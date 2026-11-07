@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The codes *Go on with Daoris's brief* is refused by that are its own (SESSCTX1c part B), beside <see cref="StartFrom"/>'s, the
+/// The codes *Go on with Daoris's brief* is refused by that are its own, beside <see cref="StartFrom"/>'s, the
 /// hand-over's tree and <see cref="WordsNever"/>'s: the page's <c>GO_ON_BRIEF</c> twin, held to this by <c>locales/say.test.ts</c>.
 /// </summary>
 public static class GoOnBrief
 {
-    /// <summary>The agent the session ran on is no longer one this machine has: the hand-over chooses another.</summary>
+    /// <summary>The agent the session ran on is not one this machine has: the hand-over chooses another.</summary>
     public const string AgentGone = "agent-gone";
 }
 
 /// <summary>
-/// A conversation, or a closed quest's session, goes on in a new part of its session handed Daoris's brief (SESSCTX1c part B, D189
-/// points 2-3; the session-context design §2): by itself where its own conversation is proven lost (<see cref="ContinueReason.Lost"/>),
+/// A conversation, or a closed quest's session, goes on in a new part of its session handed Daoris's brief: by itself where its own
+/// conversation is proven lost (<see cref="ContinueReason.Lost"/>),
 /// or by the person's *Go on with Daoris's brief* where it waits for them. The new part opens through the runner's own start, in the tree the old part ran in, on its agent and
 /// its account, its record naming the one it continues, why <c>resume</c>, by Daoris or by the person.
 /// </summary>
@@ -20,28 +20,27 @@ public static class GoOnBrief
 /// <para><b>Refused before anything starts</b>, by a code: what never goes on (<see cref="WordsNever"/>), a session that runs or parks
 /// (<see cref="StartFrom.Running"/>), no words of the person's waiting (<see cref="StartFrom.NoWords"/>), a quest still open or taken,
 /// whose words the driver carries on by itself (<see cref="StartFrom.Carried"/>), a conversation's tree that is gone (<see cref="HandOver.TreeGone"/>)
-/// and an agent this machine no longer has (<see cref="GoOnBrief.AgentGone"/>), which only the hand-over's choice of agent answers.</para>
+/// and an agent this machine does not have (<see cref="GoOnBrief.AgentGone"/>), which only the hand-over's choice of agent answers.</para>
 ///
-/// <para><b>A closed quest's session goes on as a conversation</b> in its own tree (the steward's choice): a closed quest opens no
-/// driven record. Where the look's tidy took that tree, the person's press grows a fresh one from the line (TREEGONE2, ONEWAY1's design
-/// §3 C5). <b>Ask Daoris's goes on in its own room</b>, a conversation of its workspace's, its link kept in the room's history
+/// <para><b>A closed quest's session goes on as a conversation</b> in its own tree: a closed quest opens no
+/// driven record. Where the look's tidy took that tree, the person's press grows a fresh one from the line.
+/// <b>Ask Daoris's goes on in its own room</b>, a conversation of its workspace's, its link kept in the room's history
 /// (<see cref="HelpConversations.StartedFrom"/>), since the room's record takes no <c>from</c>, on its own agent: the one path that places
-/// Ask Daoris's new part on another agent is <see cref="LimitMove"/>'s, a limit with no account of its agent left (LIMITGOON2, D205
-/// §3.5(e)).</para>
+/// Ask Daoris's new part on another agent is <see cref="LimitMove"/>'s, a limit with no account of its agent left.</para>
 ///
 /// <para><b>Only the person's words go</b>, after the brief and in the same prompt, as the person's: another agent's answer waiting
-/// beside them stays on the old record (XAGENT1e, MIXAGENT2a-iii). They leave the old record by their ids, naming the new part, once
+/// beside them stays on the old record. They leave the old record by their ids, naming the new part, once
 /// it took them; until then they stay where they were.</para>
 ///
-/// <para><b>Moved by the open</b> (FOUNDATION1d-ii part 4, the foundation design §3.4 rule 3): against a host whose <c>opens</c> mark is 2 the
+/// <para><b>Moved by the open</b>: against a host whose <c>opens</c> mark is 2 the
 /// new part's open moves the person's words, and any of theirs kept since the read, in its own step, so no word falls between the read and the
 /// open. The delivery is then the new part's moved words (<see cref="MovedWords"/>): their files copied into its folder, each marked attempted
 /// there as it is handed and shown under its id; they leave the new part once it took them, and where its first hand fails they wait on it,
 /// whose own go-on carries them. Ask Daoris's room opens through its own door, unkeyed, and moves as before.</para>
 ///
-/// <para><b>The old part ended before the new starts</b> (D51): an ended record holds no tree, and a resume refused on the wire has put
+/// <para><b>The old part ended before the new starts</b>: an ended record holds no tree, and a resume refused on the wire has put
 /// its record back first (<see cref="ChatGoOn.WentBackAsync"/>). No closing note is asked: a lost conversation cannot be asked, and a
-/// refused one has no turn left (D189's amendment).</para>
+/// refused one has no turn left.</para>
 /// </remarks>
 [Executor("briefed-move", ExecutorPhase.Move)]
 internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
@@ -54,14 +53,14 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 
     private IChatHelping help => wiring.Of<IChatHelping>();
 
-    /// <summary>What the course answered each briefed move, by session (FOUNDATION1h branch 4): a test hears it; no person reads it.</summary>
+    /// <summary>What the course answered each briefed move, by session: a test hears it; no person reads it.</summary>
     internal event Action<string, LineCourse>? Decided;
 
     /// <summary>
     /// Go on in a new part handed the brief, one at a time per session: the person's press, a closed quest's session the driver hands
-    /// over, and a conversation whose resume was refused on the wire once its run let go.
+    /// over, and a conversation whose resume got refused on the wire once its run let go.
     /// </summary>
-    /// <param name="lost">Why its own conversation was proven lost, where it goes on by itself; null for the person's press.</param>
+    /// <param name="lost">Why its own conversation is proven lost, where it goes on by itself; null for the person's press.</param>
     /// <param name="by">Who asks: <see cref="HandOverBy.Daoris"/> or <see cref="HandOverBy.Person"/>.</param>
     public async Task<StartedFrom> MoveAsync(
         string sessionId, ContinueReason? lost, string by, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct)
@@ -93,10 +92,10 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var listed = SessionRecords.Parse(json).FirstOrDefault(each => string.Equals(each.Id, sessionId, StringComparison.Ordinal));
         if (listed is null) return Refused(WordsNever.NotFound, $"no session here is {sessionId}.");
 
-        // FOUNDATION1h branch 4 (the foundation design §3.1, §14.2): this is the course's adapter for the briefed move. What the line is, the
+        // This is the course's adapter for the briefed move. What the line is, the
         // words waiting, the tree and the agent are read into the facts, and the course decides for CourseTrigger.BriefedPress (the person's
-        // press) or CourseTrigger.ConversationLost (Daoris's, on a conversation proven lost); every refusal is said by the code and sentence
-        // it has always had. The account's answer is not asked here: the new part's own walk (`ownFirst`) takes it, as before.
+        // press) or CourseTrigger.ConversationLost (Daoris's, on a conversation proven lost). The account's answer is not asked here:
+        // the new part's own walk (`ownFirst`) takes it.
         var person = by == HandOverBy.Person;
         var next = WordsNever.ContinuedIn(json, sessionId);
         var last = WordsNever.LastHere(json, listed.Quest);
@@ -107,7 +106,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         // boundary of; for the person's press the course refuses it.
         if (!person && never is null && listed.Live) return Refused(StartFrom.Running, RunningWords(sessionId, listed));
 
-        // The quest of a closed session is read only where nothing before it refused, as it was. A quest the driver carries on by itself is
+        // The quest of a closed session is read only where nothing before it refused. A quest the driver carries on by itself is
         // the course's refusal of the person's press; a lost go-on's is its own (the course's lost answer for it is the driver's fall-back).
         var carried = (Quest: (string?)null, Status: (string?)null);
         if (never is null && !listed.Live && record is { WordsWaiting: true, Quest: { } quest } && record.Kind != "chat")
@@ -118,7 +117,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         }
 
         // Its agent is the one whose conversation it is; a record naming none goes on with its role's choice, Chat's order, never the
-        // machine's `adapter` key (FOUNDATION1j part iii, the foundation design §2.4's first row). Chat off, or its entry unread, is said below.
+        // machine's `adapter` key. Chat off, or its entry unread, is said below.
         AgentDoor? resolved = null;
         var named = record?.Adapter;
         var unchosenWords = (string?)null;
@@ -126,7 +125,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         {
             try
             {
-                // FOUNDATION1x: its binding's role first, as a quest's go-on reads it (§2.4).
+                // Its binding's role first, as a quest's go-on reads it.
                 named = record.Adapter is { Length: > 0 } opened
                     ? opened
                     : StartPlan.ContinuedOn(
@@ -152,7 +151,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
                 Session: sessionId, QuestStatus: carried.Status, AskDaoris: help, AgentGone: record is not null && resolved?.Can.Interactive != true,
                 Judged: lost?.Code),
             listed.Live ? CourseBoundary.TurnRunning : CourseBoundary.ProcessExited,
-            // An account the person picked stays the one account (§3.5(d)): the course says it as the pick the new part keeps.
+            // An account the person picked stays the one account: the course says it as the pick the new part keeps.
             Account: new CourseAccount(Picked: pinned), Press: person ? new CoursePress(CoursePressKind.Briefed) : null,
             Rules: new CourseRules(Runner: true));
         var course = CourseDecision.Decide(facts, person ? CourseTrigger.BriefedPress : CourseTrigger.ConversationLost);
@@ -160,7 +159,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 
         if (course is not LineCourse.Move move)
         {
-            // What the course held, said by the code the refusal has always had: its own refusal's, or, for Daoris's cannot-go-on, the first
+            // What the course held, said by the code of its own refusal, or, for Daoris's cannot-go-on, the first
             // thing the facts lack in the course's order.
             var code = course switch
             {
@@ -183,7 +182,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
             });
         }
 
-        // Which words go is the course's (D212's difference 1): the person's alone (XAGENT1e, MIXAGENT2a-iii), another agent's claims stay.
+        // Which words go is the course's: the person's alone, another agent's claims stay.
         var wanted = move.Words.Ids.ToHashSet(StringComparer.Ordinal);
         var words = record!.Waiting.Where(word => wanted.Contains(word.Id ?? "")).ToList();
         var agent = resolved!;
@@ -192,14 +191,14 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var brief = await ContextBriefs.ComposeAsync(
                 context.Service, context.Events, context.Home, sessionId, HandOverWhy.Resume, conversation: record.Kind == "chat", ct: ct)
             .ConfigureAwait(false);
-        // FOUNDATION1a-iii (the design's §3.2 step 6, §7 row 4): the new part takes the walk with its own account first where that is ready,
+        // The new part takes the walk with its own account first where that is ready,
         // the person's press and a part whose own conversation is proven lost alike, rather than the cooling account as a pick, which
-        // refused exactly when the person needed it. An account the person picked stays the one account (§3.5(d)): it waits while it cools.
-        // FOUNDATION1d-ii part 4: the new part's open moves the person's words, and any of theirs kept since this read, in its own step.
+        // refused exactly when the person needed it. An account the person picked stays the one account: it waits while it cools.
+        // The new part's open moves the person's words, and any of theirs kept since this read, in its own step.
         var started = help
             ? await HelpStartAsync(record, agent.Id.Value, config, onEnded, ct).ConfigureAwait(false)
             : await runner.StartAsync(
-                    // TREEGONE2: a closed quest's session whose tree went (the course moves no conversation's) grows a fresh tree from the line.
+                    // A closed quest's session whose tree went (the course moves no conversation's) grows a fresh tree from the line.
                     record.Repository!, agent.Id.Value, config, onEnded, record.Profile, ownTree: tree is null ? true : null, ct: ct, tree: tree,
                     from: new ContinuedFrom(sessionId, HandOverWhy.Resume, by), ownFirst: move.Where.Source != CourseAccountSource.Pick,
                     moves: Moves(record, words))
@@ -215,7 +214,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var message = new ChatMessage(moved?.Text ?? string.Join("\n\n", words.Select(word => word.Text)), files) { Brief = brief, TakenOver = opening };
         var taken = (!moving || moved is { Words.Count: > 0 }) && await handOver.SayHandedOver(to, message, moved?.Shown).ConfigureAwait(false);
 
-        // The move, said on the part it left, where the person wrote it, and in the machine log, by profile name (D125 point 7).
+        // The move, said on the part it left, where the person wrote it, and in the machine log, by profile name.
         var on = HandOverNotes.MovedOn(to, agent.Id.Value, record.Profile, HandOverWhy.Resume, high, brief.Text.Length);
         context.Note(sessionId, on);
         context.Service.AccountSaid(Continuations.Moved(to, sessionId, ranOn, agent.Id.Value, record.Profile, record.Profile, HandOverWhy.Resume, briefed: true));
@@ -232,7 +231,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var ids = moved?.Left ?? [.. words.Select(word => word.Id).OfType<string>()];
         if (await TakenAsync(sessionId, to, moved, ids, ct).ConfigureAwait(false)) context.Marks.Clear(sessionId);
 
-        // Where they went, where the person wrote them: their ids, the part and the reason's code (MSG1d), which the page words.
+        // Where they went, where the person wrote them: their ids, the part and the reason's code, which the page words.
         var went = Continuations.Went(ids, to, lost ?? ContinueWhy.Of(ContinueWhy.Started));
         context.Output?.Append(sessionId, went.Text!);
         context.Events.Keep(sessionId, went, say: null);
@@ -240,10 +239,10 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The go-on of a conversation its agent refused at the open (MODELROLE1d2, D205 §3.5(b)), after an interruption between its two records:
+    /// The go-on of a conversation its agent refused at the open, after an interruption between its two records:
     /// no conversation began there, so it is a fresh start of its actor, never a resume, its record the new part's <c>from</c> (Ask Daoris's
     /// room history) and its waiting words the first message. A pick is never walked afresh: only the picked agent's entries on the picked
-    /// account are tried (§3.5(d)), the refused one passed by the reading kept. A refused continuation, whose line holds an earlier part
+    /// account are tried, the refused one passed by the reading kept. A refused continuation, whose line holds an earlier part
     /// that held a conversation, is handed Daoris's brief of that line first, recomposed here (<see cref="ContextBriefs"/>), since its
     /// words carried none; a refused new conversation goes on with its words alone. Within a go-on that already holds the session.
     /// </summary>
@@ -254,8 +253,8 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         var isHelp = string.Equals(record.Repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase);
         var actor = isHelp ? "ask-daoris" : "chat";
 
-        // FOUNDATION1h branch 4: a fresh start of the actor is the course's too (the go-on of a conversation its agent refused at the open);
-        // the executor reads the facts and says the refusals by the codes they have always had.
+        // A fresh start of the actor is the course's too (the go-on of a conversation its agent refused at the open);
+        // the executor reads the facts and says the refusals by their codes.
         var facts = new CourseFacts(
             new CourseHead(
                 record.State, Role: actor, Choice: record.Choice, Adapter: record.Adapter, Profile: record.Profile,
@@ -276,14 +275,14 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 
         IReadOnlyList<ActorEffective> order;
         string? pinned = null;
-        // The role its start was bound to (STAFFPOLICY1d), else the role that takes the work now; its order as a start would arrange it.
+        // The role bound to its start, else the role that takes the work now; its order as a start would arrange it.
         var staff = context.Harnesses.StaffFor(context.Home);
         var role = RoleOrders.Bound(context.Conversations.RoleOf(sessionId)?.Role, actor, RoleCatalog.ReadHome(context.Home), new RolePlace());
         try
         {
             if (record.Choice == "pick" && record.Adapter is { Length: > 0 } picked)
             {
-                // Only an account the person picked is held to its account (FOUNDATION1a-iii, §7 row 2): an agent pick walks its agent's
+                // Only an account the person picked is held to its account: an agent pick walks its agent's
                 // accounts, the refused one passed by the reading kept.
                 order = ChatPending.Recovering(
                     actor, [new ActorEffective(picked, record.Asked?.NamedModel, record.Asked?.Effort.Value, "pick")], config, staff, role);
@@ -324,7 +323,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
                 .ConfigureAwait(false);
         if (started.SessionId is not { } to) return new StartedFrom(null, false, null, started.Message);
 
-        // FOUNDATION1d-ii part 4: where the open moved the words, the fresh start's first message is the new part's moved words.
+        // Where the open moved the words, the fresh start's first message is the new part's moved words.
         var moving = MovedWords.Moving(started);
         var moved = moving ? await HandedAsync(sessionId, to, started, ct).ConfigureAwait(false) : null;
         var files = moved?.Files ?? [.. words.SelectMany(word => ChatFiles.Kept(context.Home, sessionId, word.Files))];
@@ -353,11 +352,11 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// Ask Daoris's new part, in the room of its workspace (ASKSCOPE1b): that workspace's running conversation set aside, as going on in an
+    /// Ask Daoris's new part, in the room of its workspace: that workspace's running conversation set aside, as going on in an
     /// earlier one sets it aside, the new one placed and run as a press's is, and its link kept in the room's history.
     /// </summary>
-    /// <param name="order">Ask Daoris's order its placement walks (MODELROLE1d2's fresh start); null places it on <paramref name="agent"/>.</param>
-    /// <param name="handed">What its history says it was handed: <see cref="HelpConversations.Brief"/> or <see cref="HelpConversations.NotOffered"/>.</param>
+    /// <param name="order">Ask Daoris's order its placement walks; null places it on <paramref name="agent"/>.</param>
+    /// <param name="handed">What its history says it got: <see cref="HelpConversations.Brief"/> or <see cref="HelpConversations.NotOffered"/>.</param>
     private async Task<ChatStart> HelpStartAsync(
         PriorSession record, string agent, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct,
         IReadOnlyList<ActorEffective>? order = null, string handed = HelpConversations.Brief)
@@ -383,7 +382,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// The words off the record they were said to by their ids, naming the part that took them (MSG1a's taken door). A refusal costs a
+    /// The words off the record they were said to by their ids, naming the part that took them. A refusal costs a
     /// line in that part, never the part: false then, and the record still keeps them.
     /// </summary>
     private async Task<bool> TakeAsync(string sessionId, IReadOnlyList<string> ids, string to, CancellationToken ct)
@@ -406,12 +405,12 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
         return false;
     }
 
-    /// <summary>What the new part's open is asked to move (FOUNDATION1d-ii part 4): the person's words named, and every word this read saw waiting.</summary>
+    /// <summary>What the new part's open is asked to move: the person's words named, and every word this read saw waiting.</summary>
     private static MoveWords Moves(PriorSession record, IReadOnlyList<SaidWordView> words) =>
         MovedWords.Asked(record.Session, words.Select(word => word.Id), record.Waiting.Select(word => word.Id));
 
     /// <summary>
-    /// The words the open moved to the new part, as it is handed them (FOUNDATION1d-ii part 4): read there, their files copied, and marked
+    /// The words the open moved to the new part, as it is handed them: read there, their files copied, and marked
     /// attempted where this runner holds the part, so a hand that cannot be made marks nothing; null where the new part's record did not read.
     /// </summary>
     private async Task<MovedWords?> HandedAsync(string from, string to, ChatStart started, CancellationToken ct)
@@ -422,7 +421,7 @@ internal sealed class BriefedMove(IExecutorWiring wiring) : IExecutor
 
     /// <summary>
     /// The handed words taken off: the new part's by their ids there where the open moved them, judged by what it holds after, a failure said
-    /// on it; else the old record's by theirs, naming the new part, as before. True where none of them waits any more.
+    /// on it; else the old record's by theirs, naming the new part. True where none of them waits any more.
     /// </summary>
     private async Task<bool> TakenAsync(string sessionId, string to, MovedWords? moved, IReadOnlyList<string> ids, CancellationToken ct)
     {

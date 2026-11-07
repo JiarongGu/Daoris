@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 internal readonly record struct RefRun(bool Done, string Said, bool Unanswered = false);
 
 /// <summary>
-/// One typed transaction for a set of ref acts (GITTXN1): exactly one <c>git update-ref --stdin</c> operation per ref, each with its
+/// One typed transaction for a set of ref acts: exactly one <c>git update-ref --stdin</c> operation per ref, each with its
 /// expectation (create: the ref absent; update and delete: its old value), and a <c>verify</c> for each dependency that is only read.
 /// Identical expectations are named once; two values for one ref, two names for one ref (a case alias, a symbolic ref) and a name that is
 /// no full ref are refused before git runs, so git's own "multiple updates" never decides what a caller meant.

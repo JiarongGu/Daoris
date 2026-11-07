@@ -14,26 +14,26 @@ public enum HookJoinOutcome
     /// <summary>A hook line for the id names a subagent.</summary>
     Child,
 
-    /// <summary>No hook line for the id was read within the budget.</summary>
+    /// <summary>No hook line for the id is read within the budget.</summary>
     NotFound,
 
     /// <summary>Hook lines for the id disagree.</summary>
     Conflict,
 
-    /// <summary>The hook was sent an agent id it could not read.</summary>
+    /// <summary>The hook is sent an agent id it cannot read.</summary>
     Unreadable,
 
-    /// <summary>The wait was cancelled before it could say.</summary>
+    /// <summary>The wait is cancelled before it can say.</summary>
     TimedOut,
 }
 
 /// <summary>
-/// A Claude Code call's id joined to the hook line naming the agent behind it, in the session's lineage file (FABRIC-C2a, D173's
-/// FABRIC-C2a note, point 5): read from the end, bounded in bytes and time, cancellable, and opened with every writer let in.
+/// A Claude Code call's id joined to the hook line naming the agent behind it, in the session's lineage file:
+/// read from the end, bounded in bytes and time, cancellable, and opened with every writer let in.
 /// </summary>
 /// <remarks>
 /// Only a <c>by: hook</c>, <c>event: call</c> line with the exact id joins; the connector's own <c>by: call</c> line carries the
-/// same id and is no join. The hook runs before its call (measured 21 ms to 6.5 s ahead, D173's 2026-10-21 note), so the first
+/// same id and is no join. The hook runs before its call (measured 21 ms to 6.5 s ahead), so the first
 /// look finds it; the <see cref="Budget"/> is the ceiling for a line not yet written.
 /// </remarks>
 public static class HookJoin

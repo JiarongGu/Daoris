@@ -3,14 +3,14 @@ namespace Daoris.Driver;
 
 
 /// <summary>
-/// Which line a repository's work grows from and lands on (WSR2), read from one place by every door:
+/// Which line a repository's work grows from and lands on, read from one place by every door:
 /// a session tree's start, the merge, a tree's removal, and sync's feed. What the person set for the
 /// repository, then for its workspace, then the checkout's own guess (`origin/HEAD`, else `main`, else
 /// `master`), and the answer always says which.
 /// </summary>
 public static class CanonicalLine
 {
-    /// <remarks>A repository in no workspace is in the `default` one (D48 §2), so its line is found under that name.</remarks>
+    /// <remarks>A repository in no workspace is in the `default` one, so its line is found under that name.</remarks>
     public static Line Choose(DriverConfig config, string repository, string? workspace, string? guess)
     {
         if (config.Lines.TryGetValue(repository, out var set)) return new(set, LineSource.Repository);
@@ -40,7 +40,7 @@ public static class CanonicalLine
 
     /// <summary>
     /// The line, with the checkout asked only when nothing is set, and git only when what it reads moved since it was last asked
-    /// (<see cref="LineGuesses"/>, IDLECPU1).
+    /// (<see cref="LineGuesses"/>).
     /// </summary>
     public static Task<Line> ResolveAsync(
         string root, string repository, string? workspace, DriverConfig config, CancellationToken ct = default) =>
@@ -48,7 +48,7 @@ public static class CanonicalLine
 
     /// <summary>
     /// The same, with the checkout's guess asked of <paramref name="guess"/>: a look that asks git once per checkout
-    /// (UIFREEZE1, <c>TreeContext.OneLook</c>).
+    /// (<c>TreeContext.OneLook</c>).
     /// </summary>
     internal static async Task<Line> ResolveAsync(
         string root, string repository, string? workspace, DriverConfig config, Func<string, CancellationToken, Task<string?>> guess,
@@ -60,10 +60,10 @@ public static class CanonicalLine
     }
 
     /// <summary>
-    /// The line as far as the checkout's guess was judged (PARALLEL1a, PUSH1b1): what is set first; with no checkout here
+    /// The line as far as the checkout's guess is judged: what is set first; with no checkout here
     /// (<paramref name="root"/> empty), what is set alone; else <paramref name="guessed"/>, the guess as the machine's facts last
-    /// judged it, or null where it was not judged yet, so the reader says the line not read yet rather than guess or wait. The twin
-    /// of <see cref="OfAsync"/> over what was judged: Ask Daoris's room and the lines slice read it, and it asks no git.
+    /// judged it, or null where it is not judged yet, so the reader says the line not read yet rather than guess or wait. The twin
+    /// of <see cref="OfAsync"/> over what is judged: Ask Daoris's room and the lines slice read it, and it asks no git.
     /// </summary>
     public static Line? Judged(DriverConfig config, string repository, string? workspace, string? root, HelpLineGuess? guessed)
     {

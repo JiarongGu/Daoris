@@ -1,16 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris plugin add`'s copy, the driver's twin (PLUG9): a plugin's folder read by the catalogue's own
+/// `daoris plugin add`'s copy, the driver's twin: a plugin's folder read by the catalogue's own
 /// reader, then copied into the home under its manifest's id. Ask Daoris's <c>plugin</c> proposal is
-/// judged by <see cref="Read"/> and applied by <see cref="Add(string, string, IEnumerable{string})"/>. Since PLUG9 (c) and (d) (D103) an add
+/// judged by <see cref="Read"/> and applied by <see cref="Add(string, string, IEnumerable{string})"/>. An add
 /// records where the plugin came from, an offer of the install is added by its id, and an installed
 /// plugin with a record is updated from it.
 /// </summary>
 /// <remarks>
-/// <para><b>Once a twin of the CLI's <c>plugins.ts</c></b>, which left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f): the same
-/// refusals in the same words, a copy staged beside and renamed in, links neither followed nor copied, and the data
-/// folder untouched, all held by <c>fixtures/plugins-text.json</c> since <c>daoris plugin</c> is <c>daoris plugin</c>.</para>
+/// <para><b>The refusals are fixed.</b> The same refusals in the same words, a copy staged beside and renamed in, links neither
+/// followed nor copied, and the data folder untouched, all held by <c>fixtures/plugins-text.json</c>.</para>
 ///
 /// <para><b>One difference, deliberate:</b> <see cref="Add(string, string, IEnumerable{string})"/> adds, and never replaces an
 /// installed plugin. Replacing one wholesale is <c>daoris plugin add</c>'s at a terminal, <see cref="Replace"/>, which no route
@@ -21,7 +20,7 @@ namespace Daoris.Driver;
 /// starts a hook at its next look, as it does any plugin, and a harness or a server runs only with a
 /// session.</para>
 ///
-/// <para>The use case (STRUCT3a): the refusals and their order are here, the folders it copies, moves and forgets are
+/// <para>The use case: the refusals and their order are here, the folders it copies, moves and forgets are
 /// <see cref="PluginFolders"/>'.</para>
 /// </remarks>
 public static class PluginInstall
@@ -69,7 +68,7 @@ public static class PluginInstall
         AddFrom(home, folder, PluginSource.FromFolder(folder), reservedHarnesses);
 
     /// <summary>
-    /// One of Daoris's own plugins the install offers, added by its id with the same copy (PLUG9 d), the
+    /// One of Daoris's own plugins the install offers, added by its id with the same copy, the
     /// offer recorded so a republish's newer one can be taken by <see cref="Update"/>.
     /// </summary>
     /// <param name="offers">The install's offers folder (<see cref="PluginOffers"/>).</param>
@@ -87,7 +86,7 @@ public static class PluginInstall
 
     /// <summary>
     /// A package's plugin folder, extracted by <see cref="PluginPackage"/> into a stage of its own under the home,
-    /// added with the same copy and the package recorded (PLUGDIST1a, D120 §5.7 step 4). That stage is the one
+    /// added with the same copy and the package recorded. That stage is the one
     /// folder inside the home an add copies from, since the reader made it and nothing else writes there.
     /// </summary>
     internal static PluginManifest Add(string home, string stage, PluginPackageOrigin package, IEnumerable<string> reservedHarnesses) =>
@@ -114,7 +113,7 @@ public static class PluginInstall
         try
         {
             TreeCopy.Copy(folder, staging);
-            // Where it came from, in the copy before it is renamed in (PLUG9 c): one move for both.
+            // Where it came from, in the copy before it is renamed in: one move for both.
             PluginSource.Write(staging, source);
             PluginFolders.MoveInto(staging, target);
         }
@@ -128,7 +127,7 @@ public static class PluginInstall
     }
 
     /// <summary>
-    /// What updating an installed plugin would do, or why it cannot (PLUG9 c): its record, the source it
+    /// What updating an installed plugin would do, or why it cannot: its record, the source it
     /// names read by the catalogue's own reader, the same plugin by id, nothing this build refuses — and
     /// what changes. The refusals come in the CLI's order and words (<c>planUpdate</c>), and nothing is written.
     /// </summary>
@@ -144,8 +143,8 @@ public static class PluginInstall
         if (entry is null) return Refuse($"no plugin `{id}` on this machine — `daoris plugin list` shows what there is.");
         var installed = Path.GetFileName(entry.Folder)!;
 
-        // LANDPIN3: the person's press to take the install's own copy of an example they hold an older copy of, whatever record
-        // the copy has or lacks. A copy whose files they changed is never replaced, and one not older is never taken back.
+        // The person's press to take the install's own copy of an example they hold an older copy of, whatever record
+        // the copy has or lacks. A copy whose files they changed is never overwritten, and one not older is never taken back.
         PluginSource? source;
         string? problem;
         string? shippedFrom = null;
@@ -194,7 +193,7 @@ public static class PluginInstall
                 + "and records where it came from.");
         }
 
-        // PLUGDIST1a: a package is installed whole, and this build reads no package source to take a newer
+        // A package is installed whole, and this build reads no package source to take a newer
         // version from; the CLI's `planUpdate` says the same, word for word.
         if (source.Package is not null)
         {
@@ -203,7 +202,7 @@ public static class PluginInstall
                 + "`daoris plugin install <file.nupkg>`, and what it kept stays where it is.");
         }
 
-        // LANDPIN3b: a copy whose record says what its install copied is never replaced once its files are not those any more.
+        // A copy whose record says what its install copied is never overwritten once its files differ from those.
         if (source.Digest is { } digest && !PluginFolders.HoldsDigest(entry.Folder, digest)) return Refuse(ChangedSinceInstalled(installed));
 
         string from;
@@ -368,9 +367,9 @@ public static class PluginInstall
     }
 
     /// <summary>
-    /// Take an installed plugin out (PUSH1f2f, the route's remove taken out as an operation): its install folder moved aside WHOLE, then
+    /// Take an installed plugin out: its install folder moved aside WHOLE, then
     /// deleted, and its disabled row cleared so a re-add starts on; what it kept, <c>.data/&lt;id&gt;</c>, stays and is the person's. Answers
-    /// the plugin as it was. 🔴 Nothing is stopped here: <c>PLUGIN_ACTION</c> stops the plugin's process first, and alone no Daoris runs
+    /// the plugin removed. 🔴 Nothing is stopped here: <c>PLUGIN_ACTION</c> stops the plugin's process first, and alone no Daoris runs
     /// one; a process still holding the folder (a headless loop's) makes the move fail, refused as <see cref="PluginCodes.Busy"/> with
     /// nothing taken.
     /// </summary>
@@ -380,8 +379,8 @@ public static class PluginInstall
         var entry = PluginCatalog.Load(home).Plugins.FirstOrDefault(plugin => string.Equals(plugin.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new PluginRefusal(PluginRefusal.Unknown, $"no plugin `{id}` on this machine.", ("id", id));
 
-        // 🔴 Moved aside WHOLE, then deleted (REV3): on Windows a running hook holds its folder, and a recursive delete took every file it
-        // could before failing, stranding a plugin with no manifest.
+        // 🔴 Moved aside WHOLE, then deleted: on Windows a running hook holds its folder, and a recursive delete takes every file it
+        // can before failing, stranding a plugin with no manifest.
         var aside = Path.Combine(Path.GetDirectoryName(entry.Folder)!, $".removing-{entry.Manifest.Id}-{Guid.NewGuid():N}");
         try
         {

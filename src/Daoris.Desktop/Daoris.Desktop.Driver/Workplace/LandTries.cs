@@ -23,6 +23,9 @@ public static class LandTries
         _ => false,
     };
 
+    public static bool Landed(LandEntry entry, string? tip) =>
+        entry.Last is { Code: LandingCode.Landed or LandingCode.Advanced, Tip: { } at } && string.Equals(at, tip, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// A tree's <c>git status --porcelain</c> as a fact a try is kept with: <c>clean</c>, or a fingerprint of what git listed,
     /// so a later look can tell whether it moved without keeping a path.
@@ -36,8 +39,8 @@ public static class LandTries
     }
 
     /// <summary>
-    /// What a landing came to, by its code (design §8). The push is the plugin's whether the branch was made or moved on, so a
-    /// plugin that could not or did not push is kept as that first (LAND2c).
+    /// What a landing came to, by its code. The push is the plugin's whether the branch is made or moved on, so a
+    /// plugin that could not or did not push is kept as that first.
     /// </summary>
     public static string CodeOf(TreeLanding landed)
     {
@@ -47,8 +50,8 @@ public static class LandTries
 }
 
 /// <summary>
-/// What the conversation's record keeps of each try it is told of (LAND2b, design §2, D100): a note whose lead-in is a code
-/// (LANG1a), so the page words it in the reader's language, and the landing's own sentence beneath it as a part of its own.
+/// What the conversation's record keeps of each try it is told of: a note whose lead-in is a code,
+/// so the page words it in the reader's language, and the landing's own sentence beneath it as a part of its own.
 /// </summary>
 public static class LandTryNotes
 {
@@ -64,11 +67,11 @@ public static class LandTryNotes
     /// <param name="uncommitted">How many paths were uncommitted, where that held it.</param>
     /// <param name="branch">The branch the pattern names, where a refusal names one and the landing did not.</param>
     /// <param name="rebaseTold">
-    /// A refusal whose replay onto the line conflicted, and whose session Daoris told to rebase in its own tree (LANDREBASE1): its own
+    /// A refusal whose replay onto the line conflicted, and whose session Daoris told to rebase in its own tree: its own
     /// lead-in, <c>landing.rebase</c>. A refusal it could not tell keeps <c>landing.refused</c>.
     /// </param>
     /// <param name="carry">
-    /// The person's Accept the try lands or carries on (LANDBACK1 part 1, <see cref="CarriedAccepts"/>): <see cref="LandCarry.Uncommitted"/> or
+    /// The person's Accept the try lands or carries on (<see cref="CarriedAccepts"/>): <see cref="LandCarry.Uncommitted"/> or
     /// <see cref="LandCarry.Conflicted"/> for a try that carried its session on, and anything else for a landing that the kept yes
     /// accepted, which says the person's press accepted it and not the rule's switch.
     /// </param>
@@ -89,10 +92,10 @@ public static class LandTryNotes
             LandingCode.CarryBound => Noted.Of(ChatNoteCodes.LandingCarryBound,
                 $"accepted, but its session was carried on {LandCarry.Bound} times and its tree is still not clean or its work still conflicts, "
                 + "so nothing was landed. It waits for your review: Accept again once it has committed, or decide the rest is not wanted."),
-            // The person's yes, kept on it while its session cleaned the tree, landed it: said as theirs (LANDBACK1 part 1).
+            // The person's yes, kept on it while its session cleaned the tree, landed it: said as theirs.
             LandingCode.Landed or LandingCode.Advanced when carry is not null => Noted.Of(ChatNoteCodes.LandingAcceptedCarried,
                 $"accepted by your press once its tree was clean: its work is on `{named}`.", ("branch", named)),
-            // An advance is an acceptance too (LAND2c): the work is on the chain's branch, and the sentence beneath says it moved.
+            // An advance is an acceptance too: the work is on the chain's branch, and the sentence beneath says it moved.
             LandingCode.Landed or LandingCode.Advanced => Noted.Of(ChatNoteCodes.LandingAccepted,
                 $"{LandingNotes.AutoAccepted} its work is on `{named}`.", ("branch", named)),
             LandingCode.Nothing => Noted.Of(ChatNoteCodes.LandingNothing, "its quest was done and its work made no commits, so nothing was landed."),
@@ -105,12 +108,12 @@ public static class LandTryNotes
             LandingCode.Exists => Noted.Of(ChatNoteCodes.LandingExists,
                 $"not accepted automatically: `{named}` is already a branch, and Daoris does not move it. It waits for your review.",
                 ("branch", named)),
-            // The review's gate held it (REVIEWENV1c): its own code, the gate's sentence beneath (REVIEWENV1c2).
+            // The review's gate held it: its own code, the gate's sentence beneath.
             LandingCode.Unreviewed => Noted.Of(ChatNoteCodes.LandingUnreviewed,
                 "not accepted automatically: its work waits for your review before it lands, as follows. It lands at the first look "
                 + "after you review it or skip the review."),
-            // The second opinion's gate held it (XAGENT1f): its own code since the page words it (XAGENT1g), as the review's wait
-            // has since REVIEWENV1c2; the gate's sentence beneath says what waits.
+            // The second opinion's gate held it: its own code, since the page words it as it words the review's wait;
+            // the gate's sentence beneath says what waits.
             LandingCode.Opinion => Noted.Of(ChatNoteCodes.LandingOpinion,
                 "not accepted automatically: its work waits for a second opinion before it lands, as follows. It lands at the first "
                 + "look once the opinion is settled, or you go on without one."),

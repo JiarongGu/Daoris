@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPALL1, KEEPALL1b, KEEPALL1c and KEEPALL1e (FIX-LOG 2026-10-17): every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
+/// Every home file a door edits keeps what its writer does not own, as <c>driver.json</c>'s writers do
 /// (<see cref="DriverConfigKeepsTests"/>). One table both twins read, <c>test/fixtures/home-files-keep.json</c>, row for row with the
 /// CLI's <c>homefileskeep.test.ts</c>: an existing file in the writer's layout with keys neither twin knows at each level, one door's
 /// edit, and the bytes both write. <c>browser/settings.json</c>'s rows are <c>BrowserSettingsTests</c>', and the remotes' go through
@@ -31,7 +31,7 @@ public sealed class HomeFilesKeepTests
             if (refused is null) Assert.Null(error);
             else Assert.Contains(refused, Assert.IsType<DriverException>(error).Message);
             Assert.Equal((name, expected), (name, File.ReadAllText(path)));
-            // KEEPALL1e: what the driver's reader reads from it, as the CLI's and the service's do.
+            // What the driver's reader reads from it, as the CLI's and the service's do.
             if (reads is not null) Assert.Equal((name, reads), (name, Read(RemoteTarget.LoadFile(path))));
         }
         finally

@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The home's workflows as a plan reads them, with the copies a set-up would save added in memory (WORKFLOWCLEAN1 1a): nothing is written, so
+/// The home's workflows as a plan reads them, with the copies a set-up would save added in memory: nothing is written, so
 /// the plan's after reads the version it would choose.
 /// </summary>
 internal sealed class PlannedWorkflows : IWorkflowStore

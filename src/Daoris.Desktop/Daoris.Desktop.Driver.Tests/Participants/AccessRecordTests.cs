@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1a (D184 point 1): a driven start keeps the access setup it started under on its record, as D183 keeps Ask Daoris's mode.
+/// A driven start keeps the access setup it started under on its record.
 /// The start resolves its repository's setup and hands it to the open, which the service keeps on this machine's record alone; its
 /// transcript's start note says it in one line where it is not today's behaviour.
 /// </summary>

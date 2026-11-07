@@ -3,14 +3,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MODELROLE1d2 (D205 §3.5(b), §13's tests): a conversation's first open re-asks within the same press. Its agent refusing its actor's
+/// A conversation's first open re-asks within the same press. Its agent refusing its actor's
 /// model at the open, before any prompt, the refused record ends <c>choice-not-offered</c>, the walk is asked again with that account
 /// passed, and its answer opens in the same call, linked to the refused record, the person's words moved to it and reaching it once;
 /// with nothing left, the words wait on the refused record. A pick tries only its own agent's other entries on its own account.
 /// </summary>
 /// <remarks>
 /// The conversation runs on the <c>acp-stub</c> adapter (a node stand-in on the protocol door) over the stub's two accounts; the stand-in
-/// lists three models and refuses at the set the ones its argument names for its account, as Claude's door was measured to (MODELROLE1a).
+/// lists three models and refuses at the set the ones its argument names for its account, as Claude's door does.
 /// The ledger is <see cref="ChatLedger"/>, in-process. Every case has its own scratch home under <c>_fixtures/</c>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -65,7 +65,7 @@ public sealed class ChatPendingProcessTests : IDisposable
         return config;
     }
 
-    /// <param name="opens">The ledger's <c>opens</c> mark (FOUNDATION1d-ii): 0 a host before row d-i, 1 a d-i host, 2 one whose open moves the words.</param>
+    /// <param name="opens">The ledger's <c>opens</c> mark: 0 a host that keeps no open mark, 1 one that keeps it, 2 one whose open moves the words.</param>
     private (ChatRunner Runner, ChatLedger Ledger, ServiceClient Client, List<(string From, string To)> Replaced) Runner(int opens = 0)
     {
         var ledger = new ChatLedger { Opens = opens }.Register("engine", _root);
@@ -143,7 +143,7 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Ask Daoris refused at the open after its press was answered (<c>START_HELP</c> placed it and returned): the words said to it
+    /// 🔴 Ask Daoris refused at the open after its press is answered (<c>START_HELP</c> placed it and returned): the words said to it
     /// reach the replacement exactly once, in the same workspace's room, its history linking the two, and the window is told to follow it.
     /// </summary>
     [Fact]
@@ -261,7 +261,7 @@ public sealed class ChatPendingProcessTests : IDisposable
         await runner.TakeUpAsync();
 
         await Poll.Until(() => Prompts("account-2").Length == 1, () => Seen(ledger, refused));
-        // After the process a conversation continuing another in its tree is told (MAKERTRAIL1), its words: no brief, since none began.
+        // After the process a conversation continuing another in its tree is told, its words: no brief, since none began.
         var handed = Assert.Single(Prompts("account-2"));
         Assert.EndsWith("Make the port configurable.", handed, StringComparison.Ordinal);
         Assert.DoesNotContain("You continue session", handed, StringComparison.Ordinal);
@@ -273,7 +273,7 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 An account the person picked is never walked afresh (round 4, Codex 2; FOUNDATION1a-iii, the design's §7 row 2): a start whose
+    /// 🔴 An account the person picked is never walked afresh: a start whose
     /// account they picked, interrupted after its refusal, account-2 free and offering the model, the come-up's go-on never runs it there:
     /// with no other entry of the picked agent, it waits saying why, its words kept.
     /// </summary>
@@ -297,7 +297,7 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1a-iii (the design's §7 row 2): an agent pick, with no account the person picked, walks its agent's accounts: the same
+    /// 🔴 An agent pick, with no account the person picked, walks its agent's accounts: the same
     /// interrupted start's go-on opens on account-2, which offers the model, the refused account passed by the reading kept, never on another
     /// agent, continuing the refused record by <c>not-offered</c>.
     /// </summary>
@@ -320,8 +320,8 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A refused continuation rebuilds its brief (round 4, Codex 3): part A held a conversation, replacement B was refused before its first
-    /// prompt, and the app stopped before C opened. C's first prompt carries a fact only A's history held, then the words, once.
+    /// 🔴 A refused continuation rebuilds its brief: part A holds a conversation, replacement B is refused before its first
+    /// prompt, and the app stops before C opens. C's first prompt carries a fact only A's history holds, then the words, once.
     /// </summary>
     [Fact]
     public async Task A_refused_continuation_s_go_on_is_handed_the_brief_of_its_line_then_its_words()
@@ -358,7 +358,7 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 5 (the foundation design §3.4 rule 3): against a host whose open moves the words (its <c>opens</c> mark 2), a word the
+    /// 🔴 Against a host whose open moves the words (its <c>opens</c> mark 2), a word the
     /// person said to a start its agent then refused at the open, kept on that record, moves with the replacement's keyed open in its own step,
     /// and goes there as the replacement's own word under its id: marked attempted on the replacement before its turn is written and taken off
     /// it once on the wire, nothing taken off the refused record, and shown there by its own event under its id. A producer's retry under its key
@@ -448,8 +448,8 @@ public sealed class ChatPendingProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 5: the words a keyed open moved to a part are shown there each by its own event under its id as the part's first
-    /// message is written (part 4's display, O6-F2). Where that part's agent then refuses it at the open, its replacement writes the message and
+    /// 🔴 The words a keyed open moved to a part are shown there each by its own event under its id as the part's first
+    /// message is written. Where that part's agent then refuses it at the open, its replacement writes the message and
     /// shows them so, never as one joined word: a refused conversation's go-on opens a fresh start that moves its words, the account it opens on
     /// refuses the model too, and the third account's part shows each word under its id.
     /// </summary>

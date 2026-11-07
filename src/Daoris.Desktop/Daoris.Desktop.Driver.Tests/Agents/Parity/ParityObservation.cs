@@ -33,7 +33,7 @@ internal enum ParityChannel
     /// <summary>The spawn, flag by flag, as its program received it.</summary>
     Spawn,
 
-    /// <summary>What was written on stdin, and when.</summary>
+    /// <summary>What is written on stdin, and when.</summary>
     Stdin,
 
     /// <summary>The downloads handed.</summary>
@@ -70,7 +70,7 @@ internal sealed record Observed(ParityChannel Channel, string What, IReadOnlyLis
     public override string ToString() => $"{Channel} {What}({string.Join(", ", Fields.Select(field => $"{field.Name}={field.Value ?? "null"}"))})";
 }
 
-/// <summary>Everything one path observed of one run, in the order it was written, and the run's start, which a time is measured from.</summary>
+/// <summary>Everything one path observed of one run, in the order it is written, and the run's start, which a time is measured from.</summary>
 internal sealed class ParityObservation(string path, DateTimeOffset start)
 {
     private readonly List<Observed> _seen = [];

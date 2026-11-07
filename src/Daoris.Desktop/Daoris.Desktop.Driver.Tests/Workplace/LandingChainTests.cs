@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAND2c (D145 §3, D149): related work lands on one branch per repository. What is related is the `follows` chain, whichever
+/// Related work lands on one branch per repository. What is related is the `follows` chain, whichever
 /// ask published each quest; a later done advances the chain's branch as a fast-forward of a branch Daoris made, and never
 /// one whose work already reads on the line; the landing record keeps each advance, and the plugin is told the pull request
 /// it already opened and who accepted the work. Tables and files only, so the suite's fast half; the advance over real git is
@@ -33,7 +33,7 @@ public sealed class LandingChainTests : IDisposable
 
     /// <summary>
     /// The owner's TK-2203, as its shape: a quest, its verify step, and a follow-up ask's drill-down that follows the verify
-    /// step. The drill-down was published by another ask, and still lands on the chain's branch, named for its first quest; a
+    /// step. The drill-down is published by another ask, and still lands on the chain's branch, named for its first quest; a
     /// quest of the second ask that follows nothing is its own work, on its own branch.
     /// </summary>
     [Fact]
@@ -83,7 +83,7 @@ public sealed class LandingChainTests : IDisposable
     /// <summary>
     /// A branch of the pattern's name moves on only where Daoris made and recorded it, it stands at the recorded tip, no working
     /// tree has it checked out, its work does not already read on the line, and the session's work grows from it with something
-    /// new. Each refusal names what stands in the way; only one whose pull request was merged is <c>completed</c>.
+    /// new. Each refusal names what stands in the way; only one whose pull request is merged is <c>completed</c>.
     /// </summary>
     [Theory]
     [InlineData("unrecorded", LandingCode.Exists, "Daoris does not move a branch it did not make")]
@@ -100,7 +100,7 @@ public sealed class LandingChainTests : IDisposable
         string facts, string? code, string? says)
     {
         var standing = new AdvanceFacts(Entry(), Tip, CheckedOutAt: null, Descends: true, Ahead: 1, Completed: null);
-        // PLUGHOOK1a (D149 point 3): a kept answer the platform gave refuses as git's own proof does, since git cannot see a
+        // A kept answer the platform gave refuses as git's own proof does, since git cannot see a
         // squash once the line has moved on.
         AdvanceFacts Kept(string state) => standing with
         {
@@ -142,7 +142,7 @@ public sealed class LandingChainTests : IDisposable
     }
 
     /// <summary>
-    /// STANDSREFUSE1 (D167's ACCEPTALL1g note): what a plan can say before the press from the cheap facts alone (the record's entry,
+    /// What a plan can say before the press from the cheap facts alone (the record's entry,
     /// where the branch stands, where it is checked out, the platform's kept word) is the press's own refusal, word for word; what
     /// needs git's proof or the session's work (merged by git's reading, grown apart, nothing new) is left to the press.
     /// </summary>
@@ -191,9 +191,9 @@ public sealed class LandingChainTests : IDisposable
     }
 
     /// <summary>
-    /// ACCEPTALL1d (D87's 2026-10-15 amendment point 3): under a squash rule a session's work grows from the tip the record says was
-    /// squashed, but work replayed onto the branch's tip (a part that joined its entry's branch, or past what the line holds) grows
-    /// from that tip, the record's own, so its advance is no longer refused as grown apart.
+    /// Under a squash rule a session's work grows from the tip the record says it squashed, but work replayed onto the branch's tip
+    /// (a part that joined its entry's branch, or past what the line holds) grows
+    /// from that tip, the record's own, so its advance is not refused as grown apart.
     /// </summary>
     [Fact]
     public void A_replayed_advance_grows_from_the_branchs_tip_under_a_squash_too()
@@ -208,7 +208,7 @@ public sealed class LandingChainTests : IDisposable
     }
 
     /// <summary>
-    /// D149 point 3: a branch whose pull request was merged is not moved on, and the sentence says the way through — bring the
+    /// A branch whose pull request is merged is not moved on, and the sentence says the way through — bring the
     /// repository up to date, which replays this session's own commits and removes that branch, then Accept lands it fresh.
     /// </summary>
     [Fact]

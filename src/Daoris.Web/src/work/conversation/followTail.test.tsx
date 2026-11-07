@@ -20,7 +20,7 @@ describe('following a conversation\'s tail', () => {
     expect(result.current.atTail).toBe(true);
   });
 
-  /** SESS2 H1: an ended session opens at its head, which says how it ended, and is not followed. */
+  /** An ended session opens at its head, which says how it ended, and is not followed. */
   it('opens an ended session at its top, not following, with the way to the bottom offered', () => {
     const ref = scroller(4000, 800);
     const { result, rerender } = renderHook(({ grew }) => useFollowTail(ref, grew, 's1', true), { initialProps: { grew: 1 } });
@@ -39,9 +39,9 @@ describe('following a conversation\'s tail', () => {
   });
 
   /**
-   * PAGELOOP1: a line streamed in while the reader is at the tail is followed with no second drawing. The tail re-set in the
-   * layout effect was an update React could not drop, its holder having just drawn, so each line left one behind its commit, and
-   * a hand-back of fifty lines took React past its update-depth limit (#185).
+   * A line streamed in while the reader is at the tail is followed with no second drawing. A tail re-set in the
+   * layout effect is an update React cannot drop, its holder having just drawn, so each line leaves one behind its commit, and
+   * a hand-back of fifty lines takes React past its update-depth limit (#185).
    */
   it('follows a growth its holder drew itself without drawing again', () => {
     const ref = scroller(4000, 800);

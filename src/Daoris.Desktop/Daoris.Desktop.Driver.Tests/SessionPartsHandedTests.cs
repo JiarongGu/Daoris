@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSONE1d (D167 point 4 as amended): a further part of a session is handed what the parts before it did, their trees and
+/// A further part of a session is handed what the parts before it did, their trees and
 /// branches, and where its own tree stands to theirs. The goldens (<see cref="TargetPromptGoldenTests"/>) hold the part gone into
 /// a free tree and the part run alongside; these hold a tree grown again after its session's tree went, and the bound.
 /// </summary>

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSONE2b (D167 point 7; the co-working design §2.3) as COWORK1d has it (D188; the message-urgency design §2.3, §4.2, §5, §6): what
+/// What
 /// a look does with the ask's channel for each line of work on an ask it holds a part of. A message goes to a part only where the
 /// entry has not acknowledged it by its id, and one part claims it. An urgent claim reaches a running part at its next step where its
 /// door takes words then; an ordinary one, and any claim on a turn-end door, only rides a prompt the run sends anyway, and otherwise
@@ -103,7 +103,7 @@ public sealed class ChannelReachTests
 
         public IEnumerable<string> States(string id) => Acknowledged.Where(ack => ack.Message == id).Select(ack => ack.State);
 
-        /// <summary>COMMS1k: what waits for each part alone, by its session, as the service answers it; a part absent reads as an older host's none.</summary>
+        /// <summary>What waits for each part alone, by its session, as the service answers it; a part absent reads as an older host's none.</summary>
         public Dictionary<string, List<ChannelItemView>> ForPart { get; } = new(StringComparer.Ordinal);
 
         public Task<IReadOnlyList<ChannelItemView>?> AddressedAsync(string session, CancellationToken ct)
@@ -120,7 +120,7 @@ public sealed class ChannelReachTests
             AcknowledgeAsync("", "", session, state, messages, ct);
     }
 
-    /// <summary>A message to one part alone (COMMS1k), from another part of its line of work: kept apart from the ask's channel.</summary>
+    /// <summary>A message to one part alone, from another part of its line of work: kept apart from the ask's channel.</summary>
     private static ChannelItemView ToPart(string id, string part, string from, string text, bool? urgent = true) =>
         Message(id, 1, text, session: from, entry: Key, urgent: urgent) with { Part = part, Channel = "ask:" + Ask, Repository = "console-ui" };
 
@@ -150,7 +150,7 @@ public sealed class ChannelReachTests
 
     private static ChannelPart Ended() => new(Entry, "s1", Inbox: null);
 
-    /// <summary>The run's turn ends: it drains what it was sent, then asks what goes next (null where nothing does).</summary>
+    /// <summary>The run's turn ends: it drains what it is sent, then asks what goes next (null where nothing does).</summary>
     private static ChatMessage? AtTurnEnd(DrivenInbox inbox)
     {
         while (inbox.NextOrClose() is { } next)
@@ -161,7 +161,7 @@ public sealed class ChannelReachTests
         return null;
     }
 
-    // ——— COMMS1k: parts that hear each other.
+    // ——— Parts that hear each other.
 
     /// <summary>
     /// Two alongside parts of one line of work post to each other: each message reaches the part it names alone, as that agent's claim
@@ -220,7 +220,7 @@ public sealed class ChannelReachTests
     /// claimed by that part on its entry, so its next part is not handed it again; once written, it is acknowledged sent.
     /// </summary>
     /// <summary>
-    /// 🔴 SESSONE2i: a teammate's person posted to this machine's ask from their machine. Their message is a claim, never this person's
+    /// A teammate's person posted to this machine's ask from their machine. Their message is a claim, never this person's
     /// words: urgent, it goes at the next step as Daoris's words around it, saying whose it is; it reopens no parked part.
     /// </summary>
     [Fact]
@@ -340,7 +340,7 @@ public sealed class ChannelReachTests
     }
 
     /// <summary>
-    /// 🔴 The person's message reaches a running part as their words (D137) at their level: urgent, their default, held for the turn's
+    /// The person's message reaches a running part as their words at their level: urgent, their default, held for the turn's
     /// end on that door, and kept on the ask once, as the channel kept it: never reported again as <c>added</c>.
     /// </summary>
     [Fact]
@@ -471,7 +471,7 @@ public sealed class ChannelReachTests
     // ——— A part that is not running.
 
     /// <summary>
-    /// 🔴 D155: another session's message to an entry whose part has ended starts nothing, reopens nothing and says nothing to its
+    /// Another session's message to an entry whose part has ended starts nothing, reopens nothing and says nothing to its
     /// record: it waits for a run that comes for its own reasons, its next part handed it in the instruction.
     /// </summary>
     [Fact]
@@ -487,7 +487,7 @@ public sealed class ChannelReachTests
     }
 
     /// <summary>
-    /// The person's message to the repository of a parked or ended part reopens it, as their words to it do (D137 §3): kept on its
+    /// The person's message to the repository of a parked or ended part reopens it, as their words to it do: kept on its
     /// record by the say door, which the planner then goes on with, once; the entry acknowledges it sent, to that record's queue.
     /// </summary>
     [Fact]
@@ -499,7 +499,7 @@ public sealed class ChannelReachTests
         var lines = await reach.LookAsync(doors, [Ended()], CancellationToken.None);
         await reach.LookAsync(doors, [Ended()], CancellationToken.None);
 
-        // SESSONE2e: the message's id goes with the words, so the service keeps no second ask word for them.
+        // The message's id goes with the words, so the service keeps no second ask word for them.
         Assert.Equal([("s1", "Also log the port.", "p1", (string?)null)], doors.Said);
         Assert.Equal([ChannelAcks.Sent], doors.States("p1"));
         Assert.Contains(lines, line => line.Contains("`p1`", StringComparison.Ordinal) && line.Contains("session s1", StringComparison.Ordinal));
@@ -651,7 +651,7 @@ public sealed class ChannelReachTests
     // ——— Over the service's own doors.
 
     /// <summary>
-    /// 🔴 SESSONE2a's note: the person's message reaching a running part is kept on the ask once, by the channel. The look reads the
+    /// The person's message reaching a running part is kept on the ask once, by the channel. The look reads the
     /// channel and claims the message through the service's acknowledgment door, by its id, and never posts what the person added
     /// (<c>/added</c>) nor moves a mark by moment.
     /// </summary>

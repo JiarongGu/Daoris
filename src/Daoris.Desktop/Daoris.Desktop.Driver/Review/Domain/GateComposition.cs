@@ -9,8 +9,7 @@ namespace Daoris.Driver;
 internal sealed record RunSettingsText(string Path, string? Text);
 
 /// <summary>
-/// What a gate ran with, so one of its failures can be repeated as composed (INTEGRATE1f part f1; the integration design §4.5, §5.9; D215's
-/// note on INTEGRATE1j): <c>units</c>, the classes it ran where it ran by class (sorted; null where it ran whole), and <c>settings</c>, the
+/// What a gate ran with, so one of its failures can be repeated as composed: <c>units</c>, the classes it ran where it ran by class (sorted; null where it ran whole), and <c>settings</c>, the
 /// gate as the declaration writes it, the run settings its command names as the commit holds them, the classes its run settings left out
 /// and the environment's rule. <c>digest</c> is <c>sha256:</c> over the canonical JSON of <c>{ units, settings }</c>, every object's keys
 /// sorted, so one composition digests alike however its keys were written, on either side.

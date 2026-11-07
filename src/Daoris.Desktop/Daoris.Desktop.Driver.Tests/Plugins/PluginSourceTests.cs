@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Where an installed plugin came from, and its update (PLUG9 c, D103): the record, the refusals in their order and words, and the
-/// changes, in the tables the CLI's <c>plugins.ts</c> was held to until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).
+/// Where an installed plugin came from, and its update: the record, the refusals in their order and words, and the
+/// changes.
 /// </summary>
 /// <remarks>
 /// <para>The record is <c>.daoris-source.json</c> in the install folder, written into the staged copy
@@ -76,7 +76,7 @@ public sealed class PluginSourceTests : IDisposable
     private static readonly string Sha = Convert.ToBase64String(System.Security.Cryptography.SHA512.HashData("a package"u8));
 
     /// <summary>
-    /// The record's shape (D103; a package since PLUGDIST1a, D120 §5.7): the CLI's <c>the record reads as the driver
+    /// The record's shape: the CLI's <c>the record reads as the driver
     /// reads it</c>, which parses these rows and holds its own to them, cell for cell and in this order. A row's
     /// <c>WHOLE</c> is a whole path and its <c>SHA</c> a SHA-512 in base64; each side spells its own. What it reads as
     /// is said in one line: <c>folder &lt;path&gt;</c>, <c>offer &lt;id&gt;</c>, or <c>package &lt;id&gt; &lt;version&gt;
@@ -198,8 +198,8 @@ public sealed class PluginSourceTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1a (D170 point 3): a server handed to Ask Daoris, or allowed other tools there, is a change the person sees before
-    /// an update; one handed to sessions alone says it as before. Twin: the CLI's <c>plugin-sources.test.ts</c>, the same words.
+    /// A server handed to Ask Daoris, or allowed other tools there, is a change the person sees before
+    /// an update; one handed to sessions alone says it the usual way. Twin: the CLI's <c>plugin-sources.test.ts</c>, the same words.
     /// </summary>
     [Fact]
     public void A_server_handed_to_ask_daoris_or_allowed_other_tools_there_is_a_change_an_update_shows()
@@ -215,7 +215,7 @@ public sealed class PluginSourceTests : IDisposable
         Assert.Empty(PluginChange.Between(was, was));
     }
 
-    /// <summary>HELPPLUG1b (D170 point 4): a skill handed to another destination is a change an update shows. Twin: the CLI's, the same words.</summary>
+    /// <summary>A skill handed to another destination is a change an update shows. Twin: the CLI's, the same words.</summary>
     [Fact]
     public void A_skill_handed_elsewhere_is_a_change_an_update_shows()
     {
@@ -249,7 +249,7 @@ public sealed class PluginSourceTests : IDisposable
     /// <summary>
     /// Update's refusals, the CLI's <c>update refuses a source that is gone…</c> row for row, in the same
     /// words, which that test parses from here and holds to its own; each leaves the installed version exactly
-    /// as it was. A plugin from a package (PLUGDIST1a) is installed whole: a newer package takes its place.
+    /// as it stands. A plugin from a package is installed whole: a newer package takes its place.
     /// </summary>
     [Theory]
     [InlineData("not installed", "acme.nobody", "no plugin `acme.nobody` on this machine")]
@@ -336,7 +336,7 @@ public sealed class PluginSourceTests : IDisposable
 
         Assert.Equal("github-pull-request", added.Id);
         Assert.Equal("// v1", File.ReadAllText(Path.Combine(Installed("github-pull-request"), "land.mjs")));
-        // The offer, and what its install copied (LANDPIN3b), so an edit to the copy can be told later.
+        // The offer, and what its install copied, so an edit to the copy can be told later.
         var first = PluginSource.Read(Installed("github-pull-request")).Source;
         Assert.Equal("github-pull-request", first?.Offer);
         Assert.Matches("^sha256:[0-9a-f]{64}$", first?.Digest);
@@ -368,7 +368,7 @@ public sealed class PluginSourceTests : IDisposable
         Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.Plugins)));
     }
 
-    /// <summary>The driver adds and never replaces (PLUG9's one difference): an installed offer is refused here.</summary>
+    /// <summary>The driver adds and never replaces (the one difference from the CLI): an installed offer is refused here.</summary>
     [Fact]
     public void An_installed_offer_is_never_replaced_here()
     {

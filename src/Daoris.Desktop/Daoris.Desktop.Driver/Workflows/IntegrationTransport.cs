@@ -3,7 +3,7 @@ namespace Daoris.Driver;
 /// <summary>A line the transport is asked to run: the repository, its workspace and the line by name.</summary>
 public sealed record IntegrationLineSend(string Repository, string Workspace, string Line);
 
-/// <summary>Where a unit's <c>integrate</c> node hands the line its request waits in (INTEGRATE1g): the transport, or a test's stand-in.</summary>
+/// <summary>Where a unit's <c>integrate</c> node hands the line its request waits in: the transport, or a test's stand-in.</summary>
 public interface IIntegrationLines
 {
     /// <summary>Take the line to run: it returns at once, and the run goes on off the caller's task. A line already waiting is taken once.</summary>
@@ -18,19 +18,19 @@ public sealed record IntegrationTransportWorld
     /// <summary>A repository's registered checkout in its workspace; null where this machine has none, and its line is not run.</summary>
     public Func<string, string, CancellationToken, Task<string?>> Root { get; init; } = (_, _, _) => Task.FromResult<string?>(null);
 
-    /// <summary>The say door a member's session is told its conflict through (§5.4's <c>session</c>); null holds every such member.</summary>
+    /// <summary>The say door a member's session is told its conflict through; null holds every such member.</summary>
     public RebaseTelling.Say? Say { get; init; }
 
     /// <summary>The landing's own clean-up the tidy step hands a settled landed branch to; null removes nothing.</summary>
     internal IntegrationTidy? Tidy { get; init; }
 
-    /// <summary>The ledger's sessions and their trees, so a promotion waits for a session working in the checkout (GITLOCK1); null asks nothing.</summary>
+    /// <summary>The ledger's sessions and their trees, so a promotion waits for a session working in the checkout; null asks nothing.</summary>
     public Func<CancellationToken, Task<IReadOnlyList<TreeHolder>>>? Beside { get; init; }
 
     /// <summary>The reading of the start's confirmation the store is opened with; null reads this install's.</summary>
     public Func<StoreSettled>? Settled { get; init; }
 
-    /// <summary>Each event of a line's run (§5.2), as its step ends.</summary>
+    /// <summary>Each event of a line's run, as its step ends.</summary>
     public Action<IntegrationEvent>? Told { get; init; }
 
     /// <summary>What a run said, a line each.</summary>
@@ -47,8 +47,8 @@ public sealed record IntegrationTransportWorld
 }
 
 /// <summary>
-/// The integration transport (INTEGRATE1g; the integration design §5.1, §5.6, §17.4): each line's run, one per line, on the transport's own
-/// task and never the pass's, as FABRIC-PIPELINE1d's heavy executor runs a check. A unit's <c>integrate</c> node sends the line its
+/// The integration transport: each line's run, one per line, on the transport's own
+/// task and never the pass's, as the heavy executor runs a check. A unit's <c>integrate</c> node sends the line its
 /// admitted request waits in; the come-up sends every line a standing candidate or an open request is in. Its answer asks the pass, which reads
 /// each request's outcome onto its node.
 /// </summary>
@@ -147,7 +147,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         }
     }
 
-    /// <summary>The come-up (§5.6): every line a standing candidate or an open request is in, sent once.</summary>
+    /// <summary>The come-up: every line a standing candidate or an open request is in, sent once.</summary>
     private void ComeUp()
     {
         try
@@ -226,7 +226,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             else _notBefore.Remove(send);
         }
 
-        // LANDNODE1l: a merge whose press left its request waiting is recorded by the run that takes it.
+        // A merge whose press left its request waiting is recorded by the run that takes it.
         if (run.Closed) await DeliveryReconciler.TakenAsync(home, root, send.Repository, send.Line, ct).ConfigureAwait(false);
         foreach (var told in run.Events) _world.Told?.Invoke(told);
         foreach (var line in run.Said) _world.Said?.Invoke($"integration: {line}");
@@ -234,7 +234,7 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
         return run;
     }
 
-    /// <summary>Each request newly open in the line, told queued once (§5.2 step 1).</summary>
+    /// <summary>Each request newly open in the line, told queued once.</summary>
     private void Tell(IntegrationStore store, IntegrationLineSend send)
     {
         foreach (var request in store.Queued(send.Repository, send.Line))

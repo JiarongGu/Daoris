@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1c (the co-agent design §2.3 step 9, §8.3, §9 row 3): a conversation leads a piece. The person's ask for a piece is taken for a
+/// A conversation leads a piece. The person's ask for a piece is taken for a
 /// conversation working in a tree of its own, and the piece's answer, handed by the look through the host's partner door, reaches the
 /// conversation as a turn of its own between its turns: kept while its turn runs, said once that turn has ended, as Daoris's words around
 /// the partner's claim and never the person's.

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Who reads a variable (WIRING1b, the this-Daoris design §3.5): what the row says it reaches.</summary>
+/// <summary>Who reads a variable: what the row says it reaches.</summary>
 public static class WiringReaders
 {
     public const string Desktop = "desktop";
@@ -10,10 +10,10 @@ public static class WiringReaders
     public const string Service = "service";
 }
 
-/// <summary>What a variable holds, which says how its value may be shown (design §5).</summary>
+/// <summary>What a variable holds, which says how its value may be shown.</summary>
 public enum WiringValue
 {
-    /// <summary>A path on this machine: shown as it is, since the page is the desktop's alone (D47 §4).</summary>
+    /// <summary>A path on this machine: shown as it is, since the page is the desktop's alone.</summary>
     Path,
 
     /// <summary>An address: shown without its credentials, its query or its fragment, and not at all where it does not parse.</summary>
@@ -26,19 +26,19 @@ public enum WiringValue
     Key,
 }
 
-/// <summary>A variable Daoris reads, as the page's §3.5 row shows it.</summary>
+/// <summary>A variable Daoris reads, as the page's row shows it.</summary>
 /// <param name="Name">The variable.</param>
 /// <param name="Value">How its value may be shown.</param>
 /// <param name="Instead">What is used where it is not set, in words a test can hold, or null where nothing stands in.</param>
 /// <param name="ReadBy">The programs that read it (<see cref="WiringReaders"/>).</param>
 public sealed record WiringVariable(string Name, WiringValue Value, string? Instead, params string[] ReadBy)
 {
-    /// <summary>Read by the service alone: an adopted service's value of it is not this window's to say (the second opinion).</summary>
+    /// <summary>Read by the service alone: an adopted service's value of it is not this window's to say.</summary>
     public bool ServiceOnly => ReadBy is [WiringReaders.Service];
 }
 
 /// <summary>
-/// Every variable Daoris reads, from one list (WIRING1b, the this-Daoris design §3.5): those a person may set, which the page
+/// Every variable Daoris reads, from one list: those a person may set, which the page
 /// shows, and those set aside with the reason they are not a person's setting. <c>SystemWiringTests</c> holds the list against
 /// a search of the sources, so a variable a change adds is shown or set aside by the same change.
 /// </summary>
@@ -99,7 +99,7 @@ public static class WiringVariables
         ["DAORIS_TARGET"] = "handed to a session by the driver: its target",
         ["DAORIS_GIT_IDENTITY"] = "set by the git remote helper on its transport alone: the identity an HTTPS act is carried as, which the credential door answers for",
         ["DAORIS_HOST_TOKEN"] = "a secret handed to one plugin process by the driver around its start: the API token of the identity serving the place's origin; never shown, its value or whether it is set",
-        // SUPERVISOR1a-ii (D208 §2.2): a secret, so never shown, its value or whether it is set: every Daoris process removes it at its entry.
+        // A secret, so never shown, its value or whether it is set: every Daoris process removes it at its entry.
         ["DAORIS_ROLE_KEY"] = "a role's holder key (STEWARDROLE1a-i: shared by every role its holder holds), handed only to the holder's tab of the terminal panel at the owner's appointment; a secret never shown, removed from every Daoris process at its entry and from every start",
         ["DAORIS_BRAINSTORM_ID"] = "handed to a brainstorm's pass by the driver: the brainstorm it serves",
         ["DAORIS_BRAINSTORM_TURN"] = "handed to a brainstorm's pass by the driver: its turn",
@@ -145,7 +145,7 @@ public static class WiringVariables
         ["DAORIS_MEASURED_PORT"] = "the web's measured check's port, where a checkout's own is not wanted",
         ["DAORIS_CANON"] = "the doctrine tool's tests' fixture canon",
         ["DAORIS_STUB_CONFIG_DIR"] = "the stub agent's tests' folder",
-        ["DAORIS_OWN_TOOLS"] = "a constant's name, not a variable",
+        ["DAORIS_STUB_COMPACT_AT"] = "the stub agent's compaction a carried conversation's process is spawned with",        ["DAORIS_OWN_TOOLS"] = "a constant's name, not a variable",
     };
 
     /// <summary>

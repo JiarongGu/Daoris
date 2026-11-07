@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What abandon's proof found of one session tree and its branch (PAUSE1d, D132 point 7, design §3.3): a word from a fixed
+/// What abandon's proof found of one session tree and its branch: a word from a fixed
 /// list, in the public spelling the page and the terminal share.
 /// </summary>
 public static class OnlyHereKind
@@ -22,7 +22,7 @@ public static class OnlyHereKind
     public const string Gone = "gone";
 }
 
-/// <summary>Abandon's proof of one tree and its branch, and what the first press names of them (design §3.2, §3.3).</summary>
+/// <summary>Abandon's proof of one tree and its branch, and what the first press names of them.</summary>
 /// <param name="Kind">One of <see cref="OnlyHereKind"/>.</param>
 public sealed record TreeOnlyHere(string Kind)
 {

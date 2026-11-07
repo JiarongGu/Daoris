@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a run writes its readings (the agent-provider design §3.1, row l): one port per run, composed where the run's executor is built of
+/// Where a run writes its readings: one port per run, composed where the run's executor is built of
 /// its owners' parts, each keeping the readings that are its own and passing over the rest. A part's failure is its own to say; one that
-/// throws reaches the transport, which says it on the transcript and goes on, as today's callbacks did.
+/// throws reaches the transport, which says it on the transcript and goes on.
 /// </summary>
 public interface IReadingSink
 {
     /// <summary>
-    /// Whether someone watches the run's console, so the streams its agent runs beside itself are kept apart from its own lines
-    /// (CONSOLE3c); where nobody does, their lines are the run's own.
+    /// Whether someone watches the run's console, so the streams its agent runs beside itself are kept apart from its own lines;
+    /// where nobody does, their lines are the run's own.
     /// </summary>
     bool Watched { get; }
 

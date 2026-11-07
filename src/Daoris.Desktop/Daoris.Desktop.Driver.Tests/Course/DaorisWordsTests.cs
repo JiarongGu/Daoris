@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORK1b (D188's COWORK1b note; the message-urgency design §9, trap 6): Daoris's own words to a session are marked as Daoris's,
+/// Daoris's own words to a session are marked as Daoris's,
 /// read back so, and never taken for the person's: in the record a resumed run opens with, in the record of a word held while a
-/// session works, and in the lines that say whose words a session goes on with. A host from before the mark keeps none, and its
-/// word reads as the person's, as every word did.
+/// session works, and in the lines that say whose words a session goes on with. A host without the mark keeps none, and its
+/// word reads as the person's.
 /// </summary>
 public sealed class DaorisWordsTests
 {

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the person runs, and how long each part of it takes, in the machine log (LOG1b, D94): the service
+/// What the person runs, and how long each part of it takes, in the machine log: the service
 /// client says when a session record opens and moves, the conversation record says when its events land,
 /// and the watcher turns the two into lines, never with anyone's words.
 /// </summary>
@@ -71,7 +71,7 @@ public sealed class SessionLogTests : IDisposable
     private static JsonElement Data(JsonElement line) => line.GetProperty("data");
 
     /// <summary>
-    /// An end as a process that reads the journal tells it to the log (FOUNDATION1 l-iv): the journal's row, which is where
+    /// An end as a process that reads the journal tells it to the log: the journal's row, which is where
     /// <c>session.ended</c> comes from for every end whoever wrote the record.
     /// </summary>
     private static Task Told(Watching w, string? session, string state, string? codes = null, string marks = "chat") =>
@@ -232,9 +232,9 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// UNBLOCK5 (D122 §3.10): a call refused on the protocol door is one ask, as the record says it. The
-    /// refusal arrives as an update to the call (HELP4's <c>refused</c>), carrying no kind, so the kind is the
-    /// one the call was announced with. The same call refused again is still one ask, a call that merely
+    /// A call refused on the protocol door is one ask, as the record says it. The
+    /// refusal arrives as an update to the call (<c>refused</c>), carrying no kind, so the kind is the
+    /// one announced with the call. The same call refused again is still one ask, a call that merely
     /// failed is none, and neither the call's title nor its input reaches the log.
     /// </summary>
     [Fact]
@@ -272,7 +272,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// The native door's refusal names its tool and what decided it, in the wire's own words (UNBLOCK5), and a
+    /// The native door's refusal names its tool and what decided it, in the wire's own words, and a
     /// refused call the record never announced is still an ask, of a kind nobody said.
     /// </summary>
     [Fact]
@@ -296,7 +296,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The line never carries words (D94 §5): a tool's name or a decider that is not an identifier is
+    /// 🔴 The line never carries words: a tool's name or a decider that is not an identifier is
     /// written as null, whatever a wire put there. A session whose open this process never saw has no adapter.
     /// </summary>
     [Fact]
@@ -323,7 +323,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// WSSETUP11 (D124 §7.3): a session that stopped to ask the person (D83) is the owner's complaint, counted.
+    /// A session that stopped to ask the person is the owner's complaint, counted.
     /// One line per park, naming the door, the repository and the workspace the record ran in, and never what
     /// the session asked. A park is no ending: the record ends when it goes on and ends.
     /// </summary>
@@ -351,7 +351,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// <c>session.answered</c> (ANSWER1a, D131 §2): written as the driver gives it, whether the answer resumed its own
+    /// <c>session.answered</c> : written as the driver gives it, whether the answer resumed its own
     /// conversation and why not by a code, and never the answer.
     /// </summary>
     [Fact]
@@ -370,8 +370,8 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// <c>session.reopened</c> (D137 §3.3): written as the driver gives it, from which state, whether its own conversation
-    /// resumed, why not by a code, and the door the words were said at (MSG1d), null where none was kept. Never the words.
+    /// <c>session.reopened</c>: written as the driver gives it, from which state, whether its own conversation
+    /// resumed, why not by a code, and the door the words were said at, null where none is kept. Never the words.
     /// </summary>
     [Fact]
     public void A_reopen_taken_up_is_one_line_naming_the_door_its_words_were_said_at()
@@ -390,9 +390,9 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// MSG1d (D137 §3.1): the person's words shown the moment they are said carry <c>reaches</c>, and are no prompt. The
+    /// The person's words shown the moment they are said carry <c>reaches</c>, and are no prompt. The
     /// open's wait and each turn are timed from the prompt that took them: a word said while a session opened, or to one that
-    /// had ended, times nothing from when it was said, and nobody's words are written.
+    /// had ended, times nothing from when it is said, and nobody's words are written.
     /// </summary>
     [Fact]
     public async Task Words_shown_waiting_are_no_prompt_and_time_nothing()
@@ -419,7 +419,7 @@ public sealed class SessionLogTests : IDisposable
 
     /// <summary>
     /// A park is the state the attention watch calls one (<see cref="SessionStates.IsParked"/>), and no other:
-    /// <c>AttentionTests</c> holds the same rows, so what the log counts is what the person was told about.
+    /// <c>AttentionTests</c> holds the same rows, so what the log counts is what the person is told about.
     /// </summary>
     [Theory]
     [InlineData("awaiting-person", true)]
@@ -438,7 +438,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// An intake parks too, asking the person about its ask (D65), and says it was an intake. A park whose open
+    /// An intake parks too, asking the person about its ask, and says it is an intake. A park whose open
     /// this process never saw names its session and nothing it cannot know: absent is null, never a guess.
     /// </summary>
     [Fact]
@@ -464,7 +464,7 @@ public sealed class SessionLogTests : IDisposable
 
     /// <summary>
     /// A session's start names the workspace its record runs in, so parks per week can be held against the
-    /// sessions started there, and a set-up's session says it is one (WSSETUP11), so the report can find each
+    /// sessions started there, and a set-up's session says it is one, so the report can find each
     /// set-up's cost. Every other session's start carries no such field.
     /// </summary>
     [Fact]
@@ -483,7 +483,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// WSSETUP5 (D124 §3.4): each registration followed from a line is one line, its repository and a word from the
+    /// Each registration followed from a line is one line, its repository and a word from the
     /// outcomes' list, never the sentence its row says; and none once the watch has let go.
     /// </summary>
     [Fact]
@@ -503,7 +503,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// LAND2b (design §8): each try to land a done session is one <c>landing.auto</c> line, codes and counts,
+    /// Each try to land a done session is one <c>landing.auto</c> line, codes and counts,
     /// never a sentence; and none once the watch has let go.
     /// </summary>
     [Fact]
@@ -523,7 +523,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// EVID1b (D144 §5): each read of a done's evidence is one <c>evidence.checked</c> line, counts and codes, never a path, the
+    /// Each read of a done's evidence is one <c>evidence.checked</c> line, counts and codes, never a path, the
     /// commit or the service's words; and none once the watch has let go.
     /// </summary>
     [Fact]
@@ -552,7 +552,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// WSSETUP6 (D124 §4.1): a workspace plan's lines, each with its fields only (names, words and counts, never a sentence
+    /// A workspace plan's lines, each with its fields only (names, words and counts, never a sentence
     /// or a path); and none once the watch has let go. A terminal's press writes the same lines through the static writer.
     /// </summary>
     [Fact]
@@ -578,7 +578,7 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// WSSETUP11 (D124 §7.3): what a set-up costs is measured per turn, as METER1 splits it: the tokens read
+    /// What a set-up costs is measured per turn: the tokens read
     /// anew, from the cache and written, a turn's tool calls, and the context at its high-water against the
     /// window. Each count is the wire's, null where it said none, and a call's later updates are the same call.
     /// </summary>

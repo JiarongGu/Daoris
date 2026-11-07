@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ports the install declares and the workplace answers (FOUNDATION1 mod-v): the git a child is handed and the clearing a downloaded
+/// The ports the install declares and the workplace answers: the git a child is handed and the clearing a downloaded
 /// version is deleted through. The workplace installs both when the driver's assembly loads, so a start and a delete read and clear as they
 /// always did; a test may put another in and puts it back.
 /// </summary>
@@ -94,7 +94,7 @@ public sealed class InstallPortsTests : IDisposable
             ToolDownloads.Current = workplaces;
         }
 
-        // The install asked for exactly this version, handed the files that say what is used as it was told them.
+        // The install asked for exactly this version, handed the files that say what is used as it is told them.
         Assert.Equal(("pwsh", "2.62.0", "wiring.json", "driver.json"), stand.Asked);
         Assert.True(Directory.Exists(folder), "the version stays");
     }

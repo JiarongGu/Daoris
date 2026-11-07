@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A quest's hand-over across a killed driver (FOUNDATION1f-v part b, D212; the foundation design §3.3, §13.4, §13.5, §19.4): one scratch home, the
+/// A quest's hand-over across a killed driver: one scratch home, the
 /// stand-in service <see cref="AskAndWaitTickTests.StandIn"/> of <c>HandOverQuestTickTests</c>, and the real driver's ticks over real processes. The
 /// protocol stub is both doors: its first run takes the quest and holds its turn; every run after it, the carry-on's, hears its first prompt, closes
 /// the quest done and ends, so the door tells that it wrote the prompt and the move closes <c>delivered</c>. A <b>killed driver</b> is one whose

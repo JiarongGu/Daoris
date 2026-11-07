@@ -5,9 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1e part 1 (the foundation design §3.1, §10 row 1e): the vocabulary the course decides over, read by nothing. Its closed
-/// enums keep their members and their docs, its one <c>from_why</c>/<c>from_by</c> enum is today's reasons and authors one to one, and no
-/// production source names a type it added (C5-3.3), so Daoris works exactly as before until rows h and i adopt it one path per branch.
+/// The vocabulary the course decides over. Its closed
+/// enums keep their members and their docs, its one <c>from_why</c>/<c>from_by</c> enum is the reasons and authors one to one.
 /// </summary>
 public sealed class CourseVocabularyTests
 {
@@ -37,15 +36,15 @@ public sealed class CourseVocabularyTests
         Assert.Equal(["CutOff", "StopReleased", "Retried", "Limited", "BroughtForward"], Enum.GetNames<CourseCarryOn>());
         Assert.Equal(["TurnRunning", "BetweenTurns", "ProcessExited", "Reserved", "WindingUp"], Enum.GetNames<CourseBoundary>());
         Assert.Equal(["Person", "Daoris", "Helper", "Findings", "Supervisor"], Enum.GetNames<CourseAuthor>());
-        // Part 2 widened four of them where LineCourse.Decide needs a member to say today's answer: Try again, a pick named, an update's
-        // restart word, a line that stays and a press refused, and three doors (FOUNDATION1e part 2).
+        // Four of them carry a member for each answer LineCourse.Decide gives: Try again, a pick named, an update's
+        // restart word, a line that stays and a press refused, and three doors.
         Assert.Equal(["None", "Pick", "NewSession", "Briefed", "HandOver", "StartFrom", "Stop", "Pause", "TryAgain"], Enum.GetNames<CoursePressKind>());
         Assert.Equal(["Decided", "Delivering", "Held", "Delivered", "FellBack", "Closed"], Enum.GetNames<CourseMovePhase>());
         Assert.Equal(["Now", "TurnEnd"], Enum.GetNames<CourseWhen>());
         Assert.Equal(["Brief", "Carry"], Enum.GetNames<CourseHow>());
         Assert.Equal(["Own", "Named", "Settled", "Pick"], Enum.GetNames<CourseAccountSource>());
         Assert.Equal(["None", "LimitReset", "TransientRetry", "Restart"], Enum.GetNames<CourseDaorisWord>());
-        // STAFFPOLICY1e widened three of them for a role policy's wait, ask and bound, and the door that answers the ask.
+        // Three of them carry a role policy's wait, ask and bound, and the door that answers the ask.
         Assert.Equal(["AccountCooling", "LimitReset", "TransientRetry", "PolicyWait"], Enum.GetNames<CourseWaitWhy>());
         Assert.Equal(
             ["AnswersAlone", "Account", "TransientBound", "CannotGoOn", "ConsentRefused", "SwitchOff", "MoveHeld", "Stays", "Refused", "PolicyAsk", "MovesBound"],
@@ -151,7 +150,7 @@ public sealed class CourseVocabularyTests
     }
 
     /// <summary>
-    /// The files that read the course, each with the row that moved it (FOUNDATION1h): a branch that moves a path onto the course adds its file
+    /// The files that read the course, each with the branch that moved it: a branch that moves a path onto the course adds its file
     /// here beside the census's own entry leaving (<see cref="CourseCensusTests"/>), a path from the driver's root with forward slashes.
     /// </summary>
     private static readonly Dictionary<string, string> Readers = new(StringComparer.Ordinal)

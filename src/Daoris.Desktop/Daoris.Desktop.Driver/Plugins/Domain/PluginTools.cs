@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whose a declared tool is (the UX6 design §7.2): one Daoris runs itself, whose way is set in Settings → Tools; one
+/// Whose a declared tool is: one Daoris runs itself, whose way is set in Settings → Tools; one
 /// Daoris's code names and runs for no one but a plugin; or one Daoris does not know, found and never downloaded. The
 /// CLI's <c>PluginToolKind</c> spells them <c>own</c>, <c>known</c> and <c>other</c>.
 /// </summary>
@@ -14,9 +14,9 @@ public enum PluginToolKind
     Other,
 }
 
-/// <summary>One readiness check (§7.2): a command whose exit 0 means ready, what that means, and what a person runs when it is not.</summary>
+/// <summary>One readiness check: a command whose exit 0 means ready, what that means, and what a person runs when it is not.</summary>
 /// <param name="Fix">
-/// The command the person's press runs in a console they see (ADOSIGNIN1), one of the plugin's own tools' (<see cref="PluginTools.FixWords"/>).
+/// The command the person's press runs in a console they see, one of the plugin's own tools' (<see cref="PluginTools.FixWords"/>).
 /// 🔴 Daoris never runs it unpressed, and never signs in itself.
 /// </param>
 public sealed record ReadyCheck(IReadOnlyList<string> Run, string Says, string? Fix)
@@ -48,7 +48,7 @@ public sealed record ToolInstallHint(string? Windows, string? Macos, string? Lin
 }
 
 /// <summary>
-/// A tool a plugin declares (PLUGTOOL1a, D150 point 7), as its manifest writes it. A known id takes its name from Daoris
+/// A tool a plugin declares, as its manifest writes it. A known id takes its name from Daoris
 /// and its file from its way, so <see cref="Command"/> is null for one; any other is found by <see cref="Command"/>, the
 /// id when absent. An entry that breaks a rule keeps only its id, where it has one, and says its first problem.
 /// </summary>
@@ -65,14 +65,14 @@ public sealed record PluginTool(
     IReadOnlyList<ReadyCheck> Ready,
     string? Problem)
 {
-    /// <summary>What a person reads to get the tool where it is not found (ADOSIGNIN1); null where the plugin wrote none.</summary>
+    /// <summary>What a person reads to get the tool where it is not found; null where the plugin wrote none.</summary>
     public ToolInstallHint? Install { get; init; }
 
     internal static PluginTool NotRead(string? id, string problem) => new(id, null, null, null, null, null, null, [], problem);
 }
 
 /// <summary>
-/// A plugin's tools (PLUGTOOL1a, D150 point 7; the UX6 design §7.2–§7.3): the manifest's <c>tools</c>, the programs its
+/// A plugin's tools: the manifest's <c>tools</c>, the programs its
 /// process runs, read by the catalogue by one table.
 /// </summary>
 /// <remarks>
@@ -83,18 +83,18 @@ public sealed record PluginTool(
 /// checked only at a trial or on the person's press (<see cref="PluginToolChecks"/>), never at a load, a look or on a
 /// timer, since a check may reach the platform or read another tool's sign-in.</para>
 ///
-/// <para><b>A plugin never carries a download</b> (§7.6): an entry's other fields, an address among them, are passed
+/// <para><b>A plugin never carries a download</b>: an entry's other fields, an address among them, are passed
 /// over, and a tool Daoris does not know is found where the system has it.</para>
 /// </remarks>
 public static class PluginTools
 {
-    /// <summary>The tools Daoris runs itself (D150 point 7): their way stays Settings → Tools'. The CLI's <c>DAORIS_OWN_TOOLS</c>.</summary>
+    /// <summary>The tools Daoris runs itself: their way stays Settings → Tools'. The CLI's <c>DAORIS_OWN_TOOLS</c>.</summary>
     public static readonly IReadOnlyList<string> DaorisOwn = ["git", "node", "pwsh"];
 
-    /// <summary>The most checks a tool may carry (§7.2). The CLI's <c>MAX_TOOL_CHECKS</c>.</summary>
+    /// <summary>The most checks a tool may carry. The CLI's <c>MAX_TOOL_CHECKS</c>.</summary>
     public const int MaxChecks = 4;
 
-    /// <summary>How long one check, or one version question, may take before it counts as no answer (§7.2).</summary>
+    /// <summary>How long one check, or one version question, may take before it counts as no answer.</summary>
     public static readonly TimeSpan CheckPatience = TimeSpan.FromSeconds(10);
 
     private static readonly string[] Daoris = ["name", "command", "versionArguments"];
@@ -131,7 +131,7 @@ public static class PluginTools
             return PluginTool.NotRead(null, $"tool {at} in `tools` needs an `id`: a tool's name in lowercase, like `node`.");
         }
 
-        // A tool's id has a plugin id's shape, asked of its one owner (REFAC1), as the CLI's `toolDeclared` asks `isPluginId`.
+        // A tool's id has a plugin id's shape, asked of its one owner, as the CLI's `toolDeclared` asks `isPluginId`.
         if (!PluginCatalog.IsId(id))
         {
             return PluginTool.NotRead(null,
@@ -265,7 +265,7 @@ public static class PluginTools
     public static string? InstallHere(PluginTool tool) => tool.Install?.Here;
 
     /// <summary>
-    /// The words a check's <c>fix</c> runs (ADOSIGNIN1): split on spaces, a double-quoted run one word, nothing else read, so
+    /// The words a check's <c>fix</c> runs: split on spaces, a double-quoted run one word, nothing else read, so
     /// no shell sees it. Only a command of the plugin's own <paramref name="tools"/> may be a fix's first word: the tool's
     /// <c>command</c>, or its id where it names none. No fix is no words and no problem.
     /// </summary>
@@ -322,7 +322,7 @@ public static class PluginTools
 }
 
 /// <summary>
-/// A range a plugin's tool works with (§7.2): a floor (<c>&gt;=V</c>), a floor and a top (<c>&gt;=V &lt;V</c>), or one exact
+/// A range a plugin's tool works with: a floor (<c>&gt;=V</c>), a floor and a top (<c>&gt;=V &lt;V</c>), or one exact
 /// version (<c>V</c>), each <c>V</c> one to four numbers. Compared number by number, a missing number 0.
 /// </summary>
 /// <param name="Lower">The version it starts at, held.</param>
@@ -377,7 +377,7 @@ public sealed record VersionRange(string? Lower, string? Upper, string? Exact)
             ? Compare(version, exact) == 0
             : (Lower is null || Compare(version, Lower) >= 0) && (Upper is null || Compare(version, Upper) < 0);
 
-    /// <summary>What it needs, as the plugin's page says it (§7.2): <c>2.60 or newer</c>, <c>2.60 or newer, below 3</c>, <c>exactly 22.11.0</c>.</summary>
+    /// <summary>What it needs, as the plugin's page says it: <c>2.60 or newer</c>, <c>2.60 or newer, below 3</c>, <c>exactly 22.11.0</c>.</summary>
     public string Needs => Exact is { } exact
         ? $"exactly {exact}"
         : Upper is { } upper ? $"{Lower} or newer, below {upper}" : $"{Lower} or newer";

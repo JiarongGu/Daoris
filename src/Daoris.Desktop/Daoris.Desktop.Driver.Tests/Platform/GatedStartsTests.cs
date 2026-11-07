@@ -5,21 +5,21 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Each of the driver's own starts passes the start gate (PROCSTART2, UIFREEZE1): a session's process, a harness action, a
-/// usage read, a plugin's hook process and its trial. Before, each called the runtime's start on its caller's thread, so a
-/// route that reached one before its first wait waited on .NET's one process-start lock on the window's thread.
+/// Each of the driver's own starts passes the start gate: a session's process, a harness action, a
+/// usage read, a plugin's hook process and its trial. A start run on its caller's thread would leave a
+/// route that reached one before its first wait waiting on .NET's one process-start lock on the window's thread.
 /// </summary>
 /// <remarks>
 /// The fast half: no process starts. Each start is made, within the test's flow, by a stand-in the gate hands it to
 /// (<see cref="ProcessStarts.Within"/>), which refuses it as the runtime refuses a program that is not there: the site
-/// answers as it always has for that, and the test reads where the start was made. The program named is nowhere, so a
+/// answers as for any missing program, and the test reads where the start is made. The program named is nowhere, so a
 /// site that bypassed the gate starts nothing either.
 /// </remarks>
 public sealed class GatedStartsTests : IDisposable
 {
     private const string Nowhere = "daoris-procstart2-nowhere";
 
-    // True on the thread making the call, while it makes it: a start seen there was made on a caller's thread.
+    // True on the thread making the call, while it makes it: a start seen there is made on a caller's thread.
     [ThreadStatic]
     private static bool t_calling;
 
@@ -123,9 +123,9 @@ public sealed class GatedStartsTests : IDisposable
     }
 
     /// <summary>
-    /// PARALLEL1f (D181's PARALLEL1de note): a session's start waits for its place on the loop's token, so a driver closing while
+    /// A session's start waits for its place on the loop's token, so a driver closing while
     /// it waits ends the wait, starts nothing and tells no spawn, which its caller reads as a run that never began. On no token,
-    /// the start was made once a place came, though the loop that wanted it had gone.
+    /// the start is made once a place comes, though the loop that wanted it has gone.
     /// </summary>
     [Fact]
     public async Task A_sessions_start_whose_loop_closed_while_it_waited_starts_nothing()

@@ -9,7 +9,7 @@ import { MERGE_GRAPH } from '../graphFixtures';
 import { ChangeWorkflow } from './ChangeWorkflow';
 import { EFFECTIVE_CURRENT } from './effectiveFixtures';
 
-// Change… on a repository place's Workflow (AGENTSPLACE1h, SETUPUX1p; the Setup design's §2.3): three tabs, the selected candidate drawn
+// Change… on a repository place's Workflow: three tabs, the selected candidate drawn
 // through the place's chart, the plan of choosing it where the driver announces one, Save a copy… of a preset and Use the workspace's, at
 // the main area's 80, 39 and 25 rem, in 中文 and in dark. A `play` presses what a person would, by keyboard-reachable controls.
 

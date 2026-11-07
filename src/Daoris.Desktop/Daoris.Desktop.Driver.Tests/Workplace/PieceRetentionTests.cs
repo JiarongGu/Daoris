@@ -6,8 +6,8 @@ using StandIn = Daoris.Desktop.Driver.Tests.HistoryStandIn;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A piece's ref and its box, as the retention tests below make and read them (COAGENT1b2, D199 point 3; the co-agent design §2.4,
-/// §8.3): the piece's commit grown from the lead's, so it holds the lead's history to its base, frozen at <see cref="PieceRefs.Of"/>.
+/// A piece's ref and its box, as the retention tests below make and read them: the piece's commit
+/// grown from the lead's, so it holds the lead's history to its base, frozen at <see cref="PieceRefs.Of"/>.
 /// </summary>
 internal static class PieceRetention
 {
@@ -43,7 +43,7 @@ internal static class PieceRetention
 
 /// <summary>
 /// 🔴 A tidy pass leaves a piece's ref and its box: the look removes a landed branch whose work the line holds, and the piece grown from
-/// that branch stands where it froze, its box as it was. A piece ref is no branch of Daoris's and no holder.
+/// that branch stands where it froze, its box unchanged. A piece ref is no branch of Daoris's and no holder.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -69,7 +69,7 @@ public sealed class PieceTidyRetentionTests : BranchTidyingFixture
 
 /// <summary>
 /// 🔴 A sync leaves a piece's ref and its box: bringing the line up to date once origin's line holds the piece's commit fast-forwards
-/// the line, and the piece's ref stands where it froze, its box as it was. A sync's clean-up deletes landed branches, never a piece's ref.
+/// the line, and the piece's ref stands where it froze, its box unchanged. A sync's clean-up deletes landed branches, never a piece's ref.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -93,7 +93,7 @@ public sealed class PieceSyncRetentionTests : TreeSyncFixture
 }
 
 /// <summary>
-/// A clear of the closed quest a piece's lead served (D153, D199 point 3): it leaves the piece's ref and its box, since no cleanup
+/// A clear of the closed quest a piece's lead served: it leaves the piece's ref and its box, since no cleanup
 /// mutates a piece's ref; and while the piece still waits on the person (anywhere but taken in, discarded or refused) it is refused,
 /// naming the lead, since the clear would take the lead's record the person's <i>Discard…</i> finds the piece's checkout by.
 /// </summary>

@@ -6,11 +6,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MSG1f2 (D137 §2.2, §5.3's <c>SESSION_START_FROM</c>): *Start a conversation with these words* as one act. The words a
+/// <c>SESSION_START_FROM</c>: *Start a conversation with these words* as one act. The words a
 /// record could not go on with are the first message of a new conversation in its repository, handed with the files said
 /// with them and a preface naming the session, which is the agent's to read; then they leave the record they were said to
 /// by their ids, naming that conversation, and the record's conversation says where they went by the reason's code
-/// (<c>started</c>). Refused before anything starts by a code: D137 §2.2's nevers, a record still running, one with no words
+/// (<c>started</c>). Refused before anything starts by a code: the nevers, a record still running, one with no words
 /// waiting, and one whose quest the driver carries on by itself. The real client over the in-process ledger; the start and
 /// the first message stand in, so nothing is spawned.
 /// </summary>
@@ -35,12 +35,12 @@ public sealed class StartFromTests : IDisposable
     {
         public List<string> Started { get; } = [];
 
-        /// <summary>What each start was asked to move (FOUNDATION1d-ii part 4).</summary>
+        /// <summary>What each start is asked to move.</summary>
         public List<MoveWords> Moves { get; } = [];
 
         public List<(string Session, string Text, IReadOnlyList<ChatUpload> Files, string Preface)> Said { get; } = [];
 
-        /// <summary>What each first message was to show of the words it carries: each moved word's own event, or null for one joined.</summary>
+        /// <summary>What each first message is to show of the words it carries: each moved word's own event, or null for one joined.</summary>
         public List<IReadOnlyList<SessionEvent>?> Shown { get; } = [];
     }
 
@@ -67,7 +67,7 @@ public sealed class StartFromTests : IDisposable
     }
 
     /// <summary>
-    /// The stand-in start through the client's keyed door (FOUNDATION1d-ii part 4), as the chat runner's own start opens: the moves sent
+    /// The stand-in start through the client's keyed door, as the chat runner's own start opens: the moves sent
     /// where the ledger's mark is 2, and what moved answered back.
     /// </summary>
     private Task<StartedFrom> OpenedAsync(
@@ -91,7 +91,7 @@ public sealed class StartFromTests : IDisposable
             });
 
     /// <summary>
-    /// 🔴 FOUNDATION1d-ii part 4 (the foundation design §3.4 rule 3): start-from's open moves the words, under its key, from the record they
+    /// 🔴 Start-from's open moves the words, under its key, from the record they
     /// were said to, which its new record names no <c>from</c> link to, so it names that record as the moves' source. A word kept there between
     /// the read and the open moves with them. The first message is composed from the new conversation's moved words, never the old record's:
     /// each moved word's files are copied into the new conversation's folder first and read from there, each word is marked attempted there
@@ -152,7 +152,7 @@ public sealed class StartFromTests : IDisposable
 
     /// <summary>
     /// 🔴 A moved word's files are copied by their kept names, and copied again changes nothing: a name the destination keeps already is
-    /// passed over, so a take-back or a go-on at the destination finds the one file as it was said.
+    /// passed over, so a take-back or a go-on at the destination finds the one file as it is said.
     /// </summary>
     [Fact]
     public void A_moved_words_files_copied_twice_are_one_file_with_its_bytes_and_name()
@@ -266,9 +266,9 @@ public sealed class StartFromTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: a helper's answer is another agent's claim, never the person's words, so a new conversation is never
+    /// A helper's answer is another agent's claim, never the person's words, so a new conversation is never
     /// handed it as theirs: where only a helper's answer waits nothing starts, and where the person's words wait beside it only
-    /// theirs go, the claim staying on the record for the conversation it was meant for.
+    /// theirs go, the claim staying on the record for the conversation it is meant for.
     /// </summary>
     [Fact]
     public async Task A_helpers_answer_is_never_carried_into_a_new_conversation_as_the_persons_words()
@@ -324,7 +324,7 @@ public sealed class StartFromTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 8 (the foundation design §3.1, §14.2): the press is the course's decision for <see cref="CourseTrigger.StartFrom"/>.
+    /// 🔴 The press is the course's decision for <see cref="CourseTrigger.StartFrom"/>.
     /// Heard from the start, its answer is each refusal by the code it has always had, or the start of a fresh conversation with the person's
     /// words alone, keyed by the record they were said to.
     /// </summary>
@@ -360,7 +360,7 @@ public sealed class StartFromTests : IDisposable
     }
 
     /// <summary>
-    /// HANDWORDS1: a conversation handed over or moved went on in another, which takes its words: nothing starts from them, and the
+    /// A conversation handed over or moved went on in another, which takes its words: nothing starts from them, and the
     /// refusal names the one that continues it.
     /// </summary>
     [Fact]

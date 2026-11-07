@@ -11,7 +11,7 @@ public sealed record AbandonQuest(WorkQuest Quest, string Act)
     /// <summary>For a quest taken on another machine, that machine where a teammate's record names it.</summary>
     public string? Machine { get; init; }
 
-    /// <summary>Whether its decline applies only while it is open (PAUSE1c): an open quest's.</summary>
+    /// <summary>Whether its decline applies only while it is open: an open quest's.</summary>
     public bool WhileOpen { get; init; }
 }
 
@@ -38,7 +38,7 @@ public sealed record AbandonTree(WorkTree Tree, string Act, TreeOnlyHere Judged)
     /// <summary>For a kept tree, why (<see cref="AbandonWhy"/>).</summary>
     public string? Why { get; init; }
 
-    /// <summary>The base its commits are judged from: its first session's (SURF6), or null for the merge-base with the line.</summary>
+    /// <summary>The base its commits are judged from: its first session's, or null for the merge-base with the line.</summary>
     public string? BaseCommit { get; init; }
 
     /// <summary>The repository's registered checkout, which answers for a branch whose tree is gone: never handed to a page.</summary>
@@ -46,7 +46,7 @@ public sealed record AbandonTree(WorkTree Tree, string Act, TreeOnlyHere Judged)
 }
 
 /// <summary>
-/// The work of an ask or a quest with what an abandon would do with each piece (PAUSE1d, design §3.1, §3.2): the first press,
+/// The work of an ask or a quest with what an abandon would do with each piece: the first press,
 /// which <c>WORK_PLAN</c> answers beside the pause's half and <c>ask --abandon</c> prints.
 /// </summary>
 public sealed record AbandonPlan(
@@ -59,7 +59,7 @@ public sealed record AbandonPlan(
     public AbandonEntry? Abandoned { get; init; }
 
     /// <summary>
-    /// Whether the abandon would take anything (design §3.1): a quest it would decline, a tree or branch it would discard, or
+    /// Whether the abandon would take anything: a quest it would decline, a tree or branch it would discard, or
     /// a session it would stop, end or archive. Closing the ask alone is *Close ask*'s, never an abandon's.
     /// </summary>
     public bool Abandonable =>
@@ -77,7 +77,7 @@ public sealed record AbandonPlan(
             .. Closes is { } ask ? [AbandonKeys.AskKey(ask)] : Array.Empty<string>(),
         ];
 
-    /// <summary>Every piece the abandon would keep, with why, in the words of design §3.2.</summary>
+    /// <summary>Every piece the abandon would keep, with why.</summary>
     public IReadOnlyList<AbandonKeep> Kept =>
     [
         .. Quests.Where(quest => quest.Act == AbandonAct.Keep).Select(quest => new AbandonKeep(quest.Key, quest.Why!) { Machine = quest.Machine }),
@@ -86,7 +86,7 @@ public sealed record AbandonPlan(
     ];
 }
 
-/// <summary>What an abandon did (design §3.4, §4.2).</summary>
+/// <summary>What an abandon did.</summary>
 public sealed record AbandonOutcome(WorkScope Scope, string Id, AbandonVerdict Verdict)
 {
     /// <summary>How many pieces the list held to go.</summary>
@@ -107,7 +107,7 @@ public sealed record AbandonOutcome(WorkScope Scope, string Id, AbandonVerdict V
     /// <summary>Each quest declined with the reason.</summary>
     public IReadOnlyList<string> Declined { get; init; } = [];
 
-    /// <summary>Whether the ask was closed with the reason.</summary>
+    /// <summary>Whether the ask is closed with the reason.</summary>
     public bool Closed { get; init; }
 
     /// <summary>Each session stopped, or ended unanswered.</summary>

@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage, SessionEvent } from './conversation';
 
-// The person's words on their way to a session (SENDLOST1b, D137 §2.4), as Ask Daoris keeps its own since SENDLOST1 (D89's
-// HELPSTART1 note): a chat's composer and every other box at a session's foot. A state hook, not a data hook, as `useDraft`
+// The person's words on their way to a session, as Ask Daoris keeps its own: a chat's composer and every other box at a session's foot. A state hook, not a data hook, as `useDraft`
 // is: the frame reads the session's record and queue and hands them in, so this reaches neither the service nor the shell.
 
 /**
  * How far before its send a record's words may be stamped and still be the words sent: the record's time is the driver's,
- * the send's the page's, on one machine. Ask Daoris's own bound (SENDLOST1).
+ * the send's the page's, on one machine. Ask Daoris's own bound.
  */
 const SAID_SKEW = 5000;
 
@@ -32,12 +31,12 @@ export type SendingTo = {
   queued?: readonly ChatMessage[];
   /**
    * A chat whose conversation ended: words it had not taken by then never arrived, since a chat's waiting words are in no
-   * record until taken (CONV4a). A driven session's words are kept on its record once they arrive, whatever it does
-   * meanwhile (D137 §2.4, USERSHOWN1), so its end says nothing of them.
+   * record until taken. A driven session's words are kept on its record once they arrive, whatever it does
+   * meanwhile, so its end says nothing of them.
    */
   endedChat: boolean;
   /**
-   * The driver now says nothing takes words for it (the box became the line, SENDLOST1c). Said after a send the page stopped
+   * The driver now says nothing takes words for it (the box is now the line). Said after a send the page stopped
    * waiting on, it is the driver's refusal arriving late: words its record does not hold never arrived.
    */
   refused?: boolean;

@@ -6,13 +6,12 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The driver's one way of speaking HTTP — client construction, the two verbs, and how a refusal is
-/// read. It existed three times with three error conventions, and the DRV2-era copy threw the
-/// service's refusal sentence away with a bare EnsureSuccessStatusCode — the exact loss its own
-/// comment called unacceptable. The refusal sentence is the contract; every caller keeps it.
+/// read. The service's refusal sentence is the contract; every caller keeps it, and a bare
+/// EnsureSuccessStatusCode would throw it away.
 /// </summary>
 internal static class DriverHttp
 {
-    /// <summary>How long one request is given: what a loop's say may take at most, which <c>sessions say</c> waits out (FLAKE3).</summary>
+    /// <summary>How long one request is given: what a loop's say may take at most, which <c>sessions say</c> waits out.</summary>
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
     /// <summary>A client for one host, carrying its key when there is one. The handler parameter is
@@ -66,7 +65,7 @@ internal static class DriverHttp
         new($"{url} answered {(int)response.StatusCode}: {ErrorOf(payload)}");
 
     /// <summary>
-    /// POST that tells a deliberate refusal from a wall (D48 §6).
+    /// POST that tells a deliberate refusal from a wall.
     /// </summary>
     /// <returns>
     /// Null when the remote took it; the remote's own sentence when it understood the request and

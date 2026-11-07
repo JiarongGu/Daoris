@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1n part n2 over real git and the home's own request store (D215's note; the integration design §17.4, round 5): the runtime's
+/// Over real git and the home's own request store, the runtime's
 /// pass over a landed branch of a real repository asks the real door through <see cref="HomeIntegrationDoor"/>. A person's Accept under
 /// <c>owner</c> is requested and found by its key after a restart; a rule gaining <c>integrate</c> over a standing landing requests none; an
 /// automatic landing under <c>owner</c> waits for the card, and under <c>done</c> is the request; a branch that moved after its landing is
@@ -32,7 +32,7 @@ public sealed class IntegrateNodeGitTests : LandedFixture
 
     private IntegrationStore Requests() => new(Home, () => StoreSettled.Yes);
 
-    /// <summary>The landings as they stood before the bound graph's <c>integrate</c> was kept with them: each record without it.</summary>
+    /// <summary>The landings of a build that kept no <c>integrate</c> with the bound graph: each record without it.</summary>
     private void ForgetIntegrate()
     {
         var path = DaorisHome.Entry(Home, HomeEntry.Landings);
@@ -163,7 +163,7 @@ public sealed class IntegrateNodeGitTests : LandedFixture
     }
 
     /// <summary>
-    /// F41 over the real store: a second landing tip (the unit's next Accept, an advance) invalidates the node, whose first request is still
+    /// Over the real store, a second landing tip (the unit's next Accept, an advance) invalidates the node, whose first request is still
     /// open, so no second is made; once the first closes, the second is requested for the new tip.
     /// </summary>
     [Fact]

@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words a record could not go on with, read again at each look (MSG1b): the planner leaves them waiting. The session a reopen
-/// names is one the planner goes on with too (FABRIC-CLOSE1c9).
+/// The words a record could not go on with, read again at each look: the planner leaves them waiting. The session a reopen
+/// names is one the planner goes on with too.
 /// </summary>
 [LookPass("unable", LookPhase.Read, "alone")]
 internal sealed class UnableLook(ILookWiring wiring) : ILookPass

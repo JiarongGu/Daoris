@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The answers-alone bound (COWORK1e, D188 point 4; the message-urgency design §2.3, trap 11): a line of work goes on by solicited
+/// The answers-alone bound: a line of work goes on by solicited
 /// answers alone (a helper's answer, a second opinion's findings) at most twice in a row, counted from the line's events. Only a word of
 /// the person's or Daoris's on the line resets it, the person's *Go on with this answer* among them; a hand-over never does; an answer
 /// taken inside a running turn is no go-on and counts nothing; a line with no events counts nothing.
@@ -45,7 +45,7 @@ public sealed class AnswersAloneTests
 
     private static SessionEvent Passed() => AnswersAloneNotes.Passed(["w9"]);
 
-    /// <summary>One turn: what it was prompted with, then the agent acting on it, then its end.</summary>
+    /// <summary>One turn: what it is prompted with, then the agent acting on it, then its end.</summary>
     private static IEnumerable<SessionEvent> Turn(params SessionEvent[] prompt) => [.. prompt, Acts(), Ended()];
 
     private static SaidWordView Answer(string id = "w9") => new(id, "Another agent answered.", At, [], true) { Helper = "h1" };
@@ -55,8 +55,8 @@ public sealed class AnswersAloneTests
     private static SaidWordView Said(string id = "w7") => new(id, "My words.", At, [], true);
 
     /// <summary>
-    /// SESSWATCH1b (design §2.1, case 10): the watcher's word to a quiet session, a prompt of its own where the door has no turn running,
-    /// is Daoris's but resets nothing, so a line going on by answers alone is held at the bound as before; any other word of Daoris's still resets.
+    /// The watcher's word to a quiet session, a prompt of its own where the door has no turn running,
+    /// is Daoris's but resets nothing, so a line going on by answers alone is held at the bound; any other word of Daoris's still resets.
     /// </summary>
     [Fact]
     public void The_watchers_word_to_a_quiet_session_resets_no_count_and_another_word_of_Daoris_still_does()
@@ -90,7 +90,7 @@ public sealed class AnswersAloneTests
     }
 
     /// <summary>
-    /// COAGENT1b (the co-agent design §4.2): a piece's answer counts as a helper's, by its mark; and a piece's notes on the lead (refused,
+    /// A piece's answer counts as a helper's, by its mark; and a piece's notes on the lead (refused,
     /// no work, out of time, uncertain, answered) reset nothing, whether beside an answer in its prompt or between two answers.
     /// </summary>
     [Fact]
@@ -111,7 +111,7 @@ public sealed class AnswersAloneTests
         Assert.True(Holds([new SaidWordView("w7", "A partner's answer.", At, [], true) { Helper = "pt3", Key = "partner:p3" }], line));
     }
 
-    /// <summary>Only a word of the person's or Daoris's resets it, whether it prompted a turn or was taken inside one.</summary>
+    /// <summary>Only a word of the person's or Daoris's resets it, whether it prompted a turn or is taken inside one.</summary>
     [Fact]
     public void A_word_of_the_persons_or_of_Daoriss_on_the_line_resets_the_count()
     {
@@ -164,7 +164,7 @@ public sealed class AnswersAloneTests
     {
         Assert.Equal(1, AnswersAlone.Count(Turn(Opening(), Helper(), Helper("w2"))));
         Assert.Equal(0, AnswersAlone.Count([Helper() with { Reaches = "resume" }]));
-        // A resume the agent would not take: its opening was written, nothing acted, and the try again is one go-on.
+        // A resume the agent would not take: its opening is written, nothing acted, and the try again is one go-on.
         Assert.Equal(1, AnswersAlone.Count([Opening(), Helper(), new SessionEvent { Kind = SessionEventKind.Note, Text = "— it cannot go on." }, .. Turn(Opening(), Helper())]));
     }
 
@@ -206,7 +206,7 @@ public sealed class AnswersAloneTests
         Assert.True(AnswersAlone.Solicited(Answer()) && AnswersAlone.Solicited(Finding()) && !AnswersAlone.Solicited(Said()));
     }
 
-    // ——— SUPERVISOR1a-i (D208; the supervisor design §4.3): one count, D188's, with the supervisor in both its predicates.
+    // ——— One count, with the supervisor in both its predicates.
 
     private static SessionEvent Supervisor(string id = "w4") =>
         new() { Kind = SessionEventKind.User, Origin = "target", From = SupervisorHanded.From, Id = id, Text = "The supervisor chose." };
@@ -257,10 +257,10 @@ public sealed class AnswersAloneTests
         Assert.Equal(2, AnswersAlone.Count([.. once, .. Turn(Helper("w2"), forged)]));
     }
 
-    // ——— SUPERVISOR1b (D208; the supervisor design §4.3): the route's `supervisor-bound` reads the same one count.
+    // ——— The route's `supervisor-bound` reads the same one count.
 
     /// <summary>
-    /// A line is at the bound where its count by the event predicate is D188's two, whichever answers took it there: the supervisor's,
+    /// A line is at the bound where its count by the event predicate is two, whichever answers took it there: the supervisor's,
     /// a helper's, an opinion's, mixed; the person's or Daoris's word puts it back. At the bound a waiting supervisor's word, by the
     /// waiting-word predicate, is one the hold would keep, so the route refuses to keep a decision only to be held behind it.
     /// </summary>

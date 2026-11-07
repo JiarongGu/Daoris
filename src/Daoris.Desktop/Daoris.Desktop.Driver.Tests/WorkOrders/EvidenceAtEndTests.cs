@@ -5,12 +5,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVID1b (D144 §3): a done that waits on its evidence is read when the session that made it ends, at its tree's HEAD then,
-/// before its record is written, and the record's evidence bundle (D46 §4) gains the verdict beneath its commits. The orphan
-/// sweep (D104) reads a lost session's done the same way, with the same code, as it ends its record. A quest that waits on no
-/// evidence ends exactly as before: git is asked nothing more and nothing is posted.
+/// A done that waits on its evidence is read when the session that made it ends, at its tree's HEAD then,
+/// before its record is written, and the record's evidence bundle gains the verdict beneath its commits. The orphan
+/// sweep reads a lost session's done the same way, with the same code, as it ends its record. A quest that waits on no
+/// evidence ends without the check: git is asked nothing and nothing is posted.
 /// </summary>
-/// <remarks>A service and git standing in, in process: the fast half (MOD8).</remarks>
+/// <remarks>A service and git standing in, in process: the fast half.</remarks>
 public sealed class EvidenceAtEndTests : IDisposable
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-evidence-end-" + Guid.NewGuid().ToString("N")[..8]);
@@ -85,9 +85,9 @@ public sealed class EvidenceAtEndTests : IDisposable
         };
 
     /// <summary>
-    /// 🔴 FABRIC-CLOSE1c6 (§E5, D173's CLOSE1c5 note, <i>Left</i>): a submission whose answers name no evidence is read for none, so its
-    /// commit was never known. The end of the session that said its <c>ready</c> posts the tree's HEAD alone, for that submission, so a
-    /// step that grew from it is brought up to date with it on the person's go-on. The record's evidence is what it was.
+    /// A submission whose answers name no evidence is read for none, so its
+    /// commit is never known. The end of the session that said its <c>ready</c> posts the tree's HEAD alone, for that submission, so a
+    /// step that grew from it is brought up to date with it on the person's go-on. The record's evidence stays unchanged.
     /// </summary>
     [Fact]
     public async Task A_submission_that_waits_on_no_evidence_has_its_commit_posted_alone_at_its_sessions_end()

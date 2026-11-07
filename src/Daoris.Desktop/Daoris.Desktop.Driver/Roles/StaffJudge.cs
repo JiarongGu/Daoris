@@ -2,11 +2,11 @@ using System.Globalization;
 
 namespace Daoris.Driver;
 
-/// <summary>A choice's reported tokens today (§2.2): what was reported, and whether a turn on it has not reported yet, which is never zero.</summary>
+/// <summary>A choice's reported tokens today: what is reported, and whether a turn on it has not reported yet, which is never zero.</summary>
 public sealed record StaffTokens(long Reported, bool Unreported);
 
 /// <summary>
-/// What <see cref="StaffJudge"/> arranges by (the staff policy design §3.1), all values, read by the ledger and the line before it asks.
+/// What <see cref="StaffJudge"/> arranges by, all values, read by the ledger and the line before it asks.
 /// </summary>
 public sealed record StaffFacts
 {
@@ -22,7 +22,7 @@ public sealed record StaffFacts
     /// <summary>The role's reported tokens by choice in the machine's local day.</summary>
     public IReadOnlyDictionary<StaffKey, StaffTokens> Tokens { get; init; } = new Dictionary<StaffKey, StaffTokens>();
 
-    /// <summary>Each agent marked not answering, until when (§4.2).</summary>
+    /// <summary>Each agent marked not answering, until when.</summary>
     public IReadOnlyDictionary<string, DateTimeOffset> NotAnswering { get; init; } = new Dictionary<string, DateTimeOffset>();
 
     /// <summary>Each choice this line moved off, when.</summary>
@@ -30,12 +30,12 @@ public sealed record StaffFacts
 
     /// <summary>
     /// The rule this walk arranges by where the line's move named one (<c>weighted</c> by weight, <c>next</c> by the stored order), else null for
-    /// the role's own (STAFFPOLICY1e2): the met action overrides the arrangement's rule for the walk it moves.
+    /// the role's own: the met action overrides the arrangement's rule for the walk it moves.
     /// </summary>
     public string? Rule { get; init; }
 
     /// <summary>
-    /// The line's moves as its effective rules set them on a reached home (CONTEXTDRIVE1e; the context counters design §4.5's next start's walk):
+    /// The line's moves as its effective rules set them on a reached home:
     /// whether the moved-off and not-answering passes apply is read from them. Null reads the policy's own moves, as on a home not reached.
     /// </summary>
     public IReadOnlyDictionary<string, StaffMove>? Moves { get; init; }
@@ -44,7 +44,7 @@ public sealed record StaffFacts
     public DateTimeOffset Now { get; init; }
 }
 
-/// <summary>One entry the walk takes in turn (§3.1): why it stands where it does, by a code of <see cref="StaffBy"/>, and that said.</summary>
+/// <summary>One entry the walk takes in turn: why it stands where it does, by a code of <see cref="StaffBy"/>, and that said.</summary>
 public sealed record StaffArranged(ActorEffective Entry, string By, string Said);
 
 /// <summary>
@@ -57,12 +57,12 @@ public sealed record StaffArrangement(string Rule, IReadOnlyList<StaffArranged> 
 public sealed record StaffLine(bool Elsewhere, int Moves);
 
 /// <summary>
-/// A met condition's action (§4): what to do, the tries or strikes before it, how long a wait holds, whether it is today's for want of a
+/// A met condition's action: what to do, the tries or strikes before it, how long a wait holds, whether it is today's for want of a
 /// move set, and whether the line's bound turned a move into an ask (<c>held.moves-bound</c>).
 /// </summary>
 public sealed record StaffAction(string Condition, string Do, int? After, int? UpTo, bool AsToday, bool MovesBound);
 
-/// <summary>Why an arranged entry stands where it does (§3.1), recorded as a start's <c>chosen.by</c>.</summary>
+/// <summary>Why an arranged entry stands where it does, recorded as a start's <c>chosen.by</c>.</summary>
 public static class StaffBy
 {
     /// <summary>The stored order: <i>first that can run</i>, or an order walked as given.</summary>
@@ -86,7 +86,7 @@ public static class StaffBy
     public static IReadOnlyList<string> Codes { get; } = [First, Weight, Share, Budget, Work];
 }
 
-/// <summary>The codes a policy passes an entry by before any account is asked (§3.1), beside the walk's own (<see cref="StartPasses"/>).</summary>
+/// <summary>The codes a policy passes an entry by before any account is asked, beside the walk's own (<see cref="StartPasses"/>).</summary>
 public static class StaffPasses
 {
     /// <summary>Over today's budget of starts or reported tokens.</summary>
@@ -102,17 +102,17 @@ public static class StaffPasses
 }
 
 /// <summary>
-/// A role's policy's two judges (STAFFPOLICY1a, D226; the staff policy design §3, §4), pure: the policy and its facts come in as values and
+/// A role's policy's two judges, pure: the policy and its facts come in as values and
 /// nothing is read inside. <see cref="Arrange"/> orders a start's walk over the role's own entries; <see cref="OnCondition"/> answers what a
 /// met condition does. With no policy, or a stale one the caller hands as null, each answers today's.
 /// </summary>
 /// <remarks>
-/// <para><b>The arrangement</b> (§3.1), in order: an entry whose works leave out the start's work leaves the walk; an entry over today's
+/// <para><b>The arrangement</b>, in order: an entry whose works leave out the start's work leaves the walk; an entry over today's
 /// budget is passed <c>over-budget</c>; where the role moves on <c>transient</c>, an entry this line moved off within <see cref="Hold"/> is
 /// passed <c>moved-off</c>, then one on an agent marked not answering <c>not-answering</c>, each in the stored order and only while
 /// another entry remains; then the rule orders the rest. A design start whose role names design for no choice is served by the choices
 /// taking build, as a design step falls to build's role.</para>
-/// <para><b>The weighted pick</b> (§3.2, amended by §11 point 9): each entry above weight 0 holds a balance, replayed from the starts since
+/// <para><b>The weighted pick</b>: each entry above weight 0 holds a balance, replayed from the starts since
 /// the policy's <c>since</c> and this look's reservations, in order: every entry gains its weight and the one taken loses <c>W</c>, the sum
 /// of the weights, each held within −W and 2W. The entry with the highest balance plus its weight is first, ties by the stored order;
 /// weight-0 entries last, in order. Under either rule an entry with a share is within it where one more start of the window's last
@@ -121,10 +121,10 @@ public static class StaffPasses
 /// </remarks>
 public static class StaffJudge
 {
-    /// <summary>How many of the role's last new starts the weighted pick and a share read (§3.2).</summary>
+    /// <summary>How many of the role's last new starts the weighted pick and a share read.</summary>
     public const int Window = 20;
 
-    /// <summary>How long a choice a line moved off is passed (§3.1): the curve's hold, <see cref="SwitchDecision.Hold"/>.</summary>
+    /// <summary>How long a choice a line moved off is passed: the curve's hold, <see cref="SwitchDecision.Hold"/>.</summary>
     public static TimeSpan Hold => SwitchDecision.Hold;
 
     /// <param name="policy">The role's policy; null for none or a stale one, which walks the order as given.</param>
@@ -137,7 +137,7 @@ public static class StaffJudge
     public static StaffArrangement Arrange(StaffPolicy? policy, string work, IReadOnlyList<ActorEffective> order, StaffFacts facts)
     {
         if (policy is not null && facts.Rule is { } overriding && overriding != policy.Rule) policy = policy with { Rule = overriding };
-        // CONTEXTDRIVE1e: a reached home's moves are the line's rules', a role with no policy walking its order with their passes.
+        // A reached home's moves are the line's rules', a role with no policy walking its order with their passes.
         if (facts.Moves is { } ruled)
         {
             policy = policy is not null ? policy with { Moves = ruled } : ruled.Count > 0 ? new StaffPolicy(facts.Rule ?? StaffRules.Order, [], ruled) : null;
@@ -179,7 +179,7 @@ public static class StaffJudge
         var movesOnTransient = MovesOn(policy, StaffConditions.Transient);
         if (movesOnTransient || MovesOn(policy, StaffConditions.Failed) || MovesOn(policy, StaffConditions.Quiet))
         {
-            // The moved-off pass first (§8's codes): where one choice is left of the two, it is the one this line did not just leave.
+            // The moved-off pass first: where one choice is left of the two, it is the one this line did not just leave.
             foreach (var each in remaining.ToList())
             {
                 if (remaining.Count > 1 && facts.MovedOff.TryGetValue(each.Key, out var at) && at <= facts.Now && facts.Now - at < Hold)
@@ -234,8 +234,8 @@ public static class StaffJudge
     }
 
     /// <summary>
-    /// What a met <paramref name="condition"/> does (§4): the policy's move where it set one, else today's; a move to another choice made the
-    /// person's ask where the line already made the policy's bound of moves in 24 hours (§4.2).
+    /// What a met <paramref name="condition"/> does: the policy's move where it set one, else today's; a move to another choice made the
+    /// person's ask where the line already made the policy's bound of moves in 24 hours.
     /// </summary>
     /// <exception cref="ArgumentException">A condition this build does not observe.</exception>
     public static StaffAction OnCondition(StaffPolicy? policy, string condition, StaffLine line)
@@ -255,7 +255,7 @@ public static class StaffJudge
     }
 
     /// <summary>
-    /// Today's action for <paramref name="condition"/> (§4's last column): a limit walks on where the role lists another choice or agent, else
+    /// Today's action for <paramref name="condition"/>: a limit walks on where the role lists another choice or agent, else
     /// waits; a refused sign-in or model and a budget walk on; a service that does not answer holds after the episode's tries; a fatal error
     /// and a quiet stop are tried again.
     /// </summary>
@@ -304,7 +304,7 @@ public static class StaffJudge
     }
 
     /// <summary>
-    /// The balances the weighted pick holds (§11 point 9), replayed from the starts taken in order: at each start every entry above weight 0
+    /// The balances the weighted pick holds, replayed from the starts taken in order: at each start every entry above weight 0
     /// gains its weight and the entry taken loses <paramref name="weights"/>, each held within −W and 2W after every step. A start on a choice
     /// the policy no longer holds, or on one of weight 0, is skipped.
     /// </summary>

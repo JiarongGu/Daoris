@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>Which list a rule sits in — the harness's own three (PERM1, D72).</summary>
+/// <summary>Which list a rule sits in — the harness's own three.</summary>
 public enum RuleList
 {
     Allow,
@@ -40,12 +40,12 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
 /// git access Write, <see cref="GitAccessPolicy"/>).
 /// </param>
 /// <param name="Hook">
-/// The tools a hook default judges, when it is one (PERM3) — a hook adds no rule, so its
+/// The tools a hook default judges, when it is one — a hook adds no rule, so its
 /// <paramref name="Rules"/> are empty and this says what it covers instead.
 /// </param>
 /// <param name="HardDeny">
-/// What the harness's auto-mode classifier is told as a hard denial while this default is on (UNBLOCK4,
-/// D122 §3.7): prose it judges every action against, for the forms a rule cannot name. The driver's
+/// What the harness's auto-mode classifier is told as a hard denial while this default is on:
+/// prose it judges every action against, for the forms a rule cannot name. The driver's
 /// alone, because only the driver writes the spawn file; the CLI's table carries no twin of it.
 /// </param>
 public sealed record PermissionDefault(
@@ -55,7 +55,7 @@ public sealed record PermissionDefault(
 /// `permissions.json` as it stands: the machine's rules, each circle's, each repository's, and the
 /// defaults switched off.
 /// </summary>
-/// <param name="Problem">Why the file was read as empty, when it could not be read — said, never thrown.</param>
+/// <param name="Problem">Why the file reads as empty, when it cannot be read — said, never thrown.</param>
 public sealed record PermissionFile(
     RuleLists Machine,
     IReadOnlyDictionary<string, RuleLists> Workspaces,
@@ -67,12 +67,12 @@ public sealed record PermissionFile(
     internal JsonObject Rest { get; init; } = [];
 
     /// <summary>
-    /// The file as <see cref="PermissionRules.Load"/> understood it, written, or null for rules built in memory (KEEPALL1): what an edit is
+    /// The file as <see cref="PermissionRules.Load"/> understood it, written, or null for rules built in memory: what an edit is
     /// measured from, so a save makes only the edit onto the file as it stands.
     /// </summary>
     internal string? Understood { get; init; }
 
-    /// <summary>Whether a file was there when it was read (KEEPALL1): with none then and none now, the save writes the rules whole.</summary>
+    /// <summary>Whether a file is there when it is read: with none then and none now, the save writes the rules whole.</summary>
     internal bool Found { get; init; }
 
     public static PermissionFile Empty { get; } = new(
@@ -83,7 +83,7 @@ public sealed record PermissionFile(
 }
 
 /// <summary>
-/// What an agent Daoris starts may do (PERM1, D72): Claude Code's own permission rules, held by Daoris
+/// What an agent Daoris starts may do: Claude Code's own permission rules, held by Daoris
 /// in three scopes of its own and handed to the harness at spawn as one more scope.
 /// </summary>
 /// <remarks>
@@ -94,29 +94,29 @@ public sealed record PermissionFile(
 /// `deny` survives anything Daoris allows. A second precedence here would disagree with the harness's
 /// exactly when it mattered.</para>
 ///
-/// <para><b>THE FILE is the contract.</b> This is its one reader and writer since `daoris agent rules` became
-/// the driver program's (PUSH1f2d, <see cref="AgentsCommand"/>), and a hand edit keeps working. A file that cannot be read is empty
-/// and says why, because wiring never stops a spawn (D21) — and the defaults, the guard among them,
+/// <para><b>THE FILE is the contract.</b> This is its one reader and writer since `daoris agent rules` is
+/// the driver program's (<see cref="AgentsCommand"/>), and a hand edit keeps working. A file that cannot be read is empty
+/// and says why, because wiring never stops a spawn — and the defaults, the guard among them,
 /// still hold.</para>
 /// </remarks>
 public static class PermissionRules
 {
     public const string FileName = "permissions.json";
 
-    /// <summary>The tree guard's id (PERM3) — a default that is a hook rather than a rule.</summary>
+    /// <summary>The tree guard's id — a default that is a hook rather than a rule.</summary>
     public const string TreeGuardId = "tree-guard";
 
     /// <summary>The push forms' default, fixed: git access's Write composes it (<see cref="GitAccessPolicy"/>).</summary>
     public const string NoPushId = "no-push";
 
-    /// <summary>The publishing and release sentence's default, switched alone (ONEWAY1q).</summary>
+    /// <summary>The publishing and release sentence's default, switched alone.</summary>
     public const string NoPublishId = "no-publish";
 
     /// <summary>The connector's own name, as its tools arrive: `mcp__&lt;server&gt;__&lt;tool&gt;`.</summary>
     private const string ConnectorPrefix = $"mcp__{KnowledgeConnector.ServerName}__";
 
     /// <summary>
-    /// What Daoris ships: the one table, which <c>daoris agent rules</c> lists and switches (PUSH1f2d).
+    /// What Daoris ships: the one table, which <c>daoris agent rules</c> lists and switches.
     /// </summary>
     public static IReadOnlyList<PermissionDefault> Defaults { get; } =
     [
@@ -131,35 +131,35 @@ public static class PermissionRules
                 "question_ask", "memory_search", "memory_get", "memory_write", "memory_end", "memory_propose",
             }.Select(tool => ConnectorPrefix + tool)],
             // Not `knowledge_refresh`: rebuilding the index is the machine's job, never a session's. And
-            // `permission_propose` (PERM2, D74) only PROPOSES — a widening still waits for the person. `go_ahead_ask`
-            // (KNOWUSE1a, D135 §2) only ASKS — the act it names still waits for the person's yes. `review_serve` and
-            // `review_ready` (REVIEWENV1b2, D154 points 5 and 8) are a set-up step's, answered for its own session only:
+            // `permission_propose` only PROPOSES — a widening still waits for the person. `go_ahead_ask`
+            // only ASKS — the act it names still waits for the person's yes. `review_serve` and
+            // `review_ready` are a set-up step's, answered for its own session only:
             // serving shows its build to its own tab, and saying what it showed gives no verdict, which is the person's.
-            // `opinion_give` and `opinion_answer` (XAGENT1c2, D155; the second agent design §5.4, §6.1, §6.4) are answered
+            // `opinion_give` and `opinion_answer` are answered
             // for an opinion's own reviewer and for the working session handed it only: each says a claim, and neither
             // asks for an opinion, lands the work or answers a dispute, which is the person's. `helper_ask` and `helper_answer`
-            // (MIXAGENT2a-i, D163 point 2) write a file each under the home and nothing else: an ask the driver takes under the
+            // write a file each under the home and nothing else: an ask the driver takes under the
             // person's `helpers` rule, and a helper's answer, which reaches the asker as another agent's claim, never the person's.
-            // `partner_answer` (COAGENT1b, D199 point 8) writes one file under the home, for the piece the driver started its
+            // `partner_answer` writes one file under the home, for the piece the driver started its
             // session for, and is refused to every other session: the partner's claim beside the files Daoris reads itself.
-            // `channel_post` and `channel_read` (SESSONE2a/2b, D167 point 7) speak and read for the session's own ask only, a
+            // `channel_post` and `channel_read` speak and read for the session's own ask only, a
             // helper and a reviewer refused: a message is that agent's claim, reaches no run it does not already have, and asks
-            // nothing of anyone, so work and requests stay quests. `handover_propose` (MIXAGENT1c, D163 point 3) writes one file
+            // nothing of anyone, so work and requests stay quests. `handover_propose` writes one file
             // under the home: an ask to go on with another agent, its note the agent's claim, settled by the person's `handOver` rule.
-            // `line_read` (SESSCTX1f, D189's note) changes nothing: it reads the event files of the session's own line on this machine,
-            // what its brief's bound left out, and the service refuses every other record. `handback_read` (HANDBACK1, D219) changes
+            // `line_read` changes nothing: it reads the event files of the session's own line on this machine,
+            // what its brief's bound left out, and the service refuses every other record. `handback_read` changes
             // nothing: it reads one quest's handback of the session's own workspace, as `quest_list` reads its quests. `question_ask`
-            // (PARKVIEW1) writes one file under the home: the question its park waits on, the agent's words, which the person answers; it
-            // decides nothing. The memory tools (KNOWCENTRAL2b) answer within the session's own workspace: `memory_search` and `memory_get`
+            // writes one file under the home: the question its park waits on, the agent's words, which the person answers; it
+            // decides nothing. The memory tools answer within the session's own workspace: `memory_search` and `memory_get`
             // change nothing, `memory_write` is held to the session's commit point, `memory_end` waits for its approver, and `memory_propose`
             // is a quest to an entry's owner; the service refuses each to a session whose work may not call it.
             "A session takes and closes its own quest, publishes what it finds for others and proposes a "
             + "change to these rules, through Daoris's connector — and anything it would have to ask for is "
             + "refused."),
-        // 🔴 The owner's answer to PERM4 (2026-09-24), from a measured failure: in a folder the agent had
-        // never trusted, a real driven session made its edit, was refused the commit — the repository's
-        // own allow-list does not apply there — and declined. `cd` because the agent prefixes its commit
-        // with one, and every part of a compound command must be allowed. `git mv` (UNBLOCK4, D122 §3.6):
+        // 🔴 From a measured failure: in a folder the agent had
+        // never trusted, a real driven session made its edit, is refused the commit — the repository's
+        // own allow-list does not apply there — and declines. `cd` because the agent prefixes its commit
+        // with one, and every part of a compound command must be allowed. `git mv`:
         // a rename stays in the tree, is taken back by another, and git refuses a path outside the
         // repository. A merge, a discard and a switch of branch stay out.
         new(
@@ -167,15 +167,15 @@ public static class PermissionRules
             ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)", "Bash(git mv:*)"],
             "A session commits its own work in its own tree, because committing is part of finishing a task "
             + "— the push is still refused."),
-        // 🔴 UNBLOCK4 (D122 §3.7): the harness matches a Bash rule against the command as written, so
-        // `git push …` alone let `git -C . push` and `git -c <key>=<value> push` through, and auto mode's
+        // 🔴 The harness matches a Bash rule against the command as written, so
+        // `git push …` alone lets `git -C . push` and `git -c <key>=<value> push` through, and auto mode's
         // classifier allows a push to the working repository by default. The option-first rules take
         // every push with options before its subcommand, on both doors, whatever the mode. A deny's `*`
         // before the subcommand is the maker's own shape for that; only an ALLOW so written draws its
         // warning. The price, stated: a `git -C <dir> commit` whose message has "push" as a word before
         // another is refused too. What no rule can name — a quoted subcommand, an alias, a path to git, a
         // shell running it — is the classifier's, told below; on the pipe door nothing allows it anyway.
-        // ONEWAY1q: a push is git access's Write alone, so this default is fixed and the policy opens its plain forms.
+        // A push is git access's Write alone, so this default is fixed and the policy opens its plain forms.
         new(
             NoPushId, RuleList.Deny,
             ["Bash(git push)", "Bash(git push:*)", "Bash(git -* push)", "Bash(git -* push *)"],
@@ -199,15 +199,15 @@ public static class PermissionRules
     /// <summary>
     /// A tool name, then an optional parenthesised specifier on the same line — the harness's own shape, which the CLI's
     /// <c>SHAPE</c> and the service's <c>RuleProposalBox</c> twin. <c>\z</c>, since .NET's <c>$</c> also passes a final
-    /// line break the CLI's refuses, and the screen's door hands the rule untrimmed (PERMSHAPE1).
+    /// line break the CLI's refuses, and the screen's door hands the rule untrimmed.
     /// </summary>
     private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?\z", RegexOptions.CultureInvariant);
 
     public static string PathOf(string home) => DaorisHome.Entry(home, HomeEntry.Permissions);
 
     /// <summary>
-    /// What the harness's auto-mode classifier is told as hard denials (UNBLOCK4, D122 §3.7): the sentence
-    /// of each default on that carries one — `no-push`'s always, `no-publish`'s unless the person switched it
+    /// What the harness's auto-mode classifier is told as hard denials: the sentence
+    /// of each default on that carries one — `no-push`'s always, `no-publish`'s unless the person switches it
     /// off. The harness's own list is kept by Claude Code's rule language (<see cref="ClaudeRules.Render"/>), never here.
     /// </summary>
     public static IReadOnlyList<string> HardDeny(PermissionFile file) =>
@@ -221,13 +221,13 @@ public static class PermissionRules
     public static bool IsOn(PermissionFile file, PermissionDefault shipped) =>
         shipped.Fixed || !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal);
 
-    /// <summary>Whether sessions are handed the tree guard (PERM3): on unless the person switched it off.</summary>
+    /// <summary>Whether sessions are handed the tree guard: on unless the person switches it off.</summary>
     public static bool GuardsTree(PermissionFile file) => !file.DefaultsOff.Contains(TreeGuardId, StringComparer.Ordinal);
 
     /// <summary>
     /// Whether a session handed <paramref name="rules"/> may call the connector's <paramref name="tool"/>
-    /// without being asked (D73): allowed by the tool's own rule, the server's, or its wildcard, and
-    /// named by no ask or deny rule, since an asked permission is refused over either door (D52).
+    /// without being asked: allowed by the tool's own rule, the server's, or its wildcard, and
+    /// named by no ask or deny rule, since an asked permission is refused over either door.
     /// </summary>
     public static bool AllowsConnector(RuleLists rules, string tool)
     {
@@ -237,8 +237,8 @@ public static class PermissionRules
     }
 
     /// <summary>
-    /// A read of everything under <paramref name="directory"/>, in the harness's own absolute form
-    /// (INT4j): the folder a session's own quest or ask keeps its files in, which lies outside its tree.
+    /// A read of everything under <paramref name="directory"/>, in the harness's own absolute form:
+    /// the folder a session's own quest or ask keeps its files in, which lies outside its tree.
     /// </summary>
     /// <remarks>
     /// <para><b>The form is Claude Code's, read from its bundle (2.1.281), not guessed.</b> A pattern
@@ -254,7 +254,7 @@ public static class PermissionRules
 
     /// <summary>
     /// An edit of everything under <paramref name="directory"/>, in the same absolute form as
-    /// <see cref="ReadRule"/> (D107): allowed in a declared write target, denied in every other checkout.
+    /// <see cref="ReadRule"/>: allowed in a declared write target, denied in every other checkout.
     /// The harness applies an Edit rule to each of its tools that writes a file.
     /// </summary>
     public static string EditRule(string directory) => $"Edit({Absolute(directory)})";
@@ -321,15 +321,14 @@ public static class PermissionRules
     }
 
     /// <summary>
-    /// Written beside and renamed over, BOM-less and LF, keeping what a newer build wrote: the edit from what was read made onto the file as
-    /// it stands (KEEPALL1, <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is at every level, a
-    /// change another writer made since the read stays, and no edit writes nothing. Rebuilt from the fields it reads, it moved what it did
-    /// not know to the front and deleted a scope's own unknown keys. Rules built in memory are written whole.
+    /// Written beside and renamed over, BOM-less and LF, keeping what a newer build wrote: the edit from what is read made onto the file as
+    /// it stands (<see cref="JsonKeeping.Save"/>), so a key this build has no field for stays where it is at every level, a
+    /// change another writer made since the read stays, and no edit writes nothing. Rules built in memory are written whole.
     /// </summary>
     /// <exception cref="DriverException">
-    /// The file could not be read when <paramref name="file"/> was loaded (REV3). What it holds is the
+    /// The file could not be read when <paramref name="file"/> is loaded. What it holds is the
     /// empty read, and writing it would drop every rule the file had. The CLI refuses the same edit. Or the file there now does not read,
-    /// holds a key twice, or made a scope this edit changes no longer an object.
+    /// holds a key twice, or makes a scope this edit changes something other than an object.
     /// </exception>
     public static void Save(string home, PermissionFile file)
     {
@@ -340,7 +339,7 @@ public static class PermissionRules
                 + "rule in the file with this one change. Fix the file or remove it, then make the change again.");
         }
 
-        // The home and the folder the rules are in (`data/` since HOMELAYOUT3), which a new home has not made yet.
+        // The home and the folder the rules are in (`data/`), which a new home has not made yet.
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(PathOf(home)))!);
         if (file.Understood is { } understood) JsonKeeping.Save(PathOf(home), file.Found, understood, Written(file));
         else JsonFile.Write(PathOf(home), Root(file));
@@ -382,7 +381,7 @@ public static class PermissionRules
 
         layers.Add(file.Machine);
         // 🔴 A scope is a person's name, compared as every other layer compares one — trimmed, case-
-        // insensitive (REV3). Ordinal, a quest to `engine` was handed none of `Engine`'s denies. Every
+        // insensitive. Ordinal, a quest to `engine` would be handed none of `Engine`'s denies. Every
         // matching scope is taken, so a file that holds both spellings loses no rule from either.
         layers.AddRange(Named(file.Workspaces, Circle(workspace)));
         if (repository is { Length: > 0 }) layers.AddRange(Named(file.Repositories, repository.Trim()));

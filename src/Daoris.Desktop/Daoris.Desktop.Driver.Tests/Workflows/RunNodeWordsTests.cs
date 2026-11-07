@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1f (D190 points 3 and 6; the cutover design §3, §5.2): the person's skip and stop of a graph run's node, kept on the run's
+/// The person's skip and stop of a graph run's node, kept on the run's
 /// record by their door under its lock and the lease, in a field of its own, and applied by the runtime's next pass through the one table.
 /// Each seen failing first.
 /// </summary>
@@ -15,7 +15,7 @@ public sealed class RunNodeWordsTests : NodeRunFixture
 
     private NodeWorded Word(string node, string act, string? words, string run = RunId) => RunNodeWords.Word(Files, run, node, act, words, () => _now);
 
-    /// <summary>A run whose go-ahead was begun on an ask that raised none, its work done and its branch read: the go-ahead waits, the landing behind it.</summary>
+    /// <summary>A run whose go-ahead began on an ask that raised none, its work done and its branch read: the go-ahead waits, the landing behind it.</summary>
     private async Task<NodeRuntime> GoAheadWaitingAsync()
     {
         BoundTo(GoAheadBeforeHanded, ask: "a1");
@@ -60,7 +60,7 @@ public sealed class RunNodeWordsTests : NodeRunFixture
     }
 
     /// <summary>
-    /// INTEGRATE1o part o2 (§17.3): a quest the run's session published and the other repository declined holds <c>work.requests</c> active, never
+    /// A quest the run's session published and the other repository declined holds <c>work.requests</c> active, never
     /// failed, and the landing behind it blocked; the person's <i>Pass over…</i> with words is the run's existing skip on the kind, and the landing
     /// begins at the next pass.
     /// </summary>
@@ -183,7 +183,7 @@ public sealed class RunNodeWordsTests : NodeRunFixture
     }
 
     /// <summary>
-    /// INTEGRATE1n (§17.4, F50): the stop of a node the integration record says promoted is refused at the door before anything is kept, in its
+    /// The stop of a node the integration record says promoted is refused at the door before anything is kept, in its
     /// own code and sentence; a skip of it, and the stop of a node not promoted, are the table's as before.
     /// </summary>
     [Fact]
@@ -201,7 +201,7 @@ public sealed class RunNodeWordsTests : NodeRunFixture
         Assert.True(RunNodeWords.Word(Files, RunId, "go", NodeWordActs.Stop, "not promoted", () => _now, new HashSet<string> { "handed" }).Done);
     }
 
-    /// <summary>A door whose request for the run's unit at a tip is open, its member promoted or not (INTEGRATE1n part n3).</summary>
+    /// <summary>A door whose request for the run's unit at a tip is open, its member promoted or not.</summary>
     private sealed class PromotingDoor(bool promoted, DateTimeOffset at) : IIntegrationDoor
     {
         public Task<IntegrationRequest?> FindAsync(string unit, string tip, CancellationToken ct) =>
@@ -216,7 +216,7 @@ public sealed class RunNodeWordsTests : NodeRunFixture
     }
 
     /// <summary>
-    /// INTEGRATE1n part n3 (F50): the doors the person presses a stop through (the page's route and the terminal's verb) read the integration
+    /// The doors the person presses a stop through (the page's route and the terminal's verb) read the integration
     /// record before they keep it: a node whose open request's member promoted is refused its stop with nothing kept, while a node whose request
     /// is still queued, and a node with no request of its own, are kept as before.
     /// </summary>

@@ -111,7 +111,7 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
   const stepsAt = (id: string): string[] => (nodeOf(id) ? [id] : id.startsWith(HOLDS) ? holdsRun(id) : []);
 
   const words = (from: string, row: WayRowKey, to: string) => t('workflow.edit.said.way', { row: rowSaid(t, row, nodeOf(from)?.kind), from: titleOf(from), to: titleOf(to) });
-  /** A change's words, with the inputs it proposed and the ones it leaves to ask about (SETUPUX1r). */
+  /** A change's words, with the inputs it proposed and the ones it leaves to ask about. */
   const carried = (said: string, next: GraphDraft, proposed: Carried[], steps: string[]) =>
     [said, carriedSaid(t, i18n, palette, next, proposed, steps)].filter(Boolean).join(' ');
   const select = (id: string) => {
@@ -251,7 +251,7 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
   };
   menu.current = { undo: undoChange, redo: redoChange, copy: () => copy(selected), paste };
 
-  // The keys (D223 §3): undo and redo outside a field; on a step, + or Insert to add a step after it, / for the picker, Delete to remove,
+  // The keys: undo and redo outside a field; on a step, + or Insert to add a step after it, / for the picker, Delete to remove,
   // Alt+↑ and Alt+↓ to move within its chain, Ctrl+C and Ctrl+V to copy and paste. A key aimed at a field is the field's own.
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (isComposing(event) || event.defaultPrevented) return;
@@ -275,7 +275,7 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
     }
   };
 
-  // The judgement (FLOWCHART2c): the newest answer, only while it is of the draft held now. An edit makes it invalid at once, before the
+  // The judgement: the newest answer, only while it is of the draft held now. An edit makes it invalid at once, before the
   // change is asked; a failed request leaves it so; undoing to the draft it judged takes it back.
   const judgement = judged && judgedOf === fingerprint ? judged : null;
   const unjudged = judgement === null && judgeFailed === fingerprint && !judging && settled === ask;
@@ -286,7 +286,7 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
     if (wire?.from && nodeOf(wire.from)) return wire.from;
     return problem.node && nodeOf(problem.node) ? problem.node : null;
   };
-  // Ask Daoris is told the draft open here (FLOWCHART2d; D223 §8.3), registered while the editor is mounted and let go when it closes.
+  // Ask Daoris is told the draft open here, registered while the editor is mounted and let go when it closes.
   const placeName = 'repository' in place ? place.repository : place.workspace;
   const rolePlace: RolePlace = 'repository' in place ? { kind: 'repository', name: place.repository } : { kind: 'workspace', name: place.workspace };
   const source = target.base !== null ? `${target.id}@v${target.base}` : target.from ? `preset:${target.from}` : 'new';
@@ -302,7 +302,7 @@ export function useEditorActs({ draft, t, i18n, palette, setHistory, setHeard, s
   // A refusal inside the holds opens them and they stay open: the judgement goes invalid on the next edit, and the drawing must not jump.
   useEffect(() => { if (holdRefused) setHoldsOpen(true); }, [holdRefused]);
 
-  // Ask Daoris's proposal (FLOWCHART2f; D223 §4, §8.6): drawn on the chart beside the draft, taken whole or change by change as one step of
+  // Ask Daoris's proposal: drawn on the chart beside the draft, taken whole or change by change as one step of
   // history each, its record undone with it, and settled by the one press naming every change taken or left. Opening it settles nothing.
   const [settling, setSettling] = useState<Readonly<Record<string, Settling>>>({});
   const [setAside, setSetAside] = useState<readonly string[]>([]);

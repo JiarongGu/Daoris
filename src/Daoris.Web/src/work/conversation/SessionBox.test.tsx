@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { SessionBox } from './SessionBox';
 
-// The box at the foot of a session's page (MSG1f, D137 §5.1), props in: the running door's box, the park's answer, the
+// The box at the foot of a session's page, props in: the running door's box, the park's answer, the
 // box where the same session goes on, the words held while a session winds up, and the line where nothing takes words.
 
 const show = (props: Partial<Parameters<typeof SessionBox>[0]> & Pick<Parameters<typeof SessionBox>[0], 'box'>) =>
@@ -14,8 +14,8 @@ const show = (props: Partial<Parameters<typeof SessionBox>[0]> & Pick<Parameters
 
 describe('SessionBox', () => {
   /**
-   * D136, COWORK1a: a working session's running door, its words held behind its turn. *Send* goes at the person's default;
-   * nothing presses now with nothing typed (the design's trap 2), and with no levels known the press queues as it did.
+   * A working session's running door, its words held behind its turn. *Send* goes at the person's default;
+   * nothing presses now with nothing typed, and with no levels known the press queues.
    */
   it('offers a working session the running door’s box, at its default', async () => {
     const onSend = vi.fn();
@@ -37,7 +37,7 @@ describe('SessionBox', () => {
   });
 
   /**
-   * COWORK1a (the message-urgency design §3.2, §8.1): the running door's words go at the level chosen from the menu beside
+   * The running door's words go at the level chosen from the menu beside
    * *Send*; the keeping stop stands beside what waits for the turn's end only where the door can stop a turn keeping the
    * session, which the native door's run cannot.
    */
@@ -61,7 +61,7 @@ describe('SessionBox', () => {
     expect(screen.queryByRole('button', { name: 'Stop its turn so this goes next…' })).toBeNull();
   });
 
-  /** QUEUEEDIT1b: a held word with an id can be taken back out, or reworded, on the running door's box. */
+  /** A held word with an id can be taken back out, or reworded, on the running door's box. */
   it('lets a held word be removed or reworded by its id', async () => {
     const onRemove = vi.fn().mockResolvedValue({ done: true });
     const onEdit = vi.fn().mockResolvedValue({ done: true });
@@ -76,7 +76,7 @@ describe('SessionBox', () => {
   });
 
   /**
-   * SENDLOST1b: words on their way show above every box that takes words, the running door's, the park's answer, the box
+   * Words on their way show above every box that takes words, the running door's, the park's answer, the box
    * where the same session goes on and the one winding up, as sending or, once the page stopped waiting, as unanswered.
    */
   it('shows the words on their way above every box that takes words', () => {
@@ -93,7 +93,7 @@ describe('SessionBox', () => {
     expect(screen.getByRole('list', { name: 'sending…' })).toHaveTextContent('and the line?');
   });
 
-  /** D126 §3.1, D137 §5.1: on a parked session the box is the answer. */
+  /** On a parked session the box is the answer. */
   it('offers a parked session the answer', async () => {
     const onSend = vi.fn();
     show({ box: { kind: 'say', mode: 'answer' }, onSend });
@@ -106,9 +106,9 @@ describe('SessionBox', () => {
   });
 
   /**
-   * PARKVIEW1, QUESTIONUI1a: what the park asks stands in its answer's box above the field, every answer a row to select, and the field
+   * What the park asks stands in its answer's box above the field, every answer a row to select, and the field
    * says its words go with the answer chosen. With one selected the box's *Send* sends with the field empty too, and the field names it;
-   * the frame makes the message. The free answer is the box's own send, as before.
+   * the frame makes the message. The free answer is the box's own send.
    */
   it("draws what a park asks above the answer's field, a selected answer letting *Send* go with the field empty", async () => {
     const onSend = vi.fn();
@@ -138,7 +138,7 @@ describe('SessionBox', () => {
     expect(onSend).toHaveBeenLastCalledWith('any free port');
   });
 
-  /** D137 §5.1: on a session that ended, the box says the same session goes on with the words; nothing to attach. */
+  /** On a session that ended, the box says the same session goes on with the words; nothing to attach. */
   it('offers a session that ended the box where the same session goes on', async () => {
     const onSend = vi.fn();
     show({ box: { kind: 'say', mode: 'goOn' }, onSend });
@@ -153,7 +153,7 @@ describe('SessionBox', () => {
   });
 
   /**
-   * SAIDBACK1b (D76): the words waiting on a record that ended or parked are listed above its box, each by its id, and are
+   * The words waiting on a record that ended or parked are listed above its box, each by its id, and are
    * taken back or reworded there as a live queue's are; the reword goes as an edit, never as more words.
    */
   it('lists the words waiting on a record above its box, to remove or reword by their ids', async () => {
@@ -175,7 +175,7 @@ describe('SessionBox', () => {
   });
 
   /**
-   * LINESTOGETHER1b: the box's first line says where a word goes and when, before the person speaks; a word held on a part beside
+   * The box's first line says where a word goes and when, before the person speaks; a word held on a part beside
    * the head has one press, *Say it to the head instead*, which names the word by its id. No line, no press, where the frame
    * offers none (a part with no head).
    */
@@ -194,7 +194,7 @@ describe('SessionBox', () => {
     expect(screen.queryByText(/To this part/)).toBeNull();
   });
 
-  /** LINESTOGETHER1b: beside the head, an unsent draft is carried to the head's box by *To the head*; with nothing typed, no press. */
+  /** Beside the head, an unsent draft is carried to the head's box by *To the head*; with nothing typed, no press. */
   it('offers an unsent draft the press to the head, beside the first line', async () => {
     const toHead = vi.fn();
     const goes = 'To this part, beside the head · after a running session here ends';
@@ -215,7 +215,7 @@ describe('SessionBox', () => {
   });
 
   /**
-   * WAITFOOT2c (D168): a park's answer box and its waiting words are one box, so the words fold to one line with their count
+   * A park's answer box and its waiting words are one box, so the words fold to one line with their count
    * inside the box's frame, and open to *Edit* and *Remove* on a press.
    */
   it('folds the words waiting on a park to one line with their count, open to remove or reword', async () => {
@@ -234,7 +234,7 @@ describe('SessionBox', () => {
     expect(screen.queryByRole('list', { name: 'waiting for the same session to go on with them' })).toBeNull();
   });
 
-  /** D137 §2.1: words said as a session winds up wait for its record to end, and the box shows them waiting. */
+  /** Words said as a session winds up wait for its record to end, and the box shows them waiting. */
   it('shows the words held while a session winds up above its box', () => {
     show({ box: { kind: 'say', mode: 'ending' }, ending: ['also cap it'] });
 
@@ -243,7 +243,7 @@ describe('SessionBox', () => {
     expect(screen.getByLabelText('Message')).toBeInTheDocument();
   });
 
-  /** D137 §2.4: words the door cannot take at once stay in the box, unsent, and the caller says why. */
+  /** Words the door cannot take at once stay in the box, unsent, and the caller says why. */
   it('keeps words its door does not accept in the box, unsent', async () => {
     const onSend = vi.fn();
     show({ box: { kind: 'say', mode: 'goOn' }, onSend, accepts: (text) => text.length <= 5 });
@@ -261,7 +261,7 @@ describe('SessionBox', () => {
     expect(screen.getByLabelText('Message')).toHaveValue('x');
   });
 
-  /** D137 §5.1, D119 §3.2: no box where nothing takes words, and the line says why, by the code. */
+  /** No box where nothing takes words, and the line says why, by the code. */
   it.each([
     ['teammate', 'This session ran on another machine, where its conversation is.'],
     ['stood-down', 'It stood down: #q1 is someone else\'s, so it has nothing to go on with.'],
@@ -275,15 +275,15 @@ describe('SessionBox', () => {
     expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
-  /** HANDWORDS1: a conversation handed over or moved names the one it went on in, as the module answered it. */
+  /** A conversation handed over or moved names the one it went on in, as the module answered it. */
   it('names the conversation a continued one went on in', () => {
     show({ box: { kind: 'line', why: 'continued', to: 'c2' } });
     expect(screen.getByText('It went on in conversation c2; say it to that one.')).toBeInTheDocument();
   });
 
   /**
-   * HANDWORDS1-ii (D165's HANDWORDS1-i note, design §4): where the frame holds the conversation it went on in, the line names it
-   * by its title and *Open session* attends it; one the frame does not hold is said by its id, as before.
+   * Where the frame holds the conversation it went on in, the line names it
+   * by its title and *Open session* attends it; one the frame does not hold is said by its id.
    */
   it('names the conversation it went on in by its title, and opens it', async () => {
     const onOpenSession = vi.fn();

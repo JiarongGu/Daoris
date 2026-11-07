@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-GRAPH1 (the fabric events design §E7): a graph's shape, its bounds, its entries and end, every node reachable, D157's protected
-/// order before the landing, canary 40's closure deadlock and the cleanup, composed with the declarations' and the wires' own checks; the
+/// A graph's shape, its bounds, its entries and end, every node reachable, the protected
+/// order before the landing, the closure deadlock and the cleanup, composed with the declarations' and the wires' own checks; the
 /// digest over immutable declarations; and the graph read from its JSON. Pure: nothing evaluated, nothing stored.
 /// </summary>
 public sealed class NodeGraphsTests
@@ -21,7 +21,7 @@ public sealed class NodeGraphsTests
 
     private static Wire Data(string id, string from, string output, string to, string input) => new(id, WireKinds.Data, new(from, output), new(to, input));
 
-    /// <summary>The design's §E7 example, its ports declared: a QA press after the line, a dependency, a deploy, and the quest's close.</summary>
+    /// <summary>The example graph, its ports declared: a QA press after the line, a dependency, a deploy, and the quest's close.</summary>
     private static readonly NodeDeclaration[] Nodes =
     [
         Node("line", NodeKinds.Line),
@@ -66,7 +66,7 @@ public sealed class NodeGraphsTests
         """;
 
     /// <summary>
-    /// FABRIC-GRAPH1's re-check, finding 4: a look and a plugin in an <c>all</c> join, the landing on the join's pass or its failure. The
+    /// A look and a plugin in an <c>all</c> join, the landing on the join's pass or its failure. The
     /// plugin fails, the join fails at once while the look still waits (WireEvaluation's early failure), and its failure's wire releases the
     /// landing. A row of the shared table, which refuses it.
     /// </summary>
@@ -89,7 +89,7 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// FABRIC-GRAPH1c: each row of the table (`graph-problems.json`'s `graphs`):
+    /// Each row of the table (`graph-problems.json`'s `graphs`):
     /// each refusal of the graph's own alone, with its code, wire and node, and its words; the graphs that hold, the bounds at their limits
     /// among them; the wires' and the declarations' checks composed with the graph's.
     /// </summary>
@@ -103,14 +103,14 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// The re-check's finding 4, its other side: the same join with only its pass into the landing holds, since the join passes only once
+    /// The same join with only its pass into the landing holds, since the join passes only once
     /// every member has, the look among them; and its failure's path may go anywhere but the landing.
     /// </summary>
     [Fact]
     public void A_join_holding_a_look_releases_the_landing_only_on_its_pass()
     {
         var graph = EarlyFailure();
-        // FABRIC-GRAPH1i: the look is wired straight into the landing too, since a skip of the join's other member would pass its wire.
+        // The look is wired straight into the landing too, because a skip of the join's other member would pass its wire.
         var wired = After("x", "look", "landing");
         Assert.Empty(NodeGraphs.Problems(graph with { Wires = [.. graph.Wires.Where(wire => wire.Id != "d"), wired] }).Where(GraphProblemsTable.IsRule));
         var retry = graph with
@@ -122,7 +122,7 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// The second re-check's finding 3: a member fails a join only where its kind's authority lets something fail it, so a join of a look
+    /// A member fails a join only where its kind's authority lets something fail it, so a join of a look
     /// and a person's press, neither of which anything fails, has no failed path, and its failure's wire beside its pass into the landing
     /// holds. A join of joins asks the same of its members' members: one holding a plugin may fail, and its failure into the landing is
     /// refused as before.
@@ -135,7 +135,7 @@ public sealed class NodeGraphsTests
         {
             Nodes = [.. graph.Nodes.Select(node => node.Id == "check" ? Node("check", NodeKinds.Human) : node)],
         };
-        // The order holds by reach here; FABRIC-GRAPH1i asks only the look's wire into the landing besides.
+        // The order holds by reach here; it asks only the look's wire into the landing besides.
         IEnumerable<string> Codes(NodeGraph each) => NodeGraphs.Problems(each).Where(GraphProblemsTable.IsRule).Select(problem => problem.Code);
         Assert.Equal([GraphRefusal.ProtectedWire], Codes(pressed));
         Assert.Empty(NodeGraphs.Problems(pressed with { Wires = [.. pressed.Wires, After("x", "look", "landing")] }).Where(GraphProblemsTable.IsRule));
@@ -152,8 +152,8 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// INTEGRATE1n, F47: the refusal of a node that observes the landing before any <c>land</c> is the save's alone. The same graph read
-    /// from a file that kept it still reads, as a stored version that read before is never made unreadable by a rule added after it.
+    /// The refusal of a node that observes the landing before any <c>land</c> is the save's alone. The same graph read
+    /// from a file that kept it still reads, as a stored version that reads is never made unreadable by a rule added after it.
     /// </summary>
     [Fact]
     public void A_line_before_the_landing_is_refused_when_saved_and_read_as_it_was_from_a_file()
@@ -175,12 +175,12 @@ public sealed class NodeGraphsTests
         var codes = typeof(GraphRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!).ToList();
         Assert.Equal(codes.Count, codes.Distinct().Count());
         Assert.Empty(codes.Intersect(typeof(WireRefusal).GetFields(BindingFlags.Public | BindingFlags.Static).Select(field => (string)field.GetValue(null)!)));
-        // The save's own refusals (WORKFLOWCLEAN1 1b) are proved apart from the rows, by SavesRefusedTests.
+        // The save's own refusals are proved apart from the rows, by SavesRefusedTests.
         Assert.Empty(codes.Except(GraphProblemsTable.Codes()).Except([GraphRefusal.LandMethod]));
     }
 
     /// <summary>
-    /// FABRIC-GRAPH1's review, finding 4: the protected order holds on every way to the landing, an <c>anyOf</c>'s members as alternatives.
+    /// The protected order holds on every way to the landing, an <c>anyOf</c>'s members as alternatives.
     /// A landing that waits on the look and on another node as well holds; one the look's failure reaches does not, nor one a press reaches
     /// beside two looks in one <c>anyOf</c>, which is said once, naming the first look.
     /// </summary>
@@ -198,8 +198,8 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// FABRIC-GRAPH1i: a graph that wires each gate into each later one holds, a work's claim and a go-ahead beside them no gate; a gate
-    /// absent asks nothing. FABRIC-GRAPH1g: observed nodes of different steps, of one built-in kind, or one observed beside a performed node
+    /// A graph that wires each gate into each later one holds, a work's claim and a go-ahead beside them no gate; a gate
+    /// absent asks nothing. Observed nodes of different steps, of one built-in kind, or one observed beside a performed node
     /// of the same plugin kind hold.
     /// </summary>
     [Fact]
@@ -218,7 +218,7 @@ public sealed class NodeGraphsTests
         Assert.Empty(NodeGraphs.Problems(new NodeGraph([Watch("one", "acme/watch"), Watch("two", "other/watch")], [], ["one", "two"], "two")));
     }
 
-    /// <summary>The bounds (§E7) the table's rows hold at their limits are the driver's: 24 authored nodes, D157's 24 steps, and 96 wires.</summary>
+    /// <summary>The bounds the table's rows hold at their limits are the driver's: 24 authored nodes, 24 steps, and 96 wires.</summary>
     [Fact]
     public void The_bounds_hold_at_their_limits_and_synthetic_nodes_count_apart()
     {
@@ -228,7 +228,7 @@ public sealed class NodeGraphsTests
         Assert.Equal(96, NodeGraphs.MaxWires);
     }
 
-    /// <summary>The table's graph base is the design's example, read from its JSON as this class builds it.</summary>
+    /// <summary>The table's graph base is the example graph, read from its JSON as this class builds it.</summary>
     [Fact]
     public void The_tables_graph_base_is_the_designs_example()
     {
@@ -284,7 +284,7 @@ public sealed class NodeGraphsTests
             WithWire("b", wire => wire with { Waits = new WaitTarget("u2", "r3") { End = true, Commitment = "q2/take-7" } }),
             WithWire("b", wire => wire with { Waits = new WaitTarget("u2", "r2") { End = true } }),
             WithWire("b", wire => wire with { Waits = new WaitTarget("u2", "r2") { Node = "deploy" } }),
-            // DECIDE1b: a decision's outcomes in their order, a `when`'s outcome and what a `back` is taken on.
+            // A decision's outcomes in their order, a `when`'s outcome and what a `back` is taken on.
             WithNode("deploy", node => node with { Outcomes = ["shipped", "held"] }),
             WithNode("deploy", node => node with { Outcomes = ["held", "shipped"] }),
             WithWire("a", wire => wire with { Kind = WireKinds.When, Outcome = "shipped" }),
@@ -323,8 +323,8 @@ public sealed class NodeGraphsTests
         """;
 
     /// <summary>
-    /// DECIDE1b: a file's <c>outcomes</c>, a <c>when</c>'s <c>outcome</c> and a <c>back</c>'s <c>on</c> are read and digested, each moving the
-    /// digest and the place of the node it is about; a graph that says none of them digests as it did, so every stored graph keeps its digest
+    /// A file's <c>outcomes</c>, a <c>when</c>'s <c>outcome</c> and a <c>back</c>'s <c>on</c> are read and digested, each moving the
+    /// digest and the place of the node it is about; a graph that says none of them digests unchanged, so every stored graph keeps its digest
     /// and its places (the version fixtures hold them too).
     /// </summary>
     [Fact]
@@ -353,7 +353,7 @@ public sealed class NodeGraphsTests
     }
 
     /// <summary>
-    /// A graph naming a kind this build does not know is held whole, as before DECIDE1b: a wire kind outside the eight, which is how a build
+    /// A graph naming a kind this build does not know is held whole: a wire kind outside the eight, which is how a build
     /// before this one holds a version naming <c>when</c> or <c>back</c>, and a node kind none of the built-ins nor a plugin's.
     /// </summary>
     [Fact]

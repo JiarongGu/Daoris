@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 m-ii and m-iii (the foundation design §4.2, §4.5, §19.6): the news a journal row is, told by a teller that claims each
+/// The news a journal row is, told by a teller that claims each
 /// occurrence's key before it shows anything. A park is a move into the state that waits on the person, and a restart tells the one made
 /// just before it, once; an end is the journal's own <c>part.ended</c>, judged by the one table.
 /// </summary>
@@ -92,7 +92,7 @@ public sealed class NewsTellerTests : IDisposable
     // ---- m-iii: ends ----
 
     /// <summary>
-    /// An end is told once by the class table: a failure is news; the person's own stop, an account's limit (LIMITRESUME1a) and an agent's refusal of
+    /// An end is told once by the class table: a failure is news; the person's own stop, an account's limit and an agent's refusal of
     /// the choice are not; and a conversation's end never is.
     /// </summary>
     [Fact]
@@ -112,7 +112,7 @@ public sealed class NewsTellerTests : IDisposable
         Assert.Equal(("ended.exit", "failed"), (_shown[0].Reason, _shown[0].State));
     }
 
-    /// <summary>A quest's park covers the end of its last session (FOUNDATION1 z-v gap): a park then its end tells one notice, and an end with no park its own.</summary>
+    /// <summary>A quest's park covers the end of its last session: a park then its end tells one notice, and an end with no park its own.</summary>
     [Fact]
     public async Task A_quest_parked_then_ended_tells_one_notice()
     {

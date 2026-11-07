@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HIST1m (D153's HIST1m note; the history-clearing design §6.3; <c>.claude/knowledge/twins.md</c>): every word the service's
+/// Twins (<c>.claude/knowledge/twins.md</c>): every word the service's
 /// history doors spell and this driver reads is held to one table, the service suite's <c>fixtures/history-words.json</c>, which
 /// the service's <c>HistoryWordsTwinTests</c> holds the desk's enums to as well. Here each class's constants are the table's
 /// rows, name for name and word for word, so a word the service adds fails until the table says it, and then fails here until

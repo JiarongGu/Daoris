@@ -4,8 +4,8 @@ import { kindTitle, outcomeSaid } from '../graphFlow';
 import type { GraphProblem, WorkflowPaletteAnswer } from './answers';
 import { askedInputs, type Carried, type DraftNode, type DraftWire, type GraphDraft, type WayRowKey } from './graphDraft';
 
-// The editor's words (FLOWCHART2b): a step's title, a row of *What happens next*, a way on with its target, and a refusal, each from the
-// catalogues, with a plugin's step titled by its manifest's authored words where it declares them (D222). Pure.
+// The editor's words: a step's title, a row of *What happens next*, a way on with its target, and a refusal, each from the
+// catalogues, with a plugin's step titled by its manifest's authored words where it declares them. Pure.
 
 /** Words with a code's backticks taken out: a name, or an option's label. */
 export const plain = (text: string) => text.replace(/`/g, '');

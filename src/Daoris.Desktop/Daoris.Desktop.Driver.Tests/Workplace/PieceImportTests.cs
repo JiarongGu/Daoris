@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 point 2; the co-agent design §7.9, Codex's read 24): the import's rules over what the keeper's walk found and
+/// The import's rules over what the keeper's walk found and
 /// what the base holds. Regular files only; a link, a nested repository and a submodule refused with the base's files under them
 /// left as they were; a new ignored file left out; a file and a piece over their bounds; deletions; paths beyond the piece named,
 /// never refused; and the object id the keeper compares by is git's.

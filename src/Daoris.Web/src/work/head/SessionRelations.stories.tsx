@@ -5,7 +5,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { SessionRelations } from './SessionRelations';
 
-// Who a session worked with (SESS1): asked for by another session, carried on after an answer, and
+// Who a session worked with: asked for by another session, carried on after an answer, and
 // what it asked of other repositories, one answered and one not.
 
 const quest = (over: Partial<Quest> & { id: string }): Quest => aQuest({
@@ -26,7 +26,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The line the page draws, folded (HEADFIT1): who it worked with in one line, and the press that opens it in place. */
+/** The line the page draws, folded: who it worked with in one line, and the press that opens it in place. */
 export const Folded: Story = {
   args: {
     relations: {

@@ -3,16 +3,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6g through real looks: the owner's install, where two accounts read signed out and the third cooled, held a start at
-/// every look, and every look asked the agent again about every account and the person's own sign-in. Watched on the
-/// install: the status question three times in 45 seconds while two starts were refused, none once both were paused.
+/// Through real looks: where two accounts read signed out and the third cools, a start is held at
+/// every look, and a look must not ask the agent again about every account and the person's own sign-in: the status
+/// question is not repeated at each look while starts are refused.
 /// </summary>
 /// <remarks>
 /// <para>Over the real client and planner with the service's doors standing in (<see cref="StandInLedger"/>), as
 /// <c>AccountRotationHoldTests</c> is, with the stub's command a script that answers its version and its status question
 /// and writes each to a log. A status line with no account home is the tool's own sign-in. Nothing is spawned beyond those
 /// questions: the start is held.</para>
-/// <para>ROSTER1: each case starts as a restart does, from a fresh roster and what the person's last press read, kept under
+/// <para>Each case starts as a restart does, from a fresh roster and what the person's last press read, kept under
 /// the home (<see cref="AccountReads"/>): the accounts signed out at the test's moment. A look reads none of them, so a status
 /// line is a question a look asked; the binary is asked its version once per binary, which is no question of an account.</para>
 /// </remarks>
@@ -41,7 +41,7 @@ public sealed class SignedOutLooksTests : IDisposable
         new HarnessSettings().WithDefault("stub", "account-1").WithRotation("stub", ["account-1", "account-2", "gmail"])
             .Save(DaorisHome.Entry(_home, HomeEntry.Harnesses));
         AccountCooling.Cool(_home, new CoolingEntry("stub", "gmail", _now.AddDays(2), true, "weekly", _now, "s0"), _now);
-        // What the person's last press read (ROSTER1), at the test's moment, so the hour's backstop is not due.
+        // What the person's last press read, at the test's moment, so the hour's backstop is not due.
         foreach (var account in new[] { "account-1", "account-2", "gmail" })
         {
             AccountReads.Keep(_home, "stub", account, LoginState.Out, _now);
@@ -83,8 +83,8 @@ public sealed class SignedOutLooksTests : IDisposable
     private IReadOnlyList<string> Asked => File.Exists(Log) ? File.ReadAllLines(Log) : [];
 
     /// <summary>
-    /// ROSTER1: five looks from a fresh roster, as after a restart, ask no account, the first included: the start is held from
-    /// what was last read. Before, the first look at a cold cache asked every account, and before TOOL6g every look did.
+    /// Five looks from a fresh roster, as after a restart, ask no account, the first included: the start is held from
+    /// the last reading.
     /// </summary>
     [Fact]
     public async Task A_start_held_on_signed_out_accounts_asks_no_account_at_any_look_and_never_the_own_sign_in()

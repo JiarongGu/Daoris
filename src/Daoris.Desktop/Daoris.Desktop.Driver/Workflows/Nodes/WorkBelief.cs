@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a plugin's answer may establish before it moves a node (FABRIC-PERFORM1c; the fabric events design §C4's five belief rules, §D4's
-/// binding, §D6's outputs, §E2's authority by kind). Pure: the performer judges each completion here before the one table sees it, and
+/// What a plugin's answer may establish before it moves a node. Pure: the performer judges each completion here before the one table sees it, and
 /// each start's inputs again at dispatch.
 /// </summary>
 /// <remarks>
@@ -12,8 +11,8 @@ namespace Daoris.Driver;
 /// (<see cref="NodeAuthority.OnPluginWord"/>); (3) its unit is one Daoris tells about, and a repository or branch the frame names is that
 /// unit's; (4) a commit the frame names is the attempt's revision; (5) its time is no more than a minute ahead. Anything else is no answer,
 /// counted by its code and never applied.</para>
-/// <para><b>What the plugin's word establishes</b> is its own node's outcome, bound to the work by its attempt (§D4): the reach's evidence is
-/// the plugin's reference at the schema the node declares, kept as its word (D143), never a deployment Daoris has proved.</para>
+/// <para><b>What the plugin's word establishes</b> is its own node's outcome, bound to the work by its attempt: the reach's evidence is
+/// the plugin's reference at the schema the node declares, kept as its word, never a deployment Daoris has proved.</para>
 /// </remarks>
 public static class WorkBelief
 {
@@ -39,17 +38,17 @@ public static class WorkBelief
     }
 
     /// <summary>
-    /// Whether the work has moved past the revision the attempt was dispatched on (§C4's fourth rule, §D4's lapse): its outcome, though its
+    /// Whether the work has moved past the revision the attempt is dispatched on: its outcome, though its
     /// own, is a stale attempt's, evidence for no current binding.
     /// </summary>
     public static bool Lapsed(NodeAttempt attempt, WatchedUnit unit) => !string.Equals(attempt.Call.SubjectRevision, unit.Tip, StringComparison.Ordinal);
 
     /// <summary>
-    /// The input a start's binding names that the record no longer holds as its producer's current acceptance exposes it, or null (§D6: at
+    /// The input a start's binding names that the record no longer holds as its producer's current acceptance exposes it, or null (at
     /// dispatch each input resolves to the ref on the producing node's current, valid acceptance; a stale or invalidated producer leaves the
-    /// consumer ineligible, never given an old ref). A producer is on the consumer's record (a <c>data</c> wire names a node of its own graph),
+    /// consumer ineligible, never given a stale ref). A producer is on the consumer's record (a <c>data</c> wire names a node of its own graph),
     /// so its acceptance is current where it is reached and is the acceptance the port names; on the consumer's subject, at the consumer's
-    /// revision. On another subject (FABRIC-CUTOVER1a: a run's quest-side node feeding a branch-side one, whose revisions differ by design, a
+    /// revision. On another subject (a run's quest-side node feeding a branch-side one, whose revisions differ by design, a
     /// quest's moment and a branch's tip) it is judged on its own, which the evaluation did in keeping it reached.
     /// </summary>
     public static string? Unresolved(NodeRecord record, NodeAcceptance binding)
@@ -70,7 +69,7 @@ public static class WorkBelief
     }
 
     /// <summary>
-    /// The reach's evidence (§D4, §E2's ports): the plugin's reference at the schema it names (<c>&lt;schema&gt;:&lt;id&gt;</c>), so the one
+    /// The reach's evidence: the plugin's reference at the schema it names (<c>&lt;schema&gt;:&lt;id&gt;</c>), so the one
     /// table refuses one of another schema than the node declares (<see cref="NodeRefusal.NoEvidence"/>), and none where the node declares a
     /// schema the plugin gave no reference of. A node declaring none takes the answer itself, its invocation, as the plugin's word.
     /// </summary>
@@ -81,10 +80,10 @@ public static class WorkBelief
         : node.Evidence is null ? new NodePort(node.Kind, invocation, revision, null)
         : null;
 
-    /// <summary>The schema a reference names (§D6's <c>&lt;schema&gt;:&lt;opaque id&gt;</c>), or null where it names none.</summary>
+    /// <summary>The schema a reference names (<c>&lt;schema&gt;:&lt;opaque id&gt;</c>), or null where it names none.</summary>
     public static string? SchemaOf(string reference) => reference.IndexOf(':') is > 0 and var colon && colon < reference.Length - 1 ? reference[..colon] : null;
 
-    /// <summary>The frame's step is the attempt's: its plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c> (PERFORM1a's wire).</summary>
+    /// <summary>The frame's step is the attempt's: its plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c>.</summary>
     private static bool Names(string step, string plugin, string kind) =>
         string.Equals(step, kind, StringComparison.Ordinal) || string.Equals(plugin + "/" + step, kind, StringComparison.Ordinal);
 

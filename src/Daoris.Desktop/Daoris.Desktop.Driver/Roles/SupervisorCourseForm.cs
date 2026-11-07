@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>SUPERVISOR_COURSE</c>'s exact form (CONTEXTDRIVE1j; the context counters design §5's <c>course</c>): <c>{ id, point, generation,
+/// <c>SUPERVISOR_COURSE</c>'s exact form: <c>{ id, point, generation,
 /// proof, do, reasons }</c>, held as <c>SUPERVISOR_ANSWER</c>'s is, <c>do</c> one of <see cref="SupervisorCourseActs.All"/>. Its proof is
 /// over its own route's canonical bytes, so no answer's or defer's proof is a course act's.
 /// </summary>

@@ -4,12 +4,12 @@ import { searchable } from '../../lib/searchable';
 import { Button, Icon } from '../../design/ui';
 
 /**
- * The way through a long run (SESS1 S9): a jump to where it first failed and to its last words, and a
+ * The way through a long run: a jump to where it first failed and to its last words, and a
  * search within the session — its words and its calls by their titles — stepped through in order.
  *
  * @remarks
- * Written from the first real workspace, whose driven sessions ran to 1,855 events: a reader came for
- * the failure or the conclusion, and scrolled for them. **A jump opens what it lands in** — the fold, and
+ * Driven sessions run to thousands of events: a reader comes for
+ * the failure or the conclusion, and scrolls for them. **A jump opens what it lands in** — the fold, and
  * the pages before — which is the organism's; this is the row, props in and presses out.
  */
 export function ConversationFind({
@@ -54,7 +54,7 @@ export function ConversationFind({
           placeholder={t('work.find.placeholder')}
           onChange={(event) => onQuery(event.target.value)}
           onKeyDown={(event) => {
-            // Words found through an input method: its Enter accepts a candidate and steps nowhere (IME1).
+            // Words found through an input method: its Enter accepts a candidate and steps nowhere.
             if (isComposing(event) || event.key !== 'Enter' || found === 0) return;
             event.preventDefault();
             onStep(event.shiftKey ? -1 : 1);

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1a (D199 point 5; the co-agent design §2.5, §8.2): the asker's work in progress captured for its helper, over a real folder
-/// with git's two answers handed in, so nothing starts a process: the fast half (MOD8). Changed, new, binary, renamed and deleted
+/// The asker's work in progress captured for its helper, over a real folder
+/// with git's two answers handed in, so nothing starts a process: the fast half. Changed, new, binary, renamed and deleted
 /// files are carried with their manifest; an unresolved merge, a submodule, a nested repository, an unreadable file and a capture
 /// over its bounds are each refused; a capture that changed under it is taken again once, and refused when it changes again; and
 /// the capture is laid over a copy whole. Links, which need a junction made by a process, and real git are
@@ -172,7 +172,7 @@ public sealed class HelperCaptureTests : IDisposable
     }
 
     /// <summary>
-    /// A file written while it was read is seen when the bytes are hashed again: that capture is thrown away and taken once more,
+    /// A file written during its read is seen when the bytes are hashed again: that capture is discarded and taken once more,
     /// and the second, read still, is the one kept, with the new bytes.
     /// </summary>
     [Fact]

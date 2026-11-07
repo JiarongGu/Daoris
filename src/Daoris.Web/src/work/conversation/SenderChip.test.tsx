@@ -10,9 +10,9 @@ import { channelHomeOf } from './channelHome';
 import { CHANNEL, CLAIM, HELPER_ANSWER, HELPER_QUESTION, nameOf, personsAsk, senderEvents } from './senderChips.fixtures';
 
 /**
- * COMMS1h (the comms design §7): a message is drawn whole once, at its home, and each word's turn is headed by its sender chip, read
+ * A message is drawn whole once, at its home, and each word's turn is headed by its sender chip, read
  * by the one sender rule. A channel message's home is the channel, so the turn that took it names its poster and opens the channel.
- * MIXAGENT3a-iii: a helper's answer no card folds is that agent's block, with the question it answers.
+ * A helper's answer no card folds is that agent's block, with the question it answers.
  */
 describe('COMMS1h the sender chips', () => {
   /** `channel: null` draws a page that holds no channel. */
@@ -90,7 +90,7 @@ describe('COMMS1h the sender chips', () => {
     expect(opened).toHaveBeenCalledTimes(1);
     unmount();
 
-    // With no channel to open, the claim is named as one and drawn whole, as before.
+    // With no channel to open, the claim is named as one and drawn whole.
     const { container: alone } = draw({ channel: null });
     expect(alone.querySelector('[data-word="e8"]')?.textContent).toContain('Another session’s claim, in Daoris’s words');
     expect(screen.queryByRole('button', { name: 'Open the channel' })).toBeNull();
@@ -108,7 +108,7 @@ describe('COMMS1h the sender chips', () => {
   });
 
   /**
-   * CHANNELJOIN1c (the event-channel design §5.8): a message an agent outside Daoris posted as a member of the channel is headed as that
+   * A message an agent outside Daoris posted as a member of the channel is headed as that
    * member's, saying it is outside Daoris, and never as a session's, the person's or Daoris's own; in both languages.
    */
   it('CHANNELJOIN1c heads a member’s message as the member’s, outside Daoris, never as a session’s', async () => {

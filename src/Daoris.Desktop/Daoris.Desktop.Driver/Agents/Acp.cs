@@ -83,6 +83,8 @@ public sealed class AcpSession(
     /// </summary>
     public Func<bool>? SetupChanged { get; set; }
 
+    public Func<string, bool>? LimitSaid { get; set; }
+
     /// <summary>
     /// Whether this client asks the agent for typed session failures: set for an agent whose toolchain declares it marks a terminal
     /// failure for such a client alone (<see cref="ErrorWords.TypedFailures"/>).
@@ -104,7 +106,7 @@ public sealed class AcpSession(
 
     /// <summary>
     /// The words the run handed back unprompted, in the order said, for the driver to keep on their record: those held as its setup
-    /// changed or as it left a silent turn of a closed quest, then every word it was asked to send and never wrote, turned away at its
+    /// changed or as it left a silent turn of a closed quest, then every word it had been asked to send and never wrote, turned away at its
     /// door as it ended (<see cref="AcpTurnedAway"/>).
     /// </summary>
     public IReadOnlyList<IAgentWord> HandedBack => _open.HandedBack;
@@ -201,7 +203,7 @@ public sealed class AcpSession(
         }
     }
 
-    /// <summary>The stream's end as a failure: its cause's where one was said before it (<see cref="Ending"/>), else <paramref name="sentence"/>.</summary>
+    /// <summary>The stream's end as a failure: its cause's where one is said before it (<see cref="Ending"/>), else <paramref name="sentence"/>.</summary>
     private DriverException StreamEnded(string sentence)
     {
         Noted? why;
@@ -244,7 +246,7 @@ public sealed class AcpSession(
         set => Options.Carry = value;
     }
 
-    /// <summary>Told what was carried where it differs from <see cref="Carry"/>.</summary>
+    /// <summary>Told what is carried where it differs from <see cref="Carry"/>.</summary>
     public Action<ActorAsked>? Carried
     {
         get => Options.Carried;
@@ -292,7 +294,7 @@ public sealed class AcpSession(
     /// Asked when a turn ends while the session's own background work runs: whether its quest stands as a park would leave it. Yes keeps
     /// the session open until that work ends, then goes on with a turn that says so; null never waits.
     /// </param>
-    /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing was prompted.</exception>
+    /// <exception cref="AcpResumeRefused">The agent offers no resume, or refused this one: nothing is prompted.</exception>
     /// <exception cref="DriverException">The agent's stream ended while the session waited for its background work.</exception>
     public Task<AcpOutcome> RunAsync(
         string cwd, string prompt, CancellationToken ct, ConnectorPlan? plan = null,
@@ -318,12 +320,12 @@ public sealed class AcpSession(
     private CancellationToken _stops;
     private bool _inRun;
 
-    /// <summary>The transient retry a run or a conversation was handed, or null, and a failure then ends as it came.</summary>
+    /// <summary>The transient retry a run or a conversation is handed, or null, and a failure then ends as it came.</summary>
     private TransientRetry? _retry;
 
     /// <summary>
     /// What the run's first prompt's write return tells, told again as each try's write returns: a carry-on's moved words are sent at the
-    /// first write that returns, whichever prompt it was, and the caller tells it once.
+    /// first write that returns, whichever prompt it is, and the caller tells it once.
     /// </summary>
     private Action? _prompted;
 
@@ -450,7 +452,7 @@ public sealed class AcpSession(
     internal Task<string> RetriedAsync(Func<Task<string>> prompt, CancellationToken ct) => PromptingAsync(prompt, ct);
 
     /// <summary>
-    /// A word handed to a running turn whose own prompt was refused after the word was taken (<see cref="AcpWordTurnFailed"/>): the turn
+    /// A word handed to a running turn whose own prompt is refused after the word is taken (<see cref="AcpWordTurnFailed"/>): the turn
     /// that failed is the one it opened, so its refusal is read as any prompt's, a transient one opening the episode.
     /// </summary>
     internal Task<string> RecoveredAsync(AcpRefusal refusal, CancellationToken ct) =>
@@ -460,7 +462,7 @@ public sealed class AcpSession(
     public bool Steers => _steersNow;
 
     /// <summary>The person's *Send now*, steered into the running turn (<see cref="AcpSteering.SteerAsync"/>).</summary>
-    /// <returns>The adapter's outcome: <c>injected</c>, or <c>promptRequired</c> where no turn was running after all.</returns>
+    /// <returns>The adapter's outcome: <c>injected</c>, or <c>promptRequired</c> where no turn is running after all.</returns>
     /// <exception cref="AcpRefusal">The agent refused the steer, in its words.</exception>
     /// <exception cref="DriverException">The agent never said it steers, or the session is not open: nothing is sent.</exception>
     public Task<string> SteerAsync(IAgentWord words, CancellationToken ct) => Steering.SteerAsync(words, ct);
@@ -476,7 +478,7 @@ public sealed class AcpSession(
     /// </summary>
     /// <remarks>
     /// A permission request held for the person is answered <c>cancelled</c> after the cancel goes, as the protocol asks of a client that
-    /// cancels: the turn it was asked in is stopping, and nothing the person says now could land in it.
+    /// cancels: the turn it is asked in is stopping, and nothing the person says now could land in it.
     /// </remarks>
     public async Task CancelTurnAsync()
     {
@@ -514,7 +516,7 @@ public sealed class AcpSession(
     {
         if (_sessionId is null) return;
 
-        // Nothing held for the person outlives the session it was asked in: answered before the close goes.
+        // Nothing held for the person outlives the session it is asked in: answered before the close goes.
         await TurnStages.Of<AcpPermission>().ReleaseHeldAsync(PermissionWhy.Ended).ConfigureAwait(false);
 
         using var closing = CancellationTokenSource.CreateLinkedTokenSource(ct);

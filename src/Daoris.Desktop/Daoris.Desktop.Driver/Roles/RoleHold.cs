@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The two kinds of appointed role in the catalogue (D233 point 2): the supervisor, who answers a parked session's recorded question with
+/// The two kinds of appointed role in the catalogue: the supervisor, who answers a parked session's recorded question with
 /// one offered choice or leaves it to the person, and the steward, who makes development's management acts on the person's behalf. A
 /// record names its kind; its acts are of that kind's vocabulary, as a working role's works are of the work vocabulary.
 /// </summary>
@@ -24,7 +24,8 @@ public static class AppointedRoles
         StewardActNames.Drive, StewardActNames.Undrive, StewardActNames.Trees, StewardActNames.Hold, StewardActNames.Resume,
         StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Workflow,
         StewardActNames.Pause, StewardActNames.Unpause, StewardActNames.Done, StewardActNames.Delete,
-        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Land, StewardActNames.Clean, StewardActNames.Setup,
+        StewardActNames.UpdateNow, StewardActNames.UpdateCancel, StewardActNames.Land, StewardActNames.Clean, StewardActNames.HandOver,
+        StewardActNames.Setup,
     ];
 
     /// <summary>The acts <paramref name="kind"/> may hold; none for a kind this build does not know.</summary>
@@ -69,6 +70,7 @@ public static class StewardActNames
     /// <summary>A session's tree landed on its line, or cleaned unforced; neither pushes.</summary>
     public const string Land = "land";
     public const string Clean = "clean";
+    public const string HandOver = "handover";
     public const string Setup = "setup";
 }
 

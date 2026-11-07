@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one reader of <see cref="OwnedProcesses.Census"/> (D249): as this process stops, a <c>processes.running</c> line says which purposes
+/// The one reader of <see cref="OwnedProcesses.Census"/>: as this process stops, a <c>processes.running</c> line says which purposes
 /// still hold a process and the ids they hold, so a process that outlived its work is found in the log and the job's kill at the end is seen
 /// to have had something to end. Written only where something runs; it reads and ends nothing.
 /// </summary>

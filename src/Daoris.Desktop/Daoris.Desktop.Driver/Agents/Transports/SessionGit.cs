@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The session's own git on a spawn (the agent-provider design §4.6): the tokens it inherited cleared, its gh and az configuration
+/// The session's own git on a spawn: the tokens it inherited cleared, its gh and az configuration
 /// folders, its commits' author and its long paths. Declared by the shell and implemented by Workplace, which owns those names, so the
 /// shell names no type of Workplace.
 /// </summary>
@@ -20,7 +20,7 @@ public interface ISessionGit
     IReadOnlyList<string> Tokens { get; }
 }
 
-/// <summary>The session's git installed when the driver loads (D212's bounds: Workplace installs it, an unset port throws).</summary>
+/// <summary>The session's git installed when the driver loads (Workplace installs it, an unset port throws).</summary>
 public static class SessionGit
 {
     private static ISessionGit? _current;

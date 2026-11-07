@@ -6,19 +6,19 @@ import { call } from './call';
 import { readSlice } from './driver';
 import { mergeKeyed, readPushed, type SliceSpec } from './state/slices';
 
-// Done and failed, as the shell pushes it (NOTIFY2f, D196 point 6; the notification design §2.2, §2.5): the notices of the machine's
+// Done and failed, as the shell pushes it: the notices of the machine's
 // record `data/notices.json`, with whether each is read, judged in .NET once per process (`NoticesStateSlice`) and read alike in every
-// window. The page orders them newest first, words them in the reader's language and keeps their acts. Beside them, Messages
-// (NOTIFY2g): each ask's unread count as the service keeps the person's mark, with its newest message from an agent or a teammate,
+// window. The page orders them newest first, words them in the reader's language and keeps their acts. Beside them, Messages:
+// each ask's unread count as the service keeps the person's mark, with its newest message from an agent or a teammate,
 // and a conversation's answer, a notice of its own kind.
 
 /** Its partition of notices, each under its id. */
 const NEWS = 'news';
 
-/** Its partition of Messages, each live ask's and each teammate's under the ask's id (NOTIFY2g). */
+/** Its partition of Messages, each live ask's and each teammate's under the ask's id. */
 const MESSAGES = 'messages';
 
-/** The notice of a conversation that answered the person's words (NOTIFY2g): Messages', never Done and failed's. */
+/** The notice of a conversation that answered the person's words: Messages', never Done and failed's. */
 export const ANSWERED = 'answered';
 
 /**
@@ -29,15 +29,14 @@ export type Notice = {
   id: string;
   /**
    * `ended`, a session that ended without the person asking; `expired`, a terminal's press refused by its time; `answered`, a
-   * conversation that answered the person's words (NOTIFY2g), one per conversation; `look`, a line of the driver's look that is news,
-   * by its `code` (NOTIFY2h); `withdrawn`, a terminal's press taken back once shown, and `closed`, one an earlier build's close ended
-   * (CONFIRMWAIT1a-i); `lost`, `count` presses a restart could not bring back, and `newer`, presses a newer Daoris kept
-   * (CONFIRMWAIT1a-ii).
+   * conversation that answered the person's words, one per conversation; `look`, a line of the driver's look that is news,
+   * by its `code`; `withdrawn`, a terminal's press taken back once shown, and `closed`, one an earlier build's close ended;
+   * `lost`, `count` presses a restart could not bring back, and `newer`, presses a newer Daoris kept.
    */
   kind: string;
   at: string;
   read: boolean;
-  /** The workspace it was made in; none is every window's. */
+  /** The workspace it is made in; none is every window's. */
   workspace?: string;
   session?: string;
   quest?: string;
@@ -49,7 +48,7 @@ export type Notice = {
   act?: string;
   /** What a look's line said, for `look`: a hand-over that could not be made, a session stopped on a lost claim, … */
   code?: string;
-  /** How many presses from a terminal a `lost` notice names (CONFIRMWAIT1a-ii): one a restart could not bring back, or one lost at a close. */
+  /** How many presses from a terminal a `lost` notice names: one a restart could not bring back, or one lost at a close. */
   count?: number;
 };
 
@@ -65,7 +64,7 @@ export function noticeOf(value: unknown): Notice | null {
 
 /**
  * The newest message on an ask's channel written by an agent or a teammate, never the person's own and never a Daoris line, read or
- * not (NOTIFY2g). Its fields are the slice's allow-list, which `NoticesStateSliceTests` reads from here.
+ * not. Its fields are the slice's allow-list, which `NoticesStateSliceTests` reads from here.
  */
 export type NewestMessage = {
   id: string;
@@ -75,13 +74,13 @@ export type NewestMessage = {
   repository?: string;
   /** Its first line, bounded by the shell, shown as written. */
   line: string;
-  /** D188's level; one from before the levels is `ordinary`. */
+  /** The message's level; one without a level is `ordinary`. */
   level: 'urgent' | 'ordinary';
   toEveryone: boolean;
 };
 
 /**
- * An ask's entry in Messages as the shell pushes it (NOTIFY2g, the notification design §2.5): every live local ask and every
+ * An ask's entry in Messages as the shell pushes it: every live local ask and every
  * teammate's, `unread: 0` among them. Its fields are the slice's allow-list, which `NoticesStateSliceTests` reads from here.
  */
 export type AskMessages = {
@@ -213,7 +212,7 @@ export const useNotices = (): Notice[] => {
 export const useAskMessages = (): AskMessages[] | undefined => useNoticesRead()?.messages;
 
 /**
- * Messages in this window (NOTIFY2g, the notification design §2.2's third group): each ask's entry of the window's scope, its own
+ * Messages in this window: each ask's entry of the window's scope, its own
  * workspace's and every machine-wide one, `undefined` where the shell pushes no such partition; and the conversations' answers of
  * its scope, newest first. Being listed reads none of them.
  */

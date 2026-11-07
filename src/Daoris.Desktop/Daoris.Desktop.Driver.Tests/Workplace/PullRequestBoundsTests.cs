@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END6c (the review of FABRIC-END6, before plugin mode is relied on): one fetch of a repository's line at a time, shared by every
-/// fetch path; a repository held by a removing press, bringing it up to date or a landing; D148's minute shared by every occasion; an
-/// answer kept only where it was asked after the kept one, a completed one never replaced; each answer stamped with its own request's
+/// One fetch of a repository's line at a time, shared by every
+/// fetch path; a repository held by a removing press, bringing it up to date or a landing; the minute shared by every occasion; an
+/// answer kept only where its ask came after the kept one's, a completed one never replaced; each answer stamped with its own request's
 /// time; a person's fetch read from git's files; and a focus kept until the moments exist. No process starts here.
 /// </summary>
 public sealed class PullRequestBoundsTests : IDisposable
@@ -29,7 +29,7 @@ public sealed class PullRequestBoundsTests : IDisposable
         };
 
     /// <summary>
-    /// Finding 1: a fetch of the line in flight counts as made, whichever path started it (a landing's press, bringing up to date, a
+    /// A fetch of the line in flight counts as made, whichever path started it (a landing's press, bringing up to date, a
     /// moment): a second fetch of that line joins it rather than start another, and the next one after it ends fetches again.
     /// </summary>
     [Fact]
@@ -80,7 +80,7 @@ public sealed class PullRequestBoundsTests : IDisposable
     }
 
     /// <summary>
-    /// Finding 1: a removing press and bringing up to date hold the repository alone through the replay's lock, and so hold it for the
+    /// A removing press and bringing up to date hold the repository alone through the replay's lock, and so hold it for the
     /// moments too, in this process; nested holds let go with the last.
     /// </summary>
     [Fact]
@@ -105,8 +105,8 @@ public sealed class PullRequestBoundsTests : IDisposable
     }
 
     /// <summary>
-    /// Finding 2: D148's minute is one per pull request in this process, whichever occasion takes it; a later request's own time is
-    /// kept, and a minute whose ask was never sent is given back.
+    /// The minute is one per pull request in this process, whichever occasion takes it; a later request's own time is
+    /// kept, and a minute whose ask never went out is given back.
     /// </summary>
     [Fact]
     public void The_minute_one_occasion_takes_bounds_every_other()
@@ -134,7 +134,7 @@ public sealed class PullRequestBoundsTests : IDisposable
     }
 
     /// <summary>
-    /// Finding 2: an answer is kept only where it was asked no earlier than the kept one, so a moment's slow <c>open</c> never
+    /// An answer is kept only where its ask came no earlier than the kept one's, so a moment's slow <c>open</c> never
     /// overwrites a concurrent look's <c>completed</c>; and <c>completed</c>, which is final, is never replaced. A failure older than the
     /// kept answer is not the latest word, and an answer older than the kept failure leaves it.
     /// </summary>
@@ -167,7 +167,7 @@ public sealed class PullRequestBoundsTests : IDisposable
     }
 
     /// <summary>
-    /// Finding 3: each answer carries when its own request was sent, not when the occasion began: frames go one at a time, and a slow
+    /// Each answer carries when its own request went out, not when the occasion began: frames go one at a time, and a slow
     /// one before it moves the minute's start.
     /// </summary>
     [Fact]
@@ -190,7 +190,7 @@ public sealed class PullRequestBoundsTests : IDisposable
     }
 
     /// <summary>
-    /// Finding 4: a fetch that changed nothing is still a fetch: git's <c>FETCH_HEAD</c>, where it names the line, says when, across a
+    /// A fetch that changed nothing is still a fetch: git's <c>FETCH_HEAD</c>, where it names the line, says when, across a
     /// restart; so does the newest entry of origin's line's log. An empty one, or one naming other branches alone, says nothing.
     /// </summary>
     [Fact]
@@ -221,7 +221,7 @@ public sealed class PullRequestBoundsTests : IDisposable
         Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(later), RemoteFetches.InGit(git, "main"));
     }
 
-    /// <summary>Finding 5: a focus before there is anyone to tell is kept, once, and told when they come; one flag, not a queue.</summary>
+    /// <summary>A focus before there is anyone to tell is kept, once, and told when they come; one flag, not a queue.</summary>
     [Fact]
     public void A_focus_before_anyone_to_tell_is_told_once_they_come()
     {

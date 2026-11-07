@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SQUASHTIDY1 (D51 rule 7, D88, D102's SQUASHTIDY1 note): a session branch whose commits no branch of the person's holds, but
-/// whose work a squash merge or a cherry-pick put elsewhere by content, is discarded unforced and says how its work was found
+/// A session branch whose commits no branch of the person's holds, but
+/// whose work a squash merge or a cherry-pick put elsewhere by content, is discarded unforced and says how its work is found
 /// held; the clean-up lists it as landed and removes it. Work held nowhere still refuses, and force stays its door. Real git, in
 /// a scratch repository, and nothing reaches a network.
 /// </summary>
@@ -24,7 +24,7 @@ public sealed class ContentHeldTests : LandedFixture
         await CommitAsync(tree.Path, "work.txt", "the work\n", "the work");
         await CommitAsync(tree.Path, "shared.txt", "one\ntwo\n", "more of the work");
         await SquashAsync(root, tree.Branch);
-        // The squash leaves no ancestry: D88 alone would refuse it.
+        // The squash leaves no ancestry: ancestry alone would refuse it.
         Assert.Equal(2, await TreeFollows.UnlandedAsync(root, tree.Branch));
 
         var removal = await trees.RemoveAsync(tree.Path);
@@ -95,7 +95,7 @@ public sealed class ContentHeldTests : LandedFixture
         Assert.Contains(tree.Branch, await GitAsync(root, "branch", "--list", "daoris/*"));
     }
 
-    /// <summary>Commits that change no file leave nothing to find anywhere: not proven, as D102 has it, so the refusal stands.</summary>
+    /// <summary>Commits that change no file leave nothing to find anywhere: not proven, so the refusal stands.</summary>
     [Fact]
     public async Task A_tree_whose_commits_change_no_file_still_refuses()
     {

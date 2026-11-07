@@ -100,13 +100,14 @@ internal sealed class QuestPublishOperation : IQuestOperation
         },
     };
 
-    /// <summary>Publish a quest. Returns the existing one unchanged if it is already asked.</summary>
+    /// <summary>Publish a quest. Returns the one standing under these words, unchanged and held, if it is open or taken.</summary>
     /// <remarks>
     /// The workspace is the circle both sides share, decided by <see cref="QuestExchange"/>, which is where the same-workspace clause
     /// lives; every other field is already judged by the exchange. A set-up step's <paramref name="parent"/> derives its id as a chain
-    /// step's does, so pressing twice is one step.
+    /// step's does, so pressing twice is one step, and a workflow's <paramref name="request"/> key is its own quest back. Plain words
+    /// are a retry only while their quest stands; a closed or forgotten one never swallows a new ask.
     /// </remarks>
-    internal async Task<Quest> PublishAsync(
+    internal async Task<(Quest Quest, bool Held)> PublishAsync(
         QuestTx tx, string from, string to, string title, string body, DateTimeOffset now, string? workspace,
         IReadOnlyList<string>? links, IReadOnlyList<QuestAttachment>? attachments, IReadOnlyList<QuestStep>? then, string? publishedBy,
         IReadOnlyList<string>? lanes, IReadOnlyList<QuestRequirement>? requirements, string? shortTitle, QuestReview? review,
@@ -114,9 +115,16 @@ internal sealed class QuestPublishOperation : IQuestOperation
     {
         var sorted = QuestStore.Sorted(lanes);
         var id = QuestStore.MakeId(from, to, title, parent, sorted, request);
+        var keyed = parent is not null || request is not null;
+        for (var again = 1; ; again++)
+        {
+            var existing = await tx.FindAsync(id).ConfigureAwait(false);
+            if (existing is null && (keyed || !await tx.IsForgottenAsync(id).ConfigureAwait(false))) break;
 
-        // The same ask already held is the answer.
-        if (await tx.FindAsync(id).ConfigureAwait(false) is { } existing) return existing;
+            // The same ask already held is the answer, while it stands.
+            if (existing is not null && (keyed || existing.Status is QuestStatus.Open or QuestStatus.Taken)) return (existing, true);
+            id = QuestStore.MakeId(from, to, title, parent, sorted, request, again);
+        }
 
         var asked = new Quest(
             id, from, to, title, body, QuestStatus.Open, null, now, now,
@@ -137,7 +145,7 @@ internal sealed class QuestPublishOperation : IQuestOperation
             Request = request,
         };
 
-        return await PublishInAsync(tx, asked).ConfigureAwait(false);
+        return (await PublishInAsync(tx, asked).ConfigureAwait(false), false);
     }
 
     /// <summary>

@@ -5,12 +5,12 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The helpers' three files per ask under <c>&lt;home&gt;/helpers</c> (MIXAGENT2a-i, D163 point 2): read as the service writes
+/// The helpers' three files per ask under <c>&lt;home&gt;/helpers</c>: read as the service writes
 /// them and written as the service reads them. The file is the contract; the service's <c>HelperBox</c> and this share no code,
-/// and each side's tests hold the same shapes. A fourth, <c>&lt;askId&gt;.capture.json</c> (COAGENT1a), is the driver's alone, as is a waiting session's
-/// <c>&lt;session&gt;.back.json</c> (HELPERWAIT1c), its move back to the person refused.
+/// and each side's tests hold the same shapes. A fourth, <c>&lt;askId&gt;.capture.json</c>, is the driver's alone, as is a waiting session's
+/// <c>&lt;session&gt;.back.json</c>, its move back to the person refused.
 /// </summary>
-/// <remarks>The records are the Domain's (<see cref="HelperAsk"/>, <see cref="HelperState"/>, <see cref="HelperAnswer"/>; STRUCT3h).</remarks>
+/// <remarks>The records are the Domain's (<see cref="HelperAsk"/>, <see cref="HelperState"/>, <see cref="HelperAnswer"/>).</remarks>
 public sealed class HelperFiles(string home)
 {
     public string PathOf(string id, string kind) => DaorisHome.Entry(home, HomeEntry.Helpers, $"{id}.{kind}.json");
@@ -34,9 +34,9 @@ public sealed class HelperFiles(string home)
                 var at = Moments.Read(element, "at") ?? File.GetLastWriteTimeUtc(path);
                 asks.Add(new HelperAsk(id, asker, question, Text(element, "agent") is { Length: > 0 } agent ? agent : null, by, at)
                 {
-                    // COWORK1d: an ask with no level is ordinary, today's delivery.
+                    // An ask with no level is ordinary, today's delivery.
                     Urgent = element.TryGetProperty("urgent", out var urgent) && urgent.ValueKind == JsonValueKind.True,
-                    // COWORKUX1d: absent, a first ask whose answer goes to the lead.
+                    // Absent, a first ask whose answer goes to the lead.
                     After = Text(element, "after") is { Length: > 0 } after ? after : null,
                     To = Text(element, "to") == HelperAsk.ToPerson ? HelperAsk.ToPerson : null,
                 });
@@ -94,7 +94,7 @@ public sealed class HelperFiles(string home)
     }
 
     /// <summary>
-    /// The ask <paramref name="ask"/> asks again after, with its answer as kept (COWORKUX1d): its answer file, or the last words its state
+    /// The ask <paramref name="ask"/> asks again after, with its answer as kept: its answer file, or the last words its state
     /// keeps. Null for a first ask, or where the earlier one is gone or holds no answer.
     /// </summary>
     public HelperEarlier? EarlierOf(HelperAsk ask)
@@ -118,7 +118,7 @@ public sealed class HelperFiles(string home)
     }
 
     /// <summary>
-    /// Keep the manifest of the work a helper was handed, <c>&lt;askId&gt;.capture.json</c> (COAGENT1a, the co-agent design §2.5):
+    /// Keep the manifest of the work a helper is handed, <c>&lt;askId&gt;.capture.json</c>:
     /// the driver's alone, written before the helper starts, never its bytes. The service reads none of it.
     /// </summary>
     public void WriteCapture(string id, HelperCaptured capture)
@@ -158,7 +158,7 @@ public sealed class HelperFiles(string home)
         });
     }
 
-    /// <summary>The manifest of the work an ask's helper was handed, or null where none was kept (an ask from before COAGENT1a) or it is unreadable.</summary>
+    /// <summary>The manifest of the work an ask's helper is handed, or null where none is kept or it is unreadable.</summary>
     public HelperCaptured? ReadCapture(string id)
     {
         if (Parse(PathOf(id, "capture")) is not { } root) return null;
@@ -198,9 +198,9 @@ public sealed class HelperFiles(string home)
     }
 
     /// <summary>
-    /// The ask a person's terminal writes, in the shape <c>helper_ask</c> writes (MIXAGENT2a-ii): with <c>askedBy: person</c>,
+    /// The ask a person's terminal writes, in the shape <c>helper_ask</c> writes: with <c>askedBy: person</c>,
     /// atomically. Returns its id. A follow-up names the ask it follows (<paramref name="after"/>) and an answer kept for the person says
-    /// <c>to: person</c> (COWORKUX1d, the co-worker design §4.3), each after <c>askedBy</c> and only where set.
+    /// <c>to: person</c>, each after <c>askedBy</c> and only where set.
     /// </summary>
     public string WriteAsk(string asker, string question, string? agent, DateTimeOffset at, string? after = null, bool toPerson = false)
     {
@@ -223,7 +223,7 @@ public sealed class HelperFiles(string home)
     }
 
     /// <summary>
-    /// Every refused move back to the person on file (HELPERWAIT1c, <see cref="HelperBack"/>), oldest first; one unreadable or of another
+    /// Every refused move back to the person on file (<see cref="HelperBack"/>), oldest first; one unreadable or of another
     /// shape is none. The service reads none of them.
     /// </summary>
     public IReadOnlyList<HelperBack> Backs()
@@ -245,7 +245,7 @@ public sealed class HelperFiles(string home)
         return [.. backs.OrderBy(back => back.At).ThenBy(back => back.Session, StringComparer.Ordinal)];
     }
 
-    /// <summary>Keep a refused move back to the person whole, atomically (HELPERWAIT1c): the driver is its only writer.</summary>
+    /// <summary>Keep a refused move back to the person whole, atomically: the driver is its only writer.</summary>
     public void WriteBack(HelperBack back)
     {
         JsonFile.Write(PathOf(back.Session, "back"), writer =>
@@ -260,7 +260,7 @@ public sealed class HelperFiles(string home)
         });
     }
 
-    /// <summary>Let a refused move back go (HELPERWAIT1c): it moved, or the session waits on nothing of the person's any more.</summary>
+    /// <summary>Let a refused move back go: it moved, or the session waits on nothing of the person's any more.</summary>
     public void ClearBack(string session)
     {
         try { File.Delete(PathOf(session, "back")); } catch (IOException) { } catch (UnauthorizedAccessException) { }

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1c (D147 §3.3, D50): <c>daoris git branches</c>, the terminal's read door to the branch list: its words, its
-/// scope (D112) and its written form, from lists built here. The read itself is <c>GitBranchesTests</c>'.
+/// <c>daoris git branches</c>, the terminal's read door to the branch list: its words, its
+/// scope and its written form, from lists built here. The read itself is <c>GitBranchesTests</c>'.
 /// </summary>
 public sealed class GitBranchesCommandTests
 {
@@ -40,7 +40,7 @@ public sealed class GitBranchesCommandTests
         Assert.Contains(named, problem);
     }
 
-    /// <summary>D112's scope, as <c>trees sync</c> takes it: those holding Daoris's branches, every one with <c>--all</c>, and a repository named.</summary>
+    /// <summary>The scope, as <c>trees sync</c> takes it: those holding Daoris's branches, every one with <c>--all</c>, and a repository named.</summary>
     [Fact]
     public void The_scope_is_d112s()
     {
@@ -118,7 +118,7 @@ public sealed class GitBranchesCommandTests
         Assert.Contains("    daoris/s-1a2b3c4d  22222222  2 ahead  session newest (working), quest #21; grew from `feature/12-even`; its tree D:/data/trees/aurora/engine/s-1a2b3c4d\n", said);
         Assert.Contains("    daoris/s-0f0f0f0f  22222222  1 ahead, 3 behind  no session record names its tree; no tree holds it\n", said);
         Assert.Contains("  landed (2)\n", said);
-        // PLUGHOOK1c: its pull request's kept state, with when and who answered, and the failed ask beside it.
+        // Its pull request's kept state, with when and who answered, and the failed ask beside it.
         Assert.Contains("    feature/12-even  33333333  1 ahead  landed for session s-even, quest #12 \"Even\"; pushed by azure, in step with origin's copy; "
             + "pull request https://example.test/pr/7; its pull request: open, as `azure` answered at 2026-10-04 11:00 UTC; "
             + "asking `azure` again at 2026-10-04 11:30 UTC failed (`late`)\n", said);
@@ -131,7 +131,7 @@ public sealed class GitBranchesCommandTests
         Assert.DoesNotContain("    main  ", said);
     }
 
-    /// <summary>D147 §3.3: a read's terminal door is git itself, so each repository says the git calls that answered it, ready to copy.</summary>
+    /// <summary>A read's terminal door is git itself, so each repository says the git calls that answered it, ready to copy.</summary>
     [Fact]
     public void Each_repository_says_the_git_that_answered_it()
     {
@@ -148,7 +148,7 @@ public sealed class GitBranchesCommandTests
         Assert.Contains("  git could not list its branches: fatal: bad object refs/heads/broken\n", said);
     }
 
-    /// <summary>D112: the repositories holding nothing of Daoris's are named in one line, with how to include them.</summary>
+    /// <summary>The repositories holding nothing of Daoris's are named in one line, with how to include them.</summary>
     [Fact]
     public void The_repositories_left_apart_are_named_with_how_to_include_them()
     {
@@ -171,7 +171,7 @@ public sealed class GitBranchesCommandTests
             GitBranchesCommand.Say(new GitBranchList([], [new SyncRepository("game", "aurora", false)]), null, Now));
     }
 
-    /// <summary><c>--json</c> writes the list whole, origin's branches included, each field the page's route will carry (GIT1d).</summary>
+    /// <summary><c>--json</c> writes the list whole, origin's branches included, each field the page's route will carry.</summary>
     [Fact]
     public void The_written_form_holds_the_list_whole()
     {
@@ -205,7 +205,7 @@ public sealed class GitBranchesCommandTests
                 "pullRequestState", "pullRequestAskFailed"],
             landed.EnumerateObject().Select(field => field.Name));
         Assert.Equal(GitOrigin.InStep, landed.GetProperty("origin").GetString());
-        // PLUGHOOK1c (D148 point 6): the kept answer whole, as the landing record keeps it, and the failed ask beside it.
+        // The kept answer whole, as the landing record keeps it, and the failed ask beside it.
         var state = landed.GetProperty("pullRequestState");
         Assert.Equal(
             ["state", "pullRequest", "mergeCommit", "sourceCommit", "target", "how", "at", "message", "plugin", "askedAt"],

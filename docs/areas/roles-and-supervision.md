@@ -237,11 +237,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     unattributable one is quarantined. (from D208, D233)
 50. The owner's own words supersede a supervisor's decision; *Overrule* takes it back until the move to working admits
     it. (from D208)
-51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of seventeen with no card: drive, undrive,
+51. The steward, scoped to this Daoris, makes the acts its role's `authority` lists of eighteen with no card: drive, undrive,
     trees, hold, resume, stop, finish, try again, a repository's workflow, a quest's pause, unpause, done and delete, a
-    session's tree land and clean, and a staged update's now and cancel, each one exact form over `ROLE_ACT`, logged
-    `role.act` and said on its line; `setup` only where the person lists it. A route act (`StewardRouteAct`: workflow, done,
-    delete, land, clean) runs its person's route inside the role's door, a refusal of the route refusing the act; done and
+    session's tree land and clean, a staged update's now and cancel, and a session's hand-over, each one exact form over
+    `ROLE_ACT`, logged `role.act` and said on its line; `setup` only where the person lists it. A route act (`StewardRouteAct`:
+    workflow, done, delete, land, clean; `StewardHandOverAct`) runs its person's route inside the role's door, a refusal of the
+    route refusing the act with its code and its words. The hand-over is `SESSION_HAND_OVER { id, agent[, account] }` over a
+    quest's own session (`steward hand-over <id> --agent <a> [--account <x>]`): its session's line says the steward asked
+    (`handover.asked-steward`) while the move it keeps is the route's own, and it is refused `owner-held` where its quest is held
+    by what only the owner releases (a stop not the steward's own of this run, an outage past its tries, the strikes, a pause, a
+    role policy's bound), since a hand-over releases that hold. Outside the grants its route's judge refuses the press before any
+    card, and the steward's verb says the judge's words; done and
     delete are `QUEST_DONE` and `QUEST_DELETE`, the service's doors sent as the person's records; land is `LAND_SESSION_TREE`
     and clean the unforced `DISCARD_SESSION_TREE`, each over the session alone, and land is refused `landing-pushes` where
     the landing's plan names a plugin that pushes: neither ever pushes to a remote. The pause (`StewardPauseAct`) never writes the
@@ -352,6 +358,8 @@ Web: `agents/roles/*.test.ts(x)` and `agents/setup/*.test.tsx`.
   `app/Daoris.Desktop.exe`, a referred point decided and gone on, and the look in the window.
 - **QUESTIONUI1b, SUPERVISOR1d, SUPERVISOR1c, SUPERVISOR1f:** the pick on the card; the bench; the `actor` holder; words.
 - **STEWARDROLE1d:** the installed look of rule 51's acts.
-- **STEWARDROLE1e to 1h:** the steward's hand-over, go-on, set-up, and free words.
+- **STEWARDROLE1e (answers) to 1h:** the steward's yes or no to an agent's hand-over ask (a pending operation consumed from memory, the
+  move written `HandOverBy.Steward`), the go-on, the set-up, and free words. The go-on releases a hold D210 point 3 leaves to the person
+  alone, so it waits on D210 carrying or answering the steward design's §4.3a.
 - **ROLEPERM1, PERSONDOOR1c-i:** permission answers through appointed actors; the role's boundary at every door.
 - **SETUPUX1y:** the places tree lit by default, retiring the Roles sections under Setup.

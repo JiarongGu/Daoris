@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The service's answers and the roster, as the machine's topic judged them (PARALLEL1a).</summary>
+/// <summary>The service's answers and the roster, as the machine's topic judged them.</summary>
 /// <param name="Snapshot">The registry, the quests and the active sessions.</param>
 /// <param name="Standing">The asks the host answered.</param>
 /// <param name="Roster">The harnesses as the roster reports them.</param>
@@ -10,12 +10,12 @@ public sealed record HelpMachineWhole(IKnowledgeSnapshot Snapshot, IReadOnlyList
 public sealed record HelpLineGuess(string? Branch);
 
 /// <summary>
-/// Where each unit of work has got to (FABRIC-MILESTONE1b), what could not be read, each by its repository (FACTSPLIT1a), and
+/// Where each unit of work has got to, what could not be read, each by its repository, and
 /// Daoris's own recoveries no unit names: one repository's part, or the parts merged.
 /// </summary>
 public sealed record HelpWork(IReadOnlyList<IKnowledgeMilestone> Units, IReadOnlyList<InventoryUnread> Unread, IReadOnlyList<InventoryEntry> Recovery);
 
-/// <summary>What one part of the work reads (FACTSPLIT1a, <see cref="HelpFacts.PartOf"/>), from the service's answers.</summary>
+/// <summary>What one part of the work reads (<see cref="HelpFacts.PartOf"/>), from the service's answers.</summary>
 /// <param name="Repository">The repository whose part it is; null for the rest's (<see cref="HelpFacts.NoCheckout"/>).</param>
 /// <param name="Roots">The checkout whose refs it reads: the repository's own; none for the rest.</param>
 /// <param name="Checkouts">Every repository with a checkout here, which the rest's holds none of.</param>
@@ -23,11 +23,11 @@ public sealed record HelpWork(IReadOnlyList<IKnowledgeMilestone> Units, IReadOnl
 public sealed record HelpWorkPart(
     string? Repository, IReadOnlyDictionary<string, string> Roots, IReadOnlySet<string> Checkouts, IReadOnlySet<string> InUse)
 {
-    /// <summary>The trees this part's repositories' sessions recorded (OVERVIEWNOISE1b), from the sessions' look; none before it.</summary>
+    /// <summary>The trees this part's repositories' sessions recorded, from the sessions' look; none before it.</summary>
     public IReadOnlyList<RecordedTree> Recorded { get; init; } = [];
 
     /// <summary>
-    /// The quests the service says are closed among those this part's landings name (LANDRETIRE1 part 2, <see cref="LandedStanding.ClosedAsync"/>),
+    /// The quests the service says are closed among those this part's landings name (<see cref="LandedStanding.ClosedAsync"/>),
     /// read by the module's judge, which holds the service; none read, none is closed. The facts' deadline judges the part again, so a quest closing
     /// or a day passing reaches the page within it, with no wake of its own.
     /// </summary>
@@ -39,13 +39,13 @@ public sealed record HelpWorkPart(
         : !Checkouts.Contains(repository);
 }
 
-/// <summary>What one part of the clean-up's list reads (PUSH1c4a, <see cref="HelpFacts.SweepPartOf"/>), from the service's answers.</summary>
+/// <summary>What one part of the clean-up's list reads (<see cref="HelpFacts.SweepPartOf"/>), from the service's answers.</summary>
 /// <param name="Repository">The repository whose part it is, as the registry names it.</param>
 /// <param name="Workspace">The workspace the registry names it in, which its line is read under.</param>
 /// <param name="Root">Its checkout here.</param>
 /// <param name="InUse">The trees sessions still running or waiting hold, kept whatever they hold.</param>
 public sealed record HelpSweepPart(string Repository, string Workspace, string Root, IReadOnlySet<string> InUse)
 {
-    /// <summary>The quests the service says are closed among those its landings name (LANDRETIRE1 part 2), as <see cref="HelpWorkPart.ClosedQuests"/> reads them.</summary>
+    /// <summary>The quests the service says are closed among those its landings name, as <see cref="HelpWorkPart.ClosedQuests"/> reads them.</summary>
     public IReadOnlySet<string> ClosedQuests { get; init; } = new HashSet<string>();
 }

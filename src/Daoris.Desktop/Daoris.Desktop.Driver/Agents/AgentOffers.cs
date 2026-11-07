@@ -4,8 +4,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What one agent, at one version, last offered on one account (D205 §9.2, MODELROLE1c2): the model and effort values its open listed,
-/// and the models it refused there, each with when it was read. An account the tool's own home holds is <see cref="AgentOffers.OwnHome"/>.
+/// What one agent, at one version, last offered on one account: the model and effort values its open listed,
+/// and the models it refused there, each with the time of its reading. An account the tool's own home holds is <see cref="AgentOffers.OwnHome"/>.
 /// </summary>
 /// <param name="Models">The <c>model</c> category's values its last open listed; null where it listed none (a door with no model option).</param>
 /// <param name="Efforts">The effort category's values, as <paramref name="Models"/>.</param>
@@ -24,17 +24,17 @@ public sealed record OfferReading(
 }
 
 /// <summary>
-/// <c>data/agent-offers.json</c> (D205 §9.2, MODELROLE1c2): what each agent, version and account last offered in <c>model</c> and
+/// <c>data/agent-offers.json</c>: what each agent, version and account last offered in <c>model</c> and
 /// <c>thought_level</c>, and each account's <c>refused</c> readings, written at every protocol <c>session/new</c> and every refusal at an
 /// open, read by the walk (<see cref="Judge"/>) and by the editor as hints. A reading, not a setting: never synced, taken by a clear of the
-/// home (D195's inventory).
+/// home.
 /// </summary>
 /// <remarks>
-/// <para><b>Keyed per account</b>, since each account is its own home and what an agent offers is its account's (§3.3):
+/// <para><b>Keyed per account</b>, since each account is its own home and what an agent offers is its account's:
 /// <c>{ "schemaVersion": 1, "readings": { "&lt;agent&gt;|&lt;account&gt;": { … } } }</c>, merged per key under the file's
 /// <see cref="KeepLock"/> by every process that writes it (the loop, conversations, the host's consoles), each write one hold from its read
 /// to its rename. A reading from an older version never replaces a newer one.</para>
-/// <para><b>Judged per account</b> (§3.3): a reading passes an account only while its version is the start's and it is under
+/// <para><b>Judged per account</b>: a reading passes an account only while its version is the start's and it is under
 /// <see cref="Fresh"/> old. An older or other-version reading is a hint, and the account is tried, its open refreshing the reading, so a
 /// negative reading never holds back the opening that would correct it for longer than a day.</para>
 /// </remarks>
@@ -105,7 +105,7 @@ public static class AgentOffers
     }
 
     /// <summary>
-    /// An open's reading (§9.2, at every protocol <c>session/new</c>): what it listed, replacing the account's last list; the models it
+    /// An open's reading (at every protocol <c>session/new</c>): what it listed, replacing the account's last list; the models it
     /// refused at this version stay refused until their day is out, since an open that lists them again has not tried them. Null where
     /// written; else why not.
     /// </summary>
@@ -122,7 +122,7 @@ public static class AgentOffers
         });
 
     /// <summary>
-    /// A refusal at an open (§3.3): <paramref name="model"/> kept as the account's <c>refused</c> reading, before the refused record
+    /// A refusal at an open: <paramref name="model"/> kept as the account's <c>refused</c> reading, before the refused record
     /// ends, so the next look judges it. Null where written; else why not.
     /// </summary>
     public static string? Refused(string home, string agent, string? version, string? account, string model, DateTimeOffset now) =>

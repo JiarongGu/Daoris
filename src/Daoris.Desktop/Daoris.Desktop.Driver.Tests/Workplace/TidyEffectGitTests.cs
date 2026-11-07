@@ -5,9 +5,9 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END4a over real git (the records-only half is <see cref="TidyEffectTests"/>): the look's tidy takes its candidates from the
+/// Over real git (the records-only half is <see cref="TidyEffectTests"/>): the look's tidy takes its candidates from the
 /// kept facts, so nothing goes before <i>held</i> (canary 15), the removal judges again and a contradicted end keeps its branch
-/// (canary 8), and the branches the line holds none of are no longer judged at each pace: the git starts counted down.
+/// (canary 8), and the branches the line holds none of are not judged at each pace: the git starts counted down.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -110,9 +110,9 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The fourth review's P1 (AutoTidies.cs:262, TreeSweeps.cs:402): a session branch whose work the line holds through a landing's
-    /// branch rests on what that landing's proof rested on, the line at the commit read, as well as on the landing's branch. The line rewound
-    /// after the landing was proved keeps the session branch: its work is no longer on the line.
+    /// 🔴 A session branch whose work the line holds through a landing's
+    /// branch rests on what that landing's proof rested on, the line at the commit read, as well as on the landing's branch. A line rewound
+    /// after the landing has been proved keeps the session branch: its work is not on the line.
     /// </summary>
     [Fact]
     public async Task A_line_rewound_after_a_landing_was_proved_keeps_the_session_branch_it_holds()
@@ -158,6 +158,9 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         await CommitAsync(opened.Path, "work.txt", "work\n", "the work");
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
         await TidyAsync(trees, root);
+        Assert.True(await StandsAsync(root, opened.Branch));
+        await GitAsync(root, "merge", "--no-ff", "--quiet", "-m", "merge feature/x", "feature/x");
+        await TidyAsync(trees, root);
         Assert.False(await StandsAsync(root, opened.Branch));
 
         await GitAsync(opened.Path, "checkout", "--quiet", "-b", "feature/y");
@@ -169,10 +172,10 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// The git starts counted down (END3 measured the keeper at 0.4-4 s of them per repository): a pace's tidy of a repository whose
+    /// The git starts counted down (the keeper costs 0.4-4 s of them per repository): a pace's tidy of a repository whose
     /// branches the line holds none of starts no more git than the end judgement's keeper already did for each of them, however many.
-    /// Before FABRIC-END4a each was judged again by the press's list as well. 🔴 FABRIC-END2d: the first pass is the second, since no
-    /// recorded branch the keeper could not prove is judged again by the press's list (END4a's review fallback is gone).
+    /// The press's list does not judge each again. 🔴 The first pass is the second: no
+    /// recorded branch the keeper could not prove is judged again by the press's list.
     /// </summary>
     [Fact]
     public async Task A_tidy_judges_no_branch_the_line_does_not_hold()
@@ -181,7 +184,7 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         var four = await RepositoryAsync("four");
         var trees = new SessionTrees(Home);
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
-        // The recovery refs' retention is held once a day for each repository in a process (CLEANUP1): asked here, before any branch.
+        // The recovery refs' retention is held once a day for each repository in a process: asked here, before any branch.
         foreach (var root in new[] { one, four }) await trees.TidyEmptyAsync(root, Path.GetFileName(root), "aurora", InUseAsync, CancellationToken.None);
         await WorkAsync(trees, one, "a.txt", merged: false, repository: "one");
         for (var each = 0; each < 4; each++) await WorkAsync(trees, four, $"{each}.txt", merged: false, repository: "four");
@@ -189,17 +192,17 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
         var overOne = await BeyondTheKeeperAsync(trees, one);
         var overFour = await BeyondTheKeeperAsync(trees, four);
 
-        // Read beside the D173 note: the starts the tidy makes beyond the keeper's, with one branch and with four, first pass and second.
+        // The starts the tidy makes beyond the keeper's, with one branch and with four, first pass and second.
         output.WriteLine($"END2d git starts beyond the keeper: one branch {overOne.First} then {overOne.Second}, four branches {overFour.First} then {overFour.Second}");
         Assert.Equal(overOne.First, overOne.Second);
         Assert.Equal(overFour.First, overFour.Second);
-        // At most the follow's one read of each tree (TREEFOLLOW1), three here; before FABRIC-END4a the press's list judged each of
-        // them again, nine starts a branch on this machine (16 with one, 43 with four).
+        // At most the follow's one read of each tree, three here; the press's list judging each of
+        // them again would cost nine starts a branch on this machine (16 with one, 43 with four).
         Assert.True(overFour.Second - overOne.Second <= 3, $"the tidy judged branches the line holds none of: {overOne.Second} starts beyond the keeper with one, {overFour.Second} with four");
     }
 
     /// <summary>
-    /// FABRIC-END2d, the review's older squash record (D173's FABRIC-END4a note, "After review"), a guard green before and after: a session
+    /// The review's older squash record: a session
     /// branch from before units whose squashing landing the line holds goes at the look's tidy, on the fact the keeper keeps for it.
     /// </summary>
     [Fact]
@@ -218,8 +221,8 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// FABRIC-END2d, the review's landing inside another, green before (END4a's fallback) and after: it goes at the look's tidy with the one it
-    /// is inside, now on the fact the keeper keeps for it.
+    /// The review's landing inside another: it goes at the look's tidy with the one it
+    /// is inside, on the fact the keeper keeps for it.
     /// </summary>
     [Fact]
     public async Task A_landing_inside_another_the_line_holds_goes_with_it()
@@ -237,11 +240,10 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The second review's P2 (AutoTidies.cs:263, :268, :320), now with no memory at all (FABRIC-END2d): a session branch from before units
+    /// 🔴 A session branch from before units
     /// whose work only a landing inside another holds, which the press kept because its tree held uncommitted work, goes at the next pace once
-    /// the tree is clean, with neither its tip nor the line moved. END4a's fallback remembered it at its tip and the line's commit and judged
-    /// it again only once the <c>refs</c> deadline passed; the keeper now keeps its end (through the landing whose branch holds it), so it is
-    /// a candidate at every pace.
+    /// the tree is clean, with neither its tip nor the line moved. The keeper keeps its end (through the landing whose branch holds it), so it is
+    /// a candidate at every pace, with no memory at all.
     /// </summary>
     [Fact]
     public async Task A_kept_unproven_branch_goes_at_the_next_pace_once_its_tree_is_clean()
@@ -274,7 +276,7 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// FABRIC-UNKNOWN1 over real git: a <c>daoris/*</c> branch no record names, though the line holds all of it, is read by the
+    /// Over real git: a <c>daoris/*</c> branch no record names, though the line holds all of it, is read by the
     /// inventory as an unknown owner, blocked, and the look's tidy leaves it standing: only the person's press removes it.
     /// </summary>
     [Fact]
@@ -303,7 +305,7 @@ public sealed class TidyEffectGitTests(ITestOutputHelper output) : LandedFixture
     }
 
     /// <summary>
-    /// FABRIC-UNKNOWN1b over real git: with an empty home, a registered repository whose checkout holds an unrecorded <c>daoris/x</c> is
+    /// Over real git: with an empty home, a registered repository whose checkout holds an unrecorded <c>daoris/x</c> is
     /// read, in one git listing, and the branch is an unknown owner, blocked, as one in a repository a record names is.
     /// </summary>
     [Fact]

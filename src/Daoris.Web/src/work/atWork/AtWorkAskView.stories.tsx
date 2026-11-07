@@ -5,7 +5,7 @@ import { AtWorkAskView } from './AtWorkAskView';
 import { ASK_EMPTY, ASK_SAID, ASK_TEAMMATE, ASK_TWO_ENTRIES, CONSIDERED, FAILED, READING } from './atWork.fixtures';
 import type { AtWorkHeld } from './types';
 
-// Who is at work on an ask (COWORKVIEW1d, the cowork view design §3.5, §5.3): the section above the ask page's quests, at the main area's
+// Who is at work on an ask: the section above the ask page's quests, at the main area's
 // three widths (80, 39 and 25rem: `storyWidths.tsx`) and the side bar's 300 px floor, each in English in light and in 中文 in dark.
 
 const nothing = () => {};

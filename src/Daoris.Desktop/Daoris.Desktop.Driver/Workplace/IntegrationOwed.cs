@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's integration declaration that waits for the owner's acceptance (INTEGRATE1h; the integration design §5.8, D215): what its
+/// A repository's integration declaration that waits for the owner's acceptance: what its
 /// line commits, the blob of that <c>daoris.gates.json</c>, against the one this machine accepted. <i>What needs you</i> lists it, its door
 /// the repository's set-up page, where the declaration is read and accepted.
 /// </summary>
@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 public sealed record DeclarationOwed(string Repository, string Workspace, string Line, string Blob, string State, DateTimeOffset Since);
 
 /// <summary>
-/// Which repositories declare an integration their owner has not accepted (INTEGRATE1h; the integration design §5.8): the look's own read,
+/// Which repositories declare an integration their owner has not accepted: the look's own read,
 /// since the attention judge may start no git. Each repository with a checkout here is read at its line's committed
 /// <c>daoris.gates.json</c> against <see cref="IntegrationAcceptance.Of"/>. A line that holds no declaration, or one that declares no
 /// <c>integration</c>, owes nothing.

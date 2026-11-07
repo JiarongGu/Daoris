@@ -5,13 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's room (HELP1a, D89): a folder under the home, re-rendered at every open, that tells the
+/// Ask Daoris's room: a folder under the home, re-rendered at every open, that tells the
 /// session what Daoris is, which screen and which terminal command does each thing, and what this
 /// machine holds now — names and states, never a key. It reads; it changes nothing.
 /// </summary>
 /// <remarks>
 /// What the room is and what it allows. Each section's own sentences are held beside it under
-/// <c>Knowledge/Room/</c>, and the room whole by <see cref="HelpRoomGoldenTests"/> (MOD6).
+/// <c>Knowledge/Room/</c>, and the room whole by <see cref="HelpRoomGoldenTests"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed class HelpRoomTests : IDisposable
@@ -45,7 +45,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("quests run on `claude-code`", agents);
         Assert.Contains("asks are answered on `claude-code-acp`", agents);
         Assert.Contains("up to 4 sessions at once", agents);
-        // CAPCOUNT1: what the cap counts, so the room does not tell a person their own conversation holds a slot.
+        // What the cap counts, so the room does not tell a person their own conversation holds a slot.
         Assert.Contains("never a conversation the person holds", agents);
         Assert.Contains("2 sessions wait on the person", agents);
         Assert.Contains("1 ask waits for an answer", agents);
@@ -53,13 +53,13 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("- `claude-code` (Claude Code 2.1.0): account `work` signed out; no Daoris account is signed in, so its starts wait for a sign-in", agents);
         Assert.DoesNotContain("tool's own home", agents);
         Assert.Contains("- `codex`: not installed", agents);
-        // One harness reads AGENTS.md, another CLAUDE.md (D59).
+        // One harness reads AGENTS.md, another CLAUDE.md.
         Assert.Equal("@AGENTS.md\n", File.ReadAllText(Path.Combine(room, "CLAUDE.md")));
         Assert.DoesNotContain("\r", agents);
     }
 
     /// <summary>
-    /// HELPMODE1c2a (D183's note): where the person granted Daoris's housekeeping, the room written at the start says which of its
+    /// Where the person granted Daoris's housekeeping, the room written at the start says which of its
     /// tools this conversation may use, read from the record then, and that each target is judged again and nothing forced; a
     /// discard granted no longer sits among the presses that stay the person's. Nothing granted, and the room says nothing new.
     /// </summary>
@@ -78,13 +78,13 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("`housekeeping_clean_up`", granted);
         Assert.Contains("judged again", granted);
         Assert.Contains("Never offer to push, merge, sign in, or handle a key", granted);
-        // The room is written with the home's supervisor rules beside the access (CONTEXTDRIVE1k), so the render it is held to reads them too.
+        // The room is written with the home's supervisor rules beside the access, so the render it is held to reads them too.
         var rules = HelpRuleFacts.Read(_home);
         Assert.Equal(HelpRoom.Render(Machine with { Housekeeping = [ConfiguredAccess.Inspect, ConfiguredAccess.DiscardBranch], Rules = rules }), granted);
     }
 
     /// <summary>
-    /// HELPMODE1c3 (D183's note): where the person granted chosen settings, the room written at the start names each one's tool, that
+    /// Where the person granted chosen settings, the room written at the start names each one's tool, that
     /// it changes the setting with no Apply, and that every other setting is still proposed; housekeeping granted beside them is no
     /// longer the one change it makes itself. Nothing granted, and the room says nothing new.
     /// </summary>
@@ -113,7 +113,7 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// HELPSTUCK1: a folder beside an agent's accounts that is no account is said in the room, so the helper can answer the
+    /// A folder beside an agent's accounts that is no account is said in the room, so the helper can answer the
     /// person who misses it: one holding a sign-in with the way to keep it, renamed to an account's name.
     /// </summary>
     [Fact]
@@ -140,7 +140,7 @@ public sealed class HelpRoomTests : IDisposable
 
     /// <summary>
     /// It reads the family and nothing else: over the protocol door an unlisted tool is refused by
-    /// construction (D52), which is the point. Proposing arrives with HELP1c.
+    /// construction, which is the point.
     /// </summary>
     [Fact]
     public void The_room_allows_reading_the_family_and_nothing_that_writes()
@@ -154,22 +154,22 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__registry", allowed);
         Assert.Contains("mcp__daoris-knowledge__knowledge_search", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__quest_publish", allowed);
-        // It proposes, and the person applies (HELP1c) — never PERM2's rule proposal, whose narrowing applies itself.
+        // It proposes, and the person applies — never a rule proposal, whose narrowing applies itself.
         Assert.Contains("mcp__daoris-knowledge__setting_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__ask_propose", allowed);
-        // HELP6: the four further kinds, each a card the person applies.
+        // The four further kinds, each a card the person applies.
         Assert.Contains("mcp__daoris-knowledge__agent_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__delete_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__agent_settings_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
-        // PLUG9: adding a landed plugin, or switching one, a card the person applies like the rest.
+        // Adding a landed plugin, or switching one, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__plugin_propose", allowed);
-        // D233: a quest's yes and a landed branch's hand-off are the person's own presses, never a card.
+        // A quest's yes and a landed branch's hand-off are the person's own presses, never a card.
         Assert.DoesNotContain("mcp__daoris-knowledge__hand_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__accept_propose", allowed);
-        // ENTRY1d1: moving a registered repository to a workspace, by name, a card the person applies like the rest.
+        // Moving a registered repository to a workspace, by name, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__repository_propose", allowed);
-        // SESSUX1h2b: archiving or unarchiving sessions, a card the person applies like the rest.
+        // Archiving or unarchiving sessions, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__session_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
         Assert.DoesNotContain(allowed, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
@@ -197,9 +197,9 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// D107, as HELPMODE1c4 serves it: with a checkout it may read, what it is handed adds the connector's <c>checkout_read</c>, which
+    /// With a checkout it may read, what it is handed adds the connector's <c>checkout_read</c>, which
     /// the driver judges at every call, and no <c>Read</c> rule or git prefix on any checkout, so no command at all and nothing that
-    /// writes. HELP4's refusal of a shell stands: in the agent's asking mode anything else is asked, and refused.
+    /// writes. The refusal of a shell stands: in the agent's asking mode anything else is asked, and refused.
     /// </summary>
     [Fact]
     public void Its_rules_read_the_checkouts_through_the_tool_and_run_no_command()
@@ -214,7 +214,7 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1a (D170 point 3): a plugin's server declared for Ask Daoris is allowed only the tools the plugin declares, each
+    /// A plugin's server declared for Ask Daoris is allowed only the tools the plugin declares, each
     /// as the harness spells a server's tool, after the room's own; the person's denies still win, and nothing else is added.
     /// </summary>
     [Fact]
@@ -226,7 +226,7 @@ public sealed class HelpRoomTests : IDisposable
         var rules = HelpRoom.Rules(file, kept, [], ["mcp__tickets__search", "mcp__tickets__get_issue"], ["mcp__tickets__create_issue"]);
 
         Assert.Equal([.. HelpRoom.Allowed, PermissionRules.ReadRule(kept), "mcp__tickets__search", "mcp__tickets__get_issue"], rules.Allow);
-        // A write the person did not accept is asked, which its asking mode refuses (D89).
+        // A write the person has not accepted is asked, which its asking mode refuses.
         Assert.Equal(["mcp__tickets__create_issue"], rules.Ask);
         Assert.Contains("mcp__tickets__delete", rules.Deny);
         Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
@@ -234,7 +234,7 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1a: where its conversation runs takes the plugins' servers declared for Ask Daoris (never a session's), and its
+    /// Where its conversation runs takes the plugins' servers declared for Ask Daoris (never a session's), and its
     /// rules allow their tools only once the person approved them (<see cref="HelpGrants"/>), read under the home at each
     /// spawn; still its own asking mode.
     /// </summary>
@@ -312,18 +312,18 @@ public sealed class HelpRoomTests : IDisposable
         Assert.False(Assert.Single(machine.Repositories, repository => repository.Name == "engine").Checkout);
         Assert.Equal([new HelpWaitingSession("s1", "console-ui")], machine.Waiting);
         Assert.Equal(1, machine.Asks);
-        // The asks by id (HELP6), with the quests each became.
+        // The asks by id, with the quests each became.
         Assert.Equal(["a1", "a2"], machine.OpenAsks.Select(ask => ask.Id));
         Assert.Equal(["q1"], machine.OpenAsks[1].Quests);
         Assert.Equal(("claude-code", "claude-code-acp", "claude-code-acp", 4), (machine.Adapter, machine.Intake, machine.Helper, machine.Cap));
         var agent = Assert.Single(machine.Agents, agent => agent.Name == "claude-code");
         Assert.Equal("Claude Code", agent.Product);
         Assert.Equal([new HelpAccount("work", "out")], agent.Accounts);
-        // A key is an account's handle and never its value (AGT3), and the room carries neither.
+        // A key is an account's handle and never its value, and the room carries neither.
         // A credential's shape: `sk-` at a word's start, then its key's run (`ask-daoris` holds `sk-` inside a word and is no key).
         Assert.DoesNotMatch(@"\bsk-[A-Za-z0-9_-]{8,}", HelpRoom.Render(machine));
         Assert.DoesNotContain("/profiles/work", HelpRoom.Render(machine));
-        // A checkout is named only where the helper may read it (D107), in the reading list; since HELPMODE1c4 by name alone, as its
+        // A checkout is named only where the helper may read it, in the reading list, by name alone, as its
         // tool takes it, and no root at all.
         var room = HelpRoom.Render(machine);
         Assert.DoesNotContain("/work/console-ui", room);
@@ -334,7 +334,7 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// KNOWUSE1b: each repository's standing answer is in the room, the person's words as this machine keeps them, so the
+    /// Each repository's standing answer is in the room, the person's words as this machine keeps them, so the
     /// helper can say what a repository's sessions are handed and propose changing it; a workspace with none says nothing.
     /// </summary>
     [Fact]
@@ -371,13 +371,13 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// MOD6: every section is a class in a file of its own under <c>Knowledge/Room/</c>, named after it, so a new
+    /// Every section is a class in a file of its own under <c>Knowledge/Room/</c>, named after it, so a new
     /// section is a file and one registry line, and no section hides inside another's file.
     /// </summary>
     [Fact]
     public void Every_section_is_a_file_of_its_own()
     {
-        // The sections' folder is the one the first section's file is in, found by name wherever the module keeps it (STRUCT1, D166).
+        // The sections' folder is the one the first section's file is in, found by name wherever the module keeps it.
         var folder = Path.GetDirectoryName(SourceFiles.Driver($"{HelpRoomSections.All[0].GetType().Name}.cs"))!;
 
         // The doors section's rows and places are parts beside it (`HelpDoor*`); every other file of the folder is one section's own.

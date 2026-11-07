@@ -4,8 +4,8 @@ import i18n from '../../locales/i18n';
 import type { LandedWork } from './diff';
 import { LandedNote } from './LandedNote';
 
-// REVIEW2 (D113): where a landed session's work went, as its review says it. Props in, sentences out — every
-// state below is reached without a bridge, a repository or a git process (components plan §2).
+// Where a landed session's work went, as its review says it. Props in, sentences out — every
+// state below is reached without a bridge, a repository or a git process.
 
 const LANDED: LandedWork = {
   branch: 'feature/0fda18-fix-the-api-gap',
@@ -63,8 +63,8 @@ describe('LandedNote', () => {
     expect(note).toMatch(/Its work reads on main\./);
   });
 
-  // LANDRETIRE1 part 2: a branch the person withdrew says when, their reason and the recovery ref its commits stay on, never that the
-  // clean-up removed it, and an answer with no `withdrawn` reads as it did.
+  // A branch the person withdrew says when, their reason and the recovery ref its commits stay on, never that the
+  // clean-up removed it, and an answer with no `withdrawn` reads as a removed branch.
   it('says a branch the person withdrew, with why and where its commits stay, and never the clean-up’s removal', () => {
     show({
       ...LANDED, state: 'gone',

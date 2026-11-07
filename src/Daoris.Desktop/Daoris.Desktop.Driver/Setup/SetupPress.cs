@@ -1,24 +1,24 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The set-up press (LAYOUT7; D117 §6.1–§6.3 as D124 §2.1 and §2.4 amend them): what the repository's line and this
+/// The set-up press: what the repository's line and this
 /// machine say, each refusal with its unadopted, one ask to one repository through the ask door with its receiver named,
 /// as the person's (no intake session runs), and the rule its session needs to run the doctrine tool.
 /// </summary>
 /// <remarks>
-/// <para><b>Never Daoris writing into the repository</b> (D32): a set-up is the repository's own session's work, on its
+/// <para><b>Never Daoris writing into the repository</b>: a set-up is the repository's own session's work, on its
 /// branch, landed by the workspace's rule. The press only asks, and adds a rule, and where the repository is not driven its quest's
-/// admission (AGENTSPLACE1b), in Daoris's own files.</para>
+/// admission, in Daoris's own files.</para>
 ///
-/// <para><b>The rule is exact verbs</b> (D124 §2.4), never a runner, since a session on the protocol door cannot ask for
-/// another (D52): no <c>upstream</c> for a set-up, and only <c>upstream --all</c> for a reconcile, which outside the canon's
-/// own checkout composes a request's words and writes nothing (D230); and no management verb, since a set-up registers
+/// <para><b>The rule is exact verbs</b>, never a runner, since a session on the protocol door cannot ask for
+/// another: no <c>upstream</c> for a set-up, and only <c>upstream --all</c> for a reconcile, which outside the canon's
+/// own checkout composes a request's words and writes nothing; and no management verb, since a set-up registers
 /// nothing. <c>sync --force</c> is in: on a set-up's branch, in a tree grown from the line, what it
 /// replaces is committed on the line and can be taken back. As <c>Bash(…)</c>; <c>PowerShell(…)</c> waits on the
 /// canary that says a driven session on Windows uses that tool.</para>
 ///
-/// <para><b>"Already set up" reads the line, not <c>check</c></b>: Daoris runs no doctrine command into a repository
-/// (D32), and a second <c>check</c> would twin the CLI's hardest table. What the line shows of it is read
+/// <para><b>"Already set up" reads the line, not <c>check</c></b>: Daoris runs no doctrine command into a repository,
+/// and a second <c>check</c> would twin the CLI's hardest table. What the line shows of it is read
 /// (<see cref="LayoutFacts.Clean"/>); the rest is that repository's own gate.</para>
 ///
 /// <para><b>The use case, against its port</b>: the world comes through <see cref="ISetupWorld"/>, and the rules it applies
@@ -33,7 +33,7 @@ public static class SetupPress
         PlanAsync(world, config, unadopted, repository, day, builds: null, ct);
 
     /// <summary>
-    /// What a press would do today, its quest's safe work shaped by what the repository builds (AGENTSPLACE1a2, <see cref="SetupBuilds"/>),
+    /// What a press would do today, its quest's safe work shaped by what the repository builds (<see cref="SetupBuilds"/>),
     /// one of the four or null for none said. Reads, and writes nothing.
     /// </summary>
     public static async Task<SetupPlan> PlanAsync(
@@ -74,7 +74,7 @@ public static class SetupPress
                 + $"finished, declares what it owns, and names its index of where things are, `{facts!.DeclaredIndex}`."));
         }
 
-        // ORIENT2c: the index quest names its generator from what the repository is built with, or there is none to ask.
+        // The index quest names its generator from what the repository is built with, or there is none to ask.
         var description = row.Root is { } root ? world.Describe(root) : null;
         IndexForm? form = null;
         if (kind == SetupCase.Index)
@@ -107,15 +107,15 @@ public static class SetupPress
     }
 
     /// <summary>
-    /// What a reconcile press on <paramref name="repository"/> would do today (D230): the press's own refusals, in its order, and
+    /// What a reconcile press on <paramref name="repository"/> would do today: the press's own refusals, in its order, and
     /// one open per repository, beside any set-up; then a quest whose session runs <c>daoris reconcile</c> and decides each item,
     /// the person's standing answer for it among them. Reads, and writes nothing.
     /// </summary>
     /// <remarks>
     /// For a repository the registry marks adopted. Whether the canon has moved is the doctrine tool's answer, its
     /// <c>status --json</c> for the checkout (<see cref="ISetupWorld.StatusAsync"/>), held on the plan and said in the body; the
-    /// driver keeps no copy of the tool's table (D117). A status that moved nothing refuses nothing, since the standing answer's
-    /// lines are the reconcile's too (D230 point 4): where it is offered is the page's door, by <see cref="DoctrineStatus.Offers"/>.
+    /// driver keeps no copy of the tool's table. A status that moved nothing refuses nothing, since the standing answer's
+    /// lines are the reconcile's too: where it is offered is the page's door, by <see cref="DoctrineStatus.Offers"/>.
     /// </remarks>
     public static async Task<SetupPlan> PlanReconcileAsync(
         ISetupWorld world, DriverConfig config, bool unadopted, string repository, DateOnly day, CancellationToken ct = default)
@@ -189,10 +189,10 @@ public static class SetupPress
             + "`daoris repository import <folder> --workspace <name>`, then press again.");
 
     /// <summary>
-    /// The refusals the configuration and the registry's row alone say, in the press's order (D124 §2.1): no checkout here, no door that
+    /// The refusals the configuration and the registry's row alone say, in the press's order: no checkout here, no door that
     /// hands an unadopted repository's session its connector, and its sessions not in trees of their own. Driving is not one: a set-up
-    /// where the repository is not driven is admitted alone (AGENTSPLACE1b, <see cref="SetupPlan.Alone"/>). Read by the press and by a
-    /// place's plan (AGENTSPLACE1a2) over the configuration it would leave, so the two refuse alike.
+    /// where the repository is not driven is admitted alone (<see cref="SetupPlan.Alone"/>). Read by the press and by a
+    /// place's plan over the configuration it would leave, so the two refuse alike.
     /// </summary>
     public static IReadOnlyList<SetupRefusal> ConfigurationRefusals(DriverConfig config, bool unadopted, RepoView row)
     {
@@ -216,7 +216,7 @@ public static class SetupPress
                 + "which rides the pipe. Choose an ACP agent for Build in Agents → Roles, or with `daoris role set build \"<agent>\"`."));
         }
 
-        // HELPSETUP1: a tree per session is the repository's own, on its Setup → Driving since UX6f (D150 §4.2).
+        // A tree per session is the repository's own, on its Setup → Driving.
         if (!config.OpensOwnTree(row.Repository))
         {
             refusals.Add(new(SetupRefusals.NoOwnTree,
@@ -247,7 +247,7 @@ public static class SetupPress
             return new(false, plan.Refusals.Count > 0 ? plan.Refusals[0].Sentence : "nothing to ask.", null, null, []);
         }
 
-        // The rule first, so the session the next look starts is handed it: a session cannot ask for one (D52).
+        // The rule first, so the session the next look starts is handed it: a session cannot ask for one.
         var file = PermissionRules.Load(home);
         var held = file.Repositories
             .Where(pair => string.Equals(pair.Key.Trim(), plan.Repository, StringComparison.OrdinalIgnoreCase))
@@ -265,9 +265,9 @@ public static class SetupPress
     }
 
     /// <summary>
-    /// The ask alone, as a workspace plan's tick publishes it (WSSETUP6): its rule is the workspace's, added once by the plan's
-    /// press (D124 §4.3), so nothing is added here. Where the repository is not driven, the quest it published is admitted alone in
-    /// <paramref name="home"/>'s <c>driver.json</c> (AGENTSPLACE1b), after the publication that names it. A plan that is not pressable is
+    /// The ask alone, as a workspace plan's tick publishes it: its rule is the workspace's, added once by the plan's
+    /// press, so nothing is added here. Where the repository is not driven, the quest it published is admitted alone in
+    /// <paramref name="home"/>'s <c>driver.json</c>, after the publication that names it. A plan that is not pressable is
     /// never asked.
     /// </summary>
     public static async Task<SetupOutcome> PublishAsync(SetupPlan plan, ISetupWorld world, string home, CancellationToken ct = default)

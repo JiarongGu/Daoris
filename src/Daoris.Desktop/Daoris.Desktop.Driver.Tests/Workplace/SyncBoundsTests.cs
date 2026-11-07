@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR7's bounds, without git: a look fetches a few repositories at a time rather than one after another, and the page
+/// The sync bounds, without git: a look fetches a few repositories at a time rather than one after another, and the page
 /// waits as long as the host may work on each long route, from its own copy of the host's bounds.
 /// </summary>
 /// <remarks>
@@ -22,7 +22,7 @@ public sealed partial class SyncBoundsTests
         { "fetchMinutes", SyncBounds.Fetch.TotalMinutes },
         { "fetchesAtOnce", SyncBounds.FetchesAtOnce },
         { "replayMinutes", SyncBounds.Replay.TotalMinutes },
-        // TOOLS7: Settings → Tools' *Look for updates* waits a look's bound for each resource location.
+        // Settings → Tools' *Look for updates* waits a look's bound for each resource location.
         { "toolLookMinutes", ToolInstall.LookBound.TotalMinutes },
     };
 
@@ -44,7 +44,7 @@ public sealed partial class SyncBoundsTests
     }
 
     /// <summary>
-    /// The fetches run a few at a time (WSR7): as many as the bound at once, never more, and the answers in the order
+    /// The fetches run a few at a time: as many as the bound at once, never more, and the answers in the order
     /// asked. The first four wait until four are running together, so a bound that let fewer run would not get past.
     /// </summary>
     [Fact]

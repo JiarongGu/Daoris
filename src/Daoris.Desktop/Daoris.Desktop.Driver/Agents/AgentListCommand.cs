@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris agent [list] [--again]</c> (PUSH1f2e4, D194, the alone-path design §5): this machine's agents and the accounts they run as,
+/// <c>daoris agent [list] [--again]</c>: this machine's agents and the accounts they run as,
 /// the words <c>daoris agent</c> and <c>daoris agent list</c> hand this program. Each agent says the version the binary a start would
-/// run answered (<see cref="HarnessProbe"/>, D57 rule 4), asked only where its files changed since (PERF3), and each of its accounts
-/// what was last read of its sign-in, as the page says them: what the driver keeps of its own readings (<c>reads.json</c>, AGENTREAD1).
+/// run answered (<see cref="HarnessProbe"/>), asked only where its files changed since, and each of its accounts
+/// what is last read of its sign-in, as the page says them: what the driver keeps of its own readings (<c>reads.json</c>).
 /// <c>--again</c> is the terminal's press: each binary asked anew and each account under its probe lock, each answer kept. Beneath each agent its
 /// pin, its accounts with each one's cool-off and last reading, each list with how it is used and its next start, and the plugins'
-/// declared harnesses after the build's (D64). A read: it holds no lease and is said from a session's terminal. Its print is the CLI's
-/// <c>list</c> and <c>accountLines</c>, ported whole (<c>fixtures/agents-text.json</c>).
+/// declared harnesses after the build's. A read: it holds no lease and is said from a session's terminal. Its print is the CLI's
+/// <c>list</c> and <c>accountLines</c> (<c>fixtures/agents-text.json</c>).
 /// </summary>
 internal static class AgentListCommand
 {
@@ -25,8 +25,8 @@ internal static class AgentListCommand
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
-        // A wiring file that does not read is no wiring, as a start reads it (D21): the list says what is there. Read as the set (POOL1b,
-        // the account-pool design §2.4), as a start reads it; the receipts of what the fold changed are the projection's too.
+        // A wiring file that does not read is no wiring, as a start reads it: the list says what is there. Read as the set,
+        // as a start reads it; the receipts of what the fold changed are the projection's too.
         var set = world.Adapters(home);
         var settings = HarnessSettings.LoadSet(path, set.Agents);
         var now = world.Now();
@@ -54,7 +54,7 @@ internal static class AgentListCommand
 
             if (!report.Present && toolchain.Program.Install is not null) Say($"{Under}`daoris agent install {name}` installs it, with its own installer");
 
-            // The pin, and whether it is in force (TOOL2/D57): a pin whose directory is not there is said missing, with what the driver does
+            // The pin, and whether it is in force: a pin whose directory is not there is said missing, with what the driver does
             // about it, since running whatever is on PATH would be a different tool than the one asked for.
             if (settings.ResolveVersion(name, null, chosen: null) is { } pinned)
             {
@@ -69,7 +69,7 @@ internal static class AgentListCommand
                 if (map.TryGetValue(name, out var version) && version is { Length: > 0 }) Say($"{Under}pinned {version} for the `{circle}` workspace");
             }
 
-            // One account list per tool (TOOL6g): a door onto another agent's accounts lists them nowhere of its own, since its owner
+            // One account list per tool: a door onto another agent's accounts lists them nowhere of its own, since its owner
             // listed them with what the agent said of each.
             if (set.BorrowedFrom(name) is { } owner && set.AgentNamed(owner) is { } owned)
             {
@@ -81,7 +81,7 @@ internal static class AgentListCommand
             foreach (var line in AccountLines(name, toolchain, report, settings, home, set, now, world.Zone)) Say(line);
         }
 
-        // The harnesses this machine's plugins declare (D64), beside the build's with the plugin each came from. One with no version
+        // The harnesses this machine's plugins declare, beside the build's with the plugin each came from. One with no version
         // question is asked whether it is THERE rather than run, as the roster asks it: an ACP agent started bare waits on its stdin.
         foreach (var name in set.Names.Where(each => set.DeclaredBy(each) is not null))
         {
@@ -149,7 +149,7 @@ internal static class AgentListCommand
         };
     }
 
-    /// <summary>An agent with no Daoris account (OWNSPACE1d, D175): its starts wait for a sign-in, never run in the tool's own home.</summary>
+    /// <summary>An agent with no Daoris account: its starts wait for a sign-in, never run in the tool's own home.</summary>
     private static string NoAccounts(string agent) =>
         $"no accounts — Daoris's sessions wait until you sign in: `daoris agent login {agent} --new`";
 
@@ -163,9 +163,9 @@ internal static class AgentListCommand
     private static bool Same(string? one, string? other) => string.Equals(one, other, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// What the list says under one agent about its accounts (D49 §4, D66 §3, TOOL4e): each account and what marks it, each one's cool-off
-    /// and last reading under it, the tool's own sign-in's cool-off and reading (CODEXUSE3), each list with how it is used and its next
-    /// start (TOOL6f), and, where a start would otherwise reach the person's own sign-in, that Daoris starts none there (D175).
+    /// What the list says under one agent about its accounts: each account and what marks it, each one's cool-off
+    /// and last reading under it, the tool's own sign-in's cool-off and reading, each list with how it is used and its next
+    /// start, and, where a start would otherwise reach the person's own sign-in, that Daoris starts none there.
     /// </summary>
     private static List<string> AccountLines(
         string name, AccountAgent toolchain, HarnessReport report, HarnessSettings settings, string home, ProviderRegistry set,
@@ -173,37 +173,37 @@ internal static class AgentListCommand
     {
         var owner = set.OwnerOfAgent(name).Value;
         var lines = new List<string>();
-        // Each account by the person's name for it, else its id (ACCT2); the name column fits the longest (ACCTNAME1, floor 16).
+        // Each account by the person's name for it, else its id; the name column fits the longest (floor 16).
         string Shown(string account) => AccountNames.Shown(home, owner, account);
         var col = Math.Max(16, report.Profiles.Select(profile => Shown(profile.Name).Length).DefaultIfEmpty(0).Max());
         var gap = new string(' ', col);
         var cooling = AccountCooling.Read(home, now);
         CoolingEntry? CoolingOf(string? account) => cooling.FirstOrDefault(entry => Same(entry.Agent, owner) && Same(entry.Account ?? "", account ?? ""));
 
-        // OWNSPACE1d (D175): Daoris starts nothing in the tool's own home, so with no account its starts wait for a sign-in.
+        // Daoris starts nothing in the tool's own home, so with no account its starts wait for a sign-in.
         if (report.Profiles.Count == 0) lines.Add($"{Under}{NoAccounts(owner)}");
 
-        // POOL1b (D197, the account-pool design §5.1): every account is one of the set, so none is marked a default or said to run nowhere.
+        // Every account is one of the set, so none is marked a default or said to run nowhere.
         var scope = settings.Set(owner);
         foreach (var profile in report.Profiles)
         {
             List<string> marks = [.. Shown(profile.Name) != profile.Name ? [$"id {profile.Name}"] : Array.Empty<string>()];
 
-            // 🔴 A key account is never "in": the tool says so for any key, a wrong one included (AGT3).
+            // 🔴 A key account is never "in": the tool says so for any key, a wrong one included.
             lines.Add($"{Under}{Shown(profile.Name).PadRight(col)} {(profile.Key is not null ? "unchecked" : Word(profile.Login)),-9}"
                 + WhoWords(profile, Shown(profile.Name), report.Profiles)
                 + (profile.Key is { } handle ? $" API key {handle}" : "")
                 + (marks.Count > 0 ? $" ({string.Join(", ", marks)})" : ""));
 
             if (CoolingOf(profile.Name) is { } cooled) lines.Add($"{Under}{gap} {AgentAccountsCommand.CoolingLine(cooled, now, zone)}");
-            // What its agent last said about its windows, and how long ago (TOOL6c, D130 §3.2): a reading, never a judgement.
+            // What its agent last said about its windows, and how long ago: a reading, never a judgement.
             if (AccountWindows.SaidOf(home, owner, profile.Name, now) is { } said)
             {
                 lines.Add($"{Under}{gap} {AgentAccountsCommand.SaidLine(said, now, zone, use: null)}");
             }
         }
 
-        // The set (POOL1b, the account-pool design §5.1): its order, how it is used beneath it (TOOL6a) and its next start (TOOL6f), one
+        // The set: its order, how it is used beneath it and its next start, one
         // for every workspace.
         var says = AgentAccountsCommand.Says(set, owner);
         var product = set.AgentNamed(owner)?.Product ?? owner;
@@ -216,11 +216,11 @@ internal static class AgentListCommand
             foreach (var line in NextStartBeneath(scope, owner, home, now, zone, says, Shown)) lines.Add($"{Under}{gap} {line}");
         }
 
-        // Then the person's own sign-in, outside the set (D197 point 3, §3): no state, never asked. Its cool-off is Daoris's own record of a
+        // Then the person's own sign-in, outside the set: no state, never asked. Its cool-off is Daoris's own record of a
         // conversation begun there, which `profile ready --own` still ends.
         if (set.BorrowedFrom(name) is null && toolchain.Accounts.LoginArguments is not null && report.Present)
         {
-            // OWNSPACE1d (D175): Daoris never starts in it; what began there is read where it is and goes on there.
+            // Daoris never starts in it; what began there is read where it is and goes on there.
             lines.Add($"{Under}your own sign-in, the account `{name}` uses at your own terminal, is not one of Daoris's accounts:");
             lines.Add($"{Under}Daoris never asks it, signs it in or out, or starts a session on it; a conversation begun there goes on there —");
             lines.Add($"{Under}`daoris agent login {name} --new` signs in to one of Daoris's");
@@ -228,7 +228,7 @@ internal static class AgentListCommand
 
         if (CoolingOf(null) is { } ownCooling) lines.Add($"{Under}its own sign-in: {AgentAccountsCommand.CoolingLine(ownCooling, now, zone)}");
 
-        // What the fold changed while it is unsaid (D197 point 7, §6.3), until *Got it* on the agent's page marks it said.
+        // What the fold changed while it is unsaid, until *Got it* on the agent's page marks it said.
         string[] unsaid = [.. (settings.Pooled.GetValueOrDefault(owner) ?? []).Where(receipt => !receipt.Said).SelectMany(receipt => PoolLines(receipt, Shown))];
         if (unsaid.Length > 0)
         {
@@ -241,7 +241,7 @@ internal static class AgentListCommand
     }
 
     /// <summary>
-    /// One receipt of the fold in the terminal's words (D197 point 7, the account-pool design §4.2's <c>agents.pooled.*</c> English): each
+    /// One receipt of the fold in the terminal's words (the <c>agents.pooled.*</c> English): each
     /// scope that named fewer accounts than the set, each first moved, an account placed, the way of use set, each setting not kept and
     /// each name gone.
     /// </summary>
@@ -291,7 +291,7 @@ internal static class AgentListCommand
     }
 
     /// <summary>
-    /// What the list says beneath a scope about its next start (TOOL6f; D130 §16.4): the walk's steps as <c>profile use</c> names them,
+    /// What the list says beneath a scope about its next start: the walk's steps as <c>profile use</c> names them,
     /// each account of the scope cooling now and until when, the wait where every account a start may take is cooling (driven work's
     /// alone where the kept account is ready), and where the account it takes is named. A scope with no list is its default alone.
     /// </summary>
@@ -322,7 +322,7 @@ internal static class AgentListCommand
         if (held.Count > 0)
         {
             var each = string.Join("; ", held.Select(entry => $"`{shown(entry.Account)}` is cooling until {CoolingWords.When(entry.Until, zone)}"));
-            // Driven work passes a kept account that leaves it another (§4.6), so it waits once every other account cools.
+            // Driven work passes a kept account that leaves it another, so it waits once every other account cools.
             var keep = scope.Use.Keep is { } kept && ScopeProblem.Of(null, scope.List, kept) is null ? kept : null;
             var driven = held.Where(entry => entry.Account != keep).ToList();
             if (uses.Count == 1)
@@ -343,7 +343,7 @@ internal static class AgentListCommand
             }
         }
 
-        // UX6e2: the screen that names it is the agent's page in the Agents place (D150 §5.2).
+        // The screen that names it is the agent's page in the Agents place.
         if (scope.List.Count > 1)
         {
             lines.Add("Agents → the agent's page → How accounts are used names the account it takes, from the sessions Daoris "
@@ -354,8 +354,8 @@ internal static class AgentListCommand
     }
 
     /// <summary>
-    /// Who signed in, as the list says it after an account's name and state (D66 §3): dropped where it is the name already (ACCTNAME1);
-    /// and where another account signed in with the same email (ACCOUNTID1), what tells this one apart after it, each said once, so a
+    /// Who signed in, as the list says it after an account's name and state: dropped where it is the name already;
+    /// and where another account signed in with the same email, what tells this one apart after it, each said once, so a
     /// name that is the email with it says neither again.
     /// </summary>
     private static string WhoWords(ProfileReport profile, string name, IReadOnlyList<ProfileReport> profiles)
@@ -372,7 +372,7 @@ internal static class AgentListCommand
     }
 
     /// <summary>
-    /// What tells an account apart from another signed in with its email (ACCOUNTID1): its organisation, where no such other account has
+    /// What tells an account apart from another signed in with its email: its organisation, where no such other account has
     /// it, else its plan likewise; null where no other account has its email, or where neither tells them apart.
     /// </summary>
     private static string? ApartBy(ProfileReport profile, IReadOnlyList<ProfileReport> profiles)

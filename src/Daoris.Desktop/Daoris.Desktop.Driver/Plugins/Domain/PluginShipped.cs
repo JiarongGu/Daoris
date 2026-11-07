@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An installed plugin that is a copy of one of Daoris's own example plugins (same id) and is not what this build ships
-/// (LANDPIN3, D119): older than the shipped version, or with files the person changed. The catalogue says so; the update is
+/// An installed plugin that is a copy of one of Daoris's own example plugins (same id) and is not what this build ships:
+/// older than the shipped version, or with files the person changed. The catalogue says so; the update is
 /// the person's press, never Daoris's own.
 /// </summary>
 /// <param name="State"><see cref="Older"/> or <see cref="Changed"/>.</param>
@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// <param name="Shipped">The version this build ships.</param>
 /// <param name="Changes">What the shipped version brings, in the example's own `changes` line; null where it says none.</param>
 /// <param name="Unjudged">
-/// An older copy with no record of the files its install copied (LANDPIN3b), so whether it was edited cannot be told.
+/// An older copy with no record of the files its install copied, so whether it has been edited cannot be told.
 /// </param>
 public sealed record PluginShipped(string State, string Installed, string Shipped, string? Changes, bool Unjudged = false)
 {
@@ -21,7 +21,7 @@ public sealed record PluginShipped(string State, string Installed, string Shippe
 
     /// <summary>
     /// The installed copy's files differ: at the shipped version, from the shipped files; at an older one, from those its install
-    /// copied (LANDPIN3b). Said, and never overwritten by a press of ours.
+    /// copied. Said, and never overwritten by a press of ours.
     /// </summary>
     public const string Changed = "changed";
 

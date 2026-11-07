@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>Which set-up a repository's line calls for (D117 §6.1, D124 §2.1).</summary>
+/// <summary>Which set-up a repository's line calls for.</summary>
 public enum SetupCase
 {
     /// <summary>Not adopted on its line: the doctrine taken up whole, with the knowledge (<see cref="SetupQuests.SetUp"/>).</summary>
@@ -14,15 +14,15 @@ public enum SetupCase
     /// <summary>Adopted on the agents layout and clean, declaring nothing: the knowledge step alone (<see cref="SetupQuests.Declare"/>).</summary>
     Declare,
 
-    /// <summary>Set up, and naming no index of where things are: the index alone (<see cref="SetupQuests.Index"/>, ORIENT2c).</summary>
+    /// <summary>Set up, and naming no index of where things are: the index alone (<see cref="SetupQuests.Index"/>).</summary>
     Index,
 
     /// <summary>Set up and naming its index: nothing to ask, refused.</summary>
     Done,
 
     /// <summary>
-    /// Adopted, and asked to reconcile with the canon this machine's doctrine tool carries (<see cref="SetupQuests.Reconcile"/>,
-    /// D230): never found from the line, only asked for (<see cref="SetupPress.PlanReconcileAsync"/>).
+    /// Adopted, and asked to reconcile with the canon this machine's doctrine tool carries (<see cref="SetupQuests.Reconcile"/>):
+    /// never found from the line, only asked for (<see cref="SetupPress.PlanReconcileAsync"/>).
     /// </summary>
     Reconcile,
 }
@@ -32,12 +32,12 @@ public enum SetupCase
 /// <param name="Repository">The repository it is for, by its registered name.</param>
 /// <param name="Facts">What its line holds (<see cref="LayoutReader"/>).</param>
 /// <param name="Version">What the <c>daoris</c> a child of Daoris would find answered for its version.</param>
-/// <param name="Description">What its README says of it, as the intake reads it (D77); null when it says nothing.</param>
+/// <param name="Description">What its README says of it, as the intake reads it; null when it says nothing.</param>
 /// <param name="Entries">The path of each entry the workspace's index holds for it, once per entry.</param>
 /// <param name="Neighbours">The names the workspace knows its other repositories by.</param>
 /// <param name="Index">The generator the index quest names (<see cref="IndexForms"/>); required for <see cref="SetupCase.Index"/> alone.</param>
 /// <param name="Builds">What it builds (<see cref="SetupBuilds"/>), which shapes the safe work's checks; null for none said.</param>
-/// <param name="Standing">The person's standing answer for it on this machine, which a reconcile's quest carries among its items (D230 point 4); null for none.</param>
+/// <param name="Standing">The person's standing answer for it on this machine, which a reconcile's quest carries among its items; null for none.</param>
 /// <param name="Doctrine">What the doctrine tool's status said of the checkout before a reconcile was asked, which its body says; null where unread.</param>
 public sealed record SetupBriefInput(
     SetupCase Case, DateOnly Day, string Repository, LayoutFacts Facts, string Version,
@@ -45,7 +45,7 @@ public sealed record SetupBriefInput(
     IndexForm? Index = null, string? Builds = null, StandingAnswer? Standing = null, DoctrineStatus? Doctrine = null);
 
 /// <summary>
-/// The set-up quest's words (LAYOUT7; D117 §6.2–§6.3 as D124 §2.2–§2.7 amends them): a title from
+/// The set-up quest's words: a title from
 /// <see cref="SetupQuests"/> and a body that IS the adoption playbook, for a session that cannot read it.
 /// </summary>
 /// <remarks>
@@ -59,7 +59,7 @@ public sealed record SetupBriefInput(
 /// added there fails until it is said here.</para>
 ///
 /// <para><b>Every verb it asks for is one the press allows</b> (<see cref="SetupPressRules.Verbs"/>), exactly, since a
-/// session on the protocol door cannot ask for another (D52).</para>
+/// session on the protocol door cannot ask for another.</para>
 /// </remarks>
 public static class SetupBrief
 {
@@ -201,8 +201,8 @@ public static class SetupBrief
         + "found, stop and decline: *the doctrine command could not run here*, with what it printed.";
 
     /// <remarks>
-    /// INIT1b: <c>init</c> writes a <c>.gitattributes</c> where there is none and keeps one already there byte for byte
-    /// (D25's INIT1 note), so the step says it, as the playbook's does: a set-up bound to change no build file would
+    /// <c>init</c> writes a <c>.gitattributes</c> where there is none and keeps one already there byte for byte,
+    /// so the step says it, as the playbook's does: a set-up bound to change no build file would
     /// otherwise find a file it did not ask for in its diff.
     /// </remarks>
     private static string TakeUp(LayoutFacts facts) =>
@@ -217,7 +217,7 @@ public static class SetupBrief
         "**Move to the agents layout.** In `daoris.json`, set `\"harness\": \"agents\"` and `\"target\": \".agents\"` "
         + "(`daoris analyze --json` says what the tool reads here). " + Moves(facts);
 
-    /// <summary>The repository's own documents out of the old tiers, and what reads them by path.</summary>
+    /// <summary>The repository's own documents under <c>.claude</c> to move, and what reads them by path.</summary>
     private static string Moves(LayoutFacts facts)
     {
         var left = facts.ClaudeKnowledge.Select(file => $".claude/knowledge/{file}")
@@ -343,8 +343,8 @@ public static class SetupBrief
         "**Commit** on this branch as each step lands: the branch is what is reviewed, and this session never pushes it.";
 
     /// <remarks>
-    /// INIT1b: only the whole set-up runs <c>daoris init</c>, so only its bounds name the <c>.gitattributes</c> init writes
-    /// where there is none, and keep one already there as the tool keeps it (D25's INIT1 note).
+    /// Only the whole set-up runs <c>daoris init</c>, so only its bounds name the <c>.gitattributes</c> init writes
+    /// where there is none, and keep one already there as the tool keeps it.
     /// </remarks>
     private static void Bounds(StringBuilder body, SetupBriefInput input)
     {
@@ -355,7 +355,7 @@ public static class SetupBrief
             .Append("`AGENTS.md` and `CLAUDE.md` (the region, the brief, the import); `.agents/`, with the ")
             .Append("shared documents and this repository's own knowledge; the copies under `.claude/skills/` the tool ")
             .Append("writes; each room's `AGENTS.md`; the `safe` section of `daoris.gates.json`; where it declares none, the lanes ")
-            .Append("file's rooms and the `trees` section of `daoris.gates.json`; and a document that keeps a ")
+            .Append("file's rooms; and a document that keeps a ")
             .Append("collision's mechanism. Never push, merge or open a pull request; never write outside this tree (another ")
             .Append("repository's checkout you may read is read only); never publish a request to another repository; never ")
             .Append("run `daoris connect` or `daoris upstream`; never set `remote.join` or `remote.knowledge` in `daoris.json`, ")

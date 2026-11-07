@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>land</c> attempt left unreconciled by its binding's lapse (LANDNODE1m: a replayed merge's tree moved to the commit merged, or a commit
-/// made while it was active), settled by the deliveries its doors land through: where none bound at its commit still holds it, what it did is
+/// A <c>land</c> attempt left unreconciled by its binding's lapse (a replayed merge's tree moved to the commit merged, or a commit
+/// made while it stood active), settled by the deliveries its doors land through: where none bound at its commit still holds it, what it did is
 /// known, so it holds no new attempt back (<see cref="LandAttemptSettling"/> reads each by phase). Its commit is its binding's, or the one its
 /// history kept once its judgement on a fresh binding took that away, so an attempt held once is settled when its delivery is.
 /// </summary>
@@ -40,7 +40,7 @@ public static class LandAttempts
     }
 
     /// <summary>
-    /// The commit the attempt was bound at: its status's binding, or, once its judgement on a fresh binding took that away, the binding the
+    /// The commit the attempt is bound at: its status's binding, or, once its judgement on a fresh binding took that away, the binding the
     /// history kept of it; null where neither holds it.
     /// </summary>
     private static string? TipOf(NodeRecord record, NodeStatus status, int attempt) =>

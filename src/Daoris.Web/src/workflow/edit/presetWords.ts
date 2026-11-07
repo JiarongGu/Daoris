@@ -1,7 +1,7 @@
 import type { TFunction, i18n as I18n } from 'i18next';
 import type { PresetDelivery, PresetWorkflow } from './answers';
 
-// A shipped workflow's and delivery's words for the page (SETUPUX1a): the driver's data holds one English name and purpose, and the page
+// A shipped workflow's and delivery's words for the page: the driver's data holds one English name and purpose, and the page
 // words them from its catalogue by the id, in the language it is shown in. A locale with no key for an id (or a driver's custom preset)
 // falls back to the driver's English.
 

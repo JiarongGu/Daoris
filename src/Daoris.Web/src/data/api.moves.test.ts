@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api } from './api';
 
 /**
- * FLOWCHART1a2 (D186; the flowchart design §2.1, §7 trap 18): a quest's moves, read from the service's own door on both hosts,
+ * A quest's moves, read from the service's own door on both hosts,
  * so a browser draws its flow as the window does. A host from before the door answers it not found, and that is no failure: the
  * page draws the statuses and says the path is not kept there.
  */

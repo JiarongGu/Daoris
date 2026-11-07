@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-GRAPH1b (the fabric events design §E7, D157 §2.4, §4.1, §5.2): a named graph as a named workflow's version, schema 2, saved and
-/// read from one table, <c>fixtures/workflow-graph-versions.json</c> (the CLI's <c>graphversions.test.ts</c> read it until PUSH1f2b). A
+/// A named graph as a named workflow's version, schema 2, saved and
+/// read from one table, <c>fixtures/workflow-graph-versions.json</c>. A
 /// version is its steps or its graph, never both and never in part; an older build, which reads steps alone, reads a graph version as
-/// unreadable; the identity a run binds is the graph's own digest; schema-1 versions are written and read as before.
+/// unreadable; the identity a run binds is the graph's own digest; schema-1 versions keep their shape when written and read.
 /// </summary>
 public sealed class WorkflowGraphVersionsTests
 {
@@ -35,7 +35,7 @@ public sealed class WorkflowGraphVersionsTests
 
     public static TheoryData<string> Marks() => new([.. Table()["marks"]!.AsArray().Select(row => (string)row!["name"]!)]);
 
-    /// <summary>A row's mark (FABRIC-PIPELINE1a), absent read as a development pipeline's.</summary>
+    /// <summary>A row's mark, absent read as a development pipeline's.</summary>
     private static string Pipeline(JsonObject row) => (string?)row["pipeline"] ?? WorkflowPipelines.Development;
 
     private static JsonObject Row(string section, string name) => Table()[section]!.AsArray().Select(row => row!.AsObject()).Single(row => (string)row["name"]! == name);
@@ -89,7 +89,7 @@ public sealed class WorkflowGraphVersionsTests
         Assert.Null(read.Problem);
         Assert.Equal([true, false, true], read.Versions.Select(each => each.Steps is not null));
         Assert.NotNull(read.Versions[1].Graph);
-        // FABRIC-CUTOVER1d: a graph version runs, as a version of steps does.
+        // A graph version runs, as a version of steps does.
         Assert.Null(read.Versions[1].Unrun);
         Assert.Null(read.Versions[0].Unrun);
     }
@@ -118,7 +118,7 @@ public sealed class WorkflowGraphVersionsTests
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1a (D192 point 3, the pipeline design §2.1): a workflow's mark is read from its file and handed to each version's
+    /// A workflow's mark is read from its file and handed to each version's
     /// reading, as the CLI's <c>readWorkflowFile</c> does on the same rows.
     /// </summary>
     [Theory, MemberData(nameof(Marks))]

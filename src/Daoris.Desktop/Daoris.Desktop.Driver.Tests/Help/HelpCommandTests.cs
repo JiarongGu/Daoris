@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ASKHIST1 (D50): <c>daoris help</c>, Ask Daoris's history from a terminal, the panel's other door. It lists and searches
+/// <c>daoris help</c>, Ask Daoris's history from a terminal, the panel's other door. It lists and searches
 /// this machine's Ask Daoris conversations, says words to one through <c>sessions say</c>'s door, names, pins and unpins one, and
 /// deletes one listed first. Any other session is refused, naming the verb that acts on it. Files and an in-process ledger only:
 /// the suite's fast half.
@@ -104,9 +104,9 @@ public sealed class HelpCommandTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 points 1-2): <c>help mode</c> says the mode Ask Daoris runs in, and with one names it in the driver's file,
+    /// <c>help mode</c> says the mode Ask Daoris runs in, and with one names it in the driver's file,
     /// from the next start, saying what it means; the default is written by taking the key out, and the same mode again changes
-    /// nothing. The terminal's door to the mode, beside the page's to come (HELPMODE1b).
+    /// nothing. The terminal's door to the mode, beside the page's.
     /// </summary>
     [Fact]
     public void Mode_says_the_mode_and_sets_it_from_the_next_start()
@@ -124,7 +124,7 @@ public sealed class HelpCommandTests : IDisposable
         var full = Mode("full");
         Assert.Contains("full access", full);
         Assert.Contains("next start", full);
-        // ACCESSSWAP1b (D183's note): the terminal writes the file from another process and tells no running conversation, and says so.
+        // The terminal writes the file from another process and tells no running conversation, and says so.
         Assert.Contains("A conversation running now keeps its mode until its next start; the window's choice ends one at its turn's end.", full);
         Assert.Equal(HelpModes.Full, DriverConfig.Load(path).HelpMode);
         Assert.Equal(3, DriverConfig.Load(path).Cap);
@@ -182,7 +182,7 @@ public sealed class HelpCommandTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1a2 (D183 point 3): each row names the mode its conversation ran under, as its record keeps it, the same field at both
+    /// Each row names the mode its conversation ran under, as its record keeps it, the same field at both
     /// doors (<c>mode</c>, after <c>live</c>); a record from before the modes ran restricted. The terminal marks full access, and
     /// restricted, the default, goes unmarked.
     /// </summary>
@@ -206,7 +206,7 @@ public sealed class HelpCommandTests : IDisposable
     }
 
     /// <summary>
-    /// ASKSCOPE1d (D158's ASKSCOPE1 note, point 6): <c>--workspace &lt;name&gt;</c> lists that workspace's conversations, and
+    /// <c>--workspace &lt;name&gt;</c> lists that workspace's conversations, and
     /// <c>--all</c> every workspace's, each row labelled with its workspace, row for row the panel's; a terminal stands in no
     /// workspace, so a listing that names none is every workspace's, as <c>history</c>'s is. A record from before keeps no
     /// workspace and is `default`'s. Its <c>--json</c> carries the row's <c>workspace</c>, the route's field, after <c>mode</c>.
@@ -242,7 +242,7 @@ public sealed class HelpCommandTests : IDisposable
         Assert.Equal("help: no Ask Daoris conversation in the workspace `games` holds “branch”.\n", unfound);
     }
 
-    /// <summary>ASKSCOPE1d: a page of one workspace's conversations, or of every one's, says the words that list the next in it.</summary>
+    /// <summary>A page of one workspace's conversations, or of every one's, says the words that list the next in it.</summary>
     [Fact]
     public async Task The_next_page_is_listed_in_the_same_workspace()
     {
@@ -258,7 +258,7 @@ public sealed class HelpCommandTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1d: a listing is a page, as the panel's is: <c>--limit</c> says how many, <c>--offset</c> where it starts, and a page
+    /// A listing is a page, as the panel's is: <c>--limit</c> says how many, <c>--offset</c> where it starts, and a page
     /// that does not hold them all says which it holds of how many, and the words that list the next.
     /// </summary>
     [Fact]
@@ -284,7 +284,7 @@ public sealed class HelpCommandTests : IDisposable
     }
 
     /// <summary>
-    /// ASKHIST1d: the line of what a conversation was about is its answer's first line whole, for the page to parse before it
+    /// The line of what a conversation is about is its answer's first line whole, for the page to parse before it
     /// cuts it; the terminal shows it raw, so it cuts it to a line itself, and its <c>--json</c> carries it whole as the page's does.
     /// </summary>
     [Fact]
@@ -356,7 +356,7 @@ public sealed class HelpCommandTests : IDisposable
     }
 
     /// <summary>
-    /// RPC1g3 (D238 point 5, the terminal-conversation design §3.4 T5): words to an Ask Daoris conversation are <c>session say</c>'s, so
+    /// Words to an Ask Daoris conversation are <c>session say</c>'s, so
     /// <c>resume</c> is no verb of this family, in its usage, its verbs or its reading.
     /// </summary>
     [Fact]

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What both doors do with a push's updates once they have read them (D241 point 3): kind each by git's answer on history, judge the batch
+/// What both doors do with a push's updates once they have read them: kind each by git's answer on history, judge the batch
 /// by the grant and the place's Dangerous value, take the grant once where it carried the batch, and say a refusal as a coded line. A
 /// refusal comes before anything is forwarded, so no ref moves.
 /// </summary>

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1c (D176 point 2, D53): the measurement of whether a pass's reads stay inside its room, judged by effects and never by what the
+/// The measurement of whether a pass's reads stay inside its room, judged by effects and never by what the
 /// pass says: a token in the run is a read, a file made is a write, a held outcome needs the pass to have said it tried and to have read its
 /// own room, and everything else is unknown, so a verdict is `kept` only where every probe held.
 /// </summary>
@@ -49,7 +49,7 @@ public sealed class BrainstormRoomMeasureTests : IDisposable
         Assert.False(File.Exists(laid.InRoom));
     }
 
-    /// <summary>A pass that read its room, tried every step, was refused each and left nothing: every probe held, and the verdict is kept.</summary>
+    /// <summary>A pass that read its room, tried every step, met a refusal at each and left nothing: every probe held, and the verdict is kept.</summary>
     [Fact]
     public void A_pass_that_read_its_room_and_was_refused_every_step_kept_its_reads_in_its_room()
     {

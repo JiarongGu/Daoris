@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTLYNTAI1a (the agent-lyntai design §6.1, D248): Lyntai's agent layer is named in the desktop by <c>Agents/Layer/</c> and the
+/// Lyntai's agent layer is named in the desktop by <c>Agents/Layer/</c> and the
 /// providers' folders alone, a vendor's registration and options by that vendor's folder alone, and the layer's own provider ids nowhere,
 /// since Daoris registers under its own. So no other subdomain gains an edge to the library, and a disclosed break reaches two places.
 /// </summary>

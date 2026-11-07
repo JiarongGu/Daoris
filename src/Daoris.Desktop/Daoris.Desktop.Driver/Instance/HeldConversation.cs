@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 public sealed record HeldNotice(string Module, string Type, JsonElement Payload);
 
 /// <summary>
-/// A terminal's connection that holds a conversation (RPC1g2, D238 point 3, the terminal-conversation design §3.2): the wire read by
+/// A terminal's connection that holds a conversation: the wire read by
 /// one pump for as long as the connection lasts, so an answer reaches the request that waits for it and every other notification, the
 /// held conversation's forwarded lines among them, reaches <see cref="Told"/> as it arrives, whatever the terminal is doing.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class HeldConversation : IAsyncDisposable
     private readonly TaskCompletionSource _lost = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Task _pump;
 
-    /// <summary>Holds <paramref name="client"/>, whose hello was answered, and begins reading it; <paramref name="told"/> hears each notification.</summary>
+    /// <summary>Holds <paramref name="client"/>, whose hello is answered, and begins reading it; <paramref name="told"/> hears each notification.</summary>
     public HeldConversation(InstanceClient client, Action<HeldNotice> told)
     {
         _client = client;

@@ -41,8 +41,8 @@ import type { useDockViews } from './useDockViews';
 import type { useFrameLayout } from './useFrameLayout';
 
 /**
- * What the frame's regions draw (DOCK1b): each view's surface in whichever region it stands, the console and the streams the
- * session runs beside itself (CONSOLE2c), a file's preview (PREVIEW1), and the line that says whose session a view off Sessions
+ * What the frame's regions draw: each view's surface in whichever region it stands, the console and the streams the
+ * session runs beside itself, a file's preview, and the line that says whose session a view off Sessions
  * speaks for.
  */
 export function useRegionSurfaces({
@@ -72,7 +72,7 @@ export function useRegionSurfaces({
   attend: (id: string) => void;
   runNodeWord: ReturnType<typeof useRunNodeWord>;
   atWork: ReturnType<typeof useSessionAtWork>;
-  /** The request the head's *Waiting on* opened *At work* at (COMMS1i). */
+  /** The request the head's *Waiting on* opened *At work* at. */
   atWorkSeek?: ExchangeSeek | null;
 }) {
   const { attended, entries, quest, openings, registry, groups, here, attendedEntry, channelAsk } = session;
@@ -83,7 +83,7 @@ export function useRegionSurfaces({
   const { entryAt, discards, discardHeld, gateHolds, headReview, headOpinion, landing } = work;
   const { channel, setChannelOpened } = record;
 
-  // What the session runs beside itself, a tab each in the panel (CONSOLE2c). The panel shows the
+  // What the session runs beside itself, a tab each in the panel. The panel shows the
   // session's own console unless the person picked a stream of it, and one it no longer lists falls
   // back to the session rather than to an empty well.
   const streams = useSessionStreams(attended?.id ?? null);
@@ -93,35 +93,34 @@ export function useRegionSurfaces({
     ? (picked && streams.some((row) => row.key === picked) ? picked : attended.id)
     : null;
 
-  // Where the followed session's work stands (WORKFLOW1c, the workflow design §7): asked only while the Workflow view shows,
+  // Where the followed session's work stands: asked only while the Workflow view shows,
   // in whichever region it stands, and again at every tick under the driver's key.
   const workflowShown = following !== null && (placed.places.workflow === 'panel'
     ? !collapsed && panelView === 'workflow'
     : !dockClosed && dock === 'workflow');
   const workflowRun = useWorkflowRun(following ? { session: following.id } : null, { enabled: workflowShown });
-  // A line on no ask held here has a channel of its own (COMMS1k), which *At work* draws: read only while *At work* shows.
+  // A line on no ask held here has a channel of its own, which *At work* draws: read only while *At work* shows.
   const atWorkShown = following !== null && (placed.places.atWork === 'panel'
     ? !collapsed && panelView === 'atWork'
     : !dockClosed && dock === 'atWork');
   const lineChannel = useLineChannel(attended && !channelAsk ? attended.id : null, { enabled: atWorkShown });
   const postLine = usePostLineChannel();
-  // Why an untaken quest sits is the driver's last look's, read beside the answer from memory (COWORKVIEW1b-ii).
+  // Why an untaken quest sits is the driver's last look's, read beside the answer from memory.
   const considered = useConsidered().data;
-  // FABRIC-PIPELINE1d: *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
+  // *Run again* and *Not now* under a check held unknown, the person's word on the held attempt.
   const resolveHeld = useResolveHeld();
   const previewFile = useTreeFile(previewing ? following!.id : null, previewing?.path ?? null);
   const previewPatch = useReviewedPatch(previewing ? following!.id : null, previewing?.path ?? null);
 
-  // The console and its streams (CONSOLE2c), for whichever region it stands in. A session with nothing
-  // held here says so as a sentence, not as an empty bordered well, which read as a field on the
-  // installed window.
+  // The console and its streams, for whichever region it stands in. A session with nothing
+  // held here says so as a sentence, not as an empty bordered well, which would read as a field.
   const consoleView = following && shown
     ? <SessionConsole id={shown} fill quiet={t(shown === following.id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
     : null;
   const streamTabs = following ? panelTabs(following.id, streams) : undefined;
   const pickStream = (key: string) => setPicked(key === attended?.id ? null : key);
-  // A task stopped from its tab (CONSOLE3a): asked of the session that runs it; its tab changes when the
-  // wire says how it ended. What it was called is the tab's, for the notice.
+  // A task stopped from its tab: asked of the session that runs it; its tab changes when the
+  // wire says how it ended. What the task is called is the tab's, for the notice.
   const stopTask = useStopTask();
   const stopStream = (key: string) => {
     if (!attended) return;
@@ -133,8 +132,8 @@ export function useRegionSurfaces({
     });
   };
 
-  // Off Sessions (DOCK1a) the session views speak for the session attended there, which nothing else on
-  // the screen names — so each says whose it is, with the way back to it (found looking at Overview).
+  // Off Sessions the session views speak for the session attended there, which nothing else on
+  // the screen names — so each says whose it is, with the way back to it.
   const whose = (flush: boolean) => (elsewhere && following ? (
     // Flush in the panel, whose body carries its own gutter; inset in the side bar, as its views are.
     <p className={cn('m-0 flex min-w-0 shrink-0 items-center gap-2 border-b border-line py-1.5 text-meta text-ink-faint', flush ? 'mb-2' : 'px-3')}>
@@ -154,9 +153,9 @@ export function useRegionSurfaces({
   ) : null);
   const withWhose = (surface: ReactNode, flush = false) => (elsewhere && following ? <>{whose(flush)}{surface}</> : surface);
 
-  // *Send back…* in a review (SURF6; MSG1f, D137 §5.1): the box on that session, with the focus in it, which is what the
+  // *Send back…* in a review: the box on that session, with the focus in it, which is what the
   // glossary's send back means — its work returned to it with a note, so it carries on. Off Sessions, Sessions is opened,
-  // where the box is. Where the session takes no words, the door to the quest composer stays (SURF6b).
+  // where the box is. Where the session takes no words, the door to the quest composer stays.
   const sendBack = () => {
     if (!attended) return;
     if (!takesWords(box)) {
@@ -168,30 +167,30 @@ export function useRegionSurfaces({
   };
 
   const nothing = () => (elsewhere
-    // Off Sessions there is no session list beside it to point at (audit SE11): it says nothing is
-    // attended, or that the one attended has ended and is read on Sessions (UX6b), and offers the view.
+    // Off Sessions there is no session list beside it to point at: it says nothing is
+    // attended, or that the one attended has ended and is read on Sessions, and offers the view.
     ? <NothingFollowed ended={attended !== null} onOpenSessions={onOpenSessions} />
     : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>);
 
   const reviewSurface = () => {
-    // The line of work the reviewed part belongs to, and its ask: either's one Accept holds this one's while it lands (ACCEPTALL1h).
+    // The line of work the reviewed part belongs to, and its ask: either's one Accept holds this one's while it lands.
     const followingEntry = following ? entryOfSession(entries, following.id) : null;
     return withWhose(
       <DiffPane
-        // The session's one press, where the part reviewed is the attended one (REVIEWFLOW1a, D168).
+        // The session's one press, where the part reviewed is the attended one.
         entryPress={following && following.id === attended?.id ? entryAt('review') ?? null : null}
         entry={followingEntry?.entry ?? null}
         ask={followingEntry && !isIntakeEntry(followingEntry) ? askOfEntry(followingEntry) : null}
-        // The followed session's (UX6b): off Sessions an ended one is reviewed on Sessions, where it is attended.
+        // The followed session's: off Sessions an ended one is reviewed on Sessions, where it is attended.
         session={following?.id ?? null}
-        // What its frame says while git reads (REVIEW4); off Sessions the line above already names the session.
+        // What its frame says while git reads; off Sessions the line above already names the session.
         record={following}
         title={following && !elsewhere ? sessionTitle(following, quest, openings[following.id]) : null}
-        // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
+        // A tree of its OWN: the repository's checkout is never merged or discarded.
         hasTree={Boolean(following && ownTree(following, (registry.data ?? []).find((row) => row.repository === following.repository)?.root))}
         onSendBack={following && (takesWords(box) || onSendBack) ? sendBack : undefined}
         onPreview={following && here ? (path) => openPreview({ path }) : undefined}
-        // SQUASHTIDY1f: work the line holds by content offers the head's discard in Accept's place, through the head's press.
+        // Work the line holds by content offers the head's discard in Accept's place, through the head's press.
         discards={following && following.id === attended?.id ? discards : null}
         onDiscardTree={following && following.id === attended?.id ? discardHeld : undefined}
       />,
@@ -199,7 +198,7 @@ export function useRegionSurfaces({
   };
 
   const workflowSurface = () => {
-    // Where the followed session's work stands in its workflow (WORKFLOW1c, design §7). Its look's presses are the review's
+    // Where the followed session's work stands in its workflow. Its look's presses are the review's
     // own gate, drawn under the step where it waits, never a second implementation; every other step opens where its record is.
     const lookControl = following && following.id === attended?.id && gateHolds && headReview ? (
       <ReviewGate
@@ -214,7 +213,7 @@ export function useRegionSurfaces({
         busy={headReview.busy}
       />
     ) : null;
-    // Its second opinion's own gate under its step while the gate holds the work (XAGENT1g, WORKFLOW1c3's remainder): *Go on
+    // Its second opinion's own gate under its step while the gate holds the work: *Go on
     // anyway…* and every other press through the gate's one owner, never a second implementation. No *Accept…* is drawn beside
     // it here, so *Go on anyway…* is offered where the session's page lists the dispute inside *Accept…*.
     const opinionHeld = following && following.id === attended?.id && headOpinion ? opinionHolds(landing.data) : null;
@@ -243,7 +242,7 @@ export function useRegionSurfaces({
             answer={Array.isArray(workflowRun.data?.runs) ? workflowRun.data : null}
             reading={workflowRun.isPending}
             refusal={workflowRun.error ? sentence(workflowRun.error) : null}
-            // A service that did not answer is read again at once, before the view's next tick (CHATFLOW1b).
+            // A service that did not answer is read again at once, before the view's next tick.
             onRetry={() => { void workflowRun.refetch(); }}
             // The step the followed session is its own: a set-up step's session shows the work for the look.
             here={ownStep}
@@ -264,7 +263,7 @@ export function useRegionSurfaces({
   };
 
   const atWorkSurface = () => {
-    // Who is at work on the followed session (COWORKVIEW1a, the cowork view design §5): its parts and its subagents, from Daoris's
+    // Who is at work on the followed session: its parts and its subagents, from Daoris's
     // records; each part opens its page.
     return following
       ? withWhose(
@@ -274,11 +273,11 @@ export function useRegionSurfaces({
           onOpen={(id) => { attend(id); if (elsewhere) onOpenSessions?.(); }}
           onOpenQuest={onOpenQuest}
           considered={considered}
-          // COMMS1i: its co-workers' agents as the person calls them, as the head's *Waiting on* names them.
+          // Its co-workers' agents as the person calls them, as the head's *Waiting on* names them.
           nameOf={(agent) => agentRoster.names?.[agent] ?? agent}
           seek={atWorkSeek}
-          // The newest three messages of the page's own channel read, the panel's (COWORKVIEW1c); for a line on no ask held here,
-          // the newest three of its own channel (COMMS1k), which no panel holds.
+          // The newest three messages of the page's own channel read, the panel's; for a line on no ask held here,
+          // the newest three of its own channel, which no panel holds.
           channel={attendedEntry && channelAsk && channel.available && channel.channel ? {
             words: lastWords(channel.channel, { entry: attendedEntry.entry, repository: attendedEntry.repository }),
             onOpen: () => {
@@ -288,7 +287,7 @@ export function useRegionSurfaces({
             },
           } : lineChannel && attended ? {
             words: lastMessages(lineChannel),
-            // COMMS1k: the person's words on it, to every part of the line or one repository its messages name.
+            // The person's words on it, to every part of the line or one repository its messages name.
             recipients: repositoriesOf(lineChannel.items, []),
             onPost: (post, answered) => postLine.mutate({ session: attended.id, post }, {
               onSuccess: (posted) => (posted.posted ? answered.done() : answered.refused(posted.code ?? 'other')),
@@ -304,7 +303,7 @@ export function useRegionSurfaces({
       : nothing();
   };
 
-  /** A view's surface, drawn in whichever region it stands (DOCK1b). The panel draws the console itself. */
+  /** A view's surface, drawn in whichever region it stands. The panel draws the console itself. */
   const surface = (view: ViewId, where: Place = 'panel') => {
     if (view === 'ask') return ask;
     if (view === 'notifications') return notifications;
@@ -329,7 +328,7 @@ export function useRegionSurfaces({
           <SessionTimeline
             session={following}
             quest={quest}
-            // The word the session list shows it as, which the states' flow lights its state with (FLOWCHART1b).
+            // The word the session list shows it as, which the states' flow lights its state with.
             shown={shownOf(following, (groups.data ?? []).find((row) => row.session === following.id), taking[following.id])}
             // Off Sessions there is no head to carry the parked note, so the timeline keeps it.
             hideCurrentNote={!elsewhere && noteIsInTheHead(following, here)}
@@ -340,7 +339,7 @@ export function useRegionSurfaces({
       : nothing();
   };
 
-  // The file previewed for the followed session (PREVIEW1): the host's answer, or its sentence, and the
+  // The file previewed for the followed session: the host's answer, or its sentence, and the
   // review's patch for that path where the review already holds one.
   const previewSurface = previewing && following
     ? withWhose(

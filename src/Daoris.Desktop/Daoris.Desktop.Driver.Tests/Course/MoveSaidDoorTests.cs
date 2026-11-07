@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i part 3 (D212; the foundation design §13.4 step 4, §19.4): the service's door to a move's destination's <c>said</c>, which
-/// rows f-ii to f-vi hand the move's readings, over the real client and the in-process ledger. It reads each waiting word's id and attempt
-/// mark, takes words off as taken, and settles uncertain ones by the take-back door with the <c>lost</c> note written by the move itself
-/// (round 8, <i>O7-F4</i>). It reads no session event: a word its destination shows asked and the person took back reads <i>left</i>.
+/// The service's door to a move's destination's <c>said</c>, which
+/// the move's readings use, over the real client and the in-process ledger. It reads each waiting word's id and attempt
+/// mark, takes words off as taken, and settles uncertain ones by the take-back door with the <c>lost</c> note written by the move itself.
+/// It reads no session event: a word its destination shows asked and the person took back reads <i>left</i>.
 /// </summary>
 [Collection("agent operation ports")]
 public sealed class MoveSaidDoorTests : IDisposable

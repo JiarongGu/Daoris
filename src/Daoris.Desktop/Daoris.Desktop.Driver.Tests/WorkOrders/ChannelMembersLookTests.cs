@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// CHANNELJOIN1c (the event-channel design §5.5; rule 15): the look ends an outside agent's membership with its line, once its channel's
+/// The look ends an outside agent's membership with its line, once its channel's
 /// claims are spent, and after a quiet day judged against the member's own record, never a timer; a member still within both bounds
 /// stays, and the end is the person's key's, said as <c>expired</c>.
 /// </summary>

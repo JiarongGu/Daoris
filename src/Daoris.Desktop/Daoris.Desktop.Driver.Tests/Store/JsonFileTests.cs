@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one way the driver writes a JSON file (DEDUP3a): indented, LF only on every platform, one final newline,
+/// The one way the driver writes a JSON file: indented, LF only on every platform, one final newline,
 /// BOM-less, Chinese text and angle brackets kept as written, and the write itself atomic.
 /// </summary>
 public sealed class JsonFileTests : IDisposable

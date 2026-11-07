@@ -3,18 +3,18 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// DRV6's derivation: how often a quest has been failed, read off the session records this machine
+/// How often a quest has been failed, read off the session records this machine
 /// already wrote rather than kept as a tally of its own.
 ///
-/// <para>🔴 Measured before it was designed. ACP2's driven run failed for a reason no retry could fix
-/// — the session had no tool to take its quest with — and the driver started the same quest
+/// <para>🔴 A driven run can fail for a reason no retry can fix
+/// — the session has no tool to take its quest with — and without a count the driver would start the same quest
 /// <b>18 times</b>, each one a real login, because a failed spawn leaves the quest <c>Open</c> and
-/// untouched (driver design §3) and an untouched open quest is eligible again next tick.</para>
+/// untouched and an untouched open quest is eligible again next tick.</para>
 /// </summary>
 public sealed class StrikeTests
 {
     /// <summary>
-    /// MODELROLE1c2 (D205 §3.5(a), (c), round 4 Opus N4): a record its agent's refusal of the choice ended at the open, and a failure
+    /// A record its agent's refusal of the choice ended at the open, and a failure
     /// carrying the account's <c>account.refused-model</c> line, are the account's, never the quest's: no strike, read by the codes. A
     /// <c>choice-not-offered</c> record ran nothing, so the quest's last run is the record before it.
     /// </summary>
@@ -68,7 +68,7 @@ public sealed class StrikeTests
 
     /// <summary>
     /// Every other ending is NOT a strike, and each for its own reason: a stand-down is the race
-    /// resolving as designed, a decline is a real answer, a stop the person made was theirs (one that was
+    /// resolving as designed, a decline is a real answer, a stop the person made is theirs (one that is
     /// not is below), and a session still
     /// working has not ended at all. Counting any of them would park a quest for succeeding.
     /// </summary>
@@ -84,7 +84,7 @@ public sealed class StrikeTests
     }
 
     /// <summary>
-    /// D104: a stop that was not the person's — the orphan sweep's, or a shutdown's — is a cut-off, and
+    /// A stop that is not the person's — the orphan sweep's, or a shutdown's — is a cut-off, and
     /// counts as one. The person's own stop, said or unsaid, never does.
     /// </summary>
     [Fact]
@@ -103,7 +103,7 @@ public sealed class StrikeTests
     }
 
     /// <summary>
-    /// D125 §5.2, amending D58: a failure an account's limit made is the account's state, with its own reset, and the
+    /// A failure an account's limit makes is the account's state, with its own reset, and the
     /// cool-off bounds it, so it is never a strike. A failure that does not say `limit`, or says it false, still is.
     /// </summary>
     [Fact]
@@ -121,8 +121,8 @@ public sealed class StrikeTests
     }
 
     /// <summary>
-    /// ROSTER1b: a failure whose note carries an account's line saying the agent or its provider refused the account it ran on
-    /// (its sign-in, or its credential, AGT3b) is the account's, never the quest's, so it is never a strike. Read by the line's
+    /// A failure whose note carries an account's line saying the agent or its provider refused the account it ran on
+    /// (its sign-in, or its credential) is the account's, never the quest's, so it is never a strike. Read by the line's
     /// code, which the driver wrote, never by its words. A failure with other lines, or with none, still is.
     /// </summary>
     [Theory]
@@ -149,8 +149,7 @@ public sealed class StrikeTests
     }
 
     /// <summary>
-    /// RETRY1b: the count `daoris quest retry` marks a quest at, read by the CLI from the same records. 🔴 A TWIN with the
-    /// CLI's `failuresOf` (`strikes.ts`) until it left with the driver family's TypeScript (PUSH1f2b).
+    /// The count `daoris quest retry` marks a quest at, read by the CLI from the same records.
     /// Each row is one record as the records door answers it, and whether it is a strike against <c>q1</c>.
     /// </summary>
     [Theory]
@@ -189,8 +188,7 @@ public sealed class StrikeTests
     }
 
     /// <summary>
-    /// CASEFOLD1d: a quest's id compares by <c>OrdinalIgnoreCase</c>, each letter to its one capital, as the CLI's
-    /// <c>failuresOf</c> compared it through <c>casefold.ts</c> until PUSH1f2b. An id full case
+    /// A quest's id compares by <c>OrdinalIgnoreCase</c>, each letter to its one capital. An id full case
     /// mapping would widen or lower to the same letters is another quest's, and a final sigma is the sigma it is.
     /// </summary>
     [Fact]
@@ -214,7 +212,7 @@ public sealed class StrikeTests
         Assert.Equal(5, strikes.Count);
     }
 
-    /// <summary>The words alone spare nothing: a record whose English says it, with no coded line, is a strike as it was.</summary>
+    /// <summary>The words alone spare nothing: a record whose English says it, with no coded line, is still a strike.</summary>
     [Fact]
     public void An_account_s_words_with_no_coded_line_are_still_a_strike()
     {
@@ -226,7 +224,7 @@ public sealed class StrikeTests
         Assert.Equal(1, strikes["q1"]);
     }
 
-    /// <summary>The last run says whether its stop was interrupted — what the planner carries on from.</summary>
+    /// <summary>The last run says whether its stop is interrupted — what the planner carries on from.</summary>
     [Fact]
     public void The_last_run_says_whether_its_stop_was_interrupted()
     {
@@ -254,7 +252,7 @@ public sealed class StrikeTests
     }
 
     /// <summary>
-    /// A teammate's failed session came down with the sync keyed `origin/id` (SYNC4). A strike is this
+    /// A teammate's failed session comes down with the sync keyed `origin/id`. A strike is this
     /// driver's judgement of its OWN attempts, so a failure on another machine parks nothing here.
     /// </summary>
     [Fact]
@@ -268,7 +266,7 @@ public sealed class StrikeTests
     }
 
     /// <summary>
-    /// Which session this machine last ran on a quest (D79) — the newest of its own, wherever the
+    /// Which session this machine last ran on a quest — the newest of its own, wherever the
     /// records list it, with the tree it ran in: where a waiting quest resumes.
     /// </summary>
     [Fact]
@@ -284,7 +282,7 @@ public sealed class StrikeTests
         Assert.Single(last);
     }
 
-    /// <summary>A cut-off carries its own words (D80), which the session that carries on is told.</summary>
+    /// <summary>A cut-off carries its own words, which the session that carries on is told.</summary>
     [Fact]
     public void The_last_run_carries_how_it_ended_and_what_it_said()
     {

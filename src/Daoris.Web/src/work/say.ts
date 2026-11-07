@@ -3,30 +3,30 @@ import { type AccountsAnswer, agentOf } from '../settings/accounts/accounts';
 import { toolOf, type ToolDoor } from '../agents/tools';
 import { answeredPark, SESSION_ACTIVE } from '../design/ui';
 
-// The box on a session's page (MSG1f, D137 §5.1): which box a session is offered, by what its record says and what a word
+// The box on a session's page: which box a session is offered, by what its record says and what a word
 // said now would do; the sentences for what takes no words and for why words did not go on in their session; and the
 // native door's bound. Pure, so every session a person could attend is an argument.
 
 /**
- * What a word said now to a session would do, as `SESSION_QUEUE` answers it (MSG1d, D137 §5.3): when it reaches the
+ * What a word said now to a session would do, as `SESSION_QUEUE` answers it: when it reaches the
  * session (`next-step`, `turn-end` or `resume`, or null where it is taken at once or the door is not known yet), and why
  * nothing takes it, by a code, where nothing does.
  */
 export type Reach = {
   reaches: string | null; why: string | null;
-  /** The conversation a `continued` one went on in (HANDWORDS1); present only then. */
+  /** The conversation a `continued` one went on in; present only then. */
   to?: string;
-  /** A running session's agent steers (COWORK1a): a word at `now` cuts its step. Absent where the shell does not say. */
+  /** A running session's agent steers: a word at `now` cuts its step. Absent where the shell does not say. */
   steers?: boolean;
   /**
-   * A running session's door can stop a turn and keep the session (COWORK1a): the keeping stop is offered beside words held
+   * A running session's door can stop a turn and keep the session: the keeping stop is offered beside words held
    * for the turn's end. Absent where the shell does not say.
    */
   keepingStop?: boolean;
 };
 
 /**
- * The levels the composer offers while a turn runs (COWORK1a, the message-urgency design §8.1), from what a word said now would
+ * The levels the composer offers while a turn runs, from what a word said now would
  * do: none where the reach is not a running turn's, or the shell does not say what its door can do.
  */
 export const levelsOf = (reach: Reach | undefined): { nextStep: boolean; steers: boolean } | undefined =>
@@ -36,11 +36,11 @@ export const levelsOf = (reach: Reach | undefined): { nextStep: boolean; steers:
 
 /**
  * The box a session is offered.
- * - `chat`: a live conversation's own composer, its turns and its endings (CONV4); and an ended one's, saying it ended,
+ * - `chat`: a live conversation's own composer, its turns and its endings; and an ended one's, saying it ended,
  *   until the module answers for it.
- * - `steer`: a working driven session whose door listens (D136): words at its next step or its turn's end.
- * - `say`: words the same session goes on with (D137 §2.2): a park's `answer`; `goOn`, a session that ended or a park
- *   already answered, whose next word joins the first (§2.4); or one `ending`, whose words wait for its record to end and
+ * - `steer`: a working driven session whose door listens: words at its next step or its turn's end.
+ * - `say`: words the same session goes on with: a park's `answer`; `goOn`, a session that ended or a park
+ *   already answered, whose next word joins the first; or one `ending`, whose words wait for its record to end and
  *   then reopen it.
  * - `line`: nothing takes words, and the line says why, by the code, naming where a `continued` one went on (`to`).
  * - `none`: nothing to offer and nothing to say: no session, a live intake whose head says it, or nothing known yet.
@@ -55,26 +55,26 @@ export type Box =
 /** What decides a session's box: its record, whether it is this machine's, and what the module answered. */
 export type BoxFacts = {
   session: Pick<Session, 'kind' | 'state' | 'said' | 'opinion'> | null;
-  /** The record is this machine's: a teammate's runs on their machine and account (D47 §6). */
+  /** The record is this machine's: a teammate's runs on their machine and account. */
   here: boolean;
-  /** An intake, answered through its ask (INT4h). */
+  /** An intake, answered through its ask. */
   intake: boolean;
-  /** A driven session's inbox is open here (SESS3, D136). */
+  /** A driven session's inbox is open here. */
   listening: boolean;
   /** `SESSION_QUEUE`'s answer, or undefined until it answers. */
   reach?: Reach;
 };
 
 /**
- * The box a session is offered (D137 §5.1): on every session that takes words, and the line saying why on the rest.
+ * The box a session is offered: on every session that takes words, and the line saying why on the rest.
  *
  * @remarks
  * - **What the page knows first.** A teammate's record never takes words here, and a live intake's head already says why
- *   it takes none, so neither waits for the module. Nor does a second opinion's reviewer (XAGENT1g): one turn, no words, and
+ *   it takes none, so neither waits for the module. Nor does a second opinion's reviewer: one turn, no words, and
  *   the host refuses words to its record; ended, its line says why.
  * - **The module's code draws the line**, whatever the record says: it judges what the page cannot (a quest that went on
  *   in a later session, a record gone).
- * - **A park is the answer before the module answers**, as it was: its record says it waits on the person. Every other
+ * - **A park is the answer before the module answers**: its record says it waits on the person. Every other
  *   box that goes on with words waits for the module's `resume`, since a session that ended may yet be one nothing takes
  *   words for, and nothing known is nothing claimed.
  */
@@ -96,14 +96,14 @@ export function boxOf({ session, here, intake, listening, reach }: BoxFacts): Bo
   return { kind: 'say', mode: live ? 'ending' : 'goOn' };
 }
 
-/** Whether a box takes words: what *Send back…* opens (D137 §5.1), and nothing else. */
+/** Whether a box takes words: what *Send back…* opens, and nothing else. */
 export function takesWords(box: Box): boolean {
   return box.kind === 'chat' || box.kind === 'steer' || box.kind === 'say';
 }
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-/** The sentence for each code nothing takes words for (MSG1d), by its key. */
+/** The sentence for each code nothing takes words for, by its key. */
 export const NEVER: Record<string, string> = {
   'teammate': 'work.say.teammate',
   'stood-down': 'work.say.stoodDown',
@@ -111,15 +111,15 @@ export const NEVER: Record<string, string> = {
   'opinion': 'work.say.opinion',
   'help': 'work.say.help',
   'superseded': 'work.say.superseded',
-  // HANDWORDS1: a conversation handed over or moved went on in another, which the module names as `to`.
+  // A conversation handed over or moved goes on in another, which the module names as `to`.
   'continued': 'work.say.continued',
   'not-found': 'work.say.notFound',
 };
 
 /**
- * Why a session takes no words, in the page's own words (D137 §5.1): a code the module answered, or one the page knows.
+ * Why a session takes no words, in the page's own words: a code the module answered, or one the page knows.
  * A code a newer host answers that this page has no sentence for is named rather than left unsaid. `to` is the conversation
- * a `continued` one went on in (HANDWORDS1), as the module answers it beside the code.
+ * a `continued` one went on in, as the module answers it beside the code.
  */
 export function neverSentence(
   t: Translate, code: string, { quest, to }: { quest?: string | null; to?: string | null },
@@ -129,7 +129,7 @@ export function neverSentence(
 }
 
 /**
- * The box's first line (LINESTOGETHER1b): where a word goes, by the part's place against its line's head, and when, from
+ * The box's first line: where a word goes, by the part's place against its line's head, and when, from
  * `SESSION_QUEUE`'s reach and, where a resume waits, what holds it. A word taken at once names no time.
  */
 export function goesLine(
@@ -160,7 +160,7 @@ export function moveSaid(t: Translate, { why, message }: { moved: boolean; why: 
   return key ? t(key) : message || t('work.say.takesNone', { code: why ?? '' });
 }
 
-/** The sentence for each code *Start a conversation with these words* is refused by that is not a never (MSG1f2), by its key. */
+/** The sentence for each code *Start a conversation with these words* is refused by that is not a never, by its key. */
 export const START_FROM: Record<string, string> = {
   'running': 'work.say.startFrom.running',
   'no-words': 'work.say.startFrom.noWords',
@@ -168,7 +168,7 @@ export const START_FROM: Record<string, string> = {
 };
 
 /**
- * Why *Start a conversation with these words* started nothing, in the page's own words (MSG1f2): its own codes, a session
+ * Why *Start a conversation with these words* started nothing, in the page's own words: its own codes, a session
  * still running, no words waiting and a quest that carries them on by itself, then what never goes on, as the box says it.
  */
 export function startFromRefusal(t: Translate, code: string, { quest }: { quest?: string | null }): string {
@@ -177,7 +177,7 @@ export function startFromRefusal(t: Translate, code: string, { quest }: { quest?
 }
 
 /**
- * The sentence for each code *Go on with Daoris's brief* is refused by that is its own (SESSCTX1c part B), by its key: the driver's
+ * The sentence for each code *Go on with Daoris's brief* is refused by that is its own, by its key: the driver's
  * `GoOnBrief`. The rest it shares: a session still running, no words and a quest carried on by itself are `START_FROM`'s, a tree gone
  * is the hand-over's, and what never goes on is the box's (`NEVER`).
  */
@@ -186,9 +186,8 @@ export const GO_ON_BRIEF: Record<string, string> = {
 };
 
 /**
- * The reasons a session's words wait for the person on, under which *Go on with Daoris's brief* is offered (SESSCTX1c part B, D189 point
- * 3): every reason the driver writes on a line that cannot go on but what never goes on, a tree that is gone (nothing to go on in), a
- * record that had ended and the person's own start. A proven loss goes on by itself, so its line shows only where that move failed.
+ * The reasons a session's words wait for the person on, under which *Go on with Daoris's brief* is offered: every reason the driver writes on a line that cannot go on but what never goes on, a tree that is gone (nothing to go on in), a
+ * record that ended and the person's own start. A proven loss goes on by itself, so its line shows only where that move failed.
  */
 const BRIEF_WAITS: ReadonlySet<string> = new Set([
   'account', 'door', 'unkept', 'unable', 'offered', 'gone', 'refused', 'elsewhere', 'exited',
@@ -196,18 +195,18 @@ const BRIEF_WAITS: ReadonlySet<string> = new Set([
 
 /**
  * Whether *Go on with Daoris's brief* is offered under a line that cannot go on for `why`: {@link BRIEF_WAITS}, and a driven session's
- * tree that is gone (TREEGONE2), whose new part grows a fresh tree from the line. A chat's gone tree leaves it nothing to go on in.
+ * tree that is gone, whose new part grows a fresh tree from the line. A chat's gone tree leaves it nothing to go on in.
  */
 export const briefOffered = (why: string, chat: boolean): boolean => BRIEF_WAITS.has(why) || (why === 'tree' && !chat);
 
-/** Why *Go on with Daoris's brief* opened nothing, in the page's own words (SESSCTX1c part B): its own codes, then those it shares. */
+/** Why *Go on with Daoris's brief* opened nothing, in the page's own words: its own codes, then those it shares. */
 export function goOnBriefRefusal(t: Translate, code: string, { quest }: { quest?: string | null }): string {
   const key = GO_ON_BRIEF[code] ?? START_FROM[code] ?? (code === 'tree-gone' ? HAND_OVER[code] : undefined);
   return key ? t(key) : neverSentence(t, code, { quest });
 }
 
 /**
- * The sentence for each code *Go on with another agent…* answers by that is not a never (MIXAGENT1b-i, D163), by its key.
+ * The sentence for each code *Go on with another agent…* answers by that is not a never, by its key.
  * `unbriefed` is an answer rather than a refusal: the conversation opened, its briefing did not reach it.
  */
 export const HAND_OVER: Record<string, string> = {
@@ -218,20 +217,20 @@ export const HAND_OVER: Record<string, string> = {
   'running': 'work.handOver.refused.running',
   'waiting': 'work.handOver.refused.waiting',
   'tree-gone': 'work.handOver.refused.treeGone',
-  // A quest's session (MIXAGENT1a-ii, D163 point 1): what its judge refuses beside the conversation's.
+  // A quest's session: what its judge refuses beside the conversation's.
   'quest-closed': 'work.handOver.refused.questClosed',
   'quest-elsewhere': 'work.handOver.refused.questElsewhere',
   'quest-reopened': 'work.handOver.refused.questReopened',
   'not-last-run': 'work.handOver.refused.notLastRun',
   'parked': 'work.handOver.refused.parked',
   'no-door': 'work.handOver.refused.noDoor',
-  // FOUNDATION1h branch 3: an agent's ask the person's rule has not admitted waits for their yes.
+  // An agent's ask the person's rule has not admitted waits for their yes.
   'awaits-yes': 'work.handOver.refused.awaitsYes',
   'unbriefed': 'work.handOver.unbriefed',
 };
 
 /**
- * Why a hand-over was refused, or what it came to where it went on with a word to say, in the page's own words: its own codes,
+ * Why a hand-over is refused, or what it came to where it went on with a word to say, in the page's own words: its own codes,
  * then what never goes on, as the box says it. A code a newer driver answers is said in the driver's own sentence.
  */
 export function handOverSaid(
@@ -243,9 +242,9 @@ export function handOverSaid(
 }
 
 /**
- * When the account a session's words wait for cools until (MSG1g2, D137 §2.2): MSG1g asks a resume for the account its record
+ * When the account a session's words wait for cools until: a resume asks for the account its record
  * ran on, so where that account cools the words wait for its reset. Read from the facts `ACCOUNTS` answers: by the agent that
- * owns the door's accounts (AGT7), the tool's own sign-in where the record names no account, and only while it has not
+ * owns the door's accounts, the tool's own sign-in where the record names no account, and only while it has not
  * passed. Null where it is ready, where the page does not know its agent, and where the answer lacks it.
  */
 export function coolingFor(
@@ -262,12 +261,12 @@ export function coolingFor(
 }
 
 /**
- * What *Go on in a new session* came to, as `SESSION_HAND_OVER` naming no agent answers it (MSG1g, D137 §2.2; `kept` is `sent` here): kept for the driver's next
+ * What *Go on in a new session* came to, as `SESSION_HAND_OVER` naming no agent answers it (`kept` is `sent` here): kept for the driver's next
  * look (`sent`), or refused by a code, with the driver's sentence beside it in the terminal's words.
  */
 export type NewSessionAnswer = { sent: boolean; why: string | null; message: string };
 
-/** The sentence for each code the route refuses by that is its own, by its key; §2.2's nevers are the box's (`NEVER`). */
+/** The sentence for each code the route refuses by that is its own, by its key; the nevers are the box's (`NEVER`). */
 export const NEW_SESSION_REFUSED: Record<string, string> = {
   'running': 'work.say.newSession.running',
   'no-words': 'work.say.newSession.noWords',
@@ -276,11 +275,11 @@ export const NEW_SESSION_REFUSED: Record<string, string> = {
   'not-cooling':'work.say.newSession.notCooling',
 };
 
-/** What nothing carries on by itself (D137 §2.2), whose door is *Start a conversation with these words* instead. */
+/** What nothing carries on by itself, whose door is *Start a conversation with these words* instead. */
 const START_CHAT_INSTEAD = new Set(['conversation', 'closed']);
 
 /**
- * What *Go on in a new session* came to, in the page's own words (MSG1g2): kept, or why not by the route's code, §2.2's
+ * What *Go on in a new session* came to, in the page's own words: kept, or why not by the route's code, the
  * nevers said as the box says them; and whether *Start a conversation with these words* is the door instead. A choice the
  * driver could not keep, or a code this page has no sentence for, is the driver's own sentence, passed through whole, since
  * it names what to do.
@@ -296,7 +295,7 @@ export function newSessionSaid(
   return { sentence: answer.message, startChat: false };
 }
 
-/** The agents a reason may name (D137 §5.1): the door a session ran on, the one starts ride now, and its agent's name. */
+/** The agents a reason may name: the door a session ran on, the one starts ride now, and its agent's name. */
 export type ReasonValues = {
   /** The door the session ran on. */
   from?: string | null;
@@ -309,8 +308,8 @@ export type ReasonValues = {
 };
 
 /**
- * Each reason's key, and the values its sentence needs (D137 §5.1): a code the driver writes on its note (`ContinueWhy`).
- * `locales/note.test.ts` holds it to the reasons the driver's `NoteCodes.Continue` declares, key for key (LANG1b).
+ * Each reason's key, and the values its sentence needs: a code the driver writes on its note (`ContinueWhy`).
+ * `locales/note.test.ts` holds it to the reasons the driver's `NoteCodes.Continue` declares, key for key.
  */
 export const REASONS: Readonly<Record<string, { key: string; needs?: readonly (keyof ReasonValues)[] }>> = {
   'account': { key: 'work.say.why.account' },
@@ -326,18 +325,18 @@ export const REASONS: Readonly<Record<string, { key: string; needs?: readonly (k
   'teammate': { key: 'work.say.why.teammate' },
   'intake': { key: 'work.say.why.intake' },
   'stood-down': { key: 'work.say.why.stoodDown' },
-  // The person started a conversation with them (MSG1f2): the reason the went line gives where the press took them.
+  // The person started a conversation with them: the reason the went line gives where the press took them.
   'started': { key: 'work.say.why.started' },
-  // SESSCTX1c: the native door's agent ended before it reopened its conversation, apart from `gone`.
+  // The native door's agent ended before it reopened its conversation, apart from `gone`.
   'exited': { key: 'work.say.why.exited' },
-  // SAYHELD1: its quest resumed in a new session once the question it waited on was answered, and that session took the words.
+  // Its quest resumed in a new session once the question it waited on got its answer, and that session took the words.
   'resumed': { key: 'work.say.why.resumed' },
 };
 
 /**
- * Why the person's words did not go on in their session, in the page's own words (D137 §5.1): a reason is chrome, so the
+ * Why the person's words did not go on in their session, in the page's own words: a reason is chrome, so the
  * page says it from the code, never from the note's English. Null for a code it does not know, or one whose sentence
- * names an agent the page was not told, and then the driver's own line stands (platform language §4).
+ * names an agent the page is not told, and then the driver's own line stands.
  */
 export function reasonOf(t: Translate, code: string, values: ReasonValues): string | null {
   const reason = REASONS[code];
@@ -347,10 +346,10 @@ export function reasonOf(t: Translate, code: string, values: ReasonValues): stri
 }
 
 /**
- * The most characters the box sends at once to a driven session on the native door (D137 §2.4). A resumed native run takes
+ * The most characters the box sends at once to a driven session on the native door. A resumed native run takes
  * the person's words as one argument, and Windows caps a whole command line at 32,767 characters, which the words share
- * with the run's flags, its conversation id and what it is handed again; this leaves those the rest. Until MSG1i hands the
- * words on stdin, the box refuses longer ones before sending rather than have the spawn fail.
+ * with the run's flags, its conversation id and what it is handed again; this leaves those the rest. The
+ * box refuses longer ones before sending rather than have the spawn fail.
  */
 export const NATIVE_WORDS_LIMIT = 24_000;
 

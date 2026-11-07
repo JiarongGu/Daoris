@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1b (D155 point 4, the second-agent design §3): the reviewer chosen. A walk over the rule's reviewers, in the person's
+/// The reviewer chosen. A walk over the rule's reviewers, in the person's
 /// order, tries another maker's agent first, then one whose maker is not declared, then the working agent's own family, and
 /// calls the account walk unchanged for each (<see cref="HarnessRoster.SelectAsync"/>): the workspace's scope, cool-offs,
-/// sign-ins, the kept account and pins. Where no other maker's agent can read the work it says why, with a code (§3.3).
+/// sign-ins, the kept account and pins. Where no other maker's agent can read the work it says why, with a code.
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process. Each agent is present by a file look (<see cref="TestAgent.ProbeByPresence"/>) on a
@@ -59,7 +59,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     private static TestAgent Like(string name, string binary)
     {
         var real = ProviderRegistry.Built().AgentNamed(name)!;
-        // A test double whose own home is nobody's (OWNSPACE1a): the reviewer walk is this file's subject, and its holds are read
+        // A test double whose own home is nobody's: the reviewer walk is this file's subject, and its holds are read
         // off the own home's cool-off; a real agent's start in a Daoris account is OwnSpaceTests'.
         return new TestAgent(
             Binary: [binary], VersionArguments: [], ProfileVariable: real.Home.Variable, AccountOf: real.AccountOf,
@@ -171,7 +171,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     [Theory]
     // Another maker's agent: read by the rule's first reviewer, with nothing more to say.
     [InlineData("another maker's agent", "claude-code", "codex-acp", "codex-acp", Another, null)]
-    // Both Claude Code doors are one agent (AGT7's owner, and one maker), either way round.
+    // Both Claude Code doors are one agent (one owner, and one maker), either way round.
     [InlineData("both Claude doors", "claude-code", "claude-code-acp", "claude-code-acp", Same, NotIndependent)]
     [InlineData("both Claude doors, the other way", "claude-code-acp", "claude-code", "claude-code", Same, NotIndependent)]
     // Listed first, the same agent still waits for every other maker's agent.
@@ -207,7 +207,7 @@ public sealed class ReviewerChoiceTests : IDisposable
         Assert.Equal(reviewer is not null, choice.Selection is { Allowed: true });
     }
 
-    // ——— Families (§3.1): by owner (AGT7) and by maker, as this build declares them.
+    // ——— Families: by owner and by maker, as this build declares them.
 
     [Theory]
     [InlineData("claude-code", "claude-code-acp", true)]
@@ -332,7 +332,7 @@ public sealed class ReviewerChoiceTests : IDisposable
 
         Assert.Equal(("dsh", (string?)null), (choice.Reviewer, choice.Code));
         Assert.Equal([("codex-acp", ReviewerHeld.Cooling)], choice.Tried.Select(tried => (tried.Reviewer, tried.Held)));
-        // Another maker's agent read it: nothing was downgraded, so nothing waits on the reset.
+        // Another maker's agent read it: nothing is downgraded, so nothing waits on the reset.
         Assert.Null(choice.Cooling);
     }
 
@@ -380,8 +380,8 @@ public sealed class ReviewerChoiceTests : IDisposable
     // ——— The account walk, unchanged (§3.2 step 2): what it preserves, a reviewer gets.
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 point 1): a workspace's default once gave its reviewer that account. An older build's default is
-    /// read as the set now, begun at the machine's account, so a reviewer runs there whatever the workspace.
+    /// An older build's default is
+    /// read as the set, begun at the machine's account, so a reviewer runs there whatever the workspace.
     /// </summary>
     [Fact]
     public async Task A_reviewer_runs_on_the_set_s_account_whatever_the_workspace()
@@ -444,7 +444,7 @@ public sealed class ReviewerChoiceTests : IDisposable
         Assert.Null(here.Absent);
     }
 
-    // ——— The actor's models (MODELROLE1e, D205 §4.0, §4.4): the rule decides who and in what order, the actor each agent's model.
+    // ——— The actor's models: the rule decides who and in what order, the actor each agent's model.
 
     private static DriverConfig Actor(string actor, params ActorChoice[] entries) => ActorChoices.With(Config, actor, entries);
 
@@ -534,7 +534,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1e (D205 §3.5(f)): a partner is named by its ask, so as a pick: the named agent's other accounts, then its other entries on
+    /// A partner is named by its ask, so as a pick: the named agent's other accounts, then its other entries on
     /// the same account, then refused with the reasons; never another agent, whatever else is installed.
     /// </summary>
     [Fact]
@@ -562,7 +562,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     }
 
     /// <summary>
-    /// ROLESTEP1b: the role a workflow's opinion step names gives the rule's reviewers their entries in place of the opinion role's, judged
+    /// The role a workflow's opinion step names gives the rule's reviewers their entries in place of the opinion role's, judged
     /// where the run's bind judged it, the repository included; one that takes no review holds the choice by its own sentence.
     /// </summary>
     [Fact]
@@ -610,7 +610,7 @@ public sealed class ReviewerChoiceTests : IDisposable
     }
 
     /// <summary>
-    /// An owner's call that was refused at the open asks again with the (entry, account) it passed left out (§3.5(f)): the entry's other
+    /// An owner's call refused at the open asks again with the (entry, account) it passed left out: the entry's other
     /// account is walked before the agent's next entry, as choice-major order has it.
     /// </summary>
     [Fact]

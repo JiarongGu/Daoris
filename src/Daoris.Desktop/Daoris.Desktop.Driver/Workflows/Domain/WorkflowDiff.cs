@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What happened to a step between two versions (the workflow design §8.2).</summary>
+/// <summary>What happened to a step between two versions.</summary>
 public static class WorkflowChange
 {
     public const string Added = "added";
@@ -16,7 +16,7 @@ public sealed record WorkflowDiffSaid(IReadOnlyList<WorkflowDiffEntry> Entries, 
 {
     /// <summary>
     /// The person's part, a line each as <see cref="Said"/> says it under <i>Your part</i>, without its indent; empty where nothing in
-    /// either version is theirs. Ask Daoris's card carries it apart (WORKFLOW1h-b, design §8.2).
+    /// either version is theirs. Ask Daoris's card carries it apart.
     /// </summary>
     public IReadOnlyList<string> Part { get; init; } = [];
 
@@ -31,15 +31,15 @@ public sealed record WorkflowDiffSaid(IReadOnlyList<WorkflowDiffEntry> Entries, 
 }
 
 /// <summary>
-/// Two versions of a workflow compared by step id (WORKFLOW1d, the workflow design §2.5, §8.2): each entry in the newer one's
+/// Two versions of a workflow compared by step id: each entry in the newer one's
 /// order, a removed step where it stood, then the lines it is said in — the person's part first, then the steps, then what
-/// leaves this machine with no press of theirs that did not before. Ask Daoris's card (WORKFLOW1h) draws the same.
+/// leaves this machine with no press of theirs that did not before. Ask Daoris's card draws the same.
 /// </summary>
 /// <remarks>
 /// Held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>diffs</c>, cell for cell, every line said included; the CLI's
-/// twin, <c>workflowDiff</c> (<c>namedworkflows.ts</c>), left with the driver family's TypeScript (PUSH1f2b). The lists said apart
+/// twin, <c>workflowDiff</c> (<c>namedworkflows.ts</c>). The lists said apart
 /// (<see cref="WorkflowDiffSaid.Part"/>, <see cref="WorkflowDiffSaid.Steps"/>, <see cref="WorkflowDiffSaid.Outward"/>) are this
-/// side's alone, the same lines unindented, for Ask Daoris's card (WORKFLOW1h-b).
+/// side's alone, the same lines unindented, for Ask Daoris's card.
 /// </remarks>
 public static class WorkflowDiff
 {
@@ -214,7 +214,7 @@ public static class WorkflowDiff
         _ => Equals(a, b),
     };
 
-    /// <summary>The person's part in a step, as the diff says it after <i>you</i>, or null where they take none (design §3.1).</summary>
+    /// <summary>The person's part in a step, as the diff says it after <i>you</i>, or null where they take none.</summary>
     private static string? PartOf(NamedStep? step) => step?.Kind switch
     {
         WorkflowKinds.Look => "look at it running before it lands",
@@ -239,7 +239,7 @@ public static class WorkflowDiff
         _ => throw new ArgumentException($"a field is text, a switch or a list, not {value.GetType().Name}."),
     };
 
-    /// <summary>What a version makes leave this machine with no press of the person's (design §8.2): a push, a stage started.</summary>
+    /// <summary>What a version makes leave this machine with no press of the person's: a push, a stage started.</summary>
     private static List<string> StandingOf(IReadOnlyList<NamedStep> steps)
     {
         var said = new List<string>();

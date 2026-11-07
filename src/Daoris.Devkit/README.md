@@ -52,7 +52,7 @@ stack-specific and is *declared* by the repository rather than built in.
 |---|---|---|
 | `sensitive` | Would this commit leak a machine path, a private name, or a credential? | never — it is the one that has to run |
 | `version` | Does one file own the version, does everything agree, and was it stamped rather than typed? | no `version.source` declared |
-| `docs` | Is a declared document's last commit older than its code's, beyond the grace period? A freshness signal, not a semantic comparison | no `docs.tracked` declared |
+| `docs` | Is a declared document's last commit older than its code's last change of behaviour, beyond the grace period? A merge, or a commit typed `docs` or `style`, changes no behaviour. A freshness signal, not a semantic comparison | no `docs.tracked` declared |
 | `links` | Does each relative Markdown link target resolve? Inline-code paths need a separate check | no tracked markdown |
 | `doctrine` | Has this repository's doctrine drifted? — **delegated to `daoris check`** | no `daoris.json` |
 

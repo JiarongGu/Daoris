@@ -6,9 +6,9 @@ using System.Text.Json;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The agent family through the CLI and the host together (PUSH1f2e, the alone-path design §5's Process proofs): <c>daoris agent …</c>
+/// The agent family through the CLI and the host together: <c>daoris agent …</c>
 /// typed at a terminal, run by Node through the CLI's one spawn site, reaching the driver's own program, which runs the agent's sign-in
-/// at that terminal. The agent is a stub, never a real one (LIVELOGIN1): Claude Code pinned to a version whose managed binary is a
+/// at that terminal. The agent is a stub, never a real one: Claude Code pinned to a version whose managed binary is a
 /// script under the scratch home, so the binary a start runs is that script and nothing on <c>PATH</c>; every other agent the build
 /// declares is pinned to a version with nothing installed, so it is asked nothing. The stub's sign-in asks for a code on its standard
 /// input, which is the terminal's, and keeps it in the account's folder; its status question answers by that file.
@@ -33,7 +33,7 @@ public sealed class AgentSignInProcessTests : IDisposable
 
     private string Home => Path.Combine(_root, "home");
 
-    /// <summary>Where the stub says what it was asked: its pid while its sign-in waits for a code, and each status question.</summary>
+    /// <summary>Where the stub says what it is asked: its pid while its sign-in waits for a code, and each status question.</summary>
     private string Said => Path.Combine(_root, "said");
 
     private string Pid => Path.Combine(Said, "login.pid");
@@ -102,7 +102,7 @@ public sealed class AgentSignInProcessTests : IDisposable
 
         settings.Save(DaorisHome.Entry(Home, HomeEntry.Harnesses));
 
-        // 🔴 LIVELOGIN1: the binary a sign-in runs is the stub, by its full path, before anything starts.
+        // 🔴 The binary a sign-in runs is the stub, by its full path, before anything starts.
         var binary = HarnessProbe.CommandOf(Agent, set.AgentNamed(Agent)!, command: null, settings, Home);
         Assert.False(binary.Missing);
         Assert.StartsWith(bin, binary.Run[0], StringComparison.OrdinalIgnoreCase);
@@ -290,13 +290,13 @@ public sealed class AgentSignInProcessTests : IDisposable
         File.WriteAllText(Path.Combine(where, "credentials.json"), "{}");
         var held = await ProbeLock.TakeAsync(ProbeLock.PathOf(Home, Agent, account));
         Assert.NotNull(held);
-        // The terminal's press (PERF3): a bare list says what was read and asks no account.
+        // The terminal's press: a bare list says what is read and asks no account.
         using var run = Typed("agent", "list", "--again");
         var output = run.StandardOutput.ReadToEndAsync();
         var error = run.StandardError.ReadToEndAsync();
         try
         {
-            // Long enough for the list to have reached the account: its version was asked of the stub first.
+            // Long enough for the list to have reached the account: its version is asked of the stub first.
             await Task.Delay(TimeSpan.FromSeconds(3));
             Assert.DoesNotContain(where, StatusAsked());
         }

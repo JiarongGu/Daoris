@@ -5,26 +5,36 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The runs' binding files under a home (WORKFLOW1e, D157 point 11; the workflow design §4.5, §5.1): one file per run,
+/// The runs' binding files under a home: one file per run,
 /// <c>&lt;home&gt;/workflows/runs/&lt;run&gt;.json</c>, written once, atomically, BOM-less and LF; the driver's alone to write, and
-/// machine-local, never on the wire (D47 §4). The I/O behind <see cref="IWorkflowRunStore"/> and the file's format (STRUCT3b, D166);
+/// machine-local, never on the wire. The I/O behind <see cref="IWorkflowRunStore"/> and the file's format;
 /// the layout is <see cref="WorkflowRunBindings.FolderOf"/>'s and <see cref="WorkflowRunBindings.PathOf"/>'s.
 /// </summary>
 public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
 {
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime Written, long Length, WorkflowRunBinding Binding)> Kept =
+        new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Whether a run is bound here.</summary>
     public bool Bound(string run) => WorkflowRunBindings.IsRunId(run) && File.Exists(WorkflowRunBindings.PathOf(home, run));
 
     /// <summary>
     /// A run's binding, or null where it has none here, or its file does not read as one. Read sharing its deletion
-    /// (<see cref="AtomicFile.ReadText"/>, BINDRACE1), so a start that lost the race for its run's binding reads the winner's as it lands.
+    /// (<see cref="AtomicFile.ReadText"/>), so a start that loses the race for its run's binding reads the winner's as it lands.
     /// </summary>
     public WorkflowRunBinding? Read(string run)
     {
         if (!Bound(run)) return null;
+        var path = WorkflowRunBindings.PathOf(home, run);
+        var file = new FileInfo(path);
+        var (written, length) = (file.LastWriteTimeUtc, file.Length);
+        if (Kept.TryGetValue(path, out var kept) && kept.Written == written && kept.Length == length) return kept.Binding;
         try
         {
-            return Parse(AtomicFile.ReadText(WorkflowRunBindings.PathOf(home, run)));
+            var binding = Parse(AtomicFile.ReadText(path));
+            // A younger file could be written again within the clock grain, to the same stamp and length.
+            if (binding is not null && DateTime.UtcNow - written > NodeRecordFiles.Settled) Kept[path] = (written, length, binding);
+            return binding;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -33,32 +43,33 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     }
 
     /// <summary>
-    /// Keep a run's binding where none is (design §4.5): a run already bound keeps the version it started on. Written atomically,
-    /// BOM-less and LF, and moved into place without overwriting (FABRIC-CUTOVER1g, the cutover design §8): starts run beside one
-    /// another, and two of one run checked for a binding and then each wrote one, so the second's replaced the first's.
+    /// Keep a run's binding where none is: a run already bound keeps the version it started on. Written atomically,
+    /// BOM-less and LF, and moved into place without overwriting: starts run beside one
+    /// another, and two of one run could each check for a binding and then each write one, the second replacing the first's.
     /// </summary>
-    /// <returns>Whether it was written: false where the run was bound already, by an earlier start or by one beside this one.</returns>
+    /// <returns>Whether it is written: false where the run is bound already, by an earlier start or by one beside this one.</returns>
     public bool Bind(WorkflowRunBinding binding)
     {
         var path = WorkflowRunBindings.PathOf(home, binding.Run);
         if (File.Exists(path)) return false;
         Directory.CreateDirectory(WorkflowRunBindings.FolderOf(home));
         if (!AtomicFile.TryCreateText(path, ToJson(binding))) return false;
-        // This process's own write wakes no landing (FABRIC-END7, EVENT2's rule): the gate's files are heard for another's.
+        // This process's own write wakes no landing: the gate's files are heard for another's.
         HomeWrites.Mine(path);
         return true;
     }
 
-    /// <summary>A run's binding written over its file, atomically, and marked as this process's own (FABRIC-END7).</summary>
+    /// <summary>A run's binding written over its file, atomically, and marked as this process's own.</summary>
     public void Write(string run, WorkflowRunBinding binding)
     {
         var path = WorkflowRunBindings.PathOf(home, run);
         AtomicFile.WriteText(path, ToJson(binding));
+        Kept.TryRemove(path, out _);
         HomeWrites.Mine(path);
     }
 
     /// <summary>
-    /// Whether any run here is bound to a named workflow in <paramref name="repository"/> (WORKFLOW1f): where a gate cannot read
+    /// Whether any run here is bound to a named workflow in <paramref name="repository"/>: where a gate cannot read
     /// which run a piece of work is, it holds only where one might govern it. An unreadable file cannot rule out a named binding.
     /// </summary>
     public bool AnyNamed(string repository)
@@ -87,8 +98,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
     }
 
     /// <summary>
-    /// The versions of <paramref name="workflow"/> this home's runs name, a verification run's under <c>lines/</c> among them (the pipeline design
-    /// §4.3), so a version a kept run binds is never pruned under it; a run's file that does not read names none.
+    /// The versions of <paramref name="workflow"/> this home's runs name, a verification run's under <c>lines/</c> among them, so a version a kept run binds is never pruned under it; a run's file that does not read names none.
     /// </summary>
     public IReadOnlyList<int> KeptVersions(string workflow)
     {
@@ -100,7 +110,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
         {
             try
             {
-                // Shared as the run's own read is (BINDRACE1): a version a binding landing now names is still kept.
+                // Shared as the run's own read is: a version a binding landing now names is still kept.
                 using var document = JsonDocument.Parse(AtomicFile.ReadText(path));
                 runs.Add(document.RootElement.Clone());
             }
@@ -128,7 +138,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
                 return null;
             }
 
-            // ROLESTEP1b: a step's role that does not read leaves the binding unread, so no start takes another role in its place.
+            // A step's role that does not read leaves the binding unread, so no start takes another role in its place.
             if (RolesOf(root) is not { } roles) return null;
 
             return new WorkflowRunBinding(run, repository, workspace, workflow, level, at)
@@ -147,7 +157,7 @@ public sealed class WorkflowRunFiles(string home) : IWorkflowRunStore
                 Land = root.TryGetProperty("land", out var land) && land.ValueKind == JsonValueKind.Object
                     ? land.EnumerateObject().Where(each => each.Value.ValueKind == JsonValueKind.String).ToDictionary(each => each.Name, each => each.Value.GetString()!)
                     : LandNodes.NoResolved,
-                // WORKFLOW1f: the person's Keep, whole or none; a binding from before has none.
+                // The person's Keep, whole or none.
                 Kept = root.TryGetProperty("kept", out var kept) && kept.ValueKind == JsonValueKind.Object && Text(kept, "door") is { } door
                        && Moments.Read(Text(kept, "at")) is { } keptAt
                     ? new WorkflowKept(keptAt, door) { Words = Text(kept, "words") }

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ONEWAY1q's conversion rows (the one-way design §5 G2): a home whose person switched <c>no-push</c> off, with Write unset, is converted
+/// The conversion rows: a home whose person switched <c>no-push</c> off, with Write unset, is converted
 /// once so a session pushes as before and <c>no-publish</c> is off; a home with Write set keeps it; after that the judge reads git access
 /// alone, and the rules hand the push forms as git access opens them.
 /// </summary>

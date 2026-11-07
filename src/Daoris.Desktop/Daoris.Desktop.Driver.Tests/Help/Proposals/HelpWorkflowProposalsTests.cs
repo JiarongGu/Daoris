@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>workflow</c> proposal (WORKFLOW1h-b, D157 point 13, the workflow design §8): a whole version of a named
+/// Ask Daoris's <c>workflow</c> proposal: a whole version of a named
 /// workflow, new or an edit on the newest, for a repository or a workspace, and optionally its choice there. Judged as the editor
 /// judges a version (<see cref="WorkflowNamed"/>), its base held to the newest, its diff said by <see cref="WorkflowDiff"/> with the
 /// person's part first, and each declaration it needs where it applies. A card that needs something first is a draft with no
-/// Apply; Apply is the person's press, which judges the base again and saves through the <c>ask-daoris:</c> door (§8.4).
+/// Apply; Apply is the person's press, which judges the base again and saves through the <c>ask-daoris:</c> door.
 /// </summary>
 public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
 {
@@ -26,7 +26,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     /// <summary>`engine` chooses the workflow as its default.</summary>
     private static readonly DriverConfig Chosen = WorkflowSelection.Apply(DriverConfig.Empty, new WorkflowUse(Id, "engine", null, null));
 
-    /// <summary>The proposal's file as the service's box writes it (WORKFLOW1h-a), read back as the driver reads it.</summary>
+    /// <summary>The proposal's file as the service's box writes it, read back as the driver reads it.</summary>
     private HelpProposal Propose(
         string? steps, int? @base = null, bool choose = false, string scope = "engine", string? name = null,
         string? graph = null, string? route = null, string workflow = Id, string? draft = null)
@@ -38,7 +38,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
             ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
         };
 
-        // The box writes `name`, `steps`, `graph` and `route` only when given (WORKFLOW1h-name, FABRIC-PIPELINE1i).
+        // The box writes `name`, `steps`, `graph` and `route` only when given.
         if (steps is not null) node["steps"] = JsonNode.Parse(steps);
         if (graph is not null) node["graph"] = JsonNode.Parse(graph);
         if (route is not null) node["route"] = route;
@@ -52,7 +52,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
 
     private static string Preset(string id) => WorkflowDefaults.Of(id)!.GraphJson;
 
-    /// <summary>The draft this conversation was told (FLOWCHART2d): the Merge workflow's graph, open for `engine`, as its record keeps it.</summary>
+    /// <summary>The draft this conversation is told: the Merge workflow's graph, open for `engine`, as its record keeps it.</summary>
     private HelpMachineFacts Told(string? workflow = null, int? @base = null, string graph = "", HelpMachineFacts? from = null)
     {
         var draft = new JsonObject { ["fingerprint"] = Fingerprint, ["place"] = "engine", ["graph"] = JsonNode.Parse(graph.Length > 0 ? graph : Preset("merge-after-accept")) };
@@ -63,7 +63,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         return Here(from) with { Home = _home, Drafts = WorkflowDraftTold.Told([told.ToldNote()]) };
     }
 
-    /// <summary>Every byte under the home's workflows: what a draft's Apply must leave as it was.</summary>
+    /// <summary>Every byte under the home's workflows: what a draft's Apply must leave unchanged.</summary>
     private Dictionary<string, string> WorkflowFiles()
     {
         var folder = DaorisHome.Entry(_home, HomeEntry.Workflows);
@@ -73,7 +73,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// FLOWCHART2e (the flowchart design §4, §8.4): a whole graph proposed against the draft this conversation was told, judged as a save
+    /// A whole graph proposed against the draft this conversation is told, judged as a save
     /// is, its card said as the draft's changes, with the candidate kept apart from what a save would take, so it saves nothing.
     /// </summary>
     [Fact]
@@ -119,7 +119,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal("the draft `g1-ffffffffffffffff` was never shown to this conversation: ask again from the editor, whose draft goes beside your words.", plan.Refusal);
     }
 
-    /// <summary>§8.4: a draft mixed with what saves or chooses is refused before anything else is judged.</summary>
+    /// <summary>A draft mixed with what saves or chooses is refused before anything else is judged.</summary>
     [Theory]
     [InlineData(1, false, null, null)]
     [InlineData(null, true, null, null)]
@@ -132,7 +132,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.StartsWith("a change to the open draft ", plan.Refusal, StringComparison.Ordinal);
     }
 
-    /// <summary>WORKFLOWCLEAN1 1b: a development pipeline's graph is proposed by the `edit` door, and taken by the `draft` door, which saves nothing.</summary>
+    /// <summary>A development pipeline's graph is proposed by the `edit` door, and taken by the `draft` door, which saves nothing.</summary>
     [Fact]
     public void A_development_graph_is_proposed_by_edit_and_taken_by_draft()
     {
@@ -147,7 +147,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
 
     /// <summary>
     /// Its Apply writes no workflow and no choice: pressed from the card it opens the place's Workflow and stands; pressed with every change
-    /// taken or left it settles, recording which, and the workflow store and the configuration are as they were, byte for byte.
+    /// taken or left it settles, recording which, and the workflow store and the configuration are unchanged, byte for byte.
     /// </summary>
     [Fact]
     public async Task Apply_leaves_the_workflow_store_and_the_configuration_as_they_were()
@@ -204,7 +204,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         return Assert.IsType<HelpWorkflowCard>(plan.Workflow);
     }
 
-    /// <summary>A verification pipeline's graph: one check over the named gates, its failure as given (the pipeline design §4.1).</summary>
+    /// <summary>A verification pipeline's graph: one check over the named gates, its failure as given.</summary>
     private static string Verify(string gates = "\"heavy\"", string failed = "wait") =>
         $$$"""{"schemaVersion":2,"entries":["gates"],"end":"gates","nodes":[{"id":"gates","kind":"check","version":1,"reach":"performed","options":{"gates":{{{gates}}},"failed":"{{{failed}}}"}}],"wires":[]}""";
 
@@ -215,7 +215,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         }, kept: []);
 
     /// <summary>
-    /// FABRIC-PIPELINE1i (the pipeline design §1.3): a route with no version chooses a saved workflow, saving nothing, and only the person's
+    /// A route with no version chooses a saved workflow, saving nothing, and only the person's
     /// press applies it.
     /// </summary>
     [Fact]
@@ -254,7 +254,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
              "wires":[{"id":"a","kind":"after","from":"claim","to":"land"},{"id":"b","kind":"after","from":"land","to":"merge-in"}]}
             """)!);
 
-    /// <summary>INTEGRATE1r part r2: <c>done</c> needs the declaration's gates read, and the facts the box gathered answer for it; none gathered holds the card.</summary>
+    /// <summary><c>done</c> needs the declaration's gates read, and the facts the box gathered answer for it; none gathered holds the card.</summary>
     [Fact]
     public void A_choice_that_asks_with_done_needs_the_accepted_declaration_read_and_naming_a_gate()
     {
@@ -272,7 +272,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Empty(named.Needs);
     }
 
-    /// <summary>INTEGRATE1r part r2: the box reads an accepted declaration only where a saved graph asks with done or steward, and never passes one it cannot read.</summary>
+    /// <summary>The box reads an accepted declaration only where a saved graph asks with done or steward, and never passes one it cannot read.</summary>
     [Fact]
     public async Task The_boxes_read_of_accepted_gates_is_made_only_for_a_graph_that_needs_it()
     {
@@ -285,7 +285,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Contains("has no checkout here", read["engine"].Unread);
     }
 
-    /// <summary>FABRIC-PIPELINE1i: a kind's route, as the terminal's <c>use … --kind</c> chooses it; once chosen, a second says so.</summary>
+    /// <summary>A kind's route, as the terminal's <c>use … --kind</c> chooses it; once chosen, a second says so.</summary>
     [Fact]
     public void A_kind_s_route_with_no_version_chooses_it_for_that_kind()
     {
@@ -315,8 +315,8 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1i (the pipeline design §2.1): a graph proposed is a verification pipeline's, judged by the mark as a save is, and
-    /// made so at its first save; chosen for the landed route, its gates wait for the person's own <i>Accept the gates</i> (D156).
+    /// A graph proposed is a verification pipeline's, judged by the mark as a save is, and
+    /// made so at its first save; chosen for the landed route, its gates wait for the person's own <i>Accept the gates</i>.
     /// </summary>
     [Fact]
     public async Task A_verification_graph_proposed_is_judged_by_the_mark_and_saved_as_one()
@@ -353,7 +353,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal(new WorkflowLanded(Id, null), doors.Config.Workflows["engine"].Landed);
     }
 
-    /// <summary>FABRIC-PIPELINE1i: each pipeline takes its own versions, and each route its own pipeline, refused in the twins' words.</summary>
+    /// <summary>Each pipeline takes its own versions, and each route its own pipeline, refused in the twins' words.</summary>
     [Fact]
     public void A_version_or_a_route_of_the_other_pipeline_is_refused()
     {
@@ -373,7 +373,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// D157 point 10, the pipeline design §1.3: an agent's change that asks less of the person is kept as its proposal, said, and applies
+    /// An agent's change that asks less of the person is kept as its proposal, said, and applies
     /// only at the person's press: a check's failure moved off <c>wait</c>, and a landed route pointed at a pipeline running fewer gates.
     /// </summary>
     [Fact]
@@ -407,7 +407,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal(["it verifies the work that lands with fewer of its gates: `e2e`"], Card(narrower).Lowers);
     }
 
-    /// <summary>FLOWCHART2e: `draft` beside the three, which are unchanged.</summary>
+    /// <summary>`draft` beside the three, which are unchanged.</summary>
     [Fact]
     public void Its_doors_are_new_edit_use_and_draft()
     {
@@ -424,7 +424,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal(("edit", (int?)3), (Propose(Merge, @base: 3).Door, Propose(Merge, @base: 3).Base));
     }
 
-    /// <summary>§8.2: a new workflow's card is its first version, every step added, and what applies it; a graph that lands is a development pipeline.</summary>
+    /// <summary>A new workflow's card is its first version, every step added, and what applies it; a graph that lands is a development pipeline.</summary>
     [Fact]
     public void A_new_workflow_s_card_is_its_first_version()
     {
@@ -440,14 +440,14 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.StartsWith("Save a new workflow `docs-to-pr` as v1.", plan.Describe, StringComparison.Ordinal);
     }
 
-    /// <summary>WORKFLOWCLEAN1 1b: a list of steps is refused by this door as by every other, naming the editor and the graph file.</summary>
+    /// <summary>A list of steps is refused by this door as by every other, naming the editor and the graph file.</summary>
     [Fact]
     public void A_list_of_steps_is_refused_naming_the_editor_and_the_graph_file()
     {
         Assert.Equal(WorkflowNamed.StepsRefused(Id), HelpProposals.Plan(Propose(Merge), DriverConfig.Empty, Here()).Refusal);
     }
 
-    /// <summary>WORKFLOW1h-name: a new workflow is named by the person's words, on the card and in the saved version; absent, by its id.</summary>
+    /// <summary>A new workflow is named by the person's words, on the card and in the saved version; absent, by its id.</summary>
     [Fact]
     public async Task A_new_workflow_is_saved_under_the_name_given_else_its_id()
     {
@@ -464,7 +464,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal(Id, Card(HelpProposals.Plan(Propose(null, graph: Preset("merge-after-accept")), DriverConfig.Empty, Here())).Name);
     }
 
-    /// <summary>§8.2: an edit's diff by step id, the person's part first, then the steps, then what leaves with no press.</summary>
+    /// <summary>An edit's diff by step id, the person's part first, then the steps, then what leaves with no press.</summary>
     [Fact]
     public void An_edit_s_card_names_its_base_the_version_it_makes_and_the_runs_that_keep_theirs()
     {
@@ -483,7 +483,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.StartsWith("Save `docs-to-pr` v1 → v2 (Documentation to a pull request).", plan.Describe, StringComparison.Ordinal);
     }
 
-    /// <summary>§8.1, D157 §2.6: a base that is not the newest is stale, refused with the newest, never applied over it.</summary>
+    /// <summary>A base that is not the newest is stale, refused with the newest, never applied over it.</summary>
     [Fact]
     public void A_stale_base_is_refused_with_the_newest()
     {
@@ -523,7 +523,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// §8.1, §8.2: what a step needs that is not declared where it applies, and a kind this build does not run, are *Needs first*:
+    /// What a step needs that is not declared where it applies, and a kind this build does not run, are *Needs first*:
     /// the card is a draft, and its Apply is refused before anything is saved, the card left standing.
     /// </summary>
     [Fact]
@@ -540,7 +540,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal("proposed", HelpProposals.Find(_home, "p6")!.State);
     }
 
-    /// <summary>§8.4: Apply saves the version through the `ask-daoris:` door, then makes the choice through the driver's file.</summary>
+    /// <summary>Apply saves the version through the `ask-daoris:` door, then makes the choice through the driver's file.</summary>
     [Fact]
     public async Task Apply_saves_the_version_through_ask_daoris_and_makes_the_choice()
     {
@@ -561,7 +561,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal("applied", HelpProposals.Find(_home, "p6")!.State);
     }
 
-    /// <summary>§8.1: the press judges the base again, so a version saved since the card was drawn makes it stale, never applied over.</summary>
+    /// <summary>The press judges the base again, so a version saved since the card is drawn makes it stale, never applied over.</summary>
     [Fact]
     public async Task The_press_judges_again_and_a_version_saved_since_makes_it_stale()
     {
@@ -584,7 +584,7 @@ public sealed class HelpWorkflowProposalsTests : HelpProposalsFixture
         Assert.Equal("refused", HelpProposals.Find(_home, "p6")!.State);
     }
 
-    /// <summary>D48 §6: an edit that says what the newest says changes nothing, said and never refused; its Apply saves nothing.</summary>
+    /// <summary>An edit that says what the newest says changes nothing, said and never refused; its Apply saves nothing.</summary>
     [Fact]
     public async Task An_edit_that_changes_nothing_is_said_and_saves_nothing()
     {

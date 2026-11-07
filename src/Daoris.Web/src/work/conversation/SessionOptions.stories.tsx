@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SessionOptions } from './SessionOptions';
 
-// One conversation's model and effort (AGT6b, D98), in the shape the driver answers SESSION_OPTIONS
+// One conversation's model and effort, in the shape the driver answers SESSION_OPTIONS
 // with: the agent's own names and values, and nothing of Daoris's.
 
 const MODEL = {

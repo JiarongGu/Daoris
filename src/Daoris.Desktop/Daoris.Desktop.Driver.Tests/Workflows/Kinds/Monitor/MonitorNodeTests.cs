@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D245's note, the monitor (D247 §4): it watches the one step wired straight into it, through that step's own state reading, and is reached
+/// The monitor watches the one step wired straight into it, through that step's own state reading, and is reached
 /// with the state that step reports as its outcome. A pull request reports <c>merged</c>, a squash merge included, or <c>closed</c>; open or
 /// unanswered it is pending and nothing fails it. The save holds a monitor to one watched step that reports a state, and to that step's states
 /// as its outcomes; a run routes on them.

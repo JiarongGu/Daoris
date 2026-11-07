@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 
 namespace Daoris.Driver;
 
-/// <summary>How a topic's subjects are judged (PARALLEL1a, D181 points 2-4).</summary>
+/// <summary>How a topic's subjects are judged.</summary>
 /// <param name="Deadline">The longest a subject goes unjudged: its reconciliation, whether anything woke it or not.</param>
 /// <param name="Bound">
 /// How long one judgement may take: its token is cancelled then, and its place among the topic's judgements given back, so one that
@@ -13,8 +13,8 @@ public sealed record FactRules(TimeSpan Deadline, TimeSpan Bound, int AtOnce = 2
 {
     /// <summary>
     /// The least time between two judgements of one subject that wakes ask for: a burst of wakes on a busy machine is one judgement
-    /// each rest, for a topic whose judgement reads the whole machine. None by default. A wake afresh (<see cref="MachineFacts.Wake"/>'s,
-    /// OWNMOVES1) and an ask that waits (<see cref="MachineFacts.JudgedAsync"/>) are never held by it.
+    /// each rest, for a topic whose judgement reads the whole machine. None by default. A wake afresh (<see cref="MachineFacts.Wake"/>'s)
+    /// and an ask that waits (<see cref="MachineFacts.JudgedAsync"/>) are never held by it.
     /// </summary>
     public TimeSpan Rest { get; init; } = TimeSpan.Zero;
 }
@@ -23,7 +23,7 @@ public sealed record FactRules(TimeSpan Deadline, TimeSpan Bound, int AtOnce = 2
 public sealed record JudgedFact(object Value, DateTimeOffset At);
 
 /// <summary>
-/// The machine's facts as they stand at one moment (PARALLEL1a): immutable, so a reader holds a consistent whole for as long as it
+/// The machine's facts as they stand at one moment: immutable, so a reader holds a consistent whole for as long as it
 /// likes while the judges write the next one.
 /// </summary>
 public sealed class MachineFactsSnapshot
@@ -42,14 +42,14 @@ public sealed class MachineFactsSnapshot
     /// <summary>Nothing judged yet.</summary>
     public static MachineFactsSnapshot Empty { get; } = new(None, 0);
 
-    /// <summary>How many facts landed before this snapshot was written: a later one is greater.</summary>
+    /// <summary>How many facts landed before this snapshot is written: a later one is greater.</summary>
     public long Version { get; }
 
-    /// <summary>The fact judged for <paramref name="subject"/> of <paramref name="topic"/>; null where none was judged yet.</summary>
+    /// <summary>The fact judged for <paramref name="subject"/> of <paramref name="topic"/>; null where none is judged yet.</summary>
     public JudgedFact? Of(string topic, string subject) =>
         _topics.TryGetValue(topic, out var subjects) && subjects.TryGetValue(subject, out var fact) ? fact : null;
 
-    /// <summary>The value judged, where it is one of <typeparamref name="T"/>; null where none was judged yet.</summary>
+    /// <summary>The value judged, where it is one of <typeparamref name="T"/>; null where none is judged yet.</summary>
     public T? Value<T>(string topic, string subject) where T : class => Of(topic, subject)?.Value as T;
 
     /// <summary>The subjects of <paramref name="topic"/> that have a fact, in no order.</summary>
@@ -66,20 +66,20 @@ public sealed class MachineFactsSnapshot
 }
 
 /// <summary>
-/// The machine's facts, kept by judges on background tasks and read as last judged (PARALLEL1a, D181 points 1-4): what a person's
+/// The machine's facts, kept by judges on background tasks and read as last judged: what a person's
 /// press reads, so it never waits on a machine-wide read. One owner holds it for its life (the shell's loop), registers each topic's
 /// judge, and tells it the wakes the change sources hear; a reader takes <see cref="Current"/>, which never blocks, and hears
 /// <see cref="Changed"/> as each fact lands.
 /// </summary>
 /// <remarks>
-/// <para><b>The judges' rules are the events design's (§A3).</b> A wake is a hint, never a value: the judge reads its subject
+/// <para><b>The judges' rules.</b> A wake is a hint, never a value: the judge reads its subject
 /// afresh. A subject is never judged twice at once, and one woken while it is judged is judged once more after. A topic judges at
 /// most <see cref="FactRules.AtOnce"/> of its subjects together. Each subject is judged again at its topic's deadline, the
 /// reconciliation behind every source, so a missed wake costs latency, never correctness.</para>
 ///
 /// <para><b>Its own scheduling, not the change watch's drain.</b> <see cref="ChangeWatch"/> takes a topic's due subjects as one batch
-/// and awaits the whole batch, so one judgement that did not answer would hold every other subject of its topic until its bound. A
-/// fact's subjects are independent (D181 point 3), so each runs on its own: a judgement past its bound gives its place back, and its
+/// and awaits the whole batch, so one judgement that does not answer would hold every other subject of its topic until its bound. A
+/// fact's subjects are independent, so each runs on its own: a judgement past its bound gives its place back, and its
 /// subject stays judging, never judged beside it, until it ends.</para>
 ///
 /// <para><b>Swapped whole.</b> Writers take a lock to build the next snapshot, and publish it with one atomic write; readers take no
@@ -143,7 +143,7 @@ public sealed class MachineFacts : IDisposable
         }
     }
 
-    /// <summary>A subject of <paramref name="topic"/> known now: judged at once where it never was, and at each deadline.</summary>
+    /// <summary>A subject of <paramref name="topic"/> known now: judged at once where it has never been judged, and at each deadline.</summary>
     public void Subject(string topic, string subject)
     {
         Action? start;
@@ -173,7 +173,7 @@ public sealed class MachineFacts : IDisposable
     /// wake for a subject not known yet makes it known; one for a topic with no judge is nothing.
     /// </summary>
     /// <param name="afresh">
-    /// Past the subject's rest (OWNMOVES1): a move this process made itself, which a person is waiting to see land, judged at once, or
+    /// Past the subject's rest: a move this process makes itself, which a person is waiting to see land, judged at once, or
     /// right after a judgement under way, which may have read the subject before the move. It waits for nothing, as a wake never does.
     /// </param>
     public void Wake(string topic, string subject, bool afresh = false)
@@ -191,7 +191,7 @@ public sealed class MachineFacts : IDisposable
 
     /// <summary>
     /// The facts once <paramref name="subject"/> of <paramref name="topic"/> has a fact: at once where it has, else when its first
-    /// lands. What a reader that has nothing at all to stand on waits for, within its own bound (HELPSTUCK1's backstop).
+    /// lands. What a reader that has nothing at all to stand on waits for, within its own bound.
     /// </summary>
     public Task<MachineFactsSnapshot> FirstAsync(string topic, string subject, CancellationToken ct)
     {
@@ -308,7 +308,7 @@ public sealed class MachineFacts : IDisposable
         foreach (var landed in first) landed.TrySetCanceled();
     }
 
-    /// <summary>Under the lock: the subject's state, made known where it was not; null for a topic with no judge.</summary>
+    /// <summary>Under the lock: the subject's state, made known where it is not; null for a topic with no judge.</summary>
     private SubjectState? Known(string topic, string subject, out bool isNew)
     {
         isNew = false;
@@ -350,7 +350,7 @@ public sealed class MachineFacts : IDisposable
         return () => Launch(() => state.Run = JudgeAsync(topic, state));
     }
 
-    /// <summary>A subject's rest over: judged now where it was wanted meanwhile.</summary>
+    /// <summary>A subject's rest over: judged now where it is wanted meanwhile.</summary>
     private async Task RestedAsync(string topic, SubjectState state, TimeSpan wait)
     {
         try
@@ -449,7 +449,7 @@ public sealed class MachineFacts : IDisposable
     private void Late(string topic, string subject, TimeSpan bound) =>
         Log?.Warn("facts.late", ("topic", topic), ("subject", subject), ("boundMs", (long)bound.TotalMilliseconds));
 
-    /// <summary>A judgement over: its waiters told, and the subject judged once more where it was woken meanwhile.</summary>
+    /// <summary>A judgement over: its waiters told, and the subject judged once more where it is woken meanwhile.</summary>
     private void Ended(TopicState topic, SubjectState state)
     {
         Action? start = null;
@@ -555,7 +555,7 @@ public sealed class MachineFacts : IDisposable
     {
         public string Name { get; } = name;
 
-        /// <summary>When it became known: its first deadline counts from here where it was never judged.</summary>
+        /// <summary>When it became known: its first deadline counts from here where it has never been judged.</summary>
         public DateTimeOffset Known { get; } = known;
 
         /// <summary>Wanted: woken, or known and never judged, while it could not be judged yet.</summary>

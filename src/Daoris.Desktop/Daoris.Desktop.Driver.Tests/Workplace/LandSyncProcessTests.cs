@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDSYNC1b (D87's 2026-10-15 amendment, points 3 and 7, over real git): the landing's sync where LANDSYNC1's own cases did not
-/// reach. A branch of the tree's own (TREEFOLLOW1) whose line holds some of its commits is replayed in place and keeps its name, or,
+/// The landing's sync over real git, past the plain replay. A branch of the tree's own whose line holds some of its commits is replayed in place and keeps its name, or,
 /// on its remote, refused; a chain's branch the landing advances takes only what neither it nor the line holds, replayed onto its tip;
 /// and the session's tree follows what landed, or stays and says why, the landing standing either way. Real git in a scratch
 /// repository, so this is the suite's Process half; nothing reaches a network (an <c>origin</c> is a bare repository beside it).
@@ -62,7 +61,7 @@ public sealed class LandSyncProcessTests : LandedFixture
     }
 
     /// <summary>
-    /// Point 3, D109: the same branch on its remote is never rewritten, so where the line holds some of it the landing is refused as a
+    /// The same branch on its remote is never rewritten, so where the line holds some of it the landing is refused as a
     /// conflict is, with the rebase words naming what the line holds; nothing is made, and the tree, its branch and the remote stand.
     /// </summary>
     [Fact]
@@ -186,7 +185,7 @@ public sealed class LandSyncProcessTests : LandedFixture
     private static async Task<int> TreesAsync(string root) =>
         (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n').Count(line => line.StartsWith("worktree ", StringComparison.Ordinal));
 
-    /// <summary>What a refused landing must leave as it was, as <c>LineHoldsLandingTests</c> reads it.</summary>
+    /// <summary>What a refused landing must leave unchanged, as <c>LineHoldsLandingTests</c> reads it.</summary>
     private static async Task<string> StateAsync(string root, TreeOpened tree) =>
         string.Join("\n",
             (await GitAsync(root, "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads/", "refs/daoris/")).Trim(),

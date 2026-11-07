@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xvi, the Review cuts: the seams they add. The workflows' process and gate parts being the facets the review reads, the
+/// The Review cuts: the seams they add. The workflows' process and gate parts being the facets the review reads, the
 /// parts cast back for a reader above, the line each part keeps in the machine log, the participants' port answering the process of a run
 /// that has none named, and the workplace's chat press answering the line a capture reads. What the cuts keep is
 /// <c>ReviewBoundaryTests</c>'.

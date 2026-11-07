@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xv, the Work orders cuts: the seams they add. The installed Setup and Workflows operations being the owners' and doing
+/// The seams the Work orders cuts add. The installed Setup and Workflows operations being the owners' and doing
 /// what the room, the ask's door, the intake's kinds and the work inventory did, a supplied stand-in used where each is reached, the tick
 /// report's judged opinions being the review's, and a missing operation required only where it is reached. What the cuts keep is
 /// <c>WorkOrdersBoundaryTests</c>'.

@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 internal sealed class TurnHolds(TurnState state, TurnPump pump)
 {
     /// <summary>
-    /// Hold the turns for a hand-over's take (SWITCH1c-ii; the switch design §4, never mid-turn): true where no turn runs and no
+    /// Hold the turns for a hand-over's take, never mid-turn: true where no turn runs and no
     /// word waits, and from then on a word takes nothing (<see cref="Take"/> is null) until <see cref="Release"/>. False where a
     /// turn runs or a word waits, whose turn ends first; or where the conversation is finishing or gone.
     /// </summary>
@@ -18,7 +18,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     /// end then cut.
     /// </remarks>
     /// <param name="keeps">
-    /// The host's open moves the old part's words (FOUNDATION1o, the foundation design §3.4 rule 4): a word said while held is kept on the record
+    /// The host's open moves the old part's words: a word said while held is kept on the record
     /// and waits behind the hold, starting no turn, as under a limit's wait and a press, where without it a word is neither kept nor taken.
     /// </param>
     public bool Hold(bool keeps = false)
@@ -45,7 +45,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// Take words again after <see cref="Hold"/>: the take did not end the conversation, or it has ended and nothing listens. FOUNDATION1o: a word
+    /// Take words again after <see cref="Hold"/>: the take did not end the conversation, or it has ended and nothing listens. A word
     /// kept while held is the next turn where the conversation goes on, and stays on its record for the move's open where it ended.
     /// </summary>
     public void Release()
@@ -70,7 +70,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// Wait for the account's limit to reset (LIMITRESUME1c, D206 §3.5): from now on a word is kept as any is and waits, shown queued,
+    /// Wait for the account's limit to reset: from now on a word is kept as any is and waits, shown queued,
     /// but starts no turn, since the account would refuse it. False where the conversation is finishing, held for a take, or gone.
     /// </summary>
     public bool WaitForLimit()
@@ -84,9 +84,9 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// The wake (LIMITRESUME1c, D206 §3.5): every word that waited, handed to <paramref name="compose"/> in the order said, becomes one
+    /// The wake: every word that waited, handed to <paramref name="compose"/> in the order said, becomes one
     /// turn, the next at once, and the turns take words again. Under the turns' own lock, so a word said as it wakes either waited and is
-    /// among them or comes after it. False, composing nothing, where it was not waiting, or is finishing, held or gone.
+    /// among them or comes after it. False, composing nothing, where it is not waiting, or is finishing, held or gone.
     /// </summary>
     /// <param name="compose">The one turn the waiting words become; called under the lock, so it must not call back into the turns.</param>
     public bool WakeFromLimit(Func<IReadOnlyList<ChatMessage>, ChatMessage> compose)
@@ -113,9 +113,9 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// Hold the turns for a move while they wait for the limit (LIMITRESUME1c, as <see cref="Hold"/> holds them for a take): the words
+    /// Hold the turns for a move while they wait for the limit (as <see cref="Hold"/> holds them for a take): the words
     /// that waited are handed out, in the order said, for the move to carry, and nothing more is taken until <see cref="Release"/>.
-    /// Null where it was not waiting, a turn runs, or it is finishing, held or gone.
+    /// Null where it is not waiting, a turn runs, or it is finishing, held or gone.
     /// </summary>
     public IReadOnlyList<ChatMessage>? HoldLimited(bool keeps = false)
     {
@@ -133,8 +133,8 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// The person's press answered, landed or refused (CHATFLOW1d): the conversation is let go, and a word that waited for it starts at once.
-    /// Nothing where it was not held.
+    /// The person's press answered, landed or refused: the conversation is let go, and a word that waited for it starts at once.
+    /// Nothing where it is not held.
     /// </summary>
     public void Pressed()
     {
@@ -156,7 +156,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// Its open was refused before any prompt and a replacement opens in its place (MODELROLE1d2, D205 §3.5(b)): every word it holds, the
+    /// Its open is refused before any prompt and a replacement opens in its place: every word it holds, the
     /// one waiting on the open first and then the rest in the order said, is handed out, and from now on a word said to it is handed to
     /// <paramref name="onward"/> instead, under this same lock, so each reaches the replacement once. Nothing is sent here again.
     /// </summary>
@@ -175,8 +175,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// The one closing turn a hand-over's take asks of the outgoing agent while its turns are held (SESSCTX1c part B, the session-context
-    /// design §2.2): taken as a turn of its own though held, every other word still taking nothing, and what completes once that turn has
+    /// The one closing turn a hand-over's take asks of the outgoing agent while its turns are held: taken as a turn of its own though held, every other word still taking nothing, and what completes once that turn has
     /// ended. Null where the turns are not held by <see cref="Hold"/>, or something runs or waits, or the conversation is finishing or gone.
     /// </summary>
     public Task? TakeHeld(ChatMessage message)
@@ -197,7 +196,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// A transient episode settles its wire (AGENTERRORS1b, from its first failure and each try's): every word waits from now, handed to no
+    /// A transient episode settles its wire (from its first failure and each try's): every word waits from now, handed to no
     /// turn alongside the one that failed, so the turns the episode settles are only those already written.
     /// </summary>
     internal void Settling()
@@ -206,7 +205,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// A transient episode's wait begins (AGENTERRORS1b): every word waits, and the wait ends once a word of the person's does, at once
+    /// A transient episode's wait begins: every word waits, and the wait ends once a word of the person's does, at once
     /// where one waits already. A word said meanwhile is kept on its record and shown queued, as any word is.
     /// </summary>
     internal Task Waiting()
@@ -227,7 +226,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
     }
 
     /// <summary>
-    /// Every word of the person's that waits, handed to a transient try in the order said (AGENTERRORS1b, the design §5.1): off the queue
+    /// Every word of the person's that waits, handed to a transient try in the order said: off the queue
     /// the page shows, each dispatched as its door dispatches one, marked attempted before the wire and taken off the record once written.
     /// Their turn counts as the person's, as a word handed to a turn at its next step does.
     /// </summary>
@@ -260,7 +259,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
 
     /// <summary>
     /// Take no more, and complete once every turn already asked for has ended — what finishing waits on
-    /// before it ends the input, on either door — and every kept word that left is off the record (COWORK1c).
+    /// before it ends the input, on either door — and every kept word that left is off the record.
     /// </summary>
     public Task FinishAsync()
     {
@@ -282,8 +281,8 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
 
     /// <summary>
     /// The harness has gone: nothing waiting will be sent, and nothing more is taken. Words kept on the record stay there for the
-    /// conversation to go on with (COWORK1c: nothing undelivered vanishes), unless <paramref name="personStopped"/>: the person's stop
-    /// ends them with the conversation, as it always did, rather than start it again.
+    /// conversation to go on with (nothing undelivered vanishes), unless <paramref name="personStopped"/>: the person's stop
+    /// ends them with the conversation, rather than start it again.
     /// </summary>
     public void Gone(bool personStopped = false)
     {
@@ -293,7 +292,7 @@ internal sealed class TurnHolds(TurnState state, TurnPump pump)
             if (personStopped) state.TakeOff([.. (state.Holding is null ? [] : new[] { state.Holding }).Concat(state.Waiting).Where(message => !message.OnRecord)]);
             state.Holding = null;
             state.Waiting.Clear();
-            // FOUNDATION1o: words kept behind a move's hold stay on the record for its open.
+            // Words kept behind a move's hold stay on the record for its open.
             state.HeldBack.Clear();
             state.Publish();
         }

@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>INTEGRATE1h: <c>daoris integrate</c>'s acts pressed over the pipe, against a stand-in of it.</summary>
+/// <summary><c>daoris integrate</c>'s acts pressed over the pipe, against a stand-in of it.</summary>
 public sealed class IntegratePressTests : IAsyncLifetime
 {
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-integrate-press-tests", Guid.NewGuid().ToString("N")[..8]);
@@ -88,7 +88,7 @@ public sealed class IntegratePressTests : IAsyncLifetime
         Assert.Contains("a card in Daoris's window", _error.ToString());
     }
 
-    /// <summary>INTEGRATE1h: a decide is pressed as the route with its candidate and its word, as the window's press sends it.</summary>
+    /// <summary>A decide is pressed as the route with its candidate and its word, as the window's press sends it.</summary>
     [Fact]
     public async Task A_decide_is_pressed_as_the_integrate_route_with_its_candidate_and_word()
     {

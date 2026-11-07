@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The end judgement's one writer (FABRIC-END2; the fabric events design §B5 and §C7): for one repository, each standing landing branch
+/// The end judgement's one writer: for one repository, each standing landing branch
 /// and each standing session branch judged through <see cref="EndJudgement"/>, and <see cref="HeldFact"/> written on its entry where the
 /// line holds it, kept while it still holds, and cleared where it stopped holding. Called where the look's tidy and <i>Accept</i>'s tidy
 /// judge the work (<see cref="AutoTidies"/>, <see cref="TreeLands"/>), before either removes anything, so an ended entry outlives its branch
@@ -16,27 +16,27 @@ namespace Daoris.Driver;
 ///
 /// <para><b>A fact lapses on a standing branch only</b> (canary 7): its tip moved, its cycle names another line, its line's form no longer
 /// descends from the commit it held at (rewound or replaced), or the repository at the path is another; one that rests on a landing's end
-/// (<see cref="EndBy.Inside"/>, <see cref="EndBy.Landed"/>) also lapses once that end no longer holds this pass (FABRIC-END2d). It is then judged again: held
+/// (<see cref="EndBy.Inside"/>, <see cref="EndBy.Landed"/>) also lapses once that end no longer holds this pass. It is then judged again: held
 /// anew, or cleared, which a reader reads as not known. A trace is never judged again. A fact that still holds is not written again, so a
 /// look that changes nothing writes nothing.</para>
 ///
-/// <para><b>Nothing is removed here</b> (§B8): the look's tidy takes its candidates from what is kept (FABRIC-END4a), and the
-/// inventory reads it (MILESTONE1a). <i>Ended</i> is derived at read from the
+/// <para><b>Nothing is removed here</b>: the look's tidy takes its candidates from what is kept, and the
+/// inventory reads it. <i>Ended</i> is derived at read from the
 /// kept fact and the effective cycle, never stored.</para>
 ///
-/// <para><b>Each end it writes is said</b> (EVENTHOOK1d-iii) through <see cref="WorkEnds"/>, with the session its landing names, whichever
+/// <para><b>Each end it writes is said</b> through <see cref="WorkEnds"/>, with the session its landing names, whichever
 /// caller asked: an end another caller wrote first is found holding and written by nobody again.</para>
 /// </remarks>
 internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
 {
-    // One judgement of a repository at a time in this process (FABRIC-END3): the look's tidy, Accept and the ref watch each keep ends, and
+    // One judgement of a repository at a time in this process: the look's tidy, Accept and the ref watch each keep ends, and
     // two keepers of one repository at once would each write what it read before the other wrote.
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> Judging = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Judge one repository's standing branches and keep what the line holds; how many entries were written comes back.</summary>
     /// <param name="root">The repository's main checkout, whose common dir is its <c>.git</c> folder.</param>
-    /// <param name="line">The line the cycle names (D86), read by the caller as its own judgement reads it.</param>
-    /// <param name="refs">The caller's refs (PROC1d-ii), where it holds them; null takes them here.</param>
+    /// <param name="line">The line the cycle names, read by the caller as its own judgement reads it.</param>
+    /// <param name="refs">The caller's refs, where it holds them; null takes them here.</param>
     internal async Task<int> KeepAsync(
         string root, string repository, string workspace, string? line, CancellationToken ct, RefSnapshot? refs = null)
     {
@@ -67,10 +67,10 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
         DriverConfig? config = null;
         var now = DateTimeOffset.UtcNow;
         var written = 0;
-        // EVENTHOOK1d-iii: the sessions whose work an entry written here says the line now holds, said once the pass is done.
+        // The sessions whose work an entry written here says the line now holds, said once the pass is done.
         var said = new List<(string Session, string? Quest)>();
 
-        // FABRIC-END2d: every landing's end this pass, by its branch (its kept fact where that still holds, else this pass's verdict), before
+        // Every landing's end this pass, by its branch (its kept fact where that still holds, else this pass's verdict), before
         // any is written: a landing inside another is judged once that one's own proof is known, and a session branch reads its landing's end
         // here rather than judging that landing again.
         var ends = new Dictionary<string, EndHost>(StringComparer.Ordinal);
@@ -96,7 +96,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
             else await JudgeLandingAsync(entry, tip).ConfigureAwait(false);
         }
 
-        // FABRIC-END2d (D102's group, as the clean-up's `Inside` proves it): a landing its own proofs did not end, whose files were compared,
+        // A landing its own proofs did not end, whose files were compared,
         // inside one whose own proof did. The landings' order, as the clean-up asks them.
         var hosts = landings.Where(entry => ends.TryGetValue(entry.Branch, out var end) && EndJudgement.OwnEnd(end.End)).Select(entry => ends[entry.Branch]).ToList();
         for (var at = 0; at < judged.Count && hosts.Count > 0; at++)
@@ -121,9 +121,9 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
 
         foreach (var grown in context.Grown.All().Where(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)))
         {
-            // TREEFOLLOW1: a tree its agent moved onto a branch of its own has its work there, which its run binds, so that branch's tip is judged.
+            // A tree its agent moved onto a branch of its own has its work there, which its run binds, so that branch's tip is judged.
             if (await TreeRefs.CommitOfAsync(root, $"refs/heads/{grown.Now ?? grown.Branch}", ct, refs).ConfigureAwait(false) is not { } tip) continue;
-            // D245: a part its chain's tidy ended at this tip is ended by that record alone, and none of the proofs below judge it again.
+            // A part its chain's tidy ended at this tip is ended by that record alone, and none of the proofs below judge it again.
             if (ChainTidies.Of(standing, repository, grown.Branch, tip) is { } tidied)
             {
                 // Kept while it holds, as every other end is: Next stamps the moment of each judgement, so a judged-again fact is never equal.
@@ -138,17 +138,17 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
                 continue;
             }
 
-            // FABRIC-END2d: a fact ended through a landing rests on that landing's end, so it holds while that end holds this pass.
+            // A fact ended through a landing rests on that landing's end, so it holds while that end holds this pass.
             if (grown.Held is { } kept && await HoldsAsync(kept, tip).ConfigureAwait(false)
                 && (kept.By != EndBy.Landed || (ends.TryGetValue(kept.On, out var on) && on.End.Ended))) continue;
-            // The landing that carries its unit's work, where one stands: its cycle is what that landing recorded (§B3).
+            // The landing that carries its unit's work, where one stands: its cycle is what that landing recorded.
             var landing = grown.Unit is { } unit ? landings.LastOrDefault(entry => entry.Units.Contains(unit, StringComparer.Ordinal)) : null;
             var landingEnd = landing is not null && ends.TryGetValue(landing.Branch, out var its) ? its.End : null;
             var cycle = landing is not null ? EndCycle.Recorded(landing) : EndCycle.Accepts(config ??= context.Config(), repository, workspace);
             carriers ??= await asks.CarriersAsync(root, repository, line, ct, refs).ConfigureAwait(false);
             var subject = new EndSubject(grown.Branch, tip, EndRole.Session, landing) { Worked = !string.Equals(tip, grown.From, StringComparison.Ordinal) };
             var verdict = await EndJudgement.JudgeAsync(root, cycle, subject, line, notHolders, carriers, ct, refs, landingEnd).ConfigureAwait(false);
-            // FABRIC-END2d: where its own proofs and its unit's landing end nothing (no unit names a landing on an install from before END2, or the
+            // Where its own proofs and its unit's landing end nothing (no unit names a landing, or the
             // one it names has not ended), the landing whose record holds its work and whose own proof ended it carries it: what the clean-up's
             // press finds as the landing holding its tip (TreeSweeps.LandingHoldingAsync), and the squash's record vouching for its session
             // (SquashedHoldAsync). HolderAsync's ancestry is the inside fact the landed proof reads, so the verdict is judged on it alone.
@@ -210,8 +210,8 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
     }
 
     /// <summary>
-    /// CLEANUP1b: one landing whose branch git said is missing (<see cref="LandedGone.Missing"/>), judged through <see cref="EndJudgement"/>
-    /// at the tip its landing recorded, where the line's ancestry of that commit is its end (§B5), or (CLEANUP1c) that commit's content
+    /// One landing whose branch git said is missing (<see cref="LandedGone.Missing"/>), judged through <see cref="EndJudgement"/>
+    /// at the tip its landing recorded, where the line's ancestry of that commit is its end, or that commit's content
     /// proof on a form of the line, as a platform's squash merge leaves it. Where the line holds it, the fact is written as the entry retires
     /// (<see cref="LandedBranches.HoldGone"/>): ended, so nothing of it is left to clean, and no recovery ref is made, since the line holds
     /// its work. Asked by the clean-up and the look before they read where its work went (<see cref="LandedCleanups"/>), so a branch merged
@@ -254,7 +254,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
     private static readonly IReadOnlySet<string> NoHolders = new HashSet<string>();
 
     /// <summary>
-    /// The fact a judgement leaves (§C7), given the one kept: an end held with its evidence, <c>Since</c> kept where the tip, the line and
+    /// The fact a judgement leaves, given the one kept: an end held with its evidence, <c>Since</c> kept where the tip, the line and
     /// the repository are the ones it was first held at; null where the verdict is not an end, or its evidence could not be read.
     /// </summary>
     internal static HeldFact? Next(HeldFact? kept, EndVerdict verdict, string? onAt, string repository, DateTimeOffset now)

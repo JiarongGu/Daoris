@@ -17,7 +17,7 @@ function overflow(row: HTMLElement): number {
 }
 
 /**
- * Whether a row of tabs draws its unselected tabs as their icons alone (TABS1): a tab shows its whole
+ * Whether a row of tabs draws its unselected tabs as their icons alone: a tab shows its whole
  * name or its icon, never a name cut to one character.
  *
  * @remarks
@@ -47,9 +47,9 @@ export function useTabFit(content: string): { row: (element: HTMLElement | null)
   const [compact, setCompact] = useState(false);
   // What the committed DOM draws. The observer reads this rather than the state, which may be ahead.
   const drawn = useRef(false);
-  // The row's width the whole names need, known once they were seen not to fit.
+  // The row's width the whole names need, known once they are seen not to fit.
   const need = useRef<number | null>(null);
-  // The content the remembered need was measured for.
+  // The content the remembered need is measured for.
   const measured = useRef<string | null>(null);
 
   const fit = useCallback((row: HTMLElement) => {

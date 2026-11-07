@@ -6,11 +6,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The plugins under the home's `plugins/`, judged the way Yaorin's host judges its catalogue: the host
-/// drives whatever is there and names no plugin (D64).
+/// drives whatever is there and names no plugin.
 /// </summary>
 /// <remarks>
 /// <para><b>The version is read before anything else.</b> A manifest from a newer API is refused
-/// naming both numbers and nothing of it is taken — the same rule `pack.json` has (PLUG1).</para>
+/// naming both numbers and nothing of it is taken — the same rule `pack.json` has.</para>
 ///
 /// <para><b>A broken plugin is a named problem, never a crash</b> — the loop that spends accounts does
 /// not stop because somebody's manifest has a trailing comma. It is listed with its problem, so both
@@ -20,15 +20,14 @@ namespace Daoris.Driver;
 /// build carries, or one an earlier plugin (by id) declared, makes the later plugin contribute nothing.
 /// A plugin adds; it never replaces.</para>
 ///
-/// <para><b>The rules are pure, the reading goes through <see cref="PluginFolders"/></b> (STRUCT3a, FLAT1b-i): a manifest's
-/// text is parsed and the catalogue judged from what was read; <c>Load</c>, <c>ReadFolder</c> and <c>ReadAsWritten</c> read
+/// <para><b>The rules are pure, the reading goes through <see cref="PluginFolders"/></b>: a manifest's
+/// text is parsed and the catalogue judged from what is read; <c>Load</c>, <c>ReadFolder</c> and <c>ReadAsWritten</c> read
 /// the home through that helper, which does the I/O, so this file names none itself.</para>
 ///
-/// <para>The CLI's <c>plugins.ts</c> was this class's twin and read the same folder by the same rules, until it left with
-/// <c>daoris plugin</c>'s TypeScript (PUSH1f2f, D194): <c>daoris plugin</c> reads through here. Three fields have readers of
+/// <para><c>daoris plugin</c> reads through here. Three fields have readers of
 /// their own, each held by its table: the icon
 /// (<see cref="PluginIcon"/>) and the tools (<see cref="PluginTools"/>), whose problems never refuse a plugin, and the steps
-/// with their resources (<see cref="PluginSteps"/>, FABRIC-UNIT1d), whose problems do.</para>
+/// with their resources (<see cref="PluginSteps"/>), whose problems do.</para>
 /// </remarks>
 public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplacePluginCatalog
 {
@@ -75,16 +74,16 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     public const string Placeholder = "${plugin}";
 
     /// <summary>
-    /// The host telling a plugin where it KEEPS things (D77): its data folder, which an update never
+    /// The host telling a plugin where it KEEPS things: its data folder, which an update never
     /// touches — a browser's signed-in profile, say, which otherwise lands under the user's profile,
-    /// where nothing of Daoris's lives (D63). Twin: `plugins.ts`.
+    /// where nothing of Daoris's lives. Twin: `plugins.ts`.
     /// </summary>
     public const string DataPlaceholder = "${data}";
 
     /// <summary>
     /// A plugin id's shape, which the CLI's <c>isPluginId</c> twins: it checks <see cref="IsId"/>, a manifest's id and a server's
-    /// name. <c>\z</c>, since .NET's <c>$</c> also passes a final line break the CLI's refuses (CASEFOLD1e). Its one spelling in the
-    /// driver (REFAC1): a landing rule's plugin, a plugin's tool id and the log's landing line ask <see cref="IsId"/>.
+    /// name. <c>\z</c>, since .NET's <c>$</c> also passes a final line break the CLI's refuses. Its one spelling in the
+    /// driver: a landing rule's plugin, a plugin's tool id and the log's landing line ask <see cref="IsId"/>.
     /// </summary>
 
     /// <summary>How a manifest's text is parsed: as written by hand, a trailing comma and a comment forgiven.</summary>
@@ -106,7 +105,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     /// </summary>
     public string Signature { get; }
 
-    /// <summary>A machine with no plugins: what a reader that was handed none judges against (HELP8).</summary>
+    /// <summary>A machine with no plugins: what a reader that is handed none judges against.</summary>
     public static PluginCatalog None { get; } = new([]);
 
     internal PluginCatalog(IReadOnlyList<PluginEntry> plugins)
@@ -122,13 +121,13 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
 
     /// <summary>
     /// Every server the contributing plugins hand to a session, in catalogue order, as the protocol
-    /// door carries one (ACP4). The knowledge host is not among them: it is Daoris's own, offered
-    /// first by the driver, and a plugin may not declare its name. Since HELPPLUG1a, the ones declared for sessions.
+    /// door carries one. The knowledge host is not among them: it is Daoris's own, offered
+    /// first by the driver, and a plugin may not declare its name. Only the ones declared for sessions.
     /// </summary>
     public IReadOnlyList<ServerEntry> Servers => ServersTo(PluginServerTo.Sessions);
 
     /// <summary>
-    /// The servers the contributing plugins declare for Ask Daoris (HELPPLUG1a, D170 point 3), approved or not: what reaches it,
+    /// The servers the contributing plugins declare for Ask Daoris, approved or not: what reaches it,
     /// and the rules for their tools, are the person's approvals' (<see cref="HelpGrants"/>).
     /// </summary>
     public IReadOnlyList<ServerEntry> HelpServers => ServersTo(PluginServerTo.Help);
@@ -144,9 +143,8 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     public static bool IsId(string id) => PluginIds.IsId(id);
 
     /// <summary>
-    /// The harness names this build runs, which no plugin may declare (PLUGINRESERVE1, D64 rule 3): the built set's
-    /// <see cref="ProviderRegistry.Reserved"/>, each door and each agent a door runs as, `codex` among them since CODEXACCT1 made it
-    /// a holder rather than a door. Twin: the CLI's <c>reservedHarnesses()</c>; both suites hold their list to the driver
+    /// The harness names this build runs, which no plugin may declare: the built set's
+    /// <see cref="ProviderRegistry.Reserved"/>, each door and each agent a door runs as, `codex` among them, a holder rather than a door. Twin: the CLI's <c>reservedHarnesses()</c>; both suites hold their list to the driver
     /// suite's <c>fixtures/reserved-harnesses.json</c>.
     /// </summary>
     public static IReadOnlyList<string> Reserved => ProviderRegistry.Built().Reserved;
@@ -154,7 +152,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     /// <summary>
     /// Read the home's plugins.
     /// </summary>
-    /// <param name="home">The Daoris home (D63).</param>
+    /// <param name="home">The Daoris home.</param>
     /// <param name="reservedHarnesses">
     /// Harness names reserved beside <c>Reserved</c>, which is reserved whatever is handed: a set a test builds of its own
     /// adapters, say. A plugin declaring one is refused naming both.
@@ -178,15 +176,15 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     /// <summary>
     /// What in a manifest this build refuses, whatever else is installed: a harness it already carries,
     /// or a server under the knowledge host's name. Case-blind, as every name here is. The catalogue and
-    /// the driver's add ask this one question (PLUG9), as the CLI's twin asks `refusedByThisBuild`.
+    /// the driver's add ask this one question, as the CLI's twin asks `refusedByThisBuild`.
     /// </summary>
     /// <param name="reservedHarnesses">Harness names reserved beside <c>Reserved</c>, which is reserved whatever is handed.</param>
     public static string? RefusedByThisBuild(PluginManifest manifest, IEnumerable<string> reservedHarnesses) =>
         Refused(manifest, ReservedWith(reservedHarnesses));
 
     /// <summary>
-    /// One manifest read by the catalogue's own rules, from any folder, its placeholders left as written
-    /// (PLUG9): what the driver's add reads before it copies, and what an Ask Daoris card shows, so the
+    /// One manifest read by the catalogue's own rules, from any folder, its placeholders left as written:
+    /// what the driver's add reads before it copies, and what an Ask Daoris card shows, so the
     /// person sees `${plugin}` where the manifest says it and never a machine path.
     /// </summary>
     /// <param name="id">The id it must carry: the name of the folder it is, or will be, installed as.</param>
@@ -194,7 +192,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
         Read(id, folder: null, manifestPath);
 
     /// <summary>
-    /// A manifest in a folder anywhere — a plugins repository's, before anything is installed (PLUG8) —
+    /// A manifest in a folder anywhere — a plugins repository's, before anything is installed —
     /// read by the catalogue's own rules, with the manifest's id taken as the folder's name the way
     /// `daoris plugin add` reads a source folder: installing names the folder by the id, so a source
     /// folder may be called anything.
@@ -213,8 +211,8 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             : Parse(name, text, each => PluginFolders.Expand(each, folder, data));
     }
 
-    // The build's own names are reserved whatever a caller hands (PLUGINRESERVE1): callers hand a set's doors, and a door list
-    // alone misses an agent a door runs as, which let a plugin declare `codex` here while the CLI refused it.
+    // The build's own names are reserved whatever a caller hands: callers hand a set's doors, and a door list
+    // alone misses an agent a door runs as, such as `codex`.
     private static HashSet<string> ReservedWith(IEnumerable<string>? handed) =>
         new(Reserved.Concat(handed ?? []), StringComparer.OrdinalIgnoreCase);
 
@@ -245,7 +243,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     }
 
     /// <summary>
-    /// The catalogue of what was read under <paramref name="root"/>, in the order read: each plugin's folder, its manifest and
+    /// The catalogue of what is read under <paramref name="root"/>, in the order read: each plugin's folder, its manifest and
     /// the problem its reading found. A plugin the person switched off is listed and judged no further; one this build refuses,
     /// or one declaring an agent or a server an earlier plugin (by id) declared, contributes nothing.
     /// </summary>
@@ -271,7 +269,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
             if (problem is null && enabled)
             {
                 // What this build refuses whatever else is installed, asked first, as the CLI's twin
-                // and `daoris plugin add` ask it (PLUG9: the driver's add asks the same question).
+                // and `daoris plugin add` ask it (the driver's add asks the same question).
                 problem = refusedByThisBuild(manifest);
                 foreach (var harness in problem is null ? manifest.Harnesses : [])
                 {
@@ -302,9 +300,9 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 }
             }
 
-            // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run
-            // (PLUGTOOL1a), not a step or a resource (FABRIC-UNIT1d). Its icon stays: it is how the person recognises the plugin the
-            // sentence is about, never something the plugin contributes (D140 §3.1).
+            // Nothing of a refused plugin is taken — not a harness, not a hook, not a server, not a tool it would run,
+            // not a step or a resource. Its icon stays: it is how the person recognises the plugin the
+            // sentence is about, never something the plugin contributes.
             if (problem is not null)
             {
                 manifest = manifest with { Harnesses = [], Hooks = null, Servers = [], Skills = [], Steps = [], Resources = [], Tools = [], ToolsProblem = null };
@@ -431,13 +429,13 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                         Install: Strings(row, "install", expanded),
                         VersionArguments: Strings(row, "versionArguments", expanded),
                         AccountOf: Text(row, "accountOf"),
-                        // XAGENT1b: the plugin's word for its tool and its maker; a manifest written before says neither.
+                        // The plugin's word for its tool and its maker; either may be absent.
                         Product: Text(row, "product")?.Trim() is { Length: > 0 } product ? product : null,
                         Maker: Text(row, "maker")?.Trim() is { Length: > 0 } maker ? maker : null,
-                        // OWNSPACE1c (D175): only JSON true says the agent's own home is nobody's; the CLI reads it the same.
+                        // Only JSON true says the agent's own home is nobody's; the CLI reads it the same.
                         OwnHome: row.ValueKind == JsonValueKind.Object
                             && row.TryGetProperty("ownHome", out var ownHome) && ownHome.ValueKind == JsonValueKind.True,
-                        // COAGENT1e: the harness's own words for its two other postures, read as `product` is.
+                        // The harness's own words for its two other postures, read as `product` is.
                         FullPosture: Text(row, "fullPosture")?.Trim() is { Length: > 0 } full ? full : null,
                         AskingPosture: Text(row, "askingPosture")?.Trim() is { Length: > 0 } asking ? asking : null));
                 }
@@ -498,7 +496,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                         }
                     }
 
-                    // HELPPLUG1a (D170 point 3): who it is handed to, sessions where it says none, and the tools Ask Daoris may
+                    // Who it is handed to, sessions where it says none, and the tools Ask Daoris may
                     // call, only where it is handed to Ask Daoris. Twin: `plugins.ts`, the same rules and words in the same order.
                     var to = DestinationsOf(row, $"server `{name}`", out var toProblem);
                     if (toProblem is not null) return (PluginManifest.Empty(id), toProblem);
@@ -509,7 +507,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                             $"server `{name}`'s `allow` must list the tools Ask Daoris may call, once each, by name: letters, digits, `_` and `-`.");
                     }
 
-                    // HELPPLUG1a's tightening: the tools that change something outside Daoris, never allowed silently.
+                    // The tools that change something outside Daoris, never allowed silently.
                     var writes = ToolsOf(row, "writes");
                     if (writes is null)
                     {
@@ -532,7 +530,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 }
             }
 
-            // HELPPLUG1b (D170 point 4): the skills it hands, each a folder `skills/<name>` beside the manifest, and who to. Twin:
+            // The skills it hands, each a folder `skills/<name>` beside the manifest, and who to. Twin:
             // `plugins.ts`, the same rules and words in the same order; a problem refuses the plugin, as a server's does.
             var skills = new List<PluginSkill>();
             if (root.TryGetProperty("skills", out var carried))
@@ -556,17 +554,17 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
                 }
             }
 
-            // FABRIC-UNIT1d (§D9): its steps, each the one node declaration a built-in is, and the resources they create. Twin:
+            // Its steps, each the one node declaration a built-in is, and the resources they create. Twin:
             // `steps.ts`, the same rules and words in the same order; a problem refuses the plugin, as a skill's does.
             var declaredSteps = PluginSteps.Read(id, root);
             if (declaredSteps.Problem is not null) return (PluginManifest.Empty(id), declaredSteps.Problem);
 
-            // Its icon, last: an icon's problem is said and never refuses the plugin (D140 §3.1).
+            // Its icon, last: an icon's problem is said and never refuses the plugin.
             var (icon, iconProblem) = root.TryGetProperty("icon", out var declaredIcon)
                 ? PluginIcon.Declared(declaredIcon)
                 : (null, null);
 
-            // Its tools, after: a tool's problem is that tool's sentence and never refuses the plugin (D150 point 7).
+            // Its tools, after: a tool's problem is that tool's sentence and never refuses the plugin.
             var (tools, toolsProblem) = root.TryGetProperty("tools", out var declaredTools)
                 ? PluginTools.Read(declaredTools)
                 : ([], null);
@@ -613,13 +611,13 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
     }
 
     /// <summary>
-    /// A tool's name as Ask Daoris's rules may name it (HELPPLUG1a): letters, digits, <c>_</c> and <c>-</c>, as the harness names
+    /// A tool's name as Ask Daoris's rules may name it: letters, digits, <c>_</c> and <c>-</c>, as the harness names
     /// a tool, so a rule made of one is a server's tool and never a command or a path. Twin: the CLI's <c>TOOL_NAME</c>.
     /// </summary>
     private static readonly Regex ToolName = new(@"^[A-Za-z0-9_-]{1,64}\z", RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// A server's or a skill's <c>to</c> (HELPPLUG1a, HELPPLUG1b): absent is sessions alone; otherwise a list naming each
+    /// A server's or a skill's <c>to</c>: absent is sessions alone; otherwise a list naming each
     /// destination once, at least one, and none but <see cref="PluginServerTo.All"/>.
     /// </summary>
     /// <param name="said">The declaration as its problem names it: "server `x`" or "skill `x`".</param>
@@ -638,7 +636,7 @@ public sealed class PluginCatalog : IKnowledgePlugins, IAgentPlugins, IWorkplace
         return to;
     }
 
-    /// <summary>A server's <c>allow</c> or <c>writes</c> (HELPPLUG1a): absent is none; otherwise tool names, each once; null where it breaks that.</summary>
+    /// <summary>A server's <c>allow</c> or <c>writes</c>: absent is none; otherwise tool names, each once; null where it breaks that.</summary>
     private static IReadOnlyList<string>? ToolsOf(JsonElement server, string field)
     {
         if (!server.TryGetProperty(field, out _)) return [];

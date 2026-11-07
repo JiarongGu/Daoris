@@ -5,8 +5,8 @@ import { chinese } from '../../design/storyLanguage';
 import { OpinionGate, type OpinionGateActs } from './OpinionGate';
 import { DETAIL, GATES, NOTHING } from './opinionFixtures';
 
-// *Second opinion* (XAGENT1g; the second-agent design §8.5, §9), beside the review's gate where *Accept…* would be: each state
-// of §8.5's table, with the findings beside their answers. At the main area's width beside a 1546 px window and at 680 px, in
+// *Second opinion*, beside the review's gate where *Accept…* would be: each state
+// of the gate's table, with the findings beside their answers. At the main area's width beside a 1546 px window and at 680 px, in
 // both languages and both themes.
 
 const nothing = () => {};
@@ -56,7 +56,7 @@ export const Disputed: Story = {};
 /** The same in 中文. */
 export const DisputedChinese: Story = { decorators: [chinese] };
 
-/** XAGENT1g4b: the reviewer's door carried no usage, so the gate says *not measured*, never 0 (D57 §4). */
+/** The reviewer's door carried no usage, so the gate says *not measured*, never 0. */
 export const DisputedUseNotMeasured: Story = { args: { detail: { ...DETAIL, first: { ...DETAIL.first!, usage: null } } } };
 
 /** The same in dark. */

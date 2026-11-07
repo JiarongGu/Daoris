@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2f (the memory coordinator design §6, at presentation) as CONTEXTONE1c places it: a hand-over's brief reads the memory its
-/// line read as the service answers it when the brief is composed, an entry ended since its read shown ended, and hands it on to the
+/// A hand-over's brief reads the memory its
+/// line read as the service answers it when the brief is composed, an entry ended after its read shown ended, and hands it on to the
 /// standing block that rides with it, never saying it itself; a service with no such door hands none on.
 /// </summary>
 public sealed class BriefMemoryTests : IDisposable

@@ -4,17 +4,17 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a landing may move a standing branch on (LAND2c, D145 §3, D149): pure, so its table holds every refusal without
+/// Whether a landing may move a standing branch on: pure, so its table holds every refusal without
 /// git. Only a branch Daoris made and recorded, standing at the recorded tip, checked out nowhere, whose work does not
 /// already read on the line, to a commit that grows from that tip with something new.
 /// </summary>
 public static class LandingAdvance
 {
     /// <summary>
-    /// What the session's work must grow from to move the branch on: the tip the record says was squashed, under a squash rule where
-    /// it says one (PROCESS1b-ii point 4), else the tip the branch was made or last moved at. 🔴 Work replayed onto the branch's tip (a
-    /// part joining its entry's branch, ACCEPTALL1b, or past what the line holds, LANDSYNC1) grows from that tip under a squash too
-    /// (ACCEPTALL1d, D87's 2026-10-15 amendment point 3): the squashed tip is another tree's, which the replay does not hold.
+    /// What the session's work must grow from to move the branch on: the tip the record says is squashed, under a squash rule where
+    /// it says one, else the tip the branch is made or last moved at. 🔴 Work replayed onto the branch's tip (a
+    /// part joining its entry's branch, or past what the line holds) grows from that tip under a squash too:
+    /// the squashed tip is another tree's, which the replay does not hold.
     /// </summary>
     /// <param name="squash">The rule squashes the work into one commit.</param>
     /// <param name="replayed">The work was replayed onto the branch's tip, rather than being the session's own tip.</param>
@@ -64,8 +64,8 @@ public static class LandingAdvance
     }
 
     /// <summary>
-    /// The refusal a standing branch meets from what is cheap to read, or null where those facts allow the move (STANDSREFUSE1,
-    /// D167's ACCEPTALL1g note): not the record's, moved since the recorded tip, checked out in a working tree, or its pull request
+    /// The refusal a standing branch meets from what is cheap to read, or null where those facts allow the move:
+    /// not the record's, moved since the recorded tip, checked out in a working tree, or its pull request
     /// closed by the platform's kept word. The plan says it before the press in these words, which are the press's own (<see
     /// cref="Refusal"/> asks this first); git's proof that its work reads on the line, and how the session's work grows from it, are
     /// the press's alone, since they need the line's forms and the work it would land.
@@ -93,7 +93,7 @@ public static class LandingAdvance
                 + "Switch that tree to another branch, then accept again.");
         }
 
-        // PLUGHOOK1a (D149 point 3): the platform's kept word refuses as git's own proof does, since git cannot see a squash once
+        // The platform's kept word refuses as git's own proof does, since git cannot see a squash once
         // the line has moved on, and a closed pull request takes no new commits.
         if (recorded.PullRequestState is { State: PullRequestStates.Completed or PullRequestStates.Abandoned } kept)
         {

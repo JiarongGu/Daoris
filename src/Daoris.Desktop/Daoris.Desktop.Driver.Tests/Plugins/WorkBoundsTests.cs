@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The work wire's bounds and its restart policy (FABRIC-PERFORM1a; the fabric events design §C4): a frame over 64 KB dropped unread, 60
+/// The work wire's bounds and its restart policy: a frame over 64 KB dropped unread, 60
 /// events a minute, a refusal's line once a minute with its count, and an unasked exit's back-off of 1, 5 and 15 minutes with three
 /// within an hour marking the plugin unsound until the person tries again.
 /// </summary>
@@ -48,8 +48,8 @@ public sealed class WorkBoundsTests
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: a line ends at LF, CRLF or a bare CR, as <see cref="TextReader.ReadLineAsync()"/> ends one, which the wire
-    /// read before the bound — a plugin answering <c>JSON\r</c> was answered, and must still be.
+    /// A line ends at LF, CRLF or a bare CR, as <see cref="TextReader.ReadLineAsync()"/> ends one, which the wire
+    /// reads before the bound: a plugin answering <c>JSON\r</c> is answered.
     /// </summary>
     [Fact]
     public async Task A_bare_CR_ends_a_line_as_it_always_did()
@@ -70,7 +70,7 @@ public sealed class WorkBoundsTests
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: passing over a dropped frame keeps its top-level <c>id</c> and whether it named a <c>method</c>, wherever they
+    /// Passing over a dropped frame keeps its top-level <c>id</c> and whether it names a <c>method</c>, wherever they
     /// stand in it, so an answer too long to read fails its call at once; a nested <c>id</c> or <c>method</c> is not the frame's.
     /// </summary>
     [Fact]
@@ -93,7 +93,7 @@ public sealed class WorkBoundsTests
     }
 
     /// <summary>
-    /// PLUGSTDERR1: a clipping reader, a plugin's stderr's, keeps a long line's start up to the bound, in whole characters, and reads the next;
+    /// A clipping reader, a plugin's stderr's, keeps a long line's start up to the bound, in whole characters, and reads the next;
     /// a line at the bound is whole and not marked.
     /// </summary>
     [Fact]

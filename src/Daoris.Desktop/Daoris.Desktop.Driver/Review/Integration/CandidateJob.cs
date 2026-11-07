@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one job every process a candidate's gates start runs in (INTEGRATE1f part f2; the integration design §5.6, CISCOPE1e2's job,
-/// QUEUEDRAIN1's lesson): named by the candidate (<see cref="IntegrationJobs.NameOf"/>), made empty, each process started suspended and
+/// The one job every process a candidate's gates start runs in: named by the candidate (<see cref="IntegrationJobs.NameOf"/>), made empty, each process started suspended and
 /// joined before it runs (<see cref="HeavyStep"/>). A drop, a stop or the run's end closes it, its descendants ending with it, and
 /// <b>before</b> any place in the machine's admission is let go, so a place is never free while a process of its run still lives
 /// (<see cref="EndLeftAsync"/>, called while the place is still held, and <see cref="DisposeAsync"/>).

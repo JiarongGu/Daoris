@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One row of This Daoris's <i>Disk space</i> card (KEEP1c, D195 point 5; the cleanup design §2.1, §4.1): a kind a person decides about
+/// One row of This Daoris's <i>Disk space</i> card: a kind a person decides about
 /// together, its rule in words, and whose rule it is where it is not Daoris's. A kind whose rule runs here names its <see cref="KeepKind"/>.
 /// </summary>
 /// <param name="Id">Its id: the card's row, the catalogue's <c>settings.daoris.space.kind.*</c> and the terminal's word.</param>
@@ -19,9 +19,9 @@ public sealed record SpaceKind(string Id, string Rule, string? Whose, KeepKind? 
 public sealed record SpacePlaces(IReadOnlyList<string> Places, IReadOnlyList<string> Skip, IReadOnlyList<string> Entries);
 
 /// <summary>
-/// The card's rows, in its order (the cleanup design §4.1), and where each lies. Every rule a row shows already runs (§9): the set-aside
-/// folders' days and slim (KEEP1a), the downloads' days (KEEP1b), the machine log's days, history's press or the person's age (KEEP1g),
-/// the trees' clean-up; the rest say whose rule it is. The person sets the first four (KEEP1d, KEEP1g, <see cref="KeepRules.Settable"/>),
+/// The card's rows, in its order, and where each lies. Every rule a row shows already runs: the set-aside
+/// folders' days and slim, the downloads' days, the machine log's days, history's press or the person's age,
+/// the trees' clean-up; the rest say whose rule it is. The person sets the first four (<see cref="KeepRules.Settable"/>),
 /// each row's <i>Change…</i>.
 /// </summary>
 public static class SpaceKinds
@@ -44,8 +44,8 @@ public static class SpaceKinds
     public static SpaceKind? Named(string id) => Table.FirstOrDefault(kind => string.Equals(kind.Id, id, StringComparison.Ordinal));
 
     /// <summary>
-    /// The browser's caches, relative to <c>browser-engine</c>'s root, its active profile being <c>Default</c> (the cleanup design §3.2's
-    /// table): counted here as the browser's own, cleared by the person's press while the browser is closed (KEEP1e, <see cref="BrowserCacheClearing"/>), and below the floor once a stretch (KEEP1f).
+    /// The browser's caches, relative to <c>browser-engine</c>'s root, its active profile being <c>Default</c>:
+    /// counted here as the browser's own, cleared by the person's press while the browser is closed (<see cref="BrowserCacheClearing"/>), and below the floor once a stretch.
     /// </summary>
     public static IReadOnlyList<string> BrowserCaches { get; } =
     [
@@ -53,7 +53,7 @@ public static class SpaceKinds
         "Default/Shared Dictionary/cache", "component_crx_cache", "GrShaderCache", "ShaderCache",
     ];
 
-    /// <summary>What an earlier build left at the home's top, each by its exact path (§1.6): <c>webview2/</c> and <c>browser/profile/</c>.</summary>
+    /// <summary>What an earlier build left at the home's top, each by its exact path: <c>webview2/</c> and <c>browser/profile/</c>.</summary>
     public static IReadOnlyList<string> EarlierBuild { get; } = ["webview2", "browser/profile"];
 
     /// <summary>
@@ -63,7 +63,7 @@ public static class SpaceKinds
     /// </summary>
     public static SpacePlaces Places(string home, string id)
     {
-        // KEEPSIZE1a: the trees at every place of their entry, and the folders set aside under each, the old place's included.
+        // The trees at every place of their entry, and the folders set aside under each, an older place's included.
         var trees = DaorisHome.Places(home, HomeEntry.Trees);
         var setAside = trees.Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).ToList();
         var engine = DaorisHome.Entry(home, HomeEntry.BrowserEngine);
@@ -97,8 +97,8 @@ public static class SpaceKinds
     }
 
     /// <summary>
-    /// An entry's places: an entry kept per item, the folder holding its items in each of its places; the window's profile under an old
-    /// home, the names it holds there, never the old home whole; else the one place <see cref="DaorisHome.Entry"/> finds.
+    /// An entry's places: an entry kept per item, the folder holding its items in each of its places; the window's profile under an older
+    /// home, the names it holds there, never that home whole; else the one place <see cref="DaorisHome.Entry"/> finds.
     /// </summary>
     private static IEnumerable<string> Of(string home, HomeEntry entry)
     {
@@ -116,23 +116,23 @@ public static class SpaceKinds
             OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 }
 
-/// <summary>One kind's last walk (the cleanup design §4.3): when it ended, its bytes and files, why it stopped short, and each set-aside folder's bytes.</summary>
+/// <summary>One kind's last walk: when it ended, its bytes and files, why it stopped short, and each set-aside folder's bytes.</summary>
 /// <param name="Partial"><c>budget</c>, <c>cancelled</c>, <c>unreadable</c> or <c>twice</c> where the walk read only part; null where whole.</param>
 /// <param name="Folders">For the set-aside kind, each folder's bytes by <c>&lt;workspace&gt;/&lt;repository&gt;/&lt;folder&gt;</c>.</param>
 public sealed record KindReading(DateTimeOffset Measured, long Bytes, int Files, string? Partial, IReadOnlyDictionary<string, long> Folders);
 
 /// <summary>
-/// The card's sizes (KEEP1c, the cleanup design §4.3): a bounded walk per kind through <see cref="WiringSizes.MeasurePlaces"/>, never a
+/// The card's sizes: a bounded walk per kind through <see cref="WiringSizes.MeasurePlaces"/>, never a
 /// ledger and never the whole home on a look. Each kind has its own budget, so one large kind never starves the rest. Walks run in the
 /// background, one home's at a time and one kind after another; each kind's reading publishes as it ends, so the card fills in kind by
-/// kind (WIRING-SIZES-LIVE1's need). Kept for the process, as <see cref="WiringSizes.Shared"/> keeps the folders' measure.
+/// kind. Kept for the process, as <see cref="WiringSizes.Shared"/> keeps the folders' measure.
 /// </summary>
 public sealed class SpaceSizes
 {
     /// <summary>This process's: what every window of the desktop and the look's pass read and start.</summary>
     public static SpaceSizes Shared { get; } = new();
 
-    /// <summary>How often the look's pass counts a kind by itself (§3.1 step 6): at most once a day.</summary>
+    /// <summary>How often the look's pass counts a kind by itself: at most once a day.</summary>
     public static readonly TimeSpan Daily = TimeSpan.FromDays(1);
 
     private readonly ConcurrentDictionary<string, KindReading> _readings = new(StringComparer.Ordinal);
@@ -194,7 +194,7 @@ public sealed class SpaceSizes
     }
 
     /// <summary>
-    /// The look's pass (§3.1 step 6, §4.3): each kind never counted in this process, or counted a day ago or more, and each kind this run
+    /// The look's pass: each kind never counted in this process, or counted a day ago or more, and each kind this run
     /// removed from, walked in the background. True where any was asked.
     /// </summary>
     public bool StartDue(string home, DateTimeOffset now, IEnumerable<string> removed, WiringBudget budget)
@@ -315,18 +315,18 @@ public sealed record SpaceWorld(string Home)
     public Func<string, (long Free, long Total)?> Volume { get; init; } = SystemSpace.VolumeOf;
 
     /// <summary>
-    /// A folder's volume with its identity (KEEP1f), read for the folder's own path through any junction or mount: which volume each kind's
+    /// A folder's volume with its identity, read for the folder's own path through any junction or mount: which volume each kind's
     /// entry lies on, said on its row where it is not the Daoris folder's. The system's read by default.
     /// </summary>
     public Func<string, VolumeReading?> Reading { get; init; } = SpaceVolumes.Read;
 
-    /// <summary>The stretches below the floor this process keeps (KEEP1f), whose freeing the read says.</summary>
+    /// <summary>The stretches below the floor this process keeps, whose freeing the read says.</summary>
     public SpaceFloors Floors { get; init; } = SpaceFloors.Shared;
 
     /// <summary>Whether a process still runs, for the run lock's holder; null asks the system.</summary>
     public Func<int, bool>? Lives { get; init; }
 
-    /// <summary>The press's runs in this process (KEEP1e), whose current or last is the answer's <c>run</c>.</summary>
+    /// <summary>The press's runs in this process, whose current or last is the answer's <c>run</c>.</summary>
     public SpaceRuns Runs { get; init; } = SpaceRuns.Shared;
 
     /// <summary>The terminal's world: this home, its downloads' uses read from the files as the loop resolves them.</summary>
@@ -337,16 +337,16 @@ public sealed record SpaceWorld(string Home)
 }
 
 /// <summary>
-/// This Daoris's <i>Disk space</i> read (KEEP1c, D195 point 5; the cleanup design §4.4): <c>SYSTEM_SPACE</c>'s answer and
+/// This Daoris's <i>Disk space</i> read: <c>SYSTEM_SPACE</c>'s answer and
 /// <c>daoris space</c>'s, one reader. The free space of the Daoris folder's volume; each kind's size with when it was counted, its
 /// rule, its next and its last clean; and the run lock's holder, a run under way or one a crash cut short. It walks nothing: sizes are
 /// the kinds' last walks (<see cref="SpaceSizes"/>), and a kind never counted says so. It changes nothing.
 /// </summary>
 /// <remarks>
 /// <para>The shape is a wire shape: every field added, never renamed. A fact not read is <c>null</c> beside its <c>…Why</c>. The floor
-/// (KEEP1f, <see cref="SpaceFloor"/>): <c>volume.floor</c> from the volume's own size and the person's rule, <c>below</c>, what the floor
+/// (<see cref="SpaceFloor"/>): <c>volume.floor</c> from the volume's own size and the person's rule, <c>below</c>, what the floor
 /// freed early in this stretch below (<c>freedEarly</c>), and a kind's own <c>volume</c> where its entry lies on another; each kind's
-/// <c>rule.low</c> where the floor frees it early. The press's <c>run</c> is KEEP1e's (<see cref="SpaceRuns"/>).</para>
+/// <c>rule.low</c> where the floor frees it early. The press's <c>run</c> is <see cref="SpaceRuns"/>'s.</para>
 /// </remarks>
 public static class SystemSpace
 {
@@ -363,7 +363,7 @@ public static class SystemSpace
         var holder = KeepingRun.Holder(home, world.Lives);
         var folder = DaorisHome.FolderOf(home).Folder;
         var volume = world.Volume(folder);
-        // KEEP1f: the folder's volume by its identity, so a kind whose entry lies on another says that volume on its row.
+        // The folder's volume by its identity, so a kind whose entry lies on another says that volume on its row.
         var folderId = world.Reading(folder)?.Id;
         var stretches = world.Floors.Of(home);
         var stretch = folderId is not null && stretches.TryGetValue(folderId, out var held) ? held : null;
@@ -376,7 +376,7 @@ public static class SystemSpace
                 ? new JsonObject
                 {
                     ["path"] = folder, ["free"] = read.Free, ["total"] = read.Total,
-                    // KEEP1f: the floor this volume is held to, from its own size, and whether it is below; what the floor freed early in this
+                    // The floor this volume is held to, from its own size, and whether it is below; what the floor freed early in this
                     // stretch below, where it freed anything.
                     ["floor"] = Floor(policy.Floor, read.Total), ["below"] = Below(policy.Floor, read.Free, read.Total),
                     ["freedEarly"] = Freed(stretch),
@@ -384,9 +384,9 @@ public static class SystemSpace
                 : null,
             ["volumeWhy"] = volume is null ? "unreadable" : null,
             ["kinds"] = kinds,
-            // KEEPSIZE1: the allowance over the whole, and the whole as the kinds' last counts sum it (null while any is not counted yet).
+            // The allowance over the whole, and the whole as the kinds' last counts sum it (null while any is not counted yet).
             ["allowance"] = Allowance(world, policy),
-            // KEEP1e: the press's run, under way or last ended in this process; none where this process ran none.
+            // The press's run, under way or last ended in this process; none where this process ran none.
             ["run"] = world.Runs.Last(home)?.Json(),
             ["held"] = holder is null
                 ? null
@@ -426,7 +426,7 @@ public static class SystemSpace
         }
     }
 
-    /// <summary>A volume's floor as the read says it (KEEP1f): its bytes from the volume's own size, none where it is off, and where it comes from.</summary>
+    /// <summary>A volume's floor as the read says it: its bytes from the volume's own size, none where it is off, and where it comes from.</summary>
     private static JsonObject Floor(FloorPolicy policy, long total) => new() { ["bytes"] = policy.Of(total), ["from"] = policy.From };
 
     private static bool Below(FloorPolicy policy, long free, long total) => policy.Of(total) is { } floor && free < floor;
@@ -434,7 +434,7 @@ public static class SystemSpace
     private static JsonObject? Freed(FloorStretch? stretch) =>
         stretch is { Freed: > 0, FreedAt: { } at } ? new JsonObject { ["bytes"] = stretch.Freed, ["at"] = Moments.Write(at) } : null;
 
-    /// <summary>The entry the floor reads a kind's volume by (KEEP1f): where its acts free from, or the trees' own; none for the rest.</summary>
+    /// <summary>The entry the floor reads a kind's volume by: where its acts free from, or the trees' own; none for the rest.</summary>
     private static HomeEntry? FloorEntry(string kind) => kind switch
     {
         "set-aside" or "trees" => HomeEntry.Trees,
@@ -444,7 +444,7 @@ public static class SystemSpace
     };
 
     /// <summary>
-    /// A kind's own volume (KEEP1f; the cleanup design §3.2, §4.4's <c>kinds[].volume</c>): only where its entry lies on another volume than
+    /// A kind's own volume (<c>kinds[].volume</c>): only where its entry lies on another volume than
     /// the Daoris folder's, read for its own path; null otherwise, or where either does not read.
     /// </summary>
     private static JsonObject? KindVolume(SpaceWorld world, SpaceKind kind, KeepPolicy policy, string? folderId, IReadOnlyDictionary<string, FloorStretch> stretches)
@@ -497,23 +497,23 @@ public static class SystemSpace
             ["partial"] = reading?.Partial is not null,
             ["partialWhy"] = reading?.Partial,
             ["counting"] = world.Sizes.Counting(home, kind.Id),
-            // KEEP1f: a kind's entry on another volume than the Daoris folder's, said on its own row with that volume's floor.
+            // A kind's entry on another volume than the Daoris folder's, said on its own row with that volume's floor.
             ["volume"] = KindVolume(world, kind, policy, folderId, stretches),
             ["rule"] = Rule(kind, policy),
-            // KEEP1d: the person sets the rules of the kinds `KeepRules.Settable` names, on the card's *Change…* and `daoris settings keep`.
+            // The person sets the rules of the kinds `KeepRules.Settable` names, on the card's *Change…* and `daoris settings keep`.
             ["settable"] = kind.Keeps is { } settable && KeepRules.Settable.Contains(settable),
-            // KEEP1d: what the person may set, so the editor offers the kind's own choices and the driver's bounds, never a copy of them.
+            // What the person may set, so the editor offers the kind's own choices and the driver's bounds, never a copy of them.
             ["bounds"] = kind.Keeps is { } bounded && KeepRules.Settable.Contains(bounded) ? Bounds(bounded) : null,
             ["next"] = next,
             ["nextWhy"] = nextWhy,
-            // KEEPSIZE1b (the keep-size design §4.5): the set-aside folders no rule may take yet, by why, from their manifests alone.
+            // The set-aside folders no rule may take yet, by why, from their manifests alone.
             ["waiting"] = kind.Id == "set-aside" ? SetAsideWaiting(home, policy) : null,
             ["last"] = last is null ? null : Last(last),
             ["lastWhy"] = kind.Keeps is not null && record.Problem is not null ? "unreadable" : null,
         };
     }
 
-    /// <summary>What the person may set of a kind: its days, and the size limit (KEEPSIZE1d) only where the kind takes one.</summary>
+    /// <summary>What the person may set of a kind: its days, and the size limit only where the kind takes one.</summary>
     private static JsonObject Bounds(KeepKind kind)
     {
         var bounds = new JsonObject { ["min"] = kind.MinDays, ["max"] = kind.MaxDays, ["whole"] = kind.MaySetWhole, ["never"] = kind.MaySetNever };
@@ -525,8 +525,8 @@ public static class SystemSpace
     private static JsonObject Rule(SpaceKind kind, KeepPolicy policy)
     {
         var rule = new JsonObject { ["kind"] = kind.Rule, ["days"] = null, ["whole"] = null, ["default"] = true, ["whose"] = kind.Whose };
-        // KEEP1f: what the floor frees early of a kind while the floor is on, which its rule then says (*cleared when space is low*).
-        // KEEPSIZE1f: the floor frees nothing, so no kind says it is cleared when space is low.
+        // What the floor frees early of a kind while the floor is on, which its rule then says (*cleared when space is low*).
+        // The floor frees nothing, so no kind says it is cleared when space is low.
         rule["low"] = false;
         switch (kind.Id)
         {
@@ -551,7 +551,7 @@ public static class SystemSpace
                 rule["default"] = policy.Logs == KeepPolicy.Default.Logs;
                 break;
             case "history":
-                // KEEP1g: the press alone by default; an age the person set, the days past a unit's last move.
+                // The press alone by default; an age the person set, the days past a unit's last move.
                 if (policy.History.Days is { } age)
                 {
                     rule["kind"] = "days";
@@ -600,8 +600,8 @@ public static class SystemSpace
     }
 
     /// <summary>
-    /// How many set-aside folders wait with no rule's date (KEEPSIZE1b): awaiting their record, whose manifest does not read, or recorded where the
-    /// registry names no checkout of their repository, so no holding check can run (<c>unnamed</c>, the last fixes' check, finding 7). Read from
+    /// How many set-aside folders wait with no rule's date: awaiting their record, whose manifest does not read, or recorded where the
+    /// registry names no checkout of their repository, so no holding check can run (<c>unnamed</c>). Read from
     /// the manifests beside them, no walk; null where none waits.
     /// </summary>
     internal static JsonObject? SetAsideWaiting(string home, KeepPolicy policy)
@@ -622,7 +622,7 @@ public static class SystemSpace
         return awaiting + unread + unnamed == 0 ? null : new JsonObject { ["awaiting"] = awaiting, ["unread"] = unread, ["unnamed"] = unnamed };
     }
 
-    /// <summary>A recorded folder whose last holding check found no checkout of its repository named: it waits, never next (finding 7).</summary>
+    /// <summary>A recorded folder whose last holding check found no checkout of its repository named: it waits, never next.</summary>
     private static bool Unnamed(SetAsideEligibility judged) =>
         judged.Class == SetAsideClass.Recorded && judged.Manifest?.Why == SetAsideEligibility.NoCheckout;
 
@@ -632,15 +632,15 @@ public static class SystemSpace
         var roots = DaorisHome.Places(home, HomeEntry.Trees).Select(place => Path.Combine(place, TreeSetAside.SetAsideFolder)).Where(Directory.Exists).ToList();
         if (roots.Count == 0) return (null, null);
         var goes = new List<(DateTimeOffset At, string Folder)>();
-        // KEEPSIZE1a: every place of the trees entry, the folders set aside before the home's layout moved included.
+        // Every place of the trees entry, the folders set aside before the home's layout moved included.
         foreach (var root in roots)
         foreach (var workspace in SetAsideEligibility.Workspaces(root))
         foreach (var repository in Directory.EnumerateDirectories(workspace))
         foreach (var folder in Directory.EnumerateDirectories(repository))
         {
             if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
-            // KEEPSIZE1b (the keep-size design §3.4): a recorded folder an hour after its record; one awaiting its record has no next, nor one
-            // whose repository the registry no longer names, which the waiting line counts (the last fixes' check, finding 7).
+            // A recorded folder an hour after its record; one awaiting its record has no next, nor one
+            // whose repository the registry no longer names, which the waiting line counts.
             var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole);
             if (judged.Due is not { } due || Unnamed(judged)) continue;
             goes.Add((due, $"{Path.GetFileName(workspace)}/{Path.GetFileName(repository)}/{Path.GetFileName(folder)}"));
@@ -676,7 +676,7 @@ public static class SystemSpace
     }
 
     /// <summary>
-    /// The machine log: a day's files go once they are the policy's days old (KEEP1d), at the look's daily prune or the next process's open
+    /// The machine log: a day's files go once they are the policy's days old, at the look's daily prune or the next process's open
     /// (<see cref="MachineLog.Prune(int)"/>).
     /// </summary>
     private static (JsonObject? Next, string? Why) LogsNext(string home, KeepPolicy policy)

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSSETUP6 (D124 §4.5): the terminal's door to a workspace plan, <c>daoris place --workspace &lt;name&gt; --adoption</c>.
+/// The terminal's door to a workspace plan, <c>daoris place --workspace &lt;name&gt; --adoption</c>.
 /// <c>--plan</c> prints the list with what touched each and every refusal, and writes nothing; a press writes the plan and
 /// says the rule it added; <c>--pause</c>, <c>--resume</c> and <c>--stop</c> steer a plan already made, and print where it
 /// stands. Fast: the world is a stand-in.
@@ -61,7 +61,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         Assert.False(File.Exists(WorkspaceSetupFile.PathOf(_home, "work")));
     }
 
-    /// <summary>D124 §4.5: <c>--plan</c> prints the list and each refusal, the rule and the pacing, and publishes and writes nothing.</summary>
+    /// <summary><c>--plan</c> prints the list and each refusal, the rule and the pacing, and publishes and writes nothing.</summary>
     [Fact]
     public async Task The_plan_prints_the_list_with_what_touched_each_and_each_refusal_and_writes_nothing()
     {
@@ -177,7 +177,7 @@ public sealed class WorkspaceSetupCommandTests : IDisposable
         Assert.Contains("there is no plan for workspace `work`", output.ToString(), StringComparison.Ordinal);
     }
 
-    // ——— ACCTQUOTE1b (D125's ACCTQUOTE1 note): a command the plan's words name spells its workspace for any shell, in double
+    // ——— A command the plan's words name spells its workspace for any shell, in double
     // quotes where a space needs them and by its placeholder where no spelling holds; the words around it name it as it is.
 
     [Fact]

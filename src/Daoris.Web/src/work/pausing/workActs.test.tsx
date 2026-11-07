@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// The one owner of a pause, a resume and an abandon (PAUSE1e, D132 §7.1): whichever door pressed it, the ask's page, the
+// The one owner of a pause, a resume and an abandon: whichever door pressed it, the ask's page, the
 // quest's page or a session's header, the act runs here and says how it went. Over a mocked bridge, as an organism is held.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -85,10 +85,9 @@ describe('the acts on a work', () => {
   });
 
   /**
-   * CARRY2d (D80's CARRY2c note): a resume's report of what still holds a quest of its work carried the verdict and the
-   * driver's English alone, so 中文 said a stop, a pause, a park and a take elsewhere in English. The host now hands each
-   * hold's facts beside the sentence, as the tick hands a sitting quest's, and the page words each from both catalogues; a
-   * answer without the facts hands none, and the driver's sentence stands, as English always passes it through.
+   * A resume's report of what still holds a quest of its work carries the hold's facts beside the sentence, as the tick
+   * hands a sitting quest's, and the page words each from both catalogues; an answer without the facts hands none, and
+   * the driver's sentence stands, as English always passes it through.
    */
   describe('a resume says what still holds a quest of it in the reader’s language', () => {
     const STOP = 'you stopped session `b3f0re00`; Try again carries it on — `daoris quest retry q8 --session b3f0re00`.';
@@ -168,7 +167,7 @@ describe('the acts on a work', () => {
 
     act(() => result.current.abandon({ scope: 'ask', id: 'a1b2c3' }, 'It went the wrong way.', ['quest:9a8b7c'], undefined, done));
 
-    // A partial abandon, said in the error's tone (PAUSE1h).
+    // A partial abandon, said in the error's tone.
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Abandoned ask #a1b2c3: 5 of 6 pieces; 1 changed since the list and stayed.', 'error'));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_ABANDON', expect.objectContaining({

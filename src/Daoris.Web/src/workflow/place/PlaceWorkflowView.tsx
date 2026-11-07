@@ -40,7 +40,7 @@ export type LandingHand = {
 };
 
 /**
- * *Daoris ships a newer … workflow · Update…* (WORKFLOWCLEAN1h-b; the cleanup design §1.1): a copy behind the default this build ships. *Update…*
+ * *Daoris ships a newer … workflow · Update…*: a copy behind the default this build ships. *Update…*
  * is a plan of one: the shipped graph judged and reviewed as the copy's next version, and saved only once the places it reaches are let follow it.
  */
 function ShippedUpdate({ editor, effective, onReads }: {
@@ -131,15 +131,15 @@ export type PlaceWorkflowProps = WorkflowTabProps & {
   /** Opens another section of the place page: a step's standing answer is Sessions'. */
   onOpenSection?: (section: 'sessions') => void;
   /**
-   * The editor asked open on a draft (FLOWCHART2g): a conversation's draft card's *Open in the editor*. The draft the conversation was told
+   * The editor asked open on a draft: a conversation's draft card's *Open in the editor*. The draft the conversation is told
    * is the editor's start, so the proposal's changes can be taken; the editor is the page's to open once, and `onOpened` says it has.
    */
   opens?: PlaceEdit | null;
   onOpened?: () => void;
-  /** The editor's draft the page kept when this section was last unmounted, and where it keeps the draft as the editor reports it (REVIEW2 P5). */
+  /** The editor's draft the page kept when this section last unmounted, and where it keeps the draft as the editor reports it. */
   held?: PlaceFlowHold | null;
   onHold?: (held: PlaceFlowHold | null) => void;
-  /** Opens the home's conversion review (WORKFLOWCLEAN1g-i): the one door from a route, a Landing row or a tab that follows Current. */
+  /** Opens the home's conversion review: the one door from a route, a Landing row or a tab that follows Current. */
   onConvert?: () => void;
 };
 
@@ -149,7 +149,7 @@ type EditStart = NonNullable<WorkflowEditorProps['startFrom']>;
 type Panel = { is: 'change'; route: string } | { is: 'edit'; route: string; from?: EditStart } | null;
 
 /**
- * What *Edit steps…* opens the editor on (SETUPUX1r): the graph the selected route follows. A saved workflow's newest version is the version
+ * What *Edit steps…* opens the editor on: the graph the selected route follows. A saved workflow's newest version is the version
  * the edit appends to; Current's, or a version of steps drawn as the graph it decodes to, begins a workflow of its own. None where the
  * route draws no graph, or is still being read: the editor begins empty. A route that follows Current has no editor: it goes to the conversion.
  */
@@ -208,7 +208,7 @@ function Placed({ host, into }: { host: HTMLElement; into: HTMLElement | null })
 }
 
 /**
- * **A place's Workflow** (AGENTSPLACE1h, SETUPUX1o; the Setup design's §2.3): how a repository's or a workspace's work moves. The routes are
+ * **A place's Workflow**: how a repository's or a workspace's work moves. The routes are
  * a selection, default work, each kind the workspace declares and landed work, each with the workflow it follows and what chose it; choosing
  * one picks the graph drawn and writes nothing. The chart is the chosen route's effective graph, in a column of its own where the page holds
  * 64 rem and one press away below it, labelled *Current* or the saved workflow and its version, with a step's cell shown on selection.
@@ -216,7 +216,7 @@ function Placed({ host, into }: { host: HTMLElement; into: HTMLElement | null })
  * compose a version in place of the chart.
  *
  * @remarks
- * The two policy owners stay visible and apart (D215): the workflow owns the unit's process, the landing rule owns the line's batching,
+ * The two policy owners stay visible and apart: the workflow owns the unit's process, the landing rule owns the line's batching,
  * order, gates and promotion. A step's door to the settings that set it opens Landing on this page, and the standing answer's opens the
  * Sessions section. Landed work is chosen by its own press (`WORKFLOW_LANDED`, in *Landed route*), not by *Change…*, and landed Current is
  * no verification, which draws no chart. Nothing here is the page's judgement: every refusal is the driver's sentence.
@@ -236,7 +236,7 @@ export function PlaceWorkflowView({
   const [panel, setPanel] = useState<Panel>(() => (held ? { is: 'edit', route: held.route, ...(held.from ? { from: held.from } : {}) } : null));
   const [chartShown, setChartShown] = useState(false);
   // The chart is drawn into this one element at one place in the tree, and the element is moved where the layout wants it, so a
-  // change of layout keeps the chart and the editor mounted, with their selection and open drawer (REVIEW2 P5).
+  // change of layout keeps the chart and the editor mounted, with their selection and open drawer.
   const [host] = useState(() => Object.assign(document.createElement('div'), { className: 'min-w-0' }));
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const [asked, setAsked] = useState<{ section: 'landing' | null; n: number }>({ section: null, n: 0 });
@@ -266,8 +266,8 @@ export function PlaceWorkflowView({
     if (asked.section) document.querySelector('[data-place-row="landing"]')?.scrollIntoView?.({ block: 'nearest' });
   }, [asked]);
 
-  // A draft card's door (FLOWCHART2g): once the answer is read, the editor opens on the draft the conversation was told, or on the chart's
-  // graph where that draft is no longer held. Once per ask: the page lets it go when it has opened.
+  // A draft card's door: once the answer is read, the editor opens on the draft the conversation is told, or on the chart's
+  // graph where that draft is not held. Once per ask: the page lets it go when it has opened.
   const opened = useRef<PlaceEdit | null>(null);
   const ready = current !== undefined && current !== null && editor !== undefined;
   useEffect(() => {
@@ -325,7 +325,7 @@ export function PlaceWorkflowView({
     },
   };
 
-  // How the route lands (WORKFLOWCLEAN1h-b): under a saved version it is the version's `land` options; under Current, only the conversion.
+  // How the route lands: under a saved version it is the version's `land` options; under Current, only the conversion.
   const land = answered === null || !answered.graph || landed ? undefined : draftOf(answered.graph).nodes.find((node) => node.kind === 'land');
   const lands: LandsHere | null = answered === null || landed ? null
     : answered.workflow === 'current' ? { is: 'current', onConvert }
@@ -450,9 +450,9 @@ export function PlaceWorkflowView({
     : [];
 
   const canChange = editor !== undefined && !landed;
-  // A route that follows Current has no steps to edit: its door is the conversion (WORKFLOWCLEAN1h-b).
+  // A route that follows Current has no steps to edit: its door is the conversion.
   const onCurrent = !landed && answered?.workflow === 'current';
-  // *Ask Daoris* opens the editor on the chart's graph, so the conversation is told that draft with the person's next words (FLOWCHART2d),
+  // *Ask Daoris* opens the editor on the chart's graph, so the conversation is told that draft with the person's next words,
   // and puts the start of a request in its box. The editor, once open, is not opened again.
   const openEdit = () => {
     if (onCurrent) onConvert?.();

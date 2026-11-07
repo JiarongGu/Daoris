@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPWIRED1b (the Ask Daoris modes design §6): what the door said it loaded, read from its recorded init frame, kept on the receipt of
+/// What the door said it loaded, read from its recorded init frame, kept on the receipt of
 /// the start it said it for and answered beside what that start handed.
 /// </summary>
 public sealed class HelpLoadedTests : IDisposable

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row f, s-ix f4: the pin's install is one decision the window's actions and the terminal's <c>agent pin</c> ask
+/// The pin's install is one decision the window's actions and the terminal's <c>agent pin</c> ask
 /// (<see cref="PinInstall.Plan"/>): a channel's version refused before anything is fetched, an install in place fetching nothing, a
 /// package's command named with its prefix, and a program declaring neither refused with one sentence.
 /// </summary>

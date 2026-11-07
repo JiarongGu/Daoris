@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The relay end to end as processes (EVENTHOOK1c; the event hook design §9's 1c proofs): the built host's <c>events relay --where</c> lays
+/// The relay end to end as processes: the built host's <c>events relay --where</c> lays
 /// its copy out in a home beside a stand-in instance and prints its command; that copy's <c>--once</c> serves its pipe; and the real
 /// stand-in for the <c>event-relay</c> plugin (<see cref="RelayStandIn"/>), started into the stand-in instance's agents' job and spoken to over the hook wire as the driver does, finds
 /// the relay by its file, passes step 3 by the job, and tells two events, after which its stop ends the relay with what it gathered.

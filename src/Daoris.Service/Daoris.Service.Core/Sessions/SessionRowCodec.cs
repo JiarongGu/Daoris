@@ -64,7 +64,7 @@ internal static class SessionRowCodec
     private static JsonElement? ActorElement(SqliteDataReader reader, string column) =>
         reader.IsDBNull(reader.GetOrdinal(column)) ? null : JsonSerializer.Deserialize<JsonElement>(reader.GetString(reader.GetOrdinal(column)));
 
-    /// <summary>A record's handed versions as kept (KEEP1b): the list, in order; null for none, or for a column that does not read as one.</summary>
+    /// <summary>A record's handed versions as kept: the list, in order; null for none, or for a column that does not read as one.</summary>
     public static IReadOnlyList<string>? ResolvedRead(string? kept)
     {
         if (kept is null) return null;
@@ -83,8 +83,8 @@ internal static class SessionRowCodec
     }
 
     /// <summary>
-    /// A record's access mode as kept (HELPMODE1a2): Ask Daoris's as written, or <see cref="SessionLedger.HelpRestricted"/> where none
-    /// was, a record from before the modes; null for every other record, which runs under none.
+    /// A record's access mode as kept: Ask Daoris's as written, or <see cref="SessionLedger.HelpRestricted"/> where none
+    /// is kept, a record from before the modes; null for every other record, which runs under none.
     /// </summary>
     public static string? HelpModeRead(string repository, string? kept) =>
         string.Equals(repository, SessionLedger.HelpRepository, StringComparison.Ordinal) ? kept ?? SessionLedger.HelpRestricted : null;
@@ -141,18 +141,18 @@ internal static class SessionRowCodec
             .Select(file => file.GetString()!)
             .ToList();
         var reopens = element.TryGetProperty("reopens", out var flag) && flag.ValueKind == JsonValueKind.True;
-        // XAGENT1c: whose claims these are; absent, or not a name, is the person's, which every word before it was.
+        // Whose claims these are; absent, or not a name, is the person's.
         var by = JsonFields.Text(element, "by") is { Length: > 0 } opinion ? opinion : null;
-        // MIXAGENT2a-i: the helper whose answer this is, its own field; absent is not a helper's.
+        // The helper whose answer this is, its own field; absent is not a helper's.
         var helper = JsonFields.Text(element, "helper") is { Length: > 0 } helped ? helped : null;
         var channel = JsonFields.Text(element, "channel") is { Length: > 0 } carried ? carried : null;
-        // COWORK1b: whose words where not the person's, and the producer's key; absent on every word before them.
+        // Whose words where not the person's, and the producer's key; absent when there is none.
         var from = JsonFields.Text(element, "from") is { Length: > 0 } author ? author : null;
         var key = JsonFields.Text(element, "key") is { Length: > 0 } produced ? produced : null;
-        // COWORK1c: its level, a later build's word read as none, and when a dispatcher first wrote it to a harness.
+        // Its level, a later build's word read as none, and when a dispatcher first wrote it to a harness.
         var level = JsonFields.Text(element, "level") is { Length: > 0 } asked && SaidLevel.Known(asked) ? asked : null;
         var attempt = Moments.Read(element, "attempt");
-        // SUPERVISOR1a-i: what a supervisor's word claims, read as claims; absent on every other word.
+        // What a supervisor's word claims, read as claims; absent on every other word.
         var decision = JsonFields.Text(element, "decision") is { Length: > 0 } decided ? decided : null;
         var question = JsonFields.Text(element, "question") is { Length: > 0 } questioned ? questioned : null;
         var choice = JsonFields.Text(element, "choice") is { Length: > 0 } chose ? chose : null;

@@ -21,9 +21,9 @@ public sealed record GitReviewSources(
     SessionTrees Trees);
 
 /// <summary>
-/// <c>daoris git review &lt;session&gt; [--json] [--time]</c> (GITAPP1a-i, D202 point 2, the git-app design P1.5, D50): the
-/// terminal's door to Review's read, through the same code as <c>SESSION_DIFF</c> (<see cref="SessionReviews"/>), and the bench's verb
-/// (§10.3): with <c>--time</c> it prints every git start the read made, by node and budget, with the gate's wait, the creation and the
+/// <c>daoris git review &lt;session&gt; [--json] [--time]</c>: the
+/// terminal's door to Review's read, through the same code as <c>SESSION_DIFF</c> (<see cref="SessionReviews"/>), and the bench's verb:
+/// with <c>--time</c> it prints every git start the read made, by node and budget, with the gate's wait, the creation and the
 /// run apart, and writes <c>review.read</c>.
 /// </summary>
 /// <remarks>
@@ -122,8 +122,8 @@ public static class GitReviewCommand
         return text.ToString();
     }
 
-    /// <summary>Each start, in the order the seam saw them, and the totals: what the bench reads (the git-app design §10.3).</summary>
-    /// <remarks>GITAPP1a-ii: with the read's graph, its depth is the graph's longest chain of dependent starts, and its unused speculative starts are said.</remarks>
+    /// <summary>Each start, in the order the seam saw them, and the totals: what the bench reads.</summary>
+    /// <remarks>With the read's graph, its depth is the graph's longest chain of dependent starts, and its unused speculative starts are said.</remarks>
     internal static string Times(GitCount count, ReviewGraph? graph = null)
     {
         var starts = count.Starts;

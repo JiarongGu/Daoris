@@ -1,6 +1,6 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 
-/** The head's sections a wait stands in (WAITFOOT2a): its park's card, its go-aheads, its rules, its work. */
+/** The head's sections a wait stands in: its park's card, its go-aheads, its rules, its work. */
 export const WAIT_SECTION = '[data-wait-section]';
 
 /** How much of a section is on screen for it to be: all of it, short of a rounding. */
@@ -9,7 +9,7 @@ const WHOLE = 0.99;
 type Watching = { observer: IntersectionObserver; sections: readonly Element[]; margin: string };
 
 /**
- * **Whether the head's waits are on screen** (WAITFOOT2a, D168's WAITFOOT2 note): every section of the record's head a wait stands
+ * **Whether the head's waits are on screen**: every section of the record's head a wait stands
  * in (`data-wait-section`), wholly inside the scroll box below the page head pinned at its top (`--session-head`, which that
  * head tells its box). The strip at the foot stands aside while they are, so a wait is drawn in one place on the screen.
  *
@@ -26,7 +26,7 @@ type Watching = { observer: IntersectionObserver; sections: readonly Element[]; 
 export function useWaitsOnScreen(scroller: RefObject<HTMLElement | null>): boolean | null {
   const [onScreen, setOnScreenState] = useState<boolean | null>(false);
   const watching = useRef<Watching | null>(null);
-  // Read after every drawing, so set only on a change (PAGELOOP1): set unchanged, React keeps the update and draws the frame again,
+  // Read after every drawing, so set only on a change : set unchanged, React keeps the update and draws the frame again,
   // and counts a commit that leaves one waiting toward its update-depth limit (#185).
   const held = useRef<boolean | null>(false);
   const setOnScreen = useCallback((next: boolean | null) => {

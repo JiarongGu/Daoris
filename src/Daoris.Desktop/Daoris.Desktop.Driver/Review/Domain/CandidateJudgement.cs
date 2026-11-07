@@ -6,7 +6,7 @@ internal sealed record QueueMember(string Branch, string Tip = "");
 /// <summary>A member handed back, with how (<c>pinned</c>, <c>pinned with</c> or <c>unresolved</c>), the failure it is handed back for, the members it needs and the ones it interacts with, and why where it is unresolved.</summary>
 internal sealed record HandedBackMember(QueueMember Member, string How, string Failure, IReadOnlyList<string> With, IReadOnlyList<string> Interacting, string? Why = null);
 
-/// <summary>One failure with how it was judged.</summary>
+/// <summary>One failure with its judgement.</summary>
 internal sealed record JudgedEntry(JudgedFailure Failure, Judged Judged);
 
 /// <summary>A failure that did not fail again on its gate's confirm run, kept on its unit apart from the known red and the flakes: a sighting, never a pass.</summary>
@@ -33,7 +33,7 @@ internal enum CandidateAction
     /// <summary>The line's integration stops.</summary>
     Stop,
 
-    /// <summary>The candidate was dropped.</summary>
+    /// <summary>The candidate is dropped.</summary>
     Dropped,
 }
 
@@ -65,7 +65,7 @@ internal sealed record CandidateOutcome(CandidateAction Action)
     /// <summary>What a held candidate waits for: <c>decide</c>.</summary>
     public string? On { get; init; }
 
-    /// <summary>The gates whose only pass was the confirm run (<see cref="CandidateAction.Land"/>).</summary>
+    /// <summary>The gates whose only pass is the confirm run (<see cref="CandidateAction.Land"/>).</summary>
     public IReadOnlyList<string> PassedOnConfirm { get; init; } = [];
 
     public IReadOnlyList<JudgedFailure> Inherited { get; init; } = [];
@@ -83,7 +83,7 @@ internal sealed record CandidateOutcome(CandidateAction Action)
 }
 
 /// <summary>
-/// What a red candidate does with its failures' judgements (INTEGRATE1f part f1; the integration design §4.5, §5.3): <c>stop</c> when any stops
+/// What a red candidate does with its failures' judgements: <c>stop</c> when any stops
 /// the line; else the members handed back (pinned, pinned with, or, for a candidate of one, unresolved), the inherited failures to file, and
 /// either the members kept to be judged again or, where an unresolved failure left a candidate of several, its members one at a time
 /// (<c>split</c>). A pass on an unresolved failure's re-run never makes the candidate green.
@@ -96,7 +96,7 @@ internal sealed record CandidateOutcome(CandidateAction Action)
 /// <item><c>inconclusive</c> reads as an unresolved failure whatever the policy says, never <c>land</c>, and is listed apart.</item>
 /// <item><c>unconfirmed</c> is a sighting, never a flake and never a pass, so no candidate it touches is <c>green</c>. Under <c>split</c> it is an
 /// unresolved failure: several members run one at a time, one of one is handed back unresolved. Where nothing splits the candidate and a
-/// member was handed back, the rest are formed again and judged on their own tree. Otherwise, under <c>hold</c>, the candidate waits for a
+/// member is handed back, the rest are formed again and judged on their own tree. Otherwise, under <c>hold</c>, the candidate waits for a
 /// decide; under <c>land</c>, the confirm run's pass is the gate's verdict on that tip alone, naming the gates it passed on.</item>
 /// </list>
 /// <b>A twin</b> of <c>candidateOutcome</c> in <c>tools/merge-queue.mjs</c>, held to <c>fixtures/failure-judging.json</c>' outcomes

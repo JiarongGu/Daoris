@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What every registration declared of a spawn's environment, by provider (the agent-provider design §4.6, §7 row 9): each door's home
+/// What every registration declared of a spawn's environment, by provider: each door's home
 /// variable, its pool's key and its doors' account agents' keys, its programs' pinned variables and the variables its program is measured
-/// to read. A door's spawn inherits none of another provider's (s-vi): a key handed only to its own provider's spawn (D172 point 3).
+/// to read. A door's spawn inherits none of another provider's: a key handed only to its own provider's spawn.
 /// </summary>
 /// <remarks>
 /// Kept for the process, as the registration list is, since a door's spawn is made apart from the registry that registered it; the

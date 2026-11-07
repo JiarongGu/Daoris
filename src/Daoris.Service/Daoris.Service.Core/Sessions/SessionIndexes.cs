@@ -3,8 +3,8 @@ namespace Daoris.Knowledge;
 /// <summary>
 /// The indexes a list's per-record reads stand on. A list answers each record with its entry key and the head of its line,
 /// and each of those asks the table by a column that is no key: who continues a record, a quest's last run, the conversation that
-/// took a quest, a teammate's mirror by the id its machine knew it by. Unindexed, each was a scan of every record, so a list of
-/// three thousand made some ten thousand scans of three thousand rows.
+/// took a quest, a teammate's mirror by the id its machine knows it by. Unindexed, each is a scan of every record, so a list of
+/// three thousand makes some ten thousand scans of three thousand rows.
 /// </summary>
 internal static class SessionIndexes
 {

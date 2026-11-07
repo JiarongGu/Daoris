@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 <b>A pin stays the version pinned</b> (AGT2). Measured 2026-09-23 on a pinned Claude Code
+/// 🔴 <b>A pin stays the version pinned</b>. Measured 2026-09-23 on a pinned Claude Code
 /// 2.1.270 with no login and no model: its own <c>claude doctor</c> reported <i>Auto-updates:
 /// enabled</i>, channel <i>latest</i>, and called itself an <i>npm-global</i> install, which a copy in
 /// Daoris's own folder is not. With <c>DISABLE_UPDATES=1</c> it reported updates disabled, refused
@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// So a pinned binary runs with the tool's own switch, on every spawn Daoris makes of it: a session
 /// over either door, and the probe that asks its version and login state. An UNPINNED binary is the
-/// machine's, and its updates are the machine's business — it gains nothing (D48 §2a, byte for byte).
+/// machine's, and its updates are the machine's business — it gains nothing, byte for byte.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class PinnedUpdatesTests : IDisposable
@@ -60,7 +60,7 @@ public sealed class PinnedUpdatesTests : IDisposable
     /// <summary>
     /// The protocol door: the Agent SDK spawns the managed <c>claude</c> with the adapter's own
     /// environment, so the switch travels on the adapter's spawn — and only when a managed
-    /// <c>claude</c> was pointed at.
+    /// <c>claude</c> is pointed at.
     /// </summary>
     [Fact]
     public void The_protocol_door_s_managed_claude_runs_with_updates_off()

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CUTOVER1c (the cutover design §2.4.1): a run's observed plugin node told under its subject's unit, its session's branch before the
+/// A run's observed plugin node told under its subject's unit, its session's branch before the
 /// landing and the landed branch at its landing's tip after it, and its event mapped back to the run's record. A kept observation names its
 /// subject, and a landing's telling is judged on the tip told, which the landing's record keeps. Each seen failing first.
 /// </summary>
@@ -126,7 +126,7 @@ public sealed class ObservedRunEventTests : ObservedEventFixture
 
     /// <summary>
     /// One landing carrying two runs' work, so one branch at one tip for both: neither is told it, the pass says so, and an event there moves
-    /// neither run's node (§2.4.1; the person's skip passes it, CUTOVER1f).
+    /// neither run's node (the person's skip passes it).
     /// </summary>
     [Fact]
     public async Task One_branch_told_for_two_runs_at_one_tip_is_told_for_neither()
@@ -155,7 +155,7 @@ public sealed class ObservedRunEventTests : ObservedEventFixture
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1f (the cutover design §2.4.1, §5.2): what waits on a landing told for neither run is passed over by the person's skip, with
+    /// What waits on a landing told for neither run is passed over by the person's skip, with
     /// their words. The next pass applies it on the first run's record alone, that run ends, and the landing is then told for the other run, the
     /// one it now carries alone. Seen failing first.
     /// </summary>

@@ -4,12 +4,12 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris update`, the terminal's door to an install's update (UPDATE1, D139 §3, D50): what is staged, what holds
+/// `daoris update`, the terminal's door to an install's update: what is staged, what holds
 /// for it and how the last swap ended; and <c>--when-idle</c>, <c>--now</c> and <c>--cancel</c>, written to
 /// <c>$DAORIS_HOME/update.json</c> as the banner's *Update when idle*, *Update now* and *Not now* write it.
 /// </summary>
 /// <remarks>
-/// <para><b>The install is the home's</b> (D63): the folder above a home that is its <c>data</c>. A home named for itself — a
+/// <para><b>The install is the home's</b>: the folder above a home that is its <c>data</c>. A home named for itself — a
 /// gate's, a one-off — has none, and <c>--install &lt;folder&gt;</c> names it; a verb with none still writes its word, for
 /// whatever is staged when the application next looks.</para>
 ///
@@ -145,7 +145,7 @@ public static class UpdateCommand
             };
             output.AppendLine($"  The last swap: {outcome}");
 
-            // What the swap found held, and for how long (SWAP2): the launcher writes no log, so this is where a person reads it.
+            // What the swap found held, and for how long: the launcher writes no log, so this is where a person reads it.
             if (last.Holds is { Count: > 0 } holds) output.AppendLine($"  Held as it swapped: {string.Join("; ", holds.Select(hold => hold.Said))}.");
         }
     }

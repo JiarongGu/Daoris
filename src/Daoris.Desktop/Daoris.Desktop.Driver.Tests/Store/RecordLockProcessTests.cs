@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END2's cross-process writer (D173's END2 note): two writers of <c>session-branches.json</c> in two processes are serialized
+/// The cross-process writer: two writers of <c>session-branches.json</c> in two processes are serialized
 /// by the record's lock under the home's <c>locks/records/</c>. The other process is a PowerShell that takes the lock file as the driver
 /// does, reads the record, waits, and writes it back with its own entry: the lock file is the contract, as the lease's file is
 /// (<see cref="HomeLeaseProcessTests"/>). The in-process half is <see cref="HeldFactsTests"/>'.

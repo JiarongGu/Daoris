@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1d (the pipeline design §4.3): a person's verification of a commit is a run of its own, bound once under the home's
+/// A person's verification of a commit is a run of its own, bound once under the home's
 /// <c>workflows/lines/</c>, which arms the runtime; its check observes the run itself at that commit and is handed to the executor with the
 /// run's repository, checkout and accepted declaration, and nothing of it is told to a plugin or read from the chains' runs.
 /// </summary>

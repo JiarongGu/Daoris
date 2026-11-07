@@ -4,7 +4,7 @@ import i18n from '../../locales/i18n';
 import { FRAME_HELD } from '../../design/ui';
 import { ZoomReadout } from './ZoomReadout';
 
-// ZOOM1 (the UI/UX design §3.11): the level said as it changes, as a browser's zoom bubble says it, for a moment over the top of
+// The level said as it changes, as a browser's zoom bubble says it, for a moment over the top of
 // the content, then gone; the status bar keeps saying it while it is not 100%.
 
 describe("the zoom's readout", () => {

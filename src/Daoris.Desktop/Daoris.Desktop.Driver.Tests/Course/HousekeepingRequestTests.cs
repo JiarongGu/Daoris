@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPMODE1c2a (D183's note): Ask Daoris's housekeeping tool reaches the driver through the session requests every loop watches
-/// (SESSUX1g): a keyed request for the conversation's own session, move <c>housekeep</c>, taken once by the loop whose registry
-/// runs that conversation and answered beside it, as a terminal's say is (MSG1e). Any other loop leaves it, and so does a loop
+/// Ask Daoris's housekeeping tool reaches the driver through the session requests every loop watches:
+/// a keyed request for the conversation's own session, move <c>housekeep</c>, taken once by the loop whose registry
+/// runs that conversation and answered beside it, as a terminal's say is. Any other loop leaves it, and so does a loop
 /// that answers no housekeeping.
 /// </summary>
 /// <remarks>

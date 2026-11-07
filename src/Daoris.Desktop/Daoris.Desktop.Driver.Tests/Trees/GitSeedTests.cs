@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a copied seed keeps and mends (PROC1h): a copy is its own folder, its origin names its own bare repository, and no
+/// What a copied seed keeps and mends: a copy is its own folder, its origin names its own bare repository, and no
 /// linked-worktree metadata comes with it. No git starts here; the seeds' use is held by the Git classes that copy them.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
@@ -52,7 +52,7 @@ public sealed class GitSeedTests : IDisposable
     }
 
     /// <summary>
-    /// PROCSPEED1: git writes its objects read-only, a copy keeps that, and <c>Directory.Delete</c> refuses a read-only file on
+    /// Git writes its objects read-only, a copy keeps that, and <c>Directory.Delete</c> refuses a read-only file on
     /// Windows; the fixtures' cleanup retried that refusal for five seconds after every test and left the folder behind.
     /// </summary>
     [Fact]
@@ -76,7 +76,7 @@ public sealed class GitSeedTests : IDisposable
     }
 
     /// <summary>
-    /// SCRATCHLEAK1: a worktree's <c>.git</c> is a file, and a walk that looked for a directory only passed it and rooted the
+    /// A worktree's <c>.git</c> is a file, and a walk that looked for a directory only passed it and rooted the
     /// scratch in the main checkout's <c>_fixtures</c>.
     /// </summary>
     [Fact]
@@ -93,7 +93,7 @@ public sealed class GitSeedTests : IDisposable
         Assert.Equal(outer, GitSeed.RootFrom(Path.Combine(outer, "src")));
     }
 
-    /// <summary>SCRATCHLEAK1: a folder something holds for a moment is removed once it lets go, not left behind.</summary>
+    /// <summary>A folder something holds for a moment is removed once it lets go, not left behind.</summary>
     [Fact]
     public void A_folder_a_file_in_it_holds_for_a_moment_is_removed_once_it_is_let_go()
     {
@@ -128,7 +128,7 @@ public sealed class GitSeedTests : IDisposable
         Assert.True(Directory.Exists(folder));
     }
 
-    /// <summary>SCRATCHLEAK1: <c>Discard</c> is the cleanup a test's <c>Dispose</c> calls: it gives up quietly on a file that stays held.</summary>
+    /// <summary><c>Discard</c> is the cleanup a test's <c>Dispose</c> calls: it gives up quietly on a file that stays held.</summary>
     [Fact]
     public void A_cleanup_that_cannot_finish_gives_up_without_failing_the_test()
     {
@@ -142,20 +142,19 @@ public sealed class GitSeedTests : IDisposable
     }
 
     /// <summary>
-    /// SCRATCHLEAK1: about thirty classes each deleted their scratch once and swallowed the refusal of git's read-only objects, so
-    /// each test left a folder (29,000 entries in two folders on 2026-10-20), and nineteen walked to a <c>.git</c> directory only.
-    /// A test source that roots scratch under <c>_fixtures</c> removes it through <c>GitSeed</c>, and none writes its own walk.
+    /// A test source that roots scratch under <c>_fixtures</c> removes it through <c>GitSeed</c>, and none writes its own walk: a delete that
+    /// swallows the refusal of git's read-only objects leaves a folder per test, and a walk to a <c>.git</c> directory only misses a worktree's file.
     /// </summary>
     [Fact]
     public void No_test_deletes_its_fixtures_scratch_by_itself_or_walks_to_the_root_by_itself()
     {
-        // REVIEW2 T9: any recursive delete, named or positional, in any source that roots scratch under _fixtures or starts git (whatever its root: the OS
+        // Any recursive delete, named or positional, in any source that roots scratch under _fixtures or starts git (whatever its root: the OS
         // temp's scratch leaked as the fixtures' did).
         var plainDelete = new System.Text.RegularExpressions.Regex(@"Directory\.Delete\([^;]*(recursive:\s*true|,\s*true\s*\))");
         var startsGit = new System.Text.RegularExpressions.Regex(@"ProcessStartInfo\(""git""|TestGit\.|GitSeed\.|WorkingTree\.Git|GitStart\(");
         var ownWalk = new System.Text.RegularExpressions.Regex(@"Exists\(Path\.Combine\(\w+\.FullName, ""\.git""\)\)");
         var breaches = new List<string>();
-        // REVIEW2-LEFT1: the modules tests compile GitSeed in too, so their sources are held to it as the driver tests' are.
+        // The modules tests compile GitSeed in too, so their sources are held to it as the driver tests' are.
         foreach (var path in SourceFiles.All(SourceFiles.DriverTestsProject, "*.cs").Concat(SourceFiles.All(SourceFiles.ModulesTestsProject, "*.cs")))
         {
             var name = Path.GetFileName(path);
@@ -186,7 +185,7 @@ public sealed class GitSeedTests : IDisposable
     }
 
     /// <summary>
-    /// OVERVIEWNOISE1a: a host killed at a session's timeout never removes its run's folder, so the next run's start sweeps every
+    /// A host killed at a session's timeout never removes its run's folder, so the next run's start sweeps every
     /// run folder whose host no longer runs; a running host's and a folder not named as a run's stay.
     /// </summary>
     [Fact]

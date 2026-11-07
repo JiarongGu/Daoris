@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MODELROLE1g (D205 point 7 and its 2026-10-25 note): the choices Daoris suggests for the seeded roles are one dated table held to
+/// The choices Daoris suggests for the seeded roles are one dated table held to
 /// <c>docs/model-roles.md</c>'s roles table, failing both ways.
 /// </summary>
 public sealed class ActorSuggestionTests

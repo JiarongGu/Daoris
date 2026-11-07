@@ -5,7 +5,7 @@ import { call } from '../call';
 import { askHeld } from '../state/held';
 import { readPlanOf, type GitRefAnswer } from './git';
 
-// The person's push of one ref to origin (GITAPP2g, n; D204, D241 point 2): the one push Daoris makes, an act of the driver's journal
+// The person's push of one ref to origin: the one push Daoris makes, an act of the driver's journal
 // under a grant bound to origin's push address, the ref, its old commit and its new one.
 
 /**

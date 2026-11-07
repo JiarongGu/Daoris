@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// READSHARE1: each reader of a record AtomicFile moves into place reads it while the move still holds it (<see cref="MoveHold"/>).
+/// Each reader of a record AtomicFile moves into place reads it while the move still holds it (<see cref="MoveHold"/>).
 /// </summary>
 public sealed class ReadSharePlatformTests : IDisposable
 {
@@ -55,7 +55,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>RecordList.Read</c>, reached through <see cref="AbandonRecord"/>, reads a record its move still holds, and an edit keeps it.</summary>
+    /// <summary><c>RecordList.Read</c>, reached through <see cref="AbandonRecord"/>, reads a record its move still holds, and an edit keeps it.</summary>
     [Fact]
     public async Task A_record_list_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -78,7 +78,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Assert.Equal(["q1", "q2"], record.Entries().Select(entry => entry.Id));
     }
 
-    /// <summary>READSHARE1: <c>JsonKeeping.SaveHolding</c>'s re-read, reached through <see cref="JsonKeeping.Save"/>, saves over a file its move still holds.</summary>
+    /// <summary><c>JsonKeeping.SaveHolding</c>'s re-read, reached through <see cref="JsonKeeping.Save"/>, saves over a file its move still holds.</summary>
     [Fact]
     public async Task A_kept_edit_is_saved_while_the_move_into_place_still_holds_its_file()
     {
@@ -96,7 +96,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Assert.Equal((3, 2), (saved["a"]!.GetValue<int>(), saved["b"]!.GetValue<int>()));
     }
 
-    /// <summary>READSHARE1: <see cref="KeepingRun.Holder"/> reads the holder's file its move still holds.</summary>
+    /// <summary><see cref="KeepingRun.Holder"/> reads the holder's file its move still holds.</summary>
     [Fact]
     public void A_keeping_run_s_holder_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -113,7 +113,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="KeepingRun.Dispose"/> reads the holder's file its move still holds, and removes it as its own.</summary>
+    /// <summary><see cref="KeepingRun.Dispose"/> reads the holder's file its move still holds, and removes it as its own.</summary>
     [Fact]
     public void A_keeping_run_removes_its_holder_while_the_move_into_place_still_holds_it()
     {
@@ -131,7 +131,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>READSHARE1: <see cref="KeepingRecord.Read"/> reads <c>keeping.json</c> while its move still holds it.</summary>
+    /// <summary><see cref="KeepingRecord.Read"/> reads <c>keeping.json</c> while its move still holds it.</summary>
     [Fact]
     public void The_keeping_record_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -150,7 +150,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Assert.Equal(("run-1", 2, 1024L), (read.Last["trees"].Run, read.Last["trees"].Removed, read.Last["trees"].Bytes));
     }
 
-    /// <summary>READSHARE1: <see cref="Notices.Read"/> reads <c>notices.json</c> while its move still holds it.</summary>
+    /// <summary><see cref="Notices.Read"/> reads <c>notices.json</c> while its move still holds it.</summary>
     [Fact]
     public void The_notices_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -165,7 +165,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>Notices.Edit</c>'s read, reached through <see cref="Notices.Add"/>, keeps what <c>notices.json</c> holds while its move still holds it.</summary>
+    /// <summary><c>Notices.Edit</c>'s read, reached through <see cref="Notices.Add"/>, keeps what <c>notices.json</c> holds while its move still holds it.</summary>
     [Fact]
     public async Task A_notice_is_added_while_the_move_into_place_still_holds_the_record()
     {
@@ -179,7 +179,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Assert.Equal(["ended-s2", "ended-s1"], Notices.Read(_home, Now)!.Select(notice => notice.Id));
     }
 
-    /// <summary>READSHARE1: <see cref="RunningAddress.Read"/> reads the address file its move still holds.</summary>
+    /// <summary><see cref="RunningAddress.Read"/> reads the address file its move still holds.</summary>
     [Fact]
     public void The_running_address_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -196,7 +196,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="RunningAddress.Dispose"/> reads the address file its move still holds, and removes it as its own.</summary>
+    /// <summary><see cref="RunningAddress.Dispose"/> reads the address file its move still holds, and removes it as its own.</summary>
     [Fact]
     public void The_running_address_is_removed_while_its_move_into_place_still_holds_it()
     {
@@ -214,7 +214,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
-    /// <summary>READSHARE1: <see cref="SentPresses.Find"/> reads a kept press its move still holds.</summary>
+    /// <summary><see cref="SentPresses.Find"/> reads a kept press its move still holds.</summary>
     [Fact]
     public void A_sent_press_is_found_while_its_move_into_place_still_holds_it()
     {
@@ -223,7 +223,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         var id = Guid.NewGuid().ToString();
         var presses = new SentPresses(_home);
         presses.Keep(new SentPress(id, "key-1", "SESSION_INPUT", now));
-        // CONFIRMWAIT1a-ii keeps a sent press in its own home entry; the old `run/pipe/sent` is read only as a fallback.
+        // A sent press is kept in its own home entry; `run/pipe/sent` is read only as a fallback.
         var path = Path.Combine(DaorisHome.Entry(_home, HomeEntry.PipeSent), id + ".json");
 
         using (MoveHold.Take(path))
@@ -234,7 +234,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="DriverConfig.Load"/> reads <c>driver.json</c> while its move still holds it.</summary>
+    /// <summary><see cref="DriverConfig.Load"/> reads <c>driver.json</c> while its move still holds it.</summary>
     [Fact]
     public void The_driver_config_is_loaded_while_its_move_into_place_still_holds_it()
     {
@@ -249,7 +249,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>GitHolds.Load</c>, reached through <see cref="GitHolds.Read"/>, reads <c>held.json</c> while its move still holds it.</summary>
+    /// <summary><c>GitHolds.Load</c>, reached through <see cref="GitHolds.Read"/>, reads <c>held.json</c> while its move still holds it.</summary>
     [Fact]
     public void The_git_holds_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -267,7 +267,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <c>HomeWatch.StateOf</c>, reached through <see cref="HomePart.Named"/>'s stamps, reads a record's state while its move still holds it.</summary>
+    /// <summary><c>HomeWatch.StateOf</c>, reached through <see cref="HomePart.Named"/>'s stamps, reads a record's state while its move still holds it.</summary>
     [Fact]
     public void A_named_record_s_state_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -286,7 +286,7 @@ public sealed class ReadSharePlatformTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: <c>DaorisHome.Holds</c>, reached through <see cref="DaorisHome.Entry"/>, opens a new place its move still holds, so a
+    /// <c>DaorisHome.Holds</c>, reached through <see cref="DaorisHome.Entry"/>, opens a new place its move still holds, so a
     /// torn old place never shadows it.
     /// </summary>
     [Fact]
@@ -317,7 +317,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Sizes = new WiringSizes(),
     };
 
-    /// <summary>READSHARE1: <c>SystemWiring.LoadRemotes</c>, reached through <see cref="SystemWiring.Read"/>, reads <c>remotes.json</c> while its move still holds it.</summary>
+    /// <summary><c>SystemWiring.LoadRemotes</c>, reached through <see cref="SystemWiring.Read"/>, reads <c>remotes.json</c> while its move still holds it.</summary>
     [Fact]
     public void The_remotes_are_read_while_their_move_into_place_still_holds_them()
     {
@@ -337,7 +337,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Assert.Null(wiring["remotesWhy"]);
     }
 
-    /// <summary>READSHARE1: <c>SystemWiring.Parses</c>, reached through <see cref="SystemWiring.Read"/>, opens a settings file its move still holds.</summary>
+    /// <summary><c>SystemWiring.Parses</c>, reached through <see cref="SystemWiring.Read"/>, opens a settings file its move still holds.</summary>
     [Fact]
     public void A_settings_file_reads_while_its_move_into_place_still_holds_it()
     {
@@ -356,7 +356,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         Assert.Equal((true, null), ((bool?)row["reads"], (string?)row["readsWhy"]));
     }
 
-    /// <summary>READSHARE1: <c>HomeLease.Read</c>, reached through <see cref="HomeLease.HeldBy"/>, reads the lease its move still holds.</summary>
+    /// <summary><c>HomeLease.Read</c>, reached through <see cref="HomeLease.HeldBy"/>, reads the lease its move still holds.</summary>
     [Fact]
     public void The_home_lease_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -373,7 +373,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="HomeIdentity.Read(string, out string?)"/> reads the home's id its move still holds.</summary>
+    /// <summary><see cref="HomeIdentity.Read(string, out string?)"/> reads the home's id its move still holds.</summary>
     [Fact]
     public void The_home_s_id_is_read_while_its_move_into_place_still_holds_it()
     {
@@ -390,7 +390,7 @@ public sealed class ReadSharePlatformTests : IDisposable
         }
     }
 
-    /// <summary>READSHARE1: <see cref="GitGrants.Take"/> reads a grant its move still holds, and takes it once.</summary>
+    /// <summary><see cref="GitGrants.Take"/> reads a grant its move still holds, and takes it once.</summary>
     [Fact]
     public void A_git_grant_is_taken_while_its_move_into_place_still_holds_it()
     {

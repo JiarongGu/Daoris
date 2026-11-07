@@ -4,20 +4,20 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whose runs are read (WORKFLOW1c): a session's, a quest's, an ask's, or a repository's line, its verification runs (FABRIC-PIPELINE1d).
+/// Whose runs are read: a session's, a quest's, an ask's, or a repository's line, its verification runs.
 /// Exactly one is named.
 /// </summary>
 public sealed record WorkflowRunAsk(string? Session = null, string? Quest = null, string? Ask = null, string? Line = null);
 
 /// <summary>
-/// Where a run's records are read (WORKFLOW1c; design §5.1): this machine's service, its home (the landing record, the due list and
+/// Where a run's records are read: this machine's service, its home (the landing record, the due list and
 /// each session's conversation and bound workflow), its live declarations and plugins, and the registry's workspace for a repository.
 /// </summary>
 /// <param name="WorkspaceOf">The workspace the registry holds a repository in, or null where it holds none (read as in no workspace).</param>
 public sealed record WorkflowRunSources(
     ServiceClient Service, string Home, DriverConfig Config, IReadOnlyList<WorkflowPlugin> Plugins, Func<string, string?> WorkspaceOf)
 {
-    /// <summary>The door a run's <c>integrate</c> is asked whether its request promoted (INTEGRATE1n part n3); the home's own where none is handed.</summary>
+    /// <summary>The door a run's <c>integrate</c> is asked whether its request promoted; the home's own where none is handed.</summary>
     public IIntegrationDoor? Integration { get; init; }
 }
 
@@ -26,12 +26,12 @@ public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Pr
 {
     /// <summary>
     /// The service did not answer, so nothing could be read: a tool error, where every other <see cref="Problem"/> is an answer
-    /// that names no run (WORKFLOW1c2: the terminal's exit 2, not 1).
+    /// that names no run (the terminal's exit 2, not 1).
     /// </summary>
     public bool Unanswered { get; init; }
 
     /// <summary>
-    /// Why no run is read, as a code the page words in en and zh (<see cref="WorkflowNoRun"/>, CHATFLOW1a), where <see cref="Problem"/>
+    /// Why no run is read, as a code the page words in en and zh (<see cref="WorkflowNoRun"/>), where <see cref="Problem"/>
     /// is its English sentence; null for a problem that has none.
     /// </summary>
     public string? Code { get; init; }
@@ -39,7 +39,7 @@ public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Pr
     /// <summary>The record's id or the workflow's id the code's words name, beside <see cref="Code"/>; null where they name none.</summary>
     public string? Id { get; init; }
 
-    /// <summary>The workflow's id a no-run code's words name (none does since CHATFLOW1f); null otherwise.</summary>
+    /// <summary>The workflow's id a no-run code's words name; null otherwise.</summary>
     public string? Workflow { get; init; }
 
     /// <summary>What the service's failure said, beside <see cref="WorkflowNoRun.Unanswered"/>'s sentence, for the terminal.</summary>
@@ -47,13 +47,13 @@ public sealed record WorkflowRunRead(IReadOnlyList<WorkflowRun> Runs, string? Pr
 }
 
 /// <summary>
-/// The runs' reads (WORKFLOW1c): nothing here writes anywhere. Every request to the service is a <c>GET</c>. A run's records beside
-/// the service are read through <see cref="IWorkflowRunRecords"/>, its port (STRUCT3b, D166).
+/// The runs' reads: nothing here writes anywhere. Every request to the service is a <c>GET</c>. A run's records beside
+/// the service are read through <see cref="IWorkflowRunRecords"/>, its port.
 /// </summary>
 public static class WorkflowRunReader
 {
     /// <summary>
-    /// The runs of what <paramref name="asked"/> names (design §3.8, §5.1): a quest's chain in its repository; a session's, through
+    /// The runs of what <paramref name="asked"/> names: a quest's chain in its repository; a session's, through
     /// its quest, or through its ask where it is an intake; and an ask's, every chain it asked, one run per repository each reaches.
     /// A session that serves no quest and no ask has none, and says so.
     /// </summary>
@@ -86,8 +86,7 @@ public static class WorkflowRunReader
         if (problem is not null) return new WorkflowRunRead([], problem) { Code = code, Id = id };
 
         var reads = new Reads(sources, quests, records, ct);
-        // CHATFLOW1c: a chat in a tree of its own runs its repository's workflow, keyed by its line; a graph version binds as a steps one does
-        // (CHATFLOW1f, the chat-flow design §4.3).
+        // A chat in a tree of its own runs its repository's workflow, keyed by its line; a graph version binds as a steps one does.
         if (chat is { } session)
         {
             var run = ChatRuns.KeyOf(session, sessions)!;
@@ -109,10 +108,10 @@ public static class WorkflowRunReader
 
     /// <summary>
     /// The chains whose runs are asked for, each whole across its repositories, or the sentence that says why there are none with its
-    /// code (<see cref="WorkflowNoRun"/>) and the id its words name. A session is classified in the chat-flow design §4.2's order
-    /// (CHATFLOW1a, corrected by Codex's finding 6): its quest's run; the concrete work its line continues (<see cref="WorkOf"/>), that
+    /// code (<see cref="WorkflowNoRun"/>) and the id its words name. A session is classified in this order:
+    /// its quest's run; the concrete work its line continues (<see cref="WorkOf"/>), that
     /// quest's; an intake, its ask's; a line of an ask whose quest no record names, the ask's; each kind that runs nothing, by its code;
-    /// and a chat in a tree of its own, its chat run (CHATFLOW1c), named by <c>Chat</c> with no chain.
+    /// and a chat in a tree of its own, its chat run, named by <c>Chat</c> with no chain.
     /// </summary>
     internal static (IReadOnlyList<IReadOnlyList<QuestView>> Chains, string? Problem, string? Only, string? Code, string? Id, TracedSession? Chat) ChainsOf(
         WorkflowRunAsk asked, IReadOnlyList<QuestView> quests, IReadOnlyList<TracedSession> sessions, IWorkflowRunRecords trees)
@@ -126,7 +125,7 @@ public static class WorkflowRunReader
             if (session is null) return None(WorkflowNoRun.NoSession, sessionId.Trim());
             if (session.Teammate) return None(WorkflowNoRun.Teammate);
             if (session.Quest is { } quest) return ChainsOf(new WorkflowRunAsk(Quest: quest), quests, sessions, trees);
-            // The concrete work the line continues comes before its origin (§4.1, Codex's finding 6): a quest's worker gone on as a
+            // The concrete work the line continues comes before its origin: a quest's worker gone on as a
             // conversation, a chat that took a quest and a line whose stored origin is a quest's each read that quest's run, never a
             // chat's, and never every run of the ask whose origin the line inherited. Only an intake, or a line of an ask whose quest no
             // record here names, reads the ask's runs.
@@ -142,7 +141,7 @@ public static class WorkflowRunReader
                 return session.Tree is { Length: > 0 } tree && !trees.Stands(tree) ? None(WorkflowNoRun.ChatTreeGone) : None(WorkflowNoRun.ChatCheckout);
             }
 
-            // A chat in a tree of its own reads its chat run (CHATFLOW1c), its tree gone or not once bound; gone and never bound, none.
+            // A chat in a tree of its own reads its chat run, its tree gone or not once bound; gone and never bound, none.
             if (!trees.Stands(own) && !trees.Bound(ChatRuns.KeyOf(session, sessions)!)) return None(WorkflowNoRun.ChatTreeGone);
             return ([], null, session.Repository, null, null, session);
         }
@@ -154,14 +153,14 @@ public static class WorkflowRunReader
             if (quest is null) return None(WorkflowNoRun.NoQuest, id);
             var chain = ReviewGate.ChainOf(quests, quest.Id);
             // A quest's run is its own repository's, over the whole chain: a step or source in another repository seals, submits and
-            // reopens it as a same-repository one does (FABRIC-WORKFLOW2e), and the chain's other repositories are their own runs.
+            // reopens it as a same-repository one does, and the chain's other repositories are their own runs.
             return ([chain], null, quest.To, null, null, null);
         }
 
         if (asked.Ask is { } askId)
         {
             var sender = AskWork.SenderOf(askId.Trim().TrimStart('#'));
-            // Each chain the ask asked, by its first quest; a chain's later step names the ask as its sender too (D65 §4).
+            // Each chain the ask asked, by its first quest; a chain's later step names the ask as its sender too.
             var asks = quests.Where(each => Same(each.From, sender)).ToList();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var chains = new List<IReadOnlyList<QuestView>>();
@@ -180,10 +179,10 @@ public static class WorkflowRunReader
     }
 
     /// <summary>
-    /// The quest whose workflow governs a record's work (the chat-flow design §4.1, Codex's finding 6), or null: its own quest; else the
+    /// The quest whose workflow governs a record's work, or null: its own quest; else the
     /// nearest record its <c>From</c> links reach that names a quest or took one, so a worker gone on as a conversation stays that quest's
     /// work whatever origin its line inherited (an ask's, or a publisher's in another tree); else a quest a chat of its line in its tree
-    /// took (CHATTAKE1); else a stored origin <c>quest:&lt;id&gt;</c>. An intake, a reviewer, a helper and a teammate's record continue
+    /// took; else a stored origin <c>quest:&lt;id&gt;</c>. An intake, a reviewer, a helper and a teammate's record continue
     /// no work here, so they read none. The walk follows the records read, guarded against a cycle.
     /// </summary>
     internal static string? WorkOf(TracedSession session, IReadOnlyList<TracedSession> sessions)
@@ -205,8 +204,8 @@ public static class WorkflowRunReader
             ? id : null;
 
     /// <summary>
-    /// The quest a chat took (CHATTAKE1), read from any record of its line in its tree, the newest first: <c>took_quest</c> is the taking
-    /// record's alone, so a hand-over's next record reads the taken quest's run as the record before it did (the chat-flow design §4.2).
+    /// The quest a chat took, read from any record of its line in its tree, the newest first: <c>took_quest</c> is the taking
+    /// record's alone, so a hand-over's next record reads the taken quest's run as the record before it does.
     /// </summary>
     private static string? TookQuest(TracedSession session, IReadOnlyList<TracedSession> sessions)
     {
@@ -229,7 +228,7 @@ public static class WorkflowRunReader
         var sources = reads.Sources;
         var part = chain.Where(quest => Same(quest.To, repository)).ToList();
         var ids = new HashSet<string>(part.Select(quest => quest.Id), StringComparer.OrdinalIgnoreCase);
-        // The work's records are every record whose concrete work is a quest of this part (Codex's finding 6): its quests' own sessions,
+        // The work's records are every record whose concrete work is a quest of this part: its quests' own sessions,
         // and the conversations that continue them or took one, each read here as that quest's though its own record keeps no quest.
         var mine = sessions
             .Select(session => session.Quest is { } quest ? (ids.Contains(quest) ? session : null)
@@ -241,8 +240,8 @@ public static class WorkflowRunReader
             WorkflowRunBindings.RunOf(chain, repository));
         var current = new CurrentWorkflow(WorkflowSteps.StartHolds(sources.Plugins), [], process.Binding?.Digest ?? "unread");
 
-        // FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is the runtime's, so it is drawn from its record, and its gates
-        // read the version from its nodes (CUTOVER1d).
+        // A run bound to a graph version is the runtime's, so it is drawn from its record, and its gates
+        // read the version from its nodes.
         if (process is { Graph: { } graph, Run: { } run })
         {
             return await GraphRunAsync(chain, repository, part, mine, sessions, workspace, current, process, graph, run, reads).ConfigureAwait(false);
@@ -256,10 +255,9 @@ public static class WorkflowRunReader
     }
 
     /// <summary>
-    /// A chat's run (CHATFLOW1c; the chat-flow design §4.2): no chain, its records the line's in its tree, its session the line's newest, its
+    /// A chat's run: no chain, its records the line's in its tree, its session the line's newest, its
     /// repository the tree's owner, and its process the binding its key names, else the rules live. Every fact is selected by the line:
-    /// the landings and acceptances its records name, and its tree's tip and the commits beyond the line, read once. The look and the
-    /// second opinion are a quest's alone before rows d and d2, so they read as the press passes them: none.
+    /// the landings and acceptances its records name, and its tree's tip and the commits beyond the line, read once.
     /// </summary>
     private static async Task<WorkflowRun> ChatRunAsync(TracedSession session, string run, IReadOnlyList<TracedSession> sessions, Reads reads)
     {
@@ -287,7 +285,7 @@ public static class WorkflowRunReader
         var trees = new SessionTrees(sources.Home);
         var workflow = process.Named && tip is not null
             ? await trees.WorkflowAsync(tree, process, newest.Id, reads.Ct).ConfigureAwait(false) : null;
-        // CHATFLOW1d, CHATFLOW1d2 (§5.2, §5.3): the look and the second opinion read as the press reads them, keyed by the run, at the tip the
+        // The look and the second opinion read as the press reads them, keyed by the run, at the tip the
         // tree stands at; with no tree standing, neither can be read.
         var review = tip is null
             ? new ReviewGateState(ReviewStates.None, new ReviewDecision(ReviewLevels.Nothing, null) { Repository = repository })
@@ -303,7 +301,7 @@ public static class WorkflowRunReader
             Accepted = reads.Records.Acceptances(line),
             Chat = new ChatRunFacts(run) { Tip = tip?.Head, Beyond = tip?.Beyond, Between = reads.Records.Between(newest.Id) },
         };
-        // CHATFLOW1f: a run bound to a graph version is drawn from its record, as a quest's is, its subject the candidate a press submitted.
+        // A run bound to a graph version is drawn from its record, as a quest's is, its subject the candidate a press submitted.
         var record = reads.Records.Record(RunUnits.IdOf(bound));
         return WorkflowGraphRuns.Derive(
             new WorkflowGraphRunFacts(facts, bound, graph, record)
@@ -314,9 +312,9 @@ public static class WorkflowRunReader
     }
 
     /// <summary>
-    /// A run bound to a graph version (FABRIC-CUTOVER1e; D190 points 2, 3 and 7, the cutover design §2, §6): its graph's nodes drawn from its
+    /// A run bound to a graph version: its graph's nodes drawn from its
     /// record, <c>run:&lt;run&gt;</c>, read and never written, each on the subject its binding names; and the review's gate read for a look the
-    /// work's own choice adds, whose rows the graph replaces with none of the rule's (D154's rows 5 and 6 are its graph's).
+    /// work's own choice adds, whose rows the graph replaces with none of the rule's.
     /// </summary>
     private static async Task<WorkflowRun> GraphRunAsync(
         IReadOnlyList<QuestView> chain, string repository, IReadOnlyList<QuestView> part, IReadOnlyList<TracedSession> mine, IReadOnlyList<TracedSession> sessions,
@@ -343,7 +341,7 @@ public static class WorkflowRunReader
             Landings = [.. reads.Landings.Where(entry => sessionIds.Any(entry.Names))],
         };
         var record = reads.Records.Record(RunUnits.IdOf(run));
-        // INTEGRATE1n part n3 (F50): what the integration record says promoted, asked only where the run's graph holds an `integrate`.
+        // What the integration record says promoted, asked only where the run's graph holds an `integrate`.
         var promoted = record is not null && graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate)
             ? await IntegrateNodes.PromotedAsync(reads.Sources.Integration ?? NodeRuntime.HomeDoor(reads.Sources.Home), record, reads.Ct).ConfigureAwait(false)
             : new HashSet<string>(StringComparer.Ordinal);
@@ -356,7 +354,7 @@ public static class WorkflowRunReader
             workspace, askId);
     }
 
-    /// <summary>The unit's integration state (INTEGRATE1h), read from the integration record where the graph holds an <c>integrate</c> node; null where unread.</summary>
+    /// <summary>The unit's integration state, read from the integration record where the graph holds an <c>integrate</c> node; null where unread.</summary>
     private static IntegrationHead? IntegrationOf(string home, NodeGraph graph, NodeRecord? record)
     {
         if (record is null || !graph.Nodes.Any(node => node.Kind == NodeKinds.Integrate)) return null;
@@ -371,7 +369,7 @@ public static class WorkflowRunReader
     }
 
     /// <summary>
-    /// The requests a run's work made (INTEGRATE1o part o2; §17.3): each quest a session serving its work quests here published, from every quest the
+    /// The requests a run's work made: each quest a session serving its work quests here published, from every quest the
     /// service answered, and each helper such a session asked, from every session record, drawn as <see cref="WorkRequests.Draw"/> says them.
     /// </summary>
     private static IReadOnlyList<WorkflowRunRequest> RequestsOf(
@@ -438,7 +436,7 @@ public static class WorkflowRunReader
 
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken cancel) => Task.FromResult(quests);
 
-        /// <summary>Every quest the service answered, whichever chain and repository: where the quests a run's sessions published are found (INTEGRATE1o).</summary>
+        /// <summary>Every quest the service answered, whichever chain and repository: where the quests a run's sessions published are found.</summary>
         public IReadOnlyList<QuestView> EveryQuest => quests;
 
         public Task<AskView?> AskAsync(string id, CancellationToken cancel) => sources.Service.FindAskAsync(id, cancel);
@@ -449,12 +447,12 @@ public static class WorkflowRunReader
 
         private IReadOnlyList<GrownBranch>? _branches;
 
-        /// <summary>This machine's session branches, read once a read and only where a graph run names a branch by them (FABRIC-CUTOVER1e).</summary>
+        /// <summary>This machine's session branches, read once a read and only where a graph run names a branch by them.</summary>
         public IReadOnlyList<GrownBranch> Branches => _branches ??= records.Branches();
 
         /// <summary>
-        /// When a quest was taken (CARRY3), as <see cref="Planner.TakenAt"/> reads it: the claim's take, else the quest's last change; read
-        /// once a read, and only for a quest a chat's line took (CHATFLOW1c).
+        /// When a quest is taken, as <see cref="Planner.TakenAt"/> reads it: the claim's take, else the quest's last change; read
+        /// once a read, and only for a quest a chat's line took.
         /// </summary>
         public async Task<DateTimeOffset?> TakenAtAsync(QuestView quest)
         {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The run's one queue of words (AGENTPROVIDER1m-ii, D243): a word is written as the write returns and acknowledged once the harness names
+/// The run's one queue of words: a word is written as the write returns and acknowledged once the harness names
 /// its conversation; a retry hands the next process every word the ended one never acknowledged, in order, and never one it did.
 /// </summary>
 public sealed class DoorInputTests
@@ -141,7 +141,7 @@ public sealed class DoorInputTests
     }
 
     /// <summary>
-    /// A protocol door's input (D246): its words are requests its session answers, so a line, a held word and a control line are each refused
+    /// A protocol door's input: its words are requests its session answers, so a line, a held word and a control line are each refused
     /// naming the ability before anything is written or kept.
     /// </summary>
     [Fact]

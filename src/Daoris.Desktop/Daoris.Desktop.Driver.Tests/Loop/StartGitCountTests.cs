@@ -5,12 +5,12 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A session's start asks git once per fact (STARTGIT1): before a session spawns, the tree opener ran about 18 git commands one
-/// after another, `symbolic-ref origin/HEAD` three times and `rev-parse --verify refs/heads/main` four or five, which on a machine
-/// whose antivirus slows every process start took 8-12 s and tipped <see cref="StopHoldTickTests"/> past its 30 s under load.
+/// A session's start asks git once per fact: before a session spawns, the tree opener must not repeat git commands one
+/// after another (`symbolic-ref origin/HEAD`, `rev-parse --verify refs/heads/main`), which on a machine
+/// whose antivirus slows every process start tips <see cref="StopHoldTickTests"/> past its 30 s under load.
 /// </summary>
 /// <remarks>
-/// Every start through the gate is wrapped by <see cref="ProcessStarts.Within"/> (the PROCSTART2 seam) while a stub-driven start
+/// Every start through the gate is wrapped by <see cref="ProcessStarts.Within"/> while a stub-driven start
 /// runs as StopHold's does; the git starts before the harness's own (node) start are the start's, counted and listed.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -87,7 +87,7 @@ public sealed class StartGitCountTests : IDisposable
         _output.WriteLine(report);
         Assert.True(before.Count > 0, report);
         Assert.True(before.Count(each => each.Contains("symbolic-ref --short refs/remotes/origin/HEAD", StringComparison.Ordinal)) <= 1, report);
-        // The line guessed once, before the tree is made. One spelling per ref fact (LANDGIT1c): the line's commit read after the tree is
+        // The line guessed once, before the tree is made. One spelling per ref fact: the line's commit read after the tree is
         // made is the same command, asked again past the `worktree add` that made a branch.
         var made = before.FindIndex(each => each.StartsWith("git worktree add", StringComparison.Ordinal));
         Assert.True(made > 0, report);
@@ -106,14 +106,12 @@ public sealed class StartGitCountTests : IDisposable
         Assert.True(before.Count <= Ceiling, report);
     }
 
-    // 18 git starts before the change (`symbolic-ref origin/HEAD` x3, `rev-parse --verify --quiet refs/heads/main` x4); 11 after
-    // (the line is guessed once, its guess is not checked again, and a fresh tree's `merge-base` and `log` against itself are not asked).
-    // 12 since TREEDEPS1 (D51): a fresh tree lists the checkout's lockfiles once (`git ls-files … package-lock.json …`) to copy
-    // its dependencies, one start that saves the session a whole `npm ci`.
-    // 14 since TREELOCK1 (D51's note): the session locks its tree in its own name once its record is open, reading the tree's lock
-    // (`git worktree list --porcelain`) and taking it (`git worktree lock --reason daoris session …`), so no merge tool prunes it.
-    // 15 since GITWORKTREECONFIG1 (D51's note): an opening asks the tree it made for its working root once (`git rev-parse
-    // --show-toplevel`), so a tree git binds to another checkout is let go of before a session starts in it.
+    // What the ceiling allows: the line is guessed once, its guess is not checked again, and a fresh tree's `merge-base` and `log`
+    // against itself are not asked. A fresh tree lists the checkout's lockfiles once (`git ls-files … package-lock.json …`) to copy
+    // its dependencies, one start that saves the session a whole `npm ci`. The session locks its tree in its own name once its record
+    // is open, reading the tree's lock (`git worktree list --porcelain`) and taking it (`git worktree lock --reason daoris session …`),
+    // so no merge tool prunes it. An opening asks the tree it made for its working root once (`git rev-parse --show-toplevel`), so a
+    // tree git binds to another checkout is let go of before a session starts in it.
     private const int Ceiling = 15;
 
     private void Git(params string[] arguments)

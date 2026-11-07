@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
-/// <summary>One row of the one table (§E2): from a state, to a state, by whom, and when.</summary>
+/// <summary>One row of the one table: from a state, to a state, by whom, and when.</summary>
 public sealed record NodeTransition(string From, string To, string By, string When);
 
 /// <summary>
-/// Where one node stands on the unit it acts on (FABRIC-NODE1; §E2): its state, and what the lifecycle needs to judge the next move.
+/// Where one node stands on the unit it acts on: its state, and what the lifecycle needs to judge the next move.
 /// A value, never a store: an observed built-in's is derived from its records at each read (<see cref="NodeObserving"/>), and an
-/// attempt's store is the unit's canonical record, kept by the rows that first start one (§E7, <i>unit records keep §D6's attempts</i>).
+/// attempt's store is the unit's canonical record, kept by the rows that first start one.
 /// </summary>
 /// <param name="Unit">The unit it acts on (<see cref="WorkUnit.Id"/>).</param>
 /// <param name="Node">Its declaration's id.</param>
@@ -16,29 +16,29 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>The newest attempt's number, from 1; 0 before the first start. It only grows: an acceptance binds it.</summary>
     public int Attempt { get; init; }
 
-    /// <summary>Attempts started since the binding was fresh or the person last asked: what <see cref="NodeRetry.MaxAttempts"/> bounds.</summary>
+    /// <summary>Attempts started since the binding began or the person last asked: what <see cref="NodeRetry.MaxAttempts"/> bounds.</summary>
     public int Tries { get; init; }
 
     /// <summary>
     /// The attempt whose outcome is not established yet, apart from the visible state: one that went unknown, and a dispatched one
     /// (<see cref="NodeAuthority.Dispatches"/>) from its start until its authority's outcome, whatever moved the node off it (a stop, a
-    /// skip, a rejection, an invalidation). No new attempt starts while it is set (FABRIC-NODE1c).
+    /// skip, a rejection, an invalidation). No new attempt starts while it is set.
     /// </summary>
     public int? Unreconciled { get; init; }
 
     /// <summary>
     /// The binding the newest attempt runs on, as the acceptance it would be reached on (no evidence): set at its start from Daoris's
-    /// evaluation, and what a reach must match. Kept as history until a reset to ready or blocked (FABRIC-NODE1c).
+    /// evaluation, and what a reach must match. Kept until a reset to ready or blocked.
     /// </summary>
     public NodeAcceptance? Binding { get; init; }
 
     /// <summary>
     /// The graph and run it belongs to: a skip's, which holds for those alone (<see cref="NodeLifecycle.Skips"/>), or, from a start, its
-    /// attempt's, kept through that attempt's outcome, so a failure or a rejection is a receipt in that run alone (FABRIC-WIRE1e).
+    /// attempt's, kept through that attempt's outcome, so a failure or a rejection is a receipt in that run alone.
     /// </summary>
     public NodeScope? Scope { get; init; }
 
-    /// <summary>The acceptance it was reached on; kept as history once invalidated (<see cref="Current"/> is null then).</summary>
+    /// <summary>The acceptance it is reached on; kept once invalidated (<see cref="Current"/> is null then).</summary>
     public NodeAcceptance? Acceptance { get; init; }
 
     /// <summary>The source of its last outcome (<see cref="NodeSource"/>).</summary>
@@ -47,13 +47,13 @@ public sealed record NodeStatus(string Unit, string Node, string State)
     /// <summary>A failure's code.</summary>
     public string? Code { get; init; }
 
-    /// <summary>Whether that failure was declared transient (§D6): only such a failure retries without the person.</summary>
+    /// <summary>Whether that failure is declared transient: only such a failure retries without the person.</summary>
     public bool Transient { get; init; }
 
     /// <summary>The person's words: a rejection's reason, a skip's, a stop's where given.</summary>
     public string? Words { get; init; }
 
-    /// <summary>When the newest attempt started, as the move that started it was clocked; null on a node never started, or started unclocked.</summary>
+    /// <summary>When the newest attempt started, as the move that started it clocked it; null on a node never started, or started unclocked.</summary>
     public DateTimeOffset? Since { get; init; }
 
     public string? Holds { get; init; }
@@ -72,7 +72,7 @@ public sealed record NodeMove(string To, string By)
 
     /// <summary>
     /// The attempt an outcome or an unknown is about: required of a reach, a failure, a rejection and an unknown, and refused unless it
-    /// is the current attempt, so a late report of an earlier attempt never lands on a newer one (FABRIC-NODE1c).
+    /// is the current attempt, so a late report of an earlier attempt never lands on a newer one.
     /// </summary>
     public int? Attempt { get; init; }
 
@@ -98,28 +98,28 @@ public sealed record NodeMove(string To, string By)
 
     /// <summary>
     /// A skip's graph and run, or a start's: required of both, since a skip holds for its own alone and an attempt's outcome is a receipt in
-    /// its own run alone (FABRIC-WIRE1e). A start's graph is its binding's.
+    /// its own run alone. A start's graph is its binding's.
     /// </summary>
     public NodeScope? Scope { get; init; }
 }
 
-/// <summary>Where a skip holds (FABRIC-NODE1c): the graph that bound the run, and the run, D157's skip on a run (§E7).</summary>
+/// <summary>Where a skip holds: the graph that bound the run, and the run.</summary>
 /// <param name="GraphDigest">
-/// The graph's digest, or on a live graph the node's place (FABRIC-RUN1f): a start's is its binding's, and a skip by its kind's record names its
+/// The graph's digest, or on a live graph the node's place: a start's is its binding's, and a skip by its kind's record names its
 /// binding's, so each is checked like with like (<see cref="WireRun.Own"/>).
 /// </param>
 /// <param name="Run">The run's id.</param>
 public sealed record NodeScope(string GraphDigest, string Run);
 
-/// <summary>What a move came to: the node's status after it, or as it was with the refusal's code.</summary>
+/// <summary>What a move came to: the node's status after it, or as it stood with the refusal's code.</summary>
 public sealed record NodeMoved(NodeStatus Status, string? Refused)
 {
     public bool Moved => Refused is null;
 
     /// <summary>
     /// The status as it stood, when the move cleared any of what it held: a binding, an acceptance, an outcome's source, code or words,
-    /// a skip's scope. What the record writer keeps as the attempt's history before the reset (§D3: history is kept); null when the
-    /// move cleared nothing (FABRIC-NODE1c).
+    /// a skip's scope. What the record writer keeps as the attempt's history before the reset; null when the
+    /// move cleared nothing.
     /// </summary>
     public NodeStatus? Cleared { get; init; }
 }
@@ -157,7 +157,7 @@ public static class NodeRefusal
     /// <summary>An outcome or an unknown that names no attempt.</summary>
     public const string NoAttempt = "no-attempt";
 
-    /// <summary>The outcome names another attempt: a stale attempt's completion never counts as current evidence (§D3).</summary>
+    /// <summary>The outcome names another attempt: a stale attempt's completion never counts as current evidence.</summary>
     public const string StaleAttempt = "stale-attempt";
 
     /// <summary>
@@ -166,7 +166,7 @@ public static class NodeRefusal
     /// </summary>
     public const string NotBound = "not-bound";
 
-    /// <summary>A decision reached without one of its declared outcomes, or a reach naming an outcome on a node that declares none (DECIDE1a).</summary>
+    /// <summary>A decision reached without one of its declared outcomes, or a reach naming an outcome on a node that declares none.</summary>
     public const string NotOutcome = "not-outcome";
 
     /// <summary>A start that brings no binding, or a reach on a status that holds none.</summary>
@@ -177,20 +177,19 @@ public static class NodeRefusal
 
     /// <summary>
     /// A reach whose evidence or an output names another acceptance than the reach's own: a consumer's invalidation follows the
-    /// acceptance a port names, so it must be the one that produced it (FABRIC-NODE1d).
+    /// acceptance a port names, so it must be the one that produced it.
     /// </summary>
     public const string OtherAcceptance = "other-acceptance";
 
     /// <summary>
-    /// A reach exposing an output its node does not declare: a <c>data</c> wire's schema, checked when saved, would mean nothing at run time
-    /// (FABRIC-NODE1e).
+    /// A reach exposing an output its node does not declare: a <c>data</c> wire's schema, checked when saved, would mean nothing at run time.
     /// </summary>
     public const string UndeclaredOutput = "undeclared-output";
 
-    /// <summary>A reach exposing a declared output at another schema than its declaration's (FABRIC-NODE1e).</summary>
+    /// <summary>A reach exposing a declared output at another schema than its declaration's.</summary>
     public const string OutputSchema = "output-schema";
 
-    /// <summary>A reach without one of its node's declared outputs: every declared output is exposed (FABRIC-NODE1e).</summary>
+    /// <summary>A reach without one of its node's declared outputs: every declared output is exposed.</summary>
     public const string NoOutput = "no-output";
 
     /// <summary>A skip or a start that names no graph and run.</summary>
@@ -216,12 +215,12 @@ public static class NodeRefusal
 
     /// <summary>
     /// The person settles an attempt only of a plugin's performed node, the one kind whose attempt can be held with nothing else to say
-    /// what became of it (FABRIC-PERFORM1g, §D6): every other kind's outcome has its authority, a record or git to say it.
+    /// what became of it: every other kind's outcome has its authority, a record or git to say it.
     /// </summary>
     public const string NotSettled = "not-settled";
 
     /// <summary>
-    /// The person's word reaches a node only where it exposes nothing a consumer reads (FABRIC-PERFORM1g): a declared output or evidence
+    /// The person's word reaches a node only where it exposes nothing a consumer reads: a declared output or evidence
     /// schema is its plugin's reference, which no word makes.
     /// </summary>
     public const string NotOnWord = "not-on-word";
@@ -234,7 +233,7 @@ public static class NodeRefusal
 }
 
 /// <summary>
-/// The one lifecycle (FABRIC-NODE1; the fabric events design §E2): the only moves a node of any kind makes, and the checks a move must
+/// The one lifecycle: the only moves a node of any kind makes, and the checks a move must
 /// pass. A kind changes nothing here but who may report its outcomes (<see cref="NodeAuthorities"/>). Pure: it judges a move and
 /// returns the next status, and writes nothing.
 /// </summary>
@@ -242,14 +241,14 @@ public static class NodeRefusal
 /// <para><b>Evidence authority.</b> Only the kind's reach authority reaches it, only its failure authority fails it, each naming its
 /// <see cref="NodeSource"/>. Daoris never reports an outcome: silence and a deadline never count. A reach carries an acceptance bound to
 /// this unit, this node and this attempt; a stale attempt's completion is never current evidence.</para>
-/// <para><b>Retries.</b> Daoris retries a failure only where its code was declared transient and the declared attempts are not spent on
+/// <para><b>Retries.</b> Daoris retries a failure only where its code is declared transient and the declared attempts are not spent on
 /// this binding. The person's new attempt and a fresh binding count afresh; the attempt's number only grows.</para>
 /// <para><b>Reconciliation.</b> An unknown outcome is reconciled before any new attempt: a start is refused while one is unreconciled,
 /// whatever came between (a stop, the person's ask, an invalidation).</para>
 /// </remarks>
 public static class NodeLifecycle
 {
-    /// <summary>§E2's table, its <i>any live state</i> and <i>any bound state</i> rows expanded over <see cref="NodeStates.Live"/> and <see cref="NodeStates.Bound"/>.</summary>
+    /// <summary>The table, its <i>any live state</i> and <i>any bound state</i> rows expanded over <see cref="NodeStates.Live"/> and <see cref="NodeStates.Bound"/>.</summary>
     public static readonly IReadOnlyList<NodeTransition> Table = Build();
 
     private static List<NodeTransition> Build()
@@ -267,7 +266,7 @@ public static class NodeLifecycle
             new(NodeStates.Unknown, NodeStates.Active, daoris, "reconciliation says it is running, or never started"),
             new(NodeStates.Unknown, NodeStates.Reached, authority, "reconciliation establishes the outcome"),
             new(NodeStates.Unknown, NodeStates.Failed, authority, "reconciliation establishes the outcome"),
-            // FABRIC-PERFORM1g (§D6, D173's note): an attempt held because nothing else can say what became of it is settled by the person,
+            // An attempt held because nothing else can say what became of it is settled by the person,
             // on their own word and never as its plugin's, on a plugin's performed node alone (NodeAuthority.PersonSettles).
             new(NodeStates.Unknown, NodeStates.Reached, person, "the person settles an attempt nothing else can establish: it happened, on their word"),
             new(NodeStates.Unknown, NodeStates.Failed, person, "the person settles an attempt nothing else can establish: it did not"),
@@ -281,13 +280,13 @@ public static class NodeLifecycle
             rows.Add(new(from, NodeStates.Skipped, person, "the person passes it over for this graph and run, with their words, where the node allows a skip"));
         }
 
-        // FABRIC-WIRE1g: an opinion's gate passes its attempt over where nothing is asked of it, as D157's run reads it; never the person's.
+        // An opinion's gate passes its attempt over where nothing is asked of it, as the run reads it; never the person's.
         rows.Add(new(NodeStates.Active, NodeStates.Skipped, authority,
             "its kind's record passes its attempt over for this graph and run, where nothing is asked of it (NodeAuthority.SkipBy)"));
 
-        // FABRIC-NODE1c: a skip is the person's word for one graph and run, so they may take it back, and another graph or run lapses it.
-        // FABRIC-WIRE1g: a record's skip is its judgement of its binding, so a changed binding lapses it too.
-        // INTEGRATE1p (C33): a declined request is gone on without, a move of that kind alone (judged in Apply).
+        // A skip is the person's word for one graph and run, so they may take it back, and another graph or run lapses it.
+        // A record's skip is its judgement of its binding, so a changed binding lapses it too.
+        // A declined request is gone on without, a move of that kind alone (judged in Apply).
         rows.Add(new(NodeStates.Failed, NodeStates.Skipped, person, "the person goes on without a failed request, with their words, for this graph and run: a request node alone"));
         rows.Add(new(NodeStates.Skipped, NodeStates.Blocked, person, "the person withdraws their skip: it is judged again"));
         rows.Add(new(NodeStates.Skipped, NodeStates.Invalidated, daoris,
@@ -310,7 +309,7 @@ public static class NodeLifecycle
     /// <summary>
     /// The delay before try <paramref name="tryNumber"/> (from 2) under the node's retry: its delays in order, the last repeating. A try is
     /// counted within its binding (<see cref="NodeStatus.Tries"/>), never by the attempt's lifetime number, which keeps growing across
-    /// bindings and runs (FABRIC-PERFORM1h).
+    /// bindings and runs.
     /// </summary>
     public static TimeSpan DelayBefore(NodeDeclaration node, int tryNumber) =>
         tryNumber < 2 || node.Retry is not { DelaysSeconds.Count: > 0 } retry
@@ -319,7 +318,7 @@ public static class NodeLifecycle
 
     /// <summary>
     /// An earlier attempt's outcome established after it stopped being current (a stopped, skipped, rejected or superseded attempt's
-    /// completion, recorded as a stale attempt's, §D3, or its authority's answer that it never started): it no longer holds a new attempt
+    /// completion, recorded as a stale attempt's, or its authority's answer that it never started): it no longer holds a new attempt
     /// back. Any other attempt changes nothing, and so does a current one: an active or unknown attempt's outcome is a move.
     /// </summary>
     public static NodeStatus Reconciled(NodeStatus status, int attempt) =>
@@ -328,13 +327,13 @@ public static class NodeLifecycle
     /// <summary>Whether <paramref name="status"/> is a skip that holds for <paramref name="scope"/>: its own graph and run alone.</summary>
     public static bool Skips(NodeStatus status, NodeScope scope) => status.State == NodeStates.Skipped && status.Scope == scope;
 
-    /// <summary>The move judged against the one table and the kind's authority: the next status, or the status as it was and why not.</summary>
+    /// <summary>The move judged against the one table and the kind's authority: the next status, or the status as it stands and why not.</summary>
     public static NodeMoved Apply(NodeDeclaration node, NodeStatus status, NodeMove move)
     {
         NodeMoved Refuse(string code) => new(status, code);
         NodeMoved To(NodeStatus next) => new(next, null) { Cleared = Clears(status, next) ? status : null };
 
-        // FABRIC-NODE1c: an outcome or an unknown is about one attempt; a late report of an earlier one never lands on the current one.
+        // An outcome or an unknown is about one attempt; a late report of an earlier one never lands on the current one.
         string? Unbound(int? attempt) =>
             attempt is null ? NodeRefusal.NoAttempt : attempt != status.Attempt ? NodeRefusal.StaleAttempt : null;
 
@@ -349,7 +348,7 @@ public static class NodeLifecycle
         switch (move.To)
         {
             case NodeStates.Reached or NodeStates.Failed when move.By == NodeCause.Person:
-                // FABRIC-PERFORM1g: the person's word on a held attempt, theirs alone: its source the person, its evidence their word.
+                // The person's word on a held attempt, theirs alone: its source the person, its evidence their word.
                 if (!authority.PersonSettles) return Refuse(NodeRefusal.NotSettled);
                 if (move.Source != NodeSource.Person) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } settledAttempt) return Refuse(settledAttempt);
@@ -378,7 +377,7 @@ public static class NodeLifecycle
                 if (authority.Evidenced && accepted.Evidence is null) return Refuse(NodeRefusal.NoEvidence);
                 if (node.Evidence is { } schema && accepted.Evidence?.Schema != schema) return Refuse(NodeRefusal.NoEvidence);
                 if (Outputs(node, accepted) is { } outputs) return Refuse(outputs);
-                // FABRIC-NODE1d: a port names the acceptance that produced it, which is what its consumers' invalidation follows.
+                // A port names the acceptance that produced it, which is what its consumers' invalidation follows.
                 if (Others(accepted.Evidence, accepted.Id) || accepted.Outputs.Values.Any(port => Others(port, accepted.Id))) return Refuse(NodeRefusal.OtherAcceptance);
                 return To(next with
                 {
@@ -400,7 +399,7 @@ public static class NodeLifecycle
                 return To(next with { By = NodeSource.Person, Words = move.Words });
 
             case NodeStates.Skipped when move.By == NodeCause.Authority:
-                // FABRIC-WIRE1g: the kind's record passes the started attempt over, for that attempt's graph and run. It is never the person's:
+                // The kind's record passes the started attempt over, for that attempt's graph and run. It is never the person's:
                 // its source is the record's, and no words are kept whatever the move brings, so nothing reads it as what someone said.
                 if (authority.SkipBy is null || move.Source != authority.SkipBy) return Refuse(NodeRefusal.NotAuthority);
                 if (Unbound(move.Attempt) is { } skipAttempt) return Refuse(skipAttempt);
@@ -423,14 +422,14 @@ public static class NodeLifecycle
                 return To(next with { Unreconciled = status.Attempt });
 
             case NodeStates.Active when status.State == NodeStates.Unknown:
-                // Reconciliation found the same attempt running, or never started (redelivered with its key, §D6): not a new attempt.
+                // Reconciliation found the same attempt running, or never started (redelivered with its key): not a new attempt.
                 // A dispatched one still running stays unreconciled until its outcome.
                 return To(next with { Unreconciled = authority.Dispatches ? status.Attempt : null });
 
             case NodeStates.Active:
                 if (status.Unreconciled is not null) return Refuse(NodeRefusal.Unreconciled);
                 if (move.Binding is not { } binding) return Refuse(NodeRefusal.NoBinding);
-                // FABRIC-WIRE1e: the attempt belongs to its graph and run, so its failure or rejection is a receipt in that run alone.
+                // The attempt belongs to its graph and run, so its failure or rejection is a receipt in that run alone.
                 if (move.Scope is not { } scope) return Refuse(NodeRefusal.NoScope);
                 if (binding.Unit != status.Unit || binding.Node != status.Node || binding.NodeVersion != node.Version || binding.Attempt != status.Attempt + 1
                     || scope.GraphDigest != binding.GraphDigest)
@@ -461,8 +460,8 @@ public static class NodeLifecycle
                 return To(Reset(next) with { Tries = 0 });
 
             case NodeStates.Invalidated:
-                // FABRIC-NODE1f: an observed node's unknown was about its old binding and dispatched no effect, so a new binding clears it,
-                // or the start loop would skip the node for good. A dispatched attempt's stays: it may have taken effect (NODE1c, PERFORM1g).
+                // An observed node's unknown is about its old binding and dispatched no effect, so a new binding clears it,
+                // or the start loop would skip the node for good. A dispatched attempt's stays: it may have taken effect.
                 return To(next with { Unreconciled = authority.Dispatches ? status.Unreconciled : null });
 
             default:
@@ -474,9 +473,9 @@ public static class NodeLifecycle
     private static bool Others(NodePort? port, string acceptance) => port?.Acceptance is { } named && named != acceptance;
 
     /// <summary>
-    /// FABRIC-NODE1e: what a reach's outputs break of its declaration, or null: an output it does not declare, a declared one at another
-    /// schema, a declared one missing. A <c>data</c> wire's schema is checked when saved (WIRE1a), so the outputs a reach exposes are the
-    /// declared ones exactly, or that check means nothing at run time. DECIDE1d: a declared one is missing only where the reach's outcome
+    /// What a reach's outputs break of its declaration, or null: an output it does not declare, a declared one at another
+    /// schema, a declared one missing. A <c>data</c> wire's schema is checked when saved, so the outputs a reach exposes are the
+    /// declared ones exactly, or that check means nothing at run time. A declared one is missing only where the reach's outcome
     /// carries it (<see cref="NodeOutcomes.Carries"/>).
     /// </summary>
     private static string? Outputs(NodeDeclaration node, NodeAcceptance accepted) =>
@@ -496,7 +495,7 @@ public static class NodeLifecycle
     private static NodeStatus Reset(NodeStatus status) =>
         status with { Binding = null, Acceptance = null, By = null, Code = null, Transient = false, Words = null, Scope = null, Since = null };
 
-    /// <summary>Whether a move took away anything the status held, which the record writer keeps before it is gone (FABRIC-NODE1c).</summary>
+    /// <summary>Whether a move took away anything the status held, which the record writer keeps before it is gone.</summary>
     private static bool Clears(NodeStatus was, NodeStatus next)
     {
         static bool Lost(object? held, object? kept) => held is not null && !Equals(held, kept);

@@ -3,30 +3,30 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris ask channel</c> was asked: the ask, and with words a post, to one repository or everyone (<paramref name="To"/>
-/// null), answering a message or not; with no words, a read. A post is urgent, the person's default (D188 point 2), unless
-/// <paramref name="Ordinary"/> asked it to wait for each turn's end (COWORK1e).
+/// The request of <c>daoris ask channel</c>: the ask, and with words a post, to one repository or everyone (<paramref name="To"/>
+/// null), answering a message or not; with no words, a read. A post is urgent, the person's default, unless
+/// <paramref name="Ordinary"/> asks it to wait for each turn's end.
 /// </summary>
 public sealed record ChannelAsk(string Ask, string? To, string? Re, string? Text, bool Ordinary = false);
 
 /// <summary>
-/// The person's side of an ask's channel at a terminal (SESSONE2c, D167 points 6 to 8; the co-working design §2.4, D50), the twin
+/// The person's side of an ask's channel at a terminal, the twin
 /// of the ask page's <i>Channel</i>: <c>daoris ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re &lt;message&gt;]
 /// [--ordinary] ["…"]</c>.
 /// </summary>
 /// <remarks>
-/// <para><b>The level and the receipts</b> (COWORK1e; D188 points 2 and 6; the message-urgency design §8.4, §8.6): a post is the
-/// person's, urgent by default, and <c>--ordinary</c> posts it for each turn's end; <c>--urgent</c>, the design's spelling, says
+/// <para><b>The level and the receipts</b>: a post is the
+/// person's, urgent by default, and <c>--ordinary</c> posts it for each turn's end; <c>--urgent</c> says
 /// the default aloud. A read names an urgent message's level, and under the person's read each message says what it reached in
 /// each repository it addresses, as the service judged it and the page words it.</para>
 ///
 /// <para><b>The doors the page presses</b>: <c>GET /api/asks/{id}/channel</c>, <c>POST …/channel</c> and <c>POST …/channel/read</c>
-/// (SESSONE2a), through <see cref="ServiceClient"/>, as the shell's <c>CHANNEL_*</c> routes use them. With no words it prints the
+/// through <see cref="ServiceClient"/>, as the shell's <c>CHANNEL_*</c> routes use them. With no words it prints the
 /// channel and moves the person's own mark through the newest item, since the person read it here; with words it posts them as the
-/// person's, which every session on the ask reads (D167 point 7).</para>
+/// person's, which every session on the ask reads.</para>
 ///
 /// <para><b>Daoris's lines are coded by the service</b> and worded here in English, as every terminal sentence is; the page words
-/// the same codes in the reader's language (D142).</para>
+/// the same codes in the reader's language.</para>
 ///
 /// <para><b>Exit codes</b>: 0 read or posted, 1 refused (a code the service answered), 2 the usage or the service.</para>
 /// </remarks>
@@ -95,8 +95,7 @@ public static class ChannelCommand
         RunAsync(ask, service, output, instance: null, ct);
 
     /// <summary>
-    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for (RPC1e, the terminal RPC design
-    /// §7.2): a post is the person's words, which the window confirms, its route asked for this verb's own lines. A read stays the
+    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for: a post is the person's words, which the window confirms, its route asked for this verb's own lines. A read stays the
     /// service's: it moves the person's own mark, a door the service writes once whoever asks.
     /// </summary>
     public static Task<int> RunAsync(ChannelAsk ask, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
@@ -128,7 +127,7 @@ public static class ChannelCommand
             if (Reached(item) is { } reached) output.WriteLine($"      {reached}");
         }
 
-        // COMMS1k: the messages to one part each, kept apart from the channel, with what each reached in that part's line.
+        // The messages to one part each, kept apart from the channel, with what each reached in that part's line.
         if (channel.Addressed.Count > 0)
         {
             output.WriteLine("To one part alone:");
@@ -165,7 +164,7 @@ public static class ChannelCommand
     }
 
     /// <summary>
-    /// What a message reached in each repository it addresses (COWORK1d's receipts, the design §8.4), worded as the page's
+    /// What a message reached in each repository it addresses, worded as the page's
     /// <c>asks.channel.receipt.*</c>; null for a line, an entry's read and a host from before, which answer none.
     /// </summary>
     public static string? Reached(ChannelItemView item) =>
@@ -186,7 +185,7 @@ public static class ChannelCommand
         _ => $"{receipt.Repository}: {receipt.State}",
     };
 
-    /// <summary>What a message to one part reached in that part's line (COMMS1k), as the service spells it.</summary>
+    /// <summary>What a message to one part reached in that part's line, as the service spells it.</summary>
     private static string PartReceipt(string state, string part) => state switch
     {
         "waiting" => $"waiting for session {part}'s line",
@@ -203,7 +202,7 @@ public static class ChannelCommand
         "empty" => "Nothing was posted: the words are empty.",
         "too-long" => "Nothing was posted: a message is at most 4,000 characters.",
         "bad-to" => $"Nothing was posted: `{ask.To}` is not one of the ask's repositories.",
-        // COMMS1k: a part named in `to` must be one of a line of work on the ask, on this machine.
+        // A part named in `to` must be one of a line of work on the ask, on this machine.
         "bad-part" => $"Nothing was posted: session `{ask.To}` is no part of a line of work on ask #{ask.Ask}.",
         "part-elsewhere" => $"Nothing was posted: session `{ask.To}` runs on another machine, and a message to one part never travels.",
         "bad-re" => $"Nothing was posted: the channel holds no message to answer `{ask.Re}`.",
@@ -214,7 +213,7 @@ public static class ChannelCommand
     /// <summary>
     /// One item as a line: when, who, to whom, its level where it is urgent (an ordinary or older one is never marked, as on the page),
     /// what it answers, then the words or Daoris's coded line. <paramref name="person"/> names the person's own posts as the reader sees
-    /// them; an agent outside Daoris is said so (CHANNELJOIN1).
+    /// them; an agent outside Daoris is said so.
     /// </summary>
     public static string Line(ChannelItemView item, string person = "You")
     {

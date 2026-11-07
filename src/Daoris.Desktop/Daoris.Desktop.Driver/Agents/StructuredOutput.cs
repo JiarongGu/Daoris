@@ -9,32 +9,32 @@ public sealed record StreamMapped(IReadOnlyList<string> Lines, IReadOnlyList<Ses
     public static readonly StreamMapped Nothing = new([], []);
 
     /// <summary>
-    /// What the line said about the account's windows, apart from the agent's words (TOOL6c, D130 §5.2): the frame's object,
+    /// What the line said about the account's windows, apart from the agent's words: the frame's object,
     /// for the agent's table to read. Null for every other line. Neither the console nor the record shows it.
     /// </summary>
     public JsonElement? Limits { get; init; }
 
     /// <summary>
-    /// Whether the line was outside the harness's protocol (AGT3c): words it printed itself, which no agent wrote, since an
+    /// Whether the line is outside the harness's protocol: words it printed itself, which no agent wrote, since an
     /// agent's words arrive inside the frames. Shown on the console as ever.
     /// </summary>
     public bool Outside { get; init; }
 
     /// <summary>
-    /// A turn's failure in the harness's own words, apart from its agent's (AGT3c): a failed <c>result</c>'s. Null for every
+    /// A turn's failure in the harness's own words, apart from its agent's: a failed <c>result</c>'s. Null for every
     /// other line, a turn that did not fail among them.
     /// </summary>
     public string? Failed { get; init; }
 
     /// <summary>
-    /// The failed turn this line ended was the door's refusal of the model it was handed (D205 §3.3's pipe exception, MODELROLE1c3): the
+    /// The failed turn this line ended is the door's refusal of the model it is handed: the
     /// harness's <c>model_not_found</c>, on a turn its model never answered and no tool ran. False for every other line.
     /// </summary>
     public bool ModelRefused { get; init; }
 }
 
 /// <summary>
-/// A harness's own structured stdout, read by its adapter (D76 §1) — the native door's twin of what
+/// A harness's own structured stdout, read by its adapter — the native door's twin of what
 /// <see cref="AcpSession"/> does for the protocol door.
 /// </summary>
 /// <remarks>
@@ -46,17 +46,17 @@ public interface IStreamMapper
     /// <summary>One stdout line, read once into its frame (<see cref="NativeFrame"/>), as what the console shows and what the record keeps.</summary>
     StreamMapped Read(NativeFrame frame);
 
-    /// <summary>Context at its high-water mark, as the harness reported it (TOOL3) — null when it reported none.</summary>
+    /// <summary>Context at its high-water mark, as the harness reported it — null when it reported none.</summary>
     AcpUsage? Usage { get; }
 
     /// <summary>
-    /// The harness's own conversation id, once its wire named it (ANSWER1a, D131 §1): what an answer to a park resumes.
+    /// The harness's own conversation id, once its wire named it: what an answer to a park resumes.
     /// Null for a wire that names none, or before it has.
     /// </summary>
     string? Conversation => null;
 
     /// <summary>
-    /// What reads the session's subagents and background work off this wire (CONSOLE3c), each a console
+    /// What reads the session's subagents and background work off this wire, each a console
     /// stream of its own, or null for a wire that carries none. Asked once, where a console is kept.
     /// </summary>
     /// <param name="streams">The session's streams.</param>
@@ -65,13 +65,13 @@ public interface IStreamMapper
 }
 
 /// <summary>
-/// A wire's streams beside the session (CONSOLE3c): told each child's and background task's start and end as its reading, offered each
+/// A wire's streams beside the session: told each child's and background task's start and end as its reading, offered each
 /// stdout line before the session's own reader, and ended when the output ends.
 /// </summary>
 public interface IStreamsReader
 {
     /// <summary>
-    /// A reading the capture said of a child or a background task (AGENTPROVIDER1l): its start opens its stream and its end ends it, never read
+    /// A reading the capture said of a child or a background task: its start opens its stream and its end ends it, never read
     /// off the line again. A wire whose streams keep none passes over it.
     /// </summary>
     void Read(WireReading reading)
@@ -91,7 +91,7 @@ public interface IStreamsReader
     {
     }
 
-    /// <summary>True when the line was a stream's, so the session's reader never sees it.</summary>
+    /// <summary>True when the line is a stream's, so the session's reader never sees it.</summary>
     bool Take(NativeFrame frame);
 
     /// <summary>End every stream still open, because the session's output has: each says so.</summary>
@@ -99,7 +99,7 @@ public interface IStreamsReader
 }
 
 /// <summary>
-/// Claude Code's <c>stream-json</c> output, in Daoris's vocabulary (CONV3) — every shape read off the
+/// Claude Code's <c>stream-json</c> output, in Daoris's vocabulary — every shape read off the
 /// binary first (docs/2026-09-25-stream-json-evidence.md).
 /// </summary>
 /// <remarks>
@@ -107,17 +107,17 @@ public interface IStreamsReader
 /// in the <c>assistant</c> message. The deltas are the conversation's words, live; the whole message's
 /// text is skipped when its deltas already streamed, and kept when they did not.</para>
 ///
-/// <para><b>Every field is optional and shape-checked</b> — the ACP2 lesson: a wire that is somebody
+/// <para><b>Every field is optional and shape-checked</b>: a wire that is somebody
 /// else's grows, and a field of an unexpected shape is an absence here, never a throw.</para>
 ///
-/// <para>The reported model names ride the turn event to D205's machine-local provenance record before token attribution.
+/// <para>The reported model names ride the turn event to the machine-local provenance record before token attribution.
 /// Token shares remain the usage history's (<see cref="SessionEvent.Models"/>); monetary cost is not kept.</para>
 ///
-/// <para><b>A denial is the call's refusal</b> (UNBLOCK5, D122 §3.10). Nobody answers a prompt on this
+/// <para><b>A denial is the call's refusal</b>. Nobody answers a prompt on this
 /// door, so what the harness would have asked it denies, and reports as a <c>system</c>
 /// <c>permission_denied</c> frame and again in the result's <c>permission_denials</c>. Each is read as an
 /// update marking the call <c>refused</c>, once, with the tool's name and what decided it; the call's
-/// failed result then reads <c>refused</c> too, as the protocol door's does (HELP4). 🔴 Both shapes are
+/// failed result then reads <c>refused</c> too, as the protocol door's does. 🔴 Both shapes are
 /// the maker's reference, not yet a frame this machine printed: the tests say so beside them.</para>
 /// </remarks>
 public sealed class ClaudeStreamJson : IStreamMapper
@@ -136,12 +136,12 @@ public sealed class ClaudeStreamJson : IStreamMapper
     private long? _context;
     private AcpUsage? _usage;
 
-    // The models the turn's own answers named, and the result's split as this process last said it (USAGECAP1a2): whether
+    // The models the turn's own answers named, and the result's split as this process last said it: whether
     // `modelUsage` is the turn's or the process's running total is not recorded, and the turn's models read either.
     private readonly List<string?> _named = [];
     private IReadOnlyDictionary<string, TurnTokens>? _split;
 
-    // MODELROLE1c3 (D205 §3.3): whether this turn's tool message said `model_not_found`, and whether anything ran on it, a model's words
+    // Whether this turn's tool message said `model_not_found`, and whether anything ran on it, a model's words
     // or a tool call; begun again at each turn's result.
     private bool _modelNotFound;
     private bool _ran;
@@ -149,12 +149,12 @@ public sealed class ClaudeStreamJson : IStreamMapper
     public AcpUsage? Usage => _usage;
 
     /// <summary>
-    /// The <c>init</c> line's <c>session_id</c>, the first one said (ANSWER1a): <c>SDKSystemMessage</c> declares it, and
+    /// The <c>init</c> line's <c>session_id</c>, the first one said: <c>SDKSystemMessage</c> declares it, and
     /// <c>--resume</c> takes it. 🔴 The maker's published shape, not yet a line this machine printed.
     /// </summary>
     public string? Conversation { get; private set; }
 
-    /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, each child and task opened and ended by its reading (CONSOLE3c).</summary>
+    /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, each child and task opened and ended by its reading.</summary>
     public IStreamsReader? Beside(ISessionStreams streams, Action<string> say) => new ClaudeStreams(streams, say);
 
     /// <summary>One line, read once into its frame and then read.</summary>
@@ -165,7 +165,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
         var line = read.Line;
         if (string.IsNullOrWhiteSpace(line)) return StreamMapped.Nothing;
 
-        // Not a frame: the harness said something outside its protocol. Shown, never dropped, and its own words (AGT3c).
+        // Not a frame: the harness said something outside its protocol. Shown, never dropped, and its own words.
         if (!read.IsObject) return new([line], []) { Outside = true };
         var frame = read.Root;
 
@@ -178,7 +178,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             "control_response" => Control(frame),
             "system" when Text(frame, "subtype") == "permission_denied" => Denied(frame),
             "system" when Text(frame, "subtype") == "init" => Init(frame),
-            // The account's windows (TOOL6c, limit-signals evidence §1): handed on for the agent's table, and still not the
+            // The account's windows: handed on for the agent's table, and still not the
             // conversation, so neither a line nor an event.
             "rate_limit_event" => frame.TryGetProperty("rate_limit_info", out var info) && info.ValueKind == JsonValueKind.Object
                 ? StreamMapped.Nothing with { Limits = info.Clone() }
@@ -192,7 +192,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
         };
     }
 
-    /// <summary>The session's setup (ANSWER1a): its conversation's id kept, the first said, and nothing rendered, as before.</summary>
+    /// <summary>The session's setup: its conversation's id kept, the first said, and nothing rendered, as before.</summary>
     private StreamMapped Init(JsonElement frame)
     {
         if (Conversation is null && Text(frame, "session_id") is { Length: > 0 } id) Conversation = id;
@@ -233,8 +233,8 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
         var streamed = Text(message, "id") is { } id && _streamed.Contains(id);
         Measure(message);
-        // The model that answered the turn (USAGECAP1a2): a subagent's answer, on a line of its own beside the session, names none.
-        // 🔴 Nor does the tool's own message: a refused model or a limit is said as `<synthetic>` (MODELROLE1a's evidence), which
+        // The model that answered the turn: a subagent's answer, on a line of its own beside the session, names none.
+        // 🔴 Nor does the tool's own message: a refused model or a limit is said as `<synthetic>`, which
         // no model ran.
         var synthetic = Text(message, "model") == "<synthetic>";
         if ((!frame.TryGetProperty("parent_tool_use_id", out var parent) || parent.ValueKind != JsonValueKind.String) && !synthetic)
@@ -242,7 +242,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             _named.Add(Text(message, "model"));
         }
 
-        // 🔴 MODELROLE1c3 (row a's measured refusal): the frame's own error word on the tool's message, never its sentence, which reads
+        // 🔴 The frame's own error word on the tool's message, never its sentence, which reads
         // alike for a model unknown and one not entitled. A message a model wrote is the turn having run.
         if (synthetic && Text(frame, "error") == "model_not_found") _modelNotFound = true;
         else if (!synthetic && Blocks(message).Any()) _ran = true;
@@ -275,7 +275,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                     events.Add(call);
                     if (Plan(block) is { } plan) events.Add(plan);
                     break;
-                // Kept, never dropped (SessionEvents' own rule; REV3): a block this build has no kind for
+                // Kept, never dropped: a block this build has no kind for
                 // — a redacted thought, a server tool, an image — is its raw record, under its own name.
                 case { } other when other is not ("text" or "thinking"):
                     events.Add(new SessionEvent
@@ -304,7 +304,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             if (Text(block, "type") != "tool_result") continue;
             var failed = block.TryGetProperty("is_error", out var error) && error.ValueKind == JsonValueKind.True;
             var id = Text(block, "tool_use_id");
-            // A call the harness denied fails on the wire; the record says what happened to it (HELP4's twin),
+            // A call the harness denied fails on the wire; the record says what happened to it,
             // and the console, the raw view, keeps the wire's word.
             var status = !failed ? "completed" : id is not null && _refused.Contains(id) ? "refused" : "failed";
             // Said by the call's name, never its id — an id says nothing to a person reading along.
@@ -327,13 +327,13 @@ public sealed class ClaudeStreamJson : IStreamMapper
         var failed = frame.TryGetProperty("is_error", out var error) && error.ValueKind == JsonValueKind.True;
         var subtype = Text(frame, "subtype") ?? "unknown";
         // 🔴 A turn the person stopped is `error_during_execution` on this wire, and only its terminal
-        // reason says it was stopped rather than broken — the two the probe measured (CONV4a).
+        // reason says it is stopped rather than broken — the two the probe measured.
         var stopped = Text(frame, "terminal_reason") is "aborted_streaming" or "aborted_tools";
         var lines = new List<string>();
         var events = new List<SessionEvent>();
 
         // The turn's denials, which the reference calls the authoritative record where the message before
-        // was best-effort: any not said yet is said now, inside the turn it happened in.
+        // is best-effort: any not said yet is said now, inside the turn it happened in.
         if (frame.TryGetProperty("permission_denials", out var denials) && denials.ValueKind == JsonValueKind.Array)
         {
             foreach (var denial in denials.EnumerateArray().Where(denial => denial.ValueKind == JsonValueKind.Object))
@@ -349,7 +349,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             events.Add(new SessionEvent { Kind = SessionEventKind.Usage, Used = used, Size = size });
         }
 
-        // A failure's words reach the transcript for the person, and the capture as the harness's own (AGT3c): a refused
+        // A failure's words reach the transcript for the person, and the capture as the harness's own: a refused
         // credential is read from them there, never from the transcript, whose last lines may be the agent's words.
         var failure = !stopped && failed && Text(frame, "result") is { Length: > 0 } why ? why : null;
         lines.Add(stopped
@@ -357,12 +357,12 @@ public sealed class ClaudeStreamJson : IStreamMapper
             : failure is not null
                 ? $"— the turn failed ({subtype}): {failure}"
                 : $"— the turn ended: {subtype}");
-        // The whole turn's counts, as the result sums them over its calls (CONV5) — never a sum of the
+        // The whole turn's counts, as the result sums them over its calls — never a sum of the
         // streamed messages here, whose output the probe found under-counted.
         var tokens = frame.TryGetProperty("usage", out var usage)
             ? TurnTokens.Read(usage, "input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
             : null;
-        // Which models they were spent on, for the usage history alone (USAGECAP1a2): `modelUsage` by model where it agrees with
+        // Which models they were spent on, for the usage history alone: `modelUsage` by model where it agrees with
         // the total, read as the turn's own or as the process's running total less the result before.
         var split = frame.TryGetProperty("modelUsage", out var byModel) ? TurnModels.Read(byModel) : null;
         var models = TurnModels.Of(tokens, _named, TurnModels.FromMessages, split, _split, TurnModels.FromModelUsage, TurnModels.Names(byModel));
@@ -378,14 +378,14 @@ public sealed class ClaudeStreamJson : IStreamMapper
             Models = models,
         });
 
-        // MODELROLE1c3 (D205 §3.3's pipe exception): a failed turn whose tool message said `model_not_found`, its model never answering and
-        // no tool running, is the door's refusal of the model it was handed.
+        // A failed turn whose tool message said `model_not_found`, its model never answering and
+        // no tool running, is the door's refusal of the model it is handed.
         var modelRefused = failed && !stopped && _modelNotFound && !_ran;
         _modelNotFound = _ran = false;
         return new(lines, events) { Failed = failure, ModelRefused = modelRefused };
     }
 
-    /// <summary>A <c>permission_denied</c> frame, as the maker's reference types it (UNBLOCK5).</summary>
+    /// <summary>A <c>permission_denied</c> frame, as the maker's reference types it.</summary>
     private StreamMapped Denied(JsonElement frame)
     {
         var lines = new List<string>();
@@ -399,8 +399,8 @@ public sealed class ClaudeStreamJson : IStreamMapper
     /// and the call's refusal in the record, each the first time the call is denied.
     /// </summary>
     /// <remarks>
-    /// A call the session's record does not hold, a subagent's whose calls run beside the session
-    /// (CONSOLE3c), is said on the console and is no card in the conversation. A denial naming no call is
+    /// A call the session's record does not hold, a subagent's whose calls run beside the session,
+    /// is said on the console and is no card in the conversation. A denial naming no call is
     /// another shape than the reference's, and an absence.
     /// </remarks>
     private void Refuse(JsonElement denial, string? by, List<string> lines, List<SessionEvent> events)
@@ -465,7 +465,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
     /// <summary>
     /// A Claude Code tool call as this reader shows it, from its name, its input as written and its id: what a reader of the same call
-    /// through another way in (the layer's Claude door, AGENTLYNTAI1d) shows alike.
+    /// through another way in (the layer's Claude door) shows alike.
     /// </summary>
     internal static SessionEvent Step(string name, string? input, string? id)
     {
@@ -524,7 +524,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
     /// <summary>
     /// A tool's name as ACP's kind vocabulary, so both doors' cards wear the same glyphs: a subagent's call, <c>Agent</c> or <c>Task</c>,
-    /// wears the protocol door's <c>think</c>, as its adapter gives the call it replaces (AGENTPROVIDER1 s-viii).
+    /// wears the protocol door's <c>think</c>, as its adapter gives the call it replaces.
     /// </summary>
     private static string KindOf(string name) => name switch
     {

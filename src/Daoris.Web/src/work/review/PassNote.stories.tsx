@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PassNote } from './PassNote';
 
-// The cause and the bound of an Accept's wait (LANDHOLD2b), on the shipped component: the pass, never a tree's hold.
+// The cause and the bound of an Accept's wait, on the shipped component: the pass, never a tree's hold.
 
 const meta: Meta<typeof PassNote> = {
   title: 'Work/PassNote',

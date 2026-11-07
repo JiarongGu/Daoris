@@ -7,7 +7,7 @@ using StandIn = Daoris.Desktop.Driver.Tests.HistoryStandIn;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1g (D195 point 7, decided by the owner; the cleanup design §3.6, §9): finished history by an age the person sets. Once a day the
+/// Finished history by an age the person sets. Once a day the
 /// look's Keeping pass lists each workspace through the clear's first press and sends exactly the units whose last move is older than the
 /// person's days, every refusal holding; what went is the log's <c>history.cleared</c> with <c>door: rule</c> and <c>last.history</c>,
 /// what stays is said. With no age set, the default, nothing is cleared.

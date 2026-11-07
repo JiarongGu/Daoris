@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AUTONOMY1a (D184 point 1): <c>daoris place access</c>, the terminal's door to a repository's session access setup, its workspace's
+/// <c>daoris place access</c>, the terminal's door to a repository's session access setup, its workspace's
 /// and this machine's. It reads and writes the driver's file alone, through <see cref="AccessRules"/>, so it refuses what the screen's
 /// <c>SET_ACCESS</c> refuses, in the same words, with nothing written.
 /// </summary>
@@ -77,7 +77,7 @@ public sealed class AccessCommandTests : IDisposable
     }
 
     /// <summary>
-    /// ACCESSSWAP1b (D183's note): the terminal writes the file from another process and reaches no session's console, so a change that
+    /// The terminal writes the file from another process and reaches no session's console, so a change that
     /// moves a level's permission prompts says how a driven session already running takes it: at its next turn, ending at this one's end
     /// and going on in the same conversation. A change of another pause says nothing of it.
     /// </summary>
@@ -125,7 +125,7 @@ public sealed class AccessCommandTests : IDisposable
         Assert.Equal(before, File.ReadAllText(ConfigPath));
     }
 
-    /// <summary>WORKFLOWCLEAN1 1c (D228): how work lands is its workflow's, so the terminal refuses the landing pause and writes nothing.</summary>
+    /// <summary>How work lands is its workflow's, so the terminal refuses the landing pause and writes nothing.</summary>
     [Fact]
     public void The_landing_pause_is_refused_in_the_workflow_s_words_and_nothing_is_written()
     {

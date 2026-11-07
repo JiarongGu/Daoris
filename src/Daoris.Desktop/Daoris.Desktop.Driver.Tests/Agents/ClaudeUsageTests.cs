@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// USAGEREAD2a (D165 point 1; the usage-read evidence): a Claude Code account's windows, asked of the native CLI with the
+/// A Claude Code account's windows, asked of the native CLI with the
 /// <c>get_usage</c> control request, which spends no model usage, and read into the reading its frames fill. Pure and in
 /// process: the reader's table, and the protocol against a stand-in CLI that speaks the measured lines. The real spawn under
 /// an account's <c>CLAUDE_CONFIG_DIR</c> is <c>ClaudeUsageProcessTests</c>, in the <c>Process</c> half.
@@ -85,7 +85,7 @@ public sealed class ClaudeUsageTests
         { "a reset in words", Body(Window(5, "soon"), "null") },
     };
 
-    /// <summary>Absent is never zero (D57): a window the answer does not say whole says nothing.</summary>
+    /// <summary>Absent is never zero: a window the answer does not say whole says nothing.</summary>
     [Theory]
     [MemberData(nameof(Unread))]
     public void What_does_not_read_is_nothing_said(string why, string body)
@@ -93,7 +93,7 @@ public sealed class ClaudeUsageTests
         Assert.True(Read(body).Count == 0, why);
     }
 
-    // ——— What the usage history keeps of an answer (USAGECAP1a1, D179 point 2): a parse beside the walk's, every window the
+    // ——— What the usage history keeps of an answer: a parse beside the walk's, every window the
     // answer says whole or in part, the server's rows (the evidence's field table), the plan's word, and where each reset came from.
 
     private static UsageAnswer Answer(string body) => ClaudeUsage.Read(JsonDocument.Parse(body).RootElement.Clone(), Now);
@@ -181,7 +181,7 @@ public sealed class ClaudeUsageTests
     }
 
     /// <summary>
-    /// The installed server's answer as a signed-in account gives it (measured 2026-11-07, D248's note; every value a placeholder): a
+    /// The installed server's answer as a signed-in account gives it (measured 2026-11-07; every value a placeholder): a
     /// row's <c>scope</c> an object naming a model and a surface, beside rows whose scope is null, and the per-model arrays beside the
     /// windows. The model's <c>id</c> is a JSON literal: the server measured names the model by its display name alone, its id null.
     /// </summary>
@@ -237,7 +237,7 @@ public sealed class ClaudeUsageTests
 
         public List<string> Sent { get; } = [];
 
-        /// <summary>How late each flush ends, as a starved pool runs the writer's default flush (LOADFLAKE2).</summary>
+        /// <summary>How late each flush ends, as a starved pool runs the writer's default flush.</summary>
         public TimeSpan Late { get; init; }
 
         public TextReader Incoming => new ChannelReader(_toClient);
@@ -289,7 +289,7 @@ public sealed class ClaudeUsageTests
     };
 
     /// <summary>
-    /// The read, its patience on a clock that moves only when a test moves it (LOADFLAKE2), so a case that expects an answer is
+    /// The read, its patience on a clock that moves only when a test moves it, so a case that expects an answer is
     /// never answered by a starved pool's lateness; a case about the patience hands the machine's.
     /// </summary>
     private static Task<IReadOnlyList<WindowReading>?> Ask(
@@ -300,7 +300,7 @@ public sealed class ClaudeUsageTests
     [Fact]
     public async Task The_measured_lines_are_written_in_order_and_the_answer_is_read_past_other_frames_and_other_ids()
     {
-        // Its lines land past its patience on the machine's clock, as a starved pool once ran the writer's flush (LOADFLAKE2): read
+        // Its lines land past its patience on the machine's clock, as a starved pool runs the writer's flush: read
         // all the same, the patience on a clock that does not move.
         var cli = new FakeCli(AsMeasured) { Late = TimeSpan.FromMilliseconds(300) };
 

@@ -6,9 +6,9 @@ import i18n from '../../locales/i18n';
 import { ParkAnswer } from './ParkAnswer';
 import type { ParkQuestion } from './parkQuestion';
 
-// PARKVIEW1 (the park's ask design §3-§4): what a parked session asks, in its box above the words: its question with each answer a
+// What a parked session asks, in its box above the words: its question with each answer a
 // press beside what the agent does on it, the go-aheads it still waits on with *Approve* and *Refuse*, one line saying where its
-// question is and how long it has waited, and folded under it what it holds meanwhile and what an answer does (PARKWORDS1). A
+// question is and how long it has waited, and folded under it what it holds meanwhile and what an answer does. A
 // molecule: props in, presses out.
 
 const QUESTION: ParkQuestion = {
@@ -34,7 +34,7 @@ const SESSION = { quest: '7a82cc', tree: 's-1a2b3c4', since: '2026-10-22T09:06:0
 afterEach(() => { void i18n.changeLanguage('en'); });
 
 describe('a park\'s ask in its box', () => {
-  // QUESTIONUI1a: each answer a row to select, sent by the box's own *Send*; the card offers no press that sends.
+  // Each answer a row to select, sent by the box's own *Send*; the card offers no press that sends.
   it('says its question, each answer it offered a row to select, the recommended one marked with its reason', async () => {
     const onSelect = vi.fn();
     render(<ParkAnswer {...SESSION} question={QUESTION} goAheads={[]} onSelect={onSelect} onGoAhead={vi.fn()} />);
@@ -49,7 +49,7 @@ describe('a park\'s ask in its box', () => {
     expect(onSelect).toHaveBeenLastCalledWith('1,350');
   });
 
-  // PARKWORDS1: one line says where its question is and how long it has waited; what it holds and how the answer travels fold.
+  // One line says where its question is and how long it has waited; what it holds and how the answer travels fold.
   it('says in one line where its question is and how long it has waited, and folds what it holds meanwhile', async () => {
     vi.useFakeTimers({ now: new Date('2026-10-22T14:12:00Z'), shouldAdvanceTime: true });
     try {

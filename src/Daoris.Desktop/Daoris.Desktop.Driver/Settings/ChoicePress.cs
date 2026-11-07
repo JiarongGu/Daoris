@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One standing choice's press (D194 points 4 and 6): the route the window's press sends and the payload the verb writes from
+/// One standing choice's press: the route the window's press sends and the payload the verb writes from
 /// its words, the operation it calls alone, the press's own fields read from the route's answer, and the one function that says it
 /// from those fields on both paths. <see cref="DriverChoicesCommand.Plan"/> makes it; a test sends its payload through the route.
 /// </summary>

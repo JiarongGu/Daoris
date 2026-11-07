@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What the helper's pass is asked with (MIXAGENT2a-ii): the ask, the asker's checkout and tree, and where the copy stands.</summary>
+/// <summary>What the helper's pass is asked with: the ask, the asker's checkout and tree, and where the copy stands.</summary>
 /// <param name="Ask">The ask on file: the question as written, the agent named, who asked.</param>
 /// <param name="Root">The repository's registered checkout, where the asker's commits are.</param>
 /// <param name="Tip">The commit the asker's tree stands at, which the helper's copy is checked out at.</param>
@@ -10,7 +10,7 @@ public sealed record HelperPassAsk(HelperAsk Ask, string Repository, string Root
     public string? Workspace { get; init; }
 
     /// <summary>
-    /// The asker's work in progress (COAGENT1a), laid over the copy once it stands at <see cref="Tip"/>, which is the capture's
+    /// The asker's work in progress, laid over the copy once it stands at <see cref="Tip"/>, which is the capture's
     /// commit; null for a pass handed none.
     /// </summary>
     public HelperCaptured? Capture { get; init; }
@@ -22,7 +22,7 @@ public sealed record HelperPassAsk(HelperAsk Ask, string Repository, string Root
     public Action<string>? Opened { get; init; }
 
     /// <summary>
-    /// The owner's own walk, asked again with what was passed left out (D205 §3.5(f), MODELROLE1e): a refusal of the entry's model at the
+    /// The owner's own walk, asked again with what is passed left out: a refusal of the entry's model at the
     /// open is handled in this call, the refused record ended <c>choice-not-offered</c> and the walk's answer opened, <see cref="Opened"/>
     /// called again with the replacement. Null asks nothing again.
     /// </summary>
@@ -46,24 +46,24 @@ public sealed record HelperPassRun(string? Session, string Line)
     /// <summary>What the helper said last, bounded as a parked session's words are, where its turn completed: the fallback answer.</summary>
     public string? LastWords { get; init; }
 
-    /// <summary>An account's limit ended its turn (LIMITRESUME1h, D206 design §3.8): its record's <c>limited</c> flag.</summary>
+    /// <summary>An account's limit ended its turn: its record's <c>limited</c> flag.</summary>
     public bool Limit { get; init; }
 
-    /// <summary>Its provider kept failing past its tries or its minutes (AGENTERRORS1d): refused <see cref="HelperWhy.Transient"/>, never <i>no answer</i>.</summary>
+    /// <summary>Its provider kept failing past its tries or its minutes: refused <see cref="HelperWhy.Transient"/>, never <i>no answer</i>.</summary>
     public bool Transient { get; init; }
 
-    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c> (D205 §3.5(f)).</summary>
+    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c>.</summary>
     public bool NotOffered { get; init; }
 }
 
-/// <summary>The helper pass's own words and bounds (MIXAGENT2a-ii), each said once for every door.</summary>
+/// <summary>The helper pass's own words and bounds, each said once for every door.</summary>
 public static class HelperPass
 {
     /// <summary>The door a helper's record is opened by, as the session log's <c>session.started</c> names it.</summary>
     public const string OpenedKind = "helper";
 
     /// <summary>
-    /// How long one helper's turn may run: its own bound, never capped by a session's time (SESSWATCH1a, D200); only the tests' backstop
+    /// How long one helper's turn may run: its own bound, never capped by a session's time; only the tests' backstop
     /// (<see cref="DriverConfig.TestBound"/>) comes first.
     /// </summary>
     public static int Bound(DriverConfig config) => Math.Max(1, Math.Min(HelperInstruction.DefaultMinutes, config.TestBound ?? int.MaxValue));

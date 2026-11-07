@@ -15,8 +15,8 @@ internal sealed class StartsLook(IStartsWiring wiring) : ILookPass
         var starts = state.Starts;
 
         // 🔴 One run per record the person's words wait on: a run that took a record up moves it to working a moment after the look
-        // planned it, so a look in between still reads it waiting and plans it again, and a second run's move to working was refused
-        // (working → working) and failed the session the first was resuming. Claimed here for the run's whole life, so a later look
+        // planned it, so a look in between still reads it waiting and plans it again, and a second run's move to working is refused
+        // (working → working) and fails the session the first is resuming. Claimed here for the run's whole life, so a later look
         // begins nothing on it, and says why. After the intakes are counted, so the slot the record holds is counted as the plan counted it.
         var goingOn = new Dictionary<string, string>(StringComparer.Ordinal);
         var claimed = new List<Consideration>();

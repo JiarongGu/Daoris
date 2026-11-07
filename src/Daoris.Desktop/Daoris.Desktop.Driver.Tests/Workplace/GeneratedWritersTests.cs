@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GENREGEN1 (D87's note): <c>daoris.gates.json</c>'s <c>generated</c> read as a landing's replay reads it, and what the landing says of
+/// <c>daoris.gates.json</c>'s <c>generated</c> read as a landing's replay reads it, and what the landing says of
 /// the generated files it took, written again or not. The replay itself is <c>LandRebaseLandingTests</c>' (Process).
 /// </summary>
 public sealed class GeneratedWritersTests

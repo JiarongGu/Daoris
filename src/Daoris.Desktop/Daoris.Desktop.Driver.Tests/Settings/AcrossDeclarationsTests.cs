@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a declared write-across may hold (FOUNDATION1 mod-iii): the settings' reading, which the permissions' <c>AcrossRules.Problem</c>
+/// What a declared write-across may hold: the settings' reading, which the permissions' <c>AcrossRules.Problem</c>
 /// answers through, so the file, the verb and the reach refuse one thing in one sentence.
 /// </summary>
 public sealed class AcrossDeclarationsTests

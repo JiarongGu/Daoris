@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A remote that cannot authenticate is held until something changes (GITAUTH1a, D198 point 7; the git-auth design §5.2): the classes
+/// A remote that cannot authenticate is held until something changes: the classes
 /// that hold and those that do not, the key (the checkout, the remote, its address, the git, reads or writes), what lifts a hold, what
 /// is kept in <c>run/git/held.json</c> and what the machine log says. Files only; the real fetch is <see cref="GitHoldsProcessTests"/>.
 /// </summary>

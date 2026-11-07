@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Who holds a home (HOMELEASE1): an instance for its life, or a verb, a migration or a swap for its act.</summary>
+/// <summary>Who holds a home: an instance for its life, or a verb, a migration or a swap for its act.</summary>
 public enum LeaseKind
 {
     /// <summary>The desktop application's loop: an instance.</summary>
@@ -13,13 +13,13 @@ public enum LeaseKind
     /// <summary>A terminal's <c>daoris drive</c>: an instance.</summary>
     Headless,
 
-    /// <summary>A terminal's verb acting alone, for its mutation (the terminal RPC design §7.2).</summary>
+    /// <summary>A terminal's verb acting alone, for its mutation.</summary>
     Verb,
 
-    /// <summary>The desktop's first-start move of an older home's state into the install's (D63).</summary>
+    /// <summary>The desktop's first-start move of an older home's state into the install's.</summary>
     Migration,
 
-    /// <summary>The launcher's swap of <c>app/</c> for a staged build (D139 §5).</summary>
+    /// <summary>The launcher's swap of <c>app/</c> for a staged build.</summary>
     Swap,
 }
 
@@ -50,14 +50,14 @@ public sealed record LeaseHolder(LeaseKind Kind, int Pid, DateTimeOffset Since, 
 public sealed class HomeLeaseException(string message, Exception? inner = null) : IOException(message, inner);
 
 /// <summary>
-/// One writer per home (HOMELEASE1, the terminal RPC design §5): <c>&lt;home&gt;/home.lease</c>, the driver's lock (DRV8a's
-/// <c>driver.lock</c>, D104) grown to cover every writer rather than a second file beside it.
+/// One writer per home: <c>&lt;home&gt;/home.lease</c>, the driver's lock
+/// (<c>driver.lock</c>) grown to cover every writer rather than a second file beside it.
 /// </summary>
 /// <remarks>
 /// <para><b>Who holds it.</b> An instance (the desktop's loop, a headless <c>drive</c>) for its life; a verb acting alone for its
-/// mutation only, never for a read; the desktop's first-start migration (D63); and the launcher's swap of <c>app/</c> (D139 §5),
-/// so no verb the install carries runs alone from a folder being replaced. Until RPC1's pipe makes a verb the running instance's
-/// client, a verb that finds an instance's lease acts beside it as it always did (<see cref="Beside"/>), holding nothing.</para>
+/// mutation only, never for a read; the desktop's first-start migration; and the launcher's swap of <c>app/</c>,
+/// so no verb the install carries runs alone from a folder being replaced. A verb that finds an instance's lease
+/// acts beside it (<see cref="Beside"/>), holding nothing, until a pipe makes it the running instance's client.</para>
 ///
 /// <para><b>Taken without replacing.</b> Written beside, then moved into place with no overwrite, so of two takers at once only
 /// one takes it. Released only while it still says what its holder wrote. It names its holder's kind, process and start, a
@@ -71,19 +71,18 @@ public sealed class HomeLeaseException(string message, Exception? inner = null) 
 /// another case of the path meets the one file.</para>
 ///
 /// <para><b>An older build's <c>driver.lock</c></b> is read as that build's lease while its holder lives, so a desktop or a loop
-/// from before HOMELEASE1 still holds the home against this one; a stale one is left where it is and ignored. So is a lease at
-/// the <c>home-lease</c> entry's old place, a build's from before HOMELAYOUT3 switched it to <c>run/</c>.</para>
+/// of that build still holds the home against this one; a stale one is left where it is and ignored. So is a lease at
+/// an older place of the <c>home-lease</c> entry, outside <c>run/</c>.</para>
 ///
 /// <para><b>Compiled into the launcher too</b>, with <see cref="HomeIdentity"/> and <see cref="DaorisHome"/>, whose table names
-/// the lease's place (<c>Daoris.Desktop.Launcher.csproj</c>), so it uses nothing but the base library. The CLI's <c>lease.ts</c> was its twin until it left with the last management family's TypeScript (PUSH1f2f,
-/// D194): every verb that holds the home now holds it through here.</para>
+/// the lease's place (<c>Daoris.Desktop.Launcher.csproj</c>), so it uses nothing but the base library. Every verb that holds the home holds it through here.</para>
 /// </remarks>
 public sealed class HomeLease : IDisposable
 {
     /// <summary>The lease's name under the home.</summary>
     public const string FileName = "home.lease";
 
-    /// <summary>DRV8a's lock, which a build from before HOMELEASE1 takes: read as that build's lease while its holder lives.</summary>
+    /// <summary>The older build's lock: read as that build's lease while its holder lives.</summary>
     public const string LegacyFileName = "driver.lock";
 
     /// <summary>How long a verb, a migration or a swap waits on another act's lease, and an instance before it says so.</summary>
@@ -114,13 +113,13 @@ public sealed class HomeLease : IDisposable
     public LeaseHolder? Beside { get; }
 
     /// <summary>
-    /// Where this build takes a home's lease: the home's <c>home-lease</c> entry at its new place, <c>run/home.lease</c> (D172,
-    /// HOMELAYOUT3), whichever spelling of the home is asked.
+    /// Where this build takes a home's lease: the home's <c>home-lease</c> entry, <c>run/home.lease</c>,
+    /// whichever spelling of the home is asked.
     /// </summary>
     public static string PathIn(string home) => DaorisHome.Places(home, HomeEntry.HomeLease)[0];
 
     /// <summary>
-    /// Every other place a lease of this home may be (HOMELAYOUT3): the <c>home-lease</c> entry's old place, where a build from
+    /// Every other place a lease of this home may be: the <c>home-lease</c> entry's old place, where a build from
     /// before the switch takes it, and an older build's <c>driver-lock</c> at either of its places. A live holder at any of them
     /// holds the home; a stale one is left where it is.
     /// </summary>
@@ -207,7 +206,7 @@ public sealed class HomeLease : IDisposable
     }
 
     /// <summary>
-    /// Whether this process holds the home's lease (FABRIC-END2, design §B5): its instance's loop, or a verb acting alone under the lease
+    /// Whether this process holds the home's lease: its instance's loop, or a verb acting alone under the lease
     /// it took. A verb beside an instance holds nothing, so what only the lease's holder writes, such as an end, it never writes. Read
     /// from the lease file, so any path to the home meets the one answer.
     /// </summary>
@@ -231,8 +230,8 @@ public sealed class HomeLease : IDisposable
         + "Run this again once that one ends.";
 
     /// <summary>
-    /// The lease for a verb acting alone (the terminal RPC design §5, §7.2): taken where the home is free; beside an instance,
-    /// holding nothing, as a verb has always acted, until RPC1's pipe makes it that instance's client; and where another verb, a
+    /// The lease for a verb acting alone: taken where the home is free; beside an instance,
+    /// holding nothing, until a pipe makes it that instance's client; and where another verb, a
     /// migration or a swap holds it, waited for up to <paramref name="within"/>, then null with the refusal naming which.
     /// </summary>
     public static HomeLease? ForVerb(
@@ -245,7 +244,7 @@ public sealed class HomeLease : IDisposable
     }
 
     /// <summary>
-    /// The lease a long verb publishes under (PUSH1f2c, D194 point 3, the alone-path design §1.4): a download's end, and in its rows a
+    /// The lease a long verb publishes under: a download's end, and in its rows a
     /// sign-in's, a key's and a pin's. Waited for and never refused, as the desktop's loop waits for an act: what the person waited
     /// for is never thrown away for another act's hold. Taken the moment that hold lets go; beside an instance (the desktop started
     /// meanwhile), run holding nothing, each file's keep lock the publication's protection.
@@ -322,7 +321,7 @@ public sealed class HomeLease : IDisposable
     private static LeaseHolder? Live(string path) =>
         Read(path, out _) is { } seen && Parse(seen) is { } named && ProcessLiveness.Alive(named.Holder.Pid, named.Started) ? named.Holder : null;
 
-    /// <summary>This process, as its lease names it, with the home's id, minted where it has none (§3.1).</summary>
+    /// <summary>This process, as its lease names it, with the home's id, minted where it has none.</summary>
     private static string Describe(LeaseKind kind, string? what, string home)
     {
         using var self = Process.GetCurrentProcess();

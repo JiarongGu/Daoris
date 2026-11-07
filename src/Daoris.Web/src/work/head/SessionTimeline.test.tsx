@@ -62,7 +62,7 @@ describe('one timeline entry', () => {
     expect(screen.getByText('shown as recorded')).toBeInTheDocument();
   });
 
-  /** LANG1b (D142 points 1, 4): Daoris's lines in the record's note, worded in the reader's language. */
+  /** Daoris's lines in the record's note, worded in the reader's language. */
   it('words the record’s note in the reader’s language', async () => {
     await i18n.changeLanguage('zh');
     try {
@@ -103,7 +103,7 @@ describe('one timeline entry', () => {
   });
 
   /**
-   * UX6b (design §2.5): the install's side bar showed an ended session's whole done note, a full verify report, running
+   * An ended session's whole done note, a full verify report, would run
    * past the window's foot. A note longer than four lines folds to them, with *Show all*; the record holds it whole.
    */
   it('folds a note longer than four lines to them, and shows it all on the press', () => {
@@ -165,7 +165,7 @@ describe('one timeline entry', () => {
 
 /**
  * The entries are the ordered list's own children — a commit list nests inside one of them. The states' flow draws a list
- * above them (FLOWCHART1b), so the observed events are the ordered one.
+ * above them, so the observed events are the ordered one.
  */
 const eventsOf = () => document.querySelector('ol')!;
 const entriesOf = () => [...eventsOf().children];
@@ -178,7 +178,7 @@ describe('the timeline', () => {
   afterEach(() => vi.useRealTimers());
 
   /**
-   * UX5 U65: in the dock its tab names it, and the pane said *Timeline* again under the *Timeline*
+   * In the dock its tab names it, so the pane does not say *Timeline* again under the *Timeline*
    * tab. Untitled there; titled where it stands in the column with no tab above it.
    */
   it('carries its heading only where no tab names it', () => {
@@ -213,8 +213,8 @@ describe('the timeline', () => {
   });
 
   /**
-   * Step-parsing the stream was rejected by name (D52) and re-proposing it means answering the
-   * D23/D24 argument first. This is the assertion that would fail if someone started: a session
+   * Step-parsing the stream is rejected.
+   * This is the assertion that would fail if someone started: a session
    * with a busy console and nothing observed has a one-entry timeline, not an invented one.
    */
   it('invents nothing a harness did not tell the record', () => {

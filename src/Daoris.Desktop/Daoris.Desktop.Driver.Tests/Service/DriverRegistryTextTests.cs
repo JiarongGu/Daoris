@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (ONEWAY1u, D194 point 6): each case of <c>daoris connect</c>, <c>retire</c>, <c>wire</c> and <c>import</c>,
+/// The port keeps today's text: each case of <c>daoris connect</c>, <c>retire</c>, <c>wire</c> and <c>import</c>,
 /// as the CLI's TypeScript verbs said it before they retire (<c>fixtures/driver-registry-text.json</c>), said again by
 /// <see cref="ServiceClient"/>'s operations and <see cref="RegistryWords"/> over a stand-in service: the same lines on each stream, the
 /// same exit, and the same requests sent. A row of the <c>command</c> door is the verb's own grammar, which the command tree's table reads.

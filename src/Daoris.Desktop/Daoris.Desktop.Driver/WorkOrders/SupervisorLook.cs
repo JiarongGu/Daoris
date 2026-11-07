@@ -20,7 +20,7 @@ internal sealed class SupervisorLook(ILookWiring wiring) : ILookPass
         var undecided = round.State.Snapshot;
         var alone = round.State.Alone = AnswersAloneHold.For(wiring.Events, wiring.Marks, wiring.Home, wiring.Supervisor.Admits);
 
-        // CONTEXTDRIVE1j: each go-on the supervisor kept on a referred point, its window past, released through the count's door between turns.
+        // Each go-on the supervisor kept on a referred point, its window past, released through the count's door between turns.
         var looked = undecided.LastRun.Values.Concat(undecided.NamedByReopen.Values).DistinctBy(record => record.Session, StringComparer.Ordinal)
             .ToDictionary(record => record.Session, StringComparer.Ordinal);
         await wiring.Supervisor.ReleaseCoursesAsync(

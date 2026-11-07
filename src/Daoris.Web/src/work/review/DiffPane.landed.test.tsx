@@ -3,9 +3,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// REVIEW2 (D113): the review of a landed session, over a mocked bridge. A landing that tidied its tree away is read
+// The review of a landed session, over a mocked bridge. A landing that tidied its tree away is read
 // from its landed branch and says so; its acts are the hand-off where one applies and nothing that acts on a tree
-// that is gone; a branch gone since is said plainly. The review's other acts are WorkFrame.test's.
+// that is gone; a branch gone is said plainly. The review's other acts are WorkFrame.test's.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
@@ -119,8 +119,8 @@ describe('the review of a landed session (REVIEW2)', () => {
   });
 
   /**
-   * The tree is still here and its landed branch went (WSR6 replayed what it did since): the review is the tree's
-   * again, says where it landed before, and every act is back.
+   * The tree is still here and its landed branch is gone: the review is the tree's,
+   * says where it landed before, and every act is offered.
    */
   it('gives a tree that carried on after its landing its acts back once the landed branch is gone', async () => {
     answer({ ...FROM_BRANCH, base: 'abc1234567890', source: 'tree', landed: { ...LANDED, state: 'gone', asLanded: false } });
@@ -142,7 +142,7 @@ describe('the review of a landed session (REVIEW2)', () => {
     expect(await screen.findByText(/This session's tree is gone from this machine/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
-    // The work was not landed here, so sending it back is still a door.
+    // The work is not landed here, so sending it back is still a door.
     expect(screen.getByRole('button', { name: 'Send back…' })).toBeTruthy();
     expect(asked('LANDING')).toHaveLength(0);
   });

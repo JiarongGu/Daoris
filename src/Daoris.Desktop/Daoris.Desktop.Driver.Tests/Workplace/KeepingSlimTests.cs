@@ -5,7 +5,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1a over real git (D195 point 3; the cleanup design §5 and §9): a tree the look sets aside drops its package folders once it has
+/// Over real git: a tree the look sets aside drops its package folders once it has
 /// settled. The judgement before the hold and its check inside it by the last look's own reads, the manifest written before the move,
 /// the slim an hour after it in the Keeping pass under the run lock, and the purge at the folder's days that knows what the slim removed.
 /// What needs no git (the manifest's states, the purge's read after a slim, the budget and the backoff) is <see cref="SetAsideSlimTests"/>'.
@@ -76,7 +76,7 @@ public sealed class KeepingSlimTests : BranchTidyingFixture
     {
         var (_, tree, library, linked) = await PackagedTreeAsync();
         using var log = Log();
-        // KEEPSIZE1b: the service does not answer the record's post, so the folder waits its days and its record, and the slim takes it.
+        // The service does not answer the record's post, so the folder waits its days and its record, and the slim takes it.
         _ledger.RecordsDown = true;
 
         await new BranchTidying(_home).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
@@ -125,7 +125,7 @@ public sealed class KeepingSlimTests : BranchTidyingFixture
 
         Assert.Equal(["node_modules", "web/node_modules"], Assert.Single(await new SessionTrees(_home).ListAsync()).Slimmed);
 
-        // KEEPSIZE1b (the keep-size design §3.4): a folder awaiting its record is kept past its days; once the service answers, its record
+        // A folder awaiting its record is kept past its days; once the service answers, its record
         // is kept from the manifest alone, and the folder goes an hour after that.
         await Tidying(TimeSpan.FromDays(15)).LookAsync(_ledger.Client(), log, _closing.Token).WaitAsync(Bound);
         Assert.True(Directory.Exists(aside));

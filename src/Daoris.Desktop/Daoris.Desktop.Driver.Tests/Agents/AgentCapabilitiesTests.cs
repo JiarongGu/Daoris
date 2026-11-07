@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1e, the provider sheet (AGENTPROVIDER1 row r; COAGENT1 §3; the agent-provider design §2.4, §6): each door's sheet read from
+/// The provider sheet: each door's sheet read from
 /// its registration, each row's source and fallback, a measurement that applies only at its configuration, and the measurements table
 /// held to the evidence documents it names.
 /// </summary>
@@ -78,7 +78,7 @@ public sealed class AgentCapabilitiesTests
         Assert.True(claude.Acts.SignsIn);
         Assert.True(claude.Acts.Installs);
 
-        // A holder with no door of its id: its one door leads, and its account acts are the agent's (CODEXACCT1).
+        // A holder with no door of its id: its one door leads, and its account acts are the agent's.
         var codex = Registry.Facts.Of("codex-acp")!;
         Assert.Equal("codex", codex.Id);
         Assert.Equal("codex-acp", codex.Lead);
@@ -104,7 +104,7 @@ public sealed class AgentCapabilitiesTests
     }
 
     /// <summary>
-    /// The service's call keys' twin (the design §6, O1-F17): each agent the service reads a call's lineage for, in the fixture its
+    /// The service's call keys' twin: each agent the service reads a call's lineage for, in the fixture its
     /// <c>CallLineageTests</c> holds its one ordered list to, is an agent this registry answers.
     /// </summary>
     [Fact]

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCEPTALL1f (D167's 2026-10-15 amendment point 2): every door that lands one session names it as the review's Accept does since
-/// ACCEPTALL1b, by one call (<see cref="SessionTrees.OwnSubjectAsync"/>): the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the
+/// Every door that lands one session names it as the review's Accept does, by one call
+/// (<see cref="SessionTrees.OwnSubjectAsync"/>): the review's <c>LANDING</c> and <c>LAND_SESSION_TREE</c>, the
 /// terminal's <c>trees land</c> and the look's landing at done. A part of an entry with others is named for its entry's first part and
 /// joins the entry's branch; a session alone, a merge rule and a name the person entered land as before. The tree here is one no git
 /// holds, so the entry's branch is the rule's name for the first part, read with no git; <c>EntryLandingTests</c> holds the door
@@ -75,7 +75,7 @@ public sealed class OwnAcceptSubjectTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-UNITLINK1 and FABRIC-CLOSE1h13 (D173's CLOSELAND1 note): whatever the landing is named for, the subject keeps the quest the
+    /// Whatever the landing is named for, the subject keeps the quest the
     /// session itself served and its current submission as the door read it, which the landing's record keeps: a later part of an entry
     /// its own, not its first part's; a session alone its own; a conversation none.
     /// </summary>

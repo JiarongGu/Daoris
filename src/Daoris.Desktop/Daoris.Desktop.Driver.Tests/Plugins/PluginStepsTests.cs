@@ -4,12 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin's steps and resources (FABRIC-UNIT1d; the fabric events design §D4, §D6, §D9, §E2): the manifest declares a step once, and
+/// A plugin's steps and resources: the manifest declares a step once, and
 /// it is read into the one <see cref="NodeDeclaration"/> a built-in is, judged by <see cref="NodeDeclarations.Problem"/>. The rules' one
-/// table: the CLI's <c>steps.ts</c> held its twin to <see cref="The_steps_read_as_the_cli_reads_them"/> until it left with
-/// <c>daoris plugin</c>'s TypeScript (PUSH1f2f).
+/// table.
 /// </summary>
-/// <remarks>🔴 <b>A problem refuses the plugin</b>, as a skill's does (§C4): its code and words, and nothing of the plugin is taken.</remarks>
+/// <remarks>🔴 <b>A problem refuses the plugin</b>, as a skill's does: its code and words, and nothing of the plugin is taken.</remarks>
 public sealed class PluginStepsTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-plugin-steps-" + Guid.NewGuid().ToString("N")[..8]);
@@ -20,7 +19,7 @@ public sealed class PluginStepsTests : IDisposable
     }
 
     /// <summary>
-    /// The hooks a row's manifest speaks with where it names none (FABRIC-PERFORM1a): a performed step is asked at `work/perform`, so
+    /// The hooks a row's manifest speaks with where it names none: a performed step is asked at `work/perform`, so
     /// the hooks must name that point, and a row about anything else is not refused for it. Twin: <c>HOOKS</c> in the CLI's test.
     /// </summary>
     private const string Hooks = """, "hooks": { "command": ["node", "deploy.mjs"], "points": ["work/perform"] }""";
@@ -150,7 +149,7 @@ public sealed class PluginStepsTests : IDisposable
     }
 
     /// <summary>
-    /// A performed step is asked at `work/perform` on the plugin's process (FABRIC-PERFORM1a, UNIT1d's choice 8): a manifest whose hooks
+    /// A performed step is asked at `work/perform` on the plugin's process: a manifest whose hooks
     /// do not name that point, or that has no hooks at all, is refused when it is read, and an observed step needs no point.
     /// </summary>
     [Theory]
@@ -236,7 +235,7 @@ public sealed class PluginStepsTests : IDisposable
         }
     }
 
-    /// <summary>DECIDE1d: a decision's output carried on some outcomes alone is read into its declaration, and each refused shape is said.</summary>
+    /// <summary>A decision's output carried on some outcomes alone is read into its declaration, and each refused shape is said.</summary>
     [Theory]
     [InlineData("""["release", "none"]""", """{ "release": ["release"] }""", null)]
     [InlineData("""["release", "none"]""", """{ "release": ["merged"] }""", "outputsOn")]
@@ -267,7 +266,7 @@ public sealed class PluginStepsTests : IDisposable
         }
     }
 
-    /// <summary>SETUPUX1f, I18NOPEN1: a step may declare its <c>title</c> and <c>about</c> as authored text; read, they change nothing a step is judged or compared by.</summary>
+    /// <summary>A step may declare its <c>title</c> and <c>about</c> as authored text; read, they change nothing a step is judged or compared by.</summary>
     [Fact]
     public void A_step_may_declare_a_title_and_an_about_as_authored_text_and_a_step_without_keeps_its_kind()
     {
@@ -301,7 +300,7 @@ public sealed class PluginStepsTests : IDisposable
         Assert.Null(NodeDeclarations.Problem(find));
     }
 
-    /// <summary>SETUPUX1f: each refused shape of <c>title</c> and <c>about</c> refuses the plugin by the field's own code.</summary>
+    /// <summary>Each refused shape of <c>title</c> and <c>about</c> refuses the plugin by the field's own code.</summary>
     [Theory]
     [InlineData("title", """{ "en": "Find", "zh": "查找" }""", null)]
     [InlineData("title", "\"Find\"", null)]
@@ -402,9 +401,9 @@ public sealed class PluginStepsTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-UNIT1e (§D9): what an update changes in a plugin's steps and resources, each said in <see cref="PluginSteps.Said(NodeDeclaration)"/>'s
+    /// What an update changes in a plugin's steps and resources, each said in <see cref="PluginSteps.Said(NodeDeclaration)"/>'s
     /// words: [case, what the installed manifest declares after its id, what the source's declares, then each change as
-    /// <c>what: was → now</c>, <c>(none)</c> for an empty side, joined by <c> | </c>]. A step is said whole, so a declaration that
+    /// <c>what: before → after</c>, <c>(none)</c> for an empty side, joined by <c> | </c>]. A step is said whole, so a declaration that
     /// changes without a new version is still a change. The twin is <c>plugin-steps.test.ts</c>'s <c>CHANGE_ROWS</c>.
     /// </summary>
     [Theory]
@@ -429,7 +428,7 @@ public sealed class PluginStepsTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-UNIT1e (§D9): a plugin described where its other declarations are (<c>plugins install</c>'s line; the CLI's
+    /// A plugin described where its other declarations are (<c>plugins install</c>'s line; the CLI's
     /// <c>plugin list</c> and <c>plugin add</c>): [case, what the manifest declares after its id, the description]. The twin is
     /// <c>plugin-steps.test.ts</c>'s <c>DESCRIBE_ROWS</c>.
     /// </summary>

@@ -13,6 +13,7 @@ public static class PeerNoteCodes
     // its reason and what the session does next, never as refused.
     public static readonly NoteCode HandOverAskedTerminal = new("handover.asked-terminal", ["agent"]);
     public static readonly NoteCode HandOverAskedWindow = new("handover.asked-window", ["agent"]);
+    public static readonly NoteCode HandOverAskedSteward = new("handover.asked-steward", ["agent"]);
     public static readonly NoteCode HandOverNotTaken = new("handover.not-taken", ["agent", "why"]) { Why = NoteCodes.HandOver };
     public static readonly NoteCode HandOverNotTakenEnds = new("handover.not-taken-ends", ["agent", "why"]) { Why = NoteCodes.HandOver };
 
@@ -67,7 +68,7 @@ public static class PeerNoteCodes
     public static readonly NoteCode HelpRoomUnread = new("help.room-unread", ["seconds"]);
 
     // ——— Ask Daoris's start on the facts the judges keep: started at once, on a room that says what is not read yet, or on the room
-    // as last written where no fact was ever judged.
+    // as last written where no fact has been judged.
     public static readonly NoteCode HelpRoomNotReadYet = new("help.room-not-read-yet", []);
 
     // ——— A second opinion's answers as the working session's turn ended (<see cref="OpinionAnswers.Told"/>): whose findings and how
@@ -86,8 +87,7 @@ public static class PeerNoteCodes
     public static readonly NoteCode OpinionReviewerRead = new("opinion.reviewer-read", ["opinion"]);
     public static readonly NoteCode OpinionReviewerExited = new("opinion.reviewer-exited", ["opinion", "exit"]);
 
-    // ——— A pass that is no driven session or conversation, ended past its transient bound (AGENTERRORS1d, D210 point 8; the agent-errors
-    // design §7): its provider kept failing through the tries it made, or until its own minutes ran out, never as timed out. Each is
+    // ——— A pass that is no driven session or conversation, ended past its transient bound: its provider keeps failing through the tries it makes, or until its own minutes ran out, never as timed out. Each is
     // followed by the provider's words.
     /// <summary>A helper settled refused for its provider (<see cref="HelperWhy.Transient"/>), said on the asker.</summary>
     public static readonly NoteCode HelperTransient = new("helper.transient", ["agent", "count"]);

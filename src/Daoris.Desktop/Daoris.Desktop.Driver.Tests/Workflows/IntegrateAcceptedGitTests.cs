@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1r part r2 over real git (the integration design §17.7, §4.3): the gates a choice's door reads of a repository's accepted
+/// Over real git, the gates a choice's door reads of a repository's accepted
 /// integration declaration, only where the accepted blob is the declaration at the line's tip. A declaration accepted and naming a gate names
 /// it; none accepted, one the line changed since, or one naming no gate names none; a repository with no checkout here is not read, never
 /// passed.

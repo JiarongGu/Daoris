@@ -10,7 +10,7 @@ import { proposalOf, RELEASE_PROPOSAL } from './proposalFixtures';
 import type { ProposalShown } from './proposalTake';
 import { WorkflowEditor } from './WorkflowEditor';
 
-// Ask Daoris's proposal on the editor's chart (FLOWCHART2f; D223 §4, §8.6), drawn from props: the release workflow proposed against the
+// Ask Daoris's proposal on the editor's chart, drawn from props: the release workflow proposed against the
 // Merge workflow open in the editor, its new steps and ways drawn beside the draft and marked in words, the bar naming the agent and the
 // model that made it, and its changes one by one; the same proposal after the person took away a way it renumbers, two of its changes
 // refused with *Ask again*; the Merge workflow proposed against the release workflow, its steps to remove drawn dashed; and a proposal

@@ -3,10 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the observed events' test classes share (PARTWHOLE1): a scratch home, a stand-in port, a stand-in read of the tips counting each
-/// read, the plugin's observed deploy and the performed notify after it, the branch units a pass reads and the event a plugin sends. One
-/// class over two hand-split parts until PARTWHOLE1 gave each a class of its own: <see cref="ObservedEventTests"/> and
-/// <see cref="ObservedRunEventTests"/>.
+/// What the observed events' test classes share: a scratch home, a stand-in port, a stand-in read of the tips counting each
+/// read, the plugin's observed deploy and the performed notify after it, the branch units a pass reads and the event a plugin sends.
+/// <see cref="ObservedEventTests"/> and <see cref="ObservedRunEventTests"/> derive from it.
 /// </summary>
 public abstract class ObservedEventFixture : IDisposable
 {

@@ -9,7 +9,7 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A new session tree's dependencies (TREEDEPS1, D51's note): what its checkout installed with npm at the lockfile the tree holds,
+/// A new session tree's dependencies: what its checkout installed with npm at the lockfile the tree holds,
 /// copied into the tree as it opens, so its session does not run <c>npm ci</c> from nothing. A real copy, never a link to the
 /// checkout's folder: a session's install deletes and rewrites its folder and its tools write caches there, which a link would
 /// carry into the checkout, and node resolves a module through its real path.
@@ -27,7 +27,7 @@ namespace Daoris.Driver;
 /// anywhere else copies nothing. A cache at the top of a <c>node_modules</c> (<c>.cache</c>, <c>.vite</c>) names where it was
 /// made, and is left for the tree's tools to make again.</para>
 ///
-/// <para>It runs inline, eight files at once, on the measurement in D51's note: a fraction of the <c>npm ci</c> it saves.</para>
+/// <para>It runs inline, eight files at once, on a measurement: a fraction of the <c>npm ci</c> it saves.</para>
 /// </remarks>
 internal static class TreeDependencies
 {
@@ -47,7 +47,7 @@ internal static class TreeDependencies
     /// <summary>git's pathspecs for every tracked lockfile, at any depth.</summary>
     private static readonly string[] Pathspecs = [$":(glob)**/{Lockfile}", .. OtherLockfiles.Select(name => $":(glob)**/{name}")];
 
-    /// <summary>How many files are copied at once: eight, past which the measurement in D51's note found nothing faster.</summary>
+    /// <summary>How many files are copied at once: eight, past which a measurement found nothing faster.</summary>
     private static readonly int AtOnce = Math.Clamp(Environment.ProcessorCount, 1, 8);
 
     /// <summary>
@@ -179,8 +179,8 @@ internal static class TreeDependencies
                     continue;
                 }
 
-                // Whole: each renamed into place, tried again while the virus scanner holds a file just written in it (FIX-LOG
-                // 2026-10-07, as an installed binary is), and the empty folder it was made under goes where it can.
+                // Whole: each renamed into place, tried again while the virus scanner holds a file just written in it (as an installed
+                // binary is), and the empty folder it is made under goes where it can.
                 foreach (var (under, final) in whole)
                 {
                     AtomicFile.MoveFolder(Path.Combine(under, Modules), final);
@@ -239,7 +239,7 @@ internal static class TreeDependencies
                 if (entry.Attributes.HasFlag(FileAttributes.ReparsePoint))
                 {
                     // 🔴 Never followed, and made to lead to the same place in the tree, never where the checkout's does: git's
-                    // removal of a tree follows a junction and deletes what it leads to (D51's note).
+                    // removal of a tree follows a junction and deletes what it leads to.
                     if (LeadsInTree(root, tree, copying, entry) is not { } there) return UncopiedWhy.Link;
                     MakeLink(to, Path.Combine(tree, Path.GetRelativePath(root, entry.FullName)), there, entry is DirectoryInfo);
                 }
@@ -404,7 +404,7 @@ internal static class TreeDependencies
         return (ignored, "");
     }
 
-    /// <summary>What was made of a copy that did not finish, deleted never following a link (TIDIEDLINK1), as far as it goes.</summary>
+    /// <summary>What a copy that did not finish made, deleted never following a link, as far as it goes.</summary>
     private static void Discard(IEnumerable<string> made)
     {
         foreach (var each in made.Where(Path.Exists))
@@ -482,7 +482,7 @@ internal static class TreeDependencies
     private static string Join(params string[] parts) => string.Join('/', parts.Where(part => part.Length > 0));
 }
 
-/// <summary>One npm project's copy (TREEDEPS1): its own <c>node_modules</c> as the opening names it, the folders it takes, or why none.</summary>
+/// <summary>One npm project's copy: its own <c>node_modules</c> as the opening names it, the folders it takes, or why none.</summary>
 /// <param name="Modules">The project's <c>node_modules</c>, relative to the repository in git's spelling.</param>
 /// <param name="Folders">Every folder it copies, its workspaces' own among them; empty where it copies none.</param>
 /// <param name="Why">Why it copies none (<see cref="UncopiedWhy"/>); null where it copies.</param>
@@ -490,7 +490,7 @@ internal static class TreeDependencies
 /// <param name="Detail">What failed, in the program's words, where that is why.</param>
 internal sealed record DependencyPlan(string Modules, IReadOnlyList<string> Folders, string? Why, string? Workspace = null, string? Detail = null);
 
-/// <summary>What a tree's open copied of its checkout's dependencies (TREEDEPS1), and why it copied none of the rest.</summary>
+/// <summary>What a tree's open copied of its checkout's dependencies, and why it copied none of the rest.</summary>
 /// <param name="Copied">The folders copied, relative to the repository in git's spelling.</param>
 /// <param name="Declined">Each project that copied nothing, and why.</param>
 internal sealed record DependencyCopy(IReadOnlyList<string> Copied, IReadOnlyList<Uncopied> Declined)
@@ -512,7 +512,7 @@ internal sealed record DependencyCopy(IReadOnlyList<string> Copied, IReadOnlyLis
           + "folder's `package-lock.json` changes.";
 }
 
-/// <summary>A project whose dependencies were not copied into a new tree (TREEDEPS1), and why: a line of the tree's opening.</summary>
+/// <summary>A project whose dependencies were not copied into a new tree, and why: a line of the tree's opening.</summary>
 /// <param name="Modules">The project's <c>node_modules</c>, relative to the repository in git's spelling.</param>
 /// <param name="Why">Why (<see cref="UncopiedWhy"/>).</param>
 /// <param name="Workspace">The workspace whose own lockfile moved, where that is why.</param>
@@ -540,7 +540,7 @@ internal sealed record Uncopied(string Modules, string Why, string? Workspace = 
     }
 }
 
-/// <summary>Why a project's dependencies were not copied into a new tree (TREEDEPS1): each its own line's code.</summary>
+/// <summary>Why a project's dependencies were not copied into a new tree: each its own line's code.</summary>
 internal static class UncopiedWhy
 {
     /// <summary>pnpm or yarn installs it.</summary>

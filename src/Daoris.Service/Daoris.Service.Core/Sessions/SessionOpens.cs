@@ -14,7 +14,7 @@ public sealed record SessionOpenRecord(string Key, string Left, string Opened, b
 public sealed record OpenTransfer(string Word, string? Key, string Transfer, int Order, string Id);
 
 /// <summary>
-/// What a keyed open moves (FOUNDATION1 row d-ii part 3; the design §3.4 rule 3): the record the words move from, <paramref name="From"/>, the
+/// What a keyed open moves: the record the words move from, <paramref name="From"/>, the
 /// record the open leaves or, for a start from another's words, the source of a record that names no <c>from</c>; the ids the course named
 /// (<c>Carries</c>, judged in .NET), <paramref name="Words"/>; and the ids it saw waiting there when it read, <paramref name="Read"/>, so every
 /// word of the person's kept there since, which none of those names, is told apart and moves too. The service judges no word's carriage
@@ -45,7 +45,7 @@ public sealed record OpenMoves(string From, IReadOnlyList<string> Words, IReadOn
     }
 }
 
-/// <summary>Local open receipts, written and read inside the ledger's exclusive step (D212 §19.5).</summary>
+/// <summary>Local open receipts, written and read inside the ledger's exclusive step.</summary>
 public sealed class SessionOpens
 {
     private readonly ConnectionGate _db;

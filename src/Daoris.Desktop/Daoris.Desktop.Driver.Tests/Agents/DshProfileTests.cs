@@ -3,18 +3,17 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// **What Daoris writes into a dsh home it created** (ACP3, closing HELP2) — the two outbound rows
+/// **What Daoris writes into a dsh home it created** — the two outbound rows
 /// off, and Daoris's own skills reachable.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>The boundary this whole file defends: Daoris writes here ONLY where it made the
 /// directory.</b> With no named profile, `DSH_HOME` is unset and dsh uses the person's own `~/.dsh`
-/// — which is theirs, and which SES3's "silence means the harness's own configuration home" puts
+/// — which is theirs, and which the rule "silence means the harness's own configuration home" puts
 /// firmly out of reach. So the patch is written into a Daoris-created profile home and nowhere else,
 /// and a run without one is <b>told what that means</b> rather than quietly accepting it.</para>
 ///
-/// <para>Every fact here was read from `@deepseek-ai/dsh@0.1.6-alpha.2`'s own shipped bundle;
-/// `docs/2026-09-22-acp3-probe-evidence.md` §4 and §5 carry the evidence.</para>
+/// <para>Every fact here comes from `@deepseek-ai/dsh@0.1.6-alpha.2`'s own shipped bundle.</para>
 /// </remarks>
 public sealed class DshProfileTests : IDisposable
 {
@@ -27,7 +26,7 @@ public sealed class DshProfileTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 <b>Both rows send transcript-class material off the machine, and D47 §4 says it never
+    /// 🔴 <b>Both rows send transcript-class material off the machine, and it never
     /// leaves.</b> `session-log-deepseek` uploads the canonical session log as a field on every
     /// official-route model request; `session-telemetry-otel` exports to a hosted collector. Neither
     /// is hidden and both ship on — so a deployment either patches them off or accepts them out loud,
@@ -47,7 +46,7 @@ public sealed class DshProfileTests : IDisposable
     }
 
     /// <summary>
-    /// HELP2: dsh's skill provider scans `.dsh/skills` and `.agents/skills`, never `.claude/skills`
+    /// Dsh's skill provider scans `.dsh/skills` and `.agents/skills`, never `.claude/skills`
     /// — but its bundle format is `&lt;name&gt;/SKILL.md`, <b>exactly</b> Daoris's layout. So this is
     /// a root, not a conversion, and nothing on an adopter's disk changes.
     /// </summary>
@@ -64,7 +63,7 @@ public sealed class DshProfileTests : IDisposable
     /// 🔴 <b>The path is RELATIVE on purpose, and the reason is a trap.</b> dsh resolves the default
     /// project roots per session `cwd`, but resolves `customSkillDirs` <b>once, at construction,
     /// against the process's own cwd</b>. The driver spawns one process per tree with its working
-    /// directory set to that tree (D51), so a relative path lands on the right repository — and an
+    /// directory set to that tree, so a relative path lands on the right repository — and an
     /// absolute one written into a shared home would pin every session to whichever tree happened to
     /// be first.
     /// </summary>
@@ -147,7 +146,7 @@ public sealed class DshProfileTests : IDisposable
     /// Pinned verbatim because every other test here checks a property, and a property-checked file
     /// can drift into something that still satisfies every property and no longer composes: an id
     /// that is not a row, a key one level too deep, a list where a scalar belongs. The composed tree
-    /// is the contract and this is the copy of it that was proven.
+    /// is the contract and this is the copy of it that is proven.
     /// </remarks>
     [Fact]
     public void The_bytes_are_the_ones_dsh_was_observed_to_compose()

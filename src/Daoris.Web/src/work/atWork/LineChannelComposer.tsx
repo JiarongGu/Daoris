@@ -8,11 +8,11 @@ import { Button, SelectField } from '../../design/ui';
 /** Everyone: the one value that names no repository (a repository's name has no `*`). */
 const EVERYONE = '*';
 
-/** The codes the service refuses a post on a line's own channel with, which this page has words for; another is said as it was written. */
+/** The codes the service refuses a post on a line's own channel with, which this page has words for; another is said as it is written. */
 const REFUSALS = new Set(['empty', 'too-long', 'bad-to']);
 
 /**
- * The person's words on a line's own channel (COMMS1k, the comms design §4.4), under the channel's last words on *At work*: to everyone on
+ * The person's words on a line's own channel, under the channel's last words on *At work*: to everyone on
  * it or one repository its messages name, which a part of the line takes as their words at its look. A refusal is the service's code,
  * said under the box in the reader's language; the words stay for another try.
  */

@@ -12,7 +12,7 @@ internal sealed class SessionSaidMoves(QuestStore quests, SessionStore sessions)
     private static string Spell(SessionState state) => Session.Spell(state);
 
     /// <summary>
-    /// Take the person's words off this machine's record once a session took them (MSG1a, D137 §2.4): the resumed run's
+    /// Take the person's words off this machine's record once a session took them: the resumed run's
     /// first prompt went, or <paramref name="by"/>, the session a fallback handed them to, took them. By their ids, so a
     /// word said after the driver read the record stays for the next run; an id the record does not hold is passed over.
     /// </summary>
@@ -60,10 +60,10 @@ internal sealed class SessionSaidMoves(QuestStore quests, SessionStore sessions)
     }
 
     /// <summary>
-    /// Mark the moment a session's dispatcher first wrote these waiting words to its harness (COWORK1c, the message-urgency design §6),
+    /// Mark the moment a session's dispatcher first wrote these waiting words to its harness,
     /// before the wire: a shell that comes up again never sends a word with an attempt a second time, and says it may have reached the
     /// agent. Each word in its own statement, the first moment kept. A word no longer waiting is answered unmarked, never an error:
-    /// it was taken, or taken back, meanwhile. No revision, since the words never travel.
+    /// it is taken, or taken back, meanwhile. No revision, since the words never travel.
     /// </summary>
     public async Task<SessionAttemptOutcome> MarkAttemptAsync(
         string id, IReadOnlyCollection<string> words, DateTimeOffset at, CancellationToken ct = default)
@@ -94,11 +94,11 @@ internal sealed class SessionSaidMoves(QuestStore quests, SessionStore sessions)
     }
 
     /// <summary>
-    /// Take one of the words waiting on this machine's record back before a session took it, or reword it (SAIDBACK1a, D137
-    /// §2.4): with no <paramref name="text"/> the word leaves the record; with one, the old word leaves and the new words are
+    /// Take one of the words waiting on this machine's record back before a session took it, or reword it:
+    /// with no <paramref name="text"/> the word leaves the record; with one, the old word leaves and the new words are
     /// kept last, under a new id, said now, with the old word's files' names and its <c>reopens</c>. The new words are the
-    /// person's whoever said the old. Read, judged and written as one step (REV3), so a refused reword leaves the old word as
-    /// it was, and the driver taking the record up cannot read it between the two writes.
+    /// person's whoever said the old. Read, judged and written as one step, so a refused reword leaves the old word as
+    /// it stands, and the driver taking the record up cannot read it between the two writes.
     /// </summary>
     /// <remarks>
     /// <para><b>Refused as <see cref="SessionSayRefusal.Taken"/></b>, an answer and never an error: a word no longer on the
@@ -177,16 +177,16 @@ internal sealed class SessionSaidMoves(QuestStore quests, SessionStore sessions)
     }
 
     /// <summary>
-    /// Move one of the person's words waiting on a part's record to the head of the line <paramref name="to"/> is on (LINESTOGETHER1b, the
-    /// review-flow design §2): taken off the part and kept at the head in one step, both or neither, its words as the person wrote them
-    /// (D137), the head judged as the say door judges a record. Its key is <c>move:&lt;part&gt;:&lt;word&gt;</c>.
+    /// Move one of the person's words waiting on a part's record to the head of the line <paramref name="to"/> is on:
+    /// taken off the part and kept at the head in one step, both or neither, its words as the person wrote them,
+    /// the head judged as the say door judges a record. Its key is <c>move:&lt;part&gt;:&lt;word&gt;</c>.
     /// </summary>
     /// <remarks>
     /// <para>A retry is looked up first, before the word's absence or any refusal of either record as it stands, as the say door's settlement
     /// is: the key settled on any record (it names its source, so no other producer writes it), or waiting on a record of
     /// <paramref name="to"/>'s line.</para>
     ///
-    /// <para>A word that answered its part's park was kept on the ask then, so the moved word reopens nothing and answers nothing there
+    /// <para>A word that answered its part's park is kept on the ask then, so the moved word reopens nothing and answers nothing there
     /// again.</para>
     /// </remarks>
     /// <param name="to">The record the page showed as the head, from which the walk goes on to the head now; none is the part's own line.</param>
@@ -289,7 +289,7 @@ internal sealed class SessionSaidMoves(QuestStore quests, SessionStore sessions)
     }
 
     /// <summary>
-    /// The record of <paramref name="start"/>'s line a word under <paramref name="key"/> waits on (LINESTOGETHER1b): forward over the walk to
+    /// The record of <paramref name="start"/>'s line a word under <paramref name="key"/> waits on: forward over the walk to
     /// its head, then back along <c>from</c>, at most <see cref="Lines.Bound"/> hops. Null where none holds one.
     /// </summary>
     private async Task<string?> WaitingUnderAsync(Session start, LineWalk forward, string key, CancellationToken inside)

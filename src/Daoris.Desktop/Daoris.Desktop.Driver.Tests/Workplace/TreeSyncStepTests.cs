@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR6's replay of a chain's next step once the branch it grew from was squash-merged: cut where its own work begins when
+/// The replay of a chain's next step once the branch it grew from is squash-merged: cut where its own work begins when
 /// no record says where it started, and left while a session is starting in its repository or opened since the list.
-/// Split from <see cref="TreeSyncTests"/> (PROC1b).
+/// Split from <see cref="TreeSyncTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -46,9 +46,9 @@ public sealed class TreeSyncStepTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// WSR6's open window, closed (LEFT2): while a session is starting in the repository, which holds its trees from
-    /// choosing one until its record is open, the press leaves the line's pull and every replay as they were and says why
-    /// (GITLOCK1: the pull writes the checkout, under the same hold); and a session a driver opened after the list is seen
+    /// While a session is starting in the repository, which holds its trees from
+    /// choosing one until its record is open, the press leaves the line's pull and every replay as they stand and says why
+    /// (the pull writes the checkout, under the same hold); and a session a driver opened after the list is seen
     /// by the press's own look inside the hold, so its branch is left in use. Only then, with nothing starting and nothing
     /// in use, does the branch move.
     /// </summary>

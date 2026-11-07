@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A kind's paths (WORKFLOW1f, the workflow design §4.2, §4.4): the globs work of that kind keeps to, matched against the paths a
+/// A kind's paths: the globs work of that kind keeps to, matched against the paths a
 /// chain changed. <c>*</c> stays inside one folder, <c>**</c> crosses folders (<c>**/</c> matching none too), <c>?</c> is one
 /// character of a name, <c>{a,b}</c> is either; the rest is itself, compared exactly, as git names a path.
 /// </summary>

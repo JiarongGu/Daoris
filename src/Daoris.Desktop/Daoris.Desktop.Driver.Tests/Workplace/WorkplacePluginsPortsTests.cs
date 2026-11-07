@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Plugins cut: the seams the cut adds. Workplace declares the plugin wire's five operations, the
+/// The Workplace-names-Plugins cut: the seams the cut adds. Workplace declares the plugin wire's five operations, the
 /// catalogue's two facets, the operations that make the wire and load the catalogue, and the lower patience and door words; Plugins
 /// implements and installs them. The cases that need no new seam are <see cref="WorkplacePluginsBoundaryTests"/>'.
 /// </summary>

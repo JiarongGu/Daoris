@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the line holds of a tree's commits beyond where it left the line (LANDSYNC1, D87's 2026-10-15 amendment point 1), and what
-/// it lacks: the one judgement a landing makes per commit, which an entry's Accept (ACCEPTALL1), a session going on in an old tree
-/// (LANDSYNC2) and <i>Bring up to date</i> (LANDSYNC3) ask as well.
+/// What the line holds of a tree's commits beyond where it left the line, and what
+/// it lacks: the one judgement a landing makes per commit, which an entry's Accept, a session going on in an old tree
+/// and <i>Bring up to date</i> ask as well.
 /// </summary>
 /// <param name="Onto">The line's commit the tree was judged against.</param>
 /// <param name="Leaves">Where the tree left the line: the newest commit it shares with <paramref name="Onto"/>.</param>
@@ -13,27 +13,27 @@ namespace Daoris.Driver;
 internal sealed record LineHeld(
     string Onto, string Leaves, IReadOnlyList<LandingCommit> Commits, IReadOnlyList<LandingCommit> Kept, IReadOnlyList<LeftOutCommit> LeftOut)
 {
-    /// <summary>The line holds none of the tree's commits: nothing is left out of its landing (D87).</summary>
+    /// <summary>The line holds none of the tree's commits: nothing is left out of its landing.</summary>
     public bool HoldsNone => LeftOut.Count == 0;
 
     /// <summary>
-    /// The line moved since the tree left it, and the tree has commits beyond it (LANDREBASE1, D87's note): a landing brings them onto
+    /// The line moved since the tree left it, and the tree has commits beyond it: a landing brings them onto
     /// the line's tip first, so the work it publishes descends from that tip.
     /// </summary>
     public bool Behind => Commits.Count > 0 && !string.Equals(Leaves, Onto, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// A landing replays the tree's commits: the line holds some of them (LANDSYNC1), or it moved since the tree left it (LANDREBASE1).
+    /// A landing replays the tree's commits: the line holds some of them, or it moved since the tree left it.
     /// Where neither, the work lands as made.
     /// </summary>
     public bool Replays => !HoldsNone || Behind;
 }
 
-/// <summary>One commit beyond a branch's cut as the look's one log reads it (LANDSYNC3): whether the line has its patch, and its files.</summary>
+/// <summary>One commit beyond a branch's cut as the look's one log reads it: whether the line has its patch, and its files.</summary>
 internal sealed record BeyondCommit(string Sha, bool Held, IReadOnlyList<string> Files);
 
 /// <summary>
-/// A branch's commits beyond its cut as <i>Bring up to date</i> judges them (LANDSYNC3, D87's 2026-10-15 amendment point 1): what the
+/// A branch's commits beyond its cut as <i>Bring up to date</i> judges them: what the
 /// line holds is left out, so the count is what the replay carries.
 /// </summary>
 /// <param name="Cut">
@@ -42,26 +42,26 @@ internal sealed record BeyondCommit(string Sha, bool Held, IReadOnlyList<string>
 /// </param>
 /// <param name="Commits">The commits beyond <paramref name="Cut"/>, oldest first, merges aside.</param>
 /// <param name="Skips">Among them, those the line holds: the replay skips each, replaying the runs between.</param>
-/// <param name="LeftOut">Every commit the line holds by patch beyond the cut WSR6 made, the ones the cut moved past and the skips.</param>
+/// <param name="LeftOut">Every commit the line holds by patch beyond the cut made, the ones the cut moved past and the skips.</param>
 /// <param name="ByContent">
 /// How many commits the walk by content moved the cut past, where it did: the run up to it reads on the line, a squash of several.
-/// WSR6's words say that run as the cut (<see cref="CutBy.Content"/>), not as commits left out.
+/// The words say that run as the cut (<see cref="CutBy.Content"/>), not as commits left out.
 /// </param>
 internal sealed record HeldBeyond(string Cut, IReadOnlyList<string> Commits, IReadOnlyList<string> Skips, int LeftOut, int ByContent = 0)
 {
     /// <summary>The commits the replay carries.</summary>
     public int Kept => Commits.Count - Skips.Count;
 
-    /// <summary>The line holds some of the commits beyond the cut WSR6 made, by patch or by content (LANDSYNC2's question).</summary>
+    /// <summary>The line holds some of the commits beyond the cut made, by patch or by content.</summary>
     public bool HoldsAny => LeftOut + ByContent > 0;
 }
 
 /// <summary>
-/// The per-commit judgement of what the line holds (LANDSYNC1): first WSR6's walk by content (D109 §2), which reads a squash of
+/// The per-commit judgement of what the line holds: first the walk by content, which reads a squash of
 /// several commits; then, beyond the run it finds, each commit whose patch id a commit the line gained since has, which finds a
 /// one-commit squash or a cherry-pick even where the line has changed the same files since. What neither finds stays in, until a
-/// replay finds it empty. Patch id judges single commits only (D109's 2026-10-15 note): whether a whole tree is on the line stays
-/// SQUASHTIDY1f's proof, asked first.
+/// replay finds it empty. Patch id judges single commits only: whether a whole tree is on the line stays
+/// the content proof's, asked first.
 /// </summary>
 /// <remarks>It reads git and writes nothing; the trial (<see cref="TrialAsync"/>) writes objects only, never a ref or a tree.</remarks>
 internal static class LineHolds
@@ -72,7 +72,7 @@ internal static class LineHolds
     /// </summary>
     internal static async Task<LineHeld?> JudgeAsync(string root, string tip, string onto, string? line, CancellationToken ct)
     {
-        // STARTGIT1: a tree still at the commit it is judged against (a session's just opened) left the line where the line stands and
+        // A tree still at the commit it is judged against (a session's just opened) left the line where the line stands and
         // has no commits beyond it, as `merge-base` and `log` would answer; neither is asked. Both are full commit ids.
         if (tip.Length == 40 && string.Equals(tip, onto, StringComparison.OrdinalIgnoreCase)) return new(onto, tip, [], [], []);
 
@@ -122,22 +122,22 @@ internal static class LineHolds
     /// lines where it would, else null. A git too old to try, or one that cannot say, says nothing: the press still finds it.
     /// </summary>
     /// <remarks>Objects only: it writes no ref, no tree on disk and no index, so the plan stays a look.</remarks>
-    /// <param name="lines">The line rules the owner accepted for integration at <paramref name="onto"/> (INTEGRATE1d), whose files the press settles by their pattern; none settles none.</param>
+    /// <param name="lines">The line rules the owner accepted for integration at <paramref name="onto"/>, whose files the press settles by their pattern; none settles none.</param>
     internal static async Task<string?> TrialAsync(
         string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct, IReadOnlyList<IntegrationMergeRule>? lines = null) =>
         kept.Count == 0 ? null : (await TrialTreeAsync(root, onto, kept, ct, lines).ConfigureAwait(false)).Conflicts;
 
     /// <summary>
     /// <see cref="TrialAsync"/>'s trial, with the tree it ends at where it replays cleanly: what an entry's Accept compares to read a
-    /// part that adds nothing after a later part's (ACCEPTALL1, D167's amendment point 3). <paramref name="onto"/> may be a commit
+    /// part that adds nothing after a later part's. <paramref name="onto"/> may be a commit
     /// or a tree. Both null where git cannot say.
     /// </summary>
     internal static async Task<(string? Tree, string? Conflicts)> TrialTreeAsync(
         string root, string onto, IReadOnlyList<LandingCommit> kept, CancellationToken ct, IReadOnlyList<IntegrationMergeRule>? lineRules = null)
     {
         var current = onto;
-        // LANDBACKLOG1: the backlog the line declares at the trial's start, read once, at the first step that needs it.
-        // INTEGRATE1d: with the accepted line rules, whose files the press settles by their pattern; a trial never runs their writers.
+        // The backlog the line declares at the trial's start, read once, at the first step that needs it.
+        // With the accepted line rules, whose files the press settles by their pattern; a trial never runs their writers.
         Task<BacklogMerge.Declared>? declared = null;
         async Task<BacklogMerge.Declared> DeclaredAsync() =>
             (await BacklogMerge.DeclaredTablesAsync(root, onto, ct).ConfigureAwait(false)) with { Lines = lineRules ?? [] };
@@ -147,7 +147,7 @@ internal static class LineHolds
                 root, ["merge-tree", "--write-tree", "--name-only", "--messages", $"--merge-base={commit.Sha}^", current, commit.Sha], ct)
                 .ConfigureAwait(false);
             var lines = output.Split('\n', StringSplitOptions.TrimEntries);
-            // LANDREBASE1: a step that conflicts only in files the repository marks generated is not the session's conflict, as the
+            // A step that conflicts only in files the repository marks generated is not the session's conflict, as the
             // press's replay takes the line's copy of them; the trial goes on from the tree git wrote. The names follow the tree's id,
             // up to the blank line before git's messages.
             if (code == 1 && lines.Length > 1 && lines[0].Length > 0
@@ -159,9 +159,9 @@ internal static class LineHolds
                     continue;
                 }
 
-                // LANDBACKLOG1: nor is one in the declared backlog, alone or beside generated files, that its merge base settles, as the
+                // Nor is one in the declared backlog, alone or beside generated files, that its merge base settles, as the
                 // press settles it: the trial goes on from the tree git wrote with the backlog merged in.
-                // INTEGRATE1c: and so is one in a row table the line declares, the same way.
+                // And so is one in a row table the line declares, the same way.
                 var settles = await (declared ??= DeclaredAsync()).ConfigureAwait(false);
                 var mine = named.Where(settles.Settles).ToList();
                 var others = named.Where(each => !settles.Settles(each)).ToList();
@@ -209,17 +209,17 @@ internal static class LineHolds
         string.Join("; ", conflicts.Take(3)) + (conflicts.Count > 3 ? $"; and {conflicts.Count - 3} more." : ".");
 
     /// <summary>
-    /// <i>Bring up to date</i>'s judgement of a branch's commits beyond <paramref name="cut"/> (LANDSYNC3, D87's amendment point 1): (b)'s
+    /// <i>Bring up to date</i>'s judgement of a branch's commits beyond <paramref name="cut"/>: (b)'s
     /// patch ids and the commits' files in one log, then, where <paramref name="walk"/> and the line changed every file the first commit
     /// it lacks touched, (a)'s walk by content, which proves commit after commit and so is asked only where it can find a squash. Null
     /// where git could not list the commits.
     /// </summary>
     /// <remarks>
-    /// The look's own form of <see cref="JudgeAsync"/>, held to its git starts (UIFREEZE1, PROC1d): the one log takes the place of the
-    /// count WSR6 made, and the line's files are read only where a commit could be the line's by content.
+    /// The look's own form of <see cref="JudgeAsync"/>, held to its git starts: the one log takes the place of the
+    /// count the walk made, and the line's files are read only where a commit could be the line's by content.
     /// </remarks>
     /// <param name="leaves">Where the branch leaves the line: the newest commit it shares with <paramref name="onto"/>.</param>
-    /// <param name="cut">Where its own commits start after, as WSR6 cut it: <paramref name="leaves"/>, or a commit beyond it.</param>
+    /// <param name="cut">Where its own commits start after, as the walk cut it: <paramref name="leaves"/>, or a commit beyond it.</param>
     /// <param name="walk">Whether the walk by content may move the cut: not where a record or the walk already cut it.</param>
     internal static async Task<HeldBeyond?> JudgeBeyondAsync(
         string root, string tip, string onto, string leaves, string cut, string? line, bool walk, CancellationToken ct)
@@ -266,8 +266,8 @@ internal static class LineHolds
     ];
 
     /// <summary>
-    /// What the line holds of <paramref name="beyond"/>, cut at <paramref name="cut"/> (LANDSYNC3): the commits it begins with that the
-    /// line holds move the cut past them, so the replay is WSR6's plain one; any held after a commit it lacks is skipped.
+    /// What the line holds of <paramref name="beyond"/>, cut at <paramref name="cut"/>: the commits it begins with that the
+    /// line holds move the cut past them, so the replay is a plain one; any held after a commit it lacks is skipped.
     /// </summary>
     internal static HeldBeyond Beyond(string cut, IReadOnlyList<BeyondCommit> beyond)
     {

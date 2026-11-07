@@ -33,9 +33,8 @@ public sealed record CommitEdit
 /// </summary>
 /// <remarks>
 /// One table, this suite's <c>fixtures/commit-rules.json</c>, cell for cell (<c>CommitRulesTests</c>); its CLI twin, <c>commits.ts</c>,
-/// left with the driver family's TypeScript (PUSH1f2b, D194 point 7). Nothing here commits or tells a session: a driven session in a tree
-/// of its own is told the rule <see cref="Resolve"/> answers by <see cref="ProcessWords"/> (PROCESS1d-i); a conversation's
-/// briefing is PROCESS1d-ii's.
+/// left with the driver family's TypeScript. Nothing here commits or tells a session: a driven session in a tree
+/// of its own is told the rule <see cref="Resolve"/> answers by <see cref="ProcessWords"/>.
 /// </remarks>
 public static class CommitRules
 {
@@ -86,7 +85,7 @@ public static class CommitRules
     public static string Listed(CommitRule rule) => rule.Convention is null ? rule.Mode : $"{rule.Mode}: {rule.Convention}";
 
     /// <summary>
-    /// What the terminal and Ask Daoris's card say of a mode as it is set (TWINWORDS1, <c>landing-says.json</c>'s <c>commits</c>): one
+    /// What the terminal and Ask Daoris's card say of a mode as it is set (<c>landing-says.json</c>'s <c>commits</c>): one
     /// function, <c>daoris place commits</c>' and the card's.
     /// </summary>
     public static string Says(string mode) => mode switch

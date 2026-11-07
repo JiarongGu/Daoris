@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1c (D176 point 7): each pass takes its account by the walk, as a driven start's is, on each real door, and a maker with no ready
+/// Each pass takes its account by the walk, as a driven start's is, on each real door, and a maker with no ready
 /// account is <c>unavailable</c> with the walk's own code: <c>cooling</c> where its accounts wait for a cool-off, <c>signed-out</c> where
 /// none is signed in, <c>unavailable</c> where nothing of it is installed, <c>held</c> otherwise. The walk never runs on the other door or
 /// another maker in its place.
@@ -132,7 +132,7 @@ public sealed class BrainstormWalkTests : IDisposable
 
     /// <summary>
     /// The code is read from the walk's facts and never its words, and the model a voice's accounts did not offer keeps the code the pass's
-    /// restart reads (D205 §4.4).
+    /// restart reads.
     /// </summary>
     [Fact]
     public void The_code_is_the_walks_own_and_a_refusal_with_no_fact_is_held()

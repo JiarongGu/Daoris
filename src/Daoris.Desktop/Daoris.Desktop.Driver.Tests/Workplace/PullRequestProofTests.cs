@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUGHOOK1a (D148 points 1, 2 and 4, design §2.1 and §2.3): what a kept answer proves once git has said what it holds, and
+/// What a kept answer proves once git has said what it holds, and
 /// who is asked and when. Pure, so this is the suite's fast half; the same codes over real git, with a plugin faked on its
 /// channel, are <see cref="PullRequestStateTests"/>.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class PullRequestProofTests
         Target = target,
     };
 
-    /// <summary>Each code of §2.3, in the order git is asked, and the two that clear.</summary>
+    /// <summary>Each code, in the order git is asked, and the two that clear.</summary>
     public static TheoryData<string, string?, bool, bool, bool, string?, bool, bool> Rows => new()
     {
         // state, target, merge on the line, source held, standing, code, carries, clears
@@ -49,7 +49,7 @@ public sealed class PullRequestProofTests
         if (clears) Assert.Equal("origin/main", verdict.Form);
     }
 
-    /// <summary>After LAND2c advanced it, the branch holds commits the pull request did not carry: it stays, and what it did carry may go.</summary>
+    /// <summary>Once a landing has advanced it, the branch holds commits the pull request does not carry: it stays, and what it carries may go.</summary>
     [Fact]
     public void A_branch_beyond_the_merged_commit_stays_and_the_pull_request_still_carries_what_it_merged()
     {
@@ -63,7 +63,7 @@ public sealed class PullRequestProofTests
         Assert.Equal(new PullRequestVerdict(PullRequestStates.Unknown, null, false, false),
             PullRequestProof.Judge(null, new PullRequestFacts("main", "main", true, true, true)));
 
-    // ——— who is asked, and when (design §2.1)
+    // ——— who is asked, and when
 
     private static LandedBranch Entry(string? plugin = null) =>
         new("engine", "aurora", "feature/q1-fix", "main", new string('b', 40), "s1", "q1", "Fix", Now.AddDays(-1)) { Plugin = plugin };
@@ -98,7 +98,7 @@ public sealed class PullRequestProofTests
         Assert.Equal(Now.AddSeconds(-10), PullRequestAsking.LastAsked(Entry() with { PullRequestState = open with { AskedAt = Now.AddHours(-1) }, PullRequestAskFailed = failed }));
     }
 
-    /// <summary>D100's four reasons, each its own sentence: not installed, switched off, unsound, speaking on no <c>work/state</c> point.</summary>
+    /// <summary>The four reasons, each its own sentence: not installed, switched off, unsound, speaking on no <c>work/state</c> point.</summary>
     [Fact]
     public void A_plugin_that_cannot_be_asked_says_which_of_the_four_reasons()
     {

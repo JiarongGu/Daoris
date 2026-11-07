@@ -10,7 +10,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The driver's half of the conversation with the service — a client through the same doors as every
-/// other component (D46 §7). Deliberately NOT a reference to the service's assemblies: the doors are
+/// other component. Deliberately NOT a reference to the service's assemblies: the doors are
 /// the contract, declared in Daoris.Contracts, and a driver that could reach the store directly would
 /// drift from every client that cannot.
 /// </summary>
@@ -20,8 +20,8 @@ namespace Daoris.Driver;
 /// doors is a class of its own over the client, grouped as the service's route modules are and reached through a property
 /// (<see cref="Registry"/>, <see cref="SessionList"/>, <see cref="Words"/>, <see cref="Moves"/>, <see cref="Keeps"/>, <see cref="Store"/>,
 /// <see cref="Standing"/>, <see cref="Openings"/>, <see cref="History"/>, <see cref="Confirmations"/>, and the owners' <c>Opinions</c>,
-/// <c>Helpers</c> and <c>Partners</c>; PART8); the methods below are the one-line doors callers have always named. A class reaches the HTTP,
-/// the JSON reading and the watchers through the internal surface here (D166's PART8 note).
+/// <c>Helpers</c> and <c>Partners</c>); the methods below are the one-line doors callers name. A class reaches the HTTP,
+/// the JSON reading and the watchers through the internal surface here.
 /// </remarks>
 public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPort, IRequestPort
 {
@@ -52,7 +52,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     {
     }
 
-    /// <summary>The local host's confirmation doors, read for the windows (NOTIFY2j), over this client.</summary>
+    /// <summary>The local host's confirmation doors, read for the windows, over this client.</summary>
     public ConfirmationDoors Confirmations { get; }
 
     public SessionOpenDoors Opens { get; }
@@ -113,32 +113,32 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         return (answer.Ok, answer.Status, answer.Payload, root);
     }
 
-    /// <summary>A record a door class opened, told to <see cref="Opened"/>'s watchers as this client's own doors tell them (LOG1b).</summary>
+    /// <summary>A record a door class opened, told to <see cref="Opened"/>'s watchers as this client's own doors tell them.</summary>
     internal void RecordOpened(SessionOpened opened) => Raise(Opened, opened);
 
-    /// <summary>A record a door class moved, told to <see cref="Moved"/>'s watchers (LOG1b).</summary>
+    /// <summary>A record a door class moved, told to <see cref="Moved"/>'s watchers.</summary>
     internal void RecordMoved(SessionMoved moved) => Raise(Moved, moved);
 
-    /// <summary>A record whose provenance a door class kept, told to <see cref="ActorKept"/>'s watchers (D205).</summary>
+    /// <summary>A record whose provenance a door class kept, told to <see cref="ActorKept"/>'s watchers.</summary>
     internal void RecordActorKept(string id) => Raise(ActorKept, id);
 
     public const string UrlVariable = "DAORIS_SERVICE_URL";
     public const string KeyVariable = "DAORIS_SERVICE_KEY";
 
     /// <summary>
-    /// A session record this client opened, raised once the ledger said yes (LOG1b): every session on this machine is opened through one of
+    /// A session record this client opened, raised once the ledger says yes: every session on this machine is opened through one of
     /// these doors, so a watcher here sees what the person runs without a second door onto the ledger. A refusal raises nothing.
     /// </summary>
     public event Action<SessionOpened>? Opened;
 
-    /// <summary>A session record this client moved, raised once the ledger said yes (LOG1b).</summary>
+    /// <summary>A session record this client moved, raised once the ledger says yes.</summary>
     public event Action<SessionMoved>? Moved;
 
-    /// <summary>D205: local provenance changed without a state move or sync revision.</summary>
+    /// <summary>Local provenance changed without a state move or sync revision.</summary>
     public event Action<string>? ActorKept;
 
     /// <summary>
-    /// A repository's registration followed from its line (WSSETUP5, D124 §3.4), whatever it came to: every follow on this machine goes
+    /// A repository's registration followed from its line, whatever it came to: every follow on this machine goes
     /// through this client's registry door, so a watcher here logs each outcome (<c>registry.followed</c>) without the follower knowing the log.
     /// </summary>
     public event Action<RegistrationFollowed>? RegistryFollowed;
@@ -146,25 +146,25 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>Tell the watchers what following one repository came to (<see cref="RegistryFollowed"/>).</summary>
     public void Followed(RegistrationFollowed what) => Raise(RegistryFollowed, what);
 
-    /// <summary>A workspace plan's line (WSSETUP6, D124 §4.1): a plan written, a set-up published or skipped, a pause, a resume, a stop.</summary>
+    /// <summary>A workspace plan's line: a plan written, a set-up published or skipped, a pause, a resume, a stop.</summary>
     public event Action<SetupLine>? SetupLined;
 
     /// <summary>Tell the watchers a plan's line (<see cref="SetupLined"/>).</summary>
     public void SetupSaid(SetupLine line) => Raise(SetupLined, line);
 
-    /// <summary>An account's line (TOOL4d, D125 §5.4): a limit met, or starts waiting on a cooling account.</summary>
+    /// <summary>An account's line: a limit met, or starts waiting on a cooling account.</summary>
     public event Action<AccountLine>? AccountLined;
 
     /// <summary>Tell the watchers an account's line (<see cref="AccountLined"/>).</summary>
     public void AccountSaid(AccountLine line) => Raise(AccountLined, line);
 
-    /// <summary>A landing at done's line (LAND2b, design §8): <c>landing.auto</c>, one per try.</summary>
+    /// <summary>A landing at done's line: <c>landing.auto</c>, one per try.</summary>
     public event Action<LandingLine>? LandingLined;
 
     /// <summary>Tell the watchers a landing's line (<see cref="LandingLined"/>).</summary>
     public void LandingSaid(LandingLine line) => Raise(LandingLined, line);
 
-    /// <summary>A done's evidence read (EVID1b, D144 §5): <c>evidence.checked</c>, one per read, counts and codes.</summary>
+    /// <summary>A done's evidence read: <c>evidence.checked</c>, one per read, counts and codes.</summary>
     public event Action<EvidenceLine>? EvidenceLined;
 
     /// <summary>Tell the watchers an evidence read's line (<see cref="EvidenceLined"/>).</summary>
@@ -173,14 +173,14 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     /// <summary>Where the service is — handed to sessions so they can claim their own quests there.</summary>
     public string BaseUrl => _base;
 
-    /// <summary>URL and key from the environment — the same two names `connect` reads (design §5b).</summary>
+    /// <summary>URL and key from the environment — the same two names `connect` reads.</summary>
     public static ServiceClient FromEnvironment() => new(ServiceHttp.FromEnvironment());
 
     public void Dispose() => _doors.Dispose();
 
     /// <summary>
     /// Tell the watchers. A watcher that fails costs its own view, never the call: the ledger has already moved, and the caller is owed its
-    /// answer (LOG1b).
+    /// answer.
     /// </summary>
     private static void Raise<T>(Action<T>? watchers, T what)
     {
@@ -375,7 +375,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
     // ---- The turn lines a session's end hands the service. ----
 
     /// <summary>
-    /// The usage history's turn lines, by session, for the sessions named (KNOWCENTRAL2d): set where this client's home is known, so a session's
+    /// The usage history's turn lines, by session, for the sessions named: set where this client's home is known, so a session's
     /// end hands the service the lines its memory rows' models are read from. Null hands none, and the rows name <c>unknown</c>.
     /// </summary>
     public Func<IReadOnlyCollection<string>, IReadOnlyDictionary<string, IReadOnlyList<TurnLine>>>? TurnLines { get; init; }
@@ -423,7 +423,7 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
         SessionReads.Closed(QuestViews.Read(json), lastRun, open);
 }
 
-/// <summary>A session record the ledger opened for this client (LOG1b).</summary>
+/// <summary>A session record the ledger opened for this client.</summary>
 /// <param name="Kind">
 /// Which door opened it — <see cref="Driven"/>, <see cref="Chat"/>, <see cref="Intake"/> or
 /// <see cref="Help"/>. The door's, not the record's: the record calls an intake and Ask Daoris chats.
@@ -431,10 +431,10 @@ public sealed class ServiceClient : IDisposable, IQuestClosePort, IClosureBindPo
 /// <param name="Repository">The repository the record runs in, as the ledger recorded it; a name, never a path.</param>
 public sealed record SessionOpened(string Session, string Kind, string Adapter, string? Repository)
 {
-    /// <summary>The workspace the record runs in, as the ledger recorded it (WSSETUP11); null where it said none.</summary>
+    /// <summary>The workspace the record runs in, as the ledger recorded it; null where it says none.</summary>
     public string? Workspace { get; init; }
 
-    /// <summary>That a driven session serves a set-up quest (<see cref="SetupQuests"/>, WSSETUP11).</summary>
+    /// <summary>That a driven session serves a set-up quest (<see cref="SetupQuests"/>).</summary>
     public bool Setup { get; init; }
 
     public const string Driven = "driven";
@@ -443,5 +443,5 @@ public sealed record SessionOpened(string Session, string Kind, string Adapter, 
     public const string Help = "help";
 }
 
-/// <summary>A session record the ledger moved for this client (LOG1b), in the state's public spelling.</summary>
+/// <summary>A session record the ledger moved for this client, in the state's public spelling.</summary>
 public sealed record SessionMoved(string Session, string State);

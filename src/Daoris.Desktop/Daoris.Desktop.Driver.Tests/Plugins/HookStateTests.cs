@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUGHOOK1a (D148 points 3 and 8, the plugin hooks design §2.2 and §4 rule 3): the query point's answer read by shape, and a
+/// The query point's answer read by shape, and a
 /// handshake naming a point this build lacks said once and never asked, rather than refusing the whole plugin. In-memory
 /// streams only, so this is the suite's fast half; <see cref="HookTests"/> keeps the wire's real-process cases.
 /// </summary>
@@ -105,14 +105,14 @@ public sealed class HookStateTests
         Assert.Equal(["repository", "workspace", "root", "branch", "line", "pullRequest", "pushedTip", "origin", "key"],
             frame.EnumerateObject().Select(property => property.Name));
         Assert.Equal("feature/q1-fix", frame.GetProperty("branch").GetString());
-        // GITAUTH1b: origin as the one reader gives it, as the land frame carries it.
+        // Origin as the one reader gives it, as the land frame carries it.
         Assert.Equal("https://dev.azure.com/org/project/_git/engine", frame.GetProperty("origin").GetString());
         Assert.Equal(Source, frame.GetProperty("pushedTip").GetString());
         var none = JsonSerializer.SerializeToElement(HookFrames.State(new StateFrame("engine", "aurora", "r", "b", null, null, null)));
         Assert.Equal(JsonValueKind.Null, none.GetProperty("line").ValueKind);
         Assert.Equal(JsonValueKind.Null, none.GetProperty("pullRequest").ValueKind);
         Assert.Equal(JsonValueKind.Null, none.GetProperty("origin").ValueKind);
-        // LANDNODE1e: the delivery key is null for a plugin that declares no hooks.key.
+        // The delivery key is null for a plugin that declares no hooks.key.
         Assert.Equal(JsonValueKind.Null, none.GetProperty("key").ValueKind);
     }
 

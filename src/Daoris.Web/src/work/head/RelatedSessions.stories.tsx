@@ -3,7 +3,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { RelatedSessions, type RelatedRow } from './RelatedSessions';
 
-// The sessions beside one (LINESTOGETHER1c): two on one file, a declared overlap, and one git could not read.
+// The sessions beside one: two on one file, a declared overlap, and one git could not read.
 
 const row = (over: Partial<RelatedRow> & { id: string }): RelatedRow => ({
   kind: 'driven', quest: null, read: 'read', readAt: null, declaredOverlap: [], changedOverlap: [], ...over,

@@ -50,10 +50,12 @@ public sealed record RoleActRun(string Id, string Role, string Act, JsonElement 
     public Func<string, JsonElement, CancellationToken, Task<JsonElement>>? Route { get; init; }
 }
 
-/// <summary>An act's handler's refusal as data: its route kept nothing, so the act is refused with that code and is not the role's.</summary>
-public sealed class RoleActRefused(string why) : Exception(why)
+/// <summary>An act's handler's refusal as data: its route kept nothing, so the act is refused with that code and any words of the route's, and is not the role's.</summary>
+public sealed class RoleActRefused(string why, string? words = null) : Exception(why)
 {
     public string Why { get; } = why;
+
+    public string? Words { get; } = words;
 }
 
 /// <summary>

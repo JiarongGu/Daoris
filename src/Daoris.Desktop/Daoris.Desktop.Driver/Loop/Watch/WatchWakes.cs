@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What woke a watch's loop and how often (DEV3, FABRIC-EVENT3a): the nudges counted, whether a plain one came, the last nudge's topic and
+/// What woke a watch's loop and how often: the nudges counted, whether a plain one came, the last nudge's topic and
 /// subject, and the source a nudge cancels to end the loop's wait. Any thread's nudge writes it; the loop and its look's wait read it.
 /// </summary>
 /// <remarks>
@@ -19,11 +19,11 @@ internal sealed class WatchWakes
 {
     private CancellationTokenSource _pause = new();
 
-    // Every nudge counted, so one that lands while a look runs (before the wait it would have ended) still ends that wait (DEV3): looks
+    // Every nudge counted, so one that lands while a look runs (before the wait it would have ended) still ends that wait: looks
     // are short, and a person's control nudges the loop often.
     private int _nudges;
 
-    // Whether a plain nudge came since the loop last took its nudges up (FABRIC-EVENT3a).
+    // Whether a plain nudge came since the loop last took its nudges up.
     private int _everything;
 
     // What the last nudge said woke the loop: null for a plain nudge, which means everything.

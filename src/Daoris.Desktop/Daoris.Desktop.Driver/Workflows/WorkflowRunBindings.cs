@@ -5,30 +5,28 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Runs bound to their workflow (WORKFLOW1e, D157 point 11; the workflow design §4.5, §5.1): which run a quest's start belongs to,
+/// Runs bound to their workflow: which run a quest's start belongs to,
 /// what chose its workflow, the binding kept once at its first start, and the versions a kept run names, which a workflow's file
-/// keeps beyond its newest 20 (§2.6).
+/// keeps beyond its newest 20.
 /// </summary>
 /// <remarks>
-/// <para><b>Bound at the first start, on the machine that drives it</b> (§4.5): the selection is resolved then (§4.1,
-/// <see cref="WorkflowSelection.Resolve"/>), the newest version of a named workflow taken, and kept; editing the workflow, or the
-/// choice, later changes new work only. A run already bound is never bound again. A run that first started before this build
-/// is bound at its next start here.</para>
+/// <para><b>Bound at the first start, on the machine that drives it</b>: the selection is resolved then
+/// (<see cref="WorkflowSelection.Resolve"/>), the newest version of a named workflow taken, and kept; editing the workflow, or the
+/// choice, later changes new work only. A run already bound is never bound again.</para>
 ///
-/// <para><b>What reads it</b>: the gate (WORKFLOW1f, <see cref="WorkflowProcesses"/>' <c>Read</c>), which reads a named run's
+/// <para><b>What reads it</b>: the gate (<see cref="WorkflowProcesses"/>' <c>Read</c>), which reads a named run's
 /// version from the store (<see cref="WorkflowStore.Load"/>) by <see cref="WorkflowRunBinding.Version"/>,
 /// holds a run whose <see cref="WorkflowRunBinding.Problem"/> is set, checks the changed paths against
-/// <see cref="WorkflowRunBinding.Paths"/> where the kind's workflow lowers the person's part (§4.4) until the person's
-/// <see cref="WorkflowRunBinding.Kept"/>, and reads a run under Current, or one with no binding, live from the rules, as every gate
-/// does today.</para>
+/// <see cref="WorkflowRunBinding.Paths"/> where the kind's workflow lowers the person's part until the person's
+/// <see cref="WorkflowRunBinding.Kept"/>, and reads a run under Current, or one with no binding, live from the rules.</para>
 ///
 /// <para>The versions a kept run names (<see cref="KeptVersions(IEnumerable{JsonElement}, string)"/>) are held to the table's
-/// <c>kept</c> rows, and <c>daoris workflow edit</c> keeps them through here since PUSH1f2b (<see cref="DriverWorkflowsCommand"/>). The file is the driver's
-/// alone to write. Machine-local, never on the wire (D47 §4).</para>
+/// <c>kept</c> rows, and <c>daoris workflow edit</c> keeps them through here (<see cref="DriverWorkflowsCommand"/>). The file is the driver's
+/// alone to write. Machine-local, never on the wire.</para>
 ///
-/// <para><b>Over ports</b> (STRUCT3b, D166): the runs' use cases, written against <see cref="IWorkflowRunStore"/> and
+/// <para><b>Over ports</b>: the runs' use cases, written against <see cref="IWorkflowRunStore"/> and
 /// <see cref="IWorkflowStore"/>; the file and its format are behind them. A caller that holds only the home reaches
-/// them by it, as every module did before.</para>
+/// them by it.</para>
 /// </remarks>
 public static class WorkflowRunBindings
 {
@@ -45,21 +43,21 @@ public static class WorkflowRunBindings
     public static string PathOf(string home, string run) => WorkplaceRunFiles.PathOf(home, run);
 
     /// <summary>
-    /// The run a chain's work in <paramref name="repository"/> is (design §1, §3.8): named by the chain's first quest there, which
+    /// The run a chain's work in <paramref name="repository"/> is: named by the chain's first quest there, which
     /// every later quest of the chain in that repository shares; null where the chain has none there.
     /// </summary>
     public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) => ReviewGate.RunOf(chain, repository);
 
     /// <summary>
-    /// The task's choice an ask carries (design §4.1 row 1, §4.3): its latest, the latest standing; null where it made none, or the
+    /// The task's choice an ask carries: its latest, the latest standing; null where it made none, or the
     /// latest names neither a kind nor a workflow, which is a choice cleared.
     /// </summary>
     public static WorkflowTaskChoice? TaskOf(AskView? ask) => Latest(ask?.WorkflowChoices ?? []);
 
     /// <summary>
-    /// The task's choice of a quest no ask published (WORKFLOW1e2, design §4.1 row 1: <i>its page's before it starts</i>): the latest
+    /// The task's choice of a quest no ask published: the latest
     /// the person made on it, or, where they made none there, on the nearest quest of its chain above it, so a chain's step follows
-    /// what was chosen for the quest its close grew from, as every step of an ask's chain follows the ask's. The nearest quest with
+    /// the choice made for the quest its close grew from, as every step of an ask's chain follows the ask's. The nearest quest with
     /// any choice decides, a clear there included; null where none of them has one.
     /// </summary>
     /// <param name="every">The quests a parent is found among; a parent not among them ends the walk.</param>
@@ -82,9 +80,9 @@ public static class WorkflowRunBindings
             : null;
 
     /// <summary>
-    /// The binding a run's first start makes (design §4.5): §4.1 resolved for its repository, and the workflow it names read here,
+    /// The binding a run's first start makes: the selection resolved for its repository, and the workflow it names read here,
     /// its newest version taken; under Current, the graph Current draws now. A named workflow that cannot be read is kept with
-    /// why, never swapped for another: what was chosen is what the run says.
+    /// why, never swapped for another: the choice made is what the run says.
     /// </summary>
     /// <param name="workspace">The repository's workspace, or null for none.</param>
     /// <param name="plugins">The plugins switched on and sound, as Current reads them (<see cref="WorkflowCurrent.PluginsOf"/>).</param>
@@ -119,21 +117,21 @@ public static class WorkflowRunBindings
 
         if (found.Read.Problem is { } unread) return binding.Held(BindingProblem.ForUnread(selected.Workflow, unread));
         var newest = found.Read.Versions[^1];
-        // FABRIC-PIPELINE1a (the pipeline design §2.1): a route naming a verification pipeline is judged at its bind, kept with why.
+        // A route naming a verification pipeline is judged at its bind, kept with why.
         if (found.Read.Verifies) return binding with { Version = newest.Version, Problem = WorkflowSelection.VerificationElsewhere(selected.Workflow) };
-        // A graph version (schema 2) binds its graph's digest (FABRIC-GRAPH1b).
+        // A graph version (schema 2) binds its graph's digest.
         if (newest.Graph is null)
         {
             return (binding with { Version = newest.Version }).Held(BindingProblem.ForVersionUnread(selected.Workflow, newest.Version, newest.Problem ?? "it is no graph"));
         }
 
-        // G8: a plugin's pull-request step nothing performs here is refused now, never run to.
+        // A plugin's pull-request step nothing performs here is refused now, never run to.
         if (PullRequestUnserved.Of(newest.Graph, plugins, selected.Workflow, newest.Version) is { } unserved)
         {
             return (binding with { Version = newest.Version, Digest = newest.Digest }).Held(unserved);
         }
 
-        // LANDNODE1h (the land node design §4): a `land` the version leaves open is resolved now, once, and kept, from derived defaults (the
+        // A `land` the version leaves open is resolved now, once, and kept, from derived defaults (the
         // default pattern, the default key).
         var resolved = newest.Graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is { } land
             ? LandNodes.Resolve(land)
@@ -145,7 +143,7 @@ public static class WorkflowRunBindings
     }
 
     /// <summary>
-    /// The role each agent step of <paramref name="graph"/> names (ROLESTEP1b), judged by the catalogue where the run's starts are: the work
+    /// The role each agent step of <paramref name="graph"/> names, judged by the catalogue where the run's starts are: the work
     /// step as build or design work, the opinion as a review. Each is kept as named, with its record's revision, so a start reads that role
     /// and holds on it, never on another; the first that cannot take its step is the binding's problem, said with why.
     /// </summary>
@@ -177,14 +175,14 @@ public static class WorkflowRunBindings
     }
 
     /// <summary>
-    /// Keep a run's binding where none is (design §4.5): a run already bound keeps the version it started on. Written atomically,
+    /// Keep a run's binding where none is: a run already bound keeps the version it started on. Written atomically,
     /// BOM-less and LF.
     /// </summary>
-    /// <returns>Whether it was written: false where the run was bound already.</returns>
+    /// <returns>Whether it is written: false where the run is bound already.</returns>
     public static bool Bind(string home, WorkflowRunBinding binding) => WorkflowPorts.Runs(home).Bind(binding);
 
     /// <summary>
-    /// The person's <i>Keep</i> kept on a run's binding (WORKFLOW1f, design §4.4), atomically, every other field as it was read: the
+    /// The person's <i>Keep</i> kept on a run's binding, atomically, every other field as read: the
     /// binding itself is never bound again. A run with no binding here keeps nothing.
     /// </summary>
     /// <returns>The binding with it, or null where the run has none here.</returns>
@@ -204,7 +202,7 @@ public static class WorkflowRunBindings
     public static bool Bound(string home, string run) => WorkflowPorts.Runs(home).Bound(run);
 
     /// <summary>
-    /// Whether any run here is bound to a named workflow in <paramref name="repository"/> (WORKFLOW1f): where a gate cannot read
+    /// Whether any run here is bound to a named workflow in <paramref name="repository"/>: where a gate cannot read
     /// which run a piece of work is, it holds only where one might govern it. An unreadable file cannot rule out a named binding.
     /// </summary>
     public static bool AnyNamed(string home, string repository) => WorkflowPorts.Runs(home).AnyNamed(repository);
@@ -213,8 +211,8 @@ public static class WorkflowRunBindings
     public static WorkflowRunBinding? Read(string home, string run) => WorkflowPorts.Runs(home).Read(run);
 
     /// <summary>
-    /// The versions of <paramref name="workflow"/> the runs read name (design §2.6), in order, each once: a run whose file is an object
-    /// naming that workflow exactly and a whole version from 1. A binding whose version did not read still keeps it.
+    /// The versions of <paramref name="workflow"/> the runs read name, in order, each once: a run whose file is an object
+    /// naming that workflow exactly and a whole version from 1. A binding whose version does not read still keeps it.
     /// </summary>
     public static IReadOnlyList<int> KeptVersions(IEnumerable<JsonElement> runs, string workflow) =>
     [
@@ -231,7 +229,7 @@ public static class WorkflowRunBindings
     public static IReadOnlyList<int> KeptVersions(string home, string workflow) => WorkflowPorts.Runs(home).KeptVersions(workflow);
 
     /// <summary>
-    /// What the look says of a binding (design §4.1, *the run says why*): the workflow and its version, and the level that chose it;
+    /// What the look says of a binding: the workflow and its version, and the level that chose it;
     /// or why the workflow chosen could not be read here.
     /// </summary>
     public static string Said(WorkflowRunBinding binding, string quest)

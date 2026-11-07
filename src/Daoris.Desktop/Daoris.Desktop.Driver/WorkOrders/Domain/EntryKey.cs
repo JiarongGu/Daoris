@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An entry's key read apart (SESSONE1h, D167): <c>&lt;origin&gt;/&lt;repository&gt;</c>, split at its first slash, as the service
+/// An entry's key read apart: <c>&lt;origin&gt;/&lt;repository&gt;</c>, split at its first slash, as the service
 /// reads a stored key. The one reader the driver has, so <see cref="EntryParts"/> and the session groups agree on a key that is
 /// odd: a key with no slash is all origin and has no repository.
 /// </summary>

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e4b (D215's note; the integration design §5.2 step 8, §8): the requester's authority judged again at promotion, from the
-/// line's policy and the place's workflow's <c>integrate</c> step as they stand now, and the appointment seam. A person's request stands on its
+/// The requester's authority judged again at promotion, from the
+/// line's policy and the place's workflow's <c>integrate</c> step as they stand, and the appointment seam. A person's request stands on its
 /// own, as does a version's own step; Daoris's sweep stands while the step says <c>request: done</c>, and a steward's while it says
 /// <c>steward</c> and the seam says its appointment is live. A place whose workflow names no requester reads <c>request: owner</c>, and the
 /// sweep and a steward's request lapse under it before the appointment is asked. Nothing here starts a process.
@@ -57,7 +57,7 @@ public sealed class IntegrationAuthorityTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1g: a unit's <c>integrate</c> node asks on its landing's acceptance, which the door judged. The person's Accept stands on its own,
+    /// A unit's <c>integrate</c> node asks on its landing's acceptance, which the door judged. The person's Accept stands on its own,
     /// as their card does; a version's own step, whose landing kept the version as its gate proof, stands whatever the line says, since a bound
     /// version is never edited; an automatic landing with no version behind it stands while the place's workflow says <c>request: done</c>, and
     /// lapses where it names no requester.

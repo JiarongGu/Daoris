@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>
 /// The grammar of <c>role rules</c> and its twin on Ask Daoris's card: one command writes a place's rules whole, each flag naming the
 /// roles it reaches after an <c>@</c> (<c>--set answers-alone=3:hold@build,design</c>), so the card's twin is the one judged write the
-/// card was judged as, never a chain of commands judged one by one.
+/// card is judged as, never a chain of commands judged one by one.
 /// </summary>
 internal static class SupervisorRulesFlags
 {

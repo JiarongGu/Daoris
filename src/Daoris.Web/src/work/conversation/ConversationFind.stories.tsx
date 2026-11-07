@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ConversationFind } from './ConversationFind';
 
-// The way through a long run (SESS1 S9): the jumps, and a search in each state it answers in.
+// The way through a long run: the jumps, and a search in each state it answers in.
 
 const meta = {
   title: 'Work/ConversationFind',

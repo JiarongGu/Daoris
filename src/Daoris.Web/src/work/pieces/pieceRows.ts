@@ -1,4 +1,4 @@
-// A session's pieces (COAGENT1b, D199; the co-agent design §6.1): another agent's work on one piece, in a clone of its own, as the
+// A session's pieces: another agent's work on one piece, in a clone of its own, as the
 // driver's look left it. Pure, so the Pieces section, the head's line and their stories read one table.
 
 /** One piece a session asked, as `SESSION_PARTNERS` answers it, read defensively. */
@@ -29,7 +29,7 @@ export type PieceRow = {
   beyond: string[] | null;
 };
 
-/** Where a piece stands as the section says it: one of the design's states, by its key under `work.pieces.state`. */
+/** Where a piece stands as the section says it: one of its states, by its key under `work.pieces.state`. */
 export type PieceShown =
   | 'asked' | 'waits' | 'working' | 'answered' | 'takenIn' | 'notTakenIn' | 'stopped' | 'outOfTime' | 'limited' | 'held' | 'refused'
   | 'uncertain' | 'discarded';
@@ -40,7 +40,7 @@ const WORKING = new Set(['approved', 'preparing', 'started', 'ending']);
 /** The ends that are not an answer: its work is kept, and the section says how it ended. */
 const ENDS: Readonly<Record<string, PieceShown>> = { stopped: 'stopped', 'out-of-time': 'outOfTime', limited: 'limited' };
 
-/** Where a piece stands, in the section's words (the design §6.1's table): one the page has no word for reads as asked. */
+/** Where a piece stands, in the section's words: one the page has no word for reads as asked. */
 export function shownOf(row: Pick<PieceRow, 'state' | 'end'>): PieceShown {
   if (WORKING.has(row.state)) return 'working';
   switch (row.state) {
@@ -59,7 +59,7 @@ export function shownOf(row: Pick<PieceRow, 'state' | 'end'>): PieceShown {
 /** Whether a piece's partner is at work, which its *Stop…* ends: started, with its record named. */
 export const stoppable = (row: Pick<PieceRow, 'state' | 'partner'>): boolean => row.state === 'started' && Boolean(row.partner);
 
-/** The states whose work or copy waits for the person's *Discard…* (the design §6.1's table); a piece taken in, refused or discarded has none. */
+/** The states whose work or copy waits for the person's *Discard…*; a piece taken in, refused or discarded has none. */
 const DISCARDABLE = new Set(['held', 'imported', 'answered', 'handed', 'not-taken-in', 'uncertain']);
 
 /** Whether a piece takes *Discard…*, which removes its ref and its copy. */
@@ -69,7 +69,7 @@ export const discardable = (row: Pick<PieceRow, 'state'>): boolean => DISCARDABL
 export const handable = (row: Pick<PieceRow, 'state'>): boolean => row.state === 'uncertain';
 
 /**
- * The head's partners (the design §6.1): the agents its pieces went to, each once in the order first asked, by the roster's name,
+ * The head's partners: the agents its pieces went to, each once in the order first asked, by the roster's name,
  * and how many are working. Null where the session asked none.
  */
 export function partnersOf(

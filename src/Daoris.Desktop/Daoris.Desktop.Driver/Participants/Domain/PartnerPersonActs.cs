@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's two acts on a piece after its partner's turn (COAGENT1b2, D199; the co-agent design §6.1's table): <i>Discard…</i>, which
+/// The person's two acts on a piece after its partner's turn: <i>Discard…</i>, which
 /// removes the piece's ref and copy in one verified step, and <i>Hand over what it left</i>, which keeps, imports and hands the work of a
 /// piece a restart left uncertain. Pure: which state admits which act, and what the act's file holds.
 /// </summary>
@@ -24,7 +24,7 @@ public static class PartnerPersonActs
         _ => false,
     };
 
-    /// <summary>The codes of an act that was not written or not done, by what the page and the verb say.</summary>
+    /// <summary>The codes of an act that is not written or not done, by what the page and the verb say.</summary>
     public static class Why
     {
         /// <summary>The act is not one of <see cref="All"/>.</summary>
@@ -44,11 +44,11 @@ public static class PartnerPersonActs
 /// <summary>The person's act on one piece as <c>&lt;id&gt;.act.json</c> keeps it: written by the press, taken and removed by the driver's look.</summary>
 public sealed record PartnerActAsk(string Id, string Act, DateTimeOffset At);
 
-/// <summary>What the person's press of an act came to: whether it was written, and the code and sentence of why not.</summary>
+/// <summary>What the person's press of an act came to: whether it is written, and the code and sentence of why not.</summary>
 public sealed record PartnerActed(bool Acted, string? Why, string Message);
 
 /// <summary>
-/// Whether a piece was taken in (the design §2.3 step 10), pure over what the look read: the frozen commit as an ancestor of the lead's
+/// Whether a piece is taken in, pure over what the look read: the frozen commit as an ancestor of the lead's
 /// branch is <see cref="PartnerStates.TakenIn"/>, recorded with the lead's commit and never unset; a lead whose work landed without it
 /// leaves <see cref="PartnerStates.NotTakenIn"/>, its ref kept until the person's <i>Discard…</i>.
 /// </summary>
@@ -57,7 +57,7 @@ public static class PartnerTakenIn
     /// <summary>The states a look reads for it: the piece is handed and not yet taken in (a not-taken-in one may still be merged later).</summary>
     public static bool Reads(string state) => state is PartnerStates.Handed or PartnerStates.NotTakenIn;
 
-    /// <param name="tip">The lead's branch's commit when the ancestry was read, or null where it could not be read.</param>
+    /// <param name="tip">The lead's branch's commit when the ancestry is read, or null where it could not be read.</param>
     /// <param name="ancestor">The frozen commit is an ancestor of <paramref name="tip"/>.</param>
     /// <param name="landed">The lead's work has landed and its record ended.</param>
     /// <returns>The state to write, or null where it stands.</returns>

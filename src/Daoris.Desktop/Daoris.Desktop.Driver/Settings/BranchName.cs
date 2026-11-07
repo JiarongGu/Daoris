@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A branch name the line may be set to (WSR2): git's own rules for a ref name, the ones a person could
+/// A branch name the line may be set to: git's own rules for a ref name, the ones a person could
 /// break by typing.
 /// </summary>
 public static class BranchName

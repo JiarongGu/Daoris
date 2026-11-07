@@ -8,8 +8,7 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A program started suspended and joined to a job before its first instruction, its three streams this process's pipes (GITAPP2a, the
-/// git-writes design §5): an act's effect step, whose id and start are journaled while it cannot yet run, then let go by <see cref="Resume"/>.
+/// A program started suspended and joined to a job before its first instruction, its three streams this process's pipes: an act's effect step, whose id and start are journaled while it cannot yet run, then let go by <see cref="Resume"/>.
 /// </summary>
 /// <remarks>
 /// As <see cref="HeavyStep"/>'s gates are held: <c>CreateProcessW</c> with <c>CREATE_SUSPENDED</c>, the job joined, and only then the thread

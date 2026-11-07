@@ -2,11 +2,11 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// One reviewer, helper or partner entry a walk tried and passed, as the one-turn re-ask reads it (<see cref="OneTurnReask{TChoice, TPassed}"/>):
-/// the actor's entry that was tried, the code that held it and the account walk's own sentence. Review's <c>ReviewerTried</c> implements it.
+/// the actor's entry tried, the code that held it and the account walk's own sentence. Review's <c>ReviewerTried</c> implements it.
 /// </summary>
 public interface IActorTried
 {
-    /// <summary>The actor's entry for the agent that was tried, with its model; null where a caller named none.</summary>
+    /// <summary>The actor's entry for the agent tried, with its model; null where a caller named none.</summary>
     ActorEffective? Entry { get; }
 
     /// <summary>What held it (a code of the owner's walk).</summary>
@@ -17,14 +17,14 @@ public interface IActorTried
 }
 
 /// <summary>
-/// An owner's walk answer, as the one-turn re-ask reads and re-selects it (<see cref="OneTurnReask{TChoice, TPassed}"/>): whether an entry was chosen,
+/// An owner's walk answer, as the one-turn re-ask reads and re-selects it (<see cref="OneTurnReask{TChoice, TPassed}"/>): whether an entry is chosen,
 /// the actor's entry that runs, the account walk's selection it runs on and what the walk passed. The owner's own choice implements it directly
 /// (Review's <c>ReviewerChoice</c>), so the re-ask names none of the owner's types and hands its own back.
 /// </summary>
 /// <typeparam name="TChoice">The implementing choice, which the re-ask returns.</typeparam>
 public interface IActorChoice<TChoice> where TChoice : IActorChoice<TChoice>
 {
-    /// <summary>Whether an entry was chosen.</summary>
+    /// <summary>Whether an entry is chosen.</summary>
     bool Chosen { get; }
 
     /// <summary>The actor's entry that runs; null where none does.</summary>
@@ -37,8 +37,8 @@ public interface IActorChoice<TChoice> where TChoice : IActorChoice<TChoice>
     IReadOnlyList<IActorTried> Tried { get; }
 
     /// <summary>
-    /// Each entry the start plan's loop passed before the one that runs, in order, in the plan's one vocabulary (<see cref="StartPasses"/>;
-    /// FOUNDATION1j part ii): what the opening note's actor line and the machine log say.
+    /// Each entry the start plan's loop passed before the one that runs, in order, in the plan's one vocabulary (<see cref="StartPasses"/>):
+    /// what the opening note's actor line and the machine log say.
     /// </summary>
     IReadOnlyList<BuildPass> Passes { get; }
 
@@ -53,10 +53,10 @@ public interface IActorChoice<TChoice> where TChoice : IActorChoice<TChoice>
 /// <typeparam name="TPassed">The implementing record, which the re-ask makes and hands back.</typeparam>
 public interface IActorPassed<TPassed> where TPassed : IActorPassed<TPassed>
 {
-    /// <summary>The actor's entry that was passed.</summary>
+    /// <summary>The actor's entry passed.</summary>
     ActorEffective Entry { get; }
 
-    /// <summary>The account it was passed on; null for an agent running under its own sign-in.</summary>
+    /// <summary>The account it is passed on; null for an agent running under its own sign-in.</summary>
     string? Account { get; }
 
     /// <summary>The record of passing <paramref name="entry"/> on <paramref name="account"/>.</summary>

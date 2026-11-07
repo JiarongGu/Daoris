@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LINESTOGETHER1d (the review-flow design §4, <i>The head's line</i>, <i>Phases</i>): the look moves an operation by what it reads of
+/// The look moves an operation by what it reads of
 /// the head and its members: the head's turn, its tip and its line, each member's tip. A head reset after <i>checked</i> goes back to
 /// <i>checking</i>; a member moving before it ends it stale; the line carried to a successor its own word opened, stale on another.
 /// </summary>

@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LIST_ROW, nextRow, useListKeys } from './listKeys';
 
-// D118 §3e (audit A7): no list in the application moved by arrow keys, so a rail was walked by Tab.
+// Lists move by arrow keys, so a rail is not walked by Tab alone.
 
 describe('the row a key moves to', () => {
   it('steps down and up, and stops at either end rather than wrapping', () => {
@@ -86,7 +86,7 @@ describe('a list bound to its keys', () => {
     expect(screen.getByRole('button', { name: 'one' })).toHaveFocus();
   });
 
-  // IME1: an input method's ↓ walks its candidates, and the focus stays in the box it is composing in.
+  // An input method's ↓ walks its candidates, and the focus stays in the box it is composing in.
   it('leaves the search box the ↓ an input method is composing with', () => {
     render(<List />);
     const box = screen.getByRole('textbox', { name: 'search' });

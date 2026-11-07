@@ -15,18 +15,18 @@ public enum LoopMode
 
 /// <summary>A loop, asked for by name.</summary>
 /// <param name="Mode">How it runs.</param>
-/// <param name="Share">Run beside a live driver on the same home, on purpose, rather than be refused (D104).</param>
+/// <param name="Share">Run beside a live driver on the same home, on purpose, rather than be refused.</param>
 public sealed record LoopRequest(LoopMode Mode, bool Share)
 {
     /// <summary>
-    /// <c>--quiet-end &lt;minutes&gt;</c> (SESSWATCH1a, D200, the session-watch design §2): a session of this run unheard that long, busy or
+    /// <c>--quiet-end &lt;minutes&gt;</c>: a session of this run unheard that long, busy or
     /// not, is ended and carried on, for a run nobody watches that must return. Only with <c>--once</c> or <c>--until-idle</c>; null waits.
     /// </summary>
     public int? QuietEnd { get; init; }
 }
 
 /// <summary>
-/// The loop a person asks for by its verb (D104), and the tree's usage: a bare invocation, or a word no command answers, is the usage
+/// The loop a person asks for by its verb, and the tree's usage: a bare invocation, or a word no command answers, is the usage
 /// and starts nothing. In the library rather than the host, so that is held by a test, as the plugin kit's command is.
 /// </summary>
 [CommandGroup("drive", Whole = true)]
@@ -71,15 +71,15 @@ public static class DriverCommand
         args is ["help" or "--help" or "-h"];
 
     /// <summary>
-    /// The loop the words ask for, or null for the usage — with what was not understood, where
-    /// something was said. A bare invocation is null with nothing to say.
+    /// The loop the words ask for, or null for the usage — with what is not understood, where
+    /// something is said. A bare invocation is null with nothing to say.
     /// </summary>
     public static LoopRequest? Read(IReadOnlyList<string> args, out string? problem)
     {
         problem = null;
         if (args.Count == 0 || AskedForHelp(args)) return null;
 
-        // One spelling (ONEWAY1ai-i): a mode flag before the verb is the tree's refusal, naming `drive`.
+        // One spelling: a mode flag before the verb is the tree's refusal, naming `drive`.
         if (args[0] != "drive")
         {
             problem = $"no verb `{args[0]}` — the loop is `drive`.";
@@ -99,7 +99,7 @@ public static class DriverCommand
                 case "--once": once = true; break;
                 case "--until-idle": untilIdle = true; break;
                 case "--share": share = true; break;
-                // SESSWATCH1a: a whole number of minutes, at least one.
+                // A whole number of minutes, at least one.
                 case "--quiet-end":
                     if (!words.MoveNext() || !int.TryParse(words.Current, System.Globalization.NumberStyles.None,
                             System.Globalization.CultureInfo.InvariantCulture, out var minutes) || minutes < 1)
@@ -132,15 +132,15 @@ public static class DriverCommand
     }
 
     /// <summary>
-    /// How the host ends a run a cancellation ended (DEV3b, D115's DEV3a note): a close only where the person's own Ctrl+C
+    /// How the host ends a run a cancellation ended: a close only where the person's own Ctrl+C
     /// asked for one, <i>driver: stopped.</i>, exit 0. A request the service never answered within the client's own timeout
     /// is a failure that says so, exit 2, as a service it could not reach is; and a cancellation nothing asked for is one too.
     /// </summary>
     /// <remarks>
-    /// 🔴 The host read every cancellation as Ctrl+C, so a look whose own request timed out printed <i>driver: stopped.</i>
-    /// and exited 0, and a script or a gate read a stalled service as a person's close.
+    /// 🔴 A cancellation is not always Ctrl+C: a look whose own request timed out must not print <i>driver: stopped.</i>
+    /// and exit 0, or a script or a gate reads a stalled service as a person's close.
     /// </remarks>
-    /// <param name="closed">Whether the host's own close was asked for: its Ctrl+C, and nothing else.</param>
+    /// <param name="closed">Whether the host's own close is asked for: its Ctrl+C, and nothing else.</param>
     public static LoopEnded Cancelled(OperationCanceledException error, bool closed) =>
         closed ? new LoopEnded(0, "driver: stopped.", Failed: false)
         // The client's own timeout: HttpClient cancels with a TimeoutException inside, and its message names the timeout.
@@ -148,7 +148,7 @@ public static class DriverCommand
         : new LoopEnded(2, $"driver: a request was cancelled though nothing closed the run — {error.Message}", Failed: true);
 }
 
-/// <summary>How the host ends a run (DEV3b): its exit code, and the line it prints, to the error stream where it failed.</summary>
+/// <summary>How the host ends a run: its exit code, and the line it prints, to the error stream where it failed.</summary>
 /// <param name="Exit"><c>0</c> for the person's close, <c>2</c> for a failure.</param>
 /// <param name="Said">The line the host prints.</param>
 /// <param name="Failed">Whether the run failed rather than closed: its line goes to the error stream and its log as a failure.</param>

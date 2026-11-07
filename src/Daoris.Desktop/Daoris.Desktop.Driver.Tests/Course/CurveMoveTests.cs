@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SWITCH1c-ii (D165 point 3; the switch design §1.2, §2 and §4): a conversation over its account's usage curve moves on its own,
+/// A conversation over its account's usage curve moves on its own,
 /// at its turn's end, to another account of the same agent that has room. What the runner judges: a turn just ended with nothing
 /// queued, no hand-over waiting or taken, the scope's switch, the account's reading, the others read where the decision asks, and
 /// the thirty minutes' hold from the record's <c>created</c> where it moved by the curve. The real client over an in-process ledger
@@ -159,8 +159,8 @@ public sealed class CurveMoveTests : IDisposable
     private IReadOnlyList<SessionEvent> Record(string id) => new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After(id, 0).Events;
 
     /// <summary>
-    /// 🔴 Over its curve, with another account of the agent that has room (the switch design §4): the conversation goes on there,
-    /// by the move record the store keeps (FOUNDATION1f-iii part a), with its agent unchanged, why `curve`, asked by `daoris`, and no
+    /// 🔴 Over its curve, with another account of the agent that has room: the conversation goes on there,
+    /// by the move record the store keeps, with its agent unchanged, why `curve`, asked by `daoris`, and no
     /// hand-over box beside it; the new record continues the old. The stand-in refuses to prepare, so the new record ends failed and the
     /// hand is not made: that both lines are written is the Process half's.
     /// </summary>
@@ -181,7 +181,7 @@ public sealed class CurveMoveTests : IDisposable
         var move = Assert.IsType<SwitchChoice.MoveTo>(choice);
         Assert.Equal(("account-3", "weekly", 0.75), (move.Account, move.Window, move.Used));
 
-        // FOUNDATION1h branch 1: the course admits it (G-02's facts): at the turn's end, a brief, why `curve` by `daoris`, a pick of the
+        // The course admits it: at the turn's end, a brief, why `curve` by `daoris`, a pick of the
         // account the decision named, on the conversation's own role.
         var course = Assert.IsType<LineCourse.Move>(Assert.Single(decided).Answer);
         Assert.Equal(
@@ -196,7 +196,7 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Empty(Asked());
 
         // The move is the store's record, decided by the curve for the account named, and ended by its phase since the stand-in's start did
-        // not hand the new part back; no box was ever kept.
+        // not hand the new part back; no box is kept.
         var kept = Assert.Single(new MoveStore(_home, () => StoreSettled.Yes, _ => true, "run-probe", StoreProcess.Shell).Of("c0nv0001"));
         Assert.Equal(("curve", "daoris", "conversation", "brief", "account-3"), (kept.Why, kept.By, kept.Executor, kept.How, kept.Account));
         Assert.False(kept.Stands, $"the move stands at {kept.PhaseWord}");
@@ -213,7 +213,7 @@ public sealed class CurveMoveTests : IDisposable
         });
 
     /// <summary>
-    /// 🔴 MODELROLE1d2 (D205 §3.5(a)): the curve move never takes an account that does not offer the conversation's model. Over its curve,
+    /// 🔴 The curve move never takes an account that does not offer the conversation's model. Over its curve,
     /// the account with the most room has refused the record's asked model on this version within the day, so it is not ready, and the
     /// next with room is moved to.
     /// </summary>
@@ -236,7 +236,7 @@ public sealed class CurveMoveTests : IDisposable
     }
 
     /// <summary>
-    /// The composer's change kept on the record is what is judged (D205 §3.5(a): the <c>override</c>'s model where one is kept): an
+    /// The composer's change kept on the record is what is judged (the <c>override</c>'s model where one is kept): an
     /// account that refused only the opening's model is moved to for a conversation the person moved to another.
     /// </summary>
     [Fact]
@@ -271,7 +271,7 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Null(new HandOverBox(_home).Read("c0nv0001"));
     }
 
-    /// <summary>What the course answered each judged turn's end, by session (FOUNDATION1h branch 1), heard from the runner.</summary>
+    /// <summary>What the course answered each judged turn's end, by session, heard from the runner.</summary>
     private static List<(string Session, LineCourse Answer)> Deciding(ChatRunner runner)
     {
         var decided = new List<(string Session, LineCourse Answer)>();
@@ -283,7 +283,7 @@ public sealed class CurveMoveTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 1 (the foundation design §3.1, C5-1.14): the scope's switch is the course's consent, its <c>SwitchAdmits</c> rule.
+    /// 🔴 The scope's switch is the course's consent, its <c>SwitchAdmits</c> rule.
     /// With <c>switch: off</c> it is the course's <c>SwitchOff</c> hold that stops the curve, as the judged event shows it and no record
     /// is made; the account reading (<see cref="SwitchDecision"/>) still says <c>off</c> beside it, and reads nothing.
     /// </summary>
@@ -419,7 +419,7 @@ public sealed class CurveMoveTests : IDisposable
         Assert.Equal(1, ledger.Count);
     }
 
-    /// <summary>🔴 The hold reads when a record was made (SWITCH1c-ii): `created`, as the ledger answers it, on the record a run reads.</summary>
+    /// <summary>🔴 The hold reads when a record is made: `created`, as the ledger answers it, on the record a run reads.</summary>
     [Fact]
     public async Task A_record_says_when_it_was_created()
     {

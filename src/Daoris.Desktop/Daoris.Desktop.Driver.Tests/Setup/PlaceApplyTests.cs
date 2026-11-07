@@ -59,7 +59,7 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Equal("q-1", kept.Of(PlaceOperations.AdoptionOf("atlas"))!.Quest);
     }
 
-    /// <summary>WORKFLOWCLEAN1 1a: the copy is saved first as its own operation, the place then follows it, and a second press saves nothing again.</summary>
+    /// <summary>The copy is saved first as its own operation, the place then follows it, and a second press saves nothing again.</summary>
     [Fact]
     public async Task The_copy_is_saved_before_the_configuration_chooses_it_and_a_second_press_saves_nothing_again()
     {
@@ -382,7 +382,7 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Equal(0, stand.Changes);
     }
 
-    /// <summary>REVIEW2 4: from a session's terminal the apply, acting alone, is refused and writes nothing, as every other person's press is.</summary>
+    /// <summary>From a session's terminal the apply, acting alone, is refused and writes nothing, as every other person's press is.</summary>
     [Fact]
     public async Task The_verb_applying_alone_from_a_sessions_terminal_is_refused_and_writes_nothing()
     {
@@ -497,7 +497,7 @@ public sealed class PlaceApplyTests : IDisposable
     }
 
     /// <summary>
-    /// WORKFLOWCLEAN1 1f: an adoption covering more of a workspace's repositories than it asks at once writes that workspace's plan (its rule added
+    /// An adoption covering more of a workspace's repositories than it asks at once writes that workspace's plan (its rule added
     /// once) and asks nothing itself; the driver's tick publishes it. A second press of the digest writes and asks nothing again.
     /// </summary>
     [Fact]
@@ -526,7 +526,7 @@ public sealed class PlaceApplyTests : IDisposable
         Assert.Equal(plan.Created, WorkspaceSetupFile.Load(_home, "aurora").Plan!.Created);
     }
 
-    /// <summary>An adoption that says no pace is one at a time, the plan's default (D117 §9): two repositories of a workspace are a plan, not two quests.</summary>
+    /// <summary>An adoption that says no pace is one at a time, the plan's default: two repositories of a workspace are a plan, not two quests.</summary>
     [Fact]
     public async Task An_adoption_that_says_no_pace_of_two_repositories_of_a_workspace_is_paced_one_at_a_time()
     {
@@ -659,7 +659,7 @@ public sealed class PlaceApplyTests : IDisposable
         }
     }
 
-    /// <summary>The set-up press's world: its registry, line, tools and quests, and an ask door that keeps what it was asked.</summary>
+    /// <summary>The set-up press's world: its registry, line, tools and quests, and an ask door that keeps what it is asked.</summary>
     private sealed class SetupWorld : ISetupWorld
     {
         private readonly LayoutFacts _facts = new LayoutReaderTests.Scratch().File("README.md", "# Atlas\n").Read();

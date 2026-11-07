@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The marks a record carries that tell its work (FOUNDATION1c, D212; the foundation design §2.2): handed to <see cref="ParticipantWork.Of"/>
+/// The marks a record carries that tell its work: handed to <see cref="ParticipantWork.Of"/>
 /// as a value, so the rule names no record type above it. Each caller builds it from its own view of the record
 /// (the planner's <c>SessionView</c>, its <c>PriorSession</c>, the fields the service answers), and a mark that is empty is none, as an
 /// absent one is.
@@ -17,20 +17,19 @@ public readonly record struct WorkMarks(
     bool Mirror, string? Kind, string? Repository, string? Ask, string? Serves, string? Piece, string? Opinion);
 
 /// <summary>
-/// The participant's work (FOUNDATION1c, D212; the foundation design §2.2): the capability a record was opened for, one closed code read
+/// The participant's work: the capability a record is opened for, one closed code read
 /// from its marks by one rule and never stored, so every reader that must tell the work reads it here.
 /// </summary>
 /// <remarks>
 /// <para><b>A twin</b> (<c>.claude/knowledge/twins.md</c>): the service's <c>ParticipantWork.Of</c> answers it as <c>work</c> on loopback
 /// from its own record, and the page's <c>identity.ts</c> draws by what a host answers. The three share no code; the file between them is
-/// <c>fixtures/participant-work.json</c> among the service's tests, which each side's tests hold row for row, every place a reader of the
-/// same marks answered otherwise before the rule named and decided there.</para>
+/// <c>fixtures/participant-work.json</c> among the service's tests, which each side's tests hold row for row.</para>
 /// <para><b>The one rule</b>, the first that holds: a mirror is another machine's, with no work here (null); <c>opinion</c> is
 /// <see cref="Review"/>; <c>serves</c> with <c>piece</c> is <see cref="Partner"/>; <c>serves</c> alone is <see cref="Help"/>; <c>ask</c> is
 /// <see cref="Intake"/>; the Ask Daoris repository is <see cref="AskDaoris"/>; a chat is <see cref="Chat"/>; otherwise <see cref="Build"/>. A
-/// co-worker is a relation, <c>serves</c>, never a work of its own (D203 point 1).</para>
+/// co-worker is a relation, <c>serves</c>, never a work of its own.</para>
 /// <para><b>The cap's slot is a property of the work</b> (<see cref="HoldsSlot"/>): what the driver starts takes a place under the cap,
-/// a conversation the person holds does not (CAPCOUNT1).</para>
+/// a conversation the person holds does not.</para>
 /// </remarks>
 public static class ParticipantWork
 {
@@ -81,7 +80,7 @@ public static class ParticipantWork
     }
 
     /// <summary>
-    /// Whether the work takes a place under the machine's cap (CAPCOUNT1): <c>build</c>, <c>design</c>, <c>intake</c>, <c>help</c>,
+    /// Whether the work takes a place under the machine's cap: <c>build</c>, <c>design</c>, <c>intake</c>, <c>help</c>,
     /// <c>partner</c> and <c>review</c> do, what the driver starts for itself; <c>chat</c>, <c>ask-daoris</c> and <c>brainstorm</c> do not,
     /// and a record with no work here holds no place.
     /// </summary>

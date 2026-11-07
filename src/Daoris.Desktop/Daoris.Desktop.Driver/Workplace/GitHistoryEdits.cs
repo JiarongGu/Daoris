@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A history edit asked (GITAPP2m): <paramref name="Edit"/> is <c>pick</c>, <c>revert</c> or <c>rebase</c>; <paramref name="Target"/> the
+/// A history edit asked: <paramref name="Edit"/> is <c>pick</c>, <c>revert</c> or <c>rebase</c>; <paramref name="Target"/> the
 /// commit or <c>A..B</c> range to pick or revert onto <paramref name="Branch"/>, or the commit to rebase it onto.
 /// </summary>
 public sealed record HistoryEditAsk(string Home, string Repository, string Checkout, string Edit, string Branch, string Target)
@@ -67,7 +67,7 @@ internal sealed record HistoryEditRead(string Id, IReadOnlyList<string> Parents,
 }
 
 /// <summary>
-/// **Pick, revert and rebase onto, without a working tree** (GITAPP2m, D204; the git-writes design §1, §6, §7, §12 row m). On a branch no
+/// **Pick, revert and rebase onto, without a working tree**. On a branch no
 /// tree has out, never the line, a session's, a landing's or one bound to bring sessions together: each commit made from
 /// <c>merge-tree --write-tree --merge-base</c> and <c>commit-tree</c>, then the branch's <c>update</c>, its old tip's recovery ref under
 /// <c>refs/daoris/discarded/</c> and the proof refs' <c>verify</c>, one transaction run as an act of the journal (<see cref="ActRuns"/>).
@@ -95,7 +95,7 @@ public static class GitHistoryEdits
 
     public const string RebaseKind = "history.rebase";
 
-    /// <summary>The most commits one edit takes (provisional, the design §7); past it the command to copy is said.</summary>
+    /// <summary>The most commits one edit takes (provisional); past it the command to copy is said.</summary>
     public const int MostCommits = 50;
 
     /// <summary>The first git whose <c>merge-tree</c> takes <c>--merge-base</c>.</summary>
@@ -333,7 +333,7 @@ public static class GitHistoryEdits
     }
 
     /// <summary>
-    /// The configured programs a history edit would run (§1): a merge driver in any scope, <c>merge.renormalize</c> beside a filter, and the
+    /// The configured programs a history edit would run: a merge driver in any scope, <c>merge.renormalize</c> beside a filter, and the
     /// signing <c>commit.gpgSign</c> asks; each refused, named with its scope. Null where none is set.
     /// </summary>
     private static async Task<string?> ProgramsAsync(HistoryEditAsk ask, CancellationToken ct)
@@ -418,7 +418,7 @@ public static class GitHistoryEdits
 
     /// <summary>
     /// Whether a rebase's oldest commit is on any remote-tracking ref (so every later one is too), and every remote-tracking ref at the id read,
-    /// to verify in the transaction (D109).
+    /// to verify in the transaction.
     /// </summary>
     private static async Task<(string? Published, IReadOnlyList<(string, string)> Remotes, string? Unread)> PublishedAsync(string root, string oldest, CancellationToken ct)
     {

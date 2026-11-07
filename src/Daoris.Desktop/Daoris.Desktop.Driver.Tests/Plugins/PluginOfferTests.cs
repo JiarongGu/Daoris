@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Daoris's own example plugins, offered by the install (PLUG9 d, D103), whose twin in the CLI's <c>plugins.ts</c> left with
-/// <c>daoris plugin</c>'s TypeScript (PUSH1f2f). The offers are the
+/// Daoris's own example plugins, offered by the install. The offers are the
 /// install's <c>app/plugin-offers/</c>, read as the catalogue reads a plugin with the placeholders as
 /// written, each with what its README says it needs. None is installed until a press.
 /// </summary>
@@ -69,7 +68,7 @@ public sealed class PluginOfferTests : IDisposable
         Assert.Empty(PluginOffers.Load(null, Home, Reserved));
     }
 
-    /// <summary>HOMELAYOUT4: a development run's root is its own Daoris folder, so its offers are its <c>app/plugin-offers/</c>.</summary>
+    /// <summary>A development run's root is its own Daoris folder, so its offers are its <c>app/plugin-offers/</c>.</summary>
     [Fact]
     public void A_dev_runs_offers_are_its_roots_own_app_plugin_offers()
     {
@@ -128,7 +127,7 @@ public sealed class PluginOfferTests : IDisposable
     }
 
     /// <summary>
-    /// The install's own offers, as the tracked examples stand (D103): the two that land work and the one that
+    /// The install's own offers, as the tracked examples stand: the two that land work and the one that
     /// hands a session Daoris's own browser, each sound here and saying what it needs. The rehearsal fixture
     /// (<c>hold-by-title</c>) and the browser a machine without the shell uses are not offered.
     /// </summary>
@@ -150,10 +149,10 @@ public sealed class PluginOfferTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1c (D170's note): the in-app browser offers Ask Daoris its `browser` server, its page-reading tools as reads and
+    /// The in-app browser offers Ask Daoris its `browser` server, its page-reading tools as reads and
     /// its page-changing ones as writes, so the person can approve it on its page; none is a generic execution tool, so it is
     /// never refused, and the tools that run a page's code (`browser_evaluate`, `browser_run_code_unsafe`) are not offered.
-    /// Every session is still handed it, as before.
+    /// Every session is handed it.
     /// </summary>
     [Fact]
     public void The_in_app_browser_offers_ask_daoris_its_browser_reads_and_writes_apart_and_no_code_runner()

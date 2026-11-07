@@ -21,15 +21,15 @@ import { useFollowTail } from './followTail';
 import type { Wait } from '../waits/waits';
 import { type ChatLimitHeld, chatLimitHeldOf } from '../waits/limitWait';
 
-/** How many blocks a conversation holds before it is offered a way through (SESS1 S9). */
+/** How many blocks a conversation holds before it is offered a way through. */
 const LONG = 20;
 
 /** Whether the reader is at the conversation's tail, and the way there: what a host that draws the press is told. */
 export type TailState = { atTail: boolean; toTail: () => void };
 
 /**
- * The waits whose raising event the conversation holds, or may hold on a page before, and the way to one (WAITFOOT1c, D168
- * point 4): what a host that draws *In the conversation* is told.
+ * The waits whose raising event the conversation holds, or may hold on a page before, and the way to one:
+ * what a host that draws *In the conversation* is told.
  */
 export type AnchorState = { anchored: AnchorWait[]; show: (wait: AnchorWait) => void };
 
@@ -43,7 +43,7 @@ const SCROLL_PRESS =
   'flex h-7 w-7 cursor-pointer items-center justify-center rounded-control border border-line-strong bg-raised text-ink-soft hover:text-ink';
 
 /**
- * *Back to bottom* as a press of its own (ASKHIST1c): for a strip its host keeps outside the transcript, so it takes its own
+ * *Back to bottom* as a press of its own: for a strip its host keeps outside the transcript, so it takes its own
  * room and never covers the words it leads back to.
  */
 export function BackToBottom({ onPress, className }: { onPress: () => void; className?: string }) {
@@ -57,8 +57,8 @@ export function BackToBottom({ onPress, className }: { onPress: () => void; clas
 }
 
 /**
- * *To the top* as a press of its own (WAITPANEL1): the record's head, where every wait stands with its reading. Drawn beside
- * *Back to bottom* above the waiting panel, as the strip's *To the top* was (D168 point 1), so neither is ever under the panel.
+ * *To the top* as a press of its own: the record's head, where every wait stands with its reading. Drawn beside
+ * *Back to bottom* above the waiting panel, as the strip's *To the top* is, so neither is ever under the panel.
  */
 export function ToTheTop({ onPress, className }: { onPress: () => void; className?: string }) {
   const { t } = useTranslation();
@@ -71,45 +71,45 @@ export function ToTheTop({ onPress, className }: { onPress: () => void; classNam
 }
 
 /**
- * The attended session's conversation (D76, CONV2): the organism that holds its record and its
+ * The attended session's conversation: the organism that holds its record and its
  * scroll, so the view below it holds neither.
  *
  * @remarks
  * **It follows the tail until the person scrolls up**, and then offers the way back — the rule the
- * console has kept since SURF4c, applied to the region the conversation scrolls in, which is the
+ * console keeps, applied to the region the conversation scrolls in, which is the
  * frame's centre (handed in, since the head above scrolls with it).
  *
- * **A long run gets a way through** (SESS1 S9): a jump to where it first failed and to its last words,
+ * **A long run gets a way through**: a jump to where it first failed and to its last words,
  * and a search within it. **A jump lands on an event**: the pages before it are loaded until it is
  * held, then its block is shown, its fold open, and scrolled to. The frame jumps too, to the event that raised a wait on the
- * person (WAITFOOT1c, `onAnchors`).
+ * person (`onAnchors`).
  *
- * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
+ * Desktop-only for the console's reason: the record arrives over the bridge.
  */
 export function SessionConversation({
   session, adapter, chat = false, tree, live, mode = 'attended', began, turnRunning, scroller, onUsage, onWaiting, onSession, onStartFrom, reasons, cooling, onTail,
   waits, onAnchors, onToWait, callMark, onSayAgain, onGoOnBrief, onLimitWait, helpersAsked, channel,
 }: {
-  /** The home of the channel messages its turns took (COMMS1h), the attended session's alone — `ConversationView`'s. */
+  /** The home of the channel messages its turns took, the attended session's alone — `ConversationView`'s. */
   channel?: ChannelHome;
   /**
-   * The helpers its agent asked for, each drawn as its card at its call with its answer folded in (COMMS1h): the session's asks as the
+   * The helpers its agent asked for, each drawn as its card at its call with its answer folded in: the session's asks as the
    * frame read them, the agents' names, and the door to a helper's conversation.
    */
   helpersAsked?: { asks: readonly HelperAskRow[]; nameOf?: (agent: string) => string; onOpen?: (helper: string) => void };
-  /** *Go on with Daoris's brief* (SESSCTX1c part B), beside the fresh start where the words wait for the person — `ConversationView`'s. */
+  /** *Go on with Daoris's brief*, beside the fresh start where the words wait for the person — `ConversationView`'s. */
   onGoOnBrief?: () => void;
-  /** *Say it again* (COWORK1c): the person's own words that may have reached the agent, said anew — `ConversationView`'s. */
+  /** *Say it again*: the person's own words that may have reached the agent, said anew — `ConversationView`'s. */
   onSayAgain?: (words: string[]) => void;
   /** The call the driver's grouping says the session is in, held or not (AUTONOMY1b3e) — `ConversationView`'s. */
   callMark?: CallMark;
   /**
-   * What waits on the person in this session, and what its joins name (WAITFOOT1c, D168 point 4): the waits that stand, its
+   * What waits on the person in this session, and what its joins name: the waits that stand, its
    * go-aheads, the opinion the landing's gate names. Each is anchored to the event that raised it where the join finds one.
    */
   waits?: Omit<AnchorAsks, 'session'>;
   /**
-   * Told which waits it holds the raising event of, and the way to one, on a change only (WAITFOOT1c): the jump this organism
+   * Told which waits it holds the raising event of, and the way to one, on a change only: the jump this organism
    * kept to itself, the frame's to press, as `onTail` is. Pressed, the event is shown and outlined, the pages before it loaded
    * first where it is older than the page.
    */
@@ -117,20 +117,20 @@ export function SessionConversation({
   /** Go to a wait's line where it is answered: the raising block's *To the wait*. Absent, no block is marked. */
   onToWait?: (wait: Wait) => void;
   /**
-   * Told whether the reader is at the tail and how to go there (ASKHIST1c), where the host draws *Back to bottom* in a strip
-   * of its own outside the transcript (`BackToBottom`). Absent, the press is drawn at the transcript's foot, as before.
+   * Told whether the reader is at the tail and how to go there, where the host draws *Back to bottom* in a strip
+   * of its own outside the transcript (`BackToBottom`). Absent, the press is drawn at the transcript's foot.
    */
   onTail?: (tail: TailState) => void;
-  /** The account the person's words wait for cools, and *Go on in a new session* (MSG1g2) — `ConversationView`'s. */
+  /** The account the person's words wait for cools, and *Go on in a new session* — `ConversationView`'s. */
   cooling?: Cooling;
-  /** Attend the session the person's words went to (MSG1f); absent, it is named as text. */
+  /** Attend the session the person's words went to; absent, it is named as text. */
   onSession?: (id: string) => void;
-  /** Start a conversation with words that cannot go on here (MSG1f, D137 §2.2); absent, no press is offered. */
+  /** Start a conversation with words that cannot go on here; absent, no press is offered. */
   onStartFrom?: (words: string[]) => void;
-  /** What a reason the driver gave by code may name (D137 §5.1). */
+  /** What a reason the driver gave by code may name. */
   reasons?: ReasonValues;
   /**
-   * **`earlier`: a part of a line the attended one continues** (SWITCHCTX1c-i; the switch-context design §2.7), drawn read-only above
+   * **`earlier`: a part of a line the attended one continues**, drawn read-only above
    * it. It is read with its own record's `live` and no other, since `settle` reads a part that is not live as ended; it owns neither
    * the region's scroll nor any fact of the frame, so it tells its host nothing of its usage, its wait, its limit's wait, its tail or
    * its anchors, and offers no act, no wait and no way through itself. `attended` is the part the page is on, which owns all of them.
@@ -138,11 +138,11 @@ export function SessionConversation({
   mode?: 'attended' | 'earlier';
   /**
    * How the part began, in the strip's words, drawn as its one boundary line where it began by no move (a sibling's request, a
-   * *Try again*, a resume into a new part) and its events hold no first line of a move's own (SWITCHCTX1c-i).
+   * *Try again*, a resume into a new part) and its events hold no first line of a move's own.
    */
   began?: string;
   session: string;
-  /** The harness it runs on — whose declaration says whether its door keeps a conversation (D76 §1). */
+  /** The harness it runs on — whose declaration says whether its door keeps a conversation. */
   adapter?: string;
   /** Whether it is a conversation with a person. */
   chat?: boolean;
@@ -154,31 +154,31 @@ export function SessionConversation({
   /** The region the conversation scrolls in. */
   scroller: RefObject<HTMLElement | null>;
   /**
-   * Told the context reading whenever it changes (CONV5), for the ring under the composer — which
+   * Told the context reading whenever it changes, for the ring under the composer — which
    * reads this record rather than holding a second one: the stream has one home.
    */
   onUsage?: (session: string, usage?: Usage) => void;
-  /** Told when the turn its agent is on was asked, while the agent has answered nothing (WAITSHOWN1); undefined once it has. */
+  /** Told when the turn its agent is on has begun, while the agent has answered nothing; undefined once it has. */
   onWaiting?: (session: string, since?: string, calling?: RunningCall, retrying?: string) => void;
   /**
-   * Told whether the conversation waits for its account's limit, read from its events (LIMITRESUME1d2, D206 §3.7), on a change only:
+   * Told whether the conversation waits for its account's limit, read from its events, on a change only:
    * the head and the foot say the wait from it, so the record has one reader.
    */
   onLimitWait?: (session: string, held: ChatLimitHeld | null) => void;
 }) {
   const { events, opening, firstFailure, earlier, loaded, loadEarlier } = useSessionEvents(session);
-  // An earlier part of a line owns none of what the attended one does (SWITCHCTX1c-i): the scroll, the frame's facts, the acts.
+  // An earlier part of a line owns none of what the attended one does: the scroll, the frame's facts, the acts.
   const own = mode === 'attended';
   // The door's own word on what an empty record means — undefined until the roster answers, which reads
   // as the console sentence: it claims least.
   const harnesses = useHarnesses();
   const structured = harnesses.data?.harnesses?.find((row) => row.door === adapter)?.structured;
-  // What the person calls each account, so the opening line and a wait name one as the agents' page does (NOTENAME1).
+  // What the person calls each account, so the opening line and a wait name one as the agents' page does.
   const roster = harnesses.data?.harnesses;
   const names = useMemo(() => accountNames(Array.isArray(roster) ? roster : []), [roster]);
-  // Read from what was asked (SESS1 S1), and as an ended session leaves it: a turn it ended inside says
-  // so, and its open calls read stopped rather than running for good (S4).
-  // A helper's word is a partner's by the work of the record it names (COMMS1a): an event carries no key to tell them by.
+  // Read from the ask, and as an ended session leaves it: a turn it ended inside says
+  // so, and its open calls read stopped rather than running for good.
+  // A helper's word is a partner's by the work of the record it names: an event carries no key to tell them by.
   const everySession = useEverySession(true).data;
   const { turns, usage, where } = useMemo(() => {
     const workOf = (id: string) => {
@@ -194,13 +194,13 @@ export function SessionConversation({
   const report = useRef(onUsage);
   report.current = own ? onUsage : undefined;
   useEffect(() => { report.current?.(session, usage); }, [session, usage]);
-  // The wait for the first answer goes up the same way (WAITSHOWN1), for the head's facts; only while the session is live.
+  // The wait for the first answer goes up the same way, for the head's facts; only while the session is live.
   const waitingSince = live ? firstAnswerWait(turns) : undefined;
-  // And the call it is inside (WAITSAY1), read from the settled turns, so a session not live says none.
+  // And the call it is inside, read from the settled turns, so a session not live says none.
   const call = live ? runningCall(turns) : null;
   const callTitle = call?.title;
   const callSince = call?.since;
-  // AGENTERRORS1a2 (D210 §5.1, §8): and when a transient episode tries again, read from its quiet events, for the head's *Trying again at*.
+  // And when a transient episode tries again, read from its quiet events, for the head's *Trying again at*.
   const retrying = live ? retryingAt(events) : undefined;
   const reportWait = useRef(onWaiting);
   reportWait.current = own ? onWaiting : undefined;
@@ -208,7 +208,7 @@ export function SessionConversation({
     reportWait.current?.(session, waitingSince, callTitle && callSince ? { title: callTitle, since: callSince } : undefined, retrying);
   }, [session, waitingSince, callTitle, callSince, retrying]);
 
-  // Its limit's wait goes up the same way (LIMITRESUME1d2), told again only where the line it reads changes.
+  // Its limit's wait goes up the same way, told again only where the line it reads changes.
   const held = useMemo(() => (chat && own ? chatLimitHeldOf(events) : null), [chat, own, events]);
   const heldKey = held ? `${held.until}:${held.stated}` : '';
   const reportHeld = useRef(onLimitWait);
@@ -220,7 +220,7 @@ export function SessionConversation({
 
   // What changes when the conversation grows: the last event, and its text as chunks join it.
   const last = events[events.length - 1];
-  // An ended session opens at its head, which says how it ended (SESS2 H1); a live one follows its tail.
+  // An ended session opens at its head, which says how it ended; a live one follows its tail.
   // An earlier part follows nothing and opens nothing: it is handed no region, so the attended part alone owns the scroll.
   const nobody = useRef<HTMLElement | null>(null);
   const { atTail, toTail } = useFollowTail(own ? scroller : nobody, `${last?.seq ?? 0}:${turns.length}`, `${session}:${loaded}`, !live);
@@ -234,7 +234,7 @@ export function SessionConversation({
   }, [away, toTail]);
   useEffect(() => () => tell.current?.({ atTail: true, toTail: () => {} }), []);
 
-  // The way through a long run (SESS1 S9).
+  // The way through a long run.
   const long = own && (earlier || turns.reduce((count, turn) => count + turn.items.length, 0) > LONG);
   const [query, setQuery] = useState('');
   const settled = useDebounced(query, 300);
@@ -246,7 +246,7 @@ export function SessionConversation({
   const [reveal, setReveal] = useState<{ key: string; n: number } | null>(null);
   const show = (key: string) => setReveal((was) => ({ key, n: (was?.n ?? 0) + 1 }));
 
-  // The wait a press is headed for, until the page holds the event that raised it (WAITFOOT1c).
+  // The wait a press is headed for, until the page holds the event that raised it.
   const [seeking, setSeeking] = useState<AnchorWait | null>(null);
 
   useEffect(() => {
@@ -272,7 +272,7 @@ export function SessionConversation({
     }
   }, [pending, where, earlier, loadEarlier]);
 
-  // Where each wait was raised (WAITFOOT1c, D168 point 4), read from what the page holds: the asks compared by value, since the
+  // Where each wait is raised, read from what the page holds: the asks compared by value, since the
   // frame hands a new object on every render.
   const asked = JSON.stringify(own ? waits ?? null : null);
   const from = events[0]?.at;
@@ -285,7 +285,7 @@ export function SessionConversation({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `asked` stands for `waits`
     [anchors, asked, Boolean(onToWait)]);
   const anchored = [...Object.keys(anchors.held), ...anchors.earlier] as AnchorWait[];
-  // COMMS1h: each helper its agent asked for, drawn once as its card at its call, the turn that took its answer a line to it.
+  // Each helper its agent asked for, drawn once as its card at its call, the turn that took its answer a line to it.
   const askedFor = JSON.stringify(own ? helpersAsked?.asks ?? null : null);
   const exchanges = useMemo(
     () => (own && helpersAsked ? exchangesOf(turns, helpersAsked.asks, helpersAsked.nameOf) : NO_EXCHANGES),

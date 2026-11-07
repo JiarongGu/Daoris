@@ -5,9 +5,8 @@ using static Daoris.Driver.MoveRows;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The course's move record in the desktop store (FOUNDATION1f-i part 1, D212; the foundation design §3.3, §13.3's family <i>The course</i>,
-/// §13.4, §19.1): every move's one durable row in <c>moves</c>, its words in transfer in <c>move_words</c>. Rows f-ii to f-vi, h and i adopt
-/// it: the delete of a record takes its moves, and since FOUNDATION1f-ii part a the live limit move keeps its record here through
+/// The course's move record in the desktop store (the family <i>The course</i>): every move's one durable row in <c>moves</c>, its words
+/// in transfer in <c>move_words</c>. The delete of a record takes its moves, and the live limit move keeps its record here through
 /// <see cref="ConversationMoves"/>.
 /// </summary>
 /// <remarks>
@@ -24,13 +23,13 @@ namespace Daoris.Driver;
 /// its run marked. A take is one guarded update that raises the generation, refused where the generation moved since the taker read it.</para>
 /// <para><b>Every external effect is fenced by a mark</b> written under the claim's check before it is made, and its outcome after: a mark
 /// with no outcome is the evidence a taker holds, never made again by itself, so no second mark goes over it.</para>
-/// <para><b>The moved words' <c>sent</c></b> (part 3): each word's delivery evidence, written at <c>delivering</c> in one transaction as its
+/// <para><b>The moved words' <c>sent</c></b>: each word's delivery evidence, written at <c>delivering</c> in one transaction as its
 /// door's write returns and before its take, and <c>delivered</c> only once every word the move moved has it. A hold names its words by their
 /// disposition in its own transaction, and the person's press closes a hold <c>resolved</c> without its claim. A record that is the
 /// destination of a standing move takes no move of its own: a decision of it is answered that move, as the index answers the record left's.</para>
 /// <para>Opened for each use and closed, like the bindings' store, under the process's one run (<see cref="StoreProcess"/>); a read never
 /// creates the store. It never holds a word's text, a path or a credential, and writes no box beside the row: an older build recovers a move
-/// the store carries from the ledger alone (§13.5).</para>
+/// the store carries from the ledger alone.</para>
 /// </remarks>
 /// <param name="home">The home whose store this is.</param>
 /// <param name="settled">The reading of the start's confirmation; null reads this install's swap journal.</param>
@@ -73,14 +72,14 @@ public sealed class MoveStore(
 
     string IWorkplaceMoveRecords.StoreLocation => Location;
 
-    /// <summary>The reading of the start's confirmation this store's imports wait for, asked again at each call (§13.5).</summary>
+    /// <summary>The reading of the start's confirmation this store's imports wait for, asked again at each call.</summary>
     public StoreSettled Settled() => _settled();
 
-    /// <summary>Whether a run that wrote the store still lives, by the liveness this store was handed (the lease's own test by default).</summary>
+    /// <summary>Whether a run that wrote the store still lives, by the liveness handed to this store (the lease's own test by default).</summary>
     public bool Alive(StoreRun run) => _alive(run);
 
     /// <summary>
-    /// The lease's own test of a run (§13.4): alive while its process runs under the start time it recorded; a start it could not read when it
+    /// The lease's own test of a run: alive while its process runs under the start time it recorded; a start it could not read when it
     /// began counts as alive, as the lease's <i>cannot tell</i> holds.
     /// </summary>
     public static bool Lives(StoreRun run) => run.Started is not { } started || ProcessLiveness.Alive(run.Pid, started);
@@ -88,9 +87,9 @@ public sealed class MoveStore(
     // ——— The decision and its claim.
 
     /// <summary>
-    /// Write a move the course decided, claimed by this store's run at generation 1, in one transaction (§13.4 step 1); or, where the record
+    /// Write a move the course decided, claimed by this store's run at generation 1, in one transaction; or, where the record
     /// left already has a standing move, answer that move and write nothing, which the decider reads as the course's <c>Never</c>. A record
-    /// that is the destination of a standing move is answered that move alike (part 3; §3.3: its destination takes no move of its own).
+    /// that is the destination of a standing move is answered that move alike (its destination takes no move of its own).
     /// </summary>
     /// <exception cref="ArgumentException">The decision names no record, an executor or a <c>how</c> no move has, or no why or by.</exception>
     public MoveDecided Decide(MoveDecision decision)
@@ -130,7 +129,7 @@ public sealed class MoveStore(
         }
     }
 
-    // ——— A box's import (part 2; §3.3, §13.5).
+    // ——— A box's import.
 
     /// <summary>Write the move an older build's box kept as this store's own row, with the import's receipt; held until the start is settled, refused where the record already has a standing move.</summary>
     public MoveImported Import(StoreImport receipt, MoveFromBox box) => new MoveImporter(this).Import(receipt, box);
@@ -159,7 +158,7 @@ public sealed class MoveStore(
     /// <summary>
     /// Move to a phase that carries nothing of its own (<c>quiescing</c>, <c>old-ended</c>, <c>copied</c>, <c>verified</c>, <c>delivering</c>,
     /// <c>delivered</c>), under the claim's check, forward only (<see cref="MovePhases.Follows"/>). A phase written again changes nothing.
-    /// <c>delivered</c> is written only once every word the move moved has <c>sent</c> (part 3; §13.4 step 4, §19.4).
+    /// <c>delivered</c> is written only once every word the move moved has <c>sent</c>.
     /// </summary>
     /// <exception cref="ArgumentException">The phase carries something, and has its own write.</exception>
     /// <exception cref="MoveClaimLostException">The claim no longer holds the move.</exception>
@@ -181,10 +180,10 @@ public sealed class MoveStore(
         });
     }
 
-    /// <summary>The open asked under its key, which a lost answer is asked again by (§3.3, §13.4 step 3).</summary>
+    /// <summary>The open asked under its key, which a lost answer is asked again by.</summary>
     public MoveRecord Opening(MoveClaim claim, string opens) => Step(claim, MoveRecordPhase.Opening, ("opens", Required(opens, "the open's key")), null);
 
-    /// <summary>The open's answer: the record it made and every word it moved, written with the phase in one transaction (§13.4 step 3).</summary>
+    /// <summary>The open's answer: the record it made and every word it moved, written with the phase in one transaction.</summary>
     public MoveRecord Opened(MoveClaim claim, string destination, IReadOnlyList<MoveRecordWord> words) =>
         Step(claim, MoveRecordPhase.Opened, ("destination", Required(destination, "the record its open made")), write =>
         {
@@ -201,8 +200,8 @@ public sealed class MoveStore(
     public MoveRecord FallBack(MoveClaim claim, string code) => Step(claim, MoveRecordPhase.FellBack, ("fell_back_code", Required(code, "its code")), null);
 
     /// <summary>
-    /// Held for the person, with its reason: it stands until it closes <c>resolved</c> by §3.3's one rule, once nothing it names waits on its
-    /// destination's <c>said</c>. The words it names are written with it in its one transaction (part 3), each a word of the move with no
+    /// Held for the person, with its reason: it stands until it closes <c>resolved</c> by the held move's one rule, once nothing it names waits on its
+    /// destination's <c>said</c>. The words it names are written with it in its one transaction, each a word of the move with no
     /// disposition yet, so a word sent is never named; held again, the first hold and its words stand.
     /// </summary>
     /// <param name="named">The words it names, by transfer id, each with its disposition (<see cref="MoveWordDispositions.Named"/>); none names none.</param>
@@ -218,16 +217,16 @@ public sealed class MoveStore(
         });
     }
 
-    // ——— The moved words' `sent` (part 3; §13.4 step 4, §19.4).
+    // ——— The moved words' `sent`.
 
     /// <summary>
     /// As the door's write returns, and before its take: each written word's <c>sent</c> and its moment in one transaction under the claim's
     /// check, at <c>delivering</c> alone, with the outcome of the effect last marked where it has none, since the write returning is that
-    /// effect's outcome. A word already <c>sent</c> is unchanged. Nothing is written where a transfer is not the move's or its word was
+    /// effect's outcome. A word already <c>sent</c> is unchanged. Nothing is written where a transfer is not the move's or its word is
     /// disposed otherwise.
     /// </summary>
     /// <exception cref="MoveClaimLostException">The claim no longer holds the move.</exception>
-    /// <exception cref="MoveRefusedException">The move is not at <c>delivering</c>, a transfer is not one it made, or its word was disposed otherwise.</exception>
+    /// <exception cref="MoveRefusedException">The move is not at <c>delivering</c>, a transfer is not one it made, or its word is disposed otherwise.</exception>
     public MoveRecord Sent(MoveClaim claim, IReadOnlyCollection<string> transfers)
     {
         using var store = Open();
@@ -248,7 +247,7 @@ public sealed class MoveStore(
 
     /// <summary>
     /// One word's disposition written inside the claim's transaction, its claim named in the update's own condition: unchanged where it is
-    /// already that one, refused where the move made no such transfer or its word was disposed otherwise.
+    /// already that one, refused where the move made no such transfer or its word is disposed otherwise.
     /// </summary>
     private static void Dispose(DesktopWrite write, MoveClaim claim, string transfer, string disposition, string at)
     {
@@ -269,11 +268,11 @@ public sealed class MoveStore(
         if (changed != 1) throw new MoveClaimLostException(claim, "its word's row changed under the write");
     }
 
-    // ——— The destination's standing move, and the person's press (part 3; §3.3).
+    // ——— The destination's standing move, and the person's press.
 
     /// <summary>
     /// The standing move whose open made <paramref name="destination"/>, or null: none stands, or the home has no store. While it stands the
-    /// destination takes no move of its own (§3.1's <c>Never</c>), which <see cref="Decide"/> answers under the write lock as the index answers
+    /// destination takes no move of its own (the course's <c>Never</c>), which <see cref="Decide"/> answers under the write lock as the index answers
     /// the record left's.
     /// </summary>
     public MoveRecord? StandingTo(string destination) =>
@@ -285,8 +284,8 @@ public sealed class MoveStore(
             null);
 
     /// <summary>
-    /// The person's press closing a hold <c>resolved</c> through one of its doors (§3.3), without its claim: one guarded update of the move
-    /// while it is held, the claim left as it was. A held move takes no effect, no mark and no phase but its close, so nothing a claim fences
+    /// The person's press closing a hold <c>resolved</c> through one of its doors, without its claim: one guarded update of the move
+    /// while it is held, the claim left as it stands. A held move takes no effect, no mark and no phase but its close, so nothing a claim fences
     /// interleaves with it, and the executor's own close after is a phase written again. A move not held is answered as it stands, nothing
     /// written; one the store does not hold is null.
     /// </summary>
@@ -320,7 +319,7 @@ public sealed class MoveStore(
     // ——— The effect mark.
 
     /// <summary>
-    /// Mark an external effect before it is made (§13.4 step 2), under the claim's check: refused where the move has ended or is held, and
+    /// Mark an external effect before it is made, under the claim's check: refused where the move has ended or is held, and
     /// where the last effect it marked has no outcome, which is a taker's hold and never made again by itself.
     /// </summary>
     public MoveRecord MarkEffect(MoveClaim claim, string effect)
@@ -385,7 +384,7 @@ public sealed class MoveStore(
                 ("$move", move)),
             []);
 
-    // ——— Deleted with the record (§3.3, through the workplace's port).
+    // ——— Deleted with the record (through the workplace's port).
 
     /// <summary>Which of these records left the store holds a move of; none for a home with no store, which this never makes.</summary>
     public IReadOnlyList<string> Holding(IReadOnlyCollection<string> sessions) =>
@@ -421,7 +420,7 @@ public sealed class MoveStore(
 
     IReadOnlyList<string> IWorkplaceMoveRecords.ForgetMoves(IReadOnlyCollection<string> sessions) => Forget(sessions);
 
-    // ——— The runs, and a quiet move's telling (part 2; §19.1 points 3 and 4).
+    // ——— The runs, and a quiet move's telling.
 
     /// <summary>This store's run recorded in <c>store_runs</c> with no family's write, so another process reading the runs finds it.</summary>
     public void Enter()
@@ -449,9 +448,9 @@ public sealed class MoveStore(
             []);
 
     /// <summary>
-    /// Whether this caller is the one to say <paramref name="move"/> quiet for the phase moment <paramref name="since"/> (§19.1 point 4): one
-    /// guarded update, under the write lock, of the move as it was read, at that phase and claim, and not yet said for that moment. True for
-    /// exactly one caller across every process on the home; false where another said it, or the move moved since it was read. It writes the
+    /// Whether this caller is the one to say <paramref name="move"/> quiet for the phase moment <paramref name="since"/>: one
+    /// guarded update, under the write lock, of the move as read, at that phase and claim, and not yet said for that moment. True for
+    /// exactly one caller across every process on the home; false where another said it, or the move moved since being read. It writes the
     /// telling alone, never a phase, a mark or the claim, which stay the claim's.
     /// </summary>
     public bool SayQuiet(MoveRecord move, string since)

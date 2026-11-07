@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEW2 (D113): the review and the preview of a session whose landing tidied its tree away. The review says where
+/// The review and the preview of a session whose landing tidied its tree away. The review says where
 /// the work landed and reads its changes from the landed branch in the repository's own checkout; the preview reads a
 /// file from that branch; a branch gone since is said, with whether its work reads on the line. Real git throughout,
 /// in scratch repositories, and each reads without writing: the checkout's status is the same before and after.
@@ -42,7 +42,7 @@ public sealed class LandedReviewTests : LandedFixture
         Assert.Equal(status, await GitAsync(root, "status", "--porcelain", "--branch"));
     }
 
-    /// <summary>A landing recorded before its `from` was (WSR6) is read from where its branch leaves the line.</summary>
+    /// <summary>A landing recorded without its `from` is read from where its branch leaves the line.</summary>
     [Fact]
     public async Task A_landing_with_no_recorded_start_is_read_from_where_its_branch_leaves_the_line()
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-x, the Workplace-names-Review cut: the behaviour the cut keeps, written against the surface that exists on both sides
+/// The Workplace-names-Review cut: the behaviour the cut keeps, written against the surface that exists on both sides
 /// of it (the words the workplace and the review spell alike, the system shell a generated gate's command runs through, and what a landing
 /// gate says: its refusal, its plan and its log line), so the same cases pass on the base and after it. The cases that reach a moved class
 /// through a new seam are <c>WorkplaceReviewPortsTests</c>'.

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The relay's copy and its verb's own classes (EVENTHOOK1c; the event hook design §6.1 step 0, §9's 1c proofs): a copy laid out whole
+/// The relay's copy and its verb's own classes: a copy laid out whole
 /// under the home's <c>bin</c> entry and named by its build, one without its <c>in-use</c> file laid out again, a build a relay holds kept
 /// and one none holds removed by a rename, a removal stopped partway deleted by the next, a junction said and left, a relay refused from
 /// anywhere but a whole copy; the words, refused by fixed sentences; out of a role's terminal and holding no lease.

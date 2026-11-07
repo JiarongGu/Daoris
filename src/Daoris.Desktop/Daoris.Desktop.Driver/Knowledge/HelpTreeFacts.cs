@@ -3,26 +3,26 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The trees half of <see cref="HelpFacts"/> (FACTSPLIT1b): each repository's part of what the ended sessions' trees hold, its
-/// judgement and its reading, and the door that reads the Sessions list's look with those trees merged in (PUSH1c1). It owns no state
+/// The trees half of <see cref="HelpFacts"/>: each repository's part of what the ended sessions' trees hold, its
+/// judgement and its reading, and the door that reads the Sessions list's look with those trees merged in. It owns no state
 /// but the one wait for the parts' first judgement of each facts' life; the topic names and the parts live on <see cref="HelpFacts"/>.
 /// </summary>
 internal static class HelpTreeFacts
 {
-    /// <summary>How many of a part's trees are read at once (TREELOOK1): each start still passes the background's places (PARALLEL1d).</summary>
+    /// <summary>How many of a part's trees are read at once: each start still passes the background's places.</summary>
     public const int AtOnce = 4;
 
     /// <summary>
-    /// The longest a door reading the trees waits for the parts' first judgement, once in the facts' life (PUSH1c1): a part's walk,
-    /// two at once, against the 24.9 s the whole walk took on a loaded machine (HELPSTART1).
+    /// The longest a door reading the trees waits for the parts' first judgement, once in the facts' life: a part's walk,
+    /// two at once, against the 24.9 s the whole walk took on a loaded machine.
     /// </summary>
     public static readonly TimeSpan First = TimeSpan.FromSeconds(10);
 
-    /// <summary>The one wait for the parts' first judgement of each facts' life, which every door then awaits (PUSH1c1).</summary>
+    /// <summary>The one wait for the parts' first judgement of each facts' life, which every door then awaits.</summary>
     private static readonly ConditionalWeakTable<MachineFacts, Task> FirstTrees = new();
 
     /// <summary>
-    /// What <paramref name="subject"/>'s part of the trees reads (FACTSPLIT1b): the look, and whose sessions' trees are its, a
+    /// What <paramref name="subject"/>'s part of the trees reads: the look, and whose sessions' trees are its, a
     /// repository's by its records' name, the rest's those of every repository with no checkout here. Null for a repository the
     /// answers do not name with a checkout here.
     /// </summary>
@@ -63,14 +63,14 @@ internal static class HelpTreeFacts
     }
 
     /// <summary>
-    /// One part of the trees read from <paramref name="home"/> (FACTSPLIT1b), as the module's judge reads it: each of the part's
+    /// One part of the trees read from <paramref name="home"/>, as the module's judge reads it: each of the part's
     /// sessions' trees that would be put to review or offered to land judged once with git, and no other tree.
     /// <paramref name="times"/> takes the walk's time and how many trees it asked, where a caller says them.
     /// </summary>
     /// <remarks>
-    /// TREELOOK1: a tree is walked again only where something its walk rests on moved since the home's last read of it, and asked one
+    /// A tree is walked again only where something its walk rests on moved since the home's last read of it, and asked one
     /// <c>git status</c> otherwise (<see cref="TreeReadMemo"/>); <see cref="AtOnce"/> trees at once. 145 kept trees took 45-110 s
-    /// one after another, past the part's bound. HELPNEWCHAT1: only a tree whose folder is still here, and not one moved aside under
+    /// one after another, past the part's bound. Only a tree whose folder is still here, and not one moved aside under
     /// the trees home's <c>.tidied</c>, is walked or counted (<see cref="TreeFolders.Walkable"/>); the rest are asked, holding nothing.
     /// </remarks>
     public static async Task<HelpTrees> ReadAsync(string home, HelpTreesPart part, CancellationToken ct, LookTimes? times = null)
@@ -80,11 +80,11 @@ internal static class HelpTreeFacts
 
     /// <summary>
     /// One part of the trees through <paramref name="judge"/>, a stand-in where a test hands one: each tree <paramref name="held"/> takes
-    /// that the part's sessions would put to review or offer to land, judged once, with the trees it asked (PUSH1c1).
+    /// that the part's sessions would put to review or offer to land, judged once, with the trees it asked.
     /// </summary>
     /// <param name="atOnce">How many trees are judged at once; one after another unless a caller says more.</param>
     /// <param name="walkable">
-    /// Which of the asked trees are judged and counted (HELPNEWCHAT1): every one unless a caller says; the rest are asked, holding nothing.
+    /// Which of the asked trees are judged and counted: every one unless a caller says; the rest are asked, holding nothing.
     /// </param>
     public static async Task<HelpTrees> ReadAsync(
         HelpTreesPart part, Func<string, bool> held, Func<string, CancellationToken, Task<TreeWork?>> judge, CancellationToken ct,
@@ -101,9 +101,9 @@ internal static class HelpTreeFacts
     }
 
     /// <summary>
-    /// <paramref name="look"/>, read by a door without its trees (the Sessions list's, PUSH1c1, D182 point 4), with each tree it would put
+    /// <paramref name="look"/>, read by a door without its trees (the Sessions list's), with each tree it would put
     /// to review or offer to land as the parts judged it (<see cref="Judged"/>), so a window's tick, and every other window's, starts
-    /// no git. Never a tree's state that was never judged: one no part asked is walked here through <paramref name="walk"/>, as the door
+    /// no git. Never a tree's state that is never judged: one no part asked is walked here through <paramref name="walk"/>, as the door
     /// walked every tree before, and the facts' look is judged again at once where it is behind the door's, so its part asks it next.
     /// </summary>
     /// <remarks>
@@ -146,7 +146,7 @@ internal static class HelpTreeFacts
     }
 
     /// <summary>
-    /// Each of <paramref name="asked"/> as the parts judged it (PUSH1c1): the work of a tree a part asked, keyed by
+    /// Each of <paramref name="asked"/> as the parts judged it: the work of a tree a part asked, keyed by
     /// <see cref="KnowledgeWorkOrders.Current.Normal"/>, none for one it asked and git could not speak for, and the trees no part asked.
     /// </summary>
     public static HelpTreesJudged Judged(MachineFactsSnapshot facts, IReadOnlyList<string> asked)
@@ -164,7 +164,7 @@ internal static class HelpTreeFacts
         return new HelpTreesJudged(trees, notJudged);
     }
 
-    /// <summary>Until the look and every part the answers name were judged, or <paramref name="bound"/> passed (PUSH1c1).</summary>
+    /// <summary>Until the look and every part the answers name were judged, or <paramref name="bound"/> passed.</summary>
     private static async Task FirstAsync(MachineFacts facts, TimeSpan bound)
     {
         var read = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -194,7 +194,7 @@ internal static class HelpTreeFacts
         facts.Value<HelpMachineWhole>(HelpFacts.Machine, HelpFacts.Whole) is { } whole && HelpFacts.SessionsOf(facts, whole) is not null;
 
     /// <summary>
-    /// Whether the facts' look is behind a door's (PUSH1c1): every part judged, and one of <paramref name="notJudged"/> a tree it would not
+    /// Whether the facts' look is behind a door's: every part judged, and one of <paramref name="notJudged"/> a tree it would not
     /// judge. One it names is its part's to ask, which the look landing asked at once.
     /// </summary>
     private static bool Behind(MachineFactsSnapshot facts, Func<string, bool> held, IReadOnlyList<string> notJudged)

@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rules a partner's session is handed (COAGENT1b, D199 point 4; the co-agent design §7.4), over the ones every session is: where its
+/// The rules a partner's session is handed, over the ones every session is: where its
 /// agent takes Daoris's rules, its connector offers the reading tools, its lead's line and <c>partner_answer</c>, and denies every other
 /// tool; a push is denied whatever the person's defaults say. It writes, in its copy alone, which the tree guard holds it to.
 /// </summary>
 /// <remarks>
 /// A second layer, never the only one: the connector's host refuses the same tools by the record's work before they run
 /// (the service's <c>CallTable</c>, whose partner row this is), and an agent that takes no rules, as Codex does not, is held by its copy
-/// and its measured enforcement mechanism alone (§3.3).
+/// and its measured enforcement mechanism alone.
 /// </remarks>
 public static class PartnerPermissions
 {

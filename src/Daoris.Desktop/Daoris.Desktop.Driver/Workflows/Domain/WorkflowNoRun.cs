@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Why no run is read for what was asked (CHATFLOW1a; the chat-flow design §10, D157's CHATFLOW1 note): a code the page words in en and
+/// Why no run is read for what is asked: a code the page words in en and
 /// zh, and its English sentence, which the terminal says. The page's en catalogue says the same words, and both doors are held to the
-/// twin table's <c>none</c> rows (<c>fixtures/workflow-run-said.json</c>, D50).
+/// twin table's <c>none</c> rows (<c>fixtures/workflow-run-said.json</c>).
 /// </summary>
 /// <remarks>
-/// A record's id and a workflow's id are set in backticks, as every name from a record is. No path is ever said (D48 §7).
+/// A record's id and a workflow's id are set in backticks, as every name from a record is. No path is ever said.
 /// </remarks>
 public static class WorkflowNoRun
 {
@@ -22,10 +22,10 @@ public static class WorkflowNoRun
     /// <summary>A chat whose tree is not one this home opened: it works in the person's checkout.</summary>
     public const string ChatCheckout = "chat-checkout";
 
-    /// <summary>A chat in a tree of its own, before a conversation's work has a run of its own (CHATFLOW1c).</summary>
+    /// <summary>A chat in a tree of its own, before a conversation's work has a run of its own.</summary>
     public const string ChatOwnTree = "chat-own-tree";
 
-    /// <summary>A chat whose tree is gone and was never bound.</summary>
+    /// <summary>A chat whose tree is gone and never bound.</summary>
     public const string ChatTreeGone = "chat-tree-gone";
 
     /// <summary>Ask Daoris's record (<see cref="HelpRoom.Repository"/>).</summary>
@@ -46,7 +46,7 @@ public static class WorkflowNoRun
     /// <summary>The service did not answer, so nothing could be read.</summary>
     public const string Unanswered = "unanswered";
 
-    /// <summary>Every code, in the design's order.</summary>
+    /// <summary>Every code, in order.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
         NoSession, NoQuest, AskNoQuest, ChatCheckout, ChatOwnTree, ChatTreeGone, AskDaoris, Reviewer, Helper, Partner,

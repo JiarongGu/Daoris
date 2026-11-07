@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPERWAIT1 (D163's and D188's notes): the rules a driven session waiting on its own helper is read by, in process. An ask is its own
+/// The rules a driven session waiting on its own helper is read by, in process. An ask is its own
 /// while its agent made it, and open until it is refused or its answer is handed; a session ended waiting on its helper is completed by
 /// that code, with nothing waiting on it; and a go-ahead it asked and the person has not answered is a real question, never a wait on a helper.
 /// </summary>
@@ -38,7 +38,7 @@ public sealed class HelperWaitsTests
     }
 
     /// <summary>
-    /// COMMS1b (the comms design §13 point 3): a hand in flight, its attempt on file under the helper's key or an older build's, keeps the ask
+    /// A hand in flight, its attempt on file under the helper's key or an older build's, keeps the ask
     /// open, its answer on its way; only its answer handed, kept, waiting or settled, or a refusal settles it.
     /// </summary>
     [Fact]

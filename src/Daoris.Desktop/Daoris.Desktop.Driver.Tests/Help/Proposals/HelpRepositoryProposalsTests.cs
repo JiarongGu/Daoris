@@ -6,10 +6,10 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>repository</c> proposal (ENTRY1d1, D161's ENTRY1d note): a registered repository moved to a workspace on
+/// Ask Daoris's <c>repository</c> proposal: a registered repository moved to a workspace on
 /// this machine, judged against the registry as the service answers it and applied through the local host's own
 /// <c>POST /api/registry/{repository}/workspace</c>, the door the Manage drawer's *Move to workspace* uses. A move needs no
-/// path (D48 §7): it edits one field of the registry's row.
+/// path: it edits one field of the registry's row.
 /// </summary>
 public sealed class HelpRepositoryProposalsTests : HelpProposalsFixture
 {

@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR2: a repository's line is the repository's, and a person can set it. What the person set for the
+/// A repository's line is the repository's, and a person can set it. What the person set for the
 /// repository, then for its workspace, then the checkout's guess — read from one place by every door
 /// that grows or lands work. Real git for the doors, as the other tree tests use it.
 /// </summary>
@@ -61,7 +61,7 @@ public sealed class CanonicalLineTests : IDisposable
         Assert.Equal(new Line(null, LineSource.None), CanonicalLine.Choose(config, "game", "forge", null));
     }
 
-    /// <summary>A repository in no workspace is in the `default` one (D48 §2), and its line is found under that name.</summary>
+    /// <summary>A repository in no workspace is in the `default` one, and its line is found under that name.</summary>
     [Fact]
     public void A_repository_in_no_workspace_takes_the_default_workspaces_line()
     {
@@ -101,7 +101,7 @@ public sealed class CanonicalLineTests : IDisposable
 
         var cleared = config.WithLine("engine", null).WithWorkspaceLine("aurora", null);
         var written = cleared.ToJson();
-        // FABRIC-GRAPH1's review: an entry the reader could not take (`odd`, a name git would refuse) is the person's text, kept as it
+        // An entry the reader cannot take (`odd`, a name git would refuse) is the person's text, kept as it
         // stands and still not read; only what the edit changed goes.
         Assert.Contains("\"odd\": \"has space\"", written, StringComparison.Ordinal);
         Assert.DoesNotContain("engine", written, StringComparison.Ordinal);
@@ -157,9 +157,9 @@ public sealed class CanonicalLineTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A line only on origin is compared as origin has it. `git log develop..` fails where there is
-    /// no local `develop`, and its empty output read as "nothing unmerged": the tree went as if its
-    /// work had landed, and the merge said there was nothing to merge.
+    /// A line only on origin is compared as origin has it. `git log develop..` fails where there is
+    /// no local `develop`, and its empty output would read as "nothing unmerged": the tree would go as if its
+    /// work had landed, and the merge would say there is nothing to merge.
     /// </summary>
     [Fact]
     public async Task Work_on_a_line_only_origin_has_is_not_taken_for_landed()
@@ -243,7 +243,7 @@ public sealed class CanonicalLineTests : IDisposable
         Assert.DoesNotContain("the work", await GitAsync(root, "log", "main", "--oneline"));
     }
 
-    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): no test here reads its first commit.</summary>
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no test here reads its first commit.</summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task CommitAsync(string tree, string file, string content, string message)

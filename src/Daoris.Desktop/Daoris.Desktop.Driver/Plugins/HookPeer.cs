@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The hook wire (D64 §4): JSON-RPC 2.0, one frame per line, over a plugin process's stdio — the
+/// The hook wire: JSON-RPC 2.0, one frame per line, over a plugin process's stdio — the
 /// framing <see cref="AcpSession"/> speaks, with the roles reversed. Daoris calls; the plugin answers.
 /// </summary>
 /// <remarks>
@@ -24,17 +24,17 @@ public sealed class HookPeer(
     string plugin,
     Action<string>? onLine = null,
     TimeSpan? patience = null,
-    // FABRIC-PERFORM1a (§C4): a frame longer than this, in UTF-8 bytes, is dropped unread. A process's stdout is read with the bound
+    // A frame longer than this, in UTF-8 bytes, is dropped unread. A process's stdout is read with the bound
     // HookProcess.FrameLimit names for its plugin; null reads whole lines, as a test's stand-in that gives only lines is read.
     int? frameLimit = null,
-    // The clock the grace of a shutdown is read on (TESTCLOCK2): the machine's, or a test's that it moves itself.
+    // The clock the grace of a shutdown is read on: the machine's, or a test's that it moves itself.
     TimeProvider? clock = null) : IHookChannel
 {
     /// <summary>The wire version this host speaks. Stated in `initialize`; a plugin answering another is refused.</summary>
     public const int ProtocolVersion = 1;
 
     /// <summary>
-    /// The longest frame read from a plugin that speaks no work point (FABRIC-PERFORM1a, round 2): far past any answer its points read — a
+    /// The longest frame read from a plugin that speaks no work point: far past any answer its points read — a
     /// decision, a landing's sentence and link, a pull request's state — so none is lost, and still a bound on what one line can hold.
     /// </summary>
     public const int AnswerBytes = 4 * 1024 * 1024;
@@ -50,7 +50,7 @@ public sealed class HookPeer(
     private int _nextId;
     private volatile bool _alive = true;
 
-    // FABRIC-PERFORM1a: where `work/step` goes (null: nowhere), and the requests in flight at once.
+    // Where `work/step` goes (null: nowhere), and the requests in flight at once.
     private volatile Action<JsonElement?>? _steps;
     private readonly SemaphoreSlim _calls = new(WorkBounds.CallsInFlight, WorkBounds.CallsInFlight);
 
@@ -64,8 +64,8 @@ public sealed class HookPeer(
     /// manifest declared, because a manifest is a claim and the process is the fact.
     /// </summary>
     /// <param name="patience">How long the handshake waits, where it is not the peer's: the kit's trial waits its points' own
-    /// patience here, however short a patience it gives the points' calls (PLUGKIT2).</param>
-    /// <param name="events">For a plugin on <see cref="HookPoints.Event"/>: the run, the grammar, the last <c>seq</c> minted and the build (§4.1).</param>
+    /// patience here, however short a patience it gives the points' calls.</param>
+    /// <param name="events">For a plugin on <see cref="HookPoints.Event"/>: the run, the grammar, the last <c>seq</c> minted and the build.</param>
     public async Task InitializeAsync(
         string home, string data, IReadOnlyList<string> declared, CancellationToken ct, TimeSpan? patience = null, WorkEventHandshake? events = null)
     {
@@ -76,9 +76,9 @@ public sealed class HookPeer(
             : new { protocolVersion = ProtocolVersion, plugin, home, data, points = declared, events = new { run = events.Run, grammar = events.Grammar, seq = events.Seq, build = events.Build } };
         var answer = await RequestAsync("initialize", parameters, ct, patience).ConfigureAwait(false);
 
-        // 🔴 Every read checks the shape first (REV3): a property read on the wrong kind throws
-        // InvalidOperationException, which is not a DriverException, so it escaped the tick's catch and
-        // killed every tick without naming the plugin.
+        // 🔴 Every read checks the shape first: a property read on the wrong kind throws
+        // InvalidOperationException, which is not a DriverException, so it would escape the tick's catch and
+        // kill every tick without naming the plugin.
         if (answer.ValueKind != JsonValueKind.Object)
         {
             throw Unreadable(
@@ -109,11 +109,11 @@ public sealed class HookPeer(
                         + "a manifest is what a person reads before enabling a plugin, so the process may not exceed it.");
                 }
 
-                // The work points (FABRIC-PERFORM1a) are this build's too, spoken only by the lease's loop.
+                // The work points are this build's too, spoken only by the lease's loop.
                 if (!HookPoints.All.Contains(name, StringComparer.Ordinal) && !HookPoints.Work.Contains(name, StringComparer.Ordinal))
                 {
-                    // PLUGHOOK1a (D148 point 8): a point is additive, so a plugin that grew one keeps the points this build has.
-                    // Refusing it whole made an older build lose the plugin's landing. Said once, and never asked there.
+                    // A point is additive, so a plugin that grew one keeps the points this build has; refusing it whole
+                    // would make an older build lose the plugin's landing. Said once, and never asked there.
                     onLine?.Invoke(
                         $"plugin `{plugin}` listens on `{name}`, which is not a point this build has "
                         + $"({string.Join(", ", HookPoints.All)}): it is not asked there.");
@@ -126,7 +126,7 @@ public sealed class HookPeer(
 
         Points = points;
 
-        // FABRIC-PERFORM1a (§D6): the capabilities it names that this build knows; one it grew is passed over, as a point is.
+        // The capabilities it names that this build knows; one it grew is passed over, as a point is.
         var capabilities = new List<string>();
         if (answer.TryGetProperty("capabilities", out var named) && named.ValueKind == JsonValueKind.Array)
         {
@@ -167,16 +167,16 @@ public sealed class HookPeer(
     public async Task EndedAsync(object payload, CancellationToken ct) =>
         await RequestAsync($"hook/{HookPoints.SessionEnded}", payload, ct).ConfigureAwait(false);
 
-    /// <summary>An observation (STATEHUB1g): the answer is waited for, as <see cref="EndedAsync"/>'s is, and never read.</summary>
+    /// <summary>An observation: the answer is waited for, as <see cref="EndedAsync"/>'s is, and never read.</summary>
     public async Task ChangedAsync(object payload, CancellationToken ct) =>
         await RequestAsync($"hook/{HookPoints.StateChanged}", payload, ct).ConfigureAwait(false);
 
-    /// <summary>One <c>work/event</c> frame (EVENTHOOK1b): the answer is waited for, so the next waits on it, and never read.</summary>
+    /// <summary>One <c>work/event</c> frame: the answer is waited for, so the next waits on it, and never read.</summary>
     public async Task EventAsync(object frame, CancellationToken ct) =>
         await RequestAsync($"hook/{HookPoints.Event}", frame, ct).ConfigureAwait(false);
 
     /// <summary>
-    /// The query's frame (PLUGHOOK1a, design §2.2), and its answer read by shape (<see cref="PullRequestAnswers.Read"/>): a
+    /// The query's frame, and its answer read by shape (<see cref="PullRequestAnswers.Read"/>): a
     /// state of the four, the full ids of both commits for a completed one, and the rest each its own shape or absent.
     /// Anything else is not an answer (<c>unreadable</c>), and never a state.
     /// </summary>
@@ -193,11 +193,11 @@ public sealed class HookPeer(
 
     public void Listen(Action<JsonElement?>? steps) => _steps = steps;
 
-    /// <summary>The awaited set (§C4): its answer is waited for, as an observation's is, and never read.</summary>
+    /// <summary>The awaited set: its answer is waited for, as an observation's is, and never read.</summary>
     public async Task WatchAsync(WorkWatchFrame frame, CancellationToken ct) =>
         await RequestAsync(WorkWire.WatchMethod, WorkWire.Watch(frame), ct).ConfigureAwait(false);
 
-    /// <summary>One attempt (§D6), its answer the receipt of this invocation and nothing else: anything other is unreadable.</summary>
+    /// <summary>One attempt, its answer the receipt of this invocation and nothing else: anything other is unreadable.</summary>
     public async Task PerformAsync(WorkPerformCall call, CancellationToken ct)
     {
         var answer = await InFlightAsync(WorkWire.PerformMethod, WorkWire.Perform(call), ct).ConfigureAwait(false);
@@ -209,7 +209,7 @@ public sealed class HookPeer(
         }
     }
 
-    /// <summary>What became of one attempt (§D6), read by shape (<see cref="WorkWire.ReadReconcileAnswer"/>): anything else is unreadable.</summary>
+    /// <summary>What became of one attempt, read by shape (<see cref="WorkWire.ReadReconcileAnswer"/>): anything else is unreadable.</summary>
     public async Task<WorkReconcileAnswer> ReconcileStepAsync(WorkReconcileCall call, CancellationToken ct)
     {
         var answer = await InFlightAsync(WorkWire.ReconcileMethod, WorkWire.Reconcile(call), ct).ConfigureAwait(false);
@@ -218,7 +218,7 @@ public sealed class HookPeer(
             + "`{ \"state\": \"done\" | \"not-started\" | \"running\" | \"failed\" | \"unknown\", \"outcome\": … }`, done and failed with their outcome.");
     }
 
-    /// <summary>One receipt's removal (FABRIC-PERFORM1d, §D3), read by shape (<see cref="WorkWire.ReadCleanupAnswer"/>): anything else is unreadable.</summary>
+    /// <summary>One receipt's removal, read by shape (<see cref="WorkWire.ReadCleanupAnswer"/>): anything else is unreadable.</summary>
     public async Task<WorkCleanupAnswer> CleanupAsync(WorkCleanupCall call, CancellationToken ct)
     {
         var answer = await InFlightAsync(WorkWire.CleanupMethod, WorkWire.Cleanup(call), ct).ConfigureAwait(false);
@@ -228,7 +228,7 @@ public sealed class HookPeer(
     }
 
     /// <summary>
-    /// A request among at most <see cref="WorkBounds.CallsInFlight"/> (FABRIC-PERFORM1a): one past them waits the peer's patience for a place,
+    /// A request among at most <see cref="WorkBounds.CallsInFlight"/>: one past them waits the peer's patience for a place,
     /// and is late where none comes, so a plugin that answers nothing holds four attempts, never every one Daoris has.
     /// </summary>
     private async Task<JsonElement> InFlightAsync(string method, object parameters, CancellationToken ct)
@@ -258,8 +258,8 @@ public sealed class HookPeer(
     }
 
     /// <summary>
-    /// Told to go, the write of <c>shutdown</c> given up when <paramref name="ct"/> is (FABRIC-PERFORM1a, round 2): a plugin that stopped
-    /// reading its stdin filled the pipe, and a write with no bound held whoever disposed it, and the process, for ever. Nothing is read after.
+    /// Told to go, the write of <c>shutdown</c> given up when <paramref name="ct"/> is: a plugin that stops
+    /// reading its stdin fills the pipe, and a write with no bound would hold whoever disposed it, and the process, for ever. Nothing is read after.
     /// </summary>
     public async Task ShutdownAsync(CancellationToken ct)
     {
@@ -309,7 +309,7 @@ public sealed class HookPeer(
         }
     }
 
-    /// <summary>A failure of the wire, marked with its kind for the machine log (PLUGUI1d); the sentence is unchanged.</summary>
+    /// <summary>A failure of the wire, marked with its kind for the machine log; the sentence is unchanged.</summary>
     private static DriverException Marked(string message, string kind) => PluginFailures.Mark(new DriverException(message), kind);
 
     private static DriverException Unreadable(string message) => Marked(message, PluginEvents.Unreadable);
@@ -360,8 +360,8 @@ public sealed class HookPeer(
                     if (await bounded.ReadAsync(ct).ConfigureAwait(false) is not { } read) break;
                     if (read.Text is not { } text)
                     {
-                        // FABRIC-PERFORM1a, round 2: an answer too long to read fails its call now, as the plugin's unreadable answer; it
-                        // was left to wait out its patience, and a landing's took its whole patience to say only that it was late.
+                        // An answer too long to read fails its call now, as the plugin's unreadable answer, rather than
+                        // waiting out its patience to say only that it is late.
                         if (read.Id is { } answered && !read.Method)
                         {
                             Fail(answered, Unreadable(
@@ -369,7 +369,7 @@ public sealed class HookPeer(
                             continue;
                         }
 
-                        // FABRIC-PERFORM1a (§C4): dropped unread. The lease's loop counts it and asks the plugin to send again what it
+                        // Dropped unread. The lease's loop counts it and asks the plugin to send again what it
                         // knows; a process nobody listens to says so under the plugin's name.
                         if (_steps is { } listening) listening(null);
                         else onLine?.Invoke($"a frame longer than {Size(limit!.Value)} was dropped unread.");
@@ -393,9 +393,9 @@ public sealed class HookPeer(
                     continue;
                 }
 
-                // PLUG8: a JSON value that is not an object, and an object that is neither an answer nor
-                // a request, are not frames either. A bare `42` threw InvalidOperationException from the
-                // property read below, which the catch does not name, and the wire ended.
+                // A JSON value that is not an object, and an object that is neither an answer nor
+                // a request, are not frames either. A bare `42` would throw InvalidOperationException from the
+                // property read below, which the catch does not name, and the wire would end.
                 var hasMethod = frame.ValueKind == JsonValueKind.Object && frame.TryGetProperty("method", out _);
                 if (frame.ValueKind != JsonValueKind.Object || (!hasMethod && !frame.TryGetProperty("id", out _)))
                 {
@@ -412,12 +412,12 @@ public sealed class HookPeer(
                     && frame.TryGetProperty("method", out var method) && method.ValueKind == JsonValueKind.String
                     && method.GetString() == WorkWire.StepMethod)
                 {
-                    // FABRIC-PERFORM1a (§C4): the one notification this wire takes, `work/step`, from a process that declared it and that
+                    // The one notification this wire takes, `work/step`, from a process that declared it and that
                     // the lease's loop listens to. Its sender is this process, whatever the frame says; what is believed of it is not decided here.
                     steps(frame.TryGetProperty("params", out var @params) ? @params : default(JsonElement));
                 }
                 // A request FROM a plugin is not a thing this wire has: there is nothing a plugin may
-                // ask the host for, by design (D64 §7) — so it is neither answered nor errored, and a
+                // ask the host for, by design — so it is neither answered nor errored, and a
                 // plugin that waits on one waits on itself. Any other notification is noise, and is ignored.
             }
         }

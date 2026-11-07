@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PROOF-UNREAD1 (the fabric events design §B7, "absent is never zero", D57): a content proof whose git read failed says it is
+/// A content proof whose git read failed says it is
 /// unread, never "not held" and never held. Git's answers are scripted through <see cref="WorkingTree.Answered"/>, so no process
 /// starts and each failed read (git missing, a ref that cannot be read, a timeout) is one fast case.
 /// </summary>
@@ -11,7 +11,7 @@ public sealed class ContentHoldsUnreadTests
 {
     private static readonly IReadOnlySet<string> NoHolders = new HashSet<string>();
 
-    /// <summary>git's command in <paramref name="args"/>: a diff is asked with <c>--no-optional-locks</c> before it (REVIEWLOCK1).</summary>
+    /// <summary>git's command in <paramref name="args"/>: a diff is asked with <c>--no-optional-locks</c> before it.</summary>
     private static string Verb(IReadOnlyList<string> args) => args[0] == "--no-optional-locks" ? args[1] : args[0];
 
     /// <summary>A repository whose line is <c>main</c>, one file changed on the branch that the line reads differently; <paramref name="fail"/> breaks one git ask.</summary>

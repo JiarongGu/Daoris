@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The asks not closed (HELP6), by id, so a delete of one made by mistake can name it. The quests are the
+/// The asks not closed, by id, so a delete of one made by mistake can name it. The quests are the
 /// family's <c>quest_list</c>; the asks are this machine's alone.
 /// </summary>
 internal sealed class HelpRoomAsks : IHelpRoomSection
@@ -33,5 +33,5 @@ internal sealed class HelpRoomAsks : IHelpRoomSection
     }
 }
 
-/// <summary>An ask not closed, as the room lists it (HELP6): by id, so a delete of one made by mistake can name it.</summary>
+/// <summary>An ask not closed, as the room lists it: by id, so a delete of one made by mistake can name it.</summary>
 public sealed record HelpAsk(string Id, string Sentence, string Workspace, string State, IReadOnlyList<string> Quests);

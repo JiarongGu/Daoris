@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A named version read as a graph (FABRIC-WORKFLOW2): its number, its identity (<see cref="WorkflowNamed.Digest"/>), and its
+/// A named version read as a graph: its number, its identity (<see cref="WorkflowNamed.Digest"/>), and its
 /// graph with the digest a run on it binds; or, with no graph, why it is unreadable.
 /// </summary>
 /// <param name="GraphDigest">What a run on the decoded graph binds (<see cref="WireRun.GraphDigest"/>): the graph version's own digest.</param>
@@ -12,14 +12,14 @@ public sealed record DecodedVersion(int Version, string? Identity, NodeGraph? Gr
 }
 
 /// <summary>
-/// The version a run is bound to, read as a graph (§E7, <i>one governs a run, by its binding</i>). Pure: it reads a version as
+/// The version a run is bound to, read as a graph. Pure: it reads a version as
 /// <see cref="WorkflowNamed"/> read it and writes nothing. A version that is not a graph is unreadable.
 /// </summary>
 public static class WorkflowGraphs
 {
     /// <summary>
     /// A stored version decoded: one that does not read in this build (<see cref="NamedVersion.Problem"/>) or holds no graph is
-    /// unreadable with that reason, kept as it is; a graph version is a graph already, judged where it was read, and its identity is its
+    /// unreadable with that reason; a graph version is a graph already, judged where it is read, and its identity is its
     /// own digest, which is what a run on it binds.
     /// </summary>
     public static DecodedVersion Decode(NamedVersion version) =>
@@ -28,9 +28,8 @@ public static class WorkflowGraphs
             : new DecodedVersion(version.Version, null, null, null, version.Problem ?? $"v{version.Version}: it does not read.");
 
     /// <summary>
-    /// The decoded version a run is bound to (D157 §5.1): null under Current. Its identity is the binding's digest; a file that does not
-    /// read, a version it no longer holds, or one whose identity is not the binding's reads as unreadable, and the run cannot start on it
-    /// (D157 §5.2).
+    /// The decoded version a run is bound to: null under Current. Its identity is the binding's digest; a file that does not
+    /// read, a version it does not hold, or one whose identity is not the binding's reads as unreadable, and the run cannot start on it.
     /// </summary>
     public static DecodedVersion? ForRun(NamedWorkflowRead workflow, WorkflowRunBinding binding)
     {

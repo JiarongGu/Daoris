@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The bounds <c>driver.json</c>'s <c>keep</c> is read within (KEEP1d, KEEP1f, KEEP1g; FOUNDATION1 mod-iii): the days each kind's rule may
+/// The bounds <c>driver.json</c>'s <c>keep</c> is read within: the days each kind's rule may
 /// hold and the floor's size and share, which a value out of is not read. The kinds' table (<see cref="KeepKinds"/>) and the floor's
 /// policy (<see cref="FloorPolicy"/>) answer through them, so a bound is said once.
 /// </summary>
@@ -33,7 +33,7 @@ public static class KeepKey
     /// <summary>The oldest age finished history may be cleared at.</summary>
     public const int HistoryMaxDays = 3650;
 
-    /// <summary>The fewest GB the person may set a kind's size limit to (KEEPSIZE1d).</summary>
+    /// <summary>The fewest GB the person may set a kind's size limit to.</summary>
     public const int PartMinGb = 1;
 
     /// <summary>The most GB a kind's size limit may hold.</summary>
@@ -56,10 +56,10 @@ public static class KeepKey
 }
 
 /// <summary>
-/// The person's keep rules (KEEP1d, D195 point 2; the cleanup design §2.2): <c>driver.json</c>'s <c>keep</c>, a standing choice in one
-/// object, each key absent meaning its kind's default in <see cref="KeepKinds"/>. This row's kinds: the set-aside folders' days and
-/// <c>whole</c>, the downloads' days or <c>never</c>, the logs' days, history's age (KEEP1g), none by default, and the free-space floor
-/// (KEEP1f): a size in GB, a share of the volume, or <c>off</c>. A key this build does not know stays where it stands
+/// The person's keep rules: <c>driver.json</c>'s <c>keep</c>, a standing choice in one
+/// object, each key absent meaning its kind's default in <see cref="KeepKinds"/>. Its kinds: the set-aside folders' days and
+/// <c>whole</c>, the downloads' days or <c>never</c>, the logs' days, history's age, none by default, and the free-space floor:
+/// a size in GB, a share of the volume, or <c>off</c>. A key this build does not know stays where it stands
 /// (<see cref="JsonKeeping"/>).
 /// </summary>
 /// <remarks>
@@ -83,31 +83,31 @@ public sealed record KeepChoices
     /// <summary>The downloads' <c>never</c>: none goes by its days, the press alone.</summary>
     public bool DownloadsNever { get; init; }
 
-    /// <summary>The set-aside folders' size limit in GB (KEEPSIZE1d), or null for the default.</summary>
+    /// <summary>The set-aside folders' size limit in GB, or null for the default.</summary>
     public int? SetAsideGb { get; init; }
 
-    /// <summary>The downloads' size limit in GB (KEEPSIZE1d), or null for the default.</summary>
+    /// <summary>The downloads' size limit in GB, or null for the default.</summary>
     public int? DownloadsGb { get; init; }
 
-    /// <summary>The browser's caches' size limit in GB (KEEPSIZE1e), or null for the default.</summary>
+    /// <summary>The browser's caches' size limit in GB, or null for the default.</summary>
     public int? BrowserCacheGb { get; init; }
 
-    /// <summary>The allowance over the whole in GB (KEEPSIZE1), or null for the default.</summary>
+    /// <summary>The allowance over the whole in GB, or null for the default.</summary>
     public int? AllowanceGb { get; init; }
 
     /// <summary>The machine log's days, or null for the default thirty.</summary>
     public int? LogsDays { get; init; }
 
-    /// <summary>Finished history's age in days (KEEP1g), or null for the default: <c>never</c>, the person's clear alone.</summary>
+    /// <summary>Finished history's age in days, or null for the default: <c>never</c>, the person's clear alone.</summary>
     public int? HistoryDays { get; init; }
 
-    /// <summary>The floor as a size, in GB (KEEP1f), or null; at most half of each volume it is read on (<see cref="FloorPolicy.Of"/>).</summary>
+    /// <summary>The floor as a size, in GB, or null; at most half of each volume it is read on (<see cref="FloorPolicy.Of"/>).</summary>
     public int? FloorGb { get; init; }
 
-    /// <summary>The floor as a share of each volume, in percent (KEEP1f), or null.</summary>
+    /// <summary>The floor as a share of each volume, in percent, or null.</summary>
     public int? FloorPercent { get; init; }
 
-    /// <summary>No floor (KEEP1f): Daoris frees nothing early, and says nothing of the free space in <i>What needs you</i>.</summary>
+    /// <summary>No floor: Daoris frees nothing early, and says nothing of the free space in <i>What needs you</i>.</summary>
     public bool FloorOff { get; init; }
 
     /// <summary>No choice made: every kind at its default.</summary>
@@ -158,7 +158,7 @@ public sealed record KeepChoices
         if (Kind(keep, "logs") is { } logs) choices = choices with { LogsDays = Days(logs, KeepKey.LogsMinDays, KeepKey.LogsMaxDays) };
         // `history.days` written null is `never`, its default, so it reads as none.
         if (Kind(keep, "history") is { } history) choices = choices with { HistoryDays = Days(history, KeepKey.HistoryMinDays, KeepKey.HistoryMaxDays) };
-        // KEEP1f: one of `off`, a size or a share; a value out of its bounds is not read, so the floor keeps its default.
+        // The floor is one of `off`, a size or a share; a value out of its bounds is not read, so the floor keeps its default.
         if (Kind(keep, "floor") is { } floor)
         {
             if (floor.TryGetProperty("off", out var off) && off.ValueKind == JsonValueKind.True) choices = choices with { FloorOff = true };

@@ -3,7 +3,7 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a layer run's session runs beside itself (CONSOLE3c), kept where someone watches its console: the door's streams beside
+/// What a layer run's session runs beside itself, kept where someone watches its console: the door's streams beside
 /// (<see cref="LayerRegistration.Beside"/>), each child's and task's opened and ended by its reading, and each event a child said (one whose
 /// <c>ParentCallId</c> names the call that spawned it) shown on that child's stream through a translation of its own, never on the session's
 /// console or in its record, as the native reader takes a child's frames.
@@ -18,7 +18,7 @@ internal sealed class LayerStreams(IStreamsReader beside, Func<LayerReadings> tr
     /// <summary>A child's or a task's start or end, as its reading: its stream opened or ended.</summary>
     public void Read(WireReading reading) => beside.Read(reading);
 
-    /// <summary>True when the event was a child's, said on its stream, so the session's translation never reads it.</summary>
+    /// <summary>True when the event is a child's, said on its stream, so the session's translation never reads it.</summary>
     public bool Take(AgentStreamEvent evt)
     {
         if (evt is AgentTaskOutputFile { TaskId: { Length: > 0 } task, Path: { Length: > 0 } path }) beside.Followed(task, path);

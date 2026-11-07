@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin's health (PLUGUI1d, D119 §2): five states, decided by the loop's own record in the process that
+/// A plugin's health: five states, decided by the loop's own record in the process that
 /// runs the loop, and read by a terminal from the machine log's last word. One table of cases holds both
 /// readings: every row is played once into the record and the log together, and the two must agree.
 /// </summary>
@@ -109,7 +109,7 @@ public sealed class PluginHealthTests : IDisposable
         }
     }
 
-    /// <summary>A terminal says the state is the log's, and when and from which process its last word came (D119 §2).</summary>
+    /// <summary>A terminal says the state is the log's, and when and from which process its last word came.</summary>
     [Fact]
     public void The_logs_reading_says_when_its_last_word_was_and_which_process_said_it()
     {

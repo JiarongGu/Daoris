@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One entry of an actor's order (D205 §3.1): an agent, and its model and effort in the tool's own words; null is account default.</summary>
+/// <summary>One entry of an actor's order: an agent, and its model and effort in the tool's own words; null is account default.</summary>
 public sealed record ActorChoice(string Agent, string? Model = null, string? Effort = null)
 {
     /// <summary>The entry in the terminal's words: <c>agent model|- effort|-</c>.</summary>
@@ -10,13 +10,13 @@ public sealed record ActorChoice(string Agent, string? Model = null, string? Eff
 }
 
 /// <summary>
-/// The actors' key as <c>driver.json</c> keeps it, <c>actors</c> (D205 §3.1, MODELROLE1c; FOUNDATION1 mod-iii): the ids it may hold, what
+/// The actors' key as <c>driver.json</c> keeps it, <c>actors</c>: the ids it may hold, what
 /// an actor's order may be, and its reading and writing by the settings' own parser. What an order means, its effective reading and its
 /// write-through, stays with the actors (<see cref="ActorChoices"/>), which answers through this for what it shares.
 /// </summary>
 public static class ActorKey
 {
-    /// <summary>The nine actors' wire ids, in the screen's order (§2.2).</summary>
+    /// <summary>The nine actors' wire ids, in the screen's order.</summary>
     public static IReadOnlyList<string> Ids { get; } = ["build", "design", "intake", "opinion", "helper", "partner", "brainstorm", "ask-daoris", "chat"];
 
     /// <summary>The most choices an actor holds: the most voices a brainstorm takes (<c>BrainstormDesk.MostAgents</c>).</summary>
@@ -56,7 +56,7 @@ public static class ActorKey
             for (var j = 0; j < i; j++)
             {
                 if (choices[j] == choice) return $"choice {i + 1} is choice {j + 1} again: no two choices are the same.";
-                // Brainstorm's entries are voices that run together (§4.4): two of one agent would be one voice.
+                // Brainstorm's entries are voices that run together: two of one agent would be one voice.
                 if (actor == "brainstorm" && string.Equals(choices[j].Agent, choice.Agent, StringComparison.OrdinalIgnoreCase))
                 {
                     return $"brainstorm's choices are voices, one each: choice {i + 1} names `{choice.Agent}` as choice {j + 1} does.";

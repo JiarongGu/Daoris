@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris session list</c>' list through the running Daoris (RPCOPEN1, RPC1e, the terminal RPC design §7.2 and §7.3): its own
+/// <c>daoris session list</c>' list through the running Daoris: its own
 /// <c>SESSION_GROUPS</c> look, answered as lines the verb prints, and this process's own look where none answers, both from
 /// <see cref="SessionsCommand.ListLines"/>.
 /// </summary>
@@ -73,7 +73,7 @@ public sealed class SessionsThroughInstanceTests
     }
 
     /// <summary>
-    /// RPC1c: <c>sessions archive</c> and <c>unarchive</c> are the person's presses, sent to the running Daoris, which shows them in its
+    /// <c>sessions archive</c> and <c>unarchive</c> are the person's presses, sent to the running Daoris, which shows them in its
     /// window; the terminal says it waits, then prints the lines the confirmed press answers, which are the alone path's words
     /// (<see cref="SessionArchive.ArchiveSaid"/>), and this process reads and writes nothing.
     /// </summary>
@@ -103,7 +103,7 @@ public sealed class SessionsThroughInstanceTests
         Assert.Equal($$"""{"ids":["s1a2b3c4"],"archived":{{(archived ? "true" : "false")}},"said":true}""", press.GetProperty("payload").GetRawText());
     }
 
-    /// <summary>RPC1c: refused in the window, the archive is the verb's exit 1 with the instance's sentence, and nothing is archived here.</summary>
+    /// <summary>Refused in the window, the archive is the verb's exit 1 with the instance's sentence, and nothing is archived here.</summary>
     [Fact]
     public async Task An_archive_the_person_refuses_in_the_window_is_exit_1_and_archives_nothing()
     {
@@ -127,7 +127,7 @@ public sealed class SessionsThroughInstanceTests
     private const string Id = "s1a2b3c4";
 
     /// <summary>
-    /// RPC1d: each of the other sessions verbs, the ask it reads, the person's route it sends and the payload it sends it with. The
+    /// Each of the other sessions verbs, the ask it reads, the person's route it sends and the payload it sends it with. The
     /// payload is the route's own, beside <c>said: true</c>, which asks the route for the lines the verb prints.
     /// </summary>
     private static (SessionsAsk Ask, string Route, string Payload) Verb(string name) => name switch
@@ -157,7 +157,7 @@ public sealed class SessionsThroughInstanceTests
     };
 
     /// <summary>
-    /// RPC1d: the sessions verbs that press are the person's presses, sent to the running Daoris, which shows each in its window; the
+    /// The sessions verbs that press are the person's presses, sent to the running Daoris, which shows each in its window; the
     /// terminal says it waits, then prints the lines the confirmed press answers (the alone path's words), and this process reads and
     /// writes nothing.
     /// </summary>
@@ -200,7 +200,7 @@ public sealed class SessionsThroughInstanceTests
     }
 
     /// <summary>
-    /// COWORKUX1d: <c>helper --after --to-me</c> sends both in the press, and <c>pass</c> names the session that asked beside its ask, found
+    /// <c>helper --after --to-me</c> sends both in the press, and <c>pass</c> names the session that asked beside its ask, found
     /// in the home's own files, so the press is the page's <i>Pass to the lead</i>.
     /// </summary>
     [Fact]
@@ -225,7 +225,7 @@ public sealed class SessionsThroughInstanceTests
         Assert.Equal($$"""{"ask":"{{held}}","session":"s1a2b3c4","said":true}""", standIn.Presses[1].GetProperty("payload").GetRawText());
     }
 
-    /// <summary>RPC1d: refused in the window, each verb is exit 1 with the instance's sentence, and this process did nothing.</summary>
+    /// <summary>Refused in the window, each verb is exit 1 with the instance's sentence, and this process did nothing.</summary>
     [Theory]
     [InlineData("stop", "refused")]
     [InlineData("stop-turn", "expired")]
@@ -260,7 +260,7 @@ public sealed class SessionsThroughInstanceTests
         Assert.Single(standIn.Presses);
     }
 
-    /// <summary>RPC1d: a file named to a say that is not one is said before anything is sent, as the alone path says it.</summary>
+    /// <summary>A file named to a say that is not one is said before anything is sent, as the alone path says it.</summary>
     [Fact]
     public async Task A_say_naming_a_missing_file_is_told_so_before_anything_is_sent()
     {
@@ -279,7 +279,7 @@ public sealed class SessionsThroughInstanceTests
         Assert.Empty(standIn.Presses);
     }
 
-    /// <summary>RPC1d: a say with files sends their paths, which the Daoris on this machine reads as the alone path does.</summary>
+    /// <summary>A say with files sends their paths, which the Daoris on this machine reads as the alone path does.</summary>
     [Fact]
     public async Task A_say_with_a_file_sends_its_full_path()
     {
@@ -299,7 +299,7 @@ public sealed class SessionsThroughInstanceTests
         Assert.Equal(file, Assert.Single(payload.GetProperty("paths").EnumerateArray()).GetString());
     }
 
-    /// <summary>RPC1d: with no instance a stop acts alone, as it did, and says what it said.</summary>
+    /// <summary>With no instance a stop acts alone and says its own words.</summary>
     [Fact]
     public async Task With_no_instance_a_stop_acts_alone_and_says_what_it_said()
     {

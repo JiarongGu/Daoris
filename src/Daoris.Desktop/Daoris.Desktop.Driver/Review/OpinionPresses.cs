@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What a press at the second opinion's gate came to: whether it was taken, its sentence, and the gate after it.</summary>
+/// <summary>What a press at the second opinion's gate came to: whether it took, its sentence, and the gate after it.</summary>
 public sealed record OpinionPressed(bool Done, string Message)
 {
     /// <summary>The landing gate as it stands after the press; null where the session's work could not be read.</summary>
@@ -8,17 +8,16 @@ public sealed record OpinionPressed(bool Done, string Message)
 }
 
 /// <summary>
-/// The person's presses at the second opinion's gate, the driver's half (XAGENT1f, D155 point 10; the second-agent design §8.5,
-/// §9): <i>Ask now</i>, <i>Try again</i>, <i>Ask again</i> and <i>Ask the same agent, fresh</i> (a pass the next look starts),
+/// The person's presses at the second opinion's gate, the driver's half: <i>Ask now</i>, <i>Try again</i>, <i>Ask again</i> and <i>Ask the same agent, fresh</i> (a pass the next look starts),
 /// <i>Go on anyway…</i>, <i>I looked myself…</i>, <i>Stop</i>, and the answer an <i>Accept…</i> makes to what it showed. The
 /// terminal's <c>daoris session opinion</c> and the screen's bridge both press here, so each says the same and keeps the same.
 /// </summary>
 /// <remarks>
-/// <para><b>Only the person's.</b> No connector tool and no Ask Daoris card reaches these (§9, D110): asking spends an account at
+/// <para><b>Only the person's.</b> No connector tool and no Ask Daoris card reaches these: asking spends an account at
 /// their choice, and going on, or reading it themselves, is a judgement nobody else has made.</para>
 ///
-/// <para><b>Kept on this machine</b> (D47 §4): an answer is kept at the gate for the chain's work in the repository, bound to the
-/// commit it was given at, and on the landing record once the work lands. The opinion itself is the local host's, and no door here
+/// <para><b>Kept on this machine</b>: an answer is kept at the gate for the chain's work in the repository, bound to the
+/// commit it is given at, and on the landing record once the work lands. The opinion itself is the local host's, and no door here
 /// writes the person's answer into it.</para>
 /// </remarks>
 public sealed class OpinionPresses(string home, ServiceClient service)
@@ -26,14 +25,14 @@ public sealed class OpinionPresses(string home, ServiceClient service)
     private readonly SessionTrees _trees = new(home);
 
     /// <summary>
-    /// What a session's work is, for the gate: its tree, its quest, the chain's key and repository, and its run (WORKFLOW1f). A chat run's
-    /// (CHATFLOW1d) has no quest, and its run's key, <c>chat-&lt;first&gt;</c>, is the gate's key in place of a chain's.
+    /// What a session's work is, for the gate: its tree, its quest, the chain's key and repository, and its run. A chat run's
+    /// has no quest, and its run's key, <c>chat-&lt;first&gt;</c>, is the gate's key in place of a chain's.
     /// </summary>
     private sealed record Work(string Session, string Tree, string? Quest, string Chain, string Repository, string Workspace, IOpinionWorld World)
     {
         public string? Run { get; init; }
 
-        /// <summary>The chat run whose work this is (CHATFLOW1d), where it serves no quest; null for a quest's.</summary>
+        /// <summary>The chat run whose work this is, where it serves no quest; null for a quest's.</summary>
         public string? ChatRun { get; init; }
     }
 
@@ -51,29 +50,29 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         _trees.GateAsync(work.Tree, work.Quest, work.World, work.Session, ct, run: work.ChatRun);
 
     /// <summary>
-    /// <i>Go on anyway…</i> (§8.5): what is unsettled stays so, the person's answer is kept with their words at the commit that
+    /// <i>Go on anyway…</i>: what is unsettled stays so, the person's answer is kept with their words at the commit that
     /// would land, and the gate's next item follows. Nothing lands here.
     /// </summary>
     public Task<OpinionPressed> AnywayAsync(string session, string? words, string door, CancellationToken ct = default) =>
         SayAsync(session, OpinionPersonSaid.Anyway, words, door, ct);
 
     /// <summary>
-    /// <i>I looked myself…</i> (§8.5): the person's own reading, kept in place of another agent's, with their words. It settles the
+    /// <i>I looked myself…</i>: the person's own reading, kept in place of another agent's, with their words. It settles the
     /// opinion's part as an absence is settled.
     /// </summary>
     public Task<OpinionPressed> MyselfAsync(string session, string? words, string door, CancellationToken ct = default) =>
         SayAsync(session, OpinionPersonSaid.Myself, words, door, ct);
 
     /// <summary>
-    /// The answer an <i>Accept…</i> makes to what it showed beside it (§8.2–§8.3): kept only where the gate stands as the press
+    /// The answer an <i>Accept…</i> makes to what it showed beside it: kept only where the gate stands as the press
     /// drew it (<see cref="LandingGate.Answers"/>), so a press over a page drawn before the gate moved answers nothing.
     /// </summary>
-    /// <returns>The gate after the answer, or the gate as read where nothing was answered.</returns>
+    /// <returns>The gate after the answer, or the gate as read where nothing is answered.</returns>
     /// <param name="run">
-    /// The chat run whose press this is (CHATFLOW1d, the chat-flow design §7), keyed by the run where no quest is, so its press answers a
+    /// The chat run whose press this is, keyed by the run where no quest is, so its press answers a
     /// dispute and commits nobody read as a quest's does; null for a quest's.
     /// </param>
-    /// <param name="door">The door the press was made at: the screen's, or the terminal's.</param>
+    /// <param name="door">The door the press came through: the screen's, or the terminal's.</param>
     public async Task<LandingGate> PressedAsync(
         string session, LandingGate gate, string? token, string? tree, string? quest, CancellationToken ct = default, string? run = null,
         string door = ReviewDoors.Screen)
@@ -89,10 +88,10 @@ public sealed class OpinionPresses(string home, ServiceClient service)
     }
 
     /// <summary>
-    /// <i>Ask now</i>, <i>Try again</i>, <i>Ask again</i> (§8.5) and the person's ask (§2.1): a first pass on the session's work,
-    /// started at the driver's next look and never capped (§8.3). <paramref name="reviewer"/> names one of the rule's reviewers;
+    /// <i>Ask now</i>, <i>Try again</i>, <i>Ask again</i> and the person's ask: a first pass on the session's work,
+    /// started at the driver's next look and never capped. <paramref name="reviewer"/> names one of the rule's reviewers;
     /// <paramref name="sameAgent"/> asks the working agent in a fresh conversation, which is never an independent reading and says
-    /// so on its face (§3.3).
+    /// so on its face.
     /// </summary>
     /// <param name="occasion"><c>asked</c>, or <c>failure</c> for a struck quest's <i>Ask another agent for help</i>.</param>
     public async Task<OpinionPressed> AskAsync(
@@ -101,7 +100,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         var (work, refused) = await WorkAsync(session, ct).ConfigureAwait(false);
         if (work is null) return new(false, refused!);
 
-        // WORKFLOW1f: the run's named workflow's opinion step, where it has one, names which of the declared reviewers may read it.
+        // The run's named workflow's opinion step, where it has one, names which of the declared reviewers may read it.
         var config = DriverConfig.Load(DriverConfig.ResolvePath(home));
         var process = ParticipantsWorkflows.Current.ReadProcess(home, config, work.Repository, work.Workspace, work.Run);
         if ((process.OpinionCannot ?? process.Problem ?? process.Unread) is { } cannot)
@@ -128,8 +127,8 @@ public sealed class OpinionPresses(string home, ServiceClient service)
                 + "a press chooses among what the rule declares, never beyond it.");
         }
 
-        // The look starts what is owed: one owed here at the rule's first occasion, if none was, so the request is read. A chat run's is owed
-        // at the landing (CHATFLOW1d, the chat-flow design §5.2 point 3), never at a first occasion of `steps`, which would close it past at
+        // The look starts what is owed: one owed here at the rule's first occasion, if none is, so the request is read. A chat run's is owed
+        // at the landing, never at a first occasion of `steps`, which would close it past at
         // once; it carries the tip and the person's turn count read at this press, captured with the conversation reserved where a runner
         // here holds it, so its findings are delivered by the press's rule.
         var dues = new OpinionDues(home);
@@ -156,7 +155,7 @@ public sealed class OpinionPresses(string home, ServiceClient service)
         return new(true, $"A second opinion on session {session}'s work is asked: {who} reads it from the driver's next look.") { Gate = gate };
     }
 
-    /// <summary><i>Stop</i> (§8.5): the reviewer's session ended as the person's stop; the opinion it was reading then fails, and says so.</summary>
+    /// <summary><i>Stop</i>: the reviewer's session ended as the person's stop; the opinion it reads then fails, and says so.</summary>
     public async Task<OpinionPressed> StopAsync(string opinion, SessionProcesses processes, CancellationToken ct = default)
     {
         var view = await service.Opinions.ReadAsync(opinion, ct).ConfigureAwait(false);
@@ -188,14 +187,13 @@ public sealed class OpinionPresses(string home, ServiceClient service)
     }
 
     /// <summary>
-    /// The runner that may hold a chat in this process (CHATFLOW1d): <i>Ask now</i> on a chat run reserves it for the capture alone, as the
+    /// The runner that may hold a chat in this process: <i>Ask now</i> on a chat run reserves it for the capture alone, as the
     /// person's Accept reserves it, so the tip and the turn count are read with no turn starting between them. Null where none does.
     /// </summary>
     public IChatPressing? Holder { get; init; }
 
     /// <summary>
-    /// The tip and the person's turn count a chat run's <i>Ask now</i> captures (CHATFLOW1d, the chat-flow design §5.2 point 3, the Opus check's
-    /// finding 5), read as the press reads them, the conversation reserved for the capture alone where a runner here holds it; or why not.
+    /// The tip and the person's turn count a chat run's <i>Ask now</i> captures, read as the press reads them, the conversation reserved for the capture alone where a runner here holds it; or why not.
     /// </summary>
     private async Task<(string? Tip, int Turns, string? Refused)> CaptureAsync(Work work, CancellationToken ct)
     {
@@ -222,13 +220,13 @@ public sealed class OpinionPresses(string home, ServiceClient service)
             return (null, $"session `{session}` names no working tree of its own on this machine, so no second opinion is asked of its work here.");
         }
 
-        // CHATFLOW1i (the chat-flow design §4.1): a chat that took a quest, a worker gone on as a conversation and a line whose origin is a quest's
+        // A chat that took a quest, a worker gone on as a conversation and a line whose origin is a quest's
         // are that quest's work, read by the resolver the view reads (WorkflowRunReader.WorkOf), so every door decides by one answer.
         var recordsJson = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
         var taken = await service.SessionQuestAsync(session, ct).ConfigureAwait(false) ?? WorkplaceWorkflows.Current.TakenOf(session, recordsJson);
         if (taken is not { } quest)
         {
-            // CHATFLOW1d (the chat-flow design §7): a chat in a tree of its own is its chat run's work, its gate keyed by the run.
+            // A chat in a tree of its own is its chat run's work, its gate keyed by the run.
             if (ChatRunOf(session, recordsJson) is { } chatRun)
             {
                 var (chatWorkspace, chatRepository) = _trees.Owner(tree);

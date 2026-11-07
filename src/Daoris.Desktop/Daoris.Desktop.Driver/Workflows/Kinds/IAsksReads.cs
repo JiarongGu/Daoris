@@ -16,7 +16,7 @@ public enum PassRead
     Remote = 4,
 }
 
-/// <summary>A kind whose node waits on a read the pass makes for it (D247 §3.3), so the pass asks it of the unit and names no kind.</summary>
+/// <summary>A kind whose node waits on a read the pass makes for it, so the pass asks it of the unit and names no kind.</summary>
 public interface IAsksReads
 {
     /// <summary>The reads its node waits on.</summary>

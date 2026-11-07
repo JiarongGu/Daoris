@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Nothing Daoris starts prompts through git (GITAUTH1a, D198 point 6; the git-auth design §4.1, §4.6 and §14 row 1), measured
+/// Nothing Daoris starts prompts through git, measured
 /// with this machine's real git against a host on the loopback that asks for a sign-in: the empty <c>GIT_ASKPASS</c> Daoris
 /// hands survives Windows' environment block into git, and stops git's search before the program <c>core.askPass</c> names.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class GitPromptsProcessTests : IDisposable
 
     private string Marker => Path.Combine(_root, "asked");
 
-    /// <summary>An askpass that says it was asked, and answers a name nobody holds.</summary>
+    /// <summary>An askpass that records being asked, and answers a name nobody holds.</summary>
     private string Askpass()
     {
         var file = Path.Combine(_root, "askpass.sh");
@@ -58,7 +58,7 @@ public sealed class GitPromptsProcessTests : IDisposable
     private static async Task<(int Exit, string Out, string Err)> RunAsync(ProcessStartInfo info)
     {
         using var process = Process.Start(TestGit.Ceiling(info))!;
-        // Both reads start before the wait (TESTGIT1).
+        // Both reads start before the wait.
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-RECLOCK2 (D173's FABRIC-RECLOCK2 note): the abandon record is edited holding its own lock under the home's <c>locks/records/</c>, so an edit waits while another
+/// The abandon record is edited holding its own lock under the home's <c>locks/records/</c>, so an edit waits while another
 /// handle holds it, then reads what the holder wrote, and neither write is lost. As <see cref="HeldFactsTests"/>' lock test; the lock file is the contract a second process honours (<see cref="RecordLockProcessTests"/>).
 /// </summary>
 public sealed class RecordLockStoresTests : IDisposable
@@ -48,7 +48,7 @@ public sealed class RecordLockStoresTests : IDisposable
 
     /// <summary>
     /// Holds <paramref name="lockPath"/> as another process would, starts <paramref name="edit"/>, and once the edit has found the lock
-    /// held (<see cref="RecordLock.Waiting"/>, TESTCLOCK2) makes the holder's own read-modify-write, renaming <paramref name="from"/> to
+    /// held (<see cref="RecordLock.Waiting"/>) makes the holder's own read-modify-write, renaming <paramref name="from"/> to
     /// <paramref name="to"/>; then lets go and waits for the edit to finish.
     /// </summary>
     private static void WaitsWhileHeld(string lockPath, string file, string from, string to, Action edit)

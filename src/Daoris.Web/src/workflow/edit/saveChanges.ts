@@ -1,7 +1,7 @@
 import { canonicalJson } from '../draftFingerprint';
 import type { DraftNode, GraphDraft } from './graphDraft';
 
-// What a save changes (SETUPUX1s; the Setup design's §2.3): the steps a draft adds, takes out or changes against the version it began from,
+// What a save changes: the steps a draft adds, takes out or changes against the version it began from,
 // the count of ways that differ, and the key an append's consent is bound to. Pure.
 
 export type StepChanges = { added: DraftNode[]; removed: DraftNode[]; changed: DraftNode[]; ways: number };

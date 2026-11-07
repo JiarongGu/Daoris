@@ -3,9 +3,9 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A held move's one rule (FOUNDATION1f-i part 3, D212; the foundation design §3.3, §13.5's <c>held</c> row, §19.3): it closes <c>resolved</c>
+/// A held move's one rule: it closes <c>resolved</c>
 /// once nothing it names still waits on its destination's <c>said</c>, and until then it stands and its destination takes no move of its own.
-/// Rows f-ii to f-vi, h and i adopt it, the conversations' holder first (FOUNDATION1f-ii part a, <see cref="ConversationMoves"/>).
+/// The conversations' holder adopts it first (<see cref="ConversationMoves"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>What a hold names</b> is written with it: the move's words disposed <i>left</i>, uncertain or held for the person
@@ -60,8 +60,8 @@ public sealed class MoveResolve(MoveStore store, IMoveSaid said)
     }
 
     /// <summary>
-    /// A record's standing move as the course reads it before it moves the record (§3.1's <c>Never</c>): the one whose open made the record,
-    /// the destination's, which the design names, or else the one the record left. Where it is held under this store's run, the one rule is
+    /// A record's standing move as the course reads it before it moves the record (the course's <c>Never</c>): the one whose open made the record,
+    /// the destination's, or else the one the record left. Where it is held under this store's run, the one rule is
     /// read first under that claim; another run's hold, live or dead, is answered as it stands, its own executor's or its taker's to read.
     /// </summary>
     /// <returns>The move that still stands, which the course reads as <c>Never</c>; null where none does and the record may move.</returns>
@@ -82,7 +82,7 @@ public sealed class MoveResolve(MoveStore store, IMoveSaid said)
     }
 
     /// <summary>
-    /// The person's press through one of a hold's doors (§3.3; §19.3: the take-back of a word it names at its destination, or the word said
+    /// The person's press through one of a hold's doors (the take-back of a word it names at its destination, or the word said
     /// at the head): the hold standing on <paramref name="record"/>, its destination's or else the one it left, read by the one rule and closed
     /// <c>resolved</c> where nothing it names waits, without its claim (<see cref="MoveStore.PressResolved"/>).
     /// </summary>

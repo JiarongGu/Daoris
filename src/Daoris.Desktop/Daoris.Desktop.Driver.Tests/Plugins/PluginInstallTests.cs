@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// `daoris plugin add`'s copy, the driver's twin (PLUG9): a plugin's folder read by the catalogue's own
+/// `daoris plugin add`'s copy, the driver's twin: a plugin's folder read by the catalogue's own
 /// reader, then copied into the home under its manifest's id. The CLI's `plugins.test.ts` holds the same
 /// table (*add copies a folder in under its id*, *add refuses a folder whose manifest is unsound*), and
 /// the two share no code. One difference is deliberate and held here: the driver adds, and never

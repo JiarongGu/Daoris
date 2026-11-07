@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Git for Windows' launcher, started past for real (GITSTART1): against this machine's install, the real git started
+/// Git for Windows' launcher, started past for real: against this machine's install, the real git started
 /// directly hands its children what the launcher's would, and a hook and a <c>!</c> alias still find <c>sh</c>. Where
 /// the machine has no such install, each test holds nothing.
 /// </summary>
@@ -78,7 +78,7 @@ public sealed class GitForWindowsProcessTests : IDisposable
         info.StandardOutputEncoding = Encoding.UTF8;
         info.StandardErrorEncoding = Encoding.UTF8;
         using var process = Process.Start(info)!;
-        // Both reads start before the wait (TESTGIT1).
+        // Both reads start before the wait.
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

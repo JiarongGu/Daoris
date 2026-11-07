@@ -10,19 +10,19 @@ namespace Daoris.Driver;
 internal static class NodeGraphStarts
 {
     /// <summary>
-    /// The nodes that can start while no node <paramref name="gate"/> names has passed (FABRIC-GRAPH1's review, finding 4): the entries, and
+    /// The nodes that can start while no node <paramref name="gate"/> names has passed: the entries, and
     /// each node whose eligibility groups (<see cref="NodeWires.Groups"/>: all of an <c>allOf</c>, one of an <c>anyOf</c>, every group) and
     /// inputs can all be met so. A reach's wire (<c>after</c>, <c>trigger</c>) or an input is met by a node that starts so and is no gate; a
     /// failure's or a rejection's by any node that starts so, a gate included, since a gate that fails has not passed. The gate is the
-    /// protected order's look (<see cref="LandingGuard.Passed"/>), or INTEGRATE1o's <c>work.requests</c>, whose own id is the gate it names. A
-    /// wire <paramref name="closed"/> names is never met, and closes its target as a route not taken does (DECIDE1d: a decision's other
+    /// protected order's look (<see cref="LandingGuard.Passed"/>), or the <c>work.requests</c> node, whose own id is the gate it names. A
+    /// wire <paramref name="closed"/> names is never met, and closes its target as a route not taken does (a decision's other
     /// outcomes' <c>when</c> wires).
-    /// <para>An <c>all</c> join follows <see cref="WireEvaluation"/> (the re-check's finding 4): its <c>after</c> wires are its members and
+    /// <para>An <c>all</c> join follows <see cref="WireEvaluation"/>: its <c>after</c> wires are its members and
     /// no group's, and it starts once every member is reached or skipped, or once any one has failed. All its members met so, it starts as
     /// any node does. A member that starts so and may fail (a look among them) starts it too, but only to fail at once while the rest
     /// still wait: then only its failure's and rejection's paths are met, never its pass, so a landing on them passes no look.</para>
-    /// <para>A node fails only where its kind's authority lets something fail it, and a join only where a member may (the second re-check,
-    /// finding 3: <see cref="MayFail"/>): a join of a look and a person's press has no failed path, so its failure's wire is never met.</para>
+    /// <para>A node fails only where its kind's authority lets something fail it, and a join only where a member may
+    /// (<see cref="MayFail"/>): a join of a look and a person's press has no failed path, so its failure's wire is never met.</para>
     /// </summary>
     internal static HashSet<string> StartsWithout(
         Dictionary<string, NodeDeclaration> byId, IReadOnlyList<string> starts, IReadOnlyList<Wire> local, Func<NodeDeclaration, bool> gate, Func<Wire, bool>? closed = null)
@@ -30,7 +30,7 @@ internal static class NodeGraphStarts
         var started = new HashSet<string>(starts, StringComparer.Ordinal);
         var failing = new HashSet<string>(StringComparer.Ordinal);
         var mayFail = MayFail(byId, local);
-        // A reach's wire, a `when` among them (DECIDE1b): met by its source's reach, with that outcome, never by its failure.
+        // A reach's wire, a `when` among them: met by its source's reach, with that outcome, never by its failure.
         bool Met(Wire wire) => closed?.Invoke(wire) != true && wire.Kind switch
         {
             WireKinds.Failed => mayFail.Contains(wire.From!.Node) && (started.Contains(wire.From.Node) || failing.Contains(wire.From.Node)),
@@ -38,7 +38,7 @@ internal static class NodeGraphStarts
             _ => started.Contains(wire.From!.Node) && !gate(byId[wire.From.Node]),
         };
 
-        // DECIDE1b: the nodes a route may leave untaken, as WireEvaluation's NotTaken closes them: behind a `when` from a decision that starts
+        // The nodes a route may leave untaken, as WireEvaluation's NotTaken closes them: behind a `when` from a decision that starts
         // (another outcome closes it), or a wire from such a node, by a data input, an `allOf` member or every member of an `anyOf`. A join's
         // members never close it, and settle it as skips do, so whichever outcome a run takes, a join on its route starts.
         var untaken = new HashSet<string>(StringComparer.Ordinal);
@@ -75,7 +75,7 @@ internal static class NodeGraphStarts
     }
 
     /// <summary>
-    /// The nodes something may fail (the second re-check, finding 3): each whose kind's authority names who fails it
+    /// The nodes something may fail: each whose kind's authority names who fails it
     /// (<see cref="NodeAuthorities"/>: not git's proofs, nor the person's kinds, a look among them), and each <c>all</c> join one of whose
     /// members may fail, since <see cref="WireEvaluation"/> fails a join only on a member's failure.
     /// </summary>

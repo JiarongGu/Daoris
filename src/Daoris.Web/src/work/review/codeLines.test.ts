@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { highlightLines, languageOf, splitHighlighted } from './codeLines';
 
-// Code highlighted a line at a time (REVIEW2): a diff draws each line on its own, and a highlighter
+// Code highlighted a line at a time: a diff draws each line on its own, and a highlighter
 // reads text whole — a comment opened on one line is still open on the next. So the text is
 // highlighted whole and split back into lines, each one's markup balanced. Pure.
 

@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRef } from 'react';
 import i18n from '../../locales/i18n';
 
-// SWITCHCTX1c-i (the switch-context design §2.7): the parts a session's page draws above the attended one, at most three nearest and
+// The parts a session's page draws above the attended one, at most three nearest and
 // a press for up to three more, each read-only with its own record's liveness. The bridge is mocked; the records are the test's.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1c: the agent's ask to hand over and the driver's state, two files per session under the home's sessions folder. The ask
+/// The agent's ask to hand over and the driver's state, two files per session under the home's sessions folder. The ask
 /// is read as the connector's <c>handover_propose</c> writes it, the state is written as the service's <c>HandOverAskBox</c> reads it
 /// (its <c>McpHandOverToolTests</c> hold the same shapes), and neither is a hand-over's box, which whoever runs the session takes.
 /// </summary>

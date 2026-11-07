@@ -8,7 +8,7 @@ import {
   LINE_SAID, PUBLISHED_AND_WAITS_ON_NONE, QUESTS_EACH_TAKER, READING, REVIEWERS, SAID, RESUMED_AND_EARLIER, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
 
-// Who is at work (COWORKVIEW1a, the cowork view design §5.3): each state the view draws, at the side bar's floor (300 px), a roomier
+// Who is at work: each state the view draws, at the side bar's floor (300 px), a roomier
 // side bar (430 px) and the whole frame under 768 px (680 px); each in English in light and in 中文 in dark.
 
 const nothing = () => {};
@@ -88,7 +88,7 @@ export const DrivenHistoryChinese: Story = { args: { held: HISTORY }, decorators
 export const Elsewhere: Story = { args: { held: ELSEWHERE }, decorators: light };
 export const ElsewhereChinese: Story = { args: { held: ELSEWHERE }, decorators: zhDark };
 
-// COWORKVIEW1b-i: the routing half's stories at the main area's three widths (80, 39 and 25rem: `storyWidths.tsx`) and the side bar's
+// The routing half's stories at the main area's three widths (80, 39 and 25rem: `storyWidths.tsx`) and the side bar's
 // 300 px floor, each in English in light and in 中文 in dark.
 const ROUTING_WIDTHS = [300, 400, 624, 1280] as const;
 const routingLight = [atWidths(ROUTING_WIDTHS), inLight];
@@ -114,7 +114,7 @@ export const PublishedAndWaitsOnNoneChinese: Story = { args: { held: PUBLISHED_A
 export const ResumedBesideItsEarlierParts: Story = { args: { held: RESUMED_AND_EARLIER }, decorators: routingLight };
 export const ResumedBesideItsEarlierPartsChinese: Story = { args: { held: RESUMED_AND_EARLIER }, decorators: routingZh };
 
-/** Each door a part joined by, in the design's words. */
+/** Each door a part joined by. */
 export const JoinedEachWay: Story = { args: { held: JOINED_EACH_WAY }, decorators: routingLight };
 export const JoinedEachWayChinese: Story = { args: { held: JOINED_EACH_WAY }, decorators: routingZh };
 
@@ -122,7 +122,7 @@ export const JoinedEachWayChinese: Story = { args: { held: JOINED_EACH_WAY }, de
 export const OverflowBesideTheFold: Story = { args: { held: OVERFLOW_AND_EARLIER }, decorators: routingLight };
 export const OverflowBesideTheFoldChinese: Story = { args: { held: OVERFLOW_AND_EARLIER }, decorators: routingZh };
 
-// COWORKVIEW1b-ii: the quests a part asked and what asked it, at the same widths (80, 39 and 25rem and the side bar's 300 px floor), in
+// The quests a part asked and what asked it, at the same widths (80, 39 and 25rem and the side bar's 300 px floor), in
 // English in light and in 中文 in dark. The tick's reasons are the page's `considered`.
 
 /** Two lane parts alongside the chat that published them, and a third lane quest untaken with the tick's reason beside it. */
@@ -146,20 +146,20 @@ export const AskedBySessionChinese: Story = { args: { held: ASKED_BY({ session: 
 export const AskedByYou: Story = { args: { held: ASKED_BY({ person: true }) }, decorators: routingLight };
 export const AskedByYouChinese: Story = { args: { held: ASKED_BY({ person: true }) }, decorators: routingZh };
 
-// COWORKVIEW1c: the channel's last words, each on the part that posted it, the person's in the block, and *All messages*.
+// The channel's last words, each on the part that posted it, the person's in the block, and *All messages*.
 
 /** The channel's newest three: a lane part's on its row, the lead's on its own, and the person's under *On the channel*. */
 export const ChannelLastWords: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: SAID, onOpen: nothing } }, decorators: routingLight };
 export const ChannelLastWordsChinese: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: SAID, onOpen: nothing } }, decorators: routingZh };
 
-/** COMMS1k: a line on no ask, its own channel: two alongside parts to each other alone, each on its row, and no *All messages*. */
+/** A line on no ask, its own channel: two alongside parts to each other alone, each on its row, and no *All messages*. */
 export const LineOwnChannel: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: LINE_SAID } }, decorators: routingLight };
 export const LineOwnChannelChinese: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: LINE_SAID } }, decorators: routingZh };
 
 /** A session with an ask and nothing said on its channel yet. */
 export const ChannelNothingSaid: Story = { args: { held: LANES_ALONGSIDE_AND_UNTAKEN, channel: { words: [], onOpen: nothing } }, decorators: routingLight };
 
-// COWORKVIEW1e-iii: the hint, one story per standing, at the same widths.
+// The hint, one story per standing, at the same widths.
 
 /** Two subagents ran in a repository that is not driven here. */
 export const HintNotDriven: Story = { args: { held: HINTED('not-driven') }, decorators: routingLight };
@@ -177,7 +177,7 @@ export const HintOneAtATimeChinese: Story = { args: { held: HINTED('one-at-a-tim
 export const EndedBesideItsContinuation: Story = { args: { held: CONTINUED }, decorators: light };
 export const EndedBesideItsContinuationChinese: Story = { args: { held: CONTINUED }, decorators: zhDark };
 
-// COMMS1i: the line's co-workers, a member in each state (asked, starting, reading, answered and taken, refused, a successor asked by an
+// The line's co-workers, a member in each state (asked, starting, reading, answered and taken, refused, a successor asked by an
 // earlier part with its delivery not certain) and a source not read, at the main area's three widths and the 300 px dock floor.
 const NAMES: Record<string, string> = { 'codex-acp': 'Codex' };
 const named = (agent: string) => NAMES[agent] ?? agent;
@@ -185,9 +185,9 @@ const named = (agent: string) => NAMES[agent] ?? agent;
 /** Each co-worker state, and the *Waiting on* line that reads the same requests. */
 export const Coworkers: Story = { args: { held: COWORKERS, nameOf: named }, decorators: routingLight };
 export const CoworkersChinese: Story = { args: { held: COWORKERS, nameOf: named }, decorators: routingZh };
-/** COMMS1i (wave 2's rest): the line's reviewers among its co-workers, one reading, one ended, one failed. */
+/** The line's reviewers among its co-workers, one reading, one ended, one failed. */
 export const Reviewers: Story = { args: { held: REVIEWERS, nameOf: named }, decorators: routingLight };
 export const ReviewersChinese: Story = { args: { held: REVIEWERS, nameOf: named }, decorators: routingZh };
-/** COMMS1i: opened from the head's *Waiting on*, at the helper the line waits on, its row outlined and holding the focus. */
+/** Opened from the head's *Waiting on*, at the helper the line waits on, its row outlined and holding the focus. */
 export const OpenedAtTheRequest: Story = { args: { held: COWORKERS, nameOf: named, seek: { exchange: 'helper:h7', n: 1 } }, decorators: routingLight };
 export const OpenedAtTheRequestChinese: Story = { args: { held: COWORKERS, nameOf: named, seek: { exchange: 'helper:h7', n: 1 } }, decorators: routingZh };

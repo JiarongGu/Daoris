@@ -11,10 +11,10 @@ public sealed record WorkflowMigrated(DriverConfig Config, IReadOnlyList<string>
 }
 
 /// <summary>
-/// The workflow step of the release's one migration (D232 point 2): every place converted to a saved graph once, at the release's first start.
+/// The workflow step of the release's one migration: every place converted to a saved graph once, at the release's first start.
 /// A saved workflow whose newest version holds a <c>handed</c>, or a <c>land</c> with an <c>accept</c> gets the next version
 /// as a graph; a place that followed the rules (nothing named, or <c>current</c>) follows the home default or a saved copy of what its rules drew;
-/// a rule's <c>integrate</c> becomes its line's policy; a converted place's access <c>landing</c> pause and session checks go, since its graph
+/// a rule's <c>integrate</c> becomes its line's policy; a converted place's access <c>landing</c> pause and session checks go, because its graph
 /// carries them. The home's migration takes the backup, calls <see cref="Convert"/>, and writes <c>driver.json</c> once; this step writes the
 /// workflow files it saves. A version the save refuses is left as it is, said.
 /// </summary>
@@ -180,11 +180,11 @@ public static class WorkflowMigration
         return new(WithoutOldKeys(config), saved, said);
     }
 
-    /// <summary>The keys no build reads any more: the landing rules and the work cycles.</summary>
+    /// <summary>The keys the migration removes: the landing rules and the work cycles.</summary>
     private static readonly string[] OldKeys = ["landings", "workspaceLandings", "workCycles", "workspaceWorkCycles"];
 
     /// <summary>
-    /// The file with the old keys taken out. A save keeps every key it does not own from the file on disk, so the text is the one written
+    /// The file with those keys taken out. A save keeps every key it does not own from the file on disk, so the text is the one written
     /// whole: its source file is cleared, and the migration's write replaces the file, its backup taken first.
     /// </summary>
     private static DriverConfig WithoutOldKeys(DriverConfig config)
@@ -202,7 +202,7 @@ public static class WorkflowMigration
         [.. places.Where(each => each.Follows == workflow).OrderBy(each => each.IsWorkspace).ThenBy(each => each.Place, StringComparer.OrdinalIgnoreCase)
             .Where(each => !each.IsWorkspace || places.All(other => other.IsWorkspace || other.Workspace != each.Place || other.Follows != workflow))];
 
-    /// <summary>A converted place's access <c>landing</c> pause and its own session checks, which its graph's nodes carry now.</summary>
+    /// <summary>A converted place's access <c>landing</c> pause and its own session checks, which its graph's nodes carry.</summary>
     private static DriverConfig Removed(DriverConfig config, MigratedPlace place)
     {
         var next = config;
@@ -221,7 +221,7 @@ public static class WorkflowMigration
         return next;
     }
 
-    /// <summary>The shape of a version if it is an old one, else null: read from the file's own text, since no reader takes it any more.</summary>
+    /// <summary>The shape of a version if it holds a <c>handed</c> or a <c>land</c> with an <c>accept</c>, else null: read from the file's own text.</summary>
     private static string? ShapeOf(WorkflowFileFound found, NamedVersion version)
     {
         if (RawVersion(found, version) is not { } raw) return null;

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The three words a kept piece comes to (COAGENT1b, the design §7.2) and how the piece's ref reads: pure vocabulary, which
+/// The three words a kept piece comes to and how the piece's ref reads: pure vocabulary, which
 /// <see cref="PartnerStates"/> keeps under its own names for the readers above the workplace, the way <see cref="PartnerWhy"/> is Events'.
 /// </summary>
 internal static class PieceKeptStates
@@ -16,7 +16,7 @@ internal static class PieceKeptStates
     internal const string Uncertain = "uncertain";
 
     /// <summary>
-    /// How the create-only import reads the piece's ref (the design §7.2's import row): absent, it is created; at the keeper's
+    /// How the create-only import reads the piece's ref: absent, it is created; at the keeper's
     /// commit, the import already happened and is <see cref="Imported"/>; at another commit, <see cref="Uncertain"/>.
     /// </summary>
     internal static string? AfterRef(string? refCommit, string kept) =>

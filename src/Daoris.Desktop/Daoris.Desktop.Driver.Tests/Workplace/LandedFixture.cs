@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The scratch a landed branch's tests share (WSR5): a home whose `engine` lands on branches named
+/// The scratch a landed branch's tests share: a home whose `engine` lands on branches named
 /// <c>feature/{quest}-{slug}</c>, repositories made in a scratch folder, and the moves a platform makes —
 /// a squash merge onto the line, a branch deleted on the remote. Split over several classes so they run
 /// side by side: each test spawns git dozens of times.
@@ -31,8 +31,8 @@ public abstract class LandedFixture : IDisposable
 
     public void Dispose()
     {
-        // A plugin's process, where a test ran one, stands in its folder a moment after it is told to go (FLAKE1); Remove waits for
-        // it, and makes git's read-only objects writable first (PROCSPEED1, SCRATCHLEAK1).
+        // A plugin's process, where a test ran one, stands in its folder a moment after it is told to go; Remove waits for
+        // it, and makes git's read-only objects writable first.
         GitSeed.Discard(Scratch);
 
         GC.SuppressFinalize(this);
@@ -73,8 +73,8 @@ public abstract class LandedFixture : IDisposable
     }
 
     /// <summary>
-    /// The records as an install from before FABRIC-END2 left them: no session branch names its unit, and no landing the units it carries
-    /// (FABRIC-END2d). Both files are read and written whole, every other key as it was.
+    /// The records as an install without units leaves them: no session branch names its unit, and no landing the units it carries.
+    /// Both files are read and written whole, every other key unchanged.
     /// </summary>
     protected void ForgetUnits()
     {
@@ -89,10 +89,10 @@ public abstract class LandedFixture : IDisposable
     }
 
     /// <summary>
-    /// A squashing landing from before FABRIC-END2 (the review of FABRIC-END4a's older squash record): a session's tree with one commit, landed
+    /// A squashing landing recorded without units: a session's tree with one commit, landed
     /// under a squash rule, its landing branch merged onto the line, and the line then changing the session's file again, so the line's
     /// ancestry does not hold the session's own commit and its file differs on the line. The squash commit the line holds has the session's
-    /// own tree, which the content proof reads (SQUASHTIDY1, the commit's tree). The units are forgotten.
+    /// own tree, which the content proof reads (the commit's tree). The units are forgotten.
     /// </summary>
     /// <returns>The session's tree, its branch, and the branch the landing made.</returns>
     protected async Task<(string Tree, string Branch, string Landing)> OlderSquashAsync(SessionTrees trees, string root)
@@ -109,7 +109,7 @@ public abstract class LandedFixture : IDisposable
     }
 
     /// <summary>
-    /// The first real ticket's case (<c>LandedBranchTests</c>): a landing made A; a later landing made B from A's branch; B was squash-merged
+    /// The first real ticket's case (<c>LandedBranchTests</c>): a landing made A; a later landing made B from A's branch; B is squash-merged
     /// onto the line, so B's files read there and A's shared file does not, and A is inside B.
     /// </summary>
     /// <returns>Both landings, and the first session's tree and branch, whose commit only A and B hold.</returns>
@@ -134,8 +134,8 @@ public abstract class LandedFixture : IDisposable
 
     /// <summary>
     /// The platform's side, as its "squash and merge" leaves the bare origin: `main` one squash commit on, whose tree is the branch
-    /// merged onto it, and the branch deleted there. <paramref name="then"/> is a later change on `main` after it (the line moving on,
-    /// PLUGHOOK1a), a commit of its own. Made in the origin by git's plumbing (PROCSPEED1b): three git starts, seven with
+    /// merged onto it, and the branch deleted there. <paramref name="then"/> is a later change on `main` after it (the line moving on),
+    /// a commit of its own. Made in the origin by git's plumbing: three git starts, seven with
     /// <paramref name="then"/>, where a clone that squash-merged, committed and pushed twice made about twenty, most of them the
     /// clone's and the pushes' own.
     /// </summary>
@@ -153,7 +153,7 @@ public abstract class LandedFixture : IDisposable
 
     /// <summary>
     /// Someone else's commit on the bare origin's <c>main</c>, as a platform's edit or merge leaves it: <paramref name="files"/> written at
-    /// the top of the line's tree, one commit on it. Made in the origin by git's plumbing (PROCSPEED1b): five git starts for one file, where
+    /// the top of the line's tree, one commit on it. Made in the origin by git's plumbing: five git starts for one file, where
     /// a clone that committed and pushed made about twelve, most of them the clone's and the push's own.
     /// </summary>
     /// <returns>The commit.</returns>
@@ -203,7 +203,7 @@ public abstract class LandedFixture : IDisposable
 
     /// <summary>
     /// A person's branch <paramref name="onto"/>, made from the line, that takes <paramref name="branch"/>'s commits by cherry-pick,
-    /// then the checkout back on the line. 🔴 Each copy is a commit of its own (AUTOTIDY1r): a cherry-pick whose parent is the
+    /// then the checkout back on the line. Each copy is a commit of its own: a cherry-pick whose parent is the
     /// original's, by the same committer in the same second, writes the very same commit, and the person's branch then holds the
     /// session's work by ancestry, never by content. <c>-x</c> names the original in the message, so the copy's id always differs.
     /// </summary>
@@ -226,7 +226,7 @@ public abstract class LandedFixture : IDisposable
     }
 
     /// <summary>
-    /// A repository on `main` with one commit, README and shared.txt: a copy of the run's seed of that name (<see cref="GitSeed"/>, PROC1h),
+    /// A repository on `main` with one commit, README and shared.txt: a copy of the run's seed of that name (<see cref="GitSeed"/>),
     /// whose commit is the seed's own, so a test that reads a fresh repository's exact history builds its own (<see cref="BuildRepositoryAsync"/>).
     /// </summary>
     protected async Task<string> RepositoryAsync(string name)
@@ -254,7 +254,7 @@ public abstract class LandedFixture : IDisposable
 
     /// <summary>
     /// A repository whose `origin` is a bare repository beside it — somewhere a push lands without leaving the machine. A copy of the run's
-    /// seed of that name with its origin, whose url is repaired to the copy's own bare repository (PROC1h).
+    /// seed of that name with its origin, whose url is repaired to the copy's own bare repository.
     /// </summary>
     protected async Task<(string Root, string Origin)> RepositoryWithOriginAsync(string name)
     {
@@ -296,7 +296,7 @@ public abstract class LandedFixture : IDisposable
         var (beganUtc, began) = (DateTime.UtcNow, Stopwatch.GetTimestamp());
         using var process = Process.Start(TestGit.Past(info))!;
         var started = Stopwatch.GetTimestamp();
-        // Both reads start before the wait: a child that fills the pipe nobody reads waits on it forever (TESTGIT1).
+        // Both reads start before the wait: a child that fills the pipe nobody reads waits on it forever.
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

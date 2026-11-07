@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// This machine's acceptance of each repository's integration declaration, as <c>driver.json</c> keeps it, <c>integrationGates</c>
-/// (INTEGRATE1d; D215 point 2, the integration design §4.1): by repository, git's blob id of the <c>daoris.gates.json</c> the owner
+/// This machine's acceptance of each repository's integration declaration, as <c>driver.json</c> keeps it, <c>integrationGates</c>:
+/// by repository, git's blob id of the <c>daoris.gates.json</c> the owner
 /// accepted for integration, or <c>none</c> where the line held no declaration. Its own key, beside the landed route's acceptance
 /// (<c>workflows</c>' <c>landed.gates</c>) and in the shape of <c>heavyGates</c>' map, because integrating needs no verification
 /// pipeline; never bound to a chosen workflow. The key's shape and its reading and writing, by the settings' own parser; what an
@@ -25,7 +25,7 @@ public static class IntegrationGatesKey
 
     /// <summary>
     /// The map as <c>driver.json</c> holds it: each repository's name trimmed, a blank one and a value no acceptance passed over, a
-    /// name written twice in any case read where first readable (CASEMAP1); none where the key is absent or no object.
+    /// name written twice in any case read where first readable; none where the key is absent or no object.
     /// </summary>
     internal static IReadOnlyDictionary<string, string> Map(JsonElement root)
     {

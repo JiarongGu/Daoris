@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1e: <c>daoris help</c> through the running Daoris (the terminal RPC design §7.2 and §7.3). <c>rename</c>, <c>pin</c>,
+/// <c>daoris help</c> through the running Daoris. <c>rename</c>, <c>pin</c>,
 /// <c>unpin</c> and <c>delete --yes</c> are the person's presses, sent to the instance, which shows each in its window; <c>list</c> is a
 /// read. The terminal prints the lines the route answers (<c>said</c>, the alone path's own words), and this process asks the service
 /// nothing. A delete's first ask reads alone.
@@ -147,7 +147,7 @@ public sealed class HelpThroughInstanceTests
         Assert.True(service.Requests > 0);
     }
 
-    /// <summary>With no instance running, the list is this process's own, in the same words, as it was.</summary>
+    /// <summary>With no instance running, the list is this process's own, in the same words.</summary>
     [Fact]
     public async Task With_no_instance_the_list_is_this_process_s_own()
     {

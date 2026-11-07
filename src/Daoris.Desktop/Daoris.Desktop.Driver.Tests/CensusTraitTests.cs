@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEW2 T6: every test class that walks a project's sources by text (<c>SourceFiles.All</c>, <c>SourceFiles.Project</c>, a scan for
+/// Every test class that walks a project's sources by text (<c>SourceFiles.All</c>, <c>SourceFiles.Project</c>, a scan for
 /// <c>*.cs</c>) carries <c>[Trait(Category.Name, Category.Census)]</c>, so the <c>censuses</c> gate (<c>--filter Category=Census</c>) runs every
 /// census in a minute. A Process class is the Process half's, and a class with no test reads nothing the run could refuse.
 /// </summary>

@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1a (D226; the staff policy design §2.2 to §2.5): a role's policy as a record of its own, its choices known by their tuple, the
-/// digest binding it to the staffing it was set for, the presets that fill a draft, and its judge, held both ways to
+/// A role's policy as a record of its own, its choices known by their tuple, the
+/// digest binding it to the staffing it is set for, the presets that fill a draft, and its judge, held both ways to
 /// <c>fixtures/staff-policy.json</c>'s <c>judged</c> rows.
 /// </summary>
 public sealed class StaffPolicyTests

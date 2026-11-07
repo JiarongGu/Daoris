@@ -7,14 +7,14 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// The service's doors a look crosses, standing in: the open quests, the registry, the session ledger,
-/// where this machine's claim on a quest stands (DEV3), the asks an intake answers (UX6d1), and the say and taken doors a
-/// park the person answers goes on through (ANSWER2). In-process, reached through the real client over a
+/// where this machine's claim on a quest stands, the asks an intake answers, and the say and taken doors a
+/// park the person answers goes on through. In-process, reached through the real client over a
 /// handler, so a look is driven with no port and no process, and the suite's fast half can hold it.
 /// </summary>
 /// <remarks>
 /// It answers as the service does, and only as far as a look reads: active means queued, starting, working
 /// or parked; a quest list holds the open and the taken; a session names its quest, its repository and when
-/// it was made, which is how the driver reads its last run on a quest.
+/// it is made, which is how the driver reads its last run on a quest.
 /// </remarks>
 internal sealed class StandInLedger : HttpMessageHandler
 {
@@ -28,7 +28,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private readonly Dictionary<string, int> _claims = new(StringComparer.Ordinal);
     private DateTimeOffset _clock = new(2026, 10, 1, 9, 0, 0, TimeSpan.Zero);
 
-    /// <summary>What <c>/api/quests/{id}/claim</c> answers for every quest (D68 §4).</summary>
+    /// <summary>What <c>/api/quests/{id}/claim</c> answers for every quest.</summary>
     public string Claim
     {
         get { lock (_gate) return _claim; }
@@ -59,7 +59,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private ForwardTake? _claimForward;
 
     /// <summary>
-    /// The finished trees' records posted to <c>/api/trees/record</c> (KEEPSIZE1b), each once by its <c>workspace/repository/folder</c>, as the
+    /// The finished trees' records posted to <c>/api/trees/record</c>, each once by its <c>workspace/repository/folder</c>, as the
     /// service keeps them; a second post of a kept one answers as the first and keeps nothing more.
     /// </summary>
     public IReadOnlyList<JsonObject> Records
@@ -77,7 +77,7 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private int _recordPosts;
 
-    /// <summary>The record door does not answer (KEEPSIZE1b's retry): a 503, as a service that is down.</summary>
+    /// <summary>The record door does not answer: a 503, as a service that is down.</summary>
     public bool RecordsDown
     {
         get { lock (_gate) return _recordsDown; }
@@ -95,7 +95,7 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private bool _recordsMissing;
 
-    /// <summary>The record door answers as a service whose records a newer build stamped: 409, <c>RECORDS_NEWER</c> (KEEPSIZE1b).</summary>
+    /// <summary>The record door answers as a service whose records a newer build stamped: 409, <c>RECORDS_NEWER</c>.</summary>
     public bool RecordsNewer
     {
         get { lock (_gate) return _recordsNewer; }
@@ -105,7 +105,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private bool _recordsNewer;
 
     /// <summary>
-    /// The person brings this machine's lost take forward now (SYNCMERGE1a): its fresh take, made after every record so far, stands as
+    /// The person brings this machine's lost take forward now: its fresh take, made after every record so far, stands as
     /// <paramref name="standing"/>, and so does the claim, unless it lost again.
     /// </summary>
     public ForwardTake BringForward(string standing = "held", string holder = "desk")
@@ -127,13 +127,13 @@ internal sealed class StandInLedger : HttpMessageHandler
     public bool Down { get; set; }
 
     /// <summary>
-    /// While true the claim door never answers (DEV3a): it is counted, then holds until the client gives up, as a host that took
+    /// While true the claim door never answers: it is counted, then holds until the client gives up, as a host that took
     /// the question and stalled does, so the driver meets the client's own timeout.
     /// </summary>
     public bool ClaimHangs { get; set; }
 
     /// <summary>
-    /// While true the quest list never answers (DEV3b): it is counted, then holds until the client gives up or its caller
+    /// While true the quest list never answers: it is counted, then holds until the client gives up or its caller
     /// closes, as a host that took a look's own question and stalled does.
     /// </summary>
     public bool QuestsHang { get; set; }
@@ -144,7 +144,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private int _questsAsked;
 
     /// <summary>
-    /// What this host's sync pass meets at its remote (DEV3b): null for a pass that went through, or the wall it names, as a
+    /// What this host's sync pass meets at its remote: null for a pass that went through, or the wall it names, as a
     /// host whose remote is away answers <c>/api/sync</c>. The remote's own doors answer from this ledger's rows.
     /// </summary>
     public string? SyncProblem
@@ -156,7 +156,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     private string? _syncProblem;
 
     /// <summary>
-    /// The sentence the open-session door refuses every open with (TICKSHOWN1), as the service does one that someone else got to
+    /// The sentence the open-session door refuses every open with, as the service does one that someone else got to
     /// first: null for an open that goes through.
     /// </summary>
     public string? OpenRefusal
@@ -172,7 +172,7 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     private int _syncPasses;
 
-    /// <summary>What the change stream's door does (FABRIC-EVENT3b).</summary>
+    /// <summary>What the change stream's door does.</summary>
     public enum ChangeDoor
     {
         /// <summary>No such door, as a host from before answers: 404.</summary>
@@ -185,7 +185,7 @@ internal sealed class StandInLedger : HttpMessageHandler
         Refuses,
     }
 
-    /// <summary>The change stream's door (FABRIC-EVENT3b): absent unless a test opens it, as every older stand-in had none.</summary>
+    /// <summary>The change stream's door: absent unless a test opens it.</summary>
     public ChangeDoor Changes { get; set; }
 
     /// <summary>How many waits the driver asked the change stream for.</summary>
@@ -276,13 +276,13 @@ internal sealed class StandInLedger : HttpMessageHandler
         lock (_gate) Moved(families);
     }
 
-    // Each ask's channel (FABRIC-EVENT3c): its messages oldest first, and each entry's acknowledgment of a message by its id.
+    // Each ask's channel: its messages oldest first, and each entry's acknowledgment of a message by its id.
     private readonly Dictionary<string, List<JsonObject>> _channels = new(StringComparer.Ordinal);
     private readonly Dictionary<(string Ask, string Entry, string Message), (string State, string Session)> _acks = [];
 
     /// <summary>
     /// The person's message <paramref name="id"/> on ask <paramref name="ask"/>'s channel, to <paramref name="to"/> or everyone, as a
-    /// connector or the page keeps it (FABRIC-EVENT3c): the <c>channel</c> family moves with it, as the service's trigger moves it.
+    /// connector or the page keeps it: the <c>channel</c> family moves with it, as the service's trigger moves it.
     /// </summary>
     public void Posted(string ask, string id, string text, string? to = null, bool? urgent = null)
     {
@@ -331,9 +331,9 @@ internal sealed class StandInLedger : HttpMessageHandler
 
     /// <summary>
     /// An open quest to <paramref name="to"/>, the newest: the service answers oldest first. <paramref name="from"/> is its
-    /// sender, <c>ask #id</c> for a quest an ask asked (GOAHEAD2).
+    /// sender, <c>ask #id</c> for a quest an ask asked.
     /// </summary>
-    /// <param name="parent">The chain's step before it (D65 §4), whose run a step in the same repository shares (WORKFLOW1e).</param>
+    /// <param name="parent">The chain's step before it, whose run a step in the same repository shares.</param>
     public void Publish(string id, string to, string? title = null, string from = "game", string? parent = null)
     {
         lock (_gate)
@@ -349,12 +349,12 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
-    // The asks a quest was asked by, by id, as `/api/asks/{id}` answers one, with the go-aheads its sessions asked (GOAHEAD2).
+    // The asks a quest is asked by, by id, as `/api/asks/{id}` answers one, with the go-aheads its sessions asked.
     // Apart from the list above, which holds the asks an intake answers.
     private readonly Dictionary<string, JsonObject> _askedBy = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// <paramref name="session"/> asks the person on ask <paramref name="ask"/> for a go-ahead (KNOWUSE1a): kept as the ask's
+    /// <paramref name="session"/> asks the person on ask <paramref name="ask"/> for a go-ahead: kept as the ask's
     /// next number, waiting on them, the ask held from its first.
     /// </summary>
     public void GoAheadAsked(string ask, string session, string kind, string on, string act)
@@ -381,7 +381,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// The person's kind and workflow on ask <paramref name="ask"/> (WORKFLOW1e), kept as its latest choice, as <c>/api/asks/{id}</c>
+    /// The person's kind and workflow on ask <paramref name="ask"/>, kept as its latest choice, as <c>/api/asks/{id}</c>
     /// answers it: what a run of the ask's work binds by at its first start.
     /// </summary>
     public void WorkflowChosen(string ask, string? kind, string? workflow, string workspace = "default")
@@ -409,7 +409,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     /// <summary>
     /// An ask proposed in <paramref name="workspace"/> and served by no intake yet, the newest (UX6d1): a look whose config
     /// names an intake's adapter starts one for it. Its tier is the service's for a new ask, the declarations'; a
-    /// <paramref name="tier"/> of <c>named</c> is a named ask whose quest was deleted, which no intake serves (QUESTDELETE1).
+    /// <paramref name="tier"/> of <c>named</c> is a named ask whose quest is deleted, which no intake serves.
     /// </summary>
     public void Ask(string id, string workspace = "default", string tier = "declarations")
     {
@@ -423,14 +423,14 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
-    /// <summary>A quest now waiting on another repository's answer (D79), as the service lists it.</summary>
+    /// <summary>A quest now waiting on another repository's answer, as the service lists it.</summary>
     public void Awaiting(string id, string repository)
     {
         lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == id)["awaits"] = repository;
     }
 
     /// <summary>
-    /// The person reopened the submission <paramref name="id"/> grew from (FABRIC-CLOSE1c), as the service then lists the step: its
+    /// The person reopens the submission <paramref name="id"/> grew from, as the service then lists the step: its
     /// source named reopened and held for it.
     /// </summary>
     public void Reopened(string id, string machine, long sequence)
@@ -445,13 +445,12 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// The person's go-on (FABRIC-CLOSE1c): the step rebound to the submission it grows from now, and its hold let go. Its own result,
-    /// its submission and what was judged of it, is cleared (FABRIC-CLOSE1c10).
+    /// The person's go-on: the step rebound to the submission it grows from now, and its hold let go. Its own result,
+    /// its submission and what is judged of it, is cleared.
     /// </summary>
     /// <param name="moved">
-    /// Whether the quest's <c>updated</c> moves to the go-on, as the service's does (FABRIC-CLOSE1c13 reads it). Off by default, as the
-    /// tests before it model it. A look judges an unmarked take by <c>updated</c> only where the claim says no take time
-    /// (<see cref="TakenAt"/>, CARRY3), as a host before it.
+    /// Whether the quest's <c>updated</c> moves to the go-on, as the service's does. Off by default. A look judges an unmarked take by <c>updated</c> only where the claim says no take time
+    /// (<see cref="TakenAt"/>).
     /// </param>
     public void Rebound(string id, string machine, long sequence, bool moved = false)
     {
@@ -473,7 +472,7 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
-    /// <summary>The taker's <c>ready</c> on <paramref name="id"/> (FABRIC-CLOSE1a): its current submission, said by <paramref name="session"/>.</summary>
+    /// <summary>The taker's <c>ready</c> on <paramref name="id"/>: its current submission, said by <paramref name="session"/>.</summary>
     public void Submitted(string id, string machine, long sequence, string session)
     {
         lock (_gate)
@@ -516,17 +515,17 @@ internal sealed class StandInLedger : HttpMessageHandler
         lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == id)["status"] = status;
     }
 
-    // When each quest's take was made, as the claim's answer says it (CARRY3); a quest absent answers none, as a host before it.
+    // When each quest's take is made, as the claim's answer says it; a quest absent answers none.
     private readonly Dictionary<string, DateTimeOffset> _takenAt = new(StringComparer.Ordinal);
 
-    /// <summary>The claim on <paramref name="id"/> says its take was made at <paramref name="at"/> (CARRY3).</summary>
+    /// <summary>The claim on <paramref name="id"/> says its take is made at <paramref name="at"/>.</summary>
     public void TakenAt(string id, DateTimeOffset at)
     {
         lock (_gate) _takenAt[id] = at;
     }
 
     /// <summary>
-    /// Take a quest out of every list, as the service's rebase forgets a step that went with its source's lost submission (FABRIC-CLOSE1e):
+    /// Take a quest out of every list, as the service's rebase forgets a step that goes with its source's lost submission:
     /// no list shows it, though this machine's claim on it is still answered.
     /// </summary>
     public void Forget(string id)
@@ -535,8 +534,8 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// A record's link to the session it continues (MIXAGENT1a-iii's <c>from</c>, <c>fromWhy</c>, <c>fromBy</c>), as the ledger
-    /// answers it on loopback: what MIXAGENT1c's judge reads to know a part a hand-over started.
+    /// A record's link to the session it continues (<c>from</c>, <c>fromWhy</c>, <c>fromBy</c>), as the ledger
+    /// answers it on loopback: what the judge reads to know a part a hand-over started.
     /// </summary>
     public void Continues(string session, string from, string why, string by)
     {
@@ -549,17 +548,17 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
-    /// <summary>A record's line of work (D167 point 2), as the ledger answers it: the parts that share it are one entry.</summary>
+    /// <summary>A record's line of work, as the ledger answers it: the parts that share it are one entry.</summary>
     public void InEntry(string session, string entry)
     {
         lock (_gate) _sessions.Single(s => s["id"]!.GetValue<string>() == session)["entry"] = entry;
     }
 
     /// <summary>
-    /// A driven session of this machine's that took <paramref name="quest"/> and parked to ask the person (D83), in its own
-    /// tree, with no words on it yet (ANSWER2): what the say door keeps the person's answer on.
+    /// A driven session of this machine's that took <paramref name="quest"/> and parked to ask the person, in its own
+    /// tree, with no words on it yet: what the say door keeps the person's answer on.
     /// </summary>
-    /// <param name="entry">Its line of work's key (D167 point 2), where the test reads it: <c>ask:&lt;id&gt;/&lt;repository&gt;</c> has a channel.</param>
+    /// <param name="entry">Its line of work's key, where the test reads it: <c>ask:&lt;id&gt;/&lt;repository&gt;</c> has a channel.</param>
     public void Park(string session, string quest, string tree, string? entry = null)
     {
         lock (_gate)
@@ -580,7 +579,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// A driven session of this machine's on <paramref name="quest"/>, which it took (MIXAGENT1a-ii): working, or in whatever state
+    /// A driven session of this machine's on <paramref name="quest"/>, which it took: working, or in whatever state
     /// it ended, in its own tree, on the adapter and account it ran as.
     /// </summary>
     public void Driven(string session, string quest, string tree, string state = "working", string adapter = "stub", string? profile = null)
@@ -602,13 +601,13 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// A session of this machine's in <paramref name="tree"/> with no quest (AUTOTIDY1): a conversation, as the ledger keeps one,
+    /// A session of this machine's in <paramref name="tree"/> with no quest: a conversation, as the ledger keeps one,
     /// which the active list answers while it is working, and the whole list once it ended.
     /// </summary>
-    /// <param name="ask">The ask it answers, where it is an intake (CAPCOUNT1): kept on the record as the ledger keeps it.</param>
-    /// <param name="serves">The session it answers, where it is a helper (CAPCOUNT1).</param>
-    /// <param name="opinion">The second opinion it reads for, where it is a reviewer (CAPCOUNT1).</param>
-    /// <param name="piece">The piece it writes, where it is a partner (COAGENT1b): kept only beside <paramref name="serves"/>.</param>
+    /// <param name="ask">The ask it answers, where it is an intake: kept on the record as the ledger keeps it.</param>
+    /// <param name="serves">The session it answers, where it is a helper.</param>
+    /// <param name="opinion">The second opinion it reads for, where it is a reviewer.</param>
+    /// <param name="piece">The piece it writes, where it is a partner: kept only beside <paramref name="serves"/>.</param>
     public void Working(
         string session, string repository, string tree, string state = "working", string? ask = null, string? serves = null,
         string? opinion = null, string? piece = null)
@@ -631,13 +630,13 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
-    /// <summary>The session whose connector published <paramref name="quest"/> (SESS1), as the service lists it.</summary>
+    /// <summary>The session whose connector published <paramref name="quest"/>, as the service lists it.</summary>
     public void PublishedBy(string quest, string session)
     {
         lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == quest)["publishedBy"] = session;
     }
 
-    /// <summary>A chat took <paramref name="quest"/> through its own connector (CHATFLOW1a): the quest taken, the record naming it, its <c>quest</c> still null.</summary>
+    /// <summary>A chat took <paramref name="quest"/> through its own connector: the quest taken, the record naming it, its <c>quest</c> still null.</summary>
     public void Took(string session, string quest)
     {
         lock (_gate)
@@ -647,7 +646,7 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
-    /// <summary>The record's note, its one coded part, as the ledger keeps the driver's (HELPERWAIT1: <c>ended.awaits-helper</c>).</summary>
+    /// <summary>The record's note, its one coded part, as the ledger keeps the driver's (<c>ended.awaits-helper</c>).</summary>
     public void Noted(string session, string code)
     {
         lock (_gate)
@@ -658,8 +657,8 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// <paramref name="quest"/> made a set-up step showing its chain's work in <paramref name="environment"/>, done, with one
-    /// local set-up <paramref name="session"/> said and no verdict on it yet (REVIEWENV1d): a review waiting for the person.
+    /// <paramref name="quest"/> makes a set-up step showing its chain's work in <paramref name="environment"/>, done, with one
+    /// local set-up <paramref name="session"/> said and no verdict on it yet: a review waiting for the person.
     /// </summary>
     public void SetUpShown(string quest, string session, string environment = "local-dev")
     {
@@ -676,7 +675,7 @@ internal sealed class StandInLedger : HttpMessageHandler
         }
     }
 
-    /// <summary>Every state a record was moved to through the state door, in order (ANSWER2).</summary>
+    /// <summary>Every state a record is moved to through the state door, in order.</summary>
     public IReadOnlyList<string> MovesOf(string id)
     {
         lock (_gate) return [.. _moves.GetValueOrDefault(id) ?? []];
@@ -685,9 +684,9 @@ internal sealed class StandInLedger : HttpMessageHandler
     private readonly Dictionary<string, List<string>> _moves = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Where the ledger lets a running record move from each of its active states (D46 §4), for the sentence it refuses a
+    /// Where the ledger lets a running record move from each of its active states, for the sentence it refuses a
     /// move with. The stand-in refuses only a move to the state a running record is already in, the refusal a second run on
-    /// the same record meets (ANSWER2); its own runs move a record queued → working, which the real ledger never takes.
+    /// the same record meets; its own runs move a record queued → working, which the real ledger never takes.
     /// </summary>
     private static readonly Dictionary<string, string> From = new(StringComparer.Ordinal)
     {
@@ -703,8 +702,7 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// The session an open says the new record continues, why and who asked (MIXAGENT1a-iii), and the access setup it started under
-    /// (AUTONOMY1a), kept as the service answers them on loopback: each only where the open named it.
+    /// The session an open says the new record continues, why and who asked, and the access setup it started under, kept as the service answers them on loopback: each only where the open named it.
     /// </summary>
     internal static void Continues(JsonObject session, JsonObject open)
     {
@@ -713,13 +711,13 @@ internal sealed class StandInLedger : HttpMessageHandler
             if (open[name]?.GetValue<string>() is { } value) session[name] = value;
         }
 
-        // The access setup a driven start resolved (AUTONOMY1a), kept as the service answers it on loopback.
+        // The access setup a driven start resolved, kept as the service answers it on loopback.
         if (open["access"] is JsonObject access) session["access"] = access.DeepClone();
         Works(session);
     }
 
     /// <summary>
-    /// The work a record answers (FOUNDATION1c), as the service answers it on loopback: read from the record's own marks by the driver's
+    /// The work a record answers, as the service answers it on loopback: read from the record's own marks by the driver's
     /// twin of the rule, so a test's read of it passes on what the real service would answer. A record with no work here answers none.
     /// </summary>
     internal static void Works(JsonObject session)
@@ -746,14 +744,14 @@ internal sealed class StandInLedger : HttpMessageHandler
     }
 
     /// <summary>
-    /// What a request waits on before it is answered, outside the gate, where a test holds one (PARALLEL1b): which requests are asked
+    /// What a request waits on before it is answered, outside the gate, where a test holds one: which requests are asked
     /// at once is what such a test reads. Null holds none.
     /// </summary>
     public Func<HttpRequestMessage, CancellationToken, Task>? Before { get; set; }
 
     /// <summary>
     /// Whether a finished record with no words waiting refuses a move to working, as the ledger's go-on does: a second start's advance
-    /// that lands after the record concluded (COWORKVIEW1a rule 5). Off, a finished record moves to working as before.
+    /// that lands after the record concluded. Off, a finished record moves to working.
     /// </summary>
     public bool FinishedStays { get; set; }
 
@@ -807,7 +805,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                 case ("GET", "/api/registry"):
                     return Answer(HttpStatusCode.OK, new JsonArray([.. _registry.Select(r => r.DeepClone())]));
 
-                // A circle's sync (DEV3b): this machine owes it no retires, and the host's pass answers where its remote stood.
+                // A circle's sync: this machine owes it no retires, and the host's pass answers where its remote stands.
                 case ("GET", "/api/registry/retired"):
                     return Answer(HttpStatusCode.OK, new JsonObject { ["repositories"] = new JsonArray() });
 
@@ -837,7 +835,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                         ["id"] = $"s{_sessions.Count + 1}", ["quest"] = quest, ["repository"] = to,
                         ["state"] = "queued", ["kind"] = "driven", ["door"] = body["door"]?.GetValue<string>(),
                         ["tree"] = body["tree"]?.GetValue<string>(), ["created"] = _clock.ToString("O"),
-                        // The account it runs on, as the service answers it on loopback (TOOL4f reads it back).
+                        // The account it runs on, as the service answers it on loopback.
                         ["profile"] = body["profile"]?.GetValue<string>(),
                     };
                     Continues(session, body);
@@ -875,31 +873,31 @@ internal sealed class StandInLedger : HttpMessageHandler
                     session["updated"] = _clock.ToString("O");
                     if (!_moves.TryGetValue(id, out var moves)) _moves[id] = moves = [];
                     moves.Add(to);
-                    // A session that parks again asks anew (ANSWER1b): a move into a park clears the words waiting (MSG1a).
+                    // A session that parks again asks anew: a move into a park clears the words waiting.
                     if (to == "awaiting-person" && session["said"] is not null) session["said"] = new JsonArray();
                     if (body["note"] is { } note)
                     {
                         session["note"] = note.GetValue<string>();
-                        // Its parts beside it, as the service keeps them (LANG1a): a note sent without them clears them. The
-                        // strikes read an account's line by its code (ROSTER1b).
+                        // Its parts beside it, as the service keeps them: a note sent without them clears them. The
+                        // strikes read an account's line by its code.
                         session["noteParts"] = body["noteParts"]?.DeepClone();
                     }
 
                     if (body["interrupted"] is { } interrupted) session["interrupted"] = interrupted.GetValue<bool>();
-                    // Kept once said, as the service keeps it (TOOL4c).
+                    // Kept once said, as the service keeps it.
                     if (body["limit"] is { } limit && limit.GetValue<bool>()) session["limit"] = true;
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" });
                 }
 
-                // The say door (MSG1a), the one the screen's answer and a terminal's words reach through `ServiceClient.SayAsync`:
-                // words kept on a parked or ended record, verbatim and in order, as the keyed words alone (ONEWAY1m); a running record is
+                // The say door, the one the screen's answer and a terminal's words reach through `ServiceClient.SayAsync`:
+                // words kept on a parked or ended record, verbatim and in order, as the keyed words alone; a running record is
                 // refused `running`, since its words reach it through the driver that runs it.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/say", StringComparison.Ordinal):
                 {
                     var id = path["/api/sessions/".Length..^"/say".Length];
                     var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                     var state = session["state"]!.GetValue<string>();
-                    // COWORK1c: a running record keeps a word for its run where the driver that runs it asks so.
+                    // A running record keeps a word for its run where the driver that runs it asks so.
                     var forRun = state is "queued" or "starting" or "working";
                     if (forRun && body!["running"]?.GetValue<bool>() != true)
                     {
@@ -911,7 +909,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     }
 
                     if (session["said"] is not JsonArray said) session["said"] = said = [];
-                    // COWORK1b: a word kept once by its producer's key, and Daoris's kept as Daoris's, never in the person's answer.
+                    // A word kept once by its producer's key, and Daoris's kept as Daoris's, never in the person's answer.
                     var key = body!["key"]?.GetValue<string>();
                     if (key is not null && said.FirstOrDefault(each => each!["key"]?.GetValue<string>() == key) is { } kept)
                     {
@@ -937,7 +935,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     });
                 }
 
-                // COWORK1c: the attempt door, the first moment kept on each word named that still waits.
+                // The attempt door, the first moment kept on each word named that still waits.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
                 {
                     var id = path["/api/sessions/".Length..^"/attempt".Length];
@@ -952,7 +950,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "marked", ["unmarked"] = new JsonArray() });
                 }
 
-                // SAIDBACK1a's take-back door, without a reword: a word waiting on a record that runs no more leaves it.
+                // The take-back door, without a reword: a word waiting on a record that runs no more leaves it.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/take-back", StringComparison.Ordinal):
                 {
                     var id = path["/api/sessions/".Length..^"/take-back".Length];
@@ -968,7 +966,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     return Answer(HttpStatusCode.OK, new JsonObject { ["done"] = true, ["message"] = "taken back", ["session"] = session.DeepClone() });
                 }
 
-                // The taken door (MSG1a): the words a session took leave its record by their ids.
+                // The taken door: the words a session took leave its record by their ids.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/taken", StringComparison.Ordinal):
                 {
                     var id = path["/api/sessions/".Length..^"/taken".Length];
@@ -988,7 +986,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                         if (body![key] is { } value) session[key] = value.DeepClone();
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" });
                 }
-                // A finished tree's record (KEEPSIZE1b): kept once by its identity, as the service keeps it.
+                // A finished tree's record: kept once by its identity, as the service keeps it.
                 case ("POST", "/api/trees/record"):
                 {
                     if (_recordsMissing) return new HttpResponseMessage(HttpStatusCode.NotFound);
@@ -1009,7 +1007,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     return Answer(HttpStatusCode.OK, new JsonObject { ["kept"] = kept is null, ["at"] = _clock.ToString("O"), ["sessions"] = new JsonArray() });
                 }
 
-                // The resolved door (KEEP1b): the downloaded versions a start was handed, added to the record's, as the ledger keeps them.
+                // The resolved door: the downloaded versions a start is handed, added to the record's, as the ledger keeps them.
                 case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/resolved", StringComparison.Ordinal):
                 {
                     var id = path["/api/sessions/".Length..^"/resolved".Length];
@@ -1025,7 +1023,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "kept" });
                 }
 
-                // An ask's channel as one entry reads it (SESSONE2a), each message with that entry's acknowledgment (COWORK1d); an ask
+                // An ask's channel as one entry reads it, each message with that entry's acknowledgment; an ask
                 // with no channel here is not found, as a host without it answers.
                 case ("GET", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal) && path.EndsWith("/channel", StringComparison.Ordinal):
                 {
@@ -1053,7 +1051,7 @@ internal sealed class StandInLedger : HttpMessageHandler
                     });
                 }
 
-                // An entry's acknowledgments by message id (COWORK1d): a claim only where the entry holds none or let one go, the rest
+                // An entry's acknowledgments by message id: a claim only where the entry holds none or let one go, the rest
                 // kept as said. Answers the ids it changed.
                 case ("POST", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal) && path.EndsWith("/channel/ack", StringComparison.Ordinal):
                 {
@@ -1071,14 +1069,14 @@ internal sealed class StandInLedger : HttpMessageHandler
                     return Answer(HttpStatusCode.OK, new JsonObject { ["acknowledged"] = changed });
                 }
 
-                // One ask, whole, as a session's start and resume read the go-aheads on it (KNOWUSE1a).
+                // One ask, whole, as a session's start and resume read the go-aheads on it.
                 case ("GET", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal):
                     return _askedBy.TryGetValue(path["/api/asks/".Length..], out var whole)
                         ? Answer(HttpStatusCode.OK, whole.DeepClone())
                         : Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = $"No ask `#{path["/api/asks/".Length..]}`." });
 
-                // The go-ahead door (KNOWUSE1a), with what the service does to a park on the answer that leaves none of its
-                // go-aheads waiting (GOAHEAD2, SessionLedger.GoOnWithGoAheadsAsync): a parked record of a session that asked
+                // The go-ahead door, with what the service does to a park on the answer that leaves none of its
+                // go-aheads waiting (SessionLedger.GoOnWithGoAheadsAsync): a parked record of a session that asked
                 // it, holding no words yet, keeps the park's blank answer, unless the caller answers the park itself.
                 case ("POST", _) when path.StartsWith("/api/asks/", StringComparison.Ordinal) && path.Contains("/go-aheads/", StringComparison.Ordinal):
                 {
@@ -1149,10 +1147,10 @@ internal sealed class StandInLedger : HttpMessageHandler
 }
 
 /// <summary>
-/// A start's run, standing in (DEV3): it opens its record through the real client, moves it to working,
+/// A start's run, standing in: it opens its record through the real client, moves it to working,
 /// says it opened, and holds its session until the test ends it. When the look's token is cancelled it
-/// ends as the driver's shutdown ends a session: <c>stopped</c>, interrupted (D104), unless the driver
-/// had stopped it first, whose stop is then the record's (FLAKE3, <see cref="Observation.Closed"/>).
+/// ends as the driver's shutdown ends a session: <c>stopped</c>, interrupted, unless the driver
+/// stopped it first, whose stop is then the record's (<see cref="Observation.Closed"/>).
 /// </summary>
 internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
 {
@@ -1169,11 +1167,11 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
 
     /// <summary>
     /// The driver's running set, where a run says which quest it holds while it works, as the real run does —
-    /// what the lost-claim stop asks about (D68 §5).
+    /// what the lost-claim stop asks about.
     /// </summary>
     public RunningSessions? Keeping { get; set; }
 
-    /// <summary>The quests a session was opened for, in the order they opened.</summary>
+    /// <summary>The quests a session is opened for, in the order they open.</summary>
     public IReadOnlyList<string> Started
     {
         get { lock (_started) return [.. _started]; }
@@ -1183,8 +1181,8 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
     public Func<Consideration, Action, CancellationToken, Task<StartRun>> Runner => RunAsync;
 
     /// <summary>
-    /// The stop a driver is handed with the runner (DEV3b), which it calls for a take that lost as it ends a real session's
-    /// process: true when a session of this stand-in's was running and not yet stopped, which then ends stood down for the
+    /// The stop a driver is handed with the runner, which it calls for a take that lost as it ends a real session's
+    /// process: true when a session of this stand-in's is running and not yet stopped, which then ends stood down for the
     /// driver's reason.
     /// </summary>
     public Func<string, Noted, bool> Stops => Stop;
@@ -1220,7 +1218,7 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
     {
         var quest = start.Quest;
         var (id, message) = await service.OpenSessionAsync(quest.Id, "stub", ct: ct);
-        // In step with Driver.RunAsync's refusal (TICKSHOWN1): the person's words' refusal is the consideration's hold.
+        // In step with Driver.RunAsync's refusal: the person's words' refusal is the consideration's hold.
         if (id is null) return new StartRun($"refused  #{quest.Id} → {quest.To}: {message}", false, null, start.GoesOn ? $"the service refused the open: {message}" : null);
 
         await service.AdvanceAsync(id, "working", ct: ct);
@@ -1252,7 +1250,7 @@ internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
                 // without waiting for it would find the record still working.
                 await Task.Delay(200, CancellationToken.None);
 
-                // A stop the driver made before the close decided the end, as the driver's own close reads it (FLAKE3).
+                // A stop the driver made before the close decided the end, as the driver's own close reads it.
                 var (closed, interrupted) = Observation.Closed(
                     _stoppedFor.TryGetValue(id, out var first) ? new SessionStop(first, Note: null) : null);
                 if (!interrupted)

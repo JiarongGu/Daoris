@@ -16,14 +16,14 @@ export type ReviewTarget = {
   step?: string | null;
   /** The set-up step's record, whose set-up a *not yet* finds its session in. */
   record?: Quest | null;
-  /** The chain's work quest: where *Set it up* follows, and a skip goes once the step was reviewed. */
+  /** The chain's work quest: where *Set it up* follows, and a skip goes once the step is reviewed. */
   work?: string | null;
   /** The step's own page, where the gate is drawn elsewhere. */
   open?: () => void;
 };
 
 /**
- * **The one owner of a review's presses** (REVIEWENV1g; D154 point 8, the review environment design §3.3–§3.4, §3.6): the
+ * **The one owner of a review's presses**: the
  * session's head, a set-up step's page and *What needs you* each press this, so a verdict has one implementation whichever
  * door pressed it, as `historyActs.ts` is the one owner of a clear.
  *
@@ -31,10 +31,10 @@ export type ReviewTarget = {
  * **An organism**: it holds the service's and the bridge's hooks, so the gate and the rows, which press them, hold none.
  *
  * **The verdict goes to the service's door** (`api.reviewQuest`, through the person's seam), naming the set-up the view drew. A
- * refusal, a stale verdict's above all, is the host's sentence, said inside the gate that was pressed (UXFIX2). Once kept, the
+ * refusal, a stale verdict's above all, is the host's sentence, said inside the gate that is pressed. Once kept, the
  * driver is asked to look now, which lets the tab go and lands work *Accept automatically* holds.
  *
- * **A *not yet*'s words go to the set-up step's session as its next turn** (design §3.4, D137), through the same door the
+ * **A *not yet*'s words go to the set-up step's session as its next turn**, through the same door the
  * terminal's `sessions say` takes (`SESSION_INPUT`), once the verdict is kept. A browser has no shell to reach a session, so
  * there *Not yet…* is not offered; the person's own set-up has no session, and its words are kept on the quest alone.
  */

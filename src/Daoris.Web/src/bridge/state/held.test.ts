@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { hashKey, QueryClient } from '@tanstack/react-query';
 
-// NOBLOCK1: the page's half of a read the shell answers from what it holds and tells by event.
+// The page's half of a read the shell answers from what it holds and tells by event.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock('@shenora/react', () => ({ getBridge: () => ({ isAvailable: true, invoke }) }));

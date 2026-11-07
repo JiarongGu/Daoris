@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR3 (D88): a session branch goes once git proves its work is on a branch of the person's — by
+/// A session branch goes once git proves its work is on a branch of the person's — by
 /// the person's press, or by a tidy rule they set, and never otherwise. Real git throughout.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -120,7 +120,7 @@ public sealed class SweepTests : IDisposable
         var landed = await TreeWithWorkAsync(trees, root);
         await GitAsync(root, "merge", "--no-ff", "--no-edit", landed.Branch);
         var unlanded = await TreeWithWorkAsync(trees, root);
-        // A branch whose tree was removed by hand still counts.
+        // A branch whose tree has been removed by hand still counts.
         await GitAsync(root, "branch", "daoris/s-treeless");
 
         var swept = await trees.SweepAsync([("engine", "aurora", root)], new HashSet<string>());
@@ -155,7 +155,7 @@ public sealed class SweepTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A tree whose files' paths pass Windows' 260 characters is removed, as it was opened: the first
+    /// 🔴 A tree whose files' paths pass Windows' 260 characters is removed, as it is opened: the first
     /// real workspace's discarded tree failed with "Filename too long", after git had let go of it.
     /// </summary>
     [Fact]
@@ -207,7 +207,7 @@ public sealed class SweepTests : IDisposable
         return tree;
     }
 
-    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): no test here reads its first commit.</summary>
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no test here reads its first commit.</summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task IdentityAsync(string root)

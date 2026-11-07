@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words of <c>daoris role policy</c> (STAFFPOLICY1b, the staff policy design §6.4) as a policy press: a draft (the stored policy
+/// The words of <c>daoris role policy</c> as a policy press: a draft (the stored policy
 /// or today's order, or a preset's fill) with each flag laid over it, in the order typed. It judges nothing; the role door's judge does.
 /// </summary>
 internal static class StaffPolicyFlags
@@ -91,7 +91,7 @@ internal static class StaffPolicyFlags
     }
 
     /// <summary>
-    /// The policy in the fold's words (STAFFPOLICY1g, the staff policy design §6.5), as a card and the room say it: <i>Spread by weight (3:1);
+    /// The policy in the fold's words, as a card and the room say it: <i>Spread by weight (3:1);
     /// choice 2: at most 40%</i>. No policy, or one in use by order, is <i>First that can run</i>.
     /// </summary>
     public static string Fold(StaffPolicy? policy, IReadOnlyList<ActorChoice> choices)

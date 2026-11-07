@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDRETIRE1 part 2 over real git: a landing whose row the line took by another commit is listed with its age and its closed quest
+/// Over real git: a landing whose row the line took by another commit is listed with its age and its closed quest
 /// (the quest's closing is the service's, passed in once), offers the door that withdraws it, and the withdrawal from that door clears
 /// the row from the next list.
 /// </summary>

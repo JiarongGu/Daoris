@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
-/// <summary>One session beside another, what meets and how it was read.</summary>
+/// <summary>One session beside another, what meets and how it is read.</summary>
 /// <param name="Session">The other session.</param>
 /// <param name="Kind">Its record's kind.</param>
 /// <param name="Quest">Its quest, or null.</param>
-/// <param name="Read"><c>read</c>, or <c>not-read</c> where git cannot say (D137).</param>
-/// <param name="ReadAt">When the last good read of its tree was made: set for <c>not-read</c> after a good one, so the page says from when.</param>
+/// <param name="Read"><c>read</c>, or <c>not-read</c> where git cannot say.</param>
+/// <param name="ReadAt">When the last good read of its tree is made: set for <c>not-read</c> after a good one, so the page says from when.</param>
 /// <param name="DeclaredOverlap">The asking session's declared paths that meet the other's declared or changed ones.</param>
 /// <param name="ChangedOverlap">The changed paths both hold.</param>
 public sealed record RelatedSession(
@@ -13,17 +13,17 @@ public sealed record RelatedSession(
     IReadOnlyList<string> DeclaredOverlap, IReadOnlyList<string> ChangedOverlap);
 
 /// <summary>The asking session's own tree could not be read here.</summary>
-/// <param name="ReadAt">When it was last read well, or null.</param>
+/// <param name="ReadAt">When it last read well, or null.</param>
 public sealed record RelatedOwn(DateTimeOffset? ReadAt);
 
 /// <summary>What a look answers: the asker's own unread state, or the sessions beside it.</summary>
 public sealed record RelatedLook(RelatedOwn? Own, IReadOnlyList<RelatedSession> Related);
 
 /// <summary>
-/// The sessions of one repository beside one another (LINESTOGETHER1c, the review-flow design §3): each session with a tree here,
+/// The sessions of one repository beside one another: each session with a tree here,
 /// chats included, compared for declared paths that meet and changed paths both hold. A tree's read is kept by its base and commit
 /// only while the session has ended and the tree holds no uncommitted path; any other is read at each look. A read failing after
-/// a good one answers <c>not-read</c>, never the old paths.
+/// a good one answers <c>not-read</c>, never stale paths.
 /// </summary>
 public sealed class RelatedSessions(RelatedSessions.Reads reads, Func<DateTimeOffset> now)
 {
@@ -59,7 +59,7 @@ public sealed class RelatedSessions(RelatedSessions.Reads reads, Func<DateTimeOf
 
     /// <summary>
     /// <see cref="LookAsync"/> with the asker's own read told apart: where its own tree cannot be read, <see cref="RelatedLook.Own"/> says
-    /// so once and no other session is marked for it (SESSRELATED1); a <c>not-read</c> row is only a present tree git could not read.
+    /// so once and no other session is marked for it; a <c>not-read</c> row is only a present tree git could not read.
     /// </summary>
     public async Task<RelatedLook> AskAsync(
         RelatedCandidate mine, IReadOnlyList<RelatedCandidate> others, CancellationToken ct = default)

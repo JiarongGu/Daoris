@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDBACKLOG1 (D87's LANDBACKLOG1 note): the declared backlog and its merge by the merge base, the rule a landing's replay settles a
-/// backlog-only conflict by, a twin of the merge tool's (MERGETASKS1). Held cell for cell to ONE table, <c>fixtures/backlog-merges.json</c>,
+/// The declared backlog and its merge by the merge base, the rule a landing's replay settles a
+/// backlog-only conflict by, a twin of the merge tool's. Held cell for cell to ONE table, <c>fixtures/backlog-merges.json</c>,
 /// which <c>merge-branch.test.ts</c> holds the merge tool's <c>backlogOf</c> and <c>mergeByBase</c> to, row for row; and what the
 /// landing says of a backlog it settled. The replay itself is <c>LandBacklogLandingTests</c>' (Process). Reads text only.
 /// </summary>
@@ -26,7 +26,7 @@ public sealed class BacklogMergeTests
         return data;
     }
 
-    /// <summary>INTEGRATE1c: the declared row tables, each row's tables joined by a newline (the theory data keeps scalars).</summary>
+    /// <summary>The declared row tables, each row's tables joined by a newline (the theory data keeps scalars).</summary>
     public static TheoryData<string, string?, string> RowTableRows()
     {
         var data = new TheoryData<string, string?, string>();

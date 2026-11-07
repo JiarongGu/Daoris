@@ -1,21 +1,21 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The agent a piece is written by (COAGENT1b; the co-agent design §2.3 step 3, §3.3): the one the person's ask names, walked as a
-/// helper's is (<see cref="ReviewerChoice"/>) for its account, then admitted only where its confinement was measured in the effective
+/// The agent a piece is written by: the one the person's ask names, walked as a
+/// helper's is (<see cref="ReviewerChoice"/>) for its account, then admitted only where its confinement is measured in the effective
 /// configuration a start would hand it.
 /// </summary>
 /// <remarks>
 /// Admission reads the measurements table (<see cref="PartnerMeasurements"/>) twice: here, whether any row could admit the agent at the
 /// version its account resolved to; and at the start, before anything of the partner's is made, whether a row holds the whole effective
 /// configuration the start would hand it. Until M2 writes a row, every agent is refused <see cref="PartnerWhy.NotMeasured"/>, the
-/// person's own ask included (D199 point 4). A test's stand-in rows are read only where a test hands them in, never at a production start.
+/// person's own ask included. A test's stand-in rows are read only where a test hands them in, never at a production start.
 /// </remarks>
 public static class PartnerChoice
 {
     /// <param name="measured">The measurements a test hands in for its stand-ins, or null for a production start's, which reads the code's table.</param>
     /// <param name="passed">
-    /// The (entry, account) this piece's call already passed at an open's refusal (D205 §3.5(f)): the named agent's other accounts are
+    /// The (entry, account) this piece's call already passed at an open's refusal: the named agent's other accounts are
     /// walked, then its other entries, and never another agent.
     /// </param>
     public static async Task<ReviewerChoice> ChooseAsync(
@@ -23,13 +23,13 @@ public static class PartnerChoice
         IReadOnlyList<PartnerMeasurement>? measured = null, CancellationToken ct = default, IReadOnlyList<ReviewerPassed>? passed = null,
         Func<RoleCatalog>? catalogue = null)
     {
-        // The person's ask names its agent; a lead's ask under the rule is COAGENT1d's. Nothing is substituted for a name.
+        // The person's ask names its agent. Nothing is substituted for a name.
         if (ask.Agent is not { Length: > 0 } named)
         {
             return new ReviewerChoice(null, null, PartnerWhy.NotListed, "a piece names the agent that writes it, and this one names none.");
         }
 
-        // D205 §4.4: named by the ask, so the actor supplies only the model and effort of the agent named, as its entries for it in order.
+        // Named by the ask, so the actor supplies only the model and effort of the agent named, as its entries for it in order.
         var walked = await ReviewerChoice.ChooseAsync(
                 roster, OpinionRule.None with { Reviewers = [named] }, leadAdapter is { Length: > 0 } adapter ? [adapter] : [], config, workspace, ct,
                 "partner", passed, catalogue: catalogue)
@@ -48,12 +48,12 @@ public static class PartnerChoice
                 $"{chosen.Reviewer} is not admitted as a partner: no measurement of its confinement holds the configuration a start would hand it.");
 }
 
-/// <summary>How a partner's turn ended, from what Daoris observed of it (the design §2.3 steps 6 and 11), never from its words.</summary>
+/// <summary>How a partner's turn ended, from what Daoris observed of it, never from its words.</summary>
 public static class PartnerTurns
 {
     /// <param name="byPerson">The person's <i>Stop…</i> ended it.</param>
     /// <param name="exitCode">Its exit; null where its bound cut it.</param>
-    /// <param name="limited">Its account's limit was met.</param>
+    /// <param name="limited">Its account's limit is met.</param>
     public static string End(bool byPerson, int? exitCode, bool limited) =>
         byPerson ? PartnerEnds.Stopped
         : exitCode is null ? PartnerEnds.OutOfTime

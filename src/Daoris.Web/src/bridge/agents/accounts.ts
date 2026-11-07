@@ -6,16 +6,16 @@ import { call } from '../call';
 import { readSlice } from '../driver';
 import { readPushed, type SliceSpec } from '../state/slices';
 
-// How each agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; D197): the set's order and how it is used,
+// How each agent's accounts are used: the set's order and how it is used,
 // each account's cool-off, what its agent last said, its learned week and Daoris's sessions on it, and what the fold into one
-// set changed; each account's use read again (SWITCH1d); and the edits the agent's page makes, the terminal's
-// `daoris agent profile order|use|ready` over the same files (D50).
+// set changed; each account's use read again; and the edits the agent's page makes, the terminal's
+// `daoris agent profile order|use|ready` over the same files.
 
 const isAgent = (value: unknown): value is AgentAccounts =>
   typeof value === 'object' && value !== null && typeof (value as { agent?: unknown }).agent === 'string';
 
 /**
- * How each agent's accounts are used, as the shell pushes it (PUSH1e, D182): a partition per agent, named by its accounts' owner,
+ * How each agent's accounts are used, as the shell pushes it: a partition per agent, named by its accounts' owner,
  * each its answer of `ACCOUNTS` whole with the verdicts .NET judges beside each reading (`AccountsStateSlice`), composed into the
  * route's answer, agents by name as C#'s ordinal compares them, as the route orders them. Nothing judged yet composes nothing, which
  * is waited for; judged with no agent, none.
@@ -32,9 +32,9 @@ export const accountsSlice: SliceSpec = {
 };
 
 /**
- * How each agent's accounts are used, read from the files and never probed (TOOL4g), as the shell pushes it (PUSH1e): from memory,
+ * How each agent's accounts are used, read from the files and never probed, as the shell pushes it: from memory,
  * never stale and asked on no focus, a probe's result arriving by one push. Shell-only, like the roster: a profile name rides this
- * bridge and no HTTP route (D47 §4).
+ * bridge and no HTTP route.
  */
 export const useAccounts = () => {
   const { isAvailable } = useShenora();
@@ -49,11 +49,11 @@ export const useAccounts = () => {
 };
 
 /**
- * Each account's use read again (SWITCH1d; the switch design §1.2): *Read now*, which only a press asks. Each of
+ * Each account's use read again: *Read now*, which only a press asks. Each of
  * the agent's accounts whose reading is older than its question's floor is asked by its agent under its own home, with no
- * prompt and no model request (D165 point 1); the driver skips one cooling, refused, signed out, a key or busy. What it reads
- * lands in the accounts' files, which the shell's accounts slice judges at the roster's declared scope and pushes to every window
- * (PUSH1e), or which the state hub asks again under the roster's key where it is pulled, so this asks nothing again itself.
+ * prompt and no model request; the driver skips one cooling, refused, signed out, a key or busy. What it reads
+ * lands in the accounts' files, which the shell's accounts slice judges at the roster's declared scope and pushes to every window,
+ * or which the state hub asks again under the roster's key where it is pulled, so this asks nothing again itself.
  */
 export const useReadAccounts = () =>
   useMutation({
@@ -61,14 +61,14 @@ export const useReadAccounts = () =>
   });
 
 /**
- * The screen's edits to how an agent's accounts are used (TOOL4g), each refused as the terminal refuses it and written to
+ * The screen's edits to how an agent's accounts are used, each refused as the terminal refuses it and written to
  * the same file: `order`, the set's order written whole (`daoris agent profile order`, the accounts named first and the rest
  * after); `use`, how the set is used (`profile use`); `ready`, a cool-off ended early, *Try now* (`profile ready`); and `said`,
- * *Got it* on what the fold into one set changed, by the receipts' ids (POOL1a; the account-pool design §6.3). One set serves
- * every workspace (D197), so no workspace is named: the bridge refuses one as `ACCOUNTS_ONE_SET`.
+ * *Got it* on what the fold into one set changed, by the receipts' ids. One set serves
+ * every workspace, so no workspace is named: the bridge refuses one as `ACCOUNTS_ONE_SET`.
  *
  * The order, the cool-offs and what a start runs on sit under the roster's key, which the route publishes and the state hub
- * asks again in every window (STATEHUB1h, D169).
+ * asks again in every window.
  */
 export const useAccountUse = () =>
   useMutation({

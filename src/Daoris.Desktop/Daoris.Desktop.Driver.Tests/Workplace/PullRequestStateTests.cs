@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUGHOOK1a (D148, the plugin hooks design §2.1–§2.5): a squash-merged pull request's branches go on its plugin's word,
+/// A squash-merged pull request's branches go on its plugin's word,
 /// where git confirms it. Real git, a bare <c>origin</c> beside the checkout and a "platform" that squash-merges in a clone of
 /// it; the plugin is faked on its channel, answering by branch as its platform would, so nothing reaches a network.
 /// </summary>
@@ -17,14 +17,14 @@ public sealed class PullRequestStateTests : LandedFixture
     private static readonly Func<CancellationToken, Task<IReadOnlySet<string>>> NoneRunning =
         _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string>());
 
-    /// <summary>What the fake platform answers for each branch, and how many times it was asked.</summary>
+    /// <summary>What the fake platform answers for each branch, and how many times it is asked.</summary>
     private readonly Dictionary<string, Func<PullRequestState>> _answers = new(StringComparer.Ordinal);
 
     private int _asked;
 
     /// <summary>
-    /// The asks' clock, held for the whole test: an answer from the last minute is reused (PLUGHOOK1a), and on the wall
-    /// clock a first plan slower than a minute under load made the second plan ask again (merging integrate-ak, 2026-10-04).
+    /// The asks' clock, held for the whole test: an answer from the last minute is reused, and on the wall
+    /// clock a first plan slower than a minute under load would make the second plan ask again.
     /// </summary>
     private readonly DateTimeOffset _now = DateTimeOffset.UtcNow;
 
@@ -57,8 +57,8 @@ public sealed class PullRequestStateTests : LandedFixture
     };
 
     /// <summary>
-    /// The clean-up's look asks; its press acts on what was kept (design §2.1 occasion 2, §2.3). A landed branch squash-merged
-    /// after which the line changed its file again (D102's proof cannot see it) goes as <c>pull-request</c>; each other code
+    /// The clean-up's look asks; its press acts on the kept answer. A landed branch squash-merged
+    /// after which the line changed its file again (the content proof cannot see it) goes as <c>pull-request</c>; each other code
     /// keeps its branch and names why; a second look within the minute asks nothing.
     /// </summary>
     [Fact]
@@ -73,7 +73,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var beyond = await LandAsync(trees, root, "beyond.txt", "beyond\n", new LandingSubject("s5", "q5", "Beyond"));
         string Tip(TreeLanding landing) => trees.Recorded.Of("engine", landing.Branch!)!.Tip;
 
-        // The platform squash-merges two of them; after the first the line changes its file again, so D102 cannot see it.
+        // The platform squash-merges two of them; after the first the line changes its file again, so the content proof cannot see it.
         var mergedAt = await SquashOnPlatformAsync(origin, merged.Branch!, then: ("merged.txt", "changed on the line since\n"));
         var beyondAt = await SquashOnPlatformAsync(origin, beyond.Branch!);
         await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
@@ -116,8 +116,8 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// PUSH1c4a (D182, D148 point 2): the machine's facts judge one repository's list by the answer the record keeps and ask no plugin.
-    /// A squash-merged branch D102 cannot see stays kept until the person's look asks; once its answer is kept, the part judges it as
+    /// The machine's facts judge one repository's list by the answer the record keeps and ask no plugin.
+    /// A squash-merged branch the content proof cannot see stays kept until the person's look asks; once its answer is kept, the part judges it as
     /// the look did, and still asks nothing.
     /// </summary>
     [Fact]
@@ -146,8 +146,8 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// A session branch whose landed branch the person deleted after its pull request completed by squash: D88 can no longer see
-    /// its commits on any branch of theirs, the clean-up's look asks, and the press removes it as carried, kept on the entry.
+    /// A session branch whose landed branch the person deleted after its pull request completed by squash: no branch of theirs holds
+    /// its commits, the clean-up's look asks, and the press removes it as carried, kept on the entry.
     /// A source commit this machine never had keeps everything (<c>source-not-here</c>).
     /// </summary>
     [Fact]
@@ -165,7 +165,7 @@ public sealed class PullRequestStateTests : LandedFixture
         await OpenedPullRequestAsync(root, other, Plugin);
         var source = (await GitAsync(root, "rev-parse", landing.Branch!)).Trim();
         var merge = await SquashOnPlatformAsync(origin, landing.Branch!);
-        // The line changes its file again after the squash, so its work is not on the line by content either (SQUASHTIDY1):
+        // The line changes its file again after the squash, so its work is not on the line by content either:
         // only the plugin's word could carry it, and that word is not confirmed.
         var otherMerge = await SquashOnPlatformAsync(origin, other.Branch!, then: ("unknown.txt", "changed on the line since\n"));
         await GitAsync(root, "fetch", "--quiet", "--prune", "origin");
@@ -185,7 +185,7 @@ public sealed class PullRequestStateTests : LandedFixture
         await trees.CleanAsync([("engine", "aurora", root)], new HashSet<string>());
 
         Assert.Equal("", (await GitAsync(root, "branch", "--list", carried.Branch)).Trim());
-        // KEEPSIZE1b (the keep-size design §3.1, Opus finding 21): the press's path keeps a carried branch's exact tip on a ref of its own.
+        // The press's path keeps a carried branch's exact tip on a ref of its own.
         Assert.Equal(carriedTip, (await GitAsync(root, "rev-parse", $"refs/daoris/discarded/{carried.Branch}")).Trim());
         Assert.NotEqual("", (await GitAsync(root, "branch", "--list", unknown.Branch)).Trim());
         var entry = trees.Recorded.Landing("s1")!;
@@ -193,7 +193,7 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// AUTOTIDY2a: the watch's look takes a carried session branch by itself, as the press does, on the answer a list kept: its
+    /// The watch's look takes a carried session branch by itself, as the press does, on the answer a list kept: its
     /// tree's folder moved aside and its removal kept on the landing's entry. The look asks no plugin; it reads the kept answers.
     /// </summary>
     [Fact]
@@ -212,7 +212,7 @@ public sealed class PullRequestStateTests : LandedFixture
         _answers[landing.Branch!] = () => Completed(merge, source);
         await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
         var asked = _asked;
-        // FABRIC-END4a: the look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
+        // The look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         var carriedTip = (await GitAsync(root, "rev-parse", carried.Branch)).Trim();
@@ -222,7 +222,7 @@ public sealed class PullRequestStateTests : LandedFixture
         var removed = Assert.Single(pass.Results, result => result.Removed);
         Assert.Equal((carried.Branch, SweepKind.Carried, landing.Branch), (removed.Item.Branch, removed.Item.Kind, removed.Item.Where));
         Assert.NotNull(removed.MovedTo);
-        // KEEPSIZE1b (the keep-size design §3.1, Opus finding 21): the look's path keeps it too, named in the folder's manifest as carried.
+        // The look's path keeps it too, named in the folder's manifest as carried.
         Assert.Equal(carriedTip, (await GitAsync(root, "rev-parse", $"refs/daoris/discarded/{carried.Branch}")).Trim());
         var manifest = SlimManifest.Read(SlimManifest.PathFor(removed.MovedTo)).Manifest!;
         Assert.Equal(("carried", $"refs/daoris/discarded/{carried.Branch}"), (manifest.Finished!.Hold.Kind, manifest.Finished.Ref));
@@ -233,9 +233,9 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 FABRIC-END2d, after the merge: the keeper keeps a carried session branch's end once the platform and the person deleted the
+    /// The keeper keeps a carried session branch's end once the platform and the person deleted the
     /// carrier's branch, resting on the form of the line its merge commit is on (<see cref="PullRequestCarrier.Rests"/>), as the carried
-    /// tidy verifies it. It named the gone branch before, whose commit cannot be read, so no fact was kept and only END4a's fallback took it.
+    /// tidy verifies it. It does not name the gone branch, whose commit cannot be read.
     /// </summary>
     [Fact]
     public async Task The_keeper_keeps_a_carried_session_branchs_end_on_the_form_its_merge_commit_is_on()
@@ -262,8 +262,8 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// AUTOTIDY2b: the watch's look takes a landing's branch whose pull request completed by squash, on the answer a list kept,
-    /// though the line changed its file since, so D102's proof by content cannot see it: its session's branch first, whose work
+    /// The watch's look takes a landing's branch whose pull request completed by squash, on the answer a list kept,
+    /// though the line changed its file since, so the proof by content cannot see it: its session's branch first, whose work
     /// is on the line through it, its tree's folder moved aside; then the landing's branch, its commits kept on a ref of their
     /// own, and the record keeping what proved it. The look asks no plugin.
     /// </summary>
@@ -283,7 +283,7 @@ public sealed class PullRequestStateTests : LandedFixture
         _answers[landing.Branch!] = () => Completed(merge, source);
         await trees.CleanPlanAsync([("engine", "aurora", root)], new HashSet<string>());
         var asked = _asked;
-        // FABRIC-END4a: the look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
+        // The look's tidy takes what the keeper or its fallback proves, both in the lease's process alone, as the loop's.
         using var lease = HomeLease.TryAcquire(Home, LeaseKind.Headless, out _);
 
         var pass = await trees.TidyEmptyAsync(root, "engine", "aurora", NoneRunning);
@@ -301,7 +301,7 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// Without an answer nothing is removed, and absent is never zero (design §2.4): a plugin that fails keeps its code beside
+    /// Without an answer nothing is removed, and absent is never zero: a plugin that fails keeps its code beside
     /// the kept answer, which it never overwrites, and the branch stays.
     /// </summary>
     [Fact]
@@ -328,9 +328,9 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// PLUGHOOK1c (design §2.1 occasion 3): bringing up to date's look asks after its fetch, which is where the platform's squash
+    /// Bringing up to date's look asks after its fetch, which is where the platform's squash
     /// first reaches this machine, so the answer confirms there and the landed branch is listed to go as <c>pull-request</c>. A look
-    /// that fetched nothing asks nothing, and the press acts on what was kept without asking again.
+    /// that fetched nothing asks nothing, and the press acts on the kept answer without asking again.
     /// </summary>
     [Fact]
     public async Task Bringing_up_to_date_asks_after_its_fetch_and_its_press_removes_on_the_kept_answer()
@@ -371,7 +371,7 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// PLUGHOOK1c (design §2.1): a row whose pull request was not asked about says why — the plugin that pushed it is not installed
+    /// A row whose pull request is not asked about says why — the plugin that pushed it is not installed
     /// here, or no plugin pushed it and the rule names none — at the clean-up's look and at bringing up to date's. Nothing goes.
     /// </summary>
     [Fact]
@@ -407,7 +407,7 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// PLUGHOOK1c (design §2.1 occasion 4): <i>Ask again</i> asks whatever the kept answer's age, keeps a failure beside the answer
+    /// <i>Ask again</i> asks whatever the kept answer's age, keeps a failure beside the answer
     /// and never over it, says what a completed answer proves here once its merge commit is fetched, and asks a final answer no more.
     /// </summary>
     [Fact]
@@ -454,7 +454,7 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// FABRIC-END6c, finding 2: two occasions at once share D148's minute. The first look's ask is in flight when the second looks, so
+    /// Two occasions at once share the minute. The first look's ask is in flight when the second looks, so
     /// the second asks nothing, and the pull request is asked once.
     /// </summary>
     [Fact]
@@ -478,8 +478,8 @@ public sealed class PullRequestStateTests : LandedFixture
     }
 
     /// <summary>
-    /// FABRIC-END6c, finding 3: frames go one at a time, so each pull request's answer is kept with the time its own request was sent,
-    /// not the occasion's start: the minute counts from when it was actually asked.
+    /// Frames go one at a time, so each pull request's answer is kept with the time its own request went out,
+    /// not the occasion's start: the minute counts from when it is actually asked.
     /// </summary>
     [Fact]
     public async Task Each_pull_request_is_kept_with_its_own_request_s_time()

@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What Daoris did with a plugin, in the machine log (PLUGUI1d, D119 §4.2): the hook set's starts, calls,
-/// failures and stops, a landing's and a hand-off's one frame, the servers a session was handed and a
+/// What Daoris did with a plugin, in the machine log: the hook set's starts, calls,
+/// failures and stops, a landing's and a hand-off's one frame, the servers a session is handed and a
 /// trial, each a line of names, counts, flags and times, and never the plugin's words.
 /// </summary>
 /// <remarks>
@@ -71,7 +71,7 @@ public sealed class HookSetLogTests : IDisposable
         Assert.Equal(["plugin", "why", "by"], Keys(lines[3]));
     }
 
-    /// <summary>🔴 D94 §5: a hold's reason and what the plugin wrote to stderr stay in the console's ring, never the log.</summary>
+    /// <summary>A hold's reason and what the plugin wrote to stderr stay in the console's ring, never the log.</summary>
     [Fact]
     public async Task A_holds_reason_and_a_plugins_stderr_are_in_no_line()
     {
@@ -196,7 +196,7 @@ public sealed class HookSetLogTests : IDisposable
             .ToDictionary(g => g.Key, g => g.Select(l => Text(l, "why")).ToList());
         Assert.Equal(["off"], whys["a.off"]);
         Assert.Equal(["removed"], whys["b.removed"]);
-        // Each of these was stopped for what changed, started again, and ended with the loop.
+        // Each of these is stopped for what changed, started again, and ended with the loop.
         Assert.Equal(["updated", "ended"], whys["c.updated"]);
         Assert.Equal(["changed", "ended"], whys["d.changed"]);
         Assert.Equal(["ended"], whys["e.ended"]);
@@ -252,8 +252,8 @@ public sealed class HookSetLogTests : IDisposable
     }
 
     /// <summary>
-    /// A conversation is handed the plugins' servers as a driven session is, and says so in the log (PLUGUI1e, D119
-    /// §4.2): one line per server, handed or withheld, the browser's withheld where no shell answers (D78).
+    /// A conversation is handed the plugins' servers as a driven session is, and says so in the log:
+    /// one line per server, handed or withheld, the browser's withheld where no shell answers.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -281,7 +281,7 @@ public sealed class HookSetLogTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1a (D170 point 3): Ask Daoris is handed only the servers declared for it, and a session only those declared for
+    /// Ask Daoris is handed only the servers declared for it, and a session only those declared for
     /// sessions; each logs a line for its own, so a server declared for the other is never said withheld from it.
     /// </summary>
     [Fact]
@@ -294,7 +294,7 @@ public sealed class HookSetLogTests : IDisposable
                 { "name": "docs", "command": ["node", "docs.mjs"] } ] }
             """);
 
-        // Withheld from Ask Daoris until the person approves its tools (D170's note), then handed.
+        // Withheld from Ask Daoris until the person approves its tools, then handed.
         var (waiting, _, _, _) = await ChatServers.HandAsync(
             _home, null, new PluginLog(_log), "s0a0b0c0", CancellationToken.None, PluginServerTo.Help);
         HelpGrants.Approve(_home, PluginCatalog.Load(_home), "acme.tools", "tickets", readsOnly: false);
@@ -312,8 +312,8 @@ public sealed class HookSetLogTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 point 1, D170 as it amends): in full access Ask Daoris is handed every server the plugins here declare,
-    /// for it or for sessions, approved or not, each said once in the log; restricted, the approved ones alone, as before.
+    /// In full access Ask Daoris is handed every server the plugins here declare,
+    /// for it or for sessions, approved or not, each said once in the log; restricted, the approved ones alone.
     /// </summary>
     [Fact]
     public async Task In_full_access_ask_daoris_is_handed_every_server_and_restricted_the_approved_ones()
@@ -414,10 +414,10 @@ public sealed class HookSetLogTests : IDisposable
             }
         });
         // Only the late case is timed; the others are answered at once, so their patience is a bound that elapses only on failure
-        // (FLAKE1, 2026-10-30: five seconds read an unreadable answer as late under five builders' load).
+        // (five seconds read an unreadable answer as late under load).
         var peer = new HookPeer(new ChannelReader(toHost), plugin, "acme.gate", patience: kind == "late" ? TimeSpan.FromMilliseconds(100) : Poll.Patience);
         // The late case asks with no handshake: a handshake bounded by the same short patience failed under the
-        // suite's own load before the call it was there to test.
+        // suite's own load before the call under test.
         if (kind != "late") await peer.InitializeAsync(_home, _home, ["quest/consider"], CancellationToken.None);
 
         var error = await Assert.ThrowsAsync<DriverException>(() => peer.ConsiderAsync(new { }, CancellationToken.None));

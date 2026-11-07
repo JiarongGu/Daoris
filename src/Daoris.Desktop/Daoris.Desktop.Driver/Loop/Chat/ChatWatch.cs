@@ -26,7 +26,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
     /// </param>
     /// <remarks>
     /// A native chat going on whose harness ended on a failed exit before it named its conversation is tried once more by the run itself,
-    /// handed the words its first process never acknowledged (D243); the record stays working, and a second such end concludes `exited`.
+    /// handed the words its first process never acknowledged; the record stays working, and a second such end concludes `exited`.
     /// </remarks>
     public async Task WatchAsync(
         string sessionId, TransportRun run, string transcript, Func<string, string, Task>? onEnded,
@@ -72,12 +72,12 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
         using var stops = chat is null || Context.Output is null
             ? null
             : processes.OpenTaskStops(sessionId, (task, ct) => run.Session is { } session ? session.StopTaskAsync(task, ct) : Task.FromResult(false));
-        // Whether its end was asked of the run: before it, a failure lets the run go with its process ended.
+        // Whether its end is asked of the run: before it, a failure lets the run go with its process ended.
         var ending = false;
         try
         {
             // The conversation's messages are recorded as the person sends them, so the capture opens with no composed prompt of its own, its
-            // first line how the run was set up; one going on appends to the transcript of the run before it, its own conversation resumed,
+            // first line how the run is set up; one going on appends to the transcript of the run before it, its own conversation resumed,
             // its id kept for its record the moment its door names it.
             run.HandStart(run.Start with { Session = sessionId, Transcript = transcript, Preamble = watched.Preamble });
             // The account's part first: a native limit's cooling line is recorded before the turn's end it is told at.
@@ -86,10 +86,10 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 new RecordReadings(sessionId, Context.Output, Context.Events),
                 !watched.Keeps ? null
                     : ReadingSinks.On<WireReading.ConversationNamed>(named => Context.Conversations.Keep(sessionId, watched.Adapter, named.Conversation)),
-                // Each child its door says, in the part's lineage (COWORKVIEW1a).
+                // Each child its door says, in the part's lineage.
                 new LineageReadings(Context.Home, sessionId),
                 said is null ? null : ReadingSinks.On<WireReading.WindowsSaid>(windows => said(windows.Windows)),
-                // What the door says it loaded, kept beside what Ask Daoris's start handed (HELPWIRED1b).
+                // What the door says it loaded, kept beside what Ask Daoris's start handed.
                 HelpLoaded.Part(Context.Home, sessionId)));
             // The native door's go-on hands the run its ask, which the run's one retry reads and marks.
             await (goOn is null
@@ -98,7 +98,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
                 .ConfigureAwait(false);
 
             // A conversation going on is working already: the ledger moved it out of its ended state before the spawn.
-            if (goOn is null) await Context.Service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
+            if (goOn is null && !watched.Working) await Context.Service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
             // Its exit, then its capture read to its end, then its process's lineage end.
             ending = true;
@@ -115,7 +115,7 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
 
             if (goOn?.Ask.Refused is { } refused)
             {
-                await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                if (goOn.Carried is null) await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return;
             }
 
@@ -124,24 +124,24 @@ internal sealed class ChatWatch(IExecutorWiring wiring, ChatTold told, ChatConcl
             if (end.Usage is { } used) measured?.Invoke(used);
 
             // The person's stop outranks the observation, exactly as for a driven session: a killed process leaves the same signals as one that
-            // ended on its own, and only this flag knows whose decision it was. Otherwise a conversation simply ended, `completed`, with no
+            // ended on its own, and only this flag knows whose decision it is. Otherwise a conversation simply ended, `completed`, with no
             // evidence claim beyond whatever its commits already say.
             var stopped = processes.WasStopRequested(sessionId);
-            // The driver's own reason when it was the driver, closing say, and the person's otherwise. Said before anyone writes to it.
+            // The driver's own reason when it is the driver, closing say, and the person's otherwise. Said before anyone writes to it.
             var note = conclusion.EndedNoteFor(sessionId, watched, stopped);
             await conclusion.ConcludeAsync(sessionId, stopped ? "stopped" : "completed", note, onEnded).ConfigureAwait(false);
         }
         catch (Exception error)
         {
             // The harness first, while it is still tracked: a record that could not move to `working`, a stop pressed during `starting` ends
-            // it so, used to conclude here and leave the agent running, untracked and unmarked, until the application exited. The run let go
-            // before its end ends it, and writes its process's end unclean once its exit is read; one whose end was asked has exited.
+            // it so; concluding here would leave the agent running, untracked and unmarked, until the application exited. The run let go
+            // before its end ends it, and writes its process's end unclean once its exit is read; one whose end is asked has exited.
             if (!ending) await run.AbandonAsync().ConfigureAwait(false);
 
             // An agent that would not resume the conversation: nothing went, so the record goes back to how it ended.
             if (goOn?.Ask.Refused is { } refused)
             {
-                await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
+                if (goOn.Carried is null) await goOnDoor.WentBackAsync(sessionId, goOn, refused, watched.Adapter, onEnded).ConfigureAwait(false);
                 return;
             }
 

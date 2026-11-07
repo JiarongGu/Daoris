@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>The supervisor's course acts on a referred point (the context counters design §5's <c>course</c>): go on, or leave it to the person.</summary>
+/// <summary>The supervisor's course acts on a referred point: go on, or leave it to the person.</summary>
 public static class SupervisorCourseActs
 {
     public const string GoOn = "go-on";
@@ -38,7 +38,7 @@ internal sealed class SupervisorCourseDecision
 }
 
 /// <summary>
-/// The supervisor's course decisions (CONTEXTDRIVE1j; the context counters design §4.6 point 3, §5): a point a person's <c>refer</c> rule holds
+/// The supervisor's course decisions: a point a person's <c>refer</c> rule holds
 /// a line at, decided by the holder the admission admits for the line's repository. A <c>go-on</c> is held for the role's window, then
 /// released between turns through the count's own door, the rules read again first; a <c>hold</c> leaves the point to the person at once.
 /// Each is kept in the <see cref="SupervisorBook"/> under the session's lock, and written beside the questions' decisions with no

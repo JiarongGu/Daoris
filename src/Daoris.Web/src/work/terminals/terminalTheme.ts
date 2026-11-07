@@ -1,10 +1,10 @@
 /**
- * The terminal's colours (CONSOLE4b), read from the platform's tokens: a shell's output is drawn in
+ * The terminal's colours, read from the platform's tokens: a shell's output is drawn in
  * the same ink, on the same page, in either theme, and no colour here is one the tokens do not own.
  *
  * @remarks
  * **The sixteen ANSI colours by role.** The four status tokens were validated for contrast in both
- * themes (D41 §3), so red, green, yellow and blue are declined, done, open and taken. Magenta and cyan
+ * themes, so red, green, yellow and blue are declined, done, open and taken. Magenta and cyan
  * have no token and are each halfway between the two that make them. The greys turn round with the
  * theme: in light, black is the ink and white the faint ink; in dark, black is the raised surface and
  * white the soft ink, so text a program writes in "white" stays readable on either page.

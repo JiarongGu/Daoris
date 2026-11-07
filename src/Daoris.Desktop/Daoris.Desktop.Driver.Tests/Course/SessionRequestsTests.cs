@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSUX1g (D126 §7.1): a stop, a finish or a decline asked from a terminal reaches a session another process on this
+/// A stop, a finish or a decline asked from a terminal reaches a session another process on this
 /// home runs through a request in <c>&lt;home&gt;/sessions/requests/</c>, which every loop on the home watches. The loop
 /// whose own registry runs the session acts on it as its own route does, recording the person's move as the person's, and
 /// removes it; any other leaves it; a request nobody took for a minute is dropped by whichever loop looks.
@@ -12,7 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// The registry is the watch's test seam (what runs here, and how a stop is made), so no process starts: the suite's fast
 /// half. The same pass over real processes and a real tick is <see cref="SessionRequestTickTests"/>. A terminal's words
-/// (MSG1e) are a request of their own, answered beside it; the verb's whole door is <see cref="SessionsSayCommandTests"/>.
+/// are a request of their own, answered beside it; the verb's whole door is <see cref="SessionsSayCommandTests"/>.
 /// </remarks>
 public sealed class SessionRequestsTests : IDisposable
 {
@@ -137,9 +137,9 @@ public sealed class SessionRequestsTests : IDisposable
     }
 
     /// <summary>
-    /// REQTAKE1: two loops taking twenty at once, on threads of their own, honour every one exactly once. A take by renaming lost
-    /// one: the other loop's rename held the file open to move it, which refused the first loop's read of the name it had just
-    /// moved it to, and the first then deleted it (FIX-LOG 2026-10-16).
+    /// Two loops taking twenty at once, on threads of their own, honour every one exactly once. A take by renaming could lose
+    /// one: the other loop's rename holds the file open to move it, which refuses the first loop's read of the name it just
+    /// moved it to, and the first then deletes it.
     /// </summary>
     [Fact]
     public async Task Two_loops_taking_twenty_at_once_honour_each_exactly_once()
@@ -159,9 +159,9 @@ public sealed class SessionRequestsTests : IDisposable
     }
 
     /// <summary>
-    /// REQTAKE1, the loss itself: held as another loop's rename holds it the moment before it moves it (open, letting it be moved,
+    /// The loss itself: held as another loop's rename holds it the moment before it moves it (open, letting it be moved,
     /// refusing a reader), a take is taken either then or at the next look, never neither. On Windows the take's own rename
-    /// succeeds and its read is refused, and the take that then removed what it moved lost the request unread.
+    /// succeeds and its read is refused, and a take that then removed what it moved would lose the request unread.
     /// </summary>
     [Fact]
     public void A_take_whose_read_is_refused_leaves_the_request_for_the_next_look()
@@ -181,12 +181,12 @@ public sealed class SessionRequestsTests : IDisposable
     }
 
     /// <summary>
-    /// REQTAKE2 (D126 §7.1): of a withdrawal and a take only one wins, and the withdrawal says which. On Windows a take's rename
+    /// Of a withdrawal and a take only one wins, and the withdrawal says which. On Windows a take's rename
     /// opens the file, letting it be moved, a moment before it moves it; a withdrawal's rename landing in that moment moves it
-    /// aside, and the take's rename then moves it on from the withdrawn name. The withdrawal that removed what it had moved found
-    /// nothing there, said withdrawn, and the loop acted on it. Held here as such a rename holds it, the rename then completes
-    /// from wherever the file is: on Windows, through its handle, so the take has it and the withdrawal says it was not
-    /// withdrawn; on Linux a rename is by name and whole, so the withdrawal had it and the take finds nothing.
+    /// aside, and the take's rename then moves it on from the withdrawn name. A withdrawal that removed what it had moved would find
+    /// nothing there, say withdrawn, and the loop would act on it. Held here as such a rename holds it, the rename then completes
+    /// from wherever the file is: on Windows, through its handle, so the take has it and the withdrawal says it is not
+    /// withdrawn; on Linux a rename is by name and whole, so the withdrawal has it and the take finds nothing.
     /// </summary>
     [Fact]
     public async Task A_withdrawal_and_a_take_begun_before_it_never_both_win()
@@ -214,7 +214,7 @@ public sealed class SessionRequestsTests : IDisposable
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // Gone, or removed while it was held: nothing for the take.
+                // Gone, or removed while held: nothing for the take.
             }
         }
 
@@ -227,7 +227,7 @@ public sealed class SessionRequestsTests : IDisposable
         Assert.Equal(left, Directory.GetFiles(Requests.Folder).Select(Path.GetFileName));
     }
 
-    /// <summary>A request withdrawn is gone, and withdrawing one already taken says it was not there.</summary>
+    /// <summary>A request withdrawn is gone, and withdrawing one already taken says it is not there.</summary>
     [Fact]
     public void A_request_is_withdrawn_while_it_waits()
     {
@@ -242,7 +242,7 @@ public sealed class SessionRequestsTests : IDisposable
         new(session, SessionMove.Say, Now) { Text = "also the changelog; 中文 too.", Files = ["notes.md"], Key = key };
 
     /// <summary>
-    /// MSG1e (D137 §5.2): a terminal's words are a request of their own, under the session's id and their own key, so two said
+    /// A terminal's words are a request of their own, under the session's id and their own key, so two said
     /// at once both wait and a stop for the same session is not replaced by them; read back whole.
     /// </summary>
     [Fact]
@@ -333,7 +333,7 @@ public sealed class SessionRequestsTests : IDisposable
         Assert.Equal(SessionMove.Stop, Assert.Single(Requests.Pending(Now)).Move);
     }
 
-    /// <summary>A loop's half (MSG1e): a session its registry runs hears the words at its door, as the screen's box hands them.</summary>
+    /// <summary>A loop's half: a session its registry runs hears the words at its door, as the screen's box hands them.</summary>
     [Fact]
     public async Task A_say_for_a_session_this_loop_runs_is_held_at_its_door_and_answered()
     {
@@ -396,7 +396,7 @@ public sealed class SessionRequestsTests : IDisposable
         Assert.Equal(("also the changelog; 中文 too.", "notes.md"), (ledger.Text, ledger.File));
     }
 
-    /// <summary>The service's say door, standing in: it keeps every word as <c>w1</c>, and remembers what it was handed.</summary>
+    /// <summary>The service's say door, standing in: it keeps every word as <c>w1</c>, and remembers what it is handed.</summary>
     private sealed class SayingLedger : HttpMessageHandler
     {
         public int Says { get; private set; }

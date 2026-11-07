@@ -5,7 +5,7 @@ import { AtWorkView } from './AtWorkView';
 import { LANES_ALONGSIDE_AND_UNTAKEN, LINE_SAID, SAID, THREE } from './atWork.fixtures';
 import { type Channel, type ChannelItem, lastMessages, lastWords, lineChannelOf } from '../channel';
 
-// COWORKVIEW1c: the channel's last words (the cowork view design §3.3): the page's own channel read, each message on the part whose
+// The channel's last words: the page's own channel read, each message on the part whose
 // session posted it, *All messages* opening the panel; the view reads no channel and holds no field of it.
 
 afterEach(async () => {
@@ -37,7 +37,7 @@ describe('the channel’s last words in the view', () => {
     expect(open).toHaveBeenCalledOnce();
   });
 
-  /** COMMS1k: a line on no ask held here draws its own channel; two alongside parts to each other alone, each named, and no panel to open. */
+  /** A line on no ask held here draws its own channel; two alongside parts to each other alone, each named, and no panel to open. */
   it('draws a line’s own channel: each message on the part that posted it, naming the part it is to alone, with no All messages', async () => {
     render(<AtWorkView held={LANES_ALONGSIDE_AND_UNTAKEN} channel={{ words: LINE_SAID }} />);
 
@@ -67,7 +67,7 @@ describe('the channel’s last words in the view', () => {
     expect(screen.getByText('On the channel').closest('section')!.textContent).toContain('Started.');
   });
 
-  /** COMMS1k: the person posts on a line's own channel from the view: to everyone or a repository, the box clearing once it is kept. */
+  /** The person posts on a line's own channel from the view: to everyone or a repository, the box clearing once it is kept. */
   it('lets the person post on a line’s own channel, to a repository its messages name, and clears the box once it is kept', () => {
     const post = vi.fn();
     render(<AtWorkView held={LANES_ALONGSIDE_AND_UNTAKEN} channel={{ words: LINE_SAID, onPost: post, recipients: ['checker'] }} />);

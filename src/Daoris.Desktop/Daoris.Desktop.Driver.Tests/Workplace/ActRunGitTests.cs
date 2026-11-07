@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2a over real git (D204; the git-writes design §5, §6, §12 row a): a fixture act, a ref step, a configuration step and an index step,
+/// Over real git, a fixture act, a ref step, a configuration step and an index step,
 /// run under the checkout lock with each effect step in a job named for the act, its deadline journaled; then cut at every boundary, past its
 /// bound and with a child that would not end, and reconciled by another run, nothing run again. The reconciler at a writer's lock (a sync's
 /// look, a promotion's step) and at the driver's start; git's own locks; the act refs, never a holder and expired at their journaled id.

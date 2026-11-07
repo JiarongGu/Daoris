@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xii, the Participants cuts: the seams they add. Ask Daoris's room spelled once by Events, with every higher spelling
+/// The Participants cuts: the seams they add. Ask Daoris's room spelled once by Events, with every higher spelling
 /// held to it; the harness conversation's record and file owned by Participants; the page's no and the chat run's bind taking the
 /// events' and the agents' interfaces (and the terminal's no and the run's plugin catalogue taking the installed lower operations)
 /// where they took the context's and the plugins' own types. What the cuts keep is <c>ParticipantsBoundaryTests</c>'.

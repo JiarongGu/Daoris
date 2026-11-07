@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the review asks git of a tree (REVIEWENV1c, design §2.6, §3.2): its <c>HEAD</c>, and whether a commit holds another. The
+/// What the review asks git of a tree: its <c>HEAD</c>, and whether a commit holds another. The
 /// gate (<see cref="ReviewGate.ReadAsync"/>) and the loop's callers ask it by this name.
 /// </summary>
 internal static class ReviewGit
 {
     /// <summary>
-    /// A set-up step's tree's <c>HEAD</c> as its post reads it (design §2.6), git's own answer; null where it gives none. Kept as
-    /// the helper <see cref="ReviewSetUps.PostAsync"/> calls, since a Domain type names no <c>WorkingTree</c> (FLAT1b-ii).
+    /// A set-up step's tree's <c>HEAD</c> as its post reads it, git's own answer; null where it gives none. Kept as
+    /// the helper <see cref="ReviewSetUps.PostAsync"/> calls, since a Domain type names no <c>WorkingTree</c>.
     /// </summary>
     public static Task<string?> TreeHeadAsync(string tree, CancellationToken ct) => WorkingTree.HeadAsync(tree, ct);
 

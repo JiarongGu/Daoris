@@ -5,15 +5,15 @@ using Daoris.Contracts.Parts;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The loop D45 exists for: watch, plan, spawn, observe. One tick, a look, fetches a snapshot, plans it (pure), starts every
+/// The loop the driver exists for: watch, plan, spawn, observe. One tick, a look, fetches a snapshot, plans it (pure), starts every
 /// planned start and returns once each has opened its record or come to nothing. The sessions run on beside the looks that
-/// follow, and each one's ending joins the next look's report (D115 §3.1). Under the watch (D181 point 3) a look waits for a
+/// follow, and each one's ending joins the next look's report. Under the watch a look waits for a
 /// start only until something else wants the loop, and leaves the work none of its parts waits on running beside it.
 /// </summary>
 /// <remarks>
 /// <para><b>The driver never writes quest state.</b> It opens and advances SESSION records through the service's ledger; the
-/// spawned session claims and closes its own quest through its own connector (D46 §3), so a failure here leaves the quest
-/// where it was.</para>
+/// spawned session claims and closes its own quest through its own connector, so a failure here leaves the quest
+/// where it is.</para>
 /// <para><b>Everything here is observation.</b> A session's end is concluded from the exit code and the quest's state
 /// (<see cref="Observation"/>), never from the session's word.</para>
 /// </remarks>
@@ -23,11 +23,11 @@ public sealed class Driver(
     HarnessRoster? harnesses = null,
     // Null where nobody keeps the usage record: the headless rehearsal driver and every test that does not care.
     SessionUsage? usage = null,
-    // The plugins that speak (D64), shared across ticks since their processes outlive one.
+    // The plugins that speak, shared across ticks because their processes outlive one.
     HookSet? hooks = null,
     // Shared so the shell hears each event as it is written; null keeps the record under the home with nobody watching.
     SessionEvents? events = null,
-    // Daoris's own browser (D78); null where no shell carries one, and a server that drives it is then not handed.
+    // Daoris's own browser; null where no shell carries one, and a server that drives it is then not handed.
     IInAppBrowser? browser = null,
     // The sessions still running, shared by the watch across the driver it builds for each look; null keeps this driver's own.
     RunningSessions? running = null)
@@ -291,7 +291,7 @@ public sealed class Driver(
 
     internal TimeProvider BrainstormClock { get => Context.BrainstormClock; init => Context.BrainstormClock = value; }
 
-    /// <summary>The environment this driver reads its variables from (D63's seam): this process's, unless a test hands in its own scratch.</summary>
+    /// <summary>The environment this driver reads its variables from: this process's, unless a test hands in its own scratch.</summary>
     internal Func<string, string?> Variable { get; init; } = Environment.GetEnvironmentVariable;
 
     internal Task<int> BrainstormsAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct) =>
@@ -307,7 +307,7 @@ public sealed class Driver(
 
     /// <summary>
     /// Whether a driven run that ends now holding its quest waits on its own helper: a question its run asked counts from the later of
-    /// <paramref name="openedAt"/> and the words it was last handed, as its park binds one.
+    /// <paramref name="openedAt"/> and the words it is last handed, as its park binds one.
     /// </summary>
     internal Task<bool> WaitsOnOwnHelperAsync(string session, QuestView quest, DateTimeOffset openedAt, CancellationToken ct) =>
         Helpers.WaitsOnOwnHelperAsync(
@@ -326,7 +326,7 @@ public sealed class Driver(
     internal Task<string?> StepRoleAsync(QuestView quest, string? workspace, CancellationToken ct) =>
         StartBinding.StepRoleAsync(Context, quest, workspace, ct);
 
-    /// <summary>A new start's walk over Build's effective order (D205 §4.1), choice by choice, through the quest's start plan.</summary>
+    /// <summary>A new start's walk over Build's effective order, choice by choice, through the quest's start plan.</summary>
     internal async Task<(HarnessSelection Selection, ActorEffective? Chosen)> WalkBuildAsync(
         Consideration start, IReadOnlyList<RepoView> registry, CancellationToken ct) =>
         (await WalkBuildPassesAsync(start, registry, ct).ConfigureAwait(false)) is var walked ? (walked.Selection, walked.Chosen) : default;
@@ -373,11 +373,11 @@ public sealed class Driver(
 
     /// <summary>
     /// One look: the sync, the plan, and every planned start begun. Returns once each start has opened its session record or
-    /// come to nothing, never waiting for a session to end (D115 §3.1).
+    /// come to nothing, never waiting for a session to end.
     /// </summary>
     /// <param name="failed">
-    /// Handed what the look had said when it fails or is closed, when there is any, so a stop it wrote and failed after is not
-    /// lost; the failure then goes on as it was. Never called for a look that returns.
+    /// Handed what the look has said when it fails or is closed, when there is any, so a stop it wrote and failed after is not
+    /// lost; the failure then goes on as it is. Never called for a look that returns.
     /// </param>
     public async Task<TickReport> TickAsync(CancellationToken ct = default, Action<TickReport>? failed = null)
     {
@@ -442,13 +442,13 @@ public sealed class Driver(
 
     /// <summary>One quest's start, run through the stages of each phase in turn; a stage may hold the start, which ends the run there.</summary>
     /// <returns>
-    /// The console line, whether a session actually opened, what it ended as and whose decision that was, and, for a start held at
+    /// The console line, whether a session actually opened, what it ended as and whose decision that is, and, for a start held at
     /// spawn, the hold's own sentence. A hold or a refusal ends nothing, and a refusal means somebody else got there first.
     /// </returns>
-    /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across (D107).</param>
-    /// <param name="onOpened">Called once the session's record is open, and never for a start that held or was refused.</param>
+    /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across.</param>
+    /// <param name="onOpened">Called once the session's record is open, and never for a start that holds or is refused.</param>
     /// <param name="fresh">The tree this start opens, let go on each way out that starts nothing, on no token.</param>
-    /// <param name="movedOff">The account the first run of this start was refused for its sign-in; a walk that gives it again holds.</param>
+    /// <param name="movedOff">The account the first run of this start is refused for its sign-in; a walk that gives it again holds.</param>
     internal async Task<StartRun> RunAsync(
         Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, FreshTree fresh, CancellationToken ct,
         string? movedOff = null, (string Agent, string Model)? movedOffModel = null, string? movedFrom = null)
@@ -484,7 +484,7 @@ public sealed class Driver(
         AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared = null) =>
         Prepare(Context.Adapters, adapter, target, selection, prepared);
 
-    /// <summary>The same, the door's facts read from <paramref name="adapters"/>: a run's go-on hands the registry it was started from.</summary>
+    /// <summary>The same, the door's facts read from <paramref name="adapters"/>: a run's go-on hands the registry it is started from.</summary>
     internal (ProcessStartInfo Info, string? Notice) Prepare(
         ProviderRegistry adapters, AgentDoor adapter, SessionTarget target, HarnessSelection selection, ProcessStartInfo? prepared) =>
         Equipment.Prepare(adapters, adapter, target, selection, prepared);
@@ -563,7 +563,7 @@ public sealed class Driver(
     internal TextReader Hearing(TextReader reader, string sessionId) => Watch.Hearing(reader, sessionId);
 
     /// <summary>
-    /// How often a driven session that waits on its own background work reads its quest again (D83's note): every fourth tick of the
+    /// How often a driven session that waits on its own background work reads its quest again: every fourth tick of the
     /// driver's own, so a waiting session costs a quarter of a tick and its run ends within a minute of its quest's close.
     /// </summary>
     internal TimeSpan BackgroundLook => TimeSpan.FromSeconds(4 * Math.Max(1, config.PollSeconds));

@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <summary>A gate the accepted declaration declares: the name it writes (the one a runner's answer names it by), its command, the folder it runs in (relative to the tree) and whether it is heavy.</summary>
 internal sealed record DeclaredGate(string Name, string Run, string? Cwd, bool Heavy)
 {
-    /// <summary>Marked <c>clock</c> (the pipeline design §4.2): its run is bound by the clock, so a verification starts it at normal priority.</summary>
+    /// <summary>Marked <c>clock</c>: its run is bound by the clock, so a verification starts it at normal priority.</summary>
     public bool Clock { get; init; }
 
     /// <summary>
@@ -16,7 +16,7 @@ internal sealed record DeclaredGate(string Name, string Run, string? Cwd, bool H
 }
 
 /// <summary>
-/// The gates of the accepted declaration's text (INTEGRATE1f part f2; the integration design §4.3, F6): read from the blob alone, never from
+/// The gates of the accepted declaration's text: read from the blob alone, never from
 /// the tree, since the tree is the candidate's and the declaration accepted is the owner's. A text that does not read, or keeps no gate
 /// that names a command, declares none, and nothing runs under it.
 /// </summary>

@@ -1,10 +1,10 @@
 import { type RefObject, useEffect, useRef, useState } from 'react';
 
-/** A press that opens *At work* at one request (COMMS1i): the exchange's id, counted so the same one pressed again is sought again. */
+/** A press that opens *At work* at one request: the exchange's id, counted so the same one pressed again is sought again. */
 export type ExchangeSeek = { exchange: string; n: number };
 
 /**
- * The head's *Waiting on* door (the comms design §7: it opens *At work* at the exchange): the request sought, and the press that
+ * The head's *Waiting on* door (it opens *At work* at the exchange): the request sought, and the press that
  * seeks one and opens the view.
  */
 export function useAtWorkSeek(openView: (view: 'atWork') => void) {

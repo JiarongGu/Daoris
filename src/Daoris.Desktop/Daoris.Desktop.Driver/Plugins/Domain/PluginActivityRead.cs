@@ -13,7 +13,7 @@ public sealed record ProcessActivity(int Starts, int Exits, int FailedStarts);
 /// <summary>A name and how many: the sessions started on one of the plugin's agents.</summary>
 public sealed record CountedName(string Name, int Count);
 
-/// <summary>How many sessions one of the plugin's servers was handed to, and withheld from.</summary>
+/// <summary>How many sessions one of the plugin's servers is handed to, and withheld from.</summary>
 public sealed record ServerActivity(string Server, int Handed, int Withheld);
 
 /// <summary>The plugin's trials in a period, by verdict.</summary>
@@ -40,9 +40,9 @@ public sealed record PluginActivityRead(
     IReadOnlyList<PluginPush> Pushes, IReadOnlyList<ActivityEvent> Recent, int More, int Skipped);
 
 /// <summary>
-/// What a plugin did, summarised from what was read (PLUGUI1d, D119 §3.2 and §4.1): the machine log's <c>plugin.*</c> lines
+/// What a plugin did, summarised from what is read: the machine log's <c>plugin.*</c> lines
 /// for one plugin, the sessions started on its agents (<c>session.started</c>'s <c>adapter</c>) and the branches it pushed.
-/// Pure (STRUCT3a): the lines and the pushes come in as values, read by <see cref="PluginActivity"/>.
+/// Pure: the lines and the pushes come in as values, read by <see cref="PluginActivity"/>.
 /// </summary>
 public static class PluginActivitySummary
 {

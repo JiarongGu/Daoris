@@ -4,16 +4,15 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris agent unpin</c> and <c>agent profile list|add|remove|order|ready|use|rename</c> (PUSH1f2e2, PUSH1f2e3, D194, the
-/// alone-path design §5): a pin taken back and an agent's accounts from a terminal, the words <c>daoris agent …</c> hands this program.
+/// <c>daoris agent unpin</c> and <c>agent profile list|add|remove|order|ready|use|rename</c>: a pin taken back and an agent's accounts from a terminal, the words <c>daoris agent …</c> hands this program.
 /// Each change is the Agents or Accounts place's own press while Daoris runs (<c>HARNESS_ACTION</c>'s <c>unpin</c> and
 /// <c>profile-*</c>, <c>ACCOUNT_USE</c>'s <c>order</c>, <c>ready</c> and <c>use</c>), else the same write on the terminal's word; a workspace's
-/// unpin has no route and acts alone. Every check the window would refuse by is said here first, in today's words
+/// unpin has no route and acts alone. Every check the window would refuse by is said here first, in the words
 /// (<c>fixtures/agents-text.json</c>), so a refusal costs nothing on either path. The <c>use</c> verb is <see cref="AgentAccountUse"/>
 /// and the words about an account's use are <see cref="AgentAccountLines"/>.
 /// </summary>
 /// <remarks>
-/// An agent's accounts are one set (POOL1b, D197 point 6, the account-pool design §5.1): <c>order</c> and <c>use</c> act on it.
+/// An agent's accounts are one set: <c>order</c> and <c>use</c> act on it.
 /// </remarks>
 internal static class AgentAccountsCommand
 {
@@ -43,7 +42,7 @@ internal static class AgentAccountsCommand
     // ——— unpin
 
     /// <summary>
-    /// <c>unpin &lt;agent&gt; [--workspace &lt;name&gt;]</c> (TOOL2, D57): back to <c>PATH</c>, the machine's or one workspace's pin
+    /// <c>unpin &lt;agent&gt; [--workspace &lt;name&gt;]</c>: back to <c>PATH</c>, the machine's or one workspace's pin
     /// taken off. Nothing is deleted. The machine's is <c>HARNESS_ACTION</c>'s <c>unpin</c>; a workspace's has no route.
     /// </summary>
     public static AgentPress Unpin(IReadOnlyList<string> args, AgentsWorld world)
@@ -84,7 +83,7 @@ internal static class AgentAccountsCommand
         var action = args.Count > 1 ? args[1] : "list";
         var path = AgentsCommand.WiringPath(world);
         var home = HarnessSettings.HomeOf(path);
-        // Read as the set (POOL1b, the account-pool design §2.4), so a file an older build wrote is the set here too.
+        // Read as the set, so a file an older build wrote is the set here too.
         var settings = HarnessSettings.LoadSet(path, AgentsCommand.Agents(world, path));
         var context = new AccountVerbContext(args, world, path, home, settings, $"account {action}");
 
@@ -130,7 +129,7 @@ internal static class AgentAccountsCommand
         }
     }
 
-    /// <summary><c>profile add &lt;agent&gt; &lt;profile&gt;</c> (DEPLOY3): a folder, and nothing else; one that is there is an answer.</summary>
+    /// <summary><c>profile add &lt;agent&gt; &lt;profile&gt;</c>: a folder, and nothing else; one that is there is an answer.</summary>
     private static AgentPress Add(AccountVerbContext at)
     {
         var owner = at.Owner();
@@ -156,8 +155,8 @@ internal static class AgentAccountsCommand
     }
 
     /// <summary>
-    /// <c>profile remove &lt;agent&gt; &lt;profile&gt;</c> (D66 §3): the account's folder and the sign-in in it gone, and no default, list
-    /// or kept account naming it after. A delete the window could not finish is said, exit 1.
+    /// <c>profile remove &lt;agent&gt; &lt;profile&gt;</c>: the account's folder and the sign-in in it gone, and no default, list
+    /// or kept account naming it after. A delete the window cannot finish is said, exit 1.
     /// </summary>
     private static AgentPress Remove(AccountVerbContext at)
     {
@@ -194,21 +193,21 @@ internal static class AgentAccountsCommand
     }
 
     /// <summary>
-    /// <c>profile order &lt;agent&gt; &lt;account&gt;…|--clear</c> (TOOL4e, D125 §3.1; POOL1b, D197 point 2, §5.1): the set's order, the
+    /// <c>profile order &lt;agent&gt; &lt;account&gt;…|--clear</c>: the set's order, the
     /// accounts named first, in that order, each here and once, and the rest after in their order (<see cref="HarnessSettings.Change"/>
     /// writes it whole); <c>--clear</c> returns to the ids' order and clears no setting.
     /// </summary>
     private static AgentPress Order(AccountVerbContext at)
     {
         var owner = at.Owner();
-        // An account by its id or its name (ACCT2); the order holds ids, so a rename leaves it standing.
+        // An account by its id or its name; the order holds ids, so a rename leaves it standing.
         string[] named = [.. AgentsCommand.Operands(at.Args, AgentsCommand.Valued).Skip(3).Select(given => at.Account(owner, given))];
         JsonObject Payload(IEnumerable<string> accounts) => new()
         {
             ["action"] = "order", ["door"] = owner, ["accounts"] = new JsonArray([.. accounts.Select(each => (JsonNode?)each)]),
         };
 
-        // Each account by the person's name for it, else its id (ACCT2).
+        // Each account by the person's name for it, else its id.
         string Spelled(IEnumerable<string> order) => string.Join(", then ", order.Select(account => AccountNames.Shown(at.Home, owner, account)));
         if (at.Args.Contains("--clear"))
         {
@@ -265,7 +264,7 @@ internal static class AgentAccountsCommand
     }
 
     /// <summary>
-    /// <c>profile ready &lt;agent&gt; &lt;profile&gt;|--own</c> (TOOL4e, D125 §2.3): an account's cool-off ended early, the terminal's
+    /// <c>profile ready &lt;agent&gt; &lt;profile&gt;|--own</c>: an account's cool-off ended early, the terminal's
     /// <i>Try now</i>; <c>--own</c> is the tool's own sign-in.
     /// </summary>
     private static AgentPress Ready(AccountVerbContext at)
@@ -313,7 +312,7 @@ internal static class AgentAccountsCommand
     }
 
     /// <summary>
-    /// <c>profile rename &lt;agent&gt; &lt;account&gt; &lt;name&gt;</c> (ACCT2): an account's name, the person's word, kept by its id in
+    /// <c>profile rename &lt;agent&gt; &lt;account&gt; &lt;name&gt;</c>: an account's name, the person's word, kept by its id in
     /// <c>accounts.json</c>, so every list, default, reading and record keeps it; its own id gives it none.
     /// </summary>
     private static AgentPress Rename(AccountVerbContext at)

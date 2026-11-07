@@ -2,20 +2,20 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the review's gate reads of the process its run follows beyond what the workplace reads (<see cref="IWorkplaceProcess"/>): the
-/// review rule as declared and the named version's look (WORKFLOW1f). The workflows' <c>WorkflowProcess</c> implements this directly,
+/// review rule as declared and the named version's look. The workflows' <c>WorkflowProcess</c> implements this directly,
 /// so the gate names no more of the process than it reads.
 /// </summary>
 public interface IReviewedProcess : IWorkplaceProcess
 {
-    /// <summary>The review rule as declared: its environments, which the chain's and the ask's <c>on</c> reads (§2.3).</summary>
+    /// <summary>The review rule as declared: its environments, which the chain's and the ask's <c>on</c> reads.</summary>
     ResolvedReview? Review { get; }
 
-    /// <summary>Rows 5 and 6 of D154's table as the version says them; null under Current, where the rule says them, as today.</summary>
+    /// <summary>Rows 5 and 6 of the level's table as the version says them; null under Current, where the rule says them.</summary>
     WorkflowLook? Look { get; }
 }
 
 /// <summary>
-/// What a session's checks and its long calls' bound read of the process its run follows (FABRIC-PIPELINE1b): whether a named workflow
+/// What a session's checks and its long calls' bound read of the process its run follows: whether a named workflow
 /// governs it, a graph version's <c>claimed</c> options and a steps version's <c>work</c> step's <c>checks</c>. The workflows'
 /// <c>WorkflowProcess</c> implements this directly.
 /// </summary>
@@ -29,7 +29,7 @@ public interface ICheckedProcess : IWorkplaceProcess
 }
 
 /// <summary>
-/// The run's own part of the landing gate as the review's gate reads it (WORKFLOW1f): whether it holds the work, what it says and the line
+/// The run's own part of the landing gate as the review's gate reads it: whether it holds the work, what it says and the line
 /// the machine log keeps of a landing it held. The workflows' <c>WorkflowGateState</c> implements this directly.
 /// </summary>
 public interface IWorkflowGatePart
@@ -46,7 +46,7 @@ public interface IWorkflowGatePart
     /// <summary>What it says, in the driver's words: the terminal's line and every door's refusal.</summary>
     string Says { get; }
 
-    /// <summary>The process the part was read with.</summary>
+    /// <summary>The process the part is read with.</summary>
     IWorkplaceProcess Process { get; }
 
     /// <summary>The machine log's line for a landing the part held, at <paramref name="door"/>.</summary>
@@ -54,7 +54,7 @@ public interface IWorkflowGatePart
 }
 
 /// <summary>
-/// The graph's part of the landing gate as the review's gate reads it (FABRIC-CUTOVER1d): whether it lets the work land, what it says,
+/// The graph's part of the landing gate as the review's gate reads it: whether it lets the work land, what it says,
 /// whether it asks the loop's next pass and the line the machine log keeps of a landing it held. The workflows' <c>GraphGateState</c>
 /// implements this directly.
 /// </summary>

@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARKVIEW1 (the park's ask design §2, §4): a driven session's question to the person, one file per session under the home's sessions
+/// A driven session's question to the person, one file per session under the home's sessions
 /// folder, read as the connector's <c>question_ask</c> writes it and held to its bounds (the shared table
 /// <c>fixtures/park-question.json</c>, which the page's reader of the route's answer reads too); gone as each run of its record opens and
 /// bound to its park as each concludes; and a word pressed as one of its answers handed as that answer chosen.
@@ -91,7 +91,7 @@ public sealed class QuestionFilesTests : IDisposable
     }
 
     /// <summary>
-    /// SUPERVISOR1a-i (the supervisor design §6.3): a park restored after its run's opening cleared its question gets it back from the
+    /// A park restored after its run's opening cleared its question gets it back from the
     /// decision's snapshot, with the same id, its choices to press.
     /// </summary>
     [Fact]
@@ -137,7 +137,7 @@ public sealed class QuestionFilesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A run that parks again without asking leaves no question from an earlier run: the one on file was asked before this run
+    /// A run that parks again without asking leaves no question from an earlier run: the one on file dates from before this run
     /// opened, already answered by what sent the session on, so it goes.
     /// </summary>
     [Fact]
@@ -167,7 +167,7 @@ public sealed class QuestionFilesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A run that went on in the same record with the person's words (MSG1b: held while it worked, then its next prompt, on either
+    /// A run that goes on in the same record with the person's words (held while it worked, then its next prompt, on either
     /// door) binds the question to its last turn: one asked before those words were handed to it goes, since they may have answered
     /// it, and one asked after them is the park's.
     /// </summary>
@@ -193,7 +193,7 @@ public sealed class QuestionFilesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Fable's read, Q3: the protocol door's echo of the prompt it was handed (`user_message_chunk`, an id-less word of the person's)
+    /// The protocol door's echo of the prompt it is handed (`user_message_chunk`, an id-less word of the person's)
     /// hands the agent nothing new, so a question asked before the echo is still its last turn's.
     /// </summary>
     [Fact]
@@ -234,10 +234,10 @@ public sealed class QuestionFilesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1b (Codex's round-3 #1 on COWORKUX1): a question on file that does not read is no proof none was asked, so the turn
+    /// A question on file that does not read is no proof that none is asked, so the turn
     /// parks for the person (<see cref="QuestionFiles.AskedSince"/> is null), and the park keeps the file, a first run's conclusion and a
     /// resumed run's alike: nothing settles it away unread. The park still shows no half a file, since a read of it is none; a conclusion
-    /// that does not park keeps nothing, as before.
+    /// that does not park keeps nothing.
     /// </summary>
     [Theory]
     [InlineData("first")]
@@ -328,7 +328,7 @@ public sealed class QuestionFilesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Fable's read, Q4: the word a press kept is marked with its answer by the event it was shown under, so the resumed run is
+    /// The word a press kept is marked with its answer by the event it is shown under, so the resumed run is
     /// handed it as that answer chosen, on both doors, and its record says the mark again where the session takes it; the person's
     /// other words go as they are.
     /// </summary>

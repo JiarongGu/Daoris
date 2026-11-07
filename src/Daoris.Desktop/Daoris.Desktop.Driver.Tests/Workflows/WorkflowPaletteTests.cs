@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>WORKFLOWEDIT1a: the palette is built from the code's own tables, so a kind, a wire or an option added there appears here with no second list.</summary>
+/// <summary>The palette is built from the code's own tables, so a kind, a wire or an option added there appears here with no second list.</summary>
 public sealed class WorkflowPaletteTests
 {
     private static readonly WorkflowPalette Bare = WorkflowPalette.Build([]);
@@ -36,11 +36,11 @@ public sealed class WorkflowPaletteTests
         Assert.DoesNotContain(NodeKinds.Claimed, failed);
         Assert.Contains(NodeKinds.Check, failed);
         var rejected = Bare.Wires.Single(each => each.Kind == WireKinds.Rejected).From!;
-        // DECIDE1b: a review's changes are its rejection. The kinds stand in the kit's order: the picker's groups, then their marks' order.
+        // A review's changes are its rejection. The kinds stand in the kit's order: the picker's groups, then their marks' order.
         Assert.Equal([NodeKinds.Review, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Human], rejected);
         Assert.Null(Bare.Wires.Single(each => each.Kind == WireKinds.After).From);
         Assert.Equal(NodeKinds.WaitUnit, Bare.Wires.Single(each => each.Kind == WireKinds.Wait).To);
-        // WORKFLOWEDIT1b: a person's task and a monitor are the built-in decisions (D245's notes), and a wait's source is another unit's, never a node of this graph.
+        // A person's task and a monitor are the built-in decisions, and a wait's source is another unit's, never a node of this graph.
         Assert.Equal([NodeKinds.Human, NodeKinds.Monitor], Bare.Wires.Single(each => each.Kind == WireKinds.When).From!);
         Assert.Empty(Bare.Wires.Single(each => each.Kind == WireKinds.Wait).From!);
     }
@@ -69,7 +69,7 @@ public sealed class WorkflowPaletteTests
         var step = Assert.Single(Assert.Single(WorkflowPalette.Build([("local-release", [find])]).Plugins).Steps);
         Assert.Equal((1, "local-release/receipt@1"), (step.Version, step.Evidence));
         Assert.Equal(["release", "none"], step.Outcomes);
-        // DECIDE1d: the output a step carries on one outcome alone is said, so a graph composed from the palette keeps it there.
+        // The output a step carries on one outcome alone is said, so a graph composed from the palette keeps it there.
         Assert.Equal(["release"], Assert.Single(step.OutputsOn, each => each.Key == "release").Value);
         Assert.Empty(Assert.Single(WorkflowPalette.Build([("local-release", [find with { OutputsOn = new Dictionary<string, IReadOnlyList<string>>() }])]).Plugins).Steps[0].OutputsOn);
         Assert.Contains(WireKinds.When, step.Leaves);
@@ -77,7 +77,7 @@ public sealed class WorkflowPaletteTests
         Assert.DoesNotContain(WireKinds.Rejected, step.Leaves);
     }
 
-    /// <summary>SETUPUX1f: a step's title and about reach the palette as its manifest wrote them, and a step without them carries none.</summary>
+    /// <summary>A step's title and about reach the palette as its manifest states them, and a step without them carries none.</summary>
     [Fact]
     public void A_step_s_title_and_about_are_carried_and_a_step_without_carries_none()
     {

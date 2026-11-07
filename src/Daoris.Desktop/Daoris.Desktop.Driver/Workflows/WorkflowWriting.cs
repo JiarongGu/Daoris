@@ -42,12 +42,12 @@ internal sealed class WorkflowWriting(WorkflowTerminal run)
         return run.Saved(id, planned.Plan.Result, [asked]);
     }
 
-    /// <summary>The base a change is made against: the newest version, which <c>--base</c> must name where it is given (design §8.1).</summary>
+    /// <summary>The base a change is made against: the newest version, which <c>--base</c> must name where it is given.</summary>
     internal (NamedVersion Version, JsonArray? Raw) BaseOf(WorkflowFound found) => WorkflowOperations.BaseOf(found.Of, run.FlagValue("--base"));
 
     internal int Edit()
     {
-        // WORKFLOWCLEAN1 1b: `edit` composed a list of steps, which is no longer saved; the editor and `apply <id> <graph-file>` save a graph.
+        // A list of steps is not saved; the editor and `apply <id> <graph-file>` save a graph.
         var id = run.Argv.ElementAtOrDefault(2) is { } token && !token.StartsWith("--", StringComparison.Ordinal) ? WorkflowOperations.Named(token).Id : null;
         throw new ChoiceWords(WorkflowNamed.StepsRefused(id), 1);
     }
@@ -66,10 +66,9 @@ internal sealed class WorkflowWriting(WorkflowTerminal run)
         var found = run.Required(id);
         var (version, _) = BaseOf(found);
         var held = WorkflowTerminal.Parsed(run.FileOperand(run.Argv[3]));
-        // A graph (FABRIC-GRAPH1f): the file's own, a version's of schema 2, or a workflow's newest version's.
+        // A graph: the file's own, a version's of schema 2, or a workflow's newest version's.
         var versions = held is JsonObject record && record["versions"] is JsonArray listed ? listed : null;
         if (GraphIn(versions is null ? held : versions.Count > 0 ? versions[^1] : null, out var graph)) return ChangeGraph(found, version, graph);
-        // A list of steps, however the file holds it, is no longer saved (WORKFLOWCLEAN1 1b).
         if (held is JsonArray || (held is JsonObject holder && holder["steps"] is JsonArray)
             || (versions is { Count: > 0 } && versions[^1] is JsonObject last && last.ContainsKey("steps")))
         {
@@ -132,7 +131,7 @@ internal sealed class WorkflowWriting(WorkflowTerminal run)
         var file = WorkflowTerminal.Parsed(run.FileOperand(from));
         var read = file is null ? WorkflowNamed.Read(default) : WorkflowNamed.Read(WorkflowNamed.ElementOf(file));
         if (read.Problem is not null) throw new ChoiceWords($"`{from}` cannot be imported: {read.Problem}", 1);
-        // A graph version that holds is a version like another here (FABRIC-GRAPH1f); one that does not read is refused.
+        // A graph version that holds is a version like another here; one that does not read is refused.
         if (read.Versions.FirstOrDefault(each => each.Steps is null && each.Graph is null) is { } unread)
         {
             throw new ChoiceWords($"`{from}` cannot be imported: {unread.Unrun}", 1);
@@ -156,7 +155,7 @@ internal sealed class WorkflowWriting(WorkflowTerminal run)
                 + "adds the file's newest version to it.", 1);
         }
 
-        // A verification pipeline is made so here, its mark in its file (FABRIC-PIPELINE1a), and said so.
+        // A verification pipeline is made so here, its mark in its file, and said so.
         var marked = read.Pipeline == WorkflowPipelines.Verification ? ", a verification pipeline" : "";
         var header = $"daoris: `{id}` — {read.Name}{marked}, from {from}: {(read.Versions.Count == 1 ? "one version" : $"{read.Versions.Count} versions")}, "
             + $"its newest v{newest.Version}:";

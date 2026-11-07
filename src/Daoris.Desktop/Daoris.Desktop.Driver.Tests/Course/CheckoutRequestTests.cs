@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPMODE1c4 (D183's note): Ask Daoris's read of a checkout reaches the driver as its chosen settings do, through the session
+/// Ask Daoris's read of a checkout reaches the driver as its chosen settings do, through the session
 /// requests every loop watches: a keyed request for the conversation's own session, move <c>read</c>, taken once by the loop whose
-/// registry runs that conversation and answered beside it, the answer carrying what was read beside its words.
+/// registry runs that conversation and answered beside it, the answer carrying what is read beside its words.
 /// </summary>
 /// <remarks>
 /// 🔴 A twin: the request is written by the service's connector (<c>CheckoutBox</c>), whose <c>McpCheckoutToolTests</c> hold the same
@@ -77,7 +77,7 @@ public sealed class CheckoutRequestTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The loop running the conversation takes it once and writes the answer beside it, in the twin's fields with what was read as
+    /// 🔴 The loop running the conversation takes it once and writes the answer beside it, in the twin's fields with what is read as
     /// <c>text</c>; the request is gone, so no other loop acts on it again.
     /// </summary>
     [Fact]

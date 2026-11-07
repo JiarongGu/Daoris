@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1f (D155 point 10; the second-agent design §8.5, §9, D50): the terminal's doors to the second opinion's gate,
+/// The terminal's doors to the second opinion's gate,
 /// <c>daoris session opinion ask|show|stop|anyway|myself</c>, read word for word; their usage, and what <c>trees land --plan</c>
 /// says of the whole gate, held to golden text byte for byte; and what <c>opinion show</c> says of a finding and its answer.
 /// </summary>

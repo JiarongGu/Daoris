@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1e (D226; the staff policy design §4.2, §11 point 5): a line's moves to another choice are kept by the line's identity in
+/// A line's moves to another choice are kept by the line's identity in
 /// <c>role_moves</c>, so an in-start model or sign-in replacement, which writes no part link, counts beside a condition's move, a restart
 /// keeps the count, and one approval at the bound releases one move.
 /// </summary>

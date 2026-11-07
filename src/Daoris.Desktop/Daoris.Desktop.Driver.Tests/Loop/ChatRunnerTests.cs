@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A conversation resolves its harness through the roster's LIVE set (D64): the driver's tick hands
+/// A conversation resolves its harness through the roster's LIVE set: the driver's tick hands
 /// the roster the build's adapters plus whatever the plugins declare, and a runner built before a
 /// plugin arrived must still find the harness it declared.
 /// </summary>
@@ -19,10 +19,10 @@ public sealed class ChatRunnerTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1c (the chat-flow design §4.3, §4.4): a conversation that grew its tree binds its run, <c>chat-&lt;record&gt;</c>, beside the
+    /// A conversation that grew its tree binds its run, <c>chat-&lt;record&gt;</c>, beside the
     /// process it is told: under a graph version its first Daoris line names the version and who chose it, and the landing it is told is
     /// planned with that version's process, the one its press lands by. Under no workflow nothing is said. It is told no checks either way,
-    /// since nothing enforces them on its tree before CHATFLOW1h.
+    /// since nothing enforces them on its tree.
     /// </summary>
     [Fact]
     public void A_conversation_that_grew_its_tree_binds_its_run_beside_the_process_it_is_told_and_is_told_no_checks()
@@ -60,10 +60,10 @@ public sealed class ChatRunnerTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1e (the chat-flow design §6): a chat run whose process names a second opinion is handed <c>opinion_answer</c> in its rules from
+    /// A chat run whose process names a second opinion is handed <c>opinion_answer</c> in its rules from
     /// its spawn, since a live conversation's rules are fixed then, as a driven run is handed it at its resume: so even where the person turned
     /// the connector's default off, the tool that answers its findings is there. One whose process names none is handed what a conversation
-    /// always was, and with the connector's default on, the tool is allowed once. A second opinion is a graph's <c>opinion</c> node's.
+    /// as usual, and with the connector's default on, the tool is allowed once. A second opinion is a graph's <c>opinion</c> node's.
     /// </summary>
     [Fact]
     public void A_chat_run_whose_process_names_an_opinion_is_handed_the_tool_that_answers_findings_at_its_spawn()
@@ -111,7 +111,7 @@ public sealed class ChatRunnerTests : IDisposable
     }
 
     /// <summary>
-    /// D107: a conversation in a repository is handed what a driven session there is — the person's union, a
+    /// A conversation in a repository is handed what a driven session there is — the person's union, a
     /// read of its kept files, and what it may reach across — with no refusal on its own tree or files.
     /// </summary>
     [Fact]
@@ -131,8 +131,8 @@ public sealed class ChatRunnerTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1b (the session-context design §3.1 item 5, Fable's F5): a new part is handed the files its line's parts kept, by
-    /// name and where they lie, so its rules also allow a read of exactly those kept folders, as its own (D52 refuses every other ask).
+    /// 🔴 A new part is handed the files its line's parts kept, by
+    /// name and where they lie, so its rules also allow a read of exactly those kept folders, as its own (every other ask is refused).
     /// </summary>
     [Fact]
     public void A_new_part_s_rules_read_the_kept_folders_of_the_parts_its_line_continues()
@@ -173,9 +173,9 @@ public sealed class ChatRunnerTests : IDisposable
     }
 
     /// <summary>
-    /// CHATSERVERS1: a plugin that declares an agent and a server hands the server to a conversation, as the driver loop hands
-    /// it to a driven session. The runner read the catalogue reserving the roster's live set, which already holds the plugin's
-    /// own agent, so the plugin was refused as one this build already carries and its servers were withheld. Nothing starts:
+    /// A plugin that declares an agent and a server hands the server to a conversation, as the driver loop hands
+    /// it to a driven session. The catalogue is read without reserving the roster's live set, which already holds the plugin's
+    /// own agent: reserving it would refuse the plugin as one this build already carries and withhold its servers. Nothing starts:
     /// the harness's program does not exist, so the start fails after its servers are handed, and the tree is no checkout.
     /// </summary>
     [Fact]

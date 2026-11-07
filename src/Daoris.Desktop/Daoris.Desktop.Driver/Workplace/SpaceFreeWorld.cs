@@ -9,7 +9,7 @@ public sealed record SpaceFreeWorld(string Home)
     /// <summary>The sizes counted, whose set-aside walk says each folder's bytes; a run's end counts the kinds it removed from again.</summary>
     public SpaceSizes Sizes { get; init; } = SpaceSizes.Shared;
 
-    /// <summary>How the downloads are judged right before each goes (KEEP1b's act).</summary>
+    /// <summary>How the downloads are judged right before each goes.</summary>
     public Func<DownloadJudge>? Judge { get; init; }
 
     /// <summary>The shell's browser host; null with no shell to say whether the browser runs, which keeps its caches.</summary>
@@ -28,15 +28,15 @@ public sealed record SpaceFreeWorld(string Home)
     public Action<string, string>? Move { get; init; }
 
     /// <summary>
-    /// The registry's repositories (KEEPSIZE1b), whose checkouts the finished trees' record pass reads git in, read-only; null where the press
+    /// The registry's repositories, whose checkouts the finished trees' record pass reads git in, read-only; null where the press
     /// has no service, and then no record is posted and no folder resumed before it lists.
     /// </summary>
     public Func<CancellationToken, Task<IReadOnlyList<RepoView>>>? Registry { get; init; }
 
-    /// <summary>The service's door for a finished tree's record (KEEPSIZE1b): null where it keeps it, else why not.</summary>
+    /// <summary>The service's door for a finished tree's record: null where it keeps it, else why not.</summary>
     internal Func<FinishedPost, CancellationToken, Task<RecordRefusal?>>? PostRecord { get; init; }
 
-    /// <summary>This world with the service's registry and record door (KEEPSIZE1b), for the window's press.</summary>
+    /// <summary>This world with the service's registry and record door, for the window's press.</summary>
     public SpaceFreeWorld WithService(ServiceClient service) => this with { Registry = service.RegistryAsync, PostRecord = service.PostWorkRecordAsync };
 
     /// <summary>The terminal's world alone: this home's downloads judged from its files, its running sessions by the process markers.</summary>

@@ -3,12 +3,11 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What every process Daoris starts is handed for its git (GITAUTH1a and GITAUTH1b, D198 points 2 and 6; the git-auth design §4.1
-/// and §4.6): no git in it asks anyone anything, and every remote act passes one of Daoris's two doors, the ssh door for SSH and the
+/// What every process Daoris starts is handed for its git: no git in it asks anyone anything, and every remote act passes one of Daoris's two doors, the ssh door for SSH and the
 /// remote helper for HTTP and HTTPS. Handed through <see cref="Tools.Hand(ProcessStartInfo, ToolsRead, string)"/>, the seam every
 /// start the source scan holds already passes, so a start written later is held to it with no second scan; and never through
 /// <see cref="Tools.ChildEnvironment"/>, which the terminal's shells take: those are the person's own, and theirs may prompt and
-/// pass no door (§4.5).
+/// pass no door.
 /// </summary>
 /// <remarks>
 /// <para><b>An empty <c>GIT_ASKPASS</c></b> stops git's whole search, <c>core.askPass</c> and <c>SSH_ASKPASS</c> included: git reads
@@ -18,9 +17,9 @@ namespace Daoris.Driver;
 /// (<see cref="Tools.InstallBin"/>), each on its own: a home with no install beside it (a test's, a development run's that laid none)
 /// routes nothing, as before. The ssh door is named in <c>GIT_SSH_COMMAND</c> by a bare path in forward slashes holding none of git's
 /// shell characters (<see cref="Bare"/>), which git starts directly, with no <c>sh</c>; where the install's path holds one, by
-/// <c>GIT_SSH</c>, which git starts whole but which a repository's own <c>core.sshCommand</c> outranks (§4.2). The remote helper is
+/// <c>GIT_SSH</c>, which git starts whole but which a repository's own <c>core.sshCommand</c> outranks. The remote helper is
 /// reached by <c>insteadOf</c> in the command scope, appended after any the start already holds.</para>
-/// <para>The configuration file of §4.1 (TOOLS6) is handed beside these by <see cref="GitGlobalFile"/>, through the same seam; the
+/// <para>The configuration file is handed beside these by <see cref="GitGlobalFile"/>, through the same seam; the
 /// identity's author by <c>GitAuthor</c> at a session's start and a squash.</para>
 /// </remarks>
 public static class GitWiring
@@ -35,8 +34,8 @@ public static class GitWiring
     };
 
     /// <summary>
-    /// Taken out of every child's environment: an inherited one could prompt, or trace a header or a secret; and the holder key
-    /// (SUPERVISOR1a-ii, D208 §2.2), which only the holder's terminal is handed, added back by its own start alone.
+    /// Taken out of every child's environment: an inherited one could prompt, or trace a header or a secret; and the holder key,
+    /// which only the holder's terminal is handed, added back by its own start alone.
     /// </summary>
     public static readonly IReadOnlyList<string> Removed =
     [
@@ -45,15 +44,15 @@ public static class GitWiring
     ];
 
     /// <summary>
-    /// Taken out of a session's start alone (<c>Spawning.Shell</c>, §4.1): a session's <c>gh</c> or <c>az</c> would otherwise act
-    /// with a token the desktop inherited. They still act as the person's own sign-in in their own configuration, unjudged (§10).
+    /// Taken out of a session's start alone (<c>Spawning.Shell</c>): a session's <c>gh</c> or <c>az</c> would otherwise act
+    /// with a token the desktop inherited. They still act as the person's own sign-in in their own configuration, unjudged.
     /// </summary>
     public static readonly IReadOnlyList<string> SessionTokens = ["GH_TOKEN", "GITHUB_TOKEN", "GH_ENTERPRISE_TOKEN", "AZURE_DEVOPS_EXT_PAT"];
 
-    /// <summary>The ssh door's file in the install's <c>app/bin/</c> (§4.2).</summary>
+    /// <summary>The ssh door's file in the install's <c>app/bin/</c>.</summary>
     public const string SshDoor = GitGlobalFile.SshDoor;
 
-    /// <summary>The remote helper's file in the install's <c>app/bin/</c>, which git runs for a <c>daoris::</c> address (§4.3).</summary>
+    /// <summary>The remote helper's file in the install's <c>app/bin/</c>, which git runs for a <c>daoris::</c> address.</summary>
     public const string RemoteHelper = "git-remote-daoris.exe";
 
     /// <summary>How the ssh door was named for a start: <c>command</c> (<c>GIT_SSH_COMMAND</c>), <c>git-ssh</c>, or null for none.</summary>
@@ -73,7 +72,7 @@ public static class GitWiring
     {
         foreach (var name in Removed) info.Environment.Remove(name);
         foreach (var (name, value) in Prompts) info.Environment[name] = value;
-        // A grant is handed by its one start alone (§6.7), never inherited.
+        // A grant is handed by its one start alone, never inherited.
         info.Environment.Remove(GitRouting.GrantVariable);
         if (home is null) return;
 
@@ -98,7 +97,7 @@ public static class GitWiring
 
     /// <summary>
     /// The git Tools resolves for <paramref name="home"/> where a door is laid out beside it and that git is older than the doors need
-    /// (<see cref="GitVersions.Doors"/>, §4.1): it reads no command scope, so the remote helper's rewrite never reaches it. Else null.
+    /// (<see cref="GitVersions.Doors"/>): it reads no command scope, so the remote helper's rewrite never reaches it. Else null.
     /// Asked once per change of the git.
     /// </summary>
     public static async Task<Version?> OlderAsync(string home, CancellationToken ct)
@@ -108,7 +107,7 @@ public static class GitWiring
     }
 
     /// <summary>
-    /// Why one of Daoris's own remote acts refuses on this home's git (§4.1), said before any git connects and kept as a
+    /// Why one of Daoris's own remote acts refuses on this home's git, said before any git connects and kept as a
     /// <c>git.refused</c> line coded <c>old-git</c>; null where it may go on.
     /// </summary>
     public static async Task<string?> RefusesAsync(string home, string repository, string remote, string? address, GitAct act, CancellationToken ct)
@@ -118,7 +117,7 @@ public static class GitWiring
         return GitVersions.DoorsRefusal(older);
     }
 
-    /// <summary>Take a session's start's inherited token variables out (§4.1): called by <c>Spawning.Shell</c> alone.</summary>
+    /// <summary>Take a session's start's inherited token variables out: called by <c>Spawning.Shell</c> alone.</summary>
     public static void Untoken(IDictionary<string, string?> environment)
     {
         foreach (var name in SessionTokens) environment.Remove(name);

@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's words for an account's limit (TOOL4a, D125 §0.2): five recorded sentences, on its ACP
+/// Claude Code's words for an account's limit: five recorded sentences, on its ACP
 /// adapter's door and on the maker's own CLI outside Daoris, which inform the grammar, and the weekly reset
-/// the maker's errors page documents with a weekday (TOOL4k).
+/// the maker's errors page documents with a weekday.
 /// </summary>
 public static class ClaudeLimits
 {
@@ -36,5 +36,9 @@ public static class ClaudeLimits
                 "You've hit your weekly limit · resets Mon 12:00am",
                 "2026-10-02",
                 "documented, not seen: the maker's errors page, read by TOOL4b (limit-signals evidence §2), which prints it with no zone; the weekday it names is TOOL4k's grammar"),
+            new(
+                "You've hit your session limit · resets 3am (<zone>)",
+                "2026-11-07",
+                "the protocol door: the agent's whole last message of a driven turn its adapter then ended end_turn, on Sonnet, 155k tokens into the session, and again as each of four later turns' only words; no failure was carried"),
         ]);
 }

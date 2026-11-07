@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDNODE1b3 (the land node design §9's first question, decided): one Accept carrying several sessions, an entry's or LINESTOGETHER1's
+/// One Accept carrying several sessions, an entry's or a
 /// combined Accept, is one delivery. The head's unit performs it under one fence; each member is reached as <i>brought into</i> that
 /// delivery, with no delivery of its own, and while the operation binding it is open it is bound and starts none. The operation is set up
 /// as <see cref="TogetherAcceptsTests"/> sets it up.

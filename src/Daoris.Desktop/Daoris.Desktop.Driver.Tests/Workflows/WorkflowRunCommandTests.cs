@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1c2 (D157's WORKFLOW1c2 note; the workflow design §5.2, §7, D50): <c>daoris workflow run --session|--quest|--ask
+/// <c>daoris workflow run --session|--quest|--ask
 /// &lt;id&gt;</c>, the terminal's twin of the session's <i>Workflow</i> view. It prints what <see cref="WorkflowRunReader"/> reads,
 /// one line per step with its state and what that state says, the step the run stands at marked. Reads only.
 /// </summary>
@@ -114,7 +114,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
     }
 
     /// <summary>
-    /// INTEGRATE1o part o2: the requests the work's sessions made are read from every quest and session the service answers and printed under the
+    /// The requests the work's sessions made are read from every quest and session the service answers and printed under the
     /// work: the quest a session of it published, with its repository, state and the decline's reason, and the helper it asked as a request to an
     /// agent. The same run without them prints what the golden text holds.
     /// </summary>
@@ -145,8 +145,8 @@ public sealed class WorkflowRunCommandTests : IDisposable
     }
 
     /// <summary>
-    /// A conversation serves no quest: no run, and its code's English says why, the page's en words (CHATFLOW1a, the chat-flow design
-    /// §10). A chat with no tree of its own works in the checkout. Nothing names a run, exit 1.
+    /// A conversation serves no quest: no run, and its code's English says why, the page's en words.
+    /// A chat with no tree of its own works in the checkout. Nothing names a run, exit 1.
     /// </summary>
     [Fact]
     public async Task A_chat_has_no_run_and_says_its_codes_english()
@@ -255,7 +255,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Where the second opinion's gate holds the work on the person, its presses are the terminal's (XAGENT1f): the lines under the
+    /// Where the second opinion's gate holds the work on the person, its presses are the terminal's: the lines under the
     /// step name them for its session, as the page says them until the review draws them.
     /// </summary>
     [Fact]
@@ -364,7 +364,7 @@ public sealed class WorkflowRunCommandTests : IDisposable
             var body = request.RequestUri!.PathAndQuery switch
             {
                 "/api/registry" => """[{"repository":"engine","workspace":"aurora"}]""",
-                // INTEGRATE1o part o2: a quest session s1 published to another repository, declined, and a helper it asked.
+                // A quest session s1 published to another repository, declined, and a helper it asked.
                 "/api/quests?includeClosed=true" when requests =>
                     """
                     [{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"},

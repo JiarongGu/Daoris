@@ -12,34 +12,34 @@ import { type VerifyRunsProps, VerifyRuns } from './verify/VerifyRuns';
 
 export type { WorkflowDoors } from './WorkflowChart';
 
-/** What a page hands its Workflow tab: the answer, or that it is on its way or was refused, and the doors it may open. */
+/** What a page hands its Workflow tab: the answer, or that it is on its way or refused, and the doors it may open. */
 export type WorkflowTabProps = {
-  /** The Current the shell answered; absent while it is read, or where it was refused. */
+  /** The Current the shell answered; absent while it is read, or where it is refused. */
   current?: CurrentWorkflow | null;
   /** The answer is on its way. */
   reading?: boolean;
-  /** The read was refused, in the driver's sentence that says why. */
+  /** The read is refused, in the driver's sentence that says why. */
   refusal?: string | null;
   doors?: WorkflowDoors;
   /**
-   * The person's *Accept the gates* on the start node's landed route (FABRIC-PIPELINE1a): the declaration at the line's tip, accepted
+   * The person's *Accept the gates* on the start node's landed route: the declaration at the line's tip, accepted
    * by its blob. None, and the start offers no press.
    */
   onAcceptGates?: (answered: Answered) => void;
   /** An acceptance is on its way. */
   accepting?: boolean;
-  /** The person's *Verify…* of a branch or a commit under the accepted gates (FABRIC-PIPELINE1d); none, and the start offers no press. */
+  /** The person's *Verify…* of a branch or a commit under the accepted gates; none, and the start offers no press. */
   onVerify?: (ask: VerifyAsk, answered: Answered) => void;
-  /** A repository's verifications with their verdicts (FABRIC-PIPELINE1d), where its landed route names a verification pipeline; none, and none drawn. */
+  /** A repository's verifications with their verdicts, where its landed route names a verification pipeline; none, and none drawn. */
   verifications?: VerifyRunsProps;
-  /** The step editor's bridge (WORKFLOWEDIT1b); none, and the tab says the terminal's way to start a workflow of one's own. */
+  /** The step editor's bridge; none, and the tab says the terminal's way to start a workflow of one's own. */
   editor?: WorkflowEditorBridge;
 };
 
 /**
- * **A Workflow's head** (WORKFLOW1b): what it shows and why, *Current workflow*, its version, whose rules it reads, the person's part
- * composed from the steps, and its terminal twin (D50). The Workflow tab draws it first, and so does the Agents place's Workflow
- * section (AGENTSPLACE1h).
+ * **A Workflow's head**: what it shows and why, *Current workflow*, its version, whose rules it reads, the person's part
+ * composed from the steps, and its terminal twin. The Workflow tab draws it first, and so does the Agents place's Workflow
+ * section.
  */
 export function WorkflowHead({ page, name, current }: { page: 'repository' | 'workspace'; name: string; current: CurrentWorkflow }) {
   const { t } = useTranslation();
@@ -72,19 +72,19 @@ export function WorkflowHead({ page, name, current }: { page: 'repository' | 'wo
 }
 
 /**
- * **A Workflow tab** (WORKFLOW1b; D157 point 12, the workflow design §6.1, §6.2): on a repository's page and a workspace's,
- * how work there moves, drawn read-only from the rules as they stand (Current, design §2.7). It heads with what it shows
+ * **A Workflow tab**: on a repository's page and a workspace's,
+ * how work there moves, drawn read-only from the rules as they stand (Current). It heads with what it shows
  * and why: *Current workflow*, its version, whose rules it reads, the person's part composed from the steps, and its
- * terminal twin (D50). Then the chart; and on a workspace's page, its repositories, each saying whether it follows this or
+ * terminal twin. Then the chart; and on a workspace's page, its repositories, each saying whether it follows this or
  * sets rules of its own, with a door to its own.
  *
  * @remarks
  * **A molecule**: the answer arrives as a prop and every door goes out. While the answer is on its way it says so, and a
- * refusal is said in its place, in the driver's words (the platform language §4: a page never goes blank).
+ * refusal is said in its place, in the driver's words (a page never goes blank).
  *
- * **The start node comes first** (FABRIC-PIPELINE1a, `WorkflowStartNode`), where the answer carries one: each route, each kind
+ * **The start node comes first** (`WorkflowStartNode`), where the answer carries one: each route, each kind
  * among them, wired to the workflow it names, named or Current. The chart below it draws Current; *Compose steps…* opens the step
- * editor (WORKFLOWEDIT1b) below it, whose *Use here* chooses a saved version for this page's place.
+ * editor below it, whose *Use here* chooses a saved version for this page's place.
  */
 export function WorkflowTab({
   page, name, current, reading = false, refusal = null, doors, onAcceptGates, accepting = false, onVerify, verifications, editor,
@@ -108,7 +108,7 @@ export function WorkflowTab({
     <div className="grid min-w-0 gap-5">
       <WorkflowHead page={page} name={name} current={current} />
 
-      {/* FABRIC-PIPELINE1a: the start node first, the routes into the workflows; a driver before it answers none. */}
+      {/* The start node first, the routes into the workflows; a driver before it answers none. */}
       {current.start && (
         <WorkflowStartNode
           start={current.start}
@@ -133,7 +133,7 @@ export function WorkflowTab({
 }
 
 /**
- * A workflow of one's own (WORKFLOWEDIT1b, in place of INTEGRATE1q's presets in words): *Compose steps…* opens the step editor, told so its
+ * A workflow of one's own: *Compose steps…* opens the step editor, told so its
  * reads are asked only while it shows, and the terminal's twin stands beside it. With no editor handed, only the twin.
  */
 function Compose({ editor, place }: { editor?: WorkflowEditorBridge; place: { repository: string } | { workspace: string } }) {
@@ -159,10 +159,10 @@ function Compose({ editor, place }: { editor?: WorkflowEditorBridge; place: { re
 
 /**
  * A workspace's repositories against its Current: each follows it, or sets a rule of its own and so follows its own, which
- * a rule it sets replaces whole (D145 §1, D154 §1.3, D155 §2.3), with a door to that repository's Workflow tab.
+ * a rule it sets replaces whole, with a door to that repository's Workflow tab.
  */
 function Repositories({ repositories, onOpen }: {
-  /** Null where the registry was not read. */
+  /** Null where the registry is not read. */
   repositories: WorkflowRepository[] | null;
   onOpen?: (repository: string) => void;
 }) {

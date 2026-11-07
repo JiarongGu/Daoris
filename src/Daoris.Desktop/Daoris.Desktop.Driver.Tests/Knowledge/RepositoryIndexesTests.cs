@@ -3,11 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KNOWUSE1c (D135 §4): the look before asking names the indexes a repository keeps for its own documents, found in the
+/// The look before asking names the indexes a repository keeps for its own documents, found in the
 /// tree the session runs in. Found generically, since the instruction travels to repositories that know nothing of this
-/// one: the router its manifest declares, then every file named as an index where documents and doctrine are kept. The
-/// sessions that put readings to the owner had a cross-cutting index and one per part of the code, which their
-/// instructions named and the driver's did not (`docs/2026-10-03-knowledge-use-evidence.md` §2).
+/// one: the router its manifest declares, then every file named as an index where documents and doctrine are kept.
 /// </summary>
 public sealed class RepositoryIndexesTests : IDisposable
 {
@@ -167,7 +165,7 @@ public sealed class RepositoryIndexesTests : IDisposable
 
     /// <summary>
     /// The target a quest's session is handed names the indexes in the TREE it runs in, its own tree where the repository
-    /// opted in (D51), which carries the committed files as the root does; a tree that keeps none names none.
+    /// opted in, which carries the committed files as the root does; a tree that keeps none names none.
     /// </summary>
     [Fact]
     public void A_quests_target_names_the_indexes_its_tree_keeps()

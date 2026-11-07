@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Which checks a repository's sessions run, as <c>driver.json</c> keeps them (FOUNDATION1 mod-iii): the settings' own choices and
+/// Which checks a repository's sessions run, as <c>driver.json</c> keeps them: the settings' own choices and
 /// reading, which the checks answer through, so the key is read and kept alike wherever a choice is named.
 /// </summary>
 public sealed class SessionChecksKeyTests

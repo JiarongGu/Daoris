@@ -8,7 +8,7 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One download, as a list names it (§3.2).</summary>
+/// <summary>One download, as a list names it.</summary>
 /// <param name="Sha256">Lower case.</param>
 /// <param name="Exe">The executable inside the unpacked archive, a relative <c>/</c> path.</param>
 /// <param name="Paths">The folders a child's <c>PATH</c> takes first; <c>.</c> is the archive's root.</param>
@@ -24,7 +24,7 @@ public sealed record ResourceTool(
 
 /// <summary>One list as read.</summary>
 /// <param name="Origin">How sentences name it: an address, or <see cref="ToolResources.BuiltIn"/>.</param>
-/// <param name="Integrity">What vouches for it (§3.5): <c>built in</c>, <c>this machine</c>, or the host; null for text read on its own.</param>
+/// <param name="Integrity">What vouches for it: <c>built in</c>, <c>this machine</c>, or the host; null for text read on its own.</param>
 /// <param name="Path">The file read; null for text.</param>
 /// <param name="Sha256">The sha256 of the bytes read, as the screen shows it; null when nothing was read.</param>
 /// <param name="Tools">The declared tools it names, in ordinal order.</param>
@@ -66,16 +66,14 @@ public sealed record MergedResources(
     string? Platform, IReadOnlyList<MergedTool> Tools, IReadOnlyList<UnknownTool> Unknown, IReadOnlyList<string> Notes);
 
 /// <summary>
-/// <c>resources.json</c>: where each version of a tool downloads from, and the merge of every list read (TOOLS3,
-/// D121; <c>docs/2026-10-01-tools-design.md</c> §3.1–§3.5). One list is built into the install, at
+/// <c>resources.json</c>: where each version of a tool downloads from, and the merge of every list read. One list is built into the install, at
 /// <c>app/resources.json</c> beside the application; more are resource locations the person lists in
 /// <c>tools.json</c>, each fetched on their press and kept under <c>&lt;home&gt;/tools/locations/</c>. This reads the
-/// copies and the list built in, and merges them. Fetching is TOOLS4's.
+/// copies and the list built in, and merges them.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>The one reader since PUSH1f2c</b> (D194): the CLI's <c>resources.ts</c> was its twin, held row for row to
-/// <c>ToolResourcesTests</c>' tables, until <c>daoris tool</c> became <c>daoris tool</c>; a member's note naming the CLI names
-/// the function it was the twin of. Its rules:</para>
+/// <para>🔴 <b>The one reader</b>: <c>ToolResourcesTests</c>' tables hold it row for row; a member's note naming the CLI names
+/// the function it mirrors. Its rules:</para>
 /// <list type="number">
 /// <item><c>schema</c> is read first: anything but 1 refuses the whole list, and so does a <c>tools</c> that is no
 /// object.</item>
@@ -86,11 +84,11 @@ public sealed record MergedResources(
 /// inside the archive); <c>paths</c> defaults to the folder <c>exe</c> is in, <c>.</c> for the root.</item>
 /// <item>What does not read is skipped and said, never guessed at.</item>
 /// </list>
-/// <para>Then the merge (§3.4): the person's locations in order, then the list built in. One tool, version and
+/// <para>Then the merge: the person's locations in order, then the list built in. One tool, version and
 /// platform is one download, whoever names it: lists that disagree refuse that version, naming both; lists that
 /// agree under other addresses are mirrors, tried in read order; the versions are the union, and the newest is the
 /// highest by number, never by any list's word.</para>
-/// <para>It reads files and answers "what is offered". Fetching a location is TOOLS4's.</para>
+/// <para>It reads files and answers "what is offered".</para>
 /// </remarks>
 public static class ToolResources
 {
@@ -109,14 +107,14 @@ public static class ToolResources
     /// <summary>The one schema this build reads. The CLI's <c>SCHEMA</c>.</summary>
     public const int Schema = 1;
 
-    /// <summary>The archives either reader unpacks; a third is a reviewed change to both (§3.2).</summary>
+    /// <summary>The archives either reader unpacks; a third is a reviewed change to both.</summary>
     public static readonly IReadOnlyList<string> Archives = ["zip", "tar.gz"];
 
     /// <summary>How the list built in names itself in a sentence. The CLI's <c>BUILT_IN</c>.</summary>
     public const string BuiltIn = "the built-in list";
 
     /// <summary>
-    /// The platforms a list may name — .NET runtime identifiers — and .NET's names for each (§3.2). 🔴 The CLI's
+    /// The platforms a list may name — .NET runtime identifiers — and .NET's names for each. 🔴 The CLI's
     /// table holds the same ids in the same order, with Node's names; the tests hold both spellings in one table.
     /// </summary>
     private static readonly (string Id, OSPlatform Os, Architecture Arch)[] PlatformTable =
@@ -135,7 +133,7 @@ public static class ToolResources
 
     private static readonly Regex Hash = new(@"^[0-9A-Fa-f]{64}\z", RegexOptions.CultureInvariant);
 
-    /// <summary>The fields one download is, whoever names it (§3.4 rule 2), in the order a refusal names the first that differs.</summary>
+    /// <summary>The fields one download is, whoever names it, in the order a refusal names the first that differs.</summary>
     private static readonly string[] FileFields = ["sha256", "size", "archive", "exe", "paths"];
 
     /// <summary>The platform an operating system and architecture name, or null for one no list may name.</summary>
@@ -192,7 +190,7 @@ public static class ToolResources
 
         if (parsed is not JsonObject root) return Read($"{origin} is not a JSON object");
 
-        // Rule 1: the schema, before anything else.
+        // The schema, before anything else.
         if (root["schema"] is not { } schema) return Read($"{origin} names no `schema`: nothing in it is read");
         if (!IsSchema(schema))
         {
@@ -205,7 +203,7 @@ public static class ToolResources
 
         foreach (var (id, entry) in Ordinal(held))
         {
-            // Rule 2: a list offers versions of the tools this build declares, and can never add one.
+            // A list offers versions of the tools this build declares, and can never add one.
             if (Tools.Find(id) is null)
             {
                 unknown.Add(id);
@@ -225,7 +223,7 @@ public static class ToolResources
         return Read(null);
     }
 
-    /// <summary>What vouches for a list from an address (§3.5): this machine, or the host the person chose to trust.</summary>
+    /// <summary>What vouches for a list from an address: this machine, or the host the person chose to trust.</summary>
     public static string IntegrityOf(string address)
     {
         var uri = new Uri(address);
@@ -255,7 +253,7 @@ public static class ToolResources
         };
     }
 
-    /// <summary>The list built in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>, HOMELAYOUT4): its <c>app/resources.json</c>, which an install makes one folder with the application's.</summary>
+    /// <summary>The list built in the home's Daoris folder (<see cref="DaorisHome.FolderOf"/>): its <c>app/resources.json</c>, which an install makes one folder with the application's.</summary>
     public static string BesideHome(string home) =>
         System.IO.Path.Combine([DaorisHome.FolderOf(System.IO.Path.GetFullPath(home)).Folder, .. Layout]);
 
@@ -269,7 +267,7 @@ public static class ToolResources
 
     /// <summary>
     /// Where a location's fetched copy is kept: named by the sha256 of its address as written, under the home's
-    /// <see cref="HomeEntry.ToolVersions"/> as the CLI's <c>locationCopy</c> asks it (HOMELAYOUT3: <c>cache/tools/locations</c>, or
+    /// <see cref="HomeEntry.ToolVersions"/> as the CLI's <c>locationCopy</c> asks it (<c>cache/tools/locations</c>, or
     /// where an older home keeps them).
     /// </summary>
     public static string LocationCopy(string home, string address) =>
@@ -277,7 +275,7 @@ public static class ToolResources
             [.. LocationsFolder.Skip(1), Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(address))) + ".json"]);
 
     /// <summary>
-    /// Every list, in read order (§3.3): the person's locations top to bottom, each from its fetched copy, then the
+    /// Every list, in read order: the person's locations top to bottom, each from its fetched copy, then the
     /// list built in, always last. A location never fetched, and a home with no install beside it, are lists that
     /// name nothing and say why.
     /// </summary>
@@ -301,7 +299,7 @@ public static class ToolResources
     }
 
     /// <summary>
-    /// Merge the lists, read in order, for one platform (§3.4). A list with a problem offers nothing; its problem is
+    /// Merge the lists, read in order, for one platform. A list with a problem offers nothing; its problem is
     /// carried into the notes, as each list's notes are.
     /// </summary>
     public static MergedResources Merge(IReadOnlyList<ResourceList> lists, string? platform)
@@ -338,7 +336,7 @@ public static class ToolResources
             {
                 if (!list.Tools.TryGetValue(declared.Id, out var tool)) continue;
                 named.Add(list.Origin);
-                // Rule 7: the first list that names them, in read order.
+                // The first list that names them, in read order.
                 if (source is null && tool.Source is not null) (source, sourceFrom) = (tool.Source, list.Origin);
                 if (licence is null && tool.Licence is not null) (licence, licenceFrom) = (tool.Licence, list.Origin);
                 if (platform is null) continue;
@@ -365,7 +363,7 @@ public static class ToolResources
                         continue;
                     }
 
-                    // Rule 4: the same bytes under another address are a mirror, tried in read order.
+                    // The same bytes under another address are a mirror, tried in read order.
                     if (!held.Urls.Contains(file.Url, StringComparer.Ordinal)) held.Urls.Add(file.Url);
                     if (!held.Lists.Contains(list.Origin, StringComparer.Ordinal)) held.Lists.Add(list.Origin);
                 }
@@ -460,7 +458,7 @@ public static class ToolResources
         return new ResourceTool(source, licence, versions);
     }
 
-    /// <summary>A file of the list, judged (rule 4): what it downloads, or why it is skipped.</summary>
+    /// <summary>A file of the list, judged: what it downloads, or why it is skipped.</summary>
     private static (ToolFile? File, string? Why) JudgeFile(JsonNode? value)
     {
         if (value is not JsonObject file) return (null, "it is not an object");

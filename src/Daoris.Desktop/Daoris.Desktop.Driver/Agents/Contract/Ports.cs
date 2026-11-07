@@ -3,17 +3,16 @@ using System.Diagnostics;
 
 namespace Daoris.Driver;
 
-// The ports a provider written on the contract alone needs (AGENTPROVIDER1 row b; the agent-provider design §2.3, §11). A part states
-// its port or is stated absent; today's behaviour for an agent that says nothing is each port's default (D53). Row b declares them and
-// the stand-ins use the ones they need; the rows that move a port's readers (e, h, i, k, m) fill the rest.
+// The ports a provider written on the contract alone needs. A part states its port or is stated absent; each port's default is the
+// behaviour for an agent that says nothing.
 
 /// <summary>
-/// A door's spawn (the design §2.3, §4.6): a start's, a conversation's and a native resume's <see cref="ProcessRecipe"/>, which the
+/// A door's spawn: a start's, a conversation's and a native resume's <see cref="ProcessRecipe"/>, which the
 /// transports' one shell (<see cref="Shell"/>) completes, and the carriers it hands its own process once the shell has.
 /// </summary>
 public interface ISpawn
 {
-    /// <summary>The recipe of a driven session: preparation only, the driver owns its lifetime (D46 §5).</summary>
+    /// <summary>The recipe of a driven session: preparation only, the driver owns its lifetime.</summary>
     ProcessRecipe Start(SpawnRequest request);
 
     /// <summary>The recipe of a conversation, a new one or the one <see cref="SpawnRequest.Resume"/> names; the shell opens its stdin.</summary>
@@ -21,7 +20,7 @@ public interface ISpawn
 
     /// <summary>
     /// The native door's resume of the conversation <see cref="SpawnRequest.Resume"/> names, its next turn written on the input by the
-    /// driver (AGENTLYNTAI1s-i); null where the door knows none.
+    /// driver; null where the door knows none.
     /// </summary>
     ProcessRecipe? Resume(SpawnRequest request) => null;
 
@@ -30,13 +29,12 @@ public interface ISpawn
 
     /// <summary>
     /// Whether its program runs Claude Code's, so its spawn is pointed at the <c>claude</c> Claude Code's pin chose and takes that pin's
-    /// switch (ACP2, <see cref="ClaudeAcp"/>). False by default: Codex's and dsh's doors read neither variable (the agent-provider design §7
-    /// row 7).
+    /// switch (<see cref="ClaudeAcp"/>). False by default: Codex's and dsh's doors read neither variable.
     /// </summary>
     bool ClaudeSeam => false;
 
     /// <summary>
-    /// Points this spawn at the managed <c>claude</c> a start on a door that takes the seam was handed (<see cref="ClaudeSeam"/>), for the
+    /// Points this spawn at the managed <c>claude</c> a start on a door that takes the seam is handed (<see cref="ClaudeSeam"/>), for the
     /// shell to apply with the rest of the account's half; nothing by default.
     /// </summary>
     void PointAtClaude(ProcessStartInfo info, string managedClaude) { }
@@ -57,11 +55,11 @@ public interface ISpawn
     void HandPlugins(ProcessStartInfo info, IReadOnlyList<string> plugins) { }
 }
 
-/// <summary>What a door reads of its program's wire beyond the transport's: a native door's lines, or a protocol door's frames (§2.6).</summary>
+/// <summary>What a door reads of its program's wire beyond the transport's: a native door's lines, or a protocol door's frames.</summary>
 public interface IDialect;
 
 /// <summary>
-/// A native door's dialect (the design §2.6): a reader of its program's structured stdout, new per session, and how a person's message
+/// A native door's dialect: a reader of its program's structured stdout, new per session, and how a person's message
 /// and an interrupt are framed on its stdin. Absent, a door is read as plain lines and an end, nothing more, which is every pipe door
 /// until its wire is checked.
 /// </summary>
@@ -78,8 +76,7 @@ public interface INativeDialect : IDialect
 }
 
 /// <summary>
-/// A protocol door's dialect (the design §2.6): what the shared transport hands the agent's own readings. Declared in row b and read
-/// from row i; until then the transport reads every agent's extensions inline.
+/// A protocol door's dialect: what the shared transport hands the agent's own readings.
 /// </summary>
 public interface IProtocolDialect : IDialect
 {
@@ -87,7 +84,7 @@ public interface IProtocolDialect : IDialect
     object? SessionMeta(string settingsFile, IReadOnlyList<string> plugins) => null;
 }
 
-/// <summary>How an account's windows are asked between turns (the design §2.3): the program, the command, the answers recorded and the freshness.</summary>
+/// <summary>How an account's windows are asked between turns: the program, the command, the answers recorded and the freshness.</summary>
 public interface IUsageQuestion
 {
     /// <summary>The harness whose binary the command names.</summary>
@@ -96,7 +93,7 @@ public interface IUsageQuestion
     /// <summary>The binary and arguments that start the question.</summary>
     IReadOnlyList<string> Command { get; }
 
-    /// <summary>The answers the reader was written against.</summary>
+    /// <summary>The answers the reader is written against.</summary>
     IReadOnlyList<RecordedFrame> Recorded { get; }
 
     /// <summary>The question's name as the usage history writes a reading's source.</summary>
@@ -106,7 +103,7 @@ public interface IUsageQuestion
     TimeSpan Fresh { get; }
 }
 
-/// <summary>How an agent's lineage names a child (the design §2.3): its hook's lines, its calls' <c>_meta</c> keys, its stream's signals.</summary>
+/// <summary>How an agent's lineage names a child: its hook's lines, its calls' <c>_meta</c> keys, its stream's signals.</summary>
 public interface IChildVocabulary
 {
     IReadOnlyList<string> HookLines { get; }
@@ -129,7 +126,7 @@ public interface IChildVocabulary
 }
 
 /// <summary>
-/// An agent's settings file for an account's default model and effort (the design §2.3, row n): the model names its program takes as aliases
+/// An agent's settings file for an account's default model and effort: the model names its program takes as aliases
 /// and the efforts a default in the file may hold, which are not what a session may carry (<see cref="DoorOffers"/>' two scopes).
 /// </summary>
 public interface ISettingsFile
@@ -145,7 +142,7 @@ public interface ISettingsFile
 }
 
 /// <summary>
-/// What a session on one door may carry for a model and an effort (the design §2.3, row n), the session scope of <see cref="DoorOffers"/>: the
+/// What a session on one door may carry for a model and an effort, the session scope of <see cref="DoorOffers"/>: the
 /// provider's settings file where it states one, extended by the efforts only a native session carries on a door that says so, and a door that
 /// states nothing carries what its open last listed on any account.
 /// </summary>
@@ -155,7 +152,7 @@ public interface IDoorOffers
     ChoicesOffered? Of(string home, string door, ISettingsFile? provider);
 }
 
-/// <summary>What a conversation keeps under an account's home, by the agent's version (the design §2.3).</summary>
+/// <summary>What a conversation keeps under an account's home, by the agent's version.</summary>
 public interface IConversationHome
 {
     /// <summary>The paths under an account's home a conversation keeps, for this version of the agent (null: any).</summary>
@@ -166,6 +163,9 @@ public interface IConversationHome
     /// directory, as <see cref="ProjectFolders"/> says); null for an agent that files its sessions another way (Codex, by date).
     /// </summary>
     ProjectFolders? Projects => null;
+
+    /// <summary>How a conversation goes from one of the agent's account homes to another; null where it cannot.</summary>
+    IConversationCarry? Carry => null;
 }
 
 /// <summary>
@@ -179,7 +179,7 @@ public interface IConversationHome
 public sealed record ProjectFolders(string Variable, string DefaultFolder, string Folder, Func<string, string> Flatten);
 
 /// <summary>
-/// How a provider takes the product's rules for one session (the design §4.5): its own settings file, its hooks among them, and the
+/// How a provider takes the product's rules for one session: its own settings file, its hooks among them, and the
 /// hard denials its classifier is told. The rules stay the product's one grammar; a provider that takes none states this absent, and the
 /// person's denies reach none of its sessions.
 /// </summary>
@@ -190,7 +190,7 @@ public interface IRuleLanguage
 }
 
 /// <summary>
-/// How a door is handed a start's connectors at its spawn (the design §4.4): by a file in its provider's own layout. A door whose
+/// How a door is handed a start's connectors at its spawn: by a file in its provider's own layout. A door whose
 /// servers ride its wire, or that takes none at its spawn, states this absent, and no file is written for it.
 /// </summary>
 public interface IServerHanding
@@ -199,7 +199,7 @@ public interface IServerHanding
     string? Hand(ProcessStartInfo info, string home, ConnectorPlan plan);
 }
 
-/// <summary>How a provider lays out the skills a start is handed (the design §4.5), from plain values Loop composes.</summary>
+/// <summary>How a provider lays out the skills a start is handed, from plain values Loop composes.</summary>
 public interface ISkillLayout
 {
     /// <summary>The session's folder under the home and each plugin in it, in the order given; a null folder and none where nothing is handed.</summary>

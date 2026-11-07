@@ -12,6 +12,6 @@ public interface IWorkplacePluginWire
     /// <summary>Why <paramref name="plugin"/> cannot land work here now, or null (<see cref="LandingPlugins.ProblemOf"/>).</summary>
     string? Problem(string plugin);
 
-    /// <summary>An occasion's asks at <see cref="HookPoints.State"/> (PLUGHOOK1a): one answer per ask, in the order asked, and never a throw for a plugin's sake.</summary>
+    /// <summary>An occasion's asks at <see cref="HookPoints.State"/>: one answer per ask, in the order asked, and never a throw for a plugin's sake.</summary>
     Task<IReadOnlyList<StateAnswer>> AskStatesAsync(IReadOnlyList<StateAsk> asks, CancellationToken ct = default);
 }

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The attempts one pass may call a plugin's work process about (FABRIC-RUN1e): a new start's send, and each attempt a reconciliation asks
+/// The attempts one pass may call a plugin's work process about: a new start's send, and each attempt a reconciliation asks
 /// after or delivers again, take one each from the same count, so <see cref="NodeRuntime.SendsPerPass"/> bounds the whole pass, not its
 /// starts alone. What is left over waits for the next pass.
 /// </summary>

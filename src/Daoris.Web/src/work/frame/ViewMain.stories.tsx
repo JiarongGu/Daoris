@@ -7,7 +7,7 @@ import { PageHead, ViewMain } from './ViewMain';
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
-// A view's main area (D118 §3b, §5) in each of its four states, and as a container its page lays out by:
+// A view's main area in each of its four states, and as a container its page lays out by:
 // the two cards below sit side by side only where the main area itself is wide, whatever the window is.
 
 const HEADER = <PageHeader title="Expose a streaming budget" description="game → engine · filed 3 days ago" action={<Button variant="primary">Take</Button>} />;
@@ -52,7 +52,7 @@ export const Chosen: Story = {};
 /** Nothing chosen: how to choose, and the list's `＋`. */
 export const NothingChosen: Story = { args: { state: 'none', header: undefined } };
 
-/** The chosen item loading: skeleton rows, never the empty state (audit SE11). */
+/** The chosen item loading: skeleton rows, never the empty state. */
 export const Loading: Story = { args: { state: 'loading', header: undefined } };
 
 /** The chosen item has gone: retired, deleted, or no longer on this machine. */
@@ -74,7 +74,7 @@ export const ViewPage: Story = {
 
 const LONG = 'Make the world-streaming budget a per-frame cap read from the level file, and report each frame that went over it to the engine\'s log';
 
-/** A long head, drawn in the main area at the helper's widths (the UI/UX design R6, STORYGAP1). */
+/** A long head, drawn in the main area at the helper's widths. */
 const head = () => (
   <PageHead
     title={LONG}
@@ -84,13 +84,13 @@ const head = () => (
   />
 );
 
-/** HEAD2a (D162 §3): a long title wraps under itself and the acts hold still beside its first line (1546 px, the main area wide). */
+/** A long title wraps under itself and the acts hold still beside its first line (1546 px, the main area wide). */
 export const HeadHoldsStill: Story = { render: head, decorators: [storyWidths.wide], parameters: { layout: 'fullscreen' } };
 
-/** HEAD2a: at a 680 px window (the main area at its half width) the acts take their own right-aligned row under the facts. */
+/** At a 680 px window (the main area at its half width) the acts take their own right-aligned row under the facts. */
 export const HeadHoldsStillNarrow: Story = { render: head, decorators: [storyWidths.half], parameters: { layout: 'fullscreen' } };
 
-/** HEAD2a at the main area's 400 px floor: the title wraps under itself, the acts in their row under the facts. */
+/** At the main area's 400 px floor: the title wraps under itself, the acts in their row under the facts. */
 export const HeadAtTheFloor: Story = { render: head, decorators: [storyWidths.narrow], parameters: { layout: 'fullscreen' } };
 
 /** Sessions' main area: the tighter gutters its conversation keeps, and a column that follows its tail. */

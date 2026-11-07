@@ -3,7 +3,7 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The children and background tasks a layer door's events say (the agent-lyntai design §5.4): a subagent's task, the one whose kind is the
+/// The children and background tasks a layer door's events say: a subagent's task, the one whose kind is the
 /// subagent's word (<see cref="NativeChildren.Subagent"/>), started and ended as one <see cref="WireReading.ChildSeen"/> and one
 /// <see cref="WireReading.ChildEnded"/>, and any other task as one <see cref="WireReading.TaskStarted"/> and one
 /// <see cref="WireReading.TaskEnded"/>, each once however the events repeat it, an end only for a start the turn said: the readings Daoris's
@@ -25,7 +25,7 @@ internal sealed class LayerWork
 
     private readonly Dictionary<string, string> _outputs = new(StringComparer.Ordinal);
 
-    /// <summary>The reading a task's start is: a child's or a background task's; null where it was said already or names no task.</summary>
+    /// <summary>The reading a task's start is: a child's or a background task's; null where it is said already or names no task.</summary>
     public WireReading? Started(AgentTaskStarted started)
     {
         if (started.TaskId is not { Length: > 0 } task || _children.Contains(task) || _tasks.Contains(task)) return null;

@@ -15,7 +15,7 @@ public sealed class LastLook
     /// <summary>What the last look considered, in its order; null before any look, which is when a fresh plan is read instead.</summary>
     public IReadOnlyList<Consideration>? Latest => _looked?.Considered;
 
-    /// <summary>When the last look was recorded: This Daoris's *when it last looked*; null before any look.</summary>
+    /// <summary>When the last look recorded its verdicts: this Daoris's *when it last looked*; null before any look.</summary>
     public DateTimeOffset? At => _looked?.At;
 
     /// <summary>

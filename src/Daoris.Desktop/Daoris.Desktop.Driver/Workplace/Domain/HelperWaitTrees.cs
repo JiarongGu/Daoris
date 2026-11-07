@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a record that ended waiting on its own helper holds (HELPERWAIT1; Codex's #5 on COWORKUX1): the tidy, the lock's let-go and the
+/// What a record that ended waiting on its own helper holds: the tidy, the lock's let-go and the
 /// planner's further part read it beside the live sessions, so the workplace names this pure rule and
 /// <see cref="HelperWaits"/> keeps it under its own names for the readers above.
 /// </summary>

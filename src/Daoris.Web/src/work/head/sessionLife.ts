@@ -14,7 +14,7 @@ export const LIVE_STATES: readonly SessionState[] = SESSION_STATES.filter((state
 export const ENDED_STATES: readonly SessionState[] = SESSION_STATES.filter((state) => !SESSION_ACTIVE.has(state));
 
 /**
- * The moves `SessionLedger.Allowed` allows (D46): forward only, working and awaiting-person each way, an outcome from the
+ * The moves `SessionLedger.Allowed` allows: forward only, working and awaiting-person each way, an outcome from the
  * live states that can reach it, and stopped from every live state, since the person's hand is never refused. Nothing
  * leaves an ended state here: going on is the ledger's other move, with guards of its own. A page constant, held to the
  * service's source by `sessionLife.test.ts`.
@@ -69,7 +69,7 @@ function cannotGoOn(session: SessionOfLife): 'origin' | 'standDown' | 'ask' | 'o
 const isState = (value: unknown): value is SessionState => (SESSION_STATES as readonly unknown[]).includes(value);
 
 /**
- * **A session's states as a flow** (FLOWCHART1b; the flowchart design §2.2): the four live states and the moves
+ * **A session's states as a flow**: the four live states and the moves
  * `SessionLedger.Allowed` allows between them, the working ⇄ awaiting-person return, and one node of outcomes whose members
  * are words, entered at queued. The state the record is in is lit in its shown word's own tone (`SESSION_TONE`), and each
  * move is said by who makes it.

@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1j (D154 point 3; the review environment design §1.4–§1.5, D50): the ask's review choice at a terminal, the twin of
+/// The ask's review choice at a terminal, the twin of
 /// the composer's and the ask page's. <c>daoris ask … --review rule|on|&lt;environment&gt;|off</c> sends it with a new ask,
 /// <c>rule</c> sending none, as the composer's default does; <c>daoris ask review &lt;id&gt; on|&lt;environment&gt;|off</c>
 /// sets it on an ask, as its page's <i>Set</i> and <i>Apply</i> do. A named environment is one the ask's workspace declares, as the
-/// page offers only those; every other answer is the service's sentence. A service stood in: the fast half (MOD8).
+/// page offers only those; every other answer is the service's sentence. A service stood in: the fast half.
 /// </summary>
 public sealed class AskReviewCommandTests
 {
@@ -53,7 +53,7 @@ public sealed class AskReviewCommandTests
         Assert.Contains(named, problem);
     }
 
-    /// <summary>The ask's door hears the choice and the words as the composer sends them, and nothing where none was chosen.</summary>
+    /// <summary>The ask's door hears the choice and the words as the composer sends them, and nothing where none is chosen.</summary>
     [Fact]
     public async Task A_new_ask_carries_the_choice_to_the_asks_door()
     {

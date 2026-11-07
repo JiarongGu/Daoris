@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1c (D212; the foundation design §2.2; <c>.claude/knowledge/twins.md</c>): the participant's work, read once from the marks a
+/// The participant's work, read once from the marks a
 /// record carries, which each caller hands as a value, <see cref="WorkMarks"/>. The service's twin answers it as <c>work</c> on loopback;
 /// both are held to <c>fixtures/participant-work.json</c> among the service's tests, which the page's <c>identity.test.ts</c> reads as
 /// well, row for row: what the rule answers, what each reader of the same marks answered before it, and every place they differ, named
@@ -71,7 +71,7 @@ public sealed class ParticipantWorkTests
     /// <summary>
     /// The table names every difference between a reader's old answer and the work's, and decides it: a reader's two answers differ
     /// exactly where the row lists it, and each listed one names a decision the table holds. Only the partner's drawing changes what a
-    /// person sees (D203 point 1).
+    /// person sees.
     /// </summary>
     [Fact]
     public void Every_disagreement_is_listed_with_its_decision()
@@ -89,7 +89,7 @@ public sealed class ParticipantWorkTests
 
     /// <summary>
     /// The cap's slot reads the work's table and moves no answer: the planner's count over a mixed list is today's, a mirror's record
-    /// (told no mirror) counted as driven work as it was.
+    /// (told no mirror) still counted as driven work.
     /// </summary>
     [Fact]
     public void The_cap_counts_the_sessions_the_driver_runs_as_it_did()

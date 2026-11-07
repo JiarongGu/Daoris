@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a driven start hands Claude Code on each path (AGENTLYNTAI1d, the agent-lyntai design §5.6, §9.3): today's spawn of the shipped door
+/// What a driven start hands Claude Code on each path: today's spawn of the shipped door
 /// with the rules, servers and plugins its start is handed, and the layer's Claude door over the same start through
 /// <see cref="ClaudeDrivenLayer.Start"/> and the carriers, its arguments said back by the program it spawns. Compared flag by flag, every
 /// difference named. Real node processes.
@@ -14,7 +14,7 @@ public sealed class ClaudeDrivenSpawnParityProcessTests : IDisposable
 {
     /// <summary>
     /// The three tools a headless turn cannot answer, which the layer's door always denies and today's driven start does not: whether a
-    /// driven start keeps them is AGENTLYNTAI1s-ii's measurement, not yet made, and A-LQ4's second half waits on it.
+    /// driven start keeps them is a measurement not yet made.
     /// </summary>
     private const string FlowTools = "--disallowed-tools AskUserQuestion,ExitPlanMode,EnterPlanMode";
 

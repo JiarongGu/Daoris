@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1a's slim after the move and the purge after the slim (D195 point 3; the cleanup design §5, steps 1 to 4): over folders already
+/// The slim after the move and the purge after the slim: over folders already
 /// set aside with a manifest beside each, as the look leaves them, so no git and no process is needed. What only real git can show (the
 /// judgement, the move, the manifest written before it, a junction) is <see cref="KeepingSlimTests"/>'.
 /// </summary>
@@ -51,7 +51,7 @@ public sealed class SetAsideSlimTests : IDisposable
         var folder = Path.Combine(_trees.SetAsideRoot, "default", "engine",
             $"{name}-{moved.ToString("yyyyMMdd'T'HHmmssfff'Z'", System.Globalization.CultureInfo.InvariantCulture)}");
         Directory.CreateDirectory(Path.GetDirectoryName(folder)!);
-        // Tried again while the virus scanner holds a file just written in it, as the install's own folder moves are (FIX-LOG 2026-10-07).
+        // Tried again while the virus scanner holds a file just written in it, as the install's own folder moves are.
         AtomicFile.MoveFolder(staging, folder);
         return folder;
     }
@@ -77,7 +77,7 @@ public sealed class SetAsideSlimTests : IDisposable
     ];
 
     /// <summary>
-    /// 🔴 §5: nothing goes before the hour; after it exactly the manifest's package folders go, each written <c>removed</c> with when its
+    /// 🔴 Nothing goes before the hour; after it exactly the manifest's package folders go, each written <c>removed</c> with when its
     /// removal ended, and everything else stays for the folder's days: the session's files, <c>bin/</c>, <c>obj/</c>, a <c>.env</c>.
     /// </summary>
     [Fact]
@@ -106,7 +106,7 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §5 step 4 (the steward's S1): removing a folder changes the time of the folder above it, which the purge would read as a write
+    /// 🔴 Removing a folder changes the time of the folder above it, which the purge would read as a write
     /// after the move and keep for ever. It reads that folder against when the removal ended, so the slimmed folder goes at its days.
     /// </summary>
     [Fact]
@@ -128,7 +128,7 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §5 step 4 (Fable F1.1): a copy keeps its source's write time and takes a new creation time, and a move changes the time of the
+    /// 🔴 A copy keeps its source's write time and takes a new creation time, and a move changes the time of the
     /// folder it lands in: a file copied, and one moved, into the folder above a slimmed path after its removal ended each keep the
     /// folder at the purge, as a write.
     /// </summary>
@@ -157,7 +157,7 @@ public sealed class SetAsideSlimTests : IDisposable
         Assert.True(File.Exists(Path.Combine(moved, "web", "moved.txt")));
     }
 
-    /// <summary>§5 step 4 (Fable F1.1), with no manifest at all: a file copied in after the move keeps the folder by its creation time.</summary>
+    /// <summary>With no manifest at all, a file copied in after the move keeps the folder by its creation time.</summary>
     [Fact]
     public void A_file_copied_into_a_folder_set_aside_keeps_it_by_its_creation_time()
     {
@@ -174,7 +174,7 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §5 step 1: a write in the folder after the move, by an install or a program still running from it, keeps it whole for its
+    /// 🔴 A write in the folder after the move, by an install or a program still running from it, keeps it whole for its
     /// days: nothing is removed, and each path is written <c>kept</c>, <c>written</c>.
     /// </summary>
     [Fact]
@@ -194,7 +194,7 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §5 (Codex 2.4): a manifest left at <c>judged</c>, where the process stopped between the move and that write, is unknown: its
+    /// 🔴 A manifest left at <c>judged</c>, where the process stopped between the move and that write, is unknown: its
     /// folder is kept whole for its days and the manifest dropped by the next pass. One whose folder is gone is dropped too.
     /// </summary>
     [Fact]
@@ -214,7 +214,7 @@ public sealed class SetAsideSlimTests : IDisposable
         Assert.False(File.Exists(SlimManifest.PathFor(gone)));
     }
 
-    /// <summary>§5 (D195 point 3): with the person's <c>whole</c>, read at the slim, every folder stays whole and its manifest waits.</summary>
+    /// <summary>With the person's <c>whole</c>, read at the slim, every folder stays whole and its manifest waits.</summary>
     [Fact]
     public void The_person_s_whole_read_at_the_slim_keeps_every_folder_whole()
     {
@@ -229,8 +229,8 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// §5 *What is not slimmed*: a folder set aside with no manifest, as a stray's, a cut-off opening's, an opinion's copy and a
-    /// replay's tree are, and the folders set aside before KEEP1a, never loses a path before its days.
+    /// A folder set aside with no manifest, as a stray's, a cut-off opening's, an opinion's copy and a
+    /// replay's tree are, and the folders set aside before the slim kept manifests, never loses a path before its days.
     /// </summary>
     [Fact]
     public void A_folder_with_no_manifest_is_never_slimmed()
@@ -242,7 +242,7 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §5 step 2 (Codex 2.5): each path is checked again right before it goes: one with <c>..</c>, one rooted, one not a package
+    /// 🔴 Each path is checked again right before it goes: one with <c>..</c>, one rooted, one not a package
     /// folder, and one with a parent's name, are each refused and written <c>kept</c>; nothing outside the folder is touched.
     /// </summary>
     [Fact]
@@ -268,7 +268,7 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §5 step 3: a slim stopped midway leaves its path <c>removing</c>; the next pass takes it up from step 1, and neither it nor the
+    /// 🔴 A slim stopped midway leaves its path <c>removing</c>; the next pass takes it up from the start, and neither it nor the
     /// purge after it reads what the removal had changed as a write.
     /// </summary>
     [Fact]
@@ -286,7 +286,7 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// §3.1 (Codex 3.2): a pass removes within its budget, hearing a stop between paths and never inside one: none left, it removes
+    /// A pass removes within its budget, hearing a stop between paths and never inside one: none left, it removes
     /// nothing and the next pass takes up what waits.
     /// </summary>
     [Fact]
@@ -304,7 +304,7 @@ public sealed class SetAsideSlimTests : IDisposable
     }
 
     /// <summary>
-    /// §3.1: a path whose removal failed for the same reason as at its last try is tried again the next day, not each pass: here a file
+    /// A path whose removal failed for the same reason as at its last try is tried again the next day, not each pass: here a file
     /// in it held open, on Windows, where that refuses a delete.
     /// </summary>
     [Fact]
@@ -332,7 +332,7 @@ public sealed class SetAsideSlimTests : IDisposable
         Assert.Equal(["node_modules"], Assert.Single(Pass(folder, TimeSpan.FromHours(27)).Slims).Removed);
     }
 
-    /// <summary>§5: the folder's line in the trees' list, which the work inventory and <c>work state</c> read, names what was dropped.</summary>
+    /// <summary>The folder's line in the trees' list, which the work inventory and <c>work state</c> read, names what it dropped.</summary>
     [Fact]
     public async Task The_list_names_the_package_folders_a_folder_dropped()
     {

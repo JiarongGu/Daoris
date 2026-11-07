@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e1 (D215's note; the integration design §4.6): the one door, <see cref="IntegrationRequests"/>, its recorded-landing
-/// path and its records-branch path, over a stand-in of the records and the desktop store's request family (part e2,
-/// <see cref="IntegrationStore"/>, on a scratch home of each case's own), with git's answers scripted through
+/// The one door, <see cref="IntegrationRequests"/>, its recorded-landing
+/// path and its records-branch path, over a stand-in of the records and the desktop store's request family
+/// (<see cref="IntegrationStore"/>, on a scratch home of each case's own), with git's answers scripted through
 /// <see cref="WorkingTree.Answered"/> so no process starts. A recorded landing is admitted only on its record, its exact tip, its gate
 /// proof as the record keeps it and no double, each refused in its own sentence; a session's branch and a landing's are refused at the
 /// records-branch door; the come-up sweep requests each standing landing once, under <c>request: done</c> alone. The same over real git is
@@ -245,7 +245,7 @@ public sealed class IntegrationRequestsTests : IDisposable
     }
 
     /// <summary>
-    /// Its gate proof: a record that does not say who accepted the tip it holds (one recorded before that was kept) has no proof to read,
+    /// Its gate proof: a record that does not say who accepted the tip it holds (one recorded without it) has no proof to read,
     /// so it is refused; a review and an opinion it never asked are no part of the judgement.
     /// </summary>
     [Fact]
@@ -424,7 +424,7 @@ public sealed class IntegrationRequestsTests : IDisposable
         Assert.Equal(["r3", "r4"], store.Open().Select(each => each.Id).Order(StringComparer.Ordinal));
     }
 
-    // ——— The unit's own landing: the `integrate` node's route (INTEGRATE1n part n2; the design §17.4, F40, C30).
+    // ——— The unit's own landing: the `integrate` node's route.
 
     private static IntegrationAsk Node(string unit = "unit-a", string? tip = Tip) =>
         new("engine", "aurora", Root, Branch, IntegrationRoutes.Node, IntegrationRequester.NodeStart) { Unit = unit, Tip = tip };

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEW2 T12: the tree's usage line for <c>daoris role</c> (ONEWAY1ai-i: the CLI hands it whole and keeps no usage of its own) is held
+/// The tree's usage line for <c>daoris role</c> (the CLI hands it whole and keeps no usage of its own) is held
 /// to the driver's own verb, so a word the driver adds or drops fails here rather than in a text no test compares.
 /// </summary>
 [Trait(Category.Name, Category.Census)]

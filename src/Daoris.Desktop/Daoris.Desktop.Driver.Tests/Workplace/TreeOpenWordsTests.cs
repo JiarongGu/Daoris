@@ -4,8 +4,8 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREEOPENERR1: an opening git refused with nothing on its error stream said only "nothing" (or an empty pair of brackets), and the
-/// failed run's evidence (git's exit code, how long it ran, the folder it ran in and the arguments it had) went with it. No git
+/// An opening git refuses with nothing on its error stream says more than "nothing" (or an empty pair of brackets): the
+/// failed run's evidence (git's exit code, how long it ran, the folder it ran in and the arguments it had) goes with it. No git
 /// runs here: git's answer is stood in (<see cref="WorkingTree.Answered"/>), which is the one way to make "exits non-zero, says
 /// nothing" happen on demand.
 /// </summary>
@@ -71,7 +71,7 @@ public sealed class TreeOpenWordsTests : IDisposable
 
     /// <summary>
     /// A code git never returns is the system's: a process ended at its start (a DLL that would not load, a resource the machine had
-    /// run out of) leaves a status code and no words, and the sentence says it was seen, not that git failed.
+    /// run out of) leaves a status code and no words, and the sentence says the code is the system's, not that git failed.
     /// </summary>
     [Theory]
     [InlineData(-1073741502, "0xC0000142")]

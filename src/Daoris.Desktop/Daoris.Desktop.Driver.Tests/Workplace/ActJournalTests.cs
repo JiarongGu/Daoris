@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2a (D204; the git-writes design §5): the act journal's family in the desktop store, over no git. A record kept whole with its steps,
+/// The act journal's family in the desktop store, over no git. A record kept whole with its steps,
 /// one open per checkout under two journals; each step's start before its end, one open at a time; a take only from a dead run, raising the
 /// generation, the old claim fenced out and two takers at once one winner; a store this build made written on by an older build that never
 /// opens the family. The effects, the bounds and the reconciliation over real git are <c>ActRunGitTests</c>'.

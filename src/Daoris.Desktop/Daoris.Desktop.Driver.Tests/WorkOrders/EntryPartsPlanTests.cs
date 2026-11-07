@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSONE1d (D167 point 4 as amended; the co-working design §1.5 and §3): a new quest of a session's entry goes into the tree
-/// its newest part on this machine held when nothing live holds it (D51), and otherwise runs alongside in a tree of its own as a
+/// A new quest of a session's entry goes into the tree
+/// its newest part on this machine held when nothing live holds it, and otherwise runs alongside in a tree of its own as a
 /// further part; nothing waits. The evidence of ask #c98a7e replayed with neutral repositories: an app (`app`) and its database
 /// repository (`db`).
 /// </summary>
@@ -62,7 +62,7 @@ public sealed class EntryPartsPlanTests
         Assert.Contains("`62c005bc`", started.Reason);
     }
 
-    /// <summary>A's request of B, `01ba2c71`, published by `8eba4af2` at 07:59: `283ef343` had completed, so B's tree was free.</summary>
+    /// <summary>A's request of B, `01ba2c71`, published by `8eba4af2` at 07:59: `283ef343` had completed, so B's tree is free.</summary>
     private static Snapshot At0759()
     {
         var a3 = new PriorSession("8eba4af2", "D:/trees/app/s-8eba", "working", Repository: "app")
@@ -107,7 +107,7 @@ public sealed class EntryPartsPlanTests
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1 (Codex's #5 on COWORKUX1): a part that ended waiting on its own helper still holds its tree, as a park does, though it
+    /// A part that ended waiting on its own helper still holds its tree, as a park does, though it
     /// is completed and in no live list: it goes on there with the answer. A further part of its entry starts alongside, in a tree of its own,
     /// and never into that one while its quest is taken; one whose quest is no longer taken holds nothing.
     /// </summary>
@@ -136,7 +136,7 @@ public sealed class EntryPartsPlanTests
         Assert.Equal(held ? "283ef343" : null, entry.HeldBy);
     }
 
-    /// <summary>PAR1 stands: a request of another line of work in the same repository is its own entry, side by side.</summary>
+    /// <summary>A request of another line of work in the same repository is its own entry, side by side.</summary>
     [Fact]
     public void A_request_of_another_entry_in_the_same_repository_starts_in_a_tree_of_its_own()
     {
@@ -152,7 +152,7 @@ public sealed class EntryPartsPlanTests
         Assert.Null(started.Entry);
     }
 
-    /// <summary>One tree takes one session (D51): two requests of one entry at one look, the first into its tree, the second alongside.</summary>
+    /// <summary>One tree takes one session: two requests of one entry at one look, the first into its tree, the second alongside.</summary>
     [Fact]
     public void Two_requests_of_one_entry_at_one_look_take_its_tree_once()
     {
@@ -169,7 +169,7 @@ public sealed class EntryPartsPlanTests
     }
 
     /// <summary>
-    /// A resume goes back into its own tree (D79), and a request of its entry planned at the same look does not go in beside it:
+    /// A resume goes back into its own tree, and a request of its entry planned at the same look does not go in beside it:
     /// the resume is the older quest, so it takes the tree, and the request runs alongside.
     /// </summary>
     [Fact]
@@ -213,7 +213,7 @@ public sealed class EntryPartsPlanTests
         Assert.Equal("starting in `db`.", started.Reason);
     }
 
-    /// <summary>A publisher whose record came down from a teammate is read by the id its own machine knew it by (SYNC4).</summary>
+    /// <summary>A publisher whose record came down from a teammate is read by the id its own machine knows it by.</summary>
     [Fact]
     public void A_publisher_mirrored_from_a_teammate_names_the_entry()
     {
@@ -227,7 +227,7 @@ public sealed class EntryPartsPlanTests
     }
 
     /// <summary>
-    /// The look reads each record's key as the service answered it (SESSONE1a): this machine's last runs carry theirs and their quest,
+    /// The look reads each record's key as the service answers it: this machine's last runs carry theirs and their quest,
     /// and every record's, a teammate's mirror and a conversation's included, is read by its id for a publisher to name.
     /// </summary>
     [Fact]
@@ -254,7 +254,7 @@ public sealed class EntryPartsPlanTests
         Assert.False(entries.ContainsKey("0ld0ld00"));
     }
 
-    /// <summary>A repository whose sessions run in its checkout keeps one at a time (D51): the entry changes only its grouping.</summary>
+    /// <summary>A repository whose sessions run in its checkout keeps one at a time: the entry changes only its grouping.</summary>
     [Fact]
     public void Where_sessions_run_in_the_checkout_no_tree_is_gone_into()
     {

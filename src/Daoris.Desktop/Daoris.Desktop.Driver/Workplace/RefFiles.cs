@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Whether a ref is certainly not in a repository, read from its files with no git started: a review asked git's counts on origin's copy
-/// of the line even where the repository has none, and each such ask was a start that only failed. A ref that may be there is never
+/// of the line even where the repository has none, and each such ask would be a start that only failed. A ref that may be there is never
 /// called absent: a reftable repository, a loose file of the name (in any case a file system reads alike) and a line of
 /// <c>packed-refs</c> naming it each make the answer false.
 /// </summary>

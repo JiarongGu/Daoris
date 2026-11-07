@@ -6,12 +6,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVID1b (D144 §3, §5): the driver reads a done's evidence and posts its verdict to the one door that takes it
-/// (<c>POST /api/quests/{id}/evidence</c>, EVID1a's), keeps the verdict in the session record's evidence bundle, and says one
+/// The driver reads a done's evidence and posts its verdict to the one door that takes it
+/// (<c>POST /api/quests/{id}/evidence</c>), keeps the verdict in the session record's evidence bundle, and says one
 /// <c>evidence.checked</c> line in the machine log, counts and codes only. The service's answer comes back in its words: kept,
 /// not waiting (409), refused (400), no quest (404), or a host older than the door.
 /// </summary>
-/// <remarks>A service and git standing in, in process: the fast half (MOD8).</remarks>
+/// <remarks>A service and git standing in, in process: the fast half.</remarks>
 public sealed class EvidenceCheckTests : IDisposable
 {
     private readonly string _tree = Path.Combine(TestHomes.Root, "daoris-evidence-check-" + Guid.NewGuid().ToString("N")[..8]);
@@ -170,7 +170,7 @@ public sealed class EvidenceCheckTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1b (CLOSE1e's first fence): a submitted quest's verdict names the submission it was read for, so the service applies it to
+    /// A submitted quest's verdict names the submission it is read for, so the service applies it to
     /// that submission alone, never to a later <c>ready</c> that replaced it.
     /// </summary>
     [Fact]
@@ -217,7 +217,7 @@ public sealed class EvidenceCheckTests : IDisposable
         Assert.Contains(("noQueue", (object?)1), lines.Single().Data);
     }
 
-    /// <summary>Unread is never found (D143): nothing is posted, the bundle says why, and the line says it was unread.</summary>
+    /// <summary>Unread is never found: nothing is posted, the bundle says why, and the line says it is unread.</summary>
     [Fact]
     public async Task A_read_that_could_not_be_made_posts_nothing_and_says_why()
     {

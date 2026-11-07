@@ -5,14 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1a-ii (D163 point 1; the mixed-agents design §2) through REAL ticks: a quest's session working on the machine's agent
+/// Through REAL ticks: a quest's session working on the machine's agent
 /// (the protocol stub, which took its quest and holds its turn) is handed to <c>stub</c>. The look takes the box, stops the session
-/// as the person's, and the next look carries the quest on in the same tree on the named agent, told it was handed over, with the
+/// as the person's, and the next look carries the quest on in the same tree on the named agent, told it is handed over, with the
 /// note that says so; the quest closes done. A real process (node) and the stand-in service <see cref="AskAndWaitTickTests.StandIn"/>,
 /// as <see cref="StopHoldTickTests"/> uses them; no model and no account.
 /// </summary>
 /// <remarks>
-/// Written by MIXAGENT1a-ii and run by the parent at the merge (MOD8): a Process case. The stand-in service keeps each record's
+/// A Process case. The stand-in service keeps each record's
 /// adapter and answers a claim as this machine's, which the hand-over's judge reads.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -60,7 +60,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         var tree = first["tree"]!.GetValue<string>();
 
         // 2. The person hands it to `stub`: the look takes the box and stops the session as theirs, with the hand-over's own line.
-        // FOUNDATION1f-v part c: the ask decides the hand-over's move in the store through the driver's own holder, and no box is written.
+        // The ask decides the hand-over's move in the store through the driver's own holder, and no box is written.
         var asked = await QuestHandOver.AskAsync(
             new ServiceClient(service.Url, null), driver.Moves, QuestHandOver.Roster(ProviderRegistry.Built(), _home), "s1", "stub", null, HandOverWhy.Press, HandOverBy.Person);
         Assert.True(asked.Kept, asked.Message);
@@ -89,7 +89,7 @@ public sealed class HandOverQuestTickTests : IDisposable
         var carried = service.Session("s2");
         Assert.Equal("stub", carried["door"]!.GetValue<string>());
         Assert.Equal("completed", carried["state"]!.GetValue<string>());
-        // Its record names the session it was handed over from, with the hand-over's why and asker (MIXAGENT1a-iii).
+        // Its record names the session it is handed over from, with the hand-over's why and asker.
         Assert.Equal(
             ("s1", "press", "person"),
             (carried["from"]?.GetValue<string>(), carried["fromWhy"]?.GetValue<string>(), carried["fromBy"]?.GetValue<string>()));
@@ -160,7 +160,7 @@ public sealed class HandOverQuestTickTests : IDisposable
     }
 
     /// <summary>
-    /// The agent the quest is handed to: it writes down where it runs, what it was handed, and the starting note its own record
+    /// The agent the quest is handed to: it writes down where it runs, what it is handed, and the starting note its own record
     /// carries (the stand-in keeps the note's parts until the conclusion replaces them), then closes the quest done.
     /// </summary>
     private string Agent()

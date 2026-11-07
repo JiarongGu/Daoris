@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2's Stash Drop over real git (D204; the git-writes design §8): the act drops one entry of the shared stash by its commit id, only
+/// Stash Drop over real git: the act drops one entry of the shared stash by its commit id, only
 /// where a Save of Daoris's own made it, and says the commit that puts it back. The ordinals move under it; a stash of a terminal's, an unknown
 /// commit, the switch off and a session in the checkout each refuse with nothing changed.
 /// </summary>

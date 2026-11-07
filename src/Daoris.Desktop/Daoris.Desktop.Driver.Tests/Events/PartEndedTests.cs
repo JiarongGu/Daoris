@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 l-i (the foundation design §4.2): <c>part.ended</c> judged in .NET from the journal's raw transition alone, its reason the note's
+/// <c>part.ended</c> judged in .NET from the journal's raw transition alone, its reason the note's
 /// <c>ended.*</c> code and its class one closed code from the state, the limit flag and that code; the class table held both ways against
 /// <see cref="NoteCodes"/>.
 /// </summary>
@@ -72,8 +72,8 @@ public sealed class PartEndedTests
     }
 
     /// <summary>
-    /// FOUNDATION1 l-iii: <c>session/ended</c> keeps the ends the look drained and its D101 fields, with the <c>reason</c> and <c>class</c> the one
-    /// judge gives; the look's own flags refine the class, since only it knows whose decision a stop was.
+    /// <c>session/ended</c> keeps the ends the look drained and its fields, with the <c>reason</c> and <c>class</c> the one
+    /// judge gives; the look's own flags refine the class, since only it knows whose decision a stop is.
     /// </summary>
     [Theory]
     [InlineData("failed", false, false, false, "ended.exit", "failed")]
@@ -94,7 +94,7 @@ public sealed class PartEndedTests
     }
 
     /// <summary>
-    /// FOUNDATION1 l-v: <i>Ended</i> takes the classes the watch said before (every end but the person's own stop, an account's limit and an
+    /// <i>Ended</i> takes the classes the watch says (every end but the person's own stop, an account's limit and an
     /// agent's refusal of the choice), never a conversation's end; and the table gives each of the four readers its meaning of an end.
     /// </summary>
     [Fact]

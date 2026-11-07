@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1a (D226; the staff policy design §2.1, §3.2, §4.2, §11): a role's policy in <c>role_policy</c>, revisioned and bound to its
+/// A role's policy in <c>role_policy</c>, revisioned and bound to its
 /// staffing by the digest, and the ledger of its new starts, its reservations under one lock and the health mark. Nothing reads them at
 /// a start yet.
 /// </summary>
@@ -355,7 +355,7 @@ public sealed class StaffLedgerTests : IDisposable
     {
         Save(Weighted(1, 1), read: 0);
 
-        // A policy stores no moves: the line's effective rules bring them (CONTEXTDRIVE1e).
+        // A policy stores no moves: the line's effective rules bring them.
         var take = Ledger().Take("build", RoleWork.Build, Order, new StaffFacts
         {
             Moves = new Dictionary<string, StaffMove> { [StaffConditions.Transient] = new(StaffActions.Weighted) },

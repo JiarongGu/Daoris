@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGT3c (D125 point 1's rule, carried from a limit to AGT3b's refused credential): a key its provider refused is read from what
+/// A key its provider refused is read from what
 /// the harness itself said of its run's ending, never from words its agent could write. The protocol door says it in its
 /// failure; the native door in a failed <c>result</c>, outside its frames and on its stderr; a door that carries only text gives
-/// nothing but its transcript, so there only an exit that was not 0, which the harness sets, lets the transcript be read.
+/// nothing but its transcript, so there only an exit other than 0, which the harness sets, lets the transcript be read.
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process: the native door's output is fed through the real capture from text, and the agent is present by
@@ -19,7 +19,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
 
     private static readonly DateTimeOffset Seen = new(2026, 10, 7, 14, 0, 0, TimeSpan.FromMinutes(345));
 
-    /// <summary>AGT3b's measured line (Claude Code 2.1.280, an invalid key).</summary>
+    /// <summary>The measured line (Claude Code 2.1.280, an invalid key).</summary>
     private const string Measured = "Failed to authenticate. API Error: 401 API key is invalid.";
 
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-refused-own-" + Guid.NewGuid().ToString("N")[..8]);
@@ -112,7 +112,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
 
     // ——— The native door: a failed `result`, outside its frames, its stderr; never its agent's words.
 
-    /// <summary>The hazard D125 found: the agent's words end with the phrase, on a turn its harness ended normally.</summary>
+    /// <summary>The hazard: the agent's words end with the phrase, on a turn its harness ended normally.</summary>
     [Fact]
     public async Task An_agent_s_words_ending_with_the_refused_phrase_on_a_turn_that_ended_normally_hold_no_account()
     {
@@ -129,7 +129,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         await HoldsNothingAsync(roster, conclusion);
     }
 
-    /// <summary>An exit that was not 0 for another reason does not make the agent's words the harness's.</summary>
+    /// <summary>An exit other than 0 for another reason does not make the agent's words the harness's.</summary>
     [Fact]
     public async Task The_agent_s_words_hold_no_account_on_a_run_that_failed_for_another_reason()
     {
@@ -181,7 +181,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         await HoldsAsync(roster, Concluded(service, roster, ended));
     }
 
-    /// <summary>A run that goes on with held words (MSG1b) begins the harness's words again, so the last run's ending is read.</summary>
+    /// <summary>A run that goes on with held words begins the harness's words again, so the last run's ending is read.</summary>
     [Fact]
     public void Each_run_begins_the_harness_s_words_again()
     {
@@ -225,7 +225,7 @@ public sealed class RefusedByTheHarnessTests : IDisposable
         await HoldsAsync(roster, Concluded(service, roster, refused));
     }
 
-    // ——— A door that carries only text: its transcript is all it gives, read only beside an exit that was not 0.
+    // ——— A door that carries only text: its transcript is all it gives, read only beside an exit other than 0.
 
     [Fact]
     public async Task On_a_door_that_carries_only_text_an_exit_of_0_holds_nothing_and_a_failed_exit_holds_the_account()

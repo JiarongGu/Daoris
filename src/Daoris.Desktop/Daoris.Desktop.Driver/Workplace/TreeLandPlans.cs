@@ -5,20 +5,20 @@ using static Daoris.Driver.LandingSayings;
 
 namespace Daoris.Driver;
 
-/// <summary>What a press on a tree would do under its repository's landing rule, said before the press, and the subject named for the work (D87, ACCEPTFOOT2).</summary>
+/// <summary>What a press on a tree would do under its repository's landing rule, said before the press, and the subject named for the work.</summary>
 internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
 {
     /// <summary>
-    /// What a press on this tree would do under its repository's landing rule (WSR1, D87): merge into
+    /// What a press on this tree would do under its repository's landing rule: merge into
     /// the line, or make the branch the pattern names for this session — said before the press.
     /// </summary>
     /// <remarks>
-    /// LANDSYNC1 (D87's 2026-10-15 amendment point 4): and what the press would leave out because the line holds it, what it would
+    /// And what the press would leave out because the line holds it, what it would
     /// land, and whether that conflicts now, judged against the line as last fetched. It reaches no network and writes no ref and no
     /// tree: the conflict's trial is <c>git merge-tree</c>'s, which writes objects only.
     /// </remarks>
     /// <param name="process">
-    /// The run's process the door read with its gate (WORKFLOW1f): under a named workflow, its version's landing step over the
+    /// The run's process the door read with its gate: under a named workflow, its version's landing step over the
     /// declared rule. Null reads the rule live, as before.
     /// </param>
     internal async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default, IWorkplaceProcess? process = null)
@@ -27,26 +27,26 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
         if (process?.LandingCannot is not null || plan.Target.Length == 0) return plan;
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
-        // ACCEPTALL1g: whether the branch already stands, so the review says the press moves it on rather than promising a new one.
+        // Whether the branch already stands, so the review says the press moves it on rather than promising a new one.
         if (plan is { Form: LandingForm.Branch, Own: false } && Directory.Exists(full)
             && await CommitOfAsync(full, $"refs/heads/{plan.Target}", ct).ConfigureAwait(false) is { } standsAt)
         {
-            // STANDSREFUSE1: and what the press would refuse it for, said before it, where nothing else is said first.
+            // And what the press would refuse it for, said before it, where nothing else is said first.
             plan = plan with { Stands = true, Problem = plan.Problem ?? await StandingProblemAsync(full, repository, plan.Target, standsAt, subject, ct).ConfigureAwait(false) };
         }
 
         var (sync, _) = await syncs.JudgeAsync(full, repository, workspace, plan.Form == LandingForm.Branch, fetch: false, ct).ConfigureAwait(false);
         if (sync is null || !sync.Held.Replays) return plan;
-        // LANDREBASE1: where the line only moved, a standing branch the press moves on grows from its own tip (D145 §3), never rewritten.
+        // Where the line only moved, a standing branch the press moves on grows from its own tip, never rewritten.
         if (sync.Held.HoldsNone && plan.Stands) return plan;
         if (plan.Own && await OnRemoteAsync(sync.Root, sync.Branch, ct).ConfigureAwait(false))
         {
-            // A pushed branch of its own is never rewritten (D109): where the line holds none of it, it lands as it stands, as before.
+            // A pushed branch of its own is never rewritten: where the line holds none of it, it lands as it stands, as before.
             if (sync.Held.HoldsNone) return plan;
             return plan with { LeftOut = sync.Held.LeftOut, Lands = sync.Held.Kept, Conflict = TreeLandSyncs.OwnOnRemote(sync).Conflict };
         }
 
-        // INTEGRATE1d: a file of a line rule the owner accepted for integration is no conflict the press would refuse, as it settles it.
+        // A file of a line rule the owner accepted for integration is no conflict the press would refuse, as it settles it.
         var lines = await LineRules.AcceptedAsync(context.Config(), sync.Root, repository, sync.Onto, ct).ConfigureAwait(false);
         var conflicts = await LineHolds.TrialAsync(sync.Root, sync.Onto, sync.Held.Kept, ct, lines).ConfigureAwait(false);
         return plan with
@@ -58,8 +58,7 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
     }
 
     /// <summary>
-    /// The refusal a press would meet at a standing branch, from what is cheap to read (STANDSREFUSE1, D167's ACCEPTALL1g note, D145
-    /// §3), in the press's own words: a name entered that is somebody's branch, or <see cref="LandingAdvance.Standing"/>'s record, tip,
+    /// The refusal a press would meet at a standing branch, from what is cheap to read, in the press's own words: a name entered that is somebody's branch, or <see cref="LandingAdvance.Standing"/>'s record, tip,
     /// checkout and kept pull request word. Null where those allow the move; git's proof that its work is on the line, and how this
     /// work grows from it, stay the press's to judge.
     /// </summary>
@@ -81,15 +80,15 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
         return LandingAdvance.Standing(name, repository, recorded, standsAt, checkedOut)?.Message;
     }
 
-    /// <summary>What a press would do under the rule, before LANDSYNC1's judgement of what the line holds; an entry's Accept names its branch by it.</summary>
+    /// <summary>What a press would do under the rule, before the judgement of what the line holds; an entry's Accept names its branch by it.</summary>
     internal async Task<LandingPlan> PlanRuleAsync(string path, LandingSubject subject, CancellationToken ct, IWorkplaceProcess? process)
     {
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
-        // The rule it lands by, its access setup's landing composed in (AUTONOMY1c2): the session is told it is accepted automatically
+        // The rule it lands by, its access setup's landing composed in: the session is told it is accepted automatically
         // exactly where the look would land it.
         var landing = process is { Named: true } named ? named.Landing : Landing.Merge;
-        // A named workflow's landing that cannot start says so before the press, as the press would be refused (design §3.7).
+        // A named workflow's landing that cannot start says so before the press, as the press would be refused.
         if (process?.LandingCannot is not null)
         {
             return new(landing.Form, "", LandingSource.Default, null, process.LandingSays, landing.AutoAccept);
@@ -99,7 +98,7 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
         {
             // A landing names no plugin: a graph's `push` step pushes the branch.
             string? plugin = null;
-            // TREEFOLLOW1: a tree its agent moved onto a branch of its own lands as that branch stands, the one the pull request is from.
+            // A tree its agent moved onto a branch of its own lands as that branch stands, the one the pull request is from.
             if (Directory.Exists(full) && context.Holds(full) && await TreeFollows.OwnBranchOfAsync(full, ct).ConfigureAwait(false) is { } own)
             {
                 return new(LandingForm.Branch, own, LandingSource.Default, plugin, subject.EnteredName is not null ? EnteredOwn(own) : plugin is null ? null : context.Plugins.Problem(plugin),
@@ -107,9 +106,9 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
                 { Own = true };
             }
 
-            // A conversation's for its work, never its opening (ACCEPTFOOT2), as the press names it.
+            // A conversation's for its work, never its opening, as the press names it.
             var name = BranchNamed(await ForWorkAsync(full, workspace, repository, landing, subject, ct).ConfigureAwait(false), landing, repository);
-            // A name the press would refuse is said before it (LANDNAME1a), where the plan keeps the sentence a press is refused with.
+            // A name the press would refuse is said before it, where the plan keeps the sentence a press is refused with.
             var problem = subject.EnteredName is not null && !BranchName.IsValid(name) ? EnteredInvalid(name)
                 : plugin is null ? null : context.Plugins.Problem(plugin);
             return new(LandingForm.Branch, name, LandingSource.Default, plugin, problem, landing.AutoAccept) { Squash = landing.Squash };
@@ -126,7 +125,7 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
     }
 
     /// <summary>
-    /// The subject a conversation's branch is named for (ACCEPTFOOT2, D164's 2026-10-16 note): <see cref="LandingSubject.ForWork"/>
+    /// The subject a conversation's branch is named for: <see cref="LandingSubject.ForWork"/>
     /// with the oldest commit subject its work holds beyond the line, as the press's own log reads it. Git is asked only where the rule
     /// would read a conversation's words (<see cref="BranchPatterns.ReadsWords"/>), so a quest's plan, an entered name, an entry's branch
     /// and a pattern of ids alone start none.
@@ -149,7 +148,7 @@ internal sealed class TreeLandPlans(TreeContext context, TreeLandSyncs syncs)
     }
 
     /// <summary>
-    /// An entry's subject named for its first part's work (ACCEPTFOOT2): read from that part's tree where it is here, else from the tip
+    /// An entry's subject named for its first part's work: read from that part's tree where it is here, else from the tip
     /// its landing recorded, in <paramref name="anyTree"/>, a tree of the same repository; so the press, the plan and each part's own
     /// Accept name the entry's one branch alike, whichever part's tree they are pressed in. Named by the run's <paramref name="process"/>'s
     /// <c>land</c>, as the plan and the press name it.

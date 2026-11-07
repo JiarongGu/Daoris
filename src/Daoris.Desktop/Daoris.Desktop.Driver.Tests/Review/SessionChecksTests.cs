@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1b (D192 point 4; the pipeline design §3.1): which checks a repository's sessions run under Current, <c>sessionChecks</c>
+/// Which checks a repository's sessions run under Current, <c>sessionChecks</c>
 /// in <c>driver.json</c>, by repository, <c>light</c> or <c>heavy-at-end</c>, absent being today's. Read as a stored shape, held cell for
-/// cell to ONE table, <c>fixtures/session-checks.json</c> (the CLI's twin left in PUSH1f2b); written only when set,
+/// cell to ONE table, <c>fixtures/session-checks.json</c>; written only when set,
 /// after this machine's heavy gates; and edited through one door (<see cref="SessionChecks.Apply"/>) the terminal's verb and the page's
 /// go through, refusing alike. Reads text only.
 /// </summary>

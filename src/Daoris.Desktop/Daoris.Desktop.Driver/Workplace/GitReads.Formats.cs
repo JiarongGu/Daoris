@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The git calls behind a page and the pure readers of what git answers (GIT1b, D147 §4.1): each call asks a machine format,
+/// The git calls behind a page and the pure readers of what git answers: each call asks a machine format,
 /// never a human one, and each format has a reader here with its own tests, apart from any process.
 /// </summary>
 /// <remarks>
@@ -189,7 +189,7 @@ public static class GitFormats
         return names;
     }
 
-    /// <summary>The words a status letter is said in, as the review says them (D113).</summary>
+    /// <summary>The words a status letter is said in, as the review says them.</summary>
     internal static string StatusOf(char letter) => letter switch
     {
         'A' => "added",

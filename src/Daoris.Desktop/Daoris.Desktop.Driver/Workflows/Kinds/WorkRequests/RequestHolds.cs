@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A run held at a declined request (INTEGRATE1o part o3; the integration design §17.3): its <c>work.requests</c> node is active on a quest its
+/// A run held at a declined request: its <c>work.requests</c> node is active on a quest its
 /// sessions published that the receiver declined, and only the person's pass over it lets the flow go on.
 /// </summary>
 /// <param name="Run">The run, as its binding names it: what the person's word is said on.</param>
@@ -9,25 +9,25 @@ namespace Daoris.Driver;
 /// <param name="Repository">The run's repository.</param>
 /// <param name="Workspace">The run's workspace.</param>
 /// <param name="Quest">The declined quest the run is held at: the first among its sessions' published ones.</param>
-/// <param name="To">The repository the declined quest was addressed to.</param>
+/// <param name="To">The repository the declined quest is addressed to.</param>
 /// <param name="Work">The run's newest work quest here: what the row's door reads the run by; null where it has none.</param>
 /// <param name="Since">When the declined quest last moved: its decline.</param>
 public sealed record RequestHold(
     string Run, string Node, string Repository, string Workspace, string Quest, string To, string? Work, DateTimeOffset? Since)
 {
-    /// <summary>Whether the held node is the run's own <c>request</c> (INTEGRATE1p), asked again or gone on without, not the work's requests, passed over.</summary>
+    /// <summary>Whether the held node is the run's own <c>request</c>, asked again or gone on without, not the work's requests, passed over.</summary>
     public bool Request { get; init; }
 }
 
 /// <summary>
-/// The runs held at a declined request, judged from what the runtime last read and each run's node record (INTEGRATE1o part o3). **Read, never
-/// stored** (the o2 note): the decline is the quests' record at the last look, and a node the person passed over, or whose word waits to be applied,
-/// is no longer held. Pure over its inputs.
+/// The runs held at a declined request, judged from what the runtime last read and each run's node record. **Read, never
+/// stored**: the decline is the quests' record at the last look, and a node the person passed over, or whose word waits to be applied,
+/// is not held. Pure over its inputs.
 /// </summary>
 public static class RequestHolds
 {
     /// <summary>
-    /// Each governed run holding a <c>work.requests</c> node that is active while a quest its sessions published was declined, oldest decline
+    /// Each governed run holding a <c>work.requests</c> node that is active while a quest its sessions published is declined, oldest decline
     /// first. A node the person's word is pending on, passed over, stopped or reached holds nothing.
     /// </summary>
     /// <param name="governed">The runs the last look governed (the graph runs carry a scope; a unit Current's graphs govern carries none).</param>
@@ -38,7 +38,7 @@ public static class RequestHolds
         foreach (var each in governed)
         {
             if (each.Scope is not { } scope || record(each.Unit.Id) is not { } kept) continue;
-            // INTEGRATE1p (C33): a run's own request failed by a decline, under `declined: wait`, waits on the person's two acts.
+            // A run's own request failed by a decline, under `declined: wait`, waits on the person's two acts.
             foreach (var node in each.Graph.Nodes.Where(node => node.Kind == NodeKinds.Request && NodeOptions.Text(node, "declined") != RequestOptions.Stop))
             {
                 if (WorkPerformer.StatusOf(kept, node.Id) is not { State: NodeStates.Failed, Code: RequestOptions.DeclinedCode } || kept.Pending.Any(word => word.Node == node.Id)) continue;

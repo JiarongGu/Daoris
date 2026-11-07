@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The doors for setting a machine, a repository and its workflow up: what a place follows, where work is shown, and how it lands (D50).</summary>
+/// <summary>The doors for setting a machine, a repository and its workflow up: what a place follows, where work is shown, and how it lands.</summary>
 internal static class HelpDoorRowsSetup
 {
     private const string Setup = HelpDoorPlaces.Setup;

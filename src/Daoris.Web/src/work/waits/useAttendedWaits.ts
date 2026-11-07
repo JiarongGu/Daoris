@@ -34,7 +34,7 @@ import { useTeam } from '../team/useTeam';
 import { leadsPieces } from '../identity';
 
 /**
- * What waits on the attended session's person (WAITFOOT1b, D168 point 3): its helpers, pieces, hand-over, tool calls, answers
+ * What waits on the attended session's person: its helpers, pieces, hand-over, tool calls, answers
  * alone, git go-aheads and proposed rules, gathered into one object for the head and the strip at the foot alike; and where
  * each stands on the screen, the way to it, and the conversation's presses above the waiting panel.
  */
@@ -44,7 +44,7 @@ export function useAttendedWaits({
 }: {
   /** The door to the place whose supervisor rule held an answer: *Change the rule…* on the head and the strip; absent, it is not drawn. */
   onChangeRule?: (place: string) => void;
-  /** The session whose Pieces section has its ask open, the head's ⋯'s and the section's one state (COAGENT1c); absent, the section holds it. */
+  /** The session whose Pieces section has its ask open, the head's ⋯'s and the section's one state; absent, the section holds it. */
   pieceAsking?: string | null;
   setPieceAsking?: (session: string | null) => void;
   t: TFunction;
@@ -74,24 +74,24 @@ export function useAttendedWaits({
   const {
     lands, headReview, behind, headOpinion, landing, land, landed, setLandName, discards, discardHeld, landsNow, discardsNow, entryAccept,
   } = work;
-  // The rules agents proposed (PERM2, D74), the band's own read, and their answer's one owner: the attended session's own open
-  // ones are a wait where the person talks to it (PROPOSEHERE1b, D168 point 2). The machine's file, so a browser has none.
+  // The rules agents proposed, the band's own read, and their answer's one owner: the attended session's own open
+  // ones are a wait where the person talks to it. The machine's file, so a browser has none.
   const ruleState = useRules();
   const ruleAnswer = useRuleAnswer({ notify });
-  // The helpers the attended session asked for (MIXAGENT2b, D163): this machine's own files, so only for its own record. Its head
+  // The helpers the attended session asked for: this machine's own files, so only for its own record. Its head
   // lists those still on their way, with the person's yes to an agent's ask that waits on it and a door to each helper.
   const helperAsks = useSessionHelpers(attended && here ? attended.id : null);
-  // The pieces it asked other agents to write (COAGENT1b, COAGENT1c, D199): this machine's own files, so only for its own record. A
+  // The pieces it asked other agents to write: this machine's own files, so only for its own record. A
   // session working in a tree of its own leads them, driven or a conversation; a partner, a helper, a reviewer or an intake leads none.
   const leads = Boolean(attended && here && leadsPieces(attended));
   const partnerPieces = useSessionPartners(attended && here ? attended.id : null);
-  // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3): this machine's own files, so only for its own record.
+  // Its agent's own ask to hand it over: this machine's own files, so only for its own record.
   const handOverAsk = useSessionHandOverAsk(attended && here ? attended.id : null);
   const approveHandOver = useApproveHandOver();
   const declineHandOver = useDeclineHandOver();
-  // The head's helpers (MIXAGENT2b): the asks read above, the yes and the no (HELPERNO1) through the acts' one owner, and a door
+  // The head's helpers: the asks read above, the yes and the no through the acts' one owner, and a door
   // to each helper.
-  // Its team (COWORKUX1): the lead, the pass, *Bring in another agent…*'s doors, and a member's thread, each on this machine's files.
+  // Its team: the lead, the pass, *Bring in another agent…*'s doors, and a member's thread, each on this machine's files.
   const team = useTeam({
     attended, here,
     nameOf: (agent: string) => agentRoster.names?.[agent] ?? agent,
@@ -110,7 +110,7 @@ export function useAttendedWaits({
     },
     busy: actions.approvingHelper,
   } : null;
-  // Its pieces (COAGENT1b, D199; the co-agent design §6.1): the pieces read above, the ask where it may lead one, a door to each
+  // Its pieces: the pieces read above, the ask where it may lead one, a door to each
   // partner and a working piece's stop, through the acts' one owner.
   const pieceSection: PieceSection | null = attended && here && (leads || (partnerPieces.data?.length ?? 0) > 0) ? {
     pieces: partnerPieces.data ?? [],
@@ -134,7 +134,7 @@ export function useAttendedWaits({
     onAct: (piece: string, act: 'discard' | 'hand-over', answered: Answered) => actions.actPieceNow(attended, piece, act, answered),
     acting: actions.actingOnPiece,
   } : null;
-  // Its agent's own ask to hand it over (MIXAGENT1c, D163 point 3), with the person's yes and no: a wait at the foot while the look
+  // Its agent's own ask to hand it over, with the person's yes and no: a wait at the foot while the look
   // holds it on their word. A refusal is said beside the presses, in the page's words for its code.
   const handOverWord = (answer: HandOverWord, answered: Answered) =>
     (answer.stands ? answered.done() : answered.refused(handOverRefused(t, answer.why, answer.message)));
@@ -151,9 +151,9 @@ export function useAttendedWaits({
     }),
     busy: approveHandOver.isPending || declineHandOver.isPending,
   } : null;
-  // The tool calls the attended session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): the driver's own
+  // The tool calls the attended session holds for the person's answer under asking: the driver's own
   // list, this machine's record alone, asked every few seconds while it runs (the routes publish nothing), and the answer's one
-  // owner, so the head and the foot press the same. A refusal of the answer is said where it was pressed, in the catalogue's words.
+  // owner, so the head and the foot press the same. A refusal of the answer is said where it is pressed, in the catalogue's words.
   const permissionWaits = usePermissionWaits(Boolean(attended && here && (attended.state === 'working' || attended.state === 'starting')));
   const answerPermission = useAnswerPermission();
   const heldPermissions: PermissionWaits | null = attended && here && permissionWaits.data ? {
@@ -164,9 +164,9 @@ export function useAttendedWaits({
     }),
     busy: answerPermission.isPending,
   } : null;
-  // The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3): read off this
+  // The answers the answers-alone bound holds for the person: read off this
   // machine's marks under the sessions' key, and the answer's one owner, so the head and the foot press the same. Its answer said where
-  // the press was made; a refusal in the catalogue's words.
+  // the press is made; a refusal in the catalogue's words.
   const answerWaits = useAnswerWaits();
   const answerAlone = useAnswerAlone();
   const heldAnswers: AnswerWaits | null = attended && here && answerWaits.data ? {
@@ -186,8 +186,8 @@ export function useAttendedWaits({
     busy: answerAlone.isPending,
     onChangeRule,
   } : null;
-  // The git go-aheads its git door holds (GITAUTH1f, D198 point 12): the rows What needs you was pushed, so the head, the foot and the
-  // band read one judgement and press one door; its answer said where it was pressed, a refusal in the driver's words.
+  // The git go-aheads its git door holds: the rows What needs you is pushed, so the head, the foot and the
+  // band read one judgement and press one door; its answer said where it is pressed, a refusal in the driver's words.
   const attention = useAttention();
   const gitAnswer = useGitAnswer();
   const heldGitAsks: GitAskWaits | null = attended && here && attention.state === 'known' ? {
@@ -212,27 +212,27 @@ export function useAttendedWaits({
     busy: tighten.isPending,
   } : null;
 
-  // What waits on the person, handed to the head and to the strip at the foot alike (WAITFOOT1b, D168 point 3): one object, so
+  // What waits on the person, handed to the head and to the strip at the foot alike: one object, so
   // a press in either place is the same press with the same pending, and its answer, the record read again, settles both.
   const waits: WaitProps | null = attended ? {
     session: attended,
     resolving: resolve.isPending || parkGoAhead.isPending || personDone.isPending,
     onResolve: here ? onResolve : undefined,
-    // Its card's answer (PARKANSWER1): through the box's say door, the one door that answers a park (ONEWAY1k).
+    // Its card's answer: through the box's say door, the one door that answers a park.
     onAnswerSession: here ? answerFromCard : undefined,
     onAnswerChoice: here && answering && question ? choiceFromCard : undefined,
-    // QUESTIONUI1a (the design §8.4): the head's card's rows are the frame's selection too, so a row chosen there is chosen below.
+    // The head's card's rows are the frame's selection too, so a row chosen there is chosen below.
     answerPick: here && answering && question ? { selected: parkPicked, onSelect: onParkPick } : undefined,
     onAnswerAsk: here ? onAnswerAsk : undefined,
-    // The go-aheads it asked, answerable only where this machine can answer the park (KNOWUSE1a2).
+    // The go-aheads it asked, answerable only where this machine can answer the park.
     goAheads,
     goAheadsOn: parkAsk,
     onGoAhead: here ? onGoAhead : undefined,
-    // Its question (PARKVIEW1), and whether the box below is the park's answer box, which carries every press of what it asks: then
+    // Its question, and whether the box below is the park's answer box, which carries every press of what it asks: then
     // the strip draws none of the park's waits, and the head lists them with no press. A parked chat's composer draws none of it.
     question,
     parkBox: answering,
-    // The rules it proposed (PROPOSEHERE1b): settled through the band's own door, then, on an *Allow*, the session told so as its
+    // The rules it proposed: settled through the band's own door, then, on an *Allow*, the session told so as its
     // next turn, which is composed with the rule. One that takes no words now (its box's line, an intake) is not told, and says so.
     rules: {
       proposals: ruleState.data?.proposals,
@@ -244,64 +244,64 @@ export function useAttendedWaits({
       busy: ruleAnswer.busy,
       heard: !intake && box.kind !== 'line',
     },
-    // The helpers it asked for (MIXAGENT2b), with the yes and the no: an agent's ask the look holds waiting on the person's word is
-    // one of its waits, at the head and at the foot alike (MIXAGENT2c, D168).
+    // The helpers it asked for, with the yes and the no: an agent's ask the look holds waiting on the person's word is
+    // one of its waits, at the head and at the foot alike.
     helpers: helperWaits,
-    // Its agent's own ask to hand it over (MIXAGENT1c): one of its waits while the look holds it on the person's word, the strip's.
+    // Its agent's own ask to hand it over: one of its waits while the look holds it on the person's word, the strip's.
     handOver: handOverWait,
-    // The tool calls it holds for the person's answer (AUTONOMY1b3c): one of its waits, at the head and at the foot alike.
+    // The tool calls it holds for the person's answer: one of its waits, at the head and at the foot alike.
     permissions: heldPermissions,
-    // A third answer alone the bound holds for the person (COWORK1e): one of its waits, at the head and at the foot alike.
+    // A third answer alone the bound holds for the person: one of its waits, at the head and at the foot alike.
     answers: heldAnswers,
-    // A git go-ahead its git door holds (GITAUTH1f): one of its waits, at the head and at the foot alike.
+    // A git go-ahead its git door holds: one of its waits, at the head and at the foot alike.
     gitAsks: heldGitAsks,
-    // What each running session holds of git access, with the press that tightens it (D241 point 7).
+    // What each running session holds of git access, with the press that tightens it.
     gitAccess: heldGitAccess,
-    // Its review, wherever the review stands (SESS2 H4): the move beside unlanded work.
+    // Its review, wherever the review stands: the move beside unlanded work.
     onReview: () => openView('review'),
-    // LAND4: commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
-    // once it landed and a refusal said inside the ask (UXFIX2).
+    // Commits its tree holds, offered to land beside what it left; the press is the review's Accept, its sentence said
+    // once it landed and a refusal said inside the ask.
     lands,
     review: headReview,
     behind,
     opinion: headOpinion,
     landing: landing.data,
     planning: landing.isPlaceholderData,
-    // The second opinion's token rides with the press that answers what it showed (XAGENT1g).
+    // The second opinion's token rides with the press that answers what it showed.
     onLand: lands ? (answered, answers, branch) => land.mutate({ id: attended.id, answers, branch }, landed(answered)) : undefined,
     onSayRebase: (text) => say.mutateAsync({ id: attended.id, text }).then((answer) => answer.sent),
     onName: lands ? setLandName : undefined,
-    // SQUASHTIDY1b: its discard, never forced from here (`discardHeld`).
+    // Its discard, never forced from here (`discardHeld`).
     discards,
     onDiscardTree: discardHeld,
-    // Under way for this session from either place or another window (STATEHUB1c, D169 point 7), never another session's press.
+    // Under way for this session from either place or another window, never another session's press.
     workBusy: landsNow || discardsNow,
   } : null;
 
-  // WAITFOOT1c (D168 point 4): the waits that stand where the strip draws them, and the events that raised them, which the
+  // The waits that stand where the strip draws them, and the events that raised them, which the
   // conversation finds and tells; the way to each is handed to the head and the strip alike, and a raising block's *To the wait*
-  // leads to its line where it is on screen (WAITFOOT2b).
+  // leads to its line where it is on screen.
   const answerBelow = answering || (talking && box.kind === 'chat');
   const standing = attended && here && waits ? waitsOf({ ...waits, entry: entryAccept, answerBelow }) : [];
-  // PARKVIEW1: where the box answers the park, its question and its go-aheads stand in the box, so *To the wait* leads there.
+  // Where the box answers the park, its question and its go-aheads stand in the box, so *To the wait* leads there.
   const inTheBox = (wait: AnchorWait) => answering && (wait === 'question' || wait.startsWith('goAhead:'));
   const [anchored, setAnchored] = useState<(AnchorState & { session: string }) | null>(null);
   const toEvent = attended && anchored?.session === attended.id ? waitEvents(anchored.anchored, anchored.show) : undefined;
-  // One wait in one place on the screen (WAITFOOT2a, D168's WAITFOOT2 note): while the head's waits are wholly on screen the
+  // One wait in one place on the screen: while the head's waits are wholly on screen the
   // strip stands aside, and a raising block's *To the wait* leads to the head's line instead of the strip's.
   const waitsOnScreen = useWaitsOnScreen(centre);
   const [toWait, setToWait] = useState<{ session: string; wait: AnchorWait; n: number; at: 'head' | 'foot' | 'box' } | null>(null);
   // Spent once the person attends another: the strip drawn again on coming back takes no focus from it.
   useEffect(() => { setToWait(null); }, [attended?.id]);
-  // To the head's line while it is on screen, where the strip stands aside (WAITFOOT2b), else the strip's; a park's question and
-  // go-aheads to the box that answers them (PARKVIEW1), which is always drawn. The head's *next* leads the same way (REVIEWFLOW1b).
+  // To the head's line while it is on screen, where the strip stands aside, else the strip's; a park's question and
+  // go-aheads to the box that answers them, which is always drawn. The head's *next* leads the same way.
   const goToWait = (anchor: AnchorWait) => {
     if (!attended) return;
     const at = inTheBox(anchor) ? 'box' : waitsOnScreen === true ? 'head' : 'foot';
     setToWait((was) => ({ session: attended.id, wait: anchor, n: (was?.n ?? 0) + 1, at }));
   };
   const seekAt = (at: 'head' | 'foot' | 'box') => (attended && toWait?.session === attended.id && toWait.at === at ? toWait : null);
-  // And a rule's *Allow…* (PROPOSEHERE1b), by the proposal it asks about: open in the head or at the foot, never both.
+  // And a rule's *Allow…*, by the proposal it asks about: open in the head or at the foot, never both.
   const [ruleAsk, setRuleAsk] = useState<{ session: string; id: string; at: 'head' | 'foot' } | null>(null);
   const ruleAskAt = (at: 'head' | 'foot'): RuleAsk | undefined => (attended ? {
     open: ruleAsk?.session === attended.id && ruleAsk.at === at ? ruleAsk.id : null,
@@ -309,12 +309,12 @@ export function useAttendedWaits({
       ? { session: attended.id, id, at }
       : was?.session === attended.id && was.at === at ? null : was)),
   } : undefined);
-  // The waiting panel's height, kept per viewer (WAITPANEL1); and the conversation's presses drawn above it, so neither is ever
+  // The waiting panel's height, kept per viewer; and the conversation's presses drawn above it, so neither is ever
   // under it: *Back to bottom* told by the conversation (`onTail`), *To the top* once the reader is down from the head.
   const waitPanel = useWaitPanelHeight();
   const [tail, setTail] = useState<TailState | null>(null);
   const awayFromTop = useAwayFromTop(centre, attended?.id);
-  // *To the top* (D168 point 1, above the waiting panel since WAITPANEL1): the record's head, where every wait stands with its
+  // *To the top*, above the waiting panel: the record's head, where every wait stands with its
   // reading, the focus with it.
   const toTop = () => {
     const element = centre.current;

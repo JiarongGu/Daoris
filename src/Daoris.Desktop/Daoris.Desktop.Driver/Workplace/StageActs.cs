@@ -28,7 +28,7 @@ public static class StageVerbs
 }
 
 /// <summary>
-/// **Stage, unstage and their Undo** (GITAPP2h, D204, the git-writes design §4, §8). One index step of the act journal over the file's index
+/// **Stage, unstage and their Undo**. One index step of the act journal over the file's index
 /// entries. What the act leaves is found first on a copy of the index (<c>add</c>, <c>reset</c>, or <c>apply --cached --whitespace=nowarn</c> of a
 /// patch from <see cref="GitHunks"/>), never on the index itself; under the checkout lock every fresh read is made again (the switch, the checkout,
 /// the ledger, an operation in progress, HEAD, the entry and the source's bytes), and the step then replaces the entries under git's own

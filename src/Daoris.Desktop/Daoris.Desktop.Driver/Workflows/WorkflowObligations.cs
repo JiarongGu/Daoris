@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a unit still owes beyond its branch records, read from the units' node and resource records (FABRIC-PERFORM1d; the fabric events
-/// design §D3): each receipt its plugins' attempts gave, with its disposition, and each dispatched attempt whose outcome is not settled.
+/// What a unit still owes beyond its branch records, read from the units' node and resource records: each receipt its plugins' attempts gave, with its disposition, and each dispatched attempt whose outcome is not settled.
 /// Workflows owns the records, so Workflows reads them; Work orders' <see cref="WorkObligations"/> joins what this answers to the units, so a
 /// unit retires only once its end is over, every entry is terminal and no attempt is unresolved (<see cref="WorkUnit.State"/>). Read-only.
 /// </summary>
@@ -38,7 +37,7 @@ public static class WorkflowObligations
     }
 
     /// <summary>
-    /// The units that still owe anything (§D3, canary 35): a receipt not ended (unsettled and not a result, or of an undeclared schema), or an
+    /// The units that still owe anything: a receipt not ended (unsettled and not a result, or of an undeclared schema), or an
     /// attempt not settled. What the traces' pruning never drops, whatever their branch's removal said. A record that does not read keeps the
     /// unit it still names (<see cref="NodeRecordFiles.Unread"/>): what it holds is not known.
     /// </summary>
@@ -64,7 +63,7 @@ public static class WorkflowObligations
     private static bool Owes(ResourceReceipt receipt) => !receipt.Settled && receipt.Effective != PluginResourceRoles.Result;
 
     /// <summary>
-    /// A receipt as an inventory entry (§D3's dispositions): removed or already gone with its proof, retained with the plugin's reason, a
+    /// A receipt as an inventory entry: removed or already gone with its proof, retained with the plugin's reason, a
     /// result kept, a cleanup pending with its tries, or blocked: an undeclared schema, or a cleanup failing for seven days, with the plugin's
     /// words. It never disappears.
     /// </summary>

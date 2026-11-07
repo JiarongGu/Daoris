@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Claude Code's own structured output, mapped into Daoris's vocabulary by its adapter (D76 §1, CONV3).
+/// Claude Code's own structured output, mapped into Daoris's vocabulary by its adapter.
 /// </summary>
 /// <remarks>
-/// The lines are the shapes the binary printed (docs/2026-09-25-stream-json-evidence.md): the probe's
+/// The lines are the shapes the binary printed: the probe's
 /// two one-word turns, and a tool turn in the SDK's published shape, which the one-word probe did not
 /// exercise. Nothing here parses prose; every read is a field of the harness's documented wire.
 /// </remarks>
@@ -49,7 +49,7 @@ public sealed class ClaudeStreamJsonTests
 
     /// <summary>
     /// Each message's words carry the message's id, streamed or whole, so two messages in a row are two
-    /// on the page as well (found looking at CONSOLE2 on the protocol door, which had the same gap).
+    /// on the page as well, as on the protocol door.
     /// </summary>
     [Fact]
     public void A_messages_words_carry_its_id_streamed_or_whole()
@@ -63,9 +63,9 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
-    /// REV3: "something the wire said that this build has no kind for — kept, never dropped" held for
-    /// frames and not for a message's BLOCKS: a redacted thought, a server tool or an image yielded no
-    /// line and no event. The protocol door keeps its unknowns raw; so does this one now.
+    /// "Something the wire says that this build has no kind for — kept, never dropped" holds for
+    /// a message's BLOCKS as for frames: a redacted thought, a server tool or an image yields a
+    /// line and an event. The protocol door keeps its unknowns raw; so does this one.
     /// </summary>
     [Fact]
     public void A_block_this_build_has_no_kind_for_is_kept_raw_under_its_own_name()
@@ -93,7 +93,7 @@ public sealed class ClaudeStreamJsonTests
 
     /// <summary>
     /// The turn ends where the harness says, and context is used against the window the harness names —
-    /// read from the wire, never computed, and neither the model's name nor its price is kept (D24, TOOL3).
+    /// read from the wire, never computed, and neither the model's name nor its price is kept.
     /// </summary>
     [Fact]
     public void A_result_ends_the_turn_and_reports_context_against_the_harnesss_own_window()
@@ -112,7 +112,7 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
-    /// CONV5: a turn's tokens are the result's own totals — the probe's tool turn, whose two calls the
+    /// A turn's tokens are the result's own totals — the probe's tool turn, whose two calls the
     /// result sums. The streamed messages under-count the output (16 and 4 against the result's 80), so
     /// the turn never adds them up itself.
     /// </summary>
@@ -130,15 +130,15 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
-    /// USAGECAP1a2 (D179 point 2): a turn's models, for the usage history alone. The model is each top-level answer's
+    /// A turn's models, for the usage history alone. The model is each top-level answer's
     /// <c>message.model</c>, and the split <c>result.modelUsage</c> by model, taken where it agrees with the turn's total; a helper
-    /// model's tokens beside it, outside the total, make the turn not whole. Neither reaches the session's record (D24, TOOL3).
+    /// model's tokens beside it, outside the total, make the turn not whole. Neither reaches the session's record.
     /// </summary>
     /// <remarks>
     /// 🔴 No frame on this machine holds <c>message.model</c> or <c>modelUsage</c>'s counts: the lines are built from the Messages
     /// API's message shape and the SDK's declared <c>ModelUsage</c> (<c>inputTokens</c>, <c>outputTokens</c>,
     /// <c>cacheReadInputTokens</c>, <c>cacheCreationInputTokens</c>, <c>contextWindow</c>, <c>costUSD</c>), with the probe's tool
-    /// turn's totals (stream-json evidence, CONV5). A subagent's answer (<c>parent_tool_use_id</c> set) names no turn's model.
+    /// turn's totals. A subagent's answer (<c>parent_tool_use_id</c> set) names no turn's model.
     /// </remarks>
     [Fact]
     public void A_turn_s_models_are_its_answers_model_and_its_model_usage_split_and_neither_reaches_the_record()
@@ -164,8 +164,7 @@ public sealed class ClaudeStreamJsonTests
         Assert.DoesNotContain("models", line, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ——— MODELROLE1a (D205 §3.2, §3.3): what Claude Code 2.1.309 printed on the owner's install for `--model`
-    // (docs/2026-10-23-model-effort-doors-evidence.md), trimmed of fields this reader does not read.
+    // ——— What Claude Code 2.1.309 printed on an install for `--model`, trimmed of fields this reader does not read.
 
     /// <summary>
     /// <c>--model sonnet</c>, a real turn: the alias resolved, and the answer and <c>modelUsage</c> name the id that ran, the
@@ -183,14 +182,14 @@ public sealed class ClaudeStreamJsonTests
         var models = Assert.Single(events, e => e.Kind == SessionEventKind.Turn).Models!;
         Assert.Equal(("claude-sonnet-5-5", (bool?)false, TurnModels.FromModelUsage), (models.Model, models.Whole, models.From));
         Assert.Equal(["claude-haiku-5-5", "claude-sonnet-5-5"], models.Split!.Select(each => each.Model));
-        // D205: what ran, in the order the turn said it, the answer's model first; init's model is no report.
+        // What ran, in the order the turn says it, the answer's model first; init's model is no report.
         Assert.Equal(["claude-sonnet-5-5", "claude-haiku-5-5"], models.Reported);
     }
 
     /// <summary>
     /// 🔴 A model the account cannot run, as measured: <c>system/init</c> names the asked model unchecked, then the tool's own
     /// message (<c>&lt;synthetic&gt;</c>, <c>error: "model_not_found"</c>, 404) and a failed result with no counts, after
-    /// the prompt was handed, with no output and no tool use. The words reach the transcript as the turn's failure, and
+    /// the prompt is handed, with no output and no tool use. The words reach the transcript as the turn's failure, and
     /// <c>&lt;synthetic&gt;</c> is no model that ran.
     /// </summary>
     [Fact]
@@ -211,11 +210,11 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
-    /// USAGECAP1a2: a model switched mid-session splits by turn. The second turn's answers name the new model, and a
+    /// A model switched mid-session splits by turn. The second turn's answers name the new model, and a
     /// <c>modelUsage</c> that ran on from the first turn is read as the second's own less the first's: the process's running
     /// total, which only agrees with the turn's total so. The same turn reported as its own reads the same.
     /// </summary>
-    /// <remarks>🔴 Built as the test above: whether <c>modelUsage</c> is the turn's or the process's is not yet recorded.</remarks>
+    /// <remarks>🔴 Built as the test above: whether <c>modelUsage</c> is the turn's or the process's is not recorded.</remarks>
     [Fact]
     public void A_model_switched_mid_session_splits_by_turn_whether_model_usage_runs_on_or_is_the_turn_s_own()
     {
@@ -267,7 +266,7 @@ public sealed class ClaudeStreamJsonTests
         Assert.Equal(("toolu_1", "completed"), (result.Id, result.Status));
         Assert.Equal("The file src/chunk.rs has been updated.", Assert.Single(result.Content!).Text);
 
-        // The ending is said by the call's name, never its id (the "?"s the console printed).
+        // The ending is said by the call's name, never its id (never "?").
         Assert.Equal(["→ Edit src/chunk.rs", "  ✓ Edit src/chunk.rs"], lines);
     }
 
@@ -326,7 +325,7 @@ public sealed class ClaudeStreamJsonTests
     /// <summary>
     /// A turn the person stopped ends as the protocol door calls it, <c>cancelled</c>, whichever part
     /// the interrupt cut — the model writing or a tool running — and never as a failure. The shapes
-    /// are the probe's (stream-json evidence, § Stopping a turn).
+    /// are the probe's.
     /// </summary>
     [Theory]
     [InlineData("aborted_streaming")]
@@ -360,7 +359,7 @@ public sealed class ClaudeStreamJsonTests
         Assert.Equal(["— the agent refused a control request: no turn to interrupt"], lines);
     }
 
-    /// <summary>The native door's stop, as the one line the binary answered in the probe.</summary>
+    /// <summary>The native door's stop, as the one line the binary answers in the probe.</summary>
     [Fact]
     public void The_dialect_frames_an_interrupt_as_the_control_request_it_answers()
     {
@@ -374,12 +373,12 @@ public sealed class ClaudeStreamJsonTests
         Assert.DoesNotContain('\n', framed);
     }
 
-    // 🔴 UNBLOCK5: WRITTEN FROM THE MAKER'S REFERENCE, NOT PRINTED BY A BINARY. The Agent SDK's TypeScript
-    // reference, read 2026-10-01, types a denial as `SDKPermissionDeniedMessage` { type: "system", subtype:
+    // 🔴 WRITTEN FROM THE MAKER'S REFERENCE, NOT PRINTED BY A BINARY. The Agent SDK's TypeScript
+    // reference types a denial as `SDKPermissionDeniedMessage` { type: "system", subtype:
     // "permission_denied", tool_name, tool_use_id, agent_id?, decision_reason_type?, decision_reason?, message,
     // uuid, session_id }, emitted by a `-p` run with no permission host since 2.1.223 and best-effort, and the
     // result's `permission_denials` as `SDKPermissionDenial` { tool_name, tool_use_id, tool_input }, "the
-    // authoritative record". No turn on this machine has shown either frame yet (D122 §3.10); when one does,
+    // authoritative record". No turn on this machine has shown either frame yet; when one does,
     // these lines are replaced by the ones it printed.
     private const string PushCall = """{"type":"assistant","message":{"id":"msg_7","content":[{"type":"tool_use","id":"toolu_7","name":"Bash","input":{"command":"git push origin main","description":"Push the branch"}}]},"session_id":"c1","parent_tool_use_id":null}""";
     private const string FetchCall = """{"type":"assistant","message":{"id":"msg_8","content":[{"type":"tool_use","id":"toolu_8","name":"WebFetch","input":{"url":"https://example.com/notes"}}]},"session_id":"c1","parent_tool_use_id":null}""";
@@ -389,9 +388,9 @@ public sealed class ClaudeStreamJsonTests
     private const string DeniedTurn = """{"type":"result","subtype":"success","is_error":false,"result":"I could not push.","num_turns":3,"stop_reason":"end_turn","permission_denials":[{"tool_name":"Bash","tool_use_id":"toolu_7","tool_input":{"command":"git push origin main"}},{"tool_name":"WebFetch","tool_use_id":"toolu_8","tool_input":{"url":"https://example.com/notes"}}],"session_id":"c1"}""";
 
     /// <summary>
-    /// UNBLOCK5, the mapper's table: the harness's denial is the call's refusal in the record, named by its
+    /// The mapper's table: the harness's denial is the call's refusal in the record, named by its
     /// tool and what decided it, and the failed result that follows reads <c>refused</c> as the protocol
-    /// door's does (HELP4). The console keeps the wire's own word beside the refusal's line.
+    /// door's does. The console keeps the wire's own word beside the refusal's line.
     /// </summary>
     [Fact]
     public void A_denial_the_harness_reports_is_the_calls_refusal_and_its_failed_result_says_refused()
@@ -429,8 +428,8 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
-    /// A denial of a call the session's record does not hold (a subagent's, whose calls run beside the session,
-    /// CONSOLE3c) is said on the console and is no card in the conversation. A frame of another shape than the
+    /// A denial of a call the session's record does not hold (a subagent's, whose calls run beside the session)
+    /// is said on the console and is no card in the conversation. A frame of another shape than the
     /// reference's (no call id) is an absence, never a throw; a decider that is not a string is unsaid.
     /// </summary>
     [Fact]
@@ -450,7 +449,7 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
-    /// The pipe door's capture, end to end (UNBLOCK5): the harness's denial reaches the machine log as one ask,
+    /// The pipe door's capture, end to end: the harness's denial reaches the machine log as one ask,
     /// named by its tool, its kind and what decided it, and the command and its words never do.
     /// </summary>
     [Fact]
@@ -490,7 +489,7 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
-    /// TOOL6c (limit-signals evidence §1.1): the native door's <c>rate_limit_event</c> is the account's windows, handed on
+    /// The native door's <c>rate_limit_event</c> is the account's windows, handed on
     /// apart from the conversation — neither a console line nor an event — and the capture tells its listener, which keeps
     /// it for the walk. A frame with no <c>rate_limit_info</c> object hands on nothing.
     /// </summary>
@@ -529,7 +528,7 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
-    /// AGT3c: what the harness says in its own words is marked apart from its agent's: a line outside its protocol, and a
+    /// What the harness says in its own words is marked apart from its agent's: a line outside its protocol, and a
     /// failed result's words. An agent's text, a turn that ended and a stopped one carry neither.
     /// </summary>
     [Fact]
@@ -563,8 +562,8 @@ public sealed class ClaudeStreamJsonTests
 
     /// <summary>
     /// The native door's capture end to end, from the harness's stdout: the transcript is text a person
-    /// reads (never the JSON), the record opens with what was asked and holds what the wire said, and
-    /// the context the harness reported comes back for the usage record (TOOL3).
+    /// reads (never the JSON), the record opens with what is asked and holds what the wire says, and
+    /// the context the harness reports comes back for the usage record.
     /// </summary>
     [Fact]
     public async Task The_capture_keeps_a_readable_transcript_and_the_conversation_beside_it()

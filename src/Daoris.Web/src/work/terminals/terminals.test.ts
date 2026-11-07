@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { folderName, type OpenTerminal, terminalNames } from './terminals';
 
-// CONSOLE4c: a tab is named by its shell and where it started, and a name that repeats says which it is.
+// A tab is named by its shell and where it started, and a name that repeats says which it is.
 
 const terminal = (id: string, shell: string, cwd: string): OpenTerminal => ({ id, shell, cwd, exit: null });
 const name = (row: OpenTerminal) => `${row.shell} · ${folderName(row.cwd)}`;

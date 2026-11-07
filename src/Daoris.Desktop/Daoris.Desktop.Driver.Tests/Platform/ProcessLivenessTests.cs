@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-i (D212; the foundation design §3.3, §13.4, §19.1): the lease's test of a live process, taken out of <c>HomeLease</c> so the
-/// move record's claim reads a run's liveness by the same test, never a copy of it. A process is alive while its id runs under the start
+/// The lease's test of a live process, shared by <c>HomeLease</c> and the
+/// move record's claim, so a run's liveness is read by the same test, never a copy of it. A process is alive while its id runs under the start
 /// time it named, within a second; an id no process has, or one running under another start, is gone; a process whose start time cannot be
 /// read counts as alive, since nothing can tell.
 /// </summary>

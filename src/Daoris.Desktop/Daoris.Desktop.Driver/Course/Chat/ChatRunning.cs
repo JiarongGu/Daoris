@@ -1,18 +1,19 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the course's executors ask of the chat runner (D49 §3): open a conversation, place and run Ask Daoris's, go on in an ended
-/// conversation's own, walk an actor's order and say what a start was told. Course declares it and the chat runner in Loop implements it,
-/// exactly as the executors called the runner before it was a port; the places are Course's own records.
+/// What the course's executors ask of the chat runner: open a conversation, place and run Ask Daoris's, go on in an ended
+/// conversation's own, walk an actor's order and say what a start is told. Course declares it and the chat runner in Loop implements it;
+/// the places are Course's own records.
 /// </summary>
 internal interface IChatRunning
 {
-    /// <summary>Open a conversation in a repository and put a harness behind it.</summary>
+    /// <summary>Open a conversation in a repository and put a harness behind it; a limit's carry runs it as its carried conversation's resume.</summary>
     Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
-        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false, MoveWords? moves = null);
+        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false, MoveWords? moves = null,
+        ChatLimitCarry? carries = null);
 
     /// <summary>Place Ask Daoris's conversation in its workspace's room: its record open, its agent and account chosen, nothing spawned.</summary>
     Task<HelpPlaced> PlaceHelpAsync(
@@ -24,11 +25,11 @@ internal interface IChatRunning
         HelpPlaced placed, DriverConfig config, Func<CancellationToken, Task<HelpMachine?>> machine,
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default);
 
-    /// <summary>Run a conversation in a place: a new one's first message, or an ended one going on in its own conversation.</summary>
+    /// <summary>Run a conversation in a place: a new one's first message, an ended one going on in its own conversation, or a working record afresh.</summary>
     Task<ChatStart> RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
-        ChatPending? pending = null);
+        ChatPending? pending = null, bool working = false);
 
     /// <summary>What differs about a conversation in a repository's tree.</summary>
     ChatPlace RepositoryPlace(

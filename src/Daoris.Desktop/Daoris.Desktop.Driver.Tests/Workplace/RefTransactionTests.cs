@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>GITTXN1: the builder's text and its refusals, before git runs.</summary>
+/// <summary>The builder's text and its refusals, before git runs.</summary>
 public sealed class RefTransactionTests
 {
     private const string A = "1111111111111111111111111111111111111111";

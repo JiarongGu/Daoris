@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 point 4; the co-agent design §2.3 step 4, §5): a piece reserved and not yet opened holds a slot in the count every
+/// A piece reserved and not yet opened holds a slot in the count every
 /// starter reads, counted once when its record opens; the reservation is judged and written in one step, so two looks never both take
 /// the last slot, nor a look and a quest's start; it is released at every failure and end; a lead's two open pieces are counted across
 /// its <c>from</c> chain, so a hand-over does not reset them.

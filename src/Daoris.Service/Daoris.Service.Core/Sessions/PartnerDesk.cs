@@ -16,7 +16,7 @@ public sealed record PartnerOpen(string Lead, string Piece, string Door, string 
 }
 
 /// <summary>
-/// The judgement over a partner's record (COAGENT1b, D199 points 1 and 2; the co-agent design §2.3 step 5, §7.3): one implementation for
+/// The judgement over a partner's record: one implementation for
 /// the local host's door the driver calls, as <see cref="HelperDesk"/> is for a helper's. It opens a partner's record, a chat on no quest
 /// that serves the lead and carries the piece, with an entry of its own, in its clone. The open is idempotent by the piece's id: a record
 /// already open for the piece is answered as this one, so a restart between the open and the state that names it opens nothing twice.

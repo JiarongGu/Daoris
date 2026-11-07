@@ -3,7 +3,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The working trees git lists, and where a tree stands below the trees home (AUTOTIDY1). A list git could not give is never an
+/// The working trees git lists, and where a tree stands below the trees home. A list git could not give is never an
 /// empty one: "no tree here" lets a branch go, and a branch checked out somewhere would then go from under it.
 /// </summary>
 internal sealed class TreeWorktrees(TreeContext context)
@@ -13,7 +13,7 @@ internal sealed class TreeWorktrees(TreeContext context)
 
     /// <summary>
     /// Every working tree git lists for the checkout at <paramref name="root"/>, or null where git could not list them. Where the
-    /// judgement holds <paramref name="refs"/>, the list is the one it read for them (PROC1d-iii), so a judgement lists once.
+    /// judgement holds <paramref name="refs"/>, the list is the one it read for them, so a judgement lists once.
     /// </summary>
     internal static Task<IReadOnlyList<WorktreeEntry>?> EntriesAsync(string root, CancellationToken ct, RefSnapshot? refs = null) =>
         refs?.WorktreesAsync(ct) ?? ListedAsync(root, ct);
@@ -82,7 +82,7 @@ internal sealed class TreeWorktrees(TreeContext context)
     }
 
     /// <summary>
-    /// The first link on the way from the trees home down to <paramref name="tree"/>, the tree's own folder included (AUTOTIDY1):
+    /// The first link on the way from the trees home down to <paramref name="tree"/>, the tree's own folder included:
     /// the ownership test reads the path's words, and a link below the trees home makes a tree somewhere else. Null where there
     /// is none; a folder that cannot be read counts as one.
     /// </summary>

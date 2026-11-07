@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>STAFFPOLICY1e: the role policy's met condition as a fact of the one course decision, and what each action answers.</summary>
+/// <summary>The role policy's met condition as a fact of the one course decision, and what each action answers.</summary>
 public sealed class CoursePolicyTests
 {
     private static readonly DateTimeOffset Now = new(2026, 11, 2, 14, 0, 0, TimeSpan.Zero);

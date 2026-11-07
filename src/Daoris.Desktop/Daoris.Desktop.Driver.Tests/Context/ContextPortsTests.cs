@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xiii, the Context cuts: the seams they add. The note's wording, the channel claim's opening, the set-up source's
+/// The seams the Context cuts add. The note's wording, the channel claim's opening, the set-up source's
 /// word and the attachments' folder owned by Context or a lower home, with each higher spelling held to it; the installed review and
 /// work-order operations being the owners' and doing what the brief and the account did, a supplied stand-in used at those points, and
 /// a missing operation required only where it is reached. What the cuts keep is <c>ContextBoundaryTests</c>'.

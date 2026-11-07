@@ -5,7 +5,7 @@ import { Button } from '../../design/ui';
 import { type Answered, Refused } from '../InlineConfirm';
 
 /**
- * A session's agent's own ask to hand it over (MIXAGENT1c, D163 point 3), as `SESSION_HAND_OVER_ASK` answers it: the agent's note as it
+ * A session's agent's own ask to hand it over, as `SESSION_HAND_OVER_ASK` answers it: the agent's note as it
  * wrote it, when, and where the driver's look left it, its state (`waiting` on the person's word, `approved`, `taken`, `refused`; null
  * before the look read it), a refusal's code and the agent it goes to. A state a newer driver writes is read as written.
  */
@@ -19,7 +19,7 @@ export type HandOverAskRow = {
   agent: string | null;
 };
 
-/** The person's yes or no to the ask, told how it ended (UXFIX2): `done` once the driver's file holds it, `refused` with why not. */
+/** The person's yes or no to the ask, told how it ended: `done` once the driver's file holds it, `refused` with why not. */
 export type HandOverAnswer = (ask: string, answered: Answered) => void;
 
 /** What the frame hands the page for a session's agent's ask: the ask, the agents' names, and the presses it can make. */
@@ -45,14 +45,14 @@ export const waitsOnHandOverWord = (row: Pick<HandOverAskRow, 'state'>) => row.s
 export const handOverAskOpen = (row: Pick<HandOverAskRow, 'state'>) => row.state === null || row.state === 'waiting' || row.state === 'approved';
 
 /**
- * **Its agent asks to hand the session over** (MIXAGENT1c, D163 point 3; the mixed-agents design §2, §5): the agent's note, shown as
+ * **Its agent asks to hand the session over**: the agent's note, shown as
  * it wrote it and said to be its claim, then where the driver's look left the ask in the person's words. Where the look holds it
  * waiting on their word, *Hand over to {agent}*, their yes, and *Not now*, their no. Taken or refused, it is said in the timeline's
  * note and the session's `from` link, so nothing is drawn here.
  *
  * @remarks
- * **Props only** (components §2): the frame reads the ask and holds the presses. Without `onApprove` no yes is offered, without
- * `onDecline` no no: a browser, a story. Each waits in place and a refusal is said beside it (UXFIX2b3b), as a helper's ask's is.
+ * **Props only**: the frame reads the ask and holds the presses. Without `onApprove` no yes is offered, without
+ * `onDecline` no no: a browser, a story. Each waits in place and a refusal is said beside it, as a helper's ask's is.
  */
 export function HandOverAgentAsk({ ask, nameOf, onApprove, onDecline, busy = false }: HandOverAskWait) {
   const { t } = useTranslation();
@@ -108,7 +108,7 @@ export function HandOverAgentAsk({ ask, nameOf, onApprove, onDecline, busy = fal
               {t('work.handOverAsk.decline')}
             </Button>
           )}
-          {/* Drawn from the first, so it is a live region before it speaks (UXFIX2c). */}
+          {/* Drawn from the first, so it is a live region before it speaks. */}
           <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
             {pending ? t('work.confirm.pending') : null}
           </span>

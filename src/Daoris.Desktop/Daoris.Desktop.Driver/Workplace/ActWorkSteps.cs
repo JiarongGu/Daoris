@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The switch step and the stash step: their plans, their effects and their postconditions (GITAPP2k, D204; the git-writes design §5, §8). Each
+/// The switch step and the stash step: their plans, their effects and their postconditions. Each
 /// effect is one git run once in the act's job, so a <c>post-checkout</c> hook and its children end with it; none is run again, and what
 /// each did is read from <c>HEAD</c> or from <c>refs/stash</c>, never from the exit code.
 /// </summary>

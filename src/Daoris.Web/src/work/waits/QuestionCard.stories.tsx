@@ -6,10 +6,10 @@ import { InTheme } from '../../plugins/storyIcons';
 import type { ParkQuestion } from './parkQuestion';
 import { QuestionCard } from './QuestionCard';
 
-// The question card (QUESTIONUI1a; the supervisor design §8.1-§8.3): a park's question, each answer a row that reads whole, the
+// The question card: a park's question, each answer a row that reads whole, the
 // recommended one marked with the agent's reason, nothing selected at first. Its own stories, apart from the box and the head that
 // draw it: no answers, three with one recommended, six long ones, one selected, and listed with no radio; at a session page's three
-// widths, in English and 中文, light and dark. The agent's words stay as written in every language. SUPERVISOR1b: a question the
+// widths, in English and 中文, light and dark. The agent's words stay as written in every language. A question the
 // supervisor left to you, and one its agent marked as yours alone.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
@@ -46,7 +46,7 @@ const SIX: ParkQuestion = {
   why: 'The quest asks for the cap where the work is spent, and the chunk API is the one place every caller passes through.',
 };
 
-/** SUPERVISOR1b: a question the supervisor left to the owner, its bound in words and each reason with its source. */
+/** A question the supervisor left to the owner, its bound in words and each reason with its source. */
 const LEFT: ParkQuestion = {
   ...THREE,
   id: 'q8l3ft00',
@@ -59,7 +59,7 @@ const LEFT: ParkQuestion = {
   },
 };
 
-/** SUPERVISOR1b: a question its agent marked as the owner's alone. */
+/** A question its agent marked as the owner's alone. */
 const MINE: ParkQuestion = { ...THREE, id: 'q9m1ne00', owner: 'spending' };
 
 const FREE: ParkQuestion ={ ...THREE, id: 'q7fr3e00', choices: [], recommend: null, why: null, question: 'Which environment should I test the migration against?' };
@@ -119,7 +119,7 @@ export const Listed: Story = { args: { listed: true } };
 /** The same in dark. */
 export const ListedDark: Story = { args: { listed: true }, decorators: [dark] };
 
-/** The supervisor left it to you (SUPERVISOR1b): the bound and its sourced reasons above the answers, none selected. */
+/** The supervisor left it to you: the bound and its sourced reasons above the answers, none selected. */
 export const LeftToYou: Story = { args: { question: LEFT } };
 
 /** The same in 中文 and dark. */
@@ -128,7 +128,7 @@ export const LeftToYouChineseDark: Story = { args: { question: LEFT }, decorator
 /** The same at the main area's floor. */
 export const LeftToYouNarrow: Story = { args: { question: LEFT }, decorators: [sessionWidths.narrow] };
 
-/** Asked of you alone (SUPERVISOR1b): the agent's mark under its question. */
+/** Asked of you alone: the agent's mark under its question. */
 export const AskedOfYouAlone: Story = { args: { question: MINE } };
 
 /** The same in 中文. */

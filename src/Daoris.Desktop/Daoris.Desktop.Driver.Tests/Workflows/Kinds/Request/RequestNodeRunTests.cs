@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1p parts 3 and 4 (the integration design §17.5, R5's C32 and C33): a run's <c>request</c> node publishes its quest once under the
+/// A run's <c>request</c> node publishes its quest once under the
 /// request's key, reads its wait from this machine's projection of that quest, holds a decline for the person, and is asked again or gone on
 /// without by the person's two acts on the run's node door. Each seen failing first.
 /// </summary>
@@ -92,7 +92,7 @@ public sealed class RequestNodeRunTests : NodeRunFixture
         Assert.Equal(NodeStates.Active, Ask.State);
     }
 
-    /// <summary>C32: a publish whose answer was lost is sent again under the same key and makes no second quest.</summary>
+    /// <summary>A publish whose answer is lost is sent again under the same key and makes no second quest.</summary>
     [Fact]
     public async Task A_lost_publish_answer_is_sent_again_under_its_key_and_makes_no_duplicate()
     {
@@ -183,7 +183,7 @@ public sealed class RequestNodeRunTests : NodeRunFixture
     }
 
     /// <summary>
-    /// INTEGRATE1p: a ready request under <c>start: you</c> offers the person's <c>send</c>; once the door keeps it the next pass publishes the
+    /// A ready request under <c>start: you</c> offers the person's <c>send</c>; once the door keeps it the next pass publishes the
     /// quest once under its key. A request that sends itself offers none and refuses one.
     /// </summary>
     [Fact]
@@ -209,7 +209,7 @@ public sealed class RequestNodeRunTests : NodeRunFixture
         Assert.Equal(RunNodeWords.NotSendable, RunNodeWords.Word(Files, RunId, "ask", NodeWordActs.Send, null, () => _now).Refused);
     }
 
-    /// <summary>INTEGRATE1p: a request that sends itself (<c>start: automatic</c>) offers no send and refuses one.</summary>
+    /// <summary>A request that sends itself (<c>start: automatic</c>) offers no send and refuses one.</summary>
     [Fact]
     public async Task An_automatic_request_offers_no_send_and_refuses_one()
     {

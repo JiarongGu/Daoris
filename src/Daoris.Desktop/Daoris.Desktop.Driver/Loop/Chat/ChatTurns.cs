@@ -1,24 +1,23 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One conversation's turns: one at a time, in the order the person sent them — the same on both doors
-/// (CONV3b, CONV4a).
+/// One conversation's turns: one at a time, in the order the person sent them — the same on both doors.
 /// </summary>
 /// <remarks>
 /// <para><b>A message sent while a turn runs waits for it</b>, and the door records it when it is sent,
 /// not when it is typed. Recorded at once, it would sit inside the turn before it, and the conversation
-/// would read as though the agent answered a question it had not been asked. The native door used to
-/// write it to the harness at once, where Claude Code may fold it into the running turn — so both doors
-/// hold it here instead, and neither depends on what a harness does with a line mid-turn.</para>
+/// would read as though the agent answered a question it had not been asked. Written to the harness
+/// at once, a word may be folded into the running turn by Claude Code — so both doors
+/// hold it here, and neither depends on what a harness does with a line mid-turn.</para>
 ///
 /// <para><b>Where the turns stand is told as it moves</b> (the constructor's <c>changed</c>): whether a turn is
 /// in flight, which the page's stop follows — the record lags it — and what is waiting, which the page
 /// shows as queued because nothing else shows it. The one the door is still opening for counts as
 /// waiting; one the door takes at once is never announced.</para>
 ///
-/// <para><b>A stop withdraws what was waiting and stops the turn in flight</b>, in that order: stopped
+/// <para><b>A stop withdraws what is waiting and stops the turn in flight</b>, in that order: stopped
 /// the other way round, the next message would start the moment the stopped turn ended. A stop that
-/// lands after a turn was taken but before it reached the harness waits for it to be sent, so its
+/// lands after a turn is taken but before it reached the harness waits for it to be sent, so its
 /// interrupt never overtakes the turn it means to stop.</para>
 ///
 /// <para><b>Its parts.</b> The state is <see cref="TurnState"/>'s, under its one gate (its remarks say what the gate guards, the order of
@@ -46,22 +45,22 @@ internal sealed class ChatTurns : IChatTurns
     /// <param name="interrupt">The door's own way of stopping the turn in flight.</param>
     /// <param name="changed">Where the turns stand, each time that changes.</param>
     /// <param name="steer">
-    /// The door's next step (MSG1c, D137 §2.1): hand a word to the turn on the wire at once, returning what completes when the
+    /// The door's next step: hand a word to the turn on the wire at once, returning what completes when the
     /// agent has answered it, or null where the door takes no word during a turn now. Called under the turns' own lock, so it
     /// must not call back into them. Null for a door that never does (the native door, a text pipe).
     /// </param>
     /// <param name="steerNow">
-    /// The person's *Send now* on that door (STEER2a, D136's 2026-10-16 note): steer a word into the turn on the wire at once,
+    /// The person's *Send now* on that door: steer a word into the turn on the wire at once,
     /// cutting the step in flight, returning what completes when the agent has answered the steer, or null where the agent never
     /// said it steers. Called under the turns' own lock, as <paramref name="steer"/> is. Null for a door that never does.
     /// </param>
     /// <param name="nextStep">
-    /// Whether the door takes words at the turn's next step now (MSG1c), asked without sending anything: on such a door *Send now*
-    /// never stops a turn, since a word may be on its way (D136 point 4). Called under the turns' own lock. Null for a door that
+    /// Whether the door takes words at the turn's next step now, asked without sending anything: on such a door *Send now*
+    /// never stops a turn, since a word may be on its way. Called under the turns' own lock. Null for a door that
     /// never does.
     /// </param>
     /// <param name="settled">
-    /// Awaited by the pump after a turn is taken and again each time the words handed to it have all been answered (AGENTERRORS1b), before
+    /// Awaited by the pump after a turn is taken and again each time the words handed to it have all been answered, before
     /// the turn is found to have ended: the door settles there what those words' own turns came to, so a word taken whose turn failed
     /// transient is tried again inside the turn, which lasts. Never faults the pump. Null for a door that settles nothing.
     /// </param>
@@ -91,7 +90,7 @@ internal sealed class ChatTurns : IChatTurns
     }
 
     /// <summary>
-    /// The record's door for words kept there before this queue took them (COWORK1c): a helper's answer, kept by the driver, taken off by
+    /// The record's door for words kept there before this queue took them: a helper's answer, kept by the driver, taken off by
     /// its id once its turn is on the wire, in the same order as the person's words. The first door named stays.
     /// </summary>
     public void Keeps(ISaidDoor door)
@@ -100,7 +99,7 @@ internal sealed class ChatTurns : IChatTurns
     }
 
     /// <summary>
-    /// The answers-alone bound's judge of a helper's answer as its turn comes (COWORK1e): true where the bound holds it for the person,
+    /// The answers-alone bound's judge of a helper's answer as its turn comes: true where the bound holds it for the person,
     /// and the answer then goes no further, kept on its record. Named by whoever says a helper's answer, as <see cref="Keeps"/> names the
     /// door; the first named stays.
     /// </summary>
@@ -133,7 +132,7 @@ internal sealed class ChatTurns : IChatTurns
         }
     }
 
-    /// <summary>Whether the person stopped the turn in flight, which a word said now then waits for (MSG1c).</summary>
+    /// <summary>Whether the person stopped the turn in flight, which a word said now then waits for.</summary>
     public bool Stopped
     {
         get
@@ -143,16 +142,16 @@ internal sealed class ChatTurns : IChatTurns
     }
 
     /// <summary>
-    /// The line a conversation keeps of a word handed to its turn at the next step (MSG1c, D137 §2.1), once the agent answered
-    /// it: where the person's stop was asked while the word was on its way and the agent answered it <c>cancelled</c>, the
-    /// agent may have read it and its answer was not kept (STEER1 §3). Null for any other answer, which is in the turn.
+    /// The line a conversation keeps of a word handed to its turn at the next step, once the agent answered
+    /// it: where the person's stop is asked while the word is on its way and the agent answers it <c>cancelled</c>, the
+    /// agent may have read it and its answer is not kept. Null for any other answer, which is in the turn.
     /// </summary>
     /// <remarks>
-    /// Its code (MSG1c3), which the page words as <c>work.conversation.lost</c> in the reader's language, and the word's id, so
-    /// the page settles the word it still shows waiting (MSG1f). The English beside them is the console's and the terminal's.
+    /// Its code, which the page words as <c>work.conversation.lost</c> in the reader's language, and the word's id, so
+    /// the page settles the word it still shows waiting. The English beside them is the console's and the terminal's.
     /// </remarks>
     /// <param name="word">The word's id, as the record showed it waiting.</param>
-    /// <param name="stoppedUnder">The person's stop was asked while the word was on its way.</param>
+    /// <param name="stoppedUnder">The person's stop is asked while the word is on its way.</param>
     /// <param name="stopReason">The agent's answer to the word.</param>
     public static SessionEvent? Lost(string word, bool stoppedUnder, string stopReason) =>
         stoppedUnder && stopReason == "cancelled"
@@ -163,7 +162,7 @@ internal sealed class ChatTurns : IChatTurns
     public const string LostLine = SessionNotes.LostLine;
 
     /// <summary>
-    /// The line a driven session's record keeps of a held word the person took back or reworded (QUEUEEDIT1a): its code, which
+    /// The line a driven session's record keeps of a held word the person took back or reworded: its code, which
     /// the page words as <c>work.conversation.withdrawn</c>, and the word's id, so the page settles the word it showed waiting.
     /// </summary>
     public static SessionEvent Withdrawn(string word) => SessionNotes.Withdrawn(word);

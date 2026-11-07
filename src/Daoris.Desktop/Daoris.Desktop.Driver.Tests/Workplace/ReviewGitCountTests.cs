@@ -6,7 +6,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A review's read asks git few times (PERF1d): on the benchmark home it made 34 to 42 git starts, 7.1 to 7.3 s where one start costs a
+/// A review's read asks git few times, as one start costs a
 /// third of a second to two seconds. The refs it names are read in one listing of the repository's, the commits it asks after in one
 /// batch of object questions, and the files of a range in one <c>diff</c>; each answer is the one it gave before.
 /// </summary>
@@ -48,9 +48,8 @@ public sealed class ReviewGitCountTests(ITestOutputHelper output) : BranchTidyin
         Assert.True(starts.Count <= HeldCeiling, Report(starts));
     }
 
-    // Before: 36 starts on the first fixture (42 and 34 on the benchmark's small and large trees), each question asked by every stage
-    // that needed it. What is left is the offer's own judgement of the tree's commits, one question of each. Measured 23 and 24
-    // (OPTIMIZE1a, 2026-11-06), of which the two counts asked again without origin's line where it is missing.
+    // The starts that remain are the offer's own judgement of the tree's commits, one question of each; the two counts ask
+    // again without origin's line where it is missing.
     private const int SmallCeiling = 17;
     private const int HeldCeiling = 18;
 

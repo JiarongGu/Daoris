@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The driven carry-on's move (FOUNDATION1f-iv part b, sitting 2; D212; the foundation design §13.5's downgrade table, §19.1, §19.3, §19.4)
+/// The driven carry-on's move
 /// across a killed loop, beside <see cref="LiveLimitHarness"/>, whose kill and release it mirrors: one home, one stand-in service
 /// (<see cref="SessionMessagesTickTests.SaidStandIn"/>, which keeps a quest's records and says the keyed open), and two kinds of loop over them.
 /// The <b>killed loop</b> is a real <see cref="Driver"/> look whose move holder is a run of its own (<see cref="Killed"/>), told each boundary of
@@ -64,7 +64,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     public string? Reached { get; private set; }
 
     /// <summary>
-    /// Whether a part's agent leaves its quest taken when its turn ends, so the quest stays open past a write (DRIVENATTEMPT1): the line's
+    /// Whether a part's agent leaves its quest taken when its turn ends, so the quest stays open past a write: the line's
     /// next carry-on then goes on from a destination that heard the word, where its own go-on could send it a second time. A case turns it
     /// off before a loop comes up, so the parts that loop opens close their quest as the others do.
     /// </summary>
@@ -410,7 +410,7 @@ internal sealed class DrivenMoveHarness : IAsyncDisposable
     /// <summary>Every line the stub wrote down: the method, its session, its blocks.</summary>
     public IReadOnlyList<JsonObject> Heard() => [.. StubFile.Lines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
-    /// <summary>The prompts the stub was sent, each with the session whose run it was.</summary>
+    /// <summary>The prompts sent to the stub, each with the session whose run heard it.</summary>
     public IReadOnlyList<(string Session, string Text)> Prompts() =>
         [.. Heard().Where(line => line["method"]!.GetValue<string>() == "session/prompt")
             .Select(line => (line["session"]!.GetValue<string>(), string.Join("\n", line["blocks"]!.AsArray().Select(block => block!.GetValue<string>()))))];

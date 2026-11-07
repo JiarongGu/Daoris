@@ -1,10 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation whose provider kept failing past its episode goes on as its line's rules say (CONTEXTDRIVE1n; the context counters design
-/// §4.5, STAFFPOLICY1e3's conversation half): its tries rule's <c>next</c> or <c>weighted</c> moves it to another choice of its role, a new part
-/// handed D189's brief (<c>transient</c>, asked by <c>daoris</c>) and counted in <c>moves</c>; an <c>ask</c>, or the moves rule's bound, holds it
-/// for the person, whose next word goes on in it; a <c>hold</c> is the turn's end as it always was. Over the runner's context, as
+/// A conversation whose provider kept failing past its episode goes on as its line's rules say: its tries rule's <c>next</c> or <c>weighted</c> moves it to another choice of its role, a new part
+/// handed Daoris's brief (<c>transient</c>, asked by <c>daoris</c>) and counted in <c>moves</c>; an <c>ask</c>, or the moves rule's bound, holds it
+/// for the person, whose next word goes on in it; a <c>hold</c> is the turn's end. Over the runner's context, as
 /// <see cref="CurveMove"/> is.
 /// </summary>
 /// <remarks>
@@ -46,7 +45,7 @@ internal sealed class TransientMove(IExecutorWiring wiring) : IExecutor
     }
 
     /// <summary>
-    /// Judge the conversation by its line's rules and, where they move it, move it; null where nothing was judged (a hand-over waits or is
+    /// Judge the conversation by its line's rules and, where they move it, move it; null where nothing is judged (a hand-over waits or is
     /// taken, or it is no conversation of this machine's that a rule may move).
     /// </summary>
     public async Task<LineCourse?> MoveAsync(string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default)

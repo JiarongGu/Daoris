@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The transport's words each failure class is read from (GITAUTH1a, the git-auth design §5.1), measured with this machine's real git
+/// The transport's words each failure class is read from, measured with this machine's real git
 /// and OpenSSH against hosts on the loopback: a push the host refuses, a connection nobody answers over HTTP and over SSH. The words
 /// <c>GitWordsTests</c> holds as measured are these runs'.
 /// </summary>
@@ -55,7 +55,7 @@ public sealed class GitFailuresProcessTests : IDisposable
     private static async Task<(int Exit, string Err)> RunAsync(ProcessStartInfo info)
     {
         using var process = Process.Start(TestGit.Ceiling(info))!;
-        // Both reads start before the wait (TESTGIT1).
+        // Both reads start before the wait.
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync();

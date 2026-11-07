@@ -25,8 +25,8 @@ public enum StandInPress
 }
 
 /// <summary>
-/// A stand-in for the running Daoris's pipe (RPC1b): the wire of the terminal RPC design §6 as RPC1a's <c>InstancePipe</c> speaks
-/// it, a hello, a press and <c>RESULT</c>, each answered as a test sets it, with every line it was sent kept. In process, on a
+/// A stand-in for the running Daoris's pipe: the wire as <c>InstancePipe</c> speaks
+/// it, a hello, a press and <c>RESULT</c>, each answered as a test sets it, with every line it receives kept. In process, on a
 /// name of the test home's own.
 /// </summary>
 internal sealed class InstanceStandIn : IAsyncDisposable
@@ -41,7 +41,7 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// <param name="name">The pipe's name.</param>
     /// <param name="homeId">The home it answers as.</param>
     /// <param name="refusing">
-    /// Served with an ACL that refuses this user (PIPEOWNER1), as another account's pipe refuses a terminal: the connect is
+    /// Served with an ACL that refuses this user, as another account's pipe refuses a terminal: the connect is
     /// refused before any line crosses. Made with the first instance, so a constructor's, not a setting's.
     /// </param>
     public InstanceStandIn(string name, string homeId, bool refusing = false)
@@ -117,17 +117,17 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     public string? Progress { get; set; }
 
     /// <summary>
-    /// Whether a press is first told to wait for the person in the window (RPC1c), as the pipe tells a person's press, before it is
+    /// Whether a press is first told to wait for the person in the window, as the pipe tells a person's press, before it is
     /// answered or refused as <see cref="Press"/> says: how the window's Confirm, Refuse or two minutes reach the terminal.
     /// </summary>
     public bool Confirming { get; set; }
 
-    /// <summary>With <see cref="Confirming"/>, the note beside the wait: why the pipe could not place the terminal (CHANNELJOIN1c), or null for none.</summary>
+    /// <summary>With <see cref="Confirming"/>, the note beside the wait: why the pipe could not place the terminal, or null for none.</summary>
     public string? StandingWhy { get; set; }
 
     /// <summary>
-    /// <c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>, or <see cref="ResultRefused"/>'s
-    /// refusal), <c>running</c>, <c>waiting</c> (CONFIRMWAIT1a-i's), <c>unknown</c>, or <c>id-taken</c>, the refusal of another key's id.
+    /// <c>RESULT</c>'s state for a press it is asked about: <c>answered</c> (with <see cref="Data"/>, or <see cref="ResultRefused"/>'s
+    /// refusal), <c>running</c>, <c>waiting</c>, <c>unknown</c>, or <c>id-taken</c>, the refusal of another key's id.
     /// </summary>
     public string Result { get; set; } = "answered";
 
@@ -135,18 +135,18 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     public string? ResultRefused { get; set; }
 
     /// <summary>
-    /// <c>WITHDRAW</c>'s answer (CONFIRMWAIT1b, the confirm-wait design §4.3): <c>withdrawn</c>, <c>running</c>, <c>ended</c> (with
-    /// <see cref="Data"/>, or <see cref="ResultRefused"/>'s refusal), <c>id-taken</c>, or <c>no-route</c>, as today's instance answers a
+    /// <c>WITHDRAW</c>'s answer: <c>withdrawn</c>, <c>running</c>, <c>ended</c> (with
+    /// <see cref="Data"/>, or <see cref="ResultRefused"/>'s refusal), <c>id-taken</c>, or <c>no-route</c>, as an instance answers a
     /// route of the pipe it does not have.
     /// </summary>
     public string Withdraw { get; set; } = "withdrawn";
 
-    /// <summary>The nonce its hello draws (SUPERVISOR1a-ii): a fake server's own, or one it relays from a real instance.</summary>
+    /// <summary>The nonce its hello draws: a fake server's own, or one it relays from a real instance.</summary>
     public string Nonce { get; set; } = Daoris.Driver.SupervisorProof.Nonce();
 
     public int Connections => Volatile.Read(ref _connections);
 
-    /// <summary>Every request it was sent, the hello and <c>RESULT</c> among them.</summary>
+    /// <summary>Every request it received, the hello and <c>RESULT</c> among them.</summary>
     public IReadOnlyList<JsonElement> Sent
     {
         get
@@ -155,13 +155,13 @@ internal sealed class InstanceStandIn : IAsyncDisposable
         }
     }
 
-    /// <summary>The presses it was sent: every request that is not the pipe's own.</summary>
+    /// <summary>The presses it received: every request that is not the pipe's own.</summary>
     public IReadOnlyList<JsonElement> Presses => [.. Sent.Where(each => each.GetProperty("module").GetString() != "DAORIS.PIPE")];
 
-    /// <summary>The <c>RESULT</c>s it was asked.</summary>
+    /// <summary>The <c>RESULT</c>s it received.</summary>
     public IReadOnlyList<JsonElement> Results => [.. Sent.Where(each => each.GetProperty("type").GetString() == "RESULT")];
 
-    /// <summary>The <c>WITHDRAW</c>s it was asked.</summary>
+    /// <summary>The <c>WITHDRAW</c>s it received.</summary>
     public IReadOnlyList<JsonElement> Withdraws => [.. Sent.Where(each => each.GetProperty("type").GetString() == "WITHDRAW")];
 
     private async Task ServeAsync()
@@ -311,19 +311,18 @@ internal sealed class InstanceStandIn : IAsyncDisposable
         }
     }
 
-    /// <summary>How a press it was asked about ended: <see cref="Data"/>, or the refusal <see cref="ResultRefused"/> names.</summary>
+    /// <summary>How a press it is asked about ends: <see cref="Data"/>, or the refusal <see cref="ResultRefused"/> names.</summary>
     private string Ending(string asked) => ResultRefused is { } code ? Refusal(asked, code, null) : Success(asked, Data);
 
     /// <summary>
-    /// The pattern of the line a verb named <paramref name="verb"/> says as its press waits for the window (CONFIRMWAIT1b, the
-    /// confirm-wait design §4.1): the request's id, whatever it is, and the two verbs that read and take it back.
+    /// The pattern of the line a verb named <paramref name="verb"/> says as its press waits for the window: the request's id, whatever it is, and the two verbs that read and take it back.
     /// </summary>
     public static string Waiting(string verb) =>
         System.Text.RegularExpressions.Regex.Escape(verb)
         + @": waiting for you to confirm this in Daoris's window \(request (?<id>[0-9a-f-]{36})\); `daoris press result \k<id>` says how it "
         + @"ended, and `daoris press withdraw \k<id>` takes it back…";
 
-    /// <summary><see cref="Waiting"/> as the whole of what was said: that one line.</summary>
+    /// <summary><see cref="Waiting"/> as the whole of what is said: that one line.</summary>
     public static string WaitingAlone(string verb) => @"\A" + Waiting(verb) + @"\r?\n\z";
 
     private static string Success(string id, object? data) =>

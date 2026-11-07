@@ -3,11 +3,11 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One point as the plugin kit tells an author about it (PLUG8): what kind of question it is, when it
+/// One point as the plugin kit tells an author about it: what kind of question it is, when it
 /// is asked, the frame it is sent, what it must answer, how long the driver waits, and the handler a new
 /// plugin starts from.
 /// </summary>
-/// <param name="Kind">`decision`, `observation` or `act` — what the answer does (D64 §4, D100).</param>
+/// <param name="Kind">`decision`, `observation` or `act` — what the answer does.</param>
 /// <param name="OnFailure">What the driver does with a late, wrong or missing answer, finishing "so …".</param>
 /// <param name="Frame">
 /// The frame the driver sends for the kit's sample input, built by <see cref="HookFrames"/> — the

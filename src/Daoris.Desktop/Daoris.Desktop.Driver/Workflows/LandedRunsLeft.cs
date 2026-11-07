@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The verification runs the history clear may take (the pipeline design §4.3, D153): a landed run's file, folder and node record once a newer
+/// The verification runs the history clear may take: a landed run's file, folder and node record once a newer
 /// run on its line has a verdict, and a person's run once it has settled. Never the newest run with a verdict, which the next batch's base and
 /// the line's read stand on, and never one unsettled. No quest holds a run under <c>lines/</c>, so the clear that takes a chain's binding
 /// when its quest goes would never take these.

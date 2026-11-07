@@ -4,9 +4,9 @@ import { sentence } from '../locales/format';
 import i18n from '../locales/i18n';
 
 /**
- * 🔴 UX5 U29: with the machine's service stopped, every request the page made failed with the
- * browser's own words, and the toast said *Failed to fetch*: nothing a person can act on, and not
- * Daoris's voice. A request that reaches nobody is a refusal of Daoris's own, which says the service
+ * 🔴 With the machine's service stopped, a request the page makes must not fail with the
+ * browser's own words (the toast *Failed to fetch* is nothing a person can act on, and not
+ * Daoris's voice). A request that reaches nobody is a refusal of Daoris's own, which says the service
  * is not answering and that the screen shows the last it said. A request the page cancelled is still
  * a cancellation, which the query layer expects and nobody is told about.
  */
@@ -39,7 +39,7 @@ describe('a request that reaches nobody', () => {
 });
 
 /**
- * FRAME1f: an entry chosen in Search is kept by its id, and the index may have let it go since. The service's
+ * An entry chosen in Search is kept by its id, and the index may have let it go since. The service's
  * *no entry with that id* is an answer the page says as *gone*; a service that failed, or reached nobody, is not.
  */
 describe('a read the service has nothing for', () => {
@@ -60,7 +60,7 @@ describe('a read the service has nothing for', () => {
 });
 
 /**
- * KNOWUSE1a: the person's yes or no to a go-ahead reaches the ask's go-ahead door, the go-ahead by its number, their
+ * The person's yes or no to a go-ahead reaches the ask's go-ahead door, the go-ahead by its number, their
  * words only where they gave some, and a refusal is the service's own sentence.
  */
 describe('answering a go-ahead', () => {
@@ -86,7 +86,7 @@ describe('answering a go-ahead', () => {
     expect(sentence(await api.answerGoAhead('a1', 7, true).catch((error: unknown) => error))).toBe('Ask `#a1` holds no go-ahead 7: it holds 1, 2.');
   });
 
-  /** GOAHEADSTALE1: a stale go-ahead's refusal says no park goes on, so it runs nothing; every other answer reads as it always did. */
+  /** A stale go-ahead's refusal says no park goes on, so it runs nothing; every other answer reads as plain. */
   it('says no park goes on only where it is asked to', async () => {
     const sent: unknown[] = [];
     vi.stubGlobal('fetch', vi.fn(async (_url: string, init: RequestInit) => {

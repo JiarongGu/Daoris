@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COMMS1b (the comms design §4.2, §13 points 1, 3 and 4): the rules the helper's, the partner's and the opinion's looks hand a solicited answer
+/// The rules the helper's, the partner's and the opinion's looks hand a solicited answer
 /// by, in one place. An attempt is asked again under its key only inside the settlement's horizon; the line is read forward to its head as the
 /// door reads it; a head takes the answer between turns, an answered park included; and the door's answer is read as kept, already waiting
 /// with the record that holds the word, settled with no word, refused with nothing kept, or uncertain.

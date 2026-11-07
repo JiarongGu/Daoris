@@ -8,8 +8,8 @@ internal sealed class BrainstormAssembly(LoopContext context)
     private readonly LoopContext _context = context;
 
     /// <summary>
-    /// The packet's assembly (D176 point 2): the question, and for a repository its sources from the knowledge search in more than
-    /// one wording, else from its declared index's files. A meeting's first packet is this assembly (AGENTROOM1a, D177 point 2).
+    /// The packet's assembly: the question, and for a repository its sources from the knowledge search in more than
+    /// one wording, else from its declared index's files. A meeting's first packet is this assembly.
     /// </summary>
     internal async Task<BrainstormPacket> AssembleAsync(
         string question, string? asked, Snapshot snapshot, CancellationToken ct, IReadOnlyList<string>? named = null)
@@ -36,7 +36,7 @@ internal sealed class BrainstormAssembly(LoopContext context)
             catch (Exception error) when (error is HttpRequestException or JsonException or DriverException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                // No service: the declared index's files answer (D151 §6).
+                // No service: the declared index's files answer.
                 searched.Clear();
                 tier = BrainstormPackets.Files;
                 if (root is not null) searched.AddRange(IndexFiles(root, question));
@@ -50,7 +50,7 @@ internal sealed class BrainstormAssembly(LoopContext context)
     }
 
     /// <summary>
-    /// The paths the asker named, each read whole from the checkout and taken before any search's find (BRAINSTORMPACKET1); one that
+    /// The paths the asker named, each read whole from the checkout and taken before any search's find; one that
     /// is not a file there is left out as removed.
     /// </summary>
     private static IEnumerable<BrainstormFound> NamedSources(string root, IReadOnlyList<string> named, List<BrainstormLeftOut> left)
@@ -85,7 +85,7 @@ internal sealed class BrainstormAssembly(LoopContext context)
     private Task<BrainstormSearch> SearchAsync(string words, string repository, CancellationToken ct) =>
         _context.BrainstormSearches is { } search ? search(words, repository, ct) : _context.Service.BrainstormSearchAsync(words, repository, ct);
 
-    /// <summary>The declared index's files, whole, each a source: what answers where no service does (D151 §6).</summary>
+    /// <summary>The declared index's files, whole, each a source: what answers where no service does.</summary>
     private static IEnumerable<BrainstormFound> IndexFiles(string root, string question)
     {
         foreach (var index in RepositoryIndexes.Find(root))

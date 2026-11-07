@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PROCESS1d-i (D164's amendment point 4): a session in a tree of its own is told its resolved process at its start, in the
-/// instruction's landing section: the commit rule (its mode, where it was set, the person's convention quoted) and the branch the
-/// pull request comes from, so the agent and the repository's own rules no longer stop each other. Pure: <see cref="ProcessWords"/>
+/// A session in a tree of its own is told its resolved process at its start, in the
+/// instruction's landing section: the commit rule (its mode, where it is set, the person's convention quoted) and the branch the
+/// pull request comes from, so the agent and the repository's own rules do not stop each other. Pure: <see cref="ProcessWords"/>
 /// from the values the driver resolved, then the section as every form of the instruction carries it.
 /// </summary>
 public sealed class ProcessWordsTests
@@ -43,7 +43,7 @@ public sealed class ProcessWordsTests
     }
 
     /// <summary>
-    /// STASHSHARE1: git's stash is one stack per repository, so a tree of its own is told it is shared with the checkout and the other
+    /// Git's stash is one stack per repository, so a tree of its own is told it is shared with the checkout and the other
     /// trees, and to set work aside with a commit. Said once, in every mode and every kind of tree, right after the branch line.
     /// </summary>
     [Theory]
@@ -73,7 +73,7 @@ public sealed class ProcessWordsTests
         + "needs, and the line keeps that one commit.";
 
     /// <summary>
-    /// PROCESS1d-iii (D164's amendment point 2): the landing words read the run's <c>land</c> options, so a session and a conversation in a
+    /// The landing words read the run's <c>land</c> options, so a session and a conversation in a
     /// tree of their own are told once, after the branch line, that the landing squashes their commits; a landing that squashes nothing,
     /// and a merge, say nothing of it.
     /// </summary>
@@ -113,7 +113,7 @@ public sealed class ProcessWordsTests
         }
     }
 
-    /// <summary>Where the rule was set is said for a repository's or a workspace's, and nothing for the default.</summary>
+    /// <summary>Where the rule is set is said for a repository's or a workspace's, and nothing for the default.</summary>
     [Theory]
     [InlineData(OpinionSource.Repository, "This repository's process on this machine, set for its repository:\n")]
     [InlineData(OpinionSource.Workspace, "This repository's process on this machine, set for its workspace:\n")]
@@ -134,7 +134,7 @@ public sealed class ProcessWordsTests
         Assert.DoesNotContain("how a commit is written", Said(Rule(CommitRules.Ask, OpinionSource.Repository), Review));
     }
 
-    /// <summary>A tree its agent moved onto a branch of its own (TREEFOLLOW1) is told that branch lands as it stands; no other is named.</summary>
+    /// <summary>A tree its agent moved onto a branch of its own is told that branch lands as it stands; no other is named.</summary>
     [Fact]
     public void A_tree_on_its_own_branch_is_told_it_lands_as_it_stands()
     {
@@ -159,7 +159,7 @@ public sealed class ProcessWordsTests
     }
 
     /// <summary>
-    /// Under a rule that accepts automatically (LAND2b), the quest's done lands the work, so every mode commits before it: under
+    /// Under a rule that accepts automatically, the quest's done lands the work, so every mode commits before it: under
     /// <c>ask</c>, the yes and the commit come first, and no Accept is waited for.
     /// </summary>
     [Theory]
@@ -203,7 +203,7 @@ public sealed class ProcessWordsTests
         Assert.StartsWith("\nThis repository's process on this machine, set for its workspace:\n", Said(Rule(CommitRules.Ask, OpinionSource.Workspace), null));
     }
 
-    /// <summary>A named workflow's landing that cannot start has no branch to name (WORKFLOW1f): the process is said, no name is.</summary>
+    /// <summary>A named workflow's landing that cannot start has no branch to name: the process is said, no name is.</summary>
     [Fact]
     public void A_landing_with_no_branch_named_says_no_name()
     {
@@ -261,7 +261,7 @@ public sealed class ProcessWordsTests
         Assert.DoesNotContain(TargetPrompt.Composed(TargetPromptGoldenTests.Bare).Account.Sections, handed => handed.Name == HandedSections.Landing);
     }
 
-    // ——— a conversation in a tree of its own (PROCESS1d-ii): told once, with its first message
+    // ——— a conversation in a tree of its own: told once, with its first message
 
     /// <summary>
     /// The default, whole: the landing's form and who takes the branch on, the branch never said by name (a conversation's is made
@@ -316,7 +316,7 @@ public sealed class ProcessWordsTests
         }
     }
 
-    /// <summary>The opener names where the rule was set as a driven session's does, and the convention closes it as a block.</summary>
+    /// <summary>The opener names where the rule is set as a driven session's does, and the convention closes it as a block.</summary>
     [Fact]
     public void A_conversation_is_told_where_the_rule_was_set_and_the_persons_convention()
     {
@@ -329,7 +329,7 @@ public sealed class ProcessWordsTests
             ProcessWords.Conversation(Rule(CommitRules.AsYouGo, OpinionSource.Workspace), Merge));
     }
 
-    /// <summary>A merge says the line it goes into, or the repository's line where none was read; no plan, the process alone.</summary>
+    /// <summary>A merge says the line it goes into, or the repository's line where none is read; no plan, the process alone.</summary>
     [Fact]
     public void A_conversation_under_a_merge_is_told_its_line_and_one_with_no_plan_its_process_alone()
     {

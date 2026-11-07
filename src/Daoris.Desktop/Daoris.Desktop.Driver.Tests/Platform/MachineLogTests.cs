@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The machine log's desktop writer (LOG1a, D94): one JSON line per event, one file per source per
+/// The machine log's desktop writer: one JSON line per event, one file per source per
 /// day, kept thirty days, capped, and never a reason for anything to fail.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>The line table is a twin's</b> (<c>docs/2026-09-30-machine-log-design.md</c> §3): the HTTP
+/// <para>🔴 <b>The line table is a twin's</b>: the HTTP
 /// host writes the same format with its own code, and its tests hold the same lines. Change one table and
 /// the other changes with it.</para>
 /// </remarks>
@@ -71,8 +71,8 @@ public sealed class MachineLogTests : IDisposable
     }
 
     /// <summary>
-    /// LOGCOLLECTION1: only a collection of strings is an array. An object, a map or a collection of objects is not serialized: it
-    /// stays the text it was (its type's name), so a record or a sentence held in one never reaches a line by being passed there.
+    /// Only a collection of strings is an array. An object, a map or a collection of objects is not serialized: it
+    /// stays text, its type's name, so a record or a sentence held in one never reaches a line by being passed there.
     /// </summary>
     [Fact]
     public void Only_a_collection_of_strings_is_an_array_and_no_object_is_serialized()
@@ -229,8 +229,8 @@ public sealed class MachineLogTests : IDisposable
     }
 
     /// <summary>
-    /// LOG2b: a task nobody awaits, observed. The first real log's one <c>error</c> was an exception the
-    /// finalizer rethrew for such a task, an AggregateException whose only place was "an unobserved
+    /// A task nobody awaits, observed. Unobserved, its failure is an exception the
+    /// finalizer rethrows, an AggregateException whose only place is "an unobserved
     /// task". Observed, a failure is a line that says where it happened, when it happened.
     /// </summary>
     [Fact]
@@ -249,7 +249,7 @@ public sealed class MachineLogTests : IDisposable
         Assert.Equal(1, failed);
     }
 
-    /// <summary>A task that finished, or was cancelled because its reason went away, is no failure.</summary>
+    /// <summary>A task that finished, or is cancelled because its reason goes away, is no failure.</summary>
     [Fact]
     public async Task A_task_that_finished_or_was_cancelled_writes_nothing()
     {
@@ -335,7 +335,7 @@ public sealed class MachineLogTests : IDisposable
     }
 
     /// <summary>
-    /// HOSTSTART2: the exception that ends an async entry point arrives once the entry point's <c>using</c> has closed its
+    /// The exception that ends an async entry point arrives once the entry point's <c>using</c> has closed its
     /// log, which then drops the line; the watch writes it with a writer of its own, at <c>start</c>. The service's twin
     /// holds the same three rows.
     /// </summary>
@@ -382,9 +382,8 @@ public sealed class MachineLogTests : IDisposable
     }
 
     /// <summary>
-    /// MACHINELOGAPPEND1: two writers of one source on one day's file — a later launch beside the running desktop — each
-    /// write at the file's end. Before, each wrote at its own handle's position, and the second's line was gone after the
-    /// first's next (ONEINSTANCE2's measurement, D171).
+    /// Two writers of one source on one day's file — a later launch beside the running desktop — each
+    /// write at the file's end, so the second's line is not lost to the first's next.
     /// </summary>
     [Fact]
     public void Two_logs_on_one_file_keep_each_others_lines()
@@ -422,7 +421,7 @@ public sealed class MachineLogTests : IDisposable
     }
 
     /// <summary>
-    /// The desktop's entry point: the exception leaving <c>app.Run()</c> is written while the log is open, goes on as it was,
+    /// The desktop's entry point: the exception leaving <c>app.Run()</c> is written while the log is open, goes on,
     /// and is not written again by the unhandled handler; another exception still is.
     /// </summary>
     [Fact]

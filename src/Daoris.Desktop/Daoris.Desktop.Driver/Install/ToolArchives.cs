@@ -5,10 +5,10 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>A refusal by one named check (TOOLS4, D121 §3.6): an archive or a download that failed it.</summary>
+/// <summary>A refusal by one named check: an archive or a download that failed it.</summary>
 /// <param name="check">The code both twins spell — <c>hash</c>, <c>outside</c>, <c>truncated</c>, … — so a screen and a
 /// terminal name the same failure. The CLI's <c>RefusalError</c> carried the same codes.</param>
-/// <param name="facts">What the window's catalogue says a coded refusal with (PUSH1f2c, <see cref="ToolCodes"/>): the tool's name, a
+/// <param name="facts">What the window's catalogue says a coded refusal with (<see cref="ToolCodes"/>): the tool's name, a
 /// version, a file, an address.</param>
 public sealed class ToolRefusal(string check, string message, params (string Key, string Value)[] facts) : DriverException(message)
 {
@@ -21,16 +21,16 @@ public sealed class ToolRefusal(string check, string message, params (string Key
     /// <summary>A delete the system refused: something holds a file in the version's folder.</summary>
     public const string Held = "held";
 
-    /// <summary>A file named for a tool that is not a whole path, or holds no file (PUSH1f2c: the route's check, now the operation's).</summary>
+    /// <summary>A file named for a tool that is not a whole path, or holds no file (the route's check, now the operation's).</summary>
     public const string FileMissing = "file-missing";
 
-    /// <summary>A file named for a tool that did not start, or answered no version (PUSH1f2c).</summary>
+    /// <summary>A file named for a tool that did not start, or answered no version.</summary>
     public const string FileNoVersion = "file-no-version";
 
-    /// <summary>A resource location that is no address Daoris reads from (PUSH1f2c).</summary>
+    /// <summary>A resource location that is no address Daoris reads from.</summary>
     public const string Location = "location";
 
-    /// <summary>A git setting on a git older than the one that reads it (TOOLS6, D121 §2.5).</summary>
+    /// <summary>A git setting on a git older than the one that reads it.</summary>
     public const string GitTooOld = "git-too-old";
 
     public string Check { get; } = check;
@@ -39,7 +39,7 @@ public sealed class ToolRefusal(string check, string message, params (string Key
 }
 
 /// <summary>
-/// A tool's archive, unpacked whole (TOOLS4, D121 §3.6): the twin of the CLI's <c>tarball.ts</c>, which unpacks a vendor's
+/// A tool's archive, unpacked whole: the twin of the CLI's <c>tarball.ts</c>, which unpacks a vendor's
 /// <c>tar.gz</c>, and of its <c>zipfile.ts</c> until PUSH1f2c made a tool's download the driver program's alone.
 /// </summary>
 /// <remarks>
@@ -47,8 +47,8 @@ public sealed class ToolRefusal(string check, string message, params (string Key
 /// for; it does not make every name inside safe to write, so the rules hold whoever wrote the archive, and each
 /// refusal names its check: <c>absolute</c>, <c>outside</c>, <c>stream</c>, <c>link</c>, <c>entry</c> (neither a
 /// file nor a folder), <c>encrypted</c>, <c>method</c>, <c>checksum</c>, <c>truncated</c> and <c>damaged</c>.</para>
-/// <para>🔴 <b>Read by hand, inflated by .NET.</b> The design named .NET's own readers. Measured on .NET 10 before a
-/// line was written: <see cref="ZipArchive"/> reads a stored entry whose CRC-32 is wrong without complaint and names no
+/// <para>🔴 <b>Read by hand, inflated by .NET.</b> .NET's own readers do not suffice, as measured on .NET 10:
+/// <see cref="ZipArchive"/> reads a stored entry whose CRC-32 is wrong without complaint and names no
 /// entry's compression method, <c>TarReader</c> reads a header that fails its checksum and an archive with no end, and
 /// <see cref="GZipStream"/> reads a gzip cut before its trailer as if whole. So the records are walked here, as the CLI
 /// walks them, and the bytes are inflated by <see cref="DeflateStream"/> and <see cref="GZipStream"/>.</para>
@@ -78,8 +78,8 @@ public static class ToolArchives
     private static readonly uint[] CrcTable = BuildCrcTable();
 
     /// <summary>
-    /// Unpack a verified archive whole into <paramref name="into"/>, and find the executable its list names there
-    /// (§3.6). The CLI's <c>unpackPackage</c>.
+    /// Unpack a verified archive whole into <paramref name="into"/>, and find the executable its list names there.
+    /// The CLI's <c>unpackPackage</c>.
     /// </summary>
     /// <returns>The executable's path.</returns>
     /// <exception cref="ToolRefusal">The archive's own check, <c>archive</c> for a kind this build does not unpack, or
@@ -104,7 +104,7 @@ public static class ToolArchives
             throw new ToolRefusal("exe", $"the archive holds no file at `{exe}`, the executable its list names — nothing of it is kept");
         }
 
-        // Nothing is patched (§3.6): the executable bit off Windows is the one change, and it is the file system's.
+        // Nothing is patched: the executable bit off Windows is the one change, and it is the file system's.
         if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(file, Runnable);
         return file;
     }

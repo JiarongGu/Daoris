@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The supervisor's rules as the executors read them (CONTEXTDRIVE1e; the context counters design §4.5): every place's set read once, and
+/// The supervisor's rules as the executors read them: every place's set read once, and
 /// for a line its effective rules and the number or move each executor acts on.
 /// </summary>
 public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
 {
-    /// <summary>How many go-ons by answers alone a line takes in a row (§2.3): the seeded rule's number, which the course's bound reads.</summary>
+    /// <summary>How many go-ons by answers alone a line takes in a row: the seeded rule's number, which the course's bound reads.</summary>
     public const int AnswersAloneBound = 2;
 
     /// <summary>The failed sessions the seeded failures rule parks a quest at.</summary>
@@ -32,7 +32,7 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
         }
     }
 
-    /// <summary>A line's effective rules per count, for its role at its place (§4.4).</summary>
+    /// <summary>A line's effective rules per count, for its role at its place.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> For(string? role, string? repository, string? workspace) =>
         SupervisorRules.Effective(Sets, SupervisorRules.Chain(repository, workspace), role);
 
@@ -40,7 +40,7 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     public static SupervisorRule? Acting(IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>> effective, string count, string does) =>
         effective.TryGetValue(count, out var rules) ? rules.Where(rule => rule.Do == does).MinBy(rule => rule.At) : null;
 
-    /// <summary>The revision <paramref name="place"/>'s set was read at: 0 for a place holding none, or the seed read where none was written.</summary>
+    /// <summary>The revision <paramref name="place"/>'s set is read at: 0 for a place holding none, or the seed read where none is written.</summary>
     public long RevisionOf(string place) => Sets.FirstOrDefault(set => set.Place == place)?.Revision ?? 0;
 
     /// <summary>
@@ -67,7 +67,7 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
         effective.TryGetValue(SupervisorRules.Tries, out var rules) && rules.Count > 0 ? Math.Clamp(rules.Min(rule => rule.At), 1, TransientRetry.Bound) : TransientRetry.Bound;
 
     /// <summary>
-    /// The policy the staffing course reads (§4.8 read back): <paramref name="applied"/>'s rule, weights, shares, budgets and works,
+    /// The policy the staffing course reads: <paramref name="applied"/>'s rule, weights, shares, budgets and works,
     /// its moves and its bound taken from the effective rules alone. A tries rule that holds is the episode's limit, no move; a role with no policy
     /// and no move rule is null, today's order.
     /// </summary>
@@ -90,7 +90,7 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     public const int MovesByDefault = 3;
 
     /// <summary>
-    /// The rules a preset brings (§2.4): <i>Spread evenly</i> and <i>Spread by weight</i> move a line by weight on a limit, at most
+    /// The rules a preset brings: <i>Spread evenly</i> and <i>Spread by weight</i> move a line by weight on a limit, at most
     /// <see cref="MovesByDefault"/> moves a day, as rules naming <paramref name="role"/> at <paramref name="place"/>; <i>First that can run</i> none.
     /// </summary>
     public static IReadOnlyList<SupervisorRule> PresetRules(string preset, string role, string place)
@@ -101,7 +101,7 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     }
 
     /// <summary>
-    /// The machine's rules every home holds at today's numbers (§6.1, the owner's answer of 2026-11-03), a fresh home's and a migrated one's
+    /// The machine's rules every home holds at today's numbers, a fresh home's and a migrated one's
     /// alike: answers alone 2 in a row, failed sessions at <paramref name="failures"/> (none at 0; an older home's migration hands its file's
     /// number), five transient tries, and three moves a day before the next asks, for every role.
     /// </summary>
@@ -116,7 +116,7 @@ public sealed record SupervisorRuleBook(IReadOnlyList<SupervisorRuleSet> Sets)
     ];
 
     /// <summary>
-    /// A fresh home's first start (§6.1), beside its workflow's seed: the seeded rules written at the machine's place, so the person reads and
+    /// A fresh home's first start, beside its workflow's seed: the seeded rules written at the machine's place, so the person reads and
     /// edits them where every line reads them. A store that does not take them now is seeded at a later start; until then <see cref="Read"/>
     /// decides by the same rules.
     /// </summary>

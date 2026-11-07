@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The usage file in the shape this build reads (D232; AGENTPROVIDER1t): each entry's <c>harness</c>, the door the session ran on, is
+/// The usage file in the shape this build reads: each entry's <c>harness</c>, the door the session ran on, is
 /// <c>door</c>. An entry that already says <c>door</c> is one this build wrote and is left as it is.
 /// </summary>
 public sealed class UsageFileStep : IHomeMigrationStep

@@ -1,4 +1,75 @@
-# Rooms first, with an optimised fallback: a session works in place in the room it holds, and a repository without rooms gets kept trees whose ignored content is managed by class (TREEPOOL1, 2026-10-26: round 5, proposed 2026-11-07; round 6 for row 2, proposed 2026-11-07; round 7 for rows 3 and 4, proposed 2026-11-08)
+# Rooms first, with an optimised fallback: a session works in place in the room it holds, and a repository without rooms gets kept trees whose ignored content is managed by class (TREEPOOL1, 2026-10-26: round 5, proposed 2026-11-07; round 6 for row 2, proposed 2026-11-07; round 7 for rows 3 and 4, proposed 2026-11-08; round 8 for every file git does not manage, proposed 2026-11-08; round 9 for the rule file and both reads of round 7, proposed 2026-11-08; round 10 for the rule file restricting nothing by default, proposed 2026-11-08; round 11 for both reads of rounds 9 and 10, proposed 2026-11-08; round 12 for both narrow reads of round 11, proposed 2026-11-08; round 13 for both confirming reads of round 12, proposed 2026-11-08)
+
+**Standing (round 13, both confirming reads of round 12, proposed under D191, D214):** **Both makers read rows 3 and 4 again**: the
+independent Opus reader at `557594b07a` (4 findings, 2 blocking, each where `unworked` outlives the hand-off it stands for) and Codex at
+`f22f391b94` (one case left, blocking: a worked tree's hit placed beside a changed dependency it was installed against); neither found
+committed work lost. **Round 13 is written by Claude Opus 5.5 from main at `b6908ea79c`** (§33) and takes each smallest change: a go-on
+into a tree a return marked removes the mark before its resumed turn; the files record is written under one lock, and the stage reads
+the mark again before each of its writes, stopping once a terminal has taken it; the hook is owed in the record until it runs; a worked
+tree's hit is placed only beside earlier dependencies the stage kept or placed. Nothing is asked of the owner and no visit is refused.
+**Rows 3 and 4 wait a final confirming read by both makers of the passages §33.2 names.**
+
+**Standing (round 12, both narrow reads of round 11, proposed under D191, D214):** **Both makers read rows 3 and 4 narrowly** at
+`107063dfa2`: the independent Opus reader (6 findings, 2 blocking, both in how a tree is known unworked) and Codex (one case left,
+blocking: an install's write another rule names); neither found committed work lost. **Round 12 is written by Claude Opus 5.5 from
+main at `30f8e89eff`** (§32) and takes every finding in the floor's own test and the record it reads: the mark is held the other way,
+`unworked`, written by Daoris's making, take or return and removed before an agent or a terminal is handed the tree, a conversation's
+open among them, so a tree with no mark is worked; an install's write another rule names is in its record, so clearing it installs the
+dependency again before `hand`. Nothing is asked of the owner. **Rows 3 and 4 wait a last confirming read by both makers of the sections
+§32.3 names.** *(R13)* They read them; round 13 answers both (§33).
+
+**Standing (round 11, both reads of rounds 9 and 10, proposed under D191, D214):** **Both makers read rounds 9 and 10 together**:
+Codex at `9f2a228a48` (5 findings, all blocking: rows 6a, 3 and 4 another round), the independent Opus reader at `7b9f129e3b` (9
+findings, 2 blocking: rows 3 and 4 narrowly another round); neither found committed work lost. **Round 11 is written by Claude Opus 5.5
+from main at `b36ab3e8a0`** (§31) and takes every finding within the owner's choices, chiefly by making **the floor** sound (§30.1): a
+bare repository is a repository; a provider's untracked project configuration is never copied; **Daoris deletes or overwrites only what
+it made**, and installs, or runs a command a rule names, only in a tree no agent has run in since it made or took it, so a resume and a
+carry-on install nothing and the line installs its own; and what a take sets aside from a line that may come back is that line's until
+it finishes. The key takes every passed value as a digest keyed by the home, a secret's among them; an install's record lists what it
+wrote beside its folder, and placements one install changed are kept and installed as one group; an `output` is found only where a build
+tool's setting or a generation step makes it again. Nothing is asked of the owner. **Rows 6a and 6b are ready to build; rows 3 and 4
+wait one narrow read by both makers of the sections §31.4 names.** *(R12)* They read them; round 12 answers both (§32).
+
+**Standing (round 10, the rule file restricts nothing by default, proposed under D191, D214):** **The owner's principle of 2026-11-08**
+(D214's note): Daoris is a development tool, so the rule file restricts nothing by default; restrictions are the person's to add, and
+where one asks for an allow, the place's appointed supervisor gives it under its role's grants (D233's note), the person only where no
+role covers it. **Round 10 is written by Claude Opus 5.5 from main at `50055ee6d6`** (§30) and cuts. **The floor** keeps what prevents
+losing work: a tracked path is git's, a nested repository or worktree is never touched, a harness's or an editor's own settings file is
+never copied, and Daoris deletes nothing it did not make, setting it aside. Round 9's other refusals, its person-only kinds, the
+analysis's *never* list and its proposals go: every field acts from any layer, `discard` excepted, which goes. **By default the person
+has nothing to press.** A restriction is their own rule, their `permissions` (`deny`, `ask`, `allow` over Daoris's `run`, `copy` and
+`share`, empty by default) or the place's workflow; what an `ask` holds is allowed by a `files` supervisor's grant, new and off by
+default, else by the person. Round 9's answers to the round-7 reads stand, the scan narrowed to secret values as F8 asked. **Both makers
+read rounds 9 and 10 together before rows 6a, 3 and 4 are built.** *(R11)* They did; round 11 answers both (§31).
+
+**Standing (round 9, the rule file and both reads of round 7, proposed under D191, D214):** **The owner chose on 2026-11-08** (D214's
+note, round 8's choices) that every file git does not manage is handled by rules, not by round 8's inventory accepted entry by entry,
+and that runnable outputs stay cleared at every take. **Round 9 is written by Claude Opus 5.5 from main at `5651fdda5a`** (§29). **The
+rule file** is JSON whose `rules` are read in order as an ignore file is, a later match winning, each naming a kind (round 8's classes)
+and its paths, in four layers: the analysis's found rules; the repository's `daoris.files.json` beside its gates file, tracked and read
+at the line's tip; the person's rules, beside the found ones in the home's `data/files.json`, never synced; and built-in refusals no
+layer overrides. **The analysis writes acting rules by itself** where a signature or the repository's scripts are its evidence,
+choosing the kind whose wrong cost is a build. A copy of a local input or a secret, a deletion, a share across repositories and a
+command no signature ships are the person's own rules, which it only proposes, and Daoris deletes nothing it cannot prove its own.
+**Both reads of round 7 are answered** (§29.6): Codex's 1 to 4 and the Opus reader's F1 to F3, all blocking, are taken, chiefly by one
+*files stage* after the record's open at every start, a key holding each manager's effective configuration, and a fill sealed only in a
+tree holding nothing else ignored. The rows run 6a, 3, 4, 6b, g (§28.9); §18 items 13 and 14 are asked. **Both makers read round 9
+before rows 6a, 3 and 4 are built.** *(R10)* The owner answered items 13 and 14 the same day, and the principle of that day cuts the
+person's own rules above to restrictions the person adds (§30).
+
+**Standing (round 8, every file git does not manage, proposed under D191, D214):** **The owner directed on 2026-11-08** that the agent in
+a managed tree have every file git does not manage handled for it, from an inventory Daoris keeps on the machine outside git rather than
+a declaration the repository tracks. **Round 8 is written by Claude Opus 5.5 from main at `8c8e0f86bd`** (§28). **The inventory** is
+per repository, in the desktop store, never synced: each entry a path, its class, its producer, its size and count, how it was found and
+its handling, and nothing acts on an entry the person has not accepted on the repository's page. **The analysis** is generic and cheap:
+git's own view, toolchain signatures as data, the repository's own scripts, its declaration as one input, and what Daoris's own trees
+show; an unknown path is left alone and shown. **Measured** read-only in this repository's checkout and two siblings: signatures and
+scripts class 51 of the 58 ignored folders here and 43 of 48 in one sibling, and most of what git does not manage on a working machine
+is private files and other repositories. A kept slot saves nine files in ten, but under round 7's classes writes `bin/` again each
+session, so here a quarter to three quarters of a fresh tree's bytes. **Rows 6a and 6b** (the inventory read, then shown and accepted;
+nothing acts) **come before row 3**, which no longer stands alone; row 4 follows row 3, and row g both. §18 items 11 and 12 are asked.
+**Both makers' reads of round 7 were running and were not seen**: round 9 takes their findings into this layer. *(R9)* The owner
+replaced the inventory with rules the same day, and round 9 answers both reads (§29).
 
 **Standing (round 7, rows 3 and 4 alone, proposed under D191, D214):** **Codex read rows 2 to 4 of round 6** at `b347f3ab20`: row 3
 another round on its key, row 4 narrowly on what a slot carries, and its slot mechanics sound. **The independent Opus reader read round 6's
@@ -383,6 +454,25 @@ sessions at once in one group last week is row 2's count, read from the install'
 *Round 7* *(R7-C8, C9, C10)*: nothing a slot carries is trusted because its path stays put. Each class it carries has a key and a check,
 and the declaration acts only as the owner accepted it.
 
+*Round 8* *(R8)*: the classes are the inventory's. Daoris reads them on each machine and acts on each entry only once the person has
+accepted it (§28.3, §28.5). The declaration below is one input of that reading (§28.4, source 3), the repository's word to it: each of
+its fields is taken into the entry it proposes, and the gates file's acceptance no longer covers it. So read *the accepted declaration*
+below as *the accepted entry*, and *with nothing declared* as *with nothing accepted*. Two classes join the table, tool caches and
+another repository or tree; a path no source names is *unknown*, handled as the table's scratch. *Ask Daoris proposes a declaration*,
+the section's last sentence, is withdrawn: the analysis proposes.
+
+*Round 9* *(R9)*: the classes are the rule file's kinds (§29.2), and what acts on a path is its effective rule, read from four layers,
+with no acceptance. Read *the accepted declaration* and *the accepted entry* below as *the effective rule*, and *the declaration* as the
+repository's own layer, `daoris.files.json`, which takes the gates file's `trees` in the same chunk (D228) and is read from git's
+objects at the line's tip. Its example is §29.2's. Three definitions change. A runnable output is what a runner uses **without its
+tool's own check** (Opus round 7's F11), a `dotnet build --no-restore` over another line's `obj/project.assets.json` among it. A
+dependency's `paths` are everything its one install makes in the tree, a generated client among them (Codex round 7's 3). The `key`
+statement reads *no other file, tracked or ignored, changes what `install` makes* (Opus round 7's F8). The uv example's `.venv` takes
+`"caches": ["**/__pycache__/"]` and `uv python find` in its `toolchain`, and since a rule matches only the ignored tops git lists, its
+intermediate `**/__pycache__/` never reaches inside the `.venv/` (Opus round 7's F10). *(R11-F8, F9)* Its interpreter is keyed by `uv
+python find --system` and that interpreter's `--version`, never the `.venv`'s own, and its install is `uv sync --locked`. *(R11-C1)* A
+runnable output is found only by a build tool's output setting or a generation step (§29.4).
+
 | Class | What it is | Between one line and the next | Examples |
 |---|---|---|---|
 | **Dependencies** | what a package manager installs from a lockfile, by the command the declaration names | kept or placed by its key and its placement record, read at every take (R5.6), never linked; one that names its own path is kept in place, never stored, and installed again when its key or record moves *(R7)* | `node_modules`, `vcpkg_installed`; in place: a `.venv`, a conda environment |
@@ -460,11 +550,72 @@ package manager's key inputs *(R7)*, as a change in that repository.
 
 ### R5.6 The dependency store
 
-*Rewritten at round 7* *(R7-C8, C9, C10)*.
+*Rewritten at round 7* *(R7-C8, C9, C10)*. *Round 8* *(R8)*: every field the key and the fill read (`key`, `install`, `toolchain`,
+`env`, `caches`, `bound`) is the accepted dependency entry's (§28.3), proposed from the signatures, the scripts and the declaration; the
+rest stands.
+
+*Round 9* *(R9)*: every field is the effective `dependency` rule's (§29.2), and the reads of round 7 change seven things, each in §29.6:
+- **the key** adds each manager's effective configuration, printed by a `toolchain` command its signature names (`npm config list
+  --json`) and run in the folder and environment of the install, the tree's path written as a token before it is hashed (Codex 1, Opus
+  F3); each optional project configuration file, absent keyed as absent (Codex 5); and the key of each dependency before it in rule order
+  (Codex 2). It is kept as its hash alone. Every `env` value is hashed, never written to a record, a note or a log, and a name a
+  rule of any layer marks `secret` is keyed by its name (Opus F8) *(R10)*;
+- **the fill** runs at the files stage, after the record's open and before the agent is handed, never in a take's claim (§29.7; Opus F1,
+  Codex 4), one install of a repository at a time (Opus F9). It is recorded `installing` before its folder is cleared, so a cut-off
+  install is known as Daoris's own (Opus F4);
+- **it seals** only in a tree that held, as it began, nothing ignored but the folders of the dependencies before it whose records hold (a
+  fresh tree before its hook and its local copies), and only where it wrote nothing in the tree outside its rule's `paths`. *Nothing new beside the
+  folder but declared outputs* is withdrawn (Codex 1, Codex 3). An install it cannot seal is the tree's own, recorded and kept in a slot
+  by its key and record as a `bound` one is. A `secret` value found in what it wrote seals nothing, as the tree's path does *(R10)*;
+- **after each install** every placement before it is read against its record; one it changed is rewritten as the tree's own, and the
+  install seals nothing (Codex 2);
+- **git's common folder**, which this repository's `prepare` writes, is listed before and after (its hooks and its local configuration),
+  and what changed is said; anything else outside the tree is the rule's own to answer for (Opus F9);
+- **a placement** copies by its entry's manifest, and a source missing or of another size evicts the entry and falls to the install; a
+  file its signature names is written last (npm's hidden lockfile, `Workplace/TreeDependencies.cs:268-273`) (Opus F11);
+- **a placement whose record fails, or a dependency's folder with no record**, is never removed at a take: it is the line's own (Opus F7).
+  Daoris removes only a placement whose record holds, and an install it marked and that was cut off.
+
+*Round 11* *(R11)*: both reads of rounds 9 and 10 change six things, each in §31, whose *Cn* and *Fn* this note uses. *(R12)* Round 12
+revises four of them in place (§32): the write-back, the companions, the group and the mark. *(R13)* Round 13 revises two again (§33):
+the group's earlier keys and the mark.
+- **the key** takes every `env` value as a digest keyed by a secret of the home's (HMAC-SHA-256 under a key made once in the home, never
+  synced or shown), never the value, a value marked `secret` among them (C4). The mark's one effect is the fill's scan for the value.
+  Round 10's *keyed by its name* and the plain hash of an unmarked value are withdrawn;
+- **an install runs only in an unworked tree** (§29.7), so round 7's *the tree about to be used, its tracked files at the commit and no
+  session working there* holds again, for every install Daoris runs, a fill or not (F1, C3). In a tree an agent has run in nothing is
+  installed, removed or written back: a dependency whose key moved, or absent at a miss, is the line's to install, said;
+- **an install that changed a tracked file, or wrote a path git does not ignore at `HEAD`**, has the file written back from the commit
+  and the path removed, each Daoris's own of a moment ago in an unworked tree, and its folder cleared, said: a fill's or not, so no
+  install of Daoris's leaves a change the session would commit as its own. *(R12-F3)* One cut off before its after-read leaves its
+  change to the next start in the still-unworked tree, whose first step writes back every such change before any placement (§29.7);
+- **its companions** (F2): each path in the tree an unsealed install wrote outside its `paths` that git ignores at `HEAD` and no
+  effective rule names, listed in its record with its manifest. They are the dependency's: read with its namespace at every take, the
+  judgement and the finish, kept with it and never `unknown`, the placement kept only while they hold and else installed again in an
+  unworked tree. *(R12-C)* A path another rule names keeps that rule's kind, a take clearing or moving it as that rule says, and is
+  listed in the record as the install's **other write**: the placement is kept only while each stands after the stage's hook (§29.7
+  step 4), else it is installed again before `hand` in the unworked tree, so its producer runs. This repository's root stays kept at a
+  take: its `prepare` writes `docs/index/` where none stands (`tools/index-hook.mjs:84-88`), and the `post-checkout` hook the stage runs
+  after a switch writes it again (`:8-12`). Round 11's *its rule answering for its producer* is withdrawn. git's common folder stays
+  listed before and after, and said;
+- **a group** (C5): where an install changes an earlier placement, the two, with any already grouped with either, are one group: one
+  record over every member's namespace and companions, and one key of every member's rule and key in rule order. A group is kept only
+  while every member's rule stands and its whole key and record hold; otherwise, in an unworked tree, each member is removed and the
+  members installed again in rule order. It seals nothing and is never placed from the store, *(R12-F4)* nor is a member by its own
+  key while a group of the tree's record names it, though its own fill sealed before the group formed: in an unworked tree the group's
+  install places it, and in a worked tree its absent folder is the line's, said. *The changed placement's record is
+  rewritten as the tree's own* is withdrawn: rewritten, it outlived the rule that changed it, and placed again at its key it lost the
+  change. Each key still holds the keys before it, for an install that reads an earlier folder without changing it, *(R13-C)* so a hit
+  stands for its folder only beside earlier dependencies that are as their keys say: in a worked tree it is placed only where each
+  dependency before it was kept or placed by the stage (§29.7);
+- **the `installing` mark** is its start's: the `permissions` are read before it is written, and a failed install takes it and its half
+  folder away before `hand`, *(R12-F1)* or before a conversation's *(R13-F1)* or a go-on's step that removes `unworked`, so a mark
+  found is a cut-off start's (F5). One install runs at a time per key, and per repository only for an install whose rule's last
+  install wrote git's common folder, or that has none yet (F9's nit; Opus round 7's F9).
 
 - **The key** of a dependency at a commit: its declared path; each `key` path's blob id at the commit, a path absent counted as absent
   (with no `key`, the commit's tree id); the `install` command; each `toolchain` command's output, run at the tree's root in the install's
-  environment; that environment; the system and the architecture; and the repository.
+  environment, *(R12-F5)* a read in any tree (floor 4); that environment; the system and the architecture; and the repository.
 - **The install's environment is composed by selection**: the system's own names (the path, the system's, the user's and the programs'
   folders, the processor), named in code, and the dependency's `env`, nothing else inherited, every name and value in the key. A gate's
   environment, composed by removal (`Review/Domain/GateEnvironment.cs:66-75`), would pass every variable but Daoris's and git's.
@@ -816,7 +967,7 @@ alone is not a test-and-set across a read, a judgement and a switch (O-1).
 | `kept_trees` *(R4)* | workspace, repository, number, registration (git's name for it), path (its fixed folder), line (the line's path whose branch it is on, `''` when detached), tip (the commit HEAD stands at while free, `''` while a line holds it) *(O2-F4)*, state (`kept`, `retiring`, `stuck`), said (`''` or why), since (the moment its present line took it), bytes (what it holds ignored outside `node_modules`, read at each let-go, §11) | (workspace, repository, number), and one unique index over (workspace, repository, line) where `line` is not empty | the slots that exist, and which line each serves |
 | `tree_claims` *(R4)* | workspace, repository, number, kind (`make`, `take`, `return`, `finish`, `end`, `retire`), holder (the quest, session or person's press it serves), line (the line's path it brings the slot to, or ends), branch, start (the commit a new branch grows at, or a returning line's tip), expect (the HEAD the judgement read), opens (the key its record's open is made under, written before that open, `''` where a kind opens none) *(C2-2.2)*, job (the name of the claim's own job) *(C2-2.3)*, record (the opened record's id, `''` until known), phase, claim_run (a `store_runs` id), claim_generation *(R4-F8)*, at | (workspace, repository, number), and one unique index over (workspace, repository, line) | the one claim in flight on a slot, its whole intent written before its first effect *(C1-2.2)* |
 | `tree_visits` | workspace, repository, number, kind (`terminal`, `served`) *(C2-3.2)*, visitor (the terminal's or the served build's id), run, at | (workspace, repository, number, visitor) | a terminal the person opened in a slot, or a build served from it to a tab, admitted before its shell starts or its serving begins *(C1-2.5, C2-3.2)* |
-| `line_ends` *(R4)* | workspace, repository, line, branch, session, number (the slot it was let go in), kind (`output`, `no-output`, `uncommitted`, `held`), tip, read (the moment the slot was read), left (the names of its own ignored paths, §11, `''` for none), at | (workspace, repository, line, at) | each let-go of a line: the tip the next judgement compares (§5.2), the slot a returning line prefers (§5.1), the facts the finish's manifest needs where the line's slot serves another by then (§10) *(C1-2.3)*, and the licence to grow a no-output branch again (§6) |
+| `line_ends` *(R4)* | workspace, repository, line, branch, session, number (the slot it was let go in), kind (`output`, `no-output`, `uncommitted`, `held`), tip, read (the moment the slot was read), left (the names of its own ignored paths, §11, `''` for none), toolchain (the key of its rules' `toolchain` outputs at its tip, read at the let-go) *(R9)*, at | (workspace, repository, line, at) | each let-go of a line: the tip the next judgement compares (§5.2), the slot a returning line prefers (§5.1), the facts the finish's manifest needs where the line's slot serves another by then (§10) *(C1-2.3)*, and the licence to grow a no-output branch again (§6) |
 
 Round 3's `from`, `park`, `to` and `before` are withdrawn with the moves *(R4)*, and the unique index over a claim's `to` becomes one over its
 line, so two ways back of one line still let one through *(O1-F1)*. Round 2's `line_records` stays withdrawn *(C2-2.4)*: a finished line's
@@ -851,7 +1002,7 @@ ends. D201's launcher holds no claim: a claim belongs to a step, never to an age
 | Kind | Phases, in order | What the effect between them is |
 |---|---|---|
 | `make` *(O2-F15)* | `opening`, `made`, then as `take` from `checked` | today's open at `k-<n>` under OPENCUT1's lock, its first line's branch made with it (`SessionTrees.OpenAsync`); its lock swapped for the claim's; then the check, the keyed open and the record (§5.3 steps 4 and 6) |
-| `take`, `return` | `judged`, `switched`, `cleared`, `placed`, `checked`, `installed`, `opening-record`, `opened` *(R7)* | the switch in place, hooks held (§5.3 step 2); the outputs and Daoris's copies cleared, then the dependencies kept or placed and TREELOCAL1's copies made again (§5.3's round-7 note); the check (step 4), then the repository's `post-checkout` hook (step 5); a missed dependency installed; the keyed open requested, its key already written; the record's id written. A returning line's own slot still on its branch (§5.1 choice 1) has only `judged`, `checked`, `opening-record` and `opened` |
+| `take`, `return` | `judged`, `switched`, `cleared`, `checked`, `opening-record`, `opened` *(R9)* | the switch in place, hooks held (§5.3 step 2); the outputs moved aside and Daoris's copies deleted, the intermediates and caches moved aside where the toolchain key moved (§5.3's round-9 note); the check (step 4); the keyed open requested, its key already written; the record's id written. The dependencies, the hook and the local copies follow in the run's files stage, after the record's open (§29.7). A returning line's own slot still on its branch (§5.1 choice 1) has only `judged`, `checked`, `opening-record` and `opened` |
 | `finish` | `judged`, `setting-aside`, `set-aside`, `detached` | KEEPSIZE1b's tip held and its manifest written at `judged` before anything moves; the line's own ignored paths (§11) renamed into the set-aside folder, the manifest at `moved`, and the slot read again; `switch --detach` at the line's tip, which writes no file, and `kept_trees.tip` written; then the claim is done, and the branch's journaled delete and the record's post are the manifest's own steps (§10) *(C2-2.4, R4-F6)* |
 | `end` | `judged`, `recorded`, `locked` | the slot read; `line_ends` written; the free lock put back |
 | `retire` | `judged`, `slim-judged`, `moving`, `moved`, `dropped` | the slim's manifest at `judged`; the set-aside's rename of the whole folder into `.tidied`; the manifest at `moved`; git's record of the vanished path dropped and the row removed (§9) |
@@ -866,7 +1017,7 @@ and status, git's registration of it (`worktree list --porcelain`), and git's ow
 the slot `stuck`, said, until the person removes it, since Daoris never deletes git's lock files. Then, by what it found:
 
 - **Before the switch** (`judged`): the claim is dropped and the free lock put back.
-- **Switched, no open requested** (`switched` to `installed` *(R7)*): a take's slot standing on its new branch at `start`, with no commit of its own, is
+- **Switched, no open requested** (`switched` to `checked` *(R9)*): a take's slot standing on its new branch at `start`, with no commit of its own, is
   detached at `start` and that branch deleted through `JournaledDeletes.DeleteAsync` judged at `start` (`Workplace/JournaledDeletes.cs:31-33`),
   which verifies the commit and keeps the Undo, never by `update-ref -d` or `branch -D` *(O1-F15, R4-F6)*; a return's slot stays on the
   returning line's branch, free, as the line let it go; a HEAD at neither holds the slot `stuck`, said. No record names the slot meanwhile.
@@ -972,7 +1123,12 @@ census holds three lists, each entry naming its row and what it reads there:
   test of a listed folder against one** (`Workplace/TreeSweeps.cs:338`, `Workplace/BranchJudging.cs:121`, `Workplace/SessionLocks.cs:117`,
   `Workplace/TreeStrays.cs:149`, `WorkOrders/Inventory/WorkInventory.cs:469`). A slot's folder is no record's path, so each set adds, for
   each held line, the slot `WhereIs` names. Without it a running line's slot reads free: the look's tidy sets a landed line's slot aside
-  (`Workplace/TreeSetAside.cs:29-32`), and a replay rebases its branch there.
+  (`Workplace/TreeSetAside.cs:29-32`), and a replay rebases its branch there. *(R9, Opus round 7's F2)* The landing's set joins the
+  list: `ServiceReviewLandingWorld.InUseAsync` (`Review/ReviewLandingWorld.cs:43-46`, the active sessions' trees), handed to the
+  landing (`Workplace/LandPerformer.cs:112`, `:252-254`) and read by LANDSYNC1's follow (`Workplace/LandingPress.cs:339-342`), whose
+  test (`Workplace/TreeLandSyncs.cs:206`) would otherwise detach a slot under its running line. *(R9, Opus round 7's F1)* A slot under
+  a take is in no set before its record opens, and needs none: the take runs inside the start's shared hold up to that open, and nothing
+  of it runs after the hold is let go but in the files stage, under the record (§29.7).
 
 The census fails on a new entry in any list.
 
@@ -1126,6 +1282,19 @@ it; npm's workspace rule is no longer named. Step 5's *the slot's* are R5.5's cl
 with its placement record, and an intermediate. A runnable output is cleared at the take and holds nothing; any other ignored path is the
 line's own.
 
+*Round 8* *(R8)*. Step 5's *the slot's* are the accepted inventory entries' dependencies, intermediates and tool caches, and Daoris's
+own are its copies of the accepted local entries (§28.5). Any other ignored path, an entry not accepted among them, is the line's own.
+Step 3's repository inside the slot includes a linked worktree a harness made there (this repository's `.claude/worktrees/`, §28.2).
+
+*Round 9* *(R9)*. Step 5's *the slot's* are the effective rules' dependencies whose namespace holds their placement record, read as the
+take reads it, and their intermediates and caches. A dependency whose record fails, or a dependency rule's folder with no record, is the
+line's own (Opus round 7's F7): a live line's holds its slot under §18 item 4 (a), and a finished line's goes aside with its record.
+Daoris's own are its copies made by the effective `copy` rules *(R10)*, each known by its recorded hash.
+
+*Round 11* *(R11)*. Step 3's repository inside the slot includes a bare one, by floor 2's test (R11-C2). Step 5's *the slot's* include
+each dependency's companions and each group's members, read with their record as the take reads them (R5.6's round-11 note; R11-F2,
+C5).
+
 A slot is taken for another line only where every one of these holds; any other answer leaves it its line's, said (`tree.kept-held` with
 why), and the choice tries the next:
 
@@ -1187,6 +1356,25 @@ i), and its *never resets a tree that holds work no ref holds* by steps 5 and 6.
 
 A takeover from `cleared` to `installed` acts as at `switched` (§2.3), having first ended the claim's job as it always does; a folder left
 with no placement record is cleared at the next take. Step 3's npm judgement (§11) is withdrawn.
+
+*Round 8* *(R8)*. *Cleared* removes the accepted output entries' folders; *placed* places the accepted dependency entries and copies
+the accepted local entries; tool caches are moved aside with the intermediates where the toolchain key moved. Nothing an entry not
+accepted names is cleared, placed, copied or run (§28.3).
+
+*Round 9* *(R9; Opus round 7's F1, F6, F7; Codex round 7's 4)*. A take's phases are `judged`, `switched`, `cleared`, `checked`,
+`opening-record` and `opened`, all inside the start's shared hold; `placed` and `installed` leave the claim. **Cleared**, under the
+effective rules at the new `HEAD` and only over the ignored tops git lists there: the outputs moved aside into a set-aside folder of the
+line they came from, never deleted; Daoris's own copies deleted, never followed; the intermediates and caches moved aside where the
+toolchain key read after the switch differs from the one the last let-go wrote (§6), at the size bound, or where no rule now names them.
+Then step 4's check and step 6's open. The dependencies, step 5's hook and the local copies run in the **files stage** after the record's
+open, where the record holds the line and `WhereIs` its slot in every in-use set (§29.7). A takeover from `cleared` to `checked` acts as at
+`switched`.
+
+*Round 11* *(R11)*. Daoris's own copies are deleted at the end of `judged`, before the switch, so `--no-overwrite-ignore` never refuses
+a slot for a file Daoris made (R11-F9). The outputs a take moves aside go into a set-aside folder held as their line's until it finishes,
+where it may come back (floor 4; R11-C1). A take and a return *(R12-F2)* mark the slot `unworked` once their check passes, so the files
+stage installs there, and one refused before it leaves the slot as it was (§29.7); the returning
+line's own slot (§5.1 choice 1) is a tree its own agent ran in, where the stage installs nothing and only keeps or adds (§29.7; R11-F1).
 
 A take brings a slot to a new line B; a return brings one to a returning line R. Both run as the take stage of the `Grown` phase, before
 `GrowTree`'s own tree checks and inside the start's shared hold, where today's open runs (`GrowTree.cs:96`, `:110`) *(R4-F2, R4-F7)*; `GrowTree`
@@ -1263,7 +1451,9 @@ reader's keep (O §1.4), with Codex's checks:
    is resumed from its phase and never read as done. The refs and the row are dropped once the slot's status and its index both equal the kept
    ones. Where the tip moved, nothing is laid back and the opening names the refs. Row i proves staged and unstaged versions of one path,
    **a force-added ignored path staged at one version and edited to another** *(C2-2.6)*, deletions staged and unstaged, and a lay-back stopped
-   between its steps.
+   between its steps. *(R13-F4)* A return that lays work back writes no `unworked` (§5.3, §29.7): what it lays back is its line's own
+   uncommitted work, so the tree is worked and the files stage keeps and adds only, never writing that work back; row i proves a laid-back
+   lockfile edit as it was at `hand`.
 
 **Rejected:** loose files moved to a kept area outside the slot (X-6), since a move cannot keep a tracked edit and its payloads have no rule
 that removes them (§1.1 row 3); Daoris committing the leftovers on the line's own branch, which lands what the agent never chose to commit and
@@ -1275,7 +1465,9 @@ At a run's end (the run's conclusion; the conversation's end in the chat runner)
 (`Agents/SessionProcesses.cs:514-519`; D201) *(R4-F14)*, the end claims the slot (`end`), reads it (§5.2 steps 3 to 6), writes `line_ends`
 with the tip, the read moment, the slot and the names of the line's own ignored paths (§11), puts the free lock back, and the record says one
 of the three below. Where an agent was not contained (`Platform/AgentJobs.cs`' reasons), that read of the slot is the only guard against a
-process still writing, and the end says so.
+process still writing, and the end says so. *(R9, Opus round 7's F6)* The read also runs the effective rules' `toolchain` commands in the
+slot at the line's tip and writes their key into `line_ends.toolchain` and `kept_trees.toolchain`, so a take compares the toolchain the
+intermediates were last built under, a `global.json` or a `rust-toolchain.toml` the line committed among it, never its own take's.
 
 **Who runs the end** *(O1-F10)*. The run's own end, and, idempotently, **the look**, for every slot that no holder holds (§7), that is under
 no claim, and that has no `line_ends` row since its `since`: a park ended in another process, a dead `end` claim, or a session of a build that
@@ -1394,6 +1586,16 @@ move**, never the line's own claim in place, so a person's terminal open in a li
 
 ## 10. The finished record and removal
 
+*Round 11* *(R11-C1, F2)*: each folder a take set aside for a line that may come back (§29.7) is held as that line's, by a class of its
+own in `SetAsideEligibility`, never by days or a size limit, until the line's finish; the finish then writes its manifest at step 3 beside
+the line's own and its record at step 7 names it, so it goes as the finished line's folder does, an hour after its record.
+A dependency's companions and a group's members are the slot's at step 4, never the line's own. *(R12-F6)* The class is read from the
+line's record, never its branch: it holds while the record can go on and the line has no finish, ends with the finish's record, and
+where the record can no longer go on (a stand-down's, `Course/Chat/ChatGoOn.cs:34-35`) falls to D195's days. A no-output line has no
+finish while it can go on, its empty branch going after a take being grown again when its record goes on (§6), so its set-aside is held
+as today's conversation's place is, the press's (`Workplace/TreeSetAside.cs:17-32`; D88:51-52): listed by the press, shown on the Disk
+space card by its class, and gone at the press or with a finish the line reaches later.
+
 *(R4)* A pooled line's tree never ends: its slot stays the pool's. So **a line's finish is KEEPSIZE1b's own set-aside of the line's own
 ignored paths** (D195:503-519) *(C2-2.4, O2-F6, C1-2.3, O1-F7)*: what today's tidy does to a finished tree, but for what the slot keeps (its
 tracked files, §11's `SlotKeeps` and Daoris's own copies), which stays for the next line. Its snapshot is today's: KEEPSIZE1b's schema-2
@@ -1443,7 +1645,11 @@ stand**; 1d's allowance never counts a kept slot, which is live, and its set-asi
 placement record (R5.6), and its intermediates while the tree's `toolchain` key holds *(R7-C10)*. Its runnable outputs, `bin/` and
 `wwwroot` among them, are cleared at every take *(R4-F2)*, and a finish sets aside with the record every other ignored path, the outputs
 among them. The saving is R5.2's, measured after a switch. Round 4's npm judgement below, per project by a hidden lockfile's time with
-TREEDEPS1's copy behind it, is withdrawn *(R7-C9)*. The rest of this section is round 4's.
+TREEDEPS1's copy behind it, is withdrawn *(R7-C9)*. The rest of this section is round 4's. *Round 8* *(R8)*: read *R5.5's declared
+classes* as the inventory's accepted entries (§28.5). A finish sets aside every ignored path that is not an accepted dependency,
+intermediate or cache, nor Daoris's own copy; and §28.2 measures what clearing `bin/` at every take costs here. *Round 9* *(R9)*: read
+*accepted entries* as the effective rules (§29.2). A take moves the outputs aside, never deletes them, and the dependencies are kept,
+placed or installed in the files stage after the record's open (§29.7).
 
 - **The one list:** `TreeScratch`'s thirteen (`Workplace/TreeScratch.cs`) and `wwwroot`, an ignored web root no list holds today (survey §4).
   Each use names its subset of it: **what a slot keeps across lines** (`SlotKeeps`, below) *(R4-F1)*; what a finish sets aside with the record
@@ -1641,6 +1847,68 @@ bound; its toolchain changed; its declaration no longer names them. Round 4's `s
 npm's alone, are withdrawn. At row 3, TREEDEPS1's `started.tree-copied` and its seven `started.uncopied-*` codes go with it, a stored note
 reading by its English (§14).
 
+*Round 8* *(R8)*. One code is added, and one *why*:
+
+| Code | en | zh |
+|---|---|---|
+| `started.files-waiting` (row 3) | {{count}} kind(s) of file git does not manage in `{{repository}}` wait for your acceptance on its page, so this tree was handed none of them. | `{{repository}}` 中有 {{count}} 类 git 不管理的文件等待你在其页面上接受，所以这个工作树没有得到其中任何一类。 |
+| `tree.kept-held`'s *why* (row 4) | it holds {{count}} path(s) Daoris does not know, which stay with their work | 它有 {{count}} 个 Daoris 不认识的路径，这些路径随其工作保留 |
+
+The page's section is *Files git does not manage* (git 不管理的文件), and the glossary gains that term: *the files in a repository's
+folder that git neither tracks nor holds as a session's work (its dependencies, builds, caches, local settings and scratch), which
+Daoris reads on this machine and handles by kind once the person accepts each kind*. The classes' words are *Dependencies* (依赖),
+*Intermediate builds* (中间构建产物), *Runnable outputs* (可运行产物), *Tool caches* (工具缓存), *Local files* (本地文件), *Scratch*
+(临时文件), *Unknown* (未知) and *Another repository* (另一个仓库). An edit's cost line, for an output kept: *A run that does not build
+first would run another session's build of it.* (不先构建就运行时，会运行另一个会话构建的产物。)
+
+*Round 9* *(R9)*. Two codes are revised before either ships, one is added, and two *why*s:
+
+| Code | en | zh |
+|---|---|---|
+| `started.files-waiting` (row 3) | {{count}} rule(s) Daoris proposes for files git does not manage in `{{repository}}` wait for you on its page, so this tree was not handed what they would give it. | Daoris 为 `{{repository}}` 中 git 不管理的文件提出的 {{count}} 条规则正在其页面上等待你，所以这个工作树没有得到它们会提供的内容。 |
+| `started.deps-unstored` (row 3) | `{{path}}` was installed in this tree and not stored: {{why}}. | `{{path}}` 已在这个工作树中安装，没有存入存储：{{why}}。 |
+| `started.deps-left` (row 3) | `{{path}}` was changed by this line's own work, so Daoris left it as it is. | `{{path}}` 已被这条工作线自己的工作改动，所以 Daoris 保持原样。 |
+| `tree.kept-held`'s *why* (row 4) | its `{{path}}` was changed by its work | 它的 `{{path}}` 被它的工作改动过 |
+
+`started.deps-unstored`'s *why* is one of: it names the folder it was installed in; its install wrote `{{beside}}` outside its folder;
+its install changed `{{other}}`; the tree held other ignored files when it was installed; a value its install was given is in its files.
+Round 8's cost line is withdrawn with the kept output (§18 item 12). The glossary's *files git does not manage* ends *which Daoris
+handles on this machine by the rules of the repository, of this machine and of what it found*, and gains **file rules** (文件规则): *the
+ordered rules, in layers, that say how Daoris's trees handle each kind of file git does not manage*.
+
+*Round 10* *(R10)*. Nothing is proposed, so `started.files-waiting` is revised before it ships, and `started.deps-unstored`'s last *why*
+reads *a secret value its install was given is in its files*:
+
+| Code | en | zh |
+|---|---|---|
+| `started.files-waiting` (row 3) | {{count}} of Daoris's acts on files git does not manage in `{{repository}}` wait for an allow under a restriction set for it, so this tree was not handed what they give. | 根据为 `{{repository}}` 设置的限制，Daoris 对其中 git 不管理的文件的 {{count}} 项操作正在等待许可，所以这个工作树没有得到它们会提供的内容。 |
+
+*Round 11* *(R11)*. One code is revised before it ships, three are added, and two *why*s change:
+
+| Code | en | zh |
+|---|---|---|
+| `started.deps-left` (row 3) | `{{path}}` is left as this line's own: {{why}}. | `{{path}}` 保留为这条工作线自己的：{{why}}。 |
+| `started.copy-refused` (row 3) | `{{input}}` was not copied: {{why}}. | 未复制 `{{input}}`：{{why}}。 |
+| `started.files-unread` (row 3) | This machine's file rules for `{{repository}}` do not read ({{why}}), so Daoris held every install, copy and share they could restrict here until they read. | 本机为 `{{repository}}` 设置的文件规则无法读取（{{why}}），所以在它们可读之前，Daoris 暂停了这里它们可能限制的所有安装、复制和共享。 |
+| `started.outputs-aside` (row 4) | Its earlier tree's runnable outputs were set aside when that tree went to other work; they are kept until this line finishes, and builds here start without them. | 它先前工作树的可运行产物在该工作树交给其他工作时已被移到一旁；它们会保留到这条工作线完成，这里的构建将在没有它们的情况下开始。 |
+
+`started.deps-left`'s *why* is one of: its work changed it; the files that key it moved since it was installed, and this tree is its
+line's to install in; no install of it matches these files, and this tree is its line's to install in; what its install wrote beside it
+is gone, and this tree is its line's to install in. `started.copy-refused`'s: git does not ignore it in this tree, so a copy would read
+as this tree's work; a file Daoris did not copy stands there. `started.files-unread`'s says where the file stops reading, never a path.
+`started.deps-unstored`'s *its install changed `{{other}}`* reads *its install changed `{{other}}`, so the two are kept and installed
+together*, and `started.deps-unplaced` gains *its install changed `{{tracked}}`, which git tracks or does not ignore, so Daoris put it
+back*. TREELOCAL1's `started.local-refused` goes at row 3 with its copying, a stored note reading by its English (§14).
+
+*Round 13* *(R13)*. One code is added, and one *why*:
+
+| Code | en | zh |
+|---|---|---|
+| `started.files-stopped` (row 3) | A terminal opened in this tree while Daoris was preparing it, so Daoris stopped there: what it had not finished installing or copying is this line's own, left as it stands. | Daoris 准备这个工作树时，其中打开了一个终端，所以 Daoris 在那里停止：它尚未完成安装或复制的内容归这条工作线自己，保持现状。 |
+
+`started.deps-left`'s *why* gains *it was installed against `{{before}}`, which is this line's own here, and this tree is its line's to
+install in*.
+
 Round 2's `started.tree-kept-dropped` stays withdrawn, and round 3's `started.tree-hook-skipped` is withdrawn, since the repository's
 `post-checkout` hook now runs at a take (§5.3 step 5) *(R4-F14)*. `{{slot}}` is the slot's number as the Projects row counts it, never its
 folder.
@@ -1670,16 +1938,29 @@ checkout that a line of work holds*. Git's refusal text and an author's words ar
 Round 5 re-cuts the rows around rooms. Rows a to j below are round 4's. *(R7)* By the owner's choice of 2026-11-07, rows 3 and 4 are
 built before row 2: row 3 first, then row 4, which is round 4's rows a to f in that order, each its own branch, as §27 cuts them. Rows g
 and h follow row 4 for a repository on kept slots, this one first (§18 item 2), and i and j wait on §18 items 3 and 4. Each row lands as
-the paragraph after this table says, and a ⚖ row only after both makers' reads find nothing blocking in it.
+the paragraph after this table says, and a ⚖ row only after both makers' reads find nothing blocking in it. *(R8)* Round 8 puts rows 6a
+and 6b, the inventory read and then shown and accepted, before row 3, which acts only on accepted entries (§28.9). The build order is
+6a, 6b, 3, 4 (its rows a to f), g, then 7 in a round of its own; rows 2 and 5 stand where they were. *(R9)* Round 9 replaces the
+inventory with the rule file (§29.2), which nothing waits on the person to accept, so row 6b, the page, moves after row 4 and before row
+g. The build order is 6a, 3, 4 (its rows a to f), 6b, g, then 7 (§28.9). *(R10)* Round 10 cuts the proposals, the person-only fields
+and the further refusals (§30); the build order stands. *(R11)* Round 11 answers both reads of rounds 9 and 10, chiefly in the floor
+(§31); the build order stands, rows 6a and 6b ready to build and rows 3 and 4 after one narrow read of the sections §31.4 names.
+*(R12)* Round 12 answers both narrow reads of round 11 in the unworked tree's mark and an install's record (§32); the build order
+stands, rows 3 and 4 after a last confirming read of the sections §32.3 names. *(R13)* Round 13 answers both confirming reads of round
+12 in the mark's last hand-offs, the hook owed and a worked tree's hit (§33); the build order stands, rows 3 and 4 after a final
+confirming read of the passages §33.2 names.
 
 | Row | Changes | The person sees | Proof |
 |---|---|---|---|
 | **0. The commit stamped only where a release is built** (this repository's own build, BUILDSTAMP1, apart from the generic design) | R5.8: a root `Directory.Build.props`, imported by the desktop's and the service's, gives a development build no source-control query, no source link and the fixed `+dev`; the publish and the stage pass `-p:DaorisStamp=true` and stamp the commit as today | nothing, but the System page's build fact reads `dev` in a development build | a switch's build compiles only what changed (R5.8's measurement as a test of the generated `AssemblyInfo`); `BuildVersionTests` unchanged; a staged build's `ProductVersion` carries its commit |
-| **1. Rooms and classes declared, and proposed** *(built at round 5's text: `LaneRooms`, `TreeClassesReader`, `RoomCheck`, F4's closures and F8's laneless inputs taken; `reads` and `writes` beside `builds` and the pathspec proof (R6-F5) left)* | the lanes file's lanes gain `builds`, `reads` and `writes` and are the rooms (R5.3); the room check and its claim groups (R5.4) *(R6-F4)*; the lanes' globs as git pathspecs *(R6-F5)*; `trees` in the gates file and its reader (R5.5); Ask Daoris's and the set-up's proposals of both, their conventions in canon knowledge; this repository's declarations, the two web lanes one room, the laneless paths a room, and its groups. Nothing acts on them | the proposals, in Ask Daoris and the set-up | the check failing on overlapping rooms, a build unit or a lockfile split, a generated file written from two rooms; rooms whose closures meet grouped, and this repository's two groups read from its declaration; a pathspec matching `git ls-files` for each lane's globs and `!` exclusions; the reader refusing a tracked path and a `prepare` command its `safe` list lacks; no declaration carrying nothing |
+| **1. Rooms and classes declared, and proposed** *(R9: revised at row 6a, its classes reader the reader of the repository's rule file, `daoris.files.json`, which takes the gates file's `trees`; R8: its proposal's classes half withdrawn; built at round 5's text: `LaneRooms`, `TreeClassesReader`, `RoomCheck`, F4's closures and F8's laneless inputs taken; `reads` and `writes` beside `builds` and the pathspec proof (R6-F5) left)* | the lanes file's lanes gain `builds`, `reads` and `writes` and are the rooms (R5.3); the room check and its claim groups (R5.4) *(R6-F4)*; the lanes' globs as git pathspecs *(R6-F5)*; `trees` in the gates file and its reader (R5.5); Ask Daoris's and the set-up's proposals of both, their conventions in canon knowledge; this repository's declarations, the two web lanes one room, the laneless paths a room, and its groups. Nothing acts on them | the proposals, in Ask Daoris and the set-up | the check failing on overlapping rooms, a build unit or a lockfile split, a generated file written from two rooms; rooms whose closures meet grouped, and this repository's two groups read from its declaration; a pathspec matching `git ls-files` for each lane's globs and `!` exclusions; the reader refusing a tracked path and a `prepare` command its `safe` list lacks; no declaration carrying nothing |
 | **2. ⚖ A session in place in its claimed room** *(R6)* | `room_claims` by group, held by its line and by its files, taken over only by its line's carry-on, released by a journaled act; a record naming its line's path, and the census of readers that open a record's tree (§3.2) for a room's line; a start whose work lies in one free group placed in the checkout for a harness Daoris holds, else the fallback; the private-index commit, its hooks, its check and its refusals, a ref act keyed by its line; Daoris's `commit`, `status` and `diff` tools; git's writing forms denied, the classifier told, the guard forced on and narrowed, `GIT_OPTIONAL_LOCKS=0`; the room-aware fast-forward for the promotion and the pull; the turn's-end read and keep; the person's acts refused on held paths; the other home's marker; D51 and D164 amended (§18 item 7) | a session working in place in its room, the room and its held paths on the Projects row | two sessions in two groups of one checkout, each branch holding only its room's changes, a second start in a held group taking the fallback; a fallback branch changing a held room's path landing with the room's file kept, the room's next commit not reverting it, its landing taking it, and the next line in that room starting at the tip; a person's change outside the held groups holding the move with nothing written; a move killed before and after its ref step reconciled; a restart with two quests to one lane giving the room back to the line carried on, a parked line's room never taken, and a line ended with uncommitted room work keeping it; a Codex start taking the fallback; `git -C . stash`, `git checkout -- x` and `git commit` denied to a Claude Code session; a room reset by hand stopping its session before any commit, and a `commit -a` made outside Daoris caught at the turn's end; a hook refusing the commit; a sparse checkout and a skip-worktree entry refused; the person's Commit of a free path allowed and of a held path refused; another home refused; the install's week of overlapping sessions per group, and how long parked lines held a group, counted |
-| **3. ⚖ The dependency store** *(R7, as §27 cuts it; first of rows 3 and 4)* | R5.6 as round 7 writes it: the key naming the install, the fill by Daoris's own install at a miss and its judgement, the seal by copy, the placement record read at every take; R5.5's declaration (`install`, `env`, `caches`, `bound`, `toolchain`, an optional `key`) acting only from the accepted blob, `prepare` and `safe` withdrawn; today's open and TREEGONE1's remake placing from the store; TREEDEPS1 removed (D228, D51's note) on §18 item 10's yes; the `deps` kind on the Disk space card | each declared dependency said placed from the store, installed before the session began, installed in each tree, or not placed and why | each key input moving the key, a variable no `env` names never reaching the install; nothing sealed from a session's install, nor from one that writes beside its folder, leaves a link outside the tree or names its path; a hard-linked install sealed by copy; a placement writable and link-safe; a file changed, removed or added outside a cache failing its record; a failed install leaving the folder absent; eviction by days and size |
-| **4. ⚖ The fallback's tree** *(R7, as §27 cuts it; after row 3)* | round 4's rows a to f, in that order (§2 to §12, §25), under R5.5's classes and row 3's dependencies; `WhereIs(line)` and the census built here, its three lists *(R7-O9, C7, O1)*; the take's round-7 phases (§5.3); no clone, a fresh worktree only where every slot is held *(R6-F11a)* | nothing until its row f; then the count's control on the Projects row, off by default, and with a count set, sessions starting in a kept tree, said | round 4's rows a to f's proofs under the classes; the census failing on each list's planted kind; a running line's slot in use to every in-use test; a dependency kept, replaced, placed or installed by its key and record; a `.venv` installed again in place; `obj/` renewed at a toolchain change; an unaccepted declaration carrying nothing; `--no-build`, `e2e-host.mjs` and `desktop.mjs run` refusing in a taken slot as in a fresh tree |
+| **6a. The rule file read, and the analysis writing its layer; nothing acts** *(R8, R9, R10, R11, as §28.9 cuts it; before row 3)* | `FileRules`: the four layers (the analysis's found rules in the home's `data/files-found.json` *(R11)* and the person's in its `data/files.json`, the repository's `daoris.files.json` read at the line's tip, the built-in floor *(R10)*), the effective rule of each ignored top; the person's `permissions` read *(R10)*; the analysis's seven sources (§28.4) writing the found layer; the gates file's `trees` moved into `daoris.files.json`, `TreeClassesReader` its reader; `daoris driver files`; `RoomsProposal`'s classes half withdrawn; the canon's `rooms-and-classes` revised; *(R11)* an output found only by a build tool's setting or a generation step, a bare repository on the floor, the person's unread file held as asks | the verb's list | a fixture repository per signature row read to its found rules; the layers' order; every field acting from any layer *(R10)*; a tracked path, a nested repository and a harness's settings beating every layer; a branch's change to `daoris.files.json` acting on nothing; this repository's effective rules equal to §28.2's classes; the git starts held; no route reading `files.json`; *(R11)* a bare repository with an unpushed ref read as `repository`; a folder a script only reads found `scratch` |
+| **3. ⚖ The dependency store** *(R7, as §27 cuts it; first of rows 3 and 4. R8, R9: from the effective rules, after row 6a; the files stage after the record's open. R10: the local copies by the effective `copy` rules; a command run unless the person's `permissions` deny or hold it. R11: installs only in an unworked tree. R12: the tree marked `unworked` by Daoris, the mark removed before an agent, a conversation's among them. R13: the mark read again before each of the stage's writes; a worked tree's hit only beside earlier dependencies kept or placed)* | R5.6 as round 7 writes it: the key naming the install, the fill by Daoris's own install at a miss and its judgement, the seal by copy, the placement record read at every take; the effective `dependency` rule (`install`, `env`, `caches`, `bound`, `toolchain`, an optional `key`), `prepare` and `safe` withdrawn; R5.6's round-9 changes: the effective configuration and the earlier dependencies keyed, a fill sealed only in a tree holding nothing else ignored and only where it wrote nothing outside its paths, the placements read after each install, one install per repository at a time *(R9)*; the files stage at every start into a tree, today's open and TREEGONE1's remake among them, hooks held until it *(R9)*; TREEDEPS1 removed (D228, D51's note), and TREELOCAL1's copying by the effective `copy` rules, its copies carried as the person's *(R10)*; the `deps` kind on the Disk space card; *(R11)* installs only in an unworked tree, every `env` value keyed by its digest, an install's companions and one install's changes grouped, the copies' two gates; *(R12)* the files record's `unworked`, written by a making, a take or a return and removed by `hand`, the conversation's step and a terminal's visit; an unworked tree's leftover changes written back first; a group's member never placed by its own key; an install's other writes read after the hook; `toolchain` commands reads; *(R13)* the files record under one lock, the stage reading the mark again before each write-back, removal, placement record, after-read, hook and copy and stopping once a terminal has taken it, said (`started.files-stopped`); the hook owed in the record until it runs, and the other writes read at every unworked stage; a worked tree's hit placed only where each dependency before it was kept or placed | each dependency said kept, placed from the store, installed before the session began, installed in this tree and not stored, left as the line's own, or not placed and why | each key input moving the key, a user-level setting and a project `.npmrc` among them, a variable no `env` names never reaching the install; nothing sealed from a session's install, nor from one that writes outside its paths, changes another placement, leaves a link outside the tree or names its path; a replay refused during a paused install; a cut-off install installed again at the carry-on; a hard-linked install sealed by copy; a placement writable and link-safe; a file changed, removed or added outside a cache failing its record; a failed install leaving the folder absent; eviction by days and size; *(R11)* a resume after a key moved leaving the line's uncommitted work as it was; a changed secret missing; a removed rule's effect on an earlier placement removed; *(R12)* a conversation's new part in its tree after a key moved, its uncommitted edit as it was; a tree opened before row 3, dirty, resumed after it, left as it was; a cut-off install's lockfile change written back though an `ask` holds its install; a group's member removed by its line left absent at the resume; an install's output another rule names, removed, installed again before `hand`; *(R13)* a terminal's edit and new files during an install, as they were at `hand`; a take clearing an install's other write and cut off before its hook, its carry-on running the hook and installing again before `hand`; B installed reading A's headers, A's changed by the line and B's folder removed, the resume leaving B absent, said |
+| **4. ⚖ The fallback's tree** *(R7, as §27 cuts it; after row 3. R8, R9: every class from the effective rules, tool caches kept per slot, unknown paths set aside with their line, another repository or tree holding the slot. R11: a live line's set-aside its own until it finishes. R12: that set-aside read from the line's record. R13: a go-on back by a return removing the mark)* | round 4's rows a to f, in that order (§2 to §12, §25), under R5.5's classes and row 3's dependencies; `WhereIs(line)` and the census built here, its three lists *(R7-O9, C7, O1)*, the landing's set among them *(R9)*; the take's round-9 phases (§5.3), outputs moved aside, a failing placement the line's own, the toolchain key written at each let-go *(R9)*; *(R11)* a live line's set-aside held as its own until it finishes, a dependency's companions the slot's; *(R12)* that set-aside held while the line's record can go on, a no-output line's as its conversation's place is; a take's `unworked` once its check passes; *(R13)* a go-on into a tree a return marked removing `unworked` before its resumed turn, a failed removal holding its words; no clone, a fresh worktree only where every slot is held *(R6-F11a)* | nothing until its row f; then the count's control on the Projects row, off by default, and with a count set, sessions starting in a kept tree, said | round 4's rows a to f's proofs under the classes; the census failing on each list's planted kind; a running line's slot in use to every in-use test, a replaying landing's follow among them; a dependency kept, placed or installed by its key and record, and one whose record fails held as the line's own; a `.venv` installed again in place; `obj/` renewed at a toolchain change the let-go line committed; `--no-build`, `e2e-host.mjs` and `desktop.mjs run` refusing in a taken slot as in a fresh tree; *(R11, R12)* a `prepare`'s folder beside its own kept with it at a finish and a take at the same commit, and *(R13)* installed again where it was removed; a live line's set-aside outputs kept past D195's days; *(R12)* a take at the same key clearing an install's output another rule names, the dependency installed again before `hand`, and this repository's root kept, its hook writing `docs/index/` again; a take refused at `judged` leaving the line's own slot worked; a no-output conversation's set-aside kept after its empty branch goes; *(R13)* a conversation not spoken to within the hour, its slot taken and let go by another line, going on by a return, editing its lockfile uncommitted and moving at its limit, the edit as it was at its next part's stage |
+| **6b. The rules shown and set; nothing new acts** *(R8, R9, R10, R11, as §28.9 cuts it; after row 4)* | the repository page's section, each top's effective rule and its layer, the person's rules and `permissions` set there by Window-class verbs, what an `ask` holds and its allow *(R10)*, the words and the glossary's terms; *(R11)* an unread file said, nothing written over it | each repository's files git does not manage, what Daoris does with each and why, and anything a restriction they added holds *(R10)* | a person's rule overriding the repository's and the found one's, shown with both; an allow pressed writing the person's `allow` *(R10)*; a verb refused on the pipe; no machine path in the payload; *(R11)* an allow refused while the file does not read |
 | **5. ⚖ Per-session trees retired where rooms cover the work** | the planner opens no tree for work whose paths lie in free rooms; today's in-root mode becomes one room over every path under row 2's rules and is removed in the same chunk (driving rule 12, `CleanCheckout`, the `one-at-a-time` standing) *(R6-F6)*; the owner's yes (§18 item 8) | fewer trees under `work/trees` | a week on the install: no tree opened for work rooms covered; `work/trees` no longer growing |
+| *Later:* **7. The tidy's lists read through the rules** *(R8, R9)* | a round of its own: `TreeScratch`'s build folders and `integration.scratch` read through the effective rules for a finished fresh tree's tidy, and removed; until then they stand for that tidy alone (D228's condition) | — | — |
 | *Later:* **B, build slots apart from editing**, and **A, views** | a round of their own once rows 2 and 4 measure a need (R5.7) | — | — |
 
 Each row is its own branch, after FOUNDATION1's mod-x has landed and on files no open branch holds (D212 §14.6), every new type written in
@@ -1931,6 +2212,9 @@ or resetting a tree that holds work.
    resume (item 5) and starts its day of measurements. *Where to look:* §5, §7, §11, row g, and the proofs of rows a to f. *Round 7*
    *(R7)*: the owner chose on 2026-11-07 that this repository keeps its sessions on kept slots (D214's note). Asked: is that this item's
    yes? If it is, row g follows row 4 with item 5's one resume first. If it gives the direction only, row g waits for this item's own yes.
+   *Round 8* *(R8)*: answered yes by D214's note of 2026-11-08. Row g follows rows 6a, 6b, 3 and 4, once the owner has accepted this
+   repository's inventory. *Round 9* *(R9)*: it follows rows 6a, 3, 4 and 6b, with nothing to accept: this repository's
+   `daoris.files.json` and the found rules act as row 6a writes them.
 3. **Daoris keeping a let-go line's uncommitted work aside, and clearing it from the tree** (row i). *What it is:* two parentless commits, one
    of what the line had staged and one of its working files, untracked ones included, on `refs/daoris/kept/…`, made by Daoris off the line's
    branch, where D164 point 1 has Daoris commit
@@ -2007,7 +2291,60 @@ or resetting a tree that holds work.
     a copy writing what an install writes; the time is not, 72 to 93 s here against 6 to 17 s (R5.2). *What a no does:* TREEDEPS1 stays
     for a repository whose accepted declaration names no dependency, and goes for each once it declares one (D228's condition), a later
     row deleting it once none is left. *Recommendation:* yes: one way, and a person's install never reaches a session (F6). *Where to
-    look:* R5.6, §27's row 3.
+    look:* R5.6, §27's row 3. *Round 8* *(R8)*: answered yes by D214's note of 2026-11-08, and item 2's yes there puts row g after rows
+    3 and 4, which round 8 keeps, rows 6a and 6b going first. Under round 8, *declares* reads *has accepted on its page*: the analysis
+    proposes a repository's dependencies when it is registered, so it gets none placed only until the person accepts them, where round
+    7 needed a declaration written and landed in the repository. *Round 9* *(R9)*: *declares* reads *has an effective `dependency` rule*,
+    which the analysis writes at registration wherever a signature names one, so a repository waits for nothing.
+11. **Local configuration and secrets copied into a session's tree** (rows 3 and 4) *(R8)*. *What it is:* today TREELOCAL1 copies the
+    `local/` files a repository's gates file names into every new tree, read-only, with no acceptance (D216). Round 8 reads every
+    machine-local file the analysis finds (an environment file, a local settings file, a key, the gates' `localInputs`) as a *local*
+    entry, and copies into a tree only those the person accepts on the repository's page: read-only, from the checkout, at every open
+    and take, never into the store or another repository's tree. The harness's and the editor's own settings files are never copied,
+    since they carry the person's own grants beyond what Daoris composes for a session. An accepted copy is readable by the session's
+    agent and its model provider, and the entry says so before it is accepted. *What a yes does:* row 3 copies the accepted local entries
+    in TREELOCAL1's place and removes its own reading of `localInputs` in the same chunk (D228). A repository whose local entries are not
+    accepted gets no copies; its sensitive scan falls back to its built-in patterns, as a tree without the file does today
+    (`started.local-missing`). *What a no does:* TREELOCAL1 keeps copying `localInputs` without acceptance, and only the other local
+    files wait for it; its reading stays, with that condition, until row 7. *Recommendation:* yes: one way, and the person sees what each
+    tree is handed. *Where to look:* §28.3, §28.5, §28.7, row 3. *Round 9* *(R9)*: answered by D214's note of 2026-11-08: local
+    inputs and secrets are copied only by the person's rule, a harness's and an editor's settings never (§29.2's refusals 3 to 5). Row 3
+    removes TREELOCAL1's copying in the same chunk; whether its copies today carry over as the person's rules is item 13. *Round 10*
+    *(R10)*: by the owner's principle of the same day a local input is copied where any layer's rule says `copy`, the analysis writing
+    it for an input a gate or a script reads; a harness's and an editor's settings are on the floor (§30.1, §30.3).
+12. **A runnable output kept from one line to the next where the person accepts it** (row 4) *(R8)*. *What it is:* round 7 clears every
+    runnable output at a take, since a runner that does not build would run another line's build (§25's F2). In a .NET repository `bin/`
+    holds a copy of every reference, so a kept slot writes it whole each session: here 0.24 to 0.84 GB of the 0.36 to 1.12 GB a kept
+    slot writes, and in sibling A 1.8 GB (§28.2). The inventory could let the person edit an output entry to *kept*, its cost said first
+    (§15's cost line). *What a yes does:* row 4 keeps an output the person accepted as kept, renewing it only at a toolchain change or the
+    size bound, and says at each take that its outputs are another line's until the session builds. This repository's `bin/` would stay
+    cleared, since its tools run `bin/` without building. *What a no does:* outputs are always cleared at a take, and a kept slot here
+    saves nine files in ten and a quarter to three quarters of the bytes. *Recommendation:* no, for the first build: the hazard is a wrong
+    result, not a cost, and row b's note measures what a take writes before anyone weighs it again. *Where to look:* §28.2, §28.5, R5.5.
+    *Round 9* *(R9)*: answered for the first build by D214's note of 2026-11-08: outputs are cleared at every take, moved aside (§29.3),
+    and no rule keeps one. Asked again with row b's measurement.
+13. **What TREELOCAL1 copies today, carried over as the person's own rules** (row 3) *(R9)*. *What it is:* under D216 every new tree
+    gets read-only copies of the `local/` files its gates file names (`localInputs`, the sensitive patterns file). Under rules a copy acts
+    only from the person's own rule (item 11), so row 3, which removes TREELOCAL1's copying, would leave every tree without them until the
+    person presses each proposal. *What a yes does:* row 3's upgrade writes, into the person's layer of each registered repository, one
+    `copy` rule per file TREELOCAL1 copies there today, said on the repository's page as carried from D216 and removable like any other;
+    nothing changes for a person who sets nothing. *What a no does:* each waits for the person's press; until then a tree gets none, and its
+    sensitive scan falls back to its built-in patterns, said (`started.local-missing`). *Recommendation:* yes: D216 was the person's yes to
+    exactly those files. *Where to look:* §29.2, §29.5 bound 2, row 3. *Round 10* *(R10)*: answered yes by D214's note of 2026-11-08
+    on round 9's choices. Since a copy now acts from any layer, the carried rules keep today's copies whatever the found layer says, and
+    the person removes one as any rule of theirs.
+14. **A repository's own command run by Daoris only once the person lets it** (rows 3 and 6a) *(R9)*. *What it is:* the commands the
+    toolchain signatures ship (`npm ci` in a lockfile's folder, `dotnet --version`, `npm config list --json`) run by themselves. A
+    repository rule's `install` or `toolchain` command that no signature ships is run by Daoris outside every session's permission rules,
+    so it runs only once the person adds its text to the repository's `commands` in their layer, one press on the proposal, as D218 runs
+    the integration's commands only from the gates file the owner accepted. *What a yes does:* as written; a repository on the signatures'
+    commands, this one among them, waits for nothing. *What a no does:* a landed rule's command runs as it stands at the line's tip, with
+    the trust already given to the lifecycle scripts its install runs, and nothing waits; D218's rule and this one then differ.
+    *Recommendation:* yes: one way for Daoris to run a repository's command. *Where to look:* §29.2's refusal 6, §29.4. *Round 10*
+    *(R10)*: answered otherwise by D214's note of 2026-11-08 on round 9's choices: a command a rule names runs in every tree Daoris
+    makes for the repository, each being for work the person drives or a conversation the person opened, unless the person's
+    `permissions` deny it or an `ask` holds it for an allow, which lasts until taken back and may be a pattern (§30.4). D218's acceptance
+    of the integration's commands and this differ, as the item's *no* said.
 
 Round 2's item 4, a finished line's scratch cleared at a take, is withdrawn: a finished line's scratch now goes with its record at its finish,
 which is today's rule under the owner's decision of 2026-10-24 (D195:503-505), and asks nothing new *(O2-F6)*.
@@ -2104,9 +2441,60 @@ slot path, answers the round-3 reader's proposed item 6 *(R4-F1)*.
 | *Round 7:* a `.venv` carried as an intermediate for its fixed path (round 5's R5.5) *(R7-C10)* | nothing checks it against its lockfile when a test runs it; it is a dependency kept in place by its key and record |
 | *Round 7:* `prepare`, held by a `safe` list in the same gates file (round 5's R5.5) | one commit changes both, no repository declares the list, and its use was a template the owner's no to a Dev Drive removed; each dependency's `install` fills the store, run from the accepted declaration |
 | *Round 7:* the classes acted on from the checkout's working file (round 5's R5.5) | what a take clears is a list of files deleted, read from the accepted declaration as the tidy's scratch is (D218's note) |
+| *Round 8:* the repository's declaration as what acts, the inventory as its cache (round 7's R5.5) *(R8)* | a repository that ships none (neither sibling does, §28.2) gets nothing handled, and what lies on disk is the machine's; the declaration is one input (§28.4) |
+| *Round 8:* the inventory kept in the repository, tracked or ignored *(R8)* | it would travel or be read from a branch, and its sizes, toolchain and private names are the machine's (D47 §4); it lives in the desktop store |
+| *Round 8:* two acceptances, the gates file's for `trees` and the inventory's *(R8)* | two ways to say yes to one handling (D228); the inventory's alone |
+| *Round 8:* the toolchain's signatures as code, a case per stack *(R8)* | R5.1: no code names a stack's folders; the signatures are data one engine reads |
+| *Round 8:* a model reading the repository to propose its classes *(R8)* | not cheap and not deterministic, its tier varying by machine; Ask Daoris may explain an entry |
+| *Round 8:* an entry not accepted acting as its proposed class *(R8)* | nothing acts on what the person has not accepted; it is handled as unknown, today's handling |
+| *Round 8:* the harness's or the editor's settings copied from the checkout into a tree *(R8)* | they carry the person's grants past what Daoris composes for a session (`Loop/Session/SessionRules.cs`) |
+| *Round 8:* a walk of every ignored folder at each reading *(R8)* | 151 s here over 142,763 files (§28.2); git lists the tops, and walks are bounded |
+| *Round 8:* last-access times as the evidence of a run without building *(R8)* | not reliable on NTFS; the session job's processes and the scripts' text instead |
+| *Round 8:* the names inside a local, scratch or unknown entry kept in the inventory *(R8)* | a private name (here a folder named for a sibling repository) would be written into the store and shown |
+| *Round 9:* round 8's inventory, each entry acting once accepted (§28.3) *(R9)* | the owner's choice of 2026-11-08: every finding would wait for a press; rules act, and only what §29.4 names waits for the person's own rule |
+| *Round 9:* the repository's rules in the gates file (`trees`) or in `daoris.json` *(R9)* | the gates file is accepted whole for its commands, so every gate's edit would hold the rules back (Opus round 7's F5); `daoris.json` is the doctrine tool's offline contract (D115:58-59's reason for the lanes file); a file beside them keeps one format in both layers, its own blob and history |
+| *Round 9:* the analysis's rules above the repository's *(R9)* | a guess would override what the repository states, a key's completeness or a path-bound install among it |
+| *Round 9:* the repository's layer read from the tree's commit or the checkout's working file *(R9)* | a branch's change would act on the next line, and on a command Daoris runs outside every session's rules; it is read at the line's tip |
+| *Round 9:* the take's install outside the start's hold, before the record opens (round 7's `installed` phase) *(R9)* | a pull's replay reads the slot as free and rebases it under the install (Opus round 7's F1, Codex round 7's 4); it runs in the files stage, under the record |
+| *Round 9:* a reservation from `tree_claims` read by every removal and replay judgement (Codex round 7's 4, its first way) *(R9)* | every reader of an in-use set would learn the claims; with the install under the record, no take runs outside the hold before its record |
+| *Round 9:* the package managers' configuration replaced by Daoris's own (Codex round 7's 1, its first way) *(R9)* | it would install otherwise than the person's own install does, a private registry's sign-in in the user's file among it; the effective configuration is keyed instead |
+| *Round 9:* a fill sealed beside declared outputs, or beside a slot's kept intermediates and caches (round 7's R5.6) *(R9)* | a hit does not make the outputs again (Codex round 7's 3), and an install may read another line's state no key holds (Codex round 7's 1) |
+| *Round 9:* a placement whose record fails replaced by removal at a take (round 7's R5.6) *(R9)* | it holds the line's own writes, a patch not yet written or a `pip install` among them (Opus round 7's F7) |
+| *Round 9:* outputs deleted at a take (round 7's §5.3) *(R9)* | a scratch folder the analysis took for an output would be lost; moved aside, a wrong kind costs a build |
+| *Round 9:* tool caches shared through the store (round 8's §28.5) *(R9)* | its fill would run a repository's script no signature ships; a cache is kept per slot for the first build |
+| *Round 9:* two installs of one repository at once *(R9)* | this repository's `prepare` writes git's common configuration, and the second fails on its lock (Opus round 7's F9); a second at one key also installs for nothing |
+| *Round 10:* round 9's person-only fields, its refusals 4 to 6, the analysis's *never* list and its proposals *(R10)* | the owner's principle of 2026-11-08: they slowed development to guard what the person's own rules and `permissions` can (§30.2) |
+| *Round 10:* `discard`, scratch deleted at its line's finish *(R10)* | it deletes what a session made, which the floor sets aside; the set-aside goes an hour after the record (D195) |
+| *Round 10:* the rule file's restrictions in `permissions.json` *(R10)* | it is handed to the harness whole, so an allow given there for Daoris's own act would widen the agent too; and the harness reads an `ask` before an `allow`, so no allow could answer one |
+| *Round 10:* a harness's or an editor's settings copied where a rule or an allow says so *(R10)* | it would set a session's permissions past the person's, unseen (§30.3) |
+| *Round 10:* every passed `env` value scanned for in what a fill wrote (round 9's F8 answer) *(R10)* | an unmarked value is keyed by its hash, so a hit holds the same value; the scan cost an install in each tree for more than F8 asked |
+| *Round 11:* an install in a tree an agent has run in, rolled back to its pre-install working and index states where it fails (Codex's first way for its R11-C3) *(R11)* | a command reaches what no rollback lists, a folder it empties or a file outside its paths, so the floor would rest on the command; nothing is installed there, and the line installs its own as before row 3 |
+| *Round 11:* a name marked `secret` keyed by its name, and an unmarked value by its plain hash (round 10's R5.6) *(R11)* | a changed secret keeps its key, so a hit places the old variant (R11-C4); one digest keyed by the home keys every value and lets none be guessed |
+| *Round 11:* a script that names an ignored path read as its producer (round 8's source 5) *(R11)* | naming shows a reader, not a recreation, so unique files became an output a take clears (R11-C1); a build tool's setting or a generation step is the evidence |
+| *Round 11:* a placement another install changed rewritten as the tree's own (round 9's answer to Codex round 7's 2) *(R11)* | it outlives the rule that changed it, and placed again at its key loses the change (R11-C5); the two are one group |
+| *Round 11:* one install per repository at a time (round 9's answer to Opus round 7's F9) *(R11)* | it holds a sealable fill behind an unsealable one (R11-F9); a lock per key, and the repository's for an install that writes git's common folder |
+| *Round 11:* the person's `files.json` that does not read read as empty, beside the found layer in the same file (round 9's §29.2) *(R11)* | its defaults restrict nothing, so a stray comma drops every restriction the person set, and the analysis's next write over it loses their rules (R11-F7) |
 
 ## 20. What stays unmeasured, and what this design's checks do not cover
 
+- **Round 11's** *(R11)*: how often a resume or a carry-on finds a dependency left as its line's, since no install runs in a tree an
+  agent has run in (row g counts it); the disk a live line's set-asides hold until it finishes, beside the outputs moved aside at takes
+  (row b's note); how often an install writes companions or forms a group (none here: the root writes `docs/index/`, an output, and git's
+  common folder); what a bare-repository candidate costs the walk; and the package managers' install-script marks, from their
+  documentation.
+- **Round 9's** *(R9)*: the files stage's time on a start's path, which row g splits out; whether `npm config list --json`, and each
+  manager's like command, prints the same twice at one configuration (row 3 runs it twice and compares), and what it costs at each take;
+  how often a fill can seal here (the root never, since its `prepare` writes `docs/index/`; the web's at each key move); what an install
+  writes outside the tree beyond git's common folder, which nothing sees; the disk the outputs moved aside at takes hold under KEEPSIZE1's
+  limit; and how often a person is asked for a `copy` or a command, *(R10)* now only where a restriction they added holds one.
+- **Round 10's** *(R10)*: nothing new is measured. How often an added `ask` holds an act, and how often a `files` supervisor's grants
+  answer it, wait for the supervisor kinds' round (D233's note of 2026-11-08); what a harness reads from a copied settings file is from
+  Claude Code's settings documentation, not run.
+- **Round 8's** *(R8)*: a reading's time and git starts on a real checkout, the analysis not being built (§28.2's walk is the
+  measurement's, not the analysis's); the walk's bound; how much sampling the session job's processes misses of a run without building;
+  the siblings' tracked and untracked files, which their matcher cannot split; a kept slot's per-session bytes under round 7's classes,
+  recombined here and measured by row b; and how often a reading changes an accepted entry's revision, so how often the person is asked
+  again.
 - **Round 7's**: what a take's namespace read costs over a `node_modules` of 17,000 files, and a fill's path scan over its bytes (rows 3
   and 4 measure them); which spellings of a tree's path the scan misses (a short 8.3 name, another case), so which path-bound install it
   would store, which `bound` then declares; whether `dotnet --version` moves with every SDK change that leaves `obj/` stale; and an input an
@@ -2157,7 +2545,13 @@ slot path, answers the round-3 reader's proposed item 6 *(R4-F1)*.
 | 4 | 2026-11-07, Claude Opus 5.5, from main at `75a4b694be`, on the owner's choice of a fixed slot path: the slot a fixed folder `k-<n>` no record names, every record naming its line's path, so a missed reader and an older build fail as at a gone tree; the take a switch in place inside the start's shared hold, no rename; the slot's dependencies and .NET builds its own, the saving measured here; the claim on the act engine's job and a generation; the holders `TidyHolders`, `moves` and a run's `land` node; TREELOCAL1's copies, the binding check and the journal's delete at a take; hooks run after the check; D189 and D51 amended; §18 item 4 restated; §22 and §23 moved to the reads file; D214's round-4 status | the independent Opus reader at `b8ef097e29` (`docs/2026-10-26-tree-pool-reads.md`): another round, scoped to F1 and F2 (8 findings, 2 blocking), no case found in which the pool loses work; Codex has not read it | §25, every finding |
 | 5 | 2026-11-07, Claude Opus 5.5, from main at `bfdb82acd6`, on the owner's reframing (end the churn, generic, the ignored files unmanaged) and the owner's frame (rooms first, an optimised fallback): the churn measured by class in this repository and a sibling .NET repository (R5.2); rooms, a claimed lane worked in place with private-index commits (R5.3) and the way into them (R5.4); ignored content by five declared classes (R5.5); the dependency store (R5.6); the fallback's ways compared and chosen, kept slots with clones inside them (R5.7); this repository's stamp its own row, measured (R5.8); §17 re-cut (§17.0); §18 items 4 restated and 6 to 8 added; D214's round-5 status | the independent Opus reader at `353a67a334` (`docs/2026-10-26-tree-pool-reads.md`): another round, scoped to row 2 (11 findings, 4 blocking, all in row 2), rows 1, 3 and 4 free to go ahead; Codex has not read it | §26, row 2's findings |
 | 6 | 2026-11-07, Claude Opus 5.5, from main at `5643df4196`, row 2 alone under the owner's choices of 2026-11-07: the room-aware fast-forward for every move of a line that a checkout has out, free paths written and held groups kept at their base, never waiting for a room, measured against this repository's 850 moves in seven days; a room held by its line and by its files, taken over only by its line's carry-on and released only where a ref holds what it writes over; in place for Claude Code alone, its git denied in every spelling, the guard forced on, the commit's check, the turn's-end read and keep; claim groups by build closure, per-session outputs rejected, this repository one group beside the records; the private-index commit's hooks, refusals and ref act; the in-root mode folded into one room at row 5; the person's acts and another home; §18 items 3, 7 and 8 restated and 9 added | both at `b347f3ab20` (`docs/2026-10-26-tree-pool-reads.md`): Codex, of rows 2 to 4 (another round for row 2, for row 3 on its key, and for row 4 narrowly on what a slot carries; 10 findings, 8 blocking); the independent Opus reader, of row 2 (another round on F1 to F3; 9 findings, 3 blocking), rows 1, 3 and 4 free to go ahead | §27, rows 3 and 4; row 2's findings wait for a later round |
-| 7 | 2026-11-08, Claude Opus 5.5, from main at `a94a922745`, rows 3 and 4 alone, on the owner's choice that the kept slot is made solid first: a dependency kept by a key naming its install (the declared tracked inputs, the command, the toolchain, an environment composed by selection, the repository) and by a placement record read at every take; the store filled only by Daoris's own install at a miss, judged before it is sealed; path-bound installs kept in place, intermediates keyed by the toolchain, mixed folders outputs; the classes acting only from the accepted declaration, `prepare` and `safe` withdrawn; row 4 building `WhereIs` and the census, its in-use sets keyed through the pool, the helper's capture among its readers; the take's phases; R5.7's clone and §18 item 6 withdrawn under the owner's no; §18 item 2 restated and item 10 asked | owed: Codex's and the independent Opus reader's, of rows 3 and 4 | — |
+| 7 | 2026-11-08, Claude Opus 5.5, from main at `a94a922745`, rows 3 and 4 alone, on the owner's choice that the kept slot is made solid first: a dependency kept by a key naming its install (the declared tracked inputs, the command, the toolchain, an environment composed by selection, the repository) and by a placement record read at every take; the store filled only by Daoris's own install at a miss, judged before it is sealed; path-bound installs kept in place, intermediates keyed by the toolchain, mixed folders outputs; the classes acting only from the accepted declaration, `prepare` and `safe` withdrawn; row 4 building `WhereIs` and the census, its in-use sets keyed through the pool, the helper's capture among its readers; the take's phases; R5.7's clone and §18 item 6 withdrawn under the owner's no; §18 item 2 restated and item 10 asked | both, of rows 3 and 4 (`docs/2026-10-26-tree-pool-reads.md`): Codex at `687dc968a8`, another round for row 3 and narrowly for row 4 (5 findings, 4 blocking); the independent Opus reader at `8c8e0f86bd`, another round narrowly for row 3 on F3 and for row 4 on F1 and F2 (11 findings, 3 blocking); neither found work lost | §29.6, every finding of both *(R9)* |
+| 8 | 2026-11-08, Claude Opus 5.5, from main at `8c8e0f86bd`, on the owner's direction that every file git does not manage be handled from an inventory Daoris keeps: the inventory per repository in the desktop store, never synced, each entry acting only once the person accepts it on the repository's page (§28.3); the analysis from git's view, local signatures, the declaration as one input, the toolchain's signatures as data, the repository's scripts and observation, else unknown (§28.4); nine classes and their handling at an open, a take and a finish, with what a wrong class costs (§28.5); measured read-only in this repository's checkout and two siblings, a kept slot under round 7's classes rewriting `bin/` each session (§28.2); rows 6a and 6b before row 3, which no longer stands alone, and row 7 later (§28.9); §18 items 11 and 12 asked, items 2 and 10 restated | not read: the owner replaced its inventory with rules the same day (D214's note of 2026-11-08) | round 9 replaces §28.3 and revises the rest in place *(R9)* |
+| 9 | 2026-11-08, Claude Opus 5.5, from main at `5651fdda5a`, on the owner's choice that every file git does not manage is handled by rules: one JSON format in four layers read in order, a later match winning (the analysis's found rules, the repository's tracked `daoris.files.json` read at the line's tip, the person's rules beside the found ones in the home's `data/files.json`, built-in refusals no layer overrides), the gates file's `trees` moved into it (§29.2); a take moving outputs aside, Daoris deleting only what it proves its own (§29.3); what the analysis writes by itself and what only the person's rule may (§29.4); round 8's four bounds under rules (§29.5); both reads of round 7 answered, every blocking finding taken: one files stage after the record's open at every start, the managers' effective configuration and the earlier dependencies in each key, a fill sealed only in a tree holding nothing else ignored and only where it wrote nothing outside its paths, the placements read again after each install, one install per repository at a time, the landing's set in the census, the toolchain key at each let-go, a failing placement the line's own (§29.6, §29.7); rows re-cut 6a, 3, 4, 6b, g (§28.9); §18 items 11 and 12 answered, 13 and 14 asked | not read alone: the owner's principle of the same day cut its further refusals and person-only kinds first (D214's note) *(R10)*; *(R11)* read with round 10, as round 10's row says | round 10 revises §29 in place *(R10)*; §31 *(R11)* |
+| 10 | 2026-11-08, Claude Opus 5.5, from main at `50055ee6d6`, on the owner's principle that the rule file restricts nothing by default and D233's note that a supervisor may be of a kind: the floor of four, each kept for the work it keeps from loss (§30.1); each of round 9's further refusals, person-only kinds, *never* list and proposals kept, moved or cut (§30.2), `discard` removed; the harness's settings weighed onto the floor, and the store's local inputs and secrets kept as the key's soundness, the scan narrowed to secret values (§30.3); the person's own rules, `permissions` and the place's workflow as where a restriction is added, and what an `ask` holds allowed by a `files` supervisor's grant, `allow-run`, `allow-copy` or `allow-share`, off by default, else by the person (§30.4); §18 items 13 and 14 answered | both, of rows 6a, 3, 4 and 6b, rounds 9 and 10 together (`docs/2026-10-26-tree-pool-reads.md`): Codex at `9f2a228a48`, another round for rows 6a, 3 and 4, row 6b ready after them (5 findings, all blocking); the independent Opus reader at `7b9f129e3b`, nothing blocking in rows 6a and 6b, another round narrowly for row 3 on F1 and for row 4 on F2 (9 findings, 2 blocking); neither found committed work lost *(R11)* | §31, every finding of both *(R11)* |
+| 11 | 2026-11-08, Claude Opus 5.5, from main at `b36ab3e8a0`: both reads of rounds 9 and 10 answered, every finding of both taken (§31); the floor made sound (§30.1): a bare repository recognised, a provider's untracked project configuration never copied, Daoris deleting or overwriting only what it made and installing or running a rule's command only in a tree no agent has run in since it made or took it, a take's set-aside of a live line kept until that line finishes; an `output` found only by a build tool's setting or a generation step; every `env` value keyed by a digest keyed by the home; an install's companions in its record, and placements one install changed kept and installed as a group; the files record's `handed`, a failed install's mark cleared before `hand`; the copies' two gates; the found layer in a file of its own, the person's unread file holding every act as an `ask`; nothing asked of the owner; rows 6a and 6b ready to build, rows 3 and 4 one narrow read (§31.4) | both, of rows 3 and 4 narrowly, at `107063dfa2` (`docs/2026-10-26-tree-pool-reads.md`): the independent Opus reader, another round narrowly for row 3 on F1 and F2, nothing blocking of row 4's own (6 findings, 2 blocking); Codex, its five round-10 findings answered and one case left, blocking for rows 3 and 4; neither found committed work lost *(R12)* | §32, every finding of both *(R12)* |
+| 12 | 2026-11-08, Claude Opus 5.5, from main at `30f8e89eff`: both narrow reads of round 11 answered (§32): the mark held the other way, `unworked`, written by Daoris's making, remaking, take or return and removed before an agent or a terminal is handed the tree, a conversation's open among them, so a tree with no mark, or none that reads, is worked; an unworked tree's leftover tracked changes written back before any placement; a group's member never placed by its own key; a `toolchain` command a read in any tree; a take's set-aside held while its line's record can go on, a no-output line's as its conversation's place is; an install's write another rule names in its record, so clearing it installs the dependency again before `hand`; row 4's husky proof restated; nothing asked of the owner | both, confirming, of rows 3 and 4 (`docs/2026-10-26-tree-pool-reads.md`): the independent Opus reader at `557594b07a`, another round narrowly for row 3 on F2 and for row 4 on F1 (4 findings, 2 blocking); Codex at `f22f391b94`, its round-11 case answered and one case left, blocking for rows 3 and 4; neither found committed work lost *(R13)* | §33, every finding of both *(R13)* |
+| 13 | 2026-11-08, Claude Opus 5.5, from main at `b6908ea79c`: both confirming reads of round 12 answered (§33): a go-on into a tree a return marked removing `unworked` before its resumed turn; the files record written under one lock and the stage reading the mark again before each of its writes, stopping once a terminal has taken it, said, no visit refused; the hook owed in the record until it runs, the other writes read at every unworked stage; a worked tree's hit placed only where each dependency before it was kept or placed; a return that lays work back writing no mark (row i); §17.0's row 4 reading *installed again*; nothing asked of the owner | owed: a final confirming read by both makers, of the passages §33.2 names | — |
 
 ## 22. Round 2: both reads of round 1 answered
 
@@ -2292,7 +2686,8 @@ dependencies; §17.0's rows 3 and 4; §18 items 2, 6 and 10; §19; §20; §21.
     namespace read, the link-safe removal and the eviction.
   - Today's open (`TreeOpening.cs:172`) and TREEGONE1's remake (`TreeReturns.cs:121`) place each declared dependency from the store where
     TREEDEPS1 copies now. At a miss they run its `install` as a stage after the open and before the agent starts, outside the start's
-    shared hold. The agent is told what was placed or installed, in TREEDEPS1's `Told` place.
+    shared hold. *(R9)* After the **record's** open: the files stage, which also places, and runs at every start into a tree (§29.7).
+    The agent is told what was placed or installed, in TREEDEPS1's `Told` place.
   - `TreeClassesReader` gains each dependency's `install`, `env`, `caches` and `bound`, `toolchain` as a list, `key` optional and in
     globs, and the tree's own `toolchain`; `prepare` and the `safe` test go. For acting, `trees` is read from the accepted blob where it
     is the line's tip's, as `TreeScratch.AcceptedAsync` reads it. This repository's declaration becomes R5.5's, and the canon's
@@ -2372,3 +2767,1127 @@ dependencies; §17.0's rows 3 and 4; §18 items 2, 6 and 10; §19; §20; §21.
 cite. This repository's key churn was counted from main's history: in the two weeks to this round no lockfile changed, and the root
 `package.json` changed in 26 commits, the web's in 2 and the CLI's in 1. What package managers do (npm's lifecycle scripts, pnpm's hard
 links, uv's launchers, `ctest`) and what `File.Copy` copies are from their documentation, not run here. Nothing was built or run.
+
+**Whether each stands alone, at round 8** *(R8)*: row 3 no longer does. It acts only on accepted inventory entries, so it follows rows
+6a and 6b, and still needs neither row 2 nor row 4 (§28.6). *At round 9* *(R9)*: row 3 follows row 6a alone, which writes the rules it
+acts on; row 6b, the page, follows row 4 (§28.9).
+
+## 28. Round 8: every file git does not manage, managed by Daoris
+
+**The owner's direction (2026-11-08).** The agent working in a managed tree should have every file git does not manage handled for it,
+not only its dependencies. Daoris analyses the repository and keeps an inventory of its non-git files on the machine, outside git, rather
+than relying on a declaration the repository tracks. The purpose stays the design's: end the churn of a whole repository written and
+deleted for every session, writing only what changes, for any repository and toolchain. The owner's standing choices bound it (D214's
+notes of 2026-11-07 and 2026-11-08):
+- the kept slot made solid first, rows 3 and 4 before row 2;
+- this repository's sessions on kept slots, and the pool on here after rows 3 and 4 (row g);
+- the dependency store the one way a tree gets its dependencies, TREEDEPS1's copy removed;
+- no Dev Drive;
+- rooms first where rooms do not share a build.
+
+**Round 8 is written by Claude Opus 5.5 from main at `8c8e0f86bd`.** It changes what decides how a tree's non-git files are handled,
+and how many of them are decided. It keeps how each class is handled once decided: round 7's keys, fill, placement record, toolchain key
+and take phases stand. **Codex's and the independent Opus reader's reads of round 7 were running as this was written, and were not
+seen.** Round 9 takes their findings into this layer. A finding about a key, a check, a phase or the census carries over as it stands,
+since round 8 keeps them; one about the accepted declaration becomes one about the inventory's acceptance (§28.6). A passage of R5 to §27
+that round 8 changes is marked *(R8)*.
+
+### 28.1 What changes, and what does not
+
+- **What acts.** Round 7: the gates file's `trees`, from the blob the owner accepted where it is the line's tip's. Round 8: the
+  repository's **inventory**, kept by Daoris on this machine. Each entry acts only once the person has accepted it on the repository's
+  page. The declaration is one input of the analysis that fills the inventory (§28.4), never a second way to act (D228).
+- **How much is decided.** Round 7 named what a declaration names and called every other ignored path scratch. Round 8 gives every path
+  git does not manage an entry, from git's own view, with a class, a producer and how it was found; *unknown* is one of the classes.
+- **Who proposes.** The analysis, on each machine, cheaply and without a model. R5.5's *Ask Daoris proposes a declaration*, and the
+  classes half of row 1's `RoomsProposal`, are withdrawn. Rooms are still proposed as R5.4 says.
+- **Every reader of non-git content today, and where it goes** (D228):
+  - `trees` (row 1's `TreeClassesReader`; nothing acts on it): an input, read at the reading's commit (§28.6);
+  - TREELOCAL1's `localInputs` (copied at every open, D216): an input; from row 3 the open copies the accepted local entries instead
+    (§18 item 11);
+  - TREEDEPS1's copy (acts at every open): removed at row 3, as D214's note of 2026-11-08 chose;
+  - the tidy's lists for a finished fresh tree, `TreeScratch`'s build folders (TREEKEEP1, TIDYOUTPUT1) and `integration.scratch`
+    (D215, D218's note): kept for that tidy alone until row 7 reads the inventory there, the condition and the row that end them;
+  - `SlotKeeps` and round 4's npm judgement: withdrawn already (R7).
+- **What stays.** Round 7's handling of each class (R5.5, R5.6, §5.3), row 4's slot mechanics (§2 to §12), the owner's frame (R5.1,
+  R5.7), and §17.0's order, but for rows 6a and 6b before row 3.
+
+### 28.2 Measured: what the analysis finds
+
+**How it was read** (2026-11-08; Windows 11 build 26300, NTFS, git 2.53.0.windows.3, Node 24.19). Read-only: a walk records names,
+sizes and write times, never follows a link, and opens no file git does not track. Nothing was installed, built or deleted.
+- **git's view.** This session's git was confined to its own tree, and git in another folder was refused. So git's view of this
+  repository's main checkout was taken by `git check-ignore` in this session's tree of the same repository, at the same commit, over the
+  checkout's names. The rules are the same: the tracked ignore files, the common git directory's exclude file and the person's global
+  ignore file.
+- **The two sibling repositories** beside the checkout were read by a matcher of git's ignore rules over their walks. On this repository
+  it gave exactly git's answer (the same 56 folders and 3 files), but it cannot tell their tracked files from their untracked ones. They
+  are named here by their stacks.
+- The checkout's scratch folder and the harness's worktrees inside it were walked apart. Sizes are binary (a MB is 2^20 bytes).
+
+**By class, in each checkout** (folders, files and size):
+
+| Class | This repository | Sibling A: .NET and web (16 projects, 3 npm lockfiles, 2 CMake files) | Sibling B: a workspace (a .NET app, a web app, 19 repositories inside) |
+|---|---|---|---|
+| Git's, not ignored | 8,601 tracked files, 101 MB; nothing untracked | 1,322 files, 15 MB, tracked and untracked together | 208 files, 7 MB, likewise |
+| Ignored, as git lists it | 58 folders and 3 files at their tops | 48 folders and 6 files | 10 folders and 1 file |
+| Dependencies | 2 `node_modules/`, each beside its `package-lock.json`: 21,051 files, 367 MB | 3, likewise: 7,014 files, 198 MB | 1: 5,088 files, 101 MB |
+| Intermediates | 21 `obj/`, each beside a project file: 1,853 files, 455 MB | 13: 14,131 files, 634 MB | 1: 37 files, 1.5 MB |
+| Runnable outputs | 21 `bin/` (3,190 files, 2.16 GB); 7 folders its scripts name (`publish/`, `wwwroot`, the two generated type folders, `docs/index/`, storybook's and playwright's): 316 files, 197 MB | 16 `bin/`, `dist/` and `artifacts/` (11,667 files, 1.76 GB); 6 its scripts or project files name (an MSBuild artifacts folder, a pack folder, two web roots, two media-evidence folders): 360 files, 76 MB | a `bin/` and a `dist/`: 644 files, 97 MB |
+| Tool caches in the tree | none outside a dependency (the web's `.vite/` and `.cache/` lie inside its `node_modules/`) | 2 its scripts write, each under a folder named for the pinned version it holds: 9,954 files, 4.33 GB | none |
+| Local | `local/`, the family's private folder: 107,732 files, 11.7 GB, beside 396 repositories inside it (the merge tool's own trees, the person's backups), 6.3 GB; the harness's local settings file | `local/` (59 files, 34 MB) and an agent plugin's notes (2.6 MB); the harness's and the editor's local settings files | three `local/` folders: 278,679 files, 24.7 GB, beside 2,305 repositories inside, 5.7 GB; the harness's settings |
+| Scratch | `_fixtures/`: 59,043 files, 3.25 GB, beside 49,294 test fixture repositories (384,437 files, 37 MB); 4 nested `_fixtures/`; a log | 3 folders its scripts write and prune (screenshots and device captures, 5 files); 2 logs and a port file its tools write | none named |
+| Another repository or tree | `.claude/worktrees/`: 5 of the harness's linked worktrees of this repository, 1.5 GB | none | 19 repositories, 18 in an ignored tools folder and 1 untracked: 6.5 GB |
+| Unknown, every source read | none | 2 probe folders (496 files, 395 MB); a `node_modules/` with no manifest beside it (1 file); a one-off script | `temp/`, copies of trees (65,104 files, 10.2 GB, 80 repositories inside); a working folder whose name suggests credentials (39 files, 6 MB) |
+
+**Which source found each.**
+- **This repository.** The signatures class 44 of the 58 folders; its scripts name 7 more. `local/` is the family's private folder,
+  and the gates' `localInputs` name a file inside it. `_fixtures/` and the four nested ones are scratch, by what sessions leave (both
+  session trees below wrote one) and by the ignore file's own words. The harness's worktrees are found by their `.git` files. The
+  declaration (`trees`) names nothing outside what the signatures and scripts found; it adds what neither can see, its keys'
+  completeness and its `caches`. The signature pass also finds two lifecycle scripts: the root's `prepare` (`package.json:14`), which
+  writes `docs/index/` and git's configuration, and the CLI's `prepack`.
+- **Sibling A.** The signatures class 32 of 48. Its development script and helpers name 11 more: the two caches, six outputs and three
+  scratch folders. Two are local by convention, and three stay unknown. It ships no `trees`.
+- **Sibling B.** The signatures class 4 of 10, the `dist/` by its web app's build script. Three are local, one folder holds other
+  repositories, and two stay unknown. It ships no `trees`.
+
+**What two sessions left** (observation, read as above, in two of the harness's worktrees of this repository):
+- **One whose session ended a day ago:** a scratch clone, a repository of 9,950 files and 358 MB, inside `_fixtures/`, beside 184 more
+  files and 190 MB; the root's `node_modules/` (257 files, 25 MB); 1.6 MB of outputs; the harness's local settings; and 31
+  files outside main's tracked list, its work or its branch's.
+- **One whose session built the driver's tests:** 8 `bin/` and `docs/index/` (538 files, 245 MB), 8 `obj/` (430 files, 260 MB), a
+  `local/` of its own (295 files, 58 MB), and the harness's local settings.
+
+So a session leaves its builds' outputs and intermediates, anything from nothing to half a gigabyte of scratch (a whole clone among it),
+and private files under `local/`. And each tree holds the harness's own local settings file, where it keeps the permissions granted
+in that tree.
+
+**Per session, a fresh tree against a kept slot.** This repository's row recombines R5.2's measured figures and the two session trees;
+it is not a new run. The siblings' rows assume a session builds and fetches what its checkout holds, an upper bound.
+
+| | A fresh tree | A kept slot, round 7's classes (outputs cleared at every take) | Outputs kept (§18 item 12) |
+|---|---|---|---|
+| This repository | 26,502 files and 1.47 GB, as many deleted (R5.2) | **about 2,650 to 3,000 files, 0.36 to 1.12 GB**: the switch (2,034 files, 37 MB), the intermediates of the projects changed (about 80, 85 MB, the stamp off), `docs/index/` (257, 1 MB), and the outputs written whole again, from the driver's tests' `bin/` (281, 244 MB) up to both desktop test projects' (835 MB), with the web's build where it runs (159, 192 MB) | about 2,400 files, 0.33 GB |
+| Sibling A | about 44,000 files, 7.0 GB: its dependencies, its two caches (4.33 GB) fetched again, and its builds | **about 12,000 files, 1.9 GB**: the switch, its outputs again (12,027 files, 1.83 GB), and the intermediates of what changed | the switch and what changed |
+| Sibling B | about 6,000 files, 0.2 GB | **about 700 files, 0.1 GB**: its `bin/` again | the switch and what changed |
+
+**What the measure says.**
+- **A kept slot saves nine files in ten** everywhere, since dependencies and intermediates are most of the files.
+- **The bytes are the runnable outputs'.** .NET's `bin/` holds a copy of every reference. Round 7 clears it at every take, since this
+  repository runs it without building (`tools/merge-branch.mjs:637`'s `--no-build`, `tools/e2e-host.mjs`, `tools/desktop.mjs run`).
+  So here a kept slot writes a quarter to three quarters of a fresh tree's bytes, not R5.2's third, which kept `bin/`. Sibling A's
+  largest saving is its tool caches, a class round 7 did not name.
+- **Most of what git does not manage on a working machine is never a tree's**: 18 GB of private files and repositories here, and 30 GB
+  and a 10 GB copy folder in sibling B. The inventory shows them and leaves them.
+- **The analysis is cheap where git does the listing.** git's view lists 61 names here: 58 folders and 3 files. The walk this
+  measurement made instead read 142,763 files in 151 s, and asked git about 115,000 folder names in 34 s. That is the cost the analysis
+  must not pay, so its sizes come from bounded walks (§28.4).
+- **Readings are few.** Main's first-parent history moved a signature file (a project file, a manifest, a lockfile, an ignore file, the
+  gates file, a props file, a web config) in 70 of its 1,117 commits over the two weeks to this round: about five readings a day.
+
+### 28.3 The inventory
+
+*Round 9* *(R9)*: withdrawn by the owner's choice of 2026-11-08 and replaced by the rule file (§29.2). What it held is split: its entries'
+fields are the found layer's rules, each with its evidence and its size, beside the person's rules in the home's `data/files.json`
+instead of two store tables; its states, revisions and per-entry acceptance go, since a rule acts as it stands. What it kept out stays
+out: no machine path, no name below a local, scratch or unknown top, nothing sent to the service, and no route reading it. The page's
+section stays, showing the effective rules (row 6b).
+
+- **Where.** In Daoris's home, in the desktop store: two tables of the Workplace family (D212 §13.3), beside `kept_trees`, named
+  `file_inventory_readings` and `file_inventory_entries`. Only the analysis and the person's acts write them.
+  - Never in the repository; never in a brief beyond the tree's own lines (§15); never sent to the service or any shared host. No route
+    reads the tables, which row 6a's census proves.
+  - Its paths are repository-relative, so it names no machine path.
+  - It holds no name below an entry of the local, scratch or unknown class, only their counts and sizes. Such a name may be private:
+    here a folder under `local/` is named for a sibling repository.
+  - The code names it `FileInventory`, apart from the work units' `InventoryEntry` (`WorkOrders/Inventory/`).
+- **A reading** is keyed by the commit and the toolchain it was read at: the line's tip; the outputs of the toolchain commands its
+  signatures name (`node --version`, `dotnet --version`); the system and the architecture. It records when it ran, each source's counts
+  and its git starts.
+- **An entry** holds:
+  - its **pattern**, in the gates' path grammar (repository-relative, `/`, globs, a folder ending in `/`);
+  - its **class** (§28.5);
+  - its **producer**, the command or tool that writes it (`npm ci`, `dotnet build`, `node tools/orient-index.mjs`, *a session*), or
+    none known;
+  - for a dependency, round 7's fields: its **key inputs** (tracked paths and globs, never their contents; with none, the commit's
+    tree), its `install`, its `toolchain` commands, the names of its `env` (never their values), its `caches`, and whether it is `bound`;
+  - its **size and count**: in the checkout at the reading, by a bounded walk saying *more than* past the bound, and in Daoris's trees
+    as their takes and finishes read them;
+  - **found by**: each source, with its evidence (*beside `package-lock.json`*; *named by `tools/orient-index.mjs`*; *declared in the
+    gates file at `<commit>`*; *written in 2 of the last 2 trees*; *ignored by `.gitignore:8`*);
+  - its **handling** (§28.5): its class's, or the person's edit;
+  - its **state**.
+- **Its states.**
+  - *Proposed* by a reading.
+  - *Accepted* by the person. The acceptance names the entry's **revision**: a hash of its pattern, class, producer, key inputs,
+    commands, `env` names, caches, `bound` and handling.
+  - *Changed*, where a later reading would change the revision. It acts as unknown until the person accepts the new revision, and its
+    last acceptance is still shown. A key input's content moving is no revision: it moves the store's key (R5.6).
+  - *Gone*, where no reading finds it any more. It acts on nothing.
+- **Nothing acts on an entry the person has not accepted**, as round 7 required of the gates file: no clear, no set-aside by class, no
+  placement, no copy and no command. An entry not accepted is handled as *unknown* (§28.5), which is today's handling of every path a
+  session makes.
+- **What Daoris runs.** A command it runs (an `install`, a `toolchain` command, a cache's producer) is the accepted revision's text. A
+  branch that changes its declaration, or a script's name, changes nothing that runs until the person accepts it. The scripts a command
+  runs are the commit's, as a session's own `npm ci` and a gate's command run them (`Review/Integration/DirectGateRuns.cs`).
+- **The person sees it** on the repository's page, a section *Files git does not manage* (git 不管理的文件).
+  - Each entry shows its path, its kind, what makes it, its size, how it was found, what Daoris will do with it, and its state, with
+    *Accept*, *Accept all*, *Edit* and *Read again*. A revision shows what changed.
+  - An edit toward a handling that keeps or shares more than its class proposes (an output kept, a cache shared) shows its cost before
+    it is saved (§28.5). An edit toward less is saved as asked.
+  - Accepting is the person's press in the window, a Window-class verb refused on the pipe. Ask Daoris and a steward may say what an
+    entry is, never accept it.
+
+### 28.4 The analysis
+
+*Round 9* *(R9)*: its sources, their order and when it reads stand. What it makes is rules in the found layer, which act at once within
+§29.4's limits, and proposals for the person; *nothing acts before acceptance* no longer holds. Source 3 is the repository's own layer,
+which acts as itself; the analysis reads it only to propose nothing it already says and to judge it (no tracked path, no path in two
+kinds). Where sources disagree it writes the kind whose wrong cost is a build or a held slot, and proposes the other; *(R10)* it
+proposes nothing, the other kind shown beside the rule as its evidence, and §29.4 has no limits but the floor. Source 4's rows
+gain each manager's effective-configuration command, its optional project configuration files, a file its placement writes last and, for
+uv, `uv python find`.
+
+*Round 11* *(R11; Cn and Fn as §31 names them)*: source 1 counts a bare repository, a folder holding a `HEAD` file and `objects/` and `refs/` folders that git
+confirms read-only, as another repository (floor 2; C2). Source 4's npm and pnpm rows put each workspace member's `node_modules/` in the
+root's `paths` (F2); each row's install is its frozen form (`npm ci`, `pnpm install --frozen-lockfile`, `yarn install --immutable`, `uv
+sync --locked`); uv's interpreter is keyed by `uv python find --system` and its `--version` (F8). Source 5's second point reads: a
+script or project file that names an ignored path reads or writes it, and is never by that alone its producer; the folder is an output
+only where a build tool's output setting names it or a generation step makes it again, a tracked script that writes it run by a gate, a
+hook or a lifecycle script, and otherwise `scratch` where a script or a session writes it, `unknown` where nothing does (C1, F4). A
+lockfile's own mark of a package's install script (npm's `hasInstallScript`) is source 5's lifecycle evidence for the key (F3).
+
+Generic and cheap: no model, no build and no install. Of what git does not manage it reads names, sizes, stats and times, never
+contents, but the hash a local entry's copy needs. Of what git tracks it reads the manifests and scripts its signatures name, at the
+reading's commit from git's objects, never the working file.
+
+**Its sources, in the order they are weighed:**
+1. **git's own view** decides what is git's.
+   - Tracked paths are git's, and get no entry.
+   - `git ls-files --others --ignored --exclude-standard --directory -z` gives the ignored paths at their tops, never descending.
+   - `git ls-files --others --exclude-standard --directory -z` gives the untracked paths not ignored. In a Daoris tree they are its
+     session's work and get no entry; in the checkout they are the person's.
+   - `git check-ignore -v` names each entry's rule (*ignored by `.gitignore:5`*).
+   - Any path holding a `.git` file or folder below the top, and every linked worktree `git worktree list --porcelain` names inside the
+     folder, is **another repository or tree** before anything else is read of it.
+2. **Local signatures** outrank every class but 1's. They are:
+   - the gates' `localInputs` and `sensitive.patternsFile`, and the canon's private folder, `local/`;
+   - an environment file (`.env`, `.env.*`) and a local settings file (`*.local.json`, `local.settings.json`,
+     `appsettings.*.local.json`);
+   - a key or a certificate (`*.pem`, `*.key`, `*.pfx`);
+   - the harness's and the editor's own settings (`.claude/settings.local.json`, `.vscode/settings.local.json`).
+
+   A path both this source and a later one claim is local.
+3. **The repository's declaration**, where it ships one: the gates file's `trees` (R5.5) and `integration.scratch`. Each entry is
+   found *declared*, its fields taken as stated. It is the repository's word across machines, and it says what no other source can: a
+   key's completeness, a path-bound install, a cache inside a dependency. How it meets the inventory:
+   - it is read at the reading's commit from git's objects, never from the working file or a tree's;
+   - each declared path becomes a proposed entry; where another source finds the same path, the entry lists both;
+   - a declaration that does not read proposes nothing, said. An entry of it that names a tracked path or a local input, or a path in two
+     classes, is refused alone, said, as `TreeClassesReader` refuses it today; since nothing of it acts before acceptance, the rest still
+     proposes;
+   - acceptance is the inventory's alone: the gates file's accepted blob (`IntegrationAcceptance`) no longer covers `trees`;
+   - a declaration changed at a later commit makes a revision of the entries it proposed (§28.3), and one deleted takes its evidence
+     away, so an entry it alone found is gone;
+   - the declaration acts on nothing by itself.
+4. **The toolchain's signatures**: data shipped with the desktop (`Defaults/file-signatures.json`), never code that names a stack. A
+   row per toolchain gives its signature file, the folder beside it, the class, the producer, the key inputs, the toolchain commands
+   and the caches. The first rows:
+   - **npm**: `package-lock.json`; `node_modules/` by `npm ci`, keyed by the lockfile, `package.json`, each workspace member's and
+     `.npmrc`. **pnpm**: `pnpm-lock.yaml`, with `pnpm-workspace.yaml`, `.npmrc` and its patches folder. **yarn**: `yarn.lock` and
+     `.yarnrc.yml`; `.yarn/cache/` a cache, `.pnp.*` a dependency;
+   - **.NET**: a project file; `obj/` an intermediate, `bin/` an output; `packages.lock.json`, `global.json` and the central package
+     file as inputs. NuGet keeps its packages outside the tree, so nothing;
+   - **cargo**: `Cargo.toml`; `target/` an intermediate;
+   - **pip and uv**: `uv.lock`, `pyproject.toml`, `requirements*.txt`; `.venv/` a dependency kept in place, `bound`; `__pycache__/`
+     and `.pytest_cache/` the slot's caches;
+   - **go**: `go.mod`; nothing in the tree;
+   - **Gradle**: `.gradle/` an intermediate, `build/` an output. **Maven**: `target/` an output. **CMake**: its build tree an output,
+     since `ctest` runs it as it stands. **vcpkg**: `vcpkg_installed/` a dependency;
+   - **vite**: its `outDir`, `dist/` by default, an output.
+
+   A folder no row reaches is left to the next source.
+5. **The repository's own scripts**, read at the commit by `git grep -l -F` over its tracked scripts, manifests and project files:
+   - a lifecycle script (`preinstall`, `install`, `postinstall`, `prepare`) makes its manifest a key input, and tells the fill's
+     judgement what the install may write beside its folder. Here the root's `prepare` writes `docs/index/`;
+   - a script or project file that names an ignored path is its producer (*named by `tools/orient-index.mjs`*). The class is an output,
+     or a cache where the folder is a download's or a tool's kept under a version;
+   - a script that runs a folder without building it (`--no-build`, or a path into `bin/` or `target/` run as a program) makes that
+     folder an output, whatever 3 or 4 said: round 7's mixed-folder rule.
+6. **Observation over sessions**, in Daoris's own trees:
+   - at each finish, the paths the tree holds against its open's or take's record, which the slim's manifest (KEEPSIZE1b) already
+     walks: what the session's builds wrote, what it left, and how big;
+   - at each look while it runs, the image paths and command lines of the processes in the session's job
+     (`Agents/SessionProcesses.cs`). A folder run while its newest write is older than the session's start was *run without building*.
+
+   Observation adds evidence and sizes to an entry, and proposes one for a path no entry matches, *unknown* until another source names
+   it.
+7. **Nothing found**: *unknown*.
+
+**Where sources disagree**, the entry is proposed with the stronger source's class, in this order: 1, 2, 3, 5's runner evidence, 4, 5's
+names, then 6. The disagreement is said on it (*declared an intermediate; `tools/desktop.mjs` runs it without building*), for the person
+to choose. No source turns an unknown into a class that deletes, carries or shares without evidence of its own, and nothing acts before
+acceptance.
+
+**When it reads.**
+- at a repository's registration;
+- at the look, where the line's tip moved and `git diff --name-only <last read> <tip>` names a signature file, a manifest, an ignore
+  file or the gates file (about five times a day here, §28.2);
+- where a toolchain command's output moved, read at most once a day and at a take;
+- at a finish, its observation alone;
+- at the person's *Read again*.
+
+**What it costs**: git's two listings; one `ls-tree` of the commit's names; one `git grep` for the scripts; each `toolchain` command
+once; and a walk of each new or changed entry, bounded at 20,000 entries or two seconds. Its git starts are held to a budget beside the
+tidy's (`Workplace/TidyGitCountTests`).
+
+### 28.5 The classes and their handling
+
+*Round 9* *(R9)*: the classes are the rule file's kinds, and *an entry not accepted* reads *a path no rule names*. Four cells change
+(§29.3): a take moves the runnable outputs aside, never deletes them; the dependencies are kept, placed or installed in the files stage
+after the record's open, and a placement whose record fails is the line's own; a tool cache is kept per slot and not shared through the
+store in the first build; a local file is copied only by the person's `copy` rule, and scratch discarded only by the person's `discard`.
+*(R10)* A local file is copied by any layer's `copy` rule, and scratch is never discarded, only set aside with its record (§30.2).
+*(R11)* A runnable output is found by a build tool's output setting or a generation step alone (§28.4's round-11 note), and what a take
+moves aside from a line that may come back is that line's until it finishes (floor 4). A dependency's companions are the dependency's in
+every column, and a local copy is made only into a target git ignores that is absent or Daoris's own.
+
+| Class | What it is, and how it is found | A fresh tree | A kept slot's take | Its finish | Shared across trees |
+|---|---|---|---|---|---|
+| **Dependencies** | what a package manager installs from tracked inputs: a signature, the declaration, a lifecycle script | placed from the store at its key, or installed by Daoris at a miss before the session starts (R5.6, row 3) | kept where its key and placement record hold; else placed or installed; a `bound` one installed again in place | stays the slot's | through the store, keyed per repository, filled only by Daoris's own install |
+| **Intermediates** | what a build tool checks itself and makes again when stale, valid only at its path: a signature | none: the first build is cold | kept while the slot's toolchain key holds; renewed (moved aside) when it moves, or at the size bound | stays the slot's | never |
+| **Runnable outputs** | what a runner uses without building, or what its writer makes again cheaply: a signature, a script that names it or runs it without building | none | cleared after the switch: a finished line's went aside at its finish, and a line that may come back does not hold its slot for them (§18 item 4) | set aside with the line's record (KEEPSIZE1b), gone an hour after it (D195) | never |
+| **Tool caches** | what a tool writes for itself and checks or keys itself: a signature (`.pytest_cache/`, a cache inside a dependency), a script's folder kept under a version | none, or placed from the store where its producer is accepted and the folder is keyed by its own content (named for the pin it holds) | kept; renewed with the intermediates when the toolchain moves | stays the slot's | only through the store, filled by Daoris's own run of its accepted producer, as a dependency is; never from a session's tree |
+| **Local** | the machine-local configuration and secrets the builds, gates and runs read; and the person's private material | its accepted inputs copied read-only from the checkout, TREELOCAL1's way, each hashed; private folders and the harness's and editor's settings never copied | the earlier copies removed, never followed, and made again from the checkout | Daoris's copies deleted; anything else the session wrote in a local path set aside with its record | never: not in the store, not in another repository's tree, never read beyond its existence and hash |
+| **Scratch** | what sessions and tools write and nothing builds from: the declaration (`integration.scratch`), a script that writes and prunes it, what sessions leave | none | none should remain | set aside with the record, as today, or discarded with its line where the person accepts that | never |
+| **The session's own work** | untracked and not ignored: git's view | none | holds the slot (§5.2 step 5) | `ended.uncommitted`: the slot stays its line's | never; never managed |
+| **Unknown** | ignored, and no source names it; or an entry not accepted | none | none should remain, since a finished line's went aside | set aside with the record; a live line's holds its slot (§18 item 4) | never |
+| **Another repository or tree** | a `.git` below the top, or a linked worktree inside: git's view | none | holds the slot while it stands there (§5.2 step 3) | set aside with the record, as today's tidy sets a whole tree aside; never deleted | never touched |
+
+**What Daoris writes at a take and at a finish.**
+- **At a take** it writes only three things: a dependency's placement or install where its key or record moved; the local inputs'
+  copies; and the moves aside of intermediates and caches at a renewal. Everything else it does there is the removal of what should
+  already be gone. So a take's bytes are the switch's and the session's own builds', and a dependency's only when its key moves.
+- **At a finish** it writes nothing. It moves aside the line's outputs, scratch, unknown paths and local writes (a rename on one volume,
+  no bytes), and deletes Daoris's own local copies.
+
+**What one wrong class costs**, and so why each default leans as it does:
+- **A dependency** that is really path-bound, placed by copy: the next line runs against a broken environment. The fill's path scan
+  stores none it finds (R5.6), and `bound` covers what it misses. One wrongly left unknown: the session installs it, as before row 3.
+- **An output** classed an intermediate and kept: a run that does not build runs another line's build under this line's name, passing or
+  failing for that line's reasons (X-11, §25's F2). An intermediate classed an output costs its build again at each take: time and
+  bytes, never a wrong result.
+- **A cache** shared that its tool does not key: one tree's bad cache reaches every tree. Kept per slot, it is bounded as an
+  intermediate is.
+- **A secret** classed anything but local: it could be sealed into the store or set aside under the home for days. So local signatures
+  outrank every class (source 2), and nothing local enters the store. A local input not copied: a gate falls back, as TREELOCAL1's
+  missing copy does today (`started.local-missing`).
+- **Scratch** classed an output: a line that may come back no longer holds its slot for it, and the next take clears it, where scratch
+  keeps the slot its line's (§18 item 4). Scratch discarded at its finish is gone without the hour a set-aside keeps it. So scratch
+  holds its slot and goes aside by default, and discarding is the person's accepted choice.
+- **Anything** classed where it is unknown: the class's handling acts on a guess. So no source guesses, and unknown is today's handling.
+- **A repository** read as a folder: a move or a delete reaches another repository's work. So a `.git` is read first, and wins.
+
+### 28.6 Rows 1, 3 and 4, and round 7's answers
+
+*Round 9* *(R9)*: read *the accepted entry* below as *the effective rule*. Row 1's `TreeClassesReader` reads the repository's own layer,
+`daoris.files.json`, which takes the gates file's `trees`, and `RoomCheck` reads it there. Row 3 follows row 6a alone. Both reads of
+round 7 are answered in §29.6, which this section's last four points foresaw.
+
+- **Row 1** (built).
+  - `TreeClassesReader` becomes the analysis's reader of source 3. It reads at the reading's commit from git's objects, where today it
+    reads the checkout's working file (its remark's *the checkout's say* is now the accepted inventory's). Its judgement (no tracked
+    path, no local input, no path in two classes) is kept, per entry, and applied to every source's proposals.
+  - `RoomCheck` keeps reading `trees` as it does, to check the repository's own declarations against each other. That acts on nothing.
+  - `RoomsProposal` drops its classes half.
+  - R5.5's declaration paragraph, its *With nothing declared* and its *Ask Daoris proposes a declaration* are revised (R5.5's round-8
+    note). The canon's `rooms-and-classes` says the classes are Daoris's to read, and the declaration the repository's word to it.
+- **Row 3** becomes the dependency class's handling.
+  - Its key inputs, `install`, `toolchain`, `env` names, `caches` and `bound` come from the accepted dependency entry, where round 7
+    read the accepted gates blob. The key, the fill, its judgement, the seal by copy and the placement record are round 7's.
+  - The open's local copies come from the accepted local entries, TREELOCAL1's reader becoming source 2 (§18 item 11).
+  - **Row 3 no longer stands alone.** It acts only on accepted entries, so it follows rows 6a and 6b. It still needs neither row 2 nor
+    row 4.
+  - D214's note of 2026-11-08 holds: a repository whose dependency entries are not accepted gets none placed. What changes is that
+    note's cost: a repository no longer needs a declaration written and landed in it (a quest to its owner, for another's), but one
+    press on its page.
+- **Row 4** reads the accepted entries at every take and finish, for every class, where round 7 read the declaration. It adds tool
+  caches kept per slot under the toolchain key, the local class's copies, unknown set aside with its line, and another repository
+  holding the slot. It comes after row 3, as round 7 has it. Its census lists the observation's read of a finished tree, which the
+  finish makes in the slot it holds.
+- **Codex's 8** (the key identifies a lockfile, not the install). Round 7's answer stands: the key names the install. Who states the
+  key's completeness moves from the repository's accepted declaration to the person's accepted entry. The entry is proposed from the
+  signatures (each manager's inputs: its lockfile, manifests, configuration and patches), from the lifecycle scripts source 5 finds, and
+  from the declaration where it says more. With no key accepted, the commit's tree keys it.
+- **Codex's 9** (caches against added dependencies). Unchanged: an entry's `caches` are the only additions its placement record passes,
+  proposed by the signatures (`.cache/`, `.vite/` under a `node_modules/`) and the declaration.
+- **Codex's 10** (path stability cannot validate a carried environment). Round 7's answer stands: every carried class has a key and a
+  check. Round 8's two new carried things meet it. A tool cache is kept per slot under the slot's toolchain key, and shared only through
+  the store; local copies are made again at every take, never carried. The mixed-folder rule is now found, not declared: source 5's
+  runner evidence proposes the output, and an edit toward keeping one shows its cost (§18 item 12).
+- **The Opus reader's F9** (the census). Unchanged: row 4 builds `WhereIs(line)` and the census, and the observation joins its first
+  list.
+- **The reads of round 7 now running.** Round 9 answers both inside this layer. A finding about the key, the fill, the placement record,
+  the take's phases or the census carries over as it stands. One about acting from the accepted blob becomes one about the inventory's
+  acceptance and its revisions (§28.3).
+
+### 28.7 Where the direction holds, and where this round bounds it
+
+*Round 9* *(R9)*: the four bounds stand, and §29.5 says how each reads under rules. *An inventory per machine* below reads *the
+machine's layers of the rule file*.
+
+- **It holds.** An inventory per machine is the right home. What lies on disk is the machine's: its sizes, its toolchain, its private
+  files. The person's acceptance was per machine already. And most repositories will never ship a declaration: neither sibling does.
+  Signatures and scripts alone class 51 of this repository's 58 ignored folders and 43 of sibling A's 48. The declaration adds what no
+  reading can see.
+- **Not every file can be handled for the agent.** The person's private material and other repositories are most of what git does not
+  manage on a working machine (§28.2). For them, *handled* is known, shown and left alone: never copied into a tree, never moved.
+- **Local configuration copied into a tree** is right for what the builds, gates and runs read. It is wrong for the harness's and the
+  editor's own settings, which carry the person's grants: the person's permission file copied into a tree would widen a session past
+  what Daoris composes for it (`Loop/Session/SessionRules.cs`). And a secret copied into a tree is the agent's, and its model
+  provider's, to read. So each local input is copied only as the person accepts it, its exposure said, and the harness's and the
+  editor's settings never are (§18 item 11).
+- **The bytes are the runnable outputs'.** The inventory cannot make a kept output safe where a runner does not build. In a .NET
+  repository that runs its binaries without building, a kept slot writes `bin/` whole each session (§28.2). Keeping it anyway is the
+  owner's choice (§18 item 12), not the analysis's.
+- **Observing a run without building is approximate.** Last-access times are not reliable on NTFS, so the evidence is the session job's
+  processes, sampled at the look, and the scripts' own text; a run between two samples is missed. The scripts are the main evidence.
+- **"No code names a stack's folders"** (R5.1) holds as data: the signatures are a file the desktop ships and a person can read, read by
+  one engine.
+
+### 28.8 What is the owner's, and what was not run
+
+*Round 9* *(R9)*: items 11 and 12 are answered by D214's note of 2026-11-08, and items 13 and 14 are asked (§29.8). *(R10)* Items 13
+and 14 are answered by D214's note on round 9's choices (§18).
+
+- **Asked:** §18 item 11 (local configuration and secrets copied into trees, and TREELOCAL1 folded in) and item 12 (a runnable output
+  kept where the person accepts it). Item 10 is restated. The owner's choices of 2026-11-08 hold: rows 6a and 6b come before row 3, and
+  row g still follows rows 3 and 4.
+- **Not run.** The analysis is not built: its figures are this round's walk and git's check (§28.2).
+  - The siblings' view is a matcher's, exact on this repository. Their tracked and untracked files are not split, and their per-session
+    rows assume a session builds what its checkout holds.
+  - This repository's kept-slot figures are R5.2's and two session trees' recombined; row b measures them.
+  - Process sampling as evidence, the walk's bound and a reading's time are row 6a's to measure.
+  - Nothing was built, installed or deleted, and no other repository's git was run.
+- **Revised in place** *(R8)*: the standing; R5.5's and R5.6's heads; §5.2's and §5.3's round-7 notes; §11's head; §15; §17.0's
+  paragraph and rows 1, 3, 4, 6a, 6b and 7; §18 items 2, 10, 11 and 12; §19; §20; §21; §27's *Whether each stands alone*.
+
+### 28.9 The plan
+
+*(R9)* The rows in build order, after row 1 (built) and before row 2 (another round): 6a, 3, 4 (its rows a to f), 6b, g; 7 later. Row
+6a reads and writes rules and row 6b shows and sets them; neither clears, places, copies or runs anything. Row 6b follows row 4, since
+nothing waits on the person's acceptance: rows 3 and 4 need no page, the verb lists what acts, and the person's few own rules (§18 items
+13 and 14) are set by the verb or the file until the page lands, before row g turns the pool on here. Each ⚖ row is built only after both
+makers' reads find nothing blocking in it. *(R10)* The order stands. Nothing is proposed: row 6a reads the floor, every field from any
+layer and the person's `permissions`; row 3 copies what the effective rules name and runs a command unless the person's `permissions`
+deny or hold it; row 6b shows what an `ask` holds and sets the person's restrictions and allows. Until the supervisor kinds' rows land
+(D233's note), every `ask` is the person's (§30.4). *(R11)* The order stands. Rows 6a and 6b are ready to build; rows 3 and 4 wait one
+narrow read by both makers of the sections §31.4 names. Row 3 installs, and runs a rule's command, only in an unworked tree; row 4
+holds a live line's set-aside as its own until it finishes (§30.1). In the rows' round-11 parts, *Cn* and *Fn* are §31's. *(R12)* The
+order stands; rows 3 and 4 wait a last confirming read of the sections §32.3 names. Row 3 knows an unworked tree by Daoris's own mark,
+removed before any agent is handed it, and reads an install's other writes after the hook; row 4 reads a set-aside's class from its
+line's record. In the rows' round-12 parts, *Fn* and *C* are §32's. *(R13)* The order stands; rows 3 and 4 wait a final confirming read
+of the passages §33.2 names. Row 3 reads the mark again before each of the stage's writes, owes the hook in the record until it runs,
+and places a worked tree's hit only beside earlier dependencies it kept or placed; row 4's go-on by a return removes the mark before
+its resumed turn. In the rows' round-13 parts, *Fn* and *C* are §33's.
+
+| Row | Changes | The person sees | Proof |
+|---|---|---|---|
+| **6a. The rule file read, and the analysis writing its layer; nothing acts** *(R8, R9, R10, R11)* **Built** (2026-11-08, `Workplace/Files/`, `daoris files`), but for the analysis's triggers, the toolchain commands' outputs in a reading, pnpm's workspace members, `SetAsideReads`' bare check and the canon's `rooms-and-classes` | `FileRules` in `Workplace/`: the four layers and their order (§29.2), the effective rule of each ignored top at a tree's `HEAD`, a field a rule leaves out taken from its signature, the built-in floor and the person's `permissions` *(R10)*; the repository's `daoris.files.json` read at the line's tip from git's objects, its reader row 1's `TreeClassesReader` (its judgement per rule: no tracked path, no path in two kinds; a `key` path no longer required to be tracked, Codex round 7's 5), the gates file's `trees` moved into it in the same chunk (D228) and `RoomCheck` reading it there; the home's `data/files.json` (a `DaorisHome` entry beside `data/permissions.json`), one reader and writer, a hand edit read, an unreadable file said *(R11: and every act it could restrict held as an `ask` until it reads, F7)*; `FileAnalysis`, round 8's seven sources (§28.4) writing the found layer *(R10)* at registration, at a line move naming a signature file, at a toolchain move, at a finish's observation and at a press through a seam; `FileSignatures` over `Defaults/file-signatures.json`, each row's command, key inputs with its project configuration, toolchain and effective-configuration commands, caches, `bound` and a file its placement writes last; bounded walks; `daoris driver files <repository>`: each top's effective rule and its layer, and `set` and `remove` in the person's layer; this repository's `daoris.files.json` (§29.2); `RoomsProposal`'s classes half withdrawn; the canon's `rooms-and-classes` revised and synced; `docs/areas/driving.md`'s rule 22; *(R11)* an `output` found only by a build tool's output setting or a generation step, a folder a script only names `scratch` or `unknown` (C1, F4); floor 2's bare repository in `SetAsideReads`' walk, by `HEAD`, `objects/` and `refs/` and git's read-only answer (C2); floor 3's provider project configuration; a lockfile's install-script mark keying by the commit's tree (F3); the npm and pnpm rows' workspace members' `node_modules/` in the root's `paths`, the frozen installs and uv's `--system` (F2, F8, F9); the found layer in `data/files-found.json`, the person's file that does not read holding every act as an `ask`, the verb's `set` and `remove` refused from a session's environment (F7); the last match deciding within a layer (F9) | the verb's list | a fixture repository per signature row (npm with a workspace and a `prepare`, keyed by the commit's tree with no repository key; pnpm with patches; yarn's PnP; .NET with a tracked `bin/` entry point beside ignored ones; cargo with a script running `target/`; uv's `.venv` with its `__pycache__/` caches and `uv python find`; go; Gradle; Maven; CMake with `ctest`; vcpkg), each read to its found rules and evidence; the layers' order, and a later rule winning within one; `share`, `copy` and a `secret` `env` acting from every layer, and `copy` found for a local input a gate or a script reads *(R10)*; a tracked path, a nested repository, a linked worktree and a harness's settings beating every layer; `**/__pycache__/` never reaching into a `.venv/`; a branch's and a working file's change to `daoris.files.json` acting on nothing until it lands; a script's `--no-build` making a signature's intermediate an output, the other kind shown as its evidence *(R10)*; a reading replacing the found layer and leaving the person's; no name below a local, scratch or unknown top written; a census that no route of the service or the knowledge server reads `files.json`; this repository's effective rules equal to §28.2's classes; the git starts held to their budget; a walk past its bound saying *more than*; *(R11)* a bare repository with an unpushed ref inside an ignored cache, beside the `.git` and gitfile fixtures, read as `repository`, and a candidate git cannot read held as one (C2); a folder a script only reads found `scratch` and one a gate's script writes found `output` (C1); a dependency whose `postinstall` reads a tracked file, two commits at one lockfile, a miss (F3); a stray comma in `files.json` holding every act as an `ask`, said, and the analysis writing nothing over it (F7); `uv python find --system` keyed with a `.venv` standing (F8) |
+| **3. ⚖ The dependency store, by the rules** *(R7, R8, R9, R10, R11, R12, R13)* | round 7's row 3 (§27), as R5.6's round-9 note and §29.6 change it, from the effective `dependency` rules: the files stage, `TreeFiles`, a run stage after `open` and before `hand`, at every start into a tree, and the same step in the conversation's open after its record (`Loop/Chat/ChatStarts.cs`) (§29.7); today's open and TREEGONE1's remake made with hooks held, their hook run after the stage; the key's effective configuration, project configuration and earlier dependencies; `env` values hashed, `secret` names marked in any layer and their values scanned *(R10)*; the fill's isolation, its `installing` record, one install per repository at a time, every earlier placement read after each install, git's common folder listed; a command run unless the person's `permissions` deny it or an `ask` holds it (§30.4) *(R10)*; the local copies at the stage from the effective `copy` rules, TREELOCAL1's copying removed in the same chunk and its copies carried as the person's rules (§18 item 13) *(R10)*; TREEDEPS1 removed (D214's note); §15's round-9 and round-10 words; *(R11)* the files record's `handed`, an install only in an unworked tree and nothing installed, removed or run in a tree an agent has run in (F1, C3); every `env` value keyed by a digest keyed by the home (C4); an install's companions (F2) and one install's changes grouped (C5); the write-back for every install, and an unignored write removed; a failed install's mark cleared before `hand` (F5); a lock per key (F9); the copies' two gates (F6); §15's round-11 words; *(R12)* the files record's `unworked` in place of `handed`, written by today's open before its `worktree unlock`, TREEGONE1's remake, and a take or a return once its check passes, and removed before `hand`'s agent, before a conversation's first turn in `ChatStarts` and by a terminal's visit, a removal that fails handing nothing, and a tree with no record or none that reads worked (F1, F2); an unworked tree's tracked changes and unignored paths written back and removed before any placement (F3); a group's member never placed by its own key (F4); an install's other writes in its record and read after the hook, one absent installing it again (C); `toolchain` commands run as reads (F5); *(R13)* the files record under one lock, the stage reading the mark again before each write-back, removal, placement record, after-read, hook and copy and stopping once a terminal has taken it, said (`started.files-stopped`) (F2); the hook owed in the record until it runs, owed again by step 1's write-back, and the other writes read at every unworked stage (F3); a worked tree's hit placed only where each dependency before it was kept or placed, else left, said (C) | at a session's start, each dependency said kept, placed, installed before the session began, installed in this tree and not stored and why, left as the line's own *(R11: and why)*, or not placed and why, and what an `ask` holds (`started.files-waiting`) *(R10)*; the Disk space card's `deps` kind | round 7's row 3 proofs from the rules; a user-level setting and a project `.npmrc` with `omit=dev` each added at one lockfile, each missing (Opus F3, Codex 5); an install reading an ignored file present beside it sealing nothing (Codex 1); an install changing a file in another dependency's folder without adding a path, sealing nothing and that folder's record rewritten (Codex 2); an install writing a generated folder outside its paths sealing nothing, and one whose rule lists it sealing both and a hit placing both (Codex 3); a replay tried from a second process during a paused install refused as in use (Codex 4, Opus F1); an install killed by a restart and its carry-on removing the `installing` folder and installing again (Opus F4); a `secret` value written into the folder sealing nothing, an unmarked one stored at its hash's key, and no value in a record, note or log (Opus F8) *(R10)*; two starts at one new key making one install and one placement (Opus F9); a repository command no signature ships running by default, refused by a `deny`, and held by an `ask` until the person's `allow` lets it at the next start *(R10)*; a fresh tree's `post-checkout` hook running after the stage; *(R11)* a resume after its line's commit moved a commit-tree key, its uncommitted tracked edit and untracked file as they were and the dependency said as the line's (F1); a carry-on whose lifecycle script would rewrite an already-dirty tracked file running nothing (C3); a cut-off start's carry-on installing again; two secret values making different folders, neither literal in either, the second missing (C4); removing B's rule removing its effect on A, and A placed again at its key with B's rule standing having B's effect again (C5); a failed install's mark gone before `hand`, and the line's own install kept at the next start (F5); a carry-on leaving the `.env` its line set, and a copy refused into a path its `HEAD` does not ignore (F6); the web's fill sealing while the root's install runs (F9); *(R12)* a conversation's new part in its tree after its key moved, its uncommitted lockfile edit as it was (F1); a tree opened before row 3 with an uncommitted lockfile edit and a patch under `node_modules/x/`, resumed after it, left as it was (F2); an install cut off after rewriting the lockfile, an `ask` set before its carry-on, the lockfile at the commit when the session starts (F3); B's install changing sealed A, A's folder removed by the line and its resume leaving it absent, said (F4); an install's lifecycle output another rule names, removed before a start into the unworked tree at the same key, installed again before `hand` (C); *(R13)* a terminal's edit to a tracked file and its new unignored and ignored files during an install, as they were at `hand` (F2); a take clearing an install's other write and cut off before its hook, its carry-on running the hook and installing the dependency again before `hand` (F3); B installed reading A's headers without changing them, A's headers changed by the line and B's folder removed, the resume leaving B absent, said (C); **measured, in the row's note**: this repository's root installed in each tree and its web folder sealed, a placement's and an install's time, and the stage's time on the start's path; TREEDEPS1 gone |
+| **4. ⚖ The fallback's tree, by the rules** *(R7, R8, R9, R11, R12, R13)* | round 7's row 4 (round 4's rows a to f) reading the effective rules at every take and finish, for every kind; the take's round-9 phases, the files stage after them (§5.3, §29.7); outputs moved aside at a take, never deleted; a dependency whose record fails, or a dependency rule's folder with none, the line's own at the judgement and the finish (Opus F7); the toolchain key read at each let-go into `line_ends` and `kept_trees` and a take renewing where its own differs (Opus F6); tool caches kept per slot under the toolchain key; unknown paths and local writes set aside at a finish; another repository or tree holding the slot; the census's third list with the landing's set and the follow's test (Opus F2); the observation at each slot's finish, in the census's first list; *(R11)* a take's set-aside of a line that may come back held as that line's until it finishes, by a class of its own in `SetAsideEligibility`, and recorded with its record (C1); a dependency's companions and a group's members the slot's at the judgement and the finish (F2, C5); Daoris's copies deleted before the switch (F9); the returning line's own slot a worked tree (F1); `started.outputs-aside`; *(R12)* that set-aside's class read from its line's record, held while the record can go on, a no-output line's as its conversation's place is (F6); a take or a return writing `unworked` once its check passes (F2); *(R13)* a go-on into a tree a return marked removing `unworked` in its own step before its resumed turn, a failed removal holding its words (F1) | nothing until its row f; then the count's control, off by default, and with a count set, sessions starting in a kept tree, said | round 7's row 4 proofs from the rules; a replaying landing with its line's session running in the slot leaving the slot as it was (Opus F2); the line moved during a slot's install, its branch not replayed there (Opus F1); a let-go line that committed a `global.json` selecting another SDK, the next take renewing `obj/` (Opus F6); a let-go line's edit under `node_modules/x/` or `pip install` into its `.venv` holding a live line's slot and going aside with a finished line's record (Opus F7); a `.venv` kept across a take after a test run wrote `__pycache__/` inside it (Opus F10); a live line's outputs moved aside at a take and found in its set-aside folder; a cache kept across a take and renewed at a toolchain change; a path no rule names handled as unknown; a harness worktree inside a slot holding it; a fixture repository inside scratch going aside with it; *(R11)* a `prepare` writing a folder beside its own kept with it at a finish and at a take at the same commit, and installed again where that folder was removed, git's hooks there after it *(R12)*, and a workspace member's `node_modules/` kept with its root (F2); a live line's outputs set aside at a take kept past D195's days, gone an hour after its record, and its return saying so (C1, F4); a bare repository inside an ignored cache holding its slot (C2); *(R12)* a take at the same key clearing a lifecycle script's output another rule names, the dependency installed again before `hand` and its output there, and this repository's root kept, its `post-checkout` hook writing `docs/index/` again (C); a take refused at `judged` leaving the line's own slot worked (F2); a no-output conversation's set-aside kept after its empty branch goes, and gone an hour after its record once it lands (F6); *(R13)* a conversation not spoken to within the hour, its slot taken and let go by another line, going on by a return, editing its lockfile uncommitted and moving at its limit, the edit as it was at its next part's stage (F1); **measured, in row b's note**: the files and bytes a take writes over a day of main against a fresh tree's, `bin/` cleared, against §28.2's recombination, and the disk the moved-aside outputs hold |
+| **6b. The rules shown and set** *(R8, R9, R10, R11)* | the repository page's section *Files git does not manage*: each top's effective rule, its layer, what the layers below it said, its evidence and size; the person's rules and `permissions` added, changed or removed, and what an `ask` holds allowed in one press *(R10)*, by Window-class verbs refused on the pipe; *Read again*; the words in both catalogues and the glossary's terms (§15); the area's sentence; *(R11)* a file that does not read said, and nothing written over it (F7) | each repository's files git does not manage, what Daoris does with each and why, and anything a restriction they added holds *(R10)* | stories and page tests in both languages; a person's rule overriding the repository's and the found one's, shown beside both; an allow pressed writing the person's `allow` with its maker, and an allow taken back *(R10)*; a `copy` showing who can read the copy; a verb refused on the pipe; no machine path in the payload; *(R11)* an allow refused while the file does not read |
+| **g. ⚖ On for this repository, measured** *(R8, R9)* | as §17's row g, once rows 6a, 3, 4 and 6b have landed; its installed resume first | sessions here starting in kept trees, said | row g's measurements, the bytes split by kind |
+| *Later:* **7. The tidy's lists read through the rules** *(R8, R9)* | a round of its own: `TreeScratch`'s build folders and `integration.scratch` read through the effective rules for a finished fresh tree's tidy, and removed. Until it lands they stand for that tidy alone (D228's condition) | — | — |
+
+Rows 2, 5, h, i and j, and the later B and A, stand as §17.0 writes them.
+
+## 29. Round 9: the rule file, and both reads of round 7 answered
+
+**The owner's choice (D214's note of 2026-11-08, round 8's choices).** Every file git does not manage is handled by rules, not by round
+8's inventory accepted entry by entry: a rule file of path patterns, read in order as an ignore file is, each pattern naming its kind of
+management, layered as an agent's permission settings are, and set or changed at any time. Daoris's analysis proposes rules into it, so
+nothing waits on the person accepting each finding. Runnable outputs stay cleared at every take for the first build. The standing
+choices bound it (D214's notes of 2026-11-07 and 2026-11-08): the kept slot made solid first, rows 3 and 4 and then row g here; the
+dependency store the one way a tree gets its dependencies; no Dev Drive; rooms first where rooms do not share a build.
+
+**Round 9 is written by Claude Opus 5.5 from main at `5651fdda5a`.** It replaces round 8's inventory with the rule file (§29.1 to
+§29.5) and answers both makers' reads of round 7, which round 8 did not see (§29.6, §29.7): Codex's at `687dc968a8` and the independent
+Opus reader's at `8c8e0f86bd`, verbatim in `docs/2026-10-26-tree-pool-reads.md`. Every line §29.6 cites was read at `5651fdda5a`. A
+passage of R5 to §28 that round 9 changes is marked *(R9)*; in this section *Codex n* is Codex's round-7 finding n and *Fn* the Opus
+reader's.
+
+### 29.1 What changes, and what does not
+
+- **What acts.** Round 8: the inventory's entries the person accepted. Round 9: the **effective rule** of each path git does not manage,
+  read from the rule file's layers (§29.2). Nothing waits for an acceptance; *(R10)* nothing waits at all but what a restriction the
+  person added holds (§30.4).
+- **What stays.** Round 8's analysis, its seven sources and their order (§28.4), its measurements (§28.2) and its classes, now the rules'
+  kinds (§28.5, revised by §29.3); round 7's key, fill, placement record and toolchain key as §29.6 changes them; row 4's slot mechanics
+  (§2 to §12); the owner's frame (R5.1, R5.7).
+- **What goes**, in the chunk that replaces it (D228): the inventory's store tables, states, revisions and per-entry acceptance (§28.3);
+  the gates file's `trees`, moved into the repository's own rule file at row 6a; TREELOCAL1's copying, at row 3, its copies carried as
+  the person's rules (§18 items 11 and 13) *(R10)*; TREEDEPS1's copy, at row 3, as D214's note of 2026-11-08 chose.
+
+### 29.2 The rule file: its format, its place and its layers
+
+**One format in every layer.** A JSON object whose `rules` is a list read in order, as an ignore file is: of the rules that match a
+path, the last decides. Each rule names one `kind` and the `paths` it covers, in the gates' path grammar (repository-relative, `/`,
+globs, a folder ending in `/`), with the fields its kind takes. A key opening with `_` is the file's own note, as in the gates file.
+JSON, for three reasons: every declaration Daoris reads in a repository is JSON already (`daoris.json`, the gates file, the lanes file);
+a dependency's install, key and caches need structure a line of an ignore file does not give; and the machine's layers are a file of the
+home as `permissions.json` is, with one reader and writer and a hand edit still read (agents area rule 18).
+
+**The kinds** are round 8's classes: `dependency`, `intermediate`, `output`, `cache`, `local`, `scratch`, `repository` and `unknown`.
+The session's own work, untracked and not ignored, is no rule's. *(R10)* Every field acts from any layer; round 9's column of fields
+only the person's layer could set is cut, and with it scratch's `discard` (§30.2).
+
+| Kind | Its fields |
+|---|---|
+| `dependency` | `install`, the command, run in the folder of the manifest beside its first path; `key`, the tracked paths and globs that key it, an absent one keyed as absent; `toolchain`, the commands whose output keys it; `env`, the names its install is given, *(R11-C4)* each value keyed by its digest and a name marked `secret` also scanned for; `caches`, folders inside it that its tools write and check; `bound`, installed in each tree and never stored; `share`, its store entry shared across repositories. Its `paths` are everything its one install makes in the tree, placed and recorded together, *(R11)* a glob among them expanded by its manifests at `HEAD` (a workspace's members); what its install writes outside them that no rule names are its companions (R5.6) |
+| `intermediate`, `cache` | `toolchain`, the commands whose output keys the tree's build state |
+| `output`, `repository`, `unknown` | none |
+| `local` | `copy`: copied into each tree read-only from the checkout |
+| `scratch` | none: it goes aside with its line's record |
+
+A field the winning rule leaves out takes the toolchain signature's value for that kind and folder (§28.4, source 4), never another
+layer's rule: so this repository's rule for `node_modules/` need not restate `npm ci`. A `dependency` that neither names nor inherits an
+`install` and a `key` acts on nothing, said.
+
+**What a rule is matched against.** The paths git lists ignored at their tops in the tree at its `HEAD` (`git ls-files --others
+--ignored --exclude-standard --directory`), never a path inside one: a dependency's or a repository's folder is one unit, and inside it
+only its own `caches` count (F10). *(R11-F9)* A dependency's folders come from its rule and its manifests at `HEAD`, since a fresh tree
+holds none yet for git to list. A `copy` names a file of the checkout, which it copies from. Rules act only in Daoris's own trees, never
+in the checkout, which is the person's.
+
+**The layers**, read in this order, a match in a later layer winning over every earlier one:
+
+| Layer | Where | Written by | Tracked |
+|---|---|---|---|
+| 1. **Found** | *(R11-F7)* the home's `data/files-found.json`, the analysis's file alone | the analysis alone, at each reading (§28.4), replacing the layer whole; never by hand, an edit going in layer 3 | no |
+| 2. **The repository's** | `daoris.files.json` at the repository's top, beside its gates and lanes files, read from git's objects at the line's tip | the repository, by landing | yes |
+| 3. **The person's** | the home's `data/files.json`: its `machine` rules, for every repository here, then the repository's own `rules`, and the `permissions` of both (§30.4) *(R10)* | the person: the repository page, `daoris driver files`, or the file by hand; an allow also by a supervisor's grant (§30.4) | no |
+| 4. **The built-in floor** *(R10)* | Daoris's code | — | — |
+
+That is how an agent's settings are layered: Daoris's guesses lowest, as a harness's defaults; the repository's word shared by every
+machine, as a project's settings; the machine's own above it, as a project's local settings; and a floor no layer overrides *(R10)*, as
+a managed policy's is and as Daoris's fixed `no-push` is beneath the person's rules (agents area rule 18). The analysis sits below the
+repository, so a guess never overrides what the repository states: a key's completeness, a path-bound install. *(R11-F9)* Within one
+layer the last matching rule decides too, as an ignore file reads; row 6a's refusal of a path in two kinds stays only for a
+dependency's `paths`, one install's unit: a later rule that takes one of them makes that dependency act on nothing, said.
+
+**Read at the line's tip, never a branch's.** The repository's layer is read from git's objects at the commit the checkout's line stands
+at, never from a working file or a session's branch, so a session's change to it acts once it lands. Round 7's lesson holds: what Daoris
+does to the next line is never one branch's say, and the command it runs least of all.
+
+**Set or changed at any time.** Each open, take, files stage (§29.7) and finish reads the effective rules afresh, so a change acts at the
+next of them and never on a tree under way. *(R11-F7)* The person's `files.json` absent is empty. One that stands and does not read holds
+every `run`, `copy` and `share` as an `ask` no allow can answer until it reads, said (`started.files-unread`), and nothing writes over it:
+its defaults restrict nothing, so read as empty it would drop every `deny` and `ask` the person set, where `permissions.json`, read as
+empty where it fails (`Agents/Permissions.cs:314-319`), keeps the harness's own defaults. A found file that does not read is written
+again at the analysis's next reading, the floor still standing.
+
+**The built-in floor** *(R10)*, after every layer, which no layer, role or allow sets aside and none of which asks, is §30.1's. *(R11)*
+Round 10 wrote it here and in §30.1 both; round 11 keeps the one in §30.1, which it revises.
+
+Round 9's refusals 4 to 6, of a local input in the store or another repository's tree, of the person-only fields and of a command no
+signature ships, are cut (§30.2).
+
+**This repository's layer**, as row 6a writes it from the gates file's `trees` (`daoris.gates.json:199-211`), which it replaces:
+
+```json
+{
+  "_why": "How Daoris's trees handle this repository's files git does not manage (docs/2026-10-26-tree-pool-design.md §29). Read in order, a later rule winning; this machine's own rules come after these.",
+  "rules": [
+    { "kind": "local", "paths": ["local/"] },
+    { "kind": "scratch", "paths": ["_fixtures/", "**/_fixtures/"] },
+    { "kind": "dependency", "paths": ["src/Daoris.Web/node_modules/"],
+      "key": ["src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/.npmrc"],
+      "caches": [".cache/", ".vite/", ".vite-temp/"] },
+    { "kind": "dependency", "paths": ["node_modules/"],
+      "key": ["package-lock.json", "package.json", "src/Daoris.Cli/package.json", ".npmrc"] },
+    { "kind": "intermediate", "paths": ["src/**/obj/", "tools/**/obj/"], "toolchain": ["dotnet --version"] },
+    { "kind": "output", "paths": ["src/Daoris.Contracts/bin/", "src/Daoris.Desktop/*/bin/", "src/Daoris.Service/*/bin/",
+      "src/Daoris.Devkit/*/bin/", "tools/*/bin/", "src/Daoris.Service/Daoris.Service.Http/wwwroot/", "src/Daoris.Cli/dist/",
+      "docs/index/", "src/Daoris.Web/src/data/generated/", "src/Daoris.Web/src/bridge/generated/"] }
+  ]
+}
+```
+
+Both dependencies take npm's signature for the rest: `npm ci` in the lockfile's folder, and `node --version`, `npm --version` and `npm
+config list --json` as their `toolchain` (F3). The `.npmrc` files are absent today and keyed as absent (Codex 5). The root states its
+key, which the analysis alone could not, since its `prepare` runs (`package.json:14`). The web's rule comes first: dependencies are
+installed in rule order, and the root's install writes `docs/index/` outside its folder, so a fill after it in the same tree could not
+seal (Codex 3's row in §29.6). The CLI's tracked `bin/` is git's by floor 1, yet the outputs stay named folder by folder, since the
+reader refuses a pattern that reaches a tracked path, so a mistake is said.
+
+**This machine's layer** for it, after the upgrade on §18 item 13's yes:
+
+```json
+{ "repositories": { "<repository>": {
+    "rules": [ { "kind": "local", "paths": ["local/sensitive-patterns.txt"], "copy": true } ] } } }
+```
+
+*(R11-F7)* Its found layer is the analysis's own file, `data/files-found.json`, shaped as the machine's layer is, each repository's
+entry holding its `read` (the commit, the toolchain and the moment) and its `rules`. Its found rules are §28.2's reading: the 21 `obj/`
+and 21 `bin/` by the .NET signature, the two `node_modules/` by npm's, the seven folders the scripts name, `_fixtures/` by what sessions
+leave, `local/` and the harness's settings as local, and the harness's worktrees as repositories. Each carries its evidence (*beside
+`package-lock.json`*) and its size, and names nothing below a local, scratch or unknown top. Where layer 2 matches the same top, layer 2
+decides. *(R11-C1)* Of the seven, the four layer 2 names stay outputs here; the found layer reads storybook's and playwright's folders
+by those tools' output settings, and `publish/`, which publish scripts write and no gate or hook runs, as `scratch`.
+
+### 29.3 What each kind does, under rules
+
+§28.5's table stands but for four cells, and §5.3's round-9 note gives the take's order:
+- **Runnable outputs**: a take moves them aside into a set-aside folder of the line they came from, never deletes them (floor 4); a
+  finish sets them aside with the record, as before. Cleared at every take, by the owner's choice, and no rule keeps one in the first
+  build (§18 item 12). *(R11-C1)* The folder a take makes for a line that may come back is held as that line's until it finishes, then
+  goes with its record (§10's round-11 note).
+- **Dependencies**: kept, placed or installed in the files stage after the record's open, never in a take's claim (§29.7). A placement
+  whose record fails, or a dependency rule's folder with no record, is the line's own: it holds a live line's slot and goes aside with a
+  finished line's record (F7).
+- **Intermediates and caches**: renewed, moved aside, where the toolchain key a take reads after its switch differs from the one the last
+  let-go wrote (F6). A cache is kept per slot; sharing one through the store waits for a later row, since its fill would run a
+  repository's script no signature ships.
+- **Local and scratch** *(R10)*: a file is copied where the effective rule says `copy`, at the files stage, after the installs, *(R11-F6)*
+  only into a target git ignores there that is absent or Daoris's own copy; scratch goes aside with its line's record, never deleted
+  (floor 4).
+
+### 29.4 What the analysis writes *(R10)*
+
+**Into the found layer, acting at once:**
+- a `dependency` where a signature row names one: a lockfile beside the folder, the manager's command, its key inputs, its `toolchain`
+  and effective-configuration commands, its caches; `bound` where the row says so (uv's `.venv`) or the fill finds the tree's path. Where
+  its install runs a lifecycle script (source 5) and no repository rule states its key, it is keyed by the commit's tree, shared at one
+  commit only, round 7's rule for a key nobody states. *(R11-F3)* So it is where its lockfile marks a package's own install script
+  (npm's `hasInstallScript`, where a manager writes one), unless the signature row lists that package as reading nothing of the tree
+  (esbuild's binary check). Those whose installs run no lifecycle script come first in its order, so one that writes beside its folder
+  leaves the others free to seal. An `env` name, or its `secret` mark, only where a signature row names it *(R10)*;
+- an `intermediate` or a `cache` by a signature row, unless a script or an observed process uses that folder without its tool's own
+  check (source 5's runner evidence, source 6), which makes it an `output`;
+- *(R11-C1, F4)* an `output` only where a build tool's output setting names the folder (a signature row: .NET's `bin/`, vite's and tsc's
+  `outDir`) or a generation step makes it again: a tracked script that writes it, run by a gate, a hook or a lifecycle script, as the
+  checkout hooks run `tools/orient-index.mjs` for `docs/index/`. A script or project file that only names a folder shows a reader, never
+  by that alone a producer: with no producer found the folder is `scratch` where a script or a session writes it, else `unknown`, each
+  holding a live line's slot and going aside at its finish;
+- a `scratch`, `unknown` or `repository`; and `local` for every local signature (source 2), with `copy` where a gate or a script reads
+  the file (the gates' `localInputs` and `sensitive.patternsFile`, a file source 5's scripts name) and never for a harness's or an
+  editor's settings (floor 3) *(R10)*. A private folder nothing found reads is not copied: a copy no reader needs is churn.
+
+Where sources disagree it writes the kind whose wrong cost is a build or a held slot, `output` over `intermediate` and `scratch` or
+`unknown` over a kind that keeps (§28.5's costs), and shows the other beside it as its evidence (*a signature says intermediate;
+`tools/desktop.mjs` runs it without building*) *(R10)*. A path no source names is `unknown`. A reading replaces the found layer whole and
+never touches layers 2 and 3. It writes no `share`, since no reading finds one, and no command but a signature's, since it only reads.
+
+*(R10)* Round 9's proposals and its *never* list are cut (§30.2): nothing the analysis finds waits on a press, and a person who wants
+otherwise writes their own rule or `permissions` (§30.4).
+
+So a repository nobody has looked at gets, from its registration, its dependencies placed, its intermediates kept per slot, its outputs
+cleared, the local inputs its gates read copied and its own rules' commands run, and a wrong guess there loses nothing (floor 4)
+*(R10)*: *(R11-C1)* an output set aside from a line that may come back is that line's until it finishes.
+
+### 29.5 Round 8's four bounds, under rules
+
+1. **Most unmanaged bytes are private files or other repositories** (§28.2: 18 GB here, 30 GB and a 10 GB copy folder in sibling B),
+   shown and left alone. Floor 2 holds every repository and worktree whatever a layer says, and the analysis writes `local` for the
+   private folders without `copy`, since nothing found reads them *(R10)*. The page shows their counts and sizes, never their inner names.
+2. **Local inputs are copied where a rule says so, and a harness's or an editor's settings never** *(R10)*. `copy` and a `secret` mark
+   act from any layer, the analysis writing `copy` for an input a gate or a script reads; the harness's and the editor's settings are
+   on the floor (floor 3, §30.3). *(R11-C4)* Every passed value is keyed by its digest, and a name marked `secret` also scanned for in
+   what the install wrote (§29.6, F8). TREELOCAL1's copies today carry over as the person's rules (§18 item 13, answered yes).
+3. **Outputs limit the saving.** Cleared at every take, moved aside, by the owner's choice; no rule keeps one, so a kept slot here still
+   writes a quarter to three quarters of a fresh tree's bytes (§28.2). Row b's note measures it before the choice is asked again (§18
+   item 12).
+4. **A run that reads without building is only approximated**: by the scripts' text and the session job's sampled processes (§28.4,
+   sources 5 and 6). Under rules the analysis writes `output` wherever any evidence says a folder runs without its tool's own check, and
+   a run between two samples is caught by the finish's observation, which rewrites the found rule. Until then an intermediate wrongly kept
+   can hand a line another line's build; the repository's or the person's rule settles that folder for good.
+
+### 29.6 Both reads of round 7, answered
+
+Codex's read asked another round for row 3 and, narrowly, for row 4 (5 findings, 4 blocking); the Opus reader's, another round narrowly
+for row 3 on F3 and for row 4 on F1 and F2 (11 findings, 3 blocking). Neither found committed work lost, and none of their findings
+reopens a choice of the owner's. Each is answered inside the rule file.
+
+| Finding | Holds? | The change, and the row that proves it |
+|---|---|---|
+| Codex 1 (blocking) Selecting the install's environment does not bound its inputs: the manager's user configuration, a slot's earlier state and local copies, a secret in `env` | **Holds. Taken** | npm reads its user, global and built-in configuration whatever the environment (`docs.npmjs.com`'s `npmrc` page, as Codex cites it), and a slot's take ran its install beside line A's intermediates and after the local copies (§5.3's round-7 note). **The key** adds each manager's effective configuration, printed by a `toolchain` command its signature row names (`npm config list --json`, `pnpm config list --json`, `pip config list`), run in the install's folder and environment, its output hashed and the tree's path written as a token first; a manager that prints none keys its configuration files outside the tree by content, absent as absent (F3's change, which this shares). **The fill seals** only in a tree that held, as it began, nothing ignored but the folders of the dependencies before it whose records hold: a fresh tree, its hook held until the files stage, before the local copies (F8). In a slot holding kept intermediates or caches it installs in place, recorded and kept by its key and record as a `bound` one, never stored. Every `env` value is hashed, never written, and each `secret` one scanned for in what the fill wrote *(R10)*. An install that needs a private input fails in Daoris's fill, which holds none, said, and the session installs its own as before row 3. Row 3: a user-level setting changed at one lockfile missing; an install reading an ignored file beside it sealing nothing; a `secret` value in the folder sealing nothing *(R10)* |
+| Codex 2 (blocking) The fill cannot see writes inside existing ignored folders | **Holds. Taken** | `status --ignored=matching` names a wholly ignored folder once (`Workplace/ContentHolds.cs:402`, `:421-424`), so a write inside another dependency passes it. Under Codex 1's isolation a sealable fill's tree holds only tracked files, the earlier dependencies' folders and the folder it fills, so **after each install every earlier placement is read against its record**, stat first and a hash where a stat differs. One it changed was written outside the install's paths: that install seals nothing, and the changed placement's record is rewritten as the tree's own, so the tree holds what a fresh install in rule order makes. **Each dependency's key holds the keys of those before it in rule order**, so where a take places the first again, the second is installed again over it and what it did to the first is done again. All before the agent is handed. Row 3: an install changing a file inside another dependency's folder, adding no path |
+| Codex 3 (blocking) A store hit does not make again what the install wrote outside the stored folder | **Holds. Taken** | R5.6 let *declared outputs* beside the folder pass the judgement, and a hit places only the folder. **Withdrawn**: an install that writes anything in the tree outside its rule's `paths` seals nothing, and is installed in each tree and kept in a slot by its key and record. A rule lists in `paths` each folder its one install makes that a later step needs (a generated client), placed and recorded with it, a path in two kinds refused, so a hit makes every effect the install had in the tree. git's common folder, shared by every tree and the checkout, is listed before and after (its hooks and its local configuration) and what changed is said; anything else outside the tree is the rule's own to answer for (§20). Here the root's `prepare` writes git's configuration and hooks and, where it is absent, `docs/index/` (`tools/index-hook.mjs:54-88`; `tools/merge-rows.mjs:264-276`), so the root's folder, 257 files and 25 MB, is installed in each tree and never stored, and the web's, 17,069 files and 229 MB, with no lifecycle script, seals, its rule coming before the root's, since a stray path an earlier install left keeps every later fill in that tree from sealing (§29.2). Row 3, its note measuring both |
+| Codex 4 (blocking) The install releases the start's hold before the record opens, so a replay rebases the tree under it | **Holds. Taken, as the Opus reader's F1 proposes** | The start's hold is the run's until its record opens (`Loop/Run/Tree/GrowTree.cs:3-9`; `Loop/Run/Open/OpenRecord.cs:119-120`), and a pull's replay judges a tree busy only by its in-use set (`Workplace/BranchJudging.cs:121`). **No install runs before the record's open**: a take's phases end at `opened`, inside the hold (§5.3), and the dependencies are kept, placed or installed in the files stage after the open, where the record holds the line and `WhereIs` its slot in every in-use set (§3.2), a fresh tree being its record's own path. Nothing of a start runs outside the hold before its record, so no reservation from the claims and no second check before the open is needed (§19). Codex's test is taken. Rows 3 and 4: a replay tried from a second process during a paused install refused as in use |
+| Codex 5 The example key omits the project `.npmrc` | **Holds. Taken** | npm's signature row keys each optional project configuration file, absent as absent, and the effective configuration covers it twice. This repository's layer names `.npmrc` beside each lockfile (§29.2). The reader's refusal of an untracked `key` path (`Workplace/TreeClassesReader.cs:91`) goes at row 6a. Row 3: a project `.npmrc` with `omit=dev` added at one lockfile, under this repository's own rules, missing |
+| F1 (blocking) A take's install runs before the record opens and outside the start's hold | **Holds. Taken** | As Codex 4: the files stage, a run stage after `open` and before `hand`. *After the open* in round 7's row 3 reads *after the record's open*. Row 4: the line moved during a slot's install, its branch not replayed there |
+| F2 (blocking) The landing's follow tests the slot against a set the census does not name | **Holds. Taken as the reader proposes** | `ServiceReviewLandingWorld.InUseAsync` holds the active sessions' trees alone (`Review/ReviewLandingWorld.cs:43-46`), handed to the landing (`Workplace/LandPerformer.cs:112`, `:252-254`) and tested by LANDSYNC1's follow (`Workplace/LandingPress.cs:339-342`; `Workplace/TreeLandSyncs.cs:206`), which would detach `k-1` under its running line. The census's third list names the set and the test, and the slot is added where the set is built (§3.2). Row 4 (rows a and c; proved at e): a replaying landing with its line's session running in the slot leaves the slot as it was |
+| F3 (blocking) The key leaves out each manager's configuration outside the tree | **Holds. Taken** | As Codex 1's key: the effective-configuration commands are signature data, this repository's dependencies take npm's (§29.2), and a command whose output names the tree has that path written as a token, so it never makes every key miss. A `bound` `.venv` kept at its key moves with it. Row 3: a user-level setting changed at one lockfile, missing |
+| F4 An install killed after the record opened is met by a carry-on that clears nothing | **Holds. Taken** | The files stage runs at every start into a tree, a resume and a carry-on among them. Each install's placement record is written `installing` before its folder is cleared; a folder found so is Daoris's own cut-off install, removed link-safe and installed again before the agent. A folder with no record, or a failing one, at a resume is the line's own, left as it is, said (`started.deps-left`). Row 3: an install killed by a restart, then the carry-on |
+| F5 Accepting the gates file whole darkens the classes at every gate edit | **Holds for round 7; gone under rules** | Nothing is accepted: the repository's layer is its own file, read at the line's tip, so a gate's edit changes none of it. *(R10)* A repository's command runs unless the person's `permissions` deny it or hold it, matched by its text alone (§30.4), so an edit elsewhere holds nothing back |
+| F6 The toolchain key is read at the take, not where the intermediates were built | **Holds. Taken as the reader proposes** | The end's read writes the key into `line_ends.toolchain` and `kept_trees.toolchain` (§6, §2.3), and a take renews where the key it reads after its switch differs. Row 4b: a let-go line that committed a `global.json` selecting another SDK, the next take renewing `obj/` |
+| F7 A placement whose record fails is still the slot's at the judgement and the finish | **Holds. Taken** | §5.2 step 5 and the finish read each dependency's namespace against its record, as the take does; a failing one is the line's own, holding a live line's slot (§18 item 4 (a)) and going aside with a finished line's record, never removed at a take (floor 4). Row 4b: an edit under `node_modules/x/` and a `pip install` into a `.venv`, each by a let-go line |
+| F8 A secret in `env`, and the inputs a fill reads unkeyed | **Holds. Taken** | The key and the record hold the key's hash alone; an `env` value is hashed, never written to a record, a note or a log; a name any layer marks `secret` is keyed by its name; the fill scans for each secret value as for the tree's path, sealing nothing where it finds one, as F8 asked *(R10)*. Installs run before the local copies, and R5.5's `key` statement reads *no other file, tracked or ignored*. Row 3 |
+| F9 What the fill cannot see; two fills of one key | **Holds. Taken** | (a) git's common folder listed before and after and said, the rest the rule's own (Codex 3). (b) One install of a repository at a time, across its trees, under a lock of its own in the home; a waiter looks at the store again once it has the lock and places a sealed hit. This repository's two `--install`s cannot then race for `config.lock`. Row 3: two starts at one new key, one install and one placement |
+| F10 The uv example installs again at every take | **Holds. Taken** | A rule matches only the ignored tops git lists, so no other kind's glob reaches inside a dependency; uv's row gives the `.venv` `"caches": ["**/__pycache__/"]` and keys the interpreter by `uv python find`, since `pyvenv.cfg` leads outside the tree. Row 6a's uv fixture; row 4: a `.venv` kept across a take after a test run |
+| F11 Nits | **Taken, each** | The clear only over what git ignores at the new `HEAD` (floor 1); installs one at a time in rule order, each judged against the status the last left; a placement by its entry's manifest, a source missing or of another size evicting the entry and falling to the install; npm's hidden lockfile written last, by its signature row (`Workplace/TreeDependencies.cs:268-273`); the conversation's open runs the files step after its record and before its agent (`Loop/Chat/ChatStarts.cs`); an output is what a runner uses *without its tool's own check* (R5.5's round-9 note); §18 items 2 and 10 were answered at round 8 |
+
+**Where the reads found nothing**, nothing changes: the claim, its generation, the named job and the takeover (§2.3); the switch and
+the order of the clear and the check; submodules refused; the first two census lists; npm's workspace junctions made again inside the
+tree; pnpm's hard links sealed by copy; NuGet's packages outside the tree; cargo's fingerprints; yarn's PnP paths; path-bound installs;
+mixed folders; link-safe removal; an evicted entry leaving its placed copies.
+
+*(R11)* Round 11 revises five of these answers (§31): Codex 2's placement rewritten as the tree's own becomes one group with the install
+that changed it (R11-C5); Codex 3's install kept by its key and record keeps its companions with it (R11-F2); F4's stage at a carry-on
+installs only in an unworked tree, and a failed install's mark goes before `hand` (R11-F1, F5); F8's `secret` name is keyed by its
+value's digest, as every value is (R11-C4); and F10's interpreter is keyed by `uv python find --system` (R11-F8).
+
+### 29.7 The take and the files stage, as rows 3 and 4 build them
+
+*(R11)* Revised in place by round 11 (§31): Daoris's copies go before the switch, a take's set-aside of a live line is that line's, and
+the files stage installs only in an unworked tree, its companions and groups read with each placement. *(R12)* Revised in place by
+round 12 (§32): the mark is `unworked`, Daoris's own, removed before anything is handed the tree, a conversation's open among them; an
+unworked tree's leftover changes go back first; a group's member is never placed by its own key; an install's other writes are read
+after the hook. *(R13)* Revised in place by round 13 (§33): a go-on removes a return's mark, the record is written under one lock and
+the mark read again before each of the stage's writes, the hook is owed until it runs, and a worked tree's hit waits on the dependencies
+before it.
+
+**A take or a return**, inside the start's shared hold, as phases of its claim (§2.3, §5.3):
+1. `judged`: §5.2, its step 5 reading each dependency against its record (F7), with its companions and its group *(R11)*. Then *(R11-F9)*
+   Daoris's own copies deleted by their recorded hash, never followed, so the switch never refuses a slot for a file Daoris made.
+2. `switched`: in place, hooks held, never forced.
+3. `cleared`: under the effective rules at the new `HEAD`, over its ignored tops only. Outputs moved aside into the set-aside folder of
+   the line they came from, *(R11-C1)* held as that line's until it finishes where it may come back (floor 4; §10's round-11 note);
+   intermediates and caches moved aside where the toolchain key now differs from the last let-go's (F6), at the size bound, or where no
+   rule names them.
+4. `checked`: step 4's check.
+5. `opening-record`, `opened`: the record opens under the keyed open, the claim is deleted and `kept_trees.line` written in one
+   transaction; the hold is let go there, as today's start lets it go (`OpenRecord.cs:119-120`).
+
+**The files stage**, `TreeFiles`, a run stage after `open` and before `hand`, at every start into one of Daoris's trees (a fresh tree, a
+remake, a take, a return, a resume, a carry-on), and the same step in a conversation's open after its record, *(R11-F1)* only where that
+tree is Daoris's, never the checkout a conversation may open in; under the record, so in every in-use set.
+
+*(R11-F1, C3, F5)* **The tree's files record**, in the home beside the tree's placement records, holds each placement's and each group's
+record, each copy's hash, any `installing` mark, and *(R12-F2)* `unworked`: written by the tree's making, remaking, take or return in
+the step that ends it (today's open before its `worktree unlock`, `Workplace/TreeOpening.cs:177`; a take or a return once its check
+passes, §5.3), and removed before anything is handed the tree: in `hand`'s own step, *(R12-F1)* in a conversation's own step after its
+files step and before its first turn (`Loop/Chat/ChatStarts.cs:328-333`), *(R13-F1)* in a go-on's own step after its files step and
+before its resumed turn (`Course/Chat/GoingOnRun.cs:225`), and by the shell in the step that writes a terminal's visit row there (§7).
+A removal that fails hands nothing: the start ends as a failed open does, a go-on's words wait, its conversation not resumed, and the
+terminal does not open. A go-on resumes only by the id its conversation's first turn kept (`Course/Chat/ChatGoOn.cs:11-13`), so its
+tree holds the mark only where a return brought it back to its line's branch after another line used it (§3.3) and marked it once its
+check passed; a go-on whose tree holds none removes nothing. *(R13-F2)* The record is written under a lock of its own, each writer
+reading it and writing it whole under that lock, so no writer puts back a mark another has removed. A tree
+holding `unworked` is **unworked**: no agent has run in it since Daoris made or took it, so its tracked files are at the commit but for
+what Daoris's own steps wrote, and its ignored ones are the slot's kept kinds or Daoris's own (§5.2 step 5). A tree with no files
+record, every tree standing when row 3 lands among them (today's open writes none, `Workplace/TreeOpening.cs:172`, `:175`), or with one
+that does not read, is worked, and a take refused before its check leaves the slot as it was. Only an unworked tree is installed in,
+and only there does a command a rule names run, its `toolchain` reads apart (floor 4). In an unworked tree:
+1. The effective rules, read once, and the person's `permissions` (§30.4). *(R12-F3)* Then every tracked change and every path git does
+   not ignore at `HEAD`, which only a cut-off start's own install or hook can have left there, is written back from the commit or
+   removed, said, before any placement, so neither a held install nor a later install's before-read keeps it.
+2. Each `dependency` rule in order, one at a time: kept where its key, its record and *(R11-F2)* its companions hold; removed and placed
+   from the store where its record holds and its key moved, or at a hit where its folder is absent, *(R12-F4)* never a group's member by
+   its own key; installed otherwise. *(R10, R11-F5)*
+   The `permissions` are read first: an install a `deny` matches, or an `ask` holds with no `allow`, is not run and writes nothing, its
+   folder left absent and said (`started.files-waiting` for a held one). Otherwise its record is written `installing`, and it runs under
+   its key's lock, and the repository's where its rule's last install here wrote git's common folder or it has none yet *(R11-F9)*, and
+   under the machine's admission as a heavy step; it is judged, and sealed where it can be (R5.6). A folder marked `installing` is a
+   cut-off start's, removed and installed again (F4). A failed install takes its mark and its half folder away before `hand` *(R12-F1)*
+   or the conversation's *(R13-F1)* or the go-on's step, said, so no mark outlives its start.
+3. After each install, every earlier placement read against its record, one it changed joining it in a group *(R11-C5)*, and what it
+   wrote outside its `paths` read as R5.6's round-11 note says: written back where git tracks it or does not ignore it, its companions
+   where no rule names it *(R11-F2)*, *(R12-C)* its other writes where another rule does.
+4. The repository's `post-checkout` hook, by `git hook run`, *(R13-F3)* where the files record holds it owed: the making, remaking,
+   take or return writes it owed with `unworked`, since a fresh tree and a remake are made with hooks held as a take's switch is, so no
+   hook's output is in the tree while a fill runs; step 1 owes it again where it wrote anything back; its run clears it, whatever its
+   exit. So a carry-on into a still-unworked tree runs the hook its cut-off start did not. *(R12-C)* Then, *(R13-F3)* at every unworked
+   stage, the hook run or not, each kept placement's and group's other writes are read: one absent, its own rule having cleared or
+   moved it, fails the placement, which is removed and installed again as step 2 installs, step 3 after it, so its producer runs before
+   `hand`, said; one the hook made again keeps it.
+5. The files the effective `copy` rules name, copied read-only from the checkout, each recorded with its hash, *(R11-F6)* only where git
+   ignores the target at the tree's `HEAD` and the target is absent or Daoris's own copy by that hash, else left and said
+   (`started.copy-refused`); a copy the person's `permissions` deny or hold is not made, said *(R10)*.
+6. Then `hand`, which *(R12-F2)* removes `unworked` in its own step, or a conversation's own step, which removes it before its first
+   turn, *(R13-F1)* or a go-on's, before its resumed turn. Each step's failure leaves its folder absent or its copy unmade, said, and
+   the session starts.
+
+*(R13-F2)* **The mark is read again before each of the stage's writes.** In an unworked tree the stage reads `unworked` again, under
+the record's lock, before each write-back, removal, placement record, after-read, hook and copy, and holds the lock through each
+write-back, removal, record and copy, never while an install or the hook runs, so a terminal's visit waits at most for one such write.
+Once a visit has taken the mark, the stage stops there, said (`started.files-stopped`): it writes nothing back and lists nothing in a
+record, takes the `installing` mark away and leaves the install's folder with no record, the line's own (R5.6's round-9 note), and goes
+to step 6, the tree holding no mark to remove. What the install changed of a tracked file is then left as it stands, the line's to see,
+and the person's own edits and new files with it.
+
+*(R11-F1, C3)* **In a tree an agent has run in** (a resume, a carry-on after `hand`, *(R12-F1)* a conversation handed over in the tree
+it ran in, the returning line's own slot of §5.1 choice 1), the stage installs nothing, removes nothing and runs no command but
+*(R12-F5)* a key's `toolchain` reads: step 1's read alone; each dependency kept where its key, its record, its companions and *(R12-C)*
+its other writes hold, or placed from a hit into an absent folder where no tracked input of its key has a working change *(R12-F4)* and
+no group of the tree's record names it, *(R13-C)* and where every dependency before it in rule order, whose keys its key holds, was kept
+or placed by this stage, so those keys say what stands beside it; every other dependency left as it stands, the line's to install,
+said (`started.deps-left` with why), as today's resume leaves it; step 5's copies under its gates; then step 6, its tree holding no mark
+to remove. A carry-on whose start was cut off before `hand` finds its tree still marked `unworked`, and installs as above (F4).
+
+**What moves out of the hold.** The placements, the installs, the hook and the copies, which today's open makes under its opening lock
+(`Workplace/TreeOpening.cs:172`, `:175`) and round 7's take made in its claim. A take's hold now covers a switch, renames and a check.
+
+### 29.8 What is the owner's, what was not run, and what was revised
+
+- **Asked:** §18 item 13 (TREELOCAL1's copies carried over as the person's rules, recommended yes) and item 14 (a repository's own
+  command run only once the person lets it, recommended yes). **Answered** by D214's note of 2026-11-08: items 11 and 12, the latter
+  for the first build. The other standing choices hold, and nothing here reopens one. *(R10)* Items 13 and 14 are answered by D214's
+  note on round 9's choices (§18).
+- **Not run.** Nothing was built, installed, deleted or measured anew: §28.2's figures stand, and this repository's root and web
+  folders' sizes are R5.2's and §28.2's. `npm config list --json` was not run here (the Opus reader ran it once and found no tree path
+  in it); what the other managers print, and what npm reads, are from their documentation. Each line §29.6 cites was read at
+  `5651fdda5a`; the reads' line numbers stand there, but for `LandPerformer.cs`, one line lower, cited as found.
+- **Revised in place** *(R9)*: the standing; R5.5's and R5.6's heads; §2.3's take row, takeover and `line_ends`; §3.2's census; §5.2's
+  and §5.3's notes; §6; §11's head; §15; §17.0's paragraph and rows 1, 3, 4, 6a, 6b and 7; §18 items 2, 10, 11 and 12, and 13 and 14
+  added; §19; §20; §21; §27's row 3 and *Whether each stands alone*; §28.3 to §28.8's heads; §28.9's plan.
+
+### 29.9 Whether each row is ready for both makers' reads
+
+- **Row 6a** is new and ready: it reads and writes rules and acts on nothing; both makers read it with rows 3 and 4.
+- **Row 3** is ready: Codex's 1 to 3 and the Opus reader's F3, its blocking findings, are taken by contracts with their proofs, and F4,
+  F8, F9 and F11 land with it. Its ⚖ stands; it is built after both makers' reads of round 9 find nothing blocking in it.
+- **Row 4** is ready, narrowly: Codex's 4 and the Opus reader's F1 and F2 are taken, and F6, F7 and F10 land before its row b. Its ⚖
+  rows are built after both makers' reads find nothing blocking in them, row 3 first.
+- **Row 6b** is new and ready, after row 4: it shows the rules and sets the person's own, which act as any rule does.
+- **Row g** follows them, its installed resume first.
+
+*(R10)* Round 10 revises rows 6a, 3 and 6b in place and leaves row 4 as it is; both makers read rounds 9 and 10 together (§30.5).
+*(R11)* They did, and round 11 answers both (§31): rows 6a and 6b are ready to build, and rows 3 and 4 wait one narrow read of the
+sections §31.4 names. *(R12)* Both narrow reads came back, and round 12 answers them (§32): rows 3 and 4 wait a last confirming read
+of the sections §32.3 names. *(R13)* Both confirming reads came back, and round 13 answers them (§33): rows 3 and 4 wait a final
+confirming read of the passages §33.2 names.
+
+## 30. Round 10: the rule file restricts nothing by default
+
+**The owner's principle (D214's note of 2026-11-08 on the rule file; D233's note of the same day).** Daoris is a development tool, so
+the rule file restricts nothing by default: the analysis's found rules act as found, a repository's own rules and the commands they name
+run, and a local input is copied where a rule says so. Restrictions are the person's to add, through the permission rules and the
+workflows that exist for that; where one asks for an allow, the place's appointed supervisor gives it under its role's grants, a
+supervisor of a kind answering its own decisions and the generic one the rest, and the person only where no role covers it. The built-in
+floor keeps only what prevents losing work, and nobody allows it away. The standing choices hold: today's copies carried over as the
+person's rules, a command list shaped as an agent's permission settings and leaning to running (D214's note on round 9's choices), and
+runnable outputs cleared at every take for the first build.
+
+**Round 10 is written by Claude Opus 5.5 from main at `50055ee6d6`, and cuts.** It goes through round 9's further refusals, its
+person-only kinds, the analysis's *never* list and its proposals (§30.2), weighs the two the owner named (§30.3), and says what the
+person sees and where they add a restriction (§30.4). Round 9's answers to the round-7 reads stand (the key, the files stage after the
+record's open, the census), but for the scan of passed values, narrowed to the secret ones the Opus reader's F8 asked for. A passage
+round 10 changes is marked *(R10)*.
+
+### 30.1 The floor
+
+*(R11)* Revised in place by round 11 (§31.1): floor 2 recognises a bare repository, floor 3 names a provider's untracked project
+configuration, and floor 4 reads *deletes or overwrites*, holds every install and command to an unworked tree, and keeps a live line's
+set-aside until the line finishes. *(R12)* Revised again in floor 4 by round 12 (§32): the unworked tree is Daoris's own mark, every
+tracked change in one is Daoris's, a `toolchain` command is a read, and a take's set-aside is held while its line's record can go on.
+*(R13)* Revised in floor 4 by round 13 (§33): the mark is read again before each of Daoris's writes in the tree.
+
+Read after every layer. No rule, role or allow sets any of it aside, and none of it asks.
+1. **A path git tracks at the tree's `HEAD` is git's.** A rule that cleared, moved or placed over it would put a guess where committed
+   work was.
+2. **A nested repository or a linked worktree is never touched**: a path holding a `.git` file or folder below its top, a linked worktree
+   git lists inside the tree, or *(R11-C2)* a bare repository, a folder holding a `HEAD` file and `objects/` and `refs/` folders that git,
+   asked read-only, takes as its own directory, a candidate git cannot answer for counting as one. It is `repository`, holding a slot
+   while it stands there, going aside whole with a finished line's record, never moved at a take, copied or deleted. Its uncommitted work
+   and its refs are another repository's, which no rule here reads.
+3. **A harness's or an editor's own settings file is never copied**, nor *(R11-F9)* a provider's project configuration git does not
+   track in the tree (Claude Code's `.claude/settings.json` and `.mcp.json` beside `.claude/settings.local.json`), weighed in §30.3: a
+   copy would change the session's permissions past the ones the person set, unseen, and with them what stops an agent's destructive act.
+4. **Daoris deletes or overwrites only what it made** *(R11-F1)*: a placement whose record holds, with its companions and its group
+   (R5.6); its own copies by their recorded hash; an install it marked `installing` in a tree still unworked; its store's entries; and, in
+   an unworked tree, what its own steps wrote there, *(R12-F3)* which every tracked change and every path git does not ignore there is,
+   a tracked file written back from the commit. **It installs, and runs a command a rule names, only in an unworked tree** *(R11-F1, C3)*,
+   one *(R12-F2)* Daoris marked `unworked` as it made, remade, took or returned it and has handed to no agent or terminal since (§29.7);
+   a tree without the mark, or whose files record does not read, is worked. So all the command reaches in the tree is git's at the
+   commit, the slot's kept kinds or Daoris's own. *(R13-F2)* The mark is read again under the files record's lock before each
+   write-back, removal, placement record, after-read, hook and copy, so a terminal opened while an install runs stops the stage before
+   any of them. *(R12-F5)* A rule's `toolchain` commands are reads, printing what a key reads, so they run wherever a key is read, a
+   worked tree's stage and an end's read (§6) among them; what one writes anyway is its rule's to answer for, as what an install writes
+   outside the tree is (R5.6). Whatever else leaves a tree goes into a set-aside folder: one a take makes from a line that may come back is that line's, kept *(R12-F6)* while the line's record can go on and the line has not
+   finished, then going with its record (§10) *(R11-C1)*; the rest goes by D195's rule and KEEPSIZE1's limit. So a wrong kind costs a
+   build or a held slot, never a line's work. Round 9's one exception, the person's `discard`, goes (§30.2).
+
+The rules act only in Daoris's own trees, never in the checkout (§29.2): that is their scope, not a refusal.
+
+### 30.2 Round 9's restrictions, one by one
+
+| Round 9's | Round 10 | Why |
+|---|---|---|
+| Refusals 1 and 2: a tracked path, another repository or tree | **The floor** (1, 2) | committed work, and another repository's |
+| Refusal 3: a harness's or an editor's settings never copied | **The floor** (3) | §30.3 |
+| Refusal 4: nothing local in the store | **Kept as the seal's condition**, not a refusal | §30.3; the seal already holds it, so a refusal beside it is a second way (D228) |
+| Refusal 4: nothing local in another repository's tree | **Removed** | a rule acts only in its own repository's trees, and nothing local is stored, so no way is left |
+| Refusal 4: nothing copied but by the person's `copy` | **Removed** | a copy is made where the effective rule says `copy`, from any layer |
+| Refusal 5: `share`, `discard`, `copy` and `secret` acting from the person's layer alone | **Removed** | each acts from any layer, but `discard`, which goes |
+| Refusal 6: a command run only by a signature or the person's `commands` | **Moved** to the person's `deny` and `ask` on `run(…)` (§30.4), empty by default; its allow `allow-run` | a repository's own commands run unless a deny says otherwise (D214's note on round 9's choices) |
+| Refusal 7: Daoris deletes only what it proves its own | **The floor** (4), its `discard` exception cut | work Daoris did not make |
+| `copy`, the person's | **Any layer's**, the analysis writing it for an input a gate or a script reads (§29.4); restricted by `deny` or `ask` on `copy(…)`, empty by default; its allow `allow-copy` | a gate needs its input; private material nothing reads stays uncopied as found, not as refused |
+| `discard`, the person's | **Removed** | it deletes at a finish what a session made, which floor 4 sets aside; scratch goes aside with its record and is gone an hour after it (D195), so the cut costs an hour of disk |
+| `share`, the person's | **Any layer's**, the analysis writing none; restricted by `deny` or `ask` on `share(…)`, empty by default; its allow `allow-share` | a shared entry is placed only at a key that holds every input of the install |
+| A `secret` `env` name, the person's | **Any layer's**, a signature row's among them; asks nothing | it only keeps a value out of the store (§30.3) |
+| The analysis's *never*: `discard`, `share`, `copy`, `secret` or any `env`, a command no signature ships | **Removed**, each | `discard` is gone; no reading finds a `share`; `copy` is written where a reader is found, `env` and `secret` where a signature row names them; the analysis writes no command but a signature's because it only reads, and the repository's own are its layer's |
+| Proposal: a `copy` for a local input the gates file names, or a repository rule asks | **Acts**, as the found or the repository's rule | nothing waits on a press |
+| Proposal: the other kind of a disagreement | **Shown** beside the found rule as its evidence | the found kind's wrong cost is a build; the person's rule settles it for good |
+| Proposal: a repository's command for the person's `commands` | **Runs** | refusal 6's row |
+| Proposal: a rule for the repository's own layer | **Removed** | the found layer acts on every machine by its own reading; the repository's layer says what no reading finds, written by its own sessions as any change is |
+
+### 30.3 The two weighed
+
+**(1) A harness's or an editor's own settings file, never copied: the floor's side.** A session's permissions are the ones the person
+set in Daoris (`permissions.json`, handed as the harness's command-line tier, agents area rule 18), and every restriction on an agent
+lives there. A copied `.claude/settings.local.json` is read by the harness as the project's local tier and merged with what Daoris hands:
+its allows, hooks and environment would join the session's (`Loop/Session/SessionRules.cs`), on no page of Daoris's. An allow there runs
+unjudged a command the judged mode would stop, a destructive one among them, which is how the copy loses work; and it is a second way to
+set a session's permissions (D228). Nothing waits on it, since Daoris composes the session's settings whatever the tree holds. So no
+layer copies it, and no allow does: a supervisor allowing its copy would widen a session's access, which no supervisor gives (roles area
+rule 47) and only the person's yes does (agents area rule 20).
+
+**(2) Nothing local and no secret in the shared dependency store: kept, but neither as the floor nor as a refusal.** Neither loses
+work; both are the key's soundness, round 9's answers to Codex's 1 and the Opus reader's F8. *A local input*: a fill seals only in a tree
+holding nothing ignored but the folders of the dependencies before it, and the copies come after the installs (§29.7), so no tree that
+seals holds one, and nothing waits for it. *A secret* *(R11-C4)*: every passed value, a marked one among them, is keyed by a digest
+keyed by a secret of the home's and never written, so a hit, a shared one among them, holds the same value, and no value can be read
+from the key; the fill scans for each marked value and seals nothing where it finds one, since a folder holding a secret is a copy of it.
+Round 10 keyed a marked name alone, so a changed secret kept its key (§31.2, C4); round 9's scan of every value stays gone. Any layer
+marks a name `secret`. The store outlives the tree but stays in the home on this machine, never synced.
+
+### 30.4 What the person sees, and where they add a restriction
+
+**By default, nothing to press.** A repository is read at its registration and its found rules act; its own rules act once landed. A
+start's note says what each dependency got and which copies were made (§15); the repository page's section (row 6b) shows each top's
+effective rule, its layer, its evidence and what the layers below said. Nothing waits.
+
+**Where the person restricts**, in their layer of `data/files.json` (the repository page, `daoris driver files`, or by hand; *(R11-F7)*
+the verb's `set` and `remove` refused from a session's environment, as the settings verbs are, and nothing written over a file that does
+not read, §29.2):
+- **a rule of their own**, which beats the found layer and the repository's: another kind, `copy` false, a name marked `secret`. It acts
+  at the next stage and asks nothing;
+- **their `permissions`** (round 9's `commands`, reshaped as D214's note on round 9's choices says), the machine's and each repository's,
+  unioned: `deny`, `ask` and `allow` lists of patterns over Daoris's three acts in a tree, `run(<command>)`, `copy(<path>)` and
+  `share(<path>)`, a `*` as in a permission rule. `deny` is read first, then `allow`, then `ask`, since an allow is what an ask waits for,
+  where a harness's `ask` asks whatever allows. All three lists are empty by default, so everything runs;
+- **the place's workflow**, for what the repository's own layer says: it acts at the line's tip, so it has passed what the place's saved
+  workflow puts before `land` (the shipped *Merge after you accept* holds the person's Accept; a `human` approval may be added). Daoris
+  adds no node for it.
+
+An act a `deny` matches is not made, said. One an `ask` matches and no `allow` does is not made at this start: the folder stays absent or
+the copy unmade, said (`started.files-waiting`), the session starting as after any failed step (§29.7), and the allow is asked for the
+next.
+
+**Who allows.** The place's appointed supervisor of the `files` kind, or the place's generic supervisor where no `files` kind is set,
+under a grant its `authority` holds. The grants are new, one per act, each off by default as the other role acts are:
+
+| What an `ask` holds | The grant | The place whose supervisor answers |
+|---|---|---|
+| a command, `run(…)` | `allow-run` | the repository's |
+| a copy of a local input, `copy(…)` | `allow-copy` | the repository's |
+| a share across repositories, `share(…)` | `allow-share` | the narrowest covering both: their workspace, else the machine |
+
+An allow is written into the person's `allow` with who gave it, as every permission change names its maker (agents area rule 20); it
+lasts until the person takes it back and may be a pattern. A supervisor's is logged as the role's act and said on the line it was asked
+for, `From: supervisor` (roles area rule 49). **The person decides** where no supervisor for the place can act (none appointed, or one held by
+rules alone), where its `authority` lacks the grant, or where the `ask` names the person (`run(…)@person`). No act a role holds today fits: the
+supervisor's `answer` and `defer` meet a parked session's recorded question and its course decision a `refer` point, and the steward's
+acts manage quests, sessions and updates. Rule 47's refusal of an access widening stays for a question; these grants are the person's
+own, given in the role editor. The kinds, their holders and their staffing (an agent, a model and an effort, chosen as any role's actor
+is) are a separate design round's (D233's note of 2026-11-08); this round names only the kind and the grant each allow needs. **No grant
+reaches the floor.**
+
+### 30.5 What is revised, and the rows
+
+- **Revised in place** *(R10)*: the standing; R5.6's round-9 note; §5.2's round-9 note; §15; §17.0's paragraph and rows 6a, 3 and 6b;
+  §18 items 11, 13 and 14; §19; §20; §21; §28.4's, §28.5's and §28.8's round-9 notes; §28.9; §29.1 to §29.9.
+- **The rows** keep round 9's order: 6a, 3, 4 (its rows a to f), 6b, g, then 7. Row 6a reads the floor, every field from any layer and
+  the person's `permissions`; row 3 makes the copies the effective rules name and runs a command unless a `deny` or an `ask` holds it;
+  row 6b shows what an `ask` holds and sets the person's restrictions and allows, the verb doing so before it. A supervisor's allow lands
+  with the supervisor kinds' rows; until then every `ask` is the person's.
+- **Not run.** Nothing was built, run or measured. What a harness reads from a copied settings file is from Claude Code's settings
+  documentation.
+- **Rows 6a, 3, 4 and 6b are ready for both makers' reads**, rounds 9 and 10 together. Row 4 is as round 9 left it. Rows 6a, 3 and 6b
+  lose the proposals, the person-only fields and refusal 6, and gain only the `permissions` lists, which hold nothing until a person
+  writes one. Each ⚖ row is built after both reads find nothing blocking in it.
+- *(R11)* Both reads came back (§21); round 11 answers them (§31) and revises this section's §30.1, §30.3 and §30.4 in place.
+
+## 31. Round 11: both reads of rounds 9 and 10 answered
+
+**Round 11 is written by Claude Opus 5.5 from main at `b36ab3e8a0`.** Both makers read rounds 9 and 10 together, verbatim in
+`docs/2026-10-26-tree-pool-reads.md`: Codex at `9f2a228a48`, another round for rows 6a, 3 and 4 and row 6b ready after them (5
+findings, all blocking); the independent Opus reader at `7b9f129e3b`, nothing blocking in rows 6a and 6b, another round narrowly for
+row 3 on F1 and for row 4 on F2 (9 findings, 2 blocking). Neither found committed work lost, and neither reopens a choice of the
+owner's. No file either read cites changed between its commit and `b36ab3e8a0`, and each line this section cites was read there. A
+passage of R5 to §30 that round 11 changes is marked *(R11)*, or *(R11-Cn)* and *(R11-Fn)* for the finding it answers; in this section
+*Cn* is Codex's finding n of rounds 9 and 10 and *Fn* the Opus reader's.
+
+**The owner's choices bound it** (D214's notes of 2026-11-07 and 2026-11-08, D233's of 2026-11-08): the kept slot made solid first; the
+rule file restricting nothing by default, a restriction being the person's `deny` or `ask` and its allow a supervisor's; runnable
+outputs cleared at every take for now; no Dev Drive. No finding is answered by a restriction the owner chose not to build in. Of the seven
+blocking findings, four (C1, C2, C3, F1) are answered in the floor itself, the one thing the owner kept built in; two (F2, C5) by the
+record whose holding the floor's deletion reads; and one (C4) by the key.
+
+### 31.1 The floor, made sound
+
+The floor promised that *a wrong kind costs a build or a held slot, never a loss*, and said less than that promise needs:
+- **Floor 2 knew a repository by its `.git` alone** (C2). A bare repository holds git's directory at its own top, has no `.git` child,
+  and no worktree list names it, so an unpushed ref in one inside an ignored cache followed the cache.
+- **Floor 4 named deletion, not overwriting** (F1, C3, F6). The files stage installed at a resume and a carry-on, where R5.6's write-back
+  put the commit's version over the line's tracked edit and a repository's command ran over its uncommitted work; a copy at a carry-on
+  replaced the `.env` the line had set.
+- **Floor 4's set-aside was a delay** (C1, F4). What a take moved aside from a line that may come back read `unmarked` and went by D195's
+  days (`Workplace/SetAsideEligibility.cs:69-71`), whether or not anything could make it again.
+- **A record did not say what its tree held** (F2, C5): a placement kept without the folders its install wrote beside it, and an earlier
+  placement keeping a later install's change after that install's rule had gone. Neither loses work; each hands a line a tree its record
+  misdescribes.
+
+So §30.1 is revised in place. Floor 2 recognises a bare repository; floor 3 names a provider's untracked project configuration; floor 4
+reads **Daoris deletes or overwrites only what it made**, and adds that it **installs, and runs a command a rule names, only in an
+unworked tree**, one no agent has run in since Daoris made, remade, took or returned it (§29.7), and that what a take sets aside from a
+line that may come back is that line's until it finishes. The rest follows from the floor: in a tree an agent has run in, the files stage
+writes only into what is absent or Daoris's own (§29.7), and an install's record lists everything it made (R5.6's round-11 note).
+
+### 31.2 Codex's read, answered
+
+| Finding | Holds? | The change, and the row that proves it |
+|---|---|---|
+| C1 (blocking) A script merely naming an ignored folder does not make it reproducible, and what a take moves aside expires | **Holds. Taken** | `ContentHolds.HoldsAsync` keeps a tree's own files apart from declared output (`Workplace/ContentHolds.cs:439-456`), and a set-aside folder with no finished manifest goes by days (`Workplace/SetAsideEligibility.cs:69-71`). **The kind** (§29.4; §28.4's source 5): a folder is an `output` only where a build tool's output setting names it (a signature row) or a generation step makes it again, a tracked script that writes it run by a gate, a hook or a lifecycle script; a script that only names it shows a reader, and with no producer found the folder is `scratch` where a script or a session writes it, else `unknown`, each holding a live line's slot. **The lifetime** (floor 4): a take's set-aside of a line that may come back is that line's, kept by a class of its own in `SetAsideEligibility` until the line finishes, then recorded with the line's record (§10's round-11 note) and gone an hour after it, as a finished tree is today; the line's return says so (`started.outputs-aside`). Nothing waits on an acceptance, and outputs stay cleared at every take. Row 6a: a folder a script only reads found `scratch`, one a gate's script writes found `output`. Row 4: a live line's outputs set aside at a take kept past D195's days, and gone an hour after its record |
+| C2 (blocking) The repository floor misses bare repositories | **Holds. Taken** | `SetAsideReads.NestedRepositories` looks for an entry named `.git` alone (`Workplace/SetAsideReads.cs:32-36`); `tools/rehearsal-kit.mjs:387-390` asks git instead. Floor 2 adds a folder holding a `HEAD` file and `objects/` and `refs/` folders that git, asked read-only (`git --git-dir=<it> --no-optional-locks rev-parse --git-dir`), takes as its directory; one git cannot answer for is a repository too, and holds the slot. The walk that finds a `.git` finds it, so §5.2 step 3, the finish and the analysis's source 1 read it before anything copies, carries, renews or removes the unit that holds it. Row 6a: a bare repository with an unpushed ref inside an ignored cache, beside the `.git` and gitfile fixtures, read as `repository`; row 4: it holding its slot |
+| C3 (blocking) The files stage can apply a fresh tree's rollback to a dirty resume | **Holds. Taken, by Codex's second way** | A standing tree is gone on in without its tracked files restored (`Workplace/TreeReturns.cs:59-65`; `Loop/Run/Tree/GrowTree.cs:58-63`), and a conversation may open on a dirty tree (`Loop/Chat/ChatStarts.cs:215-219`). **Nothing is installed in a tree an agent has run in** (floor 4, §29.7): no install runs there, so nothing is written back, and a dependency whose key moved, or absent at a miss, is the line's to install, said (`started.deps-left`). Codex's first way, a rollback to the pre-install working and index states, is rejected (§19). Row 3: a carry-on whose lifecycle script would rewrite an already-dirty tracked file runs nothing, and the file stays as the line left it |
+| C4 (blocking) Marking a variable secret removes its value from the key | **Holds. Taken** | `HeavyStep.EnvironmentBlock` hands every passed value to the child as it is (`Review/Heavy/HeavyStep.cs:126-142`). **Every `env` value enters the key as a digest keyed by a secret of the home's** (HMAC-SHA-256 under a key made once in the home, never synced or shown), a marked one among them, so the key moves with the value and no value can be guessed from it. The mark's one effect left is the fill's scan for the value, sealing nothing where it is found; no value is written to a record, a note or a log. Round 10's *keyed by its name* and the plain hash of an unmarked value go, one way for every value. Row 3: two secret values making different folders, neither literal in either, the second missing |
+| C5 (blocking) Earlier dependencies' keys do not capture a later install's effects on them | **Holds. Taken, as a group** | Round 9 rewrote a changed placement's record as the tree's own (R5.6's round-9 note), so it outlived the rule that changed it, and placed again at its own key it lost the change; git's listing cannot see inside it (`Workplace/ContentHolds.cs:421-438`). **Where an install changes an earlier placement, the two are one group** (R5.6's round-11 note): one record over both namespaces and their companions, one key of every member's rule and key in rule order, kept only while every member's rule stands and the whole key and record hold, else each member removed and all installed again in order, in an unworked tree. A group seals nothing and is never placed from the store, Codex's simpler first implementation. Each key still holds the keys before it, for an install that reads an earlier folder without changing it. Row 3: removing B's rule removes its effect on A; A placed again at its key, B's rule standing, has B's effect again |
+
+**Where Codex found nothing**, nothing changes: the layers' precedence, the empty default lists and `deny → allow → ask`; the
+tracked-path guard (`Workplace/TreeClassesReader.cs:60-63`); the record before any install (`Loop/Run/Open/OpenRecord.cs:119-120`); the
+landing's set in the census (`Review/ReviewLandingWorld.cs:43-46`; `Workplace/TreeLandSyncs.cs:206`); no further case for a running slot;
+copy-based sealing, writable placements, link-safe removal and eviction leaving placed copies; and row 6b's page, which adds no file
+handling of its own.
+
+### 31.3 The Opus reader's read, answered
+
+| Finding | Holds? | The change, and the row that proves it |
+|---|---|---|
+| F1 (blocking) The files stage installs at a resume and a carry-on, over the line's own work | **Holds. Taken as the reader proposes** | Round 7's fill ran only in "the tree about to be used ... no session working there" (R5.6); round 9's stage ran at every start (§29.7) and kept R5.6's write-back. **The unworked tree** (§29.7): the tree's files record holds `handed`, absent from its making, remaking, take or return and written in `hand`'s own step and where a terminal's visit opens there. Only an unworked tree is installed in or has a command run in it (floor 4): a fresh tree, a remake, a take, a return, and a start cut off before `hand`. Elsewhere (a resume, a carry-on after `hand`, a conversation's go-on, the returning line's own slot of §5.1 choice 1) the stage keeps what its record holds, places a hit only into an absent folder whose key's tracked inputs have no working change, copies under F6's gates, and says every other dependency as the line's (`started.deps-left` with why), as today's resume leaves it. Floor 4 reads *deletes or overwrites*. The conversation's step runs only in a tree of Daoris's, never in the checkout it may open in (`Loop/Chat/ChatStarts.cs:215`). Row 3: a resume after its line's commit moved a commit-tree key, its uncommitted tracked edit and untracked file as they were and the dependency said as the line's |
+| F2 (blocking) A placement a slot keeps is kept without what its install wrote beside it | **Holds. Taken as the reader proposes** | husky's `prepare` writes `.husky/_/`, which its own `*` ignores, and points `core.hooksPath` there; a workspace root's install writes members' `node_modules/`. No rule named either, so each was `unknown` and went aside at its line's finish while the root was kept. **An unsealed install's companions** (R5.6's round-11 note): each path in the tree it wrote outside its `paths`, ignored at `HEAD` and named by no effective rule, listed in its record; the dependency's at the judgement and the finish, never `unknown`; the placement kept only while they hold, else installed again in an unworked tree. A path another rule names keeps that rule's kind: here `docs/index/`, an output the post-checkout hook makes again (`tools/index-hook.mjs:84-88`), so this repository's root stays kept at a take. The npm and pnpm rows put each workspace member's `node_modules/` in the root's `paths`, a glob its manifests expand at `HEAD`. Row 4: a `prepare` writing a folder beside its own, a finish, and a take at the same commit installing again, git's hooks there after it; a workspace member's `node_modules/` kept with its root |
+| F3 The found layer states a key's completeness only the repository could | **Holds. Taken** | A dependency's own install script that reads a tracked file is unseen by source 5 (Prisma's `postinstall` generating its client from `prisma/schema.prisma`). A lockfile's own mark of a package's install script (npm's `hasInstallScript`, where a manager writes one) is source 5's evidence: such a found dependency is keyed by the commit's tree unless a repository's or the person's rule states its `key`, or its signature row lists that package as reading nothing of the tree (esbuild's binary check). This repository's two dependencies state their keys (§29.2), so nothing changes here. Row 6a: a dependency whose `postinstall` reads a tracked file, two commits at one lockfile, a miss |
+| F4 A folder a script names is an output, so a let-go line's evidence leaves its tree | **Holds. Taken, with C1** | The kind is C1's: a folder a script writes that no build tool's output setting names and no generation step makes again is `scratch`, holding a live line's slot, so sibling A's two media-evidence folders (§28.2) are scratch. Where a rule does class one an output, a take's set-aside of it is the line's until it finishes (floor 4), and a returning line's start says its outputs were set aside (`started.outputs-aside`), never with a path |
+| F5 An `installing` mark outlives a failed or held install | **Holds. Taken** | The `permissions` are read before the mark is written, so a held install writes none; a failed install takes its mark and half folder away before `hand`; and a mark is a cut-off install's only in an unworked tree, which a start that reached `hand` no longer is (§29.7). S's own `npm ci` after a failed fill is the line's, left. Row 3: a failed install's mark gone before `hand`, and the line's own install kept at the next start |
+| F6 The copy loses TREELOCAL1's two gates | **Holds. Taken** | Today's copy refuses a target git does not ignore and one already standing (`Workplace/TreeLocalInputs.cs:141`, `:204`). Both stay: a copy is made only where git ignores its target at the tree's `HEAD` and the target is absent or Daoris's own copy by its recorded hash, else left and said (`started.copy-refused`); the second is floor 4's. Row 3: a carry-on leaving the `.env` its line set, and a copy refused into a path its `HEAD` does not ignore |
+| F7 The person's layer fails open | **Holds. Taken** | `permissions.json` that does not read is empty and its defaults stand (`Agents/Permissions.cs:314-319`); this file's defaults restrict nothing, so a stray comma would drop every `deny` and `ask` the person set. The person's `files.json` absent is empty; standing and unreadable, it holds every `run`, `copy` and `share` as an `ask` no allow can answer until it reads, said (`started.files-unread`), and nothing writes over it. The found layer moves to a file of its own, `data/files-found.json`, so the analysis never writes the person's. `daoris driver files`'s `set` and `remove` are refused from a session's environment, as the settings verbs are (`Settings/DriverChoicesCommand.cs:78-80`, `:154-156`). It holds what the person set and adds nothing they did not. Rows 6a and 6b |
+| F8 uv's interpreter key reads the `.venv` itself | **Holds. Taken** | `uv python find --system` and that interpreter's `--version`, so the key never reads the tree's own `.venv`. Row 6a's uv fixture, its `.venv` standing |
+| F9 Nits | **Taken, each** | The signatures' installs in their frozen forms (`npm ci`, `pnpm install --frozen-lockfile`, `yarn install --immutable`, `uv sync --locked`); a dependency's folders from its rule and its manifests at `HEAD`, a glob expanded by them (§29.2); within one layer the last match decides, the refusal of a path in two kinds kept only for a dependency's `paths` (§29.2); a lock per key, and the repository's only for an install whose rule's last install wrote git's common folder or that has none yet, so the web's fill no longer waits on the root's here (R5.6); floor 3 naming a provider's untracked project configuration (§30.1); Daoris's own copies deleted before a take's switch, so `--no-overwrite-ignore` never refuses a slot for a file Daoris made (§29.7) |
+
+**Where the Opus reader found nothing**, nothing changes: the files stage under the record for the replays, the tidy, the landing's follow
+and the orphan sweep; npm's, pnpm's and yarn's printed configuration in the key; NuGet's restore and cargo's fingerprints kept per slot;
+the fill's isolation and this repository's `prepare`; the floor's first two items as far as they went, `_fixtures/`'s fixture
+repositories among them; secrets marked and scanned; the take's phases inside the hold; row 6b's verbs and its payload.
+
+### 31.4 What is revised, what was not run, and the rows
+
+- **Revised in place** *(R11)*: the title and the standing; R5.5's round-9 note; R5.6, a round-11 note; §5.2's and §5.3's notes; §10's
+  head; §15; §17.0's paragraph and rows 6a, 3, 4 and 6b; §19; §20; §21; §28.4's and §28.5's notes; §28.9; §29.2 to §29.7 and §29.9;
+  §30.1, §30.3, §30.4 and §30.5.
+- **Asked of the owner:** nothing. Every change is within the standing choices: a line's set-aside held until it finishes is what §18
+  item 4 (a) already does for what a live line holds, and the person's unread file holds only what the person may have set.
+- **Not run.** Nothing was built, installed, deleted or measured. What husky, npm, pnpm, yarn, uv and Prisma do is from their
+  documentation and the readers' citations; a git directory's three entries are git's documented test for one, not run here.
+- **The rows** keep their order: 6a, 3, 4 (its rows a to f), 6b, g, then 7.
+- **Whether each is ready to build:**
+  - **Row 6a: ready.** It acts on nothing and is no ⚖ row. Its two blocking findings, C1's kind and C2's recognition, are a narrowing
+    and a check, each with its fixture; Codex's look at those two answers (C1 and C2 above, §29.4's first bullets, §30.1's floor 2) can
+    run beside its build, since anything they change acts only through row 4.
+  - **Rows 3 and 4: one more narrow read by both makers**, of §29.7 (the files record, the unworked tree and the stage in each kind of
+    tree), R5.6's round-11 note (the digests, the write-back, companions and groups), §30.1's floor 4 and §10's round-11 note, and of
+    this section's rows C1, C3 to C5, F1, F2 and F5, nothing else. Row 3 first. *(R12)* Both read them; round 12 answers both (§32),
+    and rows 3 and 4 wait a last confirming read of the sections §32.3 names.
+  - **Row 6b: ready, after row 4.** Neither read found anything blocking in it; F7 reaches it only as an unread file said and no allow
+    written over it.
+  - **Row g** follows them, its installed resume first.
+
+## 32. Round 12: both narrow reads of round 11 answered
+
+**Round 12 is written by Claude Opus 5.5 from main at `30f8e89eff`.** Both makers read rows 3 and 4 as round 11 left them, at
+`107063dfa2`, verbatim in `docs/2026-10-26-tree-pool-reads.md`: the independent Opus reader, another round narrowly for row 3 on F1 and
+F2 and nothing blocking of row 4's own (6 findings, 2 blocking); Codex, its five round-10 findings answered and one case left, blocking
+for rows 3 and 4. Neither found committed work lost, and neither reopens a choice of the owner's. No file either read cites changed
+between `107063dfa2` and `30f8e89eff`, and each line this section cites was read there. A passage round 12 changes is marked *(R12)*,
+or *(R12-Fn)* for the Opus reader's finding n and *(R12-C)* for Codex's case.
+
+**The owner's choices bound it** as they bound round 11 (D214's notes of 2026-11-07 and 2026-11-08, D233's of 2026-11-08): the floor
+is the one thing built in, no finding is answered by a restriction the owner chose not to build in, and runnable outputs stay cleared at
+every take. The three blocking findings are answered in the floor's own test of an unworked tree (F1, F2) and in the record whose
+holding the floor's deletion reads (C).
+
+### 32.1 The findings, answered
+
+| Finding | Holds? | The change, and the row that proves it |
+|---|---|---|
+| F1 (blocking) A conversation's open writes no `handed` | **Holds. Taken as the reader proposes**, in F2's form of the mark | `hand` is a run's stage alone (`Loop/Run/Hand/HandToSession.cs:11`), and a conversation handed over runs in the tree the old one ran in, its work uncommitted (`Loop/Chat/ChatStarts.cs:26-29`, `:35-37`, `:215`). A conversation's open removes `unworked` in a step of its own, after its files step and before its first turn (`:325`), and a failed install's mark goes before that step (§29.7, R5.6). A go-on resumes only by the id the conversation's first turn kept (`Course/Chat/ChatGoOn.cs:11-13`), so it follows that step and needs none. Row 3: a conversation's new part in its tree after its key moved, its uncommitted lockfile edit as it was |
+| F2 (blocking) An absent `handed` reads as unworked | **Holds. Taken as the reader proposes** | Today's open writes no files record (`Workplace/TreeOpening.cs:172`, `:175`), so every tree standing when row 3 lands, and any record that does not read, read unworked. The mark is held the other way: `unworked`, written by a making, remaking, take or return in the step that ends it (today's open before its `worktree unlock`, `:177`; a take or a return once its check passes, §5.3), and removed by `hand`, the conversation's step and a terminal's visit before each hands the tree on; a removal that fails hands nothing. A tree with no record, or one that does not read, is worked, and a take refused before its check leaves the slot as it was (floor 4, §29.7). Row 3: a tree opened before row 3, dirty and patched under `node_modules/x/`, resumed after it and left as it was; row 4: a take refused at `judged` leaving the line's own slot worked |
+| F3 A cut-off install's tracked change is written back only after an install | **Holds. Taken as the reader proposes** | In an unworked tree only Daoris's own steps can have changed a tracked file or left a path git does not ignore, so the stage's first step there writes every such change back from the commit and removes such paths, said, before any placement: a held install no longer leaves a cut-off one's lockfile for the session to commit, and a running one's before-read no longer holds it (floor 4, §29.7 step 1, R5.6). Row 3: an install cut off after rewriting the lockfile, an `ask` set before its carry-on, the lockfile at the commit when the session starts |
+| F4 A group's member is placed alone in a worked tree | **Holds. Taken as the reader proposes** | A member's own fill may have sealed before a later install grouped it. A group's member is never placed by its own key: in an unworked tree the group's install places it, and in a worked tree its absent folder is the line's, said (R5.6, §29.7). Row 3: B's install changing sealed A, A's folder removed by the line, and its resume leaving it absent, said |
+| F5 Floor 4 runs no rule's command in a worked tree, and the key needs one there | **Holds. Taken, the read named wherever a key is read** | A worked tree's key runs its `toolchain` commands at the tree's root (R5.6), and §6's end runs them in the slot at every end. Floor 4 names them reads: they print what a key reads, so they run wherever a key is read, and what one writes anyway is its rule's to answer for, as an install's writes outside the tree are. The reader's narrowing to an absent folder is not taken: §6 runs the same reads at every end in the same tree, so it would spare a line nothing, and `started.deps-kept` would then say a key it never read. No new proof: the signatures' commands print |
+| F6 A take's set-aside names no test for its line's finish | **Holds. Taken, its end named** | `GoesByItself` leaves a conversation's place, a branch that never moved, to the press (`Workplace/TreeSetAside.cs:17-32`), and a chat goes on from every end but a stand-down (`Course/Chat/ChatGoOn.cs:34-35`). The class is read from the line's record, never its branch: it holds while the record can go on and the line has no finish, ends with the finish's record, and where the record can no longer go on falls to D195's days. A no-output line has no finish while it can go on, so its set-aside is held as today's conversation's place is: listed by the press, shown on the Disk space card, and gone at the press or with a finish the line reaches later (§10's note, floor 4). Row 4: a no-output conversation's set-aside kept after its empty branch goes, and gone an hour after its record once it lands |
+| R11-F2's proof wording | **Taken** | Row 4's proof reads: a `prepare`'s folder beside its own kept with it at a finish and at a take at the same commit, and installed again where that folder was removed (§17.0, §28.9) |
+| C (blocking) A companion another rule names is left out of the dependency's check | **Holds. Taken as Codex proposes**, the hook's own remaking read | Round 11 left a path another rule names out of the install's record, so a take cleared a lifecycle script's `generated/client/` while its dependency stayed kept. Each path an unsealed install writes outside its `paths` that another rule names is listed in its record as an **other write**, keeping its rule's kind for clearing; after the stage's hook a kept placement or group whose other write is absent is removed and installed again before `hand`, in the unworked tree, so its producer runs, and one the hook made again keeps it (R5.6, §29.7 step 4). This repository's root stays kept: its `prepare` writes `docs/index/` where none stands and the `post-checkout` hook the stage runs after a switch writes it again (`tools/index-hook.mjs:8-12`, `:84-88`). Outputs stay cleared at every take. Row 3: an install's lifecycle output another rule names, removed before a start into the unworked tree at the same key, installed again before `hand`; row 4: a take at the same key clearing it, the dependency installed again and its output there, and this repository's root kept |
+
+### 32.2 What is revised, and what was not run
+
+- **Revised in place** *(R12)*: the title and the standing; R5.6's key and four bullets of its round-11 note; §5.3's and §10's round-11
+  notes; §17.0's paragraph and rows 3 and 4; §21; §28.9's paragraph and rows 3 and 4; §29.7; §29.9; §30.1's floor 4; §31.4.
+- **Asked of the owner:** nothing. A no-output line's set-aside held for the press is today's rule for a conversation's place, and every
+  other change narrows what Daoris installs or keeps.
+- **Not run.** Nothing was built, installed or measured. What this repository's hook writes is read from `tools/index-hook.mjs`, not run.
+
+### 32.3 The rows, and the last read
+
+- **The rows** keep their order: 6a, 3, 4 (its rows a to f), 6b, g, then 7. Rows 6a and 6b stay ready to build.
+- **Rows 3 and 4: a last confirming read by both makers**, of §29.7 (the files record and the stage in each kind of tree), §30.1's
+  floor 4, R5.6's round-11 note and §10's round-11 note, against this section's table, nothing else. Row 3 first; each ⚖ row is built
+  once both find nothing blocking in it. *(R13)* Both read them; round 13 answers both (§33), and rows 3 and 4 wait a final confirming
+  read of the passages §33.2 names.
+
+## 33. Round 13: both confirming reads of round 12 answered
+
+**Round 13 is written by Claude Opus 5.5 from main at `b6908ea79c`.** Both makers read rows 3 and 4 as round 12 left them, verbatim in
+`docs/2026-10-26-tree-pool-reads.md`: the independent Opus reader at `557594b07a`, another round narrowly for row 3 on F2 and for row 4
+on F1 (4 findings, 2 blocking); Codex at `f22f391b94`, its round-11 case answered and one case left, blocking for rows 3 and 4. Neither
+found committed work lost, and neither reopens a choice of the owner's. Each line this section cites was read at `b6908ea79c`, where the
+reads cite it but for `Loop/Chat/ChatStarts.cs`'s first turn, now `:328-333`, as the Opus reader notes and §29.7 now cites. A passage
+round 13 changes is marked *(R13)*, or *(R13-Fn)* for the Opus reader's finding n and *(R13-C)* for Codex's case.
+
+**The owner's choices bound it** as they bound rounds 11 and 12 (D214's notes of 2026-11-07 and 2026-11-08, D233's of 2026-11-08): the
+floor is the one thing built in, and no finding is answered by a restriction the owner chose not to build in; no visit is refused.
+Each blocking finding is answered where the floor's own soundness lacked it: F1 and F2 in the hand-offs that remove `unworked`, C in
+what a hit's key states.
+
+### 33.1 The findings, answered
+
+| Finding | Holds? | The change, and the row that proves it |
+|---|---|---|
+| C (blocking) A worked tree's hit is placed beside a changed dependency it was installed against | **Holds. Taken as Codex proposes**, by the stage's own outcomes | B's key holds A's key, computed from A's tracked inputs, never A's files (R5.6), and a standing tree is gone on in as it stands (`Workplace/TreeReturns.cs:59-65`; `Loop/Run/Tree/GrowTree.cs:58-63`), so in a worked tree A's key can hold while A's ignored files are the line's. The stage reads the rules in order, so each earlier dependency's outcome is known before B's: in a worked tree a hit is placed only where every dependency before it was kept (its key, record, companions and other writes holding, or its group's) or placed by this stage, else B is left, said (`started.deps-left`, *it was installed against `{{before}}`, which is this line's own here*) (§29.7, R5.6, §15). Every earlier key, not only the one B reads, since a key cannot tell which it reads: an unrelated earlier change costs B's build, never work. An unworked tree needs nothing: there an earlier dependency stands at its record, the key B's holds, or is absent, held or failed, leaving nothing beside B for its key to misstate. Row 3: Codex's sequence, B left absent and said; row 4 has it through a worked slot's resume |
+| F1 (blocking) A go-on back by a return keeps `unworked` while its agent works | **Holds. Taken as the reader proposes** | A go-on resumes by the id its conversation's first turn kept (`Course/Chat/ChatGoOn.cs:11-13`), but a return to its last slot after another line used it (§3.3) marks the slot again once its check passes (§5.3), long after that turn's step. A go-on into a tree holding `unworked` removes it in a step of its own after its files step and before its resumed turn (`Course/Chat/GoingOnRun.cs:225`); a removal that fails holds its words, its conversation not resumed; a failed install's mark goes before that step, as before `hand`'s (§29.7, R5.6). A go-on whose tree holds none removes nothing. Row 4: a conversation not spoken to within the hour, its slot taken and let go by another line, going on by a return, editing its lockfile uncommitted and moving at its limit, the edit as it was at its next part's stage |
+| F2 (blocking) A terminal opened during the files stage takes the mark while the stage still writes back | **Holds. Taken as the reader proposes**, a placement's record among the writes | A visit is refused only while a claim that moves the slot is in flight (§7), and the stage runs after the claim and outside the hold, in a tree the record already names (`src/Daoris.Web/src/work/WorkFrame.tsx:279`), having read the mark once. The files record is written under one lock, each writer reading and writing it whole there, so no writer puts back a mark another removed. In an unworked tree the stage reads the mark under it again before each write-back, removal, placement record, after-read, hook and copy, holding the lock through each such write but never while an install or the hook runs, so a terminal waits at most for one write. Once a visit has taken the mark the stage stops, said (`started.files-stopped`): nothing written back or listed, the `installing` mark taken away and the install's folder left with no record, the line's own (R5.6's round-9 note), then step 6 (§29.7, floor 4, §15). An install's own tracked change, where it made one, is then left beside the person's work, said, never written back over it. Refusing the visit during the stage is not taken: it would hold the person's terminal for an install, a restriction the floor does not need. Row 3: a terminal's edit to a tracked file and its new unignored and ignored files during an install, as they were at `hand` |
+| F3 A carry-on into a still-unworked tree runs no hook | **Holds. Taken as the reader proposes** | Step 4 ran the hook only where this start switched the tree or made it, which a cut-off start's carry-on did not. The files record holds the hook owed, written with `unworked` by the making, remaking, take or return, owed again where step 1 wrote anything back, and cleared when it runs; the other writes are read at every unworked stage, the hook run or not (§29.7 step 4). Row 3: a take clearing an install's other write and cut off before its hook, its carry-on running the hook and installing the dependency again before `hand` |
+| F4 Row i's lay-back meets step 1 | **Holds. Taken, by the reader's first way** | A lay-back runs as phases of the return after its check (§5.5 step 5), so after the mark, and step 1 would write the laid-back work back. A return that lays work back writes no `unworked`: what it lays back is its line's, so the tree is worked, and the stage keeps and adds only. The second way, a lay-back after the stage, would take a phase out of the claim and its hold and install at the commit beside work that is not at it. Row i, on the owner's yes (§18 item 3): a laid-back lockfile edit as it was at `hand` |
+| §17.0's row 4 reads *made again* | **Taken** | It reads *installed again*, as §28.9's row 4 does, so a hook's output cannot meet the proof |
+
+**Where the readers found nothing**, nothing changes: a fresh tree's and a remake's mark at their end; a take across differing ignore
+rules failing its check; a conversation's replacement after a refused set-at-open opening in a tree its first part's step left worked;
+this repository's root kept, nothing setting `DAORIS_INDEX_HOOK`; the positive mark and its removal before a run, a conversation and a
+terminal; a missing or unreadable files record; the early write-back; the keyed `env` values; `toolchain` as reads; a failed install's
+mark; and §10's set-aside read from the record, a no-output line's among them.
+
+### 33.2 What is revised, what was not run, and the last read
+
+- **Revised in place** *(R13)*: the title and the standing; R5.6's round-11 note, its head, the group's last sentence and the mark;
+  §5.5 step 5; §15, one code and one *why*; §17.0's paragraph and rows 3 and 4; §21; §28.9's paragraph and rows 3 and 4; §29.7; §29.9;
+  §30.1's floor 4; §32.3.
+- **Asked of the owner:** nothing. Each change adds the step a hand-off lacked or narrows what Daoris writes or places; row i's sentence
+  waits on §18 item 3 with its row.
+- **Not run.** Nothing was built, installed or measured.
+- **The rows** keep their order: 6a, 3, 4 (its rows a to f), 6b, g, then 7. Rows 6a and 6b stay ready to build.
+- **Rows 3 and 4: a final confirming read by both makers**, of these passages against §33.1, nothing else: §29.7's files-record
+  paragraph, its step 4, its paragraph after step 6 and its worked-tree paragraph; §30.1's floor 4 sentence marked *(R13-F2)*; R5.6's
+  round-11 group bullet's last sentence; and §5.5 step 5's sentence marked *(R13-F4)*. Row 3 first; each ⚖ row is built once both find
+  nothing blocking in it.

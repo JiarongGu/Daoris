@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COMMS1f (the comms design §5.4, §13 point 10): a brief says what its line waits on, from the exchanges the line holds: a helper's
+/// A brief says what its line waits on, from the exchanges the line holds: a helper's
 /// ask, an answer kept and not yet handed, a predecessor's ask after a hand-over, each told once and bounded.
 /// </summary>
 public sealed class BriefWaitsTests : IDisposable

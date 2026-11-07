@@ -94,7 +94,7 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
         {
             null => null,
             { Settled: true } => new ChatSaid(null, null) { Settled = true },
-            // The record is no longer its line's head, which the turns answer: nothing was kept, and the caller says it there.
+            // The record is no longer its line's head, which the turns answer: nothing is kept, and the caller says it there.
             { Head: { } head } => new ChatSaid(null, null) { Head = head },
             { Now: { } now } => new ChatSaid(now.Reaches, kept.Word) { Now = now },
             _ => new ChatSaid(Spelled(kept.Reach), kept.Word),
@@ -133,8 +133,8 @@ internal sealed class ChatWords(ChatContext context, ChatTold told, AttentionWat
     public bool Replacing(string sessionId) => context.Pending.For(sessionId) is { IsMoving: true };
 
     /// <summary>
-    /// Hand a conversation the workflow draft open in the person's editor with the message it was sent with: taken by that message as it is
-    /// composed, its palette handed whole only where this conversation was not told it under the same digest.
+    /// Hand a conversation the workflow draft open in the person's editor with the message it is sent with: taken by that message as it is
+    /// composed, its palette handed whole only where this conversation is not told it under the same digest.
     /// </summary>
     public void HandDraft(string sessionId, WorkflowDraftTold draft) => context.Drafts[context.Pending.Current(sessionId)] = draft;
 

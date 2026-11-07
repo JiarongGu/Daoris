@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris git access --session &lt;id&gt;</c> (D241 point 7): what git access a running session holds, each class with its value and where
+/// <c>daoris git access --session &lt;id&gt;</c>: what git access a running session holds, each class with its value and where
 /// it comes from, and with <c>write=deny</c> and the like the person's <i>Tighten…</i> from the terminal. Only narrows, so no widening
 /// is pressed through the window; a session's own environment is refused before it gets here (<see cref="GitAccessCommand"/>).
 /// </summary>

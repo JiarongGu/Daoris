@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The planner's half of an answer continuing its session (ANSWER1a, D131 §1): a taken quest whose last record here is a
+/// The planner's half of an answer continuing its session: a taken quest whose last record here is a
 /// park the person answered, still parked, is started from that park. The park is still an active record holding its
 /// tree, its quest and its slot, so it is never busy with itself; anything else holding the tree still is.
 /// </summary>
@@ -41,7 +41,7 @@ public sealed class AnswerContinuesPlanTests
         Assert.Equal("D:/fam/Game", only.Root);
     }
 
-    /// <summary>🔴 The park holds its own tree (D51): read as busy with itself, the answer would wait for ever.</summary>
+    /// <summary>The park holds its own tree: read as busy with itself, the answer would wait for ever.</summary>
     [Fact]
     public void The_park_is_not_busy_with_its_own_tree_or_quest()
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1a (D147 §4.1): the branch list's one <c>for-each-ref</c> per repository, its machine format and the pure readers of
+/// The branch list's one <c>for-each-ref</c> per repository, its machine format and the pure readers of
 /// what git answers. No process starts here: each answer is git's own bytes, written out.
 /// </summary>
 public sealed class GitBranchesParseTests

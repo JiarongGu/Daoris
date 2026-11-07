@@ -38,7 +38,7 @@ public static class EndNoteCodes
 
     /// <summary>
     /// Its agent ended its turn <c>cancelled</c> though nobody stopped it, after the permission it asked for (<c>call</c>, as
-    /// the agent titled it) was refused: a park on the person that says it asked them nothing.
+    /// the agent titles it) is refused: a park on the person that says it asked them nothing.
     /// </summary>
     public static readonly NoteCode EndedParkedCut = new("ended.parked-cut", ["call"]);
 
@@ -67,7 +67,7 @@ public static class EndNoteCodes
 
     /// <summary>
     /// On the native door its turn ended while its own background work ran (<c>works</c>, as its agent named them), and its
-    /// harness ends such work with the turn, so it was cut off: carried on in the same tree.
+    /// harness ends such work with the turn, so it is cut off: carried on in the same tree.
     /// </summary>
     public static readonly NoteCode EndedBackgroundCut = new("ended.background-cut", ["works"]);
     public static readonly NoteCode EndedTakenExit = new("ended.taken-exit", ["exit"]);
@@ -92,7 +92,7 @@ public static class EndNoteCodes
     public static readonly NoteCode EndedWordsSetup = new("ended.words-setup", []);
     public static readonly NoteCode EndedTimeout = new("ended.timeout", ["minutes"]);
 
-    // Its agent's process exited but something it started held its output, so Daoris ended what was left and the run concluded by its exit.
+    // Its agent's process exited but something it started holds its output, so Daoris ends what is left and the run concludes by its exit.
     public static readonly NoteCode EndedGone = new("ended.gone", []);
 
     // The watcher's own end of a quiet run (`minutes` unheard).
@@ -102,7 +102,7 @@ public static class EndNoteCodes
     public static readonly NoteCode EndedQuietPressed = new("ended.quiet-pressed", ["minutes"]);
     public static readonly NoteCode WatchQuiet = new("watch.quiet", ["minutes"]);
 
-    // The same mark naming what it was doing: the call its agent was inside, or the background work (`works`, a list) it waited on that showed nothing.
+    // The same mark naming what it does: the call its agent is inside, or the background work (`works`, a list) it waits on that shows nothing.
     public static readonly NoteCode WatchQuietCall = new("watch.quiet-call", ["minutes", "call"]);
     public static readonly NoteCode WatchQuietWork = new("watch.quiet-work", ["minutes", "works"]);
     public static readonly NoteCode WatchLeft = new("watch.left", []);

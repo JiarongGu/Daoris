@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1a (D176 points 1, 2 and 8), ONEWAY1t: <c>daoris brainstorm</c> at the terminal. An ask, a send, a stop and a clear
+/// <c>daoris brainstorm</c> at the terminal. An ask, a send, a stop and a clear
 /// are presses of the running service's desk, which writes the records and says the sentence the verb prints; <c>show</c> and
 /// <c>list</c> read the records here. With no service the verb says so and writes nothing.
 /// </summary>

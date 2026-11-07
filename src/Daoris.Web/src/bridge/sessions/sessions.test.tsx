@@ -3,7 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// A session's life on this machine, as hooks: the list's groups by state and the archive marks (SESSUX1a, D126).
+// A session's life on this machine, as hooks: the list's groups by state and the archive marks.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
@@ -59,7 +59,7 @@ describe('the sessions domain', () => {
 
   /**
    * An archive names the sessions and which way. The sessions, their groups among them, are asked again by the driver's
-   * `STATE_CHANGED`, in every window (STATEHUB1d, D169 point 6), and by the hook never (STATEHUB1f).
+   * `STATE_CHANGED`, in every window, and by the hook never.
    */
   it('archives on DAORIS.DRIVER and leaves asking the sessions again to the state hub', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -97,8 +97,8 @@ describe('the sessions domain', () => {
   });
 
   /**
-   * SESSUX1d (D126 §3.5): *Open folder* names the session and nothing else, since the module names the folder from its
-   * record; a folder this machine no longer holds is said in the catalogue, as is an id no record has.
+   * *Open folder* names the session and nothing else, since the module names the folder from its
+   * record; a folder this machine does not hold is said in the catalogue, as is an id no record has.
    */
   it('opens a session’s folder on DAORIS.DRIVER by its id alone, and says a gone folder in the catalogue', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -121,9 +121,9 @@ describe('the sessions domain', () => {
   });
 
   /**
-   * SESSUX1f (D126 §5.4): a delete names the session alone, and each refusal reaches the person in the catalogue, naming
+   * A delete names the session alone, and each refusal reaches the person in the catalogue, naming
    * what kept it; which named it, and the archive's codes asked of a delete, by context. The sessions are asked again by the
-   * state hub (STATEHUB1d).
+   * state hub.
    */
   it('deletes on DAORIS.DRIVER by its id, leaves the sessions to the state hub, and says each refusal in the catalogue', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -156,7 +156,7 @@ describe('the sessions domain', () => {
   });
 
   /**
-   * CHATTAKE1c (D126's CHATTAKE1 note): a chat that took a quest is refused as having served one, and no quest records
+   * A chat that took a quest is refused as having served one, and no quest records
    * which session took it, so the refusal names none. The shell sends the quest empty, and the sentence says the session
    * took a quest rather than reading `#`; one that names its quest still names it.
    */
@@ -181,9 +181,9 @@ describe('the sessions domain', () => {
   });
 
   /**
-   * MSG1g2 (D137 §2.2), ONEWAY1j: *Go on in a new session* is the hand-over's press naming no agent, so it asks
+   * *Go on in a new session* is the hand-over's press naming no agent, so it asks
    * `SESSION_HAND_OVER` by the session's id alone, and its answer is read field by field, so a refusal keeps its code and a
-   * shell that answers nothing kept nothing; the sessions and the driver are asked again by the state hub (STATEHUB1d).
+   * shell that answers nothing kept nothing; the sessions and the driver are asked again by the state hub.
    */
   it('asks a new session of DAORIS.DRIVER as a hand-over naming no agent, and reads its answer defensively', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -204,7 +204,7 @@ describe('the sessions domain', () => {
 });
 
 /**
- * AUTONOMY1b3c (D184's AUTONOMY1b3a note): what this machine's driven sessions hold for the person under asking, and the person's
+ * What this machine's driven sessions hold for the person under asking, and the person's
  * answer. Neither route publishes, so the waits are asked every few seconds while a session works or one is held, and an answer
  * asks them again itself.
  */
@@ -234,7 +234,7 @@ describe('the permissions held for the person', () => {
 
     await waitFor(() => expect(result.current.data).toEqual([
       held,
-      // PERMUNTIL1: a host that says no `until` is read as none, and the card says no bound for it.
+      // A host that says no `until` is read as none, and the card says no bound for it.
       { session: 'd2', request: '7', call: null, title: null, kind: null, since: '2026-10-20T09:01:00Z', until: null, choices: [{ id: 'x', name: 'Allow', kind: 'allow_once' }] },
     ]));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PERMISSION_WAITS', {});
@@ -280,7 +280,7 @@ describe('the permissions held for the person', () => {
     expect(await result.current.mutateAsync({ session: 'd1', request: '900', option: 'no' })).toEqual({ answered: false, why: null, message: '' });
   });
 
-  /** KNOWCENTRAL2e: a session's memory rows are read by the session, and the person's decision on them sends its row or its Keep. */
+  /** A session's memory rows are read by the session, and the person's decision on them sends its row or its Keep. */
   it("reads a session's memory and sends the person's decision on it, a refusal by its words", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const op = { id: 'e1', repository: 'Owner', state: 'awaiting', at: '2026-10-31T09:00:00Z', change: { kind: 'end', target: 'm1', revision: 1 } };

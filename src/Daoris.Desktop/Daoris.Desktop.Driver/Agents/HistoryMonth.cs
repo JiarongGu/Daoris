@@ -7,5 +7,5 @@ using static Daoris.Driver.AccountFileNodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One month's file of a log as it stands (USAGEPROBE1): where <see cref="UsageLedger"/> reads on from.</summary>
+/// <summary>One month's file of a log as it stands: where <see cref="UsageLedger"/> reads on from.</summary>
 internal sealed record HistoryMonth(string Name, DateTimeOffset Month, long Length);

@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199's note on the strict start; the co-agent design §8.3): the built launcher, started as the driver starts a partner,
+/// The built launcher, started as the driver starts a partner,
 /// joins the piece's job before its harness runs, so the harness is born in it and the job's count holds both; the harness speaks over
-/// the stdio the launcher was handed; and where no job answers to the name the harness is never started. The harness is the system's
+/// the stdio the launcher is handed; and where no job answers to the name the harness is never started. The harness is the system's
 /// <c>cmd</c>, never an agent.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWBASE1 (D164's note): which commit a session tree's review is measured from, chosen from git's answer. The candidates are
+/// Which commit a session tree's review is measured from, chosen from git's answer. The candidates are
 /// the newest commit the tree shares with the line here, with the line on origin, and the commit the record says it began at, in
 /// that order; git names those no other candidate reaches (<c>merge-base --independent</c>), and the first it names is the base.
 /// Pure: the git reads that feed it are <c>ReviewBaseTests</c>', in real repositories.
@@ -56,7 +56,7 @@ public sealed class ReviewBaseChoiceTests
     }
 
     /// <summary>
-    /// REVIEWBASE3: a chain's step grew from its parent's tip and merged the line since, so git names both the line's and the
+    /// A chain's step grew from its parent's tip and merged the line since, so git names both the line's and the
     /// record's: neither reaches the other, and the review reads from a merge of the two, the line's first.
     /// </summary>
     [Fact]

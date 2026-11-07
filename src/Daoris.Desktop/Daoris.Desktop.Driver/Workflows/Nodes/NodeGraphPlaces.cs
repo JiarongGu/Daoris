@@ -32,9 +32,9 @@ internal static class NodeGraphPlaces
     }
 
     /// <summary>
-    /// Each node's place in a live graph, by node id (FABRIC-RUN1f; the cutover design §9, D190 point 9): <c>plc-</c> and 32 hex of a SHA-256 over
+    /// Each node's place in a live graph, by node id: <c>plc-</c> and 32 hex of a SHA-256 over
     /// the graph's schema version, its declaration, the wires into it in id order and whether it is an entry, each as <see cref="Digest"/> writes
-    /// it. What a skip's scope, a receipt, a firing key and a binding name on a live graph where they named the whole graph's digest, so an edit
+    /// it. What a skip's scope, a receipt, a firing key and a binding name on a live graph in place of the whole graph's digest, so an edit
     /// elsewhere leaves them current; a node declared twice has none, and is judged on the whole graph's digest.
     /// </summary>
     internal static IReadOnlyDictionary<string, string> Places(NodeGraph graph)
@@ -58,7 +58,7 @@ internal static class NodeGraphPlaces
         return places;
     }
 
-    /// <summary>A place's prefix (<see cref="Places"/>), which tells a record written since FABRIC-RUN1f from one naming the whole graph's <c>gph-</c>.</summary>
+    /// <summary>A place's prefix (<see cref="Places"/>), which tells a record naming a place from one naming the whole graph's <c>gph-</c>.</summary>
     internal const string PlacePrefix = "plc-";
 
     /// <summary>The text a graph's digest and a node's place are taken over: one line per value, escaped, so no two declarations write the same.</summary>
@@ -91,7 +91,7 @@ internal static class NodeGraphPlaces
             Map(node.Inputs);
             Map(node.Outputs);
             Map(node.Options);
-            // DECIDE1b: written only where declared, so a graph that names none digests, and places its nodes, as it did.
+            // Written only where declared, so a graph that names none keeps its digest and its places.
             if (node.Outcomes.Count > 0)
             {
                 Line("outcomes");
@@ -99,7 +99,7 @@ internal static class NodeGraphPlaces
                 foreach (var outcome in node.Outcomes) Line(outcome);
             }
 
-            // DECIDE1d: the same, for the outcomes that carry an output.
+            // The same, for the outcomes that carry an output.
             if (node.OutputsOn.Count == 0) return;
             Line("outputsOn");
             Line(node.OutputsOn.Count);

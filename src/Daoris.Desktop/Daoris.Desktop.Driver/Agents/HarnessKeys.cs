@@ -3,13 +3,13 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The keys of accounts that are API keys (AGT3, D67 §1) — <c>keys.json</c> under the home, keyed by
+/// The keys of accounts that are API keys — <c>keys.json</c> under the home, keyed by
 /// agent and then account.
 /// </summary>
 /// <remarks>
-/// <para><b>Beside the account, never inside it</b>: the account's directory is the tool's (D49 §4).
+/// <para><b>Beside the account, never inside it</b>: the account's directory is the tool's.
 /// Plaintext at rest, as <c>remotes.json</c>'s deployment keys and the tools' own credential files
-/// are; tracked by nothing; no HTTP surface (D47 §4). A person sees a key only as its
+/// are; tracked by nothing; no HTTP surface. A person sees a key only as its
 /// <see cref="Handle"/>. The CLI's <c>keys</c> helpers are the twin, over the same file.</para>
 /// </remarks>
 public static class HarnessKeys
@@ -18,7 +18,7 @@ public static class HarnessKeys
     public static string Handle(string key) => key.Length > 4 ? $"…{key[^4..]}" : "…";
 
     /// <summary>
-    /// Make an account that is this key: a fresh id (ACCT2, <see cref="AccountNames.NewId"/>), its directory, and the key
+    /// Make an account that is this key: a fresh id (<see cref="AccountNames.NewId"/>), its directory, and the key
     /// kept beside it. A blank key is refused before anything is made.
     /// </summary>
     public static string Add(string home, string harness, string key)
@@ -31,8 +31,8 @@ public static class HarnessKeys
 
         var account = HarnessSettings.NextAccount(home, harness);
 
-        // The key first (KEEPALL1), as the CLI's `addKeyAccount`: a `keys.json` that does not read refuses here, before an account
-        // directory exists. Written over, it lost every other account's key.
+        // The key first, as the CLI's `addKeyAccount`: a `keys.json` that does not read refuses here, before an account
+        // directory exists. Written over, it would lose every other account's key.
         var keys = Read(home);
         var read = Written(keys);
         if (!keys.TryGetValue(harness, out var held)) keys[harness] = held = new(StringComparer.Ordinal);
@@ -40,12 +40,12 @@ public static class HarnessKeys
         Write(home, read, keys);
         Directory.CreateDirectory(HarnessSettings.ProfileHome(home, harness, account));
 
-        // Marked as a sign-in is (TOOL6g): a name a removed account had carries no word that it is signed out.
+        // Marked as a sign-in is: a name a removed account had carries no word that it is signed out.
         ProbeLock.MarkSignedIn(HarnessSettings.ProfileHome(home, harness, account), DateTimeOffset.UtcNow);
         HarnessSettings.Placed(HarnessSettings.ResolvePath(home), harness, account);
 
-        // A new key into an account ends a cool-off its name still carried (TOOL4d, D125 §2.3): whatever was spent, it
-        // was not this key. Never the reason a key is not kept.
+        // A new key into an account ends a cool-off its name still carried: the spend behind it never came from this key.
+        // Never the reason a key is not kept.
         try
         {
             AccountCooling.End(home, harness, account, DateTimeOffset.UtcNow);
@@ -59,8 +59,8 @@ public static class HarnessKeys
     }
 
     /// <summary>
-    /// Write a new key into an account that is already a key (KEYREPLACE1a): the repair for a key its provider refused. The
-    /// account keeps its id, so its name, lists, defaults and order stand (ACCT2); its last reading and its cool-off, what
+    /// Write a new key into an account that is already a key: the repair for a key its provider refused. The
+    /// account keeps its id, so its name, lists, defaults and order stand; its last reading and its cool-off, what
     /// marked it refused on disk, are cleared and it is marked signed in as <see cref="Add"/> does. The roster's in-memory
     /// refusal is the caller's (<c>Harnesses.Removed</c> and <c>LookedAgain</c>). The CLI's <c>replaceKeyAccount</c> is the twin.
     /// An account not on this machine, one that is not a key, and a blank or spaced key are refused before anything is written.
@@ -133,7 +133,7 @@ public static class HarnessKeys
                 var held = new Dictionary<string, string>(StringComparer.Ordinal);
                 foreach (var entry in agent.Value.EnumerateObject())
                 {
-                    // A value that is not text is no key, and is kept as written (KEEPALL1): read as one, it threw.
+                    // A value that is not text is no key, and is kept as written: read as one, it would throw.
                     if (entry.Value.ValueKind == JsonValueKind.String && entry.Value.GetString() is { Length: > 0 } key) held[entry.Name] = key;
                 }
 
@@ -149,10 +149,10 @@ public static class HarnessKeys
     }
 
     /// <summary>
-    /// The edit from <paramref name="read"/>, the keys as read and written, made onto the file as it stands (KEEPALL1,
-    /// <see cref="JsonKeeping.Save"/>): a key this build has no field for stays where it is, as written, at the top and inside an agent's
+    /// The edit from <paramref name="read"/>, the keys as read and written, made onto the file as it stands
+    /// (<see cref="JsonKeeping.Save"/>): a key this build has no field for stays where it is, as written, at the top and inside an agent's
     /// keys, and a file that does not read is refused, never written over. Rebuilt from the keys it read, an edit over a file that did
-    /// not read wrote every other account's key away. The CLI's <c>writeKeys</c> does the same.
+    /// not read would write every other account's key away. The CLI's <c>writeKeys</c> does the same.
     /// </summary>
     private static void Write(string home, string read, Dictionary<string, Dictionary<string, string>> keys)
     {

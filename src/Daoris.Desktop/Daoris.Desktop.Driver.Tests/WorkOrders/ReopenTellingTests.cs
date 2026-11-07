@@ -5,7 +5,7 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1c8 (the fabric events design §E5, <i>its session is told at its next step</i>; D173's note): the person's reopen of a
+/// The person's reopen of a
 /// source's submission is told to the session that said its <c>ready</c>, on this machine, once, with Daoris's sentence and the
 /// person's words quoted, through the say door; the planner's go-on resumes it. Doors standing in for the service, and the real
 /// driver over the stand-in ledger for the go-on.
@@ -31,7 +31,7 @@ public sealed class ReopenTellingTests : IDisposable
 
     /// <summary>
     /// The service's doors standing in: this machine's records by id, every read and every word said with its key, the words a
-    /// record keeps, one per key as the say door keeps them (COWORK1b), the running sessions' inboxes, the quests as they stand
+    /// record keeps, one per key as the say door keeps them, the running sessions' inboxes, the quests as they stand
     /// now, and the words taken off a record whose fact no longer holds.
     /// </summary>
     private sealed class Doors : IReopenDoors
@@ -82,12 +82,12 @@ public sealed class ReopenTellingTests : IDisposable
             return Task.CompletedTask;
         }
 
-        /// <summary>A running record's <c>said</c> (COWORK1c), where a test gives one; none holds Daoris's words in the inbox alone.</summary>
+        /// <summary>A running record's <c>said</c>, where a test gives one; none holds Daoris's words in the inbox alone.</summary>
         public StandInSaid? Running { get; set; }
 
         public ISaidDoor? SaidOf(string session) => Running;
 
-        /// <summary>What the line holds, by commit (LIMITSWITCH3): a commit it names, true or false; one it does not, git cannot say.</summary>
+        /// <summary>What the line holds, by commit: a commit it names, true or false; one it does not, git cannot say.</summary>
         public Dictionary<string, bool?> OnLine { get; } = new(StringComparer.Ordinal);
 
         public List<(string Repository, string Commit)> Asked { get; } = [];
@@ -151,7 +151,7 @@ public sealed class ReopenTellingTests : IDisposable
 
         var said = Assert.Single(doors.Said);
         Assert.Equal(("s1", ReopenTelling.Words("q1", source.Reopened!)), said);
-        // COWORK1b: said as Daoris's under its fact's key, the quest and the reopen's machine and sequence.
+        // Said as Daoris's under its fact's key, the quest and the reopen's machine and sequence.
         Assert.Equal("reopen/q1/desk/44", Assert.Single(doors.Keys));
         Assert.Contains(told, line => line.StartsWith("reopen  ", StringComparison.Ordinal) && line.Contains("session s1", StringComparison.Ordinal));
         Assert.True(File.Exists(new ReopenMarks(_home).PathOf("s1")));
@@ -181,7 +181,7 @@ public sealed class ReopenTellingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 COWORK1b (the message-urgency design §5's Daoris row, trap 17): a running session this loop runs is told at its next step,
+    /// A running session this loop runs is told at its next step,
     /// as Daoris's urgent words through its inbox, never the say door, which refuses a running record. Once: the mark is written as
     /// the words go, and the look tells it nothing more.
     /// </summary>
@@ -214,7 +214,7 @@ public sealed class ReopenTellingTests : IDisposable
     }
 
     /// <summary>
-    /// COWORK1b (the design §3.1): on a door that takes words only at its turn's end, Daoris's words are held for it, marked urgent,
+    /// On a door that takes words only at its turn's end, Daoris's words are held for it, marked urgent,
     /// and judged again where they are delivered: while the reopen stands they go, and the mark is written then; once a later
     /// submission answered it they are dropped, never said late, and nothing is marked.
     /// </summary>
@@ -245,7 +245,7 @@ public sealed class ReopenTellingTests : IDisposable
     }
 
     /// <summary>
-    /// COWORK1c (the message-urgency design §6): Daoris's words to a running session are kept on its record first, as Daoris's, at
+    /// Daoris's words to a running session are kept on its record first, as Daoris's, at
     /// urgent and under the fact's key, then held by its inbox under the record's id: a shell that restarts before the turn's end finds
     /// them waiting there for the session's go-on. Once the run takes them they leave the record by that id, and the mark is written.
     /// </summary>
@@ -285,7 +285,7 @@ public sealed class ReopenTellingTests : IDisposable
 
     /// <summary>
     /// A running session no inbox here reaches, a conversation or one another loop runs, is told at the first look that finds it
-    /// parked or ended, through the say door, as before (D188's COWORK1b note).
+    /// parked or ended, through the say door.
     /// </summary>
     [Fact]
     public async Task A_running_session_no_inbox_here_reaches_is_told_once_a_look_finds_it_parked_or_ended()
@@ -303,7 +303,7 @@ public sealed class ReopenTellingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 COWORK1b (the design §6, trap 19): a failure between the say and the mark tells one word. The driver started again says the
+    /// A failure between the say and the mark tells one word. The driver started again says the
     /// same words under the same key, and the say door answers it with the word kept.
     /// </summary>
     [Fact]
@@ -325,7 +325,7 @@ public sealed class ReopenTellingTests : IDisposable
     }
 
     /// <summary>
-    /// COWORK1b (the design §4.3): Daoris's words waiting on a record the planner would go on with are judged at each look by the key
+    /// Daoris's words waiting on a record the planner would go on with are judged at each look by the key
     /// each carries, before the go-on that would deliver them: one whose reopen a later submission answered, or whose go-on another
     /// moved past, is taken off and said once; one whose fact holds, and the person's words, wait as they are.
     /// </summary>
@@ -354,7 +354,7 @@ public sealed class ReopenTellingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITSWITCH3 (D137's note of 2026-10-26): Daoris's rebase word asks its session to rebase a commit onto the line, so once the line
+    /// Daoris's rebase word asks its session to rebase a commit onto the line, so once the line
     /// holds that commit, landed by whatever path, the word is settled: taken off and said once, never kept waiting for an account's reset.
     /// A word for a commit the line does not hold, one git cannot place, and the person's words wait as they are.
     /// </summary>
@@ -436,7 +436,7 @@ public sealed class ReopenTellingTests : IDisposable
     }
 
     /// <summary>
-    /// NOTIFY2h2 (D196's NOTIFY2h note): a reopen that reaches no record or no tree tells nobody and asks nobody, so each is news, one
+    /// A reopen that reaches no record or no tree tells nobody and asks nobody, so each is news, one
     /// coded notice in <i>Done and failed</i> however many looks meet it; a session the person stopped is their own, and makes none.
     /// </summary>
     [Fact]
@@ -634,7 +634,7 @@ public sealed class ReopenTellingTests : IDisposable
         Assert.Empty(await LookAsync(telling, doors, StepLook(EndedBefore(state))));
 
         Assert.Equal(("s2", ReopenTelling.GoneOnWords("q2", "q1", Grew)), Assert.Single(doors.Said));
-        // COWORK1b: under its fact's key, the step and the submission it grew from.
+        // Under its fact's key, the step and the submission it grew from.
         Assert.Equal("gone-on/q2/desk/43", Assert.Single(doors.Keys));
         Assert.Contains(told, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal) && line.Contains("#q2", StringComparison.Ordinal));
         Assert.Empty(doors.Reads);
@@ -701,7 +701,7 @@ public sealed class ReopenTellingTests : IDisposable
         var told = await driver.TickAsync(_closing.Token).WaitAsync(Poll.Patience);
         var said = Assert.Single(ledger.Session("s2")["said"]!.AsArray());
         Assert.Equal(ReopenTelling.GoneOnWords("q2", "q1", Grew), said!["text"]!.GetValue<string>());
-        // COWORK1b: kept as Daoris's, under the go-on's key, which is what the start reads to bring the branch up to date.
+        // Kept as Daoris's, under the go-on's key, which is what the start reads to bring the branch up to date.
         Assert.Equal(("daoris", "gone-on/q2/desk/43"), (said["from"]?.GetValue<string>(), said["key"]?.GetValue<string>()));
         Assert.Contains(told.Events, line => line.StartsWith("reopen  session s2 ", StringComparison.Ordinal));
 
@@ -791,7 +791,7 @@ public sealed class ReopenTellingTests : IDisposable
     }
 
     /// <summary>
-    /// The look reads the marks of the named session as it reads the last one's (MSG1f2): words it was found unable to go on with
+    /// The look reads the marks of the named session as it reads the last one's: words found unable to go on with
     /// wait there, and are not tried again at each look.
     /// </summary>
     [Fact]

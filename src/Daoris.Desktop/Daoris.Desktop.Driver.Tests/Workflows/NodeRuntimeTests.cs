@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-RUN1 (the fabric events design §E2, §E3, §E7, §D6, §A3): the evaluation runtime in the lease's loop, over a stand-in port, on run
+/// The evaluation runtime in the lease's loop, over a stand-in port, on run
 /// <c>q7</c> bound to a saved graph that holds the plugin's performed deploy. The deploy is started once across wakes, its outcome heard and
 /// kept, its declared retry started after its persisted delay; a restart reconciles before any new start; two wakes at once start nothing
 /// twice. The run's own record is <see cref="NodeRuntimeRunTests"/>', and the person's word on its nodes <see cref="RunNodeWordsTests"/>'.
@@ -23,7 +23,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
         """;
 
     /// <summary>
-    /// A run whose deploy takes the build's artifact (FABRIC-PERFORM1c): a <c>data</c> wire, read from the build's accepted output, its
+    /// A run whose deploy takes the build's artifact: a <c>data</c> wire, read from the build's accepted output, its
     /// evidence the plugin's receipt.
     /// </summary>
     private const string Pipeline = """
@@ -65,7 +65,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
             Invocation: Assert.Single(Record().Attempts, attempt => attempt.Node == "build" && attempt.State != AttemptStates.Settled).Call.Invocation));
 
     /// <summary>
-    /// FABRIC-PERFORM1d (§D3): a completion's resources are its unit's receipts, by the roles its plugin's manifest declares; nothing is cleaned
+    /// A completion's resources are its unit's receipts, by the roles its plugin's manifest declares; nothing is cleaned
     /// before the unit's end; at its true end the temporary one is asked of its plugin, which is kept owed while it fails, its back-off the
     /// loop's timer, and the result is kept.
     /// </summary>
@@ -172,8 +172,8 @@ public sealed class NodeRuntimeTests : NodeRunFixture
         new(Plugin, 1, new WorkStepFrame("deploy", outcome, _now, "e1", Invocation: Assert.Single(Record().Attempts, attempt => attempt.State != AttemptStates.Settled).Call.Invocation));
 
     /// <summary>
-    /// FABRIC-RUN1c: the home's own reading of a quest's binding (<see cref="NodeRuntime.BoundIn"/>), its run named by its chain's first quest in
-    /// its repository: a binding to a named workflow is that version's, read as unreadable where the workflow is no longer saved, and a run that
+    /// The home's own reading of a quest's binding (<see cref="NodeRuntime.BoundIn"/>), its run named by its chain's first quest in
+    /// its repository: a binding to a named workflow is that version's, read as unreadable where the workflow is not saved, and a run that
     /// follows Current, or has no binding, is none.
     /// </summary>
     [Fact]
@@ -321,8 +321,8 @@ public sealed class NodeRuntimeTests : NodeRunFixture
     }
 
     /// <summary>
-    /// FABRIC-RUN1e, finding 6: the awaited set is published only while the loop holds the lease, asked after the pass's awaits: a loop that
-    /// lost it while its send was out tells nothing.
+    /// The awaited set is published only while the loop holds the lease, asked after the pass's awaits: a loop that
+    /// loses it while its send is out tells nothing.
     /// </summary>
     [Fact]
     public async Task A_lease_lost_while_a_send_is_out_publishes_no_awaited_set()
@@ -341,7 +341,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
         Assert.Empty(_port.Told);
     }
 
-    /// <summary>A sent attempt held for the person: the next loop asks after it, and its plugin cannot say (§D6's <c>unknown</c>).</summary>
+    /// <summary>A sent attempt held for the person: the next loop asks after it, and its plugin cannot say (<c>unknown</c>).</summary>
     private async Task<(NodeRuntime Runtime, WorkPerformCall Sent)> HeldAsync()
     {
         await Runtime().PassAsync(Look(Governed), CancellationToken.None);
@@ -356,7 +356,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
     private WorkPerformer Door(bool holdsLease = true) => new(new NodeRecordFiles(_home, () => holdsLease), _port, () => _now);
 
     /// <summary>
-    /// FABRIC-PERFORM1g: a held attempt is listed with its node, its attempt and why, and keeps its gate across passes; the person's *it did
+    /// A held attempt is listed with its node, its attempt and why, and keeps its gate across passes; the person's *it did
     /// not* settles it as theirs (failed, never the plugin's word), and the node starts again as a new attempt with a new key.
     /// </summary>
     [Fact]
@@ -386,7 +386,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1g: *it happened* reaches the node on the person's word, its evidence the person's; *stop* stops it with the outcome
+    /// *It happened* reaches the node on the person's word, its evidence the person's; *stop* stops it with the outcome
     /// settled as the person's to answer for. Either lifts the gate, and neither sends anything.
     /// </summary>
     [Theory]
@@ -410,7 +410,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1q: a close's word found on a plugin's held attempt, which no door records, is taken back at the next pass saying why;
+    /// A close's word found on a plugin's held attempt, which no door records, is taken back at the next pass saying why;
     /// the attempt keeps its gate and its three words, and nothing is sent or moved.
     /// </summary>
     [Fact]
@@ -429,7 +429,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1g: the door records the person's word only in the process holding the home's lease, on an attempt still held with no
+    /// The door records the person's word only in the process holding the home's lease, on an attempt still held with no
     /// word, and says why otherwise; nothing is written.
     /// </summary>
     [Fact]
@@ -448,7 +448,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
         Assert.Contains("is not held now", HeldAttempts.Said(other, 2, HeldResolutions.DidNot));
         Assert.Equal(PerformedWhat.Refused, unknownWord.What);
 
-        // FABRIC-CLOSE1q: a close's words are not a plugin's attempt's, which keeps its three as they were.
+        // A close's words are not a plugin's attempt's, which keeps its three unchanged.
         var closeWord = Door().Word(RunUnit, "deploy", 1, HeldResolutions.Resend);
         Assert.Equal((PerformedWhat.Refused, WorkPerformer.NotOffered), (closeWord.What, closeWord.Code));
         Assert.Contains("happened, did-not or stop", HeldAttempts.Said(closeWord, 1, HeldResolutions.Resend), StringComparison.Ordinal);
@@ -462,7 +462,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1k: a failure Daoris will not retry (a code its step does not declare transient) is listed for the person with its code
+    /// A failure Daoris will not retry (a code its step does not declare transient) is listed for the person with its code
     /// and their one word, keeping its node failed across passes; their <i>again</i> restarts it as a new attempt with a new key, the failure
     /// still its plugin's, and the word cleared as it is applied.
     /// </summary>
@@ -501,7 +501,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1k: a transient failure with tries left is Daoris's to retry and is not listed; spent, it is, saying so. Each kind takes
+    /// A transient failure with tries left is Daoris's to retry and is not listed; spent, it is, saying so. Each kind takes
     /// its own words alone: a held attempt's on a failure, and <i>again</i> on a held attempt, are refused and nothing is written.
     /// </summary>
     [Fact]
@@ -535,7 +535,7 @@ public sealed class NodeRuntimeTests : NodeRunFixture
         Assert.Equal(before, File.ReadAllText(NodeRecordFiles.PathOf(_home, RunUnit)));
     }
 
-    /// <summary>FABRIC-PERFORM1k: <i>again</i> on an attempt held is refused, saying what to say first; its three words stay.</summary>
+    /// <summary><i>Again</i> on an attempt held is refused, saying what to say first; its three words stay.</summary>
     [Fact]
     public async Task Again_on_a_held_attempt_is_refused()
     {

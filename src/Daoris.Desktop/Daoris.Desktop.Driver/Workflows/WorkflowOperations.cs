@@ -7,7 +7,7 @@ using static Daoris.Driver.WorkflowUsing;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The typed operations behind <c>daoris workflow new|edit|use|kind</c> (D194 point 4; AGENTSPLACE1c): the terminal's verb and the
+/// The typed operations behind <c>daoris workflow new|edit|use|kind</c>: the terminal's verb and the
 /// window's <c>WORKFLOW_SAVE</c>, <c>WORKFLOW_USE</c> and <c>WORKFLOW_KIND</c> call these and differ only in how they say the result, so a
 /// refusal, a reach or a version is judged once. Nothing here writes <c>driver.json</c>; a caller writes the edit it is handed.
 /// </summary>
@@ -17,7 +17,7 @@ public static class WorkflowOperations
     public delegate Task<ChoicesRegistry> RegistryRead(CancellationToken ct);
 
     /// <summary>
-    /// A named workflow is chosen only where it is saved and its newest version reads (design §3.9). Returns the file's mark, which goes with the
+    /// A named workflow is chosen only where it is saved and its newest version reads. Returns the file's mark, which goes with the
     /// edit so a verification pipeline is named by the landed route alone.
     /// </summary>
     /// <exception cref="ChoiceWords">Naming why it cannot be chosen.</exception>
@@ -55,7 +55,7 @@ public static class WorkflowOperations
 
 
     /// <summary>
-    /// <c>kind &lt;workspace&gt; &lt;kind&gt; --label "…" [--paths …]</c> and <c>--drop</c> (design §4.2, §4.7): a kind of task a workspace
+    /// <c>kind &lt;workspace&gt; &lt;kind&gt; --label "…" [--paths …]</c> and <c>--drop</c>: a kind of task a workspace
     /// declares, with its label and the paths work of that kind keeps to; declared again, both are replaced.
     /// </summary>
     public static WorkflowKindSet KindSet(DriverConfig choices, string workspace, string id, string? label, IReadOnlyList<string> paths, bool drop)
@@ -129,7 +129,7 @@ public static class WorkflowOperations
 
         Level("repository", choices.Workflows);
         Level("workspace", choices.WorkspaceWorkflows);
-        // The home's default reaches every place that names nothing of its own (WORKFLOWCLEAN1 1a), so editing its copy asks consent for them all.
+        // The home's default reaches every place that names nothing of its own, so editing its copy asks consent for them all.
         if (choices.DefaultWorkflow == id) scopes.Add(new WorkflowScope(HomeLevel, HomeName, "default", null));
         return scopes;
     }
@@ -142,7 +142,7 @@ public static class WorkflowOperations
     public static async Task<WorkflowVersionSource> SourceAsync(
         DriverConfig choices, string home, RegistryRead registry, string from, bool opinion, bool look, CancellationToken ct, string? asId = null)
     {
-        // WORKFLOWCLEAN1 1a: converting Current has one door, and it is not a copy made by hand.
+        // Converting Current has one door, and it is not a copy made by hand.
         if (from.StartsWith("current:", StringComparison.Ordinal))
         {
             throw new ChoiceWords(CurrentRetired);
@@ -165,7 +165,7 @@ public static class WorkflowOperations
                 + $"{string.Join(", ", WorkflowPresets.GraphTable.Select(each => $"`{each.Id}`"))}.");
         }
 
-        // WORKFLOWCLEAN1 1b: a copy of a list of steps would save one, and a list of steps is no longer saved.
+        // A copy of a list of steps would save one, and a list of steps is not saved.
         _ = VersionOf(found, wanted);
         throw new ChoiceWords(WorkflowNamed.StepsRefused(asId), 1);
     }
@@ -203,7 +203,7 @@ public static class WorkflowOperations
         return (version, found.File!["versions"]![index]!["steps"]!.DeepClone().AsArray());
     }
 
-    /// <summary>The base a change is made against: the newest version, which a named <paramref name="wanted"/> must be (design §8.1).</summary>
+    /// <summary>The base a change is made against: the newest version, which a named <paramref name="wanted"/> must be.</summary>
     /// <exception cref="ChoiceWords">Naming the newest version where the caller read an older one: read it again.</exception>
     public static (NamedVersion Version, JsonArray? Raw) BaseOf(WorkflowFileFound found, string? wanted)
     {
@@ -234,7 +234,7 @@ public static class WorkflowOperations
         return new(plan, next, null, @base?.Graph is not null && @base.Digest == next.Digest);
     }
 
-    /// <summary>The code a step's role refused at save is said by (WORKFLOWEDIT1b), beside the graph's and the wires' own.</summary>
+    /// <summary>The code a step's role refused at save is said by, beside the graph's and the wires' own.</summary>
     public const string RoleRefused = "role";
 
     /// <summary>
@@ -248,7 +248,7 @@ public static class WorkflowOperations
     }
 
     /// <summary>
-    /// Each agent step whose role cannot take it (ROLESTEP1b's <c>role</c>, judged at save by WORKFLOWEDIT1b): the role named, by the home's
+    /// Each agent step whose role cannot take it: the role named, by the home's
     /// catalogue, for the step's work at the role's own scope. Where it works is the bind's to judge, since a version is chosen for its places
     /// after it is saved. The catalogue is read only where a step names a role.
     /// </summary>
@@ -293,12 +293,12 @@ public static class WorkflowOperations
     }
 
     /// <summary>
-    /// The window's save (AGENTSPLACE1c): a new version under a fresh id, or appended to a saved workflow against the version the caller read.
+    /// The window's save: a new version under a fresh id, or appended to a saved workflow against the version the caller read.
     /// An append first says every place that chooses the workflow, which a new start binds the newest of (<c>WorkflowRunBindings.Plan</c>), and
     /// goes on only when the caller authorized exactly those; its reach of a graph that integrates is judged as a choice's is.
     /// </summary>
     /// <param name="Source">Exactly one of <c>from</c> (a new id), <c>steps</c> or <c>graph</c>.</param>
-    /// <param name="updates">The shipped default an appended version updates its copy to (WORKFLOWCLEAN1h): the version keeps that default's <c>from</c> stamp.</param>
+    /// <param name="updates">The shipped default an appended version updates its copy to: the version keeps that default's <c>from</c> stamp.</param>
     public static async Task<WorkflowSaved> SaveAsync(
         DriverConfig choices, string home, RegistryRead registry, string id, string? from, JsonNode? steps, JsonNode? graph,
         bool opinion, bool look, string? name, string? @base, IReadOnlyCollection<string>? authorized, bool plan, string at, CancellationToken ct,
@@ -346,7 +346,7 @@ public static class WorkflowOperations
             }
 
             var version = newest;
-            // An update to a copy's shipped default keeps where the version came from, so the copy follows the shipped digest it was updated to.
+            // An update to a copy's shipped default keeps where the version came from, so the copy follows the shipped digest it is updated to.
             if (updates is not null && WorkflowDefaults.Of(updates) is null) return Refuse("refused", $"this build ships no default `{updates}` to update `{id}` from. Nothing was written.");
             var planAgainst = PlanGraph(home, found, id, version, null, "screen", at, graph, updates is null ? null : WorkflowDefaults.Of(updates)!.From);
             if (planAgainst.Same) return new(id, true, null, $"`{id}` v{version.Version} already says this: nothing was written.", version.Version, false, true, [], []);

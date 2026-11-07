@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b2 (D199; the co-agent design §2.3 step 10, §2.4, §8.3's <c>PartnerLandingTests</c>), with real git: the lead's merge of the
+/// With real git: the lead's merge of the
 /// frozen commit reads as taken in, recorded with the lead's commit; a cherry-pick of it is not taken in; a lead whose work completed
 /// without it leaves the piece not taken in, its ref still standing through <c>gc</c>; and the person's <i>Discard…</i> removes the ref
 /// at the commit it froze and the copy, and keeps a ref that has moved.
@@ -96,7 +96,7 @@ public sealed class PartnerLandingTests : IDisposable
         Assert.Equal(tip, state.TakenBy);
         Assert.Equal(piece, state.Commit);
 
-        // A later rewrite of the lead's branch is the lead's own work: what was read stays.
+        // A later rewrite of the lead's branch is the lead's own work: the read stays.
         await GitAsync(root, "reset", "--quiet", "--hard", "HEAD~1");
         await Look(driver);
         Assert.Equal(PartnerStates.TakenIn, Files.ReadState("p1")!.State);
@@ -138,7 +138,7 @@ public sealed class PartnerLandingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The verdict at the landing, where the lead's tree is gone (the design §2.4): a piece the lead's landed commit does not hold is not
+    /// 🔴 The verdict at the landing, where the lead's tree is gone: a piece the lead's landed commit does not hold is not
     /// taken in, its ref kept; one it holds is taken in, recorded with that commit. Read in the repository's own checkout, which the
     /// registry names, since the tree's checkout can no longer be asked.
     /// </summary>

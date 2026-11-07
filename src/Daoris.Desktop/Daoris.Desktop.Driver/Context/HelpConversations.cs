@@ -4,20 +4,20 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the person keeps of one Ask Daoris conversation (ASKHIST1): the name they gave it, when they pinned it, and the earlier
-/// conversation it started from with what it was handed. <see cref="None"/> where they kept nothing.
+/// What the person keeps of one Ask Daoris conversation: the name they gave it, when they pinned it, and the earlier
+/// conversation it started from with what it is handed. <see cref="None"/> where they kept nothing.
 /// </summary>
 public sealed record HelpKept(string? Name, DateTimeOffset? Pinned, string? From, string? Handed)
 {
     public static HelpKept None { get; } = new(null, null, null, null);
 }
 
-/// <summary>One row of Ask Daoris's history (ASKHIST1): a conversation of this machine's the person spoke in.</summary>
+/// <summary>One row of Ask Daoris's history: a conversation of this machine's the person spoke in.</summary>
 /// <param name="Session">Its record's id.</param>
 /// <param name="State">Its record's state, in the public spelling.</param>
 public sealed record HelpConversation(string Session, string State)
 {
-    /// <summary>The records of this conversation in order; a briefed continuation stays one history row (LIMITGOON1).</summary>
+    /// <summary>The records of this conversation in order; a briefed continuation stays one history row.</summary>
     public IReadOnlyList<string> Parts { get; init; } = [];
     /// <summary>The name the person gave it, or null.</summary>
     public string? Name { get; init; }
@@ -29,16 +29,16 @@ public sealed record HelpConversation(string Session, string State)
     public string Title => Name ?? Opening ?? "";
 
     /// <summary>
-    /// A line of what it was about: the first line of Ask Daoris's last answer in it, as Markdown, whole as far as
-    /// <see cref="HelpConversations.PreviewLimit"/>, so the page parses it before it cuts it to a row (ASKHIST1d). Daoris makes
-    /// no model call (D24), so it writes no summary of its own; where the conversation got to is the agent's own words.
+    /// A line of what it is about: the first line of Ask Daoris's last answer in it, as Markdown, whole as far as
+    /// <see cref="HelpConversations.PreviewLimit"/>, so the page parses it before it cuts it to a row. Daoris makes
+    /// no model call, so it writes no summary of its own; where the conversation got to is the agent's own words.
     /// </summary>
     public string? About { get; init; }
 
-    /// <summary>When it was opened.</summary>
+    /// <summary>When it is opened.</summary>
     public DateTimeOffset Created { get; init; }
 
-    /// <summary>When it was last spoken in: its record's last word here, else when its record last moved.</summary>
+    /// <summary>When it is last spoken in: its record's last word here, else when its record last moved.</summary>
     public DateTimeOffset Last { get; init; }
 
     /// <summary>When the person pinned it, or null.</summary>
@@ -48,19 +48,19 @@ public sealed record HelpConversation(string Session, string State)
     public bool Live { get; init; }
 
     /// <summary>
-    /// The access mode it ran under, its record's (HELPMODE1a2, D183 point 3): <see cref="HelpModes.Restricted"/> or
+    /// The access mode it ran under, its record's: <see cref="HelpModes.Restricted"/> or
     /// <see cref="HelpModes.Full"/>, the mode its last start got, never the mode chosen now; a record from before the modes ran restricted.
     /// </summary>
     public string Mode { get; init; } = HelpModeNames.Restricted;
 
     /// <summary>
-    /// The workspace it started in, its record's (ASKSCOPE1d, D158's ASKSCOPE1 note, points 1 and 6): kept from its start and never
-    /// moved; a record from before ASKSCOPE1a keeps none, and is <c>default</c>'s, as it was recorded.
+    /// The workspace it started in, its record's: kept from its start and never
+    /// moved; a record with none is <c>default</c>'s, as it is recorded.
     /// </summary>
     public string Workspace { get; init; } = RemoteTarget.DefaultWorkspace;
 
     /// <summary>
-    /// Whether words written to it once it ended go on in its own conversation (D137 §2.2): its harness conversation's id was
+    /// Whether words written to it once it ended go on in its own conversation: its harness conversation's id is
     /// kept, on an agent whose door resumes. One from before ids were kept for it is offered a new conversation from its words.
     /// </summary>
     public bool Resumable { get; init; }
@@ -68,43 +68,43 @@ public sealed record HelpConversation(string Session, string State)
     /// <summary>The earlier conversation it started from, or null.</summary>
     public string? From { get; init; }
 
-    /// <summary>What it was handed of that one: <see cref="HelpConversations.Transcript"/>, <see cref="HelpConversations.Brief"/>, or null.</summary>
+    /// <summary>What it is handed of that one: <see cref="HelpConversations.Transcript"/>, <see cref="HelpConversations.Brief"/>, or null.</summary>
     public string? Handed { get; init; }
 
     /// <summary>Where a search found its words: its title where that holds them, else a snippet around the match, or null.</summary>
     public string? Found { get; init; }
 
     /// <summary>
-    /// Where a search found its words in what was said (ASKHIST1d): the line they are on, as Markdown, whole as far as
+    /// Where a search found its words in what is said: the line they are on, as Markdown, whole as far as
     /// <see cref="HelpConversations.PreviewLimit"/>, for the page to parse before it cuts around them; <see cref="Found"/>'s
-    /// snippet was cut first, and a delimiter could lose its partner. Null where the title holds them, or for no search.
+    /// snippet is cut first, and a delimiter could lose its partner. Null where the title holds them, or for no search.
     /// </summary>
     public string? FoundLine { get; init; }
 }
 
 /// <summary>
-/// A page of Ask Daoris's history (ASKHIST1d): its conversations, how many the whole list holds (or the search found), and the
+/// A page of Ask Daoris's history: its conversations, how many the whole list holds (or the search found), and the
 /// offset the next page starts at, null for the last page.
 /// </summary>
 public sealed record HelpListing(IReadOnlyList<HelpConversation> Conversations, int Total, int? Next)
 {
-    /// <summary>Whether this page left conversations out, so more follow at <see cref="Next"/>: ASKHIST1's <c>cut</c>, read as it was.</summary>
+    /// <summary>Whether this page left conversations out, so more follow at <see cref="Next"/>: its <c>cut</c>, read as it is.</summary>
     public bool Cut => Next is not null;
 }
 
 /// <summary>
-/// Ask Daoris's conversations, kept (ASKHIST1): each is a help record the host already keeps (its words this machine's own
-/// record of it, D76), and what the person adds to it is <c>&lt;home&gt;/sessions/&lt;id&gt;.help.json</c> beside its other files.
+/// Ask Daoris's conversations, kept: each is a help record the host already keeps (its words this machine's own
+/// record of it), and what the person adds to it is <c>&lt;home&gt;/sessions/&lt;id&gt;.help.json</c> beside its other files.
 /// </summary>
 /// <remarks>
 /// <para><b>This machine's, and the person's.</b> A help record keeps the workspace it started in, and no feed pushes it whatever
-/// that is (SYNC4 skips it by its kind, ASKSCOPE1a). Its words, its name and its pin are files under the home (D63), never the
-/// record, which travels where a record does (D47 §4), and never a repository. RAIL1 rejected hand-naming a session because its derived name made it
+/// that is (the sync skips it by its kind). Its words, its name and its pin are files under the home, never the
+/// record, which travels where a record does, and never a repository. A session's derived name makes hand-naming it
 /// unneeded; a conversation the person goes back to is named by them as a chat history is, and the name stays here.</para>
 ///
 /// <para><b>Listed from the records and the words</b>: a record of Ask Daoris's of this machine's the person spoke in, or named,
-/// by its name or first question, when it was last spoken in, and the first line of its last answer. One opened ahead of the
-/// person (HELP5) and never spoken in is no conversation, so it is not listed.</para>
+/// by its name or first question, when it is last spoken in, and the first line of its last answer. One opened ahead of the
+/// person and never spoken in is no conversation, so it is not listed.</para>
 ///
 /// <para><b>A file that does not read is nothing kept</b>, as the archive's marks are: the conversation lists by its question,
 /// and the next write starts the file again. A file holding nothing is removed.</para>
@@ -114,13 +114,13 @@ public sealed class HelpConversations(string home)
     public const string Suffix = SessionHomeFiles.HelpConversationsSuffix;
 
     /// <summary>
-    /// What a conversation started from an earlier one, or one that went on from it in a new part (SESSCTX1c part B), is handed: Daoris's
-    /// brief of that line, then the person's words (D233).
+    /// What a conversation started from an earlier one, or one that went on from it in a new part, is handed: Daoris's
+    /// brief of that line, then the person's words.
     /// </summary>
     public const string Brief = "brief";
 
     /// <summary>
-    /// What a replacement is handed (MODELROLE1d2, D205 §3.5(b)): the words that waited on an earlier one whose agent refused its model at
+    /// What a replacement is handed: the words that waited on an earlier one whose agent refused its model at
     /// the open, before any prompt, moved to this one opened on the walk's next answer.
     /// </summary>
     public const string NotOffered = "not-offered";
@@ -132,7 +132,7 @@ public sealed class HelpConversations(string home)
     public const int PageLimit = 200;
 
     /// <summary>
-    /// How much of a line the page is given to parse before it cuts it (ASKHIST1d): an answer's first line, or the line a search
+    /// How much of a line the page is given to parse before it cuts it: an answer's first line, or the line a search
     /// found its words on. Far past the two lines a row shows, so a delimiter cut here is never in a row's view.
     /// </summary>
     public const int PreviewLimit = 1000;
@@ -186,29 +186,29 @@ public sealed class HelpConversations(string home)
     public void Pin(string session, bool pinned, DateTimeOffset now) =>
         Change(session, kept => kept with { Pinned = pinned ? kept.Pinned ?? now : null });
 
-    /// <summary>Say that a conversation started from an earlier one, and what it was handed of it.</summary>
+    /// <summary>Say that a conversation started from an earlier one, and what it is handed of it.</summary>
     public void StartedFrom(string session, string from, string handed) =>
         Change(session, kept => kept with { From = Checked(from), Handed = handed });
 
     /// <summary>
     /// A page of Ask Daoris's conversations among <paramref name="records"/>: pinned first, the newest pin first, then the newest
-    /// by when each was last spoken in. With <paramref name="search"/>, only those whose name or words hold it, each with where.
+    /// by when each is last spoken in. With <paramref name="search"/>, only those whose name or words hold it, each with where.
     /// </summary>
     /// <remarks>
-    /// <para><b>Every record is ordered and searched before a page is taken</b> (ASKHIST1d). The list read the newest 200 records
-    /// by when each was opened and only then read pins, last words and the search, so a pinned or lately spoken conversation
-    /// opened long ago fell off it, and an older one was never searched. What orders a record is cheap to read for each: its kept
+    /// <para><b>Every record is ordered and searched before a page is taken</b>. The list read the newest 200 records
+    /// by when each is opened and only then read pins, last words and the search, so a pinned or lately spoken conversation
+    /// opened long ago fell off it, and an older one is never searched. What orders a record is cheap to read for each: its kept
     /// file, its first question and its record's last line. What only a row shows (its last answer, whether it goes on) is read
     /// for the page alone. A search reads each record's words, as a search must.</para>
     ///
-    /// <para><b>An offset into one order.</b> Ties go by when each was opened, newest first, then by id, so a page's edge is the
+    /// <para><b>An offset into one order.</b> Ties go by when each is opened, newest first, then by id, so a page's edge is the
     /// same each time it is asked. A conversation that moves between two asks (spoken in, pinned) can show on two pages or on
     /// neither until the list is asked again from its start.</para>
     ///
-    /// <para><b>One workspace's, or every one's</b> (ASKSCOPE1d, D158's ASKSCOPE1 note, point 6). A workspace named keeps the records
-    /// its conversations started in, its name matched whatever its letters' case (D48), before anything is ordered, searched or
+    /// <para><b>One workspace's, or every one's</b>. A workspace named keeps the records
+    /// its conversations started in, its name matched whatever its letters' case, before anything is ordered, searched or
     /// counted, so another workspace's never fill its page, and its total and next page are its own. None named is every
-    /// workspace's, the list as it was. A record from before keeps no workspace and is <c>default</c>'s, never guessed from its
+    /// workspace's, the list as it is. A record from before keeps no workspace and is <c>default</c>'s, never guessed from its
     /// words.</para>
     /// </remarks>
     /// <param name="resumes">Whether an adapter's door resumes a conversation by its id, by the adapter's name.</param>
@@ -273,7 +273,7 @@ public sealed class HelpConversations(string home)
             .ThenByDescending(each => each.Record.Created)
             .ThenBy(each => each.Record.Id, StringComparer.Ordinal);
 
-        // The search, over every one: the title first, then what was said.
+        // The search, over every one: the title first, then what is said.
         var listed = new List<(SessionRecord Record, HelpKept Kept, string? Opening, DateTimeOffset Last, string? Found, string? FoundLine)>();
         foreach (var (record, kept, opening, last) in ordered)
         {
@@ -333,7 +333,7 @@ public sealed class HelpConversations(string home)
     }
 
     /// <summary>
-    /// The line a match is on, whole as far as <see cref="PreviewLimit"/> (ASKHIST1d). A longer line is a window around the
+    /// The line a match is on, whole as far as <see cref="PreviewLimit"/>. A longer line is a window around the
     /// match, cut between words, with an ellipsis where it goes on: far past what a row shows, so the page's own cut comes first.
     /// </summary>
     private static string LineAround(string text, int at, int length)

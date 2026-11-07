@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second opinion delivered (XAGENT1e, D155 point 7; the second-agent design §6.3–§6.7): a first pass's findings handed once
+/// The second opinion delivered: a first pass's findings handed once
 /// to the working session as its next turn, through the local host's door, which keeps them on its record as another agent's
-/// claims in Daoris's fixed words; its answers read as its turn ends, each fix's commit checked; one recheck where a finding was
+/// claims in Daoris's fixed words; its answers read as its turn ends, each fix's commit checked; one recheck where a finding is
 /// fixed, whose findings go to the person; and the person instead wherever the working session cannot take them.
 /// </summary>
 /// <remarks>
-/// <para><b>The session goes on in its own conversation, by D137's door.</b> The words wait on its record with <c>by</c>, and the
+/// <para><b>The session goes on in its own conversation.</b> The words wait on its record with <c>by</c>, and the
 /// next look resumes it as it resumes the person's words (<see cref="Driver.ContinueAsync"/>): its record reopens, its account is its
-/// own, its quest is unmoved. They are never handed to a new session as the person's words (design §6.7).</para>
+/// own, its quest is unmoved. They are never handed to a new session as the person's words.</para>
 ///
 /// <para><b>Idempotent, and read from facts.</b> <see cref="DeliverAsync"/> reads the host's opinion, the working session's
-/// record and what it kept (<see cref="OpinionDeliveries"/>), and does the next thing owed, once: the look (XAGENT1f) calls it at
+/// record and what it kept (<see cref="OpinionDeliveries"/>), and does the next thing owed, once: the look calls it at
 /// each look for the opinion on a landing until it says the opinion is answered, or with the person.</para>
 /// </remarks>
 /// <param name="opinions">
@@ -23,12 +23,12 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
 {
     private readonly LoopContext _context = context;
 
-    /// <summary>Told each answer the course gave a driven record's findings (FOUNDATION1i path 5): a test's, no person's.</summary>
+    /// <summary>Told each answer the course gave a driven record's findings: a test's, no person's.</summary>
     internal Action<LineCourse>? Decided { get; set; }
 
     private readonly DriverOpinions _opinions = opinions;
 
-    // What this machine's driver did with each opinion, beside its packet (XAGENT1e).
+    // What this machine's driver did with each opinion, beside its packet.
     private readonly OpinionDeliveries _deliveries = new(context.Home);
 
     private OpinionDeliveries Deliveries => _deliveries;
@@ -41,8 +41,8 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     /// session at its turn's end, or to the person where it cannot take them; its answers, once read, settle whether the one
     /// recheck is due, which runs here; a recheck's findings go to the person.
     /// </summary>
-    /// <param name="asked">What the first pass was asked with (<see cref="DriverOpinions.PassAsync"/>): the rule, the checkout, the workspace and
-    /// what was asked, which its recheck reads again from the working tree's new tip.</param>
+    /// <param name="asked">What the first pass is asked with (<see cref="DriverOpinions.PassAsync"/>): the rule, the checkout, the workspace and
+    /// what is asked, which its recheck reads again from the working tree's new tip.</param>
     public async Task<OpinionDelivery> DeliverAsync(string opinion, OpinionPassAsk asked, CancellationToken ct = default)
     {
         var view = await Service.Opinions.ReadAsync(opinion, ct).ConfigureAwait(false);
@@ -65,7 +65,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
                 };
         }
 
-        // A recheck's findings go to the person, never back to the working session by themselves (design §6.5).
+        // A recheck's findings go to the person, never back to the working session by themselves.
         if (!view.First)
         {
             return new OpinionDelivery(
@@ -79,7 +79,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             };
         }
 
-        // Raised nothing: said with what it read, never as no issues (design §6.1).
+        // Raised nothing: said with what it read, never as no issues.
         if (view.Findings!.Count == 0)
         {
             return new OpinionDelivery(
@@ -98,7 +98,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         var record = await Service.RecordAsync(view.HandedTo, ct).ConfigureAwait(false);
         if (record is null) return ToPersonKept(view, named, OpinionToPerson.NotFound);
 
-        // CHATFLOW1e (the chat-flow design §6.1 (e)): findings a hand-over's record took before it answered are handed again, once, to its line's
+        // Findings a hand-over's record took before it answered are handed again, once, to its line's
         // newest record in the same tree, which then answers them; where the newest cannot take them, they go to the person.
         var chatRun = ChatRunOf(record, asked);
         if (chatRun && !record.Running && view.Answers.Count == 0
@@ -112,16 +112,16 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         }
 
 
-        // COWORK1e: findings the answers-alone bound holds wait for the person's choice, still handed; kept (*Not now*), they are theirs.
+        // Findings the answers-alone bound holds wait for the person's choice, still handed; kept (*Not now*), they are theirs.
         if (view.HandedWord is { } word && new GoOnMarks(_context.Home).Read(record.Session) is { } mark && mark.Why != GoOnMarks.AnswersAlone
             && mark.Said.Contains(word, StringComparer.Ordinal))
         {
-            // Marked as words its session could not go on with (design §6.7): the look that marked them said why.
+            // Marked as words its session could not go on with: the look that marked them said why.
             return ToPersonKept(view, named, mark.Why);
         }
 
-        // CHATFLOW1e (§6.1 (d)): a chat run's live record stays `working` between turns, so it is read by its runner's turn state; one no runner
-        // here holds is read by its record as before. Its answering turn's own completion kept its reading, read above.
+        // A chat run's live record stays `working` between turns, so it is read by its runner's turn state; one no runner
+        // here holds is read by its record. Its answering turn's own completion kept its reading, read above.
         var running = record.Running;
         if (chatRun && _context.SendsBack?.TurnEnded(record.Session) is { } between) running = !between;
         if (running || record.Said?.Any(each => each.Id == view.HandedWord) == true)
@@ -141,17 +141,17 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     }
 
     /// <summary>
-    /// Hand a first pass's findings to the working session (design §6.3): once, through the local host's door, and only to an
+    /// Hand a first pass's findings to the working session: once, through the local host's door, and only to an
     /// ended record of this machine's that takes words. A running or parked one takes them at its turn's end, so they wait; a
-    /// record that never goes on sends them to the person (design §6.7). COMMS1b (the comms design §4.2, §13 point 1): through the host's
+    /// record that never goes on sends them to the person. Through the host's
     /// one door for solicited answers, the record read is the head of the working session's line, as that door walks it, and a park the person
     /// answered takes them beside their answer; the hand asks a settled answer under the opinion's key, and a settled or waiting one is handed.
     /// </summary>
     private async Task<OpinionDelivery> HandAsync(OpinionView view, string named, OpinionPassAsk asked, CancellationToken ct)
     {
         var working = await Service.RecordAsync(view.Working, ct).ConfigureAwait(false);
-        // CHATFLOW1e (the chat-flow design §6.2): a chat run's findings go back into its own conversation, only between turns. A chat with no chat
-        // run, one in the checkout or whose tree is gone, sends them to the person below, as before.
+        // A chat run's findings go back into its own conversation, only between turns. A chat with no chat
+        // run, one in the checkout or whose tree is gone, sends them to the person below.
         if (working is not null && ChatRunOf(working, asked) && await LineOfAsync(view.Working, ct).ConfigureAwait(false) is { Count: > 0 } chatLine)
         {
             return await SendBackAsync(view, named, asked, chatLine, ct).ConfigureAwait(false);
@@ -159,7 +159,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
 
         var record = working is null ? null : SolicitedHand.Walk(await Service.RecordsAsync(ct).ConfigureAwait(false), view.Working).Head ?? working;
 
-        // FOUNDATION1i path 5: what never takes findings is the course's answer for a solicited answer; a conversation is the chat runner's,
+        // What never takes findings is the course's answer for a solicited answer; a conversation is the chat runner's,
         // which the line above sent it to where it has a run, and nothing else is the course's to say.
         var never = record switch
         {
@@ -175,11 +175,11 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         };
         if (never is not null) return ToPersonKept(view, named, never);
 
-        // 🔴 Never into a step in flight (D136): a running turn takes another agent's claims at its end, and a park after the person's answer,
-        // which through the one door is beside it (§13 point 1). The next look hands them, once the record has ended.
+        // 🔴 Never into a step in flight: a running turn takes another agent's claims at its end, and a park after the person's answer,
+        // which through the one door is beside it. The next look hands them, once the record has ended.
         if (!SolicitedHand.TakesNow(record!)) return Waiting(view, named, record!);
 
-        // A settled answer (row p) is handed: the findings' word was kept and taken before, so nothing is said for it again.
+        // A settled answer is handed: the findings' word is already kept and taken, so nothing is said for it again.
         var hand = await Service.Opinions.HandWordAsync(view.Id, ct).ConfigureAwait(false);
         if (!hand.Handed)
         {
@@ -208,7 +208,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     private const string SendBackRefused = "hand-refused";
 
     /// <summary>
-    /// Whether a record is a chat run's conversation whose findings go back into it (CHATFLOW1e): a chat of this machine's, asked on a chat run,
+    /// Whether a record is a chat run's conversation whose findings go back into it: a chat of this machine's, asked on a chat run,
     /// in a tree that stands. A chat in the checkout has no chat run, and one whose tree is gone is the person's.
     /// </summary>
     private static bool ChatRunOf(PriorSession record, OpinionPassAsk asked) =>
@@ -224,7 +224,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     }
 
     /// <summary>
-    /// A chat run's findings sent back into its conversation (CHATFLOW1e, the chat-flow design §6, §6.1 (b), (f)), to the line's newest record in
+    /// A chat run's findings sent back into its conversation, to the line's newest record in
     /// its tree, with three distinct outcomes: <b>to the person</b>, <c>person-went-on</c>, only where the person's turn count rose since the
     /// press; <b>waiting</b> only for activity that is not theirs, a live conversation no runner here holds, or a headless host; <b>reserved</b>
     /// otherwise, the send-back's turn taken at once, or the ended conversation gone on with them in its own conversation.
@@ -233,7 +233,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         OpinionView view, string named, OpinionPassAsk asked, IReadOnlyList<TracedSession> line, CancellationToken ct)
     {
         var newest = line[^1];
-        // A press from before the count was kept says nothing of the person's turns, so nothing can show they did not go on.
+        // A press that carries no count says nothing of the person's turns, so nothing can show they did not go on.
         if (asked.Turns is not { } pressed) return ToPersonKept(view, named, OpinionToPerson.PersonWentOn);
         var ids = line.Select(each => each.Id).ToList();
         var ask = new ChatSendBackAsk(newest.Id, pressed, ids)
@@ -254,7 +254,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         }
         else
         {
-            // 🔴 (f), the Opus check's finding 7: the count first. A person who went on after the press and ended the chat again moved past them.
+            // 🔴 The count first. A person who went on after the press and ended the chat again moved past them.
             var waiting = (await Service.RecordAsync(newest.Id, ct).ConfigureAwait(false))?.Waiting.Count(word => word.Persons) ?? 0;
             if (ChatPresses.TurnsOf(_context.Events, ids, waiting) > pressed) return ToPersonKept(view, named, OpinionToPerson.PersonWentOn);
             if (_context.SendsBack is not { } runner) return Waiting(view, named, newest.Id, WaitingWhy.Headless);
@@ -287,7 +287,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         }
     }
 
-    /// <summary>Why a chat run's findings wait (CHATFLOW1e): each said in the delivery's line, and tried again at the next look.</summary>
+    /// <summary>Why a chat run's findings wait: each said in the delivery's line, and tried again at the next look.</summary>
     private static class WaitingWhy
     {
         public const string Headless = "no conversation runs on this host";
@@ -305,7 +305,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         };
 
     /// <summary>
-    /// The answering turn's frozen reading (CHATFLOW1e, the chat-flow design §6.1 (c)): its ending tip and the answers kept, read as that turn
+    /// The answering turn's frozen reading: its ending tip and the answers kept, read as that turn
     /// ends and before another runs, kept beside the opinion and said in the conversation, as a resumed run's end keeps its own; marked
     /// <c>person-steered</c> where a word of the person's reached that turn.
     /// </summary>
@@ -318,7 +318,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     }
 
     /// <summary>
-    /// The working session answered (design §6.4–§6.6): the one recheck asked where it is due and not yet asked, and what then
+    /// The working session answered: the one recheck asked where it is due and not yet asked, and what then
     /// waits for the person.
     /// </summary>
     private async Task<OpinionDelivery> AnsweredAsync(
@@ -356,17 +356,17 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     }
 
     /// <summary>
-    /// The one recheck (design §6.5): a fresh pass by the same reviewer, walked again for its account, over the commits from the
+    /// The one recheck: a fresh pass by the same reviewer, walked again for its account, over the commits from the
     /// first pass's tip to the working tree's tip as its turn ended, handed the first pass's findings and the answers.
     /// </summary>
     private async Task<OpinionPassRun> RecheckAsync(OpinionView first, OpinionReading reading, OpinionPassAsk asked, CancellationToken ct)
     {
-        // Judged against every agent the line ran on, as the first pass was (LIMITRESUME1j, the limit-resume design §3.6).
+        // Judged against every agent the line ran on, like the first pass.
         var records = OpinionWriters.ById(await Service.RecordsAsync(ct).ConfigureAwait(false));
         var wrote = OpinionWriters.Agents(records, first.Working, asked.Quests.Select(quest => quest.Id));
-        // 🔴 CHATFLOW1e (the chat-flow design §6.2, Codex's finding 9): the fixes were made by the record that answered, which after a re-hand is a
+        // 🔴 The fixes were made by the record that answered, which after a re-hand is a
         // successor `first.Working`'s ancestry misses; its line's agents are the work's too. Where it is of the first reviewer's family, that
-        // reviewer is no longer independent of the fixes, and the recheck goes to another of the rule's reviewers, or to none.
+        // reviewer is not independent of the fixes, and the recheck goes to another of the rule's reviewers, or to none.
         IReadOnlyList<string> answeredBy = string.Equals(reading.Session, first.Working, StringComparison.OrdinalIgnoreCase)
             ? []
             : OpinionWriters.Agents(records, reading.Session, []);
@@ -375,7 +375,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         IReadOnlyList<string> reviewers = answeredBy.Any(agent => AgentFamily.Of(_context.Harnesses.Adapters, agent).Same(firstFamily))
             ? [.. asked.Rule.Reviewers.Where(each => !AgentFamily.Of(_context.Harnesses.Adapters, each).Same(firstFamily))]
             : [first.Door];
-        // D205 §4.2: a recheck by the first reviewer is a continuation, so it takes the first pass's record's asked choice, not the actor as it
+        // A recheck by the first reviewer is a continuation, so it takes the first pass's record's asked choice, not the actor as it
         // stands now; with the record's asked unread (an older record), or another reviewer chosen above, it reads the actor's entries as the
         // first pass did.
         IReadOnlyList<ActorEffective>? order = reviewers is [var same] && string.Equals(same, first.Door, StringComparison.OrdinalIgnoreCase)
@@ -395,14 +395,14 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
             Base = first.Tip,
             Tip = reading.Tip!,
             Rechecks = new OpinionRecheckOf(first, reading),
-            // A recheck is no ask of the gate's: it is found through what the delivery keeps (XAGENT1f).
+            // A recheck is no ask of the gate's: it is found through what the delivery keeps.
             Opened = null,
         };
         return await (_context.Passes ?? _opinions.PassAsync)(ask, choice, ct).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// The answers as the working session's turn ends (design §6.4), kept beside the opinion and said in its conversation: a fix
+    /// The answers as the working session's turn ends, kept beside the opinion and said in its conversation: a fix
     /// counts where git reads its commit as one the turn made, and a finding it left unanswered is unresolved.
     /// </summary>
     private async Task<OpinionReading> ReadAnswersAsync(OpinionView view, string session, string? tree, CancellationToken ct, bool steered = false)
@@ -410,7 +410,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         var reading = await OpinionAnswers.ReadAsync(view, session, tree, _context.OpinionGit, DateTimeOffset.UtcNow, ct).ConfigureAwait(false)
             with { Steered = steered };
         Deliveries.Answered(view.Id, reading);
-        // The machine log's line for it (XAGENT1f, design §8.6): counts only.
+        // The machine log's line for it: counts only.
         Service.LandingSaid(OpinionLines.Answered(view.Id, reading));
         var noted = OpinionAnswers.Told(view, reading);
         _context.Output?.Append(session, noted.Note);
@@ -422,7 +422,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     }
 
     /// <summary>
-    /// A resumed run that carried another agent's findings ended (design §6.4): its answers read for each opinion whose words it
+    /// A resumed run that carried another agent's findings ended: its answers read for each opinion whose words it
     /// took, before its record concludes, so a look never reads the record ended with nothing read.
     /// </summary>
     public async Task OpinionsAnsweredAsync(ResumeAsk resume, string session, string tree, CancellationToken ct)
@@ -447,7 +447,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
     }
 
     /// <summary>
-    /// Another agent's findings that cannot go on in their session (design §6.7): they go to the person instead, unanswered,
+    /// Another agent's findings that cannot go on in their session: they go to the person instead, unanswered,
     /// each <c>must</c> disputed. Kept once per opinion, the first reason standing.
     /// </summary>
     public void FindingsToPerson(PriorSession record, ContinueReason why)
@@ -480,7 +480,7 @@ internal sealed class OpinionDeliverer(LoopContext context, DriverOpinions opini
         };
 
     /// <summary>
-    /// A pass that gave no opinion (design §8.4, §10): <i>Try again</i>, with why. Never <i>no issues</i>: no agent's reading
+    /// A pass that gave no opinion: <i>Try again</i>, with why. Never <i>no issues</i>: no agent's reading
     /// stands here.
     /// </summary>
     private static OpinionDelivery TryAgain(OpinionView view, string named) =>

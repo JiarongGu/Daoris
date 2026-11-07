@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A row of the doors (D50): the act, where it is on the screen, its terminal twin, and how Ask Daoris meets it, where the row says.</summary>
+/// <summary>A row of the doors: the act, where it is on the screen, its terminal twin, and how Ask Daoris meets it, where the row says.</summary>
 /// <param name="Act">The act in the person's words, saying nothing of Ask Daoris.</param>
 internal sealed record HelpDoor(string Act, string Screen, string Terminal, HelpDoorAsk? Ask = null)
 {
@@ -12,7 +12,7 @@ internal sealed record HelpDoor(string Act, string Screen, string Terminal, Help
 }
 
 /// <summary>
-/// How Ask Daoris meets a door's act (REVIEW2 T12): it proposes it through a door its kind takes, only when the person asks for it, or
+/// How Ask Daoris meets a door's act: it proposes it through a door its kind takes, only when the person asks for it, or
 /// never, with why. The row's words are built from it, and <c>HelpRoomDoorAsksTests</c> holds a proposing row to the kind's own doors.
 /// </summary>
 internal abstract record HelpDoorAsk

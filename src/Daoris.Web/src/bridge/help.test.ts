@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 const { invoke, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
-  // The state hub's ear (STATEHUB1h, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  // The state hub's ear: what the mocked shell publishes after a press reaches it, as the kit's pump would.
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
@@ -15,7 +15,7 @@ vi.mock('@shenora/react', async (importOriginal) => {
   return {
     ...(await importOriginal<typeof import('@shenora/react')>()),
     getBridge: () => ({ invoke: published, isAvailable: true }),
-    // A shell is here, so a read asks it (HELPMODE1b's `HELP_WIRED`).
+    // A shell is here, so a read asks it (`HELP_WIRED`).
     useShenora: () => ({ isAvailable: true, bridge: {} }),
     useShenoraEvent: (module: string, type: string, handler: (payload: unknown) => void) => {
       if (module === 'DAORIS') heard.set(type, handler);
@@ -34,8 +34,8 @@ import {
 import { useStateHub } from './state/stateHub';
 
 /**
- * WSR7: Ask Daoris's sync card fetches on its first Apply and replays on its second, each as long as the screen's own
- * look and press may take; the bridge's default 30 seconds gave up on the screen's look. Every other Apply is quick.
+ * Ask Daoris's sync card fetches on its first Apply and replays on its second, each as long as the screen's own
+ * look and press may take; the bridge's default 30 seconds would give up on the screen's look. Every other Apply is quick.
  */
 describe('how long an Apply may take', () => {
   const minutes = (ms: number | undefined) => (ms === undefined ? undefined : ms / 60_000);
@@ -84,9 +84,9 @@ describe('how long an Apply may take', () => {
 });
 
 /**
- * LOG1b's `proposal.settled` is the person's Apply or Not now once the proposal settled (D94). A sync card's look
- * settles nothing: the card stands for its press, and the host says so (LEFT3 c), so the look writes no line. A look
- * that found nothing to do settled the card, and is written as any Apply is.
+ * `proposal.settled` is the person's Apply or Not now once the proposal settles. A sync card's look
+ * settles nothing: the card stands for its press, and the host says so, so the look writes no line. A look
+ * that finds nothing to do settles the card, and is written as any Apply is.
  */
 describe('what settling a proposal writes to the machine log', () => {
   const settle = async (answer: HelpSettled, apply = true) => {
@@ -113,7 +113,7 @@ describe('what settling a proposal writes to the machine log', () => {
   });
 });
 
-/** HELPAPPLY1: an Apply stands for the card the person saw, so it carries that card's revision to the host. */
+/** An Apply stands for the card the person saw, so it carries that card's revision to the host. */
 describe('what an Apply carries', () => {
   it('sends the revision of the card the conversation holds for the proposal', async () => {
     invoke.mockReset();
@@ -129,7 +129,7 @@ describe('what an Apply carries', () => {
     expect((sent?.[2] as { payload?: unknown } | undefined)?.payload).toEqual({ id: 'p13', revision: 'abc123' });
   });
 
-  /** FLOWCHART2f: a draft card's Apply from its editor names each change taken into the draft and each left, which settles it. */
+  /** A draft card's Apply from its editor names each change taken into the draft and each left, which settles it. */
   it("sends the editor's changes taken and left beside the revision", async () => {
     invoke.mockReset();
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? { message: 'Applied.', applied: true } : undefined));
@@ -145,7 +145,7 @@ describe('what an Apply carries', () => {
   });
 });
 
-/** FLOWCHART2f (D223 §4): the proposals against a draft the editor of a place reads, from the conversations told one. */
+/** The proposals against a draft the editor of a place reads, from the conversations told one. */
 describe('the proposals against an open draft', () => {
   const graph = { schemaVersion: 2, entries: ['work'], end: 'work', nodes: [{ id: 'work', kind: 'claimed' }], wires: [] };
   const card = (id: string, scope: string, draft: string | null): HelpProposal => ({
@@ -192,8 +192,8 @@ describe('the proposals against an open draft', () => {
 });
 
 /**
- * What an Apply or a Not now changed is published by its route (STATEHUB1h, D169), and the window's state hub asks it again, as
- * every other window's does; the hook asks nothing again itself. Each family below is one the hook used to ask by hand.
+ * What an Apply or a Not now changes is published by its route, and the window's state hub asks it again, as
+ * every other window's does; the hook asks nothing again itself. Each family below is one the hook would otherwise ask by hand.
  */
 describe('what an Apply reads again', () => {
   /** A client holding an answer under each key, the hub mounted beside the hook as `ShellSignals` mounts it, and an Apply made. */
@@ -221,7 +221,7 @@ describe('what an Apply reads again', () => {
     expect(invalid(keys.repositories(null))).toBe(true);
   });
 
-  // WORKFLOW1h-d: a workflow card's Apply saved a version, so the workflow tabs (a repository's Current, a run's place),
+  // A workflow card's Apply saves a version, so the workflow tabs (a repository's Current, a run's place),
   // which sit under the driver's key, are read again at once.
   it('reads the workflow tabs again, which a saved workflow version changed', async () => {
     const tabs = [keys.workflow('repository', 'engine'), keys.workflowRun('quest', 'q1')];
@@ -230,7 +230,7 @@ describe('what an Apply reads again', () => {
     await waitFor(() => { for (const tab of tabs) expect(invalid(tab)).toBe(true); });
   });
 
-  // HIST1f-a: a clear card's Apply removed history, so the history plan is read again, as the Clear history press does.
+  // A clear card's Apply removes history, so the history plan is read again, as the Clear history press does.
   it('reads the history plan again, which a clear changed', async () => {
     const plan = ['history', 'workspace', 'aurora'];
     const invalid = await settled({ id: 'p20', apply: true }, plan);
@@ -238,7 +238,7 @@ describe('what an Apply reads again', () => {
     await waitFor(() => expect(invalid(plan)).toBe(true));
   });
 
-  // And the rest an Apply's doors may move, each read again as the hook read it by hand before (HELP6, PLUG9, HELP10).
+  // And the rest an Apply's doors may move, each read again.
   it('reads the proposals, the sessions, quests and asks, the agents, the plugins and the browser’s settings again', async () => {
     const moved = [[...HELP_PROPOSALS, 's1'], keys.allSessions, keys.allQuests, keys.allAsks, keys.harnesses, keys.plugins,
       keys.browserSettings, keys.sweep];
@@ -258,7 +258,7 @@ describe('what an Apply reads again', () => {
 });
 
 /**
- * HELPMODE1b (D183 points 2-4): Ask Daoris's mode, set over `SET_HELP_MODE`, and what each start of a conversation handed, read
+ * Ask Daoris's mode, set over `SET_HELP_MODE`, and what each start of a conversation handed, read
  * over `HELP_WIRED` field for field as the driver keeps it (`HelpWired.cs`), its nulls kept.
  */
 describe('Ask Daoris’s mode and what it was handed', () => {
@@ -334,7 +334,7 @@ describe('Ask Daoris’s mode and what it was handed', () => {
 });
 
 /**
- * ASKQUESTS1 (the Ask Daoris design §9 item 12): what a conversation's Applies published, read over `HELP_PUBLISHED` as the driver
+ * What a conversation's Applies published, read over `HELP_PUBLISHED` as the driver
  * keeps it (`HelpPublished.cs`), newest first, an id its answer leaves out read as none, and no answer read as none.
  */
 describe('what a conversation published', () => {

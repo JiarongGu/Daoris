@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1a (D147 §2.2, §4.1): one repository's branch list read through a stand-in for git, so what is asked, in what order
+/// One repository's branch list read through a stand-in for git, so what is asked, in what order
 /// and how often is held without a process: one <c>for-each-ref</c>, a call more only where a landed branch is exceptional,
 /// and each fallback for a git without an atom. <c>GitBranchesTests</c> reads the same list from real repositories.
 /// </summary>
@@ -125,7 +125,7 @@ public sealed class GitBranchesReadTests
     }
 
     /// <summary>
-    /// 🔴 One process for the list, never one per branch (REVIEW3): the calls past the first are each a landed branch's own
+    /// One process for the list, never one per branch: the calls past the first are each a landed branch's own
     /// exception, a tip that moved or a copy on origin that differs, and nothing else asks git anything.
     /// </summary>
     [Fact]
@@ -200,7 +200,7 @@ public sealed class GitBranchesReadTests
     private static GrownBranch Grew(string? now) =>
         new("engine", "aurora", "daoris/s-1a2b3c4d", "main", Main, "feature/12-even", DateTimeOffset.Parse("2026-10-03T00:00:00Z"), now);
 
-    /// <summary>TREEFOLLOWREPO1: the branch a session's agent moved its tree onto is that session's, as its own daoris/ branch is.</summary>
+    /// <summary>The branch a session's agent moved its tree onto is that session's, as its own daoris/ branch is.</summary>
     [Fact]
     public async Task A_branch_the_tree_moved_onto_is_paired_with_its_session()
     {
@@ -232,7 +232,7 @@ public sealed class GitBranchesReadTests
         Assert.Equal("feature/12-even", read.Branches.Single(each => each.Name == "feature/x").Session?.GrewFrom);
     }
 
-    /// <summary>D164: while the tree is on it, the session pairing comes before the landed test.</summary>
+    /// <summary>While the tree is on it, the session pairing comes before the landed test.</summary>
     [Fact]
     public async Task A_moved_branch_with_a_landing_is_still_its_sessions()
     {
@@ -292,7 +292,7 @@ public sealed class GitBranchesReadTests
     }
 
     /// <summary>
-    /// PLUGHOOK1c (D148 point 6, D147 §2.2): a landed branch carries its pull request's state where a plugin answered, with when
+    /// A landed branch carries its pull request's state where a plugin answered, with when
     /// and the failed ask beside it, read from the landing record. A read never asks the plugin, and the list asks git nothing more.
     /// </summary>
     [Fact]
@@ -329,7 +329,7 @@ public sealed class GitBranchesReadTests
         Assert.Single(git.Asked);
     }
 
-    /// <summary>A repository holding only the person's own branches holds nothing of Daoris's (D112), and nothing of theirs is judged.</summary>
+    /// <summary>A repository holding only the person's own branches holds nothing of Daoris's, and nothing of theirs is judged.</summary>
     [Fact]
     public async Task Only_yours_holds_nothing_of_daoris()
     {
@@ -432,14 +432,14 @@ public sealed class GitBranchesReadTests
     }
 
     /// <summary>
-    /// D121 §3: the list reads the git the agents run, the file Tools resolves, started by <c>WorkingTree</c>'s one start.
+    /// The list reads the git the agents run, the file Tools resolves, started by <c>WorkingTree</c>'s one start.
     /// Read from the source, as <c>EveryChildIsHandedTheToolsTests</c> holds every other start: no start of its own, and
     /// no bare <c>git</c>.
     /// </summary>
     [Fact]
     public void The_list_starts_git_only_through_the_start_tools_resolves()
     {
-        // Found at any depth of the driver's folder, so a move into a module's folder keeps them (STRUCT1, D166).
+        // Found at any depth of the driver's folder, so a move into a module's folder keeps them.
         var sources = SourceFiles.All(SourceFiles.DriverProject, "GitBranches*.cs").ToList();
         Assert.True(sources.Count >= 2, $"expected the list's sources, found {sources.Count}");
         var text = string.Concat(sources.Select(File.ReadAllText));
@@ -448,7 +448,7 @@ public sealed class GitBranchesReadTests
         Assert.DoesNotContain("Process.Start", text);
     }
 
-    /// <summary>A repository git cannot answer for is said in git's words, and counts as holding Daoris's (D112), so it is never left out unseen.</summary>
+    /// <summary>A repository git cannot answer for is said in git's words, and counts as holding Daoris's, so it is never left out unseen.</summary>
     [Fact]
     public async Task A_repository_git_cannot_answer_for_is_said_in_gits_words()
     {

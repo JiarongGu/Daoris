@@ -7,13 +7,13 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>sync</c> proposal (HELP10, D109): the workspace's page → Branches → Updates → *Bring up to date*, and
+/// Ask Daoris's <c>sync</c> proposal: the workspace's page → Branches → Updates → *Bring up to date*, and
 /// <c>daoris tree sync</c> — each repository's line fast-forwarded from <c>origin</c>, the branches still at work
 /// replayed onto it, the landed branches whose work reached it deleted. Its target a repository, or none for every one
 /// with a checkout here.
 /// </summary>
 /// <remarks>
-/// <para><b>Two presses, as the screen's.</b> D109 fetches nothing until the person presses: looking reaches the network
+/// <para><b>Two presses, as the screen's.</b> Nothing is fetched until the person presses: looking reaches the network
 /// as them. So the card's first Apply is the look — <c>TREES_SYNC_PLAN</c>'s own list, through
 /// <see cref="IHelpDoors.SyncPlanAsync"/> — whose rows are kept in the proposal's file (<see cref="HelpProposal.Listed"/>)
 /// and shown on the card, which stays; the second is <c>TREES_SYNC</c>'s own press, through
@@ -33,8 +33,8 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
     public IReadOnlyList<string> Doors { get; } = ["sync"];
 
     /// <summary>
-    /// ASKSCOPE1c: its target is a repository and its workspace the one its look and press are scoped to; naming neither, they
-    /// reach every workspace at once (BRSCOPE1b).
+    /// Its target is a repository and its workspace the one its look and press are scoped to; naming neither, they
+    /// reach every workspace at once.
     /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
         new([Workspace(proposal)], [Repository(proposal)]) { Every = Workspace(proposal) is null && Repository(proposal) is null };
@@ -57,8 +57,8 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// What a look kept beside its rows (LEFT3 b): each repository not fetched, and the repositories left apart. A file a
-    /// look kept before LEFT3 has neither, which is nothing to say, and a field that does not read is skipped.
+    /// What a look kept beside its rows: each repository not fetched, and the repositories left apart. A file a
+    /// look kept earlier has neither, which is nothing to say, and a field that does not read is skipped.
     /// </summary>
     private static HelpSyncBesides BesidesOf(JsonElement file)
     {
@@ -87,7 +87,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
             return new HelpPlan($"`{repository}` is not registered on this machine — use a repository's name as Repositories lists it.", "", "", null);
         }
 
-        // BRSCOPE1b: as the agent proposals refuse a workspace this machine does not have.
+        // As the agent proposals refuse a workspace this machine does not have.
         var workspace = Workspace(proposal);
         if (workspace is not null && !facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))
         {
@@ -97,7 +97,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         var where = workspace is null ? "" : $" of workspace `{workspace}`";
         var scope = (repository is null ? "every repository with a checkout here" : $"`{repository}`") + where;
         var terminal = "daoris tree sync" + (repository is null ? "" : $" --repository {repository}")
-            // The one spelling every shell keeps whole, as TreesCommand.Press says it (ACCTQUOTE1b).
+            // The one spelling every shell keeps whole, as TreesCommand.Press says it.
             + (workspace is null ? "" : $" --workspace {ShellWord.Of(workspace, ShellWord.Workspace)}");
         if (proposal.Listed is not { } rows)
         {
@@ -147,7 +147,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
             // As the terminal says it: a repository with no checkout here has nothing to bring up to date.
             var why = rows.Count > 0 ? string.Join("; ", rows.Select(row => row.Says))
                 : listed.Apart.Count > 0 ? "no repository with a checkout here holds a branch of Daoris's"
-                // BRSCOPE1b: said as TreesCommand.NothingToSync says it, which a repository outside the workspace shares.
+                // Said as TreesCommand.NothingToSync says it, which a repository outside the workspace shares.
                 : repository is null ? $"no repository{(workspace is null ? "" : $" of workspace `{workspace}`")} has a checkout here"
                 : $"`{repository}` has no checkout here{(workspace is null ? "" : $" in workspace `{workspace}`")}";
             const string Nothing = "nothing to bring up to date";
@@ -155,7 +155,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         }
 
         Keep(applying.Home, id, rows, listed);
-        // The one Apply that settles nothing: the card stands for its press (LEFT3 c).
+        // The one Apply that settles nothing: the card stands for its press.
         return new HelpApplied(false,
             $"Looked for updates (`#{id}`): {moving.Count} thing(s) would change — {string.Join("; ", moving.Select(row => row.Says))}. "
             + $"The card now lists them; nothing moves until the person applies it.{Besides(listed)}") { Stands = true };
@@ -165,7 +165,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
     private const int ApartNamed = 12;
 
     /// <summary>
-    /// What the rows do not say (WSR7, D112): what was not fetched, said once, since a row carries only a mark; and the
+    /// What the rows do not say: what is not fetched, said once, since a row carries only a mark; and the
     /// repositories the look left apart, holding no branch of Daoris's, which a proposal naming one looks at.
     /// </summary>
     internal static string Besides(SyncPlan listed)
@@ -229,8 +229,8 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
 
     /// <summary>
     /// The rows a look listed, kept in the proposal's file beside every field the service wrote, written beside and
-    /// renamed; and what the rows do not say (LEFT3 b), so the card says it too: each line not fetched, with git's reason,
-    /// when it last heard from origin and how origin is reached, and the repositories the look left apart (D112).
+    /// renamed; and what the rows do not say, so the card says it too: each line not fetched, with git's reason,
+    /// when it last heard from origin and how origin is reached, and the repositories the look left apart.
     /// </summary>
     private static void Keep(string home, string id, IReadOnlyList<HelpSyncRow> rows, SyncPlan listed)
     {
@@ -251,26 +251,26 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
 
     private static string? Repository(HelpProposal proposal) => proposal.Target?.Trim() is { Length: > 0 } named ? named : null;
 
-    /// <summary>BRSCOPE1b: the workspace the look and the press are scoped to; none, and the whole machine.</summary>
+    /// <summary>The workspace the look and the press are scoped to; none, and the whole machine.</summary>
     private static string? Workspace(HelpProposal proposal) => proposal.Workspace?.Trim() is { Length: > 0 } named ? named : null;
 }
 
-/// <summary>One row a look listed (HELP10): its key as the press takes it, its step, whether the press moves it, and its sentence.</summary>
+/// <summary>One row a look listed: its key as the press takes it, its step, whether the press moves it, and its sentence.</summary>
 /// <param name="Key">`repository:branch`, the line's by its branch, as <c>TREES_SYNC</c>'s `only` takes it.</param>
 /// <param name="Step">`line`, `replay` or `delete`.</param>
 /// <param name="Says">The terminal's sentence for it (<see cref="SyncWords"/>, <see cref="LandedWords"/>).</param>
 public sealed record HelpSyncRow(string Key, string Step, bool Moves, string Says);
 
-/// <summary>What a sync card shows (HELP10): whether the person has looked, and the rows the look listed.</summary>
+/// <summary>What a sync card shows: whether the person has looked, and the rows the look listed.</summary>
 public sealed record HelpSyncPlan(bool Looked, IReadOnlyList<HelpSyncRow> Rows)
 {
-    /// <summary>What the rows do not say (LEFT3 b), kept by the look; nothing before it.</summary>
+    /// <summary>What the rows do not say, kept by the look; nothing before it.</summary>
     public HelpSyncBesides Besides { get; init; } = HelpSyncBesides.None;
 }
 
 /// <summary>
-/// What a look's rows do not say (WSR7, LEFT3 b), for the card to say itself: each repository whose line was not fetched,
-/// since a row carries only a mark, and the repositories left apart, holding no branch of Daoris's (D112).
+/// What a look's rows do not say, for the card to say itself: each repository whose line is not fetched,
+/// since a row carries only a mark, and the repositories left apart, holding no branch of Daoris's.
 /// </summary>
 /// <param name="Apart">The repositories' names, as the look listed them.</param>
 public sealed record HelpSyncBesides(IReadOnlyList<HelpSyncUnfetched> NotFetched, IReadOnlyList<string> Apart)
@@ -278,7 +278,7 @@ public sealed record HelpSyncBesides(IReadOnlyList<HelpSyncUnfetched> NotFetched
     public static HelpSyncBesides None { get; } = new([], []);
 }
 
-/// <summary>One repository whose line a look did not fetch (WSR7), as the screen's note says it.</summary>
+/// <summary>One repository whose line a look did not fetch, as the screen's note says it.</summary>
 /// <param name="Fetch">Why, in git's words.</param>
 /// <param name="LastFetch">When this checkout last heard from origin, which its row is judged against; null for never.</param>
 /// <param name="Reach">How origin is reached: `ssh`, `https`, `http`, `git` or `file`.</param>
@@ -288,9 +288,9 @@ public sealed record HelpSyncUnfetched(string Repository, string Fetch, DateTime
 public interface IHelpSyncDoors
 {
     /// <summary>
-    /// <c>TREES_SYNC_PLAN</c>'s own list (WSR6, D109): each line fetched from <c>origin</c>, as the person, and what the
+    /// <c>TREES_SYNC_PLAN</c>'s own list: each line fetched from <c>origin</c>, as the person, and what the
     /// press would do — for <paramref name="repository"/> alone, or every repository with a checkout here, within
-    /// <paramref name="workspace"/> alone where one is named (BRSCOPE1b).
+    /// <paramref name="workspace"/> alone where one is named.
     /// </summary>
     Task<SyncPlan> SyncPlanAsync(string? repository, string? workspace, CancellationToken ct);
 

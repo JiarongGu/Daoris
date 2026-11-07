@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWLOCK1: opening Review takes no lock in a running session's tree. Review reads a session's tree while its agent may be
+/// Opening Review takes no lock in a running session's tree. Review reads a session's tree while its agent may be
 /// writing there; a read that refreshed the index took <c>index.lock</c> to write it back, and an agent's <c>git add</c> or
 /// <c>git commit</c> in that moment failed on the lock. Each read here is the one the bridge's <c>SESSION_DIFF</c> makes, in its
 /// order, against a real session tree in scratch: once while a stand-in for the session holds the tree's <c>index.lock</c>,

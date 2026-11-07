@@ -4,10 +4,10 @@ import {
 } from './entries';
 import { EVIDENCE_ASKS, EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from './entries.fixtures';
 
-// SESSONE1c (D167 point 5): the list's entries as the driver's reader answers them, drawn without a rule of the page's own.
+// The list's entries as the driver's reader answers them, drawn without a rule of the page's own.
 // The owner's evidence: two asks, one of them over two repositories, eleven records, three lines of work.
 
-// LINESTOGETHER1a: a row opens on the driver's `opens`: the head, or the part that waits on the person or works.
+// A row opens on the driver's `opens`: the head, or the part that waits on the person or works.
 describe('where a row opens', () => {
   const [APP] = EVIDENCE_ENTRIES as [SessionEntry];
   const ended = { ...APP, group: 'ended' as const, head: 'ap000002', opens: 'ap000002' };
@@ -56,7 +56,7 @@ describe('the session list by entry', () => {
     expect(entryOfSession(EVIDENCE_ENTRIES, 'ap000001')?.entry).toBe('ask:c98a7e/app');
     expect(entryOfSession(EVIDENCE_ENTRIES, 'nobody')).toBeNull();
     expect(partIds(EVIDENCE_ENTRIES, 'ap000012')).toEqual(['ap000011', 'ap000012', 'ap000013']);
-    // A record in no entry is its own, so an archive of it is what it always was.
+    // A record in no entry is its own, so an archive of it is what it always is.
     expect(partIds(EVIDENCE_ENTRIES, 'lonely')).toEqual(['lonely']);
     expect(partIds(undefined, 'ap000012')).toEqual(['ap000012']);
   });
@@ -116,7 +116,7 @@ describe('the session list by entry', () => {
   });
 });
 
-// LINESTOGETHER1b: where a part stands against its line's head, for the box's first line.
+// Where a part stands against its line's head, for the box's first line.
 describe('where a part stands by the head', () => {
   const part = (session: string, began: string) =>
     ({ session, quest: 'q', shown: 'completed', group: 'review', began, after: null, askedBy: null }) as SessionEntry['parts'][number];

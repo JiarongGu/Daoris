@@ -15,7 +15,7 @@ const VIEW_ICON: Record<ViewId, IconName> = {
   terminal: 'terminal',
 };
 
-/** Where a dragged view would land, lit as VS Code lights a container a tab is over (DOCK1e). */
+/** Where a dragged view would land, lit as VS Code lights a container a tab is over. */
 export function DropMark() {
   return <div aria-hidden className="pointer-events-none absolute inset-0 z-30 border-2 border-accent bg-accent-soft opacity-70" />;
 }
@@ -26,11 +26,11 @@ export function viewEntries(t: (key: string) => string, views: readonly ViewId[]
 }
 
 /**
- * The button at the end of a region's tab row (DOCK1b): every view the region holds, and where the
+ * The button at the end of a region's tab row: every view the region holds, and where the
  * selected one can go.
  *
  * @remarks
- * **Chrome's tab list, for tabs that do not fit**: a tab drawn as its icon alone (TABS1) is named only by
+ * **Chrome's tab list, for tabs that do not fit**: a tab drawn as its icon alone is named only by
  * its tip, and once even the icons scroll some are out of sight. However narrow the region gets, this
  * lists every one by its whole name, so none is ever out of reach.
  *
@@ -40,7 +40,7 @@ export function viewEntries(t: (key: string) => string, views: readonly ViewId[]
  *
  * Controlled when `open` is handed in, so a right-click on a tab can open it.
  *
- * **The shown view is said, not only ticked** (UXFIX1b): it is one choice among the region's, so the views are radio
+ * **The shown view is said, not only ticked**: it is one choice among the region's, so the views are radio
  * rows, where a plain item's drawn tick told a screen reader nothing; the moves and the reset stay acts.
  */
 export function ViewsMenu({

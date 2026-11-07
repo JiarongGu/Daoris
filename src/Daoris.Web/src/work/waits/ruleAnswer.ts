@@ -14,13 +14,13 @@ import type { Answered } from '../InlineConfirm';
  */
 export type RuleTell = { session: string; say: (text: string) => Promise<{ sent: boolean }> };
 
-/** Who an *Allow* from the band or the Agents page tells (PROPOSEHERE1c): a session's door, one that takes no words, or no one. */
+/** Who an *Allow* from the band or the Agents page tells: a session's door, one that takes no words, or no one. */
 export type RuleHearing = RuleTell | { unheard: string } | null;
 
 /**
- * The session that proposed a rule, found in the list the page holds, and the door to it (PROPOSEHERE1c, D74's PROPOSEHERE1b
- * note). Nothing where the proposal names none (a pipe-door quest session's), the list does not hold it, or no door was given;
- * an intake takes no words (INT4b), so it is named, to be said so. An ended session's words are kept on its record by the driver.
+ * The session that proposed a rule, found in the list the page holds, and the door to it. Nothing where the proposal
+ * names none (a pipe-door quest session's), the list does not hold it, or no door is given;
+ * an intake takes no words, so it is named, to be said so. An ended session's words are kept on its record by the driver.
  */
 export function ruleHearing(
   proposal: RuleProposal | undefined,
@@ -34,7 +34,7 @@ export function ruleHearing(
 }
 
 /**
- * **The one owner of the person's answer to an agent's rule proposal** (PERM2, D74; PROPOSEHERE1b): the Agents page's card, *What
+ * **The one owner of the person's answer to an agent's rule proposal**: the Agents page's card, *What
  * needs you* and the session's own conversation each press this, so a proposal is settled one way whichever door pressed it, as
  * `reviewActs.ts` owns a review's verdict.
  *
@@ -44,10 +44,10 @@ export function ruleHearing(
  * through the door its caller hands it.
  *
  * **Settled first, then said** (`settled`): the driver's `RULE_PROPOSAL`, then the sentence of what became of it, by the press
- * the person made: *Accept* on the Agents page, *Allow* where a widening waits (the glossary's `accept`, PROPOSEHERE1a). A
- * refusal is the driver's own, raised for the door that pressed it to say where it was pressed (UXFIX2).
+ * the person made: *Accept* on the Agents page, *Allow* where a widening waits (the glossary's `accept`). A
+ * refusal is the driver's own, raised for the door that pressed it to say where it is pressed.
  *
- * **The session that proposed it is told, once it is allowed** (`answer`, D74's PROPOSEHERE1b note): words to it after the rule
+ * **The session that proposed it is told, once it is allowed** (`answer`): words to it after the rule
  * is kept, so the turn they start is composed with it (the door's rule language writes the rules at each spawn). Where nothing
  * took them, the person is told to say it themselves.
  */
@@ -62,9 +62,9 @@ export function useRuleAnswer({ notify }: { notify: Notify }) {
   );
 
   /**
-   * Settle a proposal; resolves with the sentence of what became of it, said as the press was named.
+   * Settle a proposal; resolves with the sentence of what became of it, said as the press is named.
    *
-   * Where the press is an *Allow* and the caller found the session that proposed it (`ruleHearing`, PROPOSEHERE1c), that session
+   * Where the press is an *Allow* and the caller found the session that proposed it (`ruleHearing`), that session
    * is told once the rule is kept, as the conversation's own *Allow* does; one that takes no words says so in the sentence.
    */
   const settled = (id: string, accept: boolean, change: string, press: 'accept' | 'allow' = 'allow', hearing: RuleHearing = null) =>
@@ -80,7 +80,7 @@ export function useRuleAnswer({ notify }: { notify: Notify }) {
     });
 
   /**
-   * The conversation's answer (PROPOSEHERE1b): settled, its sentence said, the ask told how it ended, and on an *Allow* the
+   * The conversation's answer: settled, its sentence said, the ask told how it ended, and on an *Allow* the
    * session told through `tell`; null where it takes no words.
    */
   const answer = (proposal: RuleProposal, accept: boolean, answered: Answered, tell: RuleTell | null) => {

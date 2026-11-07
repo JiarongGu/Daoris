@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A run's unit for the node runtime (FABRIC-CUTOVER1c; D190 point 2, the cutover design §2.1): <c>run:&lt;run&gt;</c>, the unit of its own node
+/// A run's unit for the node runtime: <c>run:&lt;run&gt;</c>, the unit of its own node
 /// record, projected for the evaluation alone and never listed by the inventory.
 /// </summary>
 public static class RunUnits
@@ -14,8 +14,8 @@ public static class RunUnits
 }
 
 /// <summary>
-/// A run bound to a named workflow's graph version, as arming reads it (FABRIC-CUTOVER1c; D190 points 1 and 3, the cutover design §1, §3): its
-/// binding, the version it is bound to (unreadable where it no longer reads, and the run is held whole), and where its record says it ended.
+/// A run bound to a named workflow's graph version, as arming reads it: its
+/// binding, the version it is bound to (unreadable where it does not read, and the run is held whole), and where its record says it ended.
 /// </summary>
 /// <param name="Asked">Whether a pass is owed it though it ended: its chain's start asked one (<see cref="NodeRuntime.Return"/>), or this is the
 /// process's first look.</param>
@@ -24,25 +24,25 @@ public sealed record GraphRun(WorkflowRunBinding Binding, DecodedVersion Version
     /// <summary>Whether the run has a node record here: a run governed before, whose record a version that stops reading holds whole.</summary>
     public bool Recorded { get; init; }
 
-    /// <summary>A conversation's run (CHATFLOW1f, the chat-flow design §4.5): the candidates its presses submitted, its subject in place of a quest; null for any other run.</summary>
+    /// <summary>A conversation's run: the candidates its presses submitted, its subject in place of a quest; null for any other run.</summary>
     public ChatCandidateFile? Candidate { get; init; }
 
-    /// <summary>A verification run's own binding (FABRIC-PIPELINE1d), bound under <c>lines/</c>; null for a chain's run.</summary>
+    /// <summary>A verification run's own binding, bound under <c>lines/</c>; null for a chain's run.</summary>
     public VerifyRun? Line { get; init; }
 
     public string Run => Binding.Run;
 
     public string Unit => RunUnits.IdOf(Binding.Run);
 
-    /// <summary>Whether a binding names a graph version: a graph version's identity is its graph's own digest (FABRIC-GRAPH1b), a steps version's never.</summary>
+    /// <summary>Whether a binding names a graph version: a graph version's identity is its graph's own digest, a steps version's never.</summary>
     public static bool Names(WorkflowRunBinding binding) =>
         !binding.IsCurrent && binding.Version is not null && binding.Digest is { } digest && digest.StartsWith("gph-", StringComparison.Ordinal);
 }
 
 /// <summary>
-/// The home's runs bound to graph versions (FABRIC-CUTOVER1c; the cutover design §3's arming): <c>&lt;home&gt;/workflows/runs/</c> listed, each
-/// binding read only when its file is new or changed since this process read it, and a graph run's version and end read once and kept. A
-/// home with no runs folder costs one stat; a run bound to Current or a steps version is D157's, and is never one.
+/// The home's runs bound to graph versions : <c>&lt;home&gt;/workflows/runs/</c> listed, each
+/// binding read only when its file is new or changed after this process read it, and a graph run's version and end read once and kept. A
+/// home with no runs folder costs one stat; a run bound to Current or a steps version is never one.
 /// </summary>
 /// <remarks>Read from the plan's look and link 8 alike, so every read holds one lock.</remarks>
 public sealed class GraphRuns(NodeRecordFiles records)
@@ -67,11 +67,12 @@ public sealed class GraphRuns(NodeRecordFiles records)
     {
         lock (_lock)
         {
-            // FABRIC-PIPELINE1d (the pipeline design §4.3): the verification runs, bound in a folder of their own, beside the chains'.
+            var stamps = new Dictionary<string, (DateTime? Written, long Length)>(StringComparer.Ordinal);
+            // The verification runs, bound in a folder of their own, beside the chains'.
             var lines = VerifyRuns.All(records.Home).Select(line =>
             {
                 var (ended, recorded) = EndOf(line.Run);
-                return new GraphRun(line.Binding, VersionOf(line.Binding), ended) { Recorded = recorded, Line = line };
+                return new GraphRun(line.Binding, VersionOf(line.Binding, stamps), ended) { Recorded = recorded, Line = line };
             }).ToList();
             var folder = WorkflowRunBindings.FolderOf(records.Home);
             if (!Directory.Exists(folder))
@@ -100,7 +101,7 @@ public sealed class GraphRuns(NodeRecordFiles records)
                     WorkflowRunBinding? binding;
                     try
                     {
-                        // Shared as the run's own read is (BINDRACE1): a binding landing now is a run here, not one skipped this look.
+                        // Shared as the run's own read is: a binding landing now is a run here, not one skipped this look.
                         binding = WorkflowRunFiles.Parse(AtomicFile.ReadText(file.FullName));
                     }
                     catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -114,7 +115,7 @@ public sealed class GraphRuns(NodeRecordFiles records)
 
                 if (kept.Binding is not { } bound || !GraphRun.Names(bound)) continue;
                 var (ended, recorded) = EndOf(bound.Run);
-                runs.Add(new GraphRun(bound, VersionOf(bound), ended)
+                runs.Add(new GraphRun(bound, VersionOf(bound, stamps), ended)
                 {
                     Recorded = recorded, Candidate = ChatRuns.IsChatRun(bound.Run) ? ChatCandidates.Read(records.Home, bound.Run) : null,
                 });
@@ -135,18 +136,23 @@ public sealed class GraphRuns(NodeRecordFiles records)
     }
 
     /// <summary>
-    /// The graph version a binding names, as its workflow's file holds it (D190 point 1: no run is governed by a decoded graph, so nothing here
+    /// The graph version a binding names, as its workflow's file holds it (no run is governed by a decoded graph, so nothing here
     /// decodes): read again only where that file changed, so a version that stops reading (its file removed or damaged, its version gone or not
-    /// the one the run started on) holds the run whole until it reads again (D157 §5.2).
+    /// the one the run started on) holds the run whole until it reads again.
     /// </summary>
-    private DecodedVersion VersionOf(WorkflowRunBinding binding)
+    private DecodedVersion VersionOf(WorkflowRunBinding binding, Dictionary<string, (DateTime? Written, long Length)> stamps)
     {
         var number = binding.Version ?? 0;
         DecodedVersion Unread(string why) => new(number, null, null, null, why);
         if (!WorkflowNamed.IsId(binding.Workflow)) return Unread($"`{binding.Workflow}` is not a workflow's id.");
-        var file = new FileInfo(WorkflowStore.PathOf(records.Home, binding.Workflow));
-        DateTime? written = file.Exists ? file.LastWriteTimeUtc : null;
-        var length = file.Exists ? file.Length : -1;
+        // A workflow file is stated once for the runs of one read, which mostly share it.
+        if (!stamps.TryGetValue(binding.Workflow, out var stamp))
+        {
+            var file = new FileInfo(WorkflowStore.PathOf(records.Home, binding.Workflow));
+            stamps[binding.Workflow] = stamp = (file.Exists ? file.LastWriteTimeUtc : null, file.Exists ? file.Length : -1);
+        }
+
+        var (written, length) = stamp;
         if (_versions.TryGetValue(binding.Run, out var kept) && kept.Written == written && kept.Length == length) return kept.Decoded;
         var read = new WorkflowFiles(records.Home).Load(binding.Workflow)?.Read;
         var stored = read?.Versions.FirstOrDefault(each => each.Version == number);
@@ -175,14 +181,14 @@ public sealed class GraphRuns(NodeRecordFiles records)
 }
 
 /// <summary>
-/// What a governed run's nodes observe this look (FABRIC-CUTOVER1c; the cutover design §2.2, §2.4): the run itself, its newest work quest here,
+/// What a governed run's nodes observe this look: the run itself, its newest work quest here,
 /// the branch its newest session worked, every branch its quests produced, and the go-aheads its own sessions and quests asked.
 /// </summary>
 /// <param name="Run">The run as arming read it.</param>
 /// <param name="Self">The run as a unit of its own, for its own nodes: its go-ahead, task, wait, stop and join.</param>
 public sealed record RunScope(GraphRun Run, WorkUnit Self)
 {
-    /// <summary><c>claimed</c>'s subject: the newest quest of its chain in its repository, never a look's set-up quest; null where none was read.</summary>
+    /// <summary><c>claimed</c>'s subject: the newest quest of its chain in its repository, never a look's set-up quest; null where none is read.</summary>
     public WorkUnit? Quest { get; init; }
 
     /// <summary>The run's work quests here, in its chain's order: what its go-aheads and its branches are the run's by.</summary>
@@ -194,40 +200,40 @@ public sealed record RunScope(GraphRun Run, WorkUnit Self)
     /// </summary>
     public WorkUnit? Branch { get; init; }
 
-    /// <summary>Every branch the run's quests produced, its former subjects included: what an answer for one maps back to the run by.</summary>
+    /// <summary>Every branch the run's quests produced, its earlier subjects included: what an answer for one maps back to the run by.</summary>
     public IReadOnlyList<WorkUnit> Branches { get; init; } = [];
 
     /// <summary>The nodes a wire path leads to from <c>handed</c>: they observe the run's branch at its landing, at the landing's tip.</summary>
     public IReadOnlySet<string> AfterHanded { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>
-    /// The go-aheads on the run's ask that a session serving one of its quests, or a request naming one, asked (§2.4.2), as schema 1 counts them;
-    /// null where its ask was not read, and its go-ahead waits.
+    /// The go-aheads on the run's ask that a session serving one of its quests, or a request naming one, asked, as schema 1 counts them;
+    /// null where its ask is not read, and its go-ahead waits.
     /// </summary>
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 
     /// <summary>
-    /// The quests a session serving one of the run's work quests published (INTEGRATE1o part o2, <see cref="WorkRequestsReading.Published"/>): what its
+    /// The quests a session serving one of the run's work quests published (<see cref="WorkRequestsReading.Published"/>): what its
     /// <c>work.requests</c> observes. Every quest the runtime read is in view, so an empty list is none published.
     /// </summary>
     public IReadOnlyList<QuestView> Requests { get; init; } = [];
 
-    /// <summary>The repository's checkout here, and its identity (§B5): where its branches are told and read.</summary>
+    /// <summary>The repository's checkout here, and its identity: where its branches are told and read.</summary>
     public string Root { get; init; } = "";
 
     public string Identity { get; init; } = "";
 
-    /// <summary>The unit a governed run is told an answer under, mapped back to it (§2.4.1): its branches, former subjects included.</summary>
+    /// <summary>The unit a governed run is told an answer under, mapped back to it: its branches, earlier subjects included.</summary>
     public IEnumerable<string> Told => Branches.Select(branch => branch.Id).Concat(Branch is { } branch ? [branch.Id] : []).Distinct(StringComparer.Ordinal);
 
     /// <summary>
-    /// A verification run's commit (FABRIC-PIPELINE1d; the pipeline design §4.3): every node of it observes the run itself at this revision, written
+    /// A verification run's commit: every node of it observes the run itself at this revision, written
     /// once, so nothing lapses as the line moves. Null for a chain's run.
     /// </summary>
     public string? Tip { get; init; }
 }
 
-/// <summary>Which subject a run's node observes (the cutover design §2.2's table), by its kind and its place after <c>handed</c>.</summary>
+/// <summary>Which subject a run's node observes, by its kind and its place after <c>handed</c>.</summary>
 public enum RunSubject
 {
     /// <summary><c>claimed</c> and <c>quest.close</c>: the run's newest work quest here.</summary>
@@ -244,8 +250,8 @@ public enum RunSubject
 }
 
 /// <summary>
-/// The cutover design §2.2's subjects, one for the runtime that binds a run's nodes and the run's view that names what each observes
-/// (FABRIC-CUTOVER1c, CUTOVER1e): a node's subject by its kind's unit (<see cref="INodeKind.Subject"/>), and a plugin's or a check's by its place
+/// The subjects, one for the runtime that binds a run's nodes and the run's view that names what each observes:
+/// a node's subject by its kind's unit (<see cref="INodeKind.Subject"/>), and a plugin's or a check's by its place
 /// after <c>handed</c>.
 /// </summary>
 public static class RunSubjects
@@ -262,8 +268,8 @@ public static class RunSubjects
         afterHanded.Contains(node.Id) ? RunSubject.Landing : RunSubject.Branch;
 
     /// <summary>
-    /// The nodes a wire path leads to from <c>handed</c> (the cutover design §2.2): what observes the run's branch at its landing. A <c>back</c>
-    /// wire leads to a node before it (DECIDE1c), so no path is read along one.
+    /// The nodes a wire path leads to from <c>handed</c>: what observes the run's branch at its landing. A <c>back</c>
+    /// wire leads to a node before it, so no path is read along one.
     /// </summary>
     public static HashSet<string> AfterHanded(NodeGraph graph)
     {
@@ -282,8 +288,7 @@ public static class RunSubjects
 }
 
 /// <summary>
-/// Who owns each quest and branch a pass reads, between Current's graphs and the runs bound to graph versions (FABRIC-CUTOVER1c; the cutover
-/// design §2.3): a quest whose run is a graph run is that run's; a branch is a run's where every quest that produced it is of that one run, held
+/// Who owns each quest and branch a pass reads, between Current's graphs and the runs bound to graph versions: a quest whose run is a graph run is that run's; a branch is a run's where every quest that produced it is of that one run, held
 /// where they name two runs and one of them is a graph run, and Current's otherwise. While the work's attribution is not read, no branch of a
 /// repository holding an open graph run is Current's. Pure.
 /// </summary>
@@ -299,14 +304,14 @@ public sealed class RunOwners
 
     private static string ChatKey(string? repository, string? branch) => $"{repository?.ToLowerInvariant()}\n{branch}";
 
-    private readonly IReadOnlyList<QuestView> _all;
+    private readonly QuestChains _chains;
 
     private readonly HashSet<string> _unreadIn = new(StringComparer.OrdinalIgnoreCase);
 
     public RunOwners(IReadOnlyDictionary<string, QuestView> quests, IReadOnlyList<GraphRun> runs, bool attributionRead)
     {
         _quests = new(quests, StringComparer.Ordinal);
-        _all = [.. quests.Values];
+        _chains = new QuestChains([.. quests.Values]);
         _runs = runs.GroupBy(run => run.Run, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
         foreach (var chat in runs.Where(run => run.Candidate is not null)) _chatBranches[ChatKey(chat.Candidate!.Repository, chat.Candidate.Branch)] = chat.Run;
         if (!attributionRead)
@@ -318,11 +323,11 @@ public sealed class RunOwners
     /// <summary>The repositories whose branches no graph governs while the work's attribution is not read: each holds an open graph run.</summary>
     public IReadOnlyCollection<string> Unattributed => _unreadIn;
 
-    /// <summary>The run a quest's work is (D157 §1): its chain's first quest in its repository, else its own id.</summary>
+    /// <summary>The run a quest's work is: its chain's first quest in its repository, else its own id.</summary>
     public string RunOf(QuestView quest)
     {
         if (_runOf.TryGetValue(quest.Id, out var run)) return run;
-        return _runOf[quest.Id] = WorkflowRunBindings.RunOf(ReviewGate.ChainOf(_all, quest.Id), quest.To) ?? quest.Id;
+        return _runOf[quest.Id] = WorkflowRunBindings.RunOf(_chains.Of(quest.Id), quest.To) ?? quest.Id;
     }
 
     /// <summary>The graph run a quest is of, or null where its run is not bound to a graph version. A home binding none reads no chain.</summary>
@@ -331,7 +336,7 @@ public sealed class RunOwners
     /// <summary>The runs whose quests produced a branch unit, each once, by its links; a quest not read is a run of its own.</summary>
     public IReadOnlyList<string> RunsOf(WorkUnit branch) =>
     [
-        // CHATFLOW1f: a conversation's branch is its chat run's, named by the candidates its presses submitted, not by a quest.
+        // A conversation's branch is its chat run's, named by the candidates its presses submitted, not by a quest.
         .. _chatBranches.TryGetValue(ChatKey(branch.Owner.Repository, branch.Subject.Artifact), out var chat) ? [chat] : (IEnumerable<string>)[],
         .. branch.Links.Where(link => link.Relation == WorkRelation.ProducedBy && link.Unit.StartsWith("quest:", StringComparison.Ordinal))
             .Select(link => link.Unit["quest:".Length..])
@@ -344,7 +349,7 @@ public sealed class RunOwners
 
     /// <summary>
     /// Why no graph governs a branch unit, or null where Current may: it is a graph run's, two runs produced it and one is a graph run's, or
-    /// its repository holds an open graph run while the work's attribution was not read.
+    /// its repository holds an open graph run while the work's attribution is not read.
     /// </summary>
     public string? Keeps(WorkUnit branch)
     {
@@ -355,13 +360,13 @@ public sealed class RunOwners
         return runs.Count == 1 ? Run : Held;
     }
 
-    /// <summary>A graph run's branch: its graph holds what it wants done on it, and its repository's landing cycle no longer runs there (§2.3).</summary>
+    /// <summary>A graph run's branch: its graph holds what it wants done on it, and its repository's landing cycle does not run there.</summary>
     public const string Run = "run";
 
     /// <summary>Two runs' work on one branch, one of them a graph run's: neither engine governs it, said.</summary>
     public const string Held = "held";
 
-    /// <summary>A branch whose work's attribution was not read in a repository holding an open graph run: never handed to Current on a guess.</summary>
+    /// <summary>A branch whose work's attribution is not read in a repository holding an open graph run: never handed to Current on a guess.</summary>
     public const string Unread = "unread";
 
     /// <summary>What the pass says of a held branch, naming the quests and runs on it.</summary>

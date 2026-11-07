@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <b>What a start would take, and where each part came from</b> (MAP1b, D67 §3) — the wiring panel's
+/// <b>What a start would take, and where each part came from</b> — the wiring panel's
 /// answer, read through the driver's own judgement so the picture cannot disagree with the loop.
 /// </summary>
 /// <remarks>
@@ -82,9 +82,8 @@ public sealed class StartWiringTests : IDisposable
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 point 1; the account-pool design §2.4): the workspace's default outranked the machine's (D49 §4),
-    /// answered as <see cref="ChoiceFrom.Workspace"/>. Every workspace reads the set now, begun at the machine's account under
-    /// <c>order</c> (§6.1 rule 3), and the panel never answers <c>Workspace</c> for an account.
+    /// Every workspace reads the set, begun at the machine's account under
+    /// <c>order</c>, and the panel never answers <c>Workspace</c> for an account.
     /// </summary>
     [Fact]
     public async Task Every_workspace_s_start_takes_the_set_s_account_never_a_workspace_s()
@@ -102,9 +101,8 @@ public sealed class StartWiringTests : IDisposable
     }
 
     /// <summary>
-    /// No default anywhere and no Daoris account is a start that waits for a sign-in, never the agent's own sign-in (OWNSPACE1a,
-    /// D175 point 2); with one, the start takes it, though nothing named it. Rewritten by POOL1a2: the one account was answered as
-    /// <see cref="ChoiceFrom.Unset"/>, named by nobody; it is the set's order now, read as the machine's.
+    /// No default anywhere and no Daoris account is a start that waits for a sign-in, never the agent's own sign-in; with one, the start takes it, though nothing named it. The one account is the set's order,
+    /// read as the machine's, not <see cref="ChoiceFrom.Unset"/>.
     /// </summary>
     [Fact]
     public async Task No_default_and_no_Daoris_account_waits_for_a_sign_in_and_one_account_takes_the_start()
@@ -154,7 +152,7 @@ public sealed class StartWiringTests : IDisposable
 
     /// <summary>
     /// A start that would be refused says so in the driver's own words, and still names the account: here an account the
-    /// person's press read signed out (ROSTER1), since the panel itself reads no account.
+    /// person's press read signed out, since the panel itself reads no account.
     /// </summary>
     [Fact]
     public async Task A_refused_start_carries_the_driver_s_sentence_and_the_account()
@@ -175,7 +173,7 @@ public sealed class StartWiringTests : IDisposable
     [Fact]
     public async Task A_pin_says_where_it_was_set_and_a_missing_pin_is_the_refusal()
     {
-        // A Daoris account to start on (OWNSPACE1a), so the pin is what refuses it.
+        // A Daoris account to start on, so the pin is what refuses it.
         SignedIn("agent", "work");
         new HarnessSettings().WithVersion("agent", "9.9.9").Save(Settings);
 
@@ -186,7 +184,7 @@ public sealed class StartWiringTests : IDisposable
         Assert.Contains("pinned to 9.9.9", wiring.Refusal);
     }
 
-    /// <summary>A command `driver.json` names has the last word over any pin (TOOL2), and the panel says so.</summary>
+    /// <summary>A command `driver.json` names has the last word over any pin, and the panel says so.</summary>
     [Fact]
     public async Task A_command_driver_json_names_outranks_the_pin()
     {
@@ -204,7 +202,7 @@ public sealed class StartWiringTests : IDisposable
         Assert.Null(wiring.Refusal);
     }
 
-    /// <summary>A door runs as its owner's accounts (AGT7): the panel names the owner, and the owner's default.</summary>
+    /// <summary>A door runs as its owner's accounts: the panel names the owner, and the owner's default.</summary>
     [Fact]
     public async Task A_door_is_wired_to_its_owner_s_account()
     {
@@ -218,7 +216,7 @@ public sealed class StartWiringTests : IDisposable
         Assert.Equal(("work", ChoiceFrom.Machine), (wiring.Profile, wiring.ProfileFrom));
     }
 
-    /// <summary>🔴 A key account's answer names the account and never carries the key (AGT3).</summary>
+    /// <summary>🔴 A key account's answer names the account and never carries the key.</summary>
     [Fact]
     public async Task A_key_account_is_named_and_its_key_never_travels()
     {

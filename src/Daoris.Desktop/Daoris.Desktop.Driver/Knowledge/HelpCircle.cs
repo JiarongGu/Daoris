@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The workspace Ask Daoris's tools are bound to (ASKSCOPE1c, D158's ASKSCOPE1 note point 5): its room's, which is its record's
-/// workspace in a room of its own, and none for <c>default</c>'s room, the whole machine (ASKSCOPE1b). Its knowledge connector is
+/// The workspace Ask Daoris's tools are bound to: its room's, which is its record's
+/// workspace in a room of its own, and none for <c>default</c>'s room, the whole machine. Its knowledge connector is
 /// handed it beside the session (<see cref="KnowledgeConnector.SessionScope"/>), and then answers from that workspace alone, refusing
 /// a call that names another, or <c>all</c> (the service's <c>WorkspaceScope</c>).
 /// </summary>

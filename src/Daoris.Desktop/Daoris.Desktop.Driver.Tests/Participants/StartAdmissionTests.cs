@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1q (D212; the foundation design §2.3): the start layer's table, keyed by the work. A working session, driven or a
-/// conversation, may ask for a co-worker; a co-worker, a reviewer, an intake and Ask Daoris may not (D203 point 6; §7 row 9). A refusal
+/// The start layer's table, keyed by the work. A working session, driven or a
+/// conversation, may ask for a co-worker; a co-worker, a reviewer, an intake and Ask Daoris may not. A refusal
 /// names the asker by the mark the doors named it by before, a co-worker's <c>serves</c> first.
 /// </summary>
 public sealed class StartAdmissionTests

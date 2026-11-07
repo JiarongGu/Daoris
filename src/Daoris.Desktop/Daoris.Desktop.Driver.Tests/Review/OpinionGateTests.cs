@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1f (D155 points 9 and 10; the second-agent design §7–§8): the second opinion's part of the landing gate, as a state
+/// The second opinion's part of the landing gate, as a state
 /// table. The level first (nothing set, a repository's none, a rule that reads only before each next step, a conversation's work);
 /// then the person's answer covering the tip; the chain's later step here; the newest pass asked and how far it went (being read,
-/// with the working session, read again, disputed, unavailable, commits since, settled); D154's <i>Reviewed</i> and a press that
-/// answer what they showed; and the one gate's order. Pure, with git's ancestry and the host stood in for: the fast half (MOD8).
+/// with the working session, read again, disputed, unavailable, commits since, settled); the review's <i>Reviewed</i> and a press that
+/// answer what they showed; and the one gate's order. Pure, with git's ancestry and the host stood in for: the fast half.
 /// <see cref="OpinionLandingTests"/> holds the doors over real git.
 /// </summary>
 public sealed class OpinionGateTests
@@ -97,7 +97,7 @@ public sealed class OpinionGateTests
     }
 
     /// <summary>
-    /// CHATFLOW1d (the chat-flow design §5.2, §7): a chat run's work waits for an opinion where its rule names one at the landing, keyed by
+    /// A chat run's work waits for an opinion where its rule names one at the landing, keyed by
     /// the run in place of a quest. Nothing asks it until the person's press, which the words say; once the press asked it, they say the
     /// look starts it and the person presses again. The rest of its states are a quest's.
     /// </summary>
@@ -123,7 +123,7 @@ public sealed class OpinionGateTests
     }
 
     /// <summary>
-    /// CHATFLOW1d (§7): a chat run's gate is kept under its run's key, the file the session delete takes with the record it names; and its
+    /// A chat run's gate is kept under its run's key, the file the session delete takes with the record it names; and its
     /// due keeps the run, the press's tip and the person's turn count, naming no quest, so a build before it passes it over.
     /// </summary>
     [Fact]
@@ -208,7 +208,7 @@ public sealed class OpinionGateTests
         Assert.Contains("Codex (OpenAI) ran out of its minutes before it said one", late.Says);
     }
 
-    /// <summary>AGENTERRORS1d: a pass whose provider kept failing is unavailable with its own code and no reset, so the look has nothing to ask again by.</summary>
+    /// <summary>A pass whose provider kept failing is unavailable with its own code and no reset, so the look has nothing to ask again by.</summary>
     [Fact]
     public async Task A_pass_whose_provider_kept_failing_is_unavailable_with_the_transient_code_and_no_reset()
     {
@@ -439,7 +439,7 @@ public sealed class OpinionGateTests
         Assert.Equal("q2", OpinionGate.LaterStep(composed, "q1", "web-app"));
         Assert.Null(OpinionGate.LaterStep(setUp, "q1", "web-app"));
 
-        // FABRIC-CLOSE1h (§E5): in a closure graph a step's work is finished at its unheld submission, which published its steps in the
+        // In a closure graph a step's work is finished at its unheld submission, which publishes its steps in the
         // same transaction, as a done does: neither a later step still to run nor one still composed.
         var made = new QuestSubmissionView("desk", 3, DateTimeOffset.UnixEpoch, "ready");
         var submitted = new List<QuestView>
@@ -498,7 +498,7 @@ public sealed class OpinionGateTests
 
         var sits = Assert.Single(plan, considered => considered.Quest.Id == "q2");
         Assert.Equal((StartVerdict.WaitsForOpinion, said), (sits.Verdict, sits.Reason));
-        // OVERVIEWNOISE1c: the look's code rides beside its sentence, so the page words it.
+        // The look's code rides beside its sentence, so the page words it.
         Assert.Equal(new SittingFact(SittingFact.Steps) { Quest = "q1", State = OpinionGateStates.Reading }, sits.Said);
         Assert.NotEqual(StartVerdict.WaitsForOpinion, Assert.Single(plan, considered => considered.Quest.Id == "q3").Verdict);
     }
@@ -558,9 +558,9 @@ public sealed class OpinionGateTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1h18 (D173's note): a due closes as landed on a landing made since it was owed, by its record: the session's own landing,
-    /// or the advance its later done made (LAND2c), accepted at or after the due's time. One accepted before it, a session whose words went
-    /// on after its landing (D137), lands only the work it holds, which git reads of the tree (the landing's tests over real git, since this
+    /// A due closes as landed on a landing made after the due is owed, by its record: the session's own landing,
+    /// or the advance its later done made, accepted at or after the due's time. One accepted before it, a session whose words went
+    /// on after its landing, lands only the work it holds, which git reads of the tree (the landing's tests over real git, since this
     /// class starts no git): its record alone closes nothing, as the last row shows.
     /// </summary>
     [Theory]
@@ -591,7 +591,7 @@ public sealed class OpinionGateTests
             if (advanced) landed.Advanced("web-app", "feature/q1-work", new LandedAdvance(Read, Later, Answered, "s1"));
             var due = new OpinionDue("s1", "q1", "web-app", "work", tree, OpinionRules.Landing, Asked.AddMinutes(owedAfter));
 
-            // Made since it was owed, read from the landing's record, in every row; the whole look where it ends before git, which this
+            // Made after the due is owed, read from the landing's record, in every row; the whole look where it ends before git, which this
             // class does not start: the last row's tree would be read by git next.
             Assert.Equal(owedAfter <= 0 || advanced, OpinionLook.MadeSince(landed.Landing("s1")!, due));
             if (closed is not null)

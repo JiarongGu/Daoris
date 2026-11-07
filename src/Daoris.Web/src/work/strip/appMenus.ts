@@ -2,17 +2,17 @@ import type { CommandEntry, MenuId } from '../../menus/commands';
 import type { MenuItem } from './AppMenu';
 
 /**
- * One menu of the bar, as its rows (UX7a, D152 §2): built from the one table, so a menu holds exactly what the palette
+ * One menu of the bar, as its rows: built from the one table, so a menu holds exactly what the palette
  * and the keys do, and nothing a list kept by care.
  *
  * @remarks
  * - **A rule between groups**, as VS Code's menus have them; a record's group (Run's *This session*, *This quest*) is named
- *   over its first row, with the tip that says what to open while its acts are off (the design §3.3).
+ *   over its first row, with the tip that says what to open while its acts are off.
  * - **A row is disabled where its surface exists and the state forbids it**, so its place is learned, and absent where the
- *   surface is absent: the table has already left out what a browser may not know (D47 §4).
+ *   surface is absent: the table has already left out what a browser may not know.
  * - **A row prints its first key** at its right, as VS Code's do; a key a browser keeps is not printed there.
  * - **A submenu is one row** (View's *Theme ▸*, *Language ▸*), at its first choice's place, its choices a radio group.
- * - **A row carries what its tick means** (UXFIX1): a region shown is a toggle, a place or a workspace one choice
+ * - **A row carries what its tick means**: a region shown is a toggle, a place or a workspace one choice
  *   (`radio`), so the menu says each as it is and not only draws it.
  *
  * Built as data, so a desktop's menus and a browser's are asserted without mounting the application.

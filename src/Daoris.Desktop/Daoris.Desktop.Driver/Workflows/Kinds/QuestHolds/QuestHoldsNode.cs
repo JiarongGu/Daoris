@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The quest's own holds as a step before the landing (LANDNODE1k, <see cref="HoldReading"/>): its done or submission standing, not taken back, and
-/// not held for the person's yes (D133) or its evidence's verdict (D144).
+/// The quest's own holds as a step before the landing (<see cref="HoldReading"/>): its done or submission standing, not taken back, and
+/// not held for the person's yes or its evidence's verdict.
 /// </summary>
 [NodeKind(NodeKinds.QuestHolds, NodeGroup.Checks, NodeKinds.WorkRequests)]
 internal sealed class QuestHoldsNode : BuiltInNode, IObserves

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The mark a record's words could not go on with (MSG1b, closing MSG1a's open point): <c>&lt;home&gt;/sessions/&lt;id&gt;.cannot.json</c>,
+/// The mark a record's words could not go on with: <c>&lt;home&gt;/sessions/&lt;id&gt;.cannot.json</c>,
 /// the words judged by their ids and why by a code, so a later look leaves them waiting rather than trying them again. A
 /// file that does not read is no mark, which costs one more try and never the words.
 /// </summary>
@@ -89,7 +89,7 @@ public sealed class GoOnMarksTests : IDisposable
     }
 
     /// <summary>
-    /// The answers-alone bound's mark (COWORK1e) names the agent that answered, which the person's wait is worded by; a mark from before
+    /// The answers-alone bound's mark names the agent that answered, which the person's wait is worded by; a mark from before
     /// the field reads with none. Every mark this home keeps is read for the waits the person answers, one that does not read left out.
     /// </summary>
     [Fact]

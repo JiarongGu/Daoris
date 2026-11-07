@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LEFT3 g: <c>landings.json</c> keeps a trace of every gone branch (REVIEW2, D113), and nothing pruned them, so the file
-/// the clean-up, the hand-off, bringing up to date and Ask Daoris each read whole grew by one entry every landing. Each
-/// repository now keeps its newest traces, by when each went, and a standing entry is never dropped. Files only.
+/// <c>landings.json</c> keeps a trace of every gone branch, so without pruning the file
+/// the clean-up, the hand-off, bringing up to date and Ask Daoris each read whole would grow by one entry every landing. Each
+/// repository keeps its newest traces, by when each went, and a standing entry is never dropped. Files only.
 /// </summary>
 public sealed class LandedTracesTests : IDisposable
 {

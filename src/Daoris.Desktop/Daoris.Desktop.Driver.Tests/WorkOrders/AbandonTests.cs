@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Abandon an ask's work, or one quest's, on this machine (PAUSE1d, D132 points 6–10, design §3): the first press lists every
+/// Abandon an ask's work, or one quest's, on this machine: the first press lists every
 /// piece and what it would keep and why, and the second sends exactly that list with the person's reason, judging each piece
-/// again. In §3.4's order it pauses the scope, stops and ends the work's sessions, declines each quest with the reason (an
+/// again. In order it pauses the scope, stops and ends the work's sessions, declines each quest with the reason (an
 /// open one only while open), closes the ask, syncs, discards a tree or branch nothing else holds, archives the sessions,
 /// tidies <c>driver.json</c> and writes <c>abandoned.json</c>, never a path.
 /// </summary>
@@ -177,7 +177,7 @@ public sealed class AbandonTests : IDisposable
                 .WithReleased("q2", "old00000")
                 .WithReleased("q5", "x0000000") with { Forgiven = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["q3"] = 2 } })
             .Save(ConfigPath);
-        // MIXAGENT1a-ii: a quest the abandon closes goes back to the machine's agent; one it leaves taken stays held.
+        // A quest the abandon closes goes back to the machine's agent; one it leaves taken stays held.
         var at = new DateTimeOffset(2026, 10, 12, 9, 0, 0, TimeSpan.Zero);
         new HandedQuests(_home).Write("q2", new HandedQuest("codex-acp", null, "old00000", HandOverWhy.Press, HandOverBy.Person, at));
         new HandedQuests(_home).Write("q5", new HandedQuest("codex-acp", null, "x0000000", HandOverWhy.Press, HandOverBy.Person, at));
@@ -219,9 +219,9 @@ public sealed class AbandonTests : IDisposable
     }
 
     /// <summary>
-    /// The record of what went (design §4.2): the reason, each quest declined, each tree's repository, branch, tip and counts,
+    /// The record of what went: the reason, each quest declined, each tree's repository, branch, tip and counts,
     /// each session stopped and archived, what stayed and why, each decline's answer, and never a path on this machine. The
-    /// machine log counts it, naming no id (D94 §5).
+    /// machine log counts it, naming no id.
     /// </summary>
     [Fact]
     public async Task The_record_keeps_what_went_and_what_stayed_with_each_tip_and_never_a_path()
@@ -422,7 +422,7 @@ public sealed class AbandonTests : IDisposable
     }
 
     /// <summary>
-    /// A work with nothing left to take is said, never refused (D48 §6): the first press offers only closing the ask, and the
+    /// A work with nothing left to take is said, never refused: the first press offers only closing the ask, and the
     /// second abandons nothing and writes nothing.
     /// </summary>
     [Fact]

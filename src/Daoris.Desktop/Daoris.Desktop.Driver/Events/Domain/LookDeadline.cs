@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <see cref="ChangeTopics.Look"/> topic's deadline (FOUNDATION1 mod-vii, the design §14.1): the rule the look held in Loop, and the
+/// The <see cref="ChangeTopics.Look"/> topic's deadline: the rule the look holds in Loop, and the
 /// events' own, since the topic is theirs. Pure: it is handed the time since the last whole look ended, never a clock.
 /// </summary>
 public static class LookDeadline

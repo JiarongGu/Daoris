@@ -27,27 +27,27 @@ export type TraceDoor = {
 };
 
 /**
- * **How this came to be** (TRACE1b, D143, D50): the screen's door to `daoris trace`, at the foot of a session's page
+ * **How this came to be**: the screen's door to `daoris trace`, at the foot of a session's page
  * and a quest's. The ask and the person's words, the quest with what they required and how its done answered, then each
- * session: what ran it, its tree, what it was handed, its rules, where its work landed, and what stood when it started.
+ * session: what ran it, its tree, what it is handed, its rules, where its work landed, and what stood when it started.
  *
  * @remarks
- * - **Folded by default**, so a page reads nothing it was not asked for: the route reads every session record and quest. Once
+ * - **Folded by default**, so a page reads nothing the person did not ask for: the route reads every session record and quest. Once
  *   read, the folded line tells the story on one line, from the ask to the sessions.
- * - **Each link says where it was kept, and a link nothing keeps says so** (D143 point 3), marked *missing* where it would
+ * - **Each link says where it is kept, and a link nothing keeps says so**, marked *missing* where it would
  *   have been. Nothing is rebuilt from what stands now.
- * - **Worded from codes where Daoris speaks** (D142): every line here is the catalogue's, in the reader's language. The
+ * - **Worded from codes where Daoris speaks**: every line here is the catalogue's, in the reader's language. The
  *   person's words, a requirement's quote and a done's answer are someone's words, shown as written; the driver's own notes
  *   (a start's account choice, an acceptance) are its English, marked *shown as recorded*.
- * - **No path**: a tree is its folder's name, a store is named by what it is (D47 §4).
- * - **No measure of its own** (D141): every block takes the page's width.
+ * - **No path**: a tree is its folder's name, a store is named by what it is.
+ * - **No measure of its own**: every block takes the page's width.
  *
  * A molecule: handed the answer and the fold, it reads the catalogue and nothing else.
  */
 export function HowItCameToBe({
   kind, id, open, onToggle, answer, reading = false, refusal, onSession, onQuest, onAsk, className, nameOf,
 }: TraceDoor & {
-  /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, each record's id is said. */
+  /** What a person calls an account, from the roster; absent, each record's id is said. */
   nameOf?: AccountNamer;
   /** What the page is: a session's or a quest's, and its id, which is not a door to itself. */
   kind: TraceKind;
@@ -135,7 +135,7 @@ function Story({ chain }: { chain: NonNullable<TraceAnswer['chain']> }) {
   return <> · <Inline text={parts.join(' → ')} /></>;
 }
 
-/** One step of the chain: its glyph and head, the store it was read from, then what it says. */
+/** One step of the chain: its glyph and head, the store it is read from, then what it says. */
 function Step({ icon, head, source, children }: { icon: IconName; head: ReactNode; source?: string; children?: ReactNode }) {
   const { t } = useTranslation();
   return (
@@ -196,7 +196,7 @@ function Said({ meta, children }: { meta?: string; children: string }) {
   );
 }
 
-/** The driver's own English, which no code words, marked as the note's are (D142 points 4, 5). */
+/** The driver's own English, which no code words, marked as the note's are. */
 function Recorded({ meta, text }: { meta?: string; text: string }) {
   const { t } = useTranslation();
   return (
@@ -356,7 +356,7 @@ function QuestStep({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
       {quest.then.length > 0 && (
         <Facts parts={[t('work.trace.quest.then', { steps: list(quest.then.map((step) => `${step.to} “${step.title}”`), i18n.language) })]} />
       )}
-      {/* A close with parts is worded in the reader's language; one without is its closer's words as written (QUESTCLOSE1b2). */}
+      {/* A close with parts is worded in the reader's language; one without is its closer's words as written. */}
       {quest.note && (
         <Part title={t('work.trace.quest.close')}>
           {quest.noteParts?.length
@@ -387,7 +387,7 @@ function Records({ quest, doors }: { quest: TraceQuestLink; doors: Doors }) {
   );
 }
 
-/** One session: what ran it, what it was handed, its rules, where its work landed, and what stood when it started. */
+/** One session: what ran it, what it is handed, its rules, where its work landed, and what stood when it started. */
 function SessionStep({ session, doors, nameOf }: { session: TraceSessionLink; doors: Doors; nameOf?: AccountNamer }) {
   const { t, i18n } = useTranslation();
   const at = (iso: string) => moment(iso, i18n.language);
@@ -413,7 +413,7 @@ function SessionStep({ session, doors, nameOf }: { session: TraceSessionLink; do
       <Facts parts={[
         session.agent.door ? t('work.trace.session.agent', { agent: session.agent.door }) : t('work.trace.session.agentUnknown'),
         session.agent.doorVersion ? t('work.trace.session.version', { version: session.agent.doorVersion }) : t('work.trace.session.versionUnknown'),
-        // The account by the person's name for it (ACCTNAME1), looked up as the trace is drawn; the record keeps the id.
+        // The account by the person's name for it, looked up as the trace is drawn; the record keeps the id.
         !session.teammate && (session.agent.account
           ? t('work.trace.session.account', {
             account: nameOf && session.agent.door ? nameOf(session.agent.door, session.agent.account) : session.agent.account,
@@ -455,7 +455,7 @@ function SessionStep({ session, doors, nameOf }: { session: TraceSessionLink; do
   );
 }
 
-/** This machine's record of it: the driver's start notes, each instruction by its size with what it was handed, acceptances. */
+/** This machine's record of it: the driver's start notes, each instruction by its size with what it is handed, acceptances. */
 function Events({ session }: { session: TraceSessionLink }) {
   const { t, i18n } = useTranslation();
   const events = session.events!;
@@ -488,7 +488,7 @@ function Events({ session }: { session: TraceSessionLink }) {
   );
 }
 
-/** The rules it was handed, by count, while their file stands; or why none are read. */
+/** The rules it is handed, by count, while their file stands; or why none are read. */
 function Rules({ rules }: { rules: NonNullable<TraceSessionLink['rules']> }) {
   const { t } = useTranslation();
   if (rules.missing) return <Gap text={t(`work.trace.rules.gap.${rules.missing}`)} />;
@@ -532,7 +532,7 @@ function Landed({ branch }: { branch: TraceBranch }) {
       ? t('work.trace.session.removedInside', { on: branch.removedOn })
       : t('work.trace.session.removed')),
   ].filter((part): part is string => Boolean(part));
-  // Who accepted it and the rule it was made under (LAND2b): a landing from before they were kept says so, and no rule is made up.
+  // Who accepted it and the rule it is made under: a landing from before they were kept says so, and no rule is made up.
   const accepted = [
     branch.acceptedBy === 'auto' || branch.acceptedBy === 'person'
       ? t(`work.trace.acceptedBy.${branch.acceptedBy}`)
@@ -540,8 +540,8 @@ function Landed({ branch }: { branch: TraceBranch }) {
     ...(branch.rule ? [
       t(`work.trace.rule.${branch.rule.source}`, { defaultValue: branch.rule.source }),
       branch.rule.plugin ? t('work.trace.rulePlugin', { plugin: branch.rule.plugin }) : t('work.trace.ruleNoPlugin'),
-      // ACCESSWORDS1b (D184's AUTONOMY1c2 note): where the access setup turned the switch on and the switch accepted it, whose setup
-      // it was stands in for the switch, as the server's trace says it; a level this page does not know shows as recorded, never
+      // Where the access setup turned the switch on and the switch accepted it, whose setup
+      // it is stands in for the switch, as the server's trace says it; a level this page does not know shows as recorded, never
       // guessed. A press under the setup keeps its level on the record too, and the setup accepted nothing there.
       branch.rule.access && branch.acceptedBy === 'auto'
         ? Object.hasOwn(ACCESS_AT, branch.rule.access)
@@ -606,7 +606,7 @@ type T = ReturnType<typeof useTranslation>['t'];
 const namedBy = (t: T, by?: { kind: string; id?: string | null } | null) =>
   t(`work.trace.namedBy.${by?.kind ?? 'trace'}`, { id: by?.id ?? '' });
 
-/** How one of the person's words was given, and to which session on which quest. */
+/** How one of the person's words is given, and to which session on which quest. */
 function given(t: T, word: { kind: string; session?: string | null; quest?: string | null }): string {
   const session = word.session ?? '';
   const how = word.kind === 'asked' ? t('work.trace.word.asked')
@@ -625,7 +625,7 @@ const stateNote = (t: T, state: TraceState) =>
     : state.state === '' ? t('work.trace.session.stateUnknown')
     : null;
 
-/** The page's own word for a traced record where its flags make one (LIMITRESUME1a: a limit's failure is *limited*), else null. */
+/** The page's own word for a traced record where its flags make one (a limit's failure is *limited*), else null. */
 const shownOfTrace = (state: TraceState): ShownState | null => (state.state === 'failed' && state.limit ? 'limited' : null);
 
 /** A record's state in words, with what its flags add. */

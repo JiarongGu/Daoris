@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The terminal's words about an agent's accounts (TOOL6a, TOOL6c; D130 §3.2, §6, §16.6): how a scope's list is used, the step the next
+/// The terminal's words about an agent's accounts: how a scope's list is used, the step the next
 /// start would follow, and what each account last said, shared by <c>agent account use</c> and <c>agent list</c>.
 /// </summary>
 internal static class AgentAccountLines
 {
-    /// <summary>What the terminal says for each <i>use accounts</i> choice (D130 §16.6): its name, and what it costs where the screen says so.</summary>
+    /// <summary>What the terminal says for each <i>use accounts</i> choice: its name, and what it costs where the screen says so.</summary>
     public static readonly IReadOnlyDictionary<string, (string Name, string? Cost)> UseWords = new Dictionary<string, (string, string?)>
     {
         ["goal"] = ("make the most of them", null),
@@ -20,9 +20,9 @@ internal static class AgentAccountLines
     };
 
     /// <summary>
-    /// Whether an agent's accounts say how much of each window is used (TOOL6c, CODEXUSE1b): a toolchain whose accounts are its own,
-    /// its door's or a door onto it (AGT7), carries the frame's words (<c>Windows</c>) or asks its own server (<c>Usage</c>), as
-    /// <c>codex-acp</c> asks for <c>codex</c>'s. The CLI's <c>windows</c>.
+    /// Whether an agent's accounts say how much of each window is used: a toolchain whose accounts are its own,
+    /// its door's or a door onto it, carries the frame's words (<c>Windows</c>) or asks its own server (<c>Usage</c>), as
+    /// <c>codex-acp</c> asks for <c>codex</c>'s.
     /// </summary>
     public static bool Says(ProviderRegistry set, string owner)
     {
@@ -36,8 +36,8 @@ internal static class AgentAccountLines
     /// <summary>
     /// How a scope's list is used, in the terminal's words: each setting's label and value, and a note
     /// for each thing the person should know: a default outside the list, a kept account that leaves driven work none, and every value
-    /// or setting this build does not know, said rather than dropped. <i>Switch accounts</i> says what passes an account at a start
-    /// (D165 point 2, the switch design §3), only where the agent says how much of each window is used.
+    /// or setting this build does not know, said rather than dropped. <i>Switch accounts</i> says what passes an account at a start,
+    /// only where the agent says how much of each window is used.
     /// </summary>
     public static (List<(string Label, string Value)> Rows, List<string> Notes) UseLines(
         RotationScope scope, string product, bool says, Func<string, string> shown)
@@ -80,7 +80,7 @@ internal static class AgentAccountLines
     }
 
     /// <summary>
-    /// The person's curve in the terminal's words (D165 point 2): each window it names, its points as <c>elapsed:used</c>, and where the
+    /// The person's curve in the terminal's words: each window it names, its points as <c>elapsed:used</c>, and where the
     /// switch is not <c>curve</c>, that it is kept and read only there. Null where there is none to show: none set, under another switch.
     /// </summary>
     private static string? CurveLine(RotationUse use)
@@ -93,9 +93,9 @@ internal static class AgentAccountLines
     }
 
     /// <summary>
-    /// The step the next start of a scope would follow (TOOL6b, TOOL6c; D130 §16.3, §16.4, §16.6), in the terminal's words: the goal's
+    /// The step the next start of a scope would follow, in the terminal's words: the goal's
     /// steps as the driver's walk takes them, or the list's order under <c>order</c>, and the kept account driven work passes; where the
-    /// agent says how much of each window is used, the curve's steps (D165 point 2, the switch design §3). Prose about
+    /// agent says how much of each window is used, the curve's steps. Prose about
     /// <see cref="AccountRotation.Order"/>: this reads no session record, so it names the steps rather than the account they would choose.
     /// </summary>
     public static (string Row, string? Note) NextStartLines(RotationScope scope, bool says, bool anySaid, Func<string, string> shown)
@@ -114,7 +114,7 @@ internal static class AgentAccountLines
             : "";
         if (scope.Use.Use != "goal") return ($"the first ready account of the order, {from}{passes}{last}", null);
 
-        // Step 4 weighs what would lapse (D165's USAGERESET1 note): only a read week's room, so an agent that says nothing has none.
+        // Step 4 weighs what would lapse: only a read week's room, so an agent that says nothing has none.
         var lapses = !says ? "" : "then the one whose week would lapse the most: within its last day, its room under "
             + $"{(off ? "Daoris's smart curve" : "its curve")} per hour to its reset; ";
         var room = !says ? "" : off ? "then the one furthest behind its week's pace; " : "then the one with the most room under its curve; ";
@@ -124,7 +124,7 @@ internal static class AgentAccountLines
             anySaid ? null : "no account has said what it has left yet: Daoris spreads starts across them by its own sessions");
     }
 
-    /// <summary>The line a cooling account is given (D125 §2.4): until when, how long that is, why, and how to try it now.</summary>
+    /// <summary>The line a cooling account is given: until when, how long that is, why, and how to try it now.</summary>
     public static string CoolingLine(CoolingEntry entry, DateTimeOffset now, TimeZoneInfo zone)
     {
         var ready = $"`daoris agent account ready {entry.Agent} {(entry.Account is null ? "--own" : ShellWord.Of(entry.Account, ShellWord.Account))}`";
@@ -142,10 +142,10 @@ internal static class AgentAccountLines
     }
 
     /// <summary>
-    /// What an account last said, as one line a person reads (TOOL6c, D130 §3.2, §9): how long ago, its own word where it gave one,
+    /// What an account last said, as one line a person reads: how long ago, its own word where it gave one,
     /// credits, each window's use and reset in the machine's zone, and its tightest window over the scope's curve with the curve's value
-    /// there now, as the start's line says it (SWITCH1b-iii), where a scope's <paramref name="use"/> is given (<c>agent list</c> gives
-    /// none). Its pace warning is said in its own words, never as near (USAGEREAD3a).
+    /// there now, as the start's line says it, where a scope's <paramref name="use"/> is given (<c>agent list</c> gives
+    /// none). Its pace warning is said in its own words, never as near.
     /// </summary>
     public static string SaidLine(AccountSaid said, DateTimeOffset now, TimeZoneInfo zone, RotationUse? use)
     {

@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2d (the memory coordinator design §1): the driver's half of the commit points. A session's end hands the service its usage
+/// The driver's half of the commit points. A session's end hands the service its usage
 /// history's turn lines, its own and those of the sessions it continues, so each row it staged names the model of the turn its instant falls
 /// in; a move that ends nothing hands none. Its connector names the role and revision its start took, read at each call.
 /// </summary>

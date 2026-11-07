@@ -3,18 +3,18 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR6 and WSR7's line: pulled by a fast-forward only, as a ref where nothing has it checked out, never over uncommitted
+/// The line is pulled by a fast-forward only, as a ref where nothing has it checked out, never over uncommitted
 /// work or a divergence; the list fetches and moves nothing of the person's; and by default only the repositories holding a
-/// branch of Daoris's are looked at (D112). Split from <see cref="TreeSyncTests"/> (PROC1b).
+/// branch of Daoris's are looked at. Split from <see cref="TreeSyncTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class TreeSyncLineTests : TreeSyncFixture
 {
     /// <summary>
-    /// The line checked out nowhere moves as a ref, from the commit it was judged at; checked out in the repository's
+    /// The line checked out nowhere moves as a ref, from the commit it is judged at; checked out in the repository's
     /// own checkout with uncommitted work, it stays, and so does the work. The repository holds nothing of Daoris's,
-    /// so it is included as `--all` includes it (D112).
+    /// so it is included as `--all` includes it.
     /// </summary>
     [Fact]
     public async Task The_line_moves_as_a_ref_where_nothing_has_it_checked_out_and_stays_under_uncommitted_work()
@@ -45,7 +45,7 @@ public sealed class TreeSyncLineTests : TreeSyncFixture
 
     /// <summary>
     /// A line with commits of its own that origin lacks, and origin with commits it lacks, is left: only a fast-forward
-    /// is Daoris's. Included by name, as `--repository` includes it (D112).
+    /// is Daoris's. Included by name, as `--repository` includes it.
     /// </summary>
     [Fact]
     public async Task A_line_that_diverged_from_origin_is_left()
@@ -64,7 +64,7 @@ public sealed class TreeSyncLineTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// The list fetches and moves nothing of the person's: every local branch is where it was. A fetch that fails
+    /// The list fetches and moves nothing of the person's: every local branch stays where it is. A fetch that fails
     /// is named, and the list is made from what the checkout already knows.
     /// </summary>
     [Fact]
@@ -81,7 +81,7 @@ public sealed class TreeSyncLineTests : TreeSyncFixture
         Assert.Null(plan.Lines.Single().Fetch);
         Assert.Equal(PullKind.FastForward, plan.Lines.Single().Kind);
         Assert.Equal(heads, await GitAsync(root, "for-each-ref", "refs/heads"));
-        // WSR7: the look writes no FETCH_HEAD — only origin's refs are its to move.
+        // The look writes no FETCH_HEAD — only origin's refs are its to move.
         var fetchHead = Path.Combine(root, (await GitAsync(root, "rev-parse", "--git-path", "FETCH_HEAD")).Trim());
         Assert.False(File.Exists(fetchHead));
 
@@ -101,7 +101,7 @@ public sealed class TreeSyncLineTests : TreeSyncFixture
     }
 
     /// <summary>
-    /// WSR7 (D112): by default a look takes only the repositories holding a branch of Daoris's — a session branch, or
+    /// By default a look takes only the repositories holding a branch of Daoris's — a session branch, or
     /// one a landing recorded that still stands — and lists every other with a checkout apart, unfetched and unmoved.
     /// Every one is taken when asked for, and a press takes each repository a listed row names.
     /// </summary>

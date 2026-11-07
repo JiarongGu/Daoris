@@ -9,12 +9,12 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 z-i's measurement of the git door's start with the desktop store (D212, the design §19.10, §13.6's row z-i, C5-1.10): a
+/// A measurement of the git door's start with the desktop store: a
 /// door's start on a remote act, with <c>Microsoft.Data.Sqlite</c> opening the store read-only, against today's door, cold and warm, with no
 /// store, beside a quiet store, beside a writer holding the write lock, beside a writer committing as fast as it can, and beside a
-/// write-ahead log's checkpoints; the limit a tenth at p95. The door takes no package in this row and no family it reads moves, so this
-/// is a measurement, never a gate: it asserts that every start answered as the door answers and that the store was read, and writes the
-/// numbers for the note of D212; the row that first moves a family the door reads runs it again and holds the limit then.
+/// write-ahead log's checkpoints; the limit a tenth at p95. The door takes no package and no family it reads moves, so this
+/// is a measurement, never a gate: it asserts that every start answers as the door answers and that the store is read, and writes the
+/// numbers; the work that first moves a family the door reads runs it again and holds the limit then.
 /// </summary>
 /// <remarks>
 /// <para><b>What is started.</b> Two programs built here from the door's own sources, in scratch under <c>_fixtures/</c>: <i>today's</i>,
@@ -27,7 +27,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// console is started.</para>
 /// <para><b>Cold</b> is a start of a freshly laid-out copy of the program, five copies each: the files are new to the machine's cache and
 /// its scanners, as an install's first start after an update is; the machine's own file cache cannot be dropped from here. <b>Warm</b> is
-/// the next starts of one copy, <c>DAORIS_MEASURE_STARTS</c> of them (40 by default, the figures in D212's note are 100).</para>
+/// the next starts of one copy, <c>DAORIS_MEASURE_STARTS</c> of them (40 by default).</para>
 /// <para><b>Held to where it is asked for.</b> The programs are built with the SDK, which takes minutes, so the cases run only where
 /// <c>DAORIS_MEASURE_GITDOOR</c> is set, as <see cref="GitSshHoldsProcessTests"/> runs only where an sshd is named; where it is not set each
 /// case holds nothing. In the Process half, alone: it measures a wall clock the load of a neighbour would move.</para>

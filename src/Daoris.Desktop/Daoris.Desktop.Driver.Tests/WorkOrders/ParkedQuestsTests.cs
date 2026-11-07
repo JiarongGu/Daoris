@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// The quests the loop's last tick parked by their failed sessions (DRV6): what the quest drawer shows its Retry by,
-/// and what Ask Daoris's <c>retry</c> is judged against (HELP10).
+/// The quests the loop's last tick parked by their failed sessions: what the quest drawer shows its Retry by,
+/// and what Ask Daoris's <c>retry</c> is judged against.
 /// </summary>
 public sealed class ParkedQuestsTests
 {
@@ -29,7 +29,7 @@ public sealed class ParkedQuestsTests
     }
 
     /// <summary>
-    /// RETRY1b: each keeps the failures its verdict carries, as the records count them, which Ask Daoris's <c>retry</c> marks
+    /// Each keeps the failures its verdict carries, as the records count them, which Ask Daoris's <c>retry</c> marks
     /// the quest at, as <c>RETRY_QUEST</c> does.
     /// </summary>
     [Fact]
@@ -61,7 +61,7 @@ public sealed class ParkedQuestsTests
     }
 
     /// <summary>
-    /// SESSUX1b: the quests a look held by the person's stop, each with the session they stopped, which a release names;
+    /// The quests a look held by the person's stop, each with the session they stopped, which a release names;
     /// a parked quest is not one, and before any look there are none.
     /// </summary>
     [Fact]

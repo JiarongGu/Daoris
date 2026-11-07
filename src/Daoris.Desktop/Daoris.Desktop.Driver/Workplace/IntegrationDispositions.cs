@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 public sealed record IntegrationAnswered(bool Done, string? Why, string Message);
 
 /// <summary>
-/// A superseded commit's disposition answered (INTEGRATE1h; the integration design §5.7): <i>superseded</i> marks it answered, its work kept on
-/// its recovery ref, which goes only by D102's rules; <i>rebase it</i> tells the member's session, through the say door as Daoris's words keyed
+/// A superseded commit's disposition answered: <i>superseded</i> marks it answered, its work kept on
+/// its recovery ref, which goes only by the clean-up's rules; <i>rebase it</i> tells the member's session, through the say door as Daoris's words keyed
 /// by the request and the commit, to rebase it onto the line in its own tree, and marks it answered once the words are kept. Nothing is
 /// discarded, and no branch or ref is touched.
 /// </summary>

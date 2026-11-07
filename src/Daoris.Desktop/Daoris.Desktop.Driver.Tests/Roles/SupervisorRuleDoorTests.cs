@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1d (the context counters design §4.3, §4.4): the supervisor's rules through the role door. For the id <c>supervisor</c> a press
+/// The supervisor's rules through the role door. For the id <c>supervisor</c> a press
 /// carries a place's <c>rules</c> and <c>rulesRevision</c> alone, judged by the rules' judge inside the role door's one transaction: a home not
 /// seeded takes a rule with no conversion asked, a moved revision is <c>revision</c>, and any other field is the appointed shape.
 /// </summary>
@@ -58,7 +58,7 @@ public sealed class SupervisorRuleDoorTests : IDisposable
     public void CONTEXTDRIVE1r_a_repository_s_chain_is_read_from_the_store_in_every_process_and_answered_in_ROLES()
     {
         Assert.True(SupervisorRuleBook.SeedFresh(_home, () => StoreSettled.Yes));
-        // The look keeps the registry's workspaces; an empty registry keeps what was kept.
+        // The look keeps the registry's workspaces; an empty registry keeps what it kept.
         Assert.True(new RuleWiderPlaceStore(_home, () => StoreSettled.Yes).Keep([("engine", "w1"), ("atlas", null)]));
         Assert.False(new RuleWiderPlaceStore(_home, () => StoreSettled.Yes).Keep([]));
         Assert.False(new RuleWiderPlaceStore(_home, () => StoreSettled.Yes).Keep([("engine", "w1")]));
@@ -119,7 +119,7 @@ public sealed class SupervisorRuleDoorTests : IDisposable
         Assert.Equal("mixed-shape", Assert.Throws<RoleRefusedException>(() => RoleDoor.ReadPress(press.RootElement)).Code);
     }
 
-    /// <summary>ROLEONE1 (D233 point 2): the supervisor's own record is a role's press, judged as every role's is.</summary>
+    /// <summary>The supervisor's own record is a role's press, judged as every role's is.</summary>
     [Theory]
     [InlineData("""{ "id": "supervisor", "change": "remove" }""", "may-not-be-off")]
     [InlineData("""{ "id": "supervisor", "change": "set", "role": { "name": "Supervisor", "takes": ["build"] } }""", "mixed-shape")]
@@ -156,7 +156,7 @@ public sealed class SupervisorRuleDoorTests : IDisposable
         Assert.Equal(["quiet", "moves"], Store.Of("repository:daoris").Rules.Select(rule => rule.Count));
     }
 
-    /// <summary>CONTEXTDRIVE1e: a preset on a reached home writes its choices into the policy and its limit move and bound as rules in the same press.</summary>
+    /// <summary>A preset on a reached home writes its choices into the policy and its limit move and bound as rules in the same press.</summary>
     [Fact]
     public void CONTEXTDRIVE1e_a_preset_on_a_reached_home_writes_its_moves_as_rules_naming_the_role()
     {

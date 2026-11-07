@@ -5,7 +5,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import { PartsStrip } from './PartsStrip';
 
-// A session's parts strip says which part is the head and how many sit beside it (LINESTOGETHER1a), and marks a part beside the
+// A session's parts strip says which part is the head and how many sit beside it, and marks a part beside the
 // head; where the driver answers no head, as an ask's siblings, it says none. At the main area's wide and narrow, in 中文 and dark.
 
 const APP = EVIDENCE_ENTRIES[0]!;

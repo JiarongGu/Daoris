@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <summary>The settings files and records of the home as the wiring answers them: whether each is there, how big, when written and whether it reads.</summary>
 internal static class WiringFiles
 {
-    /// <summary>The settings files a person's choice lives in (design §3.4), each with the variable that overrides it and the door to where it is edited.</summary>
+    /// <summary>The settings files a person's choice lives in, each with the variable that overrides it and the door to where it is edited.</summary>
     internal static readonly (HomeEntry Entry, string? Override, string Door)[] SettingsFiles =
     [
         (HomeEntry.DriverConfig, null, "driver"),
@@ -22,7 +22,7 @@ internal static class WiringFiles
         (HomeEntry.Keys, null, "agents"),
     ];
 
-    /// <summary>The records (design §3.4's fold), the same way, with no door.</summary>
+    /// <summary>The records, the same way, with no door.</summary>
     internal static readonly (HomeEntry Entry, string? Override)[] Records =
     [
         (HomeEntry.Usage, null), (HomeEntry.Landings, null), (HomeEntry.SessionBranches, null), (HomeEntry.Cooling, null),
@@ -75,7 +75,7 @@ internal static class WiringFiles
         if (isFile)
         {
             bytes = Length(path!);
-            // A database's write-ahead log is the database's (design §3.8).
+            // A database's write-ahead log is the database's.
             if (path!.EndsWith(".db", StringComparison.OrdinalIgnoreCase)) bytes += Length(path + "-wal") ?? 0;
         }
         else if (present && reading is not null)
@@ -91,7 +91,7 @@ internal static class WiringFiles
         if (record) readsWhy = "record";
         else if (!present) readsWhy = "absent";
         else if (entry == HomeEntry.Remotes) (reads, readsWhy) = (remotesWhy is null, remotesWhy);
-        // 🔴 A sign-in's file is sized, never read (design §5): its folder holds keys.
+        // 🔴 A sign-in's file is sized, never read: its folder holds keys.
         else if (entry.Category == HomeCategory.Profiles) readsWhy = "private";
         else (reads, readsWhy) = Parses(path!);
         row["reads"] = reads;

@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What a protocol session hands the parts that write its prompts and steers and read their answers (<see cref="AcpPrompting"/>,
-/// <see cref="AcpSteering"/>, <see cref="AcpTry"/>): the open prompts' state, the one request door to the agent, and what the run was
+/// <see cref="AcpSteering"/>, <see cref="AcpTry"/>): the open prompts' state, the one request door to the agent, and what the run is
 /// handed. They hold nothing of the session's but this.
 /// </summary>
 internal interface ITurnPromptWiring : ITurnRetryWiring
@@ -22,7 +22,7 @@ internal interface ITurnPromptWiring : ITurnRetryWiring
     /// <summary>The turn in flight stopped and the session kept: a notification, nothing to wait for.</summary>
     Task CancelTurnAsync();
 
-    /// <summary>Whether the run's own token was cancelled: the one cancellation a run puts on the wire. A conversation has no run, and keeps its stop.</summary>
+    /// <summary>Whether the run's own token is cancelled: the one cancellation a run puts on the wire. A conversation has no run, and keeps its stop.</summary>
     bool Stopped { get; }
 
     /// <summary>Whether the agent said it steers words into a running turn.</summary>

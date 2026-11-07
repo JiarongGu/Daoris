@@ -1,4 +1,4 @@
-// The shape of how this Daoris is wired (WIRING1b, the this-Daoris design §6): `SYSTEM_WIRING`'s answer. Types only, here and
+// The shape of how this Daoris is wired: `SYSTEM_WIRING`'s answer. Types only, here and
 // not in `bridge/system.ts`, so the cards of Settings → This Daoris, which are drawn from props and reach no bridge
 // (`presentational.test.ts`), can name them. The shape is a wire shape: a field is added, never renamed. A fact not read is
 // `null` beside its `…Why` code.
@@ -9,7 +9,7 @@ import type { Authored } from '../locales/authored';
 type Why = string | null;
 
 /**
- * How a set-up press of This Daoris ended (WIRING1e: `SYSTEM_OPEN_FOLDER`, `SYSTEM_PATH`, `SYSTEM_SERVICE_ADDRESS`): done, whether the
+ * How a set-up press of This Daoris ended (`SYSTEM_OPEN_FOLDER`, `SYSTEM_PATH`, `SYSTEM_SERVICE_ADDRESS`): done, whether the
  * account's environment is different now, or refused as data with a code the catalogue words and a sentence for a log.
  */
 export interface SetupAnswer { done: boolean; changed: boolean; why?: string | null; message?: string | null }
@@ -36,10 +36,10 @@ export interface WiringVariable {
 
 export interface WiringLocated { path: string | null; pathWhy: Why; from: 'variable' | 'beside' | 'home' | 'workspace' | null }
 
-/** A project folder Daoris's sessions left in the person's own tool home (OWNSPACE2): its name there, its size and newest file once measured. */
+/** A project folder Daoris's sessions left in the person's own tool home: its name there, its size and newest file once measured. */
 export interface WiringToolFolder {
   name: string; path: string; bytes: number | null; bytesWhy: Why; partial: boolean; newest: string | null; newestWhy: Why;
-  /** Which kind of Daoris's working directory it was keyed by: `tree`, `help` or `intake`. */
+  /** Which kind of Daoris's working directory it is keyed by: `tree`, `help` or `intake`. */
   source: string;
   /** The session records that name it: why it is listed as Daoris's. */
   by: string[];
@@ -71,7 +71,7 @@ export interface SystemWiring {
   remotes: { workspace: string; url: string | null; urlWhy: Why; keySet: boolean; keyPrefix: string | null; from: 'file' | 'environment' }[];
   remotesWhy: Why;
   loop: {
-    // `desktop`, `headless`, `verb`, `migration`, `swap` or `unknown` (HOMELEASE1); a verb says its own word in `what`.
+    // `desktop`, `headless`, `verb`, `migration`, `swap` or `unknown`; a verb says its own word in `what`.
     holder: { kind: string; instance?: boolean; what?: string | null; pid: number; since: string; thisWindow: boolean } | null;
     looked: string | null; lookedWhy: Why; ready: boolean | null; readyWhy: Why; draining: boolean | null; drainingWhy: Why;
     holds: number | null; holdsWhy: Why; pollSeconds: number | null; pollSecondsWhy: Why;
@@ -82,7 +82,7 @@ export interface SystemWiring {
     & Record<string, string | null>;
   terminal: {
     launchers: { name: string; present: boolean }[]; launchersWhy: Why;
-    /** The install's folder of launchers (WIRING1e's *Put on my PATH* and the copied line name it); null in a development run. Added after the first shape. */
+    /** The install's folder of launchers (*Put on my PATH* and the copied line name it); null in a development run. */
     bin?: string | null;
     onAccountPath: boolean | null; onAccountPathWhy: Why; onMachinePath: boolean | null; onMachinePathWhy: Why;
     firstDaoris: { is: 'this' | 'another' | 'none'; path: string | null };
@@ -90,22 +90,22 @@ export interface SystemWiring {
   };
   knowledge: { path: string | null; pathWhy: Why; from: 'variable' | 'home' | null; bytes: number | null; bytesWhy: Why; familyRoot: string | null; familyRootWhy: Why };
   logs: { path: string | null; pathWhy: Why; bytes: number | null; bytesWhy: Why; days: number; newest: string | null; newestWhy: Why; engineLog: boolean };
-  // What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3). Added after the first shape: a shell
+  // What Daoris's sessions left in the person's own tool home. A shell
   // older than it sends none, so the page reads it as absent.
   toolHome?: {
     path: string | null; pathWhy: Why; from: 'process' | 'account' | 'default' | 'named' | null; present: boolean;
     // Why nothing is listed where nothing can be (`linked`, `no-tool-home`, …), the file system's case rule, the folders left out
-    // because their name is not proven Daoris's. A list only: Daoris removes nothing here (OWNSPACE2e).
+    // because their name is not proven Daoris's. A list only: Daoris removes nothing here.
     why: string | null; caseInsensitive: boolean; ambiguous: number; uncertain: number;
     folders: WiringToolFolder[];
   };
 }
 
 /**
- * One version an agent or a tool downloaded under the install's `cache/` (CACHECLEAR1): `SYSTEM_DOWNLOADS`' row. `keeps` is why it
- * stays (`pinned`, `used`, `named`, `unread`, `recent`, `running` since KEEP1b, and at a press `in-use`), absent or null where nothing
+ * One version an agent or a tool downloaded under the install's `cache/`: `SYSTEM_DOWNLOADS`' row. `keeps` is why it
+ * stays (`pinned`, `used`, `named`, `unread`, `recent`, `running`, and at a press `in-use`), absent or null where nothing
  * uses it; `by` says what keeps it (`machine`, `workspace:<name>`, `session:<id>`, or a file). `unfinished` is one an earlier clearing
- * moved aside and left part of. KEEP1b: for one nothing uses, `unusedSince` is when its current unused stretch began and `goes` when the
+ * moved aside and left part of. For one nothing uses, `unusedSince` is when its current unused stretch began and `goes` when the
  * rule takes it; both absent where no pass has found it unused yet, and `goes` under `never`.
  */
 export type DownloadedVersion = {
@@ -114,8 +114,8 @@ export type DownloadedVersion = {
 };
 
 /**
- * `SYSTEM_DOWNLOADS`' answer: every downloaded version, and why none could be listed (`no-home`, `twice`); `days` is the rule's
- * (KEEP1b), how long into its unused stretch a version nothing uses is kept, absent from a shell before it and under `never`.
+ * `SYSTEM_DOWNLOADS`' answer: every downloaded version, and why none could be listed (`no-home`, `twice`); `days` is the rule's,
+ * how long into its unused stretch a version nothing uses is kept, absent from a shell without it and under `never`.
  */
 export type DownloadsListing = { why?: string | null; days?: number | null; versions: DownloadedVersion[] };
 
@@ -126,12 +126,12 @@ export type DownloadCleared = {
 };
 
 /**
- * One kind This Daoris's *Disk space* card shows (KEEP1c, the cleanup design §4.4): `SYSTEM_SPACE`'s row. Its size is its own last
+ * One kind This Daoris's *Disk space* card shows: `SYSTEM_SPACE`'s row. Its size is its own last
  * walk's (`measured`, null where never counted; `partial` with why where the walk stopped short), its `rule` the one that runs
  * (`days`, `never`, `press`, `proof`, or another's `own` with `whose`), `next` when its rule next takes something (`bytes` null where
- * not counted), and `last` its last clean from `keeping.json`. KEEP1f: `volume` where its entry lies on another volume than the
- * Daoris folder's, with that volume's floor; `rule.low` where the floor frees it early. KEEP1d: `settable` where the person sets its rule,
- * with `bounds`, the days and the choices the driver takes (absent from a shell before it, and null for a kind not the person's).
+ * not counted), and `last` its last clean from `keeping.json`. `volume` is set where its entry lies on another volume than the
+ * Daoris folder's, with that volume's floor; `rule.low` where the floor frees it early. `settable` is true where the person sets its rule,
+ * with `bounds`, the days and the choices the driver takes (absent from a shell without it, and null for a kind not the person's).
  */
 export type SpaceKind = {
   id: string;
@@ -141,35 +141,35 @@ export type SpaceKind = {
   rule: {
     kind: 'days' | 'never' | 'press' | 'proof' | 'own'; days: number | null; whole: boolean | null; default: boolean; whose: string | null;
     low?: boolean;
-    /** KEEPSIZE1d: the size limit in GB beside the days, on a kind that takes one; absent from a driver before it. */
+    /** The size limit in GB beside the days, on a kind that takes one; absent from a driver without it. */
     gb?: number | null;
   };
   settable: boolean;
-  /** `gb` (KEEPSIZE1d): the size limit's bounds, on a kind that takes one. */
+  /** `gb`: the size limit's bounds, on a kind that takes one. */
   bounds?: { min: number; max: number; whole: boolean; never: boolean; gb?: { min: number; max: number } | null; sizeOnly?: boolean } | null;
   next: { at: string; count: number; bytes: number | null } | null; nextWhy: Why;
   /**
-   * KEEPSIZE1b: the set-aside folders no rule may take yet, awaiting their record or unread, or recorded where the registry names no checkout
-   * of their repository (`unnamed`, absent from a driver before it); absent from a driver before KEEPSIZE1b.
+   * The set-aside folders no rule may take yet, awaiting their record or unread, or recorded where the registry names no checkout
+   * of their repository (`unnamed`, absent from a driver without it); absent from a driver without the count.
    */
   waiting?: { awaiting: number; unread: number; unnamed?: number } | null;
   last: { at: string; door: string; removed: { count: number; bytes: number }; kept: Record<string, number> } | null; lastWhy: Why;
 };
 
 /**
- * One kind's keep rule as the *Disk space* card's *Change…* sets it (KEEP1d, `SET_KEEP`): its days, `never`, `whole` or not, or its
- * default; or the free-space floor (KEEP1f): a size in GB, a share in percent, `off`, or its default.
+ * One kind's keep rule as the *Disk space* card's *Change…* sets it (`SET_KEEP`): its days, `never`, `whole` or not, or its
+ * default; or the free-space floor: a size in GB, a share in percent, `off`, or its default.
  */
 export type KeepSet =
   | { kind: 'set-aside' | 'downloads' | 'browser-cache' | 'logs' | 'history'; days?: number; never?: true; whole?: boolean; gb?: number; default?: true }
   | { kind: 'floor'; gb?: number; percent?: number; off?: true; default?: true }
   | { kind: 'allowance'; gb?: number; default?: true };
 
-/** The allowance over the whole (KEEPSIZE1): its GB, whether it is the default, and the kinds' counts summed (null until each is counted). */
+/** The allowance over the whole: its GB, whether it is the default, and the kinds' counts summed (null until each is counted). */
 export type SpaceAllowance = { gb: number | null; default: boolean; bytes: number | null; partial: boolean };
 
 /**
- * A volume as `SYSTEM_SPACE` says it (KEEP1f, the cleanup design §3.2): where it is, its free space and size, the floor it is held to
+ * A volume as `SYSTEM_SPACE` says it: where it is, its free space and size, the floor it is held to
  * (`bytes` null where it is off; `from` the person's rule: `default`, `size`, `percent` or `off`), whether it is below it, and what the
  * floor freed early in this stretch below.
  */
@@ -181,8 +181,8 @@ export type SpaceVolume = {
 };
 
 /**
- * A run of *Free up space…* (KEEP1e, the cleanup design §3.3): its id and door, when it started and ended, how it ended (`done` every
- * unit went, `kept` one was kept, `stopped` it ended before its last; null while it runs), and each kind waiting, running or done with
+ * A run of *Free up space…*: its id and door, when it started and ended, how it ended (`done` every
+ * unit went, `kept` one is kept, `stopped` it ended before its last; null while it runs), and each kind waiting, running or done with
  * what it removed and kept by why.
  */
 export type SpaceRun = {
@@ -191,59 +191,59 @@ export type SpaceRun = {
 };
 
 /**
- * `SYSTEM_SPACE`'s answer (KEEP1c): the Daoris folder's volume with its floor (KEEP1f), each kind in the card's order, the
- * press's `run` (KEEP1e: the current or last run in this window's process) and `held`, the run lock's holder, or one a crash left (`gone`).
+ * `SYSTEM_SPACE`'s answer: the Daoris folder's volume with its floor, each kind in the card's order, the
+ * press's `run` (the current or last run in this window's process) and `held`, the run lock's holder, or one a crash left (`gone`).
  */
 export type SystemSpace = {
   schema: number;
   volume: SpaceVolume | null;
   volumeWhy: Why;
   kinds: SpaceKind[];
-  /** KEEPSIZE1; absent where the shell names no allowance. */
+  /** Absent where the shell names no allowance. */
   allowance?: SpaceAllowance;
   run: SpaceRun | null;
   held: { pid: number; since: string; door: string; gone: boolean } | null;
 };
 
 /**
- * One thing *Free up space…* lists (KEEP1e): its kind and id, which the press sends back; whether it goes early by the person's word;
+ * One thing *Free up space…* lists: its kind and id, which the press sends back; whether it goes early by the person's word;
  * `why` the rule takes it now (`past`, `slim`, `unfinished`) or `early`/`kept` for an early one; its size where known; when its rule
  * takes it; a set-aside folder's workspace and repository, and whether it holds files of its own (`own`).
  */
 export type SpaceUnit = {
   kind: string; id: string; early: boolean; why: string | null; bytes: number | null; at: string | null;
   workspace: string | null; repository: string | null; own: boolean | null;
-  /** KEEPSIZE1b: a set-aside folder's listed class and the ref its tip is on; the press sends both back, and the run keeps one changed since. */
+  /** A set-aside folder's listed class and the ref its tip is on; the press sends both back, and the run keeps one changed since. */
   class?: string | null; ref?: string | null;
 };
 
-/** `SYSTEM_SPACE_FREE`'s list (KEEP1e): what each rule takes now, what could go early in groups, the kinds with presses of their own. */
+/** `SYSTEM_SPACE_FREE`'s list: what each rule takes now, what could go early in groups, the kinds with presses of their own. */
 export type SpacePlan = {
   schema: number;
   at: string;
   now: SpaceUnit[];
   early: {
     group: string; count: number; bytes: number | null; own: number; units: SpaceUnit[];
-    /** KEEPSIZE1b: the set-aside folders by class; absent from a driver before it, and on every other group. */
+    /** The set-aside folders by class; absent from a driver without it, and on every other group. */
     classes?: SetAsideClasses | null;
   }[];
   doors: string[];
   unread: Record<string, string>;
 };
 
-/** `SYSTEM_SPACE_FREE`'s answer to a press: the run's id (`joined` where one was under way), or `held` with its holder, nothing done. */
+/** `SYSTEM_SPACE_FREE`'s answer to a press: the run's id (`joined` where one is under way), or `held` with its holder, nothing done. */
 export type SpaceStarted = {
   run: string | null; joined: boolean; why?: 'held'; message?: string;
   held?: { pid: number; since: string; door: string; gone: boolean } | null;
 };
 
-/** One entry of an actor's effective order (D205 §4.0): `from` is what a start's record keeps as its choice. */
+/** One entry of an actor's effective order: `from` is what a start's record keeps as its choice. */
 export type ActorEntry = { agent: string; model?: string | null; effort?: string | null; from: string };
 
 /** A seeded role's order as it runs, as each `ROLES` row carries it (`staffing`): set, as before, off, or an entry that does not read. */
 export type ActorRow = {
   id: string; state: 'set' | 'before' | 'off' | 'unreadable'; choices: ActorEntry[]; error?: string | null;
-  /** STAFFPOLICY1d: the order a start would walk where the role's policy arranges it otherwise than as stored (Build, Chat); the offer's order. */
+  /** The order a start would walk where the role's policy arranges it otherwise than as stored (Build, Chat); the offer's order. */
   arranged?: ActorEntry[] | null;
 };
 
@@ -251,7 +251,7 @@ export type ActorRow = {
 export type RoleChoice = { agent: string; model?: string | null; effort?: string | null };
 
 /**
- * One role of the catalogue as `ROLES` answers it (FOUNDATION1y-i, the foundation design §2.7): the seed's, one the person set, one
+ * One role of the catalogue as `ROLES` answers it: the seed's, one the person set, one
  * removed or one whose record does not read; its names as authored, the work it takes, where, and its stored choices.
  */
 export type RoleRow = {
@@ -259,26 +259,26 @@ export type RoleRow = {
   takes: string[]; scopeKind?: string | null; scopeId?: string | null; revision: number; error?: string | null; choices?: RoleChoice[] | null;
   /** A seeded role's order as it runs; absent for an added role. */
   staffing?: ActorRow | null;
-  /** An appointed role's kind, acts, holder and window (D233 point 2); absent for a working role. */
+  /** An appointed role's kind, acts, holder and window; absent for a working role. */
   hold?: RoleHoldRead | null;
 };
 
 /** What an appointed role holds: its kind, its acts, who holds it (none is a role not staffed) and the supervisor's window in minutes. */
 export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number };
 
-/** A role Daoris suggests adding (FOUNDATION1y-i): the Designer while no role takes design, applied only by the person's press. */
+/** A role Daoris suggests adding: the Designer while no role takes design, applied only by the person's press. */
 
 /**
- * One role's last seven days as `ROLES` answers it (MODELROLE1f): starts, those on each choice (`1` to `4`, `before`, `rule-default`), how many
+ * One role's last seven days as `ROLES` answers it: starts, those on each choice (`1` to `4`, `before`, `rule-default`), how many
  * fell to a later choice and the walk's codes that moved them. A role with no start is not listed.
  */
 export type RoleUse = {
   role: string; starts: number; choices: { choice: string; starts: number }[]; fell: number; why: { code: string; starts: number }[];
-  /** The lines the course moved to another choice, by the condition that moved them (STAFFPOLICY1f); a driver before it leaves it out. */
+  /** The lines the course moved to another choice, by the condition that moved them; a driver without it leaves it out. */
   moved?: { condition: string; moves: number }[];
 };
 
-/** The use over `days` of the machine log (at most seven; none with no log); a driver before it leaves the field out. */
+/** The use over `days` of the machine log (at most seven; none with no log); a driver without it leaves the field out. */
 export type RoleUseRead = { days: number; roles: RoleUse[] };
 
 /** A choice's entry in a role's policy: keyed by its tuple, with its weight, share, daily budget (starts or reported tokens) and works. */
@@ -301,11 +301,11 @@ export type RolePolicyRow = {
 /** The catalogue as `ROLES` answers it: its roles, the work a role may take, whether this home keeps it, and what is suggested. */
 export type RoleCatalogue = {
   roles: RoleRow[]; works: string[]; kept: boolean; use?: RoleUseRead;
-  /** Each role's policy, the fields this build enforces and the presets the doors take (STAFFPOLICY1b); absent from a driver before them. */
+  /** Each role's policy, the fields this build enforces and the presets the doors take; absent from a driver without them. */
   policies?: RolePolicyRow[]; policyFields?: string[]; policyPresets?: string[];
-  /** The choices Daoris suggests for the seeded roles (MODELROLE1g) and the day of the reference they were read from; absent from a driver before them. */
+  /** The choices Daoris suggests for the seeded roles and the day of the reference they are read from; absent from a driver without them. */
   suggestedChoices?: { role: string; choices: RoleChoice[] }[]; suggestedChoicesDated?: string;
-  /** The supervisor's rules: every place's set and what each ruled count takes (CONTEXTDRIVE1g); absent from a driver before them. */
+  /** The supervisor's rules: every place's set and what each ruled count takes; absent from a driver without them. */
   supervisor?: SupervisorRulesRead;
 };
 
@@ -322,7 +322,7 @@ export type SupervisorCountRead = { count: string; window: string; actions: stri
 
 /**
  * The supervisor's rules as `ROLES` answers them; `wider` is each place's wider places before this machine as the driver's judge reads them
- * (a repository's workspace), absent from a driver before them.
+ * (a repository's workspace), absent from a driver without them.
  */
 export type SupervisorRulesRead = { sets: SupervisorRuleSetRead[]; counts: SupervisorCountRead[]; wider?: Record<string, string[]> };
 
@@ -335,7 +335,7 @@ export type RoleChangePress = {
     filled?: 'appointed'; authority?: string[]; holder?: string | null; window?: number;
   };
   choices?: RoleChoice[] | null;
-  /** A preset's name, a record, or null to clear (STAFFPOLICY1b); absent leaves the policy as it is. Only `SET_ROLE`/`SET_ROLES` write it. */
+  /** A preset's name, a record, or null to clear; absent leaves the policy as it is. Only `SET_ROLE`/`SET_ROLES` write it. */
   policy?: string | StaffPolicy | null;
   /** The policy revision the person read: a save against a moved one is refused, nothing written. */
   policyRevision?: number | null;
@@ -344,10 +344,10 @@ export type RoleChangePress = {
 };
 
 /**
- * The set-aside folders of the press's early group by class (KEEPSIZE1b, the keep-size design §5): recorded, its tip held by a ref or the
+ * The set-aside folders of the press's early group by class: recorded, its tip held by a ref or the
  * line; awaiting its record; its branch standing; stopped between its steps; what holds its commits not confirmed (`unheld`); and
- * unmarked, from before this build or not a finished tree; and `unread`, whose manifest does not read. `stopped`, `unheld` and `unread` are
- * absent from a driver before them.
+ * unmarked, from an earlier build or not a finished tree; and `unread`, whose manifest does not read. `stopped`, `unheld` and `unread` are
+ * absent from a driver without them.
  */
 export type SetAsideClasses = {
   recorded: number; awaiting: number; stands: number; stopped?: number; unheld?: number; unread?: number; unmarked: number;
@@ -356,7 +356,7 @@ export type SetAsideClasses = {
 /** A place the roles' structure is asked for: a workspace, a repository in it, or neither for this machine. */
 export type StructurePlaceAsk = { workspace?: string; repository?: string };
 
-/** What a choice's last readings say (COMPANYVIEW1c): one that may run by the account it would run on, else the start's pass code. */
+/** What a choice's last readings say: one that may run by the account it would run on, else the start's pass code. */
 export type ChoiceStateCode = 'ready' | 'unknown' | 'not-read' | 'unavailable' | 'not-offered' | 'cooling' | 'signed-out' | 'held';
 
 /** One choice of a work's order at a place, and its state with the reading's time it rests on. */
@@ -369,7 +369,7 @@ export type StructureChoice = {
   state: { code: ChoiceStateCode | string; at?: string; account?: string; until?: string };
 };
 
-/** One work at one place: its role or why its starts hold, its choices, its rule and where it was set, each part's failure. */
+/** One work at one place: its role or why its starts hold, its choices, its rule and where it is set, each part's failure. */
 export type StructureWork = {
   work: string;
   role?: { id: string; name: Authored; scope: { kind: string; id?: string }; revision: number };
@@ -388,7 +388,7 @@ export type StructureWork = {
   policyFailed?: string;
 };
 
-/** Where a place's effective value was set (AGENTSPLACE1a): *set here*, *from the workspace*, *from this machine* or *default*. */
+/** Where a place's effective value is set: *set here*, *from the workspace*, *from this machine* or *default*. */
 export type PlaceSourceCode = 'here' | 'workspace' | 'machine' | 'default';
 
 export type PlaceValue = { value?: string | null; source: PlaceSourceCode };
@@ -400,7 +400,7 @@ export type PlaceNeed = { code: string; detail?: string | null };
 export type PlaceRoleScope = { kind: 'machine' | 'workspace' | 'repository'; id?: string | null };
 
 /**
- * One work at a place: the role a start finds, with its names and scope (SETUPUX1d), and the rule's consent. `source` is the rule's, never
+ * One work at a place: the role a start finds, with its names and scope, and the rule's consent. `source` is the rule's, never
  * the role's.
  */
 export type PlaceWork = {
@@ -414,10 +414,10 @@ export type PlaceWork = {
   roleScope?: PlaceRoleScope | null;
 };
 
-/** The shipped default a place's workflow follows, by its id, and each option the place says otherwise (DEFAULTCONFIG1d). */
+/** The shipped default a place's workflow follows, by its id, and each option the place says otherwise. */
 export type PlaceDefault = { default?: string | null; differs: string[] };
 
-/** How a place's work lands (SETUPUX1d): the delivery preset its land matches, and each option of its own; null where the version is not read. */
+/** How a place's work lands: the delivery preset its land matches, and each option of its own; null where the version is not read. */
 export type PlaceLands = { preset?: string | null; own: string[] };
 
 /** A repository's set-up: `adopted`, `running` (its set-up quest is open or taken) or `none`. */
@@ -446,7 +446,7 @@ export type PlaceRow = {
   }) | null;
   works: PlaceWork[];
   needs: PlaceNeed[];
-  /** A repository's set-up; absent for this machine and a workspace, and from a driver before it. */
+  /** A repository's set-up; absent for this machine and a workspace, and from a driver without it. */
   adoption?: PlaceAdoption | null;
 };
 
@@ -468,7 +468,7 @@ export type PlacesAsk = {
 };
 
 /**
- * The places (AGENTSPLACE1a, the Agents-place design §3): driven ones a page at a time, with a not-driven one whose adoption runs among them,
+ * The places: driven ones a page at a time, with a not-driven one whose adoption runs among them,
  * the others as counts and a page of one fold. `running` of a workspace's `notDriven` stand among the driven.
  */
 export type PlacesRead = {
@@ -478,18 +478,18 @@ export type PlacesRead = {
   next?: string | null;
   matching: number;
   undriven?: { workspace: string; rows: { workspace: string; repository: string; checkout: boolean }[]; next?: string | null; total: number } | null;
-  /** The place asked for whole; null where none was asked or it is not known. */
+  /** The place asked for whole; null where none is asked or it is not known. */
   detail?: PlaceRow | null;
   members?: { workspace: string; rows: PlaceMember[] } | null;
 };
 
-/** The roles' structure as `ROLE_STRUCTURE` answers it (COMPANYVIEW1c, the company-view design §4). */
+/** The roles' structure as `ROLE_STRUCTURE` answers it. */
 export type RoleStructure = {
   works: string[];
   roles: RoleCatalogue['roles'];
   /** Where the store's roles do not read: every work then holds, said. */
   catalogue?: { why: string };
   places: { workspace?: string; repository?: string; works: StructureWork[] }[];
-  /** Each agent a choice names; `installed` absent where its binary was not asked yet. */
+  /** Each agent a choice names; `installed` absent where its binary is not asked yet. */
   agents: { agent: string; known: boolean; installed?: boolean; version?: string }[];
 };

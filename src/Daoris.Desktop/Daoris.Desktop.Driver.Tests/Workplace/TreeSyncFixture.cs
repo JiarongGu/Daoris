@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the tree sync's classes share (WSR6): one repository's list, the chain a landed branch and its next step make, a
-/// commit someone else pushed, and the reads they assert with. One class until PROC1b split it four ways, by the time each
+/// What the tree sync's classes share: one repository's list, the chain a landed branch and its next step make, a
+/// commit someone else pushed, and the reads they assert with. The classes are split by the time each
 /// takes: the git-only classes run four at once and a class is the unit they run by (the whole half's wall is its summed time
-/// over four, PROCSPEED1b).
+/// over four).
 /// </summary>
 /// <remarks>
 /// 🔴 <b>Nothing here reaches a network</b>: `origin` is a bare repository under the scratch folder, and the
@@ -38,7 +38,7 @@ public abstract class TreeSyncFixture : LandedFixture
         return (parent, landed.Branch!, step);
     }
 
-    /// <summary>A commit someone else pushed to origin's line — the platform's side, made in the bare origin itself (PROCSPEED1b).</summary>
+    /// <summary>A commit someone else pushed to origin's line — the platform's side, made in the bare origin itself.</summary>
     protected static Task PlatformCommitAsync(string origin, string file, string content, string message) =>
         CommitOnOriginAsync(origin, message, (file, content));
 

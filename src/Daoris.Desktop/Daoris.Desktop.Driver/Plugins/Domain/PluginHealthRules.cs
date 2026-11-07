@@ -3,17 +3,17 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What a plugin's last failure was: where (<c>start</c>, <c>process</c>, or a point), of what kind, and when.</summary>
+/// <summary>A plugin's last failure: where (<c>start</c>, <c>process</c>, or a point), of what kind, and when.</summary>
 public sealed record PluginFailure(string Where, string Kind, DateTimeOffset At);
 
 /// <summary>
-/// A plugin's health (D119 §2): its state, since when where that is known, its failure while failing, and the
+/// A plugin's health: its state, since when where that is known, its failure while failing, and the
 /// points the loop's process listens on while one is up.
 /// </summary>
 /// <param name="Since">When a running process started, or when a failing plugin failed; null for the other states.</param>
 public sealed record PluginHealthState(string State, DateTimeOffset? Since, PluginFailure? Failure, IReadOnlyList<string> Listening)
 {
-    /// <summary>When the record's last word about the plugin was: what a terminal says it read, and when (D119 §2).</summary>
+    /// <summary>When the record's last word about the plugin came: what a terminal says it read, and when.</summary>
     public DateTimeOffset? Word { get; init; }
 
     /// <summary>Which process said that last word, by the machine log's source; null in the loop's own record.</summary>
@@ -26,7 +26,7 @@ public sealed record PluginWord(
     string? Point = null, string? Where = null, string? Kind = null);
 
 /// <summary>
-/// The rules of a plugin's health (PLUGUI1d, D119 §2), the same for the loop's own record (<see cref="PluginHealth"/>) and
+/// The rules of a plugin's health, the same for the loop's own record (<see cref="PluginHealth"/>) and
 /// for a terminal's reading of the machine log's last word (<see cref="FromLog"/>): what one word does to a record
 /// (<see cref="Apply"/>), and the state from the catalogue's entry and the record (<see cref="Decide"/>).
 /// </summary>
@@ -34,7 +34,7 @@ public sealed record PluginWord(
 /// <para><b>One table of cases holds both readings</b> (<c>PluginHealthTests</c>).</para>
 ///
 /// <para><b>The five states.</b> <c>off</c>: the person switched it off. <c>refused</c>: on, and the driver refused
-/// it. <c>failing</c>: on and sound, and its last word to Daoris was a failure; its next good answer clears it, and
+/// it. <c>failing</c>: on and sound, and its last word to Daoris is a failure; its next good answer clears it, and
 /// so does the person switching it off or updating it, which starts its record afresh, while a restart of its
 /// process alone does not. <c>running</c>: on and sound, it speaks at a point the loop asks, and the loop's process
 /// for it is up. <c>ready</c>: on and sound with nothing up: it only declares, it speaks only at a landing, or the
@@ -44,7 +44,7 @@ public sealed record PluginWord(
 /// record afresh where the process that ran the loop for the plugin starts or stops (<c>app.started</c>,
 /// <c>app.stopped</c>), and where another process's loop starts it.</para>
 ///
-/// <para>Pure (STRUCT3a): the time of each word comes in with it, from the loop's clock or the log's line.</para>
+/// <para>Pure: the time of each word comes in with it, from the loop's clock or the log's line.</para>
 /// </remarks>
 public static class PluginHealthRules
 {
@@ -65,7 +65,7 @@ public static class PluginHealthRules
         new HashSet<string>([PluginEvents.Started, PluginEvents.Stopped, PluginEvents.Called, PluginEvents.Failed], StringComparer.Ordinal);
 
     /// <summary>What is known about one plugin.</summary>
-    /// <param name="LoopSource">Which process's loop it was last started by, read from the log; null in a process's own record.</param>
+    /// <param name="LoopSource">Which process's loop it is last started by, read from the log; null in a process's own record.</param>
     internal sealed record Record(
         bool Up, DateTimeOffset? UpSince, IReadOnlyList<string> Listening, PluginFailure? Failure,
         DateTimeOffset? Word = null, string? Source = null, string? LoopSource = null)
@@ -77,7 +77,7 @@ public static class PluginHealthRules
     internal static bool Plays(string @event) => Played.Contains(@event);
 
     /// <summary>
-    /// The plugin's health as the machine log's last word about it says (D119 §2): its lines played through the
+    /// The plugin's health as the machine log's last word about it says: its lines played through the
     /// same rules as the record, oldest first. A line of another plugin, or of an event the record does not take,
     /// is passed over.
     /// </summary>
@@ -135,7 +135,7 @@ public static class PluginHealthRules
                 return loop ? record with { Up = true, UpSince = at, Listening = word.Points ?? [] } : record;
 
             case PluginEvents.Called:
-                // A good answer clears a failure, wherever it was answered.
+                // A good answer clears a failure, wherever it is answered.
                 return record with { Failure = null };
 
             case PluginEvents.Failed:
@@ -165,7 +165,7 @@ public static class PluginHealthRules
         var listening = record.Up ? record.Listening : [];
         if (record.Failure is { } failure) return new(Failing, failure.At, failure, listening);
 
-        // A process the loop keeps for the work wire (FABRIC-PERFORM1a) runs as one kept for a loop point does.
+        // A process the loop keeps for the work wire runs as one kept for a loop point does.
         var speaksInLoop = entry.Manifest.Hooks?.Points.Any(point =>
             HookPoints.Loop.Contains(point, StringComparer.Ordinal) || HookPoints.Work.Contains(point, StringComparer.Ordinal) || point == HookPoints.Event) == true;
         return record.Up && speaksInLoop

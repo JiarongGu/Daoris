@@ -8,7 +8,7 @@ import { CHANNEL_CLAIM_OPENING } from '../channel';
 import { type SessionEvent, settle, toTurns } from './conversation';
 import { CLAIMED } from './handedFixtures';
 
-// The conversation's molecule (D76, CONV2), props in: every state it can be in is a turn list built
+// The conversation's molecule, props in: every state it can be in is a turn list built
 // by the same fold the organism uses, so what is asserted here is what a session would show.
 
 const at = '2026-09-25T00:00:00Z';
@@ -29,7 +29,7 @@ const FINISHED = () => [
 
 describe('ConversationView', () => {
   /**
-   * PARKVIEW1 (Fable's read, Q4): words the person pressed as an answer of the park's question read as that answer chosen, then their
+   * Words the person pressed as an answer of the park's question read as that answer chosen, then their
    * own words, waiting at the foot and as the ask of the turn that took them; in 中文 the mark is translated and the answer is not.
    */
   it('draws a pressed answer as chosen, then the person\'s own words', async () => {
@@ -73,7 +73,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * CONV5: a finished turn says how long it took and what it consumed — the driver's clock and the
+   * A finished turn says how long it took and what it consumed — the driver's clock and the
    * harness's counts — on one quiet line, with the breakdown on hover. A turn whose wire reported no
    * tokens says only its time, and a running turn has no line yet.
    */
@@ -91,7 +91,7 @@ describe('ConversationView', () => {
       ev({ kind: 'message', text: 'on it', at: stamp(21) }),
     ], { live: true });
 
-    // METER1: what it read anew (new and written to its cache) is "in"; what it re-read from its cache is
+    // What it read anew (new and written to its cache) is "in"; what it re-read from its cache is
     // said apart, since a long turn re-reads its whole context on every call and would bury the rest.
     const first = screen.getByText('4.8s · 16.7K in · 51.1K cached · 80 out');
     expect(screen.getByText('1s')).toBeTruthy();
@@ -103,7 +103,7 @@ describe('ConversationView', () => {
     expect(screen.getAllByText(/16,721 tokens in \(4 new, 16,717 written to its cache\), 51,061 read from its cache, and 80 out/)[0]).toBeTruthy();
   });
 
-  /** REVIEW2: an edit's lines are the review's lines — highlighted in the file's own language, and signed. */
+  /** An edit's lines are the review's lines — highlighted in the file's own language, and signed. */
   it('highlights an edit in the language of the file it changed', async () => {
     view(FINISHED());
     await userEvent.click(screen.getByRole('button', { name: /2 tool calls/ }));
@@ -125,7 +125,7 @@ describe('ConversationView', () => {
     expect(screen.getByText('working…')).toBeTruthy();
   });
 
-  /** WAITSHOWN1: a turn asked and not answered says it waits for its first answer, since when and for how long. */
+  /** A turn asked and not answered says it waits for its first answer, since when and for how long. */
   it('says a running turn is waiting for its first answer, until the agent does anything', () => {
     const asked = ev({ kind: 'user', origin: 'person', text: 'go on', at: new Date(Date.now() - 7 * 60_000).toISOString() });
     const { unmount } = view([asked], { live: true });
@@ -138,7 +138,7 @@ describe('ConversationView', () => {
     expect(screen.queryByText(/waiting for its first answer/)).toBeNull();
   });
 
-  /** WAITSAY1: a call that has run for minutes is named, with how long. */
+  /** A call that has run for minutes is named, with how long. */
   it('says a live turn is running a call, and for how long', () => {
     const begun = new Date(Date.now() - 7 * 60_000).toISOString();
     const events = [
@@ -153,7 +153,7 @@ describe('ConversationView', () => {
     expect(screen.queryByText(/running npm test for/)).toBeNull();
   });
 
-  /** AUTONOMY1b3e (D184): a call held for the person's answer says it waits, as the rail and the head do; else it runs. */
+  /** AUTONOMY1b3e: a call held for the person's answer says it waits, as the rail and the head do; else it runs. */
   it.each([
     ['en', 'waiting for your answer to npm test for 3m', 'waiting for your answer to a tool call for 3m', 'running npm test for 7m', /waiting for your answer/],
     ['zh', 'npm test 等你答复，已 3 分钟', '一个工具调用等你答复，已 3 分钟', '正在运行 npm test（已 7 分钟）', /等你答复/],
@@ -175,7 +175,7 @@ describe('ConversationView', () => {
       expect(screen.getByText(unnamed)).toBeTruthy();
       second.unmount();
 
-      // The mark gone: running, as before.
+      // The mark gone: running.
       for (const callMark of [undefined, { title: 'npm test', since: held }, { title: 'npm test', since: held, waiting: false }]) {
         const again = view(events, { live: true, callMark });
         expect(screen.getByText(running)).toBeTruthy();
@@ -188,9 +188,9 @@ describe('ConversationView', () => {
   });
 
   /**
-   * The agent speaks after its turn has ended when its background work finishes (CONSOLE2a). Those
+   * The agent speaks after its turn has ended when its background work finishes. Those
    * words are no turn running: with the driver saying none is in flight, they carry no *working…*,
-   * which looking at CONSOLE2 found under them for good, with nothing running.
+   * which would otherwise stay under them for good, with nothing running.
    */
   it('says working only while a turn is in flight, not under words the agent said after its turn', () => {
     const events = [
@@ -210,7 +210,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * SESSONE2c (D167 point 7): another session's message handed to a running session is Daoris's words around that agent's claim,
+   * Another session's message handed to a running session is Daoris's words around that agent's claim,
    * which the record keeps as the driver's, never the person's. It is a claim and not a target, so it is named as one and shown
    * whole, in either language.
    */
@@ -231,13 +231,13 @@ describe('ConversationView', () => {
   });
 
   /**
-   * SESSCTX1b (the session-context design §7): the driver now marks a channel's message on its `user` event by a field of its own,
+   * The driver now marks a channel's message on its `user` event by a field of its own,
    * and the page reads the field before the old prefix, so a claim whose words Daoris words otherwise is still named one, in either
    * language; a record from before is still read by the prefix (above).
    */
   /**
-   * SESSCTX1b (the session-context design §3.4): a conversation that went on from another opens with Daoris's brief of the line it
-   * continues, kept as its first prompt with its account, so it is named as that brief, folded as a target is with what it was composed
+   * A conversation that went on from another opens with Daoris's brief of the line it
+   * continues, kept as its first prompt with its account, so it is named as that brief, folded as a target is with what it is composed
    * of beneath it, and never as the person's, in either language.
    */
   it('names a part’s first prompt as Daoris’s brief of the session it continues, folded, with its account', async () => {
@@ -273,7 +273,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * COWORK1b (D188's COWORK1b note, the message-urgency design trap 6): Daoris's own words to a session, a reopen told or a step's go-on,
+   * Daoris's own words to a session, a reopen told or a step's go-on,
    * are named as Daoris's, never as the person's and never as the target it composed, and shown whole: where the session took them,
    * and while they are held for it, in either language. A word the person said in the same sentence is still theirs.
    */
@@ -304,7 +304,7 @@ describe('ConversationView', () => {
     await i18n.changeLanguage('en');
   });
 
-  /** COMMS1a: a helper's answer and a partner's are drawn under their senders, in both languages, never as the target Daoris composed. */
+  /** A helper's answer and a partner's are drawn under their senders, in both languages, never as the target Daoris composed. */
   it('draws a helper’s answer and a partner’s under their senders, never as the composed target', async () => {
     const asked = (from: 'helper' | 'partner') => render(
       <Tooltip.Provider>
@@ -329,7 +329,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * SUPERVISOR1a-i (D208; the supervisor design §6.1, §6.2): the supervisor's answer is drawn under its own mark, *From the supervisor,
+   * The supervisor's answer is drawn under its own mark, *From the supervisor,
    * on your behalf*, taken or held, never the person's bubble nor a composed target; an author the page does not know is *Not
    * attributed*, never *You*, in either language.
    */
@@ -358,7 +358,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * COWORK1b (the design §4.3): Daoris's word held for a running session and dropped where it was to be delivered, its fact answered
+   * Daoris's word held for a running session and dropped where it is to be delivered, its fact answered
    * by a later submission, is settled by the driver's coded note, worded in the reader's language, and waits no longer.
    */
   it('says Daoris’s held word was dropped once what it said no longer held', async () => {
@@ -388,8 +388,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * CONTEXT1: beneath the target, what it was composed of, from the account its event keeps — folded to its size and its
-   * sections; a target from before the account was kept says so; the person's own words carry none.
+   * Beneath the target, what it is composed of, from the account its event keeps — folded to its size and its
+   * sections; a target recorded without the account says so; the person's own words carry none.
    */
   it('shows beneath the target what it was handed, section by section, and says when that was not kept', async () => {
     view([
@@ -409,8 +409,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * UX5 U63, seen on the window: the protocol door's Claude Code adapter wraps a read's text in a
-   * Markdown fence, and the card showed the fence as the output's first and last lines. A text that
+   * The protocol door's Claude Code adapter wraps a read's text in a
+   * Markdown fence, which the card does not show as the output's first and last lines. A text that
    * is one fenced block shows what is inside it; anything else is shown as it came.
    */
   it('shows a read’s text without the fence the adapter wrapped it in', async () => {
@@ -439,7 +439,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * HELP4: a call the driver refused is not the harness failing: it reads as not allowed, in the quiet
+   * A call the driver refused is not the harness failing: it reads as not allowed, in the quiet
    * tone, closed, where a failure is the alarm and opens itself.
    */
   it('reads a call the driver refused as not allowed, not as a failure', () => {
@@ -452,9 +452,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * REV3 web-work F9: a call is drawn while it runs and fails later, on the same card. The card read
-   * "failed" once, when it first drew, so a call that failed mid-turn stayed closed over the line the
-   * reader came for. It opens when it fails — unless the person has already opened or closed it.
+   * A call is drawn while it runs and fails later, on the same card. It opens when it fails, over the line the
+   * reader came for — unless the person has already opened or closed it.
    */
   it('opens a tool call that fails after it was drawn running', () => {
     const running = [ev({ kind: 'tool', id: 'c5', title: 'npm test', toolKind: 'execute', status: 'in_progress' })];
@@ -467,7 +466,7 @@ describe('ConversationView', () => {
     expect(screen.getByText('3 failing')).toBeTruthy();
   });
 
-  /** D76 §5: the agent's text is content, never markup — raw HTML is shown as the text it is. */
+  /** The agent's text is content, never markup — raw HTML is shown as the text it is. */
   it('never renders the agent\'s HTML as markup, and opens links outside the window', () => {
     view([ev({ kind: 'message', text: 'see <img src=x onerror="alert(1)"> and [the docs](https://docs.example)' })]);
 
@@ -477,9 +476,9 @@ describe('ConversationView', () => {
   });
 
   /**
-   * REV3: a Markdown IMAGE is not raw HTML, so the test above never saw it. Rendered, it is a request
+   * A Markdown IMAGE is not raw HTML, so the test above never saw it. Rendered, it is a request
    * the page makes with no click — whatever an agent puts in the URL leaves the machine, even when
-   * its harness's own network tools are refused (D47 §4, D52). It is a link now, to be opened on
+   * its harness's own network tools are refused. It is a link now, to be opened on
    * purpose.
    */
   it('never loads an agent\'s Markdown image — it is a link a person may choose to open', () => {
@@ -492,22 +491,20 @@ describe('ConversationView', () => {
   });
 
   /**
-   * UX5 U4, seen on the window (CONV4b): an agent answered one item per line and the page drew one
-   * paragraph, because Markdown makes a single newline a space. The agent wrote for a terminal, where
-   * a newline is a newline, so a line it ended stays ended. A blank line is still a paragraph, and a
+   * Markdown makes a single newline a space, but the agent writes for a terminal, where a newline is a
+   * newline, so a line it ends stays ended. A blank line is still a paragraph, and a
    * fenced block keeps its own lines.
    */
-  // UX5 U16: a maximized window showed the conversation at half its width.
   it('follows the width it is given, as the head and the composer do', () => {
     view(FINISHED());
     expect(screen.getByRole('region', { name: 'conversation' }).className).not.toMatch(/max-w-/);
   });
 
   /**
-   * ASKHIST1b: the person's words, as asked and as held for the next turn, and the agent's answer that says them again,
+   * The person's words, as asked and as held for the next turn, and the agent's answer that says them again,
    * break a word wider than the column inside it. A pasted URL is one word, and it ran past Ask Daoris's dock, which then
    * scrolled sideways. The answer breaks only a word that would overflow (`break-word`), so a table keeps its columns and
-   * scrolls in its own box as before.
+   * scrolls in its own box.
    */
   it('breaks a word wider than its column at the column’s edge, the person’s and the agent’s', () => {
     const url = 'https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels%3Acomments';
@@ -555,7 +552,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * 🔴 Seen on the window (CONV2's look): a parked chat on the pipe door read "Nothing said yet."
+   * 🔴 A parked chat on the pipe door must not read "Nothing said yet."
    * A structured door records the target the moment it starts, so an empty record is never a
    * conversation that has not begun — running or not.
    */
@@ -580,7 +577,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * SESS1 S3, from the first real workspace: a driven session is one turn, so folding the turn whole hid
+   * A driven session is one turn, so folding the turn whole would hide
    * the agent's account of hundreds of calls behind one row. Its words stay; the work between them folds.
    */
   it('keeps every word the agent said, and folds the work between them into runs that count failures', async () => {
@@ -604,7 +601,7 @@ describe('ConversationView', () => {
     expect(screen.getByText('refused')).toBeTruthy();
   });
 
-  /** SESS1 S1: a long run is read from its ask, and *load earlier* sits where the missing events belong. */
+  /** A long run is read from its ask, and *load earlier* sits where the missing events belong. */
   it('reads a long run from what it was asked, with load earlier where the gap is', async () => {
     let asked = 0;
     const opening = ev({ kind: 'user', origin: 'target', text: 'Your target is the quest…' });
@@ -627,8 +624,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * XAGENT1g (the second-agent design §6.3): another agent's findings are a block from that agent, open, never the person's
-   * words and never a composed target with what it was composed of.
+   * Another agent's findings are a block from that agent, open, never the person's
+   * words and never a composed target with what it is composed of.
    */
   it('shows another agent’s findings as their own block, open, never as the person’s', () => {
     const words = 'Another agent, Codex by OpenAI, read your work at 4f9c2a7e and claims what follows.';
@@ -645,7 +642,7 @@ describe('ConversationView', () => {
     expect(screen.getByRole('button', { name: 'Fold' })).toHaveAttribute('aria-expanded', 'true');
   });
 
-  /** SESS1 S4: the session ended inside the turn, so its open call never finished — never *running* for good. */
+  /** The session ended inside the turn, so its open call never finished — never *running* for good. */
   it('says a session ended inside the turn it cut, and the call it left open stopped', () => {
     const events = [
       ev({ kind: 'user', origin: 'target', text: 'go' }),
@@ -659,7 +656,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * STEER1 (D136): the person's words to a working session show the moment they are said, as theirs and waiting, saying
+   * The person's words to a working session show the moment they are said, as theirs and waiting, saying
    * when the session reads them — and, once the session has ended without taking them, that it never did.
    */
   it('shows the person\'s words waiting in the turn, saying when the session reads them', () => {
@@ -683,7 +680,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * COWORK1a (the message-urgency design §3.1, §8.2): words held for the turn's end say what their level asked and what the door
+   * Words held for the turn's end say what their level asked and what the door
    * gave: urgent words, *Urgent, held*, since their door takes words only then; words at now say the same and wear a *now* chip,
    * a word in a neutral chip; ordinary words say only that they wait, and no chip names them. A level told again under the same
    * id is where the word stands, drawn once. In 中文 too.
@@ -715,7 +712,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * STEER2b (D136): words *Send now* put into the running turn show where they were taken, saying so, never as waiting; and
+   * Words *Send now* put into the running turn show where they were taken, saying so, never as waiting; and
    * a call the steer cut reads as cut, in the quiet tone, even after the session ended.
    */
   it('shows words sent now where they were taken, and a call the steer cut as cut', () => {
@@ -742,7 +739,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * MSG1f (D137 §3.1): words said to a session after it parked or ended show at once, as a turn waiting at its foot,
+   * Words said to a session after it parked or ended show at once, as a turn waiting at its foot,
    * saying the same session goes on with them — a chat's conversation as it opens again. The session's end is not
    * theirs: no *it ended before reading this*, no *working…* while they wait, and no cut turn of their own.
    */
@@ -774,7 +771,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * MSG1f (D137 §3.1): where a fallback handed the words to a new session, the conversation says so once, where they
+   * Where a fallback handed the words to a new session, the conversation says so once, where they
    * were shown, the session a door to it; the driver's own English line is not said beside it.
    */
   it('says where the words went, the session a door, once', async () => {
@@ -794,7 +791,7 @@ describe('ConversationView', () => {
     expect(onSession).toHaveBeenCalledWith('n3wn3w00');
   });
 
-  /** MIXAGENT1b-i: a conversation's last line, where it went on with another agent, presses through to the new conversation. */
+  /** A conversation's last line, where it went on with another agent, presses through to the new conversation. */
   it('gives the handed-over line a press to the conversation it went on in, where one can be opened', async () => {
     const onSession = vi.fn();
     const handed = ev({
@@ -821,8 +818,8 @@ describe('ConversationView', () => {
       && element.textContent === 'Your words went to session n3wn3w00, because its tree is gone.')).toBeTruthy();
     unmount();
 
-    // A reason that names an agent the page was not told, or a code it does not know: the driver's words stand, their
-    // backticks drawn as code (UX7d-1).
+    // A reason that names an agent the page is not told, or a code it does not know: the driver's words stand, their
+    // backticks drawn as code.
     const { container } = view([
       ev({ kind: 'user', origin: 'person', id: 'w1', reaches: 'resume', text: 'also cap it' }),
       ev({ kind: 'note', text: '— your words went to session `n3wn3w00`, because it ran on `a`, and starts here now run on `b`.', words: ['w1'], to: 'n3wn3w00', why: 'door' }),
@@ -832,7 +829,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * MSG1f (D137 §2.2): words a closed quest's session or a chat cannot go on with stay as said, the conversation says
+   * Words a closed quest's session or a chat cannot go on with stay as said, the conversation says
    * why in the page's words, and one press starts a new conversation with them — the person's, since a new conversation
    * has none of this one's context.
    */
@@ -869,7 +866,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * SESSCTX1c part B (D189 point 3): where the words wait for the person, their session's resume refused without its conversation
+   * Where the words wait for the person, their session's resume refused without its conversation
    * proven lost, *Go on with Daoris's brief* goes beside *Start a conversation with these words*: a new part of the same session, handed
    * Daoris's brief. Where a conversation's tree is gone there is nothing to go on in, so only the fresh start is offered.
    */
@@ -897,7 +894,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * TREEGONE2 (the owner's report, 2026-11-03; ONEWAY1's design §3 C5): a driven session whose tree the tidy took offers *Go on with
+   * A driven session whose tree the tidy took offers *Go on with
    * Daoris's brief* first, a new part in a fresh tree handed the brief, beside the fresh start that hands none; in 中文 too.
    */
   it.each([
@@ -933,8 +930,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * MSG1c3 (D142 point 1): a word the person's stop cut off on its way is said in the page's words, in the reader's
-   * language, from the note's code: once, where the word was shown, which waits no longer. A code the page does not know
+   * A word the person's stop cut off on its way is said in the page's words, in the reader's
+   * language, from the note's code: once, where the word is shown, which waits no longer. A code the page does not know
    * leaves the driver's English line.
    */
   it('says in the reader’s language that the agent may have read a word the stop cut off', async () => {
@@ -966,8 +963,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * COWORK1c (the message-urgency design §6, §8.2): a word a shell before attempted may have reached its agent, so it was never sent
-   * again; where it was the person's own, *Say it again* is their press, which hands its words back to be said anew. Daoris's words,
+   * A word a shell before attempted may have reached its agent, so it is never sent
+   * again; where it is the person's own, *Say it again* is their press, which hands its words back to be said anew. Daoris's words,
    * and a page with no door to say them, offer none. Both languages.
    */
   it('offers the person’s own uncertain words a press that says them again, in both languages', async () => {
@@ -999,7 +996,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * COWORK1c (the message-urgency design §7, §8.2): what the door observed of a word folds under the ask it became, each where it was
+   * What the door observed of a word folds under the ask it became, each where it is
    * observed and never otherwise: sent, taken and answered, each with its moment. Both languages.
    */
   it('folds a word’s receipts under its ask, each only where observed, in both languages', async () => {
@@ -1030,7 +1027,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * COMMS1h (the comms design §7): a receipt says what Daoris saw. A turn that ended after taking the word reads *taken · turn ended*,
+   * A receipt says what Daoris saw. A turn that ended after taking the word reads *taken · turn ended*,
    * never *answered*. Both languages.
    */
   it('COMMS1h says a turn ended after the word was taken', async () => {
@@ -1053,8 +1050,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * CONVNOTE1 (D125's SIGNIN1b note): a conversation its agent refused for its sign-in carries the driver's note with its
-   * parts, and the page words it from them in the reader's language, as a session record's note is (LANG1b). The driver's
+   * A conversation its agent refused for its sign-in carries the driver's note with its
+   * parts, and the page words it from them in the reader's language, as a session record's note is. The driver's
    * English is never shown where the page could word it, and a part the page cannot word shows as recorded, marked.
    */
   it('words a driver’s note from its parts in the reader’s language: a refused sign-in', async () => {
@@ -1088,7 +1085,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * UX7d-1 (D152's UX7d-1 note; the UX7 design §1.3): the line a conversation opens with, naming the account it opened on and
+   * The line a conversation opens with, naming the account it opened on and
    * why, is worded from its codes under 驱动 in 中文, its account drawn as code; and a driver's note with no parts, the English
    * an older driver wrote, draws its backticks as code too, never as backticks.
    */
@@ -1122,7 +1119,7 @@ describe('ConversationView', () => {
     expect(within(container).getByText('work').tagName).toBe('CODE');
   });
 
-  /** NOTENAME1: the opening line says an account by the name the roster gives it, and an id the roster lacks as it is. */
+  /** The opening line says an account by the name the roster gives it, and an id the roster lacks as it is. */
   it('names the account in the opening line by the name the person gave it', () => {
     const { container } = view([
       ev({
@@ -1138,7 +1135,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * MSG1g2 (D137 §2.2, MSG1g's note): words a resume holds while the account its record ran on cools say so, naming its
+   * Words a resume holds while the account its record ran on cools say so, naming its
    * reset, and offer *Go on in a new session*, saying the new session starts without this conversation's context. What the
    * press came to is said in the page's words; where nothing carries the words on by itself, the door is a conversation.
    */
@@ -1240,7 +1237,7 @@ describe('ConversationView', () => {
     });
   });
 
-  /** SESS1 S5: a call the page holds only the updates of began earlier, and says so, never its id. */
+  /** A call the page holds only the updates of began earlier, and says so, never its id. */
   it('says a call began earlier where the page holds only its updates, never naming it by its id', () => {
     view([ev({ kind: 'tool', id: 'toolu_01ExampleCallId', status: 'completed' })]);
 
@@ -1248,7 +1245,7 @@ describe('ConversationView', () => {
     expect(screen.getByText('a call begun earlier')).toBeTruthy();
   });
 
-  /** SESS1 S9: a jump that lands inside a fold opens it and marks the block; the person may fold it again. */
+  /** A jump that lands inside a fold opens it and marks the block; the person may fold it again. */
   it('opens the fold a jump lands in, marks the block, and lets the person fold it again', async () => {
     const events = [
       ev({ kind: 'user', origin: 'target', text: 'go' }),
@@ -1271,7 +1268,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * SESS1: a tool's output read well — how long the call ran, by the driver's clock, and, closed, how
+   * A tool's output read well — how long the call ran, by the driver's clock, and, closed, how
    * much it carried. An exit code is not on the wire, and nothing is read out of the output for one.
    */
   it('says how long a call ran and, closed, how many lines it carried', () => {
@@ -1284,7 +1281,7 @@ describe('ConversationView', () => {
     expect(screen.getByText('3 lines')).toBeTruthy();
   });
 
-  /** SESS1 S6: a record from before the refusal named its call carries the request's JSON; two lines, the rest on a press. */
+  /** A record from before the refusal named its call carries the request's JSON; two lines, the rest on a press. */
   it('shows a long note of the driver\'s as two lines, and the rest on a press', async () => {
     const long = `permission refused: {"toolCallId":"toolu_01","rawInput":{"command":"${'x'.repeat(300)}"}} — the repository's own configuration governs`;
     view([ev({ kind: 'note', text: long })]);
@@ -1304,8 +1301,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * 🔴 What an empty record means is the DOOR's to say, never a guess from the emptiness (CONV3b). A
-   * fresh chat on a structured door was told its door carries only text.
+   * 🔴 What an empty record means is the DOOR's to say, never a guess from the emptiness. A
+   * fresh chat on a structured door is told its door carries only text.
    */
   it('tells a fresh chat on a structured door that nothing has been said yet', () => {
     view([], { structured: true, chat: true, live: true });
@@ -1351,8 +1348,8 @@ describe('ConversationView', () => {
   });
 
   /**
-   * CONV4b: a stopped turn reads as stopped — in the passive, because a driven session's timeout
-   * cancels a turn too, and the page cannot know it was the person — never as the wire's word, and
+   * A stopped turn reads as stopped — in the passive, because a driven session's timeout
+   * cancels a turn too, and the page cannot know it is the person — never as the wire's word, and
    * never as a failure.
    */
   it('says a cancelled turn was stopped, even one stopped before it said anything', () => {
@@ -1364,7 +1361,7 @@ describe('ConversationView', () => {
   });
 
   /**
-   * CONV4b: the call a stop cut is drawn as stopped, in the quiet tone, and stays closed — Claude Code
+   * The call a stop cut is drawn as stopped, in the quiet tone, and stays closed — Claude Code
    * answers it as failed, and the alarm's colour with its sentence open would read as something that
    * went wrong. What the harness said is still there when the person opens it.
    */
@@ -1376,7 +1373,7 @@ describe('ConversationView', () => {
       ev({ kind: 'turn', stopReason: 'cancelled' }),
     ]);
 
-    // A run of one is shown as itself (SESS1): folding it would save nothing.
+    // A run of one is shown as itself: folding it would save nothing.
     const card = screen.getByRole('button', { name: /Run the tests/ });
     expect(within(card).getByText('stopped')).toBeTruthy();
     expect(within(card).queryByText('failed')).toBeNull();
@@ -1388,13 +1385,13 @@ describe('ConversationView', () => {
 });
 
 /**
- * WAITFOOT1c (D168 point 4): the block that raised a wait carries a line saying what waits from it, with *To the wait*; the owner,
+ * The block that raised a wait carries a line saying what waits from it, with *To the wait*; the owner,
  * 2026-10-15, found the waits "not really referencing where the wait is for".
  */
 describe('the waits a block raised', () => {
   /**
-   * WAITFOOT2b (D168's WAITFOOT2 note): a quiet mark, its words its name and its tip, since the owner found the waits drawn two
-   * and three times at once, and a line of words under the block was one more of them.
+   * A quiet mark, its words its name and its tip; a wait is drawn once, and
+   * a line of words under the block would be one more of them.
    */
   it('marks the block that raised a wait, with a way to the wait', async () => {
     const question = ev({ kind: 'message', text: 'Which of the two should I keep?' });

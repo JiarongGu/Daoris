@@ -30,12 +30,12 @@ internal sealed class WatchRun(
     /// <summary>What link 5 hears as the <c>look</c> topic's deadline: <c>timer(look)</c>, the whole look.</summary>
     internal static readonly string Whole = ChainEvents.TimerOf(ChangeTopics.Look);
 
-    // What is said and not yet in a report: the sweep's lines, and what a look that failed or was closed had said (DEV3c). The next report
+    // What is said and not yet in a report: the sweep's lines, and what a look that failed or is closed had said. The next report
     // opens with them, or `said` has them as the failure is heard.
     private readonly List<string> _carried = [];
     private readonly List<SessionEnded> _carriedEnded = [];
 
-    // What link 2 removed or kept since the last look (FABRIC-END4a), said on the ref watch's thread.
+    // What link 2 removed or kept since the last look, said on the ref watch's thread.
     private readonly List<string> _effected = [];
 
     // The last choices that read, for the wait: a torn file keeps the pace it had.
@@ -47,7 +47,7 @@ internal sealed class WatchRun(
     // tick counts it against the cap and its repository's lock. Retried each tick until the service has answered it once.
     private bool _swept;
 
-    // Once, as the loop starts (WSSETUP5, D124 §3.1): every repository with a checkout here registered from its line, since a line the person
+    // Once, as the loop starts: every repository with a checkout here registered from its line, since a line the person
     // moved outside Daoris is read nowhere else. Beside the first looks rather than before them: a workspace's lines are read with git,
     // seconds of it, and no start should wait on that. A pass the service did not answer is tried again at the next look.
     private Task<IReadOnlyList<string>?>? _following;
@@ -60,16 +60,16 @@ internal sealed class WatchRun(
 
     private Task<IReadOnlyList<string>>? _tidying;
 
-    // LIMITRESUME1c: the conversations that wait for an account, woken beside the looks (D206 §3.4), one pass at a time.
+    // The conversations that wait for an account, woken beside the looks, one pass at a time.
     private Task? _limiting;
 
-    // What woke each look, for its line in the machine log (FABRIC-EVENT2): the loop's start, its pace, a session's end, or a nudge with what
+    // What woke each look, for its line in the machine log: the loop's start, its pace, a session's end, or a nudge with what
     // it said moved; and the nudges counted when the last look took them up.
     private string _by = "start";
     private WatchWakes.Wake? _woke;
     private int _counted;
 
-    // The `look` topic's deadline (FABRIC-EVENT3a, the design §C5): `pollSeconds` after the last whole look ended, whatever woke the looks
+    // The `look` topic's deadline: `pollSeconds` after the last whole look ended, whatever woke the looks
     // between, so a stream of wakes never holds the reconciliation, or the remote sync in it, back.
     private long _whole;
 
@@ -121,20 +121,20 @@ internal sealed class WatchRun(
     /// <summary>The run, as <see cref="DriverWatch.RunAsync"/> says: it returns only once every session it started has written how it ended.</summary>
     internal async Task RunAsync()
     {
-        // Once, as the loop starts: how its git is wired, a coded line (GITAUTH1b, the git-auth design §11).
+        // Once, as the loop starts: how its git is wired, a coded line.
         DriverWatch.Wired(Home);
 
-        // FOUNDATION1w-s (the foundation design §19.15): the staffing imported once the start's confirmation is settled, and checked.
+        // The staffing imported once the start's confirmation is settled, and checked.
         _staffing = RoleStaffing.Of(ConfigPath);
         _staffing?.Check(StaffingCheckAt.Start);
         _beside = new WatchBeside(watch, Service, Home);
 
-        // The session branches tidied beside the looks (AUTOTIDY1, AUTOTIDY2a): a pass once each pace, its lines joining the report of the
+        // The session branches tidied beside the looks: a pass once each pace, its lines joining the report of the
         // look that finds it done, as the following's do.
-        // KEEP1b: the downloads' rule reads and locks the loop's own choices, as the Downloads row's press does.
-        // NOTIFY2h2: each of its lines classed as it is made, the look's pass's and link 2's alike.
-        // KEEP1g: history's daily clear judges a live session by the loop's processes, and forgets a cleared one's numbering in its record.
-        // KEEP1f: the floor's third act clears the browser's caches only through the shell's browser host, where it carries one.
+        // The downloads' rule reads and locks the loop's own choices, as the Downloads row's press does.
+        // Each of its lines is classed as it is made, the look's pass's and link 2's alike.
+        // History's daily clear judges a live session by the loop's processes, and forgets a cleared one's numbering in its record.
+        // The floor's third act clears the browser's caches only through the shell's browser host, where it carries one.
         _tidy = watch.Tidying ?? new BranchTidying(Home)
         {
             ConfigPath = ConfigPath, Sizes = SpaceSizes.Shared, Look = Lines, Processes = watch.Processes, Events = watch.Events,
@@ -144,30 +144,30 @@ internal sealed class WatchRun(
         _counted = wakes.Count;
         _whole = Stopwatch.GetTimestamp();
 
-        // The look is link 5 of the design §C6 (FABRIC-EVENT3a), on this loop's own chain: a wake is a `ledger` event, and runs the local
+        // The look is link 5, on this loop's own chain: a wake is a `ledger` event, and runs the local
         // plan alone; the `look` topic's deadline is its `timer(look)`, and runs the whole look, the remote sync first. The loop stays the
-        // topic's queue, as it was the look's: what wakes it during a look is one look after it, and its wait hears a session's end, which a
+        // topic's queue, as it is the look's: what wakes it during a look is one look after it, and its wait hears a session's end, which a
         // change watch's pump does not, so the watch under the chain is never started.
         await using var queue = new ChangeWatch();
         var chain = new Chain(queue) { Log = Log };
 
-        // A plugin asked about an open pull request when the remote's facts may have moved (FABRIC-END6, §A4.3, link 6): origin's line heard
-        // by the ref watch below, Daoris's push and the window's focus, within D148's minute. Made first, so the ref watch's first judgements
+        // A plugin asked about an open pull request when the remote's facts may have moved (link 6): origin's line heard
+        // by the ref watch below, Daoris's push and the window's focus, within the minute. Made first, so the ref watch's first judgements
         // read each line's baseline.
         await using var moments = PullRequestMoments.ForDriver(Home, Service.RegistryAsync, Log);
         moments.Start();
         doors.Focus.Ready(moments.Focused);
 
-        // The home's record files heard, not found at the pace (FABRIC-EVENT4, §A4.1, link 7): the configuration, the plugins folder, the
+        // The home's record files heard, not found at the pace (link 7): the configuration, the plugins folder, the
         // moved lines and the held words each wake the local plan by their topic, and the pace stays their deadline. Both loops run this one
         // watch, so the headless host and the shell hear the same files.
         await using var files = HomeWatch.ForDriver(Home, ConfigPath, watch.Nudge, source: Source, log: Log);
         doors.Files = files;
         files.Start();
 
-        // The refs heard on each repository's common git dir (FABRIC-END3, §B4, link 1): a ref move judges that repository's ends on its own,
-        // never the look and never the remote sync, and the tidy's pass stays the reconciliation at its pace. Link 2 on the same chain
-        // (FABRIC-END4a, §C3, §C6): the tidy as an effect, tried where link 1 found a repository held, on the wakes that can unblock it, at
+        // The refs heard on each repository's common git dir (link 1): a ref move judges that repository's ends on its own,
+        // never the look and never the remote sync, and the tidy's pass stays the reconciliation at its pace. Link 2 on the same chain:
+        // the tidy as an effect, tried where link 1 found a repository held, on the wakes that can unblock it, at
         // the `refs` deadline and at the start; what it says joins the next look's report.
         var effect = new TidyEffect(
             Home,
@@ -183,19 +183,19 @@ internal sealed class WatchRun(
             },
         };
         await using var refs = RefWatch.ForDriver(Home, Service.RegistryAsync, source: Source, log: Log,
-            // PARALLEL1a: the facts that repository's refs move; OWNMOVES1: past their rest where Daoris moved them itself.
+            // The facts that repository's refs move; past their rest where Daoris moved them itself.
             heard: (repository, mine) => Heard?.Invoke(ChangeTopics.Refs, repository, mine),
-            // DRAINHOLD1: a tidy of a ref move removes a branch and its tree, which the drain does not wait on: refused while it drains.
+            // A tidy of a ref move removes a branch and its tree, which the drain does not wait on: refused while it drains.
             tidy: new DrainHeldEffect(effect, watch.DrainsNow));
         doors.Refs = refs;
         refs.Start();
 
-        // The ledger heard, not found at the pace (FABRIC-EVENT3b, §A4.2): one wait on the service's change stream for the loop's life, each
+        // The ledger heard, not found at the pace: one wait on the service's change stream for the loop's life, each
         // family that moved waking the local plan by the `ledger` topic, as a quest an agent published, and the pace its deadline.
         using var listening = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var ledger = LedgerChanges.RunAsync(Service, watch.Nudge, Log, listening.Token);
 
-        // The start's reconciliation (canary 16): every pending tidy found from the persisted facts and tried once, beside the first looks.
+        // The start's reconciliation: every pending tidy found from the persisted facts and tried once, beside the first looks.
         var recovering = Task.Run(async () =>
         {
             try
@@ -211,7 +211,7 @@ internal sealed class WatchRun(
                 Log?.Failed("the start's reconciliation of the tidy", error);
             }
         }, CancellationToken.None);
-        // GITAPP2a: the act journal's reconciliation at the start, beside the first looks so it never holds the come-up (D181 point 1): one
+        // The act journal's reconciliation at the start, beside the first looks so it never holds the come-up: one
         // checkout at a time, each under its own lock alone, one it cannot take left to the next look's writer, which reconciles it too.
         var reconciling = Task.Run(async () =>
         {
@@ -229,18 +229,18 @@ internal sealed class WatchRun(
             }
         }, CancellationToken.None);
 
-        // FABRIC-RUN1, link 8: the evaluation runtime, only where this loop holds a hook set.
+        // Link 8: the evaluation runtime, only where this loop holds a hook set.
         _nodes = WatchNodes.Of(watch, () => _config);
         doors.Nodes = _nodes?.Runtime;
-        // FABRIC-RUN1d: the runtime's own wakes run link 8 alone: its timer and a plugin's step, never the local plan.
+        // The runtime's own wakes run link 8 alone: its timer and a plugin's step, never the local plan.
         using var nodesDue = new System.Threading.Timer(_ => watch.NodesWoken("due"));
-        // SUPERVISOR1a-i (the supervisor design §3.4): the look nudged at a held decision's goesOnAt, which releases it.
+        // The look nudged at a held decision's goesOnAt, which releases it.
         using var supervisorDue = new System.Threading.Timer(_ => watch.Nudge(ChangeTopics.Words, SupervisorHanded.From));
         _supervisorDue = supervisorDue;
 
         chain.Bind(ChainRanks.Plan, async (heard, token) =>
         {
-            // FABRIC-RUN1e: choices that no longer arm the runtime withdraw its awaited set before the plan's supervision reads it, so the
+            // Choices that no longer arm the runtime withdraw its awaited set before the plan's supervision reads it, so the
             // look that reads the last graph's removal starts no plugin for it; link 8 then reads nothing.
             if (_nodes is { } nodes) await Stages.TimeAsync("withdraw", () => nodes.Runtime.WithdrawAsync(_config, token)).ConfigureAwait(false);
             _looked = await LookAsync(heard.Any(cause => cause.Key == Whole) ? LookPart.Look : LookPart.Plan, token).ConfigureAwait(false);
@@ -249,7 +249,7 @@ internal sealed class WatchRun(
         _nodes?.Bind(chain, nodesDue, doors, ct);
 
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure ends it, so no session outlives the
-        // loop that watches it (DEV3).
+        // loop that watches it.
         using var sessions = CancellationTokenSource.CreateLinkedTokenSource(ct);
         try
         {
@@ -257,14 +257,14 @@ internal sealed class WatchRun(
         }
         catch
         {
-            // A failure with nobody to hear it ends the loop: what its look had said is said first (DEV3c).
+            // A failure with nobody to hear it ends the loop: what its look had said is said first.
             SayCarried();
             await sessions.CancelAsync().ConfigureAwait(false);
             throw;
         }
         finally
         {
-            // FABRIC-RUN1d: no wake of the runtime's fires link 8 once the loop closes; FABRIC-CUTOVER1d: nor does a door's ask, and one asked is
+            // No wake of the runtime's fires link 8 once the loop closes; nor does a door's ask, and one asked is
             // answered as not passed, so no press waits on a loop that closed.
             doors.Waking(null);
             if (doors.Unasked() is { } unasked) PassAsks.Done(unasked.Take(), passed: false);
@@ -316,36 +316,36 @@ internal sealed class WatchRun(
                 await onError(error).ConfigureAwait(false);
             }
 
-            // A whole look that failed was still the deadline's: the next comes a pace later, as it always did, not at once.
+            // A whole look that fails is still the deadline's: the next comes a pace later, not at once.
             if (part == LookPart.Look) _whole = Stopwatch.GetTimestamp();
 
             await WaitAsync(refs, nudged, failed).ConfigureAwait(false);
         }
     }
 
-    /// <summary>One look of the loop and its report, with what was said beside it since the last.</summary>
+    /// <summary>One look of the loop and its report, with what is said beside it since the last.</summary>
     private async Task TickAsync(Chain chain, LookPart part, int nudges, long began, CancellationToken sessions)
     {
-        // 🔴 Inside the catch (REV3): a hand edit that tore the file threw from outside it, and the watch died on its first tick, silently,
-        // in the shell. Now it is said, nothing ticks on choices it cannot read, and the next look after the fix ticks again.
+        // 🔴 Inside the catch: a hand edit that tears the file would throw from outside it, and the watch would die on its first tick,
+        // silently, in the shell. Here it is said, nothing ticks on choices it cannot read, and the next look after the fix ticks again.
         _config = Load(ConfigPath);
-        // FOUNDATION1w-s: a home whose staffing the store holds no import of yet is imported by a look, waiting for no lock.
+        // A home whose staffing the store holds no import of yet is imported by a look, waiting for no lock.
         _staffing?.Check(StaffingCheckAt.Look);
 
         if (!_swept)
         {
             var orphans = await Stages.TimeAsync("sweep", () => Orphans.EndAsync(Service, watch.Processes, ct: ct)).ConfigureAwait(false);
-            // An end nobody pressed and nobody must answer: news (NOTIFY2h).
+            // An end nobody pressed and nobody must answer: news.
             foreach (var ended in orphans)
             {
                 _carried.Add(Lines.News(
                     "sweep", new LookNews(LookSaid.Swept, ended.Id, ended.Id), $"stopped  session {ended.Id} ({ended.Repository}): {Orphans.Note}"));
             }
             _swept = true;
-            // SUPERVISOR1a-i (the supervisor design §3.4): the decisions an earlier run left closed before this first look's carry-ons, held
+            // The decisions an earlier run left closed before this first look's carry-ons, held
             // and released ones stale and admitted ones interrupted; their waiting words the look takes back.
             Supervisor.SweepAtStart(DateTimeOffset.UtcNow);
-            // FOUNDATION1f-iv part b (the foundation design §3.3): a loop that died with a carry-on's move standing is taken up here, at the slot
+            // A loop that died with a carry-on's move standing is taken up here, at the slot
             // where uncertain words are settled and before it, so the move says the `lost` note of a word it moved and never sent, and the
             // carry-ons the look plans are no longer held by it. Through a driver's holder, whose scope is the lease holder's.
             await Stages.TimeAsync(
@@ -353,7 +353,7 @@ internal sealed class WatchRun(
                 () => new Driver(Service, _config, watch.Adapters, Home, watch.Processes, watch.Sync, watch.Output, watch.Harnesses, watch.Usage, watch.Hooks,
                         watch.Events, watch.Browser, Running)
                     { Log = Log, Share = Share }.TakeUpMovesAsync(ct)).ConfigureAwait(false);
-            // COWORK1c (the message-urgency design §6, trap 8): the words a shell before this one wrote to its agent and never took off leave
+            // The words a shell before this one wrote to its agent and never took off leave
             // their records, said where their conversation never showed them taken, and are never sent again.
             _carried.AddRange(await Stages.TimeAsync("uncertain", () => UncertainWords.SettleAsync(Service, watch.Events, ct, Lines)).ConfigureAwait(false));
         }
@@ -377,7 +377,7 @@ internal sealed class WatchRun(
             if (lines is not null)
             {
                 _followed = true;
-                // Classed where the pass made them (NOTIFY2h2).
+                // Classed where the pass made them.
                 if (lines.Count > 0) report = report with { Events = [.. report.Events, .. lines] };
             }
         }
@@ -386,7 +386,7 @@ internal sealed class WatchRun(
         {
             _tidying = null;
             // A pass that failed past its own catches is said, and so observed, rather than left to the finalizer. Classed where the tidy made
-            // them (NOTIFY2h2).
+            // them.
             IReadOnlyList<string> lines = tidied.IsCompletedSuccessfully ? tidied.Result
                 : tidied.Exception?.InnerException is { } failure
                     ? [Lines.Retry("tidy", $"tidy  the session branches were not looked at this time, and are looked at again later: {failure.Message}")]
@@ -396,19 +396,19 @@ internal sealed class WatchRun(
 
         lock (_effected)
         {
-            // Classed where the tidy made them (NOTIFY2h2).
+            // Classed where the tidy made them.
             if (_effected.Count > 0) report = report with { Events = [.. report.Events, .. _effected] };
             _effected.Clear();
         }
 
-        // DRAINHOLD1: the tidy (and the keeping passes in it) removes trees and branches, and the limits' wake goes conversations on in turns;
+        // The tidy (and the keeping passes in it) removes trees and branches, and the limits' wake goes conversations on in turns;
         // neither begins while an update drains, and both stay due for the first look that does not.
         if (_tidying is null && _tidy.Due && !watch.DrainsNow()) _tidying = _beside.TidyAsync(_tidy, ct);
 
         if (_limiting is { IsCompleted: true }) _limiting = null;
         if (_limiting is null && Limits is { } limits && !watch.DrainsNow()) _limiting = _beside.LimitsAsync(limits, _config, ct);
 
-        // INTEGRATE1h (§5.8): the declarations owed acceptance, read before the report so the wake it brings judges them.
+        // The declarations owed acceptance, read before the report so the wake it brings judges them.
         await watch.OwedLookAsync(_config, ct).ConfigureAwait(false);
 
         Looked(_by, _woke, part, nudges, began, failed: false);
@@ -443,7 +443,7 @@ internal sealed class WatchRun(
                 return;
             }
 
-            // Up to the `look` topic's deadline (FABRIC-EVENT3a), or the whole pace after a failed look.
+            // Up to the `look` topic's deadline, or the whole pace after a failed look.
             var pace = TimeSpan.FromSeconds(_config.PollSeconds);
             var left = failed ? pace : pace - Stopwatch.GetElapsedTime(_whole);
             await Running.NextAsync(left > TimeSpan.Zero ? left : TimeSpan.Zero, wait.Token, endings: !failed).ConfigureAwait(false);
@@ -451,13 +451,13 @@ internal sealed class WatchRun(
             _by = wakes.Count != nudged ? "nudge"
                 : failed || LookDeadline.Due(Stopwatch.GetElapsedTime(_whole), _config) ? "pace"
                 : "ended";
-            // A session ending may free the tree a refused tidy waits on (FABRIC-END4a, canary 17).
+            // A session ending may free the tree a refused tidy waits on.
             if (_by == "ended") refs.Unblocked(ChainEvents.Ledger);
         }
     }
 
     /// <summary>
-    /// One look of the part link 5 heard, asked once whether an update drains, so the plan and what the report says of it agree (UPDATE1).
+    /// One look of the part link 5 heard, asked once whether an update drains, so the plan and what the report says of it agree.
     /// </summary>
     private async Task<TickReport> LookAsync(LookPart part, CancellationToken token)
     {
@@ -468,12 +468,12 @@ internal sealed class WatchRun(
             {
                 Share = Share, Runner = Runner, Stops = Stops, HandsOver = HandsOver, SendsBack = SendsBack, GoesOnLost = GoesOnLost, Log = Log, Noticed = Noticed, Stages = Stages, Reviews = Reviews,
                 Part = part, Wanted = token => WantedAsync(part, token),
-                // FABRIC-CUTOVER1c: an ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.
+                // An ended graph run whose chain came back here re-arms link 8, which a wake then judges on what is there now.
                 RunReturned = run =>
                 {
                     if (doors.Nodes?.Return(run) == true) watch.NodesWoken("returned");
                 },
-                // ACCESSSWAP1b: a session outlives this look's reading of the file, so its run reads the file again at its turn's end.
+                // A session outlives this look's reading of the file, so its run reads the file again at its turn's end.
                 ConfigPath = ConfigPath,
             };
         driver.Context.Supervisor = Supervisor;
@@ -494,9 +494,9 @@ internal sealed class WatchRun(
     }
 
     /// <summary>
-    /// PARALLEL1b (D181 point 3): what a look waits on for a start that has not yet opened its record, and leaves it beside on: a nudge since
+    /// What a look waits on for a start that has not yet opened its record, and leaves it beside on: a nudge since
     /// the loop counted its nudges, an ending waiting to be said, or the <c>look</c> topic's deadline (a whole look's own is a pace from now).
-    /// Never throws: the look reads its own token to learn whether it was the close.
+    /// Never throws: the look reads its own token to learn whether it is the close.
     /// </summary>
     private async Task WantedAsync(LookPart part, CancellationToken token)
     {
@@ -519,7 +519,7 @@ internal sealed class WatchRun(
         await waiting.CancelAsync().ConfigureAwait(false);
     }
 
-    /// <summary>What a look that failed or was closed had said, handed to <c>said</c> where a door says a part of a look alone (DEV3c).</summary>
+    /// <summary>What a look that failed or is closed had said, handed to <c>said</c> where a door says a part of a look alone.</summary>
     private void SayCarried()
     {
         if (said is null || (_carried.Count == 0 && _carriedEnded.Count == 0)) return;
@@ -529,7 +529,7 @@ internal sealed class WatchRun(
     }
 
     /// <summary>
-    /// A look's cause on the loop's chain (FABRIC-EVENT3a): the <c>look</c> topic's <c>timer</c> for a whole look; otherwise a <c>ledger</c>
+    /// A look's cause on the loop's chain: the <c>look</c> topic's <c>timer</c> for a whole look; otherwise a <c>ledger</c>
     /// event naming what moved, its topic kept, since every wake the loop hears is a local fact the plan reads: a ledger family, a terminal's
     /// words kept on its record, a session's end.
     /// </summary>
@@ -539,11 +539,11 @@ internal sealed class WatchRun(
             : new ChainEvent(ChainEvents.Ledger, woke?.Subject ?? "sessions", woke?.Topic ?? ChangeTopics.Ledger);
 
     /// <summary>
-    /// The look, timed (FABRIC-EVENT2, the design §A2): <c>watch.looked</c> with its ms, what woke it (<c>start</c>, <c>pace</c>, <c>ended</c>
-    /// for a session's end, or <c>nudge</c> with the topic and subject a nudge carried, none for a plain one), the part it ran (FABRIC-EVENT3a:
-    /// <c>look</c> for the whole look, <c>plan</c> for a wake's local plan), how many nudges it took up, and whether it failed. Up to the
-    /// report, not the door's handling of it. LOOKWAIT1: its <c>stages</c>, each part of the look and of the work beside it that ended since
-    /// the last line (<see cref="LookStages.Take"/>), so a slow look says which part was slow.
+    /// The look, timed: <c>watch.looked</c> with its ms, what woke it (<c>start</c>, <c>pace</c>, <c>ended</c>
+    /// for a session's end, or <c>nudge</c> with the topic and subject a nudge carried, none for a plain one), the part it ran
+    /// (<c>look</c> for the whole look, <c>plan</c> for a wake's local plan), how many nudges it took up, and whether it failed. Up to the
+    /// report, not the door's handling of it. Its <c>stages</c>, each part of the look and of the work beside it that ended since
+    /// the last line (<see cref="LookStages.Take"/>), so a slow look says which part is slow.
     /// </summary>
     private void Looked(string by, WatchWakes.Wake? woke, LookPart part, int nudges, long began, bool failed) =>
         Log?.Info("watch.looked",
@@ -565,7 +565,7 @@ internal sealed class WatchRun(
         }
         catch (DriverConfigUnreadableException error)
         {
-            // The file and where in it are the reader's to say (CONFIGREAD1); what the loop does about it is the watch's.
+            // The file and where in it are the reader's to say; what the loop does about it is the watch's.
             throw new DriverException(
                 $"{error.Message} Nothing is driven until it reads; the loop keeps watching it, and takes the fix at its next look.");
         }

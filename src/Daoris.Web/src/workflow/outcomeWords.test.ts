@@ -4,7 +4,7 @@ import { drawnFromJson, graphFlow } from './graphFlow';
 import { howSaid, rowSaid, waySaid } from './edit/editWords';
 import type { DraftWire } from './edit/graphDraft';
 
-// NODEKIT1: the outcomes the monitor and the person's task declare are said in the page's words at the editor's and the chart's callers
+// The outcomes the monitor and the person's task declare are said in the page's words at the editor's and the chart's callers
 // (`workflow.outcome.<kind>.<outcome>`), in both languages; a kind the page has no words for says the raw name, which stays the identity.
 
 const t = i18n.t.bind(i18n);

@@ -12,7 +12,7 @@ import { RunningIntake } from '../head/RunningIntake';
 import { AwaitingPerson } from '../waits/AwaitingPerson';
 import { TrustAsk } from '../waits/TrustAsk';
 
-// The surfaces of attention (design §4; UX6c, design §6): Overview's *What needs you* whole, as the page leads with it,
+// The surfaces of attention: Overview's *What needs you* whole, as the page leads with it,
 // the rows it is made of with the acts that settle them, and the parked session's own answer. What is NOT here is a
 // "resume" button — the ledger allows that move and a person makes it by answering, which the surface says rather than
 // offering twice.
@@ -57,7 +57,7 @@ const readSaid = clockOf(READ, new Date(), 'en');
 const CLAUDE = { agent: 'claude-code', product: 'Claude Code', door: 'claude-code', signsIn: true } as const;
 
 /**
- * The owner's morning (D150 §6.3's drawing, UX6d): the intake for two asks held behind `home`'s cool-off, having passed two
+ * The owner's morning: the intake for two asks held behind `home`'s cool-off, having passed two
  * accounts read signed out. Its why says each as last read, and each signed-out one is a press.
  */
 const ACCOUNT_WAIT: Attention = {
@@ -75,7 +75,7 @@ const ACCOUNT_WAIT: Attention = {
 
 /**
  * A quest whose only account cools, with one no read answered: *Read* for that one account. No account is outside a start's
- * list, since every account of Daoris's serves every workspace (POOL1c), so no row offers to let one run.
+ * list, since every account of Daoris's serves every workspace, so no row offers to let one run.
  */
 const UNREAD: Attention = {
   id: 'quest:claude-code/account-2', kind: 'account-wait', title: 'Read the media field names from config', where: 'engine',
@@ -90,9 +90,9 @@ const UNREAD: Attention = {
 };
 
 /**
- * A signed-out account of Daoris's that no waiting start names: its own row, its sign-in, its agent's page. It says when it was
- * read, never how long it waited, since nobody knows when it began to hold work (UXFIX3), and never where it runs, since every
- * account serves every workspace (POOL1c).
+ * A signed-out account of Daoris's that no waiting start names: its own row, its sign-in, its agent's page. It says its read
+ * time, never how long it waited, since nobody knows when it began to hold work, and never where it runs, since every
+ * account serves every workspace.
  */
 const SIGNED_OUT: Attention = {
   id: 'signed-out:claude-code/account-5', kind: 'signed-out', title: 'you@work.example', where: 'Claude Code', since: null,
@@ -105,7 +105,7 @@ function Main({ width, children }: { width?: number; children: ReactNode }) {
   return <div className="@container/main max-w-full bg-page p-4" style={width ? { width } : undefined}>{children}</div>;
 }
 
-/** A park's note by code (LANG1b): the lead-in worded in the window's language, the agent's question as written. */
+/** A park's note by code: the lead-in worded in the window's language, the agent's question as written. */
 const PARKED: Attention = {
   id: 's1a2b3c4',
   kind: 'parked',
@@ -121,7 +121,7 @@ const PARKED: Attention = {
 };
 
 /**
- * A quest parked on its failed sessions here (SESSUX1i, D126 §4.6): the quest, waiting since its last session ended, and
+ * A quest parked on its failed sessions here: the quest, waiting since its last session ended, and
  * the driver's sitting sentence; its door is the quest's page, where Try again is.
  */
 const PARKED_QUEST: Attention = {
@@ -133,7 +133,7 @@ const PARKED_QUEST: Attention = {
   detail: '3 session(s) have failed on `#7a82cc` without landing anything — parked, because trying again spends an account rather than making progress. `daoris quest retry 7a82cc` starts it again once you know why.',
 };
 
-/** A quest the steward stopped (STEWARDROLE1b, D209 §5.3): its session said, its one act Try again; its door the quest's page. */
+/** A quest the steward stopped: its session said, its one act Try again; its door the quest's page. */
 const STEWARD_STOPPED: Attention = {
   id: '7a82cd',
   kind: 'steward-stopped',
@@ -145,7 +145,7 @@ const STEWARD_STOPPED: Attention = {
 };
 
 /**
- * A run held at a request the receiver declined (INTEGRATE1o part o3): its work's quest as the title, the declined quest said, its one act
+ * A run held at a request the receiver declined: its work's quest as the title, the declined quest said, its one act
  * *Pass over…* (the run's own skip, asked once with the person's words), its door the work quest's page.
  */
 const REQUEST_DECLINED: Attention = {
@@ -158,7 +158,7 @@ const REQUEST_DECLINED: Attention = {
   declined: { node: 'requests', quest: 'q9', to: 'web', work: '7a82cd' },
 };
 
-/** An ask waiting on a person (INT4d): its place is its circle, named as one; its declarations named two receivers. */
+/** An ask waiting on a person: its place is its circle, named as one; its declarations named two receivers. */
 const PROPOSAL: Attention = {
   id: '7c1e9a04b2d5',
   kind: 'proposal',
@@ -170,20 +170,20 @@ const PROPOSAL: Attention = {
   choices: ['engine', 'game', 'tools'],
 };
 
-/** A go-ahead a session asked on its ask (KNOWUSE1a): the act, the ask, and why in the session's words. */
+/** A go-ahead a session asked on its ask: the act, the ask, and why in the session's words. */
 const GO_AHEAD: Attention = {
   id: '0fda18#1', kind: 'go-ahead', ask: '0fda18', number: 1, title: 'push on prod: “the report’s menu entries”',
   where: 'ask #0fda18', since: at(52), detail: 'The menu ships with tonight’s release, and only prod serves it.',
 };
 
-/** A done held for the person's yes (DRIFT1d2): the requirement it departed from, and its reason. */
+/** A done held for the person's yes: the requirement it departed from, and its reason. */
 const DEPARTURE: Attention = {
   id: '5e7a11', kind: 'departure', title: 'Read the media field names from config', where: 'engine', since: at(140),
   detail: 'Requirement 2 departed: the names stay in code until the config loader lands next week',
 };
 
 /**
- * A set-up shown and waiting for the person's look (REVIEWENV1g): what it showed, and *Reviewed*, *Not yet…* and *Show it
+ * A set-up shown and waiting for the person's look: what it showed, and *Reviewed*, *Not yet…* and *Show it
  * again*, its set-up named as the row drew it.
  */
 const SET_UP_ROW: Attention = {
@@ -193,7 +193,7 @@ const SET_UP_ROW: Attention = {
 };
 
 /**
- * A second opinion disputed where the work lands by itself (XAGENT1g): what the gate says, *Go on anyway…* and *Ask again*; and
+ * A second opinion disputed where the work lands by itself: what the gate says, *Go on anyway…* and *Ask again*; and
  * one none could be had for where the rule requires one, *Go on anyway…* and *Try again*.
  */
 const OPINION_ROW: Attention = {
@@ -210,13 +210,13 @@ const OPINION_NONE: Attention = {
   opinion: { ...OPINION_ROW.opinion!, session: 's43', auto: false, opinion: { state: 'unavailable', holds: true, required: true, code: 'cooling' } },
 };
 
-/** An agent's proposal to widen the rules (PERM2, D74). */
+/** An agent's proposal to widen the rules. */
 const RULE: Attention = {
   id: 'p0000002', kind: 'rule', title: 'allow WebFetch for every session on this machine', where: 'session i9n8t7k6 (ask #0fda18)',
   since: at(30), detail: 'The docs it needs are on the web.',
 };
 
-/** Seven sessions ended with work to review (D126), an hour apart: five shown, two counted. */
+/** Seven sessions ended with work to review, an hour apart: five shown, two counted. */
 const REVIEWS: Attention[] = [
   'Verify the drill-down against DEV', 'Tidy the release notes', 'Cap hydration per frame', 'Read the media field names',
   'Expose the chunk budget', 'Fix the pipeline’s knowledge check', 'Rename the scheduler’s queue',
@@ -225,7 +225,7 @@ const REVIEWS: Attention[] = [
   detail: index === 3 ? 'uncommitted changes' : index === 0 ? '1 commit to review' : `${index + 1} commits to review`,
 }));
 
-/** A start the driver holds for the agent's trust (D73) — neutral paths, as every fixture here. */
+/** A start the driver holds for the agent's trust — neutral paths, as every fixture here. */
 const HOLD = {
   folder: 'C:/somewhere/family/engine',
   trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json',
@@ -247,9 +247,9 @@ const meta: Meta = { title: 'Work/Attention' };
 export default meta;
 
 /**
- * Overview's lead as the install would have shown it the morning the asks sat (UX6c, design §6): what holds work (a folder
+ * Overview's lead with every kind of row: what holds work (a folder
  * held for trust, a quest and the asks' intake waiting on their accounts, a quest parked on its failed sessions, a
- * go-ahead, a parked session, and last a signed-out account a list holds, which has no wait to sort by, UXFIX3), what
+ * go-ahead, a parked session, and last a signed-out account a list holds, which has no wait to sort by), what
  * waits for the person's word (two proposed asks, a departure, a widening), and seven sessions to review, five shown and
  * two counted.
  */
@@ -271,7 +271,7 @@ export const BandChinese: StoryObj = { ...Band, decorators: [chinese] };
 /** The same in dark. */
 export const BandDark: StoryObj = { ...Band, decorators: [dark] };
 
-/** At 680 px: each row's title under its kind, where and how long, as the design draws it narrow. */
+/** At 680 px: each row's title under its kind, where and how long, drawn narrow. */
 export const BandNarrow: StoryObj = {
   render: () => <Main width={600}><AttentionRegion><AttentionList items={BAND} doors={DOORS} acts={ACTS} onSessions={() => {}} /></AttentionRegion></Main>,
 };
@@ -280,8 +280,8 @@ export const BandNarrow: StoryObj = {
 export const BandNarrowChinese: StoryObj = { ...BandNarrow, decorators: [chinese] };
 
 /**
- * GOAHEADSTALE1, the owner's case (2026-10-21): three go-aheads to write production configuration that nothing on their asks waits for
- * any more, each marked stale with how long and offering its refusal alone, listed with what waits for the person's word under the line
+ * Three go-aheads to write production configuration that nothing on their asks waits for
+ * now, each marked stale with how long and offering its refusal alone, listed with what waits for the person's word under the line
  * that refuses all three at once with one reason; a go-ahead a session still waits for keeps both answers where it holds work.
  */
 const STALE_GO_AHEADS: Attention[] = [
@@ -316,7 +316,7 @@ export const BandStaleGoAheadsNarrowChinese: StoryObj = {
 };
 
 /**
- * Each row that is a step waiting on the person with its door into the run (WORKFLOW1c, the workflow design §7): *Workflow*,
+ * Each row that is a step waiting on the person with its door into the run: *Workflow*,
  * quieter than the row's own, on a parked quest, a go-ahead, a parked session, a departure, a set-up and the reviews.
  */
 const IN_A_RUN: ReadonlySet<Attention['kind']> = new Set(['parked-quest', 'steward-stopped', 'request-declined', 'go-ahead', 'parked', 'departure', 'set-up', 'review']);
@@ -355,7 +355,7 @@ export const BandWithRunsNarrowChinese: StoryObj = {
 };
 
 /**
- * An intake held on an account read signed out with none cooling (UX6d1, UX6d2): a wait for a sign-in, never a reset, so its
+ * An intake held on an account read signed out with none cooling: a wait for a sign-in, never a reset, so its
  * line names no time and never the tool's own sign-in. Its sign-in.
  */
 const SIGNED_OUT_WAIT: Attention = {
@@ -372,7 +372,7 @@ const OWN_COOLING: Attention = {
 };
 
 /**
- * Overview's *What needs you* where one agent holds two waits (UX6d2): the intake held on a signed-out account with none
+ * Overview's *What needs you* where one agent holds two waits: the intake held on a signed-out account with none
  * cooling, and a quest behind the tool's own sign-in's cool-off, each its own row under its own key; then an ask for the
  * person's word.
  */
@@ -390,8 +390,8 @@ export const BandSignedOutWait: StoryObj = {
 export const BandSignedOutWaitDark: StoryObj = { ...BandSignedOutWait, decorators: [dark] };
 
 /**
- * A key its provider refused (ACCTUX1): it read *unchecked* and was no row at all. A list holds it, so it is a signed-out row
- * of its own, saying the key was refused and that its repair is a new key on its agent's page, with no sign-in, which a key
+ * A key its provider refused: a list holds it, so it is a signed-out row
+ * of its own, saying the key is refused and that its repair is a new key on its agent's page, with no sign-in, which a key
  * has none of; and a start waiting on its accounts names it refused beside one read signed out.
  */
 const KEY_REFUSED: Attention = {
@@ -441,7 +441,7 @@ export const BandInABrowser: StoryObj = {
   ),
 };
 
-/** Nothing needs the person: one line, and what is working, never a card saying all clear (§6.1). */
+/** Nothing needs the person: one line, and what is working, never a card saying all clear. */
 export const Nothing: StoryObj = {
   render: () => <Main width={1180}><AttentionRegion><NothingNeedsYou working={2} /></AttentionRegion></Main>,
 };
@@ -452,7 +452,7 @@ export const NothingQuiet: StoryObj = {
 };
 
 /**
- * Each question a row asks once under itself before it acts (design §6.3, D41 §4): a go-ahead's yes with the person's
+ * Each question a row asks once under itself before it acts: a go-ahead's yes with the person's
  * words, its no, a widening's accept naming what it widens, a receiver chosen, and the agent's own trust question.
  */
 export const Asking: StoryObj = {
@@ -464,9 +464,9 @@ export const Asking: StoryObj = {
         <AttentionRow item={RULE} acts={ACTS} onOpen={() => {}} opened="accept-rule" />
         <AttentionRow item={{ ...PROPOSAL, publishTo: [] }} acts={ACTS} onOpen={() => {}} opened="choose" />
         <AttentionRow item={TRUST_ROW} acts={ACTS} onOpen={() => {}} opened="trust" />
-        {/* REVIEWENV1g: a set-up's *not yet*, asking for the person's words, which go to its session as its next turn. */}
+        {/* A set-up's *not yet*, asking for the person's words, which go to its session as its next turn. */}
         <AttentionRow item={SET_UP_ROW} acts={ACTS} onOpen={() => {}} opened="not-yet" />
-        {/* XAGENT1g: a second opinion's *Go on anyway…*, saying what stays unsettled, with the person's words. */}
+        {/* A second opinion's *Go on anyway…*, saying what stays unsettled, with the person's words. */}
         <AttentionRow item={OPINION_ROW} acts={ACTS} onOpen={() => {}} opened="opinion-anyway" />
       </ul>
     </Main>
@@ -474,9 +474,9 @@ export const Asking: StoryObj = {
 };
 
 /**
- * The accounts' rows (UX6d, design §6.2–§6.3): the intake waiting behind a cooling account with a sign-in for each account it
- * passed signed out; a quest whose one account cools, reading one never read; a signed-out account of Daoris's, saying when it
- * was read and never where it runs (POOL1c); the tool's own sign-in cooling, which only the person signs in; three signed out,
+ * The accounts' rows: the intake waiting behind a cooling account with a sign-in for each account it
+ * passed signed out; a quest whose one account cools, reading one never read; a signed-out account of Daoris's, saying its
+ * read time and never where it runs; the tool's own sign-in cooling, which only the person signs in; three signed out,
  * two pressed and the third said; the tick's word before the roster answers, nothing to press; a row held while a sign-in
  * runs; a long 中文 name.
  */
@@ -543,7 +543,7 @@ export const AccountRows: StoryObj = {
 /**
  * The rows as 中文 words them (`accountWords` words each from the catalogue, in the reader's language): the titles and
  * the lines in 中文, the accounts' names and the reset's moment as the reader's language writes them. A signed-out account's
- * reading is the row's own words (*… 读取*) (UXFIX3), and it has no line: every account serves every workspace (POOL1c).
+ * reading is the row's own words (*… 读取*), and it has no line: every account serves every workspace.
  */
 function chineseRows(): Attention[] {
   const t = zh.t.bind(zh);
@@ -566,7 +566,7 @@ function chineseRows(): Attention[] {
       account: { ...CLAUDE, named: [{ id: null, label: t('agents.account.own'), state: 'cooling', read: null, until: RESET }] },
     },
     {
-      // OWNSPACE1b-B: the hold for no Daoris account signed in, whose one press is *Sign in for Daoris*.
+      // The hold for no Daoris account signed in, whose one press is *Sign in for Daoris*.
       ...ACCOUNT_WAIT, id: 'no-account', title: t('work.attention.held.intakes', { count: 2 }),
       detail: t('work.attention.accounts.noAccount', { product: 'Claude Code' }),
       account: { ...CLAUDE, named: [], noAccount: true },
@@ -575,7 +575,7 @@ function chineseRows(): Attention[] {
 }
 
 /**
- * The accounts' rows in 中文, each title and line as 中文 says it: a signed-out account saying when it was read, and the tool's
+ * The accounts' rows in 中文, each title and line as 中文 says it: a signed-out account saying its read time, and the tool's
  * own sign-in read signed out, with no press.
  */
 export const AccountRowsChinese: StoryObj = {
@@ -618,7 +618,7 @@ export const AccountRowsNarrowChinese: StoryObj = {
 };
 
 /**
- * GITAUTH1a (the git auth design §5.2, §7.4): a git remote held because it could not authenticate, one row per held group and class,
+ * A git remote held because it could not authenticate, one row per held group and class,
  * each worded by the reader's language from its host, its repositories and git's own last line, which stay as written; *Try again* its
  * one act. A host key changed since ssh trusted it wears danger's ink.
  */
@@ -667,7 +667,7 @@ export const GitHeldRowsNarrowChinese: StoryObj = {
 };
 
 /**
- * SESSWATCH1a (D200, the session-watch design §5.2): the sessions the watcher brings to the person. A quiet quest session offers *End
+ * The sessions the watcher brings to the person. A quiet quest session offers *End
  * and carry on*, *Hand over…*, *Stop…* and *Leave it running*, and says the person's waiting words go to the next part; a busy one
  * nothing is heard from is offered no end; an intake *Stop…* and *Leave it running* alone. Worded by the reader's language.
  */
@@ -739,7 +739,7 @@ export const Acting: StoryObj = {
 };
 
 /**
- * The band's rows one by one: parked, its note by code (LANG1b), a quest parked on its
+ * The band's rows one by one: parked, its note by code, a quest parked on its
  * failed sessions, the two kinds of ask, a quest nobody can take, a long title, one that said nothing — and last, a
  * parked row with no door, as a browser shows it.
  */
@@ -749,7 +749,7 @@ export const Rows: StoryObj = {
       <ul className="m-0 list-none border border-line bg-raised p-0">
         <AttentionRow item={PARKED} onOpen={() => {}} />
         <AttentionRow item={PARKED_QUEST} acts={ACTS} onOpen={() => {}} />
-        {/* A folder waiting on the person's trust (D73): the folder, what it holds, and why. */}
+        {/* A folder waiting on the person's trust: the folder, what it holds, and why. */}
         <AttentionRow item={TRUST_ROW} acts={ACTS} onOpen={() => {}} />
         <AttentionRow
           item={{
@@ -777,7 +777,7 @@ export const Rows: StoryObj = {
         <AttentionRow item={GO_AHEAD} acts={ACTS} onOpen={() => {}} />
         <AttentionRow item={DEPARTURE} acts={ACTS} onOpen={() => {}} />
         <AttentionRow item={RULE} acts={ACTS} onOpen={() => {}} />
-        {/* NOTIFY2e: an agent's ask to hand its session over, its note's first line, its yes naming the agent. */}
+        {/* An agent's ask to hand its session over, its note's first line, its yes naming the agent. */}
         <AttentionRow
           item={{
             id: 'h1', kind: 'hand-over', title: 'Near my limit; ParserTests and the loader’s fixture are left.', where: 'engine',
@@ -812,7 +812,7 @@ export const Rows: StoryObj = {
 };
 
 /**
- * Quests parked on their failed sessions (SESSUX1i): one as English says it, and one with a long 中文 title and the
+ * Quests parked on their failed sessions: one as English says it, and one with a long 中文 title and the
  * sitting sentence as 中文 says it from the number the tick carries; the title truncates to its line.
  */
 export const ParkedQuestRows: StoryObj = {
@@ -865,7 +865,7 @@ export const Resolving: StoryObj = {
 };
 
 /**
- * ANSWER1c (D131): the park answered, for up to one look of the driver's. The record is still parked with the answer
+ * The park answered, for up to one look of the driver's. The record is still parked with the answer
  * set, and the same session goes on with it then: the card shows what the person said and says so, asking nothing.
  * A blank answer is the service's own *carry on.*, and a 中文 one is content, never translated.
  */
@@ -882,8 +882,8 @@ export const Answered: StoryObj = {
 const QUESTION = 'published nothing: the declarations did not settle ask `#0fda18` (engine and game both accept a UI bug), so it asks you rather than guess — its question ends its transcript.';
 
 /**
- * A parked INTAKE (INT4g): its answer is on the ask, so the door leads there. No finish, no
- * decline, no box to answer in; its stop is the page header's, which says the ask stays a proposal (SESSUX1d).
+ * A parked INTAKE: its answer is on the ask, so the door leads there. No finish, no
+ * decline, no box to answer in; its stop is the page header's, which says the ask stays a proposal.
  */
 export const IntakeAsking: StoryObj = {
   render: () => (
@@ -903,8 +903,8 @@ export const IntakeAskingReadOnly: StoryObj = {
 };
 
 /**
- * A RUNNING intake (INT4h): one turn, so no message box — the line says why, and where an answer
- * goes if it asks. The door opens the ask to look at; its stop is the page header's (SESSUX1d).
+ * A RUNNING intake: one turn, so no message box — the line says why, and where an answer
+ * goes if it asks. The door opens the ask to look at; its stop is the page header's.
  */
 export const IntakeRunning: StoryObj = {
   render: () => (
@@ -915,7 +915,7 @@ export const IntakeRunning: StoryObj = {
 };
 
 /**
- * The agent's trust question, asked by Daoris for a folder the driver holds (D73): the folder, what
+ * The agent's trust question, asked by Daoris for a folder the driver holds: the folder, what
  * trusting means, what it holds, and the one file written — granted only on the press.
  */
 export const TrustAsking: StoryObj = {
@@ -927,7 +927,7 @@ export const TrustAsking: StoryObj = {
 };
 
 /**
- * A hold on your own sign-in's file (POOL1c, D197 point 3; the account-pool design §4.3): a conversation that began there goes
+ * A hold on your own sign-in's file: a conversation that began there goes
  * on there, and Daoris writes nothing in that file, so the question shows the folder and one sentence, with no grant.
  */
 export const TrustOnYourOwnSignIn: StoryObj = {

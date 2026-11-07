@@ -127,7 +127,7 @@ internal sealed class RoundConsidering(PlanRound round)
         }
 
         // A start of this machine's that has not yet opened its record holds the quest as its session will: the look that began it
-        // no longer waits for it, so a wake meanwhile plans the quest again, and would start it twice.
+        // does not wait for it, so a wake meanwhile plans the quest again, and would start it twice.
         if (round.Opening.Any(start => string.Equals(start.Quest, quest.Id, StringComparison.OrdinalIgnoreCase)))
         {
             return new(quest, StartVerdict.RepositoryBusy,
@@ -229,7 +229,7 @@ internal sealed class RoundConsidering(PlanRound round)
         }
 
         // An answered park already holds its slot among the active: going on, it starts no second session. An ended record holds
-        // none, so going on takes one, as a start does; it was planned first, so it is first to.
+        // none, so going on takes one, as a start does; it is planned first, so it is first to.
         if (!(continuing && snapshot.Active.Any(Itself)))
         {
             if (round.Slots <= 0)

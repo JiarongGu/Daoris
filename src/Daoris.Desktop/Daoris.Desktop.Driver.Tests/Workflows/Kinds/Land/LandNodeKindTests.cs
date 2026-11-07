@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDNODE1a (the land node design §2, §6): <c>land</c> is a built-in kind Daoris performs, reached by the landing record; its options are
+/// <c>land</c> is a built-in kind Daoris performs, reached by the landing record; its options are
 /// each held to their choices; and the graph rules count it as the landing (one landing, its tail, the refusals of automatic).
 /// Declaration and validation only: nothing here performs a landing.
 /// </summary>
@@ -60,7 +60,7 @@ public sealed class LandNodeKindTests
     [Theory]
     [InlineData("""{"method":"merge"}""", null)]
     [InlineData("""{"method":"branch","pattern":"feature/{quest}-{slug}"}""", null)]
-    // G8: a land names no plugin and is none of a push or a pull request; those are the steps after a branch landing.
+    // A land names no plugin and is none of a push or a pull request; those are the steps after a branch landing.
     [InlineData("""{"method":"branch","plugin":"acme.pr","pattern":"x/{quest}"}""", "plugin")]
     [InlineData("""{"method":"pull-request","plugin":"acme.pr"}""", "method")]
     [InlineData("""{"method":"integrate","target":"release/1"}""", null)]
@@ -68,11 +68,11 @@ public sealed class LandNodeKindTests
     [InlineData("""{"method":"rebase"}""", "method")]
     [InlineData("""{"method":"Merge"}""", "method")]
     [InlineData("""{"method":true}""", "method")]
-    // LANDNODE1c2: the Accept is a `review` before the land, so a land saved with the option is held rather than landed with no press.
+    // The Accept is a `review` before the land, so a land saved with the option is held rather than landed with no press.
     [InlineData("""{"method":"merge","accept":"you"}""", "accept")]
     [InlineData("""{"method":"branch","accept":"automatic","pattern":"x/{quest}"}""", "accept")]
     [InlineData("""{"accept":null}""", "accept")]
-    // REVIEW2: only an integrate may name a line other than the tree's; the others land on the tree's line, which a target would only misname.
+    // Only an integrate may name a line other than the tree's; the others land on the tree's line, which a target would only misname.
     [InlineData("""{"method":"merge","target":"release"}""", "target")]
     [InlineData("""{"method":"branch","target":"release","pattern":"x/{quest}"}""", "target")]
     [InlineData("""{"target":"has space"}""", "target")]
@@ -153,7 +153,7 @@ public sealed class LandNodeKindTests
         Assert.Equal("land", Assert.Single(said).Node);
     }
 
-    /// <summary>G8: a pull request is a branch, then a push, then a plugin's performed step; a push stands after the land that made its branch.</summary>
+    /// <summary>A pull request is a branch, then a push, then a plugin's performed step; a push stands after the land that made its branch.</summary>
     [Fact]
     public void A_push_and_a_plugins_pull_request_follow_a_branch_landing_in_order()
     {
@@ -164,7 +164,7 @@ public sealed class LandNodeKindTests
         Assert.Contains(GraphRefusal.LandTail, Codes(Chain(Claimed(), Land("""{"method":"merge"}"""), Node("push", NodeKinds.Push), Line())));
     }
 
-    /// <summary>G8: a land names no plugin, and no method of it pushes or opens a pull request.</summary>
+    /// <summary>A land names no plugin, and no method of it pushes or opens a pull request.</summary>
     [Theory]
     [InlineData("""{"method":"push"}""")]
     [InlineData("""{"method":"pull-request"}""")]
@@ -176,7 +176,7 @@ public sealed class LandNodeKindTests
     }
 
     /// <summary>
-    /// LANDNODE1c2: a land with no review before it lands with no press, a merge and an integrate under any request alike; one with a review
+    /// A land with no review before it lands with no press, a merge and an integrate under any request alike; one with a review
     /// waits for the person's Accept, which the review is wired straight into the land to hold.
     /// </summary>
     [Theory]

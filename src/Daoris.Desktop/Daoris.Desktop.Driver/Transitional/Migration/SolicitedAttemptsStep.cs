@@ -3,9 +3,9 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The helpers' states and the partners' delivery receipts in the shape this build reads (D232; COMMS1b): every hand goes through the keyed
+/// The helpers' states and the partners' delivery receipts in the shape this build reads: every hand goes through the keyed
 /// door, so <c>keyed</c> is taken out. An attempt made before that door has no key to be asked again under, so its moment is set past the
-/// settlement's horizon, which the next look settles as uncertain for the person, as an unkeyed attempt was, never handing it twice.
+/// settlement's horizon, which the next look settles as uncertain for the person, as an unkeyed attempt is, never handing it twice.
 /// </summary>
 public sealed class SolicitedAttemptsStep : IHomeMigrationStep
 {

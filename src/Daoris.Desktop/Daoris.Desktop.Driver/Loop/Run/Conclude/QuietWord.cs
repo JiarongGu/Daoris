@@ -3,14 +3,14 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's one word to a quest session the watcher marked quiet (SESSWATCH1b, D200; the session-watch design §2.1): kept on the record's
+/// Daoris's one word to a quest session the watcher marked quiet: kept on the record's
 /// <c>said</c> through the session's inbox, urgent, under <see cref="DaorisKeys.Watch"/>, once per quiet episode, and taken off again when
 /// the episode ends or the run ends, so a word not yet on the wire never outlives the quiet it speaks of and never becomes a carry-on's
 /// resume. A word already on the wire cannot be called back: its words say only what ran, true whenever they are read. An intake takes
 /// no words, so it gets the mark alone; where the long-call word (<see cref="LongCallLook"/>, found by the same look) already told the same call,
 /// its word is the episode's.
 /// Every door that takes words has one: the protocol door's reaches the agent at its next step, and the native and the text-only doors'
-/// waits for the turn's end, where it is judged by its episode and goes to no turn once the session was heard again.
+/// waits for the turn's end, where it is judged by its episode and goes to no turn once the session is heard again.
 /// </summary>
 public sealed class QuietWord : IDisposable
 {
@@ -36,7 +36,7 @@ public sealed class QuietWord : IDisposable
     }
 
     /// <summary>
-    /// What a long call's session is told (the pipeline design §3.2's fourth layer): the call's title and time, that a suite run whole is the
+    /// What a long call's session is told: the call's title and time, that a suite run whole is the
     /// verification pipeline's, and that Daoris ends nothing.
     /// </summary>
     public static string LongWords(LongCallStep step)
@@ -57,7 +57,7 @@ public sealed class QuietWord : IDisposable
 
     /// <summary>
     /// Keep a long call's word, urgent, as Daoris's, and mark the call told on the rail; a record that went on or a closed inbox is told
-    /// nothing. Daoris never ends the call: a turn is the agent's (DONEEND1), and the person's <i>Stop</i> stays the door.
+    /// nothing. Daoris never ends the call: a turn is the agent's, and the person's <i>Stop</i> stays the door.
     /// </summary>
     public async Task<bool> TellLongAsync(LongCallStep step, CancellationToken ct = default)
     {
@@ -78,10 +78,10 @@ public sealed class QuietWord : IDisposable
         SessionWatch watch, string session, DrivenInbox? inbox, ISaidDoor? door, RunningCalls? calls = null, Action<string>? failed = null) =>
         inbox is null ? null : new QuietWord(watch, session, inbox, door, calls, failed);
 
-    /// <summary>The episodes told so far, with the record's id of each word kept there (none where it was held in this process alone).</summary>
+    /// <summary>The episodes told so far, with the record's id of each word kept there (none where it is held in this process alone).</summary>
     public IReadOnlyDictionary<int, string?> Told => _told;
 
-    /// <summary>The words (§2.1): how long nothing came and what it was inside, what to do, and that Daoris stopped nothing.</summary>
+    /// <summary>The words: how long nothing came and what it is inside, what to do, and that Daoris stopped nothing.</summary>
     public static string Words(QuietStep step)
     {
         var inside = step.Call is { Length: > 0 } call ? $", while your call `{call}` ran"

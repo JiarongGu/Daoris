@@ -5,15 +5,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the service's twin of <see cref="ProviderCensusTests"/>. The
+/// The service's twin of <see cref="ProviderCensusTests"/>. The
 /// service names no driver type, so what can cross is a literal and a key: every site in the service's four production projects that
 /// names a provider's id, variable, file or wire key is counted over the source with its comments blanked, and each is a named exception
-/// in the <c>service</c> section of <c>fixtures/provider-census.json</c>, by file and token (the count is not pinned, CENSUSRULES1), the
-/// design's row that moves it and its class. The ids and the vocabulary are the registrations' own, <see cref="ProviderVocabulary"/>, read
+/// in the <c>service</c> section of <c>fixtures/provider-census.json</c>, by file and token (the count is not pinned), the
+/// row that moves it and its class. The ids and the vocabulary are the registrations' own, <see cref="ProviderVocabulary"/>, read
 /// here in the suite that holds them: the service's tests reference no driver, and the page's generated types are written by no service
 /// gate and tracked by no commit. A change to the service's sources reaches this suite through the service lane's gates.
-/// The service's ordered call readers (<c>Core/Sessions/CallLineage.cs</c>, §3.3) and its open's default (D23's supported default, §6)
-/// are named exceptions with the row or the decision that keeps them.
+/// The service's ordered call readers (<c>Core/Sessions/CallLineage.cs</c>) and its open's default
+/// are named exceptions with the row that keeps them.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class ServiceProviderCensusTests
@@ -173,7 +173,7 @@ public sealed class ServiceProviderCensusTests
             $"expected {token} named in {file}, got: {string.Join(" | ", problems)}");
     }
 
-    /// <summary>A second site in a file that already holds a named one passes, and a named one gone is named: the sites are not counted (CENSUSRULES1).</summary>
+    /// <summary>A second site in a file that already holds a named one passes, and a named one gone is named: the sites are not counted.</summary>
     [Fact]
     public void A_site_added_to_a_named_file_passes_and_one_gone_from_it_is_named_by_the_census()
     {

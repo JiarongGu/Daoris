@@ -4,7 +4,7 @@ import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
 import { LIST_ROW } from './listKeys';
 import { ListMore, ListPane } from './ListPane';
 
-// A view's list pane (D118 §3a, §5), in every state its props reach, beside a stand-in main area so a
+// A view's list pane, in every state its props reach, beside a stand-in main area so a
 // list laid over it reads as it does on the window.
 
 const open = (width: number): ListLayout => ({ mode: 'open', width, beside: width, auto: false });
@@ -84,7 +84,7 @@ export const AtItsLeast: Story = { args: { layout: open(LIST_BOUNDS.sessions.min
 /** At the most it is dragged to. */
 export const AtItsMost: Story = { args: { layout: open(LIST_BOUNDS.sessions.max) } };
 
-/** A view that makes two kinds of thing: the ＋ offers both, its primary first (Quests, FRAME1d). */
+/** A view that makes two kinds of thing: the ＋ offers both, its primary first (Quests). */
 export const TwoKinds: Story = {
   args: {
     name: 'Quests',
@@ -109,7 +109,7 @@ export const Empty: Story = {
   args: { empty: { headline: 'Nothing is running', body: 'Sessions appear here as the driver takes quests and as you open conversations.' } },
 };
 
-/** Nothing in it where the ＋ makes two kinds: each offered by its own name, its primary first (PLUGUI1b). */
+/** Nothing in it where the ＋ makes two kinds: each offered by its own name, its primary first. */
 export const EmptyTwoKinds: Story = {
   args: {
     name: 'Plugins',
@@ -132,7 +132,7 @@ export const WithItsMenu: Story = {
   args: { more: <ListMore label="More actions" items={[{ id: 'try', label: 'Try a folder…' }]} onChoose={() => {}} /> },
 };
 
-/** The list's filters in its ⋯ (FRAME1d): one value among several, then a toggle, each ticked as it stands. */
+/** The list's filters in its ⋯: one value among several, then a toggle, each ticked as it stands. */
 export const WithItsFilters: Story = {
   args: {
     name: 'Quests',

@@ -1,17 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { composeStories } from '@storybook/react-vite';
+import { composeStories } from '../test/composeStories';
 import { useState } from 'react';
 import i18n from '../locales/i18n';
 import { Button, Drawer, Icon, Menu } from '../design/ui';
 import { type Answered, InlineConfirm } from './InlineConfirm';
 import * as stories from './InlineConfirm.stories';
 
-// The one inline confirmation for a destructive act (UXFIX2; the second-opinion review's cross-cutting note), as a molecule:
+// The one inline confirmation for a destructive act, as a molecule:
 // inline, never a modal; its explanation takes the focus on opening and describes the move; the move first, then *Never
 // mind*; Escape and *Never mind* put it down and give the focus back to what opened it; the press keeps it open and waiting
-// until its act answers, a refusal said inside it word for word, and it closes only on success or a cancel. ACCTEDIT1's
+// until its act answers, a refusal said inside it word for word, and it closes only on success or a cancel.
 // `answered.done/refused` is the contract.
 
 const SAYS = 'This removes the quest from the ledger. It cannot be undone.';
@@ -134,14 +134,14 @@ describe('an inline confirmation', () => {
   });
 
   /**
-   * UXFIX2d (seen on the install at 1546 px, dark): a workspace's *Clear history…* near the page's foot opened its ask with
-   * the focus on its explanation, which scrolled only that line into view; its list and both presses stayed below the fold.
+   * A workspace's *Clear history…* near the page's foot must not open its ask with the focus on its explanation alone, which
+   * scrolls only that line into view and leaves its list and both presses below the fold.
    * Opening brings the whole ask into view, nearest edge first, then gives the explanation the focus without scrolling again.
    */
   describe('opens whole in view (UXFIX2d)', () => {
     afterEach(() => { vi.restoreAllMocks(); });
 
-    /** The ask's own scroll into view, and the explanation's focus, each as it was called and in which order. */
+    /** The ask's own scroll into view, and the explanation's focus, each as it is called and in which order. */
     function watch() {
       const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
       const focus = vi.spyOn(HTMLElement.prototype, 'focus');
@@ -223,14 +223,14 @@ describe('an inline confirmation', () => {
   });
 
   /**
-   * UXFIX2d (seen on the install, D161 §2): in a repository's Manage drawer, *Never mind* on the retire ask left the focus on
-   * the drawer's *Close*. The window's press was a script's `click()`, which activates a press without moving the focus, as a
-   * browser that does not focus a clicked button does too; the focus still sat on *Close*, where the drawer put it as it
-   * opened, and the ask took what opened it from the focus alone. `userEvent.click` moves the focus to the press first, as a
-   * pointer does in Chromium, which is why the jsdom tests passed it.
+   * In a repository's Manage drawer, *Never mind* on the retire ask must not leave the focus on the drawer's *Close*. The
+   * window's press is a script's `click()`, which activates a press without moving the focus, as a browser that does not
+   * focus a clicked button does too; the focus still sits on *Close*, where the drawer put it as it opened, so the ask
+   * cannot take what opened it from the focus alone. `userEvent.click` moves the focus to the press first, as a pointer
+   * does in Chromium, so it alone would not show this.
    */
   describe('gives the focus back to the press, whether or not pressing it moved the focus (UXFIX2d)', () => {
-    /** Pressed as a script or such a browser presses it: the click alone, the focus left where it was. */
+    /** Pressed as a script or such a browser presses it: the click alone, the focus left where it sits. */
     const pressOnly = (press: HTMLElement) => fireEvent.click(press);
 
     it('inside a drawer, Never mind gives the focus to the press drawn again, not to the drawer’s Close', async () => {
@@ -305,10 +305,9 @@ describe('an inline confirmation', () => {
   });
 
   /**
-   * UXFIX2c (the second-opinion review, `InlineConfirm.tsx:175`): the press disabled both presses and moved the focus, and
-   * nothing said the act had started. A status there from the first draw says it, politely; the move keeps its name and its
-   * place. Nothing busy holds the status, since a reader may hold back what a busy element says until it is no longer busy,
-   * which is after the act answered and the status went quiet: the waiting presses and the status are the wait's signs.
+   * The press must not disable both presses and move the focus with nothing saying the act has started. A status there from
+   * the first draw says it, politely; the move keeps its name and its place. Nothing busy holds the status, since a reader
+   * may hold back what a busy element says until it stops being busy, which is after the act answers and the status goes quiet: the waiting presses and the status are the wait's signs.
    */
   it('says its act started, politely, inside nothing busy, the move keeping its name', async () => {
     let answered: Answered | undefined;
@@ -337,9 +336,8 @@ describe('an inline confirmation', () => {
   });
 
   /**
-   * UXFIX2c (`InlineConfirm.tsx:163`): landed, the ask gave the focus back only to the press that opened it, which a page
-   * that does not offer a press twice had taken away, so the focus fell to the page's body. It finds the press drawn again,
-   * as a cancel does.
+   * Landed, the ask must not give the focus back only to the press that opened it, which a page that does not offer a press
+   * twice takes away, or the focus falls to the page's body. It finds the press drawn again, as a cancel does.
    */
   it('gives the focus back to the press drawn again once its act lands', async () => {
     const user = userEvent.setup();
@@ -415,7 +413,7 @@ describe('an inline confirmation', () => {
     expect(close).toHaveBeenCalledOnce();
   });
 
-  // IME1: a reason typed through an input method drops its composition on Escape, and the ask is still there.
+  // A reason typed through an input method drops its composition on Escape, and the ask is still there.
   it('stays open on an Escape an input method is composing with in its field, and goes on a plain one', () => {
     const onClose = vi.fn();
     render(
@@ -483,8 +481,8 @@ describe('an inline confirmation', () => {
   });
 
   /**
-   * UXFIX2c (`InlineConfirm.tsx:16`): a refusal kept its line breaks but could not break an unbroken token (a long id, a raw
-   * error), so the token widened its flex or grid item past the main area's 400 px floor. It shrinks with its column and
+   * A refusal keeps its line breaks and breaks an unbroken token (a long id, a raw error) too, or the token widens its flex
+   * or grid item past the main area's 400 px floor. It shrinks with its column and
    * breaks anywhere; the stories draw it at the floor in both themes.
    */
   it('wraps a refusal’s unbroken token inside the main area’s floor', () => {

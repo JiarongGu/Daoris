@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's words continue their session (ANSWER1a, D131; MSG1b, D137 §2.2): the record they wait on goes on itself,
+/// The person's words continue their session: the record they wait on goes on itself,
 /// a park moving <c>awaiting-person</c> → <c>working</c> and an ended record taking the ledger's one move out of an ended
 /// state, its harness's own conversation resumed with the words as its next prompt, where the account, the adapter and the
 /// tree are the same and the door can. Otherwise the words are handed on by <see cref="RunAsync"/>, saying why.
 /// </summary>
 /// <remarks>
-/// <para><b>One record for one harness conversation</b> (D131 §3). A resume reopens the record the words were said to, so
+/// <para><b>One record for one harness conversation</b>. A resume reopens the record the words were said to, so
 /// the page, the log, the review and a teammate see one session going on; a fallback is a new record because it is a new
 /// conversation.</para>
 ///
@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// reason, nothing done, and the words are handed on in the same look.</para>
 /// </remarks>
 /// <param name="driver">
-/// The driver whose run machinery a resumed run goes through (PART10n, D166): the spawn's preparation, the rules handed, the hold
+/// The driver whose run machinery a resumed run goes through: the spawn's preparation, the rules handed, the hold
 /// of the process and the account sayings, as <see cref="DriverOpinions"/> does. The three stores it keeps (the harness's own
 /// conversations, the marks of words that could not go on and the choices of a new session) live in the context, where the
 /// front reads them too.
@@ -91,37 +91,37 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     /// <summary>
     /// Why the words wait: the account, its reset and that its conversation is there, then the door out of the wait. A
     /// taken or open quest's session goes on in a new session at the person's choice; a closed quest's has nothing to carry it
-    /// on by itself, so its door is a conversation with the words (D137 §2.2). Machine-local: it names the account.
+    /// on by itself, so its door is a conversation with the words. Machine-local: it names the account.
     /// </summary>
     internal static string WaitsFor(QuestView quest, PriorSession record, HarnessSelection held) =>
         $"{held.Refusal} {DoorOf(quest, record).Note}";
 
-    /// <summary>The door out of the wait <see cref="WaitsFor"/> says, by code (CONVNOTE2g).</summary>
+    /// <summary>The door out of the wait <see cref="WaitsFor"/> says, by code.</summary>
     internal static Noted DoorOf(QuestView quest, PriorSession record) =>
         quest.Status is "Open" or "Taken" ? ResumeWords.NewSessionDoorOf(record.Session) : ResumeWords.ChatDoorOf(record.Session);
 
     /// <summary>
-    /// Continue the record the person's words wait on, or end it saying why (ANSWER1a, D131 §1–§2; MSG1b, D137 §2.2).
+    /// Continue the record the person's words wait on, or end it saying why.
     /// </summary>
     /// <returns>
-    /// The resumed run, whatever it came to; or null and why not, a park ended where it was still parked, for
-    /// <see cref="RunAsync"/> to hand the words on; and whether the words are already in the record, as a resume that was
+    /// The resumed run, whatever it came to; or null and why not, a park ended while it still stood parked, for
+    /// <see cref="RunAsync"/> to hand the words on; and whether the words are already in the record, as a resume that has been
     /// tried puts them.
     /// </returns>
     /// <param name="account">
-    /// Why the record's own account could not carry the words, where its resume asked for it (MSG1g): the walk's pick carries
+    /// Why the record's own account could not carry the words, where its resume asked for it: the walk's pick carries
     /// them, and the reason says why. Null where its own account runs it, or nobody asked.
     /// </param>
     /// <param name="inSync">
-    /// What the start did with the tree against the line before the words go on (LANDSYNC2, D87's 2026-10-15 amendment point 7), said
-    /// after them: the conversation was handed no instruction it could read it in. Null for nothing to tell.
+    /// What the start did with the tree against the line before the words go on, said
+    /// after them: the conversation holds no instruction it could read it in. Null for nothing to tell.
     /// </param>
     /// <param name="permissions">
-    /// The mode its repository's permission prompts name on its harness now (AUTONOMY1b, D184 point 3), which it goes on under, saying
+    /// The mode its repository's permission prompts name on its harness now, which it goes on under, saying
     /// the change from the setup its record started under; null keeps the adapter's own.
     /// </param>
     /// <param name="treeStands">
-    /// Whether the start found the record's tree there as git lists it (TREEGONE1): false where it is not, whatever folder stands at its
+    /// Whether the start found the record's tree there as git lists it: false where it is not, whatever folder stands at its
     /// place, so the words never go on in one. True leaves the judgement to the disk, as for a tree this home did not open.
     /// </param>
     internal async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> ContinueAsync(
@@ -135,11 +135,11 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         var output = _context.Output;
         var quest = start.Quest;
         AgentDoor? adapter = null;
-        // The agent this start runs on: its record's asked choice's (FOUNDATION1j part ii, D205 point 1), or the one a hand-over named for
-        // the quest (MIXAGENT1a-ii), passed in since starts run side by side and a field would be every start's.
+        // The agent this start runs on: its record's asked choice's, or the one a hand-over named for
+        // the quest, passed in since starts run side by side and a field would be every start's.
         try { adapter = _context.Adapters.Door(agent); } catch (DriverException) { }
 
-        // The person wrote to a record that had ended, so it stays in view whatever comes of it (D137 §2.3): its archive mark
+        // The person wrote to a record that had ended, so it stays in view whatever comes of it: its archive mark
         // goes, and a mark of words it could not take before is past, since these are taken up now.
         if (!park.Parked && park.WordsWaiting)
         {
@@ -147,7 +147,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Marks.Clear(park.Session);
         }
 
-        // FOUNDATION1i path 1: whether the words go on in the record's own conversation is the course's answer, read over the judge's reason.
+        // Whether the words go on in the record's own conversation is the course's answer, read over the judge's reason.
         var kept = _context.Conversations.Read(park.Session);
         var why = adapter is null
             ? null
@@ -157,7 +157,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             park, quest.Status, why?.Code ?? (adapter is not null && kept is null ? ContinueWhy.Unkept : null), agentGone: adapter is null);
         _driver.Decided?.Invoke(course);
 
-        // 🔴 SESSCTX1c (D189's amendment): an adapter no longer here proves nothing of the conversation, and only the person can choose
+        // 🔴 An adapter that is gone proves nothing of the conversation, and only the person can choose
         // the agent it goes on with, so the record waits as it is, a park still parked, its words unmarked, saying so with the hand-over's
         // offer. Never a park ended for a carry-on that could not start on that agent either.
         if (adapter is null)
@@ -178,8 +178,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             return (null, reason, false);
         }
 
-        // The park holds its tree in the ledger the whole time (D51), so a replay already sees it in use (LEFT2). An ended
-        // record holds it again only once the ledger moves it to working, so its starting hold is kept until then (MSG1b).
+        // The park holds its tree in the ledger the whole time, so a replay already sees it in use. An ended
+        // record holds it again only once the ledger moves it to working, so its starting hold is kept until then.
         if (park.Parked) starting?.Dispose();
 
         var sessionId = park.Session;
@@ -192,24 +192,24 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             ReadsAcross = across.Reads,
             WritesAcross = across.Writes,
             Session = sessionId,
-            // It goes on under the permission prompts standing now, on either door and in each run after (AUTONOMY1b).
+            // It goes on under the permission prompts standing now, on either door and in each run after.
             Access = permissions,
         };
-        // Another agent's findings among the words (XAGENT1e, D155 point 7): said as that agent's, and answered with the one
+        // Another agent's findings among the words: said as that agent's, and answered with the one
         // tool they need, which the person's rules may not name.
         var findings = park.Findings.Count > 0;
-        // A helper's answer (MIXAGENT2a-ii) is another agent's claim too: said as its, never as the person's.
+        // A helper's answer is another agent's claim too: said as its, never as the person's.
         var helper = park.Helpers.Count > 0;
         var persons = park.Waiting.Any(word => word.Persons);
-        // Daoris's own words (COWORK1b): a reopen told, a step's go-on, said as Daoris's, never as the person's.
+        // Daoris's own words: a reopen told, a step's go-on, said as Daoris's, never as the person's.
         var daoris = park.Waiting.Any(word => word.Daoris);
         var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
 
-        // 🔴 SAIDBACK1e (D137 §2.4): the ledger's move to working comes before the words are read and the run is spawned, so a
+        // 🔴 The ledger's move to working comes before the words are read and the run is spawned, so a
         // word taken back between the look and the move never goes (Continuations.HandedAfterMove). A park's note is replaced
-        // while it works; an ended record's keeps what ended it and says it goes on (MSG1b), with another agent's findings where
-        // those are all it goes on with (XAGENT1e), never "your words".
-        // SUPERVISOR1a-i (the supervisor design §6.1): a park's note follows who answered, never "your answer" where none of the owner's
+        // while it works; an ended record's keeps what ended it and says it goes on, with another agent's findings where
+        // those are all it goes on with, never "your words".
+        // A park's note follows who answered, never "your answer" where none of the owner's
         // words wait.
         var workingNote = park.Parked
             ? persons || Continuations.AuthorsOf(park.Waiting) is not { Count: > 0 } others ? Continuations.WorkingNoted
@@ -218,7 +218,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             : helper && !persons ? Continuations.GoingOnWithHelperNoted
             : daoris && !persons ? Continuations.GoingOnWithDaorisNoted
             : Continuations.GoingOnNoted;
-        // 🔴 SUPERVISOR1a-i (D208; the supervisor design §6.3): the move is admitted under the session's decision lock. A held decision
+        // 🔴 The move is admitted under the session's decision lock. A held decision
         // moves nothing; a released one's word is named in `expect` with the record required still parked, and the move draws a
         // single-use ticket; every other move names none, so a supervisor's word the look did not admit refuses it (`words-changed`).
         SupervisorTicket? ticket;
@@ -246,7 +246,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         catch (DriverException refused)
         {
             starting?.Dispose();
-            // Every word taken back before it moved: an ended record with none waiting does not move (MSG1a), and nothing holds it.
+            // Every word taken back before it moved: an ended record with none waiting does not move, and nothing holds it.
             if (await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false) is { Running: false, Waiting.Count: 0 })
             {
                 return (TakenBackFirst(quest, sessionId), null, false);
@@ -257,13 +257,13 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             return (new StartRun($"held  #{quest.Id} → {quest.To}: {refused.Message}", false, null, refused.Message), null, false);
         }
 
-        // COWORKVIEW1a: its process's token and `start` as its move returns, before the tree lock and the start gate; let go wherever
+        // Its process's token and `start` as its move returns, before the tree lock and the start gate; let go wherever
         // no process is spawned under it.
         var proc = ChildLineage.Opened(home, sessionId);
-        // Whether its process started: a failure before then started no run, so the record goes back with its words (SAIDBACK1e),
-        // and so does the driver's close before then (PARALLEL1f).
+        // Whether its process started: a failure before then started no run, so the record goes back with its words,
+        // and so does the driver's close before then.
         var spawned = false;
-        // TREELOCK1 (D51's note): its tree locked in its name again while it goes on, a park's kept from its run before, asked before
+        // Its tree locked in its name again while it goes on, a park's kept from its run before, asked before
         // the starting hold goes, as a start's is. Never a reason to hold it.
         var locksTree = _context.Trees.Holds(workTree);
         try
@@ -273,18 +273,17 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 _driver.Log?.Warn("tree.unlocked", ("session", sessionId), ("why", unlocked));
             }
 
-            // The ledger holds its tree again (LEFT2).
+            // The ledger holds its tree again.
             starting?.Dispose();
 
-            // Under permission prompts changed since it started it says so first, with the mode it got (AUTONOMY1b, D183 point 3 as
-            // HELPMODE1a2 says Ask Daoris's). Its record keeps the setup it opened under.
+            // Under permission prompts changed since it started it says so first, with the mode it got.
+            // Its record keeps the setup it opened under.
             if (permissions is not null && DrivenAccess.GoingOnNote(park, permissions) is { } changed)
             {
                 _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = changed }, say: null);
             }
 
-            // AUTONOMY1b2 (D184 point 1): and its record names the setup this run goes on under, before anything is spawned, as Ask
-            // Daoris's record names its mode (HELPMODE1a2). A refusal is said on its console; the run goes on, since the setup it runs
+            // Its record names the setup this run goes on under, before anything is spawned. A refusal is said on its console; the run goes on, since the setup it runs
             // under is already set.
             if (permissions is not null)
             {
@@ -306,15 +305,15 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
 
         ResumeAsk? resume = null;
-        // The stop made of it before a close cut its conclusion off, told as its run lets go (FLAKE3).
+        // The stop made of it before a close cut its conclusion off, told as its run lets go.
         SessionStop? stoppedFirst = null;
-        // TREELOCK1: whether its record still holds its tree as the run ends.
+        // Whether its record still holds its tree as the run ends.
         var holdsTree = false;
         try
         {
-            // Every word waiting once it moved, as the move left them (SAIDBACK1d): none can be taken back from a record that runs.
+            // Every word waiting once it moved, as the move left them: none can be taken back from a record that runs.
             var again = await ReadAgainAsync(service, sessionId, ct).ConfigureAwait(false);
-            // SUPERVISOR1a-i (§6.1, §6.3): a supervisor's word is handed only where it is the ticket's; with a ticket, a re-read that
+            // A supervisor's word is handed only where it is the ticket's; with a ticket, a re-read that
             // failed or no longer holds its word is not-handed, the park restored less it.
             if (ticket is { } admittedFirst && (again is null || !again.Waiting.Any(word => word.Id == admittedFirst.Word)))
             {
@@ -323,7 +322,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             var words = Continuations.Ticketed(Continuations.HandedAfterMove(park.Waiting, again), ticket);
             if (words.Count == 0) return await PutBackAsync(quest, park).ConfigureAwait(false);
-            // PARKVIEW1 (Fable's read, Q4): a word pressed as an answer of its park's question carries the mark it was shown under, so it
+            // A word pressed as an answer of its park's question carries the mark shown with it, so it
             // is handed as that answer chosen and recorded as one.
             words = Continuations.Ticketed(Continuations.Marked(words, _context.Events.ChoicesOf(sessionId)), ticket);
             // The ticket's word is handed as the paragraph composed from the decision in memory, never its stored text; the ticket spent.
@@ -337,18 +336,18 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 words = [.. words.Select(word => word.Id == handing.Word ? word with { Text = paragraph } : word)];
             }
 
-            // Each word's files where they were kept as it was said (MSG1d3, D137 §2.4), handed with the words; what its start did with
-            // its tree against the line first after them (LANDSYNC2), since that is where its next commit goes.
+            // Each word's files where they are kept as they are said, handed with the words; what its start did with
+            // its tree against the line first after them, since that is where its next commit goes.
             var after = await ResumedAfterAsync(service, sessionId, target.Language, ct).ConfigureAwait(false);
-            // CONTEXTDRIVE1b (§3 point 2): Daoris's count for its line, where one moved or stands near what Daoris does on it, last.
+            // Daoris's count for its line, where one moved or stands near what Daoris does on it, last.
             var counted = CountTexts.GoOn((await LineCountsRead.FactsAsync(service, home, sessionId, ct).ConfigureAwait(false)).Counts);
             resume = new ResumeAsk(
                 kept.Conversation, words,
-                // HELPERWAIT1: a helper's answer handed beside the person's at this look is among the words, though not among the look's.
+                // A helper's answer handed beside the person's at this look is among the words, though not among the look's.
                 Continuations.OpeningNoted(
                     adapter.Id.Value, selection.Version, park.DoorVersion, answer: park.Parked, findings, persons,
                     helper || words.Any(word => word.Helper is not null), daoris, words.Any(word => word.Supervisors)),
-                // Where its go-aheads changed since it started (AUTONOMY1c), told after the rest, since its instruction is not handed again.
+                // Where its go-aheads changed since it started, told after the rest, since its instruction is not handed again.
                 Continuations.AfterWords(
                     Continuations.AfterWords(
                         Continuations.AfterWords(inSync, after),
@@ -362,7 +361,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 ? null
                 : _context.Adapters.Resume(adapter, SpawnRequests.Of(target, config.Commands.GetValueOrDefault(adapter.Id.Value)) with { Resume = kept.Conversation });
             var (info, harnessNotice) = _driver.Prepare(adapter, target, selection, prepared);
-            // A set-up step going on with the person's words shows it again in its own tab (REVIEWENV1d, design §3.4): opened
+            // A set-up step going on with the person's words shows it again in its own tab: opened
             // again where the person closed it, and brought forward. Said, never held, where it will not open: the words go on.
             var tabNotice = quest.SetUpIn is not null && _driver.Reviews is { } desk
                             && ReviewSetUps.Environment(config, quest, start.Workspace) is { } shownIn
@@ -374,14 +373,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             _context.Hooks?.Log.Served(_context.Catalog, sessionId, servers);
             var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
             var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
-            // HELPPLUG1b (D170 point 4): the skills plugins hand sessions, as its first run was handed them, gone with this run.
+            // The skills plugins hand sessions, as its first run gets them, gone with this run.
             var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
-            // FABRIC-PIPELINE1b (D192 point 5): it goes on under the checks its repository sets now, as it goes on under the prompts
+            // It goes on under the checks its repository sets now, as it goes on under the prompts
             // standing now: their deny rules handed again where its agent takes Daoris's rules, and kept by its id for `run-heavy` while
             // this run lasts. Its instruction is not handed again, so its words are its first start's.
-            // A named workflow's run takes its bound version's (FABRIC-PIPELINE1b2), so it is read wherever a run here is bound to one; a
-            // graph version's `callMinutes` is kept beside them, as its first start kept it (FABRIC-PIPELINE1b3).
+            // A named workflow's run takes its bound version's, so it is read wherever a run here is bound to one; a
+            // graph version's `callMinutes` is kept beside them, as its first start kept it.
             var process = SessionChecks.For(config, quest.To) is null && !WorkflowRunBindings.AnyNamed(home, quest.To)
                 ? null
                 : await WorkflowProcesses.ReadAsync(
@@ -396,7 +395,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
 
             onOpened();
             var openedAt = DateTimeOffset.UtcNow;
-            // PARKVIEW1 (the park's ask design §2; Fable's read, Q2): the park's question is over as its record goes on, so a press another
+            // The park's question is over as its record goes on, so a press another
             // window still shows it with is refused as changed at once; one the disk keeps is logged.
             _driver.Questions(sessionId, new QuestionFiles(_context.Home).Clear(sessionId));
             _context.Runs.Live[quest.Id] = sessionId;
@@ -410,14 +409,14 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 handedPlan: connectors,
                 drivesBrowser: drivesBrowser,
                 // A resumed run is on the account it parked on, so what it says about that account's windows is kept
-                // as any run's is (TOOL6c with ANSWER1a).
+                // as any run's is.
                 said: _driver.Said(adapter, selection, sessionId), limits: _driver.NativeLimit(adapter),
                 resume: resume,
                 goesOnAs: selection,
-                // BGWAIT1b: a resumed run waits on its own background work as a start does, by the same judgement; where its
-                // quest was closed as the look planned it, never (D83, D105 §3, D137 §2.3).
+                // A resumed run waits on its own background work as a start does, by the same judgement; where its
+                // quest is closed as the look planned it, never.
                 waitsOnBackground: SessionWaits.OnBackground(service, quest, sessionId, resumed: true),
-                // LANDBACK1 part 3: a closed quest's resume is carried on once; where it is the person's Accept's own carry-on (the session's
+                // A closed quest's resume is carried on once; where it is the person's Accept's own carry-on (the session's
                 // yes is kept), the Accept's count bounds it and the run carries nothing on.
                 carriesOn: SessionWaits.CarriesOn(
                     service, quest, workTree, resumed: true, () => _context.Processes.StopMade(sessionId) is not null,
@@ -428,32 +427,32 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
                 spawned: () =>
                 {
                     spawned = true;
-                    // SUPERVISOR1a-i (§6.3): went-on at the spawn of the run built with the ticket's word, at that moment.
+                    // Went-on at the spawn of the run built with the ticket's word, at that moment.
                     if (ticket is { } went) _ = _context.Supervisor.WentOnAsync(went, DateTimeOffset.UtcNow, CancellationToken.None);
                 },
-                // MODELROLE1c2 (D205 §3.5(a)): a resume keeps its asked choice and never moves to another, so a refusal at the open ends the
+                // A resume keeps its asked choice and never moves to another, so a refusal at the open ends the
                 // open and puts the record back (ConcludeResumedAsync); what the open lists is kept as its account's reading.
                 offers: new OpenOffers(selection.Version, selection.Profile, _ => Task.FromResult<(ActorAsked Asked, string Choice)?>(null)),
-                // AGENTERRORS1a (D210 §5.1, §5.5): a continuation of a driven quest session is tried again as its start is, read against
-                // the quest as the look planned it, so a closed quest's word and an answered question's resume are this run's (finding 5).
+                // A continuation of a driven quest session is tried again as its start is, read against
+                // the quest as the look planned it, so a closed quest's word and an answered question's resume are this run's.
                 transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, quest.Status, quest.Awaits, retryCt),
                 conclude: (exitCode, used, turnFailed, ended) =>
                     _conclusion.ConcludeResumedAsync(quest, park, adapter, selection, resume, workTree, transcript, before, exitCode, used, turnFailed, ended,
                         openedAt, ct))
                 .ConfigureAwait(false);
-            // A record that parked again, or goes on at the next look, still holds its tree (TREELOCK1).
+            // A record that parked again, or goes on at the next look, still holds its tree.
             holdsTree = run is { Opened: true, Ended: null };
             return (run, refusedWhy, resume.Spoken);
         }
         catch (Exception error) when (!spawned && ticket is not null)
         {
-            // 🔴 SUPERVISOR1a-i (§6.3): every failure between the admission and the wire, the driver's close among them, is not-handed:
-            // nothing was spawned with the supervisor's word, and the park is restored with its queue less that word.
+            // 🔴 Every failure between the admission and the wire, the driver's close among them, is not-handed:
+            // nothing is spawned with the supervisor's word, and the park is restored with its queue less that word.
             return await NotHandedAsync(quest, park, ticket, error is OperationCanceledException ? "closed" : "unstarted").ConfigureAwait(false);
         }
         catch (Exception error) when (!spawned && !(error is OperationCanceledException && ct.IsCancellationRequested))
         {
-            // 🔴 SESSCTX1c (D189's amendment, the session-context design §2): no run started, so this is a start failure, never a move.
+            // 🔴 No run started, so this is a start failure, never a move.
             // The record ends `failed` as a first start's failed spawn does, counted by the strikes, its words waiting on it to go again;
             // nothing is handed on and no part opens for it.
             return await UnstartedAsync(
@@ -462,17 +461,17 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested && !spawned && !park.Parked)
         {
-            // 🔴 PARALLEL1f (D181's PARALLEL1de note, D137 §2.4): the driver closed before its run started, most often while its start
+            // 🔴 The driver closed before its run started, most often while its start
             // waited for a place. No run began, so the record the move took up goes back as it ended with its words waiting, and the
             // next start goes on with them; nothing is handed on, since no session opens as the driver closes. A park is closed below
-            // as the close's interrupted take (D104): back to waiting on the person the ledger would clear its words (a park asks
+            // as the close's interrupted take: back to waiting on the person the ledger would clear its words (a park asks
             // anew), while closed they stay on it for the next start.
             return await PutBackAsync(quest, park, unsent: ClosedFirst(quest, sessionId)).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // The driver is closing under it (D104): an interrupted take, carried on at the next start. Unless a stop came first,
-            // whose record it is, never interrupted, as a first run's close reads it (FLAKE3).
+            // The driver is closing under it: an interrupted take, carried on at the next start. Unless a stop came first,
+            // whose record it is, never interrupted, as a first run's close reads it.
             var (closed, interrupted) = Observation.Closed(stoppedFirst);
             try
             {
@@ -503,7 +502,7 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         catch (Exception error)
         {
             // Failed once its process started: a failure, which the strikes bound. Where the ledger refuses that move, the record
-            // moved on first, and the next look reads it as it now is. SESSCTX1c: never a park ended for a fallback here, since a run
+            // moved on first, and the next look reads it as it now is. Never a park ended for a fallback here, since a run
             // that failed is no refusal of its conversation.
             try
             {
@@ -521,33 +520,33 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
         }
         finally
         {
-            // COWORKVIEW1a: a run put back before its spawn, or whose spawn made none, tells its token so.
+            // A run put back before its spawn, or whose spawn made none, tells its token so.
             if (!spawned) LineageTokens.Current.Unspawned(proc);
             output?.Close(sessionId);
-            // A resume that was tried lets the starting hold go however it ended, so a carry-on takes it again (LEFT2).
+            // A resume that has been tried lets the starting hold go however it ended, so a carry-on takes it again.
             starting?.Dispose();
-            // TREELOCK1: the session lets go of its tree however this run ended, on no token, unless its record still holds it. A
+            // The session lets go of its tree however this run ended, on no token, unless its record still holds it. A
             // carry-on into the same tree takes the lock in its own name.
             if (locksTree && !holdsTree) await SessionLocks.LetGoAsync(workTree, sessionId, CancellationToken.None).ConfigureAwait(false);
         }
     }
 
     /// <summary>
-    /// What a resumed run handed another agent's findings is given beside the person's rules (XAGENT1e, D155 point 7): the
-    /// connector's <c>opinion_answer</c>, which no default names. Without it the harness would ask, and every ask is refused
-    /// (D52), so the session could check every finding and answer none. A deny the person wrote still wins (D72).
+    /// What a resumed run handed another agent's findings is given beside the person's rules: the
+    /// connector's <c>opinion_answer</c>, which no default names. Without it the harness would ask, and every ask is refused,
+    /// so the session could check every finding and answer none. A deny the person wrote still wins.
     /// </summary>
     internal static IReadOnlyList<string> AnswersFindings => KnowledgeConnector.AnswersFindings;
 
     /// <summary>
-    /// What a resumed run's turn carries after the person's words: the answers to the go-aheads its session asked (KNOWUSE1a,
-    /// D135 §2), read from its quest's ask as the run takes the record up, since its conversation was handed the ask's at its
-    /// start and is told the answers after the words; then the work's session language where one is set (LANG1c), since it
-    /// may have changed since the conversation was handed it. Unread, or on no ask, nothing of the go-aheads; none set, and
+    /// What a resumed run's turn carries after the person's words: the answers to the go-aheads its session asked, read from its
+    /// quest's ask as the run takes the record up, since its conversation got the ask's at its
+    /// start and is told the answers after the words; then the work's session language where one is set, since it
+    /// may have changed since the conversation got it. Unread, or on no ask, nothing of the go-aheads; none set, and
     /// no language line.
     /// </summary>
     /// <remarks>
-    /// <b>A park its go-aheads' answers woke</b> (GOAHEAD2) holds the blank answer the service keeps for one, and its turn is
+    /// <b>A park its go-aheads' answers woke</b> holds the blank answer the service keeps for one, and its turn is
     /// that, then this: each go-ahead it asked, which, approved or refused, and the person's words, quoted as theirs.
     /// </remarks>
     internal static async Task<string> ResumedAfterAsync(
@@ -558,23 +557,23 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The folder a resumed run is handed a read of for the files said with its words (MSG1d3, D137 §2.4): the session's own
+    /// The folder a resumed run is handed a read of for the files said with its words: the session's own
     /// files folder, outside its tree, where any word it goes on with carries a kept file; null where none does. A read of
-    /// exactly that folder, INT4j's rule, as a conversation is handed its own (CONV4c): every other read there would be
-    /// asked, and every ask is refused (D52).
+    /// exactly that folder, as a conversation is handed its own: every other read there would be
+    /// asked, and every ask is refused.
     /// </summary>
     internal static string? SaidFilesFolder(string home, string sessionId, ResumeAsk resume) =>
         resume.Files.Count > 0 ? ChatFiles.Folder(home, sessionId) : null;
 
     /// <summary>
-    /// The record a fallback goes on from, its words as they stand now (SAIDBACK1f, <see cref="Continuations.HandedOn"/>): the
+    /// The record a fallback goes on from, its words as they stand now (<see cref="Continuations.HandedOn"/>): the
     /// look's words may have been taken back since, and one taken back must never reach an agent.
     /// </summary>
     internal async Task<PriorSession> HandedOnRecordAsync(PriorSession look, CancellationToken ct) =>
         look.Parked ? look : Continuations.HandedOn(look, await ReadAgainAsync(_context.Service, look.Session, ct).ConfigureAwait(false));
 
     /// <summary>
-    /// The waited quest's result counts on the line a resume carries on (COMMS1g, the comms design §11), reserved before the run is handed
+    /// The waited quest's result counts on the line a resume carries on, reserved before the run is handed
     /// it and once however often the start is tried. Nothing here holds the start.
     /// </summary>
     internal async Task WaitedAsync(PriorSession resumes, string answered, PriorSession? handsOn, CancellationToken ct) =>
@@ -582,8 +581,8 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
             resumes, answered, handsOn?.Waiting ?? [], await AnswersAloneHold.RecordsAsync(_context.Service, ct).ConfigureAwait(false));
 
     /// <summary>
-    /// The record a resume (D79) hands words on from (SAYHELD1, A): the session that asked and ended waiting, as it stands now
-    /// (SAIDBACK1f), where any word it is handed waits on it (<see cref="HandedToResume"/>); null where none does. A resume opens a new
+    /// The record a resume hands words on from: the session that asked and ended waiting, as it stands now,
+    /// where any word it is handed waits on it (<see cref="HandedToResume"/>); null where none does. A resume opens a new
     /// session handed the answer, so the words said to the asker meanwhile go there, or they would wait on a record no look takes up
     /// again (<see cref="WordsNever.Superseded"/>).
     /// </summary>
@@ -595,9 +594,9 @@ internal sealed class DriverContinuations(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The words a resume is handed from the session that asked (SAYHELD1): the person's, and Daoris's own, said as Daoris's, since the
-    /// resume starts anyway and Daoris's never starts one by itself (COWORK1b). Another agent's findings and a helper's answer go to the
-    /// person instead, as any new session's do (XAGENT1e, MIXAGENT2a-ii).
+    /// The words a resume is handed from the session that asked: the person's, and Daoris's own, said as Daoris's, since the
+    /// resume starts anyway and Daoris's never starts one by itself. Another agent's findings and a helper's answer go to the
+    /// person instead, as any new session's do.
     /// </summary>
     internal static bool HandedToResume(SaidWordView word) => word.Persons || word.Daoris;
 

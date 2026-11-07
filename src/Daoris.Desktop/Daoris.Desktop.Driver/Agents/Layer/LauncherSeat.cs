@@ -3,8 +3,8 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a start hands its <see cref="LauncherRunner"/> of Daoris's own (the agent-lyntai design §5.5): the launcher's arguments containment
-/// reads (its kind, class, home and log), the environment its shell composed before the layer's door was registered, and where its process
+/// What a start hands its <see cref="LauncherRunner"/> of Daoris's own: the launcher's arguments containment
+/// reads (its kind, class, home and log), the environment its shell composed before the layer's door is registered, and where its process
 /// and its raw lines go: the process registered so a stop is Daoris's kill of the tree and the watch hears it, each raw line stamped before
 /// any reader takes it, and the lines its harness says outside a frame and on stderr kept as the transcript's lines and its own words.
 /// </summary>

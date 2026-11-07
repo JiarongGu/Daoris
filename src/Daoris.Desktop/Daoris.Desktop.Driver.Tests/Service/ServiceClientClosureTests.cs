@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1b: the driver's client for a closure graph (the fabric events design §E5; FABRIC-CLOSE1a and CLOSE1e's notes in D173). A
+/// The driver's client for a closure graph. A
 /// quest's <c>closure</c> and <c>submission</c> read, absent from a host before them; an evidence verdict on a submitted quest naming its
 /// submission; the bind, the close and its refusals by their code (<c>key-reused</c> and a replayed refusal among them); and the handshake.
-/// Runs no process: the fast half (MOD8).
+/// Runs no process: the fast half.
 /// </summary>
 public sealed class ServiceClientClosureTests
 {
@@ -57,7 +57,7 @@ public sealed class ServiceClientClosureTests
     }
 
     /// <summary>
-    /// FABRIC-WORKFLOW2d: a step's source (FABRIC-CLOSE1c's <c>grewFrom</c>) and the reopen standing on it (<c>sourceReopened</c>), each a
+    /// A step's source (<c>grewFrom</c>) and the reopen standing on it (<c>sourceReopened</c>), each a
     /// submission's machine and sequence; absent from a step a done published and from a host before them, and none where named in half.
     /// </summary>
     [Fact]
@@ -148,7 +148,7 @@ public sealed class ServiceClientClosureTests
         var submission = body.RootElement.GetProperty("submission");
         Assert.Equal(("desk", 41L), (submission.GetProperty("machine").GetString(), submission.GetProperty("sequence").GetInt64()));
 
-        // As a quest answers it back: the submission it was read for, read as written.
+        // As a quest answers it back: the submission it is read for, read as written.
         using var quest = JsonDocument.Parse($$"""{ "evidence": {{named.Json()}} }""");
         Assert.Equal(new QuestSubmissionRef("desk", 41), EvidenceVerdict.Read(quest.RootElement)!.Submission);
     }
@@ -220,7 +220,7 @@ public sealed class ServiceClientClosureTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1v: the door's scope checks, a quest of another repository, of no chain the close's quest grew from, or bound to another
+    /// The door's scope checks, a quest of another repository, of no chain the close's quest grew from, or bound to another
     /// graph, are its own coded refusals, so each settles the close as refused, whether sent or asked after, and it is not sent again.
     /// </summary>
     [Theory]
@@ -242,7 +242,7 @@ public sealed class ServiceClientClosureTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1u: what became of a close is asked at its own door with the close as it was sent, and read as a close is: its first outcome,
+    /// What became of a close is asked at its own door with the close as sent, and read as a close is: its first outcome,
     /// or refused <c>withdrawn</c> where the door never took the key, which the close door says too of a send of that key arriving after. A
     /// host before the question answers it as no door of its own, so the close stays unknown.
     /// </summary>
@@ -277,7 +277,7 @@ public sealed class ServiceClientClosureTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1l, the review's finding 7: an answer that is not the close door's own coded refusal proves nothing about whether its
+    /// An answer that is not the close door's own coded refusal proves nothing about whether its
     /// transaction committed (a proxy's 503 page, the host's 500, a bare 404 from a host restarting, a 409 naming no check), so the close is
     /// unknown, thrown as the host not answering, and the closer sends the same close again.
     /// </summary>
@@ -296,7 +296,7 @@ public sealed class ServiceClientClosureTests
 
     [Theory]
     [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": true }""", true)]
-    // CLOSECAP1: a host from before the outcome door answers closure alone, and binds nothing.
+    // A host from before the outcome door answers closure alone, and binds nothing.
     [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true }""", false)]
     [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": false }""", false)]
     [InlineData("""{ "semantic": false, "tier": "lexical only", "closeOutcome": true }""", false)]
@@ -309,7 +309,7 @@ public sealed class ServiceClientClosureTests
         Assert.Equal(knows, await client.KnowsClosureAsync());
     }
 
-    /// <summary>FABRIC-CLOSE1i: a host judges a bind through a remote only where it says `closeRemote` beside the closure handshake's two.</summary>
+    /// <summary>A host judges a bind through a remote only where it says `closeRemote` beside the closure handshake's two.</summary>
     [Theory]
     [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": true, "closeRemote": true }""", true)]
     [InlineData("""{ "semantic": false, "tier": "lexical only", "closure": true, "closeOutcome": true }""", false)]

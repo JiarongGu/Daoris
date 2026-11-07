@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>connect</c>, <c>retire</c>, <c>wire</c> and <c>import</c> say (ONEWAY1u, D194 point 6): one words function per verb over the
+/// What <c>connect</c>, <c>retire</c>, <c>wire</c> and <c>import</c> say: one words function per verb over the
 /// operation's result, the lines the TypeScript verbs said (<c>fixtures/driver-registry-text.json</c>), and the dry run's, which sends
 /// nothing.
 /// </summary>

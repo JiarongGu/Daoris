@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPNEWCHAT1 (the owner's report, 2026-10-24): *New conversation* finishes Ask Daoris's running conversation, which winds up
-/// before its run ends, and a start in that time was handed it as running, carried on: the new conversation's first words went
-/// back into the one finished. A finished conversation is marked until its run ends, so a start never carries it on, and a start
+/// *New conversation* finishes Ask Daoris's running conversation, which winds up
+/// before its run ends; a start in that time must not be handed it as running and carried on, or the new conversation's first words
+/// go back into the one finished. A finished conversation is marked until its run ends, so a start never carries it on, and a start
 /// waits a bounded moment for it to end. A fake door, so nothing is spawned.
 /// </summary>
 public sealed class HelpFinishingTests : IDisposable

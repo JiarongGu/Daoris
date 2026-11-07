@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>Why a door to a helper's record refused (MIXAGENT2a-ii) — or <see cref="None"/> when it did what was asked.</summary>
+/// <summary>Why a door to a helper's record refused, or <see cref="None"/> when it did what the caller asked.</summary>
 public enum HelperRefusal
 {
     None,
@@ -14,36 +14,36 @@ public enum HelperRefusal
     /// <summary>A part that is not one: a blank, or a session that cannot be what it is named as.</summary>
     BadShape,
 
-    /// <summary>The helper's tree is held by another session: one session per working tree (D51).</summary>
+    /// <summary>The helper's tree is held by another session: one session per working tree.</summary>
     Busy,
 
-    /// <summary>The answer was handed already, or the helper does not serve this session.</summary>
+    /// <summary>The answer is handed already, or the helper does not serve this session.</summary>
     NotHanded,
 
     /// <summary>The asking session cannot take words now: running, parked, stood down, a teammate's, an intake or a reviewer.</summary>
     CannotTake,
 }
 
-/// <param name="Refusal"><see cref="HelperRefusal.None"/> when the door did what was asked.</param>
+/// <param name="Refusal"><see cref="HelperRefusal.None"/> when the door did what the caller asked.</param>
 /// <param name="Message">The whole answer, phrased once here for every door.</param>
 public sealed record HelperOutcome(HelperRefusal Refusal, string Message)
 {
-    /// <summary>The helper's record a pass opened, or the asker's record the answer was handed to.</summary>
+    /// <summary>The helper's record a pass opened, or the asker's record the answer is handed to.</summary>
     public Session? Session { get; init; }
 
-    /// <summary>The word the answer waits in on the asker's record, when it was handed.</summary>
+    /// <summary>The word the answer waits in on the asker's record, when it is handed.</summary>
     public SaidWord? Word { get; init; }
 
     /// <summary>
-    /// The hand was answered <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5): its key's word left a record of the asker's line within the
-    /// horizon, and this names that record. Its own terminal kind, never a word: nothing was kept now, and <see cref="Session"/> and
+    /// The hand is answered <b>settled</b>: its key's word left a record of the asker's line within the
+    /// horizon, and this names that record. Its own terminal kind, never a word: nothing is kept now, and <see cref="Session"/> and
     /// <see cref="Word"/> are null. Only a hand that asked for it (<c>settled</c>) is answered so.
     /// </summary>
     public string? SettledOn { get; init; }
 
     /// <summary>
-    /// The answer was waiting already (COMMS1b): <see cref="Session"/> holds it and <see cref="Word"/> is it, so the caller dispatches it
-    /// there before it marks the ask handed. Nothing was kept now.
+    /// The answer is waiting already: <see cref="Session"/> holds it and <see cref="Word"/> is it, so the caller dispatches it
+    /// there before it marks the ask handed. Nothing is kept now.
     /// </summary>
     public bool Waiting { get; init; }
 }
@@ -63,7 +63,7 @@ public sealed record HelperOpen(string Asker, string Door, string Tree)
 }
 
 /// <summary>
-/// The judgement over a helper's record and its answer's return (MIXAGENT2a-ii, D163 point 2; the mixed agents design §3): one
+/// The judgement over a helper's record and its answer's return: one
 /// implementation for the local host's two doors the driver calls, as <see cref="OpinionDesk"/> is for a second opinion. It
 /// opens a read-only helper's record, a chat that serves the asking session and no quest, in a clone of its own; and hands the
 /// helper's answer to the asker as a said word marked as the helper's, never the person's. Whether the rule allows a helper, how
@@ -99,7 +99,7 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
                 asker.Opinion is { } reads ? $"Session `{asker.Id}` reads another session's work for second opinion `{reads}`, and a reviewer cannot ask for a helper"
                 : asker.Serves is { } serves ? $"Session `{asker.Id}` is a helper for session `{serves}`, and a helper cannot ask for a helper"
                 : asker.Ask is { } ask ? $"Session `{asker.Id}` is the intake for ask `#{ask}`, and an intake cannot ask for a helper"
-                // FOUNDATION1q (D203 point 6): the store's own guard, held to the driver's start layer by fixtures/helper-askers.json.
+                // The store's own guard, held to the driver's start layer by fixtures/helper-askers.json.
                 : SessionLedger.IsHelp(asker) ? $"Session `{asker.Id}` is Ask Daoris's conversation, and Ask Daoris cannot ask for a helper"
                 : string.Equals(Trees.Normalize(asker.Tree), tree, StringComparison.Ordinal)
                     ? $"`{tree}` is session `{asker.Id}`'s own tree: a helper reads a clone of its own"
@@ -127,16 +127,16 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
 
     /// <summary>
     /// Hand a helper's answer to the session it serves: a word on its record naming the helper as <see cref="SaidWord.Helper"/>,
-    /// which reopens it at the driver's next look (D137). Once, through <see cref="SolicitedAnswers"/>, the door every solicited answer
+    /// which reopens it at the driver's next look. Once, through <see cref="SolicitedAnswers"/>, the door every solicited answer
     /// shares: to the head of the asker's line, by that door's table of the head's state.
     /// </summary>
     /// <param name="text">The words as Daoris composed them around the helper's claim.</param>
     /// <param name="running">
-    /// The driver that runs a working driven asker hands an urgent ask's answer for its run (COWORK1d, the message-urgency design §5): kept
+    /// The driver that runs a working driven asker hands an urgent ask's answer for its run: kept
     /// on the running record's words, which that run's inbox takes at its next step and takes off by its id. Without it a running asker
     /// takes the answer at its end, as before.
     /// </param>
-    /// <param name="level">The ask's level, kept beside the word (COWORK1d): <c>urgent</c> where the ask was; none for an ordinary ask.</param>
+    /// <param name="level">The ask's level, kept beside the word: <c>urgent</c> where the ask is; none for an ordinary ask.</param>
     public async Task<HelperOutcome> HandAsync(
         string helperId, string text, DateTimeOffset now, CancellationToken ct = default, bool running = false, string? level = null, bool settled = false)
     {
@@ -191,7 +191,7 @@ public sealed class HelperDesk(SessionStore sessions, bool local = true)
             $"{outcome.Message}. Nothing was kept."),
     };
 
-    /// <summary>A helper's answer's stable key, the producer key its word carries (HELPERWAIT1): one per helper, and so one per ask.</summary>
+    /// <summary>A helper's answer's stable key, the producer key its word carries: one per helper, and so one per ask.</summary>
     public static string KeyOf(string helper) => $"helper:{helper}";
 
     private static HelperOutcome Refused(HelperRefusal refusal, string why) => new(refusal, $"{why}. Nothing was kept.");

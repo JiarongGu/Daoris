@@ -3,15 +3,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Which knowledge connector a protocol-door session is handed (ACP4), in the order
+/// Which knowledge connector a protocol-door session is handed, in the order
 /// <see cref="ServiceHostLocator"/> finds the HTTP host: what the person said, then what the install
 /// carries beside the running application, then the Daoris home's `bin/`, then the workspace build.
 /// </summary>
 /// <remarks>
-/// 🔴 CONNECTOR1. The install carried its HTTP host and no connector, so every session on a deployed
-/// shell was handed the home's `bin/` copy, which `publish:service --install` laid down once and no
-/// republish refreshed. It was eight days old on the install that found it, and it opened the
-/// shared store at its own older schema. Asserted as an ORDER, because the order is the contract.
+/// The install carries its HTTP host and its connector, so a session on a deployed shell is never
+/// handed the home's `bin/` copy, which `publish:service --install` lays down once and no
+/// republish refreshes, and which opens the shared store at its own older schema.
+/// Asserted as an ORDER, because the order is the contract.
 /// </remarks>
 public sealed class KnowledgeConnectorTests : IDisposable
 {
@@ -34,7 +34,7 @@ public sealed class KnowledgeConnectorTests : IDisposable
         return path;
     }
 
-    /// <summary>An install as `publish:desktop --service` lays it out (D93): the application runs from its `app/`.</summary>
+    /// <summary>An install as `publish:desktop --service` lays it out: the application runs from its `app/`.</summary>
     private string Application => Path.Combine(_root, "install", "app");
 
     private string OwnCopy => Path.Combine(Application, "daoris-knowledge", KnowledgeConnector.ExecutableName);
@@ -76,7 +76,7 @@ public sealed class KnowledgeConnectorTests : IDisposable
 
     /// <summary>
     /// Both shapes the HTTP host's locator takes, for the same reason: the application runs from the
-    /// install's `app/` (D93), and a hand-assembled folder runs it from beside the connector's folder.
+    /// install's `app/`, and a hand-assembled folder runs it from beside the connector's folder.
     /// </summary>
     [Theory]
     [InlineData("daoris-knowledge")]
@@ -86,7 +86,7 @@ public sealed class KnowledgeConnectorTests : IDisposable
         var folder = Path.Combine(Application, relative.Replace('/', Path.DirectorySeparatorChar));
         var own = Touch(Path.Combine(folder, KnowledgeConnector.ExecutableName));
 
-        // No home: the deployed case before anything is set, and a machine with no home has no `bin/` (D63).
+        // No home: the deployed case before anything is set, and a machine with no home has no `bin/`.
         Assert.Equal(own, KnowledgeConnector.Locate(null, home: null, Application));
     }
 
@@ -111,7 +111,7 @@ public sealed class KnowledgeConnectorTests : IDisposable
     }
 
     /// <summary>
-    /// CONNECTOR1c: an intake handed no connector is told the two commands a session is told (CONNECTOR1b), in the same
+    /// An intake handed no connector is told the two commands a session is told, in the same
     /// words and the same order, the install's first, as the locator ranks them. Each is a script the workspace has.
     /// </summary>
     [Fact]
@@ -133,7 +133,7 @@ public sealed class KnowledgeConnectorTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 CONNECTOR2: Codex hands an MCP server only its entry's own variables, so the entry carries the home or the host
+    /// Codex hands an MCP server only its entry's own variables, so the entry carries the home or the host
     /// exits 2 before it answers `initialize`.
     /// </summary>
     [Fact]
@@ -200,7 +200,7 @@ public sealed class KnowledgeConnectorTests : IDisposable
     }
 
     /// <summary>
-    /// CONNECTOR1b: a session handed no connector is told both commands that lay one down, the install's first, in the
+    /// A session handed no connector is told both commands that lay one down, the install's first, in the
     /// order the locator ranks them: `publish:desktop --service` beside the application, `publish:service --install` in
     /// the home's `bin/`. Each is a script the workspace has, so the sentence names nothing that does not run.
     /// </summary>

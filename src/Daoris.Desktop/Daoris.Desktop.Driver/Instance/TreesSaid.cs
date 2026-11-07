@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a <c>trees</c> press says in a terminal (RPC1b3, the terminal RPC design §7.3): the lines for the output, the lines for the
+/// What a <c>trees</c> press says in a terminal: the lines for the output, the lines for the
 /// error, and the exit code. The alone path prints it from the records its core returns; the route that is the press's window twin
 /// answers it beside the page's fields (<c>said</c>), so the verb that becomes a client prints the same words from the answer.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed record TreesSaid(IReadOnlyList<string> Out, IReadOnlyList<string> 
     }
 
     /// <summary>
-    /// The words with the lines the registry followed said after them, and its failure on the error (RPC1b5): what a landing's verb
+    /// The words with the lines the registry followed said after them, and its failure on the error: what a landing's verb
     /// prints once the lines it moved are registered. The code is unchanged: a registry that did not follow is not a refused landing.
     /// </summary>
     public TreesSaid Followed(FollowedSaid? followed) =>
@@ -28,7 +28,7 @@ public sealed record TreesSaid(IReadOnlyList<string> Out, IReadOnlyList<string> 
             ? this
             : new([.. Out, .. followed.Out], [.. Error, .. followed.Error], Code);
 
-    /// <summary>The words with a plugin's own lines said before them, as the alone path says them as they come (RPCOPEN1).</summary>
+    /// <summary>The words with a plugin's own lines said before them, as the alone path says them as they come.</summary>
     public TreesSaid After(IReadOnlyList<string> pluginLines) => pluginLines.Count == 0 ? this : new([.. pluginLines, .. Out], Error, Code);
 
     /// <summary>The words as an answer carries them (<c>said</c>): added beside the page's fields, never in their place.</summary>
@@ -59,7 +59,7 @@ public sealed record TreesSaid(IReadOnlyList<string> Out, IReadOnlyList<string> 
     };
 
     /// <summary>
-    /// A read's answer in the verb's own words (RPC1b2): printed and its exit code returned where the answer carries them, else null,
+    /// A read's answer in the verb's own words: printed and its exit code returned where the answer carries them, else null,
     /// so <see cref="InstanceDoor.ReadAsync"/> reads alone, as it does for an instance from before the field.
     /// </summary>
     public static Func<JsonElement, int?> ReadWords(TextWriter output, TextWriter error) => answer =>
@@ -85,7 +85,7 @@ public sealed record TreesSaid(IReadOnlyList<string> Out, IReadOnlyList<string> 
         : [];
 }
 
-/// <summary>What the registry's following said of the lines a press moved (WSSETUP5, D124 §3.1): the lines, and the failure if it had one.</summary>
+/// <summary>What the registry's following says of the lines a press moved: the lines, and the failure if it has one.</summary>
 /// <param name="Out">The lines said on the output, each already indented as the terminal says them.</param>
 /// <param name="Error">The sentence said on the error where the registry did not follow, or none.</param>
 public sealed record FollowedSaid(IReadOnlyList<string> Out, IReadOnlyList<string> Error);

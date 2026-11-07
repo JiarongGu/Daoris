@@ -5,10 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PROCESS1a (D164's amendment point 1): the commit rule, <c>commits</c> and <c>workspaceCommits</c> in <c>driver.json</c> — read,
-/// refused, resolved, said and edited, held cell for cell to ONE table, <c>fixtures/commit-rules.json</c> (the CLI's twin,
-/// <c>commits.ts</c>, left with the driver family's TypeScript in PUSH1f2b). A cell's <c>CONV400</c> and
-/// <c>CONV401</c> stand for a convention of that many characters.
+/// The commit rule, <c>commits</c> and <c>workspaceCommits</c> in <c>driver.json</c> — read,
+/// refused, resolved, said and edited, held cell for cell to ONE table, <c>fixtures/commit-rules.json</c>. A cell written <c>CONV</c>
+/// followed by a number stands for a convention of that many characters.
 /// </summary>
 public sealed class CommitRulesTests
 {

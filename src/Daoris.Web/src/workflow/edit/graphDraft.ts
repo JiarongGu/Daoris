@@ -2,12 +2,12 @@ import type { WorkflowPaletteAnswer } from './answers';
 import type { DraftNode, DraftWire, GraphDraft, GraphJson, StepChoice, WireAsk } from './graphDraftTypes';
 import { REFUSED, TAIL_KINDS, tailOf } from './landMethods';
 
-// The step editor's draft (WORKFLOWEDIT1b, FLOWCHART2b): a schema-2 graph as the person composes it, the inverse of the run view's drawing
+// The step editor's draft: a schema-2 graph as the person composes it, the inverse of the run view's drawing
 // (`workflowFlow.ts`, which reads a graph's wires onto edges). Pure: each change returns a new draft, and `graphOf` writes the graph the
 // driver reads, judges and saves. A step is added from the palette, its kind copied whole, so a kind this page has no words for is
 // composed like any other. What a saved graph holds that the editor does not draw (a group, a retry, its cleanup) is kept as written.
 //
-// The person never names a wire's kind (D223 §3, §8.1): a way on is a row of the step's *What happens next* and a target, and the kind is
+// The person never names a wire's kind: a way on is a row of the step's *What happens next* and a target, and the kind is
 // what the row and where the target stands give, by the driver's wire rules (`Nodes/NodeWires.cs`): on to a later step, back to one its
 // source comes after through `after`, `trigger`, `data` or `when`, and nothing that would close a cycle. Insert, move and remove-and-join
 // rewire only a plain chain, and never carry a data wire, a group or an exception's path over by guess (§8.2, §8.8).
@@ -123,7 +123,7 @@ const taken = (draft: GraphDraft) => new Set(draft.nodes.map((node) => node.id))
 
 const nodeById = (draft: GraphDraft, id: string) => draft.nodes.find((node) => node.id === id);
 
-/** A copy that shares nothing with what it was copied from. */
+/** A copy that shares nothing with what it is copied from. */
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
 /**
@@ -292,7 +292,7 @@ function upstream(draft: GraphDraft, id: string, along: (kind: string) => boolea
 }
 
 /**
- * The steps `id` comes after (D223 §8.1): its ancestors upstream through `after`, `trigger`, `data` and `when`, as the driver reads a way
+ * The steps `id` comes after: its ancestors upstream through `after`, `trigger`, `data` and `when`, as the driver reads a way
  * back's target (`NodeWires.BackProblem`), never a step merely drawn above it.
  */
 export const earlierThan = (draft: GraphDraft, id: string, except?: string): Set<string> =>
@@ -510,7 +510,7 @@ export function joinOf(draft: GraphDraft, id: string): JoinPlan | null {
 
 /**
  * A step removed with every wire into and out of it, nothing bridged; or, `join`, its one plain way in kept and taken on to where its one
- * plain way on went. Where it was the end, the end goes to `end`, else none is set.
+ * plain way on goes. Where it is the end, the end goes to `end`, else none is set.
  */
 export function removeStep(draft: GraphDraft, id: string, options: { join?: boolean; end?: string } = {}): GraphDraft {
   const join = options.join ? joinOf(draft, id) : null;
@@ -560,11 +560,11 @@ export function setCarry(draft: GraphDraft, to: string, input: string, source: C
   };
 }
 
-/** An input given an output when a way was made into its step: the step, its input and the output of the step it comes from. */
+/** An input given an output when a way is made into its step: the step, its input and the output of the step it comes from. */
 export type Carried = { step: string; input: string; from: string; port: string };
 
 /**
- * The inputs of `to` left unfed, fed from an output of the step its way comes from (SETUPUX1r; D221 §2.3): that step's own output of the
+ * The inputs of `to` left unfed, fed from an output of the step its way comes from: that step's own output of the
  * input's schema where it makes one, else the one other step that makes it. Where two fit, none is chosen and the step's *Carries* asks.
  */
 function proposeInputs(draft: GraphDraft, to: string, from: string): { draft: GraphDraft; carried: Carried[] } {
@@ -597,10 +597,10 @@ export function askedInputs(draft: GraphDraft, id: string): { input: string; sou
 export { LAND_METHODS, landOptionApplies, tailOf } from './landMethods';
 
 /**
- * A landing's method set and its tail brought in one change (SETUPUX1r; the land node design §2): the steps the new method brings are put
+ * A landing's method set and its tail brought in one change: the steps the new method brings are put
  * after the landing (an integrate's), between it and what followed it; the tail
  * steps the method does not bring go, each joined over; the options it refuses are cleared; and the end follows the tail where the landing
- * or a removed tail step was the end. Everything else the graph holds is kept as written.
+ * or a removed tail step is the end. Everything else the graph holds is kept as written.
  */
 export function setLandMethod(palette: WorkflowPaletteAnswer, draft: GraphDraft, id: string, method: string): { draft: GraphDraft; added: string[]; removed: string[] } {
   if (!nodeById(draft, id)) return { draft, added: [], removed: [] };

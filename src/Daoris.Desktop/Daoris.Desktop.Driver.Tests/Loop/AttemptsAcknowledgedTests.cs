@@ -6,7 +6,7 @@ using Daoris.Driver.Tests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 row p (D212's note of the row; the foundation design §3.4 rule 5): an attempt is acknowledged before the wire. The mark that failed
+/// An attempt is acknowledged before the wire. The mark that failed
 /// open is mandatory, and its answer names each word it marked: a word it does not name is not attempted and does not go. A commit that failed
 /// sends nothing and says so; an answer naming fewer words than asked sends only those; a commit whose answer is lost sends nothing, the word
 /// waiting marked on its record, which the next come-up settles as uncertain and says (never sent again by itself). The dispatcher is the real
@@ -91,7 +91,7 @@ public sealed class AttemptsAcknowledgedTests
     /// <summary>
     /// An answer naming fewer words than asked sends only those: a go-on carrying three of the record's words, the second no longer waiting, is
     /// written with two, each its own place in the prompt, and only those two leave the record once it is written. The third is the record's,
-    /// unmarked and untaken, and the conversation is told one word was left.
+    /// unmarked and untaken, and the conversation is told one word is left.
     /// </summary>
     [Fact]
     public async Task A_go_on_whose_mark_names_fewer_words_than_asked_is_written_with_only_those()

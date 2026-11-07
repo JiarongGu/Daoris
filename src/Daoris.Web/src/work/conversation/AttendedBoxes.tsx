@@ -19,7 +19,7 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
   structured === true ? 'structured' : structured === false ? 'text' : undefined;
 
 /**
- * The box under the conversation (MSG1f, D137 §5.1): a chat's composer, or every other box (the running door, the park's answer, the
+ * The box under the conversation: a chat's composer, or every other box (the running door, the park's answer, the
  * box where the same session goes on, and the line where nothing takes words), each keyed by its session so a draft's form starts fresh.
  */
 export function AttendedBoxes({
@@ -61,22 +61,22 @@ export function AttendedBoxes({
           live={live}
           sending={send.isPending}
           refusal={refused}
-          // One owner for the moves at a time (D56): while the session is parked the card above holds
+          // One owner for the moves at a time: while the session is parked the card above holds
           // finish and decline, and this form keeps `send` alone. Its session stop is the page
-          // header's at every state (D126 §3.3); this form keeps *Finish* and *Stop turn*.
+          // header's at every state; this form keeps *Finish* and *Stop turn*.
           endings={attended.state !== 'awaiting-person'}
           // *Answer…* from its row puts the focus here, where a parked chat is answered.
           focus={focus}
           draft={draft}
           onDraft={setDraft}
           queued={turns.queued}
-          // A parked conversation's waiting words are its record's, which it goes on with (SAIDBACK1b): no turn, no door.
+          // A parked conversation's waiting words are its record's, which it goes on with: no turn, no door.
           queuedLabel={attended.state === 'awaiting-person' ? t('work.say.waiting') : undefined}
           fold={attended.state === 'awaiting-person'}
           going={sending.going}
           taking={turns.taking}
           opening={turns.opening}
-          // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
+          // Only a door that can see a turn end can stop one; the roster says which.
           stoppable={roster.find((row) => row.door === attended.door)?.structured === true}
           stopping={cancelTurn.isPending}
           onStopTurn={onStopTurn}
@@ -107,7 +107,7 @@ export function AttendedBoxes({
         />
       )}
 
-      {/* Every other box (MSG1f, D137 §5.1): the running door, the park's answer, the box where the same session goes
+      {/* Every other box: the running door, the park's answer, the box where the same session goes
           on, and the line where nothing takes words. Keyed by session and box, so a draft's form starts fresh. */}
       {box.kind !== 'chat' && box.kind !== 'none' && (
         <SessionBox
@@ -120,11 +120,11 @@ export function AttendedBoxes({
           refusal={refused}
           held={held ? { queued: held.queued, taking: held.taking } : undefined}
           ending={ending?.session === attended.id ? ending.words : []}
-          // What waits on a park's or an ended session's record (SAIDBACK1b), as the driver lists it.
+          // What waits on a park's or an ended session's record, as the driver lists it.
           waiting={box.kind === 'say' ? chatTurns[attended.id]?.queued ?? [] : []}
           going={sending.going}
           stopping={cancelTurn.isPending}
-          // *Answer…* from its row, and *Send back…* from its review, put the focus here (D126 §3.1, D137 §5.1).
+          // *Answer…* from its row, and *Send back…* from its review, put the focus here.
           focus={focus}
           accepts={boxAccepts}
           onSend={onSay}
@@ -136,12 +136,12 @@ export function AttendedBoxes({
           goes={goes}
           onMove={onMoveWord}
           toHead={onDraftToHead}
-          // The conversation it went on in, by its record's title (HANDWORDS1-ii); one the frame does not hold is said by its id.
+          // The conversation it went on in, by its record's title; one the frame does not hold is said by its id.
           continued={box.kind === 'line' && box.why === 'continued' && box.to
             ? headState.headLink((sessions.data ?? []).find((row) => row.id === box.to))
             : null}
           onOpenSession={(row) => attend(row.id)}
-          // What the park asks, in its box with every answer a press the box's words go with (PARKVIEW1, the design §3-§4): its
+          // What the park asks, in its box with every answer a press the box's words go with: its
           // question as its agent asked it, its go-aheads still open, by when and what it holds. Only where the box answers a park.
           park={answering ? {
             quest: attended.quest,

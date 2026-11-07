@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LIMITRESUME1j (D206; the limit-resume design §3.6, D155 point 4): the agents that wrote the work an opinion reads are every agent
+/// The agents that wrote the work an opinion reads are every agent
 /// the line ran on, never only its last part's. A line cut off by a limit on one maker's agent and carried on by another's has two
 /// makers, and a reviewer of either is the work's own family, never another maker's.
 /// </summary>

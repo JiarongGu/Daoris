@@ -3,7 +3,7 @@ using Daoris.Contracts.Parts;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The looks a one-look run and a gate's run-until-idle make, and the wait for the sessions they started. A look no longer waits for
+/// The looks a one-look run and a gate's run-until-idle make, and the wait for the sessions they started. A look does not wait for
 /// its sessions, so between looks this waits for the next ending or the watch's pace, whichever is first; the sync beside the sessions
 /// and the lost-claim stop ride every look, as they ride the watch's.
 /// </summary>
@@ -19,7 +19,7 @@ internal sealed class LoopRuns(
     /// ended, and has said what ended.
     /// </summary>
     /// <param name="said">
-    /// Handed each look's report as the look ends, a look that failed or was closed what it had said before, and before a failure or a
+    /// Handed each look's report as the look ends, a look that failed or is closed what it had said before, and before a failure or a
     /// close lets go, what ended while it waited: what the headless host prints, so a look's lines reach the person whatever ends the
     /// run after it.
     /// </param>
@@ -84,7 +84,7 @@ internal sealed class LoopRuns(
     }
 
     /// <summary>
-    /// What a run that failed or was closed does before it lets go: it waits until every session it started has written how it
+    /// What a run that failed or is closed does before it lets go: it waits until every session it started has written how it
     /// ended, then hands <paramref name="said"/> what ended, so the endings are said rather than lost with the process. Nothing is
     /// asked of the service: it may be what failed.
     /// </summary>
@@ -106,7 +106,7 @@ internal sealed class LoopRuns(
     /// </summary>
     /// <remarks>
     /// A pass that fails is said and the next tries again, as a look's sync is, since leaving here would leave the sessions with
-    /// nothing watching. Only the close leaves, and what was gathered and what ended is handed to <paramref name="said"/> before it does.
+    /// nothing watching. Only the close leaves, and what is gathered and what ended is handed to <paramref name="said"/> before it does.
     /// </remarks>
     /// <param name="said">Handed each pass that said anything as the pass ends, then what ended: together, the report returned.</param>
     private async Task<TickReport> SettleAsync(CancellationToken ct, Action<TickReport>? said)

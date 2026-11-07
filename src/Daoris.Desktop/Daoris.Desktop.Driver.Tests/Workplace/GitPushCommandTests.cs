@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2g and n's terminal verb (D204, D241 point 2): <c>git push &lt;repository&gt; branch|tag &lt;name&gt; [&lt;commit&gt;] [--plan|--yes]</c>,
+/// The terminal verb <c>git push &lt;repository&gt; branch|tag &lt;name&gt; [&lt;commit&gt;] [--plan|--yes]</c>,
 /// one ref and never a force or <c>-u</c>; a person's press holding the home's lease only with a yes.
 /// </summary>
 public sealed class GitPushCommandTests

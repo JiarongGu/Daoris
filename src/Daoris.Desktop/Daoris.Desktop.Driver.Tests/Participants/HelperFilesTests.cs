@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT2a-ii (D163 point 2): the helpers' files are the contract between the service's <c>HelperBox</c> and the driver's
+/// The helpers' files are the contract between the service's <c>HelperBox</c> and the driver's
 /// reader, which share no code, so each side holds the shape (the service's suite holds the same text from its side). The ask is
 /// read as <c>helper_ask</c> writes it, the state is written as the box reads it, and the answer is read as <c>helper_answer</c>
 /// writes it.
@@ -60,8 +60,8 @@ public sealed class HelperFilesTests : IDisposable
     }
 
     /// <summary>
-    /// COAGENT1a (the co-agent design §2.5): the capture's manifest, the driver's alone, is kept whole with each file's hash, the
-    /// deletions and what was left out and why, never a byte of the work, and read back; an ask with none reads none.
+    /// The capture's manifest, the driver's alone, is kept whole with each file's hash, the
+    /// deletions and what the capture left out and why, never a byte of the work, and read back; an ask with none reads none.
     /// </summary>
     [Fact]
     public void A_captures_manifest_is_kept_without_its_bytes_and_read_back()
@@ -90,7 +90,7 @@ public sealed class HelperFilesTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §9): an ask `helper_ask` wrote urgent (the service's suite, <c>HelperBoxShapeTests</c>,
+    /// 🔴 An ask `helper_ask` wrote urgent (the service's suite, <c>HelperBoxShapeTests</c>,
     /// holds the same text) reads urgent; an ask with no level, every ask from before among them, reads ordinary, today's delivery.
     /// </summary>
     [Fact]

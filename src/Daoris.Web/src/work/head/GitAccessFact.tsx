@@ -10,7 +10,7 @@ import type { DetailRow } from './DetailsFold';
 export type SessionGitAccess = { session: string; repository?: string | null; workspace?: string | null; classes: ResolvedGitClass[] };
 
 /**
- * What the frame hands the head for a session's git access (D241 point 7): every record the shell pushed, of which the session's own is
+ * What the frame hands the head for a session's git access: every record the shell pushed, of which the session's own is
  * drawn, and the press that tightens it with its pending. Absent where nothing reads them (a browser).
  */
 export type SessionGitAccessHold = {
@@ -22,7 +22,7 @@ export type SessionGitAccessHold = {
 const CLASSES = ['read', 'write', 'dangerous'] as const;
 
 /**
- * **A session's git access, in one fact** (D241 point 7; the git design §3.1 G5): what the session holds now, as its record says it —
+ * **A session's git access, in one fact**: what the session holds now, as its record says it —
  * its repository's access narrowed by what the person tightened — in the words of Setup's git access summary, with *Tighten…* beside it.
  *
  * @remarks

@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's standing confirmation grant an older build stored (D201's note of 2026-11-07): the grant is gone, the four presses it
+/// The person's standing confirmation grant an older build stored: the grant is gone, the four presses it
 /// named being the steward's acts, so its record is removed. Nothing in it is copied, since it held presses and a moment, never a word
-/// of the person's. It ends when the owner's install finds none, and the row that deletes it, with <see cref="HomeEntry.StandingConfirmation"/>
-/// in the three home tables, is TERMTRUST1's.
+/// of the person's. It ends when the owner's install finds none; it is then deleted, with <see cref="HomeEntry.StandingConfirmation"/>
+/// in the three home tables.
 /// </summary>
 public sealed class StandingGrantStep : IHomeMigrationStep
 {

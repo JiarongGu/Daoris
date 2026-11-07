@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GOAHEAD2, the owner's case on the install (2026-10-08): a driven session asked two go-aheads on its ask and parked, the
-/// person answered both on the ask, and the session stayed waiting on them for minutes, until the same words were said to
-/// it. The answers to the go-aheads a parked session asked are its answer: the one that leaves none of them waiting goes on
-/// with the same session, once, as an answer to its park does (D131, ANSWER2), its turn carrying each go-ahead's answer.
+/// A driven session asks two go-aheads on its ask and parks, the person answers both on the ask, and the session must not
+/// stay waiting on them until the same words are said to it. The answers to the go-aheads a parked session asked are its
+/// answer: the one that leaves none of them waiting goes on with the same session, once, as an answer to its park does,
+/// its turn carrying each go-ahead's answer.
 /// </summary>
 /// <remarks>
 /// Driven over the real client, the real planner and a look's real scheduling, as <c>AnswerGoesOnOnceTests</c> is. The
@@ -29,7 +29,7 @@ public sealed class GoAheadsGoOnTests : IDisposable
     {
         Directory.CreateDirectory(_home);
         _ledger.Register("engine", Path.Combine(_home, "engine"));
-        // A quest a sibling of the ask published (its sender is a repository), on the ask by its session's entry (COMMS1c).
+        // A quest a sibling of the ask published (its sender is a repository), on the ask by its session's entry.
         _ledger.Publish("q1", "engine", from: "dashboards");
         _ledger.Park("s1", "q1", DaorisHome.Entry(_home, HomeEntry.Trees,"s-1"), entry: "ask:a1/engine");
         _ledger.GoAheadAsked("a1", "s1", "write", "production", "dashboard configuration");

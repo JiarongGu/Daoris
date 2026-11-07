@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1d (the fabric events design §D3): what a plugin's attempt created, taken as receipts on its unit's resource record before
+/// What a plugin's attempt created, taken as receipts on its unit's resource record before
 /// its outcome, once however often the completion comes; cleaned only by its plugin through <c>work/cleanup</c>, the request persisted with
-/// its key before it is sent, so a crash between the plugin's removal and the recording of its answer converges on <c>already-gone</c>
-/// (canary 34); a failure tried again on its back-off and read as blocked after seven days; a superseded attempt's receipts temporary and
-/// cleaned at once (canary 36); nothing cleaned before its unit's end, a result kept, an undeclared schema never cleaned by itself.
+/// its key before it is sent, so a crash between the plugin's removal and the recording of its answer converges on <c>already-gone</c>;
+/// a failure tried again on its back-off and read as blocked after seven days; a superseded attempt's receipts temporary and
+/// cleaned at once; nothing cleaned before its unit's end, a result kept, an undeclared schema never cleaned by itself.
 /// </summary>
 public sealed class ResourceCleanupTests : IDisposable
 {
@@ -149,7 +149,7 @@ public sealed class ResourceCleanupTests : IDisposable
         Assert.Equal(NodeStates.Active, Nodes.Read(Unit)!.Statuses[Deploy.Id].State);
     }
 
-    /// <summary>§D3's bound: a completion naming more than the record keeps takes none and is held for the person.</summary>
+    /// <summary>A completion naming more than the record keeps takes none and is held for the person.</summary>
     [Fact]
     public async Task A_completion_past_the_receipts_bound_is_held_for_the_person()
     {
@@ -168,7 +168,7 @@ public sealed class ResourceCleanupTests : IDisposable
         Assert.Equal(AttemptStates.Held, Nodes.Read(Unit)!.Invoked(invocation)!.State);
     }
 
-    /// <summary>§D6's <c>resources?</c>: a reconciliation's answer gives its receipts as a completion does.</summary>
+    /// <summary>A reconciliation's answer gives its receipts as a completion does.</summary>
     [Fact]
     public async Task A_reconciliations_resources_are_taken_as_receipts()
     {
@@ -209,7 +209,7 @@ public sealed class ResourceCleanupTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Canary 34: the plugin removes the resource and the answer is lost (the loop ends, or the call fails): the request was persisted with
+    /// The plugin removes the resource and the answer is lost (the loop ends, or the call fails): the request is persisted with
     /// its key before the send, so a later pass, and a loop started again, send the same key, which is answered already gone and ends it.
     /// </summary>
     [Theory]
@@ -240,7 +240,7 @@ public sealed class ResourceCleanupTests : IDisposable
         Assert.Empty(await Cleaner().CleanAsync(_ => true, WorkSends.Unbounded, CancellationToken.None));
     }
 
-    /// <summary>§D3: a failure is asked again after 1, 5, 15 and 60 minutes and then daily; past seven days it reads blocked with the plugin's words, and is still asked.</summary>
+    /// <summary>A failure is asked again after 1, 5, 15 and 60 minutes and then daily; past seven days it reads blocked with the plugin's words, and is still asked.</summary>
     [Fact]
     public async Task A_failed_cleanup_backs_off_and_reads_as_blocked_after_seven_days_never_disappearing()
     {
@@ -271,7 +271,7 @@ public sealed class ResourceCleanupTests : IDisposable
     }
 
     /// <summary>
-    /// §D3: nothing is cleaned before its unit's end, nor where it is not read; at the end, a temporary resource is, while a result is kept, an
+    /// Nothing is cleaned before its unit's end, nor where it is not read; at the end, a temporary resource is, while a result is kept, an
     /// undeclared schema is never asked and blocks, and a retention is kept with its reason.
     /// </summary>
     [Fact]
@@ -307,7 +307,7 @@ public sealed class ResourceCleanupTests : IDisposable
         Assert.Empty(Cleaner().Owed(_ => true));
     }
 
-    /// <summary>The pass's calls bound the cleanups too (FABRIC-RUN1e): what is left is asked at the next pass.</summary>
+    /// <summary>The pass's calls bound the cleanups too: what is left is asked at the next pass.</summary>
     [Fact]
     public async Task Cleanups_take_the_passs_calls()
     {

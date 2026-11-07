@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The session a new quest's start continues (SESSONE1d, D167 point 4 as amended; the co-working design §1.5): its entry's key and
+/// The session a new quest's start continues: its entry's key and
 /// the parts it already has on this machine, and where the start stands to the entry's tree. A new quest of an entry goes into the
-/// tree its newest part here held when nothing live holds it (D51), and otherwise runs alongside in a tree of its own, as a further
+/// tree its newest part here held when nothing live holds it, and otherwise runs alongside in a tree of its own, as a further
 /// part of the same entry; nothing waits.
 /// </summary>
 /// <param name="Key">The entry's key, <c>&lt;origin&gt;/&lt;repository&gt;</c>, as the records answer it.</param>
@@ -18,9 +18,9 @@ public sealed record EntryParts(string Key, IReadOnlyList<PriorSession> Parts)
 
     /// <summary>
     /// The key a quest's sessions are opened under, as the records here answer it; null where none names it. The rule is the
-    /// service's alone (SESSONE1a, <c>SessionEntries</c>), so it is read and never re-derived: the quest's own last record here,
+    /// service's alone (<c>SessionEntries</c>), so it is read and never re-derived: the quest's own last record here,
     /// a start that failed before it, holds it; else the record of the session that published the quest holds its origin, which
-    /// the quest's sessions share (the rule's publisher clause, design §1.2 rule 4). The publisher of an ask's quest is the ask's
+    /// the quest's sessions share (the rule's publisher clause). The publisher of an ask's quest is the ask's
     /// intake, whose origin is the ask, so an ask's quest reads the ask's line through it too. A quest no record here names, a
     /// person's publish or a chain's step, has no key here, and starts as a first start does.
     /// </summary>
@@ -45,8 +45,8 @@ public sealed record EntryParts(string Key, IReadOnlyList<PriorSession> Parts)
     ];
 
     /// <summary>
-    /// The publisher's entry: the record this machine knew it by, else a teammate's mirror of it keyed <c>origin/id</c>, as the
-    /// service finds a publisher (SESSONE1a, <c>FindOrMirrorAsync</c>).
+    /// The publisher's entry: the record this machine holds for it, else a teammate's mirror of it keyed <c>origin/id</c>, as the
+    /// service finds a publisher (<c>FindOrMirrorAsync</c>).
     /// </summary>
     private static string? PublisherEntry(IReadOnlyDictionary<string, string> entries, string publisher) =>
         entries.TryGetValue(publisher, out var own)

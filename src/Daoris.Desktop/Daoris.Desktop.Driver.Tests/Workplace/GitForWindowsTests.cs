@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Git for Windows' launcher, started past (GITSTART1): which layout is the launcher's, the variables it hands its child,
-/// and that a git the person named is started as named. The variables are the ones measured on git 2.53.0.windows.3
-/// (FIX-LOG, GITSTART1); <see cref="GitForWindowsProcessTests"/> holds them to a real install's launcher.
+/// Git for Windows' launcher, started past: which layout is the launcher's, the variables it hands its child,
+/// and that a git the person named is started as named. The variables are the ones measured on git 2.53.0.windows.3;
+/// <see cref="GitForWindowsProcessTests"/> holds them to a real install's launcher.
 /// </summary>
 /// <remarks>Nothing here starts a program: an install is empty files and folders in a temporary directory.</remarks>
 public sealed class GitForWindowsTests : IDisposable
@@ -156,7 +156,7 @@ public sealed class GitForWindowsTests : IDisposable
         Assert.Equal(held, tooLong.Environment.ToDictionary(pair => pair.Key, pair => pair.Value));
     }
 
-    // ── The launcher's variables (measured: FIX-LOG, GITSTART1) ─────────────────────────────────────
+    // ── The launcher's variables (measured) ─────────────────────────────────────
 
     [Theory]
     [InlineData("mingw64", "MINGW64")]
@@ -268,7 +268,7 @@ public sealed class GitForWindowsTests : IDisposable
         Assert.Equal(file, info.FileName);
     }
 
-    // ── The person's git (TOOLS5) ───────────────────────────────────────────────────────────────────
+    // ── The person's git ───────────────────────────────────────────────────────────────────
 
     [Fact]
     public void Daoris_own_git_named_as_a_file_starts_as_named_even_where_it_is_the_launcher()

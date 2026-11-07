@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris workflow run --session|--quest|--ask &lt;id&gt;</c> (WORKFLOW1c2; D157's WORKFLOW1c2 note, the workflow design
-/// §5.2, §7, D50): where a piece of work stands in the workflow it follows, the terminal's twin of the session's <i>Workflow</i>
+/// <c>daoris workflow run --session|--quest|--ask &lt;id&gt;</c>: where a piece of work stands in the workflow it follows, the terminal's twin of the session's <i>Workflow</i>
 /// view. It prints what <see cref="WorkflowRunReader"/> reads, the screen's read too, in <see cref="WorkflowRunWords"/>. In the
 /// library, so its words are held by a test.
 /// </summary>
@@ -71,7 +70,7 @@ public static class WorkflowRunCommand
         var read = await WorkflowRunReader.ReadAsync(asked, sources, ct).ConfigureAwait(false);
         if (read.Runs.Count == 0)
         {
-            // A code's English is the page's en (CHATFLOW1a); a service that did not answer says what its failure said after it.
+            // A code's English is the page's en; a service that does not answer says its failure after it.
             var why = read.Why is { } failure ? $" ({failure})" : "";
             output.WriteLine($"workflow: {read.Problem ?? "nothing runs here yet: no quest of this work is published."}{why}");
             return read.Unanswered ? 2 : 1;

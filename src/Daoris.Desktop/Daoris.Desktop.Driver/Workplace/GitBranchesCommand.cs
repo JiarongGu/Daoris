@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>What <c>daoris git branches</c> was asked: which repositories, and in which form.</summary>
-/// <param name="Repository">The one repository named, which is listed whatever it holds (D112); null for the scope's.</param>
+/// <param name="Repository">The one repository named, which is listed whatever it holds; null for the scope's.</param>
 /// <param name="All">Every repository with a checkout here, not only those holding Daoris's branches.</param>
 /// <param name="Json">The list whole, written, rather than said.</param>
 public sealed record GitBranchesAsk
@@ -28,7 +28,7 @@ public sealed record GitBranchesSources(IReadOnlyList<RepoView> Registry, Driver
 }
 
 /// <summary>
-/// <c>daoris git branches</c> (GIT1c, D147 §3.3, D50): the terminal's read door to the branch list, each repository's
+/// <c>daoris git branches</c>: the terminal's read door to the branch list, each repository's
 /// line and branches by kind, and the git each read ran, ready to copy, since a read's terminal door is git itself. In the
 /// library, so its words are held by a test.
 /// </summary>
@@ -36,7 +36,7 @@ public sealed record GitBranchesSources(IReadOnlyList<RepoView> Registry, Driver
 /// <para><b>Reads only.</b> The list is <see cref="GitBranches.ListAsync"/>'s, which writes nothing; the host routes the verb
 /// before it opens its machine log, whose open prunes old files.</para>
 ///
-/// <para><b>Which repositories</b> is D112's, as <c>trees sync</c> takes them: those holding a branch of Daoris's, the rest
+/// <para><b>Which repositories</b> are chosen as <c>trees sync</c> takes them: those holding a branch of Daoris's, the rest
 /// named in one line; <c>--all</c> lists every one, and <c>--repository</c> the one named.</para>
 ///
 /// <para>Exit codes are the family's: 0 listed, each repository git could not read said on its row · 1 the repository named has
@@ -87,7 +87,7 @@ public static class GitBranchesCommand
         return ask;
     }
 
-    /// <summary>The repositories the words take (D112): every one with <c>--all</c>, the one named, else those holding Daoris's branches.</summary>
+    /// <summary>The repositories the words take: every one with <c>--all</c>, the one named, else those holding Daoris's branches.</summary>
     public static SyncScope Scope(GitBranchesAsk ask) =>
         ask.All ? SyncScope.Everything : ask.Repository is { } named ? SyncScope.Named([named]) : SyncScope.Held;
 
@@ -219,7 +219,7 @@ public static class GitBranchesCommand
             details.Add($"landed for session {landed.Session}{(landed.Quest is { } quest ? $", quest #{quest}" : "")}{(landed.Title is { } title ? $" \"{title}\"" : "")}");
             details.Add(OriginWords(landed));
             if (landed.PullRequest is { } request) details.Add($"pull request {request}");
-            // PLUGHOOK1c: what its plugin last answered, with when, as kept; the list never asks.
+            // What its plugin last answered, with when, as kept; the list never asks.
             if (PullRequestWords.Row(landed.PullRequestState, null, landed.PullRequestAskFailed, null) is { Length: > 0 } kept) details.Add(kept[2..]);
             if (branch.Worktree is { } tree) details.Add($"checked out in {tree}");
         }
@@ -354,7 +354,7 @@ public static class GitBranchesCommand
             writer.WriteString("originCommit", landed.OriginCommit);
             Number(writer, "originAhead", landed.OriginAhead);
             Number(writer, "originBehind", landed.OriginBehind);
-            // PLUGHOOK1c (D148 point 6): the kept answer whole, as the landing record keeps it, and the failed ask beside it.
+            // The kept answer whole, as the landing record keeps it, and the failed ask beside it.
             if (landed.PullRequestState is { } kept)
             {
                 writer.WriteStartObject("pullRequestState");

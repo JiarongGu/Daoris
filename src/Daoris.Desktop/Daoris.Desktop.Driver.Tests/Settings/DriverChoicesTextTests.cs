@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (PUSH1f2a, D194 point 6, the alone-path design §3): each case of the retired <c>driver</c> verb's standing choices,
+/// The port keeps today's text: each case of the retired <c>driver</c> verb's standing choices,
 /// as the CLI's TypeScript verb said it before its branches retired (<c>fixtures/driver-choices-text.json</c>), said again by
 /// <see cref="DriverChoicesCommand"/> acting alone on a home of its own: the same lines on each stream, the same exit, and
 /// <c>driver.json</c> after it the same choices. A row the port changes on purpose says why under <c>changed</c>.

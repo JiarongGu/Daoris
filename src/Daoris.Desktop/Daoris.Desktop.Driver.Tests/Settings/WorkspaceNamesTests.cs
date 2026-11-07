@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A workspace's name as the settings key it (FOUNDATION1 mod-iii): the settings' own reading, which the service's workspace map
+/// A workspace's name as the settings key it: the settings' own reading, which the service's workspace map
 /// answers through, so the two files spell a name alike.
 /// </summary>
 public sealed class WorkspaceNamesTests

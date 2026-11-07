@@ -8,7 +8,7 @@ import type { TerminalTheme } from './terminalTheme';
 export type ScreenLook = { theme: TerminalTheme; fontFamily: string; fontSize: number };
 
 /**
- * One terminal's screen (CONSOLE4b): the renderer, kept thin so the view above it is tested over the
+ * One terminal's screen: the renderer, kept thin so the view above it is tested over the
  * bridge with this module stood in for. What is typed goes out through `onData`; what the shell wrote
  * comes in through `write`.
  */

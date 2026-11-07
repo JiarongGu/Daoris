@@ -4,15 +4,15 @@ import { ActivityBar, type ActivityItem, AppStrip } from './frame';
 import { CommandCenter } from '../strip/CommandCenter';
 import { InTheme } from '../../plugins/storyIcons';
 
-// The application's own chrome (D56, D66): the strip across the top and the bar down the side. Both
+// The application's own chrome: the strip across the top and the bar down the side. Both
 // are molecules — every state below is reached by passing props, with no shell and no service behind
-// them (components plan §2).
+// them.
 
 type Place = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'knowledge' | 'agents' | 'plugins' | 'settings';
 
-// The bar's places as a shell draws them since UX6i (D150 §2.1): Search and Convergence are one place, Knowledge. Each number is
-// what waits on the person there, the bell's rows its door opens, and running work is a mark, never a number (BADGEUX1, the UI/UX
-// design §3.10): Sessions with two parks and the driver's work under way, Quests with a proposal and a quest taken, Agents with a
+// The bar's places as a shell draws them: Search and Convergence are one place, Knowledge. Each number is
+// what waits on the person there, the bell's rows its door opens, and running work is a mark, never a number:
+// Sessions with two parks and the driver's work under way, Quests with a proposal and a quest taken, Agents with a
 // signed-out account.
 const VIEWS: ActivityItem<Place>[] = [
   { tab: 'overview', label: 'Overview', icon: 'overview' },
@@ -75,7 +75,7 @@ export const InTheShell: Story = {
   },
 };
 
-/** The scope is a slot, because the switcher is absent while the family is one circle (WSP5). */
+/** The scope is a slot, because the switcher is absent while the family is one circle. */
 export const WithScope: Story = {
   args: {
     scope: (
@@ -87,10 +87,9 @@ export const WithScope: Story = {
 };
 
 /**
- * 🔴 A narrow window (UX5 U15): the four menus, the command center, the scope and the caption room
- * in 52rem. The pill used to be laid over the strip at a fixed 28rem, and here it ran over the View
- * menu. It gives way to the menus now, and centres on the strip again once the window is wide
- * enough for both sides to fit beside it.
+ * 🔴 A narrow window: the four menus, the command center, the scope and the caption room
+ * in 52rem. The pill gives way to the menus rather than running over the View menu at a fixed 28rem,
+ * and centres on the strip again once the window is wide enough for both sides to fit beside it.
  */
 export const AtANarrowWindow: Story = {
   args: {
@@ -102,23 +101,23 @@ export const AtANarrowWindow: Story = {
 };
 
 /**
- * The room SURF7 will draw the caption buttons into. It is reserved from this landing so the strip's
- * right edge does not move when the window loses its OS title bar — a layout that shifts on the
- * landing after this one is a layout nobody trusts.
+ * The room the caption buttons are drawn into. It is reserved so the strip's
+ * right edge does not move when the window loses its OS title bar — a layout that shifts
+ * is a layout nobody trusts.
  */
 export const CaptionRoomReserved: Story = { args: { captionRoom: true } };
 
 /* ------------------------------------------------------------------ activity bar */
 
 /**
- * The one navigation (D66): every view in one list, Settings alone at the foot (UX6j, D150 §2.1), and its marks (BADGEUX1): a
+ * The one navigation: every view in one list, Settings alone at the foot, and its marks: a
  * number in open's hue is what waits on the person there, a true circle at the upper corner; a still dot in taken's hue at the
  * lower corner is work under way there. Sessions and Quests wear both, Agents a number alone. Nine controls: the eight places and
  * the gear.
  */
 export const Bar: StoryObj<typeof ActivityBar> = { render: () => barIn(VIEWS, SETTINGS, 'light') };
 
-/** The same, dark: the number's ink and the mark's hue each hold against the page and the current place (§3.10.2). */
+/** The same, dark: the number's ink and the mark's hue each hold against the page and the current place. */
 export const BarDark: StoryObj<typeof ActivityBar> = { render: () => barIn(VIEWS, SETTINGS, 'dark') };
 
 /** Running work and nothing waiting: the marks alone, and no number anywhere, the current place's among them. */

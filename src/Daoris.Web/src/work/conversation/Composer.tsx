@@ -14,12 +14,12 @@ import { mentionAt, rankMentions, withMention } from './mentions';
 import { type SessionOption, SessionOptions } from './SessionOptions';
 
 /**
- * What the frame knows of the session's tree, for `@` (CONV4d): its files, or null while they are
+ * What the frame knows of the session's tree, for `@`: its files, or null while they are
  * being asked for; how many the host's bound left out; and the host's sentence when it cannot list them.
  */
 export type MentionSource = { files: string[] | null; unlisted: number; refusal: string | null };
 
-/** One row of words above the box: waiting behind a turn, or on their way (SENDLOST1b). */
+/** One row of words above the box: waiting behind a turn, or on their way. */
 const WORDS_ROW = 'flex items-start gap-2 rounded-control border border-dashed border-line-strong px-2.5 py-1 text-small text-ink-soft';
 
 /** A message's words above the box, with its files' names. */
@@ -38,8 +38,8 @@ function Words({ message }: { message: ChatMessage }) {
 }
 
 /**
- * The input a person talks to a session through (SES2), with its **two distinct endings** and, since
- * CONV4b, the **turn's own stop** beside them.
+ * The input a person talks to a session through, with its **two distinct endings** and the
+ * **turn's own stop** beside them.
  *
  * @remarks
  * **Finish and stop mean different things and are never one button.** Finishing closes the input
@@ -47,46 +47,46 @@ function Words({ message }: { message: ChatMessage }) {
  * the record says the person did (`stopped`). Collapsing them would make the ledger's two endings
  * indistinguishable in the one place a person chooses between them.
  *
- * **Stopping the turn ends neither** (CONV4a). It stops what the agent is doing now and keeps the
+ * **Stopping the turn ends neither**. It stops what the agent is doing now and keeps the
  * conversation, and it is offered only while a turn runs on a door that can stop one: a text door
  * cannot see where a turn ends, and a button that could only be refused is worse than none.
  *
- * **A message sent while a turn runs reaches it at the level the person chooses** (COWORK1a, D188): one press, *Send*, at
+ * **A message sent while a turn runs reaches it at the level the person chooses**: one press, *Send*, at
  * their default, its tip saying what the door does, and a menu of the three levels beside it, each sending the box's words at
  * its level; *now* only where the agent steers, shown disabled with the reason elsewhere. No level stops a turn: where words
  * wait for the turn's end and the door can stop a turn keeping the session, the keeping stop stands beside them, its own press
  * that asks once. A composer told no levels queues as it did (*Queue*). What is waiting is shown above the box in the order
  * sent, each word of the person's with its own level menu.
  *
- * **A session that ends mid-sentence keeps what was typed.** The draft stays, disabled, with the
- * ending stated — because the alternative is a box that silently swallows a paragraph somebody was
+ * **A session that ends mid-sentence keeps what is typed.** The draft stays, disabled, with the
+ * ending stated — because the alternative is a box that silently swallows a paragraph somebody is
  * halfway through, and they have no way to get it back. The frame may hold the draft instead
  * (`draft`, `onDraft`), which is how each session keeps its own across a switch and a reload.
  *
- * **Files go with the message** (CONV4c): chosen, dropped anywhere on the form, or pasted, through the
+ * **Files go with the message**: chosen, dropped anywhere on the form, or pasted, through the
  * `carry` molecule the quest and ask composers use, so the three cannot drift on how a file arrives or
  * what a message carries. They wait above the box as chips, go with the next send — alone, if there
  * are no words — and are let go of once sent. They are the form's own and last one message: switching
  * sessions starts a fresh form, and a reload loses them, because a browser's file cannot be kept.
  *
- * **`@` names a file in the session's tree** (CONV4d). The mention is text, and both doors expand it
+ * **`@` names a file in the session's tree**. The mention is text, and both doors expand it
  * as typed, so the form only helps write it: after an `@` it offers the tree's files (`mentions`),
  * arrows move, Enter or Tab writes the one chosen — quoted when it holds a space, the spelling both
- * doors read — and Escape leaves what was typed. While the list offers something, Enter is the list's
+ * doors read — and Escape leaves what is typed. While the list offers something, Enter is the list's
  * and not a send. The frame is told when a mention is being written (`onMentioning`), so the tree is
  * listed only then.
  *
  * **A refusal renders verbatim**, as every service and driver sentence does: "nothing is listening"
  * is the ledger's answer, and rewriting it here would be the second copy of a sentence.
  *
- * **`endings` is the verb-ownership rule** (D56). A parked session used to render the attention
- * band's *finish it · decline… · stop it* and this form's *send · finish · stop* at the same time,
- * 400px apart — two owners for one set of moves, which is worse than either. So the state decides:
+ * **`endings` is the verb-ownership rule**. A parked session would render the attention
+ * band's *finish it · decline… · stop it* and this form's *send · finish · stop* at the same time:
+ * two owners for one set of moves, which is worse than either. So the state decides:
  * while a session is `awaiting-person` the band owns the endings and this form keeps `send` alone,
  * under the band's own sentence saying that answering is a message rather than one of those moves.
  * No capability is lost; every move stays reachable wherever it is legal, from exactly one place.
  *
- * **The conversation's model and effort sit on its row** (AGT6b, D98), where the agent offered them on
+ * **The conversation's model and effort sit on its row**, where the agent offered them on
  * the protocol door — the console's `/model`, which typed as a message cut a turn short. The options
  * are handed in: this form sends nothing itself.
  */
@@ -96,68 +96,68 @@ export function Composer({
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
   levels, onLevel, onKeepingStop, focus = 0, accepts, onRemove, onEdit, onMove, going, fold = false, answers, ready = false,
 }: {
-  /** Say a waiting word to the line's head instead, by its id (LINESTOGETHER1b): a press on a word with no files. Absent, none. */
+  /** Say a waiting word to the line's head instead, by its id: a press on a word with no files. Absent, none. */
   onMove?: (id: string) => void;
   /**
-   * Something beside the words is ready to go with them (QUESTIONUI1a): an answer selected in a park's question, so *Send* and Enter
+   * Something beside the words is ready to go with them: an answer selected in a park's question, so *Send* and Enter
    * send with the field empty too. The caller makes the message of it.
    */
   ready?: boolean;
   /**
-   * What a parked session asks, drawn above the field, its answers rows to select (PARKVIEW1, QUESTIONUI1a): the box's words go
+   * What a parked session asks, drawn above the field, its answers rows to select: the box's words go
    * with the one selected on *Send*. Absent, nothing is drawn there.
    */
   answers?: ReactNode;
   /**
-   * What the session's door does with a word while a turn runs (COWORK1a; the message-urgency design §3.0, §8.1), which the
+   * What the session's door does with a word while a turn runs, which the
    * composer offers the levels by: `nextStep`, it takes words at the turn's next step; `steers`, its agent steers, so *now* cuts
    * its step. Absent, no level is offered and a press queues as it did: a door this page does not follow, or none known yet.
    */
   levels?: { nextStep: boolean; steers: boolean };
-  /** Change a waiting word's level by its id (COWORK1a, the design §8.2), answering as `onRemove` does. Absent, its words offer none. */
+  /** Change a waiting word's level by its id, answering as `onRemove` does. Absent, its words offer none. */
   onLevel?: (id: string, level: Level) => Promise<{ done: boolean } | void>;
   /**
-   * The keeping stop (COWORK1a, the design §3.2): stop the turn so what waits goes next, the person's own press beside words held
+   * The keeping stop: stop the turn so what waits goes next, the person's own press beside words held
    * for the turn's end, offered only where the door can stop a turn keeping the session. It asks once; the caller tells it how
    * the stop ended. Absent, none is offered.
    */
   onKeepingStop?: (answered: Answered) => void;
   /**
-   * Fold the waiting words to one line with their count, open to the list on a press (WAITFOOT2c): a park's answer box and
+   * Fold the waiting words to one line with their count, open to the list on a press: a park's answer box and
    * the words waiting on it read as one box. The words on their way (`going`) are never folded.
    */
   fold?: boolean;
   /**
-   * Words on their way to the session (SENDLOST1b), in the order sent: shown the moment they are sent, as sending, until it
+   * Words on their way to the session, in the order sent: shown the moment they are sent, as sending, until it
    * holds them. `late` where the page stopped waiting on their send (the bridge's TIMEOUT): the machine has not answered yet
    * and may still take them, so they offer no control, as an edit or a removal of them would say them twice.
    */
   going?: { words: ChatMessage[]; late: boolean };
   /**
-   * Take a waiting message back out, by its id (QUEUEEDIT1b). Answers whether it was still waiting: `done: false` is a
+   * Take a waiting message back out, by its id. Answers whether it is still waiting: `done: false` is a
    * turn having it already, said in words. Absent, no waiting message offers a control.
    */
   onRemove?: (id: string) => Promise<{ done: boolean } | void>;
-  /** Reword a waiting message in place (QUEUEEDIT1b), answering as `onRemove` does. */
+  /** Reword a waiting message in place, answering as `onRemove` does. */
   onEdit?: (id: string, text: string) => Promise<{ done: boolean } | void>;
   /**
-   * Whether these words may go (MSG1f, D137 §2.4): false keeps them in the box, unsent, and the caller says why — a door
+   * Whether these words may go: false keeps them in the box, unsent, and the caller says why — a door
    * that takes fewer characters at once than they hold. Absent, every message may go.
    */
   accepts?: (text: string) => boolean;
   /**
-   * Bumped to put the focus in the box (D126 §3.1: *Answer…* from a session's row attends it and opens its box with the
+   * Bumped to put the focus in the box (*Answer…* from a session's row attends it and opens its box with the
    * focus). Zero is no ask.
    */
   focus?: number;
-  /** The conversation's model and effort as its agent offered them (AGT6b). Absent or empty, none is offered. */
+  /** The conversation's model and effort as its agent offered them. Absent or empty, none is offered. */
   offered?: SessionOption[];
   /** A change to one is on its way to the agent. */
   optionsBusy?: boolean;
   /** The person chose a value for one of them. */
   onOption?: (option: string, value: string) => void;
   /**
-   * What stopping the turn says, where it does something else (SESS3): on a driven session it stops the
+   * What stopping the turn says, where it does something else: on a driven session it stops the
    * turn so what waits goes now, rather than handing it back.
    */
   stopTurnLabel?: string;
@@ -173,18 +173,18 @@ export function Composer({
   draft?: string;
   onDraft?: (text: string) => void;
   /**
-   * The files with the draft, where its holder keeps them (ASKHIST1c: Ask Daoris keeps each conversation's across its
+   * The files with the draft, where its holder keeps them (Ask Daoris keeps each conversation's across its
    * history). Absent, the form holds its own, which go with the form.
    */
   carried?: Carry;
   onCarry?: (next: Carry) => void;
-  /** What the person sent that has not reached the harness, in the order sent (CONV4a), with its files' names. */
+  /** What the person sent that has not reached the harness, in the order sent, with its files' names. */
   queued?: ChatMessage[];
-  /** What the waiting words are waiting for, when it is not the turn in hand (HELP4: the conversation opening). */
+  /** What the waiting words are waiting for, when it is not the turn in hand (the conversation opening). */
   queuedLabel?: string;
   /** A turn is on its way to the harness or running there. */
   taking?: boolean;
-  /** The conversation is still opening (HELP4): what waits, waits for it, not for a turn to end. */
+  /** The conversation is still opening: what waits, waits for it, not for a turn to end. */
   opening?: boolean;
   /** Whether this session's door can stop a turn at all. */
   stoppable?: boolean;
@@ -193,20 +193,20 @@ export function Composer({
   mentions?: MentionSource;
   /** Told whether a mention is being written, so the frame asks for the files only then. */
   onMentioning?: (writing: boolean) => void;
-  /** What the box says while empty, where the conversation is not a repository's (HELP1a). */
+  /** What the box says while empty, where the conversation is not a repository's. */
   placeholder?: string;
   /** Whether files go with a message. An answer to a parked session is words, and takes none. */
   attachments?: boolean;
   /** What the send button says, where sending is a move of its own (an answer that carries a session on). */
   sendLabel?: string;
-  /** How full the session's context is, for the ring under the box (CONV5). Absent, no ring. */
+  /** How full the session's context is, for the ring under the box. Absent, no ring. */
   context?: { usage?: Usage; door?: 'structured' | 'text' };
-  /** The words and the files attached to them, and the level chosen from the menu (COWORK1a); none is the default. */
+  /** The words and the files attached to them, and the level chosen from the menu; none is the default. */
   onSend: (text: string, files: File[], level?: Level) => void;
   onFinish: () => void;
   /**
    * The session's stop, where this form owns it: Ask Daoris's panel, which holds its conversation on every view. In
-   * Sessions the stop's one owner is the page header (D126 §3.3), so absent there, and no stop is drawn.
+   * Sessions the stop's one owner is the page header, so absent there, and no stop is drawn.
    */
   onStop?: () => void;
   onStopTurn?: () => void;
@@ -224,7 +224,7 @@ export function Composer({
   const chooser = useFileChooser(attach.attach, t('carry.choose'));
   const files = carry.files;
 
-  // A waiting message being reworded (QUEUEEDIT1b): its words are in the box, and what the box held is kept for after.
+  // A waiting message being reworded: its words are in the box, and what the box held is kept for after.
   const [editing, setEditing] = useState<{ id: string; stash: string } | null>(null);
   const [taken, setTaken] = useState(false);
   const [listed, setListed] = useState(false);
@@ -261,7 +261,7 @@ export function Composer({
     } catch (error) { said(error); }
   };
 
-  // `@` a file (CONV4d): where the caret is decides whether a mention is being written.
+  // `@` a file: where the caret is decides whether a mention is being written.
   const field = useRef<HTMLTextAreaElement>(null);
   const listId = useId();
   const [caret, setCaret] = useState(0);
@@ -291,14 +291,14 @@ export function Composer({
     placeCaret.current = null;
   }, [text]);
 
-  // Told to take the focus (D126 §3.1's *Answer…*): once per telling, a new one each press.
+  // Told to take the focus (*Answer…*): once per telling, a new one each press.
   useEffect(() => {
     if (focus > 0) field.current?.focus();
   }, [focus]);
 
   const follow = (box: HTMLTextAreaElement) => {
     // 🔴 While a taken file is on its way into the box, the box still holds the text before it. React
-    // reads the selection on the same keydown that takes one (seen on the window), and that reading,
+    // reads the selection on the same keydown that takes one, and that reading,
     // taken as the caret, put it back inside the mention and opened the list again.
     if (placeCaret.current !== null) return;
     setCaret(box.selectionStart);
@@ -309,7 +309,7 @@ export function Composer({
     if (!mention) return;
     const next = withMention(text, mention, path);
     if (next.text === text) {
-      // The file was already written in full: no new text will arrive to place the caret after, so it
+      // The file is already written in full: no new text will arrive to place the caret after, so it
       // is placed now — left pending, it would jump back here on the next keystroke.
       field.current?.setSelectionRange(next.caret, next.caret);
     } else {
@@ -320,7 +320,7 @@ export function Composer({
     setActive(0);
   };
 
-  // The list's keys first, while it offers something; then the form's own. An input method's first of all (IME1): the
+  // The list's keys first, while it offers something; then the form's own. An input method's first of all: the
   // Enter that accepts a candidate sent half a message, and its arrows, Tab and Escape are its own too.
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (isComposing(event)) return;
@@ -354,9 +354,9 @@ export function Composer({
     if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); say(); }
   };
 
-  // 🔴 No box where nothing listens (UX5 U9, INT4h's rule): an ended session keeps a box only while it
+  // 🔴 No box where nothing listens: an ended session keeps a box only while it
   // holds words the person wrote, read-only so they can be copied out. An empty box and a send under
-  // "what you typed is still here" was the window's view of every ended session opened from the rail.
+  // "what you typed is still here" would be the window's view of every ended session opened from the rail.
   const writing = live || text.trim() !== '';
 
   const say = () => {
@@ -365,7 +365,7 @@ export function Composer({
       // Rewording keeps the word's place and files, so the box's own files stay where they are. Blank is a removal, and
       // that is what *Remove* is for.
       if (!message || !live) return;
-      // REWORDBOUND1: the door's bound holds for a reword as for a send; the words and the edit stay in the box.
+      // The door's bound holds for a reword as for a send; the words and the edit stay in the box.
       if (accepts && !accepts(message)) return;
       const { id, stash } = editing;
       setRefused(null);
@@ -377,7 +377,7 @@ export function Composer({
       return;
     }
     if ((!message && files.length === 0 && !ready) || !live || sending) return;
-    // Words the door could not take stay in the box, unsent; the caller says why (MSG1f, D137 §2.4).
+    // Words the door could not take stay in the box, unsent; the caller says why.
     if (accepts && !accepts(message)) return;
     onSend(message, files);
     setText('');
@@ -385,9 +385,9 @@ export function Composer({
     attach.forget();
   };
 
-  // COWORK1a (D188; the message-urgency design §8.1): while a turn runs, the box's words at a level chosen from the menu beside
+  // While a turn runs, the box's words at a level chosen from the menu beside
   // *Send*. Enter and *Send* are the default; no level is remembered, so each word starts there. 🔴 With nothing typed the menu
-  // presses nothing: *now* was once a stop with an empty box, and a stop is the keeping stop's own press (trap 2).
+  // presses nothing: *now* with an empty box would be a stop, and a stop is the keeping stop's own press.
   const hasWords = text.trim() !== '' || files.length > 0;
   const leveled = live && taking && levels !== undefined && !editing;
   const sendAt = (level: Level) => {
@@ -399,13 +399,13 @@ export function Composer({
     setCarry(NO_CARRY);
     attach.forget();
   };
-  // A door that carries only text has no turns, so it honours no level and offers none (the design §3.0, trap 23).
+  // A door that carries only text has no turns, so it honours no level and offers none.
   const textDoor = context?.door === 'text';
-  // The keeping stop (the design §3.2): beside words held for the turn's end, where the door can stop a turn keeping the session.
+  // The keeping stop: beside words held for the turn's end, where the door can stop a turn keeping the session.
   const keeps = live && taking && Boolean(onKeepingStop) && levels !== undefined && !levels.nextStep && queued.length > 0;
   const [asking, setAsking] = useState(false);
   useEffect(() => { if (!keeps) setAsking(false); }, [keeps]);
-  // A level changed while the word waits (the design §8.2); one a turn took meanwhile is the agent's, said as a removal's is.
+  // A level changed while the word waits; one a turn took meanwhile is the agent's, said as a removal's is.
   const changeLevel = async (id: string, level: Level) => {
     setTaken(false);
     setRefused(null);
@@ -419,9 +419,9 @@ export function Composer({
 
   return (
     <form
-      // The box follows the centre's width, as the conversation above it does (UX5 U16:
-      // capped, it was half a maximized window). Its columns are bounded, here and in what waits: an `auto` column grows
-      // to its widest word, and a pasted URL as Ask Daoris's first words ran the box past the dock (ASKHIST1b).
+      // The box follows the centre's width, as the conversation above it does:
+      // capped, it would be half a maximized window. Its columns are bounded, here and in what waits: an `auto` column grows
+      // to its widest word, and a pasted URL as Ask Daoris's first words ran the box past the dock.
       className="grid grid-cols-[minmax(0,1fr)] gap-2 border-t border-line px-4 py-3"
       onSubmit={(event) => { event.preventDefault(); say(); }}
       {...(live && attachments ? attach.handlers : {})}
@@ -431,7 +431,7 @@ export function Composer({
 
       {live && queued.length > 0 && (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-1">
-          {/* Folded (WAITFOOT2c): one line with the count, so a park's answer is one box; a press opens the list. */}
+          {/* Folded: one line with the count, so a park's answer is one box; a press opens the list. */}
           {fold ? (
             <div className="flex min-w-0 items-center gap-2 text-meta text-ink-faint">
               <span className="shrink-0 font-semibold text-ink-soft">{t('work.composer.waitCount', { n: queued.length })}</span>
@@ -455,7 +455,7 @@ export function Composer({
                 className={WORDS_ROW}
               >
                 <Words message={message} />
-                {/* The level named only where it is not quiet (the design §8.2): the person's own word sent now. A word, never a hue. */}
+                {/* The level named only where it is not quiet: the person's own word sent now. A word, never a hue. */}
                 {message.level === 'now' && <span className="shrink-0"><Chip>{t('work.level.now')}</Chip></span>}
                 {message.id && (onRemove || onEdit || onMove || (onLevel && leveled)) && (
                   <span className="flex shrink-0 items-center gap-1">
@@ -520,7 +520,7 @@ export function Composer({
           </ol>
           )}
           {taken &&<p role="status" className="m-0 text-small text-ink-soft">{t('work.composer.taken')}</p>}
-          {/* The keeping stop (the design §3.2): its own press beside what waits for the turn's end, asking once, as a stop does. */}
+          {/* The keeping stop: its own press beside what waits for the turn's end, asking once, as a stop does. */}
           {keeps && (asking
             ? (
               <InlineConfirm
@@ -542,7 +542,7 @@ export function Composer({
         </div>
       )}
 
-      {/* Words on their way (SENDLOST1b), nearest the box they left, and shown whatever the session does meanwhile: the
+      {/* Words on their way, nearest the box they left, and shown whatever the session does meanwhile: the
           frame lets them go once the session holds them, or puts them back in the box. No control: they are not the
           driver's to take back yet. */}
       {going && going.words.length > 0 && (
@@ -638,9 +638,9 @@ export function Composer({
         {/* With no box, the sentence saying why stands where the send would, on the meter's line. */}
         {!writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.ended')}</p>}
         {/* The form's submit, and nothing else: its submit handler is the one path a press takes.
-            While a turn runs it is *Send* at the person's default, its tip saying what the door does (COWORK1a), or, with no
+            While a turn runs it is *Send* at the person's default, its tip saying what the door does, or, with no
             levels known, *queue*, because that is what a press does then. Absent once the session has ended, where a send
-            could only ever be a dead press (UX5 U9). */}
+            could only ever be a dead press. */}
         {live && (taking
           ? (
             <Tip content={t(!levels ? 'work.composer.queueTip' : levels.nextStep ? 'work.composer.sendNextStepTip' : 'work.composer.sendTurnEndTip')}>
@@ -662,7 +662,7 @@ export function Composer({
                 {sendLabel ?? t('work.composer.send')}
               </Button>
             ))}
-        {/* The levels beside *Send* (COWORK1a, the design §8.1), each sending the box's words at its level. */}
+        {/* The levels beside *Send*, each sending the box's words at its level. */}
         {leveled && levels && (
           <Menu.Root>
             <Menu.Trigger asChild>
@@ -722,7 +722,7 @@ export function Composer({
             )}
           </>
         )}
-        {/* The conversation's model and effort (AGT6b), and how full its context is (CONV5), at the
+        {/* The conversation's model and effort, and how full its context is, at the
             row's far end, where the reference keeps them. */}
         {(context || (live && offered && offered.length > 0 && onOption)) && (
           <span className="ml-auto flex flex-wrap items-center gap-2">

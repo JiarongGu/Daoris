@@ -7,7 +7,7 @@ using System.Text;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A code host on this machine's loopback serving bare repositories over git's smart HTTP, for GITAUTH1b's proof: each request handed to
+/// A code host on this machine's loopback serving bare repositories over git's smart HTTP: each request handed to
 /// <c>git http-backend</c> from the git that runs the test, as a CGI program, its answer relayed with the connection closed. A raw socket
 /// rather than <c>HttpListener</c>, as <see cref="RefusingHttpHost"/> is, which asks Windows for a reservation an ordinary account may
 /// not hold. Asks no sign-in and holds no credential of anyone's; pushes are served (<c>http.receivepack</c>), so whatever refuses one is
@@ -36,7 +36,7 @@ internal sealed class GitHttpBackendHost : IAsyncDisposable
 
     /// <param name="backend">git's <c>git-http-backend</c> program.</param>
     /// <param name="projects">The folder whose bare repositories are served, by their paths under it.</param>
-    /// <param name="basic">A user and token the host asks (HTTP Basic) before it serves anything, for GITAUTH1d's proof; null asks none.</param>
+    /// <param name="basic">A user and token the host asks (HTTP Basic) before it serves anything; null asks none.</param>
     public GitHttpBackendHost(string backend, string projects, (string User, string Token)? basic = null)
     {
         _backend = backend;

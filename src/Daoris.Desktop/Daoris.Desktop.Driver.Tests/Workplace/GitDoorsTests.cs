@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAUTH1b's tables (D198 points 2, 8, 11 and 13; the git-auth design §4.1-§4.3, §6.1, §6.2 and §6.7): what <see cref="GitWiring"/>
+/// The tables: what <see cref="GitWiring"/>
 /// hands a start, the ssh door's contract, the helper's commands by class, the judge's default door by door, the address's key and
 /// the landing's grant.
 /// </summary>
@@ -241,7 +241,7 @@ public sealed class GitDoorsTests : IDisposable
         return path;
     }
 
-    /// <summary>GITREADONLY1: a push through an identity read only on its host is refused at the ssh door in its words, a grant's included.</summary>
+    /// <summary>A push through an identity read only on its host is refused at the ssh door in its words, a grant's included.</summary>
     [Fact]
     public void A_push_through_a_read_only_identity_is_refused_at_the_ssh_door_in_its_words()
     {
@@ -261,7 +261,7 @@ public sealed class GitDoorsTests : IDisposable
         Assert.Contains(Lines("git.refused"), line => Field(line, "code") == "read-only");
     }
 
-    /// <summary>GITAUTH1f: where Write says ask and no instance of Daoris holds the home, the door refuses at once and leaves no go-ahead.</summary>
+    /// <summary>Where Write says ask and no instance of Daoris holds the home, the door refuses at once and leaves no go-ahead.</summary>
     [Fact]
     public void Where_Daoris_is_not_running_a_door_that_would_ask_refuses_at_once()
     {

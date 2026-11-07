@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1d (D215 point 6, the integration design §4.1's <c>merge</c>, §4.3, §5.2 step 4): a line rule of the line's
+/// A line rule of the line's
 /// <c>daoris.gates.json</c>, <c>{ paths, line, run }</c>, settles a landing's replay that conflicts only on lines its pattern matches,
 /// by its writer recomputing them from the replayed tree, and only where the person accepted that declaration for integration and it
 /// is still the one at the line's tip. Its command is read from the accepted blob alone, so a session never runs a command its own
@@ -177,7 +177,7 @@ public sealed class LandLineRuleLandingTests : LandedFixture
     private static async Task<bool> BranchAsync(string root, string branch) =>
         (await GitAsync(root, "branch", "--list", branch)).Trim().Length > 0;
 
-    /// <summary>What a refused landing must leave as it was, as <c>LandRebaseLandingTests</c> reads it.</summary>
+    /// <summary>What a refused landing must leave unchanged, as <c>LandRebaseLandingTests</c> reads it.</summary>
     private static async Task<string> StateAsync(string root, TreeOpened tree) =>
         string.Join("\n",
             (await GitAsync(root, "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads/", "refs/daoris/")).Trim(),

@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The usage history's last <see cref="UsageProjection.Horizon"/> held in memory for one home, read on as its files grow
-/// (USAGEPROBE1): what a start's projection reads, without parsing a month of turns at every start. Only what a projection
+/// The usage history's last <see cref="UsageProjection.Horizon"/> held in memory for one home, read on as its files grow:
+/// what a start's projection reads, without parsing a month of turns at every start. Only what a projection
 /// reads is held: each reading of a window the walk reads (the whole plan's <c>session</c> and <c>weekly</c>) that gave a
 /// number, and each turn a start bound to an account, weighed where its door reports each turn's own tokens.
 /// </summary>
 /// <remarks>
 /// Each month's file is read from where the last read stopped, a line still being written left for the next. A file shorter
-/// than was read (pruned, then begun again under its name) has everything read again. Never throws: what could not be read is
+/// than read (pruned, then begun again under its name) has everything read again. Never throws: what cannot be read is
 /// not there yet. Safe across threads; machine-local, as the history is.
 /// </remarks>
 public sealed class UsageLedger(string home)
@@ -22,7 +22,7 @@ public sealed class UsageLedger(string home)
     /// One account's readings and turns within <see cref="UsageProjection.Horizon"/> of <paramref name="now"/>, oldest first,
     /// the history read on first.
     /// </summary>
-    /// <param name="agent">The account's owner (AGT7).</param>
+    /// <param name="agent">The account's owner.</param>
     /// <param name="account">The account's folder name.</param>
     public (IReadOnlyList<ReadPoint> Readings, IReadOnlyList<SpentTurn> Turns) Of(string agent, string account, DateTimeOffset now)
     {
@@ -40,7 +40,7 @@ public sealed class UsageLedger(string home)
 
     private void ReadOn(DateTimeOffset since)
     {
-        // Every month that can hold a record since then: a record is filed by the month it was written in.
+        // Every month that can hold a record since then: a record is filed by the month it is written in.
         var first = new DateTimeOffset(since.UtcDateTime.Year, since.UtcDateTime.Month, 1, 0, 0, 0, TimeSpan.Zero);
         var readings = UsageHistory.ReadingMonths(home).Where(month => month.Month >= first).ToList();
         var turns = UsageHistory.TurnMonths(home).Where(month => month.Month >= first).ToList();
@@ -84,7 +84,7 @@ public sealed class UsageLedger(string home)
             _offsets[month.Name] = to;
             foreach (var kept in read)
             {
-                // A turn whose report's meaning is not known may be a running total (D179 point 8), and one that said no count
+                // A turn whose report's meaning is not known may be a running total, and one that said no count
                 // said nothing of its size: each is held as spend nothing weighs, never as none.
                 if (kept is { Agent: { } agent, Account: { } account })
                 {
@@ -98,7 +98,7 @@ public sealed class UsageLedger(string home)
         _turns.RemoveAll(each => each.Turn.Ended < since);
     }
 
-    // Everything read again from the start at the next read: a file was begun again under a name already read.
+    // Everything read again from the start at the next read: a file begun again under a name already read.
     private void Forget()
     {
         _offsets.Clear();

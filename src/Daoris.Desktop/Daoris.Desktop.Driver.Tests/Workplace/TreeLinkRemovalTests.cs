@@ -4,8 +4,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 TREELINK1 (D51's note): a tree's removal never follows a link out of it. TREEDEPS1 probed git 2.53.0.windows.3 on the owner's
-/// machine: <c>git worktree remove --force</c> followed a junction in a tree to a folder outside it and deleted the file there. A
+/// 🔴 A tree's removal never follows a link out of it. On git 2.53.0.windows.3, the owner's
+/// machine, <c>git worktree remove --force</c> follows a junction in a tree to a folder outside it and deletes the file there. A
 /// session that links outside its tree (<c>npm link</c>, a workspace's junction, a link of its own) would lose the target when its
 /// tree went. Each removal path is driven here over a tree holding a junction to a folder outside the trees home: the folder's file
 /// still stands after it, and the junction is gone with its tree. Elsewhere the link is a symbolic link, which git never followed,
@@ -38,7 +38,7 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
 
     /// <summary>
     /// The unforced removal, behind the clean-up's proof: a junction in an ignored build folder the checkout also holds, as npm's
-    /// workspaces make under <c>node_modules</c>, is no keep (SQUASHTIDY1c), and goes as a link.
+    /// workspaces make under <c>node_modules</c>, is no keep, and goes as a link.
     /// </summary>
     [Fact]
     public async Task An_unforced_removal_leaves_what_a_link_in_a_build_folder_points_at()
@@ -55,7 +55,7 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
         Assert.Equal(Persons, await File.ReadAllTextAsync(file));
     }
 
-    /// <summary>The person's press of the clean-up (D88), which deletes the tree with git.</summary>
+    /// <summary>The person's press of the clean-up, which deletes the tree with git.</summary>
     [Fact]
     public async Task The_clean_ups_press_leaves_what_a_link_in_the_tree_points_at()
     {
@@ -72,8 +72,8 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// The look's own tidy (AUTOTIDY1): the tree's folder is moved aside whole, never deleted, and fourteen days later the purge
-    /// takes the link under its build folder as a link (TIDIEDLINK1). Neither step reaches the target.
+    /// The look's own tidy: the tree's folder is moved aside whole, never deleted, and fourteen days later the purge
+    /// takes the link under its build folder as a link. Neither step reaches the target.
     /// </summary>
     [Fact]
     public async Task The_looks_set_aside_and_its_purge_leave_what_a_link_in_the_tree_points_at()
@@ -92,8 +92,8 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// An open that did not finish, undone (OPENCUT1): git lets go of its tree with <c>--force</c> twice, the hardest removal of all,
-    /// and what is left is deleted here. A junction in it, as TREEDEPS1's copy of the dependencies makes, goes as a link.
+    /// An open that does not finish, undone: git lets go of its tree with <c>--force</c> twice, the hardest removal of all,
+    /// and what is left is deleted here. A junction in it, as the copy of the dependencies makes, goes as a link.
     /// </summary>
     [Fact]
     public async Task An_undone_opening_leaves_what_a_link_in_its_tree_points_at()
@@ -110,7 +110,7 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// A tree whose opening a kill cut off (OPENCUT1, TreeStrays): the look moves its folder aside whole and lets git forget it, and the
+    /// A tree whose opening a kill cut off (<c>TreeStrays</c>): the look moves its folder aside whole and lets git forget it, and the
     /// purge takes the link under its build folder as a link.
     /// </summary>
     [Fact]
@@ -132,7 +132,7 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
 
     /// <summary>
     /// A tree whose own folder is a link is somewhere else: the removal would reach through it, so it is refused, forced or not, and
-    /// what the link points at stands as it was.
+    /// what the link points at stands untouched.
     /// </summary>
     [Fact]
     public async Task A_tree_whose_own_folder_is_a_link_is_never_removed_through_it()
@@ -167,7 +167,7 @@ public sealed class TreeLinkRemovalTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// The one folder the look moved aside, purged once its wait is over: gone, and <paramref name="file"/> as it was. KEEPSIZE1b: a finished
+    /// The one folder the look moved aside, purged once its wait is over: gone, and <paramref name="file"/> untouched. A finished
     /// tree's folder, its record kept, goes by the hour on a holding check in <paramref name="root"/>, run right before its rename; one the
     /// look's tidy took that is no finished tree's goes at its days.
     /// </summary>

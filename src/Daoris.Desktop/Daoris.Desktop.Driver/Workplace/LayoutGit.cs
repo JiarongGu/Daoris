@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The git half of <see cref="LayoutReader"/> (LAYOUT7, D117 §6.5): a repository's line read as git objects, which the pure
+/// The git half of <see cref="LayoutReader"/>: a repository's line read as git objects, which the pure
 /// half (<see cref="LayoutReader.Read"/>) makes facts of; the set-up press and the tests call it by this name.
 /// </summary>
 public static class LayoutGit
@@ -19,7 +19,7 @@ public static class LayoutGit
     /// <returns>The facts, or why the line could not be read: no repository there, or a line that names no commit.</returns>
     public static async Task<LineReading> ReadAsync(string root, string line, CancellationToken ct = default)
     {
-        // 🔴 git walks UP (FIX-LOG): a folder that is not a repository's top would answer for the one above it.
+        // 🔴 git walks UP: a folder that is not a repository's top would answer for the one above it.
         if (!await WorkingTree.IsTopLevelAsync(root, ct).ConfigureAwait(false))
         {
             return new(null, "its checkout here is not a git repository");

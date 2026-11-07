@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import '../../locales/i18n';
 import { PatchView } from './PatchView';
 
-// A file's patch drawn (REVIEW2): numbered, highlighted in its language, unified or side by side. A
+// A file's patch drawn: numbered, highlighted in its language, unified or side by side. A
 // molecule, so every state is reached by passing a patch.
 
 const PATCH = [
@@ -58,8 +58,8 @@ describe('a patch, side by side', () => {
 });
 
 /**
- * Seen on the window (REVIEW2): a long line on the old side pushed the table wider than the pane, and
- * the new side went out of view — side by side showed one side. The two halves are fixed at half each
+ * A long line on the old side must not push the table wider than the pane and the
+ * new side out of view — side by side must show both sides. The two halves are fixed at half each
  * and their lines wrap, so both stay in view; the unified layout keeps one line to a row and scrolls.
  */
 describe('a long line, side by side', () => {

@@ -111,7 +111,7 @@ internal static class SessionsSaying
     /// A say asked of the loops on this home and waited for, until its answer or the wait's end; one a loop took by then is waited
     /// for until that loop answers it. A session winding up is asked again until its record has ended, since the say door keeps
     /// nothing for a record still running. Null and not taken where nothing took it, which is withdrawn so no loop acts on it after
-    /// the person was told.
+    /// the person is told.
     /// </summary>
     private static async Task<(WordsHeld? Held, bool Taken)> AskLoopAsync(
         SessionsWorld world, SessionRecord record, string text, IReadOnlyList<string> files, Waited waited, SessionsAsk ask, CancellationToken ct)
@@ -138,8 +138,8 @@ internal static class SessionsSaying
                 if (requests.Withdraw(request)) return (winding, winding is not null);
 
                 // Taken: the loop that took it answers it whatever became of the words, a failure included, so that answer is
-                // waited for rather than the clock read. Read once at the wait's end, a loop under load was said to have taken the
-                // words and not said where they stood while it was writing its answer.
+                // waited for rather than the clock read. Reading once at the wait's end would catch a loop under load that has taken the
+                // words and not said where they stand while it writes its answer.
                 return (await AnsweredAsync(world, requests, request, ct).ConfigureAwait(false) ?? winding, true);
             }
 

@@ -6,11 +6,11 @@ import i18n from '../../locales/i18n';
 import type { Session } from '../../data/api';
 import { code } from '../../test/code';
 import type { Answered } from '../InlineConfirm';
-import { composeStories } from '@storybook/react-vite';
+import { composeStories } from '../../test/composeStories';
 import { DeleteAsk, SessionPageHead, StopAsk } from './SessionPageHead';
 import * as stories from './SessionPageHead.stories';
 
-// The session's page header (SESSUX1d, D126 §3.2) and its stop's ask (§3.3), as molecules: every state is reached by
+// The session's page header and its stop's ask, as molecules: every state is reached by
 // passing it. Which acts apply is the rule's (`acts.test.ts`); this holds how the header draws what it is handed.
 
 const session = (over: Partial<Session> = {}): Session => ({
@@ -32,7 +32,7 @@ describe('a session’s page header', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
   /**
-   * UX7c (D152 §7, the UX7 design §5.2): its word leads, so it stays in one place whatever the title's length; then the
+   * Its word leads, so it stays in one place whatever the title's length; then the
    * title on one line, whole in its tip; then its facts, once. Its id is in its ⋯ and its Details, never a line of the head.
    */
   it('leads with its word, then its title on one line whole in its tip, then its facts, and no id', () => {
@@ -40,7 +40,7 @@ describe('a session’s page header', () => {
     const header = screen.getByRole('banner');
     const title = within(header).getByRole('heading', { level: 1, name: 'Expose a streaming budget on the chunk API' });
     expect(title.getAttribute('title')).toBe('Expose a streaming budget on the chunk API');
-    // HEAD2c (D162): one line by PageHead's clamp, never a second the head grows by.
+    // One line by PageHead's clamp, never a second the head grows by.
     expect(title.className).toContain('line-clamp-1');
     expect(title.className).not.toContain('line-clamp-2');
     const word = within(header).getByText('working');
@@ -49,7 +49,7 @@ describe('a session’s page header', () => {
     expect(within(header).queryByText('s1a2b3c4')).toBeNull();
   });
 
-  /** REVIEWFLOW1b: *next* names the press and is a door to its step, last on the facts line, in both languages. */
+  /** *next* names the press and is a door to its step, last on the facts line, in both languages. */
   it('ends its facts on a door to the next press, and presses it', async () => {
     const onNext = vi.fn();
     head({ facts: ['engine', '3 parts to land'], next: { press: 'accept', onPress: onNext } });
@@ -74,7 +74,7 @@ describe('a session’s page header', () => {
     expect(screen.getByRole('banner').querySelectorAll('p')).toHaveLength(0);
   });
 
-  /** §3.2: the primary act where the state has one, then *Stop…* while live, then ⋯ with the rest in §3.1's order. */
+  /** The primary act where the state has one, then *Stop…* while live, then ⋯ with the rest in the one rule's order. */
   it('leads with the primary act, then Stop…, and holds the rest in its ⋯ in order', async () => {
     const act = vi.fn();
     head({ acts: ['stop', 'retry', 'review', 'openFolder', 'terminal', 'detach', 'archive', 'copy'], primary: 'retry', onAct: act });
@@ -115,7 +115,7 @@ describe('a session’s page header', () => {
     expect(within(screen.getByRole('banner')).queryAllByRole('button')).toHaveLength(0);
   });
 
-  /** It is pinned: the page scrolls under it, and its acts hold still beside its title at every width (HEADFIT1b, D185). */
+  /** It is pinned: the page scrolls under it, and its acts hold still beside its title at every width. */
   it('is pinned at the top of the main area, and its acts are a column of their own beside the title at every width', () => {
     head();
     const header = screen.getByRole('banner');
@@ -129,7 +129,7 @@ describe('a session’s page header', () => {
   });
 
   /**
-   * HEADFIT1b (D185): at 640 px of the main area or less *Stop…* is its square, its words its name and its tip, still one press
+   * At 640 px of the main area or less *Stop…* is its square, its words its name and its tip, still one press
    * and never in the ⋯. The browser's layout is the measured check's (`measured/head.spec.ts`); here the width is handed in.
    */
   it('draws Stop… as its square at the narrow width, named by its words, one press, never in the ⋯', async () => {
@@ -183,14 +183,14 @@ describe('the stop’s ask', () => {
     expect(stop).toHaveBeenCalledOnce();
   });
 
-  /** UXFIX2: its sentence takes the focus and describes the move, so a keyboard reaches *Stop session* having heard it. */
+  /** Its sentence takes the focus and describes the move, so a keyboard reaches *Stop session* having heard it. */
   it('takes the focus to what follows, which describes the move', async () => {
     render(<StopAsk sentence="Stops the session now." onStop={() => {}} onClose={() => {}} />);
     await waitFor(() => expect(screen.getByText('Stops the session now.')).toHaveFocus());
     expect(screen.getByRole('button', { name: 'Stop session' })).toHaveAccessibleDescription('Stops the session now.');
   });
 
-  /** UXFIX2: the press keeps it open and waiting; a refusal is said inside it, word for word; it closes once the stop lands. */
+  /** The press keeps it open and waiting; a refusal is said inside it, word for word; it closes once the stop lands. */
   it('stays open while its stop is on its way, says a refusal inside itself, and closes once it lands', async () => {
     const close = vi.fn();
     let answered: Answered | undefined;
@@ -215,7 +215,7 @@ describe('the stop’s ask', () => {
   });
 });
 
-/** SESSUX1f (D126 §5.4): *Delete…* sits in the header's ⋯, and its ask says what goes and that nothing brings it back. */
+/** *Delete…* sits in the header's ⋯, and its ask says what goes and that nothing brings it back. */
 describe('the delete’s ask', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
@@ -246,7 +246,7 @@ describe('the delete’s ask', () => {
     expect(remove).toHaveBeenCalledOnce();
   });
 
-  /** UXFIX2: what goes takes the focus and describes the move; a refusal is said inside it; it closes once the delete lands. */
+  /** What goes takes the focus and describes the move; a refusal is said inside it; it closes once the delete lands. */
   it('takes the focus to what goes, says a refusal inside itself, and closes once the delete lands', async () => {
     const close = vi.fn();
     let answered: Answered | undefined;
@@ -274,7 +274,7 @@ describe('the delete’s ask', () => {
 });
 
 /**
- * LIMITSWITCH3b (D137's note of 2026-10-26): the head of a closed quest's finished session whose words are held for a cooling account
+ * The head of a closed quest's finished session whose words are held for a cooling account
  * wears the wait as its word, with its time and account on the facts line, in both languages, never *completed*.
  */
 describe('the head of a record held for an account’s reset, in its stories', () => {
@@ -302,7 +302,7 @@ describe('the head of a record held for an account’s reset, in its stories', (
 });
 
 /**
- * MODELROLE1c3 (D205 §4.6 item 2, §7.1): the head's choice chip is drawn at the frame's three widths in both languages, each story
+ * The head's choice chip is drawn at the frame's three widths in both languages, each story
  * wearing its word on the facts line and at its width, so a reviewer sees it where the page puts it.
  */
 describe('the head’s choice chip, in its stories', () => {

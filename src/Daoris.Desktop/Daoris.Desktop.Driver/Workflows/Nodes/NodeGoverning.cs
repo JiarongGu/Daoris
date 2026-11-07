@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// Which units a graph governs and how: each governed unit with its graph, run and declarations, a run bound to a graph version on its own
-/// record, and what a fresh read says of the quests whose closure graph the choices no longer hold. Pure: it reads what it is handed.
+/// record, and what a fresh read says of the quests whose closure graph the choices do not hold. Pure: it reads what it is handed.
 /// </summary>
 internal static class NodeGoverning
 {
@@ -14,15 +14,15 @@ internal static class NodeGoverning
     /// <param name="kept">The closure graph this home keeps under a digest (<see cref="ClosureGraphs.Read"/>), or null where it keeps none.</param>
     /// <param name="versionOf">
     /// The named version a quest unit's run is bound to (<see cref="NodeRuntimeLook.Bound"/>), or null where none: a quest bound to one is
-    /// governed by it alone, a steps version's by D157's run, a graph version's on the run's own record (<paramref name="runs"/>), so Current's
-    /// graph never governs it beside either. An unreadable binding holds it the same way: its run cannot start (D157 §5.2).
+    /// governed by it alone, a steps version's by its own run, a graph version's on the run's own record (<paramref name="runs"/>), so Current's
+    /// graph never governs it beside either. An unreadable binding holds it the same way: its run cannot start.
     /// </param>
     /// <param name="runs">
     /// The runs bound to graph versions: each is governed on its own record, <c>run:&lt;run&gt;</c>, and Current's graphs govern none of its
     /// quests and none of the branches they produced; a branch two runs produced, one of them a graph run, is held; and while the work's
     /// attribution is not read (<see cref="NodeUnitsRead.Unread"/>), no branch of a repository holding an open graph run is governed.
     /// </param>
-    /// <param name="said">What the pass says of them: a branch held, an attribution not read, a version that no longer reads.</param>
+    /// <param name="said">What the pass says of them: a branch held, an attribution not read, a version that does not read.</param>
     public static IReadOnlyList<GovernedUnit> Govern(
         DriverConfig config, NodeUnitsRead read, IReadOnlyList<NodeDeclaration> steps, Func<string, NodeGraph?>? kept = null,
         Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?>? versionOf = null, IReadOnlyList<GraphRun>? runs = null,
@@ -37,11 +37,11 @@ internal static class NodeGoverning
         {
             var unit = each;
             var repository = unit.Owner.Repository ?? "";
-            // Only a run's own record and a closure graph a quest was bound to govern a unit: no graph is drawn from the choices.
+            // Only a run's own record and a closure graph a quest is bound to govern a unit: no graph is drawn from the choices.
             NodeGraph? graph = null;
 
-            // A closure graph governs a quest bound to it at its take, and only that quest; any other keeps today's done. It is the graph the
-            // quest was bound to, kept by this home.
+            // A closure graph governs a quest bound to it at its take, and only that quest; any other keeps the plain done. It is the graph the
+            // quest is bound to, kept by this home.
             var closes = false;
             if (unit.Kind == WorkUnitKind.Quest && unit.Records.Quest is { Closure: { Length: > 0 } bound } quest)
             {
@@ -56,12 +56,12 @@ internal static class NodeGoverning
                 if (closes) unit = unit with { Subject = unit.Subject with { Revision = QuestClosing.Revision(quest, quests, read.Units, read.Tips) } };
             }
 
-            // A quest whose run is bound to a named version is that version's, run by D157's engine: Current's graph does not govern it as
+            // A quest whose run is bound to a named version is that version's, run by its own engine: Current's graph does not govern it as
             // well. A quest bound to a closure graph at its take is that graph's, as above.
             if (!closes && unit.Kind == WorkUnitKind.Quest && versionOf?.Invoke(unit, quests.Values) is not null) continue;
 
             // A quest of a run bound to a graph version is that run's, read from the home's own runs, and a branch its quests produced is its
-            // graph's; one two runs produced, one a graph run's, is held, said; and one whose attribution was not read, in a repository holding
+            // graph's; one two runs produced, one a graph run's, is held, said; and one whose attribution is not read, in a repository holding
             // an open graph run, is governed by nobody, never handed to Current on a guess.
             if (!closes && unit.Records.Quest is { } own && owners.Of(own) is not null) continue;
             if (owners.Keeps(unit) is { } keeps)
@@ -102,9 +102,10 @@ internal static class NodeGoverning
                       + "while a run bound to a graph version is open there, and every binding on that run's record is kept.");
         }
 
+        var reads = new RunReads(read, owners);
         foreach (var run in runs ?? [])
         {
-            if (Governs(run, read, owners, steps, identities, said) is { } one) governed.Add(one);
+            if (Governs(run, read, reads, owners, steps, identities, said) is { } one) governed.Add(one);
         }
 
         return governed;
@@ -159,19 +160,52 @@ internal static class NodeGoverning
         return identity;
     }
 
+    /// <summary>What every run of a read is judged from, indexed once: asked of each run, a scan of the units for it grew with the square of them.</summary>
+    private sealed class RunReads
+    {
+        public RunReads(NodeUnitsRead read, RunOwners owners)
+        {
+            Units = read.Units.GroupBy(unit => unit.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
+            Quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
+            Chains = new QuestChains(Quests);
+            var branches = read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch).ToList();
+            BranchesOf = branches.ToLookup(unit => owners.Owns(unit)?.Run, StringComparer.Ordinal);
+            foreach (var branch in branches)
+            {
+                foreach (var link in branch.Links.Where(link => link.Relation == WorkRelation.ProducedBy).Distinct())
+                {
+                    if (!ProducedBy.TryGetValue(link.Unit, out var same)) ProducedBy[link.Unit] = same = [];
+                    same.Add(branch);
+                }
+            }
+        }
+
+        public Dictionary<string, WorkUnit> Units { get; }
+
+        public List<QuestView> Quests { get; }
+
+        public QuestChains Chains { get; }
+
+        /// <summary>The branch units by the run that owns them.</summary>
+        public ILookup<string?, WorkUnit> BranchesOf { get; }
+
+        /// <summary>The branch units by the unit a link says produced them, in the order of the units.</summary>
+        public Dictionary<string, List<WorkUnit>> ProducedBy { get; } = new(StringComparer.Ordinal);
+    }
+
     /// <summary>
     /// A run bound to a graph version, as the runtime governs it: its own unit under its version's graph, named by its binding's run, and what
-    /// its nodes observe this look. Null where it is not judged now: its version no longer reads (held whole, said), or it ended and its chain
-    /// has not come back here since, or no start or first look asked a pass for it.
+    /// its nodes observe this look. Null where it is not judged now: its version does not read (held whole, said), or it ended and its chain
+    /// has not come back here, or no start or first look asked a pass for it.
     /// </summary>
     private static GovernedUnit? Governs(
-        GraphRun run, NodeUnitsRead read, RunOwners owners, IReadOnlyList<NodeDeclaration> steps, Dictionary<string, string> identities,
+        GraphRun run, NodeUnitsRead read, RunReads reads, RunOwners owners, IReadOnlyList<NodeDeclaration> steps, Dictionary<string, string> identities,
         ICollection<string>? said)
     {
         var binding = run.Binding;
         if (run.Version is not { Graph: { } graph, GraphDigest: { } digest })
         {
-            // A run governed before, not ended: its record is held whole (D157 §5.2). One never governed here has nothing to hold.
+            // A run governed here, not ended: its record is held whole. One never governed here has nothing to hold.
             if (run is { Recorded: true, Ended: null })
             {
                 said?.Add($"work  {run.Unit}: the graph version its run is bound to does not read ({run.Version.Unreadable}), so its record is held whole, "
@@ -198,15 +232,14 @@ internal static class NodeGoverning
             };
         }
 
-        var units = read.Units.GroupBy(unit => unit.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
-        var quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
+        var (units, quests) = (reads.Units, reads.Quests);
 
         // Its work here is its chain's quests in its repository, never a look's set-up step, which a run's work leaves out. A conversation's
         // run has no quest; its newest candidate, submitted at the person's press, stands in the quest's place, and a run with none yet
         // judges nothing.
         var chat = run.Candidate?.Newest;
         if (ChatRuns.IsChatRun(binding.Run) && chat is null) return null;
-        List<QuestView> work = chat is not null ? [] : ReviewGate.ChainOf(quests, binding.Run)
+        List<QuestView> work = chat is not null ? [] : reads.Chains.Of(binding.Run)
             .Where(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase) && quest.SetUpIn is null).ToList();
         var newest = work.LastOrDefault();
 
@@ -221,10 +254,10 @@ internal static class NodeGoverning
 
         // The branch its newest session worked, the newest opened of those the newest quest produced, whether its tree stands or not; one held
         // between two runs is no subject. Every branch of its quests, its former subjects included, is what an answer maps back by.
-        var branches = read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch && owners.Owns(unit)?.Run == binding.Run).ToList();
+        var branches = reads.BranchesOf[binding.Run].ToList();
         var produced = newest is null ? null : new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(newest.Id));
         var newestBranch = chat is not null ? branches.FirstOrDefault() : produced is null ? null
-            : read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch && unit.Links.Contains(produced)).MaxBy(Opened);
+            : reads.ProducedBy.GetValueOrDefault(produced.Unit)?.MaxBy(Opened);
         var branch = newestBranch is not null && owners.Keeps(newestBranch) == RunOwners.Run ? newestBranch : null;
 
         // The go-aheads on its ask that a session serving one of its quests, or a request naming one, asked.
@@ -258,14 +291,14 @@ internal static class NodeGoverning
         };
 
         var (declared, dispatchable, observable) = Declare(graph, steps);
-        // The branch its work stands on: the one its tree's agent moved onto where the look learned it (TREEFOLLOW1), else its session branch, which
-        // then no longer moves, so its branch-side nodes bound to that tip would never read the tree's work.
+        // The branch its work stands on: the one its tree's agent moved onto where the look learned it, else its session branch, which
+        // then does not move, so its branch-side nodes bound to that tip would never read the tree's work.
         var watched = new WatchedUnit(repository, binding.Workspace, root, branch?.Records.Branch?.Now ?? branch?.Subject.Artifact ?? "", "", null, null, [])
         {
             Unit = branch?.Id ?? run.Unit, Identity = identity,
         };
 
-        // A named version is never edited (D157 point 6), so its run takes no places: its nodes are scoped and bound by the version's digest.
+        // A named version is never edited, so its run takes no places: its nodes are scoped and bound by the version's digest.
         return new GovernedUnit(self, graph, digest, binding.Run, declared, dispatchable, watched) { Observable = observable, Scope = scope };
 
         // A conversation's candidate as the quest `claimed` observes: done at the tip the press submitted, one per candidate of the run.
@@ -282,23 +315,36 @@ internal static class NodeGoverning
             };
         }
 
-        // When a branch unit's work was opened: its session branch's opening, else its newest landing.
+        // When a branch unit's work is opened: its session branch's opening, else its newest landing.
         static DateTimeOffset Opened(WorkUnit unit) =>
             unit.Records.Branch?.At ?? unit.Records.Landings.Select(landing => landing.LandedAt).DefaultIfEmpty(DateTimeOffset.MinValue).Max();
     }
 
     /// <summary>
-    /// The named version a quest unit's run is bound to in <paramref name="home"/> (D157 §5.1): the run its chain's first quest in its repository
+    /// The named version a quest unit's run is bound to in <paramref name="home"/>: the run its chain's first quest in its repository
     /// names (<see cref="WorkflowRunBindings.RunOf"/>), read through the home's workflows and run bindings (<see cref="WorkflowRunNodes.VersionOf"/>)
-    /// and never written; null under Current or with no binding. A home that bound no run reads one absent file a quest.
+    /// and never written; null under Current or with no binding. A home that binds no run reads one absent file a quest.
     /// </summary>
     public static Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?> BoundIn(string home)
     {
-        var store = new WorkflowFiles(home);
+        var store = new StampedWorkflows(new WorkflowFiles(home), home);
         var runs = new WorkflowRunFiles(home);
-        return (unit, quests) => unit.Records.Quest is not { } quest
-            ? null
-            : WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(ReviewGate.ChainOf([.. quests], quest.Id), unit.Owner.Repository ?? "") ?? quest.Id);
+        // The chains of one list of quests, indexed once for every quest asked of it.
+        var gate = new object();
+        IReadOnlyCollection<QuestView>? indexed = null;
+        QuestChains? chains = null;
+        return (unit, quests) =>
+        {
+            if (unit.Records.Quest is not { } quest) return null;
+            QuestChains known;
+            lock (gate)
+            {
+                if (!ReferenceEquals(indexed, quests)) (indexed, chains) = (quests, new QuestChains([.. quests]));
+                known = chains!;
+            }
+
+            return WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(known.Of(quest.Id), unit.Owner.Repository ?? "") ?? quest.Id);
+        };
     }
 
     /// <summary>Every quest a read holds, by id.</summary>
@@ -307,7 +353,7 @@ internal static class NodeGoverning
             .GroupBy(quest => quest.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
 
     /// <summary>
-    /// What a fresh read says of the open quests bound to a closure graph the choices no longer hold, one line each, so once a pass: one closed
+    /// What a fresh read says of the open quests bound to a closure graph the choices do not hold, one line each, so once a pass: one closed
     /// through the graph this home keeps for it, naming the nodes that graph runs which the choices' graph does not, and those the choices'
     /// graph runs which it does not; one whose graph is kept nowhere here, so nothing here closes it and its close waits. A quest bound to the
     /// choices' own graph, or Done, says nothing.

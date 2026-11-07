@@ -1,24 +1,24 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The codes a choice that may run is read at (COMPANYVIEW1c): beside <see cref="StartPasses"/>' codes for one that cannot, by the account it
+/// The codes a choice that may run is read at: beside <see cref="StartPasses"/>' codes for one that cannot, by the account it
 /// would run on.
 /// </summary>
 public static class ChoiceStates
 {
-    /// <summary>An account it may use was last read signed in.</summary>
+    /// <summary>An account it may use is last read signed in.</summary>
     public const string Ready = "ready";
 
-    /// <summary>The account it would run on was last read neither signed in nor out.</summary>
+    /// <summary>The account it would run on is last read neither signed in nor out.</summary>
     public const string Unknown = "unknown";
 
-    /// <summary>The account it would run on was never read: a start runs on it, as on any unknown.</summary>
+    /// <summary>The account it would run on is never read: a start runs on it, as on any unknown.</summary>
     public const string NotRead = "not-read";
 }
 
-/// <summary>A choice's state by the last readings alone (COMPANYVIEW1c).</summary>
+/// <summary>A choice's state by the last readings alone.</summary>
 /// <param name="Code">One of <see cref="ChoiceStates"/>, or of <see cref="StartPasses"/>' codes.</param>
-/// <param name="At">When the reading it rests on was made: a sign-in's, a cool-off's or an offer's; none where it rests on none.</param>
+/// <param name="At">When the reading it rests on is made: a sign-in's, a cool-off's or an offer's; none where it rests on none.</param>
 /// <param name="Account">The account it rests on; none for the agent's own home and where no account is.</param>
 /// <param name="Until">A cool-off's end, the soonest of the agent's accounts'.</param>
 public sealed record ChoiceState(string Code, DateTimeOffset? At = null, string? Account = null, DateTimeOffset? Until = null);
@@ -41,14 +41,14 @@ public sealed record StructurePlace(RolePlace Place, IReadOnlyList<StructureWork
 public sealed record StructureAgent(string Agent, bool Known, bool? Installed, string? Version);
 
 /// <summary>
-/// The roles' structure for the places and works asked (COMPANYVIEW1c, the company-view design §4): each place's role per work by
+/// The roles' structure for the places and works asked: each place's role per work by
 /// <see cref="RoleCatalog.RoleFor"/>, as a start finds it; each work's rule by <see cref="WorkPolicies.Of"/>, inherited and default answers
-/// included, with where it was set; and each choice of the role's order, fenced by the rule's agents as a start's is, with its state from
+/// included, with where it is set; and each choice of the role's order, fenced by the rule's agents as a start's is, with its state from
 /// the last readings alone.
 /// </summary>
 /// <remarks>
 /// A projection of the configuration, never a start's selection: it walks no account, asks no account, binary or server, takes no count,
-/// and reads every choice, where a start stops at the first that runs (D150 point 5, <see cref="HarnessRoster.LastRead"/>). Each part's
+/// and reads every choice, where a start stops at the first that runs (<see cref="HarnessRoster.LastRead"/>). Each part's
 /// failure is said on its item; the rest reads.
 /// </remarks>
 public sealed record RoleStructure(RoleCatalog? Catalogue, string? CatalogueFailed, IReadOnlyList<StructurePlace> Places, IReadOnlyList<StructureAgent> Agents)
@@ -129,7 +129,7 @@ public sealed record RoleStructure(RoleCatalog? Catalogue, string? CatalogueFail
     }
 
     /// <summary>
-    /// A choice judged as a start's walk would pass it, from what was last read: a binary not there and no account each before any account;
+    /// A choice judged as a start's walk would pass it, from what is last read: a binary not there and no account each before any account;
     /// then the first account it may use, a signed-in one before an unknown one before one never read; else, as the walk's hold says it,
     /// a model every ready account refused, then the soonest cool-off, then a sign-out, then a refusal its provider gave.
     /// </summary>

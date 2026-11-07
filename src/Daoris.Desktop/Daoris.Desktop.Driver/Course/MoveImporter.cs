@@ -9,7 +9,7 @@ internal sealed class MoveImporter(MoveStore owner)
 {
     /// <summary>
     /// Write the move an older build's box kept as this store's own row, claimed by this store's run at generation 1, with the import's receipt
-    /// in the same transaction (§13.5): held, nothing written, until the start's confirmation is settled; and refused, nothing written, where
+    /// in the same transaction: held, nothing written, until the start's confirmation is settled; and refused, nothing written, where
     /// the record left already has a standing move, which it then waits behind. Its moments are the box's where it says one, else the import's.
     /// </summary>
     /// <exception cref="ArgumentException">The box is at a phase no box keeps, or at <c>opened</c> with no destination, or does not read as a decision.</exception>

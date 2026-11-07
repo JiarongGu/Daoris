@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Participants' part of a run's sink (the agent-provider design §11 row l; COWORKVIEW1a): each child the run's door said started or ended,
+/// Participants' part of a run's sink: each child the run's door said started or ended,
 /// as its <see cref="WireReading.ChildSeen"/> or <see cref="WireReading.ChildEnded"/>, is one line of the session's lineage
 /// (<see cref="ChildBindings.ChildLine"/>), naming the process the run stamped on the reading. Both executors compose it, so no transport
 /// names the lineage; a replay is no new child, and every other reading passes over.

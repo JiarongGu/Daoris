@@ -13,7 +13,7 @@ export type HelperQuestion = { question: string; agent: string | null };
 const ANY = 'any agent';
 
 /**
- * ***Ask another agent…*'s ask** (MIXAGENT2b, D163 point 2; the mixed-agents design §3): the person's own door to a helper, with
+ * ***Ask another agent…*'s ask**: the person's own door to a helper, with
  * the fields the agent's `helper_ask` has. It opens under the page header as the hand-over's does, on the primary's hue since
  * nothing goes: what a helper does (it reads this session's work, answers, and changes nothing; its answer comes back as this
  * session's next turn, marked as the helper's), the question, and which agent, Daoris's choice unless the person names one; then

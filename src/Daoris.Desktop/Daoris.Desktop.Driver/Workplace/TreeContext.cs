@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What every part of the session trees reads of the machine it works on (PART10i): the home, the plugin wire, the two test seams
+/// What every part of the session trees reads of the machine it works on: the home, the plugin wire, the two test seams
 /// and the reads derived from the home. Built once by <see cref="SessionTrees"/>, which hands it to the classes that moved out of it.
 /// </summary>
 internal sealed class TreeContext
@@ -23,25 +23,25 @@ internal sealed class TreeContext
     /// <summary>The Daoris home the trees, the records and the choices live under.</summary>
     internal string Home { get; }
 
-    /// <summary>The plugin wire a branch rule's landing speaks (WSR4, D100).</summary>
+    /// <summary>The plugin wire a branch rule's landing speaks.</summary>
     internal IWorkplacePluginWire Plugins { get; }
 
-    /// <summary>The test seam (SQUASHTIDY1c): run with the branch's name between a judgement and the delete it cleared. Production sets none.</summary>
+    /// <summary>The test seam: run with the branch's name between a judgement and the delete it cleared. Production sets none.</summary>
     internal Func<string, Task>? BeforeDeleting { get; set; }
 
-    /// <summary>A test's seam (FABRIC-END4a review): run once the trees were read, right before the branch's ref goes.</summary>
+    /// <summary>A test's seam: run once the trees are read, right before the branch's ref goes.</summary>
     internal Func<string, Task>? BeforeRefDeleted { get; set; }
 
-    /// <summary>The test seam (AUTOTIDY1): true for a checkout whose working trees git could not list. Production sets none.</summary>
+    /// <summary>The test seam: true for a checkout whose working trees git could not list. Production sets none.</summary>
     internal Func<string, bool>? ListFails { get; set; }
 
-    /// <summary>What time it is (FABRIC-END4a, second review: the look's fallback judges a kept branch again at a bound); the system's unless a test sets it.</summary>
+    /// <summary>What time it is (the look's fallback judges a kept branch again at a bound); the system's unless a test sets it.</summary>
     internal Func<DateTimeOffset> Clock { get; set; } = () => DateTimeOffset.UtcNow;
 
-    /// <summary>The branches this machine's landings made (WSR5) — the only ones the clean-up and the hand-off act on.</summary>
+    /// <summary>The branches this machine's landings made — the only ones the clean-up and the hand-off act on.</summary>
     internal LandedBranches Recorded => new(Home);
 
-    /// <summary>Where this machine's session branches started (WSR6) — what bringing one up to date cuts at.</summary>
+    /// <summary>Where this machine's session branches started — what bringing one up to date cuts at.</summary>
     internal SessionBranches Grown => new(Home);
 
     /// <summary>
@@ -51,7 +51,7 @@ internal sealed class TreeContext
     internal string TreesRoot => DaorisHome.Entry(Home, HomeEntry.Trees);
 
     /// <summary>
-    /// Both places of <see cref="HomeEntry.Trees"/>, the new first (TREEPLACE1): D172 point 6 never moves a tree, so the trees
+    /// Both places of <see cref="HomeEntry.Trees"/>, the new first: a layout move never moves a tree, so the trees
     /// opened before the layout moved stay at the old place while new ones open at the new, and each is one this home opened.
     /// </summary>
     internal IReadOnlyList<string> TreesRoots => DaorisHome.Places(Home, HomeEntry.Trees);
@@ -60,8 +60,8 @@ internal sealed class TreeContext
     internal bool Holds(string path) => RootOf(path) is not null;
 
     /// <summary>
-    /// The place of <see cref="HomeEntry.Trees"/> that holds <paramref name="path"/> below it, or null for a path under neither
-    /// (TREEPLACE1): the one test of a tree this home opened, which every check asks.
+    /// The place of <see cref="HomeEntry.Trees"/> that holds <paramref name="path"/> below it, or null for a path under neither:
+    /// the one test of a tree this home opened, which every check asks.
     /// </summary>
     internal string? RootOf(string path)
     {
@@ -71,29 +71,28 @@ internal sealed class TreeContext
     }
 
     /// <summary>
-    /// The folder of the tree the layout names <c>&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c> (TREEPLACE1): where a tree
+    /// The folder of the tree the layout names <c>&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;</c>: where a tree
     /// is at either place, else where a new one opens.
     /// </summary>
     internal string TreeAt(string workspace, string repository, string name) =>
         DaorisHome.Places(Home, HomeEntry.Trees, workspace, repository, name).FirstOrDefault(Directory.Exists)
         ?? Path.Combine(TreesRoot, workspace, repository, name);
 
-    /// <summary>The person's choices, from the file the loop and the planner read (CONFIGSEAM1): this home's <c>driver.json</c>.</summary>
+    /// <summary>The person's choices, from the file the loop and the planner read: this home's <c>driver.json</c>.</summary>
     internal DriverConfig Config() => DriverConfig.Load(DriverConfig.ResolvePath(Home));
 
     /// <summary>
-    /// The repository's line (WSR2), from the choices beside this home, read per call: the person may
+    /// The repository's line, from the choices beside this home, read per call: the person may
     /// set it between one tree and the next, and a cached answer would grow the second from the old line.
-    /// Within one look (<see cref="OneLook"/>), git's guess at a checkout's line is asked once (UIFREEZE1).
+    /// Within one look (<see cref="OneLook"/>), git's guess at a checkout's line is asked once.
     /// </summary>
     internal Task<Line> LineAsync(string root, string repository, string workspace, CancellationToken ct) =>
         CanonicalLine.ResolveAsync(root, repository, workspace, Config(), GuessAsync, ct);
 
     /// <summary>
-    /// The output a repository declares, which an unforced removal of its tree takes with it (TIDYOUTPUT1): its <c>integration.scratch</c>,
-    /// read from the declaration the owner accepted for integration at its line's tip alone (INTEGRATE1d, D218's note,
-    /// <see cref="TreeScratch.AcceptedAsync"/>). None where the choices could not be read, the line is not known or nothing is accepted,
-    /// so the tree keeps what it names, as before TIDYOUTPUT1.
+    /// The output a repository declares, which an unforced removal of its tree takes with it: its <c>integration.scratch</c>,
+    /// read from the declaration the owner accepted for integration at its line's tip alone (<see cref="TreeScratch.AcceptedAsync"/>). None where the choices could not be read, the line is not known or nothing is accepted,
+    /// so the tree keeps what it names.
     /// </summary>
     /// <param name="line">The repository's line where the caller read it already; null reads it here.</param>
     internal async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> ScratchAsync(
@@ -112,7 +111,7 @@ internal sealed class TreeContext
     }
 
     /// <summary>
-    /// <see cref="ScratchAsync"/> for a reader with no context (CLEANUPADVICE1): the same declaration, read from the home's choices and git's own guess at the line.
+    /// <see cref="ScratchAsync"/> for a reader with no context: the same declaration, read from the home's choices and git's own guess at the line.
     /// </summary>
     internal static async Task<IReadOnlyList<System.Text.RegularExpressions.Regex>> ScratchOfHomeAsync(
         string home, string root, string repository, string workspace, CancellationToken ct)
@@ -129,13 +128,13 @@ internal sealed class TreeContext
         }
     }
 
-    /// <summary>The test seam (UIFREEZE1): git's guess at a checkout's line, counted by a test. Production asks git.</summary>
+    /// <summary>The test seam: git's guess at a checkout's line, counted by a test. Production asks git.</summary>
     internal Func<string, CancellationToken, Task<string?>> CheckoutLine { get; set; } = s_gitGuess;
 
     private static readonly Func<string, CancellationToken, Task<string?>> s_gitGuess = WorkingTree.DefaultBranchAsync;
 
     /// <summary>
-    /// Whether Review's graph may ask git's guess as its three questions together (GITAPP1a-ii): no look is open, which shares one
+    /// Whether Review's graph may ask git's guess as its three questions together: no look is open, which shares one
     /// guess across its flow, and no test's seam stands in for git. Otherwise the graph asks through <see cref="LineAsync"/>, as today.
     /// </summary>
     internal bool GuessesApart => _look.Value is null && ReferenceEquals(CheckoutLine, s_gitGuess);
@@ -144,7 +143,7 @@ internal sealed class TreeContext
     private readonly AsyncLocal<Dictionary<string, Task<string?>>?> _look = new();
 
     /// <summary>
-    /// One look over the repositories (UIFREEZE1): until it is disposed, each checkout's guess at its line is asked of git once
+    /// One look over the repositories: until it is disposed, each checkout's guess at its line is asked of git once
     /// in this flow, and every caller in the look shares the answer. The sweep's list asked it three times a repository, up to
     /// three git processes each, and a frozen window's stack held seventeen such asks on the process-start lock.
     /// </summary>

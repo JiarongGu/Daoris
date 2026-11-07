@@ -7,13 +7,13 @@ import { type Answered, Refused } from '../InlineConfirm';
 import { SOUGHT } from './WaitAnchor';
 
 /**
- * A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, D188 point 4; the
- * message-urgency design §2.3, §8.3), as `ANSWER_WAITS` answers it: the session whose line it would take on, the agent that answered
- * by its adapter (null where the driver named none), the answers' ids on its record, and since when it was held.
+ * A third answer in a row with nobody between, which the answers-alone bound holds for the person,
+ * as `ANSWER_WAITS` answers it: the session whose line it would take on, the agent that answered
+ * by its adapter (null where the driver named none), the answers' ids on its record, and since when it is held.
  */
 export type AnswerWait = { session: string; agent: string | null; words: string[]; since: string; rule?: AnswerRule | null };
 
-/** The person's rule that held the answer (CONTEXTDRIVE1h): its place, the threshold, and what the count stood at; none for a hold marked before the rules. */
+/** The person's rule that holds the answer: its place, the threshold, and what the count stands at; none for a hold marked before the rules. */
 export type AnswerRule = { place: string; at: number; n: number; count: string; do: string };
 
 /** A rule's place in the person's words: this machine as *This Daoris*, any other as its own name (`repository:daoris` is `daoris`). */
@@ -26,11 +26,11 @@ export const answerRuleLine = (t: TFunction, rule: AnswerRule): string =>
 /** The person's answer as the driver took it (`SESSION_ANSWER_ALONE`): whether it stands, and where not, its code and sentence. */
 export type AnswerAloneAnswered = { answered: boolean; why: string | null; message: string };
 
-/** The person's answer to one held answer: *Go on with this answer* (`goOn`) or *Not now*, and how it ended (UXFIX2). */
+/** The person's answer to one held answer: *Go on with this answer* (`goOn`) or *Not now*, and how it ended. */
 export type AnswerAloneAnswer = (wait: AnswerWait, goOn: boolean, answered: Answered) => void;
 
 /**
- * What the frame hands the head and the foot's strip for the answers the bound holds (COWORK1e; D168 point 3): every wait the shell
+ * What the frame hands the head and the foot's strip for the answers the bound holds: every wait the shell
  * read, of which the session's own is drawn, the agents' names, the answer's one door and its pending. Absent where nothing reads
  * them (a browser, a teammate's record).
  */
@@ -60,15 +60,15 @@ export const answerAloneLine = (t: TFunction, wait: AnswerWait, nameOf?: (agent:
   (wait.agent ? t('work.wait.answerAlone', { agent: nameOf?.(wait.agent) ?? wait.agent }) : t('work.wait.answerAloneSomeone'));
 
 /**
- * **A third answer alone, held for the person** (COWORK1e, D188 point 4; the message-urgency design §8.3): a line of work goes on
+ * **A third answer alone, held for the person**: a line of work goes on
  * by answers alone (a helper's, a second opinion's findings) at most twice in a row, and the third waits here, saying whose answer it
  * is and what it would do. *Go on with this answer* lets it go on, as the person's word, so the next two go on alone again; *Not
  * now* keeps it for them, and it goes on only beside words of theirs.
  *
  * @remarks
- * **Props only** (components §2): the frame holds the answer and its pending, and hands the head and the strip the same. Without
+ * **Props only**: the frame holds the answer and its pending, and hands the head and the strip the same. Without
  * `onAnswer` no press is drawn: a browser or a teammate's record still says what waits. A refusal of the answer is said beside it
- * (UXFIX2b3b). Its words never say "waiting on you", which a parked session's are (`person-waits`).
+ * Its words never say "waiting on you", which a parked session's are (`person-waits`).
  */
 export function AnswerAlone({ wait, nameOf, onAnswer, busy = false, marked = false, onChangeRule }: {
   wait: AnswerWait;
@@ -125,7 +125,7 @@ export function AnswerAlone({ wait, nameOf, onAnswer, busy = false, marked = fal
           <Button variant="ghost" disabled={busy || pending} aria-describedby={refusal ? refusalId : undefined} onClick={() => press(false)}>
             {t('work.wait.answer.notNow')}
           </Button>
-          {/* Drawn from the first, so it is a live region before it speaks (UXFIX2c). */}
+          {/* Drawn from the first, so it is a live region before it speaks. */}
           <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
             {pending ? t('work.confirm.pending') : null}
           </span>

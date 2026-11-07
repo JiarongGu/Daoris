@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second stand-in written on the contract alone (AGENTPROVIDER1 row c; the agent-provider design §10, §11): provider
+/// The second stand-in written on the contract alone: provider
 /// <c>alt-stub</c> with its two doors, <c>alt-stub</c> on the pipe and <c>alt-acp-stub</c> on the protocol, which run whatever command the
 /// machine's configuration names and no model. It mirrors <see cref="StubProvider"/> in what it declares and differs in what it says: a
 /// home variable, a sign-in and login question, a limit, window and sign-in grammar of its own (<see cref="AltStubWords"/>), so no
-/// caller that read the first stand-in's by habit passes with it. No class of the old seam stands behind it; the registration list's one
+/// caller that read the first stand-in's by habit passes with it. No class of an older seam stands behind it; the registration list's one
 /// line is the whole of its place.
 /// </summary>
 /// <remarks>

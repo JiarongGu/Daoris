@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The clean-up's list and its press ask git for a checkout's line once each (UIFREEZE1), over a real repository: the list
-/// once asked it from the pull requests' asks, the session branches' list and the landed branches' judgement, three times a
-/// repository, and a frozen window's stack held seventeen such asks waiting on .NET's one process-start lock.
+/// The clean-up's list and its press ask git for a checkout's line once each, over a real repository: not
+/// three times a repository, from the pull requests' asks, the session branches' list and the landed branches' judgement: a frozen
+/// window's stack held seventeen such asks waiting on .NET's one process-start lock.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]

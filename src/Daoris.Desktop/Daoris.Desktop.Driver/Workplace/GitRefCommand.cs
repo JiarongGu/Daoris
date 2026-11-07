@@ -12,8 +12,7 @@ public sealed record GitRefVerb(string Kind, string Repository, string Name, str
 public sealed record GitRefWorld(Func<string, CancellationToken, Task<string?>> CheckoutOf, Func<ActRuns> Runs, Func<string, string, CancellationToken, Task<string?>>? LineOf = null);
 
 /// <summary>
-/// <c>daoris git branch|tag &lt;repository&gt; &lt;name&gt; [&lt;commit&gt;] [--delete] [--plan|--yes]</c> (GITAPP2c and d, D204; the
-/// git-writes design §9): the terminal's twin of the Branches tab's <i>New branch</i> and <i>New tag</i>, and of its <i>Delete</i>. Without
+/// <c>daoris git branch|tag &lt;repository&gt; &lt;name&gt; [&lt;commit&gt;] [--delete] [--plan|--yes]</c>: the terminal's twin of the Branches tab's <i>New branch</i> and <i>New tag</i>, and of its <i>Delete</i>. Without
 /// <c>--yes</c> (or with <c>--plan</c>) it says what it would make or delete and changes nothing. With <c>--yes</c> it is the running Daoris's
 /// client (<see cref="InstanceDoor.PressAsync"/>): the person's press, confirmed in the window; with no Daoris running it makes the change
 /// itself, through the same act (<see cref="GitRefActs"/>), refused from a session's terminal (<c>DAORIS_SESSION_ID</c>).
@@ -86,7 +85,7 @@ public static class GitRefCommand
         return new GitRefVerb(args[0], words[0], words[1], words.Count == 3 ? words[2] : null, yes == true, delete, rename);
     }
 
-    /// <summary>The verb's payload: the route's own fields beside <c>said: true</c> (RPC1e).</summary>
+    /// <summary>The verb's payload: the route's own fields beside <c>said: true</c>.</summary>
     public static Dictionary<string, object?> Payload(GitRefVerb verb) =>
         verb.RenameTo is null
             ? InstanceDoor.Said(("repository", verb.Repository), ("kind", verb.Kind), ("name", verb.Name), ("at", verb.At))

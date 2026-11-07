@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One node of Review's graph (GITAPP1a-ii, the git-app design P1.2): a read, the nodes whose answers it needs, whether it can run a
+/// One node of Review's graph: a read, the nodes whose answers it needs, whether it can run a
 /// configured program (Π) and whether it was started before the condition that decides its use (speculative). What the census
 /// generates depth and starts from.
 /// </summary>
@@ -20,7 +20,7 @@ internal sealed class ReviewRead(string name, IReadOnlyList<ReviewRead> needs, b
     /// <summary>Whether it reads file content through git's diff or merge machinery, so a configured program may run (Π).</summary>
     public bool Program { get; } = program;
 
-    /// <summary>Whether it was started before the condition that decides whether its answer is used (P1.1's one rule).</summary>
+    /// <summary>Whether it started before the condition that decides whether its answer is used.</summary>
     public bool Speculative { get; } = speculative;
 
     /// <summary>Whose its starts are: the review's, the untracked tail's, the landed review's or the offer's.</summary>
@@ -52,7 +52,7 @@ internal sealed class ReviewRead(string name, IReadOnlyList<ReviewRead> needs, b
 }
 
 /// <summary>
-/// The executor of one open of Review (GITAPP1a-ii, the git-app design P1.1-P1.2): each git start a node, started the moment the
+/// The executor of one open of Review: each git start a node, started the moment the
 /// nodes it needs have answered. The reads that can run a configured program (Π) are one chain in today's order: each Π node also
 /// needs the Π node before it, so no two run together and none is speculative. Everything else runs at once and ahead.
 /// </summary>

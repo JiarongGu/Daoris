@@ -32,7 +32,7 @@ const quest = (over: Partial<Quest> = {}): Quest => aQuest({
 } as Quest);
 
 /**
- * SESSUX1j (D126 §9, the session management design §6.2): a quest's name is its short title, the service's answer, else
+ * A quest's name is its short title, the service's answer, else
  * its title, where the field is absent. One helper, so no two places name one quest differently.
  */
 describe("an ask's name (HEAD2e)", () => {
@@ -86,7 +86,7 @@ describe('a session title', () => {
   });
 
   /**
-   * RAIL1: a conversation's identity is its first line (design §3), from this machine's record — so
+   * A conversation's identity is its first line, from this machine's record — so
    * eight rows reading "conversation" become eight things a person can tell apart. Where the machine
    * holds no record, the kind still stands in; a quest's title still outranks it.
    */
@@ -109,7 +109,7 @@ describe('a session title', () => {
   });
 
   /**
-   * INT4g: an intake is opened as a chat (INT4b, so every build reads it as a session nothing plans
+   * An intake is opened as a chat (so every build reads it as a session nothing plans
    * from), and it is not a conversation — it serves an ask. It says so, by the ask's reference, in
    * the way a quest reference stands in for a quest not in hand.
    */
@@ -122,7 +122,7 @@ describe('a session title', () => {
     await i18n.changeLanguage('en');
   });
 
-  /** XAGENT1g: a second opinion's reviewer is a chat on no quest only by the way it was opened; it says what it is. */
+  /** A second opinion's reviewer is a chat on no quest only by the way it is opened; it says what it is. */
   it('names a second opinion’s reviewer as one, never as a conversation', async () => {
     const reviewer = session({ kind: 'chat', repository: 'engine', opinion: 'o1a2b3c4' });
     expect(sessionTitle(reviewer, null, 'You are reading another session\'s work.')).toBe('Second opinion');
@@ -132,7 +132,7 @@ describe('a session title', () => {
     await i18n.changeLanguage('en');
   });
 
-  /** MIXAGENT3a-i (the mixed-agents design §4): a helper is a chat on no quest only by the way it was opened; it says what it is. */
+  /** A helper is a chat on no quest only by the way it is opened; it says what it is. */
   it('names a helper as one, never as a conversation, and its record says it is one', async () => {
     const helper = session({ kind: 'chat', repository: 'engine', serves: 's1a2b3c4' });
     expect(isHelper(helper)).toBe(true);
@@ -144,7 +144,7 @@ describe('a session title', () => {
     await i18n.changeLanguage('en');
   });
 
-  /** COMMS1b (B5): a reviewer now serves the work it reads, and is read by its opinion mark first, never as a helper. */
+  /** A reviewer serves the work it reads, and is read by its opinion mark first, never as a helper. */
   it('reads a reviewer that serves the work it reads as a reviewer, never a helper', () => {
     const reviewer = session({ kind: 'chat', serves: 's1a2b3c4', opinion: 'o1a2b3c4' });
     expect(isHelper(reviewer)).toBe(false);
@@ -159,10 +159,10 @@ describe('a session title', () => {
 });
 
 /**
- * FOUNDATION1c (D212; the foundation design §2.2, §2.3): the page draws a record by the work a host sends it, and by today's predicates
+ * The page draws a record by the work a host sends it, and by today's predicates
  * where the host sends none. The table is the shared one, `fixtures/participant-work.json` among the service's tests, which the service's
  * and the driver's suites hold row for row: what each reader answered before the work (`today`), what the page draws by the work
- * (`byWork`), and the decision for every difference. Only a partner's drawing changes, D203 point 1's reading, in a string of its own.
+ * (`byWork`), and the decision for every difference. Only a partner's drawing changes, in a string of its own.
  */
 describe('a record drawn by its work (FOUNDATION1c)', () => {
   type Marks = { mirror: boolean; kind: string | null; repository: string | null; ask: string | null; serves: string | null; piece: string | null; opinion: string | null };
@@ -244,7 +244,7 @@ describe('a record drawn by its work (FOUNDATION1c)', () => {
 });
 
 /**
- * MIXAGENT3a-i (the mixed-agents design §4): the sessions a record names as its own, the one it continues (`from`) and the one a
+ * The sessions a record names as its own, the one it continues (`from`) and the one a
  * helper helps (`serves`), each where the list holds it; a link the list does not hold is null, and nothing is claimed of it.
  */
 describe('the sessions a record links to', () => {
@@ -265,7 +265,7 @@ describe('the sessions a record links to', () => {
 });
 
 /**
- * Where a session runs (D55). The feed keys a mirrored record by `origin/id` (D47 §6), and the
+ * Where a session runs. The feed keys a mirrored record by `origin/id`, and the
  * origin is the key's own identity — whose key, on which machine. So the answer is already in the
  * record, and this is where reading it lives rather than in whichever component asked first.
  */
@@ -288,8 +288,8 @@ describe('where a session runs', () => {
 });
 
 /**
- * A session tree's short name. Daoris owns where trees live (D51 §2), so the last segment is the
- * branch the tree was cut for — the part a person recognises, and the only part that fits a rail.
+ * A session tree's short name. Daoris owns where trees live, so the last segment is the
+ * branch the tree is cut for — the part a person recognises, and the only part that fits a rail.
  */
 describe('a tree name', () => {
   it('is the last segment of the path Daoris created', () => {
@@ -305,7 +305,7 @@ describe('a tree name', () => {
     expect(treeName('/home/p/.daoris/trees/default/engine/streaming-budget/')).toBe('streaming-budget');
   });
 
-  /** No tree is the registered root, and a browser is told no path at all (D51 §9). Both are null. */
+  /** No tree is the registered root, and a browser is told no path at all. Both are null. */
   it('answers null for no tree at all', () => {
     expect(treeName(null)).toBeNull();
     expect(treeName(undefined)).toBeNull();
@@ -314,9 +314,9 @@ describe('a tree name', () => {
 });
 
 /**
- * Found by the first real-window pass (SURF4d): the rail said `in engine` under the heading
- * `engine`, because an ordinary conversation DOES carry a tree — the registered root's own path.
- * The ledger resolves an unstated tree to the root before recording it, so "has a tree" was never
+ * The rail would say `in engine` under the heading `engine` if "has a tree" were the question, because an
+ * ordinary conversation DOES carry a tree — the registered root's own path.
+ * The ledger resolves an unstated tree to the root before recording it, so "has a tree" is never
  * the question; "which tree" is.
  */
 describe('a tree the session opened for itself', () => {
@@ -347,7 +347,7 @@ describe('a tree the session opened for itself', () => {
 
 /**
  * A harness names what it touched by absolute path, so a card read `Edit D:/…/trees/…/src/chunk.rs`
- * and truncated before the part that mattered (CONV3's look). Shown relative to the session's tree;
+ * and truncated before the part that mattered. Shown relative to the session's tree;
  * the record keeps what the wire said.
  */
 describe('a path inside the session\'s tree', () => {

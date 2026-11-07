@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What the driver asks git before it feeds (D48 §6). Over a real checkout, because the whole point
+/// What the driver asks git before it feeds. Over a real checkout, because the whole point
 /// of this half is that git's answer is the one that matters — a stubbed one would prove nothing
 /// about the arguments, the format, or the parse.
 /// </summary>
@@ -46,6 +46,17 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         Assert.Equal("main", await WorkingTree.DefaultBranchAsync(_tree.Root));
     }
 
+    /// <summary>Origin's <c>HEAD</c> is a file of git's own, so the line it names is read with no process started.</summary>
+    [Fact]
+    public async Task The_canonical_line_origin_names_is_read_from_the_files()
+    {
+        _tree.Git("symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/trunk");
+        using var tally = GitStartTally.Open(_tree.Root);
+
+        Assert.Equal("trunk", await WorkingTree.DefaultBranchAsync(_tree.Root));
+        Assert.Empty(tally.Starts);
+    }
+
     /// <summary>
     /// A branch is work in flight, and the provenance says which — this is the field the deployment
     /// refuses on, so it has to be the checked-out branch and not the canonical one.
@@ -68,7 +79,7 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         Assert.Equal("(detached)", (await WorkingTree.ProvenanceAsync(_tree.Root))!.Branch);
     }
 
-    // ——— The checkout's current branch, for the composer's tree chip (NEW1e-a).
+    // ——— The checkout's current branch, for the composer's tree chip.
 
     [Fact]
     public async Task The_branch_is_the_short_name_checked_out()
@@ -132,7 +143,7 @@ public sealed class WorkingTreeProvenanceTests : IDisposable
         }
     }
 
-    // ——— How this checkout's commit stands to one a deployment holds (SYNC5a): only git can say.
+    // ——— How this checkout's commit stands to one a deployment holds: only git can say.
 
     [Fact]
     public async Task A_later_commit_descends_and_an_earlier_one_is_behind()

@@ -3,19 +3,19 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The reviewer's instruction (XAGENT1d, D155 points 5 and 6; the second-agent design §4–§5): the packet in words, what it may
+/// The reviewer's instruction: the packet in words, what it may
 /// do and what never, and how it says its opinion. Composed once, from facts, with no model; handed whole in one turn.
 /// </summary>
 /// <remarks>
 /// <para><b>Project-agnostic, as every instruction is</b>: it travels to repositories that know nothing of this one, so it speaks
 /// in plain words and the tool's names, never in decision numbers. One line a paragraph, so no phrase is split by a wrap.</para>
 ///
-/// <para><b>The words are half of what holds it.</b> The copy is the floor and the rules are the harness's (§5.1–§5.2); the
+/// <para><b>The words are half of what holds it.</b> The copy is the floor and the rules are the harness's; the
 /// instruction says the same so an agent that follows it never tries, and it says the one thing neither can: that the
 /// repository's own doctrine telling an agent to write as it goes does not apply to a reading.</para>
 ///
 /// <para><b>Claims stay claims.</b> The working session's closing note is handed as its claim, the person's words as theirs,
-/// and only what Daoris read of the evidence as what Daoris read (§6.6). The working session's conversation is never handed.</para>
+/// and only what Daoris read of the evidence as what Daoris read. The working session's conversation is never handed.</para>
 /// </remarks>
 public static class OpinionInstruction
 {
@@ -73,7 +73,7 @@ public static class OpinionInstruction
             : $"Your copy holds both commits: `{command}` shows the whole diff, and `git log` and `git show` show the commits.\n");
     }
 
-    /// <summary>Why it is read now (design §2.1), in one sentence.</summary>
+    /// <summary>Why it is read now, in one sentence.</summary>
     private static string Occasion(string occasion) => occasion switch
     {
         OpinionRules.Landing => "It is about to land: you read it before the person looks at it and before it is offered to land.",
@@ -84,8 +84,8 @@ public static class OpinionInstruction
 
     private static void Asked(StringBuilder text, OpinionPacket packet)
     {
-        // CHATFLOW1d (the chat-flow design §7): a chat run's work was asked by no quest. Its opening is named as the opening, never as what
-        // was asked, since by a later landing it may no longer describe the work; the conversation itself is never handed (D155 point 6).
+        // No quest asked a chat run's work. Its opening is named as the opening, never as what
+        // is asked, since by a later landing it may not describe the work; the conversation itself is never handed.
         if (packet.Opening is { } opening)
         {
             text.Append("\n## The conversation's opening\n\nNo quest asked this work: it was done in a conversation with the person. ")
@@ -159,7 +159,7 @@ public static class OpinionInstruction
     private static string Named(QuestEvidenceItem item) => item.Path is { } path ? $"`{path}`" : $"gate `{item.Gate}`";
 
     /// <summary>
-    /// A recheck's first reading (XAGENT1e, design §4, §6.5): each finding as that agent claimed it, then the session's answer,
+    /// A recheck's first reading: each finding as that agent claimed it, then the session's answer,
     /// as its claim, beside what git read of a fix's commit. Neither is a fact by itself: the commits since are what it reads.
     /// </summary>
     private static void FirstReading(StringBuilder text, OpinionRecheckOf recheck)
@@ -248,7 +248,7 @@ public static class OpinionInstruction
             .Append("Then say what you read, and what you did not read or could not tell. ")
             .Append("If you raise nothing, give no findings and still say what you read: an opinion says what it covered, never `no issues`. ")
             .Append(recheck
-                // The recheck's findings go to the person, never back to the working session by themselves (design §6.5).
+                // The recheck's findings go to the person, never back to the working session by themselves.
                 ? "Your findings and your word on each of the first reading's are claims: they go to the person, beside the first reading and the session's answers, and not back to the session.\n\n"
                 : "Your findings are claims: the session that did the work checks each against the code and answers it, and the person sees both.\n\n")
             .Append($"You have one turn, and at most {minutes} minutes. An opinion not given through `opinion_give` before you end is not given.\n");

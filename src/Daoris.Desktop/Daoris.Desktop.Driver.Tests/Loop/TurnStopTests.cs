@@ -4,13 +4,13 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A conversation's turns on both doors (CONV4a): one at a time, a message sent mid-turn waiting for
+/// A conversation's turns on both doors: one at a time, a message sent mid-turn waiting for
 /// its own, and the person able to stop the turn without ending the session.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>The native door wrote a mid-turn message to Claude Code's stdin at once</b>, where the
-/// binary may fold it into the turn still running, and the record took it in the middle of that turn.
-/// The protocol door already queued (CONV3b). Both doors now share one queue.</para>
+/// <para>🔴 <b>The native door must not write a mid-turn message to Claude Code's stdin at once</b>, since the
+/// binary may fold it into the turn still running, and the record would take it in the middle of that turn.
+/// Both doors share one queue.</para>
 ///
 /// <para>Each stand-in harness writes down what reached it <b>as it arrives</b>, never awaiting inside
 /// its reader. A reader that waited out each turn would hide exactly the ordering these tests are
@@ -29,7 +29,7 @@ public sealed class TurnStopTests : IDisposable
     public TurnStopTests()
     {
         Directory.CreateDirectory(Path.Combine(_home, "engine"));
-        // A Daoris account for Claude Code's doors, where every start now runs (OWNSPACE1a): never the person's own home.
+        // A Daoris account for Claude Code's doors, where every start runs: never the person's own home.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "daoris"));
     }
 
@@ -55,8 +55,8 @@ public sealed class TurnStopTests : IDisposable
         Assert.True(session.Runner.Say(session.Id, "second"));
         Assert.Equal(["second"], Texts(session.Runner.Queue(session.Id).Queued));
 
-        // FLAKE1: the queue is told the turn ended after the turn's end is counted, so the wait is for both, as the cases below wait
-        // for the told queue; read at the count alone, the last notice could still say a turn was in flight (1 of 3 alone, 2026-10-29).
+        // The queue is told the turn ended after the turn's end is counted, so the wait is for both, as the cases below wait
+        // for the told queue; read at the count alone, the last notice could still say a turn is in flight.
         await Until(() => Turns(session) == 2 && LastQueue(session) is { Taking: false }, () => session.Seen());
 
         Assert.Equal(["user: first", "result: first", "user: second", "result: second"], HeardLines());
@@ -64,8 +64,8 @@ public sealed class TurnStopTests : IDisposable
             ["person: first", "agent: heard first", "turn: end_turn", "person: second", "agent: heard second", "turn: end_turn"],
             Said(session));
         Assert.Empty(session.Runner.Queue(session.Id).Queued);
-        // The queue was told as it moved, which is what the page shows as queued.
-        // …and whether a turn was in flight, which is what the page's stop-the-turn control follows.
+        // The queue is told as it moves, which is what the page shows as queued.
+        // …and whether a turn is in flight, which is what the page's stop-the-turn control follows.
         List<ChatQueue> told;
         lock (session.Queues) told = [.. session.Queues];
         Assert.Contains(told, queue => queue.Taking && Texts(queue.Queued).SequenceEqual(["second"]));
@@ -74,8 +74,8 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
-    /// RAIL2: a live chat's last move is its last turn. Its record moves on state changes only, so the
-    /// rail read "moved 4m ago" seconds after an answer; the queue says when this machine last saw a
+    /// A live chat's last move is its last turn. Its record moves on state changes only, so the
+    /// rail would read "moved 4m ago" seconds after an answer; the queue says when this machine last saw a
     /// turn end, and says so each time one does — even when a waiting message starts the next at once,
     /// which leaves <c>Taking</c> unchanged.
     /// </summary>
@@ -101,7 +101,7 @@ public sealed class TurnStopTests : IDisposable
 
     /// <summary>
     /// Stop the turn on the native door: the harness's own interrupt, the turn ending as the protocol
-    /// door calls it, what was waiting withdrawn and handed back, and the session kept for the next
+    /// door calls it, what waits withdrawn and handed back, and the session kept for the next
     /// message.
     /// </summary>
     [Fact]
@@ -130,7 +130,7 @@ public sealed class TurnStopTests : IDisposable
         Assert.Equal(["user: hold", "interrupt", "result: hold (interrupted)", "user: again", "result: again"], HeardLines());
         Assert.DoesNotContain("person: after", Said(session));
         // The queue is told a turn ended AFTER the record holds it (ChatTurns' own ordering), so the
-        // last notice is waited for, as the first turn's is above — read at once, it raced (REV3).
+        // last notice is waited for, as the first turn's is above — read at once, it races.
         await Until(() => LastQueue(session) is { Taking: false }, () => session.Seen());
         Assert.Empty(LastQueue(session)!.Queued);
     }
@@ -146,7 +146,7 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
-    /// NOTIFY1a: the turns the person's words started end, the second taking the words queued behind the first, and the
+    /// The turns the person's words started end, the second taking the words queued behind the first, and the
     /// runner says the conversation answered them once, at the last turn's end, in the driver's own sentence.
     /// </summary>
     [Fact]
@@ -166,7 +166,7 @@ public sealed class TurnStopTests : IDisposable
             (answered.Kind, answered.Session, answered.Headline));
     }
 
-    /// <summary>NOTIFY1a: a turn the person stopped ends on their own press, so only the next one, their words again, answered.</summary>
+    /// <summary>A turn the person stopped ends on their own press, so only the next one, their words again, answered.</summary>
     [Fact]
     public async Task A_turn_the_person_stopped_is_not_said_to_have_answered()
     {
@@ -231,9 +231,9 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELP4: words sent while the session is still opening wait for the door, not for a turn, and
-    /// the queue says which. Told only <c>taking</c>, the page read the first message of a conversation
-    /// as waiting for a turn to end when nothing had answered yet.
+    /// 🔴 Words sent while the session is still opening wait for the door, not for a turn, and
+    /// the queue says which. Told only <c>taking</c>, the page would read the first message of a conversation
+    /// as waiting for a turn to end when nothing has answered yet.
     /// </summary>
     [Fact]
     public async Task Words_sent_while_the_door_opens_are_told_as_waiting_for_it()
@@ -271,7 +271,7 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
-    /// Finishing on the native door runs what was waiting first, then ends the input: the person
+    /// Finishing on the native door runs what waits first, then ends the input: the person
     /// finishing is not the person withdrawing what they already sent.
     /// </summary>
     [Fact]
@@ -289,7 +289,7 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
-    /// USAGE1 on the native door: a conversation counts toward its account at its high-water mark, from
+    /// On the native door a conversation counts toward its account at its high-water mark, from
     /// the context its reader measured — and a text door, which measures none, counts nothing.
     /// </summary>
     [Fact]
@@ -328,9 +328,9 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3, the conversation's half of the driver's reaper: the record refused to move to `working`
-    /// (as it does once a stop pressed during `starting` has ended it), the watch concluded the record,
-    /// and the harness ran on — untracked, unmarked, until the application exited.
+    /// 🔴 The conversation's half of the driver's reaper: when the record refuses to move to `working`
+    /// (as it does once a stop pressed during `starting` has ended it), the watch concludes the record,
+    /// and the harness must not run on — untracked, unmarked, until the application exits.
     /// </summary>
     [Fact]
     public async Task A_conversation_the_record_will_not_let_work_does_not_outlive_it()
@@ -367,9 +367,9 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3: "servers every session is handed" (D64) — a conversation on the protocol door got the
-    /// plugins' servers on `session/new`, and a driven or intake session on the pipe got a file, but a
-    /// conversation on Claude Code's own door got nothing. It is handed the same file now.
+    /// 🔴 "Servers every session is handed": a conversation on the protocol door gets the
+    /// plugins' servers on `session/new`, and a driven or intake session on the pipe gets a file, so a
+    /// conversation on Claude Code's own door is handed the same file.
     /// </summary>
     [Fact]
     public async Task A_conversation_on_the_native_door_is_handed_the_plugins_servers()
@@ -411,7 +411,7 @@ public sealed class TurnStopTests : IDisposable
         var argv = System.Text.Json.JsonSerializer.Deserialize<string[]>(File.ReadAllText(argvFile))!;
         var at = Array.IndexOf(argv, "--mcp-config");
         Assert.True(at >= 0, string.Join(" ", argv));
-        // LAUNCHCHAIN1: the harness's file names the package's own script, started by node, never `npx`.
+        // The harness's file names the package's own script, started by node, never `npx`.
         using (var file = System.Text.Json.JsonDocument.Parse(File.ReadAllText(argv[at + 1])))
         {
             var browser = file.RootElement.GetProperty("mcpServers").GetProperty("browser");
@@ -424,7 +424,7 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
-    /// BRW2 (D78): a plugin server that attaches to Daoris's own browser is handed its endpoint in the
+    /// A plugin server that attaches to Daoris's own browser is handed its endpoint in the
     /// file the harness reads — the shell's answer, at hand-over — and a runner with no browser to ask
     /// hands the rest and leaves that one out.
     /// </summary>
@@ -481,10 +481,10 @@ public sealed class TurnStopTests : IDisposable
         {
             var handed = file.RootElement.GetProperty("mcpServers");
             Assert.Equal(shell, handed.TryGetProperty("browser", out var browser));
-            // The server keeper (MCPMEM1) wraps the server: its own script and bounds first, then the package's script and its endpoint.
+            // The server keeper wraps the server: its own script and bounds first, then the package's script and its endpoint.
             if (shell) Assert.Equal([playwright, "--cdp-endpoint", "http://127.0.0.1:4810"], browser.GetProperty("args").EnumerateArray().Select(each => each.GetString()).TakeLast(3));
         }
-        // BRW8: handed the browser, the conversation is named as driving it while it runs; withheld, it is not.
+        // Handed the browser, the conversation is named as driving it while it runs; withheld, it is not.
         string[] driving = shell ? [id] : [];
         Assert.Equal(driving, processes.DrivingBrowser);
 
@@ -552,7 +552,7 @@ public sealed class TurnStopTests : IDisposable
 
     private static string[] Said(Session session) => Said(session.Events, session.Id);
 
-    /// <summary>The words of each message — what these tests are about; attachments are CONV4c's own tests.</summary>
+    /// <summary>The words of each message — what these tests are about; attachments have tests of their own.</summary>
     private static string[] Texts(IEnumerable<ChatMessage> messages) => [.. messages.Select(message => message.Text)];
 
     private static string[] Said(SessionEvents events, string id) => [.. events.Page(id).Events
@@ -570,8 +570,8 @@ public sealed class TurnStopTests : IDisposable
     /// <summary>
     /// A stand-in Claude Code on its structured wire: a message is answered after a moment, and
     /// <c>hold</c> streams a word and waits for the interrupt control request, which it answers the way
-    /// the binary did — a control response, then an <c>error_during_execution</c> result that says the
-    /// stream was aborted.
+    /// the binary does — a control response, then an <c>error_during_execution</c> result that says the
+    /// stream aborted.
     /// </summary>
     private string NativeHarness()
     {

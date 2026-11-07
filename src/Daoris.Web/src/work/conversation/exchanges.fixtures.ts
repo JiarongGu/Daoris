@@ -2,7 +2,7 @@ import type { HelperAskRow } from '../waits/HelperAsks';
 import type { SessionEvent } from './conversation';
 
 /**
- * A lead that asked Codex, as helper, through `helper_ask`, and the turn that took its answer (COMMS1h): the events and the asks the
+ * A lead that asked Codex, as helper, through `helper_ask`, and the turn that took its answer: the events and the asks the
  * cards are read from, for the tests and the stories alike.
  */
 export const QUESTION = 'Is the store’s write lock held across the import?';

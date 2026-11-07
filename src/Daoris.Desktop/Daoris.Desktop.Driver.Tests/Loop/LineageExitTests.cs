@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 4: every path on which Loop read a process's exit tells the token set, and writes that process's <c>end</c>
+/// Every path on which Loop read a process's exit tells the token set, and writes that process's <c>end</c>
 /// where the run concludes nothing by it: a wait thrown as the loop closes, its kill having read the exit, and a drain whose capture
 /// faulted past the exit, each before the throw leaves the run.
 /// </summary>

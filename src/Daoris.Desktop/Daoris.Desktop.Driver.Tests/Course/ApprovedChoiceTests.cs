@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1d's rest (the staff policy design §11 point 4): an agent's own ask is kept on the arranged order's step for its agent, and a
+/// An agent's own ask is kept on the arranged order's step for its agent, and a
 /// quest handed over starts the choice approved, revalidated against the role's order, never picked again.
 /// </summary>
 public sealed class ApprovedChoiceTests

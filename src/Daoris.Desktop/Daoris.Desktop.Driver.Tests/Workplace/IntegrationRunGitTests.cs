@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1e part e2 over real git (D215's note; the integration design §5.6, §5.7): each crash point of a step recovered at the come-up by
+/// Over real git: each crash point of a step recovered at the come-up by
 /// asking git whether the candidate's tip is on the line, never the store alone, a resumed step run again from its start where it is not;
 /// and the commits made on a branch after its request froze judged contained, superseded or new against the promoted line. Called from no
-/// production path: the promotion's effect here is the test's own <c>update-ref</c>, as row e4's one-ref path makes it.
+/// production path: the promotion's effect here is the test's own <c>update-ref</c>, as the one-ref path makes it.
 /// </summary>
 /// <remarks>
 /// A crash is the process gone between two writes: the case's first store stops where the crash point says, and a second store under another
@@ -222,7 +222,7 @@ public sealed class IntegrationRunGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The commits a unit's branch made after its request froze, judged against the promoted line (D87 point 1, never the branch's
+    /// The commits a unit's branch made after its request froze, judged against the promoted line (never the branch's
     /// ancestry): one whose patch the line holds, and one whose replay is empty, are contained; one whose every conflicted hunk the line changed
     /// after the frozen base by a commit outside the unit's work is superseded by that commit; one that adds work, and one that conflicts
     /// only with the unit's own landed work, are new.

@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The fixture the automatic landing's tests share (PROCSPLIT1): one scratch repository home, a stand-in for the service's quests and
-/// records, and a plugin faked on the wire's channel, built per test instance. It was the whole of one class, which xUnit ran one test
-/// after another; the classes that derive from it hold the tests by concern, so the git half's runner runs them beside each other.
+/// The fixture the automatic landing's tests share: one scratch repository home, a stand-in for the service's quests and
+/// records, and a plugin faked on the wire's channel, built per test instance. The classes that derive from it hold the tests by
+/// concern, so the git half's runner runs them beside each other.
 /// </summary>
 /// <remarks>
 /// Nothing here is shared between instances: the scratch folder carries a fresh id, and <c>LandingHolds</c>' gates are keyed by the
@@ -36,7 +36,7 @@ public abstract class ReviewLandingFixture : IDisposable
 
     /// <summary>
     /// A named workflow `docs-to-pr` saved here with one version and chosen as `engine`'s default (or, with a kind, the workspace's for
-    /// it), and run q1 bound to it as its first start binds it (WORKFLOW1e), over the rule <see cref="Rule"/> wrote.
+    /// it), and run q1 bound to it as its first start binds it, over the rule <see cref="Rule"/> wrote.
     /// </summary>
     protected void Follow(string steps, string? kind = null)
     {
@@ -71,7 +71,7 @@ public abstract class ReviewLandingFixture : IDisposable
         Task.FromResult(_world.Records.FirstOrDefault(record => string.Equals(record.Id, id, StringComparison.OrdinalIgnoreCase))?.Quest);
 
     /// <summary>
-    /// The person's press as its doors make it (FABRIC-CLOSE1h3): the quest read where the door names its landing, then the landing
+    /// The person's press as its doors make it: the quest read where the door names its landing, then the landing
     /// judged again under its holds on that read.
     /// </summary>
     protected async Task<TreeLanding> PressAsync(string tree, string? quest = "q1")
@@ -90,10 +90,10 @@ public abstract class ReviewLandingFixture : IDisposable
 
     private const string Graph = "sha256:closure";
 
-    /// <summary>A submission made on this machine at <paramref name="sequence"/> (FABRIC-CLOSE1a).</summary>
+    /// <summary>A submission made on this machine at <paramref name="sequence"/>.</summary>
     protected static QuestSubmissionView Made(long sequence) => new("desk", sequence, DateTimeOffset.UtcNow, "ready");
 
-    /// <summary>The agent moves its tree onto a branch of its own and commits its work there (TREEFOLLOW1, D164 point 4).</summary>
+    /// <summary>The agent moves its tree onto a branch of its own and commits its work there.</summary>
     protected static async Task OwnBranchAsync(string tree)
     {
         await GitAsync(tree, "checkout", "--quiet", "-b", "feature/own");
@@ -117,7 +117,7 @@ public abstract class ReviewLandingFixture : IDisposable
         public Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct) =>
             Task.FromResult<IReadOnlySet<string>>(Records.Where(r => r.Live && r.Tree is not null).Select(r => r.Tree!).ToHashSet());
 
-        // The review's gate reads the chain and its ask (REVIEWENV1c): no rule names a review here, so these decide nothing.
+        // The review's gate reads the chain and its ask: no rule names a review here, so these decide nothing.
         public Task<IReadOnlyList<QuestView>> QuestsAsync(CancellationToken ct)
         {
             ReadingQuests?.Invoke();
@@ -126,12 +126,12 @@ public abstract class ReviewLandingFixture : IDisposable
 
         public Task<AskView?> AskAsync(string id, CancellationToken ct) => Task.FromResult<AskView?>(null);
 
-        // The second opinion's gate reads the host's opinions (XAGENT1f): none, unless a test settles one (FABRIC-CLOSE1h15).
+        // The second opinion's gate reads the host's opinions: none, unless a test settles one.
         public Dictionary<string, OpinionView> Opinions { get; } = new(StringComparer.Ordinal);
 
         public Task<OpinionView?> OpinionAsync(string id, CancellationToken ct) => Task.FromResult(Opinions.GetValueOrDefault(id));
 
-        /// <summary>What Daoris said to a session through the say door (LANDREBASE1), each kept as the door keeps it.</summary>
+        /// <summary>What Daoris said to a session through the say door, each kept as the door keeps it.</summary>
         public List<(string Session, string Text, string Key)> Said { get; } = [];
 
         public Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct)
@@ -147,9 +147,9 @@ public abstract class ReviewLandingFixture : IDisposable
 
     /// <summary>A session that worked in its own tree and concluded on its quest's done, made due as the driver's conclusion makes it.</summary>
     /// <param name="parent">The quest it follows, where it is a chain's later step.</param>
-    /// <param name="from">The session branch its tree grows from, as a chain's step grows (CHAIN2).</param>
-    /// <param name="entry">The entry its record names (SESSONE1b), shared by an entry's parts; none is its own line of work.</param>
-    /// <param name="submitted">Bound to a closure graph and at its submission, taken, rather than done (FABRIC-CLOSE1h, §E5).</param>
+    /// <param name="from">The session branch its tree grows from, as a chain's step grows.</param>
+    /// <param name="entry">The entry its record names, shared by an entry's parts; none is its own line of work.</param>
+    /// <param name="submitted">Bound to a closure graph and at its submission, taken, rather than done.</param>
     protected async Task<string> DoneSessionAsync(
         string root, string session, string quest, bool held = false, bool commit = true, string? parent = null, string? from = null,
         string? entry = null, bool submitted = false)
@@ -157,7 +157,7 @@ public abstract class ReviewLandingFixture : IDisposable
         var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora", from: from);
         if (commit) await CommitAsync(opened.Path, $"{session}.txt", $"the work of {session}", $"the work of {session}");
         var view = new QuestView(quest, "game", "engine", "Fix the gap", "Fix it.", submitted ? "Taken" : "Done") { Held = held, Parent = parent };
-        // FABRIC-CLOSE1h: a closure graph's quest stays taken at its agent's `ready`, its submission current (§E5).
+        // A closure graph's quest stays taken at its agent's `ready`, its submission current.
         _world.Quests[quest] = submitted ? view with { Closure = Graph, Submission = Made(1) } : view;
         _world.Records.Add(new SessionRecord(session, "engine", "completed")
         {
@@ -182,7 +182,7 @@ public abstract class ReviewLandingFixture : IDisposable
     protected static object? Value(LandingLine line, string key) => line.Data.Single(pair => pair.Key == key).Value;
 
     /// <summary>
-    /// The repository's rule reads a second opinion before landing from now on (FABRIC-CLOSE1h15, h17), which nobody has asked yet: made
+    /// The repository's rule reads a second opinion before landing from now on, which nobody has asked yet: made
     /// after a done, it is a rule that started reading after it, so the done owed none.
     /// </summary>
     protected void ReadsAnOpinion() =>
@@ -208,7 +208,7 @@ public abstract class ReviewLandingFixture : IDisposable
         });
     }
 
-    /// <summary>Why the loop's opinion look would close <paramref name="due"/> now, as it reads it (FABRIC-CLOSE1h15), or null where it is still owed.</summary>
+    /// <summary>Why the loop's opinion look would close <paramref name="due"/> now, as it reads it, or null where it is still owed.</summary>
     protected Task<string?> ClosesAsync(OpinionDue due) =>
         OpinionLook.ClosesAsync(due, _world.Quests[due.Quest], [.. _world.Quests.Values], Config(), new LandedBranches(_home), CancellationToken.None);
 
@@ -218,8 +218,8 @@ public abstract class ReviewLandingFixture : IDisposable
         (await GitAsync(root, "branch", "--list", branch)).Trim().Length > 0;
 
     /// <summary>
-    /// A repository on <c>main</c> with one commit, its README: a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>,
-    /// PROCSPEED1b), five git starts a test fewer. No test here reads the first commit's id or time.
+    /// A repository on <c>main</c> with one commit, its README: a copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>),
+    /// five git starts a test fewer. No test here reads the first commit's id or time.
     /// </summary>
     protected Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
@@ -242,7 +242,7 @@ public abstract class ReviewLandingFixture : IDisposable
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         using var process = Process.Start(TestGit.Past(info))!;
         // 🔴 Both streams are read at once, before the wait: read one after the other, a git that writes more than a pipe's
-        // worth of warnings to the second blocks on it while the first is still being read (FIX-LOG 2026-10-04).
+        // worth of warnings to the second blocks on it while the first is still being read.
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         await Task.WhenAll(stdout, stderr);

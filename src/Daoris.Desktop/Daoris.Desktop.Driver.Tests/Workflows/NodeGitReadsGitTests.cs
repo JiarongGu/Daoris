@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-RUN1b over real git (NODE1's choice 8; D88's PROC1d-ii): the runtime's own read for a branch unit's <c>pushed</c>,
+/// Over real git, the runtime's own read for a branch unit's <c>pushed</c>,
 /// <see cref="NodeTips.RemotesAsync"/>. The remote-tracking ref is read from the checkout's ref files, and git is asked no ancestry.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

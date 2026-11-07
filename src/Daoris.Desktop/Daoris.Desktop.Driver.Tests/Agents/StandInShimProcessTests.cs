@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row b, part 1 (D213's row b note; the design §11 row b's proof): the stand-ins on the contract, through the shim,
+/// The stand-ins on the contract, through the shim,
 /// open, send and stop on each door and <c>acp-stub</c> resumes, in real processes. No model, no account. A separate test door states a native resume and no native dialect, and its resume's early
 /// failed exit is read by the plain capture and not tried again (the retry is the structured capture's: <c>Driver.cs</c>'s
 /// <c>structured is not null</c>).
@@ -40,7 +40,7 @@ public sealed class StandInShimProcessTests : IDisposable
         lines.on('close', () => process.exit(0));
         """);
 
-    /// <summary>A protocol agent that keeps the methods it was sent in a file, one per line, and answers the spec's calls.</summary>
+    /// <summary>A protocol agent that keeps the methods it is sent in a file, one per line, and answers the spec's calls.</summary>
     private string Acp() => Script("acp.mjs", """
         import { appendFileSync } from 'node:fs';
         import { createInterface } from 'node:readline';

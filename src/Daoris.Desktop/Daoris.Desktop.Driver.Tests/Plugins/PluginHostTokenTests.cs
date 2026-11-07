@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The API token's hand-off (D241 point 5): <c>DAORIS_HOST_TOKEN</c> goes to the one plugin process started for it, and the start is
+/// The API token's hand-off: <c>DAORIS_HOST_TOKEN</c> goes to the one plugin process started for it, and the start is
 /// refused where no identity serves origin, the identity is read only, Write denies, or no token is set. No process starts.
 /// </summary>
 /// <remarks>It sets the token's variable in the process's environment, which every class beside it reads, so it runs alone.</remarks>
@@ -177,7 +177,7 @@ public sealed class PluginHostTokenTests : IDisposable
         Assert.DoesNotContain(said, line => line.Contains("throwaway", StringComparison.Ordinal));
     }
 
-    /// <summary>One look of a hook set that holds the home, a plugin with a pull-request step awaited at the place <c>work</c>: what started with what token, and what was said.</summary>
+    /// <summary>One look of a hook set that holds the home, a plugin with a pull-request step awaited at the place <c>work</c>: what started with what token, and what the log says.</summary>
     private async Task<(List<string?> Tokens, List<string> Said)> LookAsync()
     {
         var folder = DaorisHome.Entry(Home, HomeEntry.Plugins, "pr");

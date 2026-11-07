@@ -3,13 +3,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// **dsh and codex as configurations of the protocol door** (ACP3/D53). Everything here is keyless,
-/// and every claim about somebody else's program was established against an installed artefact at an
+/// **dsh and codex as configurations of the protocol door**. Everything here is keyless,
+/// and every claim about somebody else's program is established against an installed artefact at an
 /// exact version — `docs/2026-09-22-acp3-probe-evidence.md` is the record, and it says which facts
 /// came from a live wire and which from a shipped bundle.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>The single finding these tests exist to hold: the D37 posture lives in three
+/// <para>🔴 <b>The single finding these tests exist to hold: the permission posture lives in three
 /// different places.</b> Claude Code and Codex express it as an ACP <b>mode</b> on the wire — with
 /// <em>different mode ids</em> — and dsh does not express it on the wire at all, because its
 /// `session/new` carries no `modes` key. Its posture is an environment variable read at boot. An
@@ -36,12 +36,12 @@ public sealed class Acp3AdapterTests : IDisposable
     // ---- the seam: a posture per adapter, in that adapter's own vocabulary --------------------
 
     /// <summary>
-    /// 🔴 <b>Each ACP harness names its own posture, and nothing has a default.</b> The mode id was a
-    /// constant inside the session while one harness rode the door; a second harness with a different
-    /// id would have been silently driven at whatever mode it happened to start in.
+    /// 🔴 <b>Each ACP harness names its own posture, and nothing has a default.</b> A mode id held as a
+    /// constant inside the session would drive a second harness with a different
+    /// id silently at whatever mode it happened to start in.
     /// </summary>
     [Theory]
-    [InlineData("claude-code-acp", "auto|acceptEdits")]  // D81: auto where offered, else as observed live (evaluation §1a)
+    [InlineData("claude-code-acp", "auto|acceptEdits")]  // auto where offered, else as observed live
     [InlineData("codex-acp", "agent")]              // read from codex-acp@1.12.0's own bundle
     public void Each_protocol_harness_states_the_posture_in_its_own_vocabulary(string name, string posture)
     {
@@ -49,7 +49,7 @@ public sealed class Acp3AdapterTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1a1 (D183 point 1): each harness names its own mode that asks nothing, for Ask Daoris's full access, in its own
+    /// Each harness names its own mode that asks nothing, for Ask Daoris's full access, in its own
     /// vocabulary: Claude Code's <c>bypassPermissions</c> on either door, Codex's <c>agent-full-access</c> (dangerFullAccess with
     /// approvals never, read from codex-acp 2.1.1's bundle). One with none mapped names none, and a full start on it is refused.
     /// </summary>
@@ -81,15 +81,15 @@ public sealed class Acp3AdapterTests : IDisposable
     // ---- dsh --------------------------------------------------------------------------------
 
     /// <summary>
-    /// dsh's posture is `DSH_PERMISSION_MODE`, and `workspace-write` is D37 in its vocabulary: writes
+    /// dsh's posture is `DSH_PERMISSION_MODE`, and `workspace-write` is the ordinary posture in its vocabulary: writes
     /// inside the workspace are sandbox-legal and proceed, and anything escalating past the sandbox
     /// asks — which over ACP arrives as `session/request_permission` and is refused by construction.
     /// </summary>
     /// <remarks>
     /// 🔴 It is <b>stated even though it is also dsh's default</b>. A posture that happens to match
     /// somebody else's default is not a posture Daoris has set, and the default is theirs to change.
-    /// `danger-full-access` is the value that would turn approvals off entirely, which is what D37
-    /// forbids — so the test names it as the thing that must never appear.
+    /// `danger-full-access` is the value that would turn approvals off entirely, which the ordinary
+    /// posture forbids — so the test names it as the thing that must never appear.
     /// </remarks>
     [Fact]
     public void Dsh_carries_the_posture_in_the_environment_because_its_wire_will_not()
@@ -134,7 +134,7 @@ public sealed class Acp3AdapterTests : IDisposable
     }
 
     /// <summary>
-    /// dsh asks no login question (SES3: a cached refusal is re-asked, and only a definite *out*
+    /// dsh asks no login question (a cached refusal is re-asked, and only a definite *out*
     /// refuses — dsh has no notion of an account to be out of, so `unknown` is permissive and a
     /// session starts).
     /// </summary>
@@ -211,13 +211,13 @@ public sealed class Acp3AdapterTests : IDisposable
     /// <remarks>
     /// <para>Found on the first real deployment. A driven <c>claude-code</c> session wrote an em-dash
     /// (<c>e2 80 94</c>) and the transcript held <c>e9 88 a5 3f</c> — that sequence decoded as the
-    /// machine's ANSI codepage (CP936 here) and re-encoded. .NET defaults a redirected stream to the
+    /// machine's ANSI codepage (GBK here) and re-encoded. .NET defaults a redirected stream to the
     /// console's codepage, which on an English machine is close enough to ASCII to look fine and on
     /// this one is not.</para>
     ///
     /// <para>It matters more than a mangled dash: this platform speaks <b>简体中文</b>, and a
     /// transcript that cannot carry a dash carries no Chinese at all. The failure is also silent —
-    /// the file is still valid UTF-8 afterwards, so nothing downstream can tell it was ever wrong.</para>
+    /// the file is still valid UTF-8 afterwards, so nothing downstream can tell it went wrong.</para>
     /// </remarks>
     [Theory]
     [InlineData("claude-code")]
@@ -238,8 +238,8 @@ public sealed class Acp3AdapterTests : IDisposable
     // ---- the roster -------------------------------------------------------------------------
 
     /// <summary>
-    /// Both arrive BESIDE what was there, never replacing it — the additive rule every part of this
-    /// toolchain holds. An unknown name still errors naming what exists (D23).
+    /// Both arrive BESIDE what is there, never replacing it — the additive rule every part of this
+    /// toolchain holds. An unknown name still errors naming what exists.
     /// </summary>
     [Fact]
     public void The_roster_gained_two_configurations_of_the_door_and_lost_nothing()
@@ -256,8 +256,7 @@ public sealed class Acp3AdapterTests : IDisposable
 
     /// <summary>
     /// Every ACP adapter that names a posture must be pinnable, because a protocol adapter that
-    /// moves under a running loop is the moving target D49 §4 refuses for harnesses — and D53 wrote
-    /// that rule from an adapter that reached 0.79 in the week it was evaluated.
+    /// moves under a running loop is the moving target harnesses are never allowed to be.
     /// </summary>
     [Fact]
     public void Every_protocol_adapter_declares_a_package_so_it_can_be_pinned()
@@ -271,26 +270,22 @@ public sealed class Acp3AdapterTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 <b>This set and the CLI's `TOOLCHAINS` were twins, and the risk was never membership.</b> The
-    /// two differed on purpose — managing a tool and spawning sessions on it are different questions
-    /// (D23), which is why the CLI had `codex` with no adapter. What must never differ is a shared
+    /// 🔴 <b>A shared NAME has one descriptor.</b> Managing a tool and spawning sessions on it are
+    /// different questions, so the sets of names may differ; what must never differ is a shared
     /// NAME's descriptor: one door probing one binary while another spawns a second is an
-    /// `agent list` reporting on a program nothing runs. Since PUSH1f2f the driver declares each alone
-    /// (`TOOLCHAINS` left with the CLI's last family), and these rows pin what it declares.
+    /// `agent list` reporting on a program nothing runs. The driver declares each alone,
+    /// and these rows pin what it declares.
     /// </summary>
     /// <remarks>
-    /// The binaries are pinned on both sides rather than compared across a language boundary — the
-    /// same shape the remotes map's three twins use, where the FILE is the contract and the test
-    /// tables move together. The 🔴 here is that the binary is the field that has already been wrong
-    /// once: `claude-agent-acp` was guessed as the adapter's Daoris name and caught by `harness list`
-    /// reporting a pin that was installed as absent.
+    /// The binary is the field that is easiest to get wrong: `claude-agent-acp` guessed as the
+    /// adapter's Daoris name would be caught by `harness list` reporting an installed pin as absent.
     /// </remarks>
     public static TheoryData<string, string, string, string, string> Twins => new()
     {
         { "claude-code", "claude", "CLAUDE_CONFIG_DIR", "Claude Code", "Anthropic" },
         { "claude-code-acp", "claude-agent-acp", "CLAUDE_CONFIG_DIR", "Claude Code", "Anthropic" },
         { "codex-acp", "codex-acp", "CODEX_HOME", "Codex", "OpenAI" },
-        // AGENTS2: the name its maker publishes it under, since `dsh` beside DeepSeek still read as no DeepSeek agent.
+        // The name its maker publishes it under: `dsh` beside DeepSeek would read as no DeepSeek agent.
         { "dsh", "dsh", "DSH_HOME", "DeepSeek Harness", "DeepSeek" },
     };
 
@@ -303,7 +298,7 @@ public sealed class Acp3AdapterTests : IDisposable
 
         Assert.Equal(binary, Assert.Single(toolchain.Program.Binary));
         Assert.Equal(seam, toolchain.Home.Variable);
-        // AGT1: what a person calls it, and whose it is — `dsh` meant nothing until it said.
+        // What a person calls it, and whose it is — `dsh` alone means nothing.
         Assert.Equal(product, toolchain.Product);
         Assert.Equal(maker, toolchain.Maker);
     }
@@ -313,14 +308,13 @@ public sealed class Acp3AdapterTests : IDisposable
     /// row's reach proves nothing about the next one.
     /// </summary>
     /// <remarks>
-    /// The table above was written during ACP3 and pinned the three arrivals, which left
-    /// <c>claude-code</c> — the oldest entry, and the one a machine actually drives with — asserted
-    /// on neither side. Nothing was wrong with it; nothing would have said so either. A count that
-    /// never <i>rose</i> is the half of this failure that has no earlier number to fall from, so the
+    /// A table that pinned only the newest arrivals would leave <c>claude-code</c> — the oldest entry,
+    /// and the one a machine actually drives with — asserted nowhere, and nothing would say so. A count
+    /// that never <i>rose</i> has no earlier number to fall from, so the
     /// membership is derived from the adapter set rather than remembered.
     ///
     /// The stubs are excluded by the only honest test there is: they name no binary, because the
-    /// "binary" is whatever a configuration says (D46 §8).
+    /// "binary" is whatever a configuration says.
     /// </remarks>
     [Fact]
     public void Every_adapter_with_a_real_binary_is_in_the_twin_table()

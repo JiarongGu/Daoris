@@ -10,13 +10,13 @@ import { SessionFlow } from './SessionFlow';
 import { type TimelineEvent, sessionTimeline } from './timeline';
 
 /**
- * How many lines a note shows before it folds (UX6b, design §2.5), and about how many letters the side bar's line holds
+ * How many lines a note shows before it folds, and about how many letters the side bar's line holds
  * at its usual width: the install's side bar showed an ended session's whole verify report past the window's foot.
  */
 const NOTE_LINES = 4;
 const MEASURE = 56;
 
-/** The mark's hue per kind — an arrangement of existing tokens (D41), never a new colour. */
+/** The mark's hue per kind — an arrangement of existing tokens, never a new colour. */
 const MARK: Record<TimelineEvent['kind'], string> = {
   opened: 'border-line bg-raised',
   state: 'border-accent bg-accent-soft',
@@ -25,17 +25,17 @@ const MARK: Record<TimelineEvent['kind'], string> = {
 };
 
 /**
- * One observed event, beside the stream and never inside it (design §3).
+ * One observed event, beside the stream and never inside it.
  *
  * @remarks
  * A molecule: it is handed an event and renders it, so every kind — including the ones a real
  * session produces once a week — is reachable in a story.
  *
- * **A session's note is `Note`'s** (LANG1b, D142): Daoris's lines worded by their codes in the reader's language,
- * someone's words as written, a record from before as it was kept, marked. An evidence bundle is a sentence the
+ * **A session's note is `Note`'s**: Daoris's lines worded by their codes in the reader's language,
+ * someone's words as written, a record from before as kept, marked. An evidence bundle is a sentence the
  * driving machine wrote and renders verbatim, and a quest's note is its closer's words.
  *
- * **A note longer than four lines folds to them** (UX6b, design §2.5), with *Show all*: a long note is someone's words or
+ * **A note longer than four lines folds to them**, with *Show all*: a long note is someone's words or
  * the driver's account of a run, and the conversation and the record hold it whole.
  */
 export function TimelineEntry({ event }: { event: TimelineEvent }) {
@@ -47,8 +47,8 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
       : event.kind === 'quest' ? t('work.timeline.quest', { status: t(`status.${event.status}`) })
         : t('work.timeline.evidence');
 
-  // A quest's note is its closer's words, shown as written; a session's is its record's, Daoris's lines worded (LANG1b).
-  // A quest's note with parts is drawn by `Note` as well, so the person's done reads in the reader's language (QUESTCLOSE1b2).
+  // A quest's note is its closer's words, shown as written; a session's is its record's, Daoris's lines worded.
+  // A quest's note with parts is drawn by `Note` as well, so the person's done reads in the reader's language.
   const coded = event.kind === 'state' || (event.kind === 'quest' && !!event.noteParts?.length);
   const note = event.kind === 'quest' && !coded ? event.note : null;
   // Long is judged on what is shown: the note's blocks as `Note` draws them, or the closer's words.
@@ -115,11 +115,10 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
  * The observed audit layer for one session.
  *
  * @remarks
- * **A molecule, not the organism the plan filed it as.** The components plan put this under
- * organisms before the derivation was known; `sessionTimeline` turned out to need only the record
+ * **A molecule.** `sessionTimeline` needs only the record
  * and its quest, both of which the attended session already holds. The dependency rule decides the
- * layer, not the table — so this takes props, stays inside the presentational boundary, and every
- * shape of timeline is reachable in a story. The plan is corrected rather than quietly satisfied.
+ * layer — so this takes props, stays inside the presentational boundary, and every
+ * shape of timeline is reachable in a story.
  */
 export function SessionTimeline({ session, quest, shown, hideCurrentNote = false, titled = true }: {
   session: Session;
@@ -136,8 +135,8 @@ export function SessionTimeline({ session, quest, shown, hideCurrentNote = false
    */
   hideCurrentNote?: boolean;
   /**
-   * Whether it carries its own heading. The dock's tab names it, and the pane said *Timeline* again
-   * under the *Timeline* tab (UX5 U65); in the column, with no tab above it, the heading stays.
+   * Whether it carries its own heading. The dock's tab names it, so the pane does not say *Timeline* again
+   * under the *Timeline* tab; in the column, with no tab above it, the heading stays.
    */
   titled?: boolean;
 }) {
@@ -153,7 +152,7 @@ export function SessionTimeline({ session, quest, shown, hideCurrentNote = false
           <span title={t('work.timeline.hint')}>{t('work.timeline.title')}</span>
         </SectionTitle>
       )}
-      {/* The session's states at its head (FLOWCHART1b): what the record says it is, above what was observed. */}
+      {/* The session's states at its head: what the record says it is, above what is observed. */}
       <SessionFlow session={session} shown={shown} className="mb-3" />
       <ol className="m-0 list-none p-0">
         {events.map((event, index) => (

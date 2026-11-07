@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The setting verbs, the standing choices <c>daoris settings …</c> and <c>daoris place …</c> hand on (PUSH1f2a, D194 points 1, 2 and 5; the alone-path
-/// design §1.2 and §2): a change goes to the running Daoris's route where one answers, confirmed in its window whatever the
+/// The setting verbs, the standing choices <c>daoris settings …</c> and <c>daoris place …</c> hand on: a change goes to the running Daoris's route where one answers, confirmed in its window whatever the
 /// terminal's environment says; with none it is the verb's own act, on the terminal's word, refused from a session's terminal; a read is
 /// never refused; and a verb it does not have is its usage.
 /// </summary>
@@ -71,7 +70,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// *Try again* alone judges from the planner's verdict over the service's snapshot (D194's PUSH1f2a note): where the service cannot
+    /// *Try again* alone judges from the planner's verdict over the service's snapshot: where the service cannot
     /// be read, nothing is guessed and nothing is written, and the words say how to give the count, as the CLI's did.
     /// </summary>
     [Fact]
@@ -117,7 +116,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
         return World() with { Verbs = DriverChoiceVerbs.With((_, _) => Task.FromResult<IReadOnlyList<Consideration>>([verdict])) };
     }
 
-    /// <summary>REVIEW2 T2: `driver retry` alone writes the yes to a role policy's ask as one approval for the quest and the role that took it.</summary>
+    /// <summary>`driver retry` alone writes the yes to a role policy's ask as one approval for the quest and the role that took it.</summary>
     [Fact]
     public async Task A_retry_alone_of_a_quest_a_policy_holds_keeps_one_approval_for_its_role()
     {
@@ -167,19 +166,19 @@ public sealed class DriverChoicesCommandTests : IDisposable
         Assert.Equal(
             ["list", "drive", "undrive", "hold", "resume", "trees", "notify", "cap", "retry", "cooloff", "quiet", "line", "across", "standing", "language", "review", "opinion", "helpers", "handover", "commits",
                 "brainstorms", "workflow", "keep",
-                // FOUNDATION1y-i: the role catalogue's door.
+                // The role catalogue's door.
                 "role"],
             DriverChoicesCommand.Verbs);
         Assert.All(DriverChoicesCommand.Verbs, verb =>
             Assert.Matches($"(?<![\\w-]){System.Text.RegularExpressions.Regex.Escape(verb)}(?![\\w-])", DriverChoicesCommand.Usage));
         Assert.All(DriverWorkflowsCommand.Verbs, verb => Assert.Contains(verb, DriverChoicesCommand.Usage, StringComparison.Ordinal));
         Assert.DoesNotContain("still", DriverChoicesCommand.Usage, StringComparison.Ordinal);
-        // CONFIRMWAIT1b (the confirm-wait design §4.1): every change waits on its Confirm, and the usage says for how long.
+        // Every change waits on its Confirm, and the usage says for how long.
         Assert.Contains(InstanceDoor.WaitUsage, DriverChoicesCommand.Usage, StringComparison.Ordinal);
     }
 
     /// <summary>
-    /// A change no route takes acts here on the terminal's word (D171's PUSH1f note, kept by D194 point 5), refused from a session's
+    /// A change no route takes acts here on the terminal's word, refused from a session's
     /// terminal before anything is read or written: the brainstorm policy and a workflow's write.
     /// </summary>
     [Theory]
@@ -214,7 +213,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Beside the running Daoris a change no route takes is written here, with nothing sent (PUSH1f2b, D194 point 5): the brainstorm policy.
+    /// Beside the running Daoris a change no route takes is written here, with nothing sent: the brainstorm policy.
     /// </summary>
     [Theory]
     [InlineData("brainstorms --mode off")]
@@ -252,7 +251,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// REVIEW2 3: beside the running Daoris a workflow's write is the window's route, confirmed there whatever the terminal's environment
+    /// Beside the running Daoris a workflow's write is the window's route, confirmed there whatever the terminal's environment
     /// says, and this process writes nothing (the guard is the window's Confirm, as every other person's press).
     /// </summary>
     [Theory]
@@ -304,7 +303,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1c-i: the variable that once named a file no instance holds is read nowhere, so beside a running Daoris on this home a
+    /// The variable that once named a file no instance holds is read nowhere, so beside a running Daoris on this home a
     /// change is its route whatever the variable says; nothing is written alone.
     /// </summary>
     [Fact]
@@ -340,8 +339,8 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// Beside the running Daoris a person's press is its route, confirmed in its window (RPC1c), whatever the terminal's environment
-    /// says (D194 point 5: the marker refuses, its absence grants nothing, and the window's Confirm is the person's): sent with its
+    /// Beside the running Daoris a person's press is its route, confirmed in its window, whatever the terminal's environment
+    /// says (the marker refuses, its absence grants nothing, and the window's Confirm is the person's): sent with its
     /// payload, said in the verb's words from the answer, and this process writes nothing.
     /// </summary>
     [Fact]
@@ -385,7 +384,7 @@ public sealed class DriverChoicesCommandTests : IDisposable
     }
 
     /// <summary>
-    /// The host routes the family and takes Ctrl+C in one handler for it (D194 point 1, the alone-path design §1.1): registered where the
+    /// The host routes the family and takes Ctrl+C in one handler for it: registered where the
     /// family is routed, after `closing` is made and after every verb routed above it, keeping the process and cancelling `closing`, whose
     /// token the family's command is handed; and its lease is the named file's to forgo (<see cref="VerbLeases.HoldsHere"/>).
     /// </summary>

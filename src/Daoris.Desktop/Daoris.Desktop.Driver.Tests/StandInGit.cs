@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// git standing in at the review's seam (<see cref="WorkingTree.GitRead"/>), in process (EVID1b): a few commits, each a set of
+/// git standing in at the review's seam (<see cref="WorkingTree.GitRead"/>), in process: a few commits, each a set of
 /// files by path, answering the reads evidence makes as git answers them: <c>rev-parse --verify --quiet</c> of a commit and of
 /// <c>commit:path</c> (a file's blob, a folder's tree, exit 1 for neither), <c>ls-tree -z</c> of a commit or a tree,
 /// <c>rev-parse --show-toplevel</c>, and <c>merge-base --is-ancestor</c> over each commit's parent. Every call is kept, so a
-/// test sees each argument as git was handed it. Anything else answers 129, as git does to a usage it does not know.
+/// test sees each argument as git is handed it. Anything else answers 129, as git does to a usage it does not know.
 /// </summary>
 /// <remarks>Ids are 40 hex characters derived from what they name, so the same commit or file is the same id on every run.</remarks>
 internal sealed class StandInGit(string top)
@@ -42,7 +42,7 @@ internal sealed class StandInGit(string top)
         return id;
     }
 
-    /// <summary>HEAD moved back to <paramref name="commit"/>, as a reset does: the next commit grows from it, beside what was after it.</summary>
+    /// <summary>HEAD moved back to <paramref name="commit"/>, as a reset does: the next commit grows from it, beside what follows it.</summary>
     public void Reset(string commit) => Head = commit;
 
     /// <summary>A file's blob id, as <see cref="Commit"/> names it from its content.</summary>

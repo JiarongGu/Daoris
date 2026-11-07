@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDRETIRE1: the two doors of the withdrawal of a landing's branch (D50), without git: the names the terminal's verb takes and the
+/// The two doors of the withdrawal of a landing's branch, without git: the names the terminal's verb takes and the
 /// repositories they belong to, the lease and the checkout the door asks before the act, the words both doors say, and the verb's usage.
 /// The act over real git is <see cref="LandedWithdrawTests"/>.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed class LandedBranchWithdrawalTests : IDisposable
         {
             Directory.Delete(_home, recursive: true);
         }
-        catch (DirectoryNotFoundException) { /* nothing was written */ }
+        catch (DirectoryNotFoundException) { /* nothing written */ }
     }
 
     private static LandedBranch Landed(string repository, string branch) =>

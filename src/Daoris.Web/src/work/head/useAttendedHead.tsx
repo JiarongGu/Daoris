@@ -40,7 +40,7 @@ import type { useHeadAsks } from './useHeadAsks';
 type Waits = ReturnType<typeof useAttendedWaits>;
 
 /**
- * The attended session's page header (D126 §3.2): its acts by the one rule, the question it asks now under it (§3.3), the
+ * The attended session's page header: its acts by the one rule, the question it asks now under it, the
  * limit's wait and Daoris's offer to hand over, its name, its facts line and its *next*; and the sessions it continues and helps.
  */
 export function useAttendedHead({
@@ -59,7 +59,7 @@ export function useAttendedHead({
   grouping: ReturnType<typeof withCall> | null;
   registry: ReturnType<typeof useRegistry>['data'];
   roster: Parameters<typeof accountNames>[0];
-  /** The roster's sheet half, which says which agent each door is (AGENTPROVIDER1 s-vii); absent where the roster names none. */
+  /** The roster's sheet half, which says which agent each door is; absent where the roster names none. */
   sheets?: AgentDoors;
   accounts: Parameters<typeof limitWaitOf>[0]['answer'];
   nameOf: ReturnType<typeof namer>;
@@ -97,17 +97,17 @@ export function useAttendedHead({
     stopAsking, setStopAsking, deleteAsking, setDeleteAsking, handOverAsking, setHandOverAsking, helperAsking, setHelperAsking,
     handOverChosen, setHandOverChosen, offerDismissed, setOfferDismissed, pauseAsking, setPauseAsking,
   } = asks;
-  // LIMITRESUME1d: what *Try now* on a waiting line came to where it was refused, by the session it was pressed on.
+  // What *Try now* on a waiting line came to where it is refused, by the session it is pressed on.
   const [limitRefusal, setLimitRefusal] = useState<{ session: string; sentence: string } | null>(null);
   const accountUse = useAccountUse();
-  // LIMITRESUME1d2: a conversation's limit wait, as its events hold it, told by the conversation that reads them.
+  // A conversation's limit wait, as its events hold it, told by the conversation that reads them.
   const [chatHeld, setChatHeld] = useState<{ session: string; held: ChatLimitHeld } | null>(null);
   const stopWaiting = useStopWaiting();
   const attendedFacts: ActFacts | null = attended
     ? { session: attended, quest, grouping, root: rootOf(attended.repository), where: where[attended.id] }
     : null;
   const headActs = attendedFacts ? offeredActs(attendedFacts, 'header').filter(actions.can) : [];
-  // LIMITRESUME1d (D206 §3.7): a driven line an account's limit cut off, every account it may run on cooling, says under its header
+  // A driven line an account's limit cut off, every account it may run on cooling, says under its header
   // when it resumes by itself and how, with the person's ways out beside it: *Go on now with…* (the hand-over's ask), *Pause quest…*
   // and the account's *Try now*. Read from the accounts the page holds, never a guess: no walk that waits, no line.
   const attendedWorkspace = attended
@@ -116,7 +116,7 @@ export function useAttendedHead({
   const limitWait = attended && here && limitedLine(attended, quest?.status, Boolean(grouping?.pausedBy))
     ? limitWaitOf({ session: attended, workspace: attendedWorkspace, doors: roster, answer: accounts, now: new Date() })
     : null;
-  // LIMITRESUME1d2 (D206 §3.5, §3.7): a conversation says its wait from its events alone (`chat.limit-waits`), worded by the walk
+  // A conversation says its wait from its events alone (`chat.limit-waits`), worded by the walk
   // where the page holds it, else by the driver's own line. Its ways out: *Go on now with…*, *Stop…* while it runs or *Stop waiting*
   // once it ended, and *Try now*.
   const conversationHeld = attended && here && attended.kind === 'chat' && chatHeld?.session === attended.id ? chatHeld.held : null;
@@ -137,10 +137,10 @@ export function useAttendedHead({
     ? limitWaitSaid(t, limitWait, (account) => nameOf(attended.door, account))
     : conversationLines;
   const waitAccount = limitWait?.account ?? conversationWait?.account ?? attended?.profile ?? null;
-  // The line, the same at the head and the foot (D206 §3.7): one element, its presses the same presses.
+  // The line, the same at the head and the foot: one element, its presses the same presses.
   const limitLine = (className: string) => (waitLines && attended ? (
     <LimitWaitLine
-      // Keyed by the session and the place: a refusal said in one is never another's (RELSPAM1).
+      // Keyed by the session and the place: a refusal said in one is never another's.
       key={`limit:${attended.id}`}
       className={className}
       lines={waitLines}
@@ -167,11 +167,11 @@ export function useAttendedHead({
       }}
     />
   ) : null);
-  // Daoris's offer to hand over (MIXAGENT1b-ii, D163 point 3): on a conversation this page offers the press on, when its own
-  // account is cut or near its limit by its scope's near (never the agent's pace warning alone, USAGEREAD3b) and another agent
+  // Daoris's offer to hand over: on a conversation this page offers the press on, when its own
+  // account is cut or near its limit by its scope's near (never the agent's pace warning alone) and another agent
   // has an account the walk would take. No driver read.
-  // MODELROLE1e (D205 §3.5(e)): its order is the session's actor's, Build's for a driven line and Chat's for a conversation, where that
-  // actor has an order of its own; the roster's order stands where it is as before.
+  // Its order is the session's actor's, Build's for a driven line and Chat's for a conversation, where that
+  // actor has an order of its own; the roster's order stands otherwise.
   const attendedActor = attended ? (actors ?? []).find((row) => row.id === (attended.kind === 'chat' ? 'chat' : 'build')) : undefined;
   const offer = attended && headActs.includes('handOver') && !offerDismissed.has(attended.id) && !waitLines
     ? handOverOffer({
@@ -185,7 +185,7 @@ export function useAttendedHead({
     : null;
   const offerTo = offer ? roster.find((row) => row.door === offer.agent) : null;
   const asked = attended ? stopAsk(attended, quest) : null;
-  // A pause's ask says what it stops from the driver's plan of the work (D132 §2.6); one that stops nothing applies at once.
+  // A pause's ask says what it stops from the driver's plan of the work; one that stops nothing applies at once.
   const pausing = pauseAsking && attended?.id === pauseAsking.session ? pauseAsking : null;
   const pausePlan = useWorkPlan(pausing?.target ?? null);
   const pauseWired = wiredFor(wiring, quest?.workspace ?? attended?.workspace);
@@ -200,14 +200,14 @@ export function useAttendedHead({
     actions.work.pause(pausing.target, undefined, () => setPauseAsking(null));
   }, [pausing, pauseQuiet, actions.work]);
   useEffect(() => { if (!pausing) pausedQuietly.current = null; }, [pausing]);
-  // Named as its row is (TITLEONE1): the entry's name, its ask's, where an ask began it, read under the rail's own key; otherwise
+  // Named as its row is: the entry's name, its ask's, where an ask began it, read under the rail's own key; otherwise
   // the record's own.
   const entryAsk = channelAsk ? (entryAsks ?? []).find((ask) => ask.id === channelAsk) : undefined;
   const attendedTitle = attended
     ? nameOfEntry(attendedEntry ?? undefined, entryAsk ? { [entryAsk.id]: askName(entryAsk) } : {})
       ?? sessionTitle(attended, quest, openings[attended.id])
     : '';
-  // Whom it continues and whom a helper helps (MIXAGENT3a-i): the record's own links, joined to the sessions the frame holds, for
+  // Whom it continues and whom a helper helps: the record's own links, joined to the sessions the frame holds, for
   // the head's facts and its *Details*. One the frame does not hold is said by its id, and its agent is not guessed.
   const linked = attended
     ? linkedSessions(attended, new Map((sessions ?? []).map((row): [string, Session] => [row.id, row])))
@@ -219,7 +219,7 @@ export function useAttendedHead({
   const continues = headLink(linked?.continues);
   const helps = headLink(linked?.helps);
   const headPrimary = primaryAct(headActs, grouping);
-  // A right-click on the session's page offers its header's acts, in the order the header draws them (CTX1, D138 §4).
+  // A right-click on the session's page offers its header's acts, in the order the header draws them.
   const pageMenu = attended && attendedFacts
     ? {
       label: attendedTitle,
@@ -227,7 +227,7 @@ export function useAttendedHead({
     }
     : null;
   const attendedShown = attended ? shownOf(attended, grouping, taking[attended.id]) : null;
-  // Its facts line by its state (UX7c, D152 §7): the row's facts and the record's, so the head and the row agree.
+  // Its facts line by its state: the row's facts and the record's, so the head and the row agree.
   const headFactsOf: SessionFactsOf | null = attended && attendedShown ? {
     session: attended,
     shown: attendedShown,
@@ -235,24 +235,24 @@ export function useAttendedHead({
     ownSignIn: roster.some((row) => row.door === attended.door),
     branch,
     nameOf,
-    // The agent it continues by the roster's name for it, as the hand-over's ask names agents (MIXAGENT3a-i).
+    // The agent it continues by the roster's name for it, as the hand-over's ask names agents.
     continuesAgent: continues
       ? roster.find((row) => row.door === continues.session.door)?.product || continues.session.door
       : null,
     leadingAgent: leadingAgentOf(attendedEntry, sessions ?? [], roster, sheets),
     helping: helps?.title,
-    // COAGENT1b: its partners, the agents its pieces went to by the roster's names, and how many work now.
+    // Its partners, the agents its pieces went to by the roster's names, and how many work now.
     partners: partnersOf(partnerPieces.data ?? [], (agent) => agentRoster.names?.[agent] ?? agent),
     waitingSince: waiting?.session === attended.id ? waiting.since : undefined,
     calling: waiting?.session === attended.id ? waiting.calling : undefined,
     withIt: following?.id === attended.id ? withIt : 0,
     windowOpened: atWorkHeld && 'answer' in atWorkHeld ? atWorkHeld.answer.windowOpened : undefined,
-    // AGENTERRORS1a2 (D210 §5.1, §8): *Trying again at* while a transient episode waits.
+    // *Trying again at* while a transient episode waits.
     retrying: waiting?.session === attended.id ? waiting.retrying : undefined,
-    // HEAVYSLOT1: its heavy run said in place of the call, by its gate or whom it waits behind.
+    // Its heavy run said in place of the call, by its gate or whom it waits behind.
     heavy: heavyPart ? heavyLine(t, heavyPart, heavyTitleOf) : null,
     integration: integration.data ?? null,
-    // REVIEWFLOW1b: where the work stands, from the same facts the head's waits are drawn from.
+    // Where the work stands, from the same facts the head's waits are drawn from.
     flow: { parts: entryOffered, landing: landsNow },
   } : null;
   const nextWait = nextPress(standing);
@@ -263,7 +263,7 @@ export function useAttendedHead({
       title={attendedTitle}
       shown={attendedShown}
       facts={sessionFacts(t, headFactsOf)}
-      // RAILLINE1: the line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
+      // The line is one line, its running call said short; the whole line, the call's whole title in it, is its tip.
       factsTip={sessionFactsTip(t, headFactsOf)}
       next={nextWait && nextAnchor ? { press: nextWait, onPress: () => goToWait(nextAnchor) } : null}
       chip={supervisionChip(t, supervision)}
@@ -278,7 +278,7 @@ export function useAttendedHead({
           sentence={t(asked.key, asked.values)}
           busy={actions.stopping}
           onStop={(answered) => actions.stopNow(attended, answered)}
-          // A stop that lands after the person moved to another session closes only the ask it was pressed in.
+          // A stop that lands after the person moved to another session closes only the ask it is pressed in.
           onClose={() => setStopAsking((was) => (was === attended.id ? null : was))}
         />
       ) : deleteAsking === attended.id && headActs.includes('delete') ? (

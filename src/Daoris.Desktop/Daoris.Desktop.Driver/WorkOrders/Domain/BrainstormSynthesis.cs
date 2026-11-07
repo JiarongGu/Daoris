@@ -3,8 +3,8 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Who gave an answer (D176 point 4): its pass, its maker, its adapter and its account, which the synthesis never sees.</summary>
-/// <param name="Maker">The maker's family as the adapter set declares it: two doors of one maker are one maker (D176 point 7).</param>
+/// <summary>Who gave an answer: its pass, its maker, its adapter and its account, which the synthesis never sees.</summary>
+/// <param name="Maker">The maker's family as the adapter set declares it: two doors of one maker are one maker.</param>
 /// <param name="Account">The account's profile, shown on this machine only; null where it ran as none.</param>
 public sealed record BrainstormBy(string Pass, string Maker, string Adapter, string? Account)
 {
@@ -19,7 +19,7 @@ public sealed record BrainstormAnonymous(string Id, BrainstormBy By, BrainstormP
 /// <param name="By"><c>daoris</c> or <c>synthesis</c>.</param>
 public sealed record BrainstormFlag(string Flag, string By, string? Why);
 
-/// <summary>One ranked group of the synthesis (D176 point 4): its title, merged idea, members by anonymous id, rank and why.</summary>
+/// <summary>One ranked group of the synthesis: its title, merged idea, members by anonymous id, rank and why.</summary>
 public sealed record BrainstormGroup(int Rank, string Title, string Idea, string Why, IReadOnlyList<string> Members, IReadOnlyList<BrainstormFlag> Flags);
 
 /// <summary>A proposal the synthesis left out, with why.</summary>
@@ -35,7 +35,7 @@ public sealed record BrainstormSynthesisChecked(BrainstormSynthesized? Synthesis
 }
 
 /// <summary>
-/// The synthesis's side of Daoris (D176 point 4): the anonymous numbering, with the makers interleaved; the validation of
+/// The synthesis's side of Daoris: the anonymous numbering, with the makers interleaved; the validation of
 /// <c>brainstorm_synthesize</c>'s answer; and nothing of who gave which handed to it.
 /// </summary>
 public static class BrainstormSyntheses
@@ -97,7 +97,7 @@ public static class BrainstormSyntheses
     }
 
     /// <summary>
-    /// Validate a synthesis against the ids it was handed (D176 point 4): every id once, in one group or left out with why; ranks
+    /// Validate a synthesis against the ids it is handed: every id once, in one group or left out with why; ranks
     /// 1 to n with no gap or tie; no id invented; each group's words within their bounds; a flag it adds named and given its why.
     /// Daoris's flags are not the synthesis's to keep: Daoris puts each member's on its group (<see cref="BrainstormDocuments"/>).
     /// </summary>
@@ -105,8 +105,8 @@ public static class BrainstormSyntheses
         Check(text, handed.Select(each => each.Id).ToList());
 
     /// <summary>
-    /// The same against the anonymous ids alone: what the turn was handed. The connector's <c>brainstorm_synthesize</c> judges by its
-    /// twin, the service's <c>BrainstormChecks</c>, and both are held to one table (BRAINSTORM1a2, <c>fixtures/brainstorm-answers.json</c>).
+    /// The same against the anonymous ids alone: what the turn is handed. The connector's <c>brainstorm_synthesize</c> judges by its
+    /// twin, the service's <c>BrainstormChecks</c>, and both are held to one table (<c>fixtures/brainstorm-answers.json</c>).
     /// </summary>
     public static BrainstormSynthesisChecked Check(string? text, IReadOnlyCollection<string> ids)
     {

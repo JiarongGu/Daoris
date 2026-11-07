@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own variables on a spawn (the agent-provider design §4.6), a list and never a prefix: the identity variables that say whose
+/// Daoris's own variables on a spawn, a list and never a prefix: the identity variables that say whose
 /// work a start serves, which the shell (<see cref="Shell"/>) sets, and the session git's, which their owner answers.
 /// </summary>
 internal static class Spawning
 {
     /// <summary>
-    /// The variables that say which work a start serves, each set by the start itself for its role (ENVLEAK1): a quest's, an
+    /// The variables that say which work a start serves, each set by the start itself for its role: a quest's, an
     /// ask's, a brainstorm's, its own record's, and the repository and service it is the agent for.
     /// </summary>
     internal static readonly IReadOnlyList<string> Roles =
@@ -33,9 +33,9 @@ internal static class Spawning
     }
 
     /// <summary>
-    /// A start begins from the driver's own environment, and drops every role variable it inherits (ENVLEAK1): a driver run
+    /// A start begins from the driver's own environment, and drops every role variable it inherits: a driver run
     /// from inside a session Daoris drives — a test, a rehearsal — carries that session's quest, target and record, and a chat
-    /// that inherited them would serve a quest it was never given, absent being the rule. Its own role is set after.
+    /// that inherits them would serve a quest it is never given, absent being the rule. Its own role is set after.
     /// </summary>
     internal static void Unrole(IDictionary<string, string?> environment)
     {

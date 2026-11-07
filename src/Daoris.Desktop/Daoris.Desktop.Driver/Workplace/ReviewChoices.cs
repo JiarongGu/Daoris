@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Today's choices of Review's read, lifted out of its chain into pure functions (GITAPP1a-ii, the git-app design P1.1): what each
+/// Today's choices of Review's read, lifted out of its chain into pure functions: what each
 /// git answer means, and which answer is taken where several were asked. Today's chain (<see cref="ReviewRanges"/>,
 /// <see cref="WorkingTree"/>) and the graph (<see cref="ReviewGraphReads"/>) both call them, so the two cannot drift.
 /// </summary>
@@ -32,7 +32,7 @@ internal static class ReviewChoices
     internal static IReadOnlyList<string> Independent(int code, string named) =>
         code != 0 ? [] : named.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-    /// <summary><c>merge-tree --write-tree</c>'s tree (REVIEWBASE3): null where they conflict or git cannot say.</summary>
+    /// <summary><c>merge-tree --write-tree</c>'s tree: null where they conflict or git cannot say.</summary>
     internal static string? Merged(int code, string output)
     {
         var first = output.Split('\n', 2)[0].Trim();
@@ -49,7 +49,7 @@ internal static class ReviewChoices
 
     /// <summary>
     /// The base and the merge the selection asks for (<c>ReviewRangeAsync</c>'s Σ): with fewer than two candidates, the one or the
-    /// record's word; else <see cref="ReviewBase.Newest"/> over git's maximal ones, and the incomparable pair where REVIEWBASE3 applies.
+    /// record's word; else <see cref="ReviewBase.Newest"/> over git's maximal ones, and the incomparable pair where that applies.
     /// </summary>
     internal static (string From, (string Line, string Record)? Merge) Choose(
         IReadOnlyList<string> candidates, IReadOnlyList<string>? maximal, string? record, string recorded)
@@ -78,7 +78,7 @@ internal static class ReviewChoices
     /// <summary><c>DefaultBranchAsync</c>'s questions after origin's <c>HEAD</c>, in its order.</summary>
     internal static readonly string[] Conventional = ["main", "master"];
 
-    /// <summary>The argument list of a conventional line's question, spelled as every read of a branch's commit is (LANDGIT1c).</summary>
+    /// <summary>The argument list of a conventional line's question, spelled as every read of a branch's commit is.</summary>
     internal static string[] ConventionalAsk(string candidate) => ["rev-parse", "--verify", "--quiet", $"refs/heads/{candidate}^{{commit}}"];
 
     /// <summary>
@@ -118,7 +118,7 @@ internal static class ReviewChoices
 }
 
 /// <summary>
-/// The untracked files' fold (REVIEWDIRTY1-a; GITAPP1a-ii, the git-app design P1.3): each answer taken in <c>status</c>'s order, the
+/// The untracked files' fold: each answer taken in <c>status</c>'s order, the
 /// patch budget spent by W's patches and each read patch, a file past it listed with no patch and counted in the truncation's words.
 /// Today's loop and the graph's window both fold through it.
 /// </summary>

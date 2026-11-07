@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// ASKSCOPE1b (D158's ASKSCOPE1 note point 4): each workspace's Ask Daoris room reads its own workspace. A named workspace has a
+/// Each workspace's Ask Daoris room reads its own workspace. A named workspace has a
 /// room folder of its own beside <c>help</c>, written from the facts projected to it before any count or limit, its first lines
-/// saying what is the workspace's and what the machine's; <c>default</c>'s stays <c>help</c> and the whole machine, as before.
+/// saying what is the workspace's and what the machine's; <c>default</c>'s stays <c>help</c> and the whole machine.
 /// </summary>
 /// <remarks>No process and no git: the facts are the fixture's (<see cref="HelpRoomScopeFixture"/>).</remarks>
 public sealed class HelpRoomScopeTests : IDisposable
@@ -34,7 +34,7 @@ public sealed class HelpRoomScopeTests : IDisposable
         var help = HelpRoom.PathOf(_home);
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.HelpRoom), help);
         Assert.All(new string?[] { null, "", " ", "default", " Default " }, unsaid => Assert.Equal(help, HelpRoom.PathOf(_home, unsaid)));
-        // A sibling of the default's room: under `work/rooms/` in a new home (HOMELAYOUT3), beside `help` in one from before.
+        // A sibling of the default's room: under `work/rooms/` in the home, beside `help`.
         Assert.Equal(Path.Combine(Path.GetDirectoryName(help)!, "help-alpha"), HelpRoom.PathOf(_home, "alpha"));
         Assert.Equal(HelpRoom.PathOf(_home, "alpha"), HelpRoom.PathOf(_home, " ALPHA "));
 
@@ -60,7 +60,7 @@ public sealed class HelpRoomScopeTests : IDisposable
     /// 🔴 The room's facts are its workspace's, projected before any count or limit: its repositories and their lines, the sessions
     /// waiting and the list's groups, the asks and their count, the quests parked, held and paused, the finished work, the work
     /// and its recoveries, the landings and the kinds of work. The agents and their accounts, the driver and its cap stay the
-    /// machine's. Since ASKSCOPE1c the checkouts it may read are its workspace's too: they are what its spawn is granted, so the room
+    /// machine's. The checkouts it may read are its workspace's too: they are what its spawn is granted, so the room
     /// lists what its rules allow (<see cref="HelpCircleTests"/>).
     /// </summary>
     [Fact]
@@ -94,7 +94,7 @@ public sealed class HelpRoomScopeTests : IDisposable
         Assert.Equal(["engine"], alpha.Reads.Select(read => read.Name));
         Assert.Equal(["console", "engine", "tools"], whole.Reads.Select(read => read.Name));
 
-        // `default`'s room is the whole machine, as before.
+        // `default`'s room is the whole machine.
         Assert.Same(whole, whole.Within("default"));
         Assert.Same(whole, whole.Within(null));
         Assert.Equal(["engine", "site", "console", "tools"], whole.Repositories.Select(repository => repository.Name));
@@ -153,7 +153,7 @@ public sealed class HelpRoomScopeTests : IDisposable
     public void Two_workspaces_rooms_written_at_once_never_cross()
     {
         var whole = HelpRoomScopeFixture.Machine();
-        // A written room carries the home's supervisor rules beside the machine's facts (CONTEXTDRIVE1k).
+        // A written room carries the home's supervisor rules beside the machine's facts.
         var rules = HelpRuleFacts.Read(_home);
         var said = new Dictionary<string, string?>
         {
@@ -202,7 +202,7 @@ public sealed class HelpRoomScopeTests : IDisposable
         catchUp.Landed();
 
         var alpha = Path.Combine(HelpRoom.PathOf(_home, "alpha"), "AGENTS.md");
-        // Read as the room's writer is read (READSHARE1): a plain read meeting the rename refuses, and failed this twice under load.
+        // Read as the room's writer reads it: a plain read meeting the rename is refused.
         await Poll.Until(() => AtomicFile.ReadText(alpha) == HelpRoom.Render(landed.Within("alpha") with { Rules = HelpRuleFacts.Read(_home) }));
         await Poll.Until(() => !catchUp.Writing);
         Assert.False(HelpRoom.SaidNotReadYet(_home, "alpha"));

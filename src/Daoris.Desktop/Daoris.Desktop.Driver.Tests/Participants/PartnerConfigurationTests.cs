@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 point 4; the co-agent design §3.3, §7.4): the partner's role as its start hands it. Its rules, for an agent that takes
+/// The partner's role as its start hands it. Its rules, for an agent that takes
 /// them, offer the reading tools, its lead's line and its answer, and deny every other connector tool and a push; its effective
 /// configuration names its posture, its copy alone, no network named and the digest of what Daoris passes, alike for every piece's copy.
 /// </summary>
@@ -35,10 +35,10 @@ public sealed class PartnerConfigurationTests
         Assert.Contains(Connector + "helper_ask", shaped.Deny);
         Assert.Contains(Connector + "partner_answer", shaped.Allow);
         Assert.Contains(Connector + "line_read", shaped.Allow);
-        // HANDBACK1: a quest's handback is a quest's record, refused a partner as the quest list is, in both layers.
+        // A quest's handback is a quest's record, refused a partner as the quest list is, in both layers.
         Assert.DoesNotContain(Connector + "handback_read", shaped.Allow);
         Assert.Contains(Connector + "handback_read", shaped.Deny);
-        // KNOWCENTRAL2b: it reads a repository's memory, and changes or proposes nothing of it.
+        // A partner reads a repository's memory, and changes or proposes nothing of it.
         Assert.Contains(Connector + "memory_search", shaped.Allow);
         Assert.Contains(Connector + "memory_get", shaped.Allow);
         Assert.Contains(Connector + "memory_write", shaped.Deny);
@@ -83,7 +83,7 @@ public sealed class PartnerConfigurationTests
     }
 
     /// <summary>
-    /// MODELROLE1e (D205 §4.4, §12): the partner actor gives the named agent its model, and the model is no part of its confinement. Two
+    /// The partner actor gives the named agent its model, and the model is no part of its confinement. Two
     /// choices, one digest: the admission reads the posture, the guard and the rule lists only, so a row measured for the agent admits
     /// every model it is given and a model never needs a measured row of its own.
     /// </summary>

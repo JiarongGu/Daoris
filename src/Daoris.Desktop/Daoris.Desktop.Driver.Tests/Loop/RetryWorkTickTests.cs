@@ -5,14 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RETRYWORK1 through REAL ticks: a session commits its work and then fails because its quest's door is closed, so it never takes
+/// Through REAL ticks: a session commits its work and then fails because its quest's door is closed, so it never takes
 /// the quest; the next look carries the open quest on in that same tree, its instruction naming what the session before committed
 /// and said, and its record's note saying it carried that work on. A real process (node) and the stand-in service
 /// <see cref="AskAndWaitTickTests.StandIn"/>, as the stop-hold ticks use them; no model and no account.
 /// </summary>
 /// <remarks>
-/// Found watching the install: two sessions built their rows, committed them, and failed only because their connector could not
-/// start (QUESTOPENLOCK1). Each quest was started again in a new tree, which built the same row from nothing.
+/// A session that commits its work and fails only because its connector cannot start must not be started again in a new tree,
+/// which would build the same work from nothing.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class RetryWorkTickTests : IDisposable
@@ -95,7 +95,7 @@ public sealed class RetryWorkTickTests : IDisposable
         Commands = new Dictionary<string, IReadOnlyList<string>> { ["stub"] = ["node", Agent(), log] },
     };
 
-    // A driver per look, sharing the processes, as the watch builds one per look (DEV3).
+    // A driver per look, sharing the processes, as the watch builds one per look.
     private Daoris.Driver.Driver Driver(AskAndWaitTickTests.StandIn service, DriverConfig config)
     {
         var adapters = ProviderRegistry.Built();
@@ -105,7 +105,7 @@ public sealed class RetryWorkTickTests : IDisposable
     }
 
     /// <summary>
-    /// The stand-in harness: it writes down what it was handed and its own record as it started. On its first run it commits a file
+    /// The stand-in harness: it writes down what it is handed and its own record as it started. On its first run it commits a file
     /// in its tree, says its quest's door is closed and fails, never taking the quest; on a later run it takes the quest and closes it
     /// done, noting whether the first run's file is in the tree it runs in.
     /// </summary>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2m (D204; the git-writes design §1): a merge driver defined in the configuration's system, global or command scope refuses a
+/// A merge driver defined in the configuration's system, global or command scope refuses a
 /// history edit before any <c>merge-tree</c> starts, as one in the checkout's own scopes does (<see cref="GitHistoryEditTests"/>).
 /// </summary>
 /// <remarks>

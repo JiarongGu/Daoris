@@ -3,21 +3,21 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The live console (D49 §2): the transcript capture, teed into a bounded window a person can watch.
+/// The live console: the transcript capture, teed into a bounded window a person can watch.
 /// </summary>
 /// <remarks>
 /// The file on disk stays the record; this is what makes a running session visible without reading a
-/// growing file. Everything here is about being honest under a bound — what was dropped, where the
+/// growing file. Everything here is about being honest under a bound — what is dropped, where the
 /// reader is, and when the stream ended — because a console that silently skipped output would be a
 /// worse lie than one that showed nothing.
 /// </remarks>
 public sealed class SessionOutputTests
 {
     /// <summary>
-    /// Whether a session's console still runs, told beside a batch of its lines (found looking at
-    /// CONSOLE3c): the relay sends lines a window after they were written, so a session's last lines
-    /// went out after it closed and the page read them as it running. Speaking again is still living
-    /// again, as it always was.
+    /// Whether a session's console still runs, told beside a batch of its lines:
+    /// the relay sends lines a window after they are written, so a session's last lines
+    /// can go out after it closes and the page would read them as it running. Speaking again is still living
+    /// again.
     /// </summary>
     [Fact]
     public void Whether_a_console_runs_is_told_as_its_batch_goes_out()
@@ -144,7 +144,7 @@ public sealed class SessionOutputTests
     }
 
     /// <summary>
-    /// A subagent or a background task is a stream of its own (CONSOLE2): its own tail, listed under
+    /// A subagent or a background task is a stream of its own: its own tail, listed under
     /// the session that started it, and nothing of it in the session's.
     /// </summary>
     [Fact]
@@ -168,7 +168,7 @@ public sealed class SessionOutputTests
 
     /// <summary>
     /// 🔴 The LAST ending is the one kept: the adapter says <c>stopped</c> and then <c>completed</c> in
-    /// the same millisecond for a task that finished on its own (CONSOLE2a). And a line that arrives
+    /// the same millisecond for a task that finished on its own. And a line that arrives
     /// after the end is kept without calling the stream live again.
     /// </summary>
     [Fact]
@@ -190,7 +190,7 @@ public sealed class SessionOutputTests
     }
 
     /// <summary>
-    /// A stream opening or ending is news for its session (CONSOLE2c): it is how a page's console
+    /// A stream opening or ending is news for its session: it is how a page's console
     /// grows a tab while the session runs. A session's end is news only when it ended a stream.
     /// </summary>
     [Fact]
@@ -284,12 +284,11 @@ public sealed class SessionOutputTests
     }
 
     /// <summary>
-    /// Two windows, one buffer (SURF8): the monitor and the main window read the same session at
+    /// Two windows, one buffer: the monitor and the main window read the same session at
     /// once, each at its own position, and neither moves the other's.
     /// </summary>
     /// <remarks>
-    /// This is the property the monitor window is built on and the one D55 §b flagged as unproven —
-    /// "SES1's bounded per-session buffer was written for one". It holds because <b>the buffer keeps
+    /// This is the property the monitor window is built on. It holds because <b>the buffer keeps
     /// no cursor at all</b>: a reader says what it has seen and is told the rest. Asserted rather
     /// than assumed, because a later optimisation that remembered a position would be the natural
     /// way to break it and would break it silently.
@@ -357,7 +356,7 @@ public sealed class SessionOutputTests
 }
 
 /// <summary>
-/// The tee itself (D49 §2): one pump, two destinations. The property worth holding is that a line
+/// The tee itself: one pump, two destinations. The property worth holding is that a line
 /// reaches BOTH — and that the file, the durable copy, is never the one that loses it.
 /// </summary>
 public sealed class CaptureTeeTests

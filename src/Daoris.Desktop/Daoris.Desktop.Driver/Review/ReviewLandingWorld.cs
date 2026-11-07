@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the landing at done reads of the service (LAND2b): a seam, so its tests stand in for the ledger. Its quests and asks are
-/// what the review's gate reads too (REVIEWENV1c), and the opinions the second opinion's part reads (XAGENT1f), so a look lands
+/// What the landing at done reads of the service: a seam, so its tests stand in for the ledger. Its quests and asks are
+/// what the review's gate reads too, and the opinions the second opinion's part reads, so a look lands
 /// nothing the gate holds.
 /// </summary>
 /// <remarks>
@@ -50,7 +50,7 @@ public sealed class ServiceReviewLandingWorld(ServiceClient service) : IReviewLa
     /// <summary>A new world over the same service, so nothing this one read is kept.</summary>
     public IReviewLandingWorld Again() => new ServiceReviewLandingWorld(service);
 
-    // FOUNDATION1d-ii: said at the head of the session's line where it went on, under the landing's key.
+    // Said at the head of the session's line where it went on, under the landing's key.
     public async Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) =>
         (await WordsHead.FollowAsync(session, at => service.SayAsync(at, text, null, ct, from: SaidFrom.Daoris, key: key)).ConfigureAwait(false)).Said;
 }

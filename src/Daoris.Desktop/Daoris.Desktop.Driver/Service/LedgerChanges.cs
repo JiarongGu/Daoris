@@ -4,24 +4,24 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The driver's one wait on the local service's change stream (FABRIC-EVENT3b, the fabric events design §A4.2): held for the loop's
+/// The driver's one wait on the local service's change stream: held for the loop's
 /// life, and each answer that names a family wakes the <c>ledger</c> topic once, so the look's local plan runs as soon as a quest
-/// an agent published, a session's record, an ask or an ask's channel moved, never the remote sync (FABRIC-EVENT3a). The wake's
-/// subject is the families the answer named, joined with commas (<c>sessions</c>, <c>quests</c>, <c>asks</c>, <c>channel</c>;
-/// PUSH1d1), so whoever hears it tells them apart. A <c>channel</c> wake is the channel's delivery (FABRIC-EVENT3c): the plan it runs
+/// an agent published, a session's record, an ask or an ask's channel moved, never the remote sync. The wake's
+/// subject is the families the answer named, joined with commas (<c>sessions</c>, <c>quests</c>, <c>asks</c>, <c>channel</c>),
+/// so whoever hears it tells them apart. A <c>channel</c> wake is the channel's delivery: the plan it runs
 /// reaches each line of work's part with what waits for it (<see cref="ChannelReach"/>), so a message is heard without the poll. The
 /// <c>look</c> topic's deadline (<c>pollSeconds</c>) still runs behind it, the reconciliation for anything the stream does not carry.
 /// </summary>
 /// <remarks>
 /// <para><b>Never a hot loop.</b> The next ask is never sooner than <see cref="Floor"/> after the last began; a refused or dropped
 /// ask is backed off from a second to <see cref="LongestBackOff"/>; an answer with nothing, sooner than half its wait (a ninth
-/// wait, or a host stopping), is backed off the same way; and a host with no such door (one from before) is asked again only
+/// wait, or a host stopping), is backed off the same way; and a host with no such door is asked again only
 /// after <see cref="Absent"/>.</para>
 ///
 /// <para><b>The bootstrap wakes the plan once</b>, as a cursor the host no longer knows (a restart, a reconnected observer) does:
 /// it is asked beside the loop's first look, not before it, so its cursor may already hold a change that look read too early, and
 /// without a wake that change would wait for the deadline. One plan more at the start is the cost; a pass that moves nothing still
-/// wakes nothing after it (canary 5).</para>
+/// wakes nothing after it.</para>
 /// </remarks>
 internal static class LedgerChanges
 {

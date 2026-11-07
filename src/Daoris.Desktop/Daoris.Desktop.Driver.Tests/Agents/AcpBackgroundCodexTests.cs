@@ -6,7 +6,7 @@ using Record = Daoris.Desktop.Driver.Tests.AcpBackgroundTests.Record;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXWAKE1: a background completion never leaves a Codex continuation waiting. The wire is <c>codex-acp</c> 2.1.1's, read from its
+/// A background completion never leaves a Codex continuation waiting. The wire is <c>codex-acp</c> 2.1.1's, read from its
 /// bundle: a background command is announced as a call, then <c>async_task_spawned</c> naming that call; after the prompt is answered it
 /// goes on streaming the command's output, says <c>async_task_state_update</c>, and completes the call with a <c>tool_call_update</c>.
 /// Its <c>usage_update</c> carries no origin and <c>turn/completed</c> sends nothing, so a turn it starts says no end.
@@ -27,7 +27,7 @@ public sealed class AcpBackgroundCodexTests
         agent.Push(Said("The measurement runs in the background; I'll read it when it completes."));
     }
 
-    /// <summary>What it says after the prompt was answered, in its order: output, the task's end, the call's completion.</summary>
+    /// <summary>What it says after the prompt is answered, in its order: output, the task's end, the call's completion.</summary>
     private static void CodexMeasurementEnds(Agent agent)
     {
         agent.Push(Update("""{"sessionUpdate":"tool_call_update","toolCallId":"call_m1","content":[{"type":"content","content":{"type":"text","text":"Passed! 12 tests"}}]}"""));
@@ -73,9 +73,9 @@ public sealed class AcpBackgroundCodexTests
             () => string.Join(" | ", record.Lines), Poll.Patience);
 
     /// <summary>
-    /// 🔴 The measurement's output, end and completed call, said after the turn was answered, are the work's and no turn's: they began
-    /// none, so nothing runs when the quiet passes and Daoris's go-on goes, as a fresh turn the adapter answers. They began a turn that
-    /// never said its end, and the continuation waited on it until the timeout.
+    /// 🔴 The measurement's output, end and completed call, said after the turn is answered, are the work's and no turn's: they begin
+    /// none, so nothing runs when the quiet passes and Daoris's go-on goes, as a fresh turn the adapter answers. Taken for a turn that
+    /// never says its end, they would leave the continuation waiting until the timeout.
     /// </summary>
     [Fact]
     public async Task A_codex_background_commands_late_updates_start_no_turn_and_the_go_on_goes_after_the_quiet()
@@ -100,7 +100,7 @@ public sealed class AcpBackgroundCodexTests
 
     /// <summary>
     /// 🔴 A turn Codex starts when the measurement completes says no end, and its quiet is the end: it ends the wait as a woken turn's
-    /// end does, with nothing sent into it. Silence was no end, and the continuation waited on the turn for ever.
+    /// end does, with nothing sent into it. Silence is no end otherwise, and the continuation would wait on the turn for ever.
     /// </summary>
     [Fact]
     public async Task A_codex_wake_that_says_no_end_ends_when_it_falls_quiet()

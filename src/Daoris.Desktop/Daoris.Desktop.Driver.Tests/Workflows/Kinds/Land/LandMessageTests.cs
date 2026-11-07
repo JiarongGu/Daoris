@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDNODE1f (the land node design §2, §8 row 7): a <c>land</c> node's <c>message</c> template rendered once, over <c>{title}</c>, <c>{quest}</c>,
+/// A <c>land</c> node's <c>message</c> template rendered once, over <c>{title}</c>, <c>{quest}</c>,
 /// <c>{ticket}</c> and <c>{session}</c>, for the delivery's intent to freeze. The commits it lands on are <see cref="LandDeliveryGitTests"/>'s;
 /// the refusal of another placeholder, where the node is judged, is <see cref="LandNodeKindTests"/>'s.
 /// </summary>

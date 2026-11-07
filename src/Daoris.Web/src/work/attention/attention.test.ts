@@ -14,7 +14,7 @@ import {
 } from './attention';
 import { entryDetail } from '../head/milestone';
 
-// *What needs you* on the page (PUSH1d4): who needs the person is judged in .NET (`NeedsAPerson`, whose cases
+// *What needs you* on the page: who needs the person is judged in .NET (`NeedsAPerson`, whose cases
 // `AttentionStateSliceTests` ports from this file cell for cell); the page orders the pushed rows, names each from the records it
 // holds and words it in the reader's language. The rows here are as the shell pushes them.
 
@@ -64,7 +64,7 @@ const words = (pushed: PushedAttention, names: AttentionNames = {}) => attention
 const keyed = (rows: readonly PushedAttention[]) => attentionInOrder(rows).map((each) => `${each.kind}:${each.id}`);
 
 describe('what needs a person, worded', () => {
-  // SESSWATCH1a (the session-watch design §5.2): what happened, never what Daoris did, and where the person's words wait, where they go.
+  // What happened, never what Daoris did, and where the person's words wait, where they go.
   it('words a quiet session as quiet or busy, its waiting words where they go, and a heavy wait behind its holder', () => {
     const quiet = (watch: Partial<QuietWait>) => row('quiet', 's1a2b3c4', '2026-09-21T10:00:00Z', {
       where: 'engine', session: 's1a2b3c4', quest: '7a82cc', quiet: { minutes: 31, busy: false, intake: false, words: false, ...watch },
@@ -84,7 +84,7 @@ describe('what needs a person, worded', () => {
   });
 
   /**
-   * HELPERWAIT1c (the co-worker design §5 point 4, §12 row 11): a session whose helper ended unanswered and whose move back to the person
+   * A session whose helper ended unanswered and whose move back to the person
    * the service refused is named as Sessions names it, says what happened in the reader's language with the service's refusal passed
    * through as said, holds work as its park would, opens its session, and is offered nothing to press but its door.
    */
@@ -119,7 +119,7 @@ describe('what needs a person, worded', () => {
     }
   });
 
-  /** KNOWCENTRAL2e: a session whose memory waits on the person is a row of waiting for their word, counted at Sessions, a door and no act. */
+  /** A session whose memory waits on the person is a row of waiting for their word, counted at Sessions, a door and no act. */
   it('words a session whose memory waits on the person, by what waits, in each language', async () => {
     const pushed = row('memory', 's1a2b3c4', '2026-10-31T09:00:00Z', {
       workspace: 'default', where: 'engine', session: 's1a2b3c4', memory: { ends: 2, replacements: 1, staged: 0 },
@@ -157,7 +157,7 @@ describe('what needs a person, worded', () => {
     });
   });
 
-  /** LANG1b: the record's note travels whole, its parts beside its English, for the row to word in the reader's language. */
+  /** The record's note travels whole, its parts beside its English, for the row to word in the reader's language. */
   it('hands the row a parked session’s note with its parts, never an English sentence made of them', () => {
     const noteParts = [{ code: 'ended.parked-asked', values: {}, text: 'It stopped with its quest still taken, to ask you:' }];
     const item = words(row('parked', 's1a2b3c4', null, { where: 'engine', note: { parts: noteParts } }));
@@ -168,7 +168,7 @@ describe('what needs a person, worded', () => {
   });
 
   /**
-   * CONFIRMSEEN1: a terminal's press waiting for the window, named as its card names it, by its act where the page words its route and
+   * A terminal's press waiting for the window, named as its card names it, by its act where the page words its route and
    * by its route otherwise; the terminal as the system names it, and until when; never a value; no act of its own, in each language.
    */
   it("names a terminal's press as its card does, says what sent it and until when, and offers no act", async () => {
@@ -181,10 +181,10 @@ describe('what needs a person, worded', () => {
     const item = words(waiting);
     expect(item.title).toBe('A terminal asks to archive sessions on this machine, or bring them back.');
     expect(item.detail).toContain('Sent by daoris-driver, process 4242.');
-    // NOTIFY2b: its card is in Notifications, never at the top of the window.
+    // Its card is in Notifications, never at the top of the window.
     expect(item.detail).toContain('It runs only once you confirm it on its card in Notifications');
     expect(attentionActs(item)).toEqual([]);
-    // Every route the census makes the person's is worded since NOTIFY2b; one no catalogue words is named by its route.
+    // Every route the census makes the person's is worded; one no catalogue words is named by its route.
     expect(words(row('confirmation', 'c2', null, { confirmation: { ...waiting.confirmation!, route: 'SET_MYSTERY', asker: null } })))
       .toMatchObject({ title: 'A terminal asks for SET_MYSTERY.', detail: expect.stringContaining('Daoris could not name what sent it.') });
     await i18n.changeLanguage('zh');
@@ -197,7 +197,7 @@ describe('what needs a person, worded', () => {
   });
 
   /**
-   * KEEP1f (the cleanup design §3.2): a volume still below its floor, named by its free space where it is mounted; its floor, what Daoris
+   * A volume still below its floor, named by its free space where it is mounted; its floor, what Daoris
    * freed of what it can make again, and what *Free up space…* could free; no act of its own, its door the press, in each language.
    */
   it('names a volume below its floor by its free space, says its floor, what Daoris freed and what the press could, and offers no act', async () => {
@@ -226,7 +226,7 @@ describe('what needs a person, worded', () => {
 
 
   /**
-   * GITAUTH1a (the git auth design §5.2, §7.4): a held git remote, said once: its host and why as its title, per class; its repositories,
+   * A held git remote, said once: its host and why as its title, per class; its repositories,
    * that Daoris does not try it again until *Try again* or a change, and git's own words, as written; *Try again* its one act; listed
    * with what waits for the person's word, after a volume below its floor, in each language.
    */
@@ -248,11 +248,11 @@ describe('what needs a person, worded', () => {
     expect(titled('write-refused')).toBe('github.com refused a push with the sign-in git has here');
     expect(titled('host-unknown')).toBe("ssh does not know github.com's key yet");
     expect(titled('host-changed')).toBe("github.com's key changed since ssh last trusted it");
-    // GITAUTH1b: a repository's own ssh command, held before any act, is lifted by removing it, and git said nothing.
+    // A repository's own ssh command, held before any act, is lifted by removing it, and git said nothing.
     const own = words(row('git-held', 'own', null, { git: { ...git, class: 'own-input', words: '' } }));
     expect(own.title).toBe("github.com is reached by the repository's own ssh command, past Daoris's door");
     expect(own.detail).toMatch(/^engine, game: the repository names its own ssh command \(core\.sshCommand\).*until that setting is removed from the repository\.$/);
-    // GITAUTH1e (§6.8): the move is one row for every remote nothing serves, counted, its hosts named, the repositories whose own
+    // The move is one row for every remote nothing serves, counted, its hosts named, the repositories whose own
     // configuration names authentication listed apart; it offers the two ways out, both in Settings → Git, and no Try again.
     const nothing = words(row('git-held', 'none', null, {
       git: { ...git, class: 'no-identity', words: '', hosts: ['github.com', 'gitlab.com'], ownInput: ['lib'] },
@@ -261,7 +261,7 @@ describe('what needs a person, worded', () => {
     expect(nothing.detail).toBe('2 git remotes on github.com, gitlab.com have no git identity yet, so Daoris\'s git does not reach them. '
       + 'Repositories: engine, game. Held apart, since their own configuration names authentication: lib.');
     expect(attentionActs(nothing)).toEqual(['git-set-up', 'git-keep-own']);
-    // A row a session waits on holds work (§6.8).
+    // A row a session waits on holds work.
     expect(attentionGroup({ ...nothing, stands: true })).toBe('holding');
     // A row from a shell that sent no group offers nothing to lift.
     expect(attentionActs(words(row('git-held', 'bare', null)))).toEqual([]);
@@ -283,7 +283,7 @@ describe('what needs a person, worded', () => {
   });
 
   /**
-   * GITAUTH1e (the git auth design §7.4): each class names what serves it and offers what mends it, then *Try again*: a refused SSH
+   * Each class names what serves it and offers what mends it, then *Try again*: a refused SSH
    * identity its key to copy and its host's key page, a refused HTTPS one a sign-in again, the person's own sign-ins Settings → Git; a
    * push refused another identity or the identity marked read only; a repository's own setting the person's own sign-ins for it, in
    * the setting's name and never its value; a host's key under an identity its comparison, under the person's own ssh the terminal.
@@ -318,7 +318,7 @@ describe('what needs a person, worded', () => {
   });
 
   /**
-   * GITAUTH1f (the git auth design §6.6, §7.4): a git go-ahead names the session that asks and the remote, offers Allow and Refuse, holds
+   * A git go-ahead names the session that asks and the remote, offers Allow and Refuse, holds
    * work, is counted at Sessions, and says a door that has gone with its Allow kept for the retry.
    */
   it('words a git go-ahead by who asks and the remote, offers its two answers and holds work', async () => {
@@ -394,7 +394,7 @@ describe('an ask that waits on a person, worded', () => {
   });
 
   /**
-   * UX6c (design §6.2): an ask waits for the person's word, after what holds work, and within that group what has waited
+   * An ask waits for the person's word, after what holds work, and within that group what has waited
    * longest comes first, whatever its kind: a quest nobody can take, sitting since September, before this morning's asks.
    */
   it('waits for the person’s word after what holds work, the longest waiting first within the group', () => {
@@ -428,7 +428,7 @@ describe('a folder waiting on the person\'s trust, worded', () => {
   });
 
   /**
-   * POOL1c (D197 point 3; the account-pool design §3 point 4, §4.3): a hold on your own sign-in's file, the row's `trust.own`,
+   * A hold on your own sign-in's file, the row's `trust.own`,
    * offers no grant, since Daoris writes nothing there, and says to trust the folder with the tool itself, at your terminal.
    */
   it('offers no grant on your own sign-in’s file, and says to trust it with the tool itself', () => {
@@ -470,7 +470,7 @@ describe('a proposal to widen the rules, worded', () => {
     expect(item.detail).toBe('The docs it needs are on the web.');
   });
 
-  /** It waits for the person's word beside the asks and the quests nobody can take, the longest waiting first (UX6c). */
+  /** It waits for the person's word beside the asks and the quests nobody can take, the longest waiting first. */
   it('waits for the person’s word, with the asks and the quests nobody can take, the longest waiting first', () => {
     expect(attentionInOrder([
       row('rule', 'p0000002', '2026-09-24T11:00:00Z'), row('proposal', '7c1e9a04b2d5', '2026-09-21T08:30:00Z'),
@@ -515,7 +515,7 @@ describe('a quest parked on its failed sessions, worded', () => {
   });
 });
 
-/** STEWARDROLE1b (D209 §5.3): a quest the steward stopped, waiting on a Try again, the steward's or the person's. */
+/** A quest the steward stopped, waiting on a Try again, the steward's or the person's. */
 describe('a quest the steward stopped, worded', () => {
   const stopped: Consideration = {
     quest: '7a82cc', repository: 'engine', verdict: 'Stopped', reason: 'the planner said so.', said: { code: 'steward', session: 's1' },
@@ -585,7 +585,7 @@ describe('a go-ahead asked on an ask, worded', () => {
 });
 
 /**
- * GOAHEADSTALE1 (the owner's case, 2026-10-21): go-aheads sat in What needs you for days after their asks' work was done another way.
+ * A go-ahead whose ask's work is done another way must not sit in What needs you.
  * .NET marks one nothing on its ask could still use; the page says so with its age, lists it where nothing is held, and offers only
  * the refusal, which runs nothing.
  */
@@ -662,7 +662,7 @@ describe('work to review, worded', () => {
   });
 
   /**
-   * LIMITSWITCH3 (D137's note of 2026-10-26): a record whose words an account's limit holds is worded in What needs you as D206 §3.7 words
+   * A record whose words an account's limit holds is worded in What needs you as the limit's wait is worded elsewhere:
    * the wait, its time and the account that resets first, in both languages, never only that it completed.
    */
   it('says a held record’s wait as a limit’s wait, in both languages', async () => {
@@ -686,7 +686,7 @@ describe('work to review, worded', () => {
   });
 });
 
-/** INTEGRATE1o part o3 (§17.3): a run held at a request the receiver declined, waiting on the person's *Pass over…*. */
+/** A run held at a request the receiver declined, waiting on the person's *Pass over…*. */
 describe('a run held at a declined request, worded', () => {
   const pushed = row('request-declined', 'r7', '2026-10-30T11:00:00Z', {
     where: 'engine', declined: { node: 'requests', quest: 'q9', to: 'web', work: '7a82cc' },
@@ -722,7 +722,7 @@ describe('a run held at a declined request, worded', () => {
   });
 });
 
-/** INTEGRATE1h (§5.8, §17.4): an integration's waits on the owner, each a row with a door to its repository's Integration tab. */
+/** An integration's waits on the owner, each a row with a door to its repository's Integration tab. */
 describe('an integration’s wait on the owner, worded', () => {
   const decide = row('integration', 'decide:c1', '2026-10-31T09:00:00Z', {
     where: 'engine', stands: true,
@@ -759,7 +759,7 @@ describe('an integration’s wait on the owner, worded', () => {
   });
 });
 
-/** INTEGRATE1h (§5.8): a declaration owed the owner's acceptance is one row per repository, which holds no work. */
+/** A declaration owed the owner's acceptance is one row per repository, which holds no work. */
 describe('a declaration owed acceptance, worded', () => {
   const unaccepted = row('integration', 'declaration:engine', '2026-10-31T09:20:00Z', {
     where: 'engine', integration: { wait: 'declaration', repository: 'engine', line: 'main', tip: '0123456789abcdef0123456789abcdef01234567', state: 'unaccepted' },
@@ -793,7 +793,7 @@ describe('a declaration owed acceptance, worded', () => {
   });
 });
 
-/** STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds for the person's yes to one move. */
+/** A quest its role's policy holds for the person's yes to one move. */
 describe('a quest its role’s policy holds, worded', () => {
   const asked: Consideration = {
     quest: 'q1', repository: 'engine', verdict: 'PolicyHeld', reason: 'the planner said so.', said: { code: 'policy-ask', session: 's1' },
@@ -833,7 +833,7 @@ describe('the groups', () => {
     });
   });
 
-  /** NOTIFY2e: an agent's ask to hand its session over holds work once its session stands still on it, its turn ended. */
+  /** An agent's ask to hand its session over holds work once its session stands still on it, its turn ended. */
   it('puts an ask to hand a session over in Holding work once its session stands still on it', () => {
     expect(attentionGroup(row('hand-over', 'h1', null, { stands: true }))).toBe('holding');
     expect(attentionGroup(row('hand-over', 'h2', null, { stands: false }))).toBe('word');
@@ -847,7 +847,7 @@ describe('the groups', () => {
   });
 
   /**
-   * OVERVIEWNOISE1b: a tree its session recorded and no branch record follows is named by that session as Sessions names it, and its
+   * A tree its session recorded and no branch record follows is named by that session as Sessions names it, and its
    * block is worded by its code in the reader's language, the reason said once, the tree by its folder's name and never its path.
    */
   it('names a unit by the session that recorded its tree, and words its block by its code, once, in each language', async () => {
@@ -869,7 +869,7 @@ describe('the groups', () => {
       'Blocked: tree s-e0a8e0fd, its session recorded it, but no branch record follows daoris/s-e0a8e0fd, so the look never cleans it up: '
       + 'the session branches on its workspace’s Branches remove it');
     expect(attentionActs(item)).toEqual([]);
-    // A session the page does not hold: the tree's folder, as the row was titled.
+    // A session the page does not hold: the tree's folder, as the row is titled.
     expect(words(reopened).title).toBe('s-e0a8e0fd');
 
     await i18n.changeLanguage('zh');
@@ -883,8 +883,8 @@ describe('the groups', () => {
   });
 
   /**
-   * CLEANUPADVICE1: where the clean-up would keep an unfollowed tree, its row says what keeps it and the remove that takes it, in each
-   * language; where git could not say, it names no remove; where the clean-up would take it, the row is as OVERVIEWNOISE1b worded it.
+   * Where the clean-up would keep an unfollowed tree, its row says what keeps it and the remove that takes it, in each
+   * language; where git could not say, it names no remove; where the clean-up would take it, the row is as for any unfollowed tree.
    */
   it('words an unfollowed tree the clean-up would keep by what keeps it and the remove that takes it, and names no remove it cannot advise', async () => {
     const tree = 'X:/daoris/trees/default/engine/s-e0a8e0fd';
@@ -917,7 +917,7 @@ describe('the groups', () => {
   });
 
   /**
-   * LANDRETIRE1 part 2: a landing's branch whose quest is closed and which the line has not held for a day is a row named by its branch,
+   * A landing's branch whose quest is closed and which the line has not held for a day is a row named by its branch,
    * its block worded by its code in each language with the quest, and the door the row opens is the workspace's Branches, where the
    * landed branches' action withdraws it.
    */
@@ -954,7 +954,7 @@ describe('the groups', () => {
     }
   });
 
-  /** OVERVIEWNOISE1b: an owner nothing records is said once, by the entry's own code, with the press that removes it. */
+  /** An owner nothing records is said once, by the entry's own code, with the press that removes it. */
   it('words an unknown owner by its code once, in each language, with the press that removes it', async () => {
     const orphan = row('work', 'unknown-branch:engine/daoris/orphan', null, {
       where: 'engine', session: null, title: 'daoris/orphan',
@@ -984,7 +984,7 @@ describe('the groups', () => {
   });
 
   /**
-   * FABRIC-UNKNOWN1c: an unknown owner's `daoris/<folder>` branch names the session whose tree was cut for it, in the same repository,
+   * An unknown owner's `daoris/<folder>` branch names the session whose tree is cut for it, in the same repository,
    * which its door opens; a branch no session's tree names, or one in another repository, names none.
    */
   it('names the session an unknown owner’s branch was cut for, and none where no tree in its repository names it', () => {
@@ -1004,7 +1004,7 @@ describe('the groups', () => {
     expect(words(unknown('daoris/s-c0nv0001')).cutFor).toBeUndefined();
   });
 
-  /** OVERVIEWNOISE1b: the tidy's guard said once by its code, and a retry promised only where the guard frees by itself. */
+  /** The tidy's guard said once by its code, and a retry promised only where the guard frees by itself. */
   it('words a guard the clean-up kept a branch by once, promising a retry only where one comes', () => {
     const kept = (why: string) => entryDetail(i18n.t, { detail: 'the driver’s clause', code: 'kept', facts: { why, at: '2026-10-20T09:00:00Z' } });
 
@@ -1016,7 +1016,7 @@ describe('the groups', () => {
     expect(entryDetail(i18n.t, { detail: 'as recorded' })).toBe('as recorded');
   });
 
-  /** FABRIC-UNKNOWN1 (design §D3): an unrecorded daoris/* branch says its owner first, then its entry worded by its code; the one rule for any such record. */
+  /** An unrecorded daoris/* branch says its owner first, then its entry worded by its code; the one rule for any such record. */
   it('words an unrecorded daoris branch as an unknown owner, then its entry', () => {
     const item = words(row('work', 'unknown-branch:engine/daoris/orphan', null, {
       where: 'engine', session: null, title: 'daoris/orphan',
@@ -1028,7 +1028,7 @@ describe('the groups', () => {
     expect(item.detail).not.toContain('as recorded');
   });
 
-  /** MIXAGENT2c (D168): an agent's ask for a helper, the session that asked named as Sessions names it, with its presses. */
+  /** An agent's ask for a helper, the session that asked named as Sessions names it, with its presses. */
   it('words an agent’s ask for a helper, with the session that asked and its presses', () => {
     const asked = words(row('helper', 'a1', '2026-09-21T09:30:00Z', { where: 'engine', session: 'c0nv0001', title: 'Which test covers the loader?' }), {
       sessions: [session({ id: 'c0nv0001', quest: '7a82cc' })], quests: [quest()],
@@ -1044,7 +1044,7 @@ describe('the groups', () => {
   });
 
   /**
-   * NOTIFY2e: an agent's ask to hand its session over, by the ask's own id: its note's first line, the session as Sessions names it,
+   * An agent's ask to hand its session over, by the ask's own id: its note's first line, the session as Sessions names it,
    * and the agent as the roster names it, with *Hand over to {agent}* and *Not now*, in each language.
    */
   it('words an agent’s ask to hand its session over, with the session, the agent and its presses', async () => {
@@ -1073,7 +1073,7 @@ describe('the groups', () => {
   });
 
   /**
-   * COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between holds its session's work,
+   * A third answer in a row with nobody between holds its session's work,
    * named as Sessions names the session, said by the agent that answered, with *Go on with this answer* and *Not now*; after a held call.
    */
   it('words a third answer alone held for the person, with its two acts', () => {
@@ -1091,7 +1091,7 @@ describe('the groups', () => {
     expect(rows.map(attentionActs)).toEqual([['go-on-answer', 'keep-answer'], ['go-on-answer', 'keep-answer']]);
   });
 
-  /** CONTEXTDRIVE1h: a held answer that carries its rule says it in the one sentence the head and the foot say, the place named as the person knows it. */
+  /** A held answer that carries its rule says it in the one sentence the head and the foot say, the place named as the person knows it. */
   it('words a held answer with the rule that held it, a machine rule as This Daoris', () => {
     const answer = { session: 'c0nv0001', agent: 'codex-acp', words: ['w3'], since: '2026-09-21T09:30:00Z', rule: { place: 'repository:engine', at: 2, n: 2, count: 'answers-alone', do: 'hold' } };
     const rows = attentionOf(attentionInOrder([
@@ -1105,7 +1105,7 @@ describe('the groups', () => {
   });
 
   /**
-   * FABRIC-PERFORM1j (the fabric events design §D3): a node record that does not read stops everything on its unit, so it is a row of the
+   * A node record that does not read stops everything on its unit, so it is a row of the
    * person's, named by the unit it still names or else by its file, saying nothing moves until it is mended, with its folder's press;
    * in 中文 too.
    */
@@ -1135,7 +1135,7 @@ describe('the groups', () => {
     }
   });
 
-  /** AUTONOMY1b3c (D184 point 3): a tool call a session holds for the person, a press per choice its agent offered. */
+  /** A tool call a session holds for the person, a press per choice its agent offered. */
   it('words a tool call a session holds for the person, with a press per offered choice', () => {
     const held = {
       session: 'c0nv0001', request: '900', call: 'tc-1', title: 'npm test', kind: 'execute', since: '2026-09-21T09:30:00Z',
@@ -1158,7 +1158,7 @@ describe('the groups', () => {
         + 'answers within 15 minutes.',
     });
     expect(rows[0]).toMatchObject({ title: 'An untitled tool call', where: '' });
-    // PERMUNTIL1: the bound is the route's for each request; where a host said none, none is said.
+    // The bound is the route's for each request; where a host said none, none is said.
     expect(rows[0]!.detail).toBe('#g0n3 waits on your answer before this tool call runs; it is refused if nobody answers in time.');
     const sooner = attentionOf([row('permission', 'c0nv0001#900', held.since, {
       where: 'engine', session: 'c0nv0001', permission: { ...held, until: '2026-09-21T09:40:00Z' },
@@ -1169,7 +1169,7 @@ describe('the groups', () => {
     expect(ASKS_ONCE.has('allow-once')).toBe(false);
   });
 
-  /** XAGENT1g (the second-agent design §9): a second opinion's row says what its gate says, named by its quest. */
+  /** A second opinion's row says what its gate says, named by its quest. */
   it('words a second opinion that waits on the person, with what its gate says and its presses', () => {
     const disputed = {
       session: 's42', quest: 'q1', repository: 'engine', since: '2026-09-21T09:00:00Z', auto: false,
@@ -1200,7 +1200,7 @@ describe('the groups', () => {
     expect(attentionGroups([])).toEqual([]);
   });
 
-  /** Two rows that waited exactly as long keep §6.2's order of kinds, then their keys: a held attempt after a unit's blocked clean-up. */
+  /** Two rows that waited exactly as long keep the order of kinds, then their keys: a held attempt after a unit's blocked clean-up. */
   it('orders rows that waited as long by their kinds’ order, then by their keys', () => {
     const at = '2026-09-21T09:00:00Z';
     expect(keyed([
@@ -1210,8 +1210,8 @@ describe('the groups', () => {
   });
 
   /**
-   * NEEDSSCOPE1: the bell, the taskbar, *Notifications*' group and Overview's summary each filtered the window's rows apart. One
-   * answer for what is listed and counted: every row but a press's own, whose card is drawn from the confirmation channel (NOTIFY2b).
+   * The bell, the taskbar, *Notifications*' group and Overview's summary do not filter the window's rows apart. One
+   * answer for what is listed and counted: every row but a press's own, whose card is drawn from the confirmation channel.
    */
   it('lists and counts every row but a press’s own, in the order given', () => {
     const at = '2026-09-21T09:00:00Z';
@@ -1221,7 +1221,7 @@ describe('the groups', () => {
   });
 
   /**
-   * COMMS1j (the comms design §4.1 clause 3, §7): *What needs you* keys each obligation once, by its exchange's id where .NET names
+   * *What needs you* keys each obligation once, by its exchange's id where .NET names
    * one and else by its kind and id, so the bell, the places and *Notifications* count one wait once however it reached the rows.
    */
   it('COMMS1j lists and counts each obligation once', () => {
@@ -1233,7 +1233,7 @@ describe('the groups', () => {
     expect(Object.values(placeCounts([goAhead, again, helper])).reduce((sum, each) => sum + each, 0)).toBe(2);
   });
 
-  /** COMMS1j: an unread message is no obligation: the bell counts the presses and the obligations, never the channel's unread. */
+  /** An unread message is no obligation: the bell counts the presses and the obligations, never the channel's unread. */
   it('COMMS1j counts no unread message on the bell', () => {
     const at = '2026-09-21T09:00:00Z';
     expect(bellCount([{ shown: true }], [row('parked', 'p1', at)])).toBe(2);
@@ -1242,7 +1242,7 @@ describe('the groups', () => {
 });
 
 /**
- * BADGEUX1 (the UI/UX design §3.10): a number on a place counts only what waits on the person, the bell's rows, each at the one place
+ * A number on a place counts only what waits on the person, the bell's rows, each at the one place
  * its door opens, where its step is taken; so the places' numbers sum to what the bell counts of the rows, and a press is the bell's.
  */
 describe('the place each wait is counted at', () => {
@@ -1269,7 +1269,7 @@ describe('the place each wait is counted at', () => {
     expect(placeCounts([])).toEqual({});
   });
 
-  /** GITAUTH1a, GITAUTH1e: a held git remote is set right in Settings → Git, where it is counted beside Disk space; the bell counts it too. */
+  /** A held git remote is set right in Settings → Git, where it is counted beside Disk space; the bell counts it too. */
   it('counts a held git remote at Settings, where its identity is set up, and at the bell', () => {
     const held = row('git-held', 'default|github.com|refused|all', '2026-10-22T09:00:00Z');
     expect(placeOf(held, undefined)).toBe('settings');
@@ -1284,8 +1284,8 @@ describe('the place each wait is counted at', () => {
   });
 
   /**
-   * Codex's read (§3.10.8): a unit of work's door is the row's, not its kind's. A held attempt's presses are on its row alone, which the
-   * bell's view holds; a branch cut for a session the page holds opens that session (FABRIC-UNKNOWN1c); any other opens Branches.
+   * A unit of work's door is the row's, not its kind's. A held attempt's presses are on its row alone, which the
+   * bell's view holds; a branch cut for a session the page holds opens that session; any other opens Branches.
    */
   it('places a unit of work where its own door opens', () => {
     const at = '2026-09-21T09:00:00Z';
@@ -1307,7 +1307,7 @@ describe('the place each wait is counted at', () => {
 });
 
 /**
- * UX6c (design §6.3): an act is on a row only where one press is safe and the row says what it does; one that widens what
+ * An act is on a row only where one press is safe and the row says what it does; one that widens what
  * Daoris may do asks once; one that needs reading first is the row's door, never an act. One rule per kind, so every row
  * of a kind is offered the same acts.
  */
@@ -1325,15 +1325,15 @@ describe('what a row offers', () => {
     expect(attentionActs(offered('steward-stopped'))).toEqual(['retry']);
     expect(attentionActs(offered('policy-hold'))).toEqual(['retry']);
     expect(attentionActs(offered('request-declined', { declined: { node: 'requests', quest: 'q9', to: 'web' } }))).toEqual(['pass-over']);
-    // INTEGRATE1p (C33): a run's own declined request offers its two words, never the work's pass-over.
+    // A run's own declined request offers its two words, never the work's pass-over.
     expect(attentionActs(offered('request-declined', { declined: { node: 'ask', quest: 'q9', to: 'web', request: true } }))).toEqual(['ask-again', 'go-on']);
     expect(attentionActs(offered('departure'))).toEqual(['accept-departure']);
     expect(attentionActs(offered('go-ahead'))).toEqual(['approve', 'refuse']);
     expect(attentionActs(offered('trust', { trust: { folder: 'f', trustFile: 'g' } }))).toEqual(['trust']);
     expect(attentionActs(offered('rule'))).toEqual(['accept-rule', 'decline-rule']);
-    // MIXAGENT2c: an agent's ask for a helper is answered as its session's page answers it, in one press each.
+    // An agent's ask for a helper is answered as its session's page answers it, in one press each.
     expect(attentionActs(offered('helper'))).toEqual(['let-ask', 'not-now']);
-    // NOTIFY2e: an agent's ask to hand its session over, to the agent the look named.
+    // An agent's ask to hand its session over, to the agent the look named.
     expect(attentionActs(offered('hand-over', { agent: 'Codex' }))).toEqual(['hand-over', 'keep-agent']);
   });
 
@@ -1349,7 +1349,7 @@ describe('what a row offers', () => {
   });
 
   /**
-   * SESSWATCH1a (D200, the session-watch design §2.3, §5.2): a quiet quest session offers *End and carry on*, *Hand over…*, *Stop…* and
+   * A quiet quest session offers *End and carry on*, *Hand over…*, *Stop…* and
    * *Leave it running*; a busy one nothing is heard from never *End and carry on*; an intake *Stop…* and *Leave it running* alone.
    */
   it('offers a quiet row the person\'s presses, never an end to a busy one, and an intake no carry-on or hand-over', () => {
@@ -1365,9 +1365,9 @@ describe('what a row offers', () => {
 });
 
 /**
- * UX6d (design §6.2–§6.3): an account's row offers what settles it in one press, *Sign in* to an account read signed out and
- * *Read* for one no read answered. Two at most beside the door, so a row holds three controls (§9.3). *Let … run …* went with
- * POOL1c (the account-pool design §4.3): every account of Daoris's serves every workspace, so none is outside a start's list.
+ * An account's row offers what settles it in one press, *Sign in* to an account read signed out and
+ * *Read* for one no read answered. Two at most beside the door, so a row holds three controls. No row offers *Let … run …*:
+ * every account of Daoris's serves every workspace, so none is outside a start's list.
  */
 describe('what an account’s row offers', () => {
   const named = (id: string | null, state: NamedAccount['state'], read: string | null = '2026-10-05T10:42:00Z'): NamedAccount =>
@@ -1398,7 +1398,7 @@ describe('what an account’s row offers', () => {
   });
 
   /**
-   * POOL1c (the account-pool design §4.3): no account is outside the set, so a row never offers to let one run, whatever an
+   * No account is outside the set, so a row never offers to let one run, whatever an
    * older answer carries beside it.
    */
   it('never offers to let an account run: every account of Daoris’s serves every workspace', () => {
@@ -1407,13 +1407,13 @@ describe('what an account’s row offers', () => {
     expect(attentionActs(accountRow('account-wait', older as AccountRowFacts))).not.toContain('let-run');
   });
 
-  /** A read that failed is a reading: *Read* is for an account never read (§6.3), as the agent's page offers it. */
+  /** A read that failed is a reading: *Read* is for an account never read, as the agent's page offers it. */
   it('reads only an account never read, and signs in nothing where Daoris runs no sign-in', () => {
     expect(attentionOffers(accountRow('account-wait', facts({ named: [named('account-5', 'unknown')] })))).toEqual([]);
     expect(attentionOffers(accountRow('account-wait', facts({ signsIn: false, named: [named('account-1', 'out')] })))).toEqual([]);
   });
 
-  /** OWNSPACE1b-B (D175 points 6-7): the hold for no Daoris account offers *Sign in for Daoris*, then sign-ins it passed. */
+  /** The hold for no Daoris account offers *Sign in for Daoris*, then sign-ins it passed. */
   it('signs in for Daoris where no Daoris account is signed in, first, and nowhere Daoris runs no sign-in', () => {
     expect(attentionOffers(accountRow('account-wait', facts({ noAccount: true })))).toEqual([{ act: 'sign-in-new' }]);
     expect(attentionActs(accountRow('account-wait', facts({ noAccount: true })))).toEqual(['sign-in-new']);
@@ -1432,8 +1432,8 @@ describe('what an account’s row offers', () => {
 });
 
 /**
- * UX6d: the account rows are What needs you's holding work, the longest waiting first among the rest (§6.2). UXFIX3: a
- * signed-out account's row knows when it was read, not since when it holds work, so it has no wait to be sorted by: it comes
+ * The account rows are What needs you's holding work, the longest waiting first among the rest. A
+ * signed-out account's row knows its read time, not since when it holds work, so it has no wait to be sorted by: it comes
  * after the rows that say how long, wherever a reading moves its time.
  */
 describe('what needs a person, with the accounts as last known', () => {

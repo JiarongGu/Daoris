@@ -3,11 +3,11 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session on the protocol door runs beside itself (CONSOLE2): each subagent its harness
+/// What a session on the protocol door runs beside itself: each subagent its harness
 /// spawns, and each piece of background work it starts, as a console stream of its own.
 /// </summary>
 /// <remarks>
-/// <para><b>Read off the wire, never inferred</b> (docs/2026-09-28-console2-streams-evidence.md). A
+/// <para><b>Read off the wire, never inferred</b>. A
 /// subagent is announced by <c>subagent_spawned</c>, speaks under its own <c>params.sessionId</c>, and
 /// ends with <c>subagent_state_update</c>. A task is announced by <c>async_task_spawned</c>, names the
 /// file its output goes to in <c>async_task_progress</c>, and ends with <c>async_task_state_update</c>.
@@ -17,14 +17,14 @@ namespace Daoris.Driver;
 /// the session's console, record or transcript. The transcript is where the driver reads what the
 /// session last said to the person (a parked card's question), and a subagent's words there would be
 /// quoted as the session's. The session's console says each one started and how it ended, and its
-/// record holds a subagent as one card, because declaring the capability took the <c>Agent</c> call
-/// that would have been its card off the session's wire.</para>
+/// record holds a subagent as one card, because declaring the capability takes the <c>Agent</c> call
+/// that would be its card off the session's wire.</para>
 ///
-/// <para><b>A session's end is theirs.</b> Nothing the session started outlives it (ORPHAN1's job
+/// <para><b>A session's end is theirs.</b> Nothing the session started outlives it (the job
 /// object), so whatever is still open when it ends is ended with it, and says so.</para>
 ///
-/// <para><b>Each child is a reading</b> (COWORKVIEW1a, AGENTPROVIDER1l): its announcement one <see cref="WireReading.ChildSeen"/> and the
-/// end its wire said one <see cref="WireReading.ChildEnded"/>, in the wire's own words, which the part's lineage keeps; never the end a
+/// <para><b>Each child is a reading</b>: its announcement one <see cref="WireReading.ChildSeen"/> and the
+/// end its wire says one <see cref="WireReading.ChildEnded"/>, in the wire's own words, which the part's lineage keeps; never the end a
 /// session's close gives it: that is its process's own <c>end</c> line.</para>
 /// </remarks>
 internal sealed class AcpStreams(
@@ -34,7 +34,7 @@ internal sealed class AcpStreams(
     /// <summary>
     /// How long a task's ending waits for a later word before it is said. The adapter says
     /// <c>stopped</c> and then <c>completed</c> in the same millisecond for a task that finished on its
-    /// own, and the last is the ending (CONSOLE2a).
+    /// own, and the last is the ending.
     /// </summary>
     internal static readonly TimeSpan Settle = TimeSpan.FromMilliseconds(250);
 
@@ -78,7 +78,7 @@ internal sealed class AcpStreams(
 
     /// <summary>
     /// Take one update if it belongs to a stream: a stream's own lifecycle, or a child's words. False
-    /// leaves it the session's, as every update was before CONSOLE2.
+    /// leaves it the session's.
     /// </summary>
     /// <param name="from">The update's <c>params.sessionId</c>.</param>
     /// <param name="rootId">The session's own id on the wire.</param>
@@ -240,7 +240,7 @@ internal sealed class AcpStreams(
             task = _tasks[id] = new Background(streamId, name);
         }
 
-        // Stoppable only when the harness says so (CONSOLE3a): its word, never a guess from the task's kind.
+        // Stoppable only when the harness says so: its word, never a guess from the task's kind.
         var canStop = update.TryGetProperty("canStop", out var stoppable) && stoppable.ValueKind == JsonValueKind.True;
         streams.Open(new SessionStream(streamId, SessionStreamKind.Task, name, canStop));
         Say($"→ background: {AcpRender.OneLine(name)}");

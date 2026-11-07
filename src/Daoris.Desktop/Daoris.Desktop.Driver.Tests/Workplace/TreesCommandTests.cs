@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRSCOPE1a (D150's BRSCOPE1 note, D50, WSP5): <c>daoris tree clean|sync</c> look at one workspace's checkouts where
+/// <c>daoris tree clean|sync</c> look at one workspace's checkouts where
 /// the words name one, as that workspace's Branches tab does: the words, the checkouts each look is handed, the refusal of a
 /// workspace the registry does not name, and the press each list suggests. Read off registry rows alone, since a look at a
 /// real checkout runs git; the host hands these rows to its looks and presses (<c>DriverCommandTests</c>).
@@ -50,7 +50,7 @@ public sealed class TreesCommandTests
         Assert.Contains(named, problem);
     }
 
-    /// <summary>D112's scope, as before: those holding Daoris's branches, every one with <c>--all</c>, and a repository named.</summary>
+    /// <summary>The default scope: those holding Daoris's branches, every one with <c>--all</c>, and a repository named.</summary>
     [Fact]
     public void The_scope_is_d112s()
     {
@@ -123,7 +123,7 @@ public sealed class TreesCommandTests
         }
     }
 
-    /// <summary>Asked for none, each look is the machine's, as it was; a repository named in another workspace is none of this one's.</summary>
+    /// <summary>Asked for none, each look is the machine's; a repository named in another workspace is none of this one's.</summary>
     [Fact]
     public void Asked_for_no_workspace_each_look_is_the_machines()
     {
@@ -187,7 +187,7 @@ public sealed class TreesCommandTests
             TreesCommand.NoneHeld(sync with { Workspace = "tools" }));
     }
 
-    /// <summary>The press a list suggests carries the list's own scope (D112), its workspace among it, so <c>--yes</c> takes what was listed.</summary>
+    /// <summary>The press a list suggests carries the list's own scope, its workspace among it, so <c>--yes</c> takes what the list showed.</summary>
     [Fact]
     public void The_press_a_list_suggests_carries_its_scope()
     {
@@ -196,7 +196,7 @@ public sealed class TreesCommandTests
         Assert.Equal("daoris tree sync --repository newcomer --yes", TreesCommand.Press(new TreesAsk(TreesLook.Sync) { Repository = "newcomer" }));
         Assert.Equal("daoris tree sync --repository anvil --workspace tools --all --yes",
             TreesCommand.Press(new TreesAsk(TreesLook.Sync) { Repository = "anvil", Workspace = "tools", All = true }));
-        // A workspace's name goes through the one spelling every shell keeps whole (ACCTQUOTE1b).
+        // A workspace's name goes through the one spelling every shell keeps whole.
         Assert.Equal("daoris tree clean --workspace \"my circle\" --yes",
             TreesCommand.Press(new TreesAsk(TreesLook.Clean) { Workspace = "my circle" }));
         Assert.Equal("daoris tree clean --workspace <workspace> --yes",
@@ -204,7 +204,7 @@ public sealed class TreesCommandTests
     }
 
     /// <summary>
-    /// ACCEPTALL1e (D50's twin rule): an entry's one Accept and an ask's are a terminal's verb as they are the page's press: the
+    /// An entry's one Accept and an ask's are a terminal's verb as they are the page's press: the
     /// words name one or the other, the parts the person leaves out as the page sends them, and the plan before the press.
     /// </summary>
     [Theory]

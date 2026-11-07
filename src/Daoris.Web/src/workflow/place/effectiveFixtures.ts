@@ -1,7 +1,7 @@
 import type { WorkflowEffective, WorkflowEffectiveCell, WorkflowStep } from '../current';
 import { MERGE_GRAPH, RELEASE_GRAPH } from '../graphFixtures';
 
-// What `WORKFLOW_CURRENT` answers as `effective` for a route (SETUPUX1b), for the place's stories and tests: Current's graph and a saved
+// What `WORKFLOW_CURRENT` answers as `effective` for a route, for the place's stories and tests: Current's graph and a saved
 // workflow's newest version, each node with the cell the driver reads for it (`WorkflowGraphRuns.Cell`, whose step ids are the nodes').
 
 type Node = { id: string; kind: string; options?: Record<string, unknown> };

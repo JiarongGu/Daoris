@@ -3,7 +3,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>Ask Daoris's <c>go</c> proposal (HELP6): a place the window has, which changes nothing.</summary>
+/// <summary>Ask Daoris's <c>go</c> proposal: a place the window has, which changes nothing.</summary>
 public sealed class HelpGoProposalsTests : HelpProposalsFixture
 {
     private static HelpProposal Go(
@@ -12,7 +12,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Of("go", "go", view) with { Domain = domain, Part = part, Item = item, Workspace = workspace, Repository = repository, Sentence = sentence };
 
     /// <summary>
-    /// NEW1d-a (D162's note): a go to Sessions' New conversation may carry the repository, as the registry spells it, and the
+    /// A go to Sessions' New conversation may carry the repository, as the registry spells it, and the
     /// words the composer opens with; either may be absent, and with neither the composer opens empty.
     /// </summary>
     [Theory]
@@ -50,34 +50,34 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
 
     [Theory]
     [InlineData("quests", null, null, "Open Quests.")]
-    // ENTRY1b (D161's ENTRY1 note): a go reaches what waits on the person below Sessions and Quests, each group by the name
+    // A go reaches what waits on the person below Sessions and Quests, each group by the name
     // its list's heading shows; it names no session and no quest.
     [InlineData("sessions", null, "waiting", "Open Sessions → Waiting on you.")]
     [InlineData("sessions", null, "review", "Open Sessions → To review.")]
     [InlineData("quests", null, "asks", "Open Quests → Asks.")]
     [InlineData("quests", null, "held", "Open Quests → Waiting on you.")]
-    // UX6e2 (D150 §3.1): Agents is a place, and its parts are the agent's page's.
+    // Agents is a place, and its parts are the agent's page's.
     [InlineData("agents", null, null, "Open Agents.")]
     [InlineData("agents", null, "rules", "Open Agents → What it may do.")]
-    // UX6g2b (D161 §3): a workspace's page's tabs and its Setup's sections are parts of Repositories, as a repository's
+    // A workspace's page's tabs and its Setup's sections are parts of Repositories, as a repository's
     // Setup is; a go to them names no workspace, and the one in view opens.
     [InlineData("projects", null, "workspace-details", "Open Repositories → a workspace's Details.")]
     [InlineData("projects", null, "workspace-branches", "Open Repositories → a workspace's Branches.")]
     [InlineData("projects", null, "workspace-workflow", "Open Repositories → a workspace's Workflow.")]
     [InlineData("projects", null, "workspace-defaults", "Open Repositories → a workspace's Defaults.")]
     [InlineData("projects", null, "workspace-remote", "Open Repositories → a workspace's Remote and reach.")]
-    // UX6i2a (D150 §2): the guide is Get started since UX6j, Setup naming a repository's tab.
+    // The guide is Get started, Setup naming a repository's tab.
     [InlineData("settings", "start", "helper", "Open Settings → Get started at step 2, Ask Daoris's agent.")]
     [InlineData("projects", null, "import", "Open Repositories → Import a folder.")]
-    // HELPSETUP1: a repository's own values are on its Setup.
+    // A repository's own values are on its Setup.
     [InlineData("projects", null, "setup", "Open Repositories → a repository's Setup.")]
-    // UX6h4: a repository's Branches and History tabs (UX6h1), named apart from a workspace's Branches.
+    // A repository's Branches and History tabs, named apart from a workspace's Branches.
     [InlineData("projects", null, "branches", "Open Repositories → a repository's Branches.")]
     [InlineData("projects", null, "history", "Open Repositories → a repository's History.")]
-    // UX6i2a: Knowledge is a place since UX6i, its parts its two modes; Knowledge alone opens as it was left.
+    // Knowledge is a place, its parts its two modes; Knowledge alone opens as left.
     [InlineData("knowledge", null, null, "Open Knowledge.")]
     [InlineData("knowledge", null, "convergence", "Open Knowledge → Convergence.")]
-    // UX6i2a: Plugins is a place since PLUGUI1b, and Settings holds none of it since UX6j.
+    // Plugins is a place, and Settings holds none of it.
     [InlineData("plugins", null, null, "Open Plugins.")]
     public void A_screen_is_a_go_that_changes_nothing(string view, string? domain, string? part, string says)
     {
@@ -95,22 +95,22 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("settings", "billing", null, "no Settings domain `billing`")]
     [InlineData("quests", null, "drawer", "no part `drawer`")]
     [InlineData("quests", "agents", null, "a domain is a part of Settings")]
-    // UX6e2: the Settings Agents domain and Permissions' Proposals left Settings for the Agents place.
+    // The Settings Agents domain and Permissions' Proposals belong to the Agents place, not Settings.
     [InlineData("settings", "agents", null, "no Settings domain `agents`")]
     [InlineData("agents", null, "workspaces", "no part `workspaces` of `agents`")]
-    // UX6i2a: a moved place is kept as it was named, and nothing beneath it: it had no parts.
+    // A moved place is kept as named, and nothing beneath it: it has no parts.
     [InlineData("convergence", null, "findings", "no view `convergence`")]
     [InlineData("settings", "plugins", "kit", "no Settings domain `plugins`")]
     [InlineData("knowledge", null, "findings", "no part `findings` of `knowledge`")]
     [InlineData("plugins", null, "kit", "no part `kit` of `plugins`")]
-    // UX6g2b: Settings → Workspace and Permissions are kept only as their parts were named; one no kept row names is refused.
+    // Settings → Workspace and Permissions are kept only as their parts were named; one no kept row names is refused.
     [InlineData("settings", "workspace", "colours", "no Settings domain `workspace`")]
     [InlineData("settings", "permissions", "proposals", "no Settings domain `permissions`")]
     [InlineData("settings", "workspace", "workspace-defaults", "no Settings domain `workspace`")]
     // A workspace's parts are Repositories', unprefixed names are a repository's, and the page has no other.
     [InlineData("projects", null, "defaults", "no part `defaults` of `projects`")]
     [InlineData("projects", null, "workspace-colours", "no part `workspace-colours` of `projects`")]
-    // ENTRY1b: a part is the group's go name, not the reader's (`you`); a group that waits on nobody is no part; and
+    // A part is the group's go name, not the reader's (`you`); a group that waits on nobody is no part; and
     // Overview stays the view alone, since what waits leads it.
     [InlineData("sessions", null, "you", "no part `you` of `sessions` — one of `new`, `review`, `waiting`.")]
     [InlineData("sessions", null, "working", "no part `working` of `sessions`")]
@@ -125,7 +125,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ENTRY1f1 (D161's ENTRY1f note): a go on Quests may name the one quest, by its id, or the one ask, as
+    /// A go on Quests may name the one quest, by its id, or the one ask, as
     /// <c>ask:&lt;id&gt;</c>, that waits on the person, judged against the records the <c>delete</c> kind reads: every quest
     /// and ask, closed ones included, so a person asking where one went is taken to it and told it closed. A <c>#</c> before
     /// the id is the room's spelling and stripped, the id matched without case, and the page handed the record's own.
@@ -137,7 +137,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("ask:#A2NONE00", "ask:a2none00", "Open Quests → ask `#a2none00` “a test ask”.")]
     [InlineData("q3done00", "q3done00", "Open Quests → quest `#q3done00` “Fix the stall”, done.")]
     [InlineData("q4declin", "q4declin", "Open Quests → quest `#q4declin` “Rewrite it all”, declined.")]
-    // ASKDISMISS1: a quest a session has taken is said taken, and an ask by the quest it became that is.
+    // A quest a session has taken is said taken, and an ask by the quest it became that is.
     [InlineData("q2taken0", "q2taken0", "Open Quests → quest `#q2taken0` “Stream the tiles”, taken.")]
     [InlineData("ask:a3kept00", "ask:a3kept00", "Open Quests → ask `#a3kept00` “stream the tiles”, its quest `#q2taken0` taken.")]
     public void A_go_may_name_one_quest_or_ask_the_machine_holds(string item, string handed, string says)
@@ -149,7 +149,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Equal(new HelpPlace("quests", null, null) { Item = handed }, plan.Go);
     }
 
-    /// <summary>ENTRY1f1: a closed ask is the person's to find as a closed quest is, and the card says it closed.</summary>
+    /// <summary>A closed ask is the person's to find as a closed quest is, and the card says it closed.</summary>
     [Fact]
     public void A_go_to_a_closed_ask_says_it_closed()
     {
@@ -161,10 +161,10 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ASKDISMISS1: a go changes nothing (HELP6), so its dismiss only takes the card out of the conversation. The proposal is
+    /// A go changes nothing, so its dismiss only takes the card out of the conversation. The proposal is
     /// settled, so no window draws it again, and nothing is said into the conversation: no turn starts in which the agent could
     /// read the press as the person's word on the quest or ask the card names. A change's Not now is still the person's answer,
-    /// told as their next message (D89).
+    /// told as their next message.
     /// </summary>
     [Fact]
     public void A_gos_dismiss_settles_its_card_and_tells_the_conversation_nothing()
@@ -180,7 +180,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ENTRY1f1: an item the machine's records do not hold is refused on the card, in the <c>delete</c> kind's words, never
+    /// An item the machine's records do not hold is refused on the card, in the <c>delete</c> kind's words, never
     /// handed to the page as a dead place; an ask's id named as a quest's is told its spelling. An item is a quest or an ask
     /// on Quests alone, with no part beside it, and one of another shape is said so.
     /// </summary>
@@ -192,7 +192,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData("quests", null, "ask:", "`ask:` is no item of `quests` — a quest by its id, or an ask as `ask:<id>`.")]
     [InlineData("quests", null, "session:s1", "`session:s1` is no item of `quests` — a quest by its id, or an ask as `ask:<id>`.")]
     [InlineData("quests", "held", "q1a2b3c4", "a go names a part of `quests` or an item in it, not both")]
-    // ENTRY1f2: an item is named on Sessions too, and on no other view.
+    // An item is named on Sessions too, and on no other view.
     [InlineData("overview", null, "ask:a2none00", "a go names an item only on `plugins`, `quests`, `sessions` — on Sessions a session by its id")]
     public void An_item_the_machine_does_not_hold_or_cannot_be_is_refused(string view, string? part, string item, string says)
     {
@@ -203,7 +203,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// The machine's own session records, as the Sessions list places them (ENTRY1f2): a park waiting on the person, one
+    /// The machine's own session records, as the Sessions list places them: a park waiting on the person, one
     /// working, one ended, a park the person answered, an intake's park, Ask Daoris's own conversation and a teammate's park.
     /// </summary>
     private static readonly HelpMachineFacts WithSessions = Machine with
@@ -223,7 +223,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     };
 
     /// <summary>
-    /// ENTRY1f2 (D161's ENTRY1f note): a go on Sessions may name one session by its id, judged against the machine's own
+    /// A go on Sessions may name one session by its id, judged against the machine's own
     /// records, since only the desktop knows its sessions. Any the Sessions list shows may be named, the one waiting on the
     /// person or another the person asks for; a <c>#</c> before the id is stripped, the id matched without case, and the
     /// page handed the record's own. The card says where it ran and whether it waits on the person or ended.
@@ -233,10 +233,10 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     [InlineData(" #S1A2B3C4 ", "s1a2b3c4", "Open Sessions → session `s1a2b3c4` in `console-ui`, waiting on you.")]
     [InlineData("s2b3c4d5", "s2b3c4d5", "Open Sessions → session `s2b3c4d5` in `engine`.")]
     [InlineData("s3c4d5e6", "s3c4d5e6", "Open Sessions → session `s3c4d5e6` in `game`, completed.")]
-    // An answered park goes on at the driver's next look, so it waits on nobody (ANSWER1c), as the list says.
+    // An answered park goes on at the driver's next look, so it waits on nobody, as the list says.
     [InlineData("s4d5e6f7", "s4d5e6f7", "Open Sessions → session `s4d5e6f7` in `engine`.")]
     [InlineData("s7a8b9c0", "s7a8b9c0", "Open Sessions → session `s7a8b9c0` answering ask `#a2none00`, waiting on you.")]
-    // LIMITRESUME1d2 (D206 §3.1): a failure an account's limit made is said limited, as the list and the terminal say it; any other failed.
+    // A failure an account's limit made is said limited, as the list and the terminal say it; any other failed.
     [InlineData("s8b9c0d1", "s8b9c0d1", "Open Sessions → session `s8b9c0d1` in `engine`, limited.")]
     [InlineData("s9c0d1e2", "s9c0d1e2", "Open Sessions → session `s9c0d1e2` in `engine`, failed.")]
     public void A_go_may_name_one_session_the_machine_holds(string item, string handed, string says)
@@ -249,7 +249,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ENTRY1f2: a session the machine's records do not hold is refused on the card, as Ask Daoris's own conversation is,
+    /// A session the machine's records do not hold is refused on the card, as Ask Daoris's own conversation is,
     /// which opens in Ask Daoris and not in Sessions, and a teammate's, which nothing here reaches. An item on Sessions is a
     /// bare id: the prefixes Quests' items take are no item of it, and a part beside it is refused as on Quests.
     /// </summary>
@@ -270,7 +270,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// The machine's plugins and the install's offers (PLUGUI1h): `example.lands` on, `example.off` off, an offer
+    /// The machine's plugins and the install's offers: `example.lands` on, `example.off` off, an offer
     /// `github-pull-request` not installed and one, `example.lands`, installed already.
     /// </summary>
     private HelpMachineFacts WithPlugins()
@@ -288,7 +288,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// PLUGUI1h (D119's note): a go on Plugins may name an installed plugin by its id, or an offer as <c>offer:&lt;id&gt;</c>,
+    /// A go on Plugins may name an installed plugin by its id, or an offer as <c>offer:&lt;id&gt;</c>,
     /// judged against the machine's plugins and the install's offers; a <c>#</c> before it is stripped, the id matched
     /// without case, and the page handed the one's own spelling. The card says whether the plugin is on or off.
     /// </summary>
@@ -309,7 +309,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// PLUGUI1h: an id the machine does not hold is refused naming the ones it does; an offer already installed is named by
+    /// An id the machine does not hold is refused naming the ones it does; an offer already installed is named by
     /// its id; and an item of another shape, or beside a part, is said so.
     /// </summary>
     [Theory]
@@ -328,21 +328,21 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Go);
     }
 
-    /// <summary>PLUGUI1h: a machine with no plugin says it holds none.</summary>
+    /// <summary>A machine with no plugin says it holds none.</summary>
     [Fact]
     public void A_machine_with_no_plugin_says_it_holds_none()
     {
         Assert.Contains("it holds none", HelpProposals.Plan(Go("plugins", item: "x"), DriverConfig.Empty, Machine).Refusal);
     }
 
-    /// <summary>The registry as Repositories lists it (ENTRY1d2a): `engine` in `work`, and `game` in none, so the default.</summary>
+    /// <summary>The registry as Repositories lists it: `engine` in `work`, and `game` in none, so the default.</summary>
     private static readonly HelpMachineFacts WithRegistry = Machine with
     {
         Registered = [("engine", "work", "/checkouts/engine"), ("game", null, null)],
     };
 
     /// <summary>
-    /// ENTRY1d2a (D161's ENTRY1d note): a go to Repositories' Add repository or Import a folder may name the workspace the
+    /// A go to Repositories' Add repository or Import a folder may name the workspace the
     /// drawer opens with, since the folder stays the person's pick there. It is normalized as the route stores a name, a
     /// workspace the registry holds handed in the registry's spelling, and a name no repository is in yet allowed, as the
     /// drawer's free text allows it, the card saying so.
@@ -363,8 +363,8 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ENTRY1d2a: a workspace is named on Repositories' Add and Import alone, the drawers that take one, never with an item,
-    /// and never as a folder: a path the conversation was not given never enters it (D48 §3/§7).
+    /// A workspace is named on Repositories' Add and Import alone, the drawers that take one, never with an item,
+    /// and never as a folder: a path the conversation is not given never enters it.
     /// </summary>
     [Theory]
     [InlineData("projects", null, null, null, "work", "a go names a workspace only with `projects` and its part `add` or `import`")]
@@ -384,7 +384,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Null(plan.Go);
     }
 
-    /// <summary>ENTRY1f2: a session named on Quests is no quest there, and a quest named on Sessions no session.</summary>
+    /// <summary>A session named on Quests is no quest there, and a quest named on Sessions no session.</summary>
     [Fact]
     public void An_item_is_judged_against_its_own_views_records()
     {
@@ -395,8 +395,8 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// UX6i2a (D150 §2): a go spelled as a place was before it moved, kept in an earlier conversation or sent by a service
-    /// that still lists it, lands where the place went, said and handed to the page by its name now. UX6g2b: Settings →
+    /// A go spelled as a place before it moved, kept in an earlier conversation or sent by a service
+    /// that still lists it, lands where the place went, said and handed to the page by its name now. Settings →
     /// Workspace and Permissions are kept with each part they had, each its own row, on the workspace's page where the part
     /// went, and Permissions alone on what agents may do.
     /// </summary>
@@ -452,7 +452,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
                 "settings/permissions/across → projects/workspace-defaults",
             ],
             HelpPlaces.Kept.Select(kept => $"{Spelled(kept.Was)} → {Spelled(kept.Now)}"));
-        // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's. ENTRY1f2: Sessions too.
+        // The views a go may name an item in, and how an ask's item is told from a quest's; Sessions too.
         Assert.Equal(["sessions", "quests", "plugins"], HelpPlaces.ItemViews);
         Assert.Equal("ask:", HelpPlaces.AskItem);
     }
@@ -468,7 +468,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Equal("applied", HelpProposals.Find(_home, "p6")!.State);
     }
 
-    /// <summary>ENTRY1f1: a go naming an ask hands the page the place with the ask's item, as the page's list names one.</summary>
+    /// <summary>A go naming an ask hands the page the place with the ask's item, as the page's list names one.</summary>
     [Fact]
     public async Task A_go_naming_an_ask_hands_the_page_its_item()
     {
@@ -479,7 +479,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Equal(new HelpPlace("quests", null, null) { Item = "ask:a2none00" }, go.Go);
     }
 
-    /// <summary>ENTRY1f2: a go naming a session hands the page the place with the session's id, as its record spells it.</summary>
+    /// <summary>A go naming a session hands the page the place with the session's id, as its record spells it.</summary>
     [Fact]
     public async Task A_go_naming_a_session_hands_the_page_its_id()
     {
@@ -490,7 +490,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Equal(new HelpPlace("sessions", null, null) { Item = "s1a2b3c4" }, go.Go);
     }
 
-    /// <summary>ENTRY1d2a: a go to Add repository hands the page the workspace the drawer opens with, and calls no door.</summary>
+    /// <summary>A go to Add repository hands the page the workspace the drawer opens with, and calls no door.</summary>
     [Fact]
     public async Task A_go_to_add_hands_the_page_its_workspace()
     {
@@ -521,7 +521,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
         Assert.Null(go.Account);
     }
 
-    /// <summary>ENTRY1f1: a go's item, read from the file as the service's box writes it, spelled as named.</summary>
+    /// <summary>A go's item, read from the file as the service's box writes it, spelled as named.</summary>
     [Fact]
     public void A_gos_item_is_read_from_the_file()
     {
@@ -540,7 +540,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// ENTRY1d2a: a go's workspace is the file's <c>workspace</c>, which every proposal's reader already reads, spelled as
+    /// A go's workspace is the file's <c>workspace</c>, which every proposal's reader already reads, spelled as
     /// written, so the kind's own reader adds nothing for it.
     /// </summary>
     [Fact]

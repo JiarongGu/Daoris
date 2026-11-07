@@ -2,8 +2,8 @@ import { HELP_REPOSITORY, type Session } from '../../data/api';
 import { store, stored } from '../../lib/stored';
 import { sessionOrigin } from '../identity';
 
-// What this machine remembers of its starts (NEW1b, the entry design §1): the repositories its last conversations started in,
-// for the picker's *Recent*, and the one last chosen, which a new conversation opens on. Per viewer, like a draft (D42): never
+// What this machine remembers of its starts: the repositories its last conversations started in,
+// for the picker's *Recent*, and the one last chosen, which a new conversation opens on. Per viewer, like a draft: never
 // machine wiring and never shared, and a storage that is absent or refused costs the memory and nothing else.
 
 /** Where the last starts are kept: repository names, newest first. */
@@ -33,7 +33,7 @@ export function withRecent(recent: readonly string[], repository: string): strin
 }
 
 /**
- * The picker's *Recent* (NEW1f): the composer's own starts merged with the repositories of this machine's own sessions, newest
+ * The picker's *Recent*: the composer's own starts merged with the repositories of this machine's own sessions, newest
  * first by the repository's newest session `updated` (parsed, not compared as text), one entry a repository, at most
  * `MAX_RECENT`. A start has no time of its own: it is dated by its repository's sessions (none left, none), and on a tie the
  * composer's starts come first, in their order. Ask Daoris's chats and a session from another machine are no place the person

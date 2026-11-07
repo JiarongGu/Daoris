@@ -12,7 +12,7 @@ public sealed record GitHistoryWorld(
 
 /// <summary>
 /// <c>daoris git pick|revert &lt;repository&gt; &lt;branch&gt; &lt;commit|A..B&gt;</c> and <c>git rebase &lt;repository&gt; &lt;branch&gt; &lt;onto&gt;</c>,
-/// each <c>[--plan|--yes]</c> (GITAPP2m, D204; the git-writes design §7, §9): the terminal's twin of a branch page's <i>Edit history</i>. Without
+/// each <c>[--plan|--yes]</c>: the terminal's twin of a branch page's <i>Edit history</i>. Without
 /// <c>--yes</c> it says the plan and changes nothing. With <c>--yes</c> it says the plan, then is the running Daoris's client
 /// (<see cref="InstanceDoor.PressAsync"/>), the press carrying the ids the plan pinned and confirmed in the window; with no Daoris running
 /// it makes the edit itself through the same act (<see cref="GitHistoryEdits"/>), saying each commit made, refused from a session's terminal.
@@ -67,7 +67,7 @@ public static class GitHistoryCommand
         return new GitHistoryVerb(args[0], words[0], words[1], words[2], yes == true);
     }
 
-    /// <summary>The verb's payload: the route's own fields and the plan's pinned ids beside <c>said: true</c> (RPC1e).</summary>
+    /// <summary>The verb's payload: the route's own fields and the plan's pinned ids beside <c>said: true</c>.</summary>
     public static Dictionary<string, object?> Payload(GitHistoryVerb verb, HistoryEditPins pins) =>
         InstanceDoor.Said(
             ("repository", verb.Repository), ("edit", verb.Edit), ("branch", verb.Branch), ("target", verb.Target),

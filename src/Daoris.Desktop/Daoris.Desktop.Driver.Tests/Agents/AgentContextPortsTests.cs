@@ -51,7 +51,7 @@ public sealed class AgentContextPortsTests
         Assert.Equal(System.Text.Json.JsonSerializer.Serialize(InstructionAccounting.Account(target, pieces, null)),
             System.Text.Json.JsonSerializer.Serialize(actual.Account(target, pieces, null)));
         Assert.Equal(InstructionAccounting.Intake(target, "intake", null).Text, actual.Intake(target, "intake", null).Text);
-        // CONTEXTONE1c: the standing block, composed and bound on the same operations.
+        // The standing block, composed and bound on the same operations.
         var facts = new StandingFacts { Repository = "stand" };
         Assert.Equal(StandingBlock.Fitted(facts, 0).Text, actual.Block(facts, 0).Text);
         Assert.Equal(facts with { Skills = [] }, actual.OnHarness(facts, BuiltDoors.Claude, "C:/nowhere"));
@@ -90,7 +90,7 @@ public sealed class AgentContextPortsTests
             await HarnessCapture.CaptureStructuredAsync(new StringReader("wire\n"), new StringReader(""), "stand",
                 new RecordReadings("s1", output, events), mapper, null, CancellationToken.None,
                 observed: e => { Assert.Same(mapper.Event, e); calls.Add("observed"); });
-            // The console's streams are asked once a stream beside is read (row l), never for a line of the run's own.
+            // The console's streams are asked once a stream beside is read, never for a line of the run's own.
             Assert.Equal(["open:stand:False", "beside", "take:wire", "read:wire", "write:rendered",
                 "output:s1:rendered", "event:s1", "observed", "end", "dispose"], calls);
             Assert.Same(mapper.Event, events.Kept);

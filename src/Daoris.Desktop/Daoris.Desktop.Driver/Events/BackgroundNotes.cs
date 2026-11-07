@@ -21,7 +21,7 @@ public static class BackgroundNotes
             ("works", works));
 
     /// <summary>
-    /// The quest closed, was declined or asked another repository while the session waited, so the session ends, and the work
+    /// The quest closes, is declined or asks another repository while the session waits, so the session ends, and the work
     /// it names, still running, ends with it.
     /// </summary>
     public static Noted WaitOver(IReadOnlyList<string> works) =>
@@ -61,7 +61,7 @@ public static class BackgroundNotes
             ("paths", paths));
 
     /// <summary>
-    /// The session was carried on as often as its run is (<see cref="TurnCarry.Limit"/>) and its tree is still not clean:
+    /// The session is carried on as often as its run allows (<see cref="TurnCarry.Limit"/>) and its tree is still not clean:
     /// it ends. The words name no count, since the limit is the look's own.
     /// </summary>
     public static Noted CarryBound() =>

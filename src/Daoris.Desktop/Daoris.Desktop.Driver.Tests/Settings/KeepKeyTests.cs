@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The keep rules as <c>driver.json</c> keeps them (FOUNDATION1 mod-iii): the settings' own bounds, reading and writing, which the
+/// The keep rules as <c>driver.json</c> keeps them: the settings' own bounds, reading and writing, which the
 /// kinds' table and the floor's policy answer through, so a bound is said once.
 /// </summary>
 public sealed class KeepKeyTests

@@ -6,8 +6,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// <c>File.ReadAllText</c> and <c>File.ReadAllLines</c> open with <c>FileShare.Read</c>, which Windows
-/// refuses while another process holds the file open to write. A poll that landed inside one of the
-/// stub's appends threw a sharing violation and failed a passing test (REV3; <c>StubFileTests</c>).
+/// refuses while another process holds the file open to write. A poll that lands inside one of the
+/// stub's appends would throw a sharing violation and fail a passing test (<c>StubFileTests</c>).
 /// Opened here sharing read and write, as the writer does.
 /// </remarks>
 internal static class StubFile
@@ -22,12 +22,12 @@ internal static class StubFile
         return reader.ReadToEnd();
     }
 
-    /// <summary>The start of the standing block a conversation's first prompt ends with (CONTEXTONE1c), its routing standing among it.</summary>
+    /// <summary>The start of the standing block a conversation's first prompt ends with, its routing standing among it.</summary>
     public const string BlockLead = "Daoris's standing block for this session: ";
 
     /// <summary>
     /// A prompt as a stand-in logged it, without the standing block Daoris appends after the person's words and its own lines: the
-    /// person's words and Daoris's other lines, exactly. A prompt carrying no block is returned as it was.
+    /// person's words and Daoris's other lines, exactly. A prompt carrying no block is returned unchanged.
     /// </summary>
     public static string WithoutBlock(string prompt)
     {

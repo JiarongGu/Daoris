@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITLOCK1's census of every git write the driver, its host and the modules make (D51's note of the row): each file that starts a git
+/// The census of every git write the driver, its host and the modules make: each file that starts a git
 /// which changes a HEAD, an index, a working tree, a branch or git's record of its trees is named here with what it writes and where, by
 /// each call's verb and the folder it runs in. A writer of a repository's checkout (its HEAD, index, working tree or the branch it has out)
 /// holds the repository alone through <c>TreeLock.TryWriting</c>, from its fresh judgement through its write and its read after it; every
@@ -11,7 +11,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// A conversation's agent or a driven session's agent writing files itself starts no git of Daoris's and cannot take the lock: it is named
-/// in <see cref="Fenced"/> with how it is fenced instead. Read from the sources by name wherever they lie (STRUCT5a), as
+/// in <see cref="Fenced"/> with how it is fenced instead. Read from the sources by name wherever they lie, as
 /// <see cref="SettledReadersCensusTests"/> is.
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
@@ -96,9 +96,9 @@ public sealed partial class CheckoutWritersCensusTests
     };
 
     /// <summary>
-    /// The doors that start a checkout's writer with a service to ask, each handing it the ledger's sessions (GITAPP2's §3 <i>Beside a
-    /// session</i>), so the write waits for a session working in the checkout. A merge rule's own press reaches the promotion through the
-    /// run's <c>land</c> (GITLOCK2), whose performer hands it the same; the Accept doors land nothing themselves (D228).
+    /// The doors that start a checkout's writer with a service to ask, each handing it the ledger's sessions,
+    /// so the write waits for a session working in the checkout. A merge rule's own press reaches the promotion through the
+    /// run's <c>land</c>, whose performer hands it the same; the Accept doors land nothing themselves.
     /// </summary>
     private static readonly Dictionary<string, string> Beside = new(StringComparer.Ordinal)
     {
@@ -110,7 +110,7 @@ public sealed partial class CheckoutWritersCensusTests
         ["GitRoutes.cs"] = "the Changes tab's stage, unstage and Undo",
     };
 
-    /// <summary>The Accept doors, which land nothing themselves (CHATFLOW1g, D228): no checkout's writer starts from them.</summary>
+    /// <summary>The Accept doors, which land nothing themselves: no checkout's writer starts from them.</summary>
     private static readonly string[] AcceptDoors = ["TreesLandDesk.cs", "ChatLandCommand.cs", "EntriesRoutes.cs"];
 
     /// <summary>

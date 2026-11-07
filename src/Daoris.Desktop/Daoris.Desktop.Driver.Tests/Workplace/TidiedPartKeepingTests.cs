@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D245 point 3, the keeper's half over real git: a part a landing's <c>tidy</c> ended at its tip is ended by that record alone (<c>tidied</c>),
+/// The keeper's half over real git: a part a landing's <c>tidy</c> ended at its tip is ended by that record alone (<c>tidied</c>),
 /// though no proof of the line holds its commits, and it is kept once. Every later pass over the same repository starts the same git as the
 /// one before and writes nothing, so the part is not judged again at each pass; a part that moved on since the tidy is judged as any other.
 /// </summary>

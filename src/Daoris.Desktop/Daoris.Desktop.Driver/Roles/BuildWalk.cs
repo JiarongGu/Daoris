@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>An actor's name as the screen says it in English (D205 §2.2), for the lines the driver writes; the page words it by its id.</summary>
+/// <summary>An actor's name as the screen says it in English, for the lines the driver writes; the page words it by its id.</summary>
 public static class ActorWords
 {
     public static string Name(string actor) => actor switch
@@ -19,7 +19,7 @@ public static class ActorWords
 }
 
 /// <summary>
-/// One entry of a role's order a start passed (D205 §4.1): its code, one of <see cref="StartPasses"/> (<c>unavailable</c>, <c>no-posture</c>,
+/// One entry of a role's order a start passed: its code, one of <see cref="StartPasses"/> (<c>unavailable</c>, <c>no-posture</c>,
 /// <c>no-connector</c>, <c>not-opened</c>, <c>not-offered</c>, <c>cooling</c>, <c>signed-out</c> or <c>held</c>), and the walk's own reason in
 /// English.
 /// </summary>
@@ -31,14 +31,14 @@ public sealed record BuildPass(ActorEffective Entry, string Code, string? Why)
     /// <summary>The pass in the wait's words: <c>choice n, agent · model: why</c>.</summary>
     public string Said => $"choice {Entry.From}, {Named}: {Why?.TrimEnd('.')}";
 
-    /// <summary>The pass as the machine log keeps it (LOGCOLLECTION1): <c>choice:agent:code</c>, names and a code, never the walk's sentence.</summary>
+    /// <summary>The pass as the machine log keeps it: <c>choice:agent:code</c>, names and a code, never the walk's sentence.</summary>
     public string Word => $"{Entry.From}:{Entry.Agent}:{Code}";
 }
 
 /// <summary>
 /// What each walk last passed, per quest, ask or conversation, so the machine log says a pass when it is new and not at every look
-/// while a choice stays passed for the same reason (LOGCOLLECTION1, D94): the first look of a walk that passes, and every look whose
-/// passes differ from the look before. The install wrote 10,488 <c>actor.passed</c> lines in a day for one held quest.
+/// while a choice stays passed for the same reason: the first look of a walk that passes, and every look whose
+/// passes differ from the look before. Said at every look, one held quest writes thousands of <c>actor.passed</c> lines in a day.
 /// </summary>
 /// <remarks>
 /// A walk is compared with the walk before it, so a pass that stopped and began again is said again, and a walk that passes nothing
@@ -47,7 +47,7 @@ public sealed record BuildPass(ActorEffective Entry, string Code, string? Why)
 /// </remarks>
 public sealed class PassMemory
 {
-    /// <summary>How many subjects are remembered at once: a quest that was started stays remembered until this fills.</summary>
+    /// <summary>How many subjects are remembered at once: a quest that is started stays remembered until this fills.</summary>
     private const int Most = 1000;
 
     private readonly object _gate = new();

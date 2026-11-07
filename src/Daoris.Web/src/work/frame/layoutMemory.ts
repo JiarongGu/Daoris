@@ -1,12 +1,12 @@
 import { store, stored } from '../../lib/stored';
 import { DOCK } from './layout';
 
-// Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
-// a preference, never machine wiring and never a tracked file. A view's list keeps its own since FRAME1c
-// (`listPanes.ts`, D118 §3f).
+// Per-viewer conveniences, like the language and the workspace scope: a remembered layout is
+// a preference, never machine wiring and never a tracked file. A view's list keeps its own
+// (`listPanes.ts`).
 export const PANEL_HEIGHT = 'daoris.panelHeight';
-// The dock's dragged width, as a SHARE of the window (LAYOUT1). `daoris.dockWidth` held pixels, and a
-// dock kept in pixels stayed the same while the window grew; one held there is read once, as its share
+// The dock's dragged width, as a SHARE of the window. `daoris.dockWidth` is the older pixel key: a
+// dock kept in pixels stays the same while the window grows; one held there is read once, as its share
 // of the window it is read in, and then forgotten.
 export const DOCK_SHARE = 'daoris.dockShare';
 const DOCK_WIDTH_PIXELS = 'daoris.dockWidth';

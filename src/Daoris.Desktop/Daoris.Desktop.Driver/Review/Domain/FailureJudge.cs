@@ -35,7 +35,7 @@ internal sealed record JudgedFailure(FailureNames Names, string Gate, string? Te
     public string Label => Test ?? Gate;
 }
 
-/// <summary>The open known red a failure's signature matches: whether its 72 hours are past, and the commit it was last seen failing on.</summary>
+/// <summary>The open known red a failure's signature matches: whether its 72 hours are past, and the commit it last failed on.</summary>
 internal sealed record KnownRed(bool Expired, string? LastSeen);
 
 /// <summary>A reason the whole admission could not be shown, where it arose (<c>start</c>, <c>beat</c>, <c>end</c>).</summary>
@@ -64,7 +64,7 @@ internal sealed record ConfirmReading(string? Result, string? Why = null)
     public ConfirmComposition? Composition { get; init; }
 }
 
-/// <summary>How a failure was judged.</summary>
+/// <summary>How a failure is judged.</summary>
 internal enum JudgeOutcome
 {
     /// <summary>Filed as known red, pinned to none.</summary>
@@ -85,7 +85,7 @@ internal enum JudgeOutcome
     /// <summary>The confirm run could not show it. Read as split, never land.</summary>
     Inconclusive,
 
-    /// <summary>The candidate was dropped during its confirm run.</summary>
+    /// <summary>The candidate is dropped during its confirm run.</summary>
     Dropped,
 }
 
@@ -159,14 +159,14 @@ internal sealed record MemoryStepResult(string Next, string? Note = null);
 /// <summary>A recheck of a stopped queue's gate selection on the base.</summary>
 internal sealed record QueueRecheck(string At, bool Passed, string By);
 
-/// <summary>A queue's stop: when it was made and the rechecks since.</summary>
+/// <summary>A queue's stop: its time and the rechecks after it.</summary>
 internal sealed record QueueStop(string At, IReadOnlyList<QueueRecheck> Rechecks);
 
 /// <summary>An open known red's standing at a time: expired past its 72 hours, warned within twelve hours of that.</summary>
 internal sealed record KnownRedStanding(bool Expired, bool Warn);
 
 /// <summary>
-/// How a red candidate's failures are judged (INTEGRATE1f part f1; D207, the integration design §4.5, §5.3, §11 row f): in order, a death of
+/// How a red candidate's failures are judged: in order, a death of
 /// memory is the machine's; a known red unexpired and last seen failing on the base is inherited with no run, and past its 72 hours is run
 /// on the base and stops the line where it fails there; the confirm run's reading comes before the base (a sighting or an inconclusive
 /// reading answers at once, with no base and no prefix run); the base; then the prefixes. Everything here is a value or a function: the
@@ -419,7 +419,7 @@ internal static class FailureJudge
 
     /// <summary>
     /// A death of memory, the machine's: never run on the base or over the prefixes, never a stop or a hand-back. Given the gate's attempts so
-    /// far (oldest first), whether the hold was released by an admission, and its reserved need, answers what happens next: <c>again</c> (once
+    /// far (oldest first), whether the hold is released by an admission, and its reserved need, answers what happens next: <c>again</c> (once
     /// more, whole and alone, once its memory is free), <c>pass</c> (a pass after a death, counted as the gate's pass), <c>hold</c> (held as
     /// memory until the admission reserves its need), or <c>judge</c> (after the hold, its own job's peak past its need: the gate's failure,
     /// judged as one that names no test).

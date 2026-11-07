@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The world a workspace plan reads on this machine (WSSETUP6): the single press's world (<see cref="SetupWorld"/>), the
+/// The world a workspace plan reads on this machine: the single press's world (<see cref="SetupWorld"/>), the
 /// registry's declarations, the session records and each one's conversation record, and the service client, through which
 /// a plan's lines reach whoever logs them. The plan itself is <see cref="WorkspaceSetup"/>.
 /// </summary>
@@ -58,7 +58,7 @@ public sealed class WorkspaceSetupWorld(ServiceClient service, string home) : IW
     public void Said(SetupLine line) => service.SetupSaid(line);
 
     /// <summary>
-    /// The files each tool call in one conversation record touched, as the record names them (D76's <c>locations</c>), each
+    /// The files each tool call in one conversation record touched, as the record names them (<c>locations</c>), each
     /// call and path once. A line that does not read is skipped: a record is read for what it can say.
     /// </summary>
     public static IReadOnlyList<ToolTouch> ReadTouches(string file)

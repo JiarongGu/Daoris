@@ -365,6 +365,30 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(0, driver.Ran);
     }
 
+    [Fact]
+    public async Task A_hand_over_its_route_would_refuse_is_answered_in_the_routes_words_with_no_card()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var grounds = new StubGrounds().Session("s1a2b3c4", "awaiting-person");
+        grounds.Held["hand-over"] = "s1a2b3c4 is waiting on you: answer it instead.";
+        var (pipe, client, driver, services, log) = await ServeAsync(grounds);
+        using var _ = services;
+        using var __ = log;
+        using var ___ = pipe;
+        await using var ____ = client;
+
+        var refused = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, "SESSION_HAND_OVER", new { id = "s1a2b3c4", agent = "codex-acp" }));
+
+        Assert.Equal(InstancePipe.NotAllowed, Code(refused));
+        Assert.Equal("s1a2b3c4 is waiting on you: answer it instead.", refused.GetProperty("error").GetProperty("message").GetString());
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Equal(0, driver.Ran);
+
+        grounds.Held["hand-over"] = "";
+        await client.SendAsync(DriverModule.Name, "SESSION_HAND_OVER", new { id = "s1a2b3c4", agent = "codex-acp" });
+        await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The servers a session is handed, as the harness will start them (LAUNCHCHAIN1): Daoris's browser filled in or withheld
+/// The servers a session is handed, as the harness will start them: Daoris's browser filled in or withheld
 /// (<see cref="InAppBrowserServers"/>), then every server a plugin declared through <c>npx</c> made node and its package's script,
 /// the package installed once into the toolchain (<see cref="ServerPackages"/>). Both doors take what this hands, the protocol
 /// door on <c>session/new</c> and the pipe door in its file, so the harness starts each server as one node under the session's job.
@@ -32,7 +32,7 @@ public static class SessionServers
     }
 
     /// <summary>
-    /// Every server declared through <c>npx</c> made node and its package's script, its arguments after; every other server as it was
+    /// Every server declared through <c>npx</c> made node and its package's script, its arguments after; every other server as
     /// declared; one that cannot be started left out, and logged.
     /// </summary>
     /// <param name="npm">The package manager an install runs; Tools' npm where null.</param>

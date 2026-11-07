@@ -3,7 +3,7 @@ import type { RunLine, RunStep, WorkflowRun } from '../run';
 import { checkWhy } from '../runSaid';
 
 /**
- * A verification's verdict as its status word (FABRIC-PIPELINE1d, the pipeline design §4.4), in a check's own words: *verified*,
+ * A verification's verdict as its status word, in a check's own words: *verified*,
  * *failed: `<gate>`*, *not known: `<why>`*, *not now*, *waiting for its gates* while they run and *waiting for its turn* before; a verdict
  * the page does not know is said as the driver spelled it.
  */

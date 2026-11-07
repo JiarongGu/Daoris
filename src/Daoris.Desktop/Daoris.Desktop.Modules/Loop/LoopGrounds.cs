@@ -132,6 +132,23 @@ public sealed class LoopGrounds(DriverLoop loop, InstancePipe pipe) : IPipeGroun
             case "help":
                 // An Ask Daoris proposal (HELP_APPLY, HELP_DISMISS), read from its record: its list's read settles and draws what it lists.
                 return PipeGround.Text(payload, "id") is { } id ? HelpProposals.Find(loop.Home, PipeGround.Id(id) ?? id)?.State : null;
+            case "hand-over":
+            {
+                // SESSION_HAND_OVER names an agent for a quest's own session: the refusal the route's judge would give, or empty.
+                if (PipeGround.Text(payload, "id") is not { } session || PipeGround.Text(payload, "agent") is not { Length: > 0 } agent
+                    || payload is not { ValueKind: JsonValueKind.Object } press || (press.TryGetProperty("said", out var said) && said.ValueKind == JsonValueKind.True))
+                {
+                    return "";
+                }
+
+                var service = Service();
+                var record = (await service.SessionRecordsAsync(cancellationToken).ConfigureAwait(false)).FirstOrDefault(each => each.Id == session);
+                if (record is null || !QuestHandOver.IsQuestSession(record)) return "";
+                var (refused, _) = await QuestHandOver.JudgeAsync(
+                    service, SessionsCommand.DrivesBy(loop.Home), session, agent, PipeGround.Text(payload, "account"), cancellationToken).ConfigureAwait(false);
+                return refused?.Message ?? "";
+            }
+
             default:
                 throw new ArgumentOutOfRangeException(nameof(wait), wait, "no such wait.");
         }

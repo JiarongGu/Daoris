@@ -6,17 +6,17 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// `daoris space free [--kind &lt;id&gt;]... [--early &lt;group&gt;]... [--yes]` (KEEP1e, the cleanup design §3.3, §4.4, D50): the
+/// `daoris space free [--kind &lt;id&gt;]... [--early &lt;group&gt;]... [--yes]`: the
 /// terminal's twin of This Daoris's <i>Free up space…</i>. Without <c>--yes</c> it lists, per kind, what its rule takes now and what could go
 /// early, and changes nothing; the list runs anywhere. With <c>--yes</c> it removes what the rules take (the kinds <c>--kind</c> names, or
 /// every kind), and each group <c>--early</c> names, then reads the run to its end, a line per kind as it ends.
 /// </summary>
 /// <remarks>
-/// <para><b>With a Daoris running</b> it is its client (<see cref="InstanceDoor.PressAsync"/>, D194 point 2): the removal is the person's,
-/// confirmed in the window (RPC1c), and its answer is the run's id, not its end, so the verb then reads <c>SYSTEM_SPACE</c>, an open read,
-/// each second until the run has ended. Where Daoris stops first, how it ended is not known: exit 2. <b>Alone</b> it holds no lease (D194
-/// point 3), takes the home's run lock, which a desktop starting meanwhile finds held, and is refused from a session's environment (D194
-/// point 5): <c>--yes</c> is the person's word at their own terminal and grants a session nothing.</para>
+/// <para><b>With a Daoris running</b> it is its client (<see cref="InstanceDoor.PressAsync"/>): the removal is the person's,
+/// confirmed in the window, and its answer is the run's id, not its end, so the verb then reads <c>SYSTEM_SPACE</c>, an open read,
+/// each second until the run has ended. Where Daoris stops first, how it ended is not known: exit 2. <b>Alone</b> it holds no lease,
+/// takes the home's run lock, which a desktop starting meanwhile finds held, and is refused from a session's environment:
+/// <c>--yes</c> is the person's word at their own terminal and grants a session nothing.</para>
 /// <para>Exit codes keep the family contract: 0 listed, or every unit removed · 1 something named was kept, the person refused it in the
 /// window, or a session's terminal · 2 could not: a word it does not answer, a read that failed, the run lock held, the run stopped, or
 /// Daoris stopped while it ran.</para>

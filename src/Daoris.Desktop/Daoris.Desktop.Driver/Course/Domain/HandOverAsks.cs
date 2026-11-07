@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>Where an agent's ask to hand its session over stands, one of <see cref="All"/> (MIXAGENT1c; the service's <c>HandOverAskBox.States</c>).</summary>
+/// <summary>Where an agent's ask to hand its session over stands, one of <see cref="All"/> (the service's <c>HandOverAskBox.States</c>).</summary>
 public static class HandOverAskStates
 {
     /// <summary>It waits for the person's yes or no under the rule's <c>ask</c>.</summary>
@@ -12,16 +12,16 @@ public static class HandOverAskStates
     /// <summary>It goes: the person's yes, or the rule's <c>on</c> while the session's turn runs, taken at that turn's end.</summary>
     public const string Approved = "approved";
 
-    /// <summary>The hand-over was kept or done, to the agent the state names.</summary>
+    /// <summary>The hand-over is kept or done, to the agent the state names.</summary>
     public const string Taken = "taken";
 
-    /// <summary>It came to nothing, by a code of <see cref="HandOverAskWhy"/>.</summary>
+    /// <summary>It comes to nothing, by a code of <see cref="HandOverAskWhy"/>.</summary>
     public const string Refused = "refused";
 
     public static readonly IReadOnlyList<string> All = [Waiting, Approved, Taken, Refused];
 }
 
-/// <summary>Who made a hand-over's ask, as its session's record names them (HANDOVERSAID1): the path that made it, never a guess.</summary>
+/// <summary>Who made a hand-over's ask, as its session's record names them: the path that made it, never a guess.</summary>
 public static class HandOverAsker
 {
     /// <summary>The session's agent, through the connector's <c>handover_propose</c>.</summary>
@@ -32,6 +32,9 @@ public static class HandOverAsker
 
     /// <summary>The person, by the window's press.</summary>
     public const string Window = "window";
+
+    /// <summary>The steward, by an act the person granted it, never as the person.</summary>
+    public const string Steward = "steward";
 }
 
 /// <summary>An agent's ask to hand its session over, as <c>&lt;session&gt;.hand-over-ask.json</c> keeps it: written by <c>handover_propose</c>, never changed.</summary>
@@ -60,16 +63,16 @@ public sealed record HandOverAskVerdict(string Kind, string? Code = null, string
 }
 
 /// <summary>
-/// The driver's judgement of an agent's ask to hand its session over (MIXAGENT1c, D163 point 3; the mixed agents design §5): what only
+/// The driver's judgement of an agent's ask to hand its session over: what only
 /// the driver can judge, since only it reads <c>driver.json</c> and the session's turns, and again what the connector judged, since an
 /// ask on file may be old.
 /// </summary>
 /// <remarks>
-/// <para><b>The rule alone</b> (D191's settling of the design): <c>off</c> refuses, <c>ask</c> holds it <c>waiting</c> until the person's
+/// <para><b>The rule alone</b>: <c>off</c> refuses, <c>ask</c> holds it <c>waiting</c> until the person's
 /// yes (the page's or the terminal's), <c>on</c> lets it go. Daoris's own offer's conditions, an account near its limit or cut, are not
 /// an agent's ask's: the agent said why in its note.</para>
 ///
-/// <para><b>No loop with no person</b> (design §5): a part a hand-over started (its record's <c>from</c> with a hand-over's why) cannot
+/// <para><b>No loop with no person</b>: a part a hand-over started (its record's <c>from</c> with a hand-over's why) cannot
 /// ask again before its own first turn ends, whatever the rule; and a helper, a reviewer, an intake and Ask Daoris's own conversation
 /// never hand over.</para>
 /// </remarks>
@@ -85,7 +88,7 @@ public static class HandOverAskJudge
         var own = state is not null && state.Id == ask.Id ? state : null;
         if (own is { State: HandOverAskStates.Taken or HandOverAskStates.Refused }) return HandOverAskVerdict.Done;
         if (record is null or { Teammate: true }) return HandOverAskVerdict.Refuse(HandOverAskWhy.AskerGone);
-        // Ask Daoris's own conversation is never moved by an ask; only LimitMove's (e) moves it (LIMITGOON2, D205 §3.5(e)).
+        // Ask Daoris's own conversation is never moved by an ask; only the limit move moves it.
         if (record.Serves is not null || record.Opinion is not null || record.Ask is { Length: > 0 } || record.HelpMode is not null)
         {
             return HandOverAskVerdict.Refuse(HandOverAskWhy.AskerUnfit);
@@ -107,8 +110,8 @@ public static class HandOverAskJudge
 public sealed record HandOverDoor(string Harness, bool Present, string? AccountOf);
 
 /// <summary>
-/// The person's order of agents a hand-over goes to (MIXAGENT1c; D191's settling): the roster's order the page's hand-over offer draws
-/// from (MIXAGENT1b-iii's <c>otherToolDoors</c>): the present doors of tools other than the session's own, one per tool, by its first
+/// The person's order of agents a hand-over goes to: the roster's order the page's hand-over offer draws
+/// from (<c>otherToolDoors</c>): the present doors of tools other than the session's own, one per tool, by its first
 /// present door. A TWIN with the page's <c>work/start/handOverOffer.ts</c>, both held to <c>fixtures/hand-over-order.json</c>.
 /// </summary>
 public static class HandOverOrder
@@ -132,7 +135,7 @@ public static class HandOverOrder
     }
 
     /// <summary>
-    /// The entries of the actor a hand-over goes to, in its effective order (D205 §3.5(e), MODELROLE1e): the present doors of an actor's
+    /// The entries of the actor a hand-over goes to, in its effective order: the present doors of an actor's
     /// entries that are on another tool than the session's own, each entry once with its model and effort and the choice it is, so the
     /// offer names it and the start takes <c>handed</c>'s model. An actor <i>as before</i> (no entries of its own: <paramref name="entries"/>
     /// empty, or only the legacy key's) has no order of its own to take, and the roster's order stands (<see cref="Others"/>) with no model.
@@ -167,7 +170,7 @@ public static class HandOverOrder
 public sealed record HandOverStep(string Harness, string? Model, string? Effort, string From);
 
 /// <summary>
-/// The outgoing agent's note as the next agent reads it (MIXAGENT1c; design §2): after Daoris's own record of the session, marked as
+/// The outgoing agent's note as the next agent reads it: after Daoris's own record of the session, marked as
 /// that agent's claim, bounded as a parked session's words are. One wording for a conversation's briefing and a quest's carry-on.
 /// </summary>
 public static class HandOverNote
@@ -179,14 +182,14 @@ public static class HandOverNote
     public static string? Said(string? note) => OutgoingNote.Said(note);
 
     /// <summary>
-    /// The brief's line where the outgoing agent was asked for its closing note and wrote none in its one turn (SESSCTX1c part B, the
-    /// session-context design §2.2): a move never waits more than that turn, so the note is said absent rather than waited for.
+    /// The brief's line where the outgoing agent is asked for its closing note and writes none in its one turn: a move never waits
+    /// more than that turn, so the note is said absent rather than waited for.
     /// </summary>
     public const string Absent = OutgoingNote.Absent;
 
     /// <summary>
-    /// Whether the outgoing agent is asked for one closing note at its turn's end (SESSCTX1c part B, D189's amendment; the design §2.2):
-    /// where the move is the person's press, or a change of agent its own agent asked for and left no note with (MIXAGENT1c's own note
+    /// Whether the outgoing agent is asked for one closing note at its turn's end:
+    /// where the move is the person's press, or a change of agent its own agent asked for and left no note with (its own note
     /// stands for it). Never where the account forces the move (<c>near</c>, <c>limit</c>, <c>curve</c>): that account is near or past
     /// its limit, and each turn's last message is already kept. A reason no box takes never reaches a take.
     /// </summary>
@@ -200,7 +203,7 @@ public static class HandOverNote
         };
 
     /// <summary>
-    /// What the outgoing agent is asked, as one turn of Daoris's, in Daoris's one English (D142 point 6): one line, so a door that takes a
+    /// What the outgoing agent is asked, as one turn of Daoris's, in Daoris's one English: one line, so a door that takes a
     /// line at a time takes it whole.
     /// </summary>
     /// <param name="agent">The agent the conversation goes on with.</param>
@@ -210,7 +213,7 @@ public static class HandOverNote
         + "were doing, what is left, and anything Daoris's record would not show. This is your last turn in this conversation.";
 
     /// <summary>
-    /// The closing note the outgoing agent wrote in its one turn: its last message of the turn, as a turn's outcome is read (the agent's
+    /// The closing note the outgoing agent writes in its one turn: its last message of the turn, as a turn's outcome is read (the agent's
     /// chunks joined, broken by anything but a usage reading), from the events the turn added. Null where it wrote none.
     /// </summary>
     public static string? Written(IReadOnlyList<SessionEvent> turn)
@@ -235,7 +238,7 @@ public static class HandOverNote
     }
 }
 
-/// <summary>The lines an agent's ask to hand over writes on its session's record (MIXAGENT1c), each by its code with facts only.</summary>
+/// <summary>The lines an agent's ask to hand over writes on its session's record, each by its code with facts only.</summary>
 public static class HandOverAskNotes
 {
     /// <summary>It waits for the person's yes or no under the rule's <c>ask</c>, naming the agent it would go on with.</summary>
@@ -247,19 +250,22 @@ public static class HandOverAskNotes
         Noted.Of(PeerNoteCodes.HandOverTaking, $"Its agent asked to hand this session over: it goes on with {agent} once its turn ends.", ("agent", agent));
 
     /// <summary>
-    /// The person asked to hand a quest's session over (HANDOVERSAID1), by the path that made the ask: at a terminal or by the window's
-    /// press. The agent's own ask is <see cref="Asked"/>'s, which waits on their word; theirs is the word.
+    /// Who asked to hand a quest's session over, by the path that made the ask: the person at a terminal or by the window's
+    /// press, or the steward by its granted act. The agent's own ask is <see cref="Asked"/>'s, which waits on their word; theirs is the word.
     /// </summary>
-    public static Noted AskedBy(string by, string agent) => by == HandOverAsker.Terminal
-        ? Noted.Of(PeerNoteCodes.HandOverAskedTerminal, $"You asked at a terminal to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent))
-        : Noted.Of(PeerNoteCodes.HandOverAskedWindow, $"You asked in the window to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent));
+    public static Noted AskedBy(string by, string agent) => by switch
+    {
+        HandOverAsker.Terminal => Noted.Of(PeerNoteCodes.HandOverAskedTerminal, $"You asked at a terminal to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent)),
+        HandOverAsker.Steward => Noted.Of(PeerNoteCodes.HandOverAskedSteward, $"The steward asked to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent)),
+        _ => Noted.Of(PeerNoteCodes.HandOverAskedWindow, $"You asked in the window to hand this session over to {agent}: Daoris takes it at its next look.", ("agent", agent)),
+    };
 
-    /// <summary>It came to nothing before anyone's yes, and why: the rule, the person's no, or what the session or its quest is.</summary>
+    /// <summary>It comes to nothing before anyone's yes, and why: the rule, the person's no, or what the session or its quest is.</summary>
     public static Noted Refused(string why) =>
         Noted.Of(PeerNoteCodes.HandOverRefused, $"Its agent's ask to hand this session over was refused: {HandOverAskWhy.Said(why)}.", ("why", why));
 
     /// <summary>
-    /// A hand-over let go, by the person's yes, their own ask or the rule's <c>on</c>, that Daoris could not take (HANDOVERSAID1): never
+    /// A hand-over let go, by the person's yes, their own ask or the rule's <c>on</c>, that Daoris could not take: never
     /// said as refused, since nobody refused it. Its real reason, and what the session does next: goes on with its own agent, or, where
     /// its quest or tree is gone, nothing goes on with it.
     /// </summary>

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second stand-in's words (AGENTPROVIDER1 row c; the agent-provider design §10): a limit, sign-in and window grammar no real agent
+/// The second stand-in's words: a limit, sign-in and window grammar no real agent
 /// uses, each pattern standing on a sentence or frame its own program prints (<c>Program/agent.mjs</c>), so a reader that matched
 /// another agent's words by habit fails against it. Its recorded sentences carry the program's, with the zone a placeholder as every
 /// table's do.

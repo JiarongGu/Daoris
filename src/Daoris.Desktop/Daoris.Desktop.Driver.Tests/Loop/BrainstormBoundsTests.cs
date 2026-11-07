@@ -5,12 +5,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// BRAINSTORM1b (D176 points 6, 7 and 9): a brainstorm never spends past its bounds or hangs. The generators run side by side
+/// A brainstorm never spends past its bounds or hangs. The generators run side by side
 /// within one deadline that keeps the synthesis's and the challenge's minutes reserved; a pass past its minutes, or the request past
 /// its deadline, is stopped and what answered is kept; a crash fails its pass alone; a limit starts the pass once more on the next
 /// account; a full cap waits within the deadline; the person's stop ends every pass; a restart ends what ran as interrupted and runs
 /// nothing again; and the policy's agents bound the request's. Every turn is a scripted stand-in on a minute shortened to a tenth of
-/// a second, so nothing starts a process (MOD8); the deadline's stop on a real agent is <c>BrainstormProcessTests</c>'.
+/// a second, so nothing starts a process; the deadline's stop on a real agent is <c>BrainstormProcessTests</c>'.
 /// </summary>
 public sealed class BrainstormBoundsTests : IDisposable
 {
@@ -164,8 +164,8 @@ public sealed class BrainstormBoundsTests : IDisposable
     /// <summary>🔴 The generators run side by side: each waits for the other, so in sequence the first would wait out its minutes.</summary>
     /// <remarks>
     /// The generators' window is wide here, as the cap case's is, since the claim is that they run side by side, not the minutes': with the
-    /// default rule's 10 minutes, a second at this test's minute, a loaded run's second generator started after the first's pass was spent,
-    /// and the first read <c>failed</c> (FLAKE1, three times on 2026-10-25).
+    /// default rule's 10 minutes, a second at this test's minute, a loaded run's second generator could start after the first's pass
+    /// is spent, and the first would read <c>failed</c>.
     /// </remarks>
     [Fact]
     public async Task The_generators_run_side_by_side_within_one_deadline()
@@ -216,7 +216,7 @@ public sealed class BrainstormBoundsTests : IDisposable
 
         var look = LookAsync(driver);
         await entered.Task.WaitAsync(Poll.Patience);
-        // BRAINBOUNDCLOCK1: spend the hanging generator's own limit, then hold the later stages' reserve through any machine load.
+        // Spend the hanging generator's own limit, then hold the later stages' reserve through any machine load.
         var armed = clock.Pending.Contains(clock.GetUtcNow() + 10 * Minute);
         clock.Advance(10 * Minute);
         await look.WaitAsync(Poll.Patience);
@@ -259,9 +259,9 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_synthesis_past_its_minutes_leaves_the_proposals_unranked_saying_why()
     {
-        // FLAKE1: the synthesis must start and then hang past its minutes, so its window is wide enough to start in. At two minutes of
-        // 100 ms a loaded machine let the window pass before the synthesis first asked for its slot, which the deadline answers first,
-        // and the pass read `cap-full` instead of `timed-out` (candidate def1fa9, green alone three times). The request's own bound stays
+        // The synthesis must start and then hang past its minutes, so its window is wide enough to start in. At two minutes of
+        // 100 ms a loaded machine can let the window pass before the synthesis first asks for its slot, which the deadline answers first,
+        // and the pass would read `cap-full` instead of `timed-out`. The request's own bound stays
         // past the generators' and the synthesis's together, so the synthesis's end is its own.
         var (driver, script) = Start(rule: Rule(synthesis: 20, request: 60));
         var id = await SentAsync(driver, "stub", "acp-stub");
@@ -283,8 +283,8 @@ public sealed class BrainstormBoundsTests : IDisposable
     [Fact]
     public async Task A_crash_fails_its_pass_alone_and_the_rest_is_ranked()
     {
-        // FLAKE1: nothing here is about a deadline, so the passes' and the synthesis's are held far past the work; at the default
-        // ten minutes of 100 ms a loaded machine let the synthesis's end first, and the answers were left unranked (candidate 48d4522).
+        // Nothing here is about a deadline, so the passes' and the synthesis's are held far past the work; at the default
+        // ten minutes of 100 ms a loaded machine can let the synthesis's end first, and the answers would be left unranked.
         var (driver, script) = Start(rule: Rule(pass: 100, synthesis: 100, request: 300));
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Answers["g1"] = Give("Make the window inclusive");
@@ -328,8 +328,8 @@ public sealed class BrainstormBoundsTests : IDisposable
     /// <summary>🔴 A full cap waits: on a cap of one, the second generator starts when the first lets its slot go.</summary>
     /// <remarks>
     /// The generators' window is wide here (the request's 300 minutes less the synthesis's and the challenge's), since the claim is the
-    /// cap's, not the deadline's: with the default rule's 10 minutes, a second at this test's minute, a loaded run's first pass used it up
-    /// and the second read <c>cap-full</c> (FLAKE1, three times by 2026-10-25); the deadline's own case is the cap-full case below.
+    /// cap's, not the deadline's: with the default rule's 10 minutes, a second at this test's minute, a loaded run's first pass could use
+    /// it up and the second would read <c>cap-full</c>; the deadline's own case is the cap-full case below.
     /// </remarks>
     [Fact]
     public async Task A_full_cap_waits_and_the_next_pass_runs_when_a_slot_is_free()
@@ -352,7 +352,7 @@ public sealed class BrainstormBoundsTests : IDisposable
     }
 
     /// <summary>
-    /// CAPCOUNT1 (D130's note): the cap counts what the driver starts. On a cap of one a driven session in the look holds the only slot
+    /// The cap counts what the driver starts. On a cap of one a driven session in the look holds the only slot
     /// and no brainstorm begins; a conversation the person holds (Ask Daoris's, here) holds none, and its passes run in turn.
     /// </summary>
     [Fact]
@@ -393,13 +393,13 @@ public sealed class BrainstormBoundsTests : IDisposable
 
     /// <summary>
     /// 🔴 The person's stop ends every pass that runs and keeps what answered: no synthesis, and the document is the validated
-    /// proposals, unranked, saying it was stopped.
+    /// proposals, unranked, saying it is stopped.
     /// </summary>
     [Fact]
     public async Task The_person_s_stop_ends_every_pass_and_keeps_what_answered()
     {
-        // FLAKE1: the stop is pressed after 100 ms, so the pass's own deadline is held far past it; at the default ten minutes of
-        // 100 ms a loaded machine let the deadline end the pass first, `failed`/`deadline` in place of the person's stop.
+        // The stop is pressed after 100 ms, so the pass's own deadline is held far past it; at the default ten minutes of
+        // 100 ms a loaded machine can let the deadline end the pass first, `failed`/`deadline` in place of the person's stop.
         var (driver, script) = Start(rule: Rule(pass: 100, request: 300));
         var id = await SentAsync(driver, "stub", "acp-stub");
         script.Answers["g1"] = Give("Make the window inclusive");

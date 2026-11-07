@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDSYNC2 (D87's 2026-10-15 amendment point 7) through REAL ticks, one case per door a session goes on by in a tree that stands:
-/// a resume (D79), a further part gone into its session's tree (SESSONE1d), a carry-on after a cut-off (D80), and the person's words
-/// going on in the session's own conversation (ANSWER1a, MSG1b). Each time the session's first commit reached the line by a squash
-/// while it was away; its next run starts on the line, and is told so. A real process (node) and a stand-in service on a loopback
+/// Through REAL ticks, one case per door a session goes on by in a tree that stands:
+/// a resume, a further part gone into its session's tree, a carry-on after a cut-off, and the person's words
+/// going on in the session's own conversation. Each time the session's first commit reaches the line by a squash
+/// while it is away; its next run starts on the line, and is told so. A real process (node) and a stand-in service on a loopback
 /// port, the shapes <see cref="AskAndWaitTickTests"/> and <see cref="AnswerContinuesTickTests"/> use; no model and no account.
 /// </summary>
 /// <remarks>The repository has no <c>origin</c>, so nothing is fetched and nothing is said of a fetch: the line here is the line.</remarks>
@@ -44,7 +44,7 @@ public sealed class StartInSyncTickTests : IDisposable
 
     private JsonObject[] Runs() => [.. File.ReadAllLines(Log).Select(line => JsonNode.Parse(line)!.AsObject())];
 
-    /// <summary>A resume (D79): the session asked and waited; its commit was squash-merged meanwhile; resumed, it starts on the line.</summary>
+    /// <summary>A resume: the session asked and waited; its commit is squash-merged meanwhile; resumed, it starts on the line.</summary>
     [Fact]
     public async Task A_resumed_session_starts_on_the_line_that_took_its_commit_and_is_told()
     {
@@ -64,7 +64,7 @@ public sealed class StartInSyncTickTests : IDisposable
         Assert.Equal("Done", service.Status("q1"));
     }
 
-    /// <summary>A further part (SESSONE1d) gone into its session's tree, whose first part's commit the line came to hold, starts on the line.</summary>
+    /// <summary>A further part gone into its session's tree, whose first part's commit the line came to hold, starts on the line.</summary>
     [Fact]
     public async Task A_further_part_gone_into_its_sessions_tree_starts_on_the_line_and_is_told()
     {
@@ -92,7 +92,7 @@ public sealed class StartInSyncTickTests : IDisposable
         Assert.Equal(Rev("main"), part["head"]!.GetValue<string>());
     }
 
-    /// <summary>A carry-on (D80): the session took the quest, committed, and failed before closing it; carried on, it starts on the line.</summary>
+    /// <summary>A carry-on: the session took the quest, committed, and failed before closing it; carried on, it starts on the line.</summary>
     [Fact]
     public async Task A_carry_on_after_a_cut_off_starts_on_the_line_and_is_told()
     {
@@ -114,7 +114,7 @@ public sealed class StartInSyncTickTests : IDisposable
     }
 
     /// <summary>
-    /// SYNCMERGE1b (D178 point 3): a carry-on of a session whose take lost, once the person brought its work forward. The session that
+    /// A carry-on of a session whose take lost, once the person brings its work forward. The session that
     /// carried the cut-off on stood down in its tree when its take lost, and the line came to hold the tree's commit meanwhile; once the
     /// claim names the bring-forward, that stand-down goes on in the tree, from the line, told the press and never its stop's words.
     /// </summary>
@@ -153,7 +153,7 @@ public sealed class StartInSyncTickTests : IDisposable
     }
 
     /// <summary>
-    /// The person's words going on in the session's own conversation (ANSWER1a, MSG1b): no instruction is handed again, so what the
+    /// The person's words going on in the session's own conversation: no instruction is handed again, so what the
     /// start did with the tree is said after the words, in the same prompt, and the conversation goes on from the line.
     /// </summary>
     [Fact]
@@ -250,7 +250,7 @@ public sealed class StartInSyncTickTests : IDisposable
     }
 
     /// <summary>
-    /// The pipe door's stand-in harness: it writes down where it ran, what it was handed and the commit its tree stood on. A first
+    /// The pipe door's stand-in harness: it writes down where it ran, what it is handed and the commit its tree is on. A first
     /// start takes the quest and commits the fix in its tree, then asks `backend` and waits (<c>ask</c>) or fails before closing it
     /// (<c>fail</c>); a resume or a carry-on closes it; a further part only says where it ran.
     /// </summary>

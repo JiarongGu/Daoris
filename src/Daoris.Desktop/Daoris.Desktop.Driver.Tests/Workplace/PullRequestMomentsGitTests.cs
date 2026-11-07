@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END6 over real git (the counted half is <see cref="PullRequestMomentsTests"/>): Daoris's push asks once and fetches nothing
+/// Over real git (the counted half is <see cref="PullRequestMomentsTests"/>): Daoris's push asks once and fetches nothing
 /// after its press's fetch; the platform squash-merges with the line moving on, so git alone cannot tell; the person's fetch moves
 /// origin's line, the ref watch tells the moments, the plugin answers completed, and the repository's ends are judged again at once,
 /// so the landing's end is held on the pull request's word with nobody pressing anything. The plugin is faked on its channel, the
@@ -20,7 +20,7 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
 
     private int _asked;
 
-    // Each branch the platform was asked about, in order (FABRIC-END6d).
+    // Each branch asked of the platform, in order.
     private readonly List<string> _askedOf = [];
 
     private DateTimeOffset _now = DateTimeOffset.UtcNow;
@@ -98,13 +98,13 @@ public sealed class PullRequestMomentsGitTests : LandedFixture
         Assert.NotNull(held);
         Assert.Equal((EndBy.PullRequest, source, "origin/main"), (held!.By, held.Tip, held.On));
 
-        // The judgement's echo told the moments again: origin's line stands where it was, so nothing more is asked.
+        // The judgement's echo told the moments again: origin's line has not moved, so nothing more is asked.
         await Step(moments);
         Assert.Equal(2, _asked);
     }
 
     /// <summary>
-    /// FABRIC-END6c, finding 4: the person's fetch that changed nothing moves no line for the ref watch to hear, and is still a fetch: git's
+    /// The person's fetch that changed nothing moves no line for the ref watch to hear, and is still a fetch: git's
     /// <c>FETCH_HEAD</c> says when, which a later Daoris reads as this one does.
     /// </summary>
     [Fact]

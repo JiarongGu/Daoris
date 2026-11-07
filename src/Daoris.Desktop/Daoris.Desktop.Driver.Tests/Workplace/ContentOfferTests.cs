@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SQUASHTIDY1b (D102's SQUASHTIDY1b note): what an ended session's tree offers, judged over real git, where a squash merge or
-/// a cherry-pick holds its work by content. LAND4 offered *Accept…* by ancestry alone, so a session a squash-merged pull request
-/// already carried was offered a landing that would make a branch of work already on the line. Now the reader asks
-/// SQUASHTIDY1c's proof, with its guarantees: one judged id, no holder a landing made here, and a tree that holds what no
+/// What an ended session's tree offers, judged over real git, where a squash merge or
+/// a cherry-pick holds its work by content. Ancestry alone would offer *Accept…* to a session a squash-merged pull request
+/// already carries, a landing that would make a branch of work already on the line. The reader asks
+/// the content proof, with its guarantees: one judged id, no holder a landing made here, and a tree that holds what no
 /// commit does stays. Real git in a scratch repository, so this is the suite's Process half; nothing reaches a network.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -85,7 +85,7 @@ public sealed class ContentOfferTests : LandedFixture
     }
 
     /// <summary>
-    /// SQUASHTIDY1c's guarantee: a branch a landing made and recorded here never vouches for a session's work by content, since
+    /// A branch a landing made and recorded here never vouches for a session's work by content, since
     /// the clean-up removes it on its own proof. The redo reads as that branch's file, and is offered its landing as before.
     /// </summary>
     [Fact]
@@ -106,7 +106,7 @@ public sealed class ContentOfferTests : LandedFixture
     }
 
     /// <summary>
-    /// SQUASHTIDY1c's guarantee: an ignored file only the session's tree holds keeps the tree, so no unforced discard is offered.
+    /// An ignored file only the session's tree holds keeps the tree, so no unforced discard is offered.
     /// Nor a landing, since its commits are on the line: the line says where its work is and why its tree stays.
     /// </summary>
     [Fact]
@@ -127,7 +127,7 @@ public sealed class ContentOfferTests : LandedFixture
         Assert.Null(row.Discards.KeptAt);
         Assert.StartsWith("Its work is on `main` by content (a squash merge). Its tree stays: ", row.Discards.Says);
         Assert.Contains("local.db", row.Discards.Says);
-        // Judging wrote nothing: the branch and its commits are where they were, and no recovery ref was made.
+        // Judging writes nothing: the branch and its commits stay, and no recovery ref is made.
         Assert.Contains(tree.Branch, await GitAsync(root, "branch", "--list", "daoris/*"));
         Assert.Equal("", (await GitAsync(root, "for-each-ref", "refs/daoris/")).Trim());
     }

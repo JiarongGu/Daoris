@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris workflow skip|stop</c> was asked (FABRIC-CUTOVER1f): the act, the run, its node and the person's words.</summary>
+/// <summary>What <c>daoris workflow skip|stop</c> asks: the act, the run, its node and the person's words.</summary>
 /// <param name="Act">One of <see cref="NodeWordActs"/>.</param>
 /// <param name="Run">The run, as its binding names it and <c>workflow run</c> prints it.</param>
 /// <param name="Node">The node's id in the run's graph.</param>
@@ -8,14 +8,13 @@ namespace Daoris.Driver;
 public sealed record WorkflowNodeAsk(string Act, string Run, string Node, string? Words);
 
 /// <summary>
-/// <c>daoris workflow skip &lt;run&gt; &lt;node&gt; "…"</c> and <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c> (FABRIC-CUTOVER1f; D190
-/// point 6, the cutover design §5.2, D50): the terminal's twin of the run's view's presses, the person's word on a node of a run bound to a graph
+/// <c>daoris workflow skip &lt;run&gt; &lt;node&gt; "…"</c> and <c>workflow stop &lt;run&gt; &lt;node&gt; ["…"]</c>: the terminal's twin of the run's view's presses, the person's word on a node of a run bound to a graph
 /// version, kept on the run's record by <see cref="RunNodeWords.Word"/>, which the page's <c>WORKFLOW_NODE</c> calls too, and applied by
 /// Daoris's next look.
 /// </summary>
 /// <remarks>
-/// <para><b>The person's press</b> (RPC1e, D156 §4.2): where Daoris runs, it is sent to it and confirmed in its window, the route answering
-/// this verb's own lines; alone, it is refused from a session's terminal (D194 point 5), and otherwise keeps the word under the home's lease,
+/// <para><b>The person's press</b>: where Daoris runs, it is sent to it and confirmed in its window, the route answering
+/// this verb's own lines; alone, it is refused from a session's terminal, and otherwise keeps the word under the home's lease,
 /// which the host holds for it (<see cref="VerbLeases"/>).</para>
 /// <para>Exit codes are the family's: 0 kept · 1 refused (a word the run or the table does not take, a session's terminal, the person's no in
 /// the window) · 2 the usage, or a Daoris that did not answer.</para>
@@ -57,7 +56,7 @@ public static class WorkflowNodeCommand
 
     /// <summary>
     /// The press acting in this process: refused from a session's terminal; else the door's own path, its sentence printed. A stop reads the
-    /// integration record through <paramref name="door"/> (the home's where none is handed), as the page's route does (INTEGRATE1n part n3, F50).
+    /// integration record through <paramref name="door"/> (the home's where none is handed), as the page's route does.
     /// </summary>
     private static async Task<int> AloneAsync(
         WorkflowNodeAsk ask, NodeRecordFiles records, TextWriter output, Func<string, string?> environment, Func<DateTimeOffset>? clock, IIntegrationDoor? door,

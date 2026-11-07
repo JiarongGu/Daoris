@@ -9,7 +9,7 @@ import { WaitStrip } from './WaitStrip';
 import { waitObligation, waitObligations } from './waitObligations';
 import { type Wait, waitsOf } from './waits';
 
-// COMMS1j (the comms design §4.1 clause 3, §7): one key per obligation drives the foot, the bell and *Notifications*, so one wait is
+// One key per obligation drives the foot, the bell and *Notifications*, so one wait is
 // counted once in every place it shows. The rows below are the ones .NET pushes for the same waits (`NeedsAPerson`): a park on a
 // go-ahead its session asked, or on its agent's ask to hand it over, is that one row and never a parked row beside it.
 

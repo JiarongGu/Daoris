@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A declaration's <c>verification</c> runner (D192's key): its command, its folder, whether it is clock-bound and whether it answers by file.</summary>
+/// <summary>A declaration's <c>verification</c> runner: its command, its folder, whether it is clock-bound and whether it answers by file.</summary>
 internal sealed record VerifyRunner(string Run, string? Cwd, bool Clock, bool Result)
 {
     internal static VerifyRunner? Of(string? text)
@@ -26,7 +26,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
     {
         Directory.CreateDirectory(_folder);
         if (send.Accepted is null) return (Unknown("no gates are accepted for this repository's verification, so nothing runs until the person accepts them"), false);
-        // The declaration is read as git objects at the commit, the blob the person accepted (the pipeline design §4.2), never a tree's file.
+        // The declaration is read as git objects at the commit, the blob the person accepted, never a tree's file.
         var (listed, entry, problem) = await WorkingTree.GitAsync(send.Checkout, ["ls-tree", "--full-tree", "-z", send.Commit, "--", HeavyGates.FileName], ct).ConfigureAwait(false);
         if (listed != 0) return (Unknown($"git could not read {TextBounds.ShortCommit(send.Commit, 7)} here: {problem.Trim()}"), false);
         var parts = entry.Split('\t', 2)[0].Split(' ');
@@ -67,7 +67,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
 
         if (chosen.Count == 0) return (Unknown("the accepted declaration marks no heavy gate, so the check shows nothing"), false);
 
-        // The pipeline design §4.7: a batch runs the gates its changed paths reach and those owed; the rest are named as kept. Where git cannot
+        // A batch runs the gates its changed paths reach and those owed; the rest are named as kept. Where git cannot
         // say what changed, every gate runs.
         IReadOnlyList<VerifyGate> kept = [];
         if (send.Reach is { } reach && await GateReach.ChangedAsync(send.Checkout, reach.Base, send.Commit, ct).ConfigureAwait(false) is { } changed)
@@ -159,7 +159,7 @@ internal sealed class VerifyExecution(string home, VerifySend send, CandidateJob
         await WorkingTree.GitAsync(send.Checkout, ["worktree", "lock", "--reason", PassLeftovers.HeldBy(Environment.ProcessId), tree], ct).ConfigureAwait(false);
     }
 
-    /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run was ended before it.</summary>
+    /// <summary>One command in the job, composed from the driver's environment; its exit, or null where the run is ended before it.</summary>
     private async Task<int?> StepAsync(
         string run, string folder, IReadOnlyList<string> running, IReadOnlyDictionary<string, string> inputs, string log, bool clock, CancellationToken ct)
     {

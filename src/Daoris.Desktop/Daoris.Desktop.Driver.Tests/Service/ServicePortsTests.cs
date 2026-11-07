@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The two ports the service declares and the workplace answers (FOUNDATION1 mod-iv): the workplace's git read for the remote sync and its
+/// The two ports the service declares and the workplace answers: the workplace's git read for the remote sync and its
 /// lock let go when a session's record ends. The workplace installs both when the driver's assembly loads, so a sync and a client read and
 /// release as they always did; a test may put another in and puts it back.
 /// </summary>

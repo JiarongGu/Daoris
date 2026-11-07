@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one boundary for words that may hold a secret (GITAUTH1a, D198 point 16; the git-auth design §10), its table row by row, and
-/// the transport's words each failure class is read from (§5.1).
+/// The one boundary for words that may hold a secret, its table row by row, and
+/// the transport's words each failure class is read from.
 /// </summary>
 /// <remarks>
 /// Every secret here is assembled at run time, as <c>SensitiveGateTests</c> assembles its own: the sensitive gate scans this file, and a

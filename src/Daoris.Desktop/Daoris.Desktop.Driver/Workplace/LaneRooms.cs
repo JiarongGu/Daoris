@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rooms a repository's lanes file declares (the tree-pool design's R5.3). A lane that carries <c>builds</c> or a
+/// The rooms a repository's lanes file declares. A lane that carries <c>builds</c> or a
 /// <c>room</c> is a room: its own, by its id, or the one its <c>room</c> names, so lanes keep their names and are one room. A laneless
 /// group that names a room is part of it. A lane or a group that is neither is said to be in none, and a repository whose entries are
 /// all neither declares no rooms. Read from the lanes file's text; the lanes' own rules are the registration's

@@ -22,6 +22,27 @@ internal static class StewardTargets
     }
 
     /// <summary>
+    /// Whether the session's quest is held by what only the owner releases, which a hand-over from it would release: a stop that is
+    /// not the steward's own of this run, an outage past its tries, the strikes, a pause, or a role policy's bound. The record is read
+    /// beside the planner's verdict, since it may have ended so after the last look.
+    /// </summary>
+    public static async Task<bool> OwnerHeldAsync(RoleActRun run, PriorSession record, CancellationToken ct)
+    {
+        var own = record.Quest is { } quest && string.Equals(run.Judge.StewardStopOf(quest), record.Session, StringComparison.Ordinal);
+        if (record.PersonStopped && !(record.StewardStopped && own)) return true;
+        if (record.NoteParts?.Any(part => part.Code == EndNoteCodes.EndedTransient.Code) == true) return true;
+        if (run.World is not { } world) return false;
+        var verdict = (await world.VerdictsAsync(ct).ConfigureAwait(false))
+            .FirstOrDefault(each => string.Equals(each.Quest.Id, record.Quest, StringComparison.OrdinalIgnoreCase));
+        return verdict switch
+        {
+            { Verdict: StartVerdict.Stopped, HeldBy: { } stop } => !(stop.StewardStopped && own && stop.Session == record.Session),
+            { Verdict: StartVerdict.Stopped or StartVerdict.TransientHeld or StartVerdict.Exhausted or StartVerdict.Paused or StartVerdict.PolicyHeld } => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>
     /// A tree's landing, which never pushes to a remote: its plan, read through the landing's own open route, names no plugin that
     /// pushes the branch once it is made. A plan that cannot be read is no plan that pushes nothing, so the act is refused.
     /// </summary>

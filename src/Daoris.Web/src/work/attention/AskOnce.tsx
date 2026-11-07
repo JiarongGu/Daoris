@@ -10,7 +10,7 @@ import { TaskPress } from '../../workflow/task/TaskPress';
 import type { Attention } from './AttentionRow';
 
 /**
- * The question an act asks once under its row (D41 §4): what the second press will do, then the move and *Never mind*.
+ * The question an act asks once under its row: what the second press will do, then the move and *Never mind*.
  * A folder's trust is the agent's own question (`TrustAsk`); a go-ahead's yes or no takes the person's words; a choice of
  * receiver is the workspace's receivers. Named by the act's own label, so a person and a test find it as the press they made.
  */
@@ -29,7 +29,7 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
   onGrant: (answered: Answered) => void;
 }) {
   const { t } = useTranslation();
-  // NODEKIT1 HUMAN: a person's task's press asks as its run's view asks it, with the note the person may give.
+  // A person's task's press asks as its run's view asks it, with the note the person may give.
   const task = taskActOf(act);
   if (task) {
     return (
@@ -51,16 +51,16 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
     );
   }
   const answering = act === 'approve' || act === 'refuse';
-  // A *not yet* needs words: they are what the set-up step's session acts on (REVIEWENV1g, design §3.3).
+  // A *not yet* needs words: they are what the set-up step's session acts on.
   const notYet = act === 'not-yet';
-  // *Go on anyway…* says what stays unsettled, and takes words the person may give (XAGENT1g, the second-agent design §8.5).
+  // *Go on anyway…* says what stays unsettled, and takes words the person may give.
   const anyway = act === 'opinion-anyway' && item.opinion ? item.opinion.opinion : null;
-  // INTEGRATE1o part o3: passing a run's declined request over needs the person's words, which the run's record keeps with the skip.
+  // Passing a run's declined request over needs the person's words, which the run's record keeps with the skip.
   const passOver = act === 'pass-over';
-  // INTEGRATE1p (C33): a declined request of the run's own, asked again (nothing to say) or gone on without (the person's words).
+  // A declined request of the run's own, asked again (nothing to say) or gone on without (the person's words).
   const askAgain = act === 'ask-again';
   const goOn = act === 'go-on';
-  // SESSWATCH1a: what ending a quiet session does, and that the person's waiting words go to the next part (§5.2).
+  // What ending a quiet session does, and that the person's waiting words go to the next part.
   const quietAsk = act === 'quiet-carry-on' || act === 'quiet-stop';
   const quietSays = act === 'quiet-carry-on' ? 'work.attention.ask.carryOn'
     : item.quiet?.intake ? 'work.attention.ask.quietStopIntake' : 'work.attention.ask.quietStop';
@@ -79,7 +79,7 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
     : act === 'approve'
       ? t('work.attention.ask.approve', { id: item.ask ?? '' })
       : act === 'refuse'
-        // GOAHEADSTALE1: a stale one's refusal sends no session on, since none waits for it.
+        // A stale one's refusal sends no session on, since none waits for it.
         ? t(item.stale ? 'work.attention.ask.refuseStale' : 'work.attention.ask.refuse', { id: item.ask ?? '' })
         : act === 'accept-rule'
           ? t('work.attention.ask.acceptRule', { change: item.title })
@@ -109,7 +109,7 @@ export function AskOnce({ act, item, label, busy, words, onWords, choice, onChoi
   const wordsLabel = answering ? t('asks.goAhead.words') : anyway ? t('opinion.ask.words') : notYet ? t('review.ask.notYetWords')
     : passOver ? t('workflow.run.node.skipWords') : goOn ? t('workflow.run.node.goOnWords') : null;
   return (
-    // Only a refusal ends or removes something (platform UX §4): every other ask here is outward and loses nothing.
+    // Only a refusal ends or removes something: every other ask here is outward and loses nothing.
     <InlineConfirm
       className="mt-2"
       tone={act === 'refuse' || quietAsk ? 'danger' : 'primary'}

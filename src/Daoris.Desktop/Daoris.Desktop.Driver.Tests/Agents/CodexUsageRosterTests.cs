@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CODEXUSE1 through the roster: where a door carries none of its agent's windows, a start's walk over a list asks each
+/// Through the roster: where a door carries none of its agent's windows, a start's walk over a list asks each
 /// listed account's windows of the agent's own server and keeps them in <c>windows.json</c> as a door's frame is kept, so
 /// switching before the limit, the start's line of what each account said, <c>daoris agent list</c> and the page read a
 /// Codex account as they read a Claude Code one. A person's press reads them too; a look never does.
@@ -25,7 +25,7 @@ public sealed class CodexUsageRosterTests : IDisposable
     private readonly List<string> _asked = [];
 
     // What each account's server answers: its readings, or null where it cannot be had (a refusal, a timeout, no binary). The
-    // tool's own sign-in answers under its own key, `AccountWindows.Own` (CODEXUSE3).
+    // tool's own sign-in answers under its own key, `AccountWindows.Own`.
     private readonly Dictionary<string, IReadOnlyList<WindowReading>?> _answers = new(StringComparer.OrdinalIgnoreCase);
 
     public CodexUsageRosterTests()
@@ -54,7 +54,7 @@ public sealed class CodexUsageRosterTests : IDisposable
     private HarnessRoster Roster(UsageQuestion? question = null) =>
         new(TestDoors.Registry(new Dictionary<string, Provider>(StringComparer.OrdinalIgnoreCase)
         {
-            // The agent declares no question of its own and has no door of its own here: its door asks for it (AGT7), as
+            // The agent declares no question of its own and has no door of its own here: its door asks for it, as
             // `codex-acp` does for `codex`.
             ["fake"] = Adapter("fake", Toolchain()),
             ["fake-door"] = Adapter("fake-door", Toolchain(question ?? Question, accountOf: "fake")),
@@ -101,7 +101,7 @@ public sealed class CodexUsageRosterTests : IDisposable
 
         Assert.Equal(["fake/account-1", "fake/account-2"], Asked().Order(StringComparer.Ordinal));
         Assert.Equal("account-2", selection.Profile);
-        // Near reads the number against the scope's curve now (SWITCH1b-ii), whichever window it is in: three sevenths of the
+        // Near reads the number against the scope's curve now, whichever window it is in: three sevenths of the
         // week gone, the smart curve stands at 63% of it.
         Assert.Equal(WalkStep.Near, selection.Choice?.Step);
         Assert.Equal("`account-1` has used 95% of its weekly limit, over its curve's 63%", selection.Choice?.Clause);
@@ -160,7 +160,7 @@ public sealed class CodexUsageRosterTests : IDisposable
         await StartAsync(roster);
         Assert.Equal(2, Asked().Length);
 
-        // Past its floor, a reading far from its curve and read within the interval is not asked (USAGEPROBE1); an account
+        // Past its floor, a reading far from its curve and read within the interval is not asked; an account
         // never read is.
         _now += TimeSpan.FromSeconds(2);
         await StartAsync(roster);
@@ -174,10 +174,10 @@ public sealed class CodexUsageRosterTests : IDisposable
     [Fact]
     public async Task A_Claude_kind_question_is_asked_again_after_its_minute_floor_not_Codex_s_five_minutes()
     {
-        // A set of two, which a reading can choose between (USAGEONE1); the second far from its curve, so asked once.
+        // A set of two, which a reading can choose between; the second far from its curve, so asked once.
         Accounts("account-1", "account-2");
         Wire(s => s.WithRotation("fake", ["account-1", "account-2"]));
-        // Within the margin of its session's curve, so a start past the floor asks it again (USAGEPROBE1).
+        // Within the margin of its session's curve, so a start past the floor asks it again.
         Answers("account-1", 0.85, 0.10);
         Answers("account-2", 0.10, 0.10);
         var roster = Roster(new ClaudeUsageQuestion("fake", ["fake-agent"], CodexUsage.Question.Recorded));
@@ -195,8 +195,8 @@ public sealed class CodexUsageRosterTests : IDisposable
     }
 
     /// <summary>
-    /// A start, then a look that finds its session ended: a start chosen on an account is one of its sessions until a look
-    /// (TOOL6b), and an account a session runs on is not asked (TOOL6g).
+    /// A start, then a look that finds its session ended: a start chosen on an account is one of its sessions until a look,
+    /// and an account a session runs on is not asked.
     /// </summary>
     private async Task StartAsync(HarnessRoster roster)
     {
@@ -223,8 +223,8 @@ public sealed class CodexUsageRosterTests : IDisposable
     }
 
     /// <summary>
-    /// Rewritten by POOL1a2 (D197 point 1): an account no list held was asked nothing, being one no start could take. Every account
-    /// of Daoris's is in the set now, so the one the stored list left out is asked as any other ready account the start could take.
+    /// Every account
+    /// of Daoris's is in the set, so the one the stored list left out is asked as any other ready account the start could take.
     /// </summary>
     [Fact]
     public async Task Nothing_is_asked_of_a_cooling_a_key_a_signed_out_or_a_busy_account()
@@ -274,13 +274,13 @@ public sealed class CodexUsageRosterTests : IDisposable
         Assert.Equal(["fake/account-1", "fake/account-2"], Asked().Skip(1).Order(StringComparer.Ordinal));
         Assert.Equal(0.30, AccountWindows.SaidOf(_home, "fake", "account-1", _now)!.Of("weekly")!.Used);
 
-        // A look reads what was kept and asks nothing.
+        // A look reads what is kept and asks nothing.
         await roster.ReportAsync("fake-door", Config);
         Assert.Equal(3, Asked().Length);
     }
 
     /// <summary>
-    /// POOL1a3 (D197 point 3, amending CODEXUSE3; Fable's F2): no press reads the tool's own sign-in's windows, an agent's
+    /// No press reads the tool's own sign-in's windows, an agent's
     /// <i>Read again</i>, an account's or the roster's read-all; each reads Daoris's accounts alone, and nothing is kept under the
     /// own sign-in's key. A look asks nothing.
     /// </summary>
@@ -307,7 +307,7 @@ public sealed class CodexUsageRosterTests : IDisposable
     }
 
     /// <summary>
-    /// CODEXUSE3: the own sign-in's reading moves nothing. A start's walk never asks it, never weighs it, and never runs on
+    /// The own sign-in's reading moves nothing. A start's walk never asks it, never weighs it, and never runs on
     /// it: an account near its limit is still the start's, and one cooling still waits, however much a reading kept from
     /// before says the own sign-in has left. And no list is written by a press.
     /// </summary>
@@ -355,7 +355,7 @@ public sealed class CodexUsageRosterTests : IDisposable
             adapters.Names.Where(name => adapters.AgentNamed(name) is { Usage: not null }).Order(StringComparer.Ordinal));
         Assert.Same(UsageReads.Of(CodexUsage.Question), roster.UsageOf("codex-acp"));
         Assert.Same(UsageReads.Of(ClaudeUsage.Question), roster.UsageOf("claude-code"));
-        // The protocol door reads its owner's (AGT7).
+        // The protocol door reads its owner's.
         Assert.Same(UsageReads.Of(ClaudeUsage.Question), roster.UsageOf("claude-code-acp"));
         Assert.True(roster.Speaks("codex-acp"));
         Assert.True(roster.Speaks("claude-code-acp"));

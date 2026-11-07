@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iv part a (D212; the foundation design §3.3, §13.4 steps 1 to 4, §19.4): the driven carry-on keeps its move record, as the live
-/// limit move does since row f-ii. Decided at <c>old-ended</c>, the session it goes on from having ended already; <c>opening</c> under the key
+/// The driven carry-on keeps its move record, as the live
+/// limit move does. Decided at <c>old-ended</c>, the session it goes on from having ended already; <c>opening</c> under the key
 /// its keyed open is sent with; <c>opened</c> with every word the open moved, by its id on the new part; <c>delivering</c> and the prompt's mark
 /// before the take; each handed word's <c>sent</c> where today's take returns, then the reading that closes it <c>delivered</c>. A carry-on the
-/// quest's hand-over made keeps none (row f-v's); a standing move on the record holds the carry-on, which writes no second move; a carry-on that
+/// quest's hand-over made keeps none of its own; a standing move on the record holds the carry-on, which writes no second move; a carry-on that
 /// goes no further than its open is ended by its phase, its record closed.
 /// </summary>
 /// <remarks>
@@ -39,7 +39,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         new(_home, new ServiceClient("http://carry-on.test", null), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             store: Store(run), said: _said, scope: MoveTakeUpScope.LeaseHolder);
 
-    /// <summary>The driven holder of a <c>--share</c> loop (SHAREMOVES1): the same store, handed the scope of only the lines the loop runs.</summary>
+    /// <summary>The driven holder of a <c>--share</c> loop: the same store, handed the scope of only the lines the loop runs.</summary>
     private ConversationMoves SharedHolder(string run, Func<string, bool> lines) =>
         new(_home, new ServiceClient("http://carry-on.test", null), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)),
             store: Store(run), said: _said, scope: MoveTakeUpScope.Shared(lines));
@@ -86,7 +86,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
         var word = Assert.Single(Store("run-probe").WordsOf(delivering.Id));
         Assert.Equal(("w1", (string?)null), (word.Word, word.Disposition));
 
-        // FOUNDATION1f-iv part b: the door's write return writes the word's `sent`, then the take is made, then the reading closes the move.
+        // The door's write return writes the word's `sent`, then the take is made, then the reading closes the move.
         List<string?> seen = [];
         record.Handed(["opens-s1/w1"], async () =>
         {
@@ -105,7 +105,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part b: the write's return is told once however many doors tell it (the protocol door's first prompt and a transient
+    /// 🔴 The write's return is told once however many doors tell it (the protocol door's first prompt and a transient
     /// try's write both do): <c>sent</c> is written once and the take is made once.
     /// </summary>
     [Fact]
@@ -133,8 +133,8 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part b: a record whose prompt was never written is ended by its phase and makes no take, however the take was handed:
-    /// the word was not sent, so it waits on the new part for its own go-on.
+    /// 🔴 A record whose prompt is never written is ended by its phase and makes no take, however the take is handed:
+    /// the word is not sent, so it waits on the new part for its own go-on.
     /// </summary>
     [Fact]
     public async Task A_prompt_never_written_makes_no_take_and_leaves_the_word_unsent()
@@ -162,7 +162,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// SHAREMOVES1: a shared loop's look takes up a dead run's move of a line it runs and leaves another line's standing, for the lease holder's
+    /// A shared loop's look takes up a dead run's move of a line it runs and leaves another line's standing, for the lease holder's
     /// look, which takes up every dead run's driven move.
     /// </summary>
     [Fact]
@@ -186,7 +186,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part b: a loop that died between the door's write and the take left the word <c>sent</c> and still waiting on the new
+    /// 🔴 A loop that dies between the door's write and the take leaves the word <c>sent</c> and still waiting on the new
     /// part; the next loop's first look takes the dead run's move up and reads it, taking the word off as taken and closing the move
     /// <c>delivered</c>, so it is never sent twice and the line's next carry-on is not held.
     /// </summary>
@@ -219,7 +219,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part b: a dead loop's driven move is taken up at each phase it can stand in, and ended by it: before the open, the line
+    /// 🔴 A dead loop's driven move is taken up at each phase it can stand in, and ended by it: before the open, the line
     /// stays on its old part (<c>not-opened</c>); the open asked and no answer recorded, held <c>unrecorded</c> and closed; opened or delivering with
     /// no word <c>sent</c>, held <c>undelivered</c> and closed, its word left waiting on the new part for its own go-on. None stands to hold the
     /// line's next carry-on.
@@ -255,7 +255,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 DRIVENATTEMPT1 (§13.5's <c>delivering</c> row): the carry-on marks each word it hands attempted on the new part at the fence, before the
+    /// 🔴 The carry-on marks each word it hands attempted on the new part at the fence, before the
     /// door writes (<c>DriverContinuations.HandedMovedAsync</c>), so a loop that died with the write's outcome unkept leaves a word the take-up
     /// reads attempted and without <c>sent</c>: uncertain, settled and never delivered again, the move held <c>undelivered</c> naming it. A word
     /// never marked, the part's own go-on's to deliver, is no such word: the same move is only gone on with and none is settled.
@@ -318,7 +318,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
 
     /// <summary>
     /// 🔴 A start that continues nothing keeps no move; every why a start continues by does, by its own code, the quest's hand-over's among them
-    /// (FOUNDATION1f-v part c: a handed start whose hand-over left no move, an agent's ask taken at its turn's end or an older build's take, is
+    /// (a handed start whose hand-over left no move, an agent's ask taken at its turn's end or an older build's take, is
     /// decided as any carry-on is).
     /// </summary>
     [Fact]
@@ -334,7 +334,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-v part c (§3.3: a hand-over is one move from ask to delivery): the carry-on the quest's hand-over starts goes on from the
+    /// 🔴 A hand-over is one move from ask to delivery: the carry-on the quest's hand-over starts goes on from the
     /// hand-over's own move, decided at the ask and left at <c>old-ended</c> by the look's take, never from a second one; it is written in the
     /// carry-on's order from there and closes <c>delivered</c>, the one row, its why, asker, agent and account the ask's.
     /// </summary>
@@ -434,7 +434,7 @@ public sealed class DrivenCarryOnStoreTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-iv part b: the take of the moved words follows the write of the prompt that carries them, and the take is what keeps the
+    /// 🔴 The take of the moved words follows the write of the prompt that carries them, and the take is what keeps the
     /// person's that reopened the work on the ask the instruction reads. The instruction is therefore handed those words as the take will keep them:
     /// the person's reopening words only, once each, in the ask's order; never Daoris's own or an answer, which the service's take keeps nowhere,
     /// and nothing where the ask could not be read.

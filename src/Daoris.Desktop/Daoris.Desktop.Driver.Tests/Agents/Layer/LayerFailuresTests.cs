@@ -4,10 +4,10 @@ using Lyntai.Agents;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The failure ingress's builder (the agent-lyntai design §5.3): the layer's failure, its released members alone (kind, <c>By</c>, the
+/// The failure ingress's builder: the layer's failure, its released members alone (kind, <c>By</c>, the
 /// restriction and the delivery), translated once into Daoris's <see cref="NormalizedFailure"/>. Its kind by one four-row map; its limit
-/// built whole from the restriction's recovery under D125's bounds, an unstated or an owner's recovery D125's default and never a made-up
-/// date; its phase the operation the run was performing; its provenance the layer's own entry, kept apart. Proven on a failure the tests
+/// built whole from the restriction's recovery under the reset bounds, an unstated or an owner's recovery the default and never a made-up
+/// date; its phase the operation the run is performing; its provenance the layer's own entry, kept apart. Proven on a failure the tests
 /// define, never a production door's.
 /// </summary>
 public sealed class LayerFailuresTests
@@ -92,7 +92,7 @@ public sealed class LayerFailuresTests
     }
 
     /// <summary>
-    /// A prompt's delivery is Daoris's hearing of what its turn showed after the write (LQ3's per-prompt half): a tool step uncertain, words,
+    /// A prompt's delivery is Daoris's hearing of what its turn showed after the write: a tool step uncertain, words,
     /// thinking or a plan taken, a meter, a background task or nothing never sent; the layer's own stamp stands only where it states no turn.
     /// </summary>
     [Theory]

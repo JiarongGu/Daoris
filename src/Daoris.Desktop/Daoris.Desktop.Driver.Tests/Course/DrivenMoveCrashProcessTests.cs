@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-iv part b, sitting 2 (D212; the foundation design §3.3, §13.4 steps 1 to 5, §19.4, row f-iv's proof): the driven carry-on's move
+/// The driven carry-on's move
 /// record holds through a loop killed at every boundary the move passes. A real driver look carries a failed quest's record <c>s1</c> on to a
 /// new part through the keyed open, is stopped at each boundary (<see cref="Cuts"/>) as a killed process never leaves it, and a loop that comes
 /// up (the real watch's first look) sweeps its records, takes its move up and ends it by its phase; the person's word the open moved is then
@@ -12,19 +12,19 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para><b>Which boundaries the driven move passes.</b> All nine of <see cref="Cuts.All"/>, though the theories kill at eight. The session a
 /// carry-on goes on from has ended already, so the decision is written <i>at</i> <c>old-ended</c>; the carry-on writes that phase again before its
-/// open (FOUNDATION1f-v part c, which the quest's hand-over's move needs), so the boundary named <c>old-ended</c> is passed too, right after
+/// open (which the quest's hand-over's move needs), so the boundary named <c>old-ended</c> is passed too, right after
 /// <c>decided</c>, and a kill there leaves the record the decision left, which is the <c>decided</c> row's.</para>
 /// <para><b>Each boundary is run with the person's word kept on the failed record and with none</b>, since a move that moved nothing is read by
 /// its prompt's outcome alone. <b>What each closes as</b>, the same with a word and without but where the word is: <c>decided</c> falls back
 /// <c>not-opened</c> and the line's next carry-on delivers; <c>opening</c> closes held <c>unrecorded</c>, the open never made, and the next
 /// carry-on delivers; <c>answered</c> and <c>marked</c> close held <c>unrecorded</c> and <c>opened</c> held <c>undelivered</c> naming nothing,
 /// the open made and the new part's own record carried on by the loop that comes up, which moves and delivers the word once; <c>written</c>
-/// closes held <c>unrecorded</c> where no word was moved, and held <c>undelivered</c> where one was (the write returned, its outcome unkept: the
-/// dead part's agent heard the word once; it was marked attempted at the hand, so the take-up reads it uncertain, settles it taken back with its
-/// <c>lost</c> note written once, and nothing sends it again, DRIVENATTEMPT1); <c>sent</c> and <c>taken</c> close <c>delivered</c>, the take-up taking
+/// closes held <c>unrecorded</c> where no word is moved, and held <c>undelivered</c> where one is (the write returned, its outcome unkept:
+/// the dead part's agent heard the word once; it is marked attempted at the hand, so the take-up reads it uncertain, settles it taken back with its
+/// <c>lost</c> note written once, and nothing sends it again); <c>sent</c> and <c>taken</c> close <c>delivered</c>, the take-up taking
 /// the word off at <c>sent</c> and the dead loop having taken it at <c>taken</c>.</para>
 /// <para>The killed loop's agent is a real process, which finishes its turn and closes the quest while its loop stands blocked, so a part whose
-/// prompt was written is not carried on again by this proof; the records the loop left live are ended <c>stopped</c> and interrupted as the
+/// prompt is written is not carried on again by this proof; the records the loop left live are ended <c>stopped</c> and interrupted as the
 /// orphan sweep ends them (<see cref="DrivenMoveHarness.KillAsync"/>).</para>
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -44,10 +44,10 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
 
     /// <summary>What a killed loop's carry-on comes to once a loop comes up.</summary>
     /// <param name="First">The shapes of the moves of <c>s1</c>, in order: phase, hold, close, fall-back code.</param>
-    /// <param name="Second">The shapes of the moves of <c>s2</c>, the destination, which the loop that came up carried on where it was left.</param>
+    /// <param name="Second">The shapes of the moves of <c>s2</c>, the destination, which the loop that comes up carries on.</param>
     /// <param name="Hears">The session whose first prompt the word reached: the dead loop's part, or the part the loop that came up opened.</param>
-    /// <param name="Waits">Where the word is left waiting, none where it was taken.</param>
-    /// <param name="Settled">Whether the move's take-up settled the word uncertain (DRIVENATTEMPT1): taken back, never taken as sent, its <c>lost</c> note written once.</param>
+    /// <param name="Waits">Where the word is left waiting, none where it is taken.</param>
+    /// <param name="Settled">Whether the move's take-up settled the word uncertain: taken back, never taken as sent, its <c>lost</c> note written once.</param>
     internal sealed record Ends(string[] First, string[] Second, string Hears, string? Waits = null, bool Settled = false);
 
     internal static Ends Row(string cut, bool word = true) => cut switch
@@ -61,8 +61,8 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
         Cuts.Opened => new([Undelivered], [Delivered], "s3"),
         Cuts.Marked => new([Unrecorded], [Delivered], "s3"),
 
-        // The prompt written and its outcome not kept: the dead part's agent heard the word once, and nothing sends it again. A word was marked
-        // attempted at the hand (DRIVENATTEMPT1), so the take-up reads it uncertain, settles it and holds the move `undelivered` naming it; a
+        // The prompt written and its outcome not kept: the dead part's agent heard the word once, and nothing sends it again. A word is marked
+        // attempted at the hand, so the take-up reads it uncertain, settles it and holds the move `undelivered` naming it; a
         // move of no word has none to settle and is held `unrecorded` as before.
         Cuts.Written => word ? new([Undelivered], [], "s2", Settled: true) : new([Unrecorded], [], "s2"),
 
@@ -137,7 +137,7 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
         Assert.True(taken.ClaimGeneration > left.ClaimGeneration, "the come-up's take-up is a claim of its own");
         if (cut == Cuts.Decided) Assert.Equal(ConversationMoves.NotOpened, _h.Store("run-probe").Of("s1")[0].FellBackCode);
 
-        // The word reaches an agent once, on the part that was written or carried on; nowhere else, and a part never hears it twice.
+        // The word reaches an agent once, on the part that is written or carried on; nowhere else, and a part never hears it twice.
         var hearing = _h.Prompts().Where(prompt => prompt.Text.Contains(DrivenMoveHarness.Word, StringComparison.Ordinal)).ToList();
         if (word)
         {
@@ -153,8 +153,8 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
             Assert.Empty(_h.Waiting());
         }
 
-        // The open is never asked again under the move's key, and no record of the line is told a word was lost but the part a settled word
-        // was written to, once, by the move's own take-up.
+        // The open is never asked again under the move's key, and no record of the line is told a word is lost but the part a settled word
+        // is written to, once, by the move's own take-up.
         var keys = _h.Service.Opened.Select(opened => opened.Key).ToList();
         Assert.Equal(keys.Count, keys.Distinct().Count());
         if (left.Opens is { } key) Assert.Equal(cut == Cuts.Opening ? 0 : 1, keys.Count(each => each == key));
@@ -173,10 +173,10 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 DRIVENATTEMPT1 (§13.5's <c>delivering</c> row, §19.4): a loop killed at <c>written</c> while the destination's quest is still open. The
-    /// word was marked attempted at the hand, before the door's write, so the come-up reads it attempted and settles it uncertain, taking it
+    /// A loop killed at <c>written</c> while the destination's quest is still open. The
+    /// word is marked attempted at the hand, before the door's write, so the come-up reads it attempted and settles it uncertain, taking it
     /// back: the quest's own go-on, which carries a record's waiting words, never finds it to send to a part a second time, and no part hears it
-    /// twice. Unmarked, the word waited on the destination for that go-on, which sent it again.
+    /// twice. Unmarked, the word would wait on the destination for that go-on, which would send it again.
     /// </summary>
     [Fact]
     public async Task A_loop_killed_at_written_with_the_destinations_quest_open_marks_the_word_attempted_and_never_sends_it_again()
@@ -190,7 +190,7 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
 
         _h.Stays = false;
         _h.ComeUp();
-        // Ready once the word waits nowhere: taken back where it was settled uncertain, or, where it was not marked, taken by the next part.
+        // Ready once the word waits nowhere: taken back where it is settled uncertain, or, where it is not marked, taken by the next part.
         await _h.SettleAsync(ready: () => _h.Waiting().Count == 0 && !_h.Store("run-probe").Of("s1").Any(move => move.Stands));
         await _h.StopAsync();
 
@@ -206,8 +206,7 @@ public sealed class DrivenMoveCrashProcessTests : IAsyncLifetime
         Assert.Equal(MoveWordDispositions.Uncertain, Assert.Single(_h.Store("run-probe").WordsOf(move.Id)).Disposition);
         Assert.Contains(("s2", "w1"), _h.Service.TakenBack);
 
-        // Said once, on the part the word was written to: the move's take-up writes the `lost` note for a moved word it settles uncertain
-        // (O7-F4; the note an older come-up leaves out is §13.5's downgrade row, not this one).
+        // Said once, on the part the word is written to: the move's take-up writes the `lost` note for a moved word it settles uncertain.
         List<string> said = [];
         for (var at = 1; at <= _h.Service.SessionCount; at++)
         {

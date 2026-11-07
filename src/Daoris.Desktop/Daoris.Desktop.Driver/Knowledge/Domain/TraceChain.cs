@@ -3,12 +3,12 @@ using System.Text.Json.Serialization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One trace, as data (TRACE1b, D143, D50): the reading both doors word. The terminal prints it in the driver's English
-/// (<see cref="TraceWords"/>), and the screen words its codes in the reader's language. Each link names the store it was read
+/// One trace, as data: the reading both doors word. The terminal prints it in the driver's English
+/// (<see cref="TraceWords"/>), and the screen words its codes in the reader's language. Each link names the store it is read
 /// from, and a link nothing keeps carries why it is missing.
 /// </summary>
 /// <remarks>
-/// <b>Nothing here is a machine path on the wire</b> (D47 §4): a session's tree is its folder's name, a file under the home is
+/// <b>Nothing here is a machine path on the wire</b>: a session's tree is its folder's name, a file under the home is
 /// named by its store, and what a failed read said (an exception's message, which may name a file) is the terminal's alone,
 /// held by <see cref="JsonIgnoreAttribute"/>.
 /// </remarks>
@@ -25,7 +25,7 @@ public sealed record TraceChain(string Kind, string Id)
     public IReadOnlyList<TraceLink> Links { get; init; } = [];
 }
 
-/// <summary>How a commit was found: in a session's evidence, or as a landing's tip or the commit a plugin pushed of it.</summary>
+/// <summary>How a commit is found: in a session's evidence, or as a landing's tip or the commit a plugin pushed of it.</summary>
 /// <param name="How"><c>evidence</c>, <c>tip</c> or <c>pushed</c>.</param>
 public sealed record TraceFoundBy(string How, string Session)
 {

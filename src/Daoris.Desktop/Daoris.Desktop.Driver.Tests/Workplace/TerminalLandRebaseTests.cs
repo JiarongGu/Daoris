@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDREBASE2 (D87's LANDREBASE2 note): <c>daoris tree land &lt;session&gt;</c> refused a replay that conflicted and printed
-/// it, but the session was handed nothing, so the work waited for someone to resolve it without its context. The window offers its
+/// <c>daoris tree land &lt;session&gt;</c> refuses a replay that conflicts and prints it; the work must not wait
+/// for someone to resolve it without the session's context. The window offers its
 /// <i>Ask it to rebase</i>; a terminal has no second press, so its landing says the rebase words to the session itself through the say
 /// door, as Daoris's, keyed by the session and its tree's tip, and the session rebases in its own tree and lands.
 /// </summary>

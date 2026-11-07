@@ -5,7 +5,7 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A file held as Windows' own move holds the file it has just put in place (BINDRACE1, <see cref="Daoris.Driver.AtomicFile.ReadText"/>):
+/// A file held as Windows' own move holds the file it has just put in place (<see cref="Daoris.Driver.AtomicFile.ReadText"/>):
 /// open for its deletion, sharing everything, so a test meets every run the moment a reader beside the move meets under load.
 /// </summary>
 internal static class MoveHold

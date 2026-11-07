@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1g, the transport wired (D215; the integration design §5.1, §5.2, §17.4), over real git and the home's own store: a unit's
+/// The transport wired, over real git and the home's own store: a unit's
 /// <c>integrate</c> node requests through the one door, the transport runs the line's run off the pass and wakes it, the node reads its
 /// request's outcome, and <c>line</c> observes the promotion. The verdict port is a stand-in answering green, as Review installs the real one.
 /// </summary>
@@ -101,7 +101,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     }
 
     /// <summary>
-    /// The run's quest, done, and the branch unit its session worked as the inventory gives it, the landing's record as it was last read
+    /// The run's quest, done, and the branch unit its session worked as the inventory gives it, the landing's record as last read
     /// standing (the tidy removes the branch once the line holds it); ended where the end judgement found the line holding it.
     /// </summary>
     private IReadOnlyList<WorkUnit> UnitsOf(SessionTrees trees, string branch, string session, string? ended = null)
@@ -144,9 +144,9 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     });
 
     /// <summary>
-    /// The proof's first case (§17.4, R4): a done quest under <c>request: done</c> through its bound graph. Its automatic landing is the
+    /// A done quest under <c>request: done</c> through its bound graph. Its automatic landing is the
     /// request; the node asks the door, the transport runs the line's run off the pass and wakes it, the node is reached on its settled request,
-    /// the line holds the tip, the checkout was only fast-forwarded, and <c>line</c> observes it with <c>work.integrated</c> told once.
+    /// the line holds the tip, the checkout is only fast-forwarded, and <c>line</c> observes it with <c>work.integrated</c> told once.
     /// </summary>
     [Fact]
     public async Task A_done_quest_under_request_done_is_integrated_through_its_bound_graph()
@@ -173,7 +173,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         await PassAsync(runtime, root, UnitsOf(trees, branch, tree.Branch));
         Assert.Equal((NodeStates.Reached, NodeSource.Integration), (Status("integrate").State, Status("integrate").By));
 
-        // The look's end judgement finds the line holding the landing's tip (D102), which `line` observes.
+        // The look's end judgement finds the line holding the landing's tip, which `line` observes.
         var pass = await PassAsync(runtime, root, UnitsOf(trees, branch, tree.Branch, ended: tip));
         Assert.Equal(NodeStates.Reached, Status("line").State);
         Assert.Equal([$"{RunUnit} engine"], _integrated);
@@ -187,7 +187,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     }
 
     /// <summary>
-    /// The <i>Integrated into the line</i> preset's graph (§17.7), its <i>with no press</i> variant, saved as a version the run is bound to:
+    /// The <i>Integrated into the line</i> preset's graph, its <i>with no press</i> variant, saved as a version the run is bound to:
     /// <c>claimed</c>, <c>work.requests</c>, <c>land</c> by the integrate method, <c>integrate</c> under <c>request: done</c>, <c>line</c>.
     /// </summary>
     private const string PresetGraph = """
@@ -202,7 +202,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
         """;
 
     /// <summary>
-    /// The proof's second case (§17.7, R4): a done quest whose run follows the preset's graph. Its landing at the done keeps the version's own
+    /// A done quest whose run follows the preset's graph. Its landing at the done keeps the version's own
     /// step as its provenance, so the run's <c>integrate</c> asks the door on the node's route with the version's <c>request: done</c>, as the
     /// runtime's start asks it, and the transport integrates it: the line holds the tip and the request is settled.
     /// </summary>
@@ -256,7 +256,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     }
 
     /// <summary>
-    /// C5 (§4.6): no request passes a stopped <c>handed</c>. The run follows the preset's graph under <c>request: owner</c>, and the person
+    /// No request passes a stopped <c>handed</c>. The run follows the preset's graph under <c>request: owner</c>, and the person
     /// stopped its <c>handed</c>: their Accept, which would be the request, is refused at the landing's gate, so no landing is recorded, the
     /// door has nothing to admit for the branch, and the transport runs nothing.
     /// </summary>
@@ -294,7 +294,7 @@ public sealed class IntegrationTransportGitTests : LandedFixture, IAsyncLifetime
     }
 
     /// <summary>
-    /// C11 (§4.6): under <c>owner</c>, a revision made after the request is offered, not queued. The person's Accept is the request at its frozen
+    /// Under <c>owner</c>, a revision made after the request is offered, not queued. The person's Accept is the request at its frozen
     /// tip; the session commits again after it; the transport integrates the frozen tip alone, the node is reached on it with no second attempt,
     /// nothing is queued for the later commit, and the session's next landing offers it for the person's Accept.
     /// </summary>

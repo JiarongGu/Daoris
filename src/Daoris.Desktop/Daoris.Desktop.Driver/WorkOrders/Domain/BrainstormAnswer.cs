@@ -2,13 +2,13 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One proposal as a generator gave it through <c>brainstorm_give</c> (BRAINSTORM1a, D176 point 3), validated.</summary>
+/// <summary>One proposal as a generator gave it through <c>brainstorm_give</c>, validated.</summary>
 public sealed record BrainstormProposal(
     string Idea, string Rationale, string Effort, string Risk, string Reversible, string? Undo, string Confidence,
     IReadOnlyList<string> Assumptions, IReadOnlyList<string> Sources)
 {
     /// <summary>
-    /// Daoris's flags, read from the fields (D176 point 3): <c>hard-to-reverse</c> where reversible is not <c>yes</c>, <c>risky</c>
+    /// Daoris's flags, read from the fields: <c>hard-to-reverse</c> where reversible is not <c>yes</c>, <c>risky</c>
     /// where the risk is <c>high</c> or <c>unknown</c>. Unknown is never read as its best value.
     /// </summary>
     public IReadOnlyList<string> Flags =>
@@ -28,7 +28,7 @@ public sealed record BrainstormChecked(BrainstormAnswer? Answer, IReadOnlyList<s
 }
 
 /// <summary>
-/// The validator of a generator's answer (D176 point 3): Daoris's, by the schema, with no model. A missing answer, a field outside
+/// The validator of a generator's answer: Daoris's, by the schema, with no model. A missing answer, a field outside
 /// its scale or bound, an unknown source id, an idea given twice, or proposals beside <c>none</c> fail the pass; Daoris never
 /// repairs, trims or keeps part of an invalid answer.
 /// </summary>
@@ -52,7 +52,7 @@ public static class BrainstormAnswers
     public const int MostProposals = 8;
     public const int AnswerChars = 20_000;
 
-    // The codes, in fixed words a repair turn is handed (D176 point 3).
+    // The codes, in fixed words a repair turn is handed.
     public const string Missing = "missing";
     public const string Shape = "shape";
     public const string TooLong = "too-long";

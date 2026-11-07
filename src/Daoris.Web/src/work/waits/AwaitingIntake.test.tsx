@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { AwaitingIntake } from './AwaitingIntake';
 
-// A parked INTAKE (INT4g): the declarations did not settle whose an ask is, so the intake asked the
+// A parked INTAKE: the declarations do not settle whose an ask is, so the intake asks the
 // person rather than guess. Its answer is on the ask, not on the session — which is why the three
 // moves a parked session offers are not offered here.
 
@@ -29,7 +29,7 @@ describe('a parked intake', () => {
   });
 
   /**
-   * 🔴 Each of the three ends the record without answering the ask (found by INT4d). *Finish* would
+   * 🔴 Each of the three ends the record without answering the ask. *Finish* would
    * even record `completed` for an intake that published nothing, which a person reading it later
    * would take for a publish.
    */
@@ -42,7 +42,7 @@ describe('a parked intake', () => {
     expect(screen.queryByText(/Answering it in the box below/)).toBeNull();
   });
 
-  /** SESSUX1d (D126 §3.3): the stop and its sentence moved to the page header, the stop's one owner. */
+  /** The stop and its sentence are the page header's, the stop's one owner. */
   it('offers no stop of its own: the page header’s stop asks with the sentence it said', () => {
     show();
 

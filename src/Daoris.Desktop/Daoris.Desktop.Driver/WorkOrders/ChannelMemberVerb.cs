@@ -3,8 +3,8 @@ using Daoris.Contracts.Asks;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an agent outside Daoris asked of <c>ask channel</c>: <see cref="Join"/> an ask's channel or a line's (<paramref name="Line"/>, a
-/// session of it), claiming an <paramref name="Agent"/> and a <paramref name="Repository"/>; or, as the <paramref name="Member"/> it was
+/// What an agent outside Daoris asks of <c>ask channel</c>: <see cref="Join"/> an ask's channel or a line's (<paramref name="Line"/>, a
+/// session of it), claiming an <paramref name="Agent"/> and a <paramref name="Repository"/>; or, as the <paramref name="Member"/> it is
 /// admitted as, <see cref="Post"/> words, <see cref="Read"/> the channel (after <paramref name="Since"/> where given) or <see cref="Leave"/>.
 /// </summary>
 public sealed record ChannelMemberAsk(
@@ -18,7 +18,7 @@ public sealed record ChannelMemberAsk(
 }
 
 /// <summary>
-/// The member's forms of the one channel verb (CHANNELJOIN1b; the event-channel design §5.3 to §5.5): <c>ask channel join &lt;ask&gt;</c> or
+/// The member's forms of the one channel verb: <c>ask channel join &lt;ask&gt;</c> or
 /// <c>--line &lt;session&gt;</c>, sent to the running Daoris as the person's press <c>CHANNEL_JOIN</c>, which waits for their Confirm and is
 /// refused before any card from a process in an agents' job; then <c>ask channel --member &lt;id&gt; ["…"]</c> and <c>ask channel leave
 /// --member &lt;id&gt;</c>, the member's own doors of the service, which carry no key: its posts are its claims, never the person's.
@@ -131,7 +131,7 @@ public static class ChannelMemberVerb
     }
 
     /// <summary>
-    /// The form asked: a join through the running Daoris as the person's press (<paramref name="instance"/>), and alone, with no Daoris to
+    /// The form to run: a join through the running Daoris as the person's press (<paramref name="instance"/>), and alone, with no Daoris to
     /// confirm it, refused; a member's post, read or leave at its own doors of the service.
     /// </summary>
     public static Task<int> RunAsync(ChannelMemberAsk ask, ServiceClient service, TextWriter output, InstanceWorld? instance, CancellationToken ct = default) =>
@@ -147,7 +147,7 @@ public static class ChannelMemberVerb
         };
 
     /// <summary>
-    /// The admission the shell presses once the person confirmed the join: the member's id, which the terminal prints with the two verbs
+    /// The admission the shell presses once the person confirms the join: the member's id, which the terminal prints with the two verbs
     /// it may run, and what its posts are.
     /// </summary>
     public static async Task<int> JoinAsync(ChannelMemberAsk ask, ServiceClient service, TextWriter output, CancellationToken ct = default)

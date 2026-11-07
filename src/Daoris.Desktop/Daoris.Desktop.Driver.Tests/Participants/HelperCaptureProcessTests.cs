@@ -5,14 +5,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1a (D199 point 5; the co-agent design §2.5, §8.3): a helper's copy holds the asker's uncommitted bytes and nothing returns
+/// A helper's copy holds the asker's uncommitted bytes and nothing returns
 /// from it, with real git. The capture reads the asker's tree with no write to its index, refs or files; a copy laid with it shows
 /// the work in progress to git's own status and holds no ignored file; what the helper writes in its copy never reaches the asker;
 /// a second opinion's copy, made as before, holds the last commit alone; and an unresolved merge and a link out of the tree are
 /// refused by the capture as git and the file system show them.
 /// </summary>
 /// <remarks>
-/// Real git, and a junction made by <c>mklink</c>, so the class is in the real-process half's git classes (MOD8, PROC1b): a branch's
+/// Real git, and a junction made by <c>mklink</c>, so the class is in the real-process half's git classes: a branch's
 /// worktree runs it alone with <c>git.process.runsettings</c>, the parent in its set. The repository is a copy of the run's seed
 /// (<see cref="GitSeed"/>): no test here reads the first commit's id or time.
 /// </remarks>
@@ -103,7 +103,7 @@ public sealed class HelperCaptureProcessTests : IDisposable
         Assert.Equal(refs, await GitAsync(root, "for-each-ref"));
     }
 
-    /// <summary>A second opinion's copy is made as before: the last commit alone, whatever the tree holds uncommitted (D155 point 6).</summary>
+    /// <summary>A second opinion's copy holds the last commit alone, whatever the tree holds uncommitted.</summary>
     [Fact]
     public async Task A_second_opinions_copy_holds_the_last_commit_alone()
     {

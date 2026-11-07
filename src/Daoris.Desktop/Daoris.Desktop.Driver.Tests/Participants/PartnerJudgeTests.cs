@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (the co-agent design §2.3 steps 1 and 3, §3.3): what the ask and its lead's record say of a piece, the production choice's
+/// What the ask and its lead's record say of a piece, the production choice's
 /// admission (nothing measured, nothing admitted) and the partner's instruction, whole, in <c>golden/partner-prompt/</c>.
 /// </summary>
 public sealed class PartnerJudgeTests
@@ -42,7 +42,7 @@ public sealed class PartnerJudgeTests
     }
 
     /// <summary>
-    /// 🔴 D199 point 4: with no measured row, the production choice admits nobody; an ask that names no agent is refused before any walk,
+    /// 🔴 With no measured row, the production choice admits nobody; an ask that names no agent is refused before any walk,
     /// never substituted.
     /// </summary>
     [Fact]

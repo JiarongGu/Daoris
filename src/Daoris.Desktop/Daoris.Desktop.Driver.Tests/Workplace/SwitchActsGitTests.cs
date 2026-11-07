@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2k over real git (D204; the git-writes design §3, §8, §12 row k): Switch through the act journal. Refused where tracked files are
+/// Over real git: Switch through the act journal. Refused where tracked files are
 /// changed, an operation is in progress, the branch is out in another tree; undone by switching back. The switch off, a session in the
 /// checkout and an unread ledger each refuse; a post-checkout hook is named in the plan and run.
 /// </summary>
@@ -69,7 +69,7 @@ public sealed class SwitchActsGitTests : TreeSyncFixture
         Assert.Equal("main", await BranchAsync(root));
     }
 
-    /// <summary>🔴 A tracked change is never carried across: the switch is refused and the file stays as it was.</summary>
+    /// <summary>🔴 A tracked change is never carried across: the switch is refused and the file keeps its contents.</summary>
     [Fact]
     public async Task A_dirty_checkout_is_refused_and_nothing_changes()
     {

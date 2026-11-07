@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END4a's second review over real git: a judged branch goes in one ref transaction with what its proof rested on
+/// Over real git: a judged branch goes in one ref transaction with what its proof rested on
 /// (<c>git update-ref --stdin</c>, <c>verify</c> beside the <c>delete</c>), for every caller of the delete, so a line rewound as it goes
 /// keeps the branch with no absence anyone can observe. The one window left, a checkout made after the trees were read, is looked at again
 /// once it went: an unread list is not clear, and a put-back git refused is said as such, never as put back.
@@ -35,7 +35,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
     /// <summary>The line rewound under the delete, after the last proof: git's own verify refuses the transaction.</summary>
     private static Func<string, Task> Rewinds(string root) => async _ => await GitAsync(root, "reset", "--hard", "--quiet", "HEAD~1");
 
-    /// <summary>🔴 The review's P1 (TreeTidies.cs:336): LAND3's door now passes what its proof rested on, so the line rewound as the branch goes keeps it.</summary>
+    /// <summary>The door passes what its proof rested on, so the line rewound as the branch goes keeps it.</summary>
     [Fact]
     public async Task The_doors_removal_keeps_a_branch_whose_line_moved_as_it_went()
     {
@@ -65,7 +65,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 DETACHTX1 (TreeRemovals.cs:178, :205): a detached tree's commit is held by the tree's own HEAD and the holder its proof found.
+    /// A detached tree's commit is held by the tree's own HEAD and the holder its proof found.
     /// The holder rewound as the tree goes leaves that commit on a recovery ref, kept until a transaction shows the holder where the proof
     /// read it, never on no ref at all.
     /// </summary>
@@ -101,7 +101,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         Assert.Contains(holding, removal.Message, StringComparison.Ordinal);
     }
 
-    /// <summary>DETACHTX1's other half: a detached tree whose holder stood as it went leaves no recovery ref behind.</summary>
+    /// <summary>A detached tree whose holder stood as it went leaves no recovery ref behind.</summary>
     [Fact]
     public async Task A_detached_trees_removal_whose_holder_stood_keeps_no_recovery_ref()
     {
@@ -177,7 +177,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The third review's P1 (ContentHolds.cs:279): a branch of the person's held the work by ancestry when it was judged, and was deleted
+    /// A branch of the person's holds the work by ancestry at the judgement, then is deleted
     /// before the delete. The holder the proof named is gone, so the branch is refused: never authorized by an unchanged line that never held it.
     /// </summary>
     [Fact]
@@ -224,7 +224,7 @@ public sealed class JudgedDeleteGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 The third review's P1 (TreeSquashes.cs:60, the earlier DELETETX2): a squashing landing's record vouches only while its branch stands
+    /// A squashing landing's record vouches only while its branch stands
     /// at the commit read, so that branch moved as the session branch goes keeps it.
     /// </summary>
     [Fact]
@@ -347,8 +347,8 @@ public sealed class JudgedDeleteGitTests : LandedFixture
     // ——— the fourth review
 
     /// <summary>
-    /// 🔴 The fourth review's P2 (ContentHolds.cs:376): git's quiet verification exits 1 on any failure to resolve, a broken ref's too, so a
-    /// branch broken as its delete was refused is unread, never "gone already": only git's own "missing" says it went.
+    /// Git's quiet verification exits 1 on any failure to resolve, a broken ref's too, so a
+    /// branch broken as its delete is refused is unread, never "gone already": only git's own "missing" says it went.
     /// </summary>
     [Fact]
     public async Task A_broken_ref_after_a_refused_delete_is_unread_not_gone()
@@ -366,10 +366,10 @@ public sealed class JudgedDeleteGitTests : LandedFixture
         Assert.Equal("not a commit\n", await File.ReadAllTextAsync(loose));
     }
 
-    // ——— FABRIC-TIDYHELD-TEST1: the cut-off opening, moved at the delete
+    // ——— The cut-off opening, moved at the delete
 
     /// <summary>
-    /// 🔴 FABRIC-TIDYHELD-TEST1, the cut-off opening (<c>TreeStrays.CutOffAsync</c>): a tree whose opening a kill cut off, its branch held by
+    /// The cut-off opening (<c>TreeStrays.CutOffAsync</c>): a tree whose opening a kill cut off, its branch held by
     /// the line. Its folder is moved aside, and its branch goes in one transaction with the line at the commit judged, so the line rewound
     /// past it, or the branch moved on, as the branch goes keeps the branch, said beside the move.
     /// </summary>

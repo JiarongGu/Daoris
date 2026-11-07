@@ -11,9 +11,9 @@ public interface IReviewWorld
 }
 
 /// <summary>
-/// What the landing at done reads of the service (LAND2b): a seam, so its tests stand in for the ledger. Its quests and asks are what the
-/// review's gate reads too (REVIEWENV1c), so a look lands nothing the gate holds. The review's <c>IReviewLandingWorld</c> adds the opinions
-/// the second opinion's part reads (XAGENT1f) and is the world every door hands the look.
+/// What the landing at done reads of the service: a seam, so its tests stand in for the ledger. Its quests and asks are what the
+/// review's gate reads too, so a look lands nothing the gate holds. The review's <c>IReviewLandingWorld</c> adds the opinions
+/// the second opinion's part reads and is the world every door hands the look.
 /// </summary>
 public interface IWorkplaceLandingWorld : IReviewWorld
 {
@@ -23,20 +23,20 @@ public interface IWorkplaceLandingWorld : IReviewWorld
     /// <summary>Every session record, closed ones included: which is the newest on a tree, and whether a live one holds it.</summary>
     Task<IReadOnlyList<SessionRecord>> RecordsAsync(CancellationToken ct);
 
-    /// <summary>The trees sessions still running or waiting name, which the rule's tidy keeps (LAND3).</summary>
+    /// <summary>The trees sessions still running or waiting name, which the rule's tidy keeps.</summary>
     Task<IReadOnlySet<string>> InUseAsync(CancellationToken ct);
 
-    /// <summary>The sessions a writer of a checkout waits for, each with its tree (GITLOCK2); a world with no ledger holds none.</summary>
+    /// <summary>The sessions a writer of a checkout waits for, each with its tree; a world with no ledger holds none.</summary>
     Task<IReadOnlyList<TreeHolder>> BesideAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<TreeHolder>>([]);
 
     /// <summary>
-    /// A world that reads the service afresh (FABRIC-END7's review): each chosen entry is judged again from it just before its own
+    /// A world that reads the service afresh: each chosen entry is judged again from it just before its own
     /// landing. A world that keeps nothing between reads answers itself.
     /// </summary>
     IWorkplaceLandingWorld Again() => this;
 
     /// <summary>
-    /// The say door (MSG1a) for Daoris's words (LANDREBASE1): kept on an ended or parked record of this machine's under their fact's key,
+    /// The say door for Daoris's words: kept on an ended or parked record of this machine's under their fact's key,
     /// for its own conversation to go on with at the next look. Null where the world has no door, and nothing is said.
     /// </summary>
     Task<SayAnswer?> SayAsync(string session, string text, string key, CancellationToken ct) => Task.FromResult<SayAnswer?>(null);
@@ -51,8 +51,8 @@ internal static class LandingDoors
 }
 
 /// <summary>
-/// What the trees read of the whole landing gate a door hands them (XAGENT1f; the second-agent design §7): the commit it was judged at,
-/// the first part that holds as a landing's refusal, the process it was read with, what the review and the second opinion keep on the
+/// What the trees read of the whole landing gate a door hands them: the commit of its judgement,
+/// the first part that holds as a landing's refusal, the process it is read with, what the review and the second opinion keep on the
 /// landing's record when they let the work go, whether the graph's part asks a pass, and the gate's words for the plan and the machine
 /// log. The review's <c>LandingGate</c> implements this directly, so the landing names no more of the gate than it reads.
 /// </summary>

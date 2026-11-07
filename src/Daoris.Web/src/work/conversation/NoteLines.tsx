@@ -12,12 +12,12 @@ import { SaidDoors } from './saidDoors';
 /** Never in a sentence: where a session's id goes, so the sentence can be cut around its door. */
 const DOOR = '⁣';
 
-/** Words waiting at a record's foot that no driver's note has settled: what a cool-off holds (MSG1g2). */
+/** Words waiting at a record's foot that no driver's note has settled: what a cool-off holds. */
 const waitingWords = (turn: Turn) =>
   turn.items.filter((item) => item.kind === 'held' && item.reaches === 'resume' && !item.settled && !item.unreached);
 
 /**
- * The person's words went to a new session (MSG1f, D137 §3.1): said in the page's words, the session a door to it, once,
+ * The person's words went to a new session: said in the page's words, the session a door to it, once,
  * where the words were shown. A reason the page cannot word leaves the driver's own line, which names it too.
  */
 export function WentLine({ block }: { block: Block }) {
@@ -47,7 +47,7 @@ export function WentLine({ block }: { block: Block }) {
   );
 }
 
-/** The conversation a `chat.handed-over` line names (MIXAGENT1b-i), or null for any other note. */
+/** The conversation a `chat.handed-over` line names, or null for any other note. */
 export const handedTo = (block: Block): string | null => {
   const part = block.parts?.find((each) => each.code === 'chat.handed-over');
   const session = part && 'values' in part ? part.values?.session : undefined;
@@ -55,7 +55,7 @@ export const handedTo = (block: Block): string | null => {
 };
 
 /**
- * A conversation that went on with another agent (MIXAGENT1b-i, D163): its own last line, worded by its parts, and where this
+ * A conversation that went on with another agent: its own last line, worded by its parts, and where this
  * page can open a session, one press to the conversation it went on in, as a started session is a door in *went*.
  */
 export function HandedLine({ block, to }: { block: Block; to: string }) {
@@ -70,10 +70,10 @@ export function HandedLine({ block, to }: { block: Block; to: string }) {
 }
 
 /**
- * The person's words cannot go on in this session (MSG1f, D137 §2.2): why, in the page's words, and one press that starts
+ * The person's words cannot go on in this session: why, in the page's words, and one press that starts
  * a conversation with them — the person's, since a new conversation has none of this one's context. The press only where
  * the page holds every word the note names, so what it starts with is what they said. Where the words wait for the person on a
- * reason that leaves a tree to go on in (SESSCTX1c part B), or a driven session's tree is gone (TREEGONE2), *Go on with Daoris's brief*
+ * reason that leaves a tree to go on in, or a driven session's tree is gone, *Go on with Daoris's brief*
  * goes first beside it: a new part of the same session, handed Daoris's brief, so it keeps the context the fresh start does not.
  */
 export function CannotLine({ block }: { block: Block }) {
@@ -100,15 +100,15 @@ export function CannotLine({ block }: { block: Block }) {
 }
 
 /**
- * A driver's note the page words itself (MSG1c3, D142 point 1): its code's sentence in the reader's language, said as the
- * went line is, where the word it names was shown. A code this page does not know leaves the driver's English line.
+ * A driver's note the page words itself: its code's sentence in the reader's language, said as the
+ * went line is, where the word it names is shown. A code this page does not know leaves the driver's English line.
  */
 export function CodedLine({ block }: { block: Block }) {
   const { t } = useTranslation();
   const { onSayAgain } = useContext(SaidDoors);
   const key = block.code ? CONVERSATION_CODES[block.code] : undefined;
   if (!key) return <NoteLine text={block.text ?? ''} />;
-  // *Say it again* (COWORK1c, the design §6): the person's own words that may have reached the agent were never sent again; saying
+  // *Say it again*: the person's own words that may have reached the agent were never sent again; saying
   // them anew is theirs to press. Never Daoris's words nor another agent's.
   const again = block.code === 'lost' && block.persons && block.said?.length && onSayAgain ? block.said : null;
   if (!again) return <p className="m-0 text-small text-ink-soft">{t(key)}</p>;
@@ -121,9 +121,9 @@ export function CodedLine({ block }: { block: Block }) {
 }
 
 /**
- * *Go on in a new session* (MSG1g2, D137 §2.2), under words a cooling account holds: what it costs (the new session starts
+ * *Go on in a new session*, under words a cooling account holds: what it costs (the new session starts
  * without this conversation's context, so it is the person's press), the press, and then what it came to in the page's
- * words. Where nothing carries the words on by itself, a conversation or a closed quest's session, MSG1f's press starts a
+ * words. Where nothing carries the words on by itself, a conversation or a closed quest's session, its press starts a
  * conversation with every word waiting. The press is offered again only for a choice the driver could not keep.
  */
 export function NewSessionDoor({ turn }: { turn: Turn }) {
@@ -156,13 +156,13 @@ const LONG_NOTE = 240;
 
 /**
  * The driver's own sentence about the session — a refusal, a missing connector. A long one shows two
- * lines and the rest on a press (SESS1 S6): records written before the refusal named its call carry the
+ * lines and the rest on a press: records written before the refusal named its call carry the
  * request's JSON, four lines each, and nothing reads that JSON to shorten it.
  *
- * A note with parts (CONVNOTE1: a refused sign-in since SIGNIN1b, a landing's line since LAND2b, the opening line since
- * UX7d-1) is worded from them as a session record's note is (`Note`, LANG1b): each coded line in the reader's language, and a
+ * A note with parts (a refused sign-in, a landing's line, the opening line)
+ * is worded from them as a session record's note is (`Note`): each coded line in the reader's language, and a
  * line the page cannot word as its record keeps it, marked. Its English is shown only where it has none, its backticks
- * drawn as code as a worded line's are (UX7d-1), never as backticks.
+ * drawn as code as a worded line's are, never as backticks.
  */
 export function NoteLine({ text, parts, under }: { text: string; parts?: readonly NotePart[]; under?: readonly Block[] }) {
   const { t, i18n } = useTranslation();
@@ -187,7 +187,7 @@ export function NoteLine({ text, parts, under }: { text: string; parts?: readonl
           {open ? t('work.conversation.hide') : t('work.conversation.show')}
         </button>
       )}
-      {/* The opening line of a part that began by a move (SWITCHCTX1c-i), folded under its boundary as a brief is. */}
+      {/* The opening line of a part that began by a move, folded under its boundary as a brief is. */}
       {under && under.length > 0 && (
         <>
           <button

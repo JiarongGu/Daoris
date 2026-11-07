@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A remote that cannot authenticate is said once and left alone (GITAUTH1a, the git-auth design §5.2 and §14 row 1), with this
+/// A remote that cannot authenticate is said once and left alone, with this
 /// machine's real git against a code host on the loopback that refuses every sign-in: Daoris's fetch of the line fails once, holds
 /// origin, and connects no more across the moments of the minutes after, each answered by the hold's sentence; <i>Try again</i> and a
 /// changed address each let the next fetch connect, once.

@@ -7,7 +7,7 @@ using static Daoris.Driver.IntegrationStepKeeping;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The integration's family in the desktop store (INTEGRATE1e part e2, D215; the integration design §5.2, §5.6, D212 §13): Workplace's
+/// The integration's family in the desktop store: Workplace's
 /// requests, candidates, members and steps, in <c>integration_requests</c>, <c>integration_candidates</c>, <c>integration_members</c> and
 /// <c>integration_steps</c>. Written by the one door (<see cref="IntegrationRequests"/>) and by the line's run (<see cref="IntegrationLines"/>),
 /// whose steps run over it.
@@ -45,13 +45,13 @@ public sealed class IntegrationStore(
     /// <summary>The store's step that made the family: a store before it holds no integration.</summary>
     private const int Since = 6;
 
-    /// <summary>The store's step that made the pending dispositions' table (INTEGRATE1e part e4b): a store before it holds none.</summary>
+    /// <summary>The store's step that made the pending dispositions' table: a store before it holds none.</summary>
     private const int DispositionsSince = 7;
 
-    /// <summary>The store's step that made the decides, the queue's order and a disposition's answer (INTEGRATE1h): a store before it holds none.</summary>
+    /// <summary>The store's step that made the decides, the queue's order and a disposition's answer: a store before it holds none.</summary>
     private const int ActsSince = 12;
 
-    /// <summary>The store's step that made the epochs' table (LANDNODE1g): a store before it holds none, and every record reads as its own epoch.</summary>
+    /// <summary>The store's step that made the epochs' table: a store before it holds none, and every record reads as its own epoch.</summary>
     private const int EpochsSince = 14;
 
     private const string RequestSubject = "request";
@@ -92,12 +92,12 @@ public sealed class IntegrationStore(
     public string Run { get; } = run ?? StoreProcess.Run;
 
     /// <summary>
-    /// The lease's own test of a run (§13.4): alive while its process runs under the start time it recorded; a start it could not read when it
+    /// The lease's own test of a run: alive while its process runs under the start time it recorded; a start it could not read when it
     /// began counts as alive, as the lease's <i>cannot tell</i> holds.
     /// </summary>
     public static bool Lives(StoreRun run) => run.Started is not { } started || ProcessLiveness.Alive(run.Pid, started);
 
-    // ——— The requests (§4.6).
+    // ——— The requests.
 
     /// <inheritdoc/>
     public IntegrationRequest? OpenFor(string repository, string branch) =>
@@ -140,10 +140,10 @@ public sealed class IntegrationStore(
         }
     }
 
-    /// <summary>The epoch a request was admitted under; null for one admitted before epochs, which reads as its own.</summary>
+    /// <summary>The epoch a request is admitted under; null where none is recorded, which reads as its own.</summary>
     public string? RequestEpoch(string request) => EpochOf(RequestSubject, request);
 
-    /// <summary>The epoch a candidate was formed under, its first member's; null for one formed before epochs.</summary>
+    /// <summary>The epoch a candidate is formed under, its first member's; null where none is recorded.</summary>
     public string? CandidateEpoch(string candidate) => EpochOf(CandidateSubject, candidate);
 
     private string? EpochOf(string subject, string id) =>
@@ -167,7 +167,7 @@ public sealed class IntegrationStore(
 
     /// <summary>
     /// The newest membership of a request in any candidate, standing or ended; null where it stands in none. What a node's stop reads to
-    /// refuse itself once the member promoted (§17.4, F50).
+    /// refuse itself once the member promoted (F50).
     /// </summary>
     public IntegrationMember? MemberOf(string request) =>
         Reading(reader => reader.Query(
@@ -202,9 +202,8 @@ public sealed class IntegrationStore(
             .FirstOrDefault(), null);
 
     /// <summary>
-    /// A line's queue (§5.2 step 2's input): its repository's open requests for it that stand in no candidate, in their order (INTEGRATE1h:
-    /// those an <c>order</c> moved first, then the rest as admitted, then those it moved last). A request whose member was held for its conflict
-    /// (<see cref="IntegrationMemberStates.Held"/>, §5.4) is not queued: it waits for the steward's or the owner's act, and queued again it would
+    /// A line's queue: its repository's open requests for it that stand in no candidate, in their order (those an <c>order</c> moved first, then the rest as admitted, then those it moved last). A request whose member is held for its conflict
+    /// (<see cref="IntegrationMemberStates.Held"/>) is not queued: it waits for the steward's or the owner's act, and queued again it would
     /// be formed, conflict and be held in every candidate for ever.
     /// </summary>
     public IReadOnlyList<IntegrationRequest> Queued(string repository, string line) =>
@@ -224,7 +223,7 @@ public sealed class IntegrationStore(
         }, []);
 
     /// <summary>
-    /// Move a queued request first or last in its line's queue (§8's <c>order</c>, INTEGRATE1h): before, or after, every other open request of
+    /// Move a queued request first or last in its line's queue (its <c>order</c>): before, or after, every other open request of
     /// the line, in one write. Null where it moved; else why not (<see cref="IntegrationOrderRefusals"/>), nothing written.
     /// </summary>
     /// <exception cref="ArgumentException">A place that is neither first nor last.</exception>
@@ -292,10 +291,10 @@ public sealed class IntegrationStore(
         }
     }
 
-    // ——— The candidates (§5.2 step 2).
+    // ——— The candidates.
 
     /// <summary>
-    /// Form a candidate (§5.2 step 2) in one transaction: the candidate on its line's commit, claimed by this store's run at generation 1, its
+    /// Form a candidate in one transaction: the candidate on its line's commit, claimed by this store's run at generation 1, its
     /// job named by it, each request a member in the order given, and its form step's start; or, where a candidate already stands for the
     /// line, answer that one and write nothing.
     /// </summary>
@@ -388,7 +387,7 @@ public sealed class IntegrationStore(
             .FirstOrDefault(), null);
 
     /// <summary>
-    /// The candidate of a repository's line that ended last, or null where none has (INTEGRATE1e part e4a): what the next form reads to know the
+    /// The candidate of a repository's line that ended last, or null where none has: what the next form reads to know the
     /// last one was split, so it takes one member. Read by the end's own moment; the later formed of two that ended together.
     /// </summary>
     public IntegrationCandidate? LastEnded(string repository, string line) =>
@@ -438,7 +437,7 @@ public sealed class IntegrationStore(
 
     /// <summary>
     /// Every disposition no one has answered yet, oldest first: visible on the Integration view and the session's head until the session, the
-    /// steward or the owner answers it, even once the review row of its request has gone (§5.7).
+    /// steward or the owner answers it, even once the review row of its request has gone.
     /// </summary>
     public IReadOnlyList<IntegrationDisposition> Pending() =>
         Reading(reader => reader.Query(
@@ -460,7 +459,7 @@ public sealed class IntegrationStore(
             ("$at", Now()), ("$answer", answer), ("$request", request), ("$commit", commit))) == 1;
     }
 
-    // ——— A held candidate's decide (INTEGRATE1h; §4.5, §8).
+    // ——— A held candidate's decide.
 
     /// <summary>The decide recorded on a candidate; null where none is, or the store is from before the decides.</summary>
     public IntegrationDecide? DecideOf(string candidate) =>
@@ -470,7 +469,7 @@ public sealed class IntegrationStore(
             .FirstOrDefault(), null, ActsSince);
 
     /// <summary>
-    /// Record a decide on a candidate held for one (§4.5's <c>hold</c>: its last step a judge ended <c>held</c>), once, in one write that judges
+    /// Record a decide on a candidate held for one (its last step a judge ended <c>held</c>), once, in one write that judges
     /// it under the lock. The person's or the steward's act, not the run's, so no claim is checked: the run consumes it at its next look. Refused,
     /// nothing written, for a candidate that does not stand, one not held for a decide, one decided already (whose decide is answered), and a
     /// <c>land</c> by anyone but the person.
@@ -514,7 +513,7 @@ public sealed class IntegrationStore(
                 row => new IntegrationDecide(row.GetString(0), row.GetString(1), row.GetString(2), Moment(row, "at")), ("$candidate", candidate))
             .FirstOrDefault();
 
-    // ——— A step's two writes (§5.6).
+    // ——— A step's two writes.
 
     private static void Validate(IntegrationRequest request)
     {
@@ -591,7 +590,7 @@ public sealed class IntegrationStore(
 
     // ——— The rows read.
 
-    /// <summary>A read of a store that holds the family (or <paramref name="since"/>, a later step's table), or <paramref name="none"/> where the home has no store or one from before it.</summary>
+    /// <summary>A read of a store that holds the family (or <paramref name="since"/>, a later step's table), or <paramref name="none"/> where the home has no store or one that lacks it.</summary>
     private T Reading<T>(Func<DesktopStoreReader, T> read, T none, int since = Since)
     {
         using var reader = DesktopStoreReader.Open(Location);

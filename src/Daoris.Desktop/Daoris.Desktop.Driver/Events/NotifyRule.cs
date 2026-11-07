@@ -2,7 +2,7 @@ using System.Collections.Frozen;
 
 namespace Daoris.Driver;
 
-/// <summary>The kinds of news the person may be told of (§4.4's notifications row), one row each in <see cref="NotifyRule"/>.</summary>
+/// <summary>The kinds of news the person may be told of, one row each in <see cref="NotifyRule"/>.</summary>
 public enum NewsKind
 {
     /// <summary>A session waits on the person.</summary>
@@ -37,10 +37,10 @@ public enum NewsKind
 }
 
 /// <summary>
-/// The notify rule in one table (FOUNDATION1 m-v, the foundation design §4.4): the switch gates news alike, a Confirm waiting is a wait on the
-/// person and stays ungated (D196), and a look's news is never said aloud (NOTIFY2h). Recording is not telling: a notice is kept whatever the
+/// The notify rule in one table: the switch gates news alike, a Confirm waiting is a wait on the
+/// person and stays ungated, and a look's news is never said aloud. Recording is not telling: a notice is kept whatever the
 /// switch says, and a piece of news is claimed in the said-set whatever it says, so turning the switch on announces nothing that happened while it
-/// was off.
+/// is off.
 /// </summary>
 public static class NotifyRule
 {

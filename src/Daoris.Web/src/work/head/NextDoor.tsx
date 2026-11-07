@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-/** *next: Answer* on a head's facts line (REVIEWFLOW1b): the press that moves the work on, a door to its step. */
+/** *next: Answer* on a head's facts line: the press that moves the work on, a door to its step. */
 export function NextDoor({ press, onPress }: { press: string; onPress: () => void }) {
   const { t } = useTranslation();
   return (

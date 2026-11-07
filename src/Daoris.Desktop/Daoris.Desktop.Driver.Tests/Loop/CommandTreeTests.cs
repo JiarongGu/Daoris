@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One name, <c>daoris</c>, and one command tree (D228). A person's words are routed once into the words each command reads; a word no
+/// One name, <c>daoris</c>, and one command tree. A person's words are routed once into the words each command reads; a word no
 /// group owns is the CLI's, and a word handed once is never handed back.
 /// </summary>
 public sealed class CommandTreeTests

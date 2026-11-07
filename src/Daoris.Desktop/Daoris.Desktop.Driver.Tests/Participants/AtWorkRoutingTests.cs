@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1b-i's composition (the design §R11.2 points 1 and 3): each part's wait as the strip places it, how it joined, where it
+/// The composition of each part's wait as the strip places it, how it joined, where it
 /// runs, and the ended parts that wait on nothing folded past the newest three, all from the groups rows, the quests and the records.
 /// </summary>
 public sealed class AtWorkRoutingTests
@@ -109,7 +109,7 @@ public sealed class AtWorkRoutingTests
         var elsewhere = Routed("chat", parts, records, [taken with { Holder = "laptop", Here = "desk" }, new AtWorkQuest("q9", "Open")]);
         var here = Routed("chat", parts, records, [taken with { Holder = "desk", Here = "desk" }, new AtWorkQuest("q9", "Open")]);
         var closedTake = Routed("chat", parts, records, [taken with { Status = "Done" }, new AtWorkQuest("q9", "Open")]);
-        // A done held for the person's yes or its evidence stays on the open list, and the planner keeps waiting on it (D144 §6).
+        // A done held for the person's yes or its evidence stays on the open list, and the planner keeps waiting on it.
         var held = Routed("chat", parts, records, [taken, new AtWorkQuest("q9", "Done") { Held = true }]);
 
         Assert.Equal(("q9", "core"), (PartOf(standing, "chat").Waits!.Quest, PartOf(standing, "chat").Waits!.Of));

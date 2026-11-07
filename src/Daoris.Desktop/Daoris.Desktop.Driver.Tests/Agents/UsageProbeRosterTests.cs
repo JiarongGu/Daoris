@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// USAGEPROBE1 through the roster (D165, D179; D130 point 9): a start's walk asks an account's maker for its windows only at
+/// Through the roster, a start's walk asks an account's maker for its windows only at
 /// the set points, an account never read, one unread for the interval, one whose projection nears its curve, and one a limit or
-/// a credit's word was said of; otherwise it ranks on what the readings already say and starts without a probe. The probes are
+/// a credit's word is said of; otherwise it ranks on what the readings already say and starts without a probe. The probes are
 /// counted through the in-process stand-in, as <c>CodexUsageRosterTests</c> counts them.
 /// </summary>
 /// <remarks>Nothing here starts a process: the agent is present by a file look, and its server is a stand-in.</remarks>
@@ -146,7 +146,7 @@ public sealed class UsageProbeRosterTests : IDisposable
         var selection = await StartAsync(roster);
 
         Assert.Equal(["fake/account-1"], Asked());
-        // Over its curve by the reading the question had, so passed for the other (D130 point 9: the reading judged it).
+        // Over its curve by the reading the question had, so passed for the other: the reading judged it.
         Assert.Equal("account-2", selection.Profile);
         Assert.Equal(WalkStep.Near, selection.Choice?.Step);
         Assert.Equal("`account-1` has used 95% of its session limit, over its curve's 90%", selection.Choice?.Clause);
@@ -216,7 +216,7 @@ public sealed class UsageProbeRosterTests : IDisposable
                 [new WindowSeen("10080-minute", "weekly", null, 10080, used, 0.01, Start.AddDays(4), UsageHistory.ResetSaid)], at);
         }
 
-        // A door whose turns' meaning is unknown (Codex's, D179 point 8) ran on the first since its reading; the second had a turn
+        // A door whose turns' meaning is unknown (Codex's) ran on the first after its reading; the second has a turn
         // its ratios weigh; the third ran nothing.
         UsageHistory.Turned(
             _home, new TurnBinding("fake", "account-1", "fake-door", UsageHistory.MeaningUnknown),
@@ -253,7 +253,7 @@ public sealed class UsageProbeRosterTests : IDisposable
     }
 
     /// <summary>
-    /// USAGEONE1: a set of one has no choice a reading could change, so its start asks nothing, never read or stale; a
+    /// A set of one has no choice a reading could change, so its start asks nothing, never read or stale; a
     /// resume held to the tool's own home neither.
     /// </summary>
     [Fact]
@@ -282,7 +282,7 @@ public sealed class UsageProbeRosterTests : IDisposable
         Read("account-2", 0.20, 0.30, minutesAgo: 10);
         AccountCooling.Cool(_home, new CoolingEntry("fake", "account-1", _now.AddMinutes(5), true, "session", _now, "s0"), _now);
 
-        // Cooling, it is asked nothing: a start on a spent account spends nothing (TOOL4d).
+        // Cooling, it is asked nothing: a start on a spent account spends nothing.
         Assert.Equal("account-2", (await StartAsync(Roster())).Profile);
         Assert.Empty(Asked());
 
@@ -350,7 +350,7 @@ public sealed class UsageProbeRosterTests : IDisposable
         Assert.Equal(3, Asked().Length);
 
         Assert.Equal("account-2", asked.Profile);
-        Assert.Equal(WalkStep.Pace, asked.Choice?.Step);
+        Assert.Equal(WalkStep.Headroom, asked.Choice?.Step);
         Assert.Equal(asked.Profile, held.Profile);
         Assert.Equal(asked.Choice?.Step, held.Choice?.Step);
         Assert.Equal(asked.Choice?.Clause, held.Choice?.Clause);

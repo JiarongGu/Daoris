@@ -32,12 +32,12 @@ internal static class HelpRuleSettings
         + "`--no-convention`, or `--clear` — e.g. `daoris place commits web-app --mode ask --convention \"Imperative subject line.\"`.";
 
     /// <summary>
-    /// <c>review</c> (REVIEWENV1a, D154 point 2, the review-environment design §1.7), as <c>daoris place review</c> reads its
+    /// <c>review</c>, as <c>daoris place review</c> reads its
     /// words: an environment added or replaced with its parts, <c>none</c>, <c>--drop</c>, <c>--required|--not-required</c>
     /// or <c>--clear</c>, for a repository or a whole workspace, a quoted word kept whole. Judged by the twin's table
     /// (<see cref="ReviewRules.Apply"/>), and an environment's procedure looked for in the checkouts it reaches, as the
     /// screen's route and the terminal look; the card says what the rule lets a step do, and what the landing's gate does with it
-    /// (<see cref="ReviewRules.Gate"/>, REVIEWENV1c2).
+    /// (<see cref="ReviewRules.Gate"/>).
     /// </summary>
     public static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Review(
         string? target, string? workspace, string value, DriverConfig config, HelpMachineFacts facts)
@@ -145,11 +145,11 @@ internal static class HelpRuleSettings
     }
 
     /// <summary>
-    /// <c>opinion</c> (XAGENT1a, D155 point 3, the second-agent design §2.5), as <c>daoris place opinion</c> reads its words:
+    /// <c>opinion</c>, as <c>daoris place opinion</c> reads its words:
     /// <c>--agents</c> and the switches set over the rule set there, <c>none</c> or <c>--clear</c>, for a repository or a
     /// whole workspace, a quoted word kept whole. Judged by the twin's table (<see cref="OpinionRules.Apply"/>); the card says
     /// what the rule lets a reviewer do, names the reviewers of the working agent's own family over this machine's agents, a
-    /// plugin's among them (XAGENT1b2), and says what the gate does with it (<see cref="OpinionRules.Gate"/>, XAGENT1f4).
+    /// plugin's among them, and says what the gate does with it (<see cref="OpinionRules.Gate"/>).
     /// </summary>
     public static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Opinion(
         string? target, string? workspace, string value, DriverConfig config, HelpMachineFacts facts)
@@ -233,7 +233,7 @@ internal static class HelpRuleSettings
             : $"Set the second opinion for {whose}.";
         var map = circle ? after.WorkspaceOpinions : after.Opinions;
         // The working agent is the one this machine's work runs on: a reviewer of its family is no independent reading. A
-        // plugin's agent is judged by what its plugin declares (XAGENT1b2), as the terminal and the reviewer's choice judge it.
+        // plugin's agent is judged by what its plugin declares, as the terminal and the reviewer's choice judge it.
         var adapters = ProviderRegistry.Built().WithPlugins(facts.Plugins);
         List<string> said = map.TryGetValue((circle ? workspace : target)!, out var standing)
             ? [.. OpinionRules.Says(standing, OpinionRules.SameAgent(standing, ActorChoices.BuildAgent(config), adapters)), .. OpinionRules.Gate(standing)]
@@ -243,7 +243,7 @@ internal static class HelpRuleSettings
     }
 
     /// <summary>
-    /// <c>helpers</c> (DOORS1a; D163 point 3, MIXAGENT2a-i), as <c>daoris place helpers</c> reads its words: <c>--mode</c> and
+    /// <c>helpers</c>, as <c>daoris place helpers</c> reads its words: <c>--mode</c> and
     /// <c>--agents</c> set over the rule set there, or <c>--clear</c>, for a repository or a whole workspace, a quoted list kept
     /// whole. Judged by the twin's table (<see cref="HelperRules.Apply"/>); the card says the rule it leaves and what an agent's
     /// ask then does, in the terminal's sentences.
@@ -296,12 +296,12 @@ internal static class HelpRuleSettings
     }
 
     /// <summary>
-    /// <c>commits</c> (DOORS1a; D164's amendment points 1 and 5, PROCESS1a), as <c>daoris place commits</c> reads its words:
+    /// <c>commits</c>, as <c>daoris place commits</c> reads its words:
     /// <c>--mode</c> and <c>--convention</c> set over the rule set there, <c>--no-convention</c> the empty convention that takes
     /// the standing one away, or <c>--clear</c>, for a repository or a whole workspace, a quoted convention kept whole. Judged by
     /// the twin's table (<see cref="CommitRules.Apply"/>); the card says how work is then committed, in the terminal's sentences,
     /// and quotes the convention as it will be kept, which may be seeded from the repository's own instructions but is the
-    /// person's once they apply it (D164's amendment point 5).
+    /// person's once they apply it.
     /// </summary>
     public static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Commits(
         string? target, string? workspace, string value, DriverConfig config)

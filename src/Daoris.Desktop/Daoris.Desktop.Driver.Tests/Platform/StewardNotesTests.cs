@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The steward's own records (STEWARDROLE1b, D209 §5.1; the design §10 row 1b's notes' sweep): every move note, resumed brief and
+/// The steward's own records: every move note, resumed brief and
 /// planner reason a steward's act writes is its own code, a behavioural sibling of the person's, and none of them, stored English or
 /// worded en and zh, reads <i>person</i> or <i>you</i>; and every reader of the person's codes, found by search, reads the steward's too.
 /// </summary>

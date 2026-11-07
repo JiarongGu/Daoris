@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CHATFLOW1g (D228): a run's <c>land</c> is the one way to land, so a door whose work no run's land performs lands nothing in place. It
+/// A run's <c>land</c> is the one way to land, so a door whose work no run's land performs lands nothing in place. It
 /// answers the gate's own refusal where a part holds, else why the work's process lands nothing, as <see cref="LandingCode.Refused"/>; the
 /// terminal's press says the same, exit 1.
 /// </summary>

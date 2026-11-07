@@ -8,12 +8,12 @@ namespace Daoris.Driver;
 /// <summary>What one pass over a home's boxes of one kind came to (<see cref="IMoveBoxImport.Import"/>).</summary>
 /// <param name="Imported">The moves written from a box this pass, each box set aside.</param>
 /// <param name="Waiting">
-/// The records whose box is still to be imported because the pass was held, the start's confirmation not settled or the store not taking
-/// it: the course reads each one's old part as <c>Never</c>, and no take-up, go-on or sweep acts on it meanwhile (§13.5).
+/// The records whose box is still to be imported because the pass is held, the start's confirmation not settled or the store not taking
+/// it: the course reads each one's old part as <c>Never</c>, and no take-up, go-on or sweep acts on it meanwhile.
 /// </param>
 /// <param name="Behind">The records whose box waits behind the record's standing move, imported once that move ends; read as <c>Never</c> too.</param>
 /// <param name="Unread">The boxes that do not read as a move: left where they are, as evidence, holding nothing.</param>
-/// <param name="Held">Why the pass was held, or null.</param>
+/// <param name="Held">Why the pass is held, or null.</param>
 public sealed record MoveBoxPass(IReadOnlyList<MoveRecord> Imported, IReadOnlyList<string> Waiting, IReadOnlyList<string> Behind, int Unread, string? Held)
 {
     /// <summary>Nothing to import: no box in the home.</summary>
@@ -24,9 +24,9 @@ public sealed record MoveBoxPass(IReadOnlyList<MoveRecord> Imported, IReadOnlyLi
 }
 
 /// <summary>
-/// The import of one kind of box an older build writes, into the move record (FOUNDATION1f-i part 2; §3.3, §13.5). Called by the take-up
-/// (<see cref="MoveTakeUp"/>) before anything else at each come-up and look; the limit box's is handed it by the conversations' holder since
-/// FOUNDATION1f-vi part a, and the hand-over's since FOUNDATION1f-v parts a and c.
+/// The import of one kind of box an older build writes, into the move record. Called by the take-up
+/// (<see cref="MoveTakeUp"/>) before anything else at each come-up and look; the conversations' holder hands it the limit box's, and the
+/// hand-over's too.
 /// </summary>
 public interface IMoveBoxImport
 {
@@ -41,7 +41,7 @@ public interface IMoveBoxImport
 }
 
 /// <summary>
-/// The import of a box an older build writes (FOUNDATION1f-i part 2; §3.3, §13.5): each read once, its bytes taken whole and its move read from
+/// The import of a box an older build writes: each read once, its bytes taken whole and its move read from
 /// those bytes, written as the store's own row with the import's receipt in one transaction, and only then set aside as
 /// <c>&lt;box&gt;.imported</c>, never deleted, and only where the file is still the bytes read; a box rewritten meanwhile is a later write, which
 /// the next pass reads.
@@ -49,13 +49,13 @@ public interface IMoveBoxImport
 /// <remarks>
 /// <para><b>Set aside, never left as a backup.</b> A box is a move an older build <i>acts on</i>, so it is imported only once the start's
 /// confirmation is settled, and its old part is read as <c>Never</c> until it is; a build rolled back before it confirmed meets every box as it
-/// was (§13.5).</para>
-/// <para><b>Once.</b> A box whose very bytes an import already holds was imported, and a crash stopped short of setting it aside: only its
+/// stood.</para>
+/// <para><b>Once.</b> A box whose very bytes an import already holds has been imported, and a crash stopped short of setting it aside: only its
 /// set-aside is left to do. A box whose record has a standing move waits behind it, left in place, and is imported once that move ends; there
-/// are never two records of one move (§3.3).</para>
-/// <para><b>Called by one production site per box, in the row that retires its reader</b>: importing a box sets it aside from today's readers,
-/// so the limit box is imported since FOUNDATION1f-vi part a and the hand-over box since FOUNDATION1f-v parts a (a conversation's) and c (a
-/// quest session's, by the driven holder), each move read from the store (<c>MoveStoreCensusTests</c>).</para>
+/// are never two records of one move.</para>
+/// <para><b>Called by one production site per box</b>: importing a box sets it aside from today's readers,
+/// so the limit box is imported by the conversations' holder and the hand-over box by the conversations' holder (a conversation's) and the
+/// driven holder (a quest session's), each move read from the store (<c>MoveStoreCensusTests</c>).</para>
 /// </remarks>
 public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImport
 {
@@ -154,7 +154,7 @@ public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImpo
         }
         catch (FileNotFoundException)
         {
-            // Taken away since it was listed, by today's reader or another importer: nothing to do.
+            // Taken away after the listing, by today's reader or another importer: nothing to do.
             return Outcome.Done;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
@@ -184,7 +184,7 @@ public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImpo
         return Outcome.Done;
     }
 
-    /// <summary>The box moved to its set-aside name, unless it changed since it was read: that one is a later write, read at the next pass.</summary>
+    /// <summary>The box moved to its set-aside name, unless it changed after the read: that one is a later write, read at the next pass.</summary>
     private static void SetAside(string path, string sha)
     {
         try
@@ -194,7 +194,7 @@ public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImpo
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
-            // Left where it is: its receipt says it was imported, and the next pass sets it aside.
+            // Left where it is: its receipt says it is imported, and the next pass sets it aside.
         }
     }
 
@@ -219,8 +219,7 @@ public abstract class MoveBoxImport(string home, MoveStore store) : IMoveBoxImpo
 }
 
 /// <summary>
-/// The ended limit move's box, <c>&lt;s&gt;.limit-move.json</c> (LIMITRESUME1c, <see cref="LimitBoxes"/>), imported as the move it keeps
-/// (FOUNDATION1f-i part 2): a conversation's brief from an ended record, at <c>old-ended</c> before its new part opened and at <c>opened</c>
+/// The ended limit move's box, <c>&lt;s&gt;.limit-move.json</c> (<see cref="LimitBoxes"/>), imported as the move it keeps: a conversation's brief from an ended record, at <c>old-ended</c> before its new part opened and at <c>opened</c>
 /// once the box names it, with the words it said under the box's own key; its recipe's bound and its refused turns' bound the box's, and its
 /// why the one its message is composed by.
 /// </summary>
@@ -258,7 +257,7 @@ public sealed class LimitBoxImport(string home, MoveStore store, Func<string, in
 
         // Only a box whose open moved the words (`moved`) names them on its destination. One an older host's open wrote moved none, its words
         // still on the old record: the move is opened with no word, as the live move records such an open, since naming them as the
-        // destination's would read them gone from it, left (FOUNDATION1f-vi part a).
+        // destination's would read them gone from it, left.
         return new MoveFromBox(decision, MoveRecordPhase.Opened)
         {
             Destination = to,
@@ -270,14 +269,13 @@ public sealed class LimitBoxImport(string home, MoveStore store, Func<string, in
 }
 
 /// <summary>
-/// The hand-over box, <c>&lt;s&gt;.hand-over.json</c> (MIXAGENT1a-i, <see cref="HandOverBox"/>), imported as the move it keeps
-/// (FOUNDATION1f-i part 2): a hand-over decided and not yet taken, to the agent and account it names, by its why and its asker, at the moment
-/// it was asked. The same file name holds a conversation's box and a quest session's, each imported by exactly one holder.
+/// The hand-over box, <c>&lt;s&gt;.hand-over.json</c> (<see cref="HandOverBox"/>), imported as the move it keeps: a hand-over decided and not yet taken, to the agent and account it names, by its why and its asker, at the moment
+/// it is asked. The same file name holds a conversation's box and a quest session's, each imported by exactly one holder.
 /// </summary>
 /// <param name="home">The home whose boxes these are.</param>
 /// <param name="store">The move record the boxes are imported into, under its run.</param>
 /// <param name="owns">
-/// Whether this importer owns a session's box, read from its record's kind (FOUNDATION1f-v parts a and c): the shell's holder owns a conversation's,
+/// Whether this importer owns a session's box, read from its record's kind: the shell's holder owns a conversation's,
 /// the driven holder a quest session's, so the other's box is left where it is. False for a record the ledger could not be asked about.
 /// </param>
 /// <param name="executor">The executor whose move the box is: a conversation's by default, <see cref="MoveExecutors.Driven"/> for a quest session's.</param>

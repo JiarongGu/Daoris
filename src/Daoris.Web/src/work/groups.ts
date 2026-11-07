@@ -2,13 +2,13 @@ import type { Session } from '../data/api';
 import { answeredPark, SESSION_ACTIVE, type ShownState, shownState } from '../design/ui';
 import { sessionOrigin } from './identity';
 
-// The session list by state (SESSUX1c, D126 §2.1, §4): the groups the driver's one reader answers, as the list
-// draws them; the list by repository as it was; the strip; what the list remembers; and what *Archive what ended…*
-// would take (SESSUX1e). Pure, so every list a person could have is an argument, and the list, the strip and the badge
+// The session list by state: the groups the driver's one reader answers, as the list
+// draws them; the list by repository; the strip; what the list remembers; and what *Archive what ended…*
+// would take. Pure, so every list a person could have is an argument, and the list, the strip and the badge
 // read one answer.
 
 /**
- * The groups the session list shows by state (D126 §2.1), in the order the person acts on them, and Archived: the
+ * The groups the session list shows by state, in the order the person acts on them, and Archived: the
  * host's spelling, which `daoris session list --group` shares.
  */
 export type SessionGroupName = 'you' | 'review' | 'working' | 'later' | 'ended' | 'archived';
@@ -17,13 +17,13 @@ export type SessionGroupName = 'you' | 'review' | 'working' | 'later' | 'ended' 
 export const GROUP_ORDER: readonly SessionGroupName[] = ['you', 'review', 'working', 'later', 'ended', 'archived'];
 
 /**
- * Where one session is listed and what its row's second line says (D126 §2.2, §2.4), as `SESSION_GROUPS` answers it.
+ * Where one session is listed and what its row's second line says, as `SESSION_GROUPS` answers it.
  *
  * @remarks
  * **One reader, in the driver.** It needs the planner's verdicts and a git judgement per tree, which only the driver has,
  * and the terminal prints the same answer, so the page reads it rather than deriving a group of its own. `shown` is the
- * record's state or a derived word, `parked`, `awaiting-reply`, `answered` (ANSWER1c), `going-on` (MSG1f) or `limit-waits` (an ended record held for an account's reset, LIMITSWITCH3b); the page keeps its own *idle* for a live chat between
- * turns (UX5 U17). `work` is what an ended session's own tree holds, a count null where git could not say. `archived`
+ * record's state or a derived word, `parked`, `awaiting-reply`, `answered`, `going-on` or `limit-waits` (an ended record held for an account's reset); the page keeps its own *idle* for a live chat between
+ * turns. `work` is what an ended session's own tree holds, a count null where git could not say. `archived`
  * says the mark stands: a session that needs the person stays in its group whatever the mark says.
  */
 export type SessionGrouping = {
@@ -37,63 +37,63 @@ export type SessionGrouping = {
   awaitsOf?: string | null;
   work?: {
     commits: number | null; uncommitted: number | null;
-    /** The branch the tree is on where the agent moved it onto one of its own (TREEFOLLOW1, TREEFOLLOWWEB2). */
+    /** The branch the tree is on where the agent moved it onto one of its own. */
     branch?: string | null;
   } | null;
   /**
-   * Whether this session holds its quest on this machine for the person (SESSUX1b, D126 §3.3): the person stopped it, or
-   * (AGENTERRORS1a2) it ended past its transient bound, and nothing starts the quest here until *Try again* releases it. Its row says so, and offers *Try again* (SESSUX1d).
+   * Whether this session holds its quest on this machine for the person: the person stopped it, or
+   * it ended past its transient bound, and nothing starts the quest here until *Try again* releases it. Its row says so, and offers *Try again*.
    */
   holdsQuest?: boolean;
   /**
-   * Whose pause holds this session's quest on this machine (PAUSE1b, D132 §6.1): an ask's or a quest's own. Its row says so,
-   * and offers *Resume* in *Try again*'s place (PAUSE1e). Absent where none does.
+   * Whose pause holds this session's quest on this machine: an ask's or a quest's own. Its row says so,
+   * and offers *Resume* in *Try again*'s place. Absent where none does.
    */
   pausedBy?: { scope: 'ask' | 'quest'; id: string } | null;
   /**
-   * What holds the person's words on an ended record that resumes later (MSG1f2, D137 §3.2), by the planner's verdict: the
+   * What holds the person's words on an ended record that resumes later, by the planner's verdict: the
    * work's pause (`paused`), the person's hold on its repository (`hold`), the cap (`cap`), its account cooling until
    * `until` (`cooling`), a session in its way (`busy`), or anything else (`waits`), with the planner's sentence. Its row
    * says so. Absent where nothing holds words. A `cooling` hold names the account that resets
-   * first at `until` (LIMITSWITCH1): `account` its id, null for the agent's own sign-in, and
+   * first at `until`: `account` its id, null for the agent's own sign-in, and
    * `accountName` the name the person gave it, where it has one.
    */
   holds?: {
     why: string; reason: string; repository?: string | null; until?: string | null; account?: string | null; accountName?: string | null;
   } | null;
   /**
-   * Whether *Delete…* would be taken (SESSUX1f, D126 §5.4): a conversation that served no quest, whose record the ledger
-   * would delete and whose tree and landing this machine no longer holds. Offered only where true, D95's way.   */
+   * Whether *Delete…* would be taken: a conversation that served no quest, whose record the ledger
+   * would delete and whose tree and landing this machine no longer holds. Offered only where true.   */
   deletable?: boolean;
   /**
-   * What its own tree offers to land (LAND4, D102's LAND4 note), whatever group it rests in bar Working: the commits on it no
+   * What its own tree offers to land, whatever group it rests in bar Working: the commits on it no
    * branch of the person's holds, by the clean-up's proof, on its branch in its tree (the tree's name, never its path), with
    * its uncommitted paths, null where git could not say. Its page offers *Accept…* beside it. Absent where it offers none,
    * and where the tree holds none.
    */
   lands?: LandOffer | null;
   /**
-   * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b, D102's note): a squash merge or a
+   * What its own tree offers where the line holds its commits by content: a squash merge or a
    * cherry-pick put its work elsewhere, so its page offers no *Accept…* but says where the work is and offers the review's
    * *Discard*, unforced. Never beside `lands`. Absent where it offers none.
    */
   discards?: DiscardOffer | null;
   /**
-   * The call a working session's agent is inside, as the driver heard it from the session's events (WAITSAY1b, D152's UX7c
-   * amendment): its title, and when it began by the driver's clock, a call begun before this window opened among them. Its
+   * The call a working session's agent is inside, as the driver heard it from the session's events:
+   * its title, and when it began by the driver's clock, a call begun before this window opened among them. Its
    * row and its head say *running … for …*. Held in the driver's memory, never the record; null where none is open, and
-   * absent otherwise. `waiting` (AUTONOMY1b3b): its permission request is held for the person's answer,
-   * timed from the hold, its title empty where the agent named none. `told`
-   * (FABRIC-PIPELINE1c): Daoris told the session this call ran past its pipeline's bound.
+   * absent otherwise. `waiting`: its permission request is held for the person's answer,
+   * timed from the hold, its title empty where the agent named none. `told`:
+   * Daoris told the session this call ran past its pipeline's bound.
    */
   calling?: { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; quietTold?: boolean; heard?: string } | null;
 };
 
-/** The characters a running call's head is said in at most (RAILLINE1), its ellipsis among them. */
+/** The characters a running call's head is said in at most, its ellipsis among them. */
 export const CALL_HEAD = 40;
 
 /**
- * A running call said in a few words (RAILLINE1): its title's first line, its spaces run together, cut to `CALL_HEAD` characters
+ * A running call said in a few words: its title's first line, its spaces run together, cut to `CALL_HEAD` characters
  * with an ellipsis where more followed. A shell call's title is its whole command, three lines on the install's head and the
  * whole of a rail row's line; the row and the head say this, and the whole title in their tips.
  */
@@ -104,11 +104,11 @@ export function callHead(title: string): string {
   return `${first.slice(0, CALL_HEAD - 1).join('').trimEnd()}…`;
 }
 
-/** What an ended session's tree offers to land (LAND4): the driver's `LandOffer`, as `SESSION_GROUPS` answers it. */
+/** What an ended session's tree offers to land: the driver's `LandOffer`, as `SESSION_GROUPS` answers it. */
 export type LandOffer = { branch: string; tree: string; commits: number; uncommitted: number | null };
 
 /**
- * What a tree whose commits the line holds by content offers (SQUASHTIDY1b): the driver's `DiscardOffer`, as `SESSION_GROUPS`
+ * What a tree whose commits the line holds by content offers: the driver's `DiscardOffer`, as `SESSION_GROUPS`
  * answers it. `says` is the driver's sentence where *Accept…* would be: where its work is, in Discard's own clause, and why
  * its tree stays where an unforced discard would not go. `keeps` is the ref an unforced discard keeps its commits at, and
  * `keptAt` the ask's sentence naming it; both null where the discard would not go now. Shown as they are.
@@ -116,12 +116,12 @@ export type LandOffer = { branch: string; tree: string; commits: number; uncommi
 export type DiscardOffer = { branch: string; tree: string; says: string; keeps: string | null; keptAt: string | null };
 
 /**
- * How the list is arranged (D126 §4.1): by state, the default, by repository, the arrangement it had before, or by ask, each
- * ask's entries under its name (D167 point 5, SESSONE1c).
+ * How the list is arranged: by state, the default, by repository, or by ask, each
+ * ask's entries under its name.
  */
 export type SessionArrangement = 'state' | 'repository' | 'ask';
 
-/** What Sessions' list remembers of its own ⋯ (D126 §4.1, D118 §3f): its arrangement, and whether archived is shown. */
+/** What Sessions' list remembers of its own ⋯: its arrangement, and whether archived is shown. */
 export type SessionFilters = { group: SessionArrangement; archived: boolean };
 
 /**
@@ -141,7 +141,7 @@ export function keptSessionFilters(filters: SessionFilters): Record<string, unkn
   return { ...(filters.group !== 'state' ? { group: filters.group } : {}), ...(filters.archived ? { archived: true } : {}) };
 }
 
-/** The words the reader derives that the page shows as its own (D126 §2.2, ANSWER1c, MSG1f, HELPERWAIT1). */
+/** The words the reader derives that the page shows as its own. */
 const DERIVED: ReadonlySet<string> = new Set(['parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limit-waits']);
 
 /**
@@ -159,7 +159,7 @@ export function shownOf(
 
 /**
  * Whether a row waits on the person: a session parked to ask them, or the last session of a quest parked on its
- * failures. Not a park they answered, which the same session goes on from at the driver's next look (ANSWER1c).
+ * failures. Not a park they answered, which the same session goes on from at the driver's next look.
  */
 export function waitsOnYou(
   session: Pick<Session, 'state' | 'said'>, grouping: Pick<SessionGrouping, 'shown'> | null | undefined,
@@ -171,7 +171,7 @@ export function waitsOnYou(
  * Where a session goes until the reader answers for it: a record that started after the reader's last look. Its record
  * alone says only the reader's first step, live or ended (`SessionGroups.Place`): a live session of this machine's
  * parked to ask the person waits on you, a teammate's waits on them and is working, one the person answered goes on and
- * is working (ANSWER1c), and an ended one is ended. Nothing here says parked, to review or resumes later, which only
+ * is working, and an ended one is ended. Nothing here says parked, to review or resumes later, which only
  * the reader can.
  */
 function provisional(session: Session): SessionGroupName {
@@ -185,12 +185,12 @@ const newestFirst = (a: Session, b: Session) => b.updated.localeCompare(a.update
 export type StateGroup = { group: SessionGroupName; sessions: Session[] };
 
 /**
- * The list by state (D126 §2.1): the groups the reader answered, each in its order, the empty ones left out.
+ * The list by state: the groups the reader answered, each in its order, the empty ones left out.
  *
  * @remarks
  * - **Only what the page holds.** The reader answers for every record on this machine; the page's list is the scope the
  *   person chose, so a session it does not hold is not drawn.
- * - **Archived is hidden unless shown** (§4.1), but the attended session is never taken out from under its reader: it is
+ * - **Archived is hidden unless shown**, but the attended session is never taken out from under its reader: it is
  *   listed under Archived alone.
  * - **A record the reader has not answered for yet** goes where its record alone puts it, after the reader's rows, or
  *   for an ended one before them, since it ended after the reader looked and the group goes newest first. The next
@@ -222,11 +222,11 @@ export function sessionsByState(
   return GROUP_ORDER.map((group) => ({ group, sessions: rows.get(group)! })).filter((group) => group.sessions.length > 0);
 }
 
-/** What *Archive what ended…* would take, and how many stay in the list because they need the person (D126 §5.3). */
+/** What *Archive what ended…* would take, and how many stay in the list because they need the person. */
 export type EndedToArchive = { going: string[]; kept: { you: number; review: number } };
 
 /**
- * What *Archive what ended…*'s first press lists (SESSUX1e, D126 §5.3): every session the reader placed in Ended that is
+ * What *Archive what ended…*'s first press lists: every session the reader placed in Ended that is
  * not archived, in its order, and how many stay under *Waiting on you* and *To review*, counted as their headings are.
  *
  * @remarks
@@ -248,17 +248,17 @@ export function endedToArchive(sessions: readonly Session[], groupings: readonly
 export type RepositoryGroups = { live: { repository: string; sessions: Session[] }[]; ended: Session[] };
 
 /**
- * The list by repository (D126 §4.3), the arrangement it had before: a group per repository by name, so the list does
+ * The list by repository: a group per repository by name, so the list does
  * not reshuffle as states move, *waiting on you* first within it, and the ended beneath, newest first.
  *
  * @remarks
- * It gains the reader's words: a parked quest's last session sorts with *waiting on you* in its repository's group,
+ * It takes the reader's words: a parked quest's last session sorts with *waiting on you* in its repository's group,
  * since only the person moves it, and an archived session is hidden unless shown. The attended session stays among the
- * live whatever state it reached, the rule this arrangement always kept: a session that ends while you read it must not
+ * live whatever state it reached: a session that ends while you read it must not
  * jump down the list out from under you.
  *
- * 🔴 **The ended are listed, never dropped** (D62, found on the deployed application): the list once held live sessions
- * only, and a machine with four real records showed four sentences saying there was nothing. The repository groups keep
+ * 🔴 **The ended are listed, never dropped**: a list of live sessions only would show a machine with
+ * four real records four sentences saying there is nothing. The repository groups keep
  * their headers for the live facts they carry, which an ended session has none of.
  */
 export function sessionsByRepository(
@@ -283,12 +283,11 @@ export function sessionsByRepository(
   };
 }
 
-/** A row the list draws as its own, with the helpers and reviewers drawn under it (MIXAGENT3a-ii); `id` is its session's. */
+/** A row the list draws as its own, with the helpers and reviewers drawn under it; `id` is its session's. */
 export type NestedRow = { id: string; session: Session; under: Session[] };
 
 /**
- * Each helper and reviewer drawn under the row of the work it serves (MIXAGENT3a-ii, the mixed-agents design §4; closing
- * XAGENT1g4d): `groups` are the rows an arrangement draws, in its order, and `serving` names, for each helper and reviewer the
+ * Each helper and reviewer drawn under the row of the work it serves: `groups` are the rows an arrangement draws, in its order, and `serving` names, for each helper and reviewer the
  * rail joined, the session whose work it serves (a helper's `serves`, a reviewer's opinion's `working`).
  *
  * @remarks
@@ -297,9 +296,9 @@ export type NestedRow = { id: string; session: Session; under: Session[] };
  *   the list drew it in.
  * - **Its own place where its parent is not drawn**: a session the list does not hold, or does not draw (archived and hidden),
  *   and where the person must act on it (`keepOwn`), so nothing that waits on them is folded under something else.
- * - **The row that stands for it** (`standsFor`): one row per line of work (D167), so a helper of a part that does not lead is
- *   drawn under its entry's row. A helper and a reviewer keep entries of their own (the co-working design §1.2).
- * - **One level**, as a helper cannot ask for a helper (D163 point 2): a row drawn under another holds none, and whatever
+ * - **The row that stands for it** (`standsFor`): one row per line of work, so a helper of a part that does not lead is
+ *   drawn under its entry's row. A helper and a reviewer keep entries of their own.
+ * - **One level**, as a helper cannot ask for a helper: a row drawn under another holds none, and whatever
  *   names it keeps its own place.
  */
 export function nestServing(
@@ -330,11 +329,11 @@ export function nestServing(
     .map((row) => ({ id: row.id, session: row, under: under.get(row.id) ?? [] })));
 }
 
-/** How many ended sessions a group lists before its *Show N more* (D126 §4.4). */
+/** How many ended sessions a group lists before its *Show N more*. */
 export const ENDED_SHOWN = 12;
 
 /**
- * A long Ended group's first rows, and how many it leaves for its *Show N more* (D126 §4.4): counted, never silently
+ * A long Ended group's first rows, and how many it leaves for its *Show N more*: counted, never silently
  * cut. The attended session is never cut out of its group.
  */
 export function cutEnded<T extends { id: string }>(
@@ -347,7 +346,7 @@ export function cutEnded<T extends { id: string }>(
 }
 
 /**
- * The strip's sessions (D126 §2.5): what waits on the person first, then what runs, in the open list's order, by state
+ * The strip's sessions: what waits on the person first, then what runs, in the open list's order, by state
  * or by repository. What ended is the open list's; the attended session stays one press away, whatever it reached.
  */
 export function stripSessions(

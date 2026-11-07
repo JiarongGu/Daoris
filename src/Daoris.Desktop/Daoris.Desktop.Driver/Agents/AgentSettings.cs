@@ -11,7 +11,7 @@ public sealed record ModelEffort(string Model, string Effort);
 /// <param name="Model">The account's model, or null for the tool's own default.</param>
 /// <param name="Effort">The account's effort, or null for the tool's own default.</param>
 /// <param name="PerModel">The efforts set per model, in the file's order.</param>
-/// <param name="Problem">The sentence saying why the file could not be read; null when it could, or was absent.</param>
+/// <param name="Problem">The sentence saying why the file could not be read; null when it could, or when the file is absent.</param>
 public sealed record AgentSettingsRead(
     string? Model, string? Effort, IReadOnlyList<ModelEffort> PerModel, string? Problem);
 
@@ -19,29 +19,28 @@ public sealed record AgentSettingsRead(
 public sealed record AgentSettingEdit(string? Value);
 
 /// <summary>
-/// An account's own settings — its model and its effort — in the tool's own file (AGT6, D98).
+/// An account's own settings — its model and its effort — in the tool's own file.
 /// </summary>
 /// <remarks>
 /// <para><b>The file is the account's, and the tool's.</b> Claude Code keeps an account's defaults in
 /// <c>settings.json</c> in its configuration home: the user tier of its settings cascade, and the file
 /// its ACP adapter reads at <c>CLAUDE_CONFIG_DIR/settings.json</c> (<c>claude-agent-acp</c> 0.84.0,
-/// <c>dist/settings.js</c>). A Daoris account IS such a home (D49 §4), so Daoris changes the keys a
+/// <c>dist/settings.js</c>). A Daoris account IS such a home, so Daoris changes the keys a
 /// person asked it to — <c>model</c>, <c>effortLevel</c>, and an effort per model under
 /// <c>modelSettings</c> — and nothing else in it.</para>
 ///
-/// <para>The FILE is the contract, and this is its one writer since the CLI's <c>agentsettings.ts</c> left with
-/// <c>daoris agent settings</c> (PUSH1f2d). Its seven rules (<c>AgentSettingsTests</c>):</para>
+/// <para>The FILE is the contract, and this is its one writer. Its seven rules (<c>AgentSettingsTests</c>):</para>
 /// <list type="number">
 /// <item>The file is the tool's own <c>settings.json</c>, in the account's configuration home.</item>
 /// <item>No file is the tool's defaults: nothing set, and reading creates nothing.</item>
 /// <item>A file that is not a JSON object is a sentence to a read and a refusal to a write, which leaves
-/// it exactly as it was.</item>
+/// it unchanged.</item>
 /// <item>A write changes only what it names; every other key keeps its place and its value.</item>
 /// <item>An effort is low, medium, high or xhigh — <c>max</c> is refused, since the tool keeps it for
 /// one session only; a model is one word, and the tool's own aliases are offered first.</item>
 /// <item>Clearing removes the key; an entry per model left empty goes, and so does an empty
 /// <c>modelSettings</c>.</item>
-/// <item>A new file holds exactly what was written, in the tool's formatting: two-space indent, LF, and
+/// <item>A new file holds exactly what a write put in it, in the tool's formatting: two-space indent, LF, and
 /// a final newline.</item>
 /// </list>
 /// </remarks>
@@ -87,7 +86,7 @@ public static class AgentSettings
     /// Change the named keys in the account's file and nothing else (rules 3–7), then read it back.
     /// </summary>
     /// <remarks>
-    /// Every value is judged before anything is written, so a refused edit leaves the file as it was. A
+    /// Every value is judged before anything is written, so a refused edit leaves the file unchanged. A
     /// write that would change nothing writes nothing: the file is the tool's, and a rewrite that only
     /// re-spaced it would still be a change to somebody else's file.
     /// </remarks>
@@ -221,8 +220,8 @@ public static class AgentSettings
 }
 
 /// <summary>
-/// An account's own model and effort, written for an agent by its name (AGT6, D98; PUSH1f2d, the alone-path design §1.3): the window's
-/// <c>SET_AGENT_SETTINGS</c>, Ask Daoris's Apply (HELP6) and <c>daoris agent settings</c> alone call this one judgement over the
+/// An account's own model and effort, written for an agent by its name: the window's
+/// <c>SET_AGENT_SETTINGS</c>, Ask Daoris's Apply and <c>daoris agent settings</c> alone call this one judgement over the
 /// roster they read. Never the tool's own configuration home, and never an account a setting would bring into being.
 /// </summary>
 public static class AccountSettings

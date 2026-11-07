@@ -5,7 +5,7 @@ import { sessionWidths } from '../../design/storyWidths';
 import type { PieceRow } from './pieceRows';
 import { Pieces } from './Pieces';
 
-// A driven session's Pieces section, under its head (COAGENT1b, D199; the co-agent design §6.1): each piece it asked another agent to
+// A driven session's Pieces section, under its head: each piece it asked another agent to
 // write, as the person wrote it, where the driver's look left it, its frozen commit and its files; a working piece's door and stop;
 // and the ask. The section draws whatever it is handed, so every state is here. In English, 中文 and dark, at the frame's widths.
 

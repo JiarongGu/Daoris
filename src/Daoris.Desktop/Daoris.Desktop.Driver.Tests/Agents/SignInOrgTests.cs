@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// ACCOUNTID1 (D66's and D125's ACCOUNTID1 notes): one email may sign in to two organisations, so the status answer's
+/// One email may sign in to two organisations, so the status answer's
 /// organisation and plan are read beside who signed in, on a yes only, and none where the agent names none. Read fresh and
 /// written nowhere: the roster holds them in memory, as it holds who.
 /// </summary>
@@ -52,8 +52,8 @@ public sealed class SignInOrgTests
     }
 
     /// <summary>
-    /// The stub's way to say one (ACCOUNTID1), so a test and a rehearsal can sign one email in to two organisations with no
-    /// account: a line of its own for each, after who; an answer saying neither reads as before.
+    /// The stub's way to say one, so a test and a rehearsal can sign one email in to two organisations with no
+    /// account: a line of its own for each, after who; an answer saying neither names no organisation.
     /// </summary>
     [Theory]
     [InlineData("logged-in as person@example.invalid\norg: Org B\nplan: pro\n", "Org B", "pro")]

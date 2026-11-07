@@ -20,11 +20,11 @@ import { readSlice } from '../driver';
 import { mergeKeyed, type SliceSpec, usePushedLive } from '../state/slices';
 import { askHeld } from '../state/held';
 
-// A session's life on this machine (MOD3): the person's answer to a parked one, a stop and how it is
+// A session's life on this machine: the person's answer to a parked one, a stop and how it is
 // said, and finding sessions by their first words and by what they said.
 
 /**
- * The session records as the shell pushes them (PUSH1d2, D182): a partition per workspace, each its records by id with the fields the
+ * The session records as the shell pushes them: a partition per workspace, each its records by id with the fields the
  * page reads (`SessionsStateSlice.Fields`), a record's move a delta of that record (`mergeKeyed`), composed into the widest list the
  * service answers, in its order; `useSessions` reads each view's list from it. Nothing judged yet composes nothing, which keeps the
  * pull; a slice judged to hold no record is an empty list.
@@ -39,8 +39,8 @@ export const sessionsSlice: SliceSpec = {
 
 /**
  * The call a running session is making: its title and when it began, as `SESSION_GROUPS` writes `calling`, and whether it waits on
- * the person's answer to its permission request (AUTONOMY1b3b), and whether Daoris told the session it ran past its pipeline's bound
- * (FABRIC-PIPELINE1c), each absent where it is not so.
+ * the person's answer to its permission request, and whether Daoris told the session it ran past its pipeline's bound,
+ * each absent where it is not so.
  */
 export type PushedCall = { title: string; since: string; waiting?: boolean; told?: boolean; quiet?: string; quietTold?: boolean; heard?: string };
 
@@ -49,7 +49,7 @@ const isCall = (value: unknown): value is PushedCall =>
   && typeof (value as { title?: unknown }).title === 'string' && typeof (value as { since?: unknown }).since === 'string';
 
 /**
- * The running calls as the shell pushes them (WAITSAY1c2, D182): one partition `calling`, session id to its call, judged from the
+ * The running calls as the shell pushes them: one partition `calling`, session id to its call, judged from the
  * driver's memory as each call starts and ends. A keyed partition is pushed whole once half its keys moved, so an end may be a whole
  * push or `{}`, and both are taken as well as a delta. Composed into one map by session; nothing judged yet composes nothing.
  */
@@ -64,16 +64,16 @@ export const callsSlice: SliceSpec = {
       if (name === 'quiet' || name === 'heard' || typeof part !== 'object' || part === null || Array.isArray(part)) continue;
       for (const [session, call] of Object.entries(part)) if (isCall(call)) calls[session] = call;
     }
-    // SESSWATCH1a: the watcher's mark laid over each quiet session's call, or a call of no title where it makes none (§5.1).
+    // The watcher's mark laid over each quiet session's call, or a call of no title where it makes none.
     const quiet = partitions.get('quiet');
     if (typeof quiet === 'object' && quiet !== null && !Array.isArray(quiet)) {
       for (const [session, mark] of Object.entries(quiet)) {
         const { since, told } = (mark ?? {}) as { since?: unknown; told?: unknown };
-        // SESSWATCH1b: whether Daoris's word to it was kept, which the row says beside the quiet.
+        // Whether Daoris's word to it is kept, which the row says beside the quiet.
         if (typeof since === 'string') calls[session] = { ...(calls[session] ?? { title: '', since }), quiet: since, ...(told === true ? { quietTold: true } : {}) };
       }
     }
-    // COWORKVIEW1a: when the window last heard a session (§3.7), beside its call, or a call of no title where it makes none.
+    // When the window last heard a session, beside its call, or a call of no title where it makes none.
     const heard = partitions.get('heard');
     if (typeof heard === 'object' && heard !== null && !Array.isArray(heard)) {
       for (const [session, mark] of Object.entries(heard)) {
@@ -108,11 +108,11 @@ export function withCall(grouping: SessionGrouping | null | undefined, calls: Re
 }
 
 /**
- * The person's answer to a session parked at a checkpoint (design §4).
+ * The person's answer to a session parked at a checkpoint.
  *
  * @remarks
- * **Three moves, and it goes through the driver.** `awaiting-person` has meant "only the person can
- * clear this" since D46; the ledger allows a fourth move from it — back to `working` — and that one
+ * **Three moves, and it goes through the driver.** `awaiting-person` means "only the person can
+ * clear this"; the ledger allows a fourth move from it — back to `working` — and that one
  * is the driver observing a session that carried on, which a person causes by *answering* it. So
  * this carries exactly `completed`, `declined` and `stopped`, and the host refuses anything else
  * with a sentence.
@@ -120,8 +120,7 @@ export function withCall(grouping: SessionGrouping | null | undefined, calls: Re
  * It lands on the driver rather than on the service because the process and the record must move
  * together: this machine lets the process go, and only then does the record say it ended.
  *
- * The sessions, the quests and the driver are asked again by the route's `STATE_CHANGED`, in every window (STATEHUB1d,
- * D169), as every press below that moves a session is.
+ * The sessions, the quests and the driver are asked again by the route's `STATE_CHANGED`, in every window, as every press below that moves a session is.
  */
 export const useResolveSession = () => useMutation({
   mutationFn: (move: { id: string; state: 'completed' | 'declined' | 'stopped'; note?: string }) =>
@@ -133,19 +132,19 @@ export const useResolveSession = () => useMutation({
 });
 
 /**
- * What the driver answered a stop: whether it ended anything, and whether what it ended was an
- * orphan — a record that said it ran when nothing on this machine ran it (2026-09-25).
+ * What the driver answered a stop: whether it ended anything, and whether what it ended is an
+ * orphan — a record that said it ran when nothing on this machine ran it.
  */
 export type StopAnswer = { stopped: boolean; orphan?: boolean; elsewhere?: boolean };
 
 /**
- * The notice for a stop, from the driver's answer — never the person's words for an ending that was
+ * The notice for a stop, from the driver's answer — never the person's words for an ending that is
  * not theirs. Both doors to a stop (the frame's, the quest record's) say it the same way.
  */
 export const stopNotice = (answer: StopAnswer) =>
   answer.orphan ? 'quests.session.orphanEnded'
     : answer.stopped ? 'quests.session.stopped'
-      // Another Daoris process here runs it — a terminal's — so the record still says working (REV3).
+      // Another Daoris process here runs it — a terminal's — so the record still says working.
       : answer.elsewhere ? 'quests.session.runElsewhere'
         : 'quests.session.notRunning';
 
@@ -154,7 +153,7 @@ export const useStopSession = () => useMutation({
 });
 
 /**
- * A quiet row's press answered (SESSWATCH1a): whether it moved, and where it did not, its code (`not-quiet`, `not-quest`, `gone`) and the
+ * A quiet row's press answered: whether it moved, and where it did not, its code (`not-quiet`, `not-quest`, `gone`) and the
  * driver's sentence.
  */
 export type QuietAnswer = { done: boolean; why: string | null; message: string };
@@ -169,7 +168,7 @@ const quietOf = (answer: unknown, field: 'stopped' | 'left'): QuietAnswer => {
 };
 
 /**
- * *End and carry on* on a quiet quest session's row (SESSWATCH1a, D200, the session-watch design §2.3): the person's stop, released in
+ * *End and carry on* on a quiet quest session's row: the person's stop, released in
  * the same press, the run ending `stopped` with no strike and the work going on in a new part in the same tree, handed the person's
  * waiting words. `SESSION_QUIET_CARRY_ON`; a refusal is the answer, by its code.
  */
@@ -178,7 +177,7 @@ export const useQuietCarryOn = () => useMutation({
 });
 
 /**
- * *Leave it running* on a quiet session's row (SESSWATCH1a): the watcher stands down for it until it is heard again, and the row goes.
+ * *Leave it running* on a quiet session's row: the watcher stands down for it until it is heard again, and the row goes.
  * `SESSION_QUIET_LEAVE`; a refusal is the answer, by its code.
  */
 export const useQuietLeave = () => useMutation({
@@ -186,9 +185,9 @@ export const useQuietLeave = () => useMutation({
 });
 
 /**
- * What the person first said in each of these sessions (RAIL1): a conversation's identity, as
+ * What the person first said in each of these sessions: a conversation's identity, as
  * `sessionTitle` takes it — read from this machine's own record, never from the session record, which
- * travels (D47 §4).
+ * travels.
  *
  * @remarks
  * **Keyed by the whole set**, sorted, so every region that names sessions from the same list — the rail,
@@ -202,7 +201,7 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
   const queryKey = keys.openings(ids);
   const answer = useQuery({
     queryKey,
-    // Told by event (NOBLOCK1): the shell answers what it holds, and the record's read comes as `ANSWERED`.
+    // Told by event: the shell answers what it holds, and the record's read comes as `ANSWERED`.
     queryFn: () => askHeld('SESSION_OPENINGS', client, queryKey, { ids }, (answer) => answer as { openings?: Record<string, string> }),
     enabled: isAvailable && ids.length > 0,
     staleTime: 60_000,
@@ -248,14 +247,14 @@ export const useSessionSpent = (ids: readonly string[] | undefined, least = 2): 
 };
 
 /**
- * Where each of these sessions' work is now: whether the tree it opened is still here, and its landing (D113),
+ * Where each of these sessions' work is now: whether the tree it opened is still here, and its landing,
  * from this machine's own files, in one ask for the rows a list shows.
  *
  * @remarks
  * Asked only of sessions whose record names a tree, with that tree, since the host looks at no folder but the trees its
- * home opened. Not a field of the sessions listing: the listing is the service's records, which travel (D47 §4), and a
- * landing is this machine's (`landings.json`, D102). Keyed under the sessions, so a landing, a clean-up or a tick that
- * asks the listing again asks this again too. Told by event (NOBLOCK1): the shell answers what it held, and its look's answer
+ * home opened. Not a field of the sessions listing: the listing is the service's records, which travel, and a
+ * landing is this machine's (`landings.json`). Keyed under the sessions, so a landing, a clean-up or a tick that
+ * asks the listing again asks this again too. Told by event: the shell answers what it held, and its look's answer
  * comes as `ANSWERED` into this query, so the rows say what they said until it does.
  */
 export const useSessionWhere = (sessions: readonly Session[] | undefined): Record<string, SessionWhere> => {
@@ -278,8 +277,8 @@ export const useSessionWhere = (sessions: readonly Session[] | undefined): Recor
 };
 
 /**
- * The record of the finished tree a session ran in (KEEPSIZE1): its landing, tip, recovery ref and commits, read once its tree is gone,
- * when only the record still says what the work was. Null while none is kept or the tree stands. Told by event, as `useSessionWhere` is.
+ * The record of the finished tree a session ran in: its landing, tip, recovery ref and commits, read once its tree is gone,
+ * when only the record still says what the work is. Null while none is kept or the tree stands. Told by event, as `useSessionWhere` is.
  */
 export const useSessionRecord = (id: string | null, treeGone: boolean): SessionRecord | null => {
   const { isAvailable } = useShenora();
@@ -296,7 +295,7 @@ export const useSessionRecord = (id: string | null, treeGone: boolean): SessionR
 };
 
 /**
- * A session's memory changes (KNOWCENTRAL2e), its writes, ends and proposals as the service keeps them, told by event. Under the sessions'
+ * A session's memory changes, its writes, ends and proposals as the service keeps them, told by event. Under the sessions'
  * key, so the person's decision on them and each tick ask it again. Empty while none is read.
  */
 export const useSessionMemory = (session: string | null | undefined): MemoryRow[] => {
@@ -316,9 +315,9 @@ export const useSessionMemory = (session: string | null | undefined): MemoryRow[
 export type MemoryDecided = { decided: boolean; why: string | null; message: string };
 
 /**
- * The person's decision on a session's memory (KNOWCENTRAL2e; the memory coordinator design §1, §4): an end awaiting them approved or
+ * The person's decision on a session's memory: an end awaiting them approved or
  * declined by its row, or the ended session's staged changes kept or dropped. A refusal is the answer, in the service's words; the
- * sessions are asked again by the state hub (D169).
+ * sessions are asked again by the state hub.
  */
 export const useDecideSessionMemory = () => useMutation({
   mutationFn: async (decision: { session: string; op: string; approve: boolean } | { session: string; keep: boolean }): Promise<MemoryDecided> => {
@@ -328,7 +327,7 @@ export const useDecideSessionMemory = () => useMutation({
 });
 
 /**
- * The sessions beside one in its repository whose work meets its own (LINESTOGETHER1c), told by event; the driver reads the trees at
+ * The sessions beside one in its repository whose work meets its own, told by event; the driver reads the trees at
  * each ask, so a stale answer is read again on focus. Empty while none is read.
  */
 export const useSessionRelatedRead = (session: string | null | undefined, enabled = true): { rows: RelatedRow[]; own: RelatedOwn | null } => {
@@ -354,8 +353,8 @@ export { byInstant, groupsIn, groupsSlice, useSessionEntries, useSessionGroups }
 export type { GroupsAnswer } from './sessionGroups';
 
 /**
- * What an archive answered (D126 §5.2): the marks as they now stand; for several sessions at once, the ones it kept and
- * why (a code of the `errors` catalogue); for an unarchive, the ones that were not archived, which is information.
+ * What an archive answered: the marks as they now stand; for several sessions at once, the ones it kept and
+ * why (a code of the `errors` catalogue); for an unarchive, the ones that are not archived, which is information.
  */
 export type ArchiveAnswer = {
   archived: { session: string; at: string }[];
@@ -364,14 +363,14 @@ export type ArchiveAnswer = {
 };
 
 /**
- * Archive sessions on this machine, or bring them back (SESSUX1a, D126 §5.2): a mark under the home, never the record,
+ * Archive sessions on this machine, or bring them back: a mark under the home, never the record,
  * which travels.
  *
  * @remarks
  * Each session is judged by where the host places it as it is asked: a live one, one waiting on you and one with work to
  * review are refused, since archive never hides what needs the person. Asked of one session, the refusal is the answer;
  * asked of several, as *Archive what ended*'s second press asks, the rest are archived and each kept one comes back with
- * its code. The sessions, their groups among them, are asked again by the state hub alone (STATEHUB1d, STATEHUB1f).
+ * its code. The sessions, their groups among them, are asked again by the state hub alone.
  */
 export const useArchiveSessions = () =>
   useMutation({
@@ -380,24 +379,24 @@ export const useArchiveSessions = () =>
   });
 
 /**
- * What a delete answered (SESSUX1f, D126 §5.4): the session, what went by name, and what the disk would not let go of by
- * the same names, left over (SESSDEL1), empty or absent when everything went; nothing machine-local.
+ * What a delete answered: the session, what went by name, and what the disk would not let go of by
+ * the same names, left over, empty or absent when everything went; nothing machine-local.
  */
 export type DeleteAnswer = { deleted: string; removed?: string[]; stayed?: string[] };
 
 /**
- * *Delete…* (SESSUX1f, D126 §5.4): a conversation that served no quest, its record through the ledger and what this
+ * *Delete…*: a conversation that served no quest, its record through the ledger and what this
  * machine kept of it, by its id alone. Each refusal is a code the catalogue says, naming what kept it. The sessions,
- * their groups among them, are asked again by the state hub (STATEHUB1d).
+ * their groups among them, are asked again by the state hub.
  */
 export const useDeleteSession = () => useMutation({
   mutationFn: (id: string) => call('SESSION_DELETE', { id }) as Promise<DeleteAnswer>,
 });
 
 /**
- * *Open folder* (SESSUX1d, D126 §3.5): the folder a session worked in, its own tree or its repository's checkout, opened
+ * *Open folder*: the folder a session worked in, its own tree or its repository's checkout, opened
  * in the system's file manager. By its id alone: the module names the folder from the session's record, and the page
- * never prints a path (platform language §4). It changes nothing, so nothing is asked again.
+ * never prints a path. It changes nothing, so nothing is asked again.
  */
 export const useOpenSessionFolder = () => useMutation({
   mutationFn: (id: string) => call('SESSION_OPEN_FOLDER', { id }) as Promise<{ opened: boolean }>,
@@ -410,7 +409,7 @@ export {
 export type { HandOverWord, HelperApproved, HelperAsked, HelperDeclined, PartnerActed, PartnerAsked } from './sessionHelpers';
 
 /**
- * The held permissions' key (AUTONOMY1b3c): under the sessions', so a session's publication (a turn's cancel, a stop, a session's
+ * The held permissions' key: under the sessions', so a session's publication (a turn's cancel, a stop, a session's
  * end, each a release) asks them again with the sessions.
  */
 export const PERMISSION_WAITS_KEY = ['sessions', 'permissionWaits'] as const;
@@ -419,16 +418,16 @@ export const PERMISSION_WAITS_KEY = ['sessions', 'permissionWaits'] as const;
 const PERMISSIONS_EVERY = 4_000;
 
 /**
- * When the held permissions are asked again on a clock (AUTONOMY1b3c): every few seconds while a session of this machine works, or
+ * When the held permissions are asked again on a clock: every few seconds while a session of this machine works, or
  * while one is held, and never otherwise, since neither route publishes (`HeldPermissions` is in the driver's memory). Where the calls
- * are pushed (`pushed`), never (AUTONOMY1b3b): a hold marks its call waiting in the calls slice and its answer or release clears the
+ * are pushed (`pushed`), never: a hold marks its call waiting in the calls slice and its answer or release clears the
  * mark, so the mark's move asks them again (`usePermissionWaits`). The clock stays for a host that pushes no calls.
  */
 export const permissionsAgainIn = (live: boolean, held: number, pushed = false): number | false =>
   (!pushed && (live || held > 0) ? PERMISSIONS_EVERY : false);
 
 /**
- * The pushed calls' waiting marks as one word (AUTONOMY1b3b): each waiting session with when its newest hold began, so a hold, an
+ * The pushed calls' waiting marks as one word: each waiting session with when its newest hold began, so a hold, an
  * answer and a release each change it; null where the calls are not pushed.
  */
 const waitingMarks = (calls: Record<string, PushedCall> | undefined): string | null =>
@@ -459,11 +458,10 @@ const readPermissionWaits = (rows: unknown): PermissionWait[] => {
 };
 
 /**
- * What this machine's driven sessions hold for the person under their repository's asking permission prompts (AUTONOMY1b3a, D184
- * point 3): each tool's request with its session, its title and kind as the agent wrote them, and what the person may choose, oldest
+ * What this machine's driven sessions hold for the person under their repository's asking permission prompts: each tool's request with its session, its title and kind as the agent wrote them, and what the person may choose, oldest
  * first, off the driver's memory, so shell-only. `live`: a session of this machine works now, so one may be asked for at any moment.
  *
- * Where the calls are pushed, asked again as their waiting marks move (AUTONOMY1b3b), once whichever reader saw it first: each
+ * Where the calls are pushed, asked again as their waiting marks move, once whichever reader saw it first: each
  * reader of the waits hears the same push, and one asking already on its way is the others' too. Elsewhere, on the clock.
  */
 export const usePermissionWaits = (live: boolean) => {
@@ -486,8 +484,8 @@ export const usePermissionWaits = (live: boolean) => {
 };
 
 /**
- * The person's answer to a permission a session holds for them (AUTONOMY1b3a, D184 point 3): an option the agent offered, by its id,
- * for this call alone; Daoris answers no allow by itself (D37, D52). A refusal is the answer, by its code (`unheld`, `unoffered`,
+ * The person's answer to a permission a session holds for them: an option the agent offered, by its id,
+ * for this call alone; Daoris answers no allow by itself. A refusal is the answer, by its code (`unheld`, `unoffered`,
  * `standing`). The route publishes nothing, so the waits are asked again here, and the card goes with the hold.
  */
 export const useAnswerPermission = () => {
@@ -503,7 +501,7 @@ export const useAnswerPermission = () => {
   });
 };
 
-/** The answers-alone waits' key (COWORK1e): under the sessions', so a tick and the person's answer (its publication) ask them again. */
+/** The answers-alone waits' key: under the sessions', so a tick and the person's answer (its publication) ask them again. */
 export const ANSWER_WAITS_KEY = ['sessions', 'answerWaits'] as const;
 
 /** The rows of `ANSWER_WAITS`, read field by field: one naming no session has nothing to answer, and is left out. */
@@ -528,8 +526,7 @@ const readAnswerRule = (raw: unknown): AnswerRule | null => {
 };
 
 /**
- * What the answers-alone bound holds for the person across this machine's sessions (COWORK1e, D188 point 4; the message-urgency design
- * §8.3): each session whose answers would take its line on a third time in a row with nobody between, the agent that answered, the
+ * What the answers-alone bound holds for the person across this machine's sessions: each session whose answers would take its line on a third time in a row with nobody between, the agent that answered, the
  * answers' ids and since when, oldest first, read off this machine's own marks, so shell-only. Under the sessions' key, so every tick
  * asks it again, and the driver's look that holds one is a tick.
  */
@@ -543,9 +540,9 @@ export const useAnswerWaits = () => {
 };
 
 /**
- * The person's answer to a third answer alone held for them (COWORK1e; §8.3): *Go on with this answer* (`goOn`), their word, which lets
+ * The person's answer to a third answer alone held for them: *Go on with this answer* (`goOn`), their word, which lets
  * the answer go on, or *Not now*, which keeps it for them. A refusal is the answer, by its code (`unheld`). The sessions and the driver
- * are asked again by the state hub (D169); the waits are asked again here too, so the wait goes with the answer.
+ * are asked again by the state hub; the waits are asked again here too, so the wait goes with the answer.
  */
 export const useAnswerAlone = () => {
   const client = useQueryClient();
@@ -563,10 +560,10 @@ export const useAnswerAlone = () => {
 /** Where a search found its words: the session, the event it began at, whose words, and a window of them. */
 export type SessionHit = { session: string; seq: number; kind: string; snippet: string };
 
-/** How many sessions a page of a search holds, asked for by name (RAILPAGE1b): the driver's own default, so a page is the same either way. */
+/** How many sessions a page of a search holds, asked for by name: the driver's own default, so a page is the same either way. */
 export const SEARCH_PAGE = 16;
 
-/** A search's answer as the driver gave it: `total` and `next` are absent from a shell before pages (RAILPAGE1a). */
+/** A search's answer as the driver gave it: `total` and `next` are absent from a shell without pages. */
 type SearchAnswer = { query: string; hits: SessionHit[]; cut: boolean; total?: number; next?: number | null };
 
 /** A search's pages as the one answer the page reads: every hit in order, `total` and `next` the last page's, null where a shell sent none. */
@@ -587,21 +584,21 @@ const joinSearch = (data: InfiniteData<SearchAnswer, number>): SessionSearchResu
 };
 
 /**
- * What sessions said, searched (RAIL1): the person's words and the agent's, on this machine's own
- * record, a page of sessions at a time (RAILPAGE1b): `fetchNextPage` asks for the one at the driver's `next`, and `data` is every
- * page read, joined. Asked from two letters on, or one Han character (`searchable`, RAILSRCH1b) — one other letter matches
+ * What sessions said, searched: the person's words and the agent's, on this machine's own
+ * record, a page of sessions at a time: `fetchNextPage` asks for the one at the driver's `next`, and `data` is every
+ * page read, joined. Asked from two letters on, or one Han character (`searchable`) — one other letter matches
  * everything — and the caller debounces, so a word typed is one question, not one per key.
  *
  * @remarks
- * A shell before pages ignores `offset` and `limit` and answers no `total` or `next`: its answer is the one page, with the `cut`
- * it always had, and `total` is null so the page knows to say that instead of counting.
+ * A shell without pages ignores `offset` and `limit` and answers no `total` or `next`: its answer is the one page, with its
+ * `cut`, and `total` is null so the page knows to say that instead of counting.
  */
 export const useSessionSearch = (query: string, session?: string) => {
   const { isAvailable } = useShenora();
   const q = query.trim();
   return useInfiniteQuery({
     queryKey: keys.sessionSearch(q, session),
-    // Within one session, where one is named (SESS1 S9): its words and its calls by their titles.
+    // Within one session, where one is named: its words and its calls by their titles.
     queryFn: ({ pageParam }) => call('SESSION_SEARCH', {
       q,
       ...(session ? { session } : {}),

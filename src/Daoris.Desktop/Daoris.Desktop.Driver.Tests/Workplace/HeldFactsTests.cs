@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END2 (the fabric events design §B5, §C7, §D2, §D3): the default cycle's facts kept. <c>Held</c> on both entries, the branch
+/// The default cycle's facts kept. <c>Held</c> on both entries, the branch
 /// unit's id and a landing's <c>Units</c>, the traces kept on the forget path with an open unit never pruned, the cross-process lock
-/// on the two files, and the one writer (canary 9). Files only; the judgement over real git is <see cref="HeldFactsGitTests"/>'.
+/// on the two files, and the one writer. Files only; the judgement over real git is <see cref="HeldFactsGitTests"/>'.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed partial class HeldFactsTests : IDisposable
@@ -28,7 +28,7 @@ public sealed partial class HeldFactsTests : IDisposable
     private static GrownBranch Grown(string branch, string? unit = null, string repository = "engine") =>
         new(repository, "default", branch, "main", "f0", null, Then) { Unit = unit };
 
-    /// <summary>🔴 Additive shapes (§B5): an entry written before END2 reads as not yet judged, never as ended, and with no unit.</summary>
+    /// <summary>Additive shapes: an entry written without a fact reads as not yet judged, never as ended, and with no unit.</summary>
     [Fact]
     public void An_old_entry_reads_as_not_yet_judged()
     {
@@ -65,7 +65,7 @@ public sealed partial class HeldFactsTests : IDisposable
     }
 
     /// <summary>
-    /// CLEANUP1b: the keeper's write for a landing whose branch git said is missing keeps the fact as the entry retires with git's word, on
+    /// The keeper's write for a landing whose branch git said is missing keeps the fact as the entry retires with git's word, on
     /// that landing alone: a standing entry becomes a trace, and a trace that says no why, or moved, gains it. One with a fact already, one
     /// Daoris removed, and a new landing of the same name are left as they are.
     /// </summary>
@@ -123,8 +123,8 @@ public sealed partial class HeldFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §B5 and §D3: a branch's removal is not its unit's retirement. An ended entry is kept as a trace; an entry whose unit a standing
-    /// landing still carries is kept open; the rest are forgotten as before.
+    /// A branch's removal is not its unit's retirement. An ended entry is kept as a trace; an entry whose unit a standing
+    /// landing still carries is kept open; the rest are forgotten.
     /// </summary>
     [Fact]
     public void Forgetting_keeps_an_ended_entry_and_an_open_unit_as_traces()
@@ -162,7 +162,7 @@ public sealed partial class HeldFactsTests : IDisposable
         Assert.Null(grown.Of("engine", "daoris/s1")!.Held);
     }
 
-    /// <summary>🔴 §D3: the traces' pruning keeps each repository's newest fifty retired traces and never prunes an open unit.</summary>
+    /// <summary>The traces' pruning keeps each repository's newest fifty retired traces and never prunes an open unit.</summary>
     [Fact]
     public void Pruning_keeps_the_newest_fifty_retired_traces_and_never_an_open_unit()
     {
@@ -203,7 +203,7 @@ public sealed partial class HeldFactsTests : IDisposable
     public void A_fact_holds_only_while_its_tip_line_repository_and_line_commit_stand(string tip, string line, string repository, bool? descends, bool holds) =>
         Assert.Equal(holds, Fact().HoldsAt(tip, line, repository, descends));
 
-    /// <summary>§C7: <c>Since</c> is when it was first held at this tip, kept across judgements; a verdict that is not an end clears it.</summary>
+    /// <summary><c>Since</c> is when it is first held at this tip, kept across judgements; a verdict that is not an end clears it.</summary>
     [Fact]
     public void Since_is_kept_at_the_same_tip_and_a_verdict_not_ended_clears_the_fact()
     {
@@ -222,10 +222,10 @@ public sealed partial class HeldFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The cross-process writer (D173's END2 note): an edit waits while another handle holds the record's lock under the home's
+    /// The cross-process writer: an edit waits while another handle holds the record's lock under the home's
     /// <c>locks/records/</c>, then reads what the holder wrote, so neither write is lost. A second process is <see cref="RecordLockProcessTests"/>'.
-    /// TESTCLOCK2: the holder writes once the edit has found the lock held (<see cref="RecordLock.Waiting"/>), where 400 ms of the
-    /// machine's clock stood for it, and a loaded edit not yet begun passed without waiting at all.
+    /// The holder writes once the edit has found the lock held (<see cref="RecordLock.Waiting"/>), where a fixed 400 ms of the
+    /// machine's clock could let a loaded edit not yet begun pass without waiting at all.
     /// </summary>
     [Fact]
     public void An_edit_waits_for_the_records_lock_and_loses_nothing()
@@ -316,7 +316,7 @@ public sealed partial class HeldFactsTests : IDisposable
         Assert.Empty(offenders);
     }
 
-    // A call of the two records' writer: on the trees' context's stores, or on a store made where it is called. CLEANUP1b's HoldGone is one.
+    // A call of the two records' writer: on the trees' context's stores, or on a store made where it is called. HoldGone is one.
     [GeneratedRegex(@"\b(Grown|Recorded|SessionBranches\([^)]*\)|LandedBranches\([^)]*\))\.Hold(Gone)?\(")]
     private static partial Regex HoldCall();
 

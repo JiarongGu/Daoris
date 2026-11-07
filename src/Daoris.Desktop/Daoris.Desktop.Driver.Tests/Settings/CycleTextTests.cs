@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A cycle as <c>driver.json</c> keeps it (FOUNDATION1 mod-iii): the settings' own compact text, which the graph homes' <c>Compact</c>
+/// A cycle as <c>driver.json</c> keeps it: the settings' own compact text, which the graph homes' <c>Compact</c>
 /// answers through.
 /// </summary>
 public sealed class CycleTextTests

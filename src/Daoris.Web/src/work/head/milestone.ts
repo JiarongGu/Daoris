@@ -1,4 +1,4 @@
-// The milestone of a unit of work (FABRIC-MILESTONE1b; the fabric events design §D0): whether its end was reached, the result kept,
+// The milestone of a unit of work: whether its end is reached, the result kept,
 // its cleanup (pending, with what waits and why, or completed, with what went) and the recovery retained and until when. The
 // driver derives it at each read from the records it keeps (`WORK_STATE`, `daoris work state`); the page stores nothing.
 import type { TFunction } from 'i18next';
@@ -14,25 +14,25 @@ export type MilestoneEntry = {
   role: string;
   /** `kept`, `retained`, `removed`, `blocked` or `pending`. */
   disposition: string;
-  /** Why, in the driver's clause: what waits, what blocks, what the proof was. Shown as recorded. */
+  /** Why, in the driver's clause: what waits, what blocks, what the proof is. Shown as recorded. */
   detail: string;
   /** A recovery's purge date, where one stands. */
   until?: string | null;
   proof?: string | null;
-  /** The repository a recovery belongs to (RECOVERYVIEW1); the answer is none. */
+  /** The repository a recovery belongs to; the answer is none. */
   repository?: string | null;
-  /** The commit a recovery ref names (RECOVERYDROP1), which a delete is verified against; the answer is none. */
+  /** The commit a recovery ref names, which a delete is verified against; the answer is none. */
   commit?: string | null;
-  /** Why a blocked entry is blocked (OVERVIEWNOISE1b), which the page words (`entryDetail`); the answer is none. */
+  /** Why a blocked entry is blocked, which the page words (`entryDetail`); the answer is none. */
   code?: string | null;
   /** The values its code is worded with, by name. */
   facts?: Record<string, string> | null;
 };
 
-/** The recovery refs of one repository a press of the delete names, each with the commit the page showed (RECOVERYDROP1). */
+/** The recovery refs of one repository a press of the delete names, each with the commit the page showed. */
 export type RecoveryDropGroup = { repository: string; refs: { ref: string; commit: string }[] };
 
-/** What a press of the delete answered across its repositories: what went, what was kept and why, and what refused the whole. */
+/** What a press of the delete answered across its repositories: what went, what is kept and why, and what refused the whole. */
 export type RecoveryDropResult = {
   dropped: { repository: string; ref: string; commit: string }[];
   skipped: { repository: string; ref: string; why: string }[];
@@ -40,9 +40,9 @@ export type RecoveryDropResult = {
   refused: string[];
 };
 
-/** Whether the end was reached, and on what evidence. */
+/** Whether the end is reached, and on what evidence. */
 export type MilestoneEnd = {
-  /** `ended`, `handed`, `not-ended`, `dropped` (over without its result, CLEANUP1) or `unknown`. */
+  /** `ended`, `handed`, `not-ended`, `dropped` (over without its result) or `unknown`. */
   state: string;
   /** The proof's code (`merged`, `empty`, `on-line`, `pull-request`, `landed`, `carried`) where ended. */
   by?: string | null;
@@ -54,17 +54,17 @@ export type MilestoneEnd = {
 };
 
 /**
- * The person's words on a held attempt (FABRIC-PERFORM1g): it happened, it did not (a new attempt), or stop the step. On Daoris's own
- * close (FABRIC-CLOSE1q), whose outcome is its door's answer and never the person's word: record that answer again, ask for it again
- * with the same close, or stop the rest of the work. On a failure kept for the person (FABRIC-PERFORM1k): their new attempt.
+ * The person's words on a held attempt: it happened, it did not (a new attempt), or stop the step. On Daoris's own
+ * close, whose outcome is its door's answer and never the person's word: record that answer again, ask for it again
+ * with the same close, or stop the rest of the work. On a failure kept for the person: their new attempt.
  */
 export type HeldResolution = 'happened' | 'did-not' | 'stop' | 'record' | 'resend' | 'again' | 'ask-fix';
 
-/** The sender Daoris's own close is held under (FABRIC-CLOSE1q): never a plugin's. */
+/** The sender Daoris's own close is held under: never a plugin's. */
 export const CLOSE_SENDER = 'quest.close';
 
 /**
- * A plugin step's attempt held for the person (FABRIC-PERFORM1g, the fabric events design §D6): nothing else can say what became of it,
+ * A plugin step's attempt held for the person: nothing else can say what became of it,
  * so its gate holds until their word. `why` is a code the page words (`unknown`, `no-reconcile`, `no-outcome`, `not-current`,
  * `not-on-word`, or the one table's refusal of its outcome); `said` is the driver's sentence for a code the page has no words for.
  */
@@ -83,16 +83,16 @@ export type HeldAttempt = {
   resolution?: HeldResolution | null;
   resolvedAt?: string | null;
   said: string;
-  /** The words the driver offers on it (FABRIC-CLOSE1q): a plugin's three, or a held close's own; absent from a driver before the field. */
+  /** The words the driver offers on it: a plugin's three, or a held close's own; absent from a driver before the field. */
   words?: HeldResolution[] | null;
-  /** A failure kept for the person's code, as its plugin gave it (FABRIC-PERFORM1k); absent on an attempt held. */
+  /** A failure kept for the person's code, as its plugin gave it; absent on an attempt held. */
   code?: string | null;
   /** What a held check on a verification run verifies; absent on every other attempt, and from a driver before the field. */
   verification?: HeldVerification | null;
 };
 
 /**
- * What a held check verifies (the pipeline design §4.4, §4.5): its run, the repository and the full commit it judged, who chose it (`person`
+ * What a held check verifies: its run, the repository and the full commit it judged, who chose it (`person`
  * or the landed route's level), the line and base its route bound it on or the branch a person asked it of, the gate that failed, and why its
  * verdict is not known (`changed`, `bound`, `stopped`, `busy`, or another said as the general).
  */
@@ -109,8 +109,8 @@ export type HeldVerification = {
 };
 
 /**
- * A unit's node record whose file does not read (FABRIC-PERFORM1j, the fabric events design §D3): nothing on its unit is judged or started
- * until the person mends it. `file` is its name in the records' folder; `unit` the unit it still names, or null; `at` when it was last
+ * A unit's node record whose file does not read: nothing on its unit is judged or started
+ * until the person mends it. `file` is its name in the records' folder; `unit` the unit it still names, or null; `at` when it is last
  * written; `said` the driver's sentence.
  */
 export type UnreadableRecord = {
@@ -121,11 +121,11 @@ export type UnreadableRecord = {
 };
 
 /**
- * A closure graph's end the milestone tells of (FABRIC-CLOSE1j, the fabric events design §E5), read from its node record's history:
+ * A closure graph's end the milestone tells of, read from its node record's history:
  * ended by the person's own done before its end (`overridden`), naming the nodes it stopped; or closed only in part
  * (`partially-closed`), naming the quest lost with its take and the close node, whose stop is offered (`words`, said through
- * `WORK_HELD` on `attempt`) while that node waits again; or the person's `word` on its close taken back (`word-taken-back`,
- * FABRIC-CLOSE1q4), since the submission of `quest` it names was reopened or replaced, said here where no held row says it any more.
+ * `WORK_HELD` on `attempt`) while that node waits again; or the person's `word` on its close taken back (`word-taken-back`)
+ * once the submission of `quest` it names is reopened or replaced, said here where no held row says it.
  */
 export type GraphEnd = {
   unit: string;
@@ -139,7 +139,7 @@ export type GraphEnd = {
   /** The person's stop, recorded and not yet applied by the driver's next look. */
   resolution?: HeldResolution | null;
   words?: HeldResolution[] | null;
-  /** FABRIC-CLOSE1q4: the person's word the driver did not take on a `word-taken-back` end, `record` or `stop`. */
+  /** The person's word the driver did not take on a `word-taken-back` end, `record` or `stop`. */
   word?: HeldResolution | null;
 };
 
@@ -153,36 +153,36 @@ export type MilestoneUnit = {
   cleanup: { state: string; waits: MilestoneEntry[]; gone: MilestoneEntry[] };
   recovery: MilestoneEntry[];
   entries: MilestoneEntry[];
-  /** Its plugin steps' attempts held for the person (FABRIC-PERFORM1g), joined from the answer's `held` by the page. */
+  /** Its plugin steps' attempts held for the person, joined from the answer's `held` by the page. */
   held?: HeldAttempt[];
-  /** Its closure graph's ends (FABRIC-CLOSE1j), joined from the answer's `ends` by the page. */
+  /** Its closure graph's ends, joined from the answer's `ends` by the page. */
   ends?: GraphEnd[];
 };
 
 /**
- * What `WORK_STATE` answers: the units, Daoris's own recoveries no unit names (RECOVERYVIEW1, CLEANUP1: a folder moved aside, a
+ * What `WORK_STATE` answers: the units, Daoris's own recoveries no unit names (a folder moved aside, a
  * recovery ref), what could not be read (a repository with no checkout here), every attempt held for the person, of any unit
- * (FABRIC-PERFORM1g: a quest's too, which no milestone names), every node record that does not read (FABRIC-PERFORM1j), and every
- * closure graph's end (FABRIC-CLOSE1j), a quest's too.
+ * (a quest's too, which no milestone names), every node record that does not read, and every
+ * closure graph's end, a quest's too.
  */
 export type WorkState = {
   units: MilestoneUnit[]; recovery: MilestoneEntry[]; unread: string[]; held: HeldAttempt[]; unreadable: UnreadableRecord[];
-  /** Absent where a state was composed before the field; `readWorkState` always fills it. */
+  /** Absent where a state is composed without the field; `readWorkState` always fills it. */
   ends?: GraphEnd[];
 };
 
-/** A quest's unit, as the driver names it (`QuestUnits.IdOf`): what its closure graph's ends name (FABRIC-CLOSE1j2). */
+/** A quest's unit, as the driver names it (`QuestUnits.IdOf`): what its closure graph's ends name. */
 export const questUnit = (quest: string): string => `quest:${quest}`;
 
-/** Whether a closure graph's end offers the person the stop of its close node now (FABRIC-CLOSE1j): offered, and no word of theirs waiting. */
+/** Whether a closure graph's end offers the person the stop of its close node now: offered, and no word of theirs waiting. */
 export function endOffersStop(end: GraphEnd): boolean {
   return end.kind === 'partially-closed' && !end.resolution && (end.words ?? []).includes('stop') && typeof end.attempt === 'number';
 }
 
 /**
- * A closure graph's end in the reader's language (FABRIC-CLOSE1j, §E5): *closed by you before its end*, naming the nodes it stopped; or
+ * A closure graph's end in the reader's language: *closed by you before its end*, naming the nodes it stopped; or
  * *partially closed*, naming the quest lost and why, then where its close node stands: its stop offered, the person's stop recorded, or
- * stopped; or the person's word on its close *not taken*, naming the quest whose submission moved (FABRIC-CLOSE1q4). A kind the page
+ * stopped; or the person's word on its close *not taken*, naming the quest whose submission moved. A kind the page
  * has no words for says nothing.
  */
 export function endSentences(t: TFunction, end: GraphEnd): string[] {
@@ -205,20 +205,20 @@ export function endSentences(t: TFunction, end: GraphEnd): string[] {
 const HELD_WHY = ['unknown', 'no-reconcile', 'no-outcome', 'not-current', 'not-on-word', 'failure-kept', 'tries-spent'] as const;
 
 /**
- * Whether it is a failure kept for the person (FABRIC-PERFORM1k, D173's RUN1e note): its plugin said it failed and Daoris tries it
+ * Whether it is a failure kept for the person: its plugin said it failed and Daoris tries it
  * no more by itself, so it waits for the person's new attempt rather than their word on what became of it.
  */
 export function heldFailed(held: HeldAttempt): boolean {
   return held.why === 'failure-kept' || held.why === 'tries-spent';
 }
 
-/** Why an attempt is held, in the reader's language (FABRIC-PERFORM1g); a held close by what its door answered (FABRIC-CLOSE1q). */
+/** Why an attempt is held, in the reader's language; a held close by what its door answered. */
 export function heldWhy(t: TFunction, held: HeldAttempt): string {
   if (held.plugin === CLOSE_SENDER) {
     if (held.why === 'not-close-word') return t('work.milestone.held.close.why.notCloseWord');
-    // FABRIC-CLOSE1q2: record or stop taken back, since the submission the close names was reopened or replaced.
+    // Record or stop taken back, because the submission the close names is reopened or replaced.
     if (held.why === 'submission-moved') return t('work.milestone.held.close.why.submissionMoved');
-    // FABRIC-CLOSE1y: an unknown close (FABRIC-CLOSE1u) is its door's silence, asked again at each look, never a missing record.
+    // An unknown close is its door's silence, asked again at each look, never a missing record.
     const answer = held.outcome === 'reached' ? 'closed' : held.outcome === 'failed' ? 'refused' : held.why === 'unknown' ? 'unknown' : 'unanswered';
     return t(`work.milestone.held.close.why.${answer}`, { code: held.why });
   }
@@ -227,7 +227,7 @@ export function heldWhy(t: TFunction, held: HeldAttempt): string {
 }
 
 /**
- * The words offered on a held attempt (FABRIC-CLOSE1q): the driver's, where it names them; a plugin's three from a driver before the
+ * The words offered on a held attempt: the driver's, where it names them; a plugin's three from a driver before the
  * field, and none on a close there, since such a driver would take a plugin's word for its door's answer.
  */
 export function heldWords(held: HeldAttempt): HeldResolution[] {
@@ -247,7 +247,7 @@ const KINDS = ['tree', 'session-branch', 'landing-branch', 'moved-aside', 'recov
 
 /**
  * An entry by what it is: its kind in the reader's language, where the page has a word, and its name. A tree is named by its folder,
- * as the rail names it (OVERVIEWNOISE1b): its path is this machine's, and the rail and the band have no room for it (D51 §9).
+ * as the rail names it: its path is this machine's, and the rail and the band have no room for it.
  */
 export function entryName(t: TFunction, entry: Pick<MilestoneEntry, 'kind' | 'resource'>): string {
   const kind = KINDS.find((one) => one === entry.kind);
@@ -255,14 +255,14 @@ export function entryName(t: TFunction, entry: Pick<MilestoneEntry, 'kind' | 're
   return [kind ? t(`work.milestone.kind.${kind}`) : null, name].filter(Boolean).join(' ');
 }
 
-/** The codes of a blocked entry the page has words for (OVERVIEWNOISE1b); any other is said by its detail, as recorded. */
+/** The codes of a blocked entry the page has words for; any other is said by its detail, as recorded. */
 const CODES = ['unfollowed', 'unread', 'unknown-folder', 'unknown-unread', 'unknown-branch', 'unrecorded', 'landing-stale'] as const;
 
-/** The guards the look's tidy keeps a branch by that the page has words for (FABRIC-END4a's `kept`, by its `why`). */
+/** The guards the look's tidy keeps a branch by that the page has words for (the `kept` code, by its `why`). */
 const KEPT = ['in-use', 'dirty', 'busy', 'hidden', 'nested', 'linked', 'refused', 'unread', 'starting', 'sessions'] as const;
 
 /**
- * Why an entry waits or is blocked, in the reader's language (OVERVIEWNOISE1b): a code the page has words for, worded with its facts
+ * Why an entry waits or is blocked, in the reader's language: a code the page has words for, worded with its facts
  * and its reason said once; any other entry, and a code or a guard the page has no words for, by the driver's sentence as recorded.
  */
 export function entryDetail(t: TFunction, entry: Pick<MilestoneEntry, 'detail' | 'code' | 'facts'>): string {
@@ -277,7 +277,7 @@ export function entryDetail(t: TFunction, entry: Pick<MilestoneEntry, 'detail' |
 }
 
 /**
- * A tree no branch record follows that the clean-up would keep (CLEANUPADVICE1): what keeps it, and the remove that takes it, which is the
+ * A tree no branch record follows that the clean-up would keep: what keeps it, and the remove that takes it, which is the
  * driver's `trees remove <path> --force`; where git could not say what it holds, no remove is named. Its path and its files are written as they are.
  */
 function unfollowedKept(t: TFunction, facts: Record<string, string>): string {
@@ -292,10 +292,10 @@ function unfollowedKept(t: TFunction, facts: Record<string, string>): string {
 }
 
 /**
- * What of a unit waits on the person (design §D0; OVERVIEWNOISE1b, *What needs you* only where they have an act), as .NET's
+ * What of a unit waits on the person (*What needs you* only where they have an act), as .NET's
  * `NeedsAPerson` judges it: where no record names its owner, the entries its cleanup is blocked on, else the unit itself; where its
  * owner is known, the trees its session recorded and no branch record follows, which only the clean-up's press takes, and a landing's
- * branch whose quest is closed and which the line has not held for a day (LANDRETIRE1 part 2), which the person withdraws. A guard the
+ * branch whose quest is closed and which the line has not held for a day, which the person withdraws. A guard the
  * look keeps a branch by is said on the work's foot, and a wait that is pending ends by itself: neither is the person's.
  */
 export function waitsOnPerson(unit: MilestoneUnit): MilestoneEntry[] {
@@ -311,10 +311,10 @@ export function unitOfBranch(units: readonly MilestoneUnit[], repository: string
 }
 
 /**
- * The units a name picks, as the driver's `WorkInventories.Named` does (PUSH1c2b): a unit's id or session in any case, a branch exact,
+ * The units a name picks, as the driver's `WorkInventories.Named` does: a unit's id or session in any case, a branch exact,
  * a branch equal to `daoris/` and the name, or any session or landing branch entry whose resource is the name. With none named, the
  * whole; with one, no recovery (the route answers none for a unit), only the attempts held of the units picked, and the closure
- * graphs' ends of those units or of the unit the name is (FABRIC-CLOSE1j2).
+ * graphs' ends of those units or of the unit the name is.
  */
 export function workOf(all: WorkState, unit: string | null): WorkState {
   if (!unit) return all;
@@ -322,8 +322,8 @@ export function workOf(all: WorkState, unit: string | null): WorkState {
   const units = all.units.filter((each) => same(each.unit) || same(each.session) || each.branch === unit || each.branch === `daoris/${unit}`
     || each.entries.some((entry) => (entry.kind === 'landing-branch' || entry.kind === 'session-branch') && entry.resource === unit));
   const ids = new Set(units.map((each) => each.unit));
-  // FABRIC-PERFORM1j: a record that does not read, by the unit it names; one naming none the route picks by its file's key alone.
-  // FABRIC-CLOSE1j2: a closure graph's end by the unit it names too, as the route's `end.Unit == picked`: a quest's (`quest:<id>`),
+  // A record that does not read, by the unit it names; one naming none the route picks by its file's key alone.
+  // A closure graph's end by the unit it names too, as the route's `end.Unit == picked`: a quest's (`quest:<id>`),
   // which no unit here carries, is what its page asks for.
   return {
     units, recovery: [], unread: all.unread, held: all.held.filter((each) => ids.has(each.unit)),
@@ -336,7 +336,7 @@ export function workOf(all: WorkState, unit: string | null): WorkState {
 export function readWorkState(answer: unknown): WorkState {
   const read = answer as
     { units?: unknown; recovery?: unknown; unread?: unknown; held?: unknown; unreadable?: unknown; ends?: unknown } | null | undefined;
-  // FABRIC-PERFORM1g: the answer is none held; FABRIC-CLOSE1j, none ended.
+  // The answer is none held, none ended.
   const held = Array.isArray(read?.held) ? read.held as HeldAttempt[] : [];
   const ends = Array.isArray(read?.ends) ? read.ends as GraphEnd[] : [];
   const units = Array.isArray(read?.units) ? read.units as MilestoneUnit[] : [];
@@ -345,7 +345,7 @@ export function readWorkState(answer: unknown): WorkState {
     recovery: Array.isArray(read?.recovery) ? read.recovery as MilestoneEntry[] : [],
     unread: Array.isArray(read?.unread) ? read.unread.filter((each): each is string => typeof each === 'string') : [],
     held,
-    // FABRIC-PERFORM1j: the answer is none.
+    // The answer is none.
     unreadable: Array.isArray(read?.unreadable) ? read.unreadable as UnreadableRecord[] : [],
     ends,
   };

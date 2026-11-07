@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 internal sealed record TogetherFacts(string HeadRecord, bool OpenedByOwnWord, string? MoveWhy, bool HeadRunning, string LineTip);
 
 /// <summary>
-/// The look's step of one operation (LINESTOGETHER1d, the review-flow design §4): the head's line carried to a successor its own word
+/// The look's step of one operation: the head's line carried to a successor its own word
 /// opened, else stale; a member's tip moving before <i>checked</i>, stale; the head's turn <i>replaying</i>, then <i>checking</i>; the
 /// accounting at the head's tip, tried once per tip; a head moved after <i>checked</i>, back to <i>checking</i> and checked again.
 /// </summary>

@@ -1,11 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The landing gate's assembly (XAGENT1f, WORKFLOW1f, FABRIC-CUTOVER1d; the second-agent design §7), which the workflows own because it
+/// The landing gate's assembly, which the workflows own because it
 /// reads the run's process, judges its workflow part and its graph's, and hands that one process to the review and the second opinion:
 /// the workplace's <see cref="TreeGates"/> keeps the public calls and its own parts (the second opinion, the paths a chain changed and the
-/// fork point they read from), and asks this through <see cref="IWorkplaceGateWorkflows"/>. Each step is what <see cref="TreeGates"/> did
-/// before it was a port, in the same order.
+/// fork point they read from), and asks this through <see cref="IWorkplaceGateWorkflows"/>.
 /// </summary>
 internal static class TreeGateWorkflows
 {
@@ -17,7 +16,7 @@ internal static class TreeGateWorkflows
         var context = gates.Context;
         var full = Path.GetFullPath(path);
         var (workspace, repository) = context.OwnerOf(full);
-        // WORKFLOW1f (the workflow design §2.3, §4.6): the run's bound version where it names one, the rules live where it does not,
+        // The run's bound version where it names one, the rules live where it does not,
         // read once and handed to every part, so the look, the opinion and the landing decide by one process.
         var config = context.Config();
         process ??= await ProcessAsync(gates, config, repository, workspace, quest, world, ct, run).ConfigureAwait(false);
@@ -31,7 +30,7 @@ internal static class TreeGateWorkflows
     }
 
     /// <summary>
-    /// The graph's part of the gate for a run bound to a graph version (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): the run's record
+    /// The graph's part of the gate for a run bound to a graph version: the run's record
     /// read as the runtime keeps it, with no lease and never written, and judged against the door's tree, the commit it would land (the tip it
     /// pinned, else its <c>HEAD</c>) and the opinion and look parts it read a moment before (<see cref="GraphGate"/>). Where it lets the work go,
     /// the gate is pinned to the commit <c>handed</c> is bound to, so every landing path lands that commit or nothing. Any other run's gate is
@@ -55,8 +54,8 @@ internal static class TreeGateWorkflows
     }
 
     /// <summary>
-    /// The process a quest's work here follows (WORKFLOW1f, <see cref="WorkflowProcesses"/>): its run's bound version. A conversation's work,
-    /// which serves no quest, reads its chat run's (CHATFLOW1c, the chat-flow design §4.2), so the view and the gate decide by one process;
+    /// The process a quest's work here follows (<see cref="WorkflowProcesses"/>): its run's bound version. A conversation's work,
+    /// which serves no quest, reads its chat run's, so the view and the gate decide by one process;
     /// one with no chat run named follows no workflow.
     /// </summary>
     /// <param name="run">The chat run's key, <c>chat-&lt;first&gt;</c>, where the work serves no quest; null for none.</param>
@@ -67,11 +66,11 @@ internal static class TreeGateWorkflows
             : WorkflowProcesses.Read(gates.Context.Home, config, repository, workspace, ChatRuns.IsChatRun(run) ? run : null);
 
     /// <summary>
-    /// The run's own part of the gate for a tree (WORKFLOW1f, the workflow design §4.4): the process judged, and where its kind chose
+    /// The run's own part of the gate for a tree: the process judged, and where its kind chose
     /// a workflow that asks less of the person, the paths the chain changed read from git, from where its work leaves the line to its
     /// tip. Git is asked only there.
     /// </summary>
-    /// <param name="tip">The commit to judge at, the branch's where a push is judged (FABRIC-CLOSE1h16); null reads the tree's <c>HEAD</c>.</param>
+    /// <param name="tip">The commit to judge at, the branch's where a push is judged; null reads the tree's <c>HEAD</c>.</param>
     internal static async Task<WorkflowGateState> WorkflowAsync(
         TreeGates gates, string tree, WorkflowProcess process, string? session, CancellationToken ct = default, string? tip = null)
     {

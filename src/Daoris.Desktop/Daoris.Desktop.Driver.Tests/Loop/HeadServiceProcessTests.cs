@@ -7,7 +7,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 row d-ii part 2 (D212's note of the part; the foundation design §3.4 rules 2 and 5, §19.13): the line's head at the say door end
+/// The line's head at the say door end
 /// to end, the service's own host started in a process of its own over a scratch home (<see cref="RealServiceHost"/>), so the door's step, its
 /// walk over <c>sessions_from</c> and <c>sessions_quest</c> and the trigger that writes the settlement are the real ones. The says go over the
 /// wire as the client sends them (<c>settled: true</c> with a key), read as the wire answers them, so the cases hold the service's half whatever
@@ -126,8 +126,8 @@ public sealed class HeadServiceProcessTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A late word to a quest's ended driven part, which went on as a conversation from it as a closed quest's part goes on (LIMITSWITCH2's
-    /// ended move): the say door refuses it <c>continued</c>, naming the conversation, nothing kept on the driven part, and the conversation
+    /// A late word to a quest's ended driven part, which goes on as a conversation from it as a closed quest's part goes on
+    /// (an ended move): the say door refuses it <c>continued</c>, naming the conversation, nothing kept on the driven part, and the conversation
     /// keeps it, once. The walk reads no quest's state, only the line, so the quest's close is the driver's to make and not this case's.
     /// </summary>
     [Fact]

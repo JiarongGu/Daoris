@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAYOUT7 (D117 §6.2–§6.3, as D124 §2.2–§2.7 amends them): the set-up quest's words. The session that carries it
+/// The set-up quest's words. The session that carries it
 /// cannot read the adoption playbook, which is Daoris's own, so the body is the playbook in the canon's words, and
 /// the two are twins: a test here reads the playbook's steps and holds that the body names each.
 /// </summary>
@@ -33,7 +33,7 @@ public sealed partial class SetupBriefTests
         ("Hand it over for review — this is the human checkpoint", "the branch is what is reviewed"),
     ];
 
-    /// <summary>The canon's words for the knowledge step (D124 §2.5), for the quest body and the playbook alike.</summary>
+    /// <summary>The canon's words for the knowledge step, for the quest body and the playbook alike.</summary>
     private const string CanonKnowledge =
         "Write what a session in another repository would need from this one and could not find: what it owns and "
         + "where, what it promises and the shape of its data, and how the figures others rely on are computed, each "
@@ -91,7 +91,7 @@ public sealed partial class SetupBriefTests
     }
 
     /// <summary>
-    /// D124 §2.3's order: the tool's check first, the doctrine taken up, then the knowledge, then the brief, the
+    /// The order: the tool's check first, the doctrine taken up, then the knowledge, then the brief, the
     /// documents, the safe work, the checks, and the commit.
     /// </summary>
     [Fact]
@@ -154,7 +154,7 @@ public sealed partial class SetupBriefTests
     }
 
     /// <summary>
-    /// D230: the reconcile asks the session to run the doctrine tool's brief and decide each item there, adopt, keep with
+    /// The reconcile asks the session to run the doctrine tool's brief and decide each item there, adopt, keep with
     /// its reason, or propose upstream, keeping the checks green; every verb it asks for is one its press allows.
     /// </summary>
     [Fact]
@@ -183,7 +183,7 @@ public sealed partial class SetupBriefTests
     }
 
     /// <summary>
-    /// D230 point 4, D135 §3 as amended: the machine's standing answer for the repository is put among the items, each line
+    /// The machine's standing answer for the repository is put among the items, each line
     /// quoted, for the session to move a line that states a rule of the repository's own development into its records.
     /// </summary>
     [Fact]
@@ -226,7 +226,7 @@ public sealed partial class SetupBriefTests
     }
 
     /// <summary>
-    /// D124 §2.6: what a set-up writes, and the bounds it never crosses. INIT1b (D25's INIT1 note): the whole set-up's
+    /// What a set-up writes, and the bounds it never crosses. The whole set-up's
     /// `daoris init` writes a `.gitattributes` where there is none, so the list of what it writes names that file, and the
     /// bounds keep one already there as the tool keeps it.
     /// </summary>
@@ -249,7 +249,7 @@ public sealed partial class SetupBriefTests
     }
 
     /// <summary>
-    /// INIT1b: the step that runs `daoris init` says what it writes besides the manifest, a `.gitattributes` pinning LF
+    /// The step that runs `daoris init` says what it writes besides the manifest, a `.gitattributes` pinning LF
     /// where the repository has none, and that one already there is never touched, as the playbook's step says (the
     /// twin). A move and the knowledge step alone run no `init`, so neither says it.
     /// </summary>
@@ -270,28 +270,29 @@ public sealed partial class SetupBriefTests
         Assert.DoesNotContain(".gitattributes", declaring);
     }
 
-    /// <summary>A set-up that declares the safe work proposes the rooms and classes where none are, and one that declares nothing asks none.</summary>
+    /// <summary>A set-up that declares the safe work proposes the rooms where none are, and one that declares nothing asks none.</summary>
     [Fact]
-    public void A_set_up_proposes_rooms_and_classes_for_a_repository_with_none()
+    public void A_set_up_proposes_rooms_for_a_repository_with_none()
     {
         foreach (var kind in new[] { SetupCase.Whole, SetupCase.Move })
         {
             var (_, body) = SetupBrief.Compose(Input(kind));
 
-            Assert.Contains("**Propose the rooms and the classes** where none are declared", body);
+            Assert.Contains("**Propose the rooms** where none are declared", body);
             Assert.Contains("Read the doctrine's `rooms-and-classes` knowledge first", body);
-            Assert.Contains("the lanes file's rooms and the `trees` section of `daoris.gates.json`", body);
-            Assert.Contains("the rooms and classes proposed, the rooms whose builds meet, or why none were", body);
+            Assert.Contains("where it declares none, the lanes file's rooms;", body);
+            Assert.Contains("the rooms proposed, the rooms whose builds meet, or why none were", body);
+            Assert.DoesNotContain("trees", body.Split('`'));
             Assert.True(body.IndexOf("**Declare the safe work**", StringComparison.Ordinal) < body.IndexOf("**Propose the rooms", StringComparison.Ordinal));
         }
 
         foreach (var kind in new[] { SetupCase.Declare, SetupCase.Index })
         {
-            Assert.DoesNotContain("**Propose the rooms and the classes**", SetupBrief.Compose(Input(kind)).Body);
+            Assert.DoesNotContain("**Propose the rooms**", SetupBrief.Compose(Input(kind)).Body);
         }
     }
 
-    /// <summary>D124 §2.7: the close names what the owner reviews.</summary>
+    /// <summary>The close names what the owner reviews.</summary>
     [Fact]
     public void The_close_names_what_the_owner_reviews_or_the_reason_it_declined()
     {
@@ -308,7 +309,7 @@ public sealed partial class SetupBriefTests
         }
     }
 
-    /// <summary>D124 §2.2: what was read there, from the line at a named commit, and what the workspace knows of it.</summary>
+    /// <summary>What is read there, from the line at a named commit, and what the workspace knows of it.</summary>
     [Fact]
     public void The_body_says_what_was_read_from_the_line_and_the_workspace()
     {
@@ -387,10 +388,10 @@ public sealed partial class SetupBriefTests
         Assert.DoesNotContain("**Initialise the knowledge.**", keeping);
     }
 
-    // ---------------------------------------------------------------- the index quest (ORIENT2c)
+    // ---------------------------------------------------------------- the index quest
 
     /// <summary>
-    /// ORIENT2c (D151 point 5; the orientation design §2.2): what the press grants is what the body asks, the doctrine tool's
+    /// What the press grants is what the body asks, the doctrine tool's
     /// verbs and the generator's two commands, each in code type.
     /// </summary>
     [Fact]
@@ -435,7 +436,7 @@ public sealed partial class SetupBriefTests
         Assert.DoesNotContain("**Initialise the knowledge.**", body);
     }
 
-    /// <summary>The design §2.4 and the close (D129 §5 as D151 amends it): each index already kept is named with how the new one differs.</summary>
+    /// <summary>The close: each index already kept is named with how the new one differs.</summary>
     [Fact]
     public void The_index_quests_close_names_each_index_kept_and_what_was_read_names_them()
     {

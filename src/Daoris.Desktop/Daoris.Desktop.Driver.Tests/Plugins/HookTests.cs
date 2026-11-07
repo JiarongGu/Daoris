@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The hook wire (D64 §4, PLUG5): a plugin that speaks, driven against a fake over in-memory streams
+/// The hook wire: a plugin that speaks, driven against a fake over in-memory streams
 /// — and once against a real process, because the environment a plugin is started with is the one
 /// thing a fake cannot prove.
 /// </summary>
@@ -18,7 +18,7 @@ public sealed class HookTests : IDisposable
 
     public void Dispose()
     {
-        // FLAKE1: a real hook's process runs in its plugin folder, and Windows refuses to delete a folder
+        // A real hook's process runs in its plugin folder, and Windows refuses to delete a folder
         // a process still stands in; the process lets go a moment after it is told to stop. So the
         // cleanup waits a little for it rather than failing a test that passed.
         for (var attempt = 0; Directory.Exists(_home); attempt++)
@@ -115,12 +115,12 @@ public sealed class HookTests : IDisposable
         Assert.Equal("acme.gate", sent.GetProperty("plugin").GetString());
         Assert.Equal("C:/somewhere/data", sent.GetProperty("home").GetString());
         Assert.Equal("C:/somewhere/data/plugins/.data/acme.gate", sent.GetProperty("data").GetString());
-        // The process is the fact; the manifest was the claim. It listens on one of the two it declared.
+        // The process is the fact; the manifest is the claim. It listens on one of the two it declared.
         Assert.Equal(["quest/consider"], peer.Points);
     }
 
     /// <summary>
-    /// Listening beyond the manifest is refused. A point this build lacks is no longer refused (PLUGHOOK1a, D148 point 8): it is
+    /// Listening beyond the manifest is refused. A point this build lacks is not refused: it is
     /// said once and never asked, which <see cref="HookStateTests"/> holds.
     /// </summary>
     [Fact]
@@ -182,7 +182,7 @@ public sealed class HookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3: an answer of the wrong JSON SHAPE threw InvalidOperationException from a property read —
+    /// An answer of the wrong JSON SHAPE threw InvalidOperationException from a property read —
     /// not a DriverException — so it escaped the tick's catch and killed every tick, naming no plugin.
     /// Every shape the wire can carry is a sentence naming the plugin.
     /// </summary>
@@ -288,7 +288,7 @@ public sealed class HookTests : IDisposable
     }
 
     /// <summary>
-    /// PLUG8: a JSON value that is not an object, and an object that is neither an answer nor a request,
+    /// A JSON value that is not an object, and an object that is neither an answer nor a request,
     /// are noise like any other line. A bare `42` on stdout threw InvalidOperationException in the pump,
     /// which its catch did not name, so the wire ended and every call after it said the plugin had stopped.
     /// </summary>
@@ -405,7 +405,7 @@ public sealed class HookTests : IDisposable
 
     /// <summary>
     /// One plugin's process is stopped NOW, not at the next tick — what removing it needs first, since
-    /// on Windows a running hook holds its folder (REV3 modules F5).
+    /// on Windows a running hook holds its folder.
     /// </summary>
     [Fact]
     public async Task One_plugin_can_be_stopped_now_and_the_others_keep_running()
@@ -566,8 +566,8 @@ public sealed class HookTests : IDisposable
     }
 
     /// <summary>
-    /// The wire is UTF-8 both ways, whatever the console's code page. Seen on the window (PLUG8's try, a
-    /// Chinese-locale machine): a plugin's em dash read back as `鈥?`, its stdout decoded in the console's
+    /// The wire is UTF-8 both ways, whatever the console's code page. Seen on a
+    /// Chinese-locale machine: a plugin's em dash read back as `鈥?`, its stdout decoded in the console's
     /// code page. So a frame going in, an answer coming out and a stderr line keep every character.
     /// </summary>
     [Fact]
@@ -605,7 +605,7 @@ public sealed class HookTests : IDisposable
     }
 
     /// <summary>
-    /// PLUGSTDERR1 (§C4): a plugin's stderr is read under <see cref="HookProcess.StderrBytes"/>, as its stdout is under the frame bound. A
+    /// A plugin's stderr is read under <see cref="HookProcess.StderrBytes"/>, as its stdout is under the frame bound. A
     /// line past it reaches the console clipped and marked, and the line after it is relayed whole.
     /// </summary>
     [Fact]

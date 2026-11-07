@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1a-i (D163 §3) with real conversations, over the hand-over's move record (FOUNDATION1f-v part a, D212): a conversation handed to
+/// With real conversations, over the hand-over's move record: a conversation handed to
 /// another agent ends, and a new one starts in the same tree on that agent, told Daoris's briefing and none of the person's words; both records
 /// say where it went and where it came from. The move is decided at the ask and kept in the store, never in a box: idle it is taken at once;
 /// while a turn runs it waits at <c>quiescing</c> and is taken as the turn ends; an older build's box left on disk is imported as a move at the
@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// The first conversation runs on the <c>acp-stub</c> adapter (a node stand-in on the protocol door) and is handed to the
 /// built-in <c>stub</c> adapter (a text-only node stand-in that echoes each line it reads): the two agents the fixtures can
-/// register as different ones. The echo is what the new conversation's transcript shows it was told. The in-process ledger of
+/// register as different ones. The echo is what the new conversation's transcript shows it is told. The in-process ledger of
 /// <see cref="ChatGoOnTests"/>; a real process each.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
@@ -102,7 +102,7 @@ public sealed class HandOverProcessTests : IDisposable
         await Poll.Until(() => Ended(ledger.State(old)), () => Seen(ledger, events, old));
         Assert.Equal(2, ledger.Count);
         Assert.Equal(_root, (await client.RecordAsync(next))!.Tree);
-        // The new record names the one it continues, why and who asked (MIXAGENT1a-iii).
+        // The new record names the one it continues, why and who asked.
         var link = (await client.RecordAsync(next))!;
         Assert.Equal((old, "press", "person"), (link.From, link.FromWhy, link.FromBy));
         // The briefing is said after the old conversation ended, so its note is waited for.
@@ -113,16 +113,16 @@ public sealed class HandOverProcessTests : IDisposable
         var opening = record.First(e => CodeOf(e) == "chat.taken-over").Parts![0];
         Assert.Equal(("acp-stub", old, "press"), (opening.Value("agent"), opening.Value("session"), opening.Value("why")));
         await Poll.Until(
-            // SESSCTX1b: Daoris's brief of the line, the new conversation's first prompt.
+            // Daoris's brief of the line, the new conversation's first prompt.
             () => StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")).Contains($"heard: You continue session `{old}`, which ran on acp-stub"),
             () => Seen(ledger, events, next));
         Assert.Contains("Make the port configurable.", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")));
-        // The new maker is told how it signs its commits; the conversation it continues was not (MAKERTRAIL1, MAKERTRAIL1b).
+        // The new maker is told how it signs its commits; the conversation it continues is not.
         Assert.Contains("This start runs on `stub`", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{next}.log")));
         Assert.DoesNotContain("This start runs on", StubFile.Text(DaorisHome.Entry(_home, HomeEntry.Sessions,$"{old}.log")));
         Assert.Equal("chat.handed-over", events.After(old, 0).Events.Select(CodeOf).Last(code => code is not null));
         Assert.Equal(next, NewSessionOf(ledger, old));
-        // The move ends last, after the old one's last line, and no box was ever written (FOUNDATION1f-v part a): poll, as CurveMoveProcessTests does.
+        // The move ends last, after the old one's last line, and no box is ever written: poll, as CurveMoveProcessTests does.
         await Poll.Until(() => new MoveStore(_home).Standing(old) is null, () => $"the store still holds {old}'s hand-over; {Seen(ledger, events, old)}");
         var move = Assert.Single(new MoveStore(_home).Of(old));
         Assert.Equal(("delivered", next, "stub", HandOverWhy.Press, HandOverBy.Person), (move.PhaseWord, move.Destination, move.Agent, move.Why, move.By));
@@ -130,7 +130,7 @@ public sealed class HandOverProcessTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1c part B (D189's amendment, the session-context design §2.2): the person's press asks the outgoing agent for one closing
+    /// 🔴 The person's press asks the outgoing agent for one closing
     /// note at its turn's end, before the conversation ends, and the new conversation's brief carries what it wrote as that agent's claim.
     /// A move the account forces (here <c>near</c>) asks none: the outgoing agent is sent no other turn, and the brief says no note.
     /// </summary>
@@ -231,7 +231,7 @@ public sealed class HandOverProcessTests : IDisposable
         var started = Assert.Single(taken);
         Assert.NotNull(started.SessionId);
         Assert.Equal(2, ledger.Count);
-        // Imported at the come-up and set aside, then taken as a move (FOUNDATION1f-v part a).
+        // Imported at the come-up and set aside, then taken as a move.
         Assert.Null(new HandOverBox(_home).Read(old));
         Assert.True(File.Exists(new HandOverBox(_home).PathOf(old) + ".imported"));
         await Poll.Until(() => events.After(started.SessionId!, 0).Events.Any(e => CodeOf(e) == "chat.taken-over"), () => Seen(ledger, events, started.SessionId!));
@@ -291,7 +291,7 @@ public sealed class HandOverProcessTests : IDisposable
         return script;
     }
 
-    /// <summary>A text-only agent, the stub's door: it echoes each line it reads, so the transcript shows what it was told.</summary>
+    /// <summary>A text-only agent, the stub's door: it echoes each line it reads, so the transcript shows what it is told.</summary>
     private string TextAgent()
     {
         var script = Path.Combine(_home, "text-agent.mjs");

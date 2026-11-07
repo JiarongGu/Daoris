@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1d (the pipeline design §4.2): a check's verdict judged from its runner's answer gate by gate, from an opaque runner's
+/// A check's verdict judged from its runner's answer gate by gate, from an opaque runner's
 /// exit, and answered to the performer's reconcile from the attempt's folder alone.
 /// </summary>
 public sealed class VerifyJudgeTests : IDisposable

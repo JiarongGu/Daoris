@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a run's step stands (WORKFLOW1c; the workflow design §5.2), as a code a page words and a test holds. The design's table,
-/// less what this build cannot reach yet: a service's wait comes with a check (WORKFLOW1k).
+/// Where a run's step stands, as a code a page words and a test holds.
 /// </summary>
 public static class WorkflowRunStates
 {
@@ -18,7 +17,7 @@ public static class WorkflowRunStates
     /// <summary>It waits for an agent's answer: a set-up shown again, findings answered, a question another repository answers.</summary>
     public const string WaitingOnAgent = "waiting-on-agent";
 
-    /// <summary>What it waits on could not be read, which is never taken as passed or failed (D148 point 5).</summary>
+    /// <summary>What it waits on could not be read, which is never taken as passed or failed.</summary>
     public const string NotKnown = "not-known";
 
     /// <summary>It cannot go on as it stands: its detail says why, and the person's door fixes it.</summary>

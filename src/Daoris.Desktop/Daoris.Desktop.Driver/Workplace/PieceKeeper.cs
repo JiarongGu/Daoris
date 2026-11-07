@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A piece's frozen ref (COAGENT1b, D199 point 3; the co-agent design §2.4): <c>refs/daoris/pieces/&lt;id&gt;</c>, created once at the
+/// A piece's frozen ref: <c>refs/daoris/pieces/&lt;id&gt;</c>, created once at the
 /// keeper's commit and never moved. Piece refs are classed beside the recovery refs (<see cref="ContentHolds.DiscardedPrefix"/>): no
 /// tidy, clear, sync or landing mutates one, and no proof of holding counts one as a holder, since a piece's commit contains the
 /// lead's history up to its base and would otherwise let a lead's branch be forgotten as held.
@@ -38,17 +38,17 @@ public enum PieceEntryKind
 }
 
 /// <summary>
-/// The import's rules (the design §7.9, Codex's read 24), pure over what the walk found and what the base holds: regular files only;
+/// The import's rules, pure over what the walk found and what the base holds: regular files only;
 /// a link, a junction or another reparse point, a submodule or a nested repository refused, and what the base held under it left as
 /// it was; a new file the repository's own ignore rules ignore left out; a file over <see cref="FileBound"/> refused, and a piece over
 /// <see cref="PieceBound"/> refused whole. Paths outside the piece's are kept and named beyond it, never refused.
 /// </summary>
 public static class PieceImport
 {
-    /// <summary>One file at most, in bytes: a first value, read again in COAGENT1f.</summary>
+    /// <summary>One file at most, in bytes: a first value.</summary>
     public const long FileBound = 10L * 1024 * 1024;
 
-    /// <summary>The piece at most, in bytes: a first value, read again in COAGENT1f.</summary>
+    /// <summary>The piece at most, in bytes: a first value.</summary>
     public const long PieceBound = 50L * 1024 * 1024;
 
     public const string WhyLink = "link";
@@ -172,7 +172,7 @@ public static class PieceImport
 }
 
 /// <summary>
-/// The keeper's walk of a partner's copy (the design §7.9): its folder as bytes, never entering <c>.git</c>, never following a link,
+/// The keeper's walk of a partner's copy: its folder as bytes, never entering <c>.git</c>, never following a link,
 /// and never entering a folder that holds a repository of its own.
 /// </summary>
 public static class PieceWalk
@@ -214,7 +214,7 @@ public static class PieceWalk
 }
 
 /// <summary>
-/// The partner's copy (COAGENT1b, the co-agent design §2.2, §2.3 step 5): a clone of the repository with no remote, its own refs,
+/// The partner's copy: a clone of the repository with no remote, its own refs,
 /// configuration, hooks and objects, checked out at the ask's exact base, refused where that commit is not in the repository (no
 /// fallback to another base). Made by Daoris before the partner's turn, the only git Daoris runs in it.
 /// </summary>
@@ -252,7 +252,7 @@ public static class PieceCopy
 public sealed record PieceKept(string? State, string? Commit, string? Code, PieceImport.Judged? Judged, string? Why);
 
 /// <summary>
-/// The keeper and the import (COAGENT1b, the design §7.9, Codex's read 23): once the partner's job is empty its copy is data the
+/// The keeper and the import: once the partner's job is empty its copy is data the
 /// partner controlled, <c>.git</c> included, so Daoris never runs git in it again. It reads the files, judges them by
 /// <see cref="PieceImport"/>, and writes one commit onto the ask's base in the repository itself through a temporary index, with no
 /// filters, no hooks and no signing, by the repository's identity, dated by the keeper's moment, so the same inputs make the same

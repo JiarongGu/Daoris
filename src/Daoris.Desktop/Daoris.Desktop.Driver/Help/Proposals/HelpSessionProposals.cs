@@ -3,28 +3,28 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>session</c> proposal (SESSUX1h2b, D126 §5.2, §5.3, §7.3): sessions archived on this machine or unarchived,
+/// Ask Daoris's <c>session</c> proposal: sessions archived on this machine or unarchived,
 /// by id, or every session that ended archived. Its doors are <c>archive</c> and <c>unarchive</c>, its target the ids
 /// comma-joined, or none and the value <c>ended</c> (with <c>archive</c> only), as the service's box writes it. It is judged by
 /// where Sessions' list places each session, as <see cref="SessionArchive"/> judges an archive, and applied through Sessions'
 /// own archive, the door its *Archive*, *Archive what ended…* and *Unarchive* press.
 /// </summary>
 /// <remarks>
-/// <para><b>Archive never hides what needs the person</b> (§5.2): a live session, one waiting on you, one to review and an id no
+/// <para><b>Archive never hides what needs the person</b>: a live session, one waiting on you, one to review and an id no
 /// record here has are refused, each in the words the list's own refusal uses. A card never says it archives what its Apply
 /// would keep, so one such among several refuses the card, naming each; the helper proposes the rest without them. A
 /// teammate's ended session may be archived, since the mark is this machine's and their record is not changed.</para>
 ///
 /// <para><b>Ask Daoris's own conversation is refused</b> at both doors: Ask Daoris → History keeps it, and names, pins and
-/// deletes it there (ASKHIST1), as a go to Sessions refuses it (ENTRY1f2). Archive what ended takes what Sessions' *Archive what
+/// deletes it there, as a go to Sessions refuses it. Archive what ended takes what Sessions' *Archive what
 /// ended…* takes, every ended row not archived, so the card's count is the list's.</para>
 ///
-/// <para><b>What changes nothing is said, never refused</b> (D48 §6): an unarchive of a session that is not archived, an
+/// <para><b>What changes nothing is said, never refused</b>: an unarchive of a session that is not archived, an
 /// archive of one archived already, and archive what ended with nothing ended. Such a card's Apply calls no door.</para>
 ///
-/// <para><b>Listed first, then pressed</b> (§5.3): the card says what archive what ended would take and what stays in the list.
+/// <para><b>Listed first, then pressed</b>: the card says what archive what ended would take and what stays in the list.
 /// Its Apply is judged again with the machine as it stands then, and the door judges each session again as it goes. A stop is
-/// no door: a session's stop is its own conversation, which a go reaches (D161's SESSUX1h1 note).</para>
+/// no door: a session's stop is its own conversation, which a go reaches.</para>
 /// </remarks>
 internal sealed class HelpSessionProposals : IHelpProposalKind
 {
@@ -33,7 +33,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
 
     public string Kind => "session";
 
-    // SESSUX1h2b: archive and unarchive; a delete is the `delete` kind's `session` door, and a stop is no door (SESSUX1h1).
+    // Archive and unarchive; a delete is the `delete` kind's `session` door, and a stop is no door.
     public string Tool => "session_propose";
 
     public IReadOnlyList<string> Doors { get; } = ["archive", "unarchive", "helper", "pass"];
@@ -41,7 +41,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     public HelpProposal Read(HelpProposal proposal, JsonElement file) => HelpSessionHelperDoors.Read(proposal, file);
 
     /// <summary>
-    /// ASKSCOPE1c2: each session it names by id, filed under the workspace its record says. Archive what ended names none by id,
+    /// Each session it names by id, filed under the workspace its record says. Archive what ended names none by id,
     /// and takes every ended row Sessions' list places, as before.
     /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts) =>
@@ -109,7 +109,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
             : acts.Count == 1
                 ? $"Unarchive session `{acts[0].Id}` on this machine: it is back in Sessions' list, in the group its state puts it in."
                 : $"Unarchive {acts.Count} sessions on this machine: {Listed(acts)}. Each is back in Sessions' list, in the group its state puts it in.";
-        // §5.2: a teammate's record may be archived here too, and only this machine's list changes.
+        // A teammate's record may be archived here too, and only this machine's list changes.
         var teammates = archive ? acts.Where(record => record.Teammate).ToList() : [];
         var theirs = teammates.Count switch
         {
@@ -141,12 +141,12 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// §5.3: every session in Ended that is not archived, in the list's order, and what stays in the list for the person, as
+    /// Every session in Ended that is not archived, in the list's order, and what stays in the list for the person, as
     /// Sessions' *Archive what ended…* says it before its press.
     /// </summary>
     private static HelpPlan EndedPlan(HelpMachineFacts facts)
     {
-        // ASKSCOPE1c3: under a circle, only the workspace's own rows; a row no session record files is left out.
+        // Under a circle, only the workspace's own rows; a row no session record files is left out.
         var mine = facts.Placed.Where(row => HelpProposalScope.InCircle(facts, row.Session)).ToList();
         var ended = mine.Where(row => row.Group == SessionGroup.Ended && !row.Archived).Select(row => row.Session).ToList();
         var (you, review) = (mine.Count(row => row.Group == SessionGroup.You), mine.Count(row => row.Group == SessionGroup.Review));
@@ -183,7 +183,7 @@ internal sealed class HelpSessionProposals : IHelpProposalKind
 public interface IHelpSessionDoors
 {
     /// <summary>
-    /// Sessions' own archive (SESSUX1a, D126 §5.2), the door its *Archive*, *Archive what ended…* and *Unarchive* press: each
+    /// Sessions' own archive, the door its *Archive*, *Archive what ended…* and *Unarchive* press: each
     /// session archived or unarchived, judged again by where the list places it as it goes. Its answer comes back as its
     /// sentence, a refusal included.
     /// </summary>
@@ -191,11 +191,11 @@ public interface IHelpSessionDoors
     Task<(bool Ok, string Message)> ArchiveSessionsAsync(IReadOnlyList<string> ids, bool archived, CancellationToken ct);
 
     /// <summary>
-    /// The person's own ask of a helper for a session (COWORKUX1), the door <c>SESSION_HELPER_ASK</c> is: judged and written by
+    /// The person's own ask of a helper for a session, the door <c>SESSION_HELPER_ASK</c> is: judged and written by
     /// <see cref="HelperPersonAskDoor"/>, which the terminal's <c>sessions helper</c> shares. Its answer comes back as its sentence.
     /// </summary>
     Task<(bool Ok, string Message)> AskHelperAsync(string session, string question, string? agent, string? after, bool toPerson, CancellationToken ct);
 
-    /// <summary><i>Pass to the lead</i> (COWORKUX1), the door <c>SESSION_HELPER_PASS</c> is: <see cref="HelperPassToLead"/>'s judge, answered as its sentence.</summary>
+    /// <summary><i>Pass to the lead</i>, the door <c>SESSION_HELPER_PASS</c> is: <see cref="HelperPassToLead"/>'s judge, answered as its sentence.</summary>
     Task<(bool Ok, string Message)> PassHelperAnswerAsync(string session, string ask, CancellationToken ct);
 }

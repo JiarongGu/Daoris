@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where one piece stands, one of <see cref="All"/> (COAGENT1b, D199 points 2 and 3; the co-agent design §7.2). A side effect is
+/// Where one piece stands, one of <see cref="All"/>. A side effect is
 /// always made before the state that names it, so a restart reconciles each state with what it observes
 /// (<see cref="PartnerReconcile"/>), never doing a side effect twice.
 /// </summary>
@@ -10,7 +10,7 @@ public static class PartnerStates
     /// <summary>The ask is on file and not yet judged.</summary>
     public const string Asked = "asked";
 
-    /// <summary>The lead's ask waits for the person's yes under the rule's <c>ask</c> (COAGENT1d).</summary>
+    /// <summary>The lead's ask waits for the person's yes under the rule's <c>ask</c>.</summary>
     public const string Waiting = "waiting";
 
     /// <summary>The piece's slot and its place in the lead's allowance are reserved in the common admission.</summary>
@@ -25,7 +25,7 @@ public static class PartnerStates
     /// <summary>The partner's job is empty; the keeper's moment is written before keeping.</summary>
     public const string Ending = "ending";
 
-    /// <summary>The import was refused: the copy is kept for the person's look and <i>Discard…</i>.</summary>
+    /// <summary>The import is refused: the copy is kept for the person's look and <i>Discard…</i>.</summary>
     public const string Held = PieceKeptStates.Held;
 
     /// <summary>The keeper's commit is in the repository, frozen as <see cref="PieceRefs.Of"/>.</summary>
@@ -34,7 +34,7 @@ public static class PartnerStates
     /// <summary>The answer's and the facts' files are written.</summary>
     public const string Answered = "answered";
 
-    /// <summary>The answer was handed to the lead, or its successor, by the delivery receipt.</summary>
+    /// <summary>The answer is handed to the lead, or its successor, by the delivery receipt.</summary>
     public const string Handed = "handed";
 
     /// <summary>Daoris read the frozen commit as an ancestor of the lead's branch: recorded once, never unset.</summary>
@@ -59,7 +59,7 @@ public static class PartnerStates
     ];
 
     /// <summary>
-    /// The states whose reservation the common admission counts beside the records (the design §5): before the partner's record
+    /// The states whose reservation the common admission counts beside the records: before the partner's record
     /// opens, its reservation holds the slot; from <see cref="Started"/> the record's <c>serves</c> holds it, counted once.
     /// </summary>
     public static bool Reserves(string state) => state is Approved or Preparing;
@@ -69,13 +69,13 @@ public static class PartnerStates
         state is Ending or Held or Answered or Handed or TakenIn or NotTakenIn or Discarded or Imported;
 
     /// <summary>
-    /// The states that count toward a lead's two open pieces, from <see cref="Approved"/> on (the design §2.3 step 2), so two looks
+    /// The states that count toward a lead's two open pieces, from <see cref="Approved"/> on, so two looks
     /// cannot both pass the second; a piece whose end is not known stays open until the person's act.
     /// </summary>
     public static bool Open(string state) => state is Approved or Preparing or Started or Ending or Uncertain;
 
     /// <summary>
-    /// The states whose box still owns its copy (the design §7.2): the strays' cleanup leaves the folder, and only a verified import
+    /// The states whose box still owns its copy: the strays' cleanup leaves the folder, and only a verified import
     /// or the person's <i>Discard…</i> removes it. An imported or later piece holds it only until its removal is done.
     /// </summary>
     public static bool HoldsCopy(PartnerState state) => state.State switch
@@ -89,7 +89,7 @@ public static class PartnerStates
     public static bool Final(string state) => state is Handed or TakenIn or NotTakenIn or Discarded or Refused;
 }
 
-/// <summary>How a partner's turn ended, kept beside <see cref="PartnerStates.Ending"/> (the design §2.3 steps 6 and 11).</summary>
+/// <summary>How a partner's turn ended, kept beside <see cref="PartnerStates.Ending"/>.</summary>
 public static class PartnerEnds
 {
     public const string Answered = "answered";
@@ -97,19 +97,19 @@ public static class PartnerEnds
     public const string OutOfTime = "out-of-time";
     public const string Limited = "limited";
 
-    /// <summary>Its provider kept failing past its tries or its minutes (AGENTERRORS1d): its work kept, as a limit's is.</summary>
+    /// <summary>Its provider kept failing past its tries or its minutes: its work kept, as a limit's is.</summary>
     public const string Transient = "transient";
 
     public static readonly IReadOnlyList<string> All = [Answered, Stopped, OutOfTime, Limited, Transient];
 }
 
 /// <summary>
-/// One piece's ask as <c>&lt;id&gt;.ask.json</c> keeps it (the design §2.3 step 1, §7.1): written once, never changed, with the exact
+/// One piece's ask as <c>&lt;id&gt;.ask.json</c> keeps it: written once, never changed, with the exact
 /// commit the lead's tree stood at and the lead's uncommitted paths as Daoris read them then.
 /// </summary>
 /// <param name="Asker">The lead's session.</param>
 /// <param name="Paths">The repository-relative paths the piece is about; empty where the ask named none.</param>
-/// <param name="Agent">The agent named, one word; null where none was (only the lead's ask, from COAGENT1d).</param>
+/// <param name="Agent">The agent named, one word; null where none is (only the lead's ask).</param>
 /// <param name="Base">The exact commit the piece grows from.</param>
 /// <param name="Uncommitted">The lead's uncommitted paths at the ask.</param>
 /// <param name="AskedBy"><see cref="ByPerson"/> or <see cref="ByAgent"/>.</param>
@@ -120,12 +120,12 @@ public sealed record PartnerAsk(
     public const string ByAgent = "agent";
     public const string ByPerson = "person";
 
-    /// <summary>A piece's words at most (the design §2.3 step 1).</summary>
+    /// <summary>A piece's words at most.</summary>
     public const int PieceLimit = 4_000;
 }
 
 /// <summary>
-/// One piece's state as the driver keeps it, <c>&lt;id&gt;.state.json</c>, the driver alone writing it (the design §7.1): the state,
+/// One piece's state as the driver keeps it, <c>&lt;id&gt;.state.json</c>, the driver alone writing it: the state,
 /// its code, and the identity of each side effect made before it.
 /// </summary>
 /// <param name="Code">A refusal's, a hold's or an uncertainty's code (<see cref="PartnerWhy"/>); null otherwise.</param>
@@ -162,7 +162,7 @@ public sealed record PartnerState(string Id, string State, string? Code, DateTim
     public string? TakenBy { get; init; }
 }
 
-/// <summary>A partner's answer as <c>&lt;id&gt;.answer.json</c> keeps it: its summary and what it could not do, its claims (the design §2.3 step 8).</summary>
+/// <summary>A partner's answer as <c>&lt;id&gt;.answer.json</c> keeps it: its summary and what it could not do, its claims.</summary>
 public sealed record PartnerAnswer(string Id, string Summary, string? Left, DateTimeOffset At)
 {
     public const int SummaryLimit = 20_000;
@@ -178,7 +178,7 @@ public sealed record PartnerAnswer(string Id, string Summary, string? Left, Date
 }
 
 /// <summary>
-/// What Daoris read itself, never from the partner's words, as <c>&lt;id&gt;.facts.json</c> keeps it (the design §2.3 step 8): the
+/// What Daoris read itself, never from the partner's words, as <c>&lt;id&gt;.facts.json</c> keeps it: the
 /// commit, the files it changes, those beyond the piece's paths, and what the import refused or left out and why.
 /// </summary>
 public sealed record PartnerFacts(
@@ -186,7 +186,7 @@ public sealed record PartnerFacts(
     DateTimeOffset At);
 
 /// <summary>
-/// The piece's one delivery receipt, <c>&lt;id&gt;.delivery.json</c> (the design §7.6): the destination claimed before anything is
+/// The piece's one delivery receipt, <c>&lt;id&gt;.delivery.json</c>: the destination claimed before anything is
 /// handed, moved along <c>from</c> explicitly, the stable key, and the outcome.
 /// </summary>
 /// <param name="To">The record the answer is claimed for: the lead, or the newest live record continuing it by <c>from</c>.</param>
@@ -194,7 +194,7 @@ public sealed record PartnerFacts(
 /// <param name="Outcome">One of <see cref="PartnerDelivery"/>'s outcomes.</param>
 public sealed record PartnerReceipt(string Id, string To, string Key, string Outcome, DateTimeOffset At);
 
-/// <summary>A delivery receipt's outcomes, and how a hand reads one (the design §7.6).</summary>
+/// <summary>A delivery receipt's outcomes, and how a hand reads one.</summary>
 public static class PartnerDelivery
 {
     public const string Waiting = "waiting";
@@ -209,7 +209,7 @@ public static class PartnerDelivery
 
     /// <summary>
     /// The receipt a hand claims before anything is handed: a fresh one waiting for the lead's chain's newest live record; an
-    /// existing one moved explicitly to <paramref name="to"/> where the claimed record left and the answer was never taken; an
+    /// existing one moved explicitly to <paramref name="to"/> where the claimed record left and the answer is never taken; an
     /// existing one waiting, attempted, uncertain or taken left as it is (a key already taken answers <i>handed</i>, an uncertain
     /// one waits for the person and is never handed again by itself).
     /// </summary>
@@ -224,7 +224,7 @@ public static class PartnerDelivery
     public static bool MayHand(PartnerReceipt receipt) => receipt.Outcome == Waiting;
 
     /// <summary>
-    /// The hand's own order (the design §7.6): the receipt is marked <see cref="Attempted"/> before the door is called, <see cref="Taken"/>
+    /// The hand's own order: the receipt is marked <see cref="Attempted"/> before the door is called, <see cref="Taken"/>
     /// naming the record the door kept the word on once it answers, and back to <see cref="Waiting"/> where the door refused to take it
     /// now. A look that finds a receipt <see cref="Attempted"/> with no hand of its own in flight met a hand a restart cut: the word may
     /// be on a record, so it is <see cref="Uncertain"/> and waits for the person, never handed again by itself.
@@ -251,7 +251,7 @@ public static class PartnerDelivery
     };
 }
 
-/// <summary>What a restart observes of a piece's side effects, by their identities (the design §7.2).</summary>
+/// <summary>What a restart observes of a piece's side effects, by their identities.</summary>
 /// <param name="StateReadable">False where the state file exists and cannot be read.</param>
 /// <param name="CopyExists">The copy's named folder exists.</param>
 /// <param name="RecordForPiece">A record already open carrying this piece, or null.</param>
@@ -293,7 +293,7 @@ public enum PartnerAct
 public sealed record PartnerStep(PartnerAct Act, PartnerState? Write);
 
 /// <summary>
-/// A restart's reconciliation of one piece (the design §7.2, Codex's read 25): it never trusts the last state alone, it reconciles
+/// A restart's reconciliation of one piece: it never trusts the last state alone, it reconciles
 /// what the state says with what it observes, by each side effect's identity, and nothing at any state runs an agent again unasked.
 /// Pure: the look observes and writes.
 /// </summary>
@@ -317,7 +317,7 @@ public static class PartnerReconcile
             case PartnerStates.Approved:
                 return new(PartnerAct.Prepare, null);
             case PartnerStates.Preparing:
-                // The record opened before the crash is taken as this one; the turn was never begun, since `started` names it first.
+                // The record opened before the crash is taken as this one; the turn is never begun, since `started` names it first.
                 if (seen.RecordForPiece is { } record) return new(PartnerAct.Watch, state with { State = PartnerStates.Started, Partner = record, At = now });
                 return seen.CopyExists ? new(PartnerAct.RemoveCopyThenPrepare, null) : new(PartnerAct.Prepare, null);
             case PartnerStates.Started:
@@ -346,7 +346,7 @@ public static class PartnerReconcile
         });
 
     /// <summary>
-    /// How the create-only import reads the piece's ref (the design §7.2's import row): absent, it is created; at the keeper's
+    /// How the create-only import reads the piece's ref: absent, it is created; at the keeper's
     /// commit, the import already happened and is <see cref="PartnerStates.Imported"/>; at another commit, <see cref="PartnerStates.Uncertain"/>.
     /// </summary>
     public static string? AfterRef(string? refCommit, string kept) => PieceKeptStates.AfterRef(refCommit, kept);

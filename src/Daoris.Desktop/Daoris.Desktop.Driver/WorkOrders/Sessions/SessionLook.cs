@@ -24,7 +24,7 @@ public sealed record SessionLook(
     /// <summary>Each quest's failed sessions since its last *Try again*, counted as the planner counts them.</summary>
     public IReadOnlyDictionary<string, int> Strikes { get; init; } = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>What each judged tree holds, by <see cref="SessionGroups.Normal"/>; a tree not here was not judged, and holds nothing to review.</summary>
+    /// <summary>What each judged tree holds, by <see cref="SessionGroups.Normal"/>; a tree not here is not judged, and holds nothing to review.</summary>
     public IReadOnlyDictionary<string, TreeWork> Trees { get; init; } = new Dictionary<string, TreeWork>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>This machine's archive marks, by session.</summary>

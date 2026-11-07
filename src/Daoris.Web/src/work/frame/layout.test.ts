@@ -3,7 +3,7 @@ import {
   CENTRE_FLOOR, DOCK, type FramePrefs, frameLayout, LIST_BOUNDS, LIST_STRIP, type ListChoice, listLayout, listToggled,
 } from './layout';
 
-// The frame's geometry (FRAME6, then D118 §3a): the reference console's field-tested numbers, as one pure
+// The frame's geometry: the reference console's field-tested numbers, as one pure
 // function so every width a window can be is an ordinary assertion.
 
 /** Sessions' list as a viewer who never touched it has it. */
@@ -18,7 +18,7 @@ const WIDTHS = [560, 640, 680, 720, 760, 768, 800, 900, 980, 1000, 1024, 1028, 1
 
 describe('the bounds', () => {
   it('are FRAME6\'s for every list but Settings\', whose rows are single names', () => {
-    // Knowledge's pane is its two modes' too (UX6i), so all three are one list's bounds.
+    // Knowledge's pane is its two modes' too, so all three are one list's bounds.
     for (const view of ['sessions', 'quests', 'projects', 'knowledge', 'convergence', 'search', 'plugins'] as const) {
       expect(LIST_BOUNDS[view]).toEqual({ min: 264, max: 420, initial: 280 });
     }
@@ -56,7 +56,7 @@ describe('the list', () => {
   });
 
   /**
-   * ENTRY1g (D161's ENTRY1b note): a go to a group of the list lays the strip the person closed over the main area, room or
+   * A go to a group of the list lays the strip the person closed over the main area, room or
    * none, since opening it beside would undo their closing. Laying over is never remembered, so once it goes the strip is
    * theirs again.
    */
@@ -64,13 +64,13 @@ describe('the list', () => {
     for (const width of WIDTHS) {
       const laid = at(width, {}, { closed: true, over: true }).list!;
       expect(laid).toEqual({ mode: 'over', width: Math.min(280, width - 48 - LIST_STRIP), beside: LIST_STRIP, auto: false });
-      // Let go by any of its doors, it is their strip again: the toggle leaves the closing as it was.
+      // Let go by any of its doors, it is their strip again: the toggle leaves the closing as it is.
       expect(at(width, {}, { closed: true, ...listToggled(laid) }).list).toEqual(at(width, {}, { closed: true }).list);
     }
   });
 
   /**
-   * D118 §3a, amending FRAME6's fixed 1024 px: the list is a strip by itself when, at its width, the main
+   * By room, not a fixed 1024 px: the list is a strip by itself when, at its width, the main
    * area would fall below its floor beside the side bar as it stands — its 32 px strip closed, its 300 px
    * floor open. So 900 px with the side bar closed leaves the rail open and 540 px for the conversation.
    */
@@ -128,7 +128,7 @@ describe('the list', () => {
   });
 
   /**
-   * D118 §3a, amending FRAME6: a strip the window drew opens the list OVER the main area, beside the strip,
+   * A strip the window drew opens the list OVER the main area, beside the strip,
    * rather than offering no open. The strip stays, so the main area keeps the room the window gave it.
    */
   it('lays itself over the main area when a strip the window drew is opened, and only then', () => {
@@ -142,7 +142,7 @@ describe('the list', () => {
 });
 
 /**
- * D118 §4, amending DOCK1a: a browser keeps the view's list and its main area, and never the side bar, so
+ * A browser keeps the view's list and its main area, and never the side bar, so
  * nothing stands beside the list but the main area.
  */
 describe("a browser's list", () => {
@@ -165,7 +165,7 @@ describe("a browser's list", () => {
   });
 });
 
-/** DOCK1a: a view with no list — Overview, Map — gives the list's room to the rest. */
+/** A view with no list — Overview, Map — gives the list's room to the rest. */
 describe('a view with no list', () => {
   it('has none, at any width, and the side bar and the main area share what the list would have taken', () => {
     expect(at(1600, { list: null }).list).toBeNull();
@@ -179,7 +179,7 @@ describe('a view with no list', () => {
 describe('a toggle of the list', () => {
   it('closes an open list, dismisses one laid over, and opens a strip — over the main area where there is no room', () => {
     expect(listToggled({ mode: 'open' })).toEqual({ closed: true, over: false });
-    // Laid over, it goes and its closing stays as it was: a go lays over a strip the person closed (ENTRY1g).
+    // Laid over, it goes and its closing stays as it is: a go lays over a strip the person closed.
     expect(listToggled({ mode: 'over' })).toEqual({ over: false });
     // A strip opens whoever drew it: the person's closing is undone, and the window's is laid over.
     expect(listToggled({ mode: 'strip' })).toEqual({ closed: false, over: true });
@@ -204,8 +204,8 @@ describe('the side bar', () => {
   });
 
   /**
-   * LAYOUT1: a dragged dock was kept in pixels, so it stayed 389px while the
-   * window grew from 1518 to 1923 (measured on the shell). A share grows and shrinks with the window.
+   * A dragged dock kept in pixels stays 389px while the
+   * window grows from 1518 to 1923 (measured on the shell). A share grows and shrinks with the window.
    */
   it('keeps a dragged width as a share, so it follows the window as it grows and shrinks', () => {
     const share = 389 / 1518;

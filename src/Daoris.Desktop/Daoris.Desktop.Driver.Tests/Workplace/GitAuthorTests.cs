@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// §3.6's author rule (GITAUTH1c, D198 point 5): a commit carries origin's identity's <c>commitsAs</c> only where the repository's own
+/// The author rule: a commit carries origin's identity's <c>commitsAs</c> only where the repository's own
 /// configuration names no author; a repository that names one keeps it; and the own-input hold gives way to the person's <c>own</c>.
 /// Against a real git in a scratch repository, its system and global files kept from the person's.
 /// </summary>

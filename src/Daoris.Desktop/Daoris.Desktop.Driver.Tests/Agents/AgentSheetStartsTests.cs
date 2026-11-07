@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The agent sheet starts no process it read before (PERF3): <c>daoris agent list</c> and the page's roster answer from what was read,
-/// the binary's version kept under the home with the file it was read of (<c>reads.json</c>) and asked again only when that
+/// The agent sheet starts no process it has read before: <c>daoris agent list</c> and the page's roster answer from what is read,
+/// the binary's version kept under the home with the file it is read of (<c>reads.json</c>) and asked again only when that
 /// file changes, and an account's sign-in asked only at a press. Every start is counted through the start gate
 /// (<see cref="ProcessStarts.Within"/>) and made for real, over a stand-in <c>claude.cmd</c> in the managed layout.
 /// </summary>
@@ -45,7 +45,7 @@ public sealed class AgentSheetStartsTests : IDisposable
             + "if exist \"%CLAUDE_CONFIG_DIR%\\who.json\" (\r\n  type \"%CLAUDE_CONFIG_DIR%\\who.json\"\r\n) else (\r\n  echo {\"loggedIn\": false}\r\n)\r\n");
     }
 
-    /// <summary>What <paramref name="read"/> answered, and each start it made, by its file's name and its arguments.</summary>
+    /// <summary>What <paramref name="read"/> answers, and each start it makes, by its file's name and its arguments.</summary>
     private static async Task<(T Said, List<string> Starts)> Counted<T>(Func<Task<T>> read)
     {
         var starts = new List<string>();

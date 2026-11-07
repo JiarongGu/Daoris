@@ -4,8 +4,8 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The frame's geometry in the Work frame, one part of its suite (WEBSPEED1 cut the one file, which ran 181 s alone, into
-// parts that run beside each other). The bridge is mocked as present, because the frame does not exist without one (D55);
+// The frame's geometry in the Work frame, one part of its suite (the parts run beside each other).
+// The bridge is mocked as present, because the frame does not exist without one;
 // what the parts share is in `test/workFrameBridge.ts` and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
@@ -26,11 +26,11 @@ function respond(url: string): Response {
 
 // 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer,
 // and a test that hid the console left it hidden for whichever console test ran next: four failed
-// in a shuffled order (UX5, 2026-09-26), and passed in file order only by luck of the order.
+// in a shuffled order, and passed in file order only by luck of the order.
 afterEach(() => window.localStorage.clear());
 
 /**
- * FRAME6: the frame's geometry (components plan §3a) — a rail and a dock a person can resize, close to
+ * The frame's geometry — a rail and a dock a person can resize, close to
  * a strip and open again, with the session in the middle keeping its floor. The numbers themselves are
  * `layout.ts`'s, asserted there; this is the frame doing what they say, and remembering what the person
  * chose.
@@ -47,7 +47,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async () => DRIVER_STATE);
     widen(1600);
-    // A viewer who has opened the dock: it opens on demand (UX5 U7), and these are about it open.
+    // A viewer who has opened the dock: it opens on demand, and these are about it open.
     window.localStorage.setItem('daoris.dockClosed', '0');
   });
   afterEach(() => {
@@ -97,7 +97,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   /**
-   * D118 §3a: the rail is a strip by room, not below a fixed 1024 px. At 900 px beside a closed side bar
+   * The rail is a strip by room, not below a fixed 1024 px. At 900 px beside a closed side bar
    * the conversation has 540 px beside the rail, so the rail stays open; the side bar opened takes the room.
    */
   it('keeps the rail open at 900 px beside a closed side bar, and draws its strip beside an open one', async () => {
@@ -112,7 +112,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   /**
-   * D118 §3a, amending FRAME6: a strip the window drew opens the rail OVER the conversation, so an ended
+   * A strip the window drew opens the rail OVER the conversation, so an ended
    * session and the rail's search are within reach at 900 px. It closes on a choice, on Escape and on a
    * press outside it, and is never remembered.
    */
@@ -124,7 +124,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     await userEvent.click(open);
     let over = screen.getByRole('region', { name: 'Sessions' });
     expect(within(over).getByRole('searchbox', { name: 'search sessions' })).toBeInTheDocument();
-    // The strip stays beside it, and the conversation keeps its room: nothing was pushed aside.
+    // The strip stays beside it, and the conversation keeps its room: nothing is pushed aside.
     expect(screen.getByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
     // A row is its button, named by what it holds; its menu is named for it.
     const chat = within(over).getAllByRole('button').find((button) => !button.hasAttribute('aria-label') && button.textContent?.includes('Chat'));
@@ -153,14 +153,14 @@ describe('the frame\'s geometry (FRAME6)', () => {
     widen(1600);
     expect(await screen.findByRole('separator', { name: 'session list width' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
-    // Narrowed again, the window draws its strip: the laying over was not kept.
+    // Narrowed again, the window draws its strip: the laying over is not kept.
     widen(900);
     await waitFor(() => expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull());
     expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
   });
 
   /**
-   * ENTRY1g (D161's ENTRY1b note): a go to a group of the rail lays its strip over the conversation, whoever drew the strip,
+   * A go to a group of the rail lays its strip over the conversation, whoever drew the strip,
    * and the rail laid over brings the group into view there; the strip beside it lets nothing go. Laid over, it stays until
    * the person lets it go, and nothing is remembered.
    */
@@ -196,7 +196,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(window.localStorage.getItem('daoris.railClosed')).toBe('1');
   });
 
-  /** FRAME6's keys are still read, so nothing a person closed or widened changes on the upgrade (D118 §3f). */
+  /** The rail's older keys are still read, so nothing a person closed or widened changes on an upgrade. */
   it('reads the rail\'s old keys: its width and its closing', async () => {
     window.localStorage.setItem('daoris.railWidth', '330');
     const { unmount } = show(null);
@@ -212,7 +212,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
   });
 
-  /** D118 §3e (audit A7): the rail moves by ↑ and ↓, where it was walked by Tab. */
+  /** The rail moves by ↑ and ↓, not by Tab. */
   it('moves between the rail\'s rows by the arrows', async () => {
     show('s1a2b3c4');
     const rail = await screen.findByRole('navigation', { name: 'Sessions' });
@@ -229,7 +229,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   /**
-   * D118 §1, §5: every view hands the frame a `ViewLayout`, its list pane where it has one and its main
+   * Every view hands the frame a `ViewLayout`, its list pane where it has one and its main
    * area, and the frame draws the list for every view that hands one. Sessions' rail is one such list.
    */
   describe('a view with a list, and a view without one', () => {
@@ -325,8 +325,8 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   /**
-   * LAYOUT1: a dragged dock was remembered in pixels and stayed 389px while the window grew
-   * from 1518 to 1923 (measured on the shell). It is remembered as its share of the window now.
+   * A dragged dock is remembered as its share of the window, not in pixels, which would stay 389px while the window grows
+   * from 1518 to 1923.
    */
   it('remembers a dragged dock as its share of the window, so it grows when the window does', async () => {
     show('s1a2b3c4');
@@ -354,8 +354,8 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   /**
-   * UX5 U7: the dock was open by default at 45%, where the reference's opens on demand, and on a
-   * 1400px window the conversation started at 442px, near its floor. A viewer who never chose sees
+   * The dock is not open by default, since at 45% on a
+   * 1400px window the conversation would start at 442px, near its floor. A viewer who never chose sees
    * the conversation with the dock closed to its strip; opening it is remembered like closing it.
    */
   it('opens the dock on demand: closed to its strip until the person opens it, and then remembered', async () => {
@@ -409,8 +409,8 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   /**
-   * The column used to carry the timeline on a window under 1024px, because the dock was hidden
-   * there. FRAME6 keeps the dock at every width, so the column's copy drew the timeline twice.
+   * The column carries no timeline on a window under 1024px: the dock is there at every width,
+   * so a copy in the column would draw the timeline twice.
    */
   it('draws the timeline once on a narrow window, in the dock', async () => {
     widen(900);
@@ -420,7 +420,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   it('asks to be closed rather than squeezing the session, when it cannot fit beside it', async () => {
-    // D118: the list gives way to its strip first, so it is past that, at 800 px, that the side bar is cramped.
+    // The list gives way to its strip first, so it is past that, at 800 px, that the side bar is cramped.
     widen(800);
     show('s1a2b3c4');
     expect(await screen.findByText(/too narrow to sit beside the session/)).toBeInTheDocument();

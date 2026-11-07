@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One heavy run's place in the machine's admission (HEAVYQUEUE1), as its file holds it: <c>{ id, kind, pid, what, since, beat }</c> and,
+/// One heavy run's place in the machine's admission, as its file holds it: <c>{ id, kind, pid, what, since, beat }</c> and,
 /// where there is one, the driven <c>session</c>, the <c>repository</c> and the <c>tree</c> it runs in.
 /// </summary>
 /// <param name="Id">Unique to the run: its process and a random part.</param>
@@ -48,7 +48,7 @@ public sealed record AdmissionRequest(string What)
 }
 
 /// <summary>
-/// The machine's heavy-run admission (HEAVYQUEUE1, D180's HEAVYRUN1 notes): a driven session's heavy run and the merge queue's heavy gates
+/// The machine's heavy-run admission: a driven session's heavy run and the merge queue's heavy gates
 /// take one place each before they start a heavy process, so the machine never runs more of them at once than it admits, and a run that
 /// waits is told what it waits for. This is the driver's side; <c>tools/machine-admission.mjs</c> is the merge tool's, and
 /// <c>fixtures/machine-admission.json</c> the table both carry.
@@ -90,7 +90,7 @@ public static class MachineAdmission
 
     /// <summary>
     /// How many heavy runs the machine admits at once (<c>capacityOf</c>): the variable where it is a whole number from 1 to 64, else one for
-    /// each seven processors, two at least and six at most. On the 22-processor machine this was built for it is three.
+    /// each seven processors, two at least and six at most.
     /// </summary>
     public static int CapacityOf(Func<string, string?> variable, int processors)
     {
@@ -194,11 +194,11 @@ public static class MachineAdmission
     }
 
     /// <summary>
-    /// The whole admission, for a confirm run (INTEGRATE1f part f2; the integration design §4.5, C7, F34): every place the machine admits,
+    /// The whole admission, for a confirm run: every place the machine admits,
     /// taken as that many ordinary entries of today's schema in one locked write, so they stand together in first-come order, wait behind
     /// the live holds and no other ask falls between them. It answers once every one holds (<see cref="WholeTake.Held"/>); the holds it
     /// sees while it waits are the runs it waits for, never a doubt. From then to <see cref="WholeTake.End"/> it reads the record again at
-    /// its start, at each beat and at its end: a live hold not its own, a place no longer held, a hold that does not read, or a read or a
+    /// its start, at each beat and at its end: a live hold not its own, a place lost, a hold that does not read, or a read or a
     /// write that fails is a doubt, and the evidence is then not conclusive (the confirm run is inconclusive, read as split).
     /// </summary>
     /// <remarks>
@@ -208,7 +208,7 @@ public static class MachineAdmission
     /// holds or asks a live place, or where a hold does not read. Another process's holds, a session's <c>run-heavy</c> among them, are
     /// waited for. A run the confirm run starts is handed the first id as <see cref="InsideVariable"/>, so it asks no place of its own.
     /// </remarks>
-    /// <param name="halted">Whether the candidate was dropped: asked at each look while it waits, the wait then ends with every place let go.</param>
+    /// <param name="halted">Whether the candidate is dropped: asked at each look while it waits, the wait then ends with every place let go.</param>
     /// <param name="ct">Wakes the wait early; it ends nothing by itself, <paramref name="halted"/> does.</param>
     internal static Task<WholeTake> TakeWholeAsync(
         string home, AdmissionRequest request, TextWriter said, Func<bool> halted, CancellationToken ct, AdmissionWaiting? waiting = null, int? capacity = null,
@@ -268,7 +268,7 @@ public static class MachineAdmission
         return new AdmissionEntry(id, kind, process, what.GetString()!, since, beat, Text("session"), Text("repository"), Text("tree"));
     }
 
-    /// <summary>The state with the entries that no longer count taken out; the waits in the order they began to ask, then by id.</summary>
+    /// <summary>The state with the entries that do not count taken out; the waits in the order they began to ask, then by id.</summary>
     internal static (List<AdmissionEntry> Holds, List<AdmissionEntry> Waits) Pruned(
         (List<AdmissionEntry> Holds, List<AdmissionEntry> Waits) state, DateTimeOffset now, Func<int, bool> alive) =>
         ([.. state.Holds.Where(entry => Live(entry, now, alive))],
@@ -340,8 +340,8 @@ public static class MachineAdmission
 }
 
 /// <summary>
-/// A place in the machine's admission, held until it is disposed (HEAVYQUEUE1): it beats while it lives, and takes its entry out as it
-/// ends. A hold that was never taken (a wait stopped) leaves no entry. Disposing twice lets go once.
+/// A place in the machine's admission, held until it is disposed: it beats while it lives, and takes its entry out as it
+/// ends. A hold never taken (a wait stopped) leaves no entry. Disposing twice lets go once.
 /// </summary>
 public sealed class AdmissionHold : IDisposable
 {

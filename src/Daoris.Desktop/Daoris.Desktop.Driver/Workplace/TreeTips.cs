@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A tree's tip read from git's own files, with no process (FABRIC-END7): the <c>HEAD</c> of its git directory, and the branch it names
+/// A tree's tip read from git's own files, with no process: the <c>HEAD</c> of its git directory, and the branch it names
 /// as a loose ref or a line of <c>packed-refs</c> in the common directory. Null wherever the files cannot say it (an unborn branch, the
 /// reftable format, a file being replaced), so the caller asks git.
 /// </summary>
@@ -26,7 +26,7 @@ public static class TreeTips
 
     /// <summary>
     /// The branch <paramref name="tree"/>'s <c>HEAD</c> names, without <c>refs/heads/</c>, or null where it is detached or the files
-    /// cannot say: what a landing's hold names its tree by (LANDHOLD3).
+    /// cannot say: what a landing's hold names its tree by.
     /// </summary>
     public static string? Branch(string tree)
     {
@@ -45,7 +45,7 @@ public static class TreeTips
 
     /// <summary>
     /// The commit <paramref name="name"/> (<c>refs/…</c>) stands at in the common directory <paramref name="common"/>, lower case: a loose
-    /// ref, else a line of <c>packed-refs</c>. Null where the files cannot say it (FABRIC-END6 reads origin's line by it).
+    /// ref, else a line of <c>packed-refs</c>. Null where the files cannot say it.
     /// </summary>
     public static string? Named(string common, string name)
     {
@@ -81,7 +81,7 @@ public static class TreeTips
     /// <summary>
     /// The repository's common git directory for a checkout, read from git's own files with no process: the checkout's git directory
     /// (<see cref="GitBranches.GitDirectory"/>), and the one its <c>commondir</c> names where it is a linked worktree's. Null where the
-    /// files cannot say it. What LANDRACE1's branch hold names a repository by, whichever checkout a door holds.
+    /// files cannot say it. What a branch hold names a repository by, whichever checkout a door holds.
     /// </summary>
     public static string? CommonDirectory(string checkout)
     {

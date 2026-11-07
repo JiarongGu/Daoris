@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1f (D195; the cleanup design §3.2, §9): below the floor, Daoris frees what it can make again and says the rest. A stand-in
+/// Below the floor, Daoris frees what it can make again and says the rest. A stand-in
 /// free-space read below and above the floor; the three acts in order and nothing else, each with its own guards (a slim within its hour
 /// not run, a <c>never</c> download kept, a running browser's caches kept); the caches cleared once in a stretch, not an hour later, and
 /// again after <c>space.ok</c> and a new stretch; a trees home on another volume judged by its own volume's read; said once and cleared
@@ -130,7 +130,7 @@ public sealed class SpaceFloorTests : IDisposable
         }
     }
 
-    /// <summary>§3.2: the default is the smaller of 10% of the volume and 20 GB; a size is at most half of each volume; the margin the smaller of 5 GB and 5%.</summary>
+    /// <summary>The default is the smaller of 10% of the volume and 20 GB; a size is at most half of each volume; the margin the smaller of 5 GB and 5%.</summary>
     [Fact]
     public void Each_volumes_floor_is_its_own_by_the_rule()
     {
@@ -146,7 +146,7 @@ public sealed class SpaceFloorTests : IDisposable
         Assert.Equal(["default", "size", "percent", "off"], new[] { FloorPolicy.Default, new(3, null, false), new(null, 3, false), FloorPolicy.None }.Select(each => each.From));
     }
 
-    /// <summary>§2.2, §3.2: a floor out of its bounds is refused, nothing written; within them it is written under <c>keep.floor</c> and read back.</summary>
+    /// <summary>A floor out of its bounds is refused, nothing written; within them it is written under <c>keep.floor</c> and read back.</summary>
     [Theory]
     [InlineData("0GB")]
     [InlineData("51GB")]
@@ -201,7 +201,7 @@ public sealed class SpaceFloorTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 KEEPSIZE1f: below the floor nothing is removed, whatever the stretch's hour: a slim due, an unused download and the browser's
+    /// Below the floor nothing is removed, whatever the stretch's hour: a slim due, an unused download and the browser's
     /// caches all stand, no act runs, no run lock is taken, and the volume is said.
     /// </summary>
     [Fact]
@@ -229,7 +229,7 @@ public sealed class SpaceFloorTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §3.2: said once each time the free space falls below (<c>space.low</c>, the stretch said), never again while it stays; still
+    /// 🔴 Said once each time the free space falls below (<c>space.low</c>, the stretch said), never again while it stays; still
     /// said above the floor within the margin; cleared once above the floor by the smaller of 5 GB and 5% (<c>space.ok</c>).
     /// </summary>
     [Fact]
@@ -260,7 +260,7 @@ public sealed class SpaceFloorTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §3.2 (Fable F4.3): a trees home on another volume (as through a junction) is judged by its own volume's read: there the slim runs,
+    /// 🔴 A trees home on another volume (as through a junction) is judged by its own volume's read: there the slim runs,
     /// while the Daoris folder's volume, above its floor, runs none of its acts; the card says that volume on the trees' rows.
     /// </summary>
     [Fact]
@@ -294,7 +294,7 @@ public sealed class SpaceFloorTests : IDisposable
     }
 
     /// <summary>
-    /// §3.1, §3.2: the look's Keeping pass runs the floor at its pace: below it, the caches cleared and the volume said once in the report,
+    /// The look's Keeping pass runs the floor at its pace: below it, the caches cleared and the volume said once in the report,
     /// with what the press could free; a look later says nothing more; above the floor by the margin, said clear.
     /// </summary>
     [Fact]
@@ -323,7 +323,7 @@ public sealed class SpaceFloorTests : IDisposable
         Assert.True(Directory.Exists(Path.Combine(Engine, "Default", "Cache")));
     }
 
-    /// <summary>🔴 §6 point 7: a free-space read that fails runs no floor act, says nothing, and takes no lock.</summary>
+    /// <summary>🔴 A free-space read that fails runs no floor act, says nothing, and takes no lock.</summary>
     [Fact]
     public async Task A_failed_read_runs_nothing()
     {
@@ -339,7 +339,7 @@ public sealed class SpaceFloorTests : IDisposable
         Assert.False(File.Exists(KeepingRun.PathOf(_home)));
     }
 
-    /// <summary>§3.1: another run holding the home's run, the floor's acts wait for a later pass, and the stretch is not said yet.</summary>
+    /// <summary>Another run holding the home's run, the floor's acts wait for a later pass, and the stretch is not said yet.</summary>
     [Fact]
     public async Task A_held_run_lock_runs_no_act_and_says_nothing_yet()
     {
@@ -349,7 +349,7 @@ public sealed class SpaceFloorTests : IDisposable
         {
             var held = await SpaceFloor.PassAsync(World());
 
-            // KEEPSIZE1f: no act waits on the run lock any more; the warning is said at once.
+            // No act waits on the run lock; the warning is said at once.
             Assert.False(held.WasHeld);
             Assert.Single(held.Low);
             Assert.True(Directory.Exists(Path.Combine(due, "node_modules")));
@@ -371,7 +371,7 @@ public sealed class SpaceFloorTests : IDisposable
     }
 
     /// <summary>
-    /// The system's read (§3.2, §10): a folder is read by its volume's identity, the same for a folder and one not made yet beneath it, and
+    /// The system's read: a folder is read by its volume's identity, the same for a folder and one not made yet beneath it, and
     /// a folder reached through a junction answers for the volume its target lies on. A volume mounted at a folder is read the same way by
     /// the system's contract (<c>GetFinalPathNameByHandleW</c> to the volume's GUID), not mounted here.
     /// </summary>

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// NEW1a (D162 point 2): <c>START_CHAT</c> takes the opening words, their files and a request id. The conversation opens as
+/// <c>START_CHAT</c> takes the opening words, their files and a request id. The conversation opens as
 /// ever and is handed the words as its first message, files over a message's limit going as the words alone; one the words
 /// were not taken by is answered as such and the driver keeps nothing. The request id makes a retry answer the first start,
 /// whether it still runs or finished within a day; a refused start is not remembered. The start and the first message stand
@@ -36,7 +36,7 @@ public sealed class StartWithTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1h branch 8 (the foundation design §3.1): starting on first words is the course's start for <see cref="CourseTrigger.StartFrom"/>,
+    /// 🔴 Starting on first words is the course's start for <see cref="CourseTrigger.StartFrom"/>,
     /// read over a conversation with no record, the person's words alone, and nothing opens where it answers otherwise.
     /// </summary>
     [Fact]

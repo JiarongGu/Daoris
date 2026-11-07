@@ -2,22 +2,22 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One pause as it resolves for a repository: its value, and where it was set (<see cref="AccessRules.FromRepository"/> and the rest).</summary>
+/// <summary>One pause as it resolves for a repository: its value, and where it is set (<see cref="AccessRules.FromRepository"/> and the rest).</summary>
 public sealed record ResolvedPause(string Pause, string Value, string Source);
 
-/// <summary>A repository's access setup as it resolves (D184 point 1), pause by pause in <see cref="AccessRules.Pauses"/>' order.</summary>
+/// <summary>A repository's access setup as it resolves, pause by pause in <see cref="AccessRules.Pauses"/>' order.</summary>
 public sealed record ResolvedAccess(IReadOnlyList<ResolvedPause> Pauses) : IWorkplaceResolvedAccess
 {
     /// <summary>The value <paramref name="pause"/> resolves to.</summary>
     public string Value(string pause) => Pauses.First(each => each.Pause == pause).Value;
 
-    /// <summary>Where <paramref name="pause"/>'s value was set.</summary>
+    /// <summary>Where <paramref name="pause"/>'s value is set.</summary>
     public string Source(string pause) => Pauses.First(each => each.Pause == pause).Source;
 
     /// <summary>Whether every pause is off: each at the value full access takes, from whichever level.</summary>
     public bool Full => Pauses.All(each => each.Value == AccessRules.Pause(each.Pause).Open);
 
-    /// <summary>Whether every pause is today's behaviour (D184 point 5), set or not.</summary>
+    /// <summary>Whether every pause is today's behaviour, set or not.</summary>
     public bool Today => Pauses.All(each => each.Value == AccessRules.Pause(each.Pause).Default);
 
     /// <summary>Each pause's value, as a record keeps the setup a session started under.</summary>
@@ -39,22 +39,22 @@ public sealed record AccessEdit
 }
 
 /// <summary>
-/// A repository's session access setup (AUTONOMY1a, D184 points 1-3, 5): <c>access</c> (by repository), <c>workspaceAccess</c> (by
+/// A repository's session access setup: <c>access</c> (by repository), <c>workspaceAccess</c> (by
 /// workspace) and <c>machineAccess</c> in <c>driver.json</c>; read, resolved pause by pause, said, written and edited, the one place
 /// the route, the terminal and a start ask.
 /// </summary>
 /// <remarks>
 /// <para><b>Each pause resolves on its own</b>: the repository's, else its workspace's, else this machine's, else today's behaviour
 /// (<see cref="AccessPause.Default"/>), and the answer names where it came from. A level that is full access gives every pause its
-/// open value. Unset everywhere is today's behaviour, so nothing loosens by itself (D184 point 5).</para>
+/// open value. Unset everywhere is today's behaviour, so nothing loosens by itself.</para>
 ///
 /// <para><b>Read as a stored shape</b>: a pause this build does not know is passed over, and a value it does not know reads as the
 /// pause's default at that level, never as the next level's, which may be looser. Both stay in the file as written, since an edit
 /// changes only the key paths it changed. A level of another shape is not read.</para>
 ///
-/// <para><b>Not here: the effects.</b> What a pause changes in a session (the permission prompts, AUTONOMY1b; the routing, the
-/// landing and the go-aheads, AUTONOMY1c; the questions, AUTONOMY1e) reads <see cref="Resolve"/> where it acts. A go-ahead the ask
-/// itself demands is asked whatever this says (D184 point 5).</para>
+/// <para><b>Not here: the effects.</b> What a pause changes in a session (the permission prompts; the routing, the
+/// landing and the go-aheads; the questions) reads <see cref="Resolve"/> where it acts. A go-ahead the ask
+/// itself demands is asked whatever this says.</para>
 /// </remarks>
 public static class AccessRules
 {
@@ -70,10 +70,10 @@ public static class AccessRules
     /// <summary>Permission prompts: the harness's asking mode.</summary>
     public const string Asking = AccessKey.Asking;
 
-    /// <summary>Permission prompts: the harness's auto mode, today's (D81).</summary>
+    /// <summary>Permission prompts: the harness's auto mode, today's.</summary>
     public const string Auto = AccessKey.Auto;
 
-    /// <summary>Permission prompts: the harness's unrestricted mode (D183's full postures).</summary>
+    /// <summary>Permission prompts: the harness's unrestricted mode.</summary>
     public const string Unrestricted = AccessKey.Unrestricted;
 
     /// <summary>Routing and landing: the person's press, today's.</summary>
@@ -88,10 +88,10 @@ public static class AccessRules
     /// <summary>Go-aheads: asked before the acts the repository names, today's.</summary>
     public const string Named = AccessKey.Named;
 
-    /// <summary>Go-aheads: never asked, save what the ask itself demands (D184 point 5).</summary>
+    /// <summary>Go-aheads: never asked, save what the ask itself demands.</summary>
     public const string Never = AccessKey.Never;
 
-    /// <summary>Questions: as the console asks them (D184 point 4), today's behaviour until AUTONOMY1e.</summary>
+    /// <summary>Questions: as the console asks them, today's behaviour.</summary>
     public static string ConsoleAsks => AccessKey.ConsoleAsks;
 
     /// <summary>The pauses, in the order every door and the record say them (the settings' <see cref="AccessKey.Pauses"/>).</summary>
@@ -115,7 +115,7 @@ public static class AccessRules
     /// <summary>The value of <paramref name="pause"/> a spelling names, trimmed and in any case, or null for none.</summary>
     public static string? ValueNamed(AccessPause pause, string? spelled) => AccessKey.ValueNamed(pause, spelled);
 
-    /// <summary>The refusal for setting the landing pause (WORKFLOWCLEAN1 1c): how work lands is its workflow's now.</summary>
+    /// <summary>The refusal for setting the landing pause: how work lands is its workflow's.</summary>
     public const string LandingRetired =
         "how work lands is its workflow's now: a workflow with no review lands with no press. Choose one on its Workflow.";
 
@@ -134,7 +134,7 @@ public static class AccessRules
     public static void Write(Utf8JsonWriter writer, AccessSetting setting) => AccessKey.Write(writer, setting);
 
     /// <summary>
-    /// Each pause as it resolves (D184 point 1): <paramref name="repository"/>'s, else <paramref name="workspace"/>'s, else
+    /// Each pause as it resolves: <paramref name="repository"/>'s, else <paramref name="workspace"/>'s, else
     /// <paramref name="machine"/>'s, else today's behaviour from <see cref="DefaultSource"/>. A pure function of the three levels.
     /// </summary>
     public static ResolvedAccess ResolveLevels(AccessSetting? repository, AccessSetting? workspace, AccessSetting? machine) =>
@@ -162,7 +162,7 @@ public static class AccessRules
 
     /// <summary>
     /// The setup in one line, as a driven start's note says it: full access or today's defaults with where they came from, else each
-    /// pause with its value and where it was set.
+    /// pause with its value and where it is set.
     /// </summary>
     public static string Said(ResolvedAccess access)
     {
@@ -179,7 +179,7 @@ public static class AccessRules
     /// </summary>
     public static string? StartNote(ResolvedAccess access) => access.Today ? null : Said(access);
 
-    /// <summary>Where a value was set, in a sentence.</summary>
+    /// <summary>Where a value is set, in a sentence.</summary>
     public static string Whose(string source) => source switch
     {
         FromRepository => "its repository",
@@ -220,7 +220,7 @@ public static class AccessRules
             foreach (var (spelled, value) in set)
             {
                 var pause = PauseNamed(spelled) ?? throw new DriverException(UnknownPause(spelled));
-                // WORKFLOWCLEAN1 1c (D228): whether work lands with no press is its workflow's, so no access setup sets it any more.
+                // Whether work lands with no press is its workflow's, so no access setup sets it.
                 if (pause.Name == Landing && !string.IsNullOrWhiteSpace(value)) throw new DriverException(LandingRetired);
                 if (string.IsNullOrWhiteSpace(value))
                 {
@@ -271,7 +271,7 @@ public static class AccessRules
                         {
                             JsonValueKind.Null => null,
                             JsonValueKind.String => pause.Value.GetString(),
-                            // Not a word: refused as a value of that pause, naming what was sent.
+                            // Not a word: refused as a value of that pause, naming what is sent.
                             _ => pause.Value.GetRawText(),
                         })),
                 ],

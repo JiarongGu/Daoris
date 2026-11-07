@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONFIGLOCK1 across the two runtimes (D173's CONFIG1 note): the driver's writer of <c>driver.json</c> and a Node writer take one lock,
+/// Across the two runtimes: the driver's writer of <c>driver.json</c> and a Node writer take one lock,
 /// <c>driver.json.lock</c>, so neither's edit lands inside the other's re-read and rename. The other process is a Node running the CLI's
 /// own <c>keeplock.ts</c>, which the repository's tools take: the lock file is the contract, as the lease's is
 /// (<see cref="RecordLockProcessTests"/>). The in-process half is <see cref="KeepLockTests"/>.
@@ -26,7 +26,7 @@ public sealed class KeepLockProcessTests : IDisposable
         try { Directory.Delete(_folder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    // The source named whole, so the merge tool's scan reads which CLI file this Process class runs (CONFIG1's reach row).
+    // The source named whole, so the merge tool's scan reads which CLI file this Process class runs.
     private static readonly string KeepLockSource =
         new Uri(Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src", "platform", "keeplock.ts")).AbsoluteUri;
 

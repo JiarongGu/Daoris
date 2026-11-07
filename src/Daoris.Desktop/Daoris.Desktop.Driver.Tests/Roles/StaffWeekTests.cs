@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1g (D226; the staff policy design §6.5): a role's last seven days as Ask Daoris's room says them, its new starts by choice
+/// A role's last seven days as Ask Daoris's room says them, its new starts by choice
 /// from <c>role_starts</c> and its moves by condition from <c>role_moves</c>, read from the store and nothing else.
 /// </summary>
 public sealed class StaffWeekTests : IDisposable

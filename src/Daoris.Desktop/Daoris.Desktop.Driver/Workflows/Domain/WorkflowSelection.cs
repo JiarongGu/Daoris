@@ -3,13 +3,13 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>The landed route work reaching a repository's line follows, and the level that set it (FABRIC-PIPELINE1a).</summary>
+/// <summary>The landed route work reaching a repository's line follows, and the level that set it.</summary>
 /// <param name="Workflow">A verification pipeline's id, or <c>current</c> where none names one.</param>
 /// <param name="Level"><see cref="WorkflowLevels.RepositoryLanded"/>, <see cref="WorkflowLevels.WorkspaceLanded"/> or <see cref="WorkflowLevels.Current"/>.</param>
 public sealed record WorkflowLandedSelected(string Workflow, string? Gates, string Level);
 
 /// <summary>
-/// What a named workflow's file says it is (FABRIC-PIPELINE1a, D192 point 3, the pipeline design §2.1): its top-level <c>pipeline</c>,
+/// What a named workflow's file says it is: its top-level <c>pipeline</c>,
 /// written when it is made and kept by every later save.
 /// </summary>
 public static class WorkflowPipelines
@@ -21,11 +21,11 @@ public static class WorkflowPipelines
     public const string Verification = "verification";
 }
 
-/// <summary>The task's own choice (design §4.1 row 1): its ask's latest, a kind and a workflow, each null where it names none.</summary>
+/// <summary>The task's own choice: its ask's latest, a kind and a workflow, each null where it names none.</summary>
 public sealed record WorkflowTaskChoice(string? Kind, string? Workflow);
 
 /// <summary>
-/// The workflow a chain's work in a repository follows, and why (design §4.1): the workflow (an id, or <c>current</c>), the level
+/// The workflow a chain's work in a repository follows, and why: the workflow (an id, or <c>current</c>), the level
 /// that chose it, the kind read with its label and paths, and a kind the task named that the workspace does not declare.
 /// </summary>
 /// <param name="Level">One of <see cref="WorkflowLevels"/>.</param>
@@ -38,7 +38,7 @@ public sealed record WorkflowSelected(
 public abstract record WorkflowChoiceEdit;
 
 /// <summary>
-/// A workflow chosen, or a choice cleared (design §4.7's <c>use</c>), for a repository or a workspace, by kind where one is named.
+/// A workflow chosen, or a choice cleared, for a repository or a workspace, by kind where one is named.
 /// </summary>
 /// <param name="Workflow">A workflow's id, <c>current</c>, or null to clear.</param>
 public sealed record WorkflowUse(string? Workflow, string? Repository, string? Workspace, string? Kind) : WorkflowChoiceEdit
@@ -49,43 +49,41 @@ public sealed record WorkflowUse(string? Workflow, string? Repository, string? W
     /// <summary>The repository's workspace, where <see cref="InKnown"/>; null for none, read as the default workspace.</summary>
     public string? In { get; init; }
 
-    /// <summary>The landed route is set, not the default or a kind (FABRIC-PIPELINE1a).</summary>
+    /// <summary>The landed route is set, not the default or a kind.</summary>
     public bool Landed { get; init; }
 
     /// <summary>The gates the person accepted for the landed route: a blob id or <c>none</c>; null where none were accepted.</summary>
     public string? Gates { get; init; }
 
     /// <summary>
-    /// The mark the named workflow's file carries (<see cref="WorkflowPipelines"/>), as the door read it; null where it was not read.
+    /// The mark the named workflow's file carries (<see cref="WorkflowPipelines"/>), as the door reads it; null where it is not read.
     /// A landed route with none read is refused, and a default or a kind is not checked.
     /// </summary>
     public string? Pipeline { get; init; }
 }
 
-/// <summary>A kind a workspace declares (design §4.7's <c>kind</c>), with its label and paths; declared again, both are replaced.</summary>
+/// <summary>A kind a workspace declares, with its label and paths; declared again, both are replaced.</summary>
 public sealed record WorkflowDeclare(string Kind, string Workspace, string Label, IReadOnlyList<string> Paths) : WorkflowChoiceEdit;
 
-/// <summary>A kind a workspace no longer declares (design §4.7's <c>kind … --drop</c>).</summary>
+/// <summary>A kind a workspace stops declaring.</summary>
 public sealed record WorkflowDrop(string Kind, string Workspace) : WorkflowChoiceEdit;
 
 /// <summary>
-/// Which workflow work follows (WORKFLOW1e, D157 point 10, the workflow design §2.5, §4.1–§4.3): <c>workflows</c> by repository and
+/// Which workflow work follows: <c>workflows</c> by repository and
 /// <c>workspaceWorkflows</c> by workspace in <c>driver.json</c>, each a default and kinds, a workspace's kinds declared with a label
-/// and the paths work of that kind keeps to; read, written, edited, and resolved in §4.1's order.
+/// and the paths work of that kind keeps to; read, written, edited, and resolved in the order <see cref="Resolve"/> names.
 /// </summary>
 /// <remarks>
-/// <para>Held, cell for cell, to ONE table, this suite's <c>fixtures/workflow-selection.json</c>; the CLI's twin,
-/// <c>workflowchoice.ts</c>, left with the driver family's TypeScript (PUSH1f2b).</para>
+/// <para>Held, cell for cell, to ONE table, this suite's <c>fixtures/workflow-selection.json</c>.</para>
 ///
-/// <para><b>A repository's choice replaces its workspace's whole</b> (§4.1), as its landing, review and opinion rules do: a
+/// <para><b>A repository's choice replaces its workspace's whole</b>, as its landing, review and opinion rules do: a
 /// repository that names any workflow follows its own kinds and its own default, the home's default where it names none (Current
 /// only where the home names none), and the workspace's mapping of a kind does not reach it. <c>current</c> is read where a file holds
-/// it, but no door writes it as a development route's choice any more (WORKFLOWCLEAN1 1a).</para>
+/// it, but no door writes it as a development route's choice.</para>
 ///
-/// <para><b>Additive</b>: two keys <c>driver.json</c> never had, written only when set, and nothing else in the file is read
-/// again. With neither, every repository's work follows Current, which is today's behaviour.</para>
+/// <para><b>Additive</b>: the two keys are written only when set. With neither, every repository's work follows Current.</para>
 ///
-/// <para><b>The landed route</b> (FABRIC-PIPELINE1a, D192 point 2, the pipeline design §1.2): a choice's <c>landed</c>, written after its
+/// <para><b>The landed route</b>: a choice's <c>landed</c>, written after its
 /// kinds, resolves on its own (<see cref="ResolveLanded"/>) and takes no part in the replacement rule above, which stays the
 /// development routes' alone (<see cref="WorkflowChoice.NamesDevelopment"/>). An older build reads an entry naming only <c>landed</c>
 /// as naming nothing, so follows its workspace, as this one does; an older writer drops the route, a downgrade's cost.</para>
@@ -95,7 +93,7 @@ public static class WorkflowSelection
     /// <summary>The word for no workflow chosen, which no saved workflow's id may take: the landed route's no verification, and work nothing runs.</summary>
     public const string Current = WorkflowKey.Current;
 
-    /// <summary>The most kinds one choice holds (design §4.2).</summary>
+    /// <summary>The most kinds one choice holds.</summary>
     public const int MaxKinds = WorkflowKey.MaxKinds;
 
     /// <summary>The longest a kind's id is.</summary>
@@ -183,7 +181,7 @@ public static class WorkflowSelection
     public static bool ArePaths(IReadOnlyList<string> paths) => WorkflowKey.ArePaths(paths);
 
     /// <summary>
-    /// An entry read (design §2.5): its first problem, or the choice; a choice naming nothing is no problem. A repository's kind maps
+    /// An entry read: its first problem, or the choice; a choice naming nothing is no problem. A repository's kind maps
     /// to a workflow; a workspace's is an object, its label first. Null is absent, and a field a kind has no name for is not kept
     /// (the settings' <see cref="WorkflowKey.Read"/>).
     /// </summary>
@@ -205,7 +203,7 @@ public static class WorkflowSelection
     public static void Write(Utf8JsonWriter writer, WorkflowChoice choice, bool workspace) => WorkflowKey.Write(writer, choice, workspace);
 
     /// <summary>
-    /// The workflow a chain's work in <paramref name="repository"/> follows (design §4.1): the task's choice, then the repository's
+    /// The workflow a chain's work in <paramref name="repository"/> follows: the task's choice, then the repository's
     /// for the task's kind, its default, the workspace's for the kind, its default, then the home's default. The first level that names a
     /// workflow decides, and a repository that names any replaces its workspace's whole; where none names one it is <see cref="Current"/>,
     /// no workflow. The task's kind is read only where its workspace declares it, and said otherwise.
@@ -221,7 +219,7 @@ public static class WorkflowSelection
         WorkflowSelected Pick(string workflow, string level) => new(workflow, level, kind, declared?.Label, declared?.Paths ?? [], undeclared);
 
         if (task?.Workflow is { } chosen) return Pick(chosen, WorkflowLevels.Task);
-        // A repository naming only its landed route names no development route, so its workspace's reach it (FABRIC-PIPELINE1a).
+        // A repository naming only its landed route names no development route, so its workspace's reach it.
         if (repository is not null && config.Workflows.TryGetValue(repository.Trim(), out var own) && own.NamesDevelopment)
         {
             if (kind is not null && own.KindOf(kind)?.Workflow is { } mapped) return Pick(mapped, WorkflowLevels.RepositoryKind);
@@ -231,13 +229,13 @@ public static class WorkflowSelection
         if (declared?.Workflow is { } sharedKind) return Pick(sharedKind, WorkflowLevels.WorkspaceKind);
         return shared?.Default is { } fallback ? Pick(fallback, WorkflowLevels.Workspace) : Home(Pick);
 
-        // Row 6 (WORKFLOWCLEAN1 1a): the home's default, else no workflow.
+        // The home's default, else no workflow.
         WorkflowSelected Home(Func<string, string, WorkflowSelected> pick) =>
             config.DefaultWorkflow is { } home ? pick(home, WorkflowLevels.Home) : pick(Current, WorkflowLevels.Current);
     }
 
     /// <summary>
-    /// The landed route work that reaches <paramref name="repository"/>'s line follows (FABRIC-PIPELINE1a, the pipeline design §1.2):
+    /// The landed route work that reaches <paramref name="repository"/>'s line follows:
     /// the repository's where it names one (its <c>current</c> keeping its workspace's away), else its workspace's, else none, read as
     /// Current. It resolves on its own, outside the rule by which a repository's development routes replace its workspace's.
     /// </summary>
@@ -256,7 +254,7 @@ public static class WorkflowSelection
     }
 
     /// <summary>
-    /// An edit applied to the choices (design §4.7): a workflow used or cleared for a repository or a workspace, by kind; a kind
+    /// An edit applied to the choices: a workflow used or cleared for a repository or a workspace, by kind; a kind
     /// declared or dropped. A choice left naming nothing is removed, so its workspace's reaches the repository again; a name is
     /// kept under the spelling first written.
     /// </summary>
@@ -275,11 +273,11 @@ public static class WorkflowSelection
         var name = (use.Repository ?? use.Workspace)?.Trim() ?? "";
         if (name.Length == 0) throw new DriverException(NamedProblem);
         if (use.Workflow is { } workflow && !IsWorkflow(workflow)) throw new DriverException(WorkflowProblem(workflow));
-        // WORKFLOWCLEAN1 1a (B1): Current is no development route's choice any more; the landed route's `current` ("no verification") stays.
+        // Current is no development route's choice; the landed route's `current` ("no verification") is one.
         if (!use.Landed && use.Workflow == Current) throw new DriverException(CurrentRefused);
         if (use.Kind is { } kind && !IsKindId(kind)) throw new DriverException(KindIdProblem(kind));
 
-        // FABRIC-PIPELINE1a: the landed route names only a verification pipeline, and a default or a kind never one, by the mark the
+        // The landed route names only a verification pipeline, and a default or a kind never one, by the mark the
         // named workflow's file carries as the door read it; a route with none read is refused, a default or a kind not checked.
         var id = use.Workflow is { } given && given != Current ? given : null;
         if (use.Landed && use.Kind is not null) throw new DriverException(LandedKindProblem);
@@ -311,7 +309,7 @@ public static class WorkflowSelection
         else
         {
             // Checked where the repository's workspace is known; a mapping cleared is never refused, so one left by a kind
-            // its workspace has since dropped can go.
+            // its workspace dropped can go.
             if (use.InKnown && use.Workflow is not null)
             {
                 var circle = RemoteTarget.Workspace(use.In);

@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COMPANYVIEW1c (the company-view design §4, row 3): the structure <c>ROLE_STRUCTURE</c> answers, each place's role per work held to the
-/// start plan's over one shared table, <c>fixtures/role-structure.json</c>, each work's rule with where it was set, and each choice's state
-/// from the last readings alone, which asks no account and no binary and counts no start (D150 point 5).
+/// The structure <c>ROLE_STRUCTURE</c> answers, each place's role per work held to the
+/// start plan's over one shared table, <c>fixtures/role-structure.json</c>, each work's rule with where it is set, and each choice's state
+/// from the last readings alone, which asks no account and no binary and counts no start.
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process: the agent's binary is a file this test writes, and every question the roster could ask fails the test.

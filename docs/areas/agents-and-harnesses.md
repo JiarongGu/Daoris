@@ -59,7 +59,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | The turn's stages | `Turn/`, listed in `docs/index/registered.md` | Each stage a module registers (`[TurnStage(name, phase, after)]`, `ITurnStage`), run in the kit's order at its phase's anchor in `AcpReader` (Update: each `session/update`, until a stage takes it; Request: the stage that takes the method, else not implemented), built once per session with the session as its `ITurnWiring`; `RefusedCalls` is the state two stages share |
 | `AcpReplay`, `AcpWatch`, `AcpHeard`, `AcpSubagent` | same names | The first Update stages, in that order: a load's replay passed over; the update counted and read by the background work and the wake; a word an error left untold taken once the agent goes on; a subagent's update routed to its own stream and taken there |
 | `AcpConsole` | same name | The console's lines joined from the agent's streamed words, ended when anything else is said or the words go quiet |
-| `AcpMeasure`, `AcpRender`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; a permission request refused, or held for the person, and released |
+| `AcpMeasure`, `AcpRender`, `AcpLimitTurn`, `AcpPermission` | same names | The stages: the context's high-water mark, the account's windows, the turn's models and the options the agent changed; each update as the record's event and the console's line, and the readings of an update the door's other units call; the agent's last message, which `AcpRun` hands its door's reader at each turn's end for its account's limit (`AcpTurnLimited`); a permission request refused, or held for the person, and released |
 | `HarnessCapture`, `ClaudeStreams`, `NativePrompt`; `StreamMapped`, `IStreamMapper`, `IStreamsReader`, `ClaudeStreamJson` | same names; the last four in `StructuredOutput.cs` | The native door: capture, `stream-json` mapping, the prompt written on stdin |
 | `NativeFrame` | `NativeFrame.cs` | A native stdout line parsed once: the capture reads each line into one frame, which the children and background tasks it says (`NativeChildren`, `NativeTasks`), the streams beside (`ClaudeStreams`, for a child's words and a command's output path) and the dialect's mapper each take, none parsing the text again |
 | `NativeChildren` | `NativeChildren.cs` | The children a native stream says: a subagent's `task_started` and its `task_notification`, each read once per child into one `ChildSeen` (the call its lines name among it) or `ChildEnded` reading on the run's sink, in the wire's own words; the protocol door's `AcpStreams` says its announcements and ends the same way |
@@ -84,6 +84,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `ConnectorPlans`, `PluginRegistry` | `Agents/ConnectorPlans.cs`, `Plugins/PluginRegistry.cs` | The one composer of a start's plan per workspace, and where the plugins' doors join the registry (`WithPlugins`, over `ProviderRegistry.Joined`) |
 | `DeclaredDoor`, `DeclaredDoors`, `DeclaredSpawn` | `Contract/DeclaredDoor.cs`, `DeclaredDoors.cs`, `DeclaredSpawn.cs` | A plugin's door: Plugins (`PluginDoors`) converts a manifest's named fields into the `DeclaredDoor`, which has no field for steering, resume, rules, words, lineage or confinement (a manifest naming one reaches nothing); the factory (`DeclaredDoors.Door`) makes it a protocol-transport contract door with its own `Identity` (plugin, product, maker), own `Home` (variable, own home) and own program, interactive and no settings file stated here and its resume the transport's (eligibility to negotiate at the open), a door that reads none of its provider's identity, home, program, rule language or skill layout (`Declared`: no rules, Claude Code's skill layout); its provider is the registry's, placed by the door's `accountOf` when it joins (`JoinedProviders`) |
 | `ClaudeRules`, `ClaudeSkills`, `ClaudeServers`, `ClaudeLineageHook`, `LineageHook`, `ClaudeConversationHome` | `Providers/ClaudeCode/` | Claude Code's: its settings file with its hooks and hard denials; its per-session plugin copies; the servers file its native door names; the lineage hook's script (`hooks/lineage-hook.mjs`), installed for the lineage file Loop hands; its conversation home, whose project-folder layout (the home variable, its default place, the `projects` folder, a directory's flat name) is what the tool-home leftovers list reads, so Codex, which files by date, is unlisted |
+| `IConversationCarry`, `CarriedFiles`, `ClaudeConversationCarry`, `CodexConversationHome`, `StubConversationHome` | `Contract/`, `Providers/<Name>/` | How a provider's conversation goes from one of its account homes to another, declared on its conversation home (`IConversationHome.Carry`, null where it cannot): the context it carries whole (`WholeBound`), the spawn variables that make its harness compact a context past that, and the copy of its files, each written beside its place and moved over it, and the removal of that copy (`Remove`). Claude Code copies `projects/<tree's flat name>/<id>.jsonl` and the `<id>/` folder for both doors (`--resume`, `session/load`), its bound 200,000 and its compaction `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` at the bound's share of the window; Codex copies the rollout under `sessions/` named by the thread id, its bound 200,000 and no compaction it can be asked for; the stand-in copies `stub-sessions/<id>`, its bound 100,000 and `DAORIS_STUB_COMPACT_AT`; dsh and `alt-stub` declare none |
 | `SpawnSkills`, `SpawnFiles`, `DshProfile` | same names; the last in `Providers/Dsh/` | A session's skills laid out by its door's provider (`ProviderRegistry.SkillLayout`) and handed by its spawn; what a spawn wrote, removed with the session; the dsh home Daoris made |
 | `SessionEquipment.Prepare`, `SessionRules.Hand` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment`, and the rules it is handed; the driver's `Prepare` and `HandRules` are one-line doors to them |
 | `daoris agent …` verbs | `AgentsCommand.cs` (with `AgentRulesVerb`, `AgentTrustVerb`, `AgentRoutes`, `AgentsWorld`), `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings. `list` says each account's last reading, as the page does, and `list --again` asks each binary and account |
@@ -197,9 +198,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     machine or workspace lists. The person's pick at a start is the one exception. (from D197)
 28. The person's own sign-in is outside the set. Daoris never signs it in or out, never asks it anything and never starts work
     in it. (from D197, D175)
-29. The walk: under `goal` (the default) a near account goes last, then fewest of Daoris's sessions running, then a week about to
-    lapse, then most room under the curve, then least recently started, then the order. Under `order` the first ready
-    account runs. The cap stays one number per machine. (from D130, D165, D197)
+29. The walk: under `goal` (the default) a near account goes last, then the most room in the tightest window the account's
+    provider reported (any window it declares, by what is left under the curve, or of the window where the curve table has none;
+    rooms within a five-point band tie; an account with no number ranks as one with no room; not under `switch: off`), then
+    fewest of Daoris's sessions running, then a week about to lapse, then most room under the curve, then least recently
+    started, then the order. Under `order` the first ready account runs. The cap stays one number per machine.
+    (from D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model
     names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
     another, its hold naming the family's limit (`held.cooling-model`). Every reader that knows a line's model reads it the
@@ -225,7 +229,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 35. Capacity is estimated from Daoris's own turns and the readings, with weights that are dated ratios, never prices.
     Acting on the estimate waits. (from D179)
 36. A door's failure is read by one reader into four kinds, in order: limit, access, transient, fatal. It reads the door's
-    own tables first, then its owner's. The agent's own message is never read. Anything unread is fatal. An access failure
+    own tables first, then its owner's. The agent's own message is never read, but for one: a driven protocol turn's last
+    message, with no step of the agent's after it, is handed to the same reader as a refused prompt's words (`TurnEndLimits`),
+    since Claude Code's adapter ends a turn `end_turn` with its account's limit said as that message. Read as a limit, it ends the
+    run there as the turn's failure (`AcpTurnLimited`), the machine log says `agent.error` as for a refused prompt, nothing more is
+    prompted, and the conclusion cools the account; any other reading leaves the turn's end alone. Anything unread is fatal. An access failure
     carries how it was read (a refused credential, a sign-in's words, or a code the door declares), and a refused resume's
     open and the conclusion's sign-out read that, never the name of the entry. (from D210, D125)
 37. A limit cools that account until the reset the agent named, plus 2 minutes, with 15 minutes' grace and nothing believed
@@ -235,8 +243,23 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     family's week (`seven_day_opus`, `seven_day_sonnet`) at 100% with its reset ahead, cool the account plus that family alone
     until the reset, under the account's `models` in `cooling.json` (`ModelLimits`); every other limit cools the whole
     account. *Try now* and a sign-in end both. (from D125, D205)
-38. A limited line resumes by itself at the look: its own conversation on its own account when ready, else a briefed resume on
-    another account or choice, else it waits showing the earliest reset. (from D206)
+38. A limited line resumes by itself at the look: its own conversation on its own account when ready; else a driven line, and a
+    repository's chat at its limit move, goes on on another account of the same agent in a new part that carries its own conversation
+    there (`LimitCarried` in a driven start's hand, `ChatLimitCarry` in the chat's limit move, the plan `LimitCarry` for both), its
+    files copied to that account's home once the part it leaves has ended, resumed by its id with Daoris's word and no brief:
+    whole at or under its provider's `WholeBound`, compacted first past it where the harness can be asked to, else briefed; it is
+    briefed on another choice of agent, from or to the tool's own home, and where its door declares no carry or the copy fails,
+    the new part saying why (`moved.not-carried`, its code `unable`, `unkept`, `unhomed`, `too-large`, `missing`, `copy-failed`, or
+    `resume-refused` where the door would not resume the copied conversation before any prompt: the same start, or the chat's same
+    part once its refused run let go, takes the copy out of that account's home (`IConversationCarry.Remove`) and goes on in the
+    brief, a second `session.moved` saying so) and
+    `session.moved` saying `carry` (`whole`, `compacted` or that code) beside `briefed`; a restart that cuts a carried move off before
+    its new part runs leaves it going on in the same conversation (conversations and context, Open); else it waits showing the earliest reset.
+    Measured on the install (a Sonnet session on the protocol door cut off at 155,233 tokens of a 1,000,000 window): a driven
+    session starts at about 64,500 tokens and its briefed successor at 67,838, so a carry writes about 87,400 more tokens to the
+    new account's cache at its first request and reads them back at each later one, about 200,000 input tokens' worth over the
+    ten or so requests that successor's first turn made; past about 200,000 a compaction's one read and summary cost less than
+    carrying whole. (from D206)
 39. A transient failure is tried again in the same conversation after 1, 2, 4, 8 and 16 minutes, up to the line's tries
     rule. It is never a strike, park, cool-off or walk. Past the bound the quest is held until the person's word or
     *Try again*. Every run on the protocol door takes that one retry (`TransientRetries.For` at the hold, `ChatRetry` for a
@@ -575,7 +598,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
 - **AGENTERRORS1c**: the native door's failure reads and the measured `--resume`; **1e**: what remains of point 8 (the
   native door's live, driven and one-turn tries). 1d is built.
 - **LIMITRESUME1f** and **TOOL4n**: the native door's limit read, so a native session ended by a limit cools its account.
-  Waits on a recorded native limit, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
+  The session limit's sentence is recorded on the protocol door (2026-11-07), and a failed native `result` saying it reads as that
+  limit; what waits is one native session seen ending on it, the owner's yes, which is all that remains of D210's row 1c. A failed native `result` is one
   `WireReading.Failed` (`native`, `DoorWhere.Result`, the result's own words) on the run's sink, and `NativeLimits`, a sink part composed in
   `SessionHold` and `ChatWatch`, reads it through `AgentErrors.Read` and holds a limit as the limit its turn ended on. A run concludes on it
   as on the protocol door's refused turn: a driven run's conclusion reads it as the turn's failure (`NativeLimits.TurnFailed`), so

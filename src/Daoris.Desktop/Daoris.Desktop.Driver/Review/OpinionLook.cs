@@ -1,19 +1,19 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second opinions owed by themselves (XAGENT1f, D155 point 2; the second-agent design §2.1): what a driven record's conclusion
+/// The second opinions owed by themselves: what a driven record's conclusion
 /// makes owed, and why the look closes one.
 /// </summary>
 public static class OpinionLook
 {
     /// <summary>
-    /// A driven record that just concluded, read against the opinion rule standing for its repository (§2.1): a done in a tree of
+    /// A driven record that just concluded, read against the opinion rule standing for its repository: a done in a tree of
     /// its own, under a rule whose occasions read it, is owed one at each occasion the rule names. Never throws: the record has
     /// concluded, and an opinion not owed leaves the person's <i>Ask now</i>.
     /// </summary>
     /// <param name="process">
-    /// Its run's process (WORKFLOW1f): under a named workflow, its version's opinion step says the occasions, one that cannot start
-    /// among them, so it sits where it is owed. Null reads the rule live, as before.
+    /// Its run's process: under a named workflow, its version's opinion step says the occasions, one that cannot start
+    /// among them, so it sits where it is owed. Null reads the rule live.
     /// </param>
     /// <returns>The occasions it is owed at; empty where none.</returns>
     public static IReadOnlyList<string> Concluded(
@@ -45,20 +45,20 @@ public static class OpinionLook
     }
 
     /// <summary>
-    /// Why an opinion owed is closed now, or null where it is still owed: its quest no longer done, its rule no longer reading at
-    /// its occasion, its tree gone, its work landed (a landing recorded for it since it was owed, FABRIC-CLOSE1h18, or nothing in its
+    /// Why an opinion owed is closed now, or null where it is still owed: its quest not done, its rule not reading at
+    /// its occasion, its tree gone, its work landed (a landing recorded for it after it fell due, or nothing in its
     /// tree that no branch of the person's, nor an older landing's squash, holds, where no automatic landing holds that branch's push
     /// back), or, under <c>steps</c>, no next step of its chain left to hold.
     /// </summary>
     /// <param name="process">
-    /// Its run's process (WORKFLOW1f): under a named workflow, whether its version still reads at the occasion. One that cannot be
-    /// read here closes nothing, since it may read once it can. Null reads the rule live, as before.
+    /// Its run's process: under a named workflow, whether its version still reads at the occasion. One that cannot be
+    /// read here closes nothing, since it may read once it can. Null reads the rule live.
     /// </param>
     public static async Task<string?> ClosesAsync(
         OpinionDue due, QuestView? quest, IReadOnlyList<QuestView> chain, DriverConfig config, LandedBranches landed, CancellationToken ct,
         IWorkplaceProcess? process = null)
     {
-        // FABRIC-CLOSE1h (§E5): in a closure graph its submission is the done it waits on.
+        // In a closure graph its submission is the done it waits on.
         if (!QuestResults.Judged(quest)) return OpinionDueClosed.Undone;
         var reads = process is null
             ? OpinionRules.Resolve(config, due.Repository, due.Workspace) is { Rule: { IsNone: false } rule } && rule.On.Contains(due.Occasion)
@@ -66,8 +66,8 @@ public static class OpinionLook
         if (!reads) return OpinionDueClosed.Off;
 
         if (TreeFolders.TreeGone(due.Tree)) return OpinionDueClosed.Gone;
-        // FABRIC-CLOSE1h18: its record lands it only where it was made since the due was owed. One older, a session whose words went
-        // on after its landing (D137), lands only the work it held then, so its tree is read below as any session's is.
+        // Its record lands it only where it is made after the due fell owed. One older, a session whose words went
+        // on after its landing, lands only the work it held then, so its tree is read below as any session's is.
         var landing = landed.Landing(due.Session);
         if (landing is not null && MadeSince(landing, due)) return OpinionDueClosed.Landed;
         if (due.Occasion == OpinionRules.Steps
@@ -79,8 +79,8 @@ public static class OpinionLook
         var unlanded = await TreeFollows.UnlandedInTreeAsync(due.Tree, "HEAD", ct).ConfigureAwait(false);
         if (unlanded == 0) return OpinionDueClosed.Landed;
 
-        // FABRIC-CLOSE1h18: an older landing that squashed the tree's work holds it while the tree stands at the commit it squashed, or
-        // behind it (the record's own word, PROCESS1b-ii), though no branch of the person's holds those commits.
+        // An older landing that squashed the tree's work holds it while the tree stands at the commit it squashed, or
+        // behind it (the record's own word), though no branch of the person's holds those commits.
         return unlanded > 0 && landing?.Squashed is { } squashed
                && await TreeRefs.IsAncestorAsync(due.Tree, "HEAD", squashed, ct).ConfigureAwait(false)
             ? OpinionDueClosed.Landed
@@ -88,9 +88,9 @@ public static class OpinionLook
     }
 
     /// <summary>
-    /// Why an opinion owed on a chat run is closed now (CHATFLOW1d, the chat-flow design §7), or null where it is still owed: <c>off</c> where
-    /// its run's process no longer reads at its occasion, <c>gone</c> with its tree, and <c>landed</c> once a landing of its line was recorded
-    /// since it was owed or its tree holds nothing the line does not. Never <c>undone</c>: a chat run serves no quest whose done it waits on.
+    /// Why an opinion owed on a chat run is closed now, or null where it is still owed: <c>off</c> where
+    /// its run's process does not read at its occasion, <c>gone</c> with its tree, and <c>landed</c> once a landing of its line is recorded
+    /// after it fell owed or its tree holds nothing the line does not. Never <c>undone</c>: a chat run serves no quest whose done it waits on.
     /// </summary>
     public static async Task<string?> RunClosesAsync(OpinionDue due, LandedBranches landed, IWorkplaceProcess process, CancellationToken ct)
     {
@@ -102,9 +102,9 @@ public static class OpinionLook
     }
 
     /// <summary>
-    /// Whether <paramref name="landing"/> was made since <paramref name="due"/> was owed (FABRIC-CLOSE1h18): its session's work accepted onto
-    /// it at or after the due's time, by the landing itself or by the advance the session's later done made (LAND2c), as the automatic
-    /// landing reads a landing made since its entry's done. One older lands only the work it held then.
+    /// Whether <paramref name="landing"/> is made after <paramref name="due"/> fell owed: its session's work accepted onto
+    /// it at or after the due's time, by the landing itself or by the advance the session's later done made, as the automatic
+    /// landing reads a landing made after its entry's done. One older lands only the work it held then.
     /// </summary>
     internal static bool MadeSince(LandedBranch landing, OpinionDue due) => landing.AcceptedAt(due.Session) >= due.At;
 }

@@ -25,7 +25,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
     /// </param>
     /// <param name="tree">
     /// A conversation handed over from another agent runs in the tree the old one ran in: its own folder, neither grown nor removed here, and
-    /// refused where it no longer exists. Null opens as before.
+    /// refused where it no longer exists. Null opens as every other conversation does.
     /// </param>
     /// <param name="from">The conversation this one continues, with why and who asked: named on the new record as it opens. Null for every other conversation.</param>
     /// <param name="order">
@@ -49,12 +49,14 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
     /// which sends them only to a host whose <c>opens</c> mark is 2. What moved comes back on <see cref="ChatStart.Moved"/>. Null for every
     /// other start, which opens as before.
     /// </param>
+    /// <param name="carries">A limit's carry: the part runs as its conversation's resume (<see cref="ChatLimitCarry.RunAsync"/>); null for every other start.</param>
     public Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
         CancellationToken ct = default, string? tree = null, ContinuedFrom? from = null, IReadOnlyList<ActorEffective>? order = null,
-        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false, MoveWords? moves = null) =>
-        StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null, settled, picked, ownFirst: ownFirst, moves: moves);
+        EarlierMaker? leftBy = null, HarnessSelection? settled = null, bool picked = false, bool ownFirst = false, MoveWords? moves = null,
+        ChatLimitCarry? carries = null) =>
+        StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending: null, settled, picked, ownFirst: ownFirst, moves: moves, carries: carries);
 
     /// <param name="pending">
     /// The pending start a replacement opens for: its order walked, the refused account passed, its passes said in the replacement's actor line.
@@ -65,7 +67,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order,
         EarlierMaker? leftBy, ChatPending? pending, HarnessSelection? settled = null, bool picked = false,
-        bool ownFirst = false, MoveWords? moves = null)
+        bool ownFirst = false, MoveWords? moves = null, ChatLimitCarry? carries = null)
     {
         var context = wiring.Context;
         if (context.Closing) return new(null, "Daoris is closing.");
@@ -75,7 +77,8 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         try
         {
             if (context.Closing) return new(null, "Daoris is closing.");
-            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending, settled, picked, ownFirst, moves).ConfigureAwait(false);
+            return await StartCoreAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, pending, settled, picked, ownFirst, moves, carries)
+                .ConfigureAwait(false);
         }
         finally
         {
@@ -93,7 +96,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
         CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy,
-        ChatPending? pending, HarnessSelection? settled, bool picked, bool ownFirst, MoveWords? moves)
+        ChatPending? pending, HarnessSelection? settled, bool picked, bool ownFirst, MoveWords? moves, ChatLimitCarry? carries)
     {
         var context = wiring.Context;
         var home = context.Home;
@@ -107,7 +110,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         if (chosen is not null) adapter = chosen.Agent;
         var walking = order is { Count: > 1 } || pending is not null;
 
-        // Through the roster's live set, not the one the runner was built with: the driver's tick hands the roster the build's adapters plus
+        // Through the roster's live set, not the one the runner is built with: the driver's tick hands the roster the build's adapters plus
         // whatever the plugins declare, so a harness declared since the shell started is a harness a conversation can run on now.
         var resolved = walking ? null! : harnesses.Adapters.Door(adapter);
         if (!walking && !resolved.Can.Interactive) return new(null, NotInteractive(resolved.Id.Value));
@@ -228,7 +231,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         var (sessionId, message) = keyed is not null
             ? (keyed.SessionId, keyed.Message)
             : await service
-                // The tree the conversation runs in: its own where one was grown, the checkout found above otherwise, stated by the side that
+                // The tree the conversation runs in: its own where one is grown, the checkout found above otherwise, stated by the side that
                 // is about to spawn into it.
                 .OpenChatAsync(
                     repository, resolved.Id.Value, selection.Version, selection.Profile, workTree, before, ct, from)
@@ -242,6 +245,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
 
         // The role this start took and its revision, on its binding beside its pick, which a continuation reads.
         context.Conversations.KeepRole(sessionId, roleTaken, roleRevision);
+        carries?.Bound(sessionId);
         // A start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they picked the account it
         // opened on, so the account rule holds the conversation to it. Never the walk's own choice.
         if (picked) context.Conversations.Pick(sessionId, selection.Profile);
@@ -297,7 +301,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // attribution: the record it continues may carry a different maker's instruction. Any other conversation, in the person's checkout or
         // Ask Daoris's, is told nothing ahead of the person's words.
         // Its run binds here, the record being its line's first in the tree it grew, and the landing it is told is planned with the process its
-        // run was bound to, so it is told the landing its press makes. A chat run whose process names a second opinion is handed the tool that
+        // run is bound to, so it is told the landing its press makes. A chat run whose process names a second opinion is handed the tool that
         // answers its findings from its spawn.
         var answers = false;
         if (opened is not null)
@@ -322,16 +326,18 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         ChatStart? started = null;
         try
         {
-            started = await wiring.RunAsync(
-                "chat", sessionId, message, agent, selection, config,
-                wiring.RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued, answers),
-                onEnded, ct, chosen: chosen, pending: context.Pending.For(sessionId)).ConfigureAwait(false);
+            var placed = wiring.RepositoryPlace(config, snapshot.Repositories, known, repository, workTree, continued, answers);
+            started = carries is not null
+                ? await carries.RunAsync(sessionId, message, agent, config, placed, onEnded, keyed?.Moved ?? [], ct).ConfigureAwait(false)
+                : await wiring.RunAsync(
+                    "chat", sessionId, message, agent, selection, config, placed, onEnded, ct, chosen: chosen, pending: context.Pending.For(sessionId))
+                    .ConfigureAwait(false);
             // What the open moved, for the move that asked it to hand the new part.
             return started = keyed is null ? started : started with { Moves = keyed.Moves, Moved = keyed.Moved };
         }
         finally
         {
-            // A start that failed, or was cancelled, has no first message to tell it with.
+            // A start that fails, or is cancelled, has no first message to tell it with.
             if (started?.SessionId is null)
             {
                 told.Forget(sessionId);

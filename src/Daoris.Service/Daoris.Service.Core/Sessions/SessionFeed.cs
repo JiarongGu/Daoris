@@ -1,22 +1,22 @@
 namespace Daoris.Knowledge;
 
-/// <summary>One record as a feed carries it — already judged where the process lived (D47 §6).</summary>
-/// <param name="Quest">Null for a chat, which may serve none (D49 §3).</param>
+/// <summary>One record as a feed carries it — already judged where the process lived.</summary>
+/// <param name="Quest">Null for a chat, which may serve none.</param>
 /// <param name="Kind">
-/// `driven` or `chat`. It travels because a teammate seeing a record deserves to know which it was —
+/// `driven` or `chat`. It travels because a teammate seeing a record deserves to know which it is —
 /// and because without it every mirrored conversation would arrive looking like planned work.
 /// </param>
 /// <param name="DoorVersion">
-/// Which tool produced this (D49 §4). It travels because it is a fact about a tool. The PROFILE NAME
+/// Which tool produced this. It travels because it is a fact about a tool. The PROFILE NAME
 /// deliberately has no field here: which account a session ran as is machine-local, guarded like the
 /// transcript — and a field that does not exist cannot be filled in by accident.
 /// </param>
 /// <param name="Limit">
-/// That an account's limit failed it (TOOL4c, D125 §5.2). It travels because it names no account: a
-/// teammate sees that a session was cut off by a limit, never whose. False is the old reading.
+/// That an account's limit failed it. It travels because it names no account: a
+/// teammate sees that a session is cut off by a limit, never whose. False where the field is absent.
 /// </param>
 /// <param name="NoteParts">
-/// The note's parts (LANG1a, D142 point 2), as <see cref="Knowledge.NoteParts"/> keeps them, every string in them cleaned
+/// The note's parts, as <see cref="Knowledge.NoteParts"/> keeps them, every string in them cleaned
 /// as the note is before they leave the machine. Null is a record from before parts, or one whose note has none.
 /// </param>
 public sealed record FedSessionRecord(
@@ -25,7 +25,7 @@ public sealed record FedSessionRecord(
     string? Kind = null, string? DoorVersion = null, bool Limit = false, string? NoteParts = null, string? Entry = null,
     string? TookQuest = null);
 
-/// <summary>Why a feed of records was not taken — or <see cref="None"/> when it was.</summary>
+/// <summary>Why a feed of records is not taken — or <see cref="None"/> when it is.</summary>
 public enum SessionFeedRefusal
 {
     None,
@@ -43,10 +43,9 @@ public enum SessionFeedRefusal
 public sealed record SessionFeedOutcome(SessionFeedRefusal Refusal, string Message, int Records);
 
 /// <summary>
-/// The session feed's judgement (D47 §4/§6), in Core for the same reason <see cref="SessionLedger"/>
-/// and <see cref="KnowledgeService.FeedAsync"/> are: the entries door already judged in Core while
-/// this judgement sat in one host — the exact asymmetry D36 exists to prevent, one new door away from
-/// a second copy. Records upsert whole, keyed by origin + id, and are never re-judged: the judgement
+/// The session feed's judgement, in Core for the same reason <see cref="SessionLedger"/>
+/// and <see cref="KnowledgeService.FeedAsync"/> are: one judgement in Core, never a second copy in a host.
+/// Records upsert whole, keyed by origin + id, and are never re-judged: the judgement
 /// ran where the process lived. Only joined repositories' records are taken.
 /// </summary>
 public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
@@ -58,17 +57,17 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
         var joined = registered
             .Where(r => r.Joined).Select(r => r.Repository).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // The receiving deployment's wiring decides the circle, exactly as it does for a knowledge feed
-        // (D48): a record cannot name the workspace it lands in, or it could name someone else's.
+        // The receiving deployment's wiring decides the circle, exactly as it does for a knowledge feed:
+        // a record cannot name the workspace it lands in, or it could name someone else's.
         var workspaces = registered.ToDictionary(
             r => r.Repository, r => r.InWorkspace, StringComparer.OrdinalIgnoreCase);
 
         // Judge everything before mirroring anything, so a refused feed changes nothing at all.
         foreach (var record in records)
         {
-            // The quest is NOT required: a chat may serve none (D49 §3), and demanding one here
+            // The quest is NOT required: a chat may serve none, and demanding one here
             // would make a conversation unmirrorable — a teammate would see the repository fall
-            // silent rather than see that somebody was talking in it.
+            // silent rather than see that somebody is talking in it.
             if (string.IsNullOrWhiteSpace(record.Id)
                 || string.IsNullOrWhiteSpace(record.Repository) || !Session.TryParse(record.State ?? "", out _))
             {
@@ -111,11 +110,11 @@ public sealed class SessionFeed(KnowledgeService service, SessionStore sessions)
                 {
                     Origin = origin,
                     Limit = record.Limit,
-                    // Read back through the door's own reader, so only what a part is lands in the store (LANG1a).
+                    // Read back through the door's own reader, so only what a part is lands in the store.
                     NoteParts = record.NoteParts,
-                    // SESSONE1a: the line of work it belongs to, as its machine answered it; none from a machine from before.
+                    // The line of work it belongs to, as its machine answered it; none from a machine from before.
                     Entry = record.Entry,
-                    // CHATTAKE1: the quest a chat took; none from a machine from before.
+                    // The quest a chat took; none from a machine from before.
                     TookQuest = record.TookQuest,
                 }, ct)
                 .ConfigureAwait(false);

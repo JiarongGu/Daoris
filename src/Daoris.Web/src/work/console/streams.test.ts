@@ -40,7 +40,7 @@ describe("the output panel's tabs (CONSOLE2c)", () => {
     expect(unknown!.status).toBe('background · disconnected');
   });
 
-  /** CONSOLE3a: a tab is stoppable only while it runs and its harness said so — never by its kind. */
+  /** A tab is stoppable only while it runs and its harness said so — never by its kind. */
   it('are stoppable only while running and when the harness said so', () => {
     const [own, stoppable, silent, ended, older] = panelTabs('s1', [
       row({ canStop: true }),

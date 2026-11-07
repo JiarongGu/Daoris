@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xii part 2, the Participants cuts of the three families above it: the seams they add. The looks' facts held through the
+/// The Participants cuts of the three families above it: the seams they add. The looks' facts held through the
 /// facets the review's records implement; a loop's reserved and bound starts held through the facets the planner's and the workflows'
 /// records implement; the tree rule spelled once by the workplace; the helper's and the partner's verbs reading the terminal through
 /// facets; and the operations Work orders and Workflows install, which the participants resolve only where reached. What the cuts keep

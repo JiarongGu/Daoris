@@ -3,12 +3,12 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A failed verification becomes work (FABRIC-PIPELINE1f; the pipeline design §4.5): <i>Ask for a fix…</i> publishes one ask per failed gate to
+/// A failed verification becomes work: <i>Ask for a fix…</i> publishes one ask per failed gate to
 /// the repository, in Daoris's fixed words naming the line, the gate and the run, with the gate's log, its last 256 KiB, as the ask's file and
 /// the kind the check's <c>ask</c> option names as its choice, so the start node routes it into the development pipeline chosen for that kind.
 /// </summary>
 /// <remarks>
-/// An ask is sent with no key of the sender's, so a restart between its send and its answer could not tell whether it was made. Before it
+/// An ask is sent with no key of the sender's, so a restart between its send and its answer cannot tell whether it is made. Before it
 /// publishes, the look reads the workspace's asks for one whose words are Daoris's own and name this line and gate: one naming this run is the
 /// ask already made; another still open takes the new failure on its channel, so there is one per gate; none, it publishes. A person's words
 /// are never read, and nothing in the service changes.
@@ -26,7 +26,7 @@ public static class VerifyFixAsks
 
     /// <summary>
     /// What a press came to: whether an ask stands for the failure now, the sentence the person reads, and whether the look found it asked
-    /// already (the ask made, or the failure on its channel), so nothing was sent.
+    /// already (the ask made, or the failure on its channel), so nothing is sent.
     /// </summary>
     public sealed record Pressed(bool Done, string Message, string? Ask = null, bool Found = false);
 
@@ -41,7 +41,7 @@ public static class VerifyFixAsks
     public static string ScopeOf(VerifyRun run) => run.Line ?? run.Branch ?? TextBounds.ShortCommit(run.Commit, 7);
 
     /// <summary>
-    /// The ask for the failed check <paramref name="node"/> of <paramref name="unit"/>'s attempt <paramref name="attempt"/>: found if it was made,
+    /// The ask for the failed check <paramref name="node"/> of <paramref name="unit"/>'s attempt <paramref name="attempt"/>: found if made,
     /// added to its channel once if its gate failed again, else published. A refusal is an answer with its sentence.
     /// </summary>
     /// <param name="asks">The workspace's asks as a look read them for every failure it asks about; null reads them here.</param>
@@ -113,7 +113,7 @@ public static class VerifyFixAsks
     private static string Again(VerifyRun run, string scope, string gate) =>
         $"The gate {gate} failed again on {scope} at {TextBounds.ShortCommit(run.Commit, 7)} (run {run.Run}). Its log is on the run.";
 
-    /// <summary>The check's declaration in the version the run is bound to; null where it no longer reads.</summary>
+    /// <summary>The check's declaration in the version the run is bound to; null where it does not read.</summary>
     internal static NodeDeclaration? NodeOf(string home, VerifyRun run, string node) =>
         new WorkflowFiles(home).Load(run.Workflow)?.Read.Versions.FirstOrDefault(each => each.Version == run.Version) is { Graph: { } graph }
             ? graph.Nodes.FirstOrDefault(each => each.Id == node)

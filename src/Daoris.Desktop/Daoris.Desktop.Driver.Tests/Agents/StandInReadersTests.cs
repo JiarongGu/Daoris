@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row b, part 1 (D213's row b note): the readers that decide whether a stand-in is listed, named or told apart read the
-/// registry by one answer each, and the two rules stay apart (C1-4.1): the roster lists a door that names a binary or that the home's
+/// The readers that decide whether a stand-in is listed, named or told apart read the
+/// registry by one answer each, and the two rules stay apart: the roster lists a door that names a binary or that the home's
 /// <c>commands</c> configure, and the verbs take an operand that names a binary, so no stand-in is one, configured or not. The reserved
-/// names are every built provider and door id, never a made provider's (O4-F9).
+/// names are every built provider and door id, never a made provider's.
 /// </summary>
 public sealed class StandInReadersTests
 {

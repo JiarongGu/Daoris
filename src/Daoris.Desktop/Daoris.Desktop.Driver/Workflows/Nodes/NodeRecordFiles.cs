@@ -7,11 +7,11 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The units' node records under a home (FABRIC-PERFORM1b; §E7, <i>unit records keep §D6's attempts</i>): one file per unit,
+/// The units' node records under a home: one file per unit,
 /// <c>&lt;home&gt;/workflows/units/&lt;key&gt;.json</c>, its key a digest of the unit's id, which the file holds. Changed only by
-/// <see cref="Edit{T}"/>: read, judged and written whole in one hold of the record's lock, the lease asked inside it (FABRIC-PERFORM1h);
-/// atomically, BOM-less and LF; the driver's alone to write, in the loop that holds the home's lease, and machine-local, never on the wire
-/// (D47 §4). A file that does not read is never taken for an empty record: an attempt it may hold could be sent twice.
+/// <see cref="Edit{T}"/>: read, judged and written whole in one hold of the record's lock, the lease asked inside it;
+/// atomically, BOM-less and LF; the driver's alone to write, in the loop that holds the home's lease, and machine-local, never on the wire.
+/// A file that does not read is never taken for an empty record: an attempt it may hold could be sent twice.
 /// </summary>
 /// <param name="home">The home the records are under.</param>
 /// <param name="holdsLease">Whether this process holds the home's lease, asked inside each edit's lock; by default the home's lease file.</param>
@@ -22,15 +22,21 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
     public const string NotHeld = "not-held";
 
+    /// <summary>How old a record file is before a read of it is kept while its stamp stands: a younger file could be written again within the clock's grain, to the same stamp and length.</summary>
+    public static readonly TimeSpan Settled = TimeSpan.FromSeconds(2);
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime Written, long Length, NodeRecord Record)> Kept =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private readonly Func<bool> _holdsLease = holdsLease ?? (() => HomeLease.HeldHere(home));
 
-    /// <summary>The home the records are under: where a closure graph a quest was bound to is kept beside them (FABRIC-CLOSE1l).</summary>
+    /// <summary>The home the records are under: where a closure graph a quest is bound to is kept beside them.</summary>
     public string Home => home;
 
-    /// <summary>Whether this process holds the home's lease, as each edit asks it: what the resource records beside these ask too (FABRIC-PERFORM1d).</summary>
+    /// <summary>Whether this process holds the home's lease, as each edit asks it: what the resource records beside these ask too.</summary>
     public Func<bool> HoldsLease => _holdsLease;
 
-    /// <summary>The folder the records sit in, beside D157's runs (<see cref="WorkflowRunBindings.FolderOf"/>).</summary>
+    /// <summary>The folder the records sit in, beside the runs (<see cref="WorkflowRunBindings.FolderOf"/>).</summary>
     public static string FolderOf(string home) => DaorisHome.Entry(home, HomeEntry.Workflows, "units");
 
     /// <summary>A unit's record's file: its id's digest, so no unit id is read as a path.</summary>
@@ -42,10 +48,15 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     public NodeRecord? Read(string unit)
     {
         var path = PathOf(home, unit);
-        if (!File.Exists(path)) return new NodeRecord(unit);
+        var file = new FileInfo(path);
+        if (!file.Exists) return new NodeRecord(unit);
+        var (written, length) = (file.LastWriteTimeUtc, file.Length);
+        if (Kept.TryGetValue(path, out var kept) && kept.Written == written && kept.Length == length) return kept.Record;
         try
         {
-            return Parse(AtomicFile.ReadText(path)) is { } record && string.Equals(record.Unit, unit, StringComparison.Ordinal) ? record : null;
+            if (Parse(AtomicFile.ReadText(path)) is not { } record || !string.Equals(record.Unit, unit, StringComparison.Ordinal)) return null;
+            if (DateTime.UtcNow - written > Settled) Kept[path] = (written, length, record);
+            return record;
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -80,8 +91,8 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     }
 
     /// <summary>
-    /// The files that do not read (FABRIC-PERFORM1j), for the person to mend: each by its name, the unit it names where its text still
-    /// names one whose key is that name, and when it was last written. Read-only.
+    /// The files that do not read, for the person to mend: each by its name, the unit it names where its text still
+    /// names one whose key is that name, and its last write time. Read-only.
     /// </summary>
     public IReadOnlyList<UnreadableRecord> Unread() =>
     [
@@ -111,12 +122,12 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     }
 
     /// <summary>
-    /// One change of a unit's record (FABRIC-PERFORM1h, as <see cref="RecordList{T}.Edit"/> is for a list): the record's lock held, the
+    /// One change of a unit's record (as <see cref="RecordList{T}.Edit"/> is for a list): the record's lock held, the
     /// lease asked, the record read as it is now, <paramref name="change"/> judged on it, and the record it returns written whole, atomically,
     /// and marked as this process's own write; a null record writes nothing. Two callers that read the same record therefore never both
     /// decide on it: the second reads what the first wrote. Nothing is awaited inside it.
     /// </summary>
-    /// <returns>Why nothing was judged (<see cref="NotHeld"/>, <see cref="Unreadable"/>), else null with what the change said.</returns>
+    /// <returns>Why nothing is judged (<see cref="NotHeld"/>, <see cref="Unreadable"/>), else null with what the change says.</returns>
     /// <exception cref="IOException">Another edit held the record's lock for the whole of <see cref="RecordLock.Wait"/>.</exception>
     public (string? Refused, T? Result) Edit<T>(string unit, Func<NodeRecord, (NodeRecord? Next, T Result)> change)
     {
@@ -131,6 +142,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             if (!string.Equals(next.Unit, unit, StringComparison.Ordinal)) throw new InvalidOperationException($"a change of unit `{unit}`'s record named another unit");
             Directory.CreateDirectory(FolderOf(home));
             AtomicFile.WriteText(path, ToJson(Trimmed(next)));
+            Kept.TryRemove(path, out _);
             HomeWrites.Mine(path);
             return (null, result);
         }
@@ -140,7 +152,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     /// A whole record put over its unit's, through <see cref="Edit{T}"/>: a test's, or a person's mend. Over a file that does not read, or
     /// without the lease, it writes nothing and says so.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Nothing was written, and why.</exception>
+    /// <exception cref="InvalidOperationException">Nothing is written, and why.</exception>
     public void Write(NodeRecord record)
     {
         if (Edit(record.Unit, _ => (record, true)).Refused is { } refused)
@@ -152,7 +164,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     /// <summary>
     /// Every attempt a status still needs, and the newest <see cref="NodeRecord.SettledKept"/> settled others; the newest history. Needed:
     /// one not settled (recorded, sent, unknown or held), each node's current one (a pending retry is its failed node's current attempt,
-    /// what <see cref="WorkPerformer.Due"/> reads its delay from), and one a node holds unreconciled (FABRIC-PERFORM1h).
+    /// what <see cref="WorkPerformer.Due"/> reads its delay from), and one a node holds unreconciled.
     /// </summary>
     private static NodeRecord Trimmed(NodeRecord record)
     {
@@ -203,7 +215,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
 
         writer.WriteEndArray();
 
-        // FABRIC-PERFORM1i: the events observed nodes were taken on, written only where there are some, so every other record reads as it did.
+        // The events observed nodes were taken on, written only where there are some.
         if (record.Observations.Count > 0)
         {
             writer.WriteStartArray("observations");
@@ -218,7 +230,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 writer.WriteString("state", each.State);
                 writer.WriteString("at", Moments.Write(each.At));
                 writer.WriteString("node", each.Node);
-                // FABRIC-CUTOVER1c: the subject a run's node was told under, written only where set, so a unit's own events read as they did.
+                // The subject a run's node is told under, written only where set.
                 if (each.Subject is { } subject) writer.WriteString("subject", subject);
                 writer.WriteEndObject();
             }
@@ -226,7 +238,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteEndArray();
         }
 
-        // FABRIC-CUTOVER1c: a run's end, written only on a run's record that holds one, so every other record reads as it did.
+        // A run's end, written only on a run's record that holds one.
         if (record.Ended is { } ended)
         {
             writer.WriteStartObject("ended");
@@ -235,8 +247,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteEndObject();
         }
 
-        // FABRIC-CUTOVER1f: the person's words on a run's nodes not applied yet, written only while one waits, so every other record reads as it
-        // did. A build before them reads past the field and writes the record without it: the word is lost there, never misapplied.
+        // The person's words on a run's nodes not applied yet, written only while one waits.
         if (record.Pending.Count > 0)
         {
             writer.WriteStartArray("pending");
@@ -253,7 +264,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             writer.WriteEndArray();
         }
 
-        // WORKFLOWCLEAN1 1c: the repairs a carried review Accept waits on, written only while one waits.
+        // The repairs a carried review Accept waits on, written only while one waits.
         if (record.Repairs.Count > 0)
         {
             writer.WriteStartArray("repairs");
@@ -319,7 +330,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     {
         writer.WriteStartObject();
         writer.WriteString("unit", acceptance.Unit);
-        // FABRIC-CUTOVER1a: written only where set, so a record of nodes observing their own unit is written as before.
+        // Written only where set.
         if (acceptance.Subject is { } subject) writer.WriteString("subject", subject);
         if (acceptance.SubjectRevision is { } revision) writer.WriteString("revision", revision);
         writer.WriteString("graph", acceptance.GraphDigest);
@@ -336,7 +347,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             WritePort(writer, evidence);
         }
 
-        // DECIDE1a: written only where set, so every record of acceptances naming none is written as before.
+        // Written only where set.
         if (acceptance.Outcome is { } outcome) writer.WriteString("outcome", outcome);
         WritePorts(writer, "outputs", acceptance.Outputs);
         writer.WriteEndObject();
@@ -394,7 +405,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (attempt.ResolvedAt is { } resolvedAt) writer.WriteString("resolvedAt", Moments.Write(resolvedAt));
         if (attempt.Decision is { } decision) writer.WriteString("decision", decision);
 
-        // FABRIC-CLOSE1b: a close's token and the quests it names, written only on a close's attempt, so every other reads as it did.
+        // A close's token and the quests it names, written only on a close's attempt.
         if (attempt.Close is { } close)
         {
             writer.WriteStartObject("close");
@@ -418,7 +429,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     }
 
     /// <summary>
-    /// A close's part of an attempt (FABRIC-CLOSE1b): absent is none, as on every plugin's attempt; present, it reads whole or the attempt
+    /// A close's part of an attempt: absent is none, as on every plugin's attempt; present, it reads whole or the attempt
     /// does not read, since a close sent again must be the same close.
     /// </summary>
     private static (bool Reads, QuestCloseCall? Close) ReadClose(JsonElement attempt)
@@ -448,7 +459,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     /// <summary>
     /// A record's file read back whole: null where it is not JSON, where any part misses what that part always says or holds it as another
     /// type (a container absent, a list holding a number, a state no rule knows), or where the record does not agree with itself
-    /// (<see cref="Consistent"/>). A record's structure is never defaulted to empty (FABRIC-PERFORM1h): <c>{"unit":"u"}</c> does not read.
+    /// (<see cref="Consistent"/>). A record's structure is never defaulted to empty: <c>{"unit":"u"}</c> does not read.
     /// </summary>
     public static NodeRecord? Parse(string json)
     {
@@ -488,7 +499,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 history.Add(new NodeHistory(at, why, status));
             }
 
-            // FABRIC-PERFORM1i: absent in a record written before them, and read whole where present.
+            // Absent where none were taken, and read whole where present.
             var observations = new List<ObservedEvent>();
             if (root.TryGetProperty("observations", out var observed))
             {
@@ -502,13 +513,13 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                         return null;
                     }
 
-                    // FABRIC-CUTOVER1c: absent on an event kept before, and on every unit's own; present, it is text or the record does not read.
+                    // Absent on every unit's own; present, it is text or the record does not read.
                     if (each.TryGetProperty("subject", out var told) && told.ValueKind != JsonValueKind.String) return null;
                     observations.Add(new ObservedEvent(plugin, repository, step, commit, id, state, at, node) { Subject = Text(each, "subject") });
                 }
             }
 
-            // FABRIC-CUTOVER1c: a run's end, absent in a record written before it and on every unit's own; present, it reads whole.
+            // A run's end, absent on every unit's own; present, it reads whole.
             RunEnd? ended = null;
             if (root.TryGetProperty("ended", out var end))
             {
@@ -516,8 +527,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 ended = new RunEnd(quest, endedAt);
             }
 
-            // FABRIC-CUTOVER1f: the person's words not applied yet, absent in a record written before them and wherever none waits; present,
-            // each reads whole, its act one this build applies.
+            // The person's words not applied yet, absent wherever none waits; present, each reads whole, its act one this build applies.
             var pending = new List<NodeWord>();
             if (root.TryGetProperty("pending", out var words))
             {
@@ -535,7 +545,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
                 }
             }
 
-            // WORKFLOWCLEAN1 1c: the repairs a carried Accept waits on, absent in a record written before them; present, each reads whole.
+            // The repairs a carried Accept waits on, absent wherever none waits; present, each reads whole.
             var repairs = new List<NodeRepair>();
             if (root.TryGetProperty("repairs", out var kept))
             {
@@ -568,10 +578,10 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
     }
 
     /// <summary>
-    /// Whether a record agrees with itself (FABRIC-PERFORM1h): every status and every attempt's call on its unit; each invocation once;
+    /// Whether a record agrees with itself: every status and every attempt's call on its unit; each invocation once;
     /// each attempt's node holding a status, never numbered past it; and a node with attempts holding the one its status names, its current
     /// one, which trimming always keeps. A node with no attempts is a built-in's, whose attempts are not dispatched and not kept here.
-    /// FABRIC-CUTOVER1c (the cutover design §2.4.1): a run's attempt is called under the subject's unit it was sent for, never <c>run:</c>, so
+    /// A run's attempt is called under the subject's unit it is sent for, never <c>run:</c>, so
     /// on a run's record a call names a unit of its own.
     /// </summary>
     private static bool Consistent(string unit, IReadOnlyDictionary<string, NodeStatus> statuses, IReadOnlyList<NodeAttempt> attempts)
@@ -658,7 +668,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
         if (element.TryGetProperty("evidence", out var evidenced) && (evidence = ReadPort(evidenced)) is null) return null;
         return new NodeAcceptance(unit, Text(element, "revision"), graph, node, version, attempt)
         {
-            // FABRIC-CUTOVER1a: absent on every acceptance written before, which reads as its unit.
+            // Absent where the node observes its own unit.
             Subject = Text(element, "subject"),
             Inputs = inputs,
             PrerequisiteReceipts = receipts,
@@ -700,7 +710,7 @@ public sealed class NodeRecordFiles(string home, Func<bool>? holdsLease = null)
             return null;
         }
 
-        // FABRIC-PERFORM1g: the person's word, absent on a record written before it; one no rule knows does not read, as a state's does.
+        // The person's word, absent wherever none is given; one no rule knows does not read, as a state's does.
         var resolution = Text(element, "resolution");
         if (resolution is not null && !HeldResolutions.All.Contains(resolution, StringComparer.Ordinal)) return null;
 

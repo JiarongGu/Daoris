@@ -7,9 +7,9 @@ import { type DiffFile, type LineBehind, REVIEW_BOUND_MINUTES, type ReviewKnown 
 import { DiffFileRow } from './DiffFileRow';
 import type { DiffLayout } from './PatchView';
 
-// The review's frame (REVIEW4): what the page knows of a session while git reads its range, the skeleton of what is
+// The review's frame: what the page knows of a session while git reads its range, the skeleton of what is
 // coming, its words with how long, and a refusal worded from its code with the person's next move. Molecules: every
-// state arrives as props, so a read of a minute and each refusal are reached without a bridge (components plan §2).
+// state arrives as props, so a read of a minute and each refusal are reached without a bridge.
 
 /** How long a read runs before the review says for how long: a moment passes unremarked, a wait does not. */
 export const SLOW_MS = 2_000;
@@ -49,21 +49,21 @@ function Reading({ words, since, className }: { words: string; since?: number | 
 }
 
 /**
- * The review's head: what the record says, there from the first frame (REVIEW4) — the session's title, its repository,
+ * The review's head: what the record says, there from the first frame — the session's title, its repository,
  * its own branch, the commit it is measured from and the commits it reported.
  *
  * @remarks
- * **The range is stated** (SURF6): a review that does not say what it is measured from is an opinion. The record's
- * base stands until the answer names the one git measured from (WSR6 may have moved it), which the pane hands in.
+ * **The range is stated**: a review that does not say what it is measured from is an opinion. The record's
+ * base stands until the answer names the one git measured from (a tree brought up to date moves it), which the pane hands in.
  *
- * **A newer read in flight is said here**, beside the facts, while the last answer below it is held dimmed (D41's
- * loading rule): the head is the one line every loaded state shares.
+ * **A newer read in flight is said here**, beside the facts, while the last answer below it is held dimmed:
+ * the head is the one line every loaded state shares.
  *
- * **Work not based on the latest line is said here** (REVIEWBASE1, D164's note): where the latest line the host knows has commits
+ * **Work not based on the latest line is said here**: where the latest line the host knows has commits
  * the work does not, one line names the line, how many, and *Updates*, the door that says whether the tree can be brought up to
- * date (WSR6). Nothing is said where it has none, or the line was not read.
+ * date. Nothing is said where it has none, or the line is not read.
  *
- * **A detached tree names no branch** (REVIEWBASE4, D164's note): in the branch's place it says *detached HEAD*. Where the tree holds
+ * **A detached tree names no branch**: in the branch's place it says *detached HEAD*. Where the tree holds
  * nothing beyond the line, its HEAD is the commit the review is measured from, so one fact says both: *detached HEAD at* that commit.
  */
 export function ReviewHead({ title, repository, branch, base, commits, refreshing, behind, detached = false }: ReviewKnown & {
@@ -112,7 +112,7 @@ export function ReviewHead({ title, repository, branch, base, commits, refreshin
   );
 }
 
-/** What the review's foot says where *Accept* would be, for a tree holding nothing beyond its line (REVIEWBASE4, D164's note). */
+/** What the review's foot says where *Accept* would be, for a tree holding nothing beyond its line. */
 export function NothingToLand({ line }: { line: string }) {
   const { t } = useTranslation();
   return (
@@ -124,7 +124,7 @@ export function NothingToLand({ line }: { line: string }) {
 
 /**
  * What the review read: the count and how many the reader has viewed, the layout, every file in one scroll (a
- * multibuffer, IDE study §2) and the host's bound, said as it said it. The reader's marks arrive as props: which file
+ * multibuffer) and the host's bound, said as it said it. The reader's marks arrive as props: which file
  * is open and which viewed are the pane's, kept per session and never written down.
  */
 export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, onViewed, onPreview, truncated, uncommitted }: {
@@ -135,11 +135,11 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
   onLayout: (layout: DiffLayout) => void;
   onToggle: (path: string) => void;
   onViewed: (path: string, viewed: boolean) => void;
-  /** Opens one file's preview in the side bar (PREVIEW1, D111). */
+  /** Opens one file's preview in the side bar. */
   onPreview?: (path: string) => void;
   /** What the bound dropped, in the host's words. */
   truncated?: string | null;
-  /** The tree's uncommitted work, read beside the committed files (REVIEWDIRTY1, D164 point 4). */
+  /** The tree's uncommitted work, read beside the committed files. */
   uncommitted?: { files: DiffFile[]; truncated: boolean } | null;
 }) {
   const { t } = useTranslation();
@@ -155,7 +155,7 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
             {t('work.review.progress', { done, total: files.length })}
           </span>
         )}
-        {/* The range it is measured from is the head's, above: said once, from the first frame (REVIEW4). */}
+        {/* The range it is measured from is the head's, above: said once, from the first frame. */}
         <span className="ml-auto">
           <Segmented
             label={t('work.review.layout')}
@@ -190,7 +190,7 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
           <p className="m-0 border-t border-line px-3 py-2 text-meta text-ink-faint">{truncated}</p>
         )}
 
-        {/* What the tree holds that no commit does (REVIEWDIRTY1): apart from the committed list and after it, through the same
+        {/* What the tree holds that no commit does: apart from the committed list and after it, through the same
             rows. Its marks are kept under their own keys, since a path can be committed and edited again. */}
         {uncommitted && uncommitted.files.length > 0 && (
           <section aria-label={t('work.review.uncommitted', { count: uncommitted.files.length })}>
@@ -225,7 +225,7 @@ export function ReviewFiles({ files, open, viewed, layout, onLayout, onToggle, o
   );
 }
 
-/** One placeholder's tone: static two-tone, never a shimmer (D41 §3), as `SkeletonRows` draws. */
+/** One placeholder's tone: static two-tone, never a shimmer, as `SkeletonRows` draws. */
 const BAR = 'block shrink-0 rounded-[4px] bg-accent-soft opacity-55';
 
 /** The paths' widths, so the rows read as a list of files rather than a block. */
@@ -235,7 +235,7 @@ const PATHS = ['62%', '48%', '74%', '40%', '56%'];
 const LINES = ['78%', '64%', '86%', '52%', '70%', '44%'];
 
 /**
- * What a review will hold, drawn before it holds it (REVIEW4): file rows with their mark, path and counts, and the
+ * What a review will hold, drawn before it holds it: file rows with their mark, path and counts, and the
  * first opened on a patch. For the eye alone; the words above it are what a reader hears.
  */
 export function ReviewSkeleton() {
@@ -266,7 +266,7 @@ export function ReviewSkeleton() {
 }
 
 /**
- * A first read on its way (REVIEW4, D41's loading rule): its words on the line the count will take — what it is
+ * A first read on its way: its words on the line the count will take — what it is
  * reading and, after a moment, for how long — and the files and the patch as a skeleton beneath. Never a spinner in
  * the middle of a blank pane.
  */
@@ -288,7 +288,7 @@ export function ReviewReading({ repository, since }: {
 
 /**
  * Each code the review's route refuses with (`TreesRoutes.cs`) and the bridge's own, with its glyph and whether
- * reading again can change it (REVIEW4). A record with no tree here, a tree gone with no landing, a record with no range
+ * reading again can change it. A record with no tree here, a tree gone with no landing, a record with no range
  * are facts a second read answers the same; git failing, a driver still starting and a wait that ran out are not.
  */
 export const REVIEW_REFUSALS = {
@@ -306,7 +306,7 @@ const isReviewRefusal = (code: unknown): code is ReviewRefusal =>
   typeof code === 'string' && Object.prototype.hasOwnProperty.call(REVIEW_REFUSALS, code);
 
 /**
- * Why there is no review, and what the person can do next (REVIEW4): what happened as a headline, why in the code's
+ * Why there is no review, and what the person can do next: what happened as a headline, why in the code's
  * own sentence (the catalogue's, so 中文 reads it too), and the next move — where the work is, what reads it instead, or
  * *Read again* where a second read can answer otherwise.
  *
@@ -317,7 +317,7 @@ const isReviewRefusal = (code: unknown): code is ReviewRefusal =>
  */
 export function ReviewFailed({ error, machine, onRetry, retrying = false }: {
   error: unknown;
-  /** The machine the session ran on, where the record says it was not this one. */
+  /** The machine the session ran on, where the record says it is not this one. */
   machine?: string | null;
   onRetry?: () => void;
   /** A read again is on its way. */

@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One pass's reads of D157's gates for the evaluation runtime (FABRIC-RUN1c, link 8's <see cref="NodeRuntimeLook.Gates"/>): a unit's work
+/// One pass's reads of the gates for the evaluation runtime (link 8's <see cref="NodeRuntimeLook.Gates"/>): a unit's work
 /// read as a landing door reads it (<see cref="SessionTreeGates.GateAsync"/>), at its newest session's tree here: a branch unit's newest executor,
 /// a quest unit's newest session serving it. The sessions are read once a pass, at the first unit asked. A unit with no such tree here (a
-/// teammate's work, a tree tidied), or a read that failed, reads nothing, and its nodes wait. FABRIC-CUTOVER1d (the cutover design §2.2): at the
+/// teammate's work, a tree tidied), or a read that failed, reads nothing, and its nodes wait. At the
 /// commit given, a run's branch at the tip its pass read, as a landing door judges at a commit it pins; else at that tree's <c>HEAD</c>.
 /// </summary>
 internal sealed class NodeGates(string home, ServiceClient service)
@@ -35,8 +35,8 @@ internal sealed class NodeGates(string home, ServiceClient service)
     }
 
     /// <summary>
-    /// What the line holds of a run's branch at <paramref name="tip"/> (LANDNODE1k), read in its newest session's tree as a landing door reads it:
-    /// the head's sentence where the line holds the work by content, and D88's proof. Null where that tree is not here or not at the tip.
+    /// What the line holds of a run's branch at <paramref name="tip"/>, read in its newest session's tree as a landing door reads it:
+    /// the head's sentence where the line holds the work by content, and the proof. Null where that tree is not here or not at the tip.
     /// </summary>
     public async Task<HoldContent?> ContentAsync(WorkUnit unit, string tip, CancellationToken ct)
     {

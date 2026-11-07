@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CLEANUP1 over real git: a landing whose branch the person deleted is marked missing by the look on git's own word and reads as the
+/// Over real git, a landing whose branch the person deleted is marked missing by the look on git's own word and reads as the
 /// person's end; one whose branch does not read is kept; a recovery ref past its retention goes only where a branch or a tag holds its
 /// commit, verified in the delete's own transaction, and one nothing else holds is kept.
 /// </summary>
@@ -107,7 +107,7 @@ public sealed class CleanupGitTests : LandedFixture
         Assert.Equal(LandedGone.Missing, Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch).GoneAs);
     }
 
-    /// <summary>🔴 A landing branch that does not read is not missing: its record stays as it was, and it never reads dropped.</summary>
+    /// <summary>A landing branch that does not read is not missing: its record stays unchanged, and it never reads dropped.</summary>
     [Fact]
     public async Task A_landing_whose_branch_does_not_read_is_kept_and_never_read_as_dropped()
     {
@@ -168,7 +168,7 @@ public sealed class CleanupGitTests : LandedFixture
 
         var trace = Assert.Single(new LandedBranches(Home).Entries(), each => each.Branch == landed.Branch);
         Assert.Equal((LandedGone.Moved, "feature/renamed", (string?)null), (trace.GoneAs, trace.MovedTo, trace.KeptOn));
-        // CLEANUP1b's guard: a branch of the person's is never the line, so no end is kept.
+        // A branch of the person's is never the line, so no end is kept.
         Assert.Null(trace.Held);
         var unit = Assert.Single(await MilestonesAsync(root), each => each.Entries.Any(entry => entry.Resource == landed.Branch));
         Assert.Equal(WorkEndState.NotEnded, unit.End.State);
@@ -268,7 +268,7 @@ public sealed class CleanupGitTests : LandedFixture
         Assert.Equal((LandedGone.Moved, "feature/HEAD"), (trace.GoneAs, trace.MovedTo));
     }
 
-    // ---- CLEANUP1b: a landing whose deleted branch's tip the line holds
+    // ---- A landing whose deleted branch's tip the line holds
 
     /// <summary>The person's line merges the landing branch with a merge commit, as a pull request merged so and pulled leaves it.</summary>
     private static Task MergeIntoLineAsync(string root, string branch) => GitAsync(root, "merge", "--no-ff", "--no-edit", branch);
@@ -277,7 +277,7 @@ public sealed class CleanupGitTests : LandedFixture
         Assert.Single(await MilestonesAsync(root), each => each.Entries.Any(entry => entry.Resource == branch));
 
     /// <summary>
-    /// 🔴 CLEANUP1b: a pull request merged with a merge commit and pulled, then the person deleted the landing branch. The line holds its
+    /// A pull request merged with a merge commit and pulled, then the person deletes the landing branch. The line holds its
     /// recorded tip, so the end judgement keeps the end as the look retires it: ended, its cleanup completed, never read as moved to the
     /// line, and no recovery ref, since the line holds its commits.
     /// </summary>
@@ -306,8 +306,8 @@ public sealed class CleanupGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 CLEANUP1b: what an earlier look wrote of such a landing is judged once: a trace from before CLEANUP1's field, and one CLEANUP1 read
-    /// as moved to the line while the line stands where it was found, each reads ended once the line is proved to hold its recorded tip.
+    /// What an earlier look wrote of such a landing is judged once: a trace from before the end field, and one read
+    /// as moved to the line while the line stands where it is found, each reads ended once the line is proved to hold its recorded tip.
     /// </summary>
     [Fact]
     public async Task A_trace_from_before_or_read_moved_to_the_line_is_judged_and_reads_ended()
@@ -339,7 +339,7 @@ public sealed class CleanupGitTests : LandedFixture
         }
     }
 
-    /// <summary>🔴 CLEANUP1b: the clean-up's press, which retires such a landing too, keeps its end the same way.</summary>
+    /// <summary>The clean-up's press, which retires such a landing too, keeps its end the same way.</summary>
     [Fact]
     public async Task The_clean_ups_press_reads_a_landing_the_line_merged_and_the_person_deleted_as_ended()
     {
@@ -361,8 +361,8 @@ public sealed class CleanupGitTests : LandedFixture
     }
 
     /// <summary>
-    /// CLEANUP1b's guard: a session branch is never the line, so a landing whose deleted branch's tip only another session branch holds
-    /// still reads as CLEANUP1 says: moved there, not ended, and no fact kept.
+    /// A session branch is never the line, so a landing whose deleted branch's tip only another session branch holds
+    /// still reads as moved there, not ended, and no fact kept.
     /// </summary>
     [Fact]
     public async Task A_landing_only_another_session_branch_holds_still_reads_moved_not_ended()
@@ -385,7 +385,7 @@ public sealed class CleanupGitTests : LandedFixture
         Assert.Equal(WorkEndState.NotEnded, (await UnitOfAsync(root, landed.Branch!)).End.State);
     }
 
-    // ---- CLEANUP1c: a squashed landing whose deleted branch's recorded commit reads on the line by content
+    // ---- A squashed landing whose deleted branch's recorded commit reads on the line by content
 
     /// <summary>
     /// The landing branch pushed, squash-merged on the platform and deleted there (<paramref name="then"/>: the line moving on after it),
@@ -415,7 +415,7 @@ public sealed class CleanupGitTests : LandedFixture
     }
 
     /// <summary>
-    /// 🔴 CLEANUP1c: the platform squash-merged the landing's pull request, and the person pulled and deleted its branch. No ancestry holds
+    /// The platform squash-merges the landing's pull request, and the person pulls and deletes its branch. No ancestry holds
     /// its recorded commit, but every file it changed reads on the line as it left them, so its end is kept by content as the look retires
     /// it: ended, its clean-up completed, and no recovery ref, since the line holds its work.
     /// </summary>
@@ -435,8 +435,8 @@ public sealed class CleanupGitTests : LandedFixture
     }
 
     /// <summary>
-    /// CLEANUP1c's guard: the line moved on after the squash and a file the landing changed reads otherwise there, so its content proof
-    /// does not hold. It still reads as CLEANUP1 says: dropped, its commit kept on a recovery ref first, and no end kept.
+    /// The line moves on after the squash and a file the landing changed reads otherwise there, so its content proof
+    /// does not hold. It still reads as dropped, its commit kept on a recovery ref first, and no end kept.
     /// </summary>
     [Fact]
     public async Task A_squashed_landing_whose_file_still_differs_on_the_line_reads_dropped_and_kept()
@@ -452,8 +452,8 @@ public sealed class CleanupGitTests : LandedFixture
     }
 
     /// <summary>
-    /// CLEANUP1c's guard: the recorded commit is no longer in the object store (git's own collection took it once nothing held it), so
-    /// no content proof can be read of it, and an unread proof never ends anything. It reads as CLEANUP1 says: missing, with nothing to keep.
+    /// The recorded commit is not in the object store (git's own collection took it once nothing held it), so
+    /// no content proof can be read of it, and an unread proof never ends anything. It reads as missing, with nothing to keep.
     /// </summary>
     [Fact]
     public async Task A_squashed_landing_whose_commit_git_collected_reads_as_cleanup1_says()
@@ -591,8 +591,8 @@ public sealed class CleanupGitTests : LandedFixture
     }
 
     /// <summary>
-    /// RECOVERYDATE1: a ref Daoris makes today for a 40-day-old commit the line holds counts its retention from when it was made, read from
-    /// the reflog it is written with, by either of its makes: kept today, and removed once 30 days have passed since it was made.
+    /// A ref Daoris makes today for a 40-day-old commit the line holds counts its retention from when it is made, read from
+    /// the reflog it is written with, by either of its makes: kept today, and removed once 30 days have passed since it is made.
     /// </summary>
     [Fact]
     public async Task A_recovery_ref_made_today_for_an_old_held_commit_is_kept_30_days_from_when_it_was_made()
@@ -644,7 +644,7 @@ public sealed class CleanupGitTests : LandedFixture
     }
 
     /// <summary>
-    /// CLEANUPADVICE1 over real git: a tree its session recorded that no branch record follows, holding an ignored file only it has, is
+    /// Over real git, a tree its session recorded that no branch record follows, holding an ignored file only it has, is
     /// said as kept with that file and the remove that takes it; one holding nothing the checkout lacks says what it said before.
     /// </summary>
     [Fact]

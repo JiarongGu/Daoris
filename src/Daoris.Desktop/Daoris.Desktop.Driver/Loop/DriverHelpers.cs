@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The helper session (MIXAGENT2a-ii, D163 point 2; the mixed agents design §3 and §5): a working session's <c>helper_ask</c> (or the
+/// The helper session: a working session's <c>helper_ask</c> (or the
 /// person's terminal verb) is answered by a read-only session on another agent, whose answer returns as the asker's next turn,
 /// marked as the helper's. The look reads the asks the connector and the person's door wrote, judges each (the person's rule, two
 /// at once per asker, the cap), chooses the agent, runs one turn in a clone of its own on the reviewer's machinery, and takes the
@@ -17,11 +17,11 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Delivery is the opinion's door</b> (<see cref="DeliverHelperAsync"/>): a word on the asker's record, through the local
 /// host, marked as the helper's; a quest asker that is running or parked takes it at its turn's end, never into a step in flight,
-/// and one that never goes on (a teammate's, stood down) is refused with its code. A conversation takes it as its next turn
-/// (MIXAGENT2a-iii): the shell's chat runner says it, or goes the ended one on with it.</para>
+/// and one that never goes on (a teammate's, stood down) is refused with its code. A conversation takes it as its next turn:
+/// the shell's chat runner says it, or goes the ended one on with it.</para>
 /// </remarks>
 /// <param name="driver">
-/// The driver whose run machinery a helper's pass goes through (PART10n, D166): the spawn's preparation, the connector, the rules
+/// The driver whose run machinery a helper's pass goes through: the spawn's preparation, the connector, the rules
 /// handed, the hold of the process and the account sayings, as <see cref="DriverOpinions"/> does. The front's <c>HelperPasses</c>,
 /// <c>HelperTrees</c> and <c>HelperChoices</c> write through to the context, and this class reads them at each use.
 /// </param>
@@ -34,7 +34,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     /// <summary>
     /// The asks for a helper on this machine, at a look: each judged and started, settled or delivered as the facts
     /// let it go, beside the look. Returns how many helpers this look starts, which take slots under the cap before any quest's
-    /// first start, as a second opinion's pass does (D130). Nothing is read where no ask is on file.
+    /// first start, as a second opinion's pass does. Nothing is read where no ask is on file.
     /// </summary>
     /// <param name="taken">The slots this look's second opinions already took.</param>
     public async Task<int> HelpersAsync(Snapshot snapshot, int taken, List<string> events, CancellationToken ct)
@@ -55,7 +55,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         var states = asks.ToDictionary(ask => ask.Id, ask => files.ReadState(ask.Id), StringComparer.Ordinal);
         var begun = 0;
         var begunFor = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        // The agents set up and signed in here, read once a look and only where an ask is judged (HELPERDEFAULT1).
+        // The agents set up and signed in here, read once a look and only where an ask is judged.
         IReadOnlyList<string>? setUp = null;
         foreach (var ask in asks)
         {
@@ -67,17 +67,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                     case HelperStates.Refused:
                         continue;
                     case HelperStates.Answered or HelperStates.Started when config.Draining:
-                        // DRAINHOLD1: a hand or a settling would go a conversation on in a turn the drain does not count; the answer is kept
+                        // A hand or a settling would go a conversation on in a turn the drain does not count; the answer is kept
                         // on file and handed at the first look that does not drain. A helper still running settles itself.
                         if (state.State == HelperStates.Answered) _context.DrainHolds(events, "helper", ask.Id, $"the answer to ask `{ask.Id}`");
                         continue;
                     case HelperStates.Answered:
-                        // HELPERWAIT1 (point 6): a hand held while its asker stands as it did then waits on its asker's move, which wakes a look,
+                        // A hand held while its asker stands as it did then waits on its asker's move, which wakes a look,
                         // and is not tried again at every look (200-480 ms each on the install, a record read whole).
                         if (state.Handed is null && !HeldStill(ask, snapshot))
                         {
                             var seen = Seen(snapshot, ask.Asker);
-                            // Codex's round-2 #1: a park the person answered goes on at this look's plan, so its helper's answer is handed
+                            // A park the person answered goes on at this look's plan, so its helper's answer is handed
                             // here, before the plan, never beside it, and both reach it in one prompt.
                             if (_context.Beside && seen is { } shown && shown.EndsWith("|answered", StringComparison.Ordinal))
                             {
@@ -97,17 +97,17 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                         await SettlingAsync(ask, events, token => SettleStartedAsync(ask, state, files, token), ct).ConfigureAwait(false);
                         continue;
                     case HelperStates.Cooling when !LeadWaits(snapshot, ask.Asker):
-                        // LIMITRESUME1h (D206 design §3.8): its asker no longer waits on it, so an answer after the reset would land in a turn
-                        // that no longer wants it. A cooling ask its asker still waits on is judged and run again below, as an approved one is.
+                        // Its asker does not wait on it, so an answer after the reset would land in a turn
+                        // that does not want it. A cooling ask its asker still waits on is judged and run again below, as an approved one is.
                         events.Add(_context.Said.Say(await RefuseAsync(
                             ask, HelperWhy.Limited, state!.Agent, files, ct,
                             note: HelperNotes.Limited(state.Agent ?? "another agent", state.Until, _context.Harnesses.Zone)).ConfigureAwait(false)));
                         continue;
                 }
 
-                // PARALLEL1g (D181 point 3): under the watch the asker's record is read as the `helper` topic's judge beside the look, once
+                // Under the watch the asker's record is read as the `helper` topic's judge beside the look, once
                 // per ask, since what the verdict reads of it never moves; an ask not judged yet begins nothing, and its judgment wakes the
-                // look that judges it. The verdict, its slot and its start stay here, before the plan, so a helper is counted as it was.
+                // look that judges it. The verdict, its slot and its start stay here, before the plan, so a helper is counted in the look.
                 PriorSession? record;
                 if (!_context.Beside)
                 {
@@ -124,7 +124,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                     }, ct);
                     continue;
                 }
-                // HELPERDEFAULT1 (D163's 2026-10-24 note): where neither the repository nor its workspace sets a rule, Daoris's own agents,
+                // Where neither the repository nor its workspace sets a rule, Daoris's own agents,
                 // those set up and signed in on this machine as its accounts say, are asked at once; the person's rule wins wherever set.
                 var rule = (record is { Repository: { } repository }
                     ? HelperRules.Resolve(config, repository, record.Workspace).Rule
@@ -137,13 +137,13 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 switch (verdict.Kind)
                 {
                     case HelperVerdict.RefuseKind:
-                        // The asker is told on its own session, or it has left and the refusal is news (NOTIFY2h2); an agent not set up
-                        // is named in it (HELPERDEFAULT1).
+                        // The asker is told on its own session, or it has left and the refusal is news; an agent not set up
+                        // is named in it.
                         events.Add(_context.Said.Say(await RefuseAsync(
                             ask, verdict.Code!, verdict.Code == HelperWhy.NotSetUp ? ask.Agent : null, files, ct).ConfigureAwait(false)));
                         break;
                     case HelperVerdict.WaitKind:
-                        // An agent's ask that comes to wait on the person's word is said once (MIXAGENT2c, D168): the line makes
+                        // An agent's ask that comes to wait on the person's word is said once: the line makes
                         // the loop's tick reach the windows, so the page reads what waits on the person again.
                         if (Wait(files, ask, state, verdict.Code) && verdict.Code is null)
                         {
@@ -152,7 +152,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
                         break;
                     case HelperVerdict.GoKind when config.Draining:
-                        // DRAINHOLD1: judged and left as it was, no state written and no slot taken; it goes at the first look that does not drain.
+                        // Judged and left as found, no state written and no slot taken; it goes at the first look that does not drain.
                         _context.DrainHolds(events, "helper", ask.Id, $"ask `{ask.Id}` from session `{ask.Asker}`");
                         break;
                     case HelperVerdict.GoKind when _context.Runs.TryOpinion(HelperClaim(ask.Id)):
@@ -175,11 +175,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         return begun;
     }
 
-    // ——— HELPERWAIT1 (D163's and D188's notes): a session waiting on its own helper is not waiting on the person.
+    // ——— A session waiting on its own helper is not waiting on the person.
 
     /// <summary>
-    /// Whether a driven session whose turn ends now, holding its quest as a park would, waits on its own helper instead (HELPERWAIT1, point
-    /// 1; <see cref="Observation.Conclude"/>'s <c>awaitsHelper</c>): its agent has an ask of its own still open, and its last turn asked
+    /// Whether a driven session whose turn ends now, holding its quest as a park would, waits on its own helper instead
+    /// (<see cref="Observation.Conclude"/>'s <c>awaitsHelper</c>): its agent has an ask of its own still open, and its last turn asked
     /// the person nothing, by <c>question_ask</c> since <paramref name="since"/> or by a go-ahead on its work's ask that still waits on
     /// them. A real question parks as before, whatever helper it asked too.
     /// </summary>
@@ -193,8 +193,8 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The look of <paramref name="session"/>'s own exchanges as the loop composes it (COMMS1d): the helper files, its question since
-    /// <paramref name="since"/> and the go-aheads on the ask its line is on, its entry's origin (COMMS1c). A source it cannot read is left
+    /// The look of <paramref name="session"/>'s own exchanges as the loop composes it: the helper files, its question since
+    /// <paramref name="since"/> and the go-aheads on the ask its line is on, its entry's origin. A source it cannot read is left
     /// null, which the read says as unread; the sources a park does not wait on here are not read.
     /// </summary>
     internal async Task<ExchangeLook> OwnLookAsync(string session, DateTimeOffset since, CancellationToken ct)
@@ -215,7 +215,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The ask <paramref name="session"/>'s line is on, its entry's origin (COMMS1c), and the go-aheads on it (HELPERWAIT1): none for a
+    /// The ask <paramref name="session"/>'s line is on, its entry's origin, and the go-aheads on it: none for a
     /// line on no ask or an ask the service does not hold; null go-aheads where the service did not answer, unread, so its caller parks
     /// as before rather than read a question as absent.
     /// </summary>
@@ -236,14 +236,14 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }
     }
 
-    // The hands held, by ask, with how the look's own list showed the asker when each was held (point 6), null where it showed none, and
-    // the state its record was read in, which a held hand is said once for.
+    // The hands held, by ask, with how the look's own list shows the asker as of each hold, null where it shows none, and
+    // the state its record is read in, which a held hand is said once for.
     private readonly object _heldGate = new();
     private readonly Dictionary<string, (string? Seen, string State)> _held = new(StringComparer.Ordinal);
 
     /// <summary>
     /// How the look shows <paramref name="asker"/>: its state and whether the person answered it, from the list of live sessions; else, for
-    /// one that ended, its state, when it last moved and how many words wait on it, from the records the look read (HELPERWAIT1); null where
+    /// one that ended, its state, when it last moved and how many words wait on it, from the records the look read; null where
     /// the look shows it neither way.
     /// </summary>
     private static string? Seen(Snapshot snapshot, string asker) =>
@@ -254,7 +254,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             : null;
 
     /// <summary>
-    /// Whether a hand held before is still held (point 6): its asker shows in the look's list as it did when the hand was held. A record
+    /// Whether a hand held before is still held: its asker shows in the look's list as it did at the hold. A record
     /// read whole tells nothing more until it moves, and its move wakes a look; an asker the list never showed is read again.
     /// </summary>
     private bool HeldStill(HelperAsk ask, Snapshot snapshot)
@@ -263,7 +263,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// A hand held (point 6): kept with how the list showed its asker, and said once for the state its record holds it in; a later look
+    /// A hand held: kept with how the list showed its asker, and said once for the state its record holds it in; a later look
     /// holds it again in silence until the asker moves.
     /// </summary>
     internal LookLine? Held(HelperAsk ask, PriorSession asker, string? seen)
@@ -281,7 +281,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// A hand the host refused (HELPERWAIT1): kept as a held hand is, said once for each refusal, and not asked again while the look shows its
+    /// A hand the host refused: kept as a held hand is, said once for each refusal, and not asked again while the look shows its
     /// asker as it did; a transient refusal is then asked again once the asker moves, as a held one is.
     /// </summary>
     internal LookLine? Unhanded(HelperAsk ask, string? seen, LookLine line)
@@ -297,10 +297,10 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// What a hand does on this machine once the word is kept on <paramref name="to"/> (design §3; COWORK1d; HELPERWAIT1b2): an urgent
+    /// What a hand does on this machine once the word is kept on <paramref name="to"/>: an urgent
     /// word held in a running asker's inbox for its next step, under the record's id; the asker's note; and for a conversation, the event
-    /// its runner hears (D137 §3.1), kept after the note so the turn it makes reads beneath it. Idempotent by the word's id, so the look
-    /// that reads back a hand whose answer was lost completes it, never twice: the inbox holds an id once, and a conversation already told
+    /// its runner hears, kept after the note so the turn it makes reads beneath it. Idempotent by the word's id, so the look
+    /// that reads back a hand whose answer is lost completes it, never twice: the inbox holds an id once, and a conversation already told
     /// of the word is not told again. True where the word reaches the run at its next step.
     /// </summary>
     internal bool Dispatch(HelperState state, PriorSession to, string? word, string composed, DrivenInbox? inbox, SessionEvents events)
@@ -312,7 +312,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             return false;
         }
 
-        // Held where the run takes it at its next step; one the inbox no longer takes stays on the record, which goes on with it once.
+        // Held where the run takes it at its next step; one the inbox does not take stays on the record, which goes on with it once.
         var atNextStep = inbox is not null && word is not null && inbox.HoldKept(
             new ChatMessage(composed, [])
             {
@@ -337,7 +337,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         return atNextStep;
     }
 
-    /// <summary>The asker's inbox an urgent ask's word reaches at its next step (COWORK1d), or null where it reaches the turn's end.</summary>
+    /// <summary>The asker's inbox an urgent ask's word reaches at its next step, or null where it reaches the turn's end.</summary>
     internal DrivenInbox? NextStepInbox(HelperAsk ask, PriorSession to) =>
         ask.Urgent && to.Kind != "chat" && to.Running && _context.Processes.InboxOf(to.Session) is { } inbox
         && inbox.ReachAt(MessageLevel.Urgent) == DrivenReach.NextStep
@@ -362,19 +362,19 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     private readonly Dictionary<string, string> _backFailed = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// The sessions that waited on their own helper and have none of their own asks open any more (HELPERWAIT1, point 4): every helper
+    /// The sessions that waited on their own helper and have none of their own asks open any more: every helper
     /// ended with no answer (refused, gone, unreadable, the person's no, past its bound), so each is brought back to the person as its
     /// turn's end would have parked it, the reason first. Read from the look's records in memory. Only while its quest is still taken: a
     /// quest closed meanwhile holds no park.
     /// </summary>
     /// <remarks>
-    /// <b>A failed move is tried again at every look, and said once</b> (Codex's round-2 #5 on COWORKUX1): nothing else moves the record,
+    /// <b>A failed move is tried again at every look, and said once</b>: nothing else moves the record,
     /// so waiting for it to move would hold the lead for good. A service that could not be reached is said as a retry; one that refused the
     /// move (a service from before it, a tree another holds) is said to the person as a wait, since the session is theirs until it moves.
     /// One post a look, for a record in this rare state alone.
-    /// <para><b>A refusal is kept on file</b> (HELPERWAIT1c; the co-worker design §5 point 4, §12 row 11): the record stays
+    /// <para><b>A refusal is kept on file</b>: the record stays
     /// <c>completed</c>, so no park row says it, and its <see cref="HelperBack"/> is what <i>What needs you</i> says it from, with the
-    /// service's words, from the first refusal. An unreachable service keeps none and leaves one kept as it was: nothing new was said. It
+    /// service's words, from the first refusal. An unreachable service keeps none and leaves one kept as it stands: nothing new is said. It
     /// goes once the move lands, and at the first look the session is no longer brought back: its quest closed, an ask of its own open
     /// again, words waiting on it, or no longer waiting at all.</para>
     /// </remarks>
@@ -403,7 +403,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
             catch (Exception error) when (error is HttpRequestException or DriverException or JsonException
                                               || (error is OperationCanceledException && !ct.IsCancellationRequested))
             {
-                // Classed where it is made (NOTIFY2h2's census): a refusal is the person's to look at, an unreachable service a retry.
+                // Classed where it is made: a refusal is the person's to look at, an unreachable service a retry.
                 var line = error is DriverException
                     ? Helper(LookClass.Wait, $"helper  session {record.Session} waited on its own helper, which ended with no answer; the service refused bringing it back to the person, so it is yours to look at: {error.Message}")
                     : Helper(LookClass.Retry, $"helper  session {record.Session} waited on its own helper, which ended with no answer, and could not be brought back to the person yet; it is tried again at the next look: {error.Message}");
@@ -427,7 +427,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// Whether a driven session of this machine's waits on its own helpers now (LIMITRESUME1h, D206 design §3.8; HELPERWAIT1): it ended its
+    /// Whether a driven session of this machine's waits on its own helpers now: it ended its
     /// turn waiting on them, by the look's records, and its quest is still taken, as <see cref="BackToPersonAsync"/> reads it.
     /// </summary>
     private static bool LeadWaits(Snapshot snapshot, string asker) =>
@@ -436,7 +436,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                                                                               && string.Equals(quest.Id, record.Quest, StringComparison.OrdinalIgnoreCase)));
 
     /// <summary>
-    /// Whether the asker has no turn in flight (COAGENT1a, D199 point 5): its work in progress is captured only then. Whether it
+    /// Whether the asker has no turn in flight: its work in progress is captured only then. Whether it
     /// runs is this look's list of active sessions under the watch, where the asker's record is read once per ask, and its record
     /// otherwise; a running one is between turns where its newest turn has ended (<see cref="SessionEvents.TurnEnded"/>).
     /// </summary>
@@ -449,13 +449,13 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         return !running || _context.Events.TurnEnded(asker);
     }
 
-    /// <summary>How many asks for a helper are judged at once beside the looks (PARALLEL1g; a topic bounded, the events design §A3).</summary>
+    /// <summary>How many asks for a helper are judged at once beside the looks (a topic bounded).</summary>
     internal const int HelpersAtOnce = 2;
 
     /// <summary>
     /// An answered ask handed to its asker, or a started one a restart left settled (<paramref name="settle"/>), once at a time per ask
-    /// under its claim: under the watch as the <c>helper</c> topic's judge beside the look (PARALLEL1g), its line joining a later report,
-    /// so an asker's record or a helpers' door slow to answer holds no start; in the look otherwise, as before.
+    /// under its claim: under the watch as the <c>helper</c> topic's judge beside the look, its line joining a later report,
+    /// so an asker's record or a helpers' door slow to answer holds no start; in the look otherwise.
     /// </summary>
     private async Task SettlingAsync(HelperAsk ask, List<string> events, Func<CancellationToken, Task<LookLine?>> settle, CancellationToken ct)
     {
@@ -482,7 +482,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// One ask judged as the <c>helper</c> topic's judge beside the look (PARALLEL1g): one judgement per ask, <see cref="HelpersAtOnce"/> at a
+    /// One ask judged as the <c>helper</c> topic's judge beside the look: one judgement per ask, <see cref="HelpersAtOnce"/> at a
     /// time, timed as work beside the look, and what stops it said as the look would have said it.
     /// </summary>
     private void Judging(string ask, Func<CancellationToken, Task<IReadOnlyList<string>>> judge, CancellationToken ct) =>
@@ -505,14 +505,14 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
         }, ct);
 
     // The asker's tree is read with git, unless a test hands in a stand-in (the context's HelperTrees), since a real read spawns git,
-    // which the suite's fast half may not (MOD8); a helper's agent is chosen by HelperChoice.ChooseAsync, whose account walk reads this
+    // which the suite's fast half may not; a helper's agent is chosen by HelperChoice.ChooseAsync, whose account walk reads this
     // machine's installs and sign-ins, unless a test hands in a choice (the context's HelperChoices).
     internal async Task<(string? Tip, string? Root)> ReadTreeAsync(string tree, CancellationToken ct) =>
         _context.HelperTrees is { } read
             ? await read(tree, ct).ConfigureAwait(false)
             : (await ReviewGit.HeadAsync(tree, ct).ConfigureAwait(false), await TreeGates.CheckoutOfTreeAsync(tree, ct).ConfigureAwait(false));
 
-    // The asker's work in progress is captured with git and its files (COAGENT1a), unless a test hands in a stand-in (the context's
+    // The asker's work in progress is captured with git and its files, unless a test hands in a stand-in (the context's
     // HelperCaptures), for the same reason.
     internal Task<HelperCaptureRead> CaptureAsync(string tree, CancellationToken ct) =>
         _context.HelperCaptures is { } capture ? capture(tree, ct) : HelperCapture.TakeAsync(tree, git: null, ct);
@@ -546,12 +546,12 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
     /// <summary>
     /// An ask held: <c>waiting</c>, with why it waits where it waits for something but the person's yes. Written when it changes;
-    /// whether it was written. An <c>approved</c> ask is left as it is (HELPERYES1, D163 point 3): the person's yes outlives a full
+    /// true where it wrote. An <c>approved</c> ask is left as it is: the person's yes outlives a full
     /// cap or an agent not ready, and the next look starts it once a slot frees, without a second yes.
     /// </summary>
     internal static bool Wait(HelperFiles files, HelperAsk ask, HelperState? state, string? code)
     {
-        // A cooling ask keeps its state and its reset while it waits for a slot or an account (LIMITRESUME1h), as an approved one keeps its yes.
+        // A cooling ask keeps its state and its reset while it waits for a slot or an account, as an approved one keeps its yes.
         if (state is { State: HelperStates.Approved or HelperStates.Cooling }) return false;
         if (state is { State: HelperStates.Waiting } kept && kept.Code == code) return false;
         files.WriteState(new HelperState(ask.Id, HelperStates.Waiting, code, null, DateTimeOffset.UtcNow));
@@ -560,11 +560,11 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
 
     /// <summary>
     /// An ask refused: its state <c>refused</c> with the code, and a coded line on the asker's record saying the agent (where one
-    /// was chosen) and why. Never an account's name or a path. Its line is the log's, the asker told; an asker that has left is told
-    /// nothing, so the refusal is news (NOTIFY2h2).
+    /// is chosen) and why. Never an account's name or a path. Its line is the log's, the asker told; an asker that has left is told
+    /// nothing, so the refusal is news.
     /// </summary>
     /// <param name="detail">What refused it beyond its code, for the log's line alone (a capture's path): never the notes'.</param>
-    /// <param name="note">The asker's line where its code says more than <see cref="HelperNotes.Refused"/> does (LIMITRESUME1h's reset).</param>
+    /// <param name="note">The asker's line where its code says more than <see cref="HelperNotes.Refused"/> does, as a limit's reset does.</param>
     internal Task<LookLine> RefuseAsync(
         HelperAsk ask, string code, string? agent, HelperFiles files, CancellationToken ct, string? detail = null, Noted? note = null)
     {
@@ -589,7 +589,7 @@ internal sealed class DriverHelpers(LoopContext context, Driver driver)
                 : new LookClassed(LookClass.Progress, "helper")));
     }
 
-    /// <summary>A helper's line, classed where it is made (NOTIFY2h2).</summary>
+    /// <summary>A helper's line, classed where it is made.</summary>
     internal static LookLine Helper(LookClass @class, string line) => new(line, new LookClassed(@class, "helper"));
 
     private HelperSettling Settling => new(this, _context);

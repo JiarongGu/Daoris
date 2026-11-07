@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SUPERVISOR1a-i (D208; the supervisor design §3.4, §3.6, §6.1, §6.3, §11 row 1a-i): the supervisor's decisions, live in memory. Each
+/// The supervisor's decisions, live in memory. Each
 /// refusal; the idempotent retry; <c>answered</c> and <c>overruled</c> sticking; the release in one conditional step owning its word by
 /// its receipt, a lost response recovered under it; an admitted decision's files rewritten, and forged files, never handed nor read; a
-/// restart closing every decision; a second park and a restart keeping the history, granting nothing; every move not in §3.6 refused.
-/// Inert in production: the admission the door will answer refuses every act until 1a-ii.
+/// restart closing every decision; a second park and a restart keeping the history, granting nothing; every other move refused.
+/// Inert in production: the admission the door will answer refuses every act.
 /// </summary>
 public sealed class SupervisorDecisionTests : IDisposable
 {
@@ -29,7 +29,7 @@ public sealed class SupervisorDecisionTests : IDisposable
     {
         public string? Generation { get; set; } = "g-1";
 
-        /// <summary>The overrule window the appointment set (SUPERVISOR1e); null sets none.</summary>
+        /// <summary>The overrule window the appointment set; null sets none.</summary>
         public TimeSpan? Window { get; set; }
 
         public DecisionAdmitted Admit(string repository) =>
@@ -64,7 +64,7 @@ public sealed class SupervisorDecisionTests : IDisposable
         public List<string> TakenBack { get; } = [];
         public bool LoseNext { get; set; }
 
-        /// <summary>A refusal the service's step makes from what it reads itself (a question marked the owner's since, SUPERVISOR1b).</summary>
+        /// <summary>A refusal the service's step makes from what it reads itself (a question marked the owner's since).</summary>
         public string? Refuse { get; set; }
 
         public int Says { get; private set; }
@@ -438,7 +438,7 @@ public sealed class SupervisorDecisionTests : IDisposable
     }
 
     /// <summary>
-    /// SUPERVISOR1e (§6.3, §12): the overrule window is the one the effective appointment set, 1 to 60 minutes: a decision kept under a
+    /// The overrule window is the one the effective appointment set, 1 to 60 minutes: a decision kept under a
     /// twelve-minute appointment is held past row 1's five and released at twelve, its file saying so; a window outside the bounds,
     /// 0 among them, is never taken, and five holds.
     /// </summary>
@@ -521,8 +521,8 @@ public sealed class SupervisorDecisionTests : IDisposable
     }
 
     /// <summary>
-    /// SUPERVISOR1b (§3.1, §4.1, §4.3): a question carrying the agent's <c>owner</c> mark, a mark this build does not know included, is
-    /// refused <c>owner-question</c> at the keeping; a line at D188's bound is refused <c>supervisor-bound</c>, so a decision is never
+    /// A question carrying the agent's <c>owner</c> mark, a mark this build does not know included, is
+    /// refused <c>owner-question</c> at the keeping; a line at the bound is refused <c>supervisor-bound</c>, so a decision is never
     /// kept only to be held behind it. Nothing kept, nothing on file.
     /// </summary>
     [Fact]
@@ -540,8 +540,8 @@ public sealed class SupervisorDecisionTests : IDisposable
     }
 
     /// <summary>
-    /// SUPERVISOR1b: both are checked again at the release, under the decision's lock, so a question marked the owner's after its
-    /// decision was kept (the service's step reads the file and refuses <c>owner-question</c>), or a line that reached the bound since,
+    /// Both are checked again at the release, under the decision's lock, so a question marked the owner's after its
+    /// decision is kept (the service's step reads the file and refuses <c>owner-question</c>), or a line that reached the bound since,
     /// is never answered by the supervisor: the decision goes <c>stale</c> with the check that failed, no word is kept, the bound's
     /// before the say is called at all, and the question is the owner's from then on. The look hands its bound to the release.
     /// </summary>
@@ -581,7 +581,7 @@ public sealed class SupervisorDecisionTests : IDisposable
         Assert.Equal(SupervisorWhy.SupervisorBound, looked.LiveOf(Session).Single().Why);
         Assert.Equal(0, said.Says);
 
-        // CONTEXTDRIVE1e: another rule holding the line at the release moves it stale with its own code.
+        // Another rule holding the line at the release moves it stale with its own code.
         var ruled = Decisions();
         await ruled.KeepAsync(Answer(), Park(), Kept);
         await ruled.ReleaseAsync(Session, said.Say, Kept.AddMinutes(5), bound: (_, _) => Task.FromResult<string?>(SupervisorWhy.RuleHolds));
@@ -589,7 +589,7 @@ public sealed class SupervisorDecisionTests : IDisposable
     }
 
     /// <summary>
-    /// SUPERVISOR1b (§3.1 <c>SUPERVISOR_DEFER</c>, §3.6 <c>left</c>, §4.2): a defer keeps a decision of state <c>left</c> with its bound
+    /// A defer keeps a decision of state <c>left</c> with its bound
     /// and reasons, final at once: nothing held, nothing released, no word, the park still a wait on the owner. A retry of the same defer
     /// answers the same decision; an answer on the question after it is <c>answered</c>; its refusals keep nothing.
     /// </summary>
@@ -663,7 +663,7 @@ public sealed class SupervisorDecisionTests : IDisposable
     }
 
     /// <summary>
-    /// CONTEXTDRIVE1i (the context-counters design §5): a reason may cite a count the holder was handed; one naming none of the counts the
+    /// A reason may cite a count the holder received; one naming none of the counts the
     /// keeping read, or cited where none were read, is refused <c>no-source</c> for an answer and a defer, keeping nothing.
     /// </summary>
     [Fact]
@@ -690,7 +690,7 @@ public sealed class SupervisorDecisionTests : IDisposable
         Assert.True((await Decisions().LeaveAsync(Defer(source: "count:moves (unknown)"), handed, Kept)).Kept);
     }
 
-    /// <summary>CONTEXTDRIVE1i (§5): the decision keeps the counts its holder was handed beside the question's snapshot, written once.</summary>
+    /// <summary>The decision keeps the counts its holder received beside the question's snapshot, written once.</summary>
     [Fact]
     public async Task CONTEXTDRIVE1i_the_decision_keeps_the_counts_it_was_handed()
     {

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// WORKFLOW1c (the workflow design §7): the session's side bar gains a view of its own, *Workflow*, beside the timeline and the
+// The session's side bar has a view of its own, *Workflow*, beside the timeline and the
 // review: the attended session's run, asked of the driver only while the view shows, with *this session* on its own step. The Work
 // frame as a page over a mocked bridge, as the rest of its suite runs.
 
@@ -39,7 +39,7 @@ const asked = () => invoke.mock.calls.filter(([module, route]) => module === 'DA
 describe("the session's Workflow view", () => {
   beforeEach(() => {
     RUN = answerOf(WORKING);
-    // The side bar open, as a viewer who opened it once keeps it (UX5 U7).
+    // The side bar open, as a viewer who opened it once keeps it.
     window.localStorage.setItem('daoris.dockClosed', '0');
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
@@ -123,7 +123,7 @@ describe("the session's Workflow view", () => {
     );
 
     const side = await screen.findByRole('complementary', { name: 'right side bar' });
-    // The session attended, its head drawn, the side bar on the timeline it opens on (FRAME6).
+    // The session attended, its head drawn, the side bar on the timeline it opens on.
     await screen.findByRole('heading', { level: 1 });
     expect(within(side).getByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
     act(() => ask('workflow'));
@@ -135,7 +135,7 @@ describe("the session's Workflow view", () => {
     expect(look).toHaveAttribute('aria-current', 'step');
   });
 
-  // FABRIC-CUTOVER1f: a graph run's go-ahead nobody raised is passed over from the view, the press the driver's `WORKFLOW_NODE`.
+  // A graph run's go-ahead nobody raised is passed over from the view, the press the driver's `WORKFLOW_NODE`.
   it("passes a graph run's go-ahead over from the view, with the person's words, through the driver's press", async () => {
     RUN = answerOf(GRAPH_RUN_GO_AHEAD);
     const previous = invoke.getMockImplementation()!;

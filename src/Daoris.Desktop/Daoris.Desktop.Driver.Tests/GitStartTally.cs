@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The git a flow of the product starts while open (OPTIMIZE1a), each with the folder it ran in, through the process gate's stand-in
+/// The git a flow of the product starts while open, each with the folder it ran in, through the process gate's stand-in
 /// (<see cref="ProcessStarts.Within"/>): what a view, an offer or a landing asks of git, as the person's machine would start it. The
 /// test's own git starts outside the gate and is never counted.
 /// </summary>

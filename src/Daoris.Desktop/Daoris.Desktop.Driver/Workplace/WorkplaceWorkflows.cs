@@ -31,11 +31,11 @@ internal interface IWorkplaceWorkflows
     /// <summary>The press's view of a chat run's record: its line's ids, oldest first, and whether it is live (see <c>ChatRuns.PressOf</c>).</summary>
     (IReadOnlyList<string> Line, bool Live) ChatPressOf(string session, string recordsJson);
 
-    /// <summary>The quest whose work a record continues though its own is none (CHATFLOW1i; see <c>ChatRuns.TakenOf</c>).</summary>
+    /// <summary>The quest whose work a record continues though its own is none (see <c>ChatRuns.TakenOf</c>).</summary>
     string? TakenOf(string session, string recordsJson);
 
     /// <summary>
-    /// A press's candidate on a graph-bound chat run (CHATFLOW1f; see <c>ChatCandidates.Submit</c>): submitted at <paramref name="tip"/>, the run's
+    /// A press's candidate on a graph-bound chat run (see <c>ChatCandidates.Submit</c>): submitted at <paramref name="tip"/>, the run's
     /// binding read first, and none for a run bound to anything else or held by a problem.
     /// </summary>
     void SubmitChatCandidate(string home, string run, string repository, string? workspace, string branch, string tip, DateTimeOffset at, Func<string, bool> landed);
@@ -47,7 +47,7 @@ internal interface IWorkplaceWorkflows
     string? SkippedLook(string home, string run, string? node);
 
     /// <summary>
-    /// The person's Accept kept as the review's word of <paramref name="process"/>'s run (WORKFLOWCLEAN1 1c), where its graph holds a review
+    /// The person's Accept kept as the review's word of <paramref name="process"/>'s run, where its graph holds a review
     /// (see <c>RunNodeWords.Word</c>); a process whose graph holds none, or that is no run's, answers <see cref="ReviewWord.HasReview"/> false.
     /// </summary>
     /// <param name="words">What the word carries: for a head's combined Accept, the operation bringing sessions together it delivers.</param>
@@ -64,7 +64,7 @@ internal interface IWorkplaceWorkflows
 
     /// <summary>
     /// Whether work in <paramref name="repository"/> follows a saved workflow (a version of the person's own or the home's default), not
-    /// Current (WORKFLOWCLEAN1 1c, the cleanup design §2.4): its landing is that workflow's, which the access setup's pauses do not compose into.
+    /// Current: its landing is that workflow's, which the access setup's pauses do not compose into.
     /// </summary>
     bool FollowsSaved(DriverConfig config, string repository, string? workspace);
 
@@ -72,7 +72,7 @@ internal interface IWorkplaceWorkflows
     PlaceIntegrate IntegrateOf(string home, DriverConfig config, string repository, string? workspace);
 }
 
-/// <summary>What keeping the person's Accept as a run's review word came to (WORKFLOWCLEAN1 1c).</summary>
+/// <summary>What keeping the person's Accept as a run's review word came to.</summary>
 /// <param name="HasReview">Whether the run's graph holds a review, so a word was to be kept; false lands by itself.</param>
 /// <param name="Kept">Whether the word is on the run's record: kept now, or kept already and not applied yet.</param>
 /// <param name="Unit">The run's own unit, whose record holds the review.</param>

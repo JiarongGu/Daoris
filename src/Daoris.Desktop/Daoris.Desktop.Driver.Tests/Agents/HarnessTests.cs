@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The toolchain (D49 §4): which harnesses this machine has, and which ACCOUNT a session runs as.
+/// The toolchain: which harnesses this machine has, and which ACCOUNT a session runs as.
 ///
 /// <para>The whole of it rests on one sentence from the design: <b>Daoris manages directories and
 /// names, and a sign-in stays the tool's</b> (an API key a person gives is the one secret Daoris
-/// keeps, D67 §1 — <c>ApiKeyAccountTests</c>). A profile is a directory Daoris owns the location of; the credential
+/// keeps — <c>ApiKeyAccountTests</c>). A profile is a directory Daoris owns the location of; the credential
 /// inside it belongs to the harness's own store, under the user's OS account, exactly where it lives
 /// today. Nothing here reads, copies, or moves one — and the tests below are written to fail if
 /// anything ever starts to.</para>
@@ -24,7 +24,7 @@ public sealed class HarnessSettingsTests : IDisposable
         if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
     }
 
-    /// <summary>A machine that has never named a profile runs exactly as it did before (D21).</summary>
+    /// <summary>A machine that has never named a profile runs exactly as an unmanaged machine does.</summary>
     [Fact]
     public void A_missing_file_is_a_machine_that_named_no_profiles()
     {
@@ -95,7 +95,7 @@ public sealed class HarnessSettingsTests : IDisposable
         Assert.Equal(["personal", "work"], HarnessSettings.Profiles(_home, "claude-code"));
         Assert.Equal(["work"], HarnessSettings.Profiles(_home, "codex"));
 
-        // HELPSTUCK1: a lock's folder beside the accounts (a lockfile library locks a folder by making `<folder>.lock` beside it)
+        // A lock's folder beside the accounts (a lockfile library locks a folder by making `<folder>.lock` beside it)
         // and a hidden one are no account, whatever they hold; they are named as strays instead. The CLI's `profiles` test
         // holds the same rows.
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "claude-code", "work") + ".lock");
@@ -108,10 +108,10 @@ public sealed class HarnessSettingsTests : IDisposable
     }
 
     /// <summary>
-    /// An account made by signing in (D66 §3) is made before anyone knows whose it is, so it takes a fresh id (ACCT2) —
-    /// twin rule 5, and the CLI's <c>login --new</c> draws the same way. It no longer takes the first free
-    /// <c>account-N</c>: removing <c>account-2</c> left <c>account-1</c> and <c>account-3</c>, and the next account made would
-    /// have taken a removed one's name, its readings and its usage. Who signed in is offered as its name, never its folder's.
+    /// An account made by signing in is made before anyone knows whose it is, so it takes a fresh id —
+    /// twin rule 5, and the CLI's <c>login --new</c> draws the same way. It does not take the first free
+    /// <c>account-N</c>: with <c>account-1</c> and <c>account-3</c> left after removing <c>account-2</c>, the next account made would
+    /// take a removed one's name, its readings and its usage. Who signed in is offered as its name, never its folder's.
     /// </summary>
     [Fact]
     public void A_new_account_takes_a_fresh_id_and_never_a_removed_one_s_name()
@@ -127,7 +127,7 @@ public sealed class HarnessSettingsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Removing an account deletes its directory, credentials and all (D66 §3) — and a tool that
+    /// 🔴 Removing an account deletes its directory, credentials and all — and a tool that
     /// clones into its home leaves READ-ONLY files there, which a plain recursive delete refuses on
     /// Windows. The account the person removed must not survive on disk because of an attribute.
     /// </summary>
@@ -170,7 +170,7 @@ public sealed class HarnessSettingsTests : IDisposable
         Assert.True(File.Exists(outside));
     }
 
-    /// <summary>The file is the API and this is an editor over it (D50) — written, read back, unchanged.</summary>
+    /// <summary>The file is the API and this is an editor over it — written, read back, unchanged.</summary>
     [Fact]
     public void The_defaults_round_trip_through_the_file()
     {
@@ -186,7 +186,7 @@ public sealed class HarnessSettingsTests : IDisposable
     }
 
     /// <summary>
-    /// Twin rule 4 (TOOL2/D57): the binary is the explicit command, then the managed pin, then
+    /// Twin rule 4: the binary is the explicit command, then the managed pin, then
     /// <c>PATH</c> — and the pin resolves by exactly the rule a profile does.
     /// </summary>
     [Fact]
@@ -205,7 +205,7 @@ public sealed class HarnessSettingsTests : IDisposable
 
     /// <summary>
     /// 🔴 The rule that must never regress, and the twin of "no profile means the harness's own
-    /// home": nothing pinned means whatever the machine has on <c>PATH</c> (D48 §2a).
+    /// home": nothing pinned means whatever the machine has on <c>PATH</c>.
     /// </summary>
     [Fact]
     public void Nothing_pinned_means_whatever_the_machine_has()
@@ -313,9 +313,9 @@ public sealed class HarnessSettingsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 REV3 CLEAN1 — the driver's half of CLI F4. Read as empty is right for DRIVING; an EDIT made
-    /// over that empty read wrote it back, and every default, workspace choice and pin the person had
-    /// in the file was gone. The CLI refuses the same edit, and so does this.
+    /// Read as empty is right for DRIVING; an EDIT made
+    /// over that empty read would write it back and lose every default, workspace choice and pin the person had
+    /// in the file. The CLI refuses the same edit, and so does this.
     /// </summary>
     [Fact]
     public void An_edit_over_wiring_that_could_not_be_read_is_refused_and_the_file_is_kept()
@@ -333,7 +333,7 @@ public sealed class HarnessSettingsTests : IDisposable
 }
 
 /// <summary>
-/// The probe (D49 §4): locate, version, and per-profile login state — <b>run, never assumed.</b>
+/// The probe: locate, version, and per-profile login state — <b>run, never assumed.</b>
 /// </summary>
 /// <remarks>
 /// Driven against a fake binary, which is the only way this is gate-testable: install, update and
@@ -414,10 +414,10 @@ public sealed class HarnessProbeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 POOL1a3 (D197 point 3; Fable's F2): the tool's own configuration home is the person's own sign-in, and the probe never
-    /// asks it. Asked with the seam unset, the tool answered for it, and could refresh the person's token beside their own
+    /// The tool's own configuration home is the person's own sign-in, and the probe never
+    /// asks it. Asked with the seam unset, the tool answers for it, and could refresh the person's token beside their own
     /// terminal's to do so. Every login question runs with the seam set to an account's folder under the home; the version is a
-    /// question of the binary alone. The own sign-in keeps the word a report before said, or unknown.
+    /// question of the binary alone. The own sign-in keeps the word a report said before, or unknown.
     /// </summary>
     [Fact]
     public async Task The_tool_s_own_home_is_never_asked_and_every_login_question_runs_in_an_account_s_home()
@@ -504,7 +504,7 @@ public sealed class HarnessProbeTests : IDisposable
 
     /// <summary>
     /// A harness whose answer this build does not recognise leaves the state UNKNOWN — and unknown is
-    /// permissive at spawn. The same judgement WSP4 made about an undeclared canonical line: refusing
+    /// permissive at spawn. The same judgement applies to an undeclared canonical line: refusing
     /// on an answer nobody can read would silence a working tool over a reworded sentence.
     /// </summary>
     [Fact]
@@ -569,8 +569,8 @@ public sealed class HarnessProbeTests : IDisposable
         + $"|{report.Version}|{report.Problem}|{report.OwnLogin}|{report.OwnAccount}|{report.OwnOrg}|{report.OwnPlan}";
 
     /// <summary>
-    /// 🔴 <b>Who is signed in, its organisation and its plan, and nothing else</b> (D66 §3, ACCOUNTID1). The owner asked
-    /// for an account to be named by who signed in rather than by a name typed before anyone knew — so the probe takes the
+    /// 🔴 <b>Who is signed in, its organisation and its plan, and nothing else</b>. An account is named by who signed in
+    /// rather than by a name typed before anyone knew — so the probe takes the
     /// name the tool gives, when its toolchain asks for it and the answer is yes; and since one email may sign in to two
     /// organisations, the organisation and the plan beside it, read the same way and kept nowhere. Nothing else is taken.
     /// </summary>
@@ -591,7 +591,7 @@ public sealed class HarnessProbeTests : IDisposable
     }
 
     /// <summary>
-    /// ACCOUNTID1: one email signed in to two organisations is two accounts, each listed with its own organisation; where
+    /// One email signed in to two organisations is two accounts, each listed with its own organisation; where
     /// the answer names none (an older CLI, a key, a stand-in answering the boolean), none is shown, never another's.
     /// </summary>
     [Fact]
@@ -648,7 +648,7 @@ public sealed class HarnessProbeTests : IDisposable
         Assert.Equal(LoginState.In, report.Profiles.Single().Login);
         Assert.Null(report.Profiles.Single().Account);
         Assert.DoesNotContain("example.invalid", Everything(report));
-        // Nor an organisation or a plan it did not ask for (ACCOUNTID1).
+        // Nor an organisation or a plan it did not ask for.
         Assert.DoesNotContain("Org A", Everything(report));
         Assert.DoesNotContain("max", Everything(report));
     }
@@ -741,7 +741,7 @@ public sealed class HarnessProbeTests : IDisposable
 }
 
 /// <summary>
-/// The judgement half (D49 §4): may this spawn happen, and as which account? <b>One implementation
+/// The judgement half: may this spawn happen, and as which account? <b>One implementation
 /// for both doors</b> — the driven loop and a conversation ask the same question of the same object,
 /// because two copies of "may this start" drift and the drift is invisible.
 /// </summary>
@@ -778,7 +778,7 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <param name="ownHome">
-    /// A test double whose own home is nobody's (<see cref="TestAgent.RunsInOwnHome"/>, OWNSPACE1a): the version, the pin
+    /// A test double whose own home is nobody's (<see cref="TestAgent.RunsInOwnHome"/>): the version, the pin
     /// and the default are this class's subjects, so a start that names no account runs there; false is a real agent's.
     /// </param>
     private TestAgent Toolchain(string script, bool ownHome = true) => new(
@@ -792,7 +792,7 @@ public sealed class HarnessSelectionTests : IDisposable
     private static DriverConfig Config() => DriverConfig.Empty with { Actors = StaffedRoles.On("fake") };
 
     /// <summary>
-    /// OWNSPACE1a (D175 point 2, amending D48 §2a's own home): with no account named and no Daoris account, a real agent's start
+    /// With no account named and no Daoris account, a real agent's start
     /// waits for a sign-in and the spawn never reaches the person's own home; with a Daoris account signed in, it runs there,
     /// its home in the environment seam.
     /// </summary>
@@ -818,7 +818,7 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 <b>The additive case for the toolchain</b> (TOOL2/D57), and the twin of the one above.
+    /// 🔴 <b>The additive case for the toolchain</b>, and the twin of the one above.
     /// Nothing pinned means the spawn runs whatever is on <c>PATH</c> — the selection names no
     /// binary at all, so nothing overrides what the adapter built.
     /// </summary>
@@ -905,7 +905,7 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The ACP adapter's <b>executable seam</b> (ACP2, §1a): a protocol-door spawn is told which
+    /// 🔴 The ACP adapter's <b>executable seam</b>: a protocol-door spawn is told which
     /// `claude` to run, read from the <b>pipe door's</b> pin — because the CLI and the account belong
     /// to `claude-code`, and the ACP adapter is a separate package that merely runs it.
     /// </summary>
@@ -919,7 +919,7 @@ public sealed class HarnessSelectionTests : IDisposable
         File.WriteAllText(claude, "");
         new HarnessSettings().WithVersion("claude-code", "2.1.278").Save(Settings);
 
-        // The seam is the door's spawn's to take (AGENTPROVIDER1t): the fake door spawns as the ACP adapter's does.
+        // The seam is the door's spawn's to take: the fake door spawns as the ACP adapter's does.
         var door = TestDoors.Door(
             "fake", Toolchain(Present()), transport: Transport.Protocol, spawn: TestDoors.SpawnOf(ProviderRegistry.Built().Door("claude-code-acp")));
         var selection = await new HarnessRoster(TestDoors.Registry(door), Settings)
@@ -946,7 +946,7 @@ public sealed class HarnessSelectionTests : IDisposable
 
     /// <summary>
     /// With no `claude` pinned the seam is null, so the SDK finds its own — the additive rule again
-    /// (D48 §2a). A protocol-door session on a machine that pinned nothing works exactly as it would.
+    /// A protocol-door session on a machine that pinned nothing works exactly as it would.
     /// </summary>
     [Fact]
     public async Task With_no_claude_pinned_the_protocol_door_lets_the_sdk_find_its_own()
@@ -963,10 +963,9 @@ public sealed class HarnessSelectionTests : IDisposable
     /// A managed install of the fake harness at one version.
     /// </summary>
     /// <remarks>
-    /// 🔴 The shim has to RUN. It used to be an empty file, which was enough while only the spawn
-    /// resolved a pin — but the probe now asks the pinned binary its version (rule 4 at the presence
-    /// question), and a file that cannot execute makes a pinned harness report absent. An empty
-    /// fixture standing in for "an install exists" stopped being true the moment anything ran it.
+    /// 🔴 The shim has to RUN. The probe asks the pinned binary its version (rule 4 at the presence
+    /// question), and a file that cannot execute makes a pinned harness report absent, so an empty
+    /// fixture does not stand in for "an install exists".
     /// </remarks>
     private string Install(string version)
     {
@@ -1031,7 +1030,7 @@ public sealed class HarnessSelectionTests : IDisposable
     /// <summary>
     /// The logged-out refusal mirrors the missing-harness one deliberately: same shape, same
     /// before-the-record timing, same naming of the action that fixes it. Once a reading said so: the person's press here,
-    /// since a look reads no account (ROSTER1).
+    /// since a look reads no account.
     /// </summary>
     [Fact]
     public async Task A_logged_out_profile_refuses_naming_the_login_action()
@@ -1053,7 +1052,7 @@ public sealed class HarnessSelectionTests : IDisposable
     /// <summary>
     /// <b>A cached "no" is asked again before it is given.</b> Otherwise the person does exactly what
     /// the refusal told them to and the driver keeps refusing until somebody restarts it — which is
-    /// the worst possible reading of a message that named an action. Asked once per sign-out (TOOL6g):
+    /// the worst possible reading of a message that named an action. Asked once per sign-out:
     /// a sign-in through Daoris's doors marks the account, and a start then asks it again.
     /// </summary>
     [Fact]
@@ -1079,8 +1078,8 @@ public sealed class HarnessSelectionTests : IDisposable
     }
 
     /// <summary>
-    /// The wiring file is re-read, never held — same rule as `driver.json` (D50): an order changed
-    /// from a terminal takes effect on the next spawn, because the FILE is the truth. Under D197 every
+    /// The wiring file is re-read, never held — same rule as `driver.json`: an order changed
+    /// from a terminal takes effect on the next spawn, because the FILE is the truth. Every
     /// account of Daoris's is in the set, so what a change on disk moves is which comes first.
     /// </summary>
     [Fact]

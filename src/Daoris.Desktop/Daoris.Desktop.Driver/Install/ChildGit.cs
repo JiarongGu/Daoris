@@ -3,9 +3,9 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a child is handed for its git, as the install declares it and the workplace answers (FOUNDATION1 mod-v, the design §14.3: the lower
+/// What a child is handed for its git, as the install declares it and the workplace answers (the lower
 /// declares a port, the higher implements it): the prompt variables every start takes and, for a start with a home, the doors installed
-/// beside it (GITAUTH1a and GITAUTH1b). <see cref="Tools.Hand(ProcessStartInfo, ToolsRead, string)"/> hands a start the tools' environment
+/// beside it. <see cref="Tools.Hand(ProcessStartInfo, ToolsRead, string)"/> hands a start the tools' environment
 /// and asks the port for the git's, so every start the source scan holds still passes one seam.
 /// </summary>
 public interface IChildGit

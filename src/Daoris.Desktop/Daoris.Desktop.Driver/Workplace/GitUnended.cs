@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a git that outlived its kill is said (GITAPP1a-iii, the git-app design P1.6, Codex R4-5): <c>git.unended</c> in the machine
+/// Where a git that outlived its kill is said: <c>git.unended</c> in the machine
 /// log, with the node, the runner, the pid and the reason, never a path. A kill that failed once read as one that worked
 /// (<see cref="ChildProcess.KillTree"/> swallows its refusal); each runner now awaits the exit after its kill and tells the seam
 /// (<see cref="GitLaunch"/>) when it saw none.

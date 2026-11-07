@@ -85,7 +85,7 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         if (answered is not null) await wiring.GoOns.WaitedAsync(start.Resumes!, answered.Id, handsOn, ct).ConfigureAwait(false);
 
         // A session going on in a tree that stands starts from the line where the line came to hold some of its commits, and is told
-        // what was done; a step whose source the person reopened is first brought up to date with the source's new submission. Asked
+        // what is done; a step whose source the person reopened is first brought up to date with the source's new submission. Asked
         // before this start's own hold below, since bringing a tree up to date holds the repository's trees alone.
         var inSync = resumedIn is { } reopenedIn && start.Resumes is { } goesFrom
                      && (ReopenTelling.BringsToSource(quest, goesFrom) || Planner.BringsForwardToSource(quest, start))
@@ -169,7 +169,7 @@ internal sealed class GrowTree(IRunWiring wiring) : IRunStage
         }
         catch (Exception error) when (error is DriverException or HttpRequestException)
         {
-            // Read as naming no commit: the session is told only the line was synced.
+            // Read as naming no commit: the session is told only the line is synced.
         }
 
         try

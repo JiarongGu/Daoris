@@ -4,16 +4,16 @@ using HelpRoomGoldenTests = Daoris.Driver.Tests.HelpRoomGoldenTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A quest's instruction rendered whole (KNOWUSE1c, KNOWUSE1d), as the harness reads it: a repository's quest that
+/// A quest's instruction rendered whole, as the harness reads it: a repository's quest that
 /// carries nothing, a quest an ask asked with everything the look and the close speak to, a carry-on after the
-/// person answered, and a session told its process in a tree of its own (PROCESS1d-i). A sentence added, moved or
+/// person answered, and a session told its process in a tree of its own. A sentence added, moved or
 /// reworded shows here as the whole instruction's difference, byte for byte.
 /// </summary>
 /// <remarks>
 /// The golden files under <c>golden/target-prompt/</c> are the instruction a session is handed. A change to what it says
 /// changes its golden file in the same commit, so review reads the instruction as the session will; the tests beside it
 /// (<see cref="AskAndWaitPromptTests"/> and the handed tests) say why each sentence is there. This class runs no process,
-/// so it is in the fast half (MOD8).
+/// so it is in the fast half.
 /// </remarks>
 public sealed class TargetPromptGoldenTests
 {
@@ -63,7 +63,7 @@ public sealed class TargetPromptGoldenTests
         ServiceUrl: "http://localhost:5177")
     {
         Links = ["https://tickets.example/T-9"],
-        // EVID1b: the evidence its check turns on, which Daoris reads in the branch's last commit when the session ends.
+        // The evidence its check turns on, which Daoris reads in the branch's last commit when the session ends.
         Requirements =
         [
             new QuestRequirementView("use the common-report module", "the report is a common-report entry")
@@ -92,13 +92,13 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
-    /// SESSCTX1b (D189 point 4, the session-context design §3.4): a carry-on handed Daoris's brief of its line in place of the last plan
+    /// A carry-on handed Daoris's brief of its line in place of the last plan
     /// and words, the brief's sections counted on their own within the account: two parts, the person's word to the first, a plan, a
     /// failed check by a declared gate, and the tree as read.
     /// </summary>
     internal static readonly SessionTarget CarryOnBrief = CarryOn with
     {
-        // CONTEXTONE1c: the memory its line read is its standing block's, handed with the brief.
+        // The memory its line read is its standing block's, handed with the brief.
         Block = CarryOn.Block! with { Memory = ["reports: the totals row reads the bridge's daily figure, never the hourly one"] },
         PersonSaid = null,
         CutOff = "the agent's turn failed with the quest still taken.",
@@ -132,7 +132,7 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
-    /// RETRYWORK1: an open quest carried on in the tree of a session that committed work and failed before it took it, handed
+    /// An open quest carried on in the tree of a session that committed work and failed before it took it, handed
     /// Daoris's brief of that line: it takes the quest, then finishes the work rather than starting again.
     /// </summary>
     internal static readonly SessionTarget Retried = Bare with
@@ -142,7 +142,7 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
-    /// A set-up step (REVIEWENV1c, design §2.2): a chain's step that shows the work of the step before, which its tree grew from,
+    /// A set-up step: a chain's step that shows the work of the step before, which its tree grew from,
     /// in a local environment for the person's review, by the procedure the rule names.
     /// </summary>
     internal static readonly SessionTarget SetUpStep = new(
@@ -164,7 +164,7 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
-    /// A session in a tree of its own (PROCESS1d-i, D164's amendment point 4): its landing rule names the pull request's branch by
+    /// A session in a tree of its own: its landing rule names the pull request's branch by
     /// the ticket, and its commit rule, set for its workspace, asks the person first and quotes their convention.
     /// </summary>
     internal static readonly SessionTarget OwnTree = Bare with
@@ -176,7 +176,7 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
-    /// A further part of a session (SESSONE1d, D167 point 4 as amended): a new quest of the session's entry, gone into the tree its
+    /// A further part of a session: a new quest of the session's entry, gone into the tree its
     /// earlier part left free, which left a change uncommitted there. Handed what the earlier part did, its tree and its branch.
     /// </summary>
     internal static readonly SessionTarget Part = Bare with
@@ -195,7 +195,7 @@ public sealed class TargetPromptGoldenTests
         InFlight = [" M src/notes.ts"],
     };
 
-    /// <summary>A further part whose session's tree a live part holds (SESSONE1d): it runs alongside, in a tree of its own.</summary>
+    /// <summary>A further part whose session's tree a live part holds: it runs alongside, in a tree of its own.</summary>
     internal static readonly SessionTarget PartAlongside = Bare with
     {
         Parts = new SessionParts(
@@ -206,7 +206,7 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
-    /// A sibling's request on an ask, whose line of work is handed what waited on the ask's channel (SESSONE2b, D167 point 7): the
+    /// A sibling's request on an ask, whose line of work is handed what waited on the ask's channel: the
     /// person's message to everyone, as their words, and another session's question to its repository, as that agent's claim.
     /// </summary>
     internal static readonly SessionTarget Channel = Bare with
@@ -238,7 +238,7 @@ public sealed class TargetPromptGoldenTests
 
     /// <summary>
     /// The standing block a build's start composes for `console-ui`, declaring two lanes, under the drive and trees
-    /// <paramref name="standing"/> names (CONTEXTONE1c): its routing among it.
+    /// <paramref name="standing"/> names: its routing among it.
     /// </summary>
     internal static StandingFacts Routed(string standing)
     {
@@ -263,16 +263,16 @@ public sealed class TargetPromptGoldenTests
         "part" => Part,
         "part-alongside" => PartAlongside,
         "channel" => Channel,
-        // FABRIC-CLOSE1l (CLOSE1g): a quest its closure graph closes, bound at its take: its session says `ready`, never `done`.
+        // A quest its closure graph closes, bound at its take: its session says `ready`, never `done`.
         "ready" => Bare with { Ready = true },
-        // COWORKVIEW1e-i: a quest's session in a driven repository that declares lanes and opens trees of its own, told its routing standing
-        // in its standing block (CONTEXTONE1c).
+        // A quest's session in a driven repository that declares lanes and opens trees of its own, told its routing standing
+        // in its standing block.
         "routed" => Bare with { Browser = "Daoris has handed you its browser.", Block = Routed("open") },
         "routed-one-at-a-time" => Bare with { Block = Routed("one-at-a-time") },
         "routed-not-driven" => Bare with { Block = Routed("not-driven") },
         // HEAVYRUN1b1: a repository that marks heavy gates, its session told to run them once, at its end, through `run-heavy`.
         "heavy" => Bare with { Heavy = HeavyTold.Words(["build", "test"]) },
-        // FABRIC-PIPELINE1b: a light development pipeline, its light gates and its heavy gates as the verification's, refused by the
+        // A light development pipeline, its light gates and its heavy gates as the verification's, refused by the
         // harness of an agent that takes Daoris's rules, and said to one that takes none.
         "light" => Bare with { Heavy = HeavyTold.LightWords(["universal", "code-map"], ["build", "test"], takesRules: true) },
         "light-said" => Bare with { Heavy = HeavyTold.LightWords(["universal", "code-map"], ["build", "test"], takesRules: false) },
@@ -280,8 +280,8 @@ public sealed class TargetPromptGoldenTests
     };
 
     /// <summary>
-    /// FABRIC-CLOSE1l (CLOSE1g): a bound quest's resume and carry-on say `ready` as its first start does, and every other quest's say `done`
-    /// as they did, so an install with no closure graph hands no `ready`.
+    /// A bound quest's resume and carry-on say `ready` as its first start does, and every other quest's say `done`,
+    /// so an install with no closure graph hands no `ready`.
     /// </summary>
     [Fact]
     public void A_bound_quests_every_start_says_ready_and_every_other_quests_says_done()
@@ -321,15 +321,15 @@ public sealed class TargetPromptGoldenTests
     [InlineData("routed-not-driven")]
     public void The_quests_instruction_is_its_golden_text(string which)
     {
-        // GOLDEN1's switch: DAORIS_GOLDEN_WRITE=1 writes the golden from the render, and without it a difference fails.
+        // The golden's switch: DAORIS_GOLDEN_WRITE=1 writes the golden from the render, and without it a difference fails.
         HelpRoomGoldenTests.Settle(GoldenPath($"{which}.md"), TargetPrompt.Compose(Of(which)), HelpRoomGoldenTests.WriteRequested);
-        // The text the account is kept beside is the same instruction, byte for byte (CONTEXT1).
+        // The text the account is kept beside is the same instruction, byte for byte.
         Assert.Equal(File.ReadAllText(GoldenPath($"{which}.md")), TargetPrompt.Composed(Of(which)).Text);
     }
 
     /// <summary>
-    /// ACCEPTWORDS1: the person's accepting is their press on the session's page, so every instruction says that words in the
-    /// conversation land nothing, and where a proposal waits (a session once thanked the person for "accepting" and nothing landed).
+    /// The person's accepting is their press on the session's page, so every instruction says that words in the
+    /// conversation land nothing, and where a proposal waits.
     /// </summary>
     [Theory]
     [InlineData("bare")]
@@ -349,7 +349,7 @@ public sealed class TargetPromptGoldenTests
     }
 
     /// <summary>
-    /// The account kept beside each instruction (CONTEXT1), as the session's record writes it: each section's size, its
+    /// The account kept beside each instruction, as the session's record writes it: each section's size, its
     /// source and what its bound left out. A section added, moved or resized shows here as the account's difference, and the
     /// sizes add up to the golden text's length.
     /// </summary>
@@ -380,7 +380,7 @@ public sealed class TargetPromptGoldenTests
     }
 
     /// <summary>
-    /// COWORKVIEW1e-i as CONTEXTONE1c places it: the routing rides the standing block at the instruction's end, once, for a quest's session
+    /// The routing rides the standing block at the instruction's end, once, for a quest's session
     /// of every kind of start, and nowhere else in it. An intake's block, composed for a work that publishes to no lane of its own, carries
     /// none.
     /// </summary>

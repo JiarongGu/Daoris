@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The drain's hold over the planner's verdicts (UPDATE1, D139 §2): the work orders' members of <see cref="InstallUpdate"/>, which says
+/// The drain's hold over the planner's verdicts: the work orders' members of <see cref="InstallUpdate"/>, which says
 /// the hold's words (<see cref="InstallUpdate.HoldReason"/>) and names no verdict, so every caller keeps <c>InstallUpdate.HeldFor</c> as spelled.
 /// </summary>
 public static class UpdateHolds

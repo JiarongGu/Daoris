@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris help</c> was asked (ASKHIST1).</summary>
+/// <summary>What <c>daoris help</c> asks.</summary>
 /// <param name="Verb"><c>list</c>, <c>rename</c>, <c>pin</c>, <c>unpin</c>, <c>delete</c> or <c>mode</c>.</param>
 public sealed record HelpVerbAsk(string Verb)
 {
@@ -20,16 +20,16 @@ public sealed record HelpVerbAsk(string Verb)
     /// <summary>The listing as the screen's answer.</summary>
     public bool Json { get; init; }
 
-    /// <summary>A listing's <c>--offset</c>: where its page starts in the whole list (ASKHIST1d).</summary>
+    /// <summary>A listing's <c>--offset</c>: where its page starts in the whole list.</summary>
     public int Offset { get; init; }
 
     /// <summary>A listing's <c>--limit</c>: the most its page holds, or null for <see cref="HelpConversations.PageLimit"/>.</summary>
     public int? Limit { get; init; }
 
-    /// <summary>A listing's <c>--workspace</c> (ASKSCOPE1d): the workspace whose conversations it lists, or null for every one's.</summary>
+    /// <summary>A listing's <c>--workspace</c>: the workspace whose conversations it lists, or null for every one's.</summary>
     public string? Workspace { get; init; }
 
-    /// <summary>A listing's <c>--all</c> (ASKSCOPE1d): every workspace's, said outright, as a listing that names none is.</summary>
+    /// <summary>A listing's <c>--all</c>: every workspace's, said outright, as a listing that names none is.</summary>
     public bool All { get; init; }
 
     /// <summary>A rename's <c>--clear</c>: its first question is its title again.</summary>
@@ -40,14 +40,13 @@ public sealed record HelpVerbAsk(string Verb)
 }
 
 /// <summary>
-/// <c>daoris help</c> (ASKHIST1, D50): Ask Daoris's history from a terminal, the panel's other door. It lists and searches
+/// <c>daoris help</c>: Ask Daoris's history from a terminal, the panel's other door. It lists and searches
 /// this machine's Ask Daoris conversations through <see cref="HelpConversations"/>, the one reader the panel's route reads; names,
 /// pins and unpins one; and deletes one through <c>sessions delete</c>'s owner, listed first and pressed with <c>--yes</c>, as the panel asks once.
 /// </summary>
 /// <remarks>
 /// <para><b>Only Ask Daoris's own conversations of this machine's</b>: an id that names any other session is refused, exit 1,
-/// naming the <c>sessions</c> verb that acts on it. Words to one are <c>session say</c>'s, and <c>chat --session</c> holds one (RPC1g3,
-/// D238).</para>
+/// naming the <c>sessions</c> verb that acts on it. Words to one are <c>session say</c>'s, and <c>chat --session</c> holds one.</para>
 ///
 /// <para><b>Not here: a new conversation from an earlier one.</b> A conversation with Ask Daoris runs in the window's panel, and
 /// no terminal door opens one; the panel's history is where one starts from another's words.</para>
@@ -70,8 +69,8 @@ public static class HelpCommand
         new HashSet<string>(StringComparer.Ordinal) { "list", "rename", "pin", "unpin", "delete", "mode" };
 
     /// <summary>
-    /// The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field. ASKSCOPE1d added
-    /// <c>workspace</c>, the one it started in, after <c>mode</c>.
+    /// The fields of a conversation in <c>--json</c>, in order: <c>HELP_CONVERSATIONS</c>' row, field for field.
+    /// Its <c>workspace</c>, the one it started in, follows <c>mode</c>.
     /// </summary>
     public static IReadOnlyList<string> JsonFields { get; } =
     [
@@ -80,7 +79,7 @@ public static class HelpCommand
     ];
 
     /// <summary>
-    /// How much of a conversation's line the terminal's listing shows (ASKHIST1d). The terminal shows it raw, so it cuts it to a
+    /// How much of a conversation's line the terminal's listing shows. The terminal shows it raw, so it cuts it to a
     /// line itself; <c>--json</c> carries it whole as far as <see cref="HelpConversations.PreviewLimit"/>, as the page's route does.
     /// </summary>
     public const int LineLimit = 160;
@@ -127,14 +126,14 @@ public static class HelpCommand
     }
 
     /// <summary>
-    /// <c>help mode [restricted|full]</c> (HELPMODE1a1, D183 points 1-2): which access mode Ask Daoris runs in, or the person's choice
+    /// <c>help mode [restricted|full]</c>: which access mode Ask Daoris runs in, or the person's choice
     /// of one, written to the driver's file at <paramref name="configPath"/> and taken at its next start. Asks no service.
     /// </summary>
     /// <remarks>
-    /// A conversation already open keeps the mode it started in until its next start (HELPMODE1a2): words to it once it ended resume it
+    /// A conversation already open keeps the mode it started in until its next start: words to it once it ended resume it
     /// under the mode chosen then, and its record and transcript say the change.
     /// </remarks>
-    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing was written.</exception>
+    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing is written.</exception>
     public static int Mode(HelpVerbAsk ask, string configPath, TextWriter output)
     {
         var config = DriverConfig.Load(configPath);
@@ -152,7 +151,7 @@ public static class HelpCommand
 
         config.WithHelpMode(mode).Save(configPath);
         output.WriteLine($"help: from its next start, {Says(mode)}");
-        // ACCESSSWAP1b (D183's note): written from another process, the mode reaches no running conversation, unlike the window's press.
+        // Written from another process, the mode reaches no running conversation, unlike the window's press.
         output.WriteLine("help: A conversation running now keeps its mode until its next start; the window's choice ends one at its turn's end.");
         return 0;
 
@@ -196,7 +195,7 @@ public static class HelpCommand
                 case "--limit":
                     problem = $"`--limit` takes how many a page holds: a whole number from 1 to {HelpConversations.PageLimit}.";
                     return null;
-                // ASKSCOPE1d: one workspace's, or every one's; never both, and each said once.
+                // One workspace's, or every one's; never both, and each said once.
                 case "--workspace" or "--all" when ask.Workspace is not null || ask.All:
                     problem = "`help list` takes one of `--workspace <name>` and `--all`, once.";
                     return null;
@@ -220,7 +219,7 @@ public static class HelpCommand
     }
 
     /// <summary>
-    /// The verb, as the running Daoris's client where its world names an instance to look for (RPC1e, the terminal RPC design §7.2):
+    /// The verb, as the running Daoris's client where its world names an instance to look for:
     /// <c>rename</c>, <c>pin</c>, <c>unpin</c> and <c>delete --yes</c> are the person's presses, which the window confirms, and <c>list</c> a
     /// read; each route asked for its words runs this verb's own path in that Daoris, so the lines are the alone path's. A delete's first
     /// ask reads here; alone where none runs.
@@ -254,7 +253,7 @@ public static class HelpCommand
         var events = new SessionEvents(DaorisHome.Entry(world.Home, HomeEntry.Sessions));
         if (ask.Verb == "list")
         {
-            // ASKSCOPE1d: the workspace named, or every one's; a terminal stands in no workspace, so naming none is every one's.
+            // The workspace named, or every one's; a terminal stands in no workspace, so naming none is every one's.
             var listing = new HelpConversations(world.Home).List(
                 records, events, resumes, ask.Search, ask.Offset, ask.Limit ?? HelpConversations.PageLimit, ask.Workspace);
             output.WriteLine(ask.Json ? Json(listing) : Listed(listing, ask, DateTimeOffset.UtcNow));
@@ -314,11 +313,11 @@ public static class HelpCommand
     }
 
     /// <summary>
-    /// The listing in the terminal's words: each conversation's id, when it was last spoken in, its title and marks, then its line;
+    /// The listing in the terminal's words: each conversation's id, when last spoken in, its title and marks, then its line;
     /// and, for a page that does not hold them all, which it holds of how many and the words that list the next.
     /// </summary>
     /// <remarks>
-    /// ASKSCOPE1d, row for row the panel's: a listing of every workspace's labels each row with its workspace, last among its
+    /// Row for row the panel's: a listing of every workspace's labels each row with its workspace, last among its
     /// marks, as the panel's *All workspaces* does; one workspace's says it where it holds none, and the next page's words keep it.
     /// </remarks>
     internal static string Listed(HelpListing listing, HelpVerbAsk ask, DateTimeOffset now)
@@ -342,7 +341,7 @@ public static class HelpCommand
             if (row.Pinned is not null) marks.Add("pinned");
             if (row.Live) marks.Add("running");
             else if (!row.Resumable) marks.Add("starts anew");
-            // The mode it ran under (HELPMODE1a2): full access marked, restricted, the default, not.
+            // The mode it ran under: full access marked, restricted, the default, not.
             if (row.Mode == HelpModes.Full) marks.Add("full access");
             if (row.From is { } from) marks.Add($"from {from}");
             if (circle is null) marks.Add($"in {row.Workspace}");
@@ -391,7 +390,7 @@ public static class HelpCommand
     /// </summary>
     public static string Json(HelpListing listing)
     {
-        // The answer is printed, not kept: the file form's final newline is left off (JsonFile, DEDUP3a).
+        // The answer is printed, not kept: the file form's final newline is left off (JsonFile).
         return JsonFile.Serialize(writer =>
         {
             writer.WriteStartObject();

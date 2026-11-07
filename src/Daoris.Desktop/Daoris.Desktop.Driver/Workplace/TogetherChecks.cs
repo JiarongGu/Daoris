@@ -15,7 +15,7 @@ internal sealed record TogetherCheck(IReadOnlyList<string> Merges, IReadOnlyList
 }
 
 /// <summary>
-/// <i>Checking</i> (LINESTOGETHER1d, the review-flow design §4): every member change accounted from the head's tip, never the agent's
+/// <i>Checking</i>: every member change accounted from the head's tip, never the agent's
 /// claim nor ancestry. A commit the tip holds by content or patch (<see cref="LineHolds.JudgeAsync"/>) is held. Each other is tried alone
 /// onto the tip, as <see cref="LineHolds.TrialTreeAsync"/> tries a step but past a conflict, git writing a tree even then, so a conflict
 /// hides no later clean change: each path it changes is contained, settled by the line's rules, missing or unproven. An unproven path

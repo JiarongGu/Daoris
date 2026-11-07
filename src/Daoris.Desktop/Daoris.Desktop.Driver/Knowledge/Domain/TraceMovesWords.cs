@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 internal static class TraceMovesWords
 {
     /// <summary>
-    /// A quest's moves (FLOWCHART1a2; the flowchart design §2.1), what its page draws on its flowchart: in the order they replay, never
+    /// A quest's moves, what its page draws on its flowchart: in the order they replay, never
     /// by time, each with its machine and time and the remote's number or none; one the replay did not apply said recorded and not
     /// applied, the hold one set or let go, and a dismissal matched to its conflict by its reference. A host from before the door keeps
     /// no path, and says so.

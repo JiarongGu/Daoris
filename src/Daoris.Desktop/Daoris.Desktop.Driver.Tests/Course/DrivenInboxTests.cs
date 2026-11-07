@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// SESS3: what a person tells a driven session while it works is held, and handed over where the protocol door
+/// What a person tells a driven session while it works is held, and handed over where the protocol door
 /// allows — the next prompt of the same session when the turn ends, or at once by stopping the turn.
 /// </summary>
 public sealed class DrivenInboxTests
@@ -27,7 +27,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1b (the message-urgency design §3.1, §5): Daoris's urgent word on a door that takes words only at its turn's end is
+    /// Daoris's urgent word on a door that takes words only at its turn's end is
     /// held for it, never refused as a claim is, and told with its reach. It is never the person's queue: the page lists none of
     /// it, and no edit of the person's reaches it. The run still sees it held.
     /// </summary>
@@ -48,7 +48,7 @@ public sealed class DrivenInboxTests
         Assert.Equal("Daoris: the person reopened it.", inbox.NextOrClose()?.Held?.Text);
     }
 
-    /// <summary>COWORK1b: Daoris's word that goes at the next step is told delivered the moment it is sent, once.</summary>
+    /// <summary>Daoris's word that goes at the next step is told delivered the moment it is sent, once.</summary>
     [Fact]
     public void Daoris_word_sent_at_the_next_step_is_told_delivered_once()
     {
@@ -69,7 +69,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// QUEUEEDIT1a: a held word is removed by its id, and the record, which showed it waiting, is told it was withdrawn; the
+    /// A held word is removed by its id, and the record, which shows it waiting, is told it is withdrawn; the
     /// rest keep their order, and the word is never taken.
     /// </summary>
     [Fact]
@@ -90,7 +90,7 @@ public sealed class DrivenInboxTests
         Assert.Equal("two", inbox.TakeOrClose()?.Text);
     }
 
-    /// <summary>QUEUEEDIT1a: an edit replaces the words where they are held, under a new id, which the record is told with the old one withdrawn.</summary>
+    /// <summary>An edit replaces the words where they are held, under a new id, which the record is told with the old one withdrawn.</summary>
     [Fact]
     public void A_held_word_is_replaced_in_place_under_a_new_id_and_the_record_is_told_both()
     {
@@ -114,7 +114,7 @@ public sealed class DrivenInboxTests
         Assert.Equal((now[0].Id, "one, said better", DrivenReach.TurnEnd), told[^1]);
     }
 
-    /// <summary>QUEUEEDIT1a: a word already sent, or taken, is the session's: answered taken, never an error, and untouched.</summary>
+    /// <summary>A word already sent, or taken, is the session's: answered taken, never an error, and untouched.</summary>
     [Fact]
     public void A_word_the_session_took_is_answered_taken_and_left_alone()
     {
@@ -130,7 +130,7 @@ public sealed class DrivenInboxTests
 
     /// <summary>
     /// 🔴 Taking and closing are one step: a word said between "nothing held" and "closed" would otherwise
-    /// be kept by an inbox nobody reads again, and the person would be told it was sent.
+    /// be kept by an inbox nobody reads again, and the person would be told it is sent.
     /// </summary>
     [Fact]
     public void Nothing_held_closes_it_and_a_word_said_after_is_refused_rather_than_lost()
@@ -146,7 +146,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// MSG1d (D137 §5.3): when a word said now reaches the session, which the modules answer the page with: not known until
+    /// When a word said now reaches the session, which the modules answer the page with: not known until
     /// the door is (a word said while it opens waits for its first prompt either way), at its next step where the door sends
     /// words during a turn, at the turn's end where it does not, and nothing once it has closed.
     /// </summary>
@@ -209,7 +209,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// STEER1 (D136): the record shows what the person said at once, with when it reaches the session — and a word said
+    /// The record shows what the person said at once, with when it reaches the session — and a word said
     /// before the door is known is told when it is, in the order said. Each word gets an id that pairs it with the same
     /// words where the session takes them.
     /// </summary>
@@ -235,7 +235,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 STEER1 (D136): where the agent takes words during a turn, each goes to it at once — held words too, the moment the
+    /// 🔴 Where the agent takes words during a turn, each goes to it at once — held words too, the moment the
     /// session's first prompt is on the wire, and never before it — and nothing waits in the inbox. The run's next step is
     /// each word's answer, in the order sent, and only when none is on its way does the inbox close.
     /// </summary>
@@ -284,8 +284,8 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 STEER1 (D136): on a door that takes words at once nothing is ever held, and a stop while a word is on its way
-    /// would answer it cancelled while the agent may still act on it (steer evidence §3), so sending now stops nothing.
+    /// 🔴 On a door that takes words at once nothing is ever held, and a stop while a word is on its way
+    /// would answer it cancelled while the agent may still act on it, so sending now stops nothing.
     /// </summary>
     [Fact]
     public async Task Sending_now_on_a_door_that_takes_words_mid_turn_stops_nothing()
@@ -304,7 +304,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (D136's 2026-10-16 note): *Send now* on a door whose agent steers hands the words to the running turn at once,
+    /// 🔴 *Send now* on a door whose agent steers hands the words to the running turn at once,
     /// told with the reach <c>now</c>; nothing is held, nothing is stopped, and the inbox closes only once the steer is answered.
     /// </summary>
     [Fact]
@@ -337,7 +337,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (a second maker's review): a turn is asked to stop once, however many presses; a turn the run takes after it is
+    /// 🔴 A turn is asked to stop once, however many presses; a turn the run takes after it is
     /// a turn of its own.
     /// </summary>
     [Fact]
@@ -359,7 +359,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a: the run takes no held word while the stop decided for the turn before is still on its way; it waits for it,
+    /// 🔴 The run takes no held word while the stop decided for the turn before is still on its way; it waits for it,
     /// so a slow stop can never land on the kept words' own turn.
     /// </summary>
     [Fact]
@@ -384,7 +384,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 STEER2a (the owner's case): on a door that steers, words pressed while an earlier word is on its way are steered past
+    /// 🔴 On a door that steers, words pressed while an earlier word is on its way are steered past
     /// it, the person's choice to go first; the earlier word stays on its way, and nothing is stopped. Where the agent cannot
     /// steer they go at the next step behind it, and the answer says <c>behind</c>.
     /// </summary>
@@ -419,8 +419,8 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// STEER2a: before the session's first prompt is on the wire no turn runs to steer: the words are held for right after it,
-    /// as any word said then is, and the answer says why the press was not carried out.
+    /// Before the session's first prompt is on the wire no turn runs to steer: the words are held for right after it,
+    /// as any word said then is, and the answer says why the press is not carried out.
     /// </summary>
     [Fact]
     public async Task Sending_now_before_the_first_prompt_left_holds_the_words_and_says_why()
@@ -438,7 +438,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1a (D188 point 3, the message-urgency design trap 1): on a door that takes words only at the turn's end, *now*
+    /// 🔴 On a door that takes words only at the turn's end, *now*
     /// holds the words for that end and stops nothing, said <c>no-interrupt</c>; the turn runs on. The stop that keeps the session
     /// is the person's own press (<see cref="DrivenInbox.SendNowAsync"/>), never a word's.
     /// </summary>
@@ -463,7 +463,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1a (the design §3.0): an ordinary word on a door that takes words at its next step waits for the turn's end, told
+    /// 🔴 An ordinary word on a door that takes words at its next step waits for the turn's end, told
     /// so; an urgent word said after it goes at the next step past it, since its sender chose sooner; and at the turn's end the
     /// ordinary one is the next prompt, after every word sent is answered.
     /// </summary>
@@ -493,8 +493,8 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1a (the design §14's trap): the first prompt on the wire sends the urgent words held while the session opened, and
-    /// keeps the ordinary ones for the turn's end; before, every held word went with it.
+    /// 🔴 The first prompt on the wire sends the urgent words held while the session opens, and
+    /// keeps the ordinary ones for the turn's end.
     /// </summary>
     [Fact]
     public void The_first_prompt_on_the_wire_sends_the_urgent_words_held_and_keeps_the_ordinary_ones()
@@ -512,7 +512,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1a (the design §8.2): a held word's level is changed while it waits, under its id. Made urgent on a door that takes
+    /// A held word's level is changed while it waits, under its id. Made urgent on a door that takes
     /// words at its next step it goes there at once, told again under the same id with its new reach; made ordinary it stays held,
     /// told again. A word no longer held is the session's, and nothing changes it.
     /// </summary>
@@ -546,8 +546,8 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1a (the design §7, §9): the record keeps a level beside the person's own words, urgent where none was said, and none
-    /// beside another session's claim, whose level is its own row's (COWORK1d), so nothing reads a claim's default as stated. The
+    /// The record keeps a level beside the person's own words, urgent where none is said, and none
+    /// beside another session's claim, whose level is its own row's, so nothing reads a claim's default as stated. The
     /// person's channel message is theirs, and keeps one.
     /// </summary>
     [Fact]
@@ -563,7 +563,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1a (the design trap 1, a census of the interrupt's callers): no delivery path decides a stop. In the driven inbox only
+    /// 🔴 No delivery path decides a stop. In the driven inbox only
     /// the keeping stop does; in a conversation's turns only the keeping stop and the withdrawing stop, each the person's own press.
     /// </summary>
     [Fact]
@@ -599,8 +599,8 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// STEER2a: a door that can neither steer nor stop its turn keeping the session (the native door's run) holds the words as
-    /// before, and says so by its code; a next-step door whose agent never said it steers sends them at its next step, as said.
+    /// A door that can neither steer nor stop its turn keeping the session (the native door's run) holds the words,
+    /// and says so by its code; a next-step door whose agent never said it steers sends them at its next step, as said.
     /// </summary>
     [Fact]
     public async Task Sending_now_where_the_door_has_no_way_holds_or_sends_the_words_as_before_and_says_why()
@@ -658,7 +658,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1c (the message-urgency design §6, D188 point 6): a word said to a running session is kept on its record first, with its
+    /// A word said to a running session is kept on its record first, with its
     /// level and key, and only then held and told, under the record's own id. The run takes it at the turn's end, and it leaves the
     /// record by that id once handed to the wire; the inbox closes only once the take-off has landed, so a record never ends holding
     /// a word its session already took.
@@ -699,7 +699,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1c (the design §6): a kept word leaves the inbox for its door to be attempted and taken off, never taken off as it is
+    /// A kept word leaves the inbox for its door to be attempted and taken off, never taken off as it is
     /// handed out: the door marks its attempt on the record before it writes it, and once written it leaves the record. One the door
     /// never wrote, nor attempted, stays there.
     /// </summary>
@@ -729,7 +729,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1c (the design §14's trap 20): two words kept at once reach the session in the record's order, through its one
+    /// Two words kept at once reach the session in the record's order, through its one
     /// dispatcher. The first word's write lands first and answers last; had each caller held its own word once its write returned,
     /// the second would have overtaken it.
     /// </summary>
@@ -765,8 +765,8 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1c: a keep on its way holds the inbox open, so a word said as the turn ends is taken by this run rather than left on a
-    /// record that concludes under it; one said once the inbox closed keeps nothing, and its caller keeps it on the record as before.
+    /// A keep on its way holds the inbox open, so a word said as the turn ends is taken by this run rather than left on a
+    /// record that concludes under it; one said once the inbox closed keeps nothing, and its caller keeps it on the record.
     /// </summary>
     [Fact]
     public async Task A_keep_on_its_way_holds_the_inbox_open_and_a_closed_inbox_keeps_nothing()
@@ -796,7 +796,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1c (the design §6): a word whose keep was on its way as the inbox closed under the run never stays on the record, which
+    /// A word whose keep is on its way as the inbox closes under the run never stays on the record, which
     /// is ending: it is taken off again, and its caller holds it as words said while a session winds up are held.
     /// </summary>
     [Fact]
@@ -820,10 +820,10 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1c (the design §6: nothing undelivered vanishes): closed by anything but the person's own stop of the session (its door
+    /// Nothing undelivered vanishes: closed by anything but the person's own stop of the session (its door
     /// failed, the shell shut down), the words kept for the run stay on the record, told as left there, for the session's go-on; only
     /// the words held in this process alone come back, for the run to say. Closed by the person's stop, the kept words leave the
-    /// record and come back with the rest, never reached, as before.
+    /// record and come back with the rest, never reached.
     /// </summary>
     [Fact]
     public async Task Closed_under_the_run_the_kept_words_stay_on_the_record_and_the_persons_stop_takes_them_off()
@@ -854,7 +854,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1c: a kept word the person takes back leaves the record too, and one reworded is kept anew in its place: the new words
+    /// A kept word the person takes back leaves the record too, and one reworded is kept anew in its place: the new words
     /// on the record under their own id, the old taken off, so a restart never brings back what the person changed.
     /// </summary>
     [Fact]
@@ -880,7 +880,7 @@ public sealed class DrivenInboxTests
     }
 
     /// <summary>
-    /// COWORK1c (the design §6, trap 19): a producer's retry under the key a waiting word holds is answered with that word, and the
+    /// A producer's retry under the key a waiting word holds is answered with that word, and the
     /// inbox, which holds it already, holds nothing more; a word the record refused is never held.
     /// </summary>
     [Fact]
@@ -905,7 +905,7 @@ public sealed class DrivenInboxTests
         Assert.False(other.Holds);
     }
 
-    // ——— COWORK1d: another agent's claim (the message-urgency design §2.3, §4.2).
+    // ——— Another agent's claim.
 
     private static ChatMessage Claim(string id, MessageLevel level) =>
         new($"Another session says: {id}", []) { Level = level, Channel = new ChannelItemView(ChannelItemView.Message, DateTimeOffset.UnixEpoch) { Id = id, Text = id } };

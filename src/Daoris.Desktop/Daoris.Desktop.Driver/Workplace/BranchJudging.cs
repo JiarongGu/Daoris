@@ -7,25 +7,25 @@ namespace Daoris.Driver;
 /// <summary>A branch as judged for the replay, with what the press acts on: its tip, its tree, where its own commits start.</summary>
 internal sealed record RebaseJudged(RebaseItem Item, string? Tip = null, string? Tree = null, string? Cut = null)
 {
-    /// <summary>The commits beyond <see cref="Cut"/>, oldest first, as LANDSYNC3 read them; null where they were not read.</summary>
+    /// <summary>The commits beyond <see cref="Cut"/>, oldest first; null where they were not read.</summary>
     public IReadOnlyList<string>? Beyond { get; init; }
 
-    /// <summary>Among <see cref="Beyond"/>, the commits the line holds, which the replay skips (LANDSYNC3).</summary>
+    /// <summary>Among <see cref="Beyond"/>, the commits the line holds, which the replay skips.</summary>
     public IReadOnlyList<string> Skips { get; init; } = [];
 
     /// <summary>
-    /// How many commits the line holds that the replay leaves out (LANDSYNC3): those the cut moved past, and the skips. The row's own,
-    /// so the list says it as the press does (LANDSYNC3b).
+    /// How many commits the line holds that the replay leaves out: those the cut moved past, and the skips. The row's own,
+    /// so the list says it as the press does.
     /// </summary>
     public int LeftOut => Item.LeftOut;
 }
 
 /// <summary>
-/// Each branch of a repository judged for the replay onto its line (WSR6; PART10j, out of <c>SessionTrees.Sync.cs</c>): the
+/// Each branch of a repository judged for the replay onto its line (out of <c>SessionTrees.Sync.cs</c>): the
 /// session branches and the landed ones recorded, what keeps each as it is, and where its own commits start.
 /// </summary>
 /// <remarks>
-/// It takes the clean-up for the landing's judgement it reads (<c>JudgeLandedAsync</c>, <c>NotAskedOf</c>; PART10l), and names the
+/// It takes the clean-up for the landing's judgement it reads (<c>JudgeLandedAsync</c>, <c>NotAskedOf</c>), and names the
 /// proof's statics by their class (<see cref="LandedProofs"/>).
 /// </remarks>
 internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups)
@@ -34,13 +34,13 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
     /// Every session branch and every recorded landed branch of one repository, judged for the replay onto
     /// <paramref name="onto"/> — and the landed branches whose work reached the line, which go instead.
     /// </summary>
-    /// <param name="asked">The look's asks (PLUGHOOK1c), for each landed row to say why it was not asked; null at the press, which asks nothing.</param>
-    /// <param name="refs">The refs the caller's judgement read (PROC1d-ii); null takes this judgement's own.</param>
+    /// <param name="asked">The look's asks, for each landed row to say why it is not asked; null at the press, which asks nothing.</param>
+    /// <param name="refs">The refs the caller's judgement read; null takes this judgement's own.</param>
     internal async Task<(List<RebaseJudged> Branches, List<LandedItem> Deletes)> JudgeBranchesAsync(
         string root, string repository, string workspace, string? line, string? onto, HashSet<string> busy, CancellationToken ct,
         IReadOnlyList<StateAnswer>? asked = null, RefSnapshot? refs = null)
     {
-        // One read of the refs and the working trees for every branch judged here (PROC1d-ii, -iii); a write in this flow drops it.
+        // One read of the refs and the working trees for every branch judged here (-iii); a write in this flow drops it.
         refs ??= RefSnapshot.Take(root);
         var worktrees = await WorktreesAsync(root, ct, refs).ConfigureAwait(false);
         var judged = new List<RebaseJudged>();
@@ -61,7 +61,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
         var config = asked is null ? null : context.Config();
         foreach (var landed in await cleanups.JudgeLandedAsync(root, repository, workspace, entries, staying, stale: null, ct, refs).ConfigureAwait(false))
         {
-            // What its pull request's answer was, and why the look did not ask where it would have (PLUGHOOK1c, design §2.5).
+            // What its pull request's answer is, and why the look did not ask where it would have.
             var item = asked is null ? landed.Item : landed.Item with { NotAsked = cleanups.NotAskedOf(landed.Item, asked, config!) };
             if (item.Removable || item.Kind == LandedKind.LeanedOn)
             {
@@ -91,7 +91,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
     }
 
     /// <summary>
-    /// One branch, judged for the replay (WSR6): what keeps it as it is, and otherwise where its own commits start.
+    /// One branch, judged for the replay: what keeps it as it is, and otherwise where its own commits start.
     /// </summary>
     /// <remarks>
     /// <para><b>Where its own commits start.</b> Where it grew from the line, where it leaves the line — a plain
@@ -101,7 +101,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
     /// waits, since replaying only its own would lose the work it builds on. With no record (a tree opened before
     /// Daoris kept one), the newest commit of it whose work reads on the line, else where it leaves the line.</para>
     /// </remarks>
-    /// <param name="refs">The judgement's refs (PROC1d-ii); null asks git.</param>
+    /// <param name="refs">The judgement's refs; null asks git.</param>
     internal async Task<RebaseJudged> JudgeReplayAsync(
         string root, string repository, string workspace, string branch, bool landed, string? tree, string? grow, string? grewFrom,
         bool pushedOnRecord, string? line, string? onto, HashSet<string> busy, CancellationToken ct, RefSnapshot? refs = null)
@@ -124,7 +124,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
             if (!string.IsNullOrWhiteSpace(dirty)) return Item(RebaseKind.Dirty, tip, detail: $"{dirty.Trim().Split('\n').Length} path(s) uncommitted");
         }
 
-        // Where it leaves the line answers whether it already holds the line's tip too, so one start asks both (UIFREEZE1, LANDSYNC3).
+        // Where it leaves the line answers whether it already holds the line's tip too, so one start asks both.
         var (baseCode, baseOut, baseErr) = await WorkingTree.GitAsync(root, ["merge-base", tip, onto], ct).ConfigureAwait(false);
         var leaves = baseOut.Trim();
         if (baseCode == 0 && leaves == onto) return Item(RebaseKind.UpToDate, tip);
@@ -153,7 +153,7 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
             walked = true;
         }
 
-        // 🔴 LANDSYNC3 (D87's amendment point 1): judged as a landing judges, so what the line holds is neither counted nor replayed. A
+        // 🔴 Judged as a landing judges, so what the line holds is neither counted nor replayed. A
         // branch grown from the line has the walk by content asked too, where it could find a squash of several of its commits.
         if (await LineHolds.JudgeBeyondAsync(root, tip, onto, leaves, cut, line, walk: !walked && cutBy == CutBy.Line, ct).ConfigureAwait(false)
             is not { } held)
@@ -169,9 +169,9 @@ internal sealed class BranchJudging(TreeContext context, LandedCleanups cleanups
     private const int ContentWalk = 64;
 
     /// <summary>
-    /// Where a branch with no record starts its own work (WSR6): walking back from its tip along its first parents,
+    /// Where a branch with no record starts its own work: walking back from its tip along its first parents,
     /// the newest commit whose work reads on the line by the clean-up's proof; none, and where it leaves the line.
-    /// The landing's judgement of what the line holds walks the same way (<see cref="LineHolds"/>, LANDSYNC1).
+    /// The landing's judgement of what the line holds walks the same way (<see cref="LineHolds"/>).
     /// </summary>
     internal static async Task<(string Cut, string CutBy)> CutByContentAsync(
         string root, string tip, string leaves, string? line, string onto, CancellationToken ct)

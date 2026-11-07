@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 points 2 and 3; the co-agent design §7.9, §2.4, Codex's reads 23 and 24): the keeper reads a partner's copy as
+/// The keeper reads a partner's copy as
 /// files and writes one commit onto the ask's base in the repository itself, with real git. The copy's hooks, filters, configuration
 /// and identity, all rewritten by the partner, are never run or read; the partner's own commits never reach the repository; the same
 /// inputs make the same commit, so a restart repeats it; the piece's ref is created once and never moved; and a piece ref is never

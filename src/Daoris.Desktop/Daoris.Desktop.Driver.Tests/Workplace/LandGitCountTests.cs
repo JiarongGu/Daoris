@@ -5,13 +5,13 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A landing asks git once per fact (LANDGIT1, after STARTGIT1): one landing, the press's or the look's, started about 50 git
-/// processes and asked some facts four or five times (`rev-parse --show-toplevel`, `symbolic-ref --short -q HEAD`,
+/// A landing asks git once per fact: asked afresh, one landing, the press's or the look's, starts about 50 git
+/// processes and asks some facts four or five times (`rev-parse --show-toplevel`, `symbolic-ref --short -q HEAD`,
 /// `rev-parse --verify refs/heads/main^{commit}`, `merge-base`), which on a machine whose antivirus slows every process start
 /// costs many seconds of nothing but starts.
 /// </summary>
 /// <remarks>
-/// Every start through the gate is wrapped by <see cref="ProcessStarts.Within"/> (the PROCSTART2 seam) while one landing runs; the
+/// Every start through the gate is wrapped by <see cref="ProcessStarts.Within"/> while one landing runs; the
 /// test setup's own git runs outside it. The same command never repeats within a landing unless a write of the landing's own sits
 /// between its two askings (a merge or a ref update changes the answer), which the allowed list names; the count has a ceiling.
 /// </remarks>
@@ -83,7 +83,7 @@ public sealed class LandGitCountTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 What another process can move is never kept (the review of LANDGIT1): the session's head, a branch's tip, and the commits
+    /// What another process can move is never kept: the session's head, a branch's tip, and the commits
     /// no branch holds. Each is moved from outside between its asking and its use, and the second asking sees the move.
     /// </summary>
     [Fact]
@@ -117,7 +117,7 @@ public sealed class LandGitCountTests : IDisposable
         Assert.NotEqual("", heldNow.Stdout.Trim());
     }
 
-    /// <summary>A table that was closed answers nothing, wherever a child task still holds it, and a child never inherits a live one.</summary>
+    /// <summary>A table that is closed answers nothing, wherever a child task still holds it, and a child never inherits a live one.</summary>
     [Fact]
     public async Task A_closed_table_is_inert_in_every_flow_that_holds_it()
     {
@@ -141,13 +141,13 @@ public sealed class LandGitCountTests : IDisposable
             await child;
         }
 
-        // The first ask, and the child's after the scope closed: neither was answered from the table.
+        // The first ask, and the child's after the scope closed: neither is answered from the table.
         Assert.Equal(2, starts.Count);
     }
 
     /// <summary>
-    /// 🔴 A fact is kept only until a git of the landing's own may move a ref: the branch made answers the question it was asked
-    /// before it was made, and a plugin's push (<see cref="GitFacts.Dropped"/>) drops what was held.
+    /// A fact is kept only until a git of the landing's own may move a ref: the branch made changes the answer to the question asked
+    /// before it, and a plugin's push (<see cref="GitFacts.Dropped"/>) drops what is held.
     /// </summary>
     [Fact]
     public async Task A_fact_asked_before_a_write_is_asked_again_after_it()
@@ -184,35 +184,21 @@ public sealed class LandGitCountTests : IDisposable
         Assert.Equal(2, starts.Count);
     }
 
-    // Git starts of one landing on this fixture, before LANDGIT1 and after: the look's automatic landing 61 and 52, the press on a
-    // squash rule 54 and 51, the press on a merge rule 45 and 42. A first version kept every ref and head read and reached 34, 42 and
-    // 34; its review found each a stale answer a judgement or a delete could act on, so only what an id answers is kept now. Merged
-    // with FABRIC-END4a's judged delete (its holders read and its one ref transaction) and END6c's per-line fetch reservation, the
-    // automatic landing measured 55 and the merge press 43; the squash press stayed within 51. PROC1d-iv's questions of commits kept
-    // a judgement (and `diff` and `rev-list --count` of ids kept in the planning) moved none of the three: one branch asks no pair twice.
-    // LANDGIT1c hands the judgement's `status` count to the dirty check, and the look's to the landing: 53, 50 and 42.
-    // LANDGIT1b passed the head and tip reads down instead of keeping them: the look's try takes the rule's plan alone (the press's plan
-    // read the line's tips, the head and the named branch's tip again), the landing reads the tree's repository and branch once for
-    // its readers, the content proof takes the tree's own branch its judgement read, and the line's two forms are one snapshot. 44, 46
-    // and 40, each act's own read (the branch's commits, the pinned tip, the tree's move) still made right before it. The two together,
-    // each landing's `status` and its repository and branch handed down: 42, 45 and 39. INTEGRATE1g carries a merge rule's press by the
-    // integration transport, its merge made in the line's integration tree and the checkout fast-forwarded: the tree found or made and put
-    // at its start for the form and again for the replay, the promotion's reads of the line and the fence, and the settle: 67. The replay no
-    // longer finds and puts back a tree the form of the same run just did (6), the promotion no longer asks a fresh candidate's ancestry (1) or
-    // reads the line a second time before the gates' move (1), and a press's containment is ancestry alone (2, the landing judged it): 57.
-    // What the transport still starts: the tree found (`worktree list`) and made (`worktree add`) and its binding read (`rev-parse
-    // --show-toplevel`) with its four puts back at the base; the ancestry read, the merge and the head read; the line read before the move
-    // and in its effect and after it, the fence's `ls-tree`, the checkout list and clean check, and the fast-forward: each the transport's own
-    // check at its moment, or the move itself.
-    // GITTXN1: a delete of the landing's branch asks first whether any name the ref transaction holds is a symbolic ref (`for-each-ref
-    // --format=%(refname)%09%(symref)`), one start in each of the three, the ceilings 43, 46 and 58. The branch about to go is a fact the
-    // proof's holders listing never read (it leaves the branch itself out), and `update-ref -d` on a symbolic ref would delete its target.
-    // LANDNODE1c3: every landing under Current performs its delivery, each effect's outcome read after it and never assumed: the branch's ref
-    // made through one ref transaction (its symbolic-ref check and `update-ref --stdin`) and read back, a merge's line read after its press
-    // (`rev-parse`, `merge-base --is-ancestor`), the ceilings 47, 50 and 61. Measured on the presses 29 and 43 (OPTIMIZE1a, 2026-11-06),
-    // then 25 and 39 (PERF1: each branch's tree from the refs' one listing, the tree's status, head and branch in one start, the refs of a
-    // repository listed once whichever of its folders asks). What is left asked again is the line's commit and the head, which another
-    // process can move and which a landing therefore reads afresh before each act.
+    // The ceilings are the git starts of one landing on this fixture, the press on a squash rule and on a merge rule: each branch's tree
+    // comes from the refs' one listing, the tree's status, head and branch in one start, and the refs of a repository are listed once
+    // whichever of its folders asks. What is left asked again is the line's commit and the head, which another process can move and which
+    // a landing therefore reads afresh before each act.
+    // A merge rule's press goes by the integration transport, its merge made in the line's integration tree and the checkout fast-forwarded.
+    // It starts the tree found (`worktree list`) and made (`worktree add`) and its binding read (`rev-parse --show-toplevel`) with its four
+    // puts back at the base; the ancestry read, the merge and the head read; the line read before the move and in its effect and after it,
+    // the fence's `ls-tree`, the checkout list and clean check, and the fast-forward: each the transport's own check at its moment, or the
+    // move itself.
+    // A delete of the landing's branch asks first whether any name the ref transaction holds is a symbolic ref (`for-each-ref
+    // --format=%(refname)%09%(symref)`). The branch about to go is a fact the proof's holders listing never read (it leaves the branch
+    // itself out), and `update-ref -d` on a symbolic ref would delete its target.
+    // Every landing under Current performs its delivery, each effect's outcome read after it and never assumed: the branch's ref made
+    // through one ref transaction (its symbolic-ref check and `update-ref --stdin`) and read back, a merge's line read after its press
+    // (`rev-parse`, `merge-base --is-ancestor`).
     private const int SquashCeiling = 25;
     private const int MergeCeiling = 39;
 
@@ -225,12 +211,12 @@ public sealed class LandGitCountTests : IDisposable
         var breakdown = git.GroupBy(each => each.Split("  @ ")[0].Split(' ')[1] + (each.Contains("/i-") ? " (integration tree)" : ""))
             .OrderByDescending(group => group.Count()).Select(group => $"{group.Count(),3}  {group.Key}");
         var report = $"{git.Count} git starts:\n{string.Join('\n', breakdown)}\n\n{string.Join('\n', git)}";
-        // The run's starts in its output, so a ceiling is lowered to what was measured.
+        // The run's starts in its output, so a ceiling is lowered to what is measured.
         _output.WriteLine(report);
         // A question of commits by their ids is asked once unless a git that may move a ref ran between its two askings. What names a
         // ref or the head is never kept (another process moves it, and a judgement or a delete must see the move), so those are asked
-        // as often as the steps ask them. `status` is never kept either, but the landing's judgement hands its count to the dirty check
-        // (LANDGIT1c), so it too is asked once until a write. Layout reads are kept only in the planning, so the tidy's own askings,
+        // as often as the steps ask them. `status` is never kept either, but the landing's judgement hands its count to the dirty check,
+        // so it too is asked once until a write. Layout reads are kept only in the planning, so the tidy's own askings,
         // after the table is closed, are not repeats of it.
         var repeated = new List<string>();
         var since = new HashSet<string>(StringComparer.Ordinal);
@@ -251,7 +237,7 @@ public sealed class LandGitCountTests : IDisposable
         }
 
         Assert.True(repeated.Count == 0, $"repeated without a write between: {string.Join("; ", repeated)}\n{report}");
-        // One spelling per ref fact (LANDGIT1c): a ref or the head is never read as itself and again as its commit.
+        // One spelling per ref fact: a ref or the head is never read as itself and again as its commit.
         var read = git.Select(each => each.Split("  @ ")[0]).Where(command => command.StartsWith(VerifyQuiet, StringComparison.Ordinal))
             .Select(command => command[VerifyQuiet.Length..]).ToHashSet(StringComparer.Ordinal);
         var spelledTwice = read.Where(each => !each.Contains('^') && read.Contains(each + "^{commit}")).ToList();
@@ -269,7 +255,7 @@ public sealed class LandGitCountTests : IDisposable
         return Process.Start(info);
     });
 
-    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): the counts are the landing's own starts.</summary>
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): the counts are the landing's own starts.</summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task CommitAsync(string tree, string file, string content, string message)

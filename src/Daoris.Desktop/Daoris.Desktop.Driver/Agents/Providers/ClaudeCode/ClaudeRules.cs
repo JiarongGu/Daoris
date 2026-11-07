@@ -3,12 +3,12 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's rule language (the agent-provider design §4.5): one session's composed rules as its own settings file under the home,
+/// Claude Code's rule language: one session's composed rules as its own settings file under the home,
 /// beside the servers file the same session is handed, with its hooks and the hard denials its classifier is told, and gone when the
 /// session is. Its native door carries the file by <c>--settings</c>, its protocol door in <c>_meta.claudeCode.options.settings</c>.
 /// </summary>
 /// <remarks>
-/// <b>Its own context</b> (CONTEXTONE1e, D230 point 3): every file also says <see cref="OwnContext"/>, so a session's skills are its
+/// <b>Its own context</b>: every file also says <see cref="OwnContext"/>, so a session's skills are its
 /// tree's and its per-session plugin copy's (<see cref="ClaudeSkills"/>), its connectors the ones it is handed, and its memory Daoris's.
 /// Claude Code 2.1.314 reads each key from the command-line tier for that invocation alone, and moves nothing in the account's home; the
 /// account's home is never written (<see cref="HarnessSettings.ProfileHome"/>).
@@ -21,7 +21,7 @@ public sealed class ClaudeRules : IRuleLanguage
     /// <summary>The end of the file a session's rules are handed in, in the spawn folder.</summary>
     public const string FileSuffix = ".settings.json";
 
-    /// <summary>The harness's own hard denials, kept by naming them in the list (UNBLOCK4).</summary>
+    /// <summary>The harness's own hard denials, kept by naming them in the list.</summary>
     public const string HarnessDefaults = TraceSpawnFiles.HarnessDefaults;
 
     /// <summary>
@@ -46,12 +46,12 @@ public sealed class ClaudeRules : IRuleLanguage
     /// <summary>Write the file for one session, which every session is handed for its own context at least.</summary>
     /// <param name="hardDeny">
     /// What auto mode's classifier is told as hard denials (<see cref="PermissionRules.HardDeny"/>), or
-    /// empty for none. Required, so no spawn forgets to say (UNBLOCK4): a session on either door is handed
+    /// empty for none. Required, so no spawn forgets to say: a session on either door is handed
     /// the same file, and the classifier reads it from this command-line tier.
     /// </param>
-    /// <param name="guard">The tree guard for this session (PERM3), or null when it is switched off.</param>
+    /// <param name="guard">The tree guard for this session, or null when it is switched off.</param>
     /// <param name="lineage">
-    /// The lineage hook for this session (FABRIC-C1a), or null for none: on the connector's calls and each subagent's start and
+    /// The lineage hook for this session, or null for none: on the connector's calls and each subagent's start and
     /// stop, beside the guard, never instead of it.
     /// </param>
     public static string Render(
@@ -74,7 +74,7 @@ public sealed class ClaudeRules : IRuleLanguage
         };
         foreach (var (key, value) in OwnContext) document[key] = value;
 
-        // 🔴 `$defaults` FIRST, always (D122 §3.7): a `hard_deny` list without it replaces the harness's
+        // 🔴 `$defaults` FIRST, always: a `hard_deny` list without it replaces the harness's
         // built-in list, whose entry is the rule against sending data out. No `autoMode` key at all when
         // nothing is told, so the harness's own lists stand untouched.
         if (told.Count > 0)
@@ -99,9 +99,9 @@ public sealed class ClaudeRules : IRuleLanguage
                     ["hooks"] = new JsonArray(new JsonObject
                     {
                         ["type"] = "command",
-                        // The node Tools resolves, by its whole path (TOOLS5): the guard runs on the person's choice.
+                        // The node Tools resolves, by its whole path: the guard runs on the person's choice.
                         ["command"] = guard.Node,
-                        // The declared write targets follow the tree, one argument each (D107).
+                        // The declared write targets follow the tree, one argument each.
                         ["args"] = new JsonArray([guard.Script, guard.Tree, .. guard.Also.Select(also => (JsonNode)also)]),
                         ["timeout"] = 30,
                     }),

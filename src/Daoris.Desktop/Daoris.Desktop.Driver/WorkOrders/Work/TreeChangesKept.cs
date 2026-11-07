@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What each running unit's tree changed since it opened, kept by what it was read from: the look's overlaps
+/// What each running unit's tree changed since it opened, kept by what it is read from: the look's overlaps
 /// (<see cref="WorkOverlaps.LookAsync"/>) ask git of a tree only where its <c>HEAD</c> or its index moved since the last read, and compare
 /// the kept paths in memory, since a look comes every fifteen seconds and nearly every tree holds what it held at the last.
 /// </summary>
 /// <remarks>
 /// <para><b>What a read rests on, read from git's files, no git started:</b> the commit it is compared with, the commit the tree's
-/// <c>HEAD</c> stands at, and its index file's length and time. A tree whose files cannot say these is read as before, its top level asked,
+/// <c>HEAD</c> stands at, and its index file's length and time. A tree whose files cannot say these is read each time, its top level asked,
 /// and nothing is kept. An edit not yet staged moves no file of git's, so a kept read is read again once it is <see cref="Again"/> old.
 /// The stamp is taken before the read, so a change during it is a different stamp the next time.</para>
 /// </remarks>

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>What a plugin reports of a step (the fabric events design §C4, §D4): reached, failed, or not known.</summary>
+/// <summary>What a plugin reports of a step: reached, failed, or not known.</summary>
 public static class WorkStates
 {
     public const string Reached = "reached";
@@ -17,7 +17,7 @@ public static class WorkStates
     public static readonly IReadOnlyList<string> All = [Reached, Failed, Unknown];
 }
 
-/// <summary>What <c>work/reconcile</c> answers of an attempt (§D6), each with what Daoris then does (PERFORM1b).</summary>
+/// <summary>What <c>work/reconcile</c> answers of an attempt, each with what Daoris then does.</summary>
 public static class ReconcileStates
 {
     public const string Done = "done";
@@ -33,82 +33,82 @@ public static class ReconcileStates
     public static readonly IReadOnlyList<string> All = [Done, NotStarted, Running, Failed, Unknown];
 }
 
-/// <summary>One unit a plugin is told about at <see cref="HookPoints.Watch"/> (§C4): where it is, its tip, and which of the plugin's steps it awaits.</summary>
+/// <summary>One unit a plugin is told about at <see cref="HookPoints.Watch"/>: where it is, its tip, and which of the plugin's steps it awaits.</summary>
 public sealed record WatchedUnit(
     string Repository, string Workspace, string Root, string Branch, string Tip, string? Line, string? PullRequest, IReadOnlyList<string> Awaiting)
 {
     /// <summary>
-    /// The canonical unit it is told for (FABRIC-PERFORM1i): the host's half of the frame, never written on the wire, so an event bound to
-    /// the frame actually sent is bound to the unit that frame named, never looked up by its repository's name alone (§C4's third rule).
+    /// The canonical unit it is told for: the host's half of the frame, never written on the wire, so an event bound to
+    /// the frame actually sent is bound to the unit that frame named, never looked up by its repository's name alone.
     /// </summary>
     public string? Unit { get; init; }
 
-    /// <summary>The repository's identity (§B5): its common git folder's file identity, else its spelling. The host's alone, as <see cref="Unit"/> is.</summary>
+    /// <summary>The repository's identity: its common git folder's file identity, else its spelling. The host's alone, as <see cref="Unit"/> is.</summary>
     public string? Identity { get; init; }
 
     /// <summary>
-    /// Whether it tells a landed branch at a landing's tip (FABRIC-CUTOVER1c; the cutover design §2.4.1): an event is judged against <see cref="Tip"/>,
+    /// Whether it tells a landed branch at a landing's tip: an event is judged against <see cref="Tip"/>,
     /// which the landing's record keeps, never the branch's live tip, which a later landing moves on. The host's alone, as <see cref="Unit"/> is.
     /// </summary>
     public bool Landing { get; init; }
 }
 
 /// <summary>
-/// A <see cref="HookPoints.Watch"/> frame (§C4): the whole awaited set, the generation of the process it is sent to, and whether the plugin
+/// A <see cref="HookPoints.Watch"/> frame: the whole awaited set, the generation of the process it is sent to, and whether the plugin
 /// sends again what it knows of each awaited step (after a start, a restart or any drop).
 /// </summary>
 public sealed record WorkWatchFrame(int Generation, bool Resync, IReadOnlyList<WatchedUnit> Units);
 
-/// <summary>An event's evidence, the plugin's word (§C4, D143): each part optional, the message 300 characters at most.</summary>
+/// <summary>An event's evidence, the plugin's word: each part optional, the message 300 characters at most.</summary>
 public sealed record WorkEvidence(string? Ref, string? Url, string? Environment, string? Message);
 
-/// <summary>An output a reached step names (§D6): a reference <c>&lt;schema&gt;:&lt;id&gt;</c>, never its payload, and its revision.</summary>
+/// <summary>An output a reached step names: a reference <c>&lt;schema&gt;:&lt;id&gt;</c>, never its payload, and its revision.</summary>
 public sealed record WorkOutput(string Ref, string? Revision);
 
 /// <summary>
-/// What a plugin says it created (FABRIC-PERFORM1d; the fabric events design §D3's receipt): a declared schema and the opaque id the plugin
+/// What a plugin says it created: a declared schema and the opaque id the plugin
 /// issued for it, which only the plugin reads. Never a path: Daoris hands it back at <c>work/cleanup</c> and runs nothing for it.
 /// </summary>
 public sealed record WorkResource(string Schema, string Id);
 
-/// <summary>An outcome as a plugin reports it (§D4, §D6): its state, a failure's code, its evidence, and a reached step's outputs.</summary>
+/// <summary>An outcome as a plugin reports it: its state, a failure's code, its evidence, and a reached step's outputs.</summary>
 public sealed record WorkOutcome(
     string State, string? Code = null, WorkEvidence? Evidence = null, IReadOnlyDictionary<string, WorkOutput>? Outputs = null)
 {
     /// <summary>
-    /// What the attempt created (FABRIC-PERFORM1d, §D3), whatever its state: a failed deployment may still have made something. Taken as
+    /// What the attempt created, whatever its state: a failed deployment may still have made something. Taken as
     /// receipts on the unit's resource record before the outcome is applied, so a crash between the two converges on the replay.
     /// </summary>
     public IReadOnlyList<WorkResource> Resources { get; init; } = [];
 
-    /// <summary>The route a reached decision took, on the wire as <c>outcome</c>: one of its step's declared outcomes (DECIDE1a). Null on any other.</summary>
+    /// <summary>The route a reached decision took, on the wire as <c>outcome</c>: one of its step's declared outcomes. Null on any other.</summary>
     public string? Decision { get; init; }
 }
 
 /// <summary>
-/// A <see cref="HookPoints.Step"/> event (§C4, §D6): an observed step bound to a repository, a branch and a full commit, or a performed
+/// A <see cref="HookPoints.Step"/> event: an observed step bound to a repository, a branch and a full commit, or a performed
 /// step's completion bound to its invocation. The step is the plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c>.
 /// </summary>
 public sealed record WorkStepFrame(
     string Step, WorkOutcome Outcome, DateTimeOffset At, string Id,
     string? Repository = null, string? Branch = null, string? Commit = null, string? Invocation = null);
 
-/// <summary>A <see cref="HookPoints.Perform"/> request's params (§D6): one attempt, with the key the plugin deduplicates it by.</summary>
+/// <summary>A <see cref="HookPoints.Perform"/> request's params: one attempt, with the key the plugin deduplicates it by.</summary>
 public sealed record WorkPerformCall(
     string Unit, string Step, int StepVersion, string Invocation, string IdempotencyKey, string SubjectRevision,
     IReadOnlyList<string> Inputs, DateTimeOffset DeadlineAt);
 
-/// <summary>A <c>work/reconcile</c> request's params (§D6): what became of one attempt.</summary>
+/// <summary>A <c>work/reconcile</c> request's params: what became of one attempt.</summary>
 public sealed record WorkReconcileCall(string Unit, string Step, string Invocation, string IdempotencyKey, string SubjectRevision);
 
-/// <summary><c>work/reconcile</c>'s answer (§D6): its state, and the outcome where it is done or failed.</summary>
+/// <summary><c>work/reconcile</c>'s answer: its state, and the outcome where it is done or failed.</summary>
 public sealed record WorkReconcileAnswer(string State, WorkOutcome? Outcome = null)
 {
-    /// <summary>What the attempt created so far (FABRIC-PERFORM1d, §D6's <c>resources?</c>), whatever its state: taken as its receipts.</summary>
+    /// <summary>What the attempt created so far, whatever its state: taken as its receipts.</summary>
     public IReadOnlyList<WorkResource> Resources { get; init; } = [];
 }
 
-/// <summary>What <c>work/cleanup</c> answers of one receipt (§D3): three are terminal, and <see cref="Failed"/> is tried again on a back-off.</summary>
+/// <summary>What <c>work/cleanup</c> answers of one receipt: three are terminal, and <see cref="Failed"/> is tried again on a back-off.</summary>
 public static class CleanupDispositions
 {
     public const string Removed = "removed";
@@ -128,29 +128,29 @@ public static class CleanupDispositions
 }
 
 /// <summary>
-/// A <c>work/cleanup</c> request's params (FABRIC-PERFORM1d, §D3): the receipt Daoris keeps, the plugin's own opaque id for what it created,
+/// A <c>work/cleanup</c> request's params: the receipt Daoris keeps, the plugin's own opaque id for what it created,
 /// and the key it deduplicates by, the same at every delivery.
 /// </summary>
 public sealed record WorkCleanupCall(string Receipt, string Resource, string IdempotencyKey);
 
-/// <summary><c>work/cleanup</c>'s answer (§D3): a disposition of <see cref="CleanupDispositions"/>, its proof and the plugin's words.</summary>
+/// <summary><c>work/cleanup</c>'s answer: a disposition of <see cref="CleanupDispositions"/>, its proof and the plugin's words.</summary>
 public sealed record WorkCleanupAnswer(string Disposition, string? Proof = null, string? Message = null);
 
 /// <summary>
-/// A step event as the hook set heard it (FABRIC-PERFORM1a): the plugin and the generation of the process it was read from, never what the
-/// frame says of its sender (§C4's first belief rule), and the frame read by shape. What is believed of it is <see cref="WorkBelief"/>'s.
+/// A step event as the hook set heard it: the plugin and the generation of the process it is read from, never what the
+/// frame says of its sender, and the frame read by shape. What is believed of it is <see cref="WorkBelief"/>'s.
 /// </summary>
 public sealed record WorkStepHeard(string Plugin, int Generation, WorkStepFrame Step);
 
 /// <summary>
-/// The work wire's contract, <c>work.perform@1</c> (FABRIC-PERFORM1a; the fabric events design §C4, §D6): every message Daoris sends at the
+/// The work wire's contract, <c>work.perform@1</c>: every message Daoris sends at the
 /// work points and every message a plugin sends back, written and read here once, so the hook set, a stand-in plugin and the kit's
-/// scaffold (PERFORM1e) say the same thing. Every name is spelled here rather than left to a serializer's policy, as
+/// scaffold say the same thing. Every name is spelled here rather than left to a serializer's policy, as
 /// <see cref="HookFrames"/>'s are.
 /// </summary>
 public static class WorkWire
 {
-    /// <summary>The capability a performer's handshake names (§D6). <c>protocolVersion</c> stays 1 (D148 point 8's rule).</summary>
+    /// <summary>The capability a performer's handshake names. <c>protocolVersion</c> stays 1.</summary>
     public const string Capability = "work.perform@1";
 
     public const string WatchMethod = "hook/" + HookPoints.Watch;
@@ -159,24 +159,24 @@ public static class WorkWire
 
     public const string ReconcileMethod = "hook/" + PluginSteps.ReconcilePoint;
 
-    /// <summary>The cleanup adapter's request (FABRIC-PERFORM1d, §D3): one receipt's removal asked of the plugin that created it.</summary>
+    /// <summary>The cleanup adapter's request: one receipt's removal asked of the plugin that created it.</summary>
     public const string CleanupMethod = "hook/" + PluginSteps.CleanupPoint;
 
-    /// <summary>How many resources one outcome or reconciliation names at most (FABRIC-PERFORM1d), as many as its outputs.</summary>
+    /// <summary>How many resources one outcome or reconciliation names at most, as many as its outputs.</summary>
     public const int ResourcesAtMost = 8;
 
     /// <summary>The plugin's notification: the one method a plugin may send unasked, and only to the lease's loop.</summary>
     public const string StepMethod = HookPoints.Step;
 
-    /// <summary>An evidence message's length at most (§C4).</summary>
+    /// <summary>An evidence message's length at most.</summary>
     public const int MessageChars = 300;
 
-    /// <summary>How many outputs a reached step names at most, and a reference's length at most (§D6).</summary>
+    /// <summary>How many outputs a reached step names at most, and a reference's length at most.</summary>
     public const int OutputsAtMost = 8;
 
     public const int RefChars = 200;
 
-    /// <summary>A name's length at most: a repository, an id, an invocation, a key, a revision, an environment (FABRIC-PERFORM1a's choice).</summary>
+    /// <summary>A name's length at most: a repository, an id, an invocation, a key, a revision, an environment.</summary>
     public const int NameChars = 200;
 
     /// <summary>A branch's length at most, and an evidence address's.</summary>
@@ -184,10 +184,10 @@ public static class WorkWire
 
     public const int UrlChars = 2000;
 
-    /// <summary>A full commit id: SHA-1's 40 or SHA-256's 64 lowercase hex digits (§C4: <c>&lt;full id&gt;</c>).</summary>
+    /// <summary>A full commit id: SHA-1's 40 or SHA-256's 64 lowercase hex digits.</summary>
     private static readonly Regex FullCommit = new("^[0-9a-f]{40}(?:[0-9a-f]{24})?$", RegexOptions.CultureInvariant);
 
-    /// <summary>A failure's code, as a step's <c>transient</c> codes are written (UNIT1d): lowercase letters, digits and dashes.</summary>
+    /// <summary>A failure's code, as a step's <c>transient</c> codes are written: lowercase letters, digits and dashes.</summary>
     private static readonly Regex CodeShape = new("^[a-z0-9][a-z0-9-]{0,39}$", RegexOptions.CultureInvariant);
 
     /// <summary>An instant as the wire writes it: ISO 8601 with its offset or <c>Z</c>, so no reader takes it for local time.</summary>
@@ -196,7 +196,7 @@ public static class WorkWire
 
     // ——— Daoris's messages
 
-    /// <summary><see cref="HookPoints.Watch"/>'s params: the whole awaited set, the generation, and whether to send again (§C4).</summary>
+    /// <summary><see cref="HookPoints.Watch"/>'s params: the whole awaited set, the generation, and whether to send again.</summary>
     public static JsonObject Watch(WorkWatchFrame frame) => new()
     {
         ["generation"] = frame.Generation,
@@ -214,7 +214,7 @@ public static class WorkWire
         })]),
     };
 
-    /// <summary><see cref="HookPoints.Perform"/>'s params (§D6), as its example writes them.</summary>
+    /// <summary><see cref="HookPoints.Perform"/>'s params, as its example writes them.</summary>
     public static JsonObject Perform(WorkPerformCall call) => new()
     {
         ["unit"] = call.Unit,
@@ -227,7 +227,7 @@ public static class WorkWire
         ["deadlineAt"] = Time(call.DeadlineAt),
     };
 
-    /// <summary><c>work/reconcile</c>'s params (§D6): <c>{ unit, step, invocation, idempotencyKey, subjectRevision }</c>.</summary>
+    /// <summary><c>work/reconcile</c>'s params: <c>{ unit, step, invocation, idempotencyKey, subjectRevision }</c>.</summary>
     public static JsonObject Reconcile(WorkReconcileCall call) => new()
     {
         ["unit"] = call.Unit,
@@ -237,7 +237,7 @@ public static class WorkWire
         ["subjectRevision"] = call.SubjectRevision,
     };
 
-    /// <summary><c>work/cleanup</c>'s params (§D3): <c>{ receipt, resource, idempotencyKey }</c>.</summary>
+    /// <summary><c>work/cleanup</c>'s params: <c>{ receipt, resource, idempotencyKey }</c>.</summary>
     public static JsonObject Cleanup(WorkCleanupCall call) => new()
     {
         ["receipt"] = call.Receipt,
@@ -248,8 +248,8 @@ public static class WorkWire
     // ——— a plugin's messages: what a stand-in and the kit's scaffold write
 
     /// <summary>
-    /// A <see cref="HookPoints.Step"/> event as a whole frame (§C4): a notification, with no id. Its outcome's fields sit beside the step's,
-    /// as §C4's frame writes <c>state</c> and <c>evidence</c>; a part not said is not written.
+    /// A <see cref="HookPoints.Step"/> event as a whole frame: a notification, with no id. Its outcome's fields sit beside the step's,
+    /// as the frame writes <c>state</c> and <c>evidence</c>; a part not said is not written.
     /// </summary>
     public static JsonObject Step(WorkStepFrame step)
     {
@@ -264,10 +264,10 @@ public static class WorkWire
         return new JsonObject { ["jsonrpc"] = "2.0", ["method"] = StepMethod, ["params"] = @params };
     }
 
-    /// <summary><see cref="HookPoints.Perform"/>'s answer (§D6): receipt of this invocation, and no more. The outcome comes later as an event.</summary>
+    /// <summary><see cref="HookPoints.Perform"/>'s answer: receipt of this invocation, and no more. The outcome comes later as an event.</summary>
     public static JsonObject PerformAnswer(string invocation) => new() { ["invocation"] = invocation };
 
-    /// <summary><c>work/reconcile</c>'s answer (§D6): its state, and its outcome where it has one.</summary>
+    /// <summary><c>work/reconcile</c>'s answer: its state, and its outcome where it has one.</summary>
     public static JsonObject ReconcileAnswer(WorkReconcileAnswer answer)
     {
         var written = new JsonObject { ["state"] = answer.State };
@@ -276,7 +276,7 @@ public static class WorkWire
         return written;
     }
 
-    /// <summary><c>work/cleanup</c>'s answer (§D3): its disposition, and its proof and words where it has them.</summary>
+    /// <summary><c>work/cleanup</c>'s answer: its disposition, and its proof and words where it has them.</summary>
     public static JsonObject CleanupAnswer(WorkCleanupAnswer answer)
     {
         var written = new JsonObject { ["disposition"] = answer.Disposition };
@@ -288,9 +288,9 @@ public static class WorkWire
     // ——— reading what a plugin sends
 
     /// <summary>
-    /// A <see cref="HookPoints.Step"/> event's params read by shape (§C4's fifth rule), or null with the first broken field named: the
+    /// A <see cref="HookPoints.Step"/> event's params read by shape, or null with the first broken field named: the
     /// step, its outcome, its time and its id always; a repository, a branch and a full commit where it binds to no invocation. A field
-    /// this build does not know (a <c>plugin</c> above all, §C4's first rule) is passed over.
+    /// this build does not know (a <c>plugin</c> above all) is passed over.
     /// </summary>
     public static WorkStepFrame? ReadStep(JsonElement @params, out string? field)
     {
@@ -311,7 +311,7 @@ public static class WorkWire
         field = "invocation";
         if (!Optional(@params, "invocation", NameChars, out var invocation)) return null;
 
-        // An observed step binds to a commit (§C4's fourth rule); a completion binds to the attempt it names (§D6).
+        // An observed step binds to a commit; a completion binds to the attempt it names.
         var bound = invocation is null;
         field = "repository";
         if (!Optional(@params, "repository", NameChars, out var repository) || (bound && repository is null)) return null;
@@ -332,8 +332,8 @@ public static class WorkWire
         answer.ValueKind == JsonValueKind.Object && Text(answer, "invocation") == invocation;
 
     /// <summary>
-    /// <c>work/reconcile</c>'s answer read by shape (§D6), or null: <c>done</c> carries an outcome reached or failed, <c>failed</c> one
-    /// failed, and the other three none. Its <c>resources</c> (FABRIC-PERFORM1d) are read as an outcome's are, whatever its state.
+    /// <c>work/reconcile</c>'s answer read by shape, or null: <c>done</c> carries an outcome reached or failed, <c>failed</c> one
+    /// failed, and the other three none. Its <c>resources</c> are read as an outcome's are, whatever its state.
     /// </summary>
     public static WorkReconcileAnswer? ReadReconcileAnswer(JsonElement answer)
     {
@@ -356,7 +356,7 @@ public static class WorkWire
     }
 
     /// <summary>
-    /// <c>work/cleanup</c>'s answer read by shape (FABRIC-PERFORM1d, §D3), or null: a disposition of the four, a proof of a name's length and
+    /// <c>work/cleanup</c>'s answer read by shape, or null: a disposition of the four, a proof of a name's length and
     /// words a person reads of an evidence message's.
     /// </summary>
     public static WorkCleanupAnswer? ReadCleanupAnswer(JsonElement answer) =>
@@ -456,12 +456,12 @@ public static class WorkWire
         return into;
     }
 
-    /// <summary>Resources as the wire writes them (FABRIC-PERFORM1d): <c>[{ schema, id }]</c>, in the order said.</summary>
+    /// <summary>Resources as the wire writes them: <c>[{ schema, id }]</c>, in the order said.</summary>
     private static JsonArray Resources(IEnumerable<WorkResource> resources) =>
         new([.. resources.Select(resource => (JsonNode)new JsonObject { ["schema"] = resource.Schema, ["id"] = resource.Id })]);
 
     /// <summary>
-    /// The <c>resources</c> beside an outcome or a reconciliation read by shape (FABRIC-PERFORM1d, §D3): absent or null is none; else at most
+    /// The <c>resources</c> beside an outcome or a reconciliation read by shape: absent or null is none; else at most
     /// <see cref="ResourcesAtMost"/>, each a schema's name and an id of a reference's length, none twice. Null where any is not.
     /// </summary>
     private static IReadOnlyList<WorkResource>? ReadResources(JsonElement from)
@@ -546,7 +546,7 @@ public static class WorkWire
         return new WorkOutcome(state, code, evidence, outputs) { Resources = resources, Decision = decision };
     }
 
-    /// <summary>A step's name: the plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c> (the kind, as §D6's example names it).</summary>
+    /// <summary>A step's name: the plugin's own id, or <c>&lt;plugin&gt;/&lt;id&gt;</c> (the kind).</summary>
     private static bool IsStep(string step)
     {
         var slash = step.LastIndexOf('/');
@@ -555,7 +555,7 @@ public static class WorkWire
             : PluginCatalog.IsId(step[..slash]) && PluginSteps.NameShape.IsMatch(step[(slash + 1)..]);
     }
 
-    /// <summary>A reference, <c>&lt;schema&gt;:&lt;opaque id&gt;</c> (§D6): a declared schema and an id that is not empty.</summary>
+    /// <summary>A reference, <c>&lt;schema&gt;:&lt;opaque id&gt;</c>: a declared schema and an id that is not empty.</summary>
     private static bool IsReference(string reference)
     {
         var colon = reference.IndexOf(':');

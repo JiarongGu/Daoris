@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A join of a group's members, keeping its identity and failure policy (§E7). Its reaching is the wire evaluation's, from its members; never
+/// A join of a group's members, keeping its identity and failure policy. Its reaching is the wire evaluation's, from its members; never
 /// skipped, since its members are skipped instead.
 /// </summary>
 [NodeKind(NodeKinds.All, NodeGroup.Others, NodeKinds.QuestClose)]

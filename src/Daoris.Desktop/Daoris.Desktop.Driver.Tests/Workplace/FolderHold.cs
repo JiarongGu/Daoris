@@ -5,7 +5,7 @@ using Microsoft.Win32.SafeHandles;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A folder held open by a handle the test lets go of when it chooses (TREECLEANFREE1): the stand-in for what outlives a
+/// A folder held open by a handle the test lets go of when it chooses: the stand-in for what outlives a
 /// holder's exit on Windows, a scanner's or an indexer's read of the folder. Which opens it refuses is the share given:
 /// <see cref="Exclusive"/> refuses every other open, so even listing the folder fails; <see cref="NoDelete"/> is a working
 /// folder's own, which lists and refuses only the removal.

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GIT1b (D147 §4.2): the reads' memory, least recently used first out and bounded by bytes. What it is keyed by, and what
+/// The reads' memory, least recently used first out and bounded by bytes. What it is keyed by, and what
 /// is never kept, is <c>GitReadsAskTests</c>'; this holds the bound and the order.
 /// </summary>
 public sealed class GitReadCacheTests

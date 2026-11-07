@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The workflow step of the release's migration (D232 point 2): one fixture home holding each old shape, converted once, every place following a
+/// The workflow step of the release's migration: one fixture home holding each old shape, converted once, every place following a
 /// saved graph after it, and the old keys gone from the file.
 /// </summary>
 public sealed class WorkflowMigrationTests : IDisposable

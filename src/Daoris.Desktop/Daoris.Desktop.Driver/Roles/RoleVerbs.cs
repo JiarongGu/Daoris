@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris role</c> (FOUNDATION1y-i, the foundation design §2.7): the terminal's door into the role catalogue, the window
+/// <c>daoris role</c>: the terminal's door into the role catalogue, the window
 /// twin of Agents → <i>Roles</i> over <c>SET_ROLE</c>. <c>role</c> says every role, <c>role &lt;id&gt;</c> one;
 /// <c>role set</c> adds or changes a working role (its names, work, scope and choices), <c>role remove</c> takes one out and
 /// <c>role default</c> gives a seeded one back its seed. Each change is judged by the role door's judge before anything is sent or
@@ -21,7 +21,7 @@ public sealed class RoleVerb : ChoiceVerb
         + "[\"<agent> [<model>|-] [<effort>|-]\" … | off]`, an appointed role's `[--acts <act,…>] [--holder terminal|rules|none] [--window <1-60>]`, "
         + "`driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
 
-    /// <summary><c>role suggested [--use]</c> (MODELROLE1g): the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
+    /// <summary><c>role suggested [--use]</c>: the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
     public override Task<int>? RunAsync(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world, CancellationToken ct) =>
         args.Count > 1 && args[1] == "suggested" ? Task.FromResult(Suggested(args, world)) : null;
 
@@ -79,7 +79,7 @@ public sealed class RoleVerb : ChoiceVerb
         + "(<n> is a choice's number in the role's staffing)";
 
     /// <summary>
-    /// <c>role policy &lt;id&gt; …</c> (STAFFPOLICY1b, the staff policy design §6.4): the role's policy set through the role door's
+    /// <c>role policy &lt;id&gt; …</c>: the role's policy set through the role door's
     /// <c>SET_ROLE</c>, the draft being the stored policy (or today's order) with the flags laid over a preset; judged before anything is sent.
     /// </summary>
     private ChoicePress PolicyPlan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
@@ -126,7 +126,7 @@ public sealed class RoleVerb : ChoiceVerb
     private const string RulesGrammar = SupervisorRulesFlags.Grammar;
 
     /// <summary>
-    /// <c>role rules --place … --set|--off|--clear …</c> (CONTEXTDRIVE1d, the context counters design §7.6): the place's rules as stored, each
+    /// <c>role rules --place … --set|--off|--clear …</c>: the place's rules as stored, each
     /// flag laid over them in order for the press's roles, judged by the rules' judge before anything is sent, then written whole through the
     /// role door's <c>SET_ROLE</c> at the revision read.
     /// </summary>
@@ -186,7 +186,7 @@ public sealed class RoleVerb : ChoiceVerb
     }
 
     /// <summary>
-    /// <c>role supervisor [--place &lt;place&gt;]</c> (§7.6): the place's rules and each count's effective rules there, where each comes from;
+    /// <c>role supervisor [--place &lt;place&gt;]</c>: the place's rules and each count's effective rules there, where each comes from;
     /// with no place, every place that holds rules.
     /// </summary>
     private static int SupervisorSaid(IReadOnlyList<string> args, DriverChoicesWorld world)
@@ -329,7 +329,7 @@ public sealed class RoleVerb : ChoiceVerb
         return 0;
     }
 
-    /// <summary>A role's policy line (§6.4): its state and the rule said, why it is stale, and the next new start; the roles with no policy say they run in order.</summary>
+    /// <summary>A role's policy line: its state and the rule said, why it is stale, and the next new start; the roles with no policy say they run in order.</summary>
     private static string PolicySaid(RolePolicyRow row, IReadOnlyList<ActorChoice>? choices)
     {
         var rule = row.PolicyState switch
@@ -368,7 +368,7 @@ public sealed class RoleVerb : ChoiceVerb
                     (window, appointed) = (int.TryParse(minutes, out var set) ? set : throw new ChoiceWords($"`--window {minutes}` is not whole minutes: {Grammar}."), true);
                     break;
                 case var flag when flag.StartsWith("--", StringComparison.Ordinal): throw new ChoiceWords($"`{flag}` is not a flag of `driver role set`: {Grammar}.");
-                // ONEWAY1a: a role whose work may be off (Intake, Ask Daoris) is set off here, as the retired `driver intake|helper off` did.
+                // A role whose work may be off (Intake, Ask Daoris) is set off here.
                 case "off": off = true; break;
                 default: entries.Add(Entry(rest[at])); break;
             }

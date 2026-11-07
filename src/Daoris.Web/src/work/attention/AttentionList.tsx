@@ -13,19 +13,19 @@ import { STALE_AT_ONCE, StaleGoAheads } from './StaleGoAheads';
  */
 export type AttentionDoors = Partial<Record<Attention['kind'], (item: Attention) => void>>;
 
-/** How many rows *Ready for you* shows before it sends the rest to Sessions (design §6.2): review can be many. */
+/** How many rows *Ready for you* shows before it sends the rest to Sessions: review can be many. */
 export const READY_SHOWN = 5;
 
 /** The row an act is on its way for, by kind and id: its acts are held until it answers. */
 export const attentionKey = (item: Attention) => `${item.kind}:${item.id}`;
 
 /**
- * *What needs you* with something in it (UX6c, design §6.2): its title and count, then a group per kind of wait that holds
+ * *What needs you* with something in it: its title and count, then a group per kind of wait that holds
  * any, each named, its rows in the order `attentionInOrder` gave them. *Ready for you* shows five, then counts the rest with a
  * door into Sessions, where they are.
  *
  * @remarks
- * Its kind wears open's hue on the card's edge and on each row's (D41 §3: waiting on the person is open's hue, everywhere
+ * Its kind wears open's hue on the card's edge and on each row's (waiting on the person is open's hue, everywhere
  * it is shown). A molecule: handed the rows, their doors and acts, it draws them and reports each press.
  */
 export function AttentionList({
@@ -33,24 +33,24 @@ export function AttentionList({
 }: {
   items: readonly Attention[];
   /**
-   * Every stale go-ahead a group holds refused in one press, with one reason (GOAHEADSTALE1), each through its own row's door; offered
+   * Every stale go-ahead a group holds refused in one press, with one reason, each through its own row's door; offered
    * where a group holds two or more. Absent, none is offered.
    */
   onRefuseStale?: (items: readonly Attention[], words: string, answered: Answered) => void;
   /** The stale go-aheads' refusals are on their way. */
   refusingStale?: boolean;
   /**
-   * Its groups alone, with no card and no head of its own (NOTIFY2b): *Notifications*' group is its head, which says its name and
+   * Its groups alone, with no card and no head of its own: *Notifications*' group is its head, which says its name and
    * its count.
    */
   bare?: boolean;
   doors?: AttentionDoors;
-  /** A row's door into the run whose step it waits at (WORKFLOW1c), where it has one. */
+  /** A row's door into the run whose step it waits at, where it has one. */
   run?: (item: Attention) => (() => void) | undefined;
   acts?: AttentionActs;
   /** The row an act is on its way for (`attentionKey`). */
   acting?: string | null;
-  /** Rows whose acts are held by something on its way elsewhere: an account's while one of its agent's sign-ins runs (UX6d). */
+  /** Rows whose acts are held by something on its way elsewhere: an account's while one of its agent's sign-ins runs. */
   held?: (item: Attention) => boolean;
   /** What a row shows beneath itself while the band follows one of its acts: an account's sign-in, step by step. */
   below?: (item: Attention) => ReactNode;
@@ -110,7 +110,7 @@ export function AttentionList({
 }
 
 /**
- * *What needs you* with nothing in it (design §6.1): one line, *Nothing needs you*, and what is working, never a card
+ * *What needs you* with nothing in it: one line, *Nothing needs you*, and what is working, never a card
  * saying all clear, which people stop reading.
  */
 export function NothingNeedsYou({ working }: { working: number }) {
@@ -134,9 +134,9 @@ export function NothingNeedsYou({ working }: { working: number }) {
  */
 export function AttentionRegion({ children, resyncing = false, bare = false }: {
   children: ReactNode;
-  /** Who needs the person read again whole (PUSHUX1): the last rows held at reduced opacity until it lands. */
+  /** Who needs the person read again whole: the last rows held at reduced opacity until it lands. */
   resyncing?: boolean;
-  /** Within *Notifications*' group (NOTIFY2b), which is the region: no landmark and no margin of its own. */
+  /** Within *Notifications*' group, which is the region: no landmark and no margin of its own. */
   bare?: boolean;
 }) {
   const { t } = useTranslation();

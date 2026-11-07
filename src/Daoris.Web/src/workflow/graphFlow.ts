@@ -3,11 +3,11 @@ import type { FlowEdge, FlowNode, FlowSection, PillTone } from '../design/FlowCa
 import type { IconName } from '../design/ui';
 import { type ChartNode, type ChartPort, type ChartStep, isPullRequestStep, variantOf } from './chart/stepKinds';
 
-// One drawing of a workflow graph for the place, the editor and a run (SETUPUX1n; D221, the Setup design's §2.3): a graph's steps and
+// One drawing of a workflow graph for the place, the editor and a run: a graph's steps and
 // ways on read onto `Flow`'s nodes and edges. Always in sections, so top to bottom or as the rail and never left to right; its
 // endings drawn as they are: the configured end flagged where the work is done, a ◎ node for an outcome with no route, and *Finished*
 // only from a run's record. The declared checks, requests and holds are one group. Pure and worded: it adds no node's lines or door,
-// which are the caller's. It hands the chart's components (FLOWCHART2a) what each node is: its variant, its ports, a terminal or a
+// which are the caller's. It hands the chart's components what each node is: its variant, its ports, a terminal or a
 // group, and the data wires apart from the ways on.
 
 /** A workflow's node track, in rem: a step's title and one fact, with its cell on selection (the Setup design's §2.3). */

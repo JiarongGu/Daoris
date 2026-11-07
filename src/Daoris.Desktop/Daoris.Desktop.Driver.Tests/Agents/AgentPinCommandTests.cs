@@ -6,10 +6,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris agent pin|update</c> (PUSH1f2e, the alone-path design §1.4): a maker's release downloaded holding nothing, staged
+/// <c>daoris agent pin|update</c>: a maker's release downloaded holding nothing, staged
 /// under the run's own name, and published under the home's lease, the move and the pin's write, waited for and stopped by Ctrl+C; a
 /// pinned update moving the pin as a pin. Codex's channel serves, its bytes from a transport the test holds: no test here touches the
-/// network, and none starts a real agent's install or update. Today's words for the refusals are <c>AgentsTextTests</c>' rows.
+/// network, and none starts a real agent's install or update. The words for the refusals are <c>AgentsTextTests</c>' rows.
 /// </summary>
 public sealed class AgentPinCommandTests : IDisposable
 {
@@ -209,7 +209,7 @@ public sealed class AgentPinCommandTests : IDisposable
     }
 
     /// <summary>
-    /// A package pin's npm, a stand-in that fails: started at this terminal as the agent's own command (§1.1's second hop), its failure
+    /// A package pin's npm, a stand-in that fails: started at this terminal as the agent's own command, its failure
     /// pins nothing. A real process, so the suite's Process half runs it.
     /// </summary>
     [Trait(Category.Name, Category.Process)]
@@ -237,7 +237,7 @@ public sealed class AgentPinCommandTests : IDisposable
         }
 
         /// <summary>
-        /// A package pin's update asks npm the window's one way (<see cref="PinNewest"/>, AGENTPROVIDER1f's s-ix rows): the npm handed, through
+        /// A package pin's update asks npm the window's one way (<see cref="PinNewest"/>): the npm handed, through
         /// the tools; its answer shown, as the window streams it; its refusal in the window's words, and the pin stays.
         /// </summary>
         [Fact]
@@ -293,7 +293,7 @@ public sealed class AgentPinCommandTests : IDisposable
 
     private static string Sha(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
 
-    /// <summary>A transport over a table of URLs, and the URLs it was asked for, in order.</summary>
+    /// <summary>A transport over a table of URLs, and the URLs it is asked for, in order.</summary>
     private sealed class Served(Dictionary<string, byte[]> files) : HttpMessageHandler
     {
         public List<string> Asked { get; } = [];

@@ -13,7 +13,7 @@ public enum SessionAdvanceRefusal
 
     /// <summary>
     /// The session is finished, and a finished session is a record. Records do not move — but for the one move out of an
-    /// ended state, to working with the person's words waiting (MSG1a, D137 §2.3).
+    /// ended state, to working with the person's words waiting.
     /// </summary>
     Terminal,
 
@@ -21,14 +21,14 @@ public enum SessionAdvanceRefusal
     InvalidMove,
 
     /// <summary>
-    /// An ended record would go on in a tree another session now holds (MSG1a): one session per working tree (D51)
+    /// An ended record would go on in a tree another session now holds: one session per working tree
     /// holds for going on as for a start.
     /// </summary>
     Busy,
 
     /// <summary>
-    /// A move to working whose waiting supervisor's words are not exactly the ones it names (SUPERVISOR1a-i, the supervisor design
-    /// §6.3): a plan made before a release, before a take-back or beside a word Daoris cannot attribute never moves the record.
+    /// A move to working whose waiting supervisor's words are not exactly the ones it names: a plan made
+    /// before a release, before a take-back or beside a word Daoris cannot attribute never moves the record.
     /// </summary>
     WordsChanged,
 }

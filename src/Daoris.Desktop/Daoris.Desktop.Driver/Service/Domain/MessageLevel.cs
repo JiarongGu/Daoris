@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A message's urgency (COWORK1a, D188 point 1): the sender's statement of when it should reach a working agent, never judged by
+/// A message's urgency: the sender's statement of when it should reach a working agent, never judged by
 /// a model (<c>model-decoupling</c>). A request, not a guarantee: each door gives what it can, and the answer says what it gave
-/// and why (the message-urgency design §3.0). No level stops a turn; only a stop does.
+/// and why. No level stops a turn; only a stop does.
 /// </summary>
 public enum MessageLevel
 {
@@ -11,19 +11,19 @@ public enum MessageLevel
     Ordinary,
 
     /// <summary>
-    /// At the agent's next step, where its door takes words then (D136); held for the turn's end anywhere else, and said so. The
-    /// person's default, and every message's that names none, which keeps each path's reach from before.
+    /// At the agent's next step, where its door takes words then; held for the turn's end anywhere else, and said so. The
+    /// person's default, and every message's that names none.
     /// </summary>
     Urgent,
 
     /// <summary>
-    /// At once, cutting the step in flight, where the agent steers (STEER2a); what urgent gets anywhere else, said so. The person's
-    /// own words only (D188 point 2).
+    /// At once, cutting the step in flight, where the agent steers; what urgent gets anywhere else, said so. The person's
+    /// own words only.
     /// </summary>
     Now,
 }
 
-/// <summary>A message's urgency in the words the wire, the record and the terminal carry (COWORK1a).</summary>
+/// <summary>A message's urgency in the words the wire, the record and the terminal carry.</summary>
 public static class MessageLevels
 {
     public const string Ordinary = "ordinary";
@@ -50,7 +50,7 @@ public static class MessageLevels
     };
 
     /// <summary>
-    /// The level a press asked for (the design §9, ONEWAY1l): its <c>level</c>, else the person's default, urgent. A level word this
+    /// The level a press asked for: its <c>level</c>, else the person's default, urgent. A level word this
     /// build does not know is the caller's to refuse.
     /// </summary>
     public static MessageLevel Asked(string? level) => Read(level) ?? MessageLevel.Urgent;

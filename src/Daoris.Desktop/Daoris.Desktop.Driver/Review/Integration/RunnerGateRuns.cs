@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The gates' runs through the repository's declared runner (INTEGRATE1f part f2; the integration design §5.9): the plan first, then the
+/// The gates' runs through the repository's declared runner: the plan first, then the
 /// run of what the plan runs, then promotion's reading of the two; a failure repeated by <c>probe</c> as composed. Only the accepted blob
 /// is the declaration (its text beside the run, in every mode); the tree is the candidate's, handed as <c>TREE</c>, standing at the commit.
 /// </summary>

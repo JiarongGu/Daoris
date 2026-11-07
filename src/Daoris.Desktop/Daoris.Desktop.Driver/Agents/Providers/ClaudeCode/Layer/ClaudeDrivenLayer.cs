@@ -5,7 +5,7 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's driven kind bound to the layer (AGENTLYNTAI1d, the agent-lyntai design §4.1, §4.2): its CLI provider registered under
+/// Claude Code's driven kind bound to the layer: its CLI provider registered under
 /// <c>claude-code</c> over the program a start resolved, opened as the layer's <c>cli</c> door for a driven start, its resume and its
 /// go-ons; a conversation stays Daoris-run until 1f-i. A refused model is told by the door's two entries for it: the assistant's
 /// <c>model_not_found</c> and a result's sentence no field read.
@@ -14,7 +14,7 @@ internal static class ClaudeDrivenLayer
 {
     public const string Door = "claude-code";
 
-    /// <summary>The entries the layer's Claude door spells a refused model with (Lyntai's AG12).</summary>
+    /// <summary>The entries the layer's Claude door spells a refused model with.</summary>
     public static IReadOnlySet<string> ModelRefusals { get; } =
         new HashSet<string>(StringComparer.Ordinal) { "claude.assistant.error=model_not_found", "claude.result:sentence:model-refused" };
 
@@ -32,8 +32,8 @@ internal static class ClaudeDrivenLayer
         };
 
     /// <summary>
-    /// What today's driven start hands Claude Code, as the layer's start carries it: the mode it runs under (today's word, or
-    /// <c>acceptEdits</c> where none is asked), the model and effort its choice carries as today's native arguments carry them, and the
+    /// What a driven start hands Claude Code, as the layer's start carries it: the mode it runs under (the start's word, or
+    /// <c>acceptEdits</c> where none is asked), the model and effort its choice carries as the native arguments carry them, and the
     /// plugin folders it composed.
     /// </summary>
     public static LayerStart Start(LayerStart start, SpawnRequest request, IReadOnlyList<string> plugins) => start with
@@ -54,8 +54,8 @@ internal static class ClaudeDrivenLayer
     /// <summary>
     /// A driven start's run on the layer, held by its executor: the program the start resolved (its file and the arguments before
     /// <c>-p</c>) started in place of the door's command, under the environment its shell composed; the mode, model, effort and plugin
-    /// folders it was handed carried by the layer's options, its rules and servers files by the carriers. A partner's piece stays on today's
-    /// transport, its job one the launcher's seat does not name.
+    /// folders handed to it carried by the layer's options, its rules and servers files by the carriers. A partner's piece stays Daoris-run,
+    /// its job one the launcher's seat does not name.
     /// </summary>
     internal static HeldRun? Run(ITransportHost host, TransportStart start, SpawnRequest request)
     {

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a loop did with words a terminal said to a session (MSG1e, D137 §5.2), written beside the request for the door that
+/// What a loop did with words a terminal said to a session, written beside the request for the door that
 /// asked: the shape the screen's routes answer (<c>{sent, reaches, why}</c>), with the id a record gave words it kept.
 /// </summary>
 /// <param name="Sent">Held or taken: they reach the session, now or when it can.</param>
@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// Where nothing took them: a code of <see cref="WordsNever"/>, <see cref="Running"/> or <see cref="Unreached"/>. Null with a
 /// <see cref="Message"/> where the loop could not say.
 /// </param>
-/// <remarks>A record alone, in Conversations' Domain (STRUCT3h, D166's note), so a Domain that answers with it may name it.</remarks>
+/// <remarks>A record alone, in Conversations' Domain, so a Domain that answers with it may name it.</remarks>
 public sealed record WordsHeld(bool Sent, string? Reaches, string? Why)
 {
     /// <summary>
@@ -29,8 +29,8 @@ public sealed record WordsHeld(bool Sent, string? Reaches, string? Why)
     public string? Word { get; init; }
 
     /// <summary>
-    /// The person's *Send now* was carried out (STEER2c): steered into the running turn, or held with the turn stopped so they go
-    /// next. Where it was not, <see cref="Why"/> is its <see cref="SendNowWhy"/> code beside <c>Sent</c>. False for an older answer.
+    /// The person's *Send now* is carried out: steered into the running turn, or held with the turn stopped so they go
+    /// next. Where it is not, <see cref="Why"/> is its <see cref="SendNowWhy"/> code beside <c>Sent</c>. False for an older answer.
     /// </summary>
     public bool Now { get; init; }
 
@@ -38,8 +38,7 @@ public sealed record WordsHeld(bool Sent, string? Reaches, string? Why)
     public string? Message { get; init; }
 
     /// <summary>
-    /// The line's head the words were said to and taken by, where the record the terminal named went on in it (FOUNDATION1d-ii, the foundation
-    /// design §3.4 rule 2): the verb names it and follows the words there. Null where the record named took them, and in an older answer.
+    /// The line's head the words were said to and taken by, where the record the terminal named went on in it: the verb names it and follows the words there. Null where the record named took them, and in an older answer.
     /// </summary>
     public string? Head { get; init; }
 

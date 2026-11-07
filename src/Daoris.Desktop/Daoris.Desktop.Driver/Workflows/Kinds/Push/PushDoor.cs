@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Performs a run's <c>push</c> node (G8; D241 point 2): the branch the run's <c>land</c> made is pushed to origin by the one push act on the
+/// Performs a run's <c>push</c> node: the branch the run's <c>land</c> made is pushed to origin by the one push act on the
 /// act journal (<see cref="GitPushActs"/>), under its ref-bound grant, exactly as the person's press pushes it. A push that ends is written on the
 /// landing record, which the node reads against git's remote-tracking ref; one the act refuses fails the node with the act's sentence kept in the
 /// machine log, so a refused push (Write denied, a read-only identity, origin held) is said and never retried on its own.
@@ -63,7 +63,7 @@ public sealed class PushDoor(string home, Action<string>? log = null, Func<bool>
             return;
         }
 
-        // An act that ended with no exit is unknown, never retried (area rule 36): the node stays active for the person's word, and only a refusal fails it.
+        // An act that ended with no exit is unknown, never retried: the node stays active for the person's word, and only a refusal fails it.
         if (!run.Refused) return;
         log?.Invoke($"push  {start.Unit}: `{start.Node.Id}` was refused: {run.Said}");
         Fail(start);

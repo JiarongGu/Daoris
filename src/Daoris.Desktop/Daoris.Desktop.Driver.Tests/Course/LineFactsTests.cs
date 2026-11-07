@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1b and CONTEXTDRIVE1i (the context-counters design §3, §5): a line's counts read as facts below the course, each with the
+/// A line's counts read as facts below the course, each with the
 /// number Daoris acts on it at today, its parts with why each began, and its last go-ons with who answered, read from this home's files over
 /// the records' text.
 /// </summary>

@@ -81,7 +81,7 @@ internal static class NodeEvaluations
                     break;
                 case RunSubject.Branch:
                     subjects[node.Id] = scope.Branch?.Id;
-                    // A branch whose tip was not read (its tree tidied after its landing): a node bound there keeps its binding's own revision, so
+                    // A branch whose tip is not read (its tree tidied after its landing): a node bound there keeps its binding's own revision, so
                     // only a moved subject lapses it; one not bound yet takes the commit its session branch records the line holding, so work
                     // merged outside the run is read where the line holds it rather than withheld for good.
                     if (tip is null && scope.Branch is { } held)
@@ -131,7 +131,7 @@ internal static class NodeEvaluations
 
     /// <summary>
     /// The landing a run's <c>handed</c> reached on: the branch unit its reach names and the tip its evidence names, the landing's own, which
-    /// what follows binds; null while it is not reached, or its branch was not read.
+    /// what follows binds; null while it is not reached, or its branch is not read.
     /// </summary>
     public static (WorkUnit Unit, string Tip)? Landed(GovernedUnit governed, IReadOnlyDictionary<string, NodeStatus> statuses)
     {
@@ -176,7 +176,7 @@ internal static class NodeEvaluations
 
     /// <summary>
     /// The revision each of a branch unit's plugin nodes, observed and performed, is judged on: its branch's tip read this pass, so a moved
-    /// branch lapses the old binding and the node is begun again on the new tip. Where the tip was not read, a bound node keeps its binding's
+    /// branch lapses the binding and the node is begun again on the new tip. Where the tip is not read, a bound node keeps its binding's
     /// revision, so nothing lapses on a read that failed; a node not bound is not begun or sent.
     /// </summary>
     private static Dictionary<string, string?> TipRevisions(GovernedUnit governed, string? tip, IReadOnlyDictionary<string, NodeStatus> statuses)
@@ -192,7 +192,7 @@ internal static class NodeEvaluations
     }
 
     /// <summary>
-    /// The governed units by each unit their plugins are told under: a unit's own, and each branch a run's quests produced, its former subjects
+    /// The governed units by each unit their plugins are told under: a unit's own, and each branch a run's quests produced, its earlier subjects
     /// included, mapped back to the run, as the read that keeps Current off them maps it.
     /// </summary>
     public static Dictionary<string, GovernedUnit> ByTold(IEnumerable<GovernedUnit> governed)
@@ -214,8 +214,8 @@ internal static class NodeEvaluations
     /// </summary>
     /// <remarks>
     /// A run's gates are its branch's, read at the tip this pass read (<paramref name="tip"/>), which its gate nodes bind, so the opinion and
-    /// the look are judged at their bound commit by construction, never at a tree's <c>HEAD</c> a commit since has moved. A run with no branch,
-    /// or whose branch's tip was not read (its tree tidied after its landing), reads none, and its gate nodes keep their bindings, a landing
+    /// the look are judged at their bound commit by construction, never at a tree's <c>HEAD</c> that a later commit has moved. A run with no branch,
+    /// or whose branch's tip is not read (its tree tidied after its landing), reads none, and its gate nodes keep their bindings, a landing
     /// at the bound commit answering them from its record.
     /// </remarks>
     public static async Task<(OpinionGateState? Opinion, ReviewGateState? Review)> GatesAsync(
@@ -232,7 +232,7 @@ internal static class NodeEvaluations
 
     /// <summary>
     /// <paramref name="reads"/> with what the line holds of a run's branch at the tip this pass read, where its <c>content.holds</c> waits
-    /// active or unknown; as they were for every other unit, so a run whose hold is settled, or holds none, asks nothing.
+    /// active or unknown; as they stand for every other unit, so a run whose hold is settled, or holds none, asks nothing.
     /// </summary>
     public static async Task<NodeGitReads?> ContentAsync(
         GovernedUnit governed, NodeRecord record, string? tip, Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> content, NodeGitReads? reads,
@@ -258,7 +258,7 @@ internal static class NodeEvaluations
     /// <summary>
     /// What git says for a branch unit's observed built-ins that wait on it: a <c>push</c> active or unknown on a landing Daoris pushed reads the
     /// landed branch's remote-tracking ref, through the pass's one read (<paramref name="git"/>). Null where nothing waits on git, so a unit with
-    /// no such node asks it nothing; what was not read stays absent, and its node unknown.
+    /// no such node asks it nothing; what is not read stays absent, and its node unknown.
     /// </summary>
     public static async Task<NodeGitReads?> GitReadsAsync(GovernedUnit governed, NodeRecord record, PassGit git, CancellationToken ct)
     {

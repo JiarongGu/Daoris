@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A kind the person acts on beyond the lifecycle's skip and stop (D247 §3.3): the acts it takes, which no other kind does, those its node
+/// A kind the person acts on beyond the lifecycle's skip and stop: the acts it takes, which no other kind does, those its node
 /// offers where it stands, and the move each of them asks of the one table.
 /// </summary>
 public interface IPressed

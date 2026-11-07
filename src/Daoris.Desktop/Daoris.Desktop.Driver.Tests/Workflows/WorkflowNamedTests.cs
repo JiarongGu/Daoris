@@ -6,12 +6,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1d (D157 points 5, 6 and 8, the workflow design §2.4–§2.6, §3.2, §3.3, §3.9): named workflows and their versions —
+/// Named workflows and their versions —
 /// what a file and each version may say, a version's digest, the diff by step id, the presets, and a version added.
 /// </summary>
 /// <remarks>
-/// Held, cell for cell, to ONE table, this suite's <c>fixtures/workflow-named.json</c> (the CLI's twin, <c>namedworkflows.ts</c>,
-/// left with the driver family's TypeScript in PUSH1f2b).
+/// Held, cell for cell, to ONE table, this suite's <c>fixtures/workflow-named.json</c>.
 /// </remarks>
 public sealed class WorkflowNamedTests
 {
@@ -133,8 +132,8 @@ public sealed class WorkflowNamedTests
     }
 
     /// <summary>
-    /// WORKFLOWCLEAN1 1b: each row of the old store table adds a version of steps, which no door saves now. A row that planned refuses
-    /// with the steps words, and a row that already refused for its file or its id says that as before.
+    /// Each row of the store table adds a version of steps, which no door saves. A row that planned refuses
+    /// with the steps words, and a row that refused for its file or its id says that.
     /// </summary>
     [Theory]
     [MemberData(nameof(Rows), "store")]

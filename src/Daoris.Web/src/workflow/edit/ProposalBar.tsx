@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Inline } from '../../design/ui';
 import type { ProposalMaker } from './proposalTake';
 
-// Ask Daoris's proposal above the editor's chart (FLOWCHART2f; D223 §4, §8.8): what it proposes, the agent and the model that made it, its
+// Ask Daoris's proposal above the editor's chart: what it proposes, the agent and the model that made it, its
 // reason in the agent's words, how it would judge taken whole, how many of its changes are taken, left and still to decide, and the presses
 // over it whole: *Take all*, and *Not now* while nothing is taken or *Leave the rest* once something is. Its changes stand below it, one by
 // one. A molecule: what it says arrives as props, and every press goes out.
@@ -15,7 +15,7 @@ export type ProposalBarProps = {
   /** What a save of the proposal's graph would refuse, counted. */
   problems: number;
   counts: { taken: number; left: number; open: number };
-  /** This window no longer holds the draft it was made against: none of its changes can be taken. */
+  /** This window does not hold the draft the proposal is made against: none of its changes can be taken. */
   unknownBase: boolean;
   /** The press that settles it: on its way, answered, or refused in the driver's words. */
   settling: { state: 'pending' | 'told' } | { state: 'failed'; why: string } | null;

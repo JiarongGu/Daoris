@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-RUN1d (the fabric events design §A3, §C6): the evaluation runtime's own wakes run link 8 alone. A <c>nodes</c> wake (a timer its
+/// The evaluation runtime's own wakes run link 8 alone. A <c>nodes</c> wake (a timer its
 /// records persist come due, the awaited set it told changed) runs the runtime's pass and no local plan, so it is no look; over the real
 /// client with the service's doors standing in, in-process, as the topics' tests drive the watch.
 /// </summary>

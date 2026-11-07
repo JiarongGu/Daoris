@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPMODE1c2a (D183's note; the Ask Daoris modes design §4.1 and §7): Ask Daoris's housekeeping grant. The person's record of
+/// Ask Daoris's housekeeping grant. The person's record of
 /// what is chosen; each start composing it again onto the allow-list and the receipt; and the driver's judgement of each tool's
-/// request, at every call, before the cleanup's own judges: the record is Ask Daoris's, the operation is chosen now and was handed
+/// request, at every call, before the cleanup's own judges: the record is Ask Daoris's, the operation is chosen now and handed
 /// at this start, and the repository is the conversation's workspace's, with a checkout here. No git runs here: every refusal
 /// comes before the checkout, and a discard's keep is read off the layout and the ledger. The git half is
 /// <c>HelpHousekeepingGitTests</c>.
@@ -35,7 +35,7 @@ public sealed class HelpHousekeepingTests : IDisposable
 
     private void Choose(string json) => File.WriteAllText(ConfiguredAccess.PathOf(_home), json);
 
-    /// <summary>What this start was handed, as its receipt keeps it.</summary>
+    /// <summary>What this start is handed, as its receipt keeps it.</summary>
     private void Handed(string session, params string[] housekeeping) =>
         new HelpWired(_home).Keep(session, new HelpReceipt
         {
@@ -81,7 +81,7 @@ public sealed class HelpHousekeepingTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1c2b: the person's choice of one operation edits that grant's list alone, made onto the file as it reads at the write,
+    /// The person's choice of one operation edits that grant's list alone, made onto the file as it reads at the write,
     /// so what it holds besides (another grant, a code this build does not act on, a key it does not know) stays as written.
     /// </summary>
     [Fact]
@@ -121,7 +121,7 @@ public sealed class HelpHousekeepingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Each start composes the grant again (design §4.1's trap): the place a start is handed reads the record then, its allow-list
+    /// 🔴 Each start composes the grant again: the place a start is handed reads the record then, its allow-list
     /// names the chosen operations' tools beside the room's own, and the room's own list names none of them, so nothing is allowed
     /// by a list the person did not choose. Full access keeps the grant, since the tools judge it either way.
     /// </summary>
@@ -168,7 +168,7 @@ public sealed class HelpHousekeepingTests : IDisposable
 
     /// <summary>
     /// 🔴 A revoke refuses the next call, mid-conversation and on a resume alike, since each call reads the record; and a grant
-    /// chosen after this start began waits for the next start, as its room and its allow-list do (a widening, D183's HELPMODE1a2).
+    /// chosen after this start began waits for the next start, as its room and its allow-list do (a widening).
     /// </summary>
     [Fact]
     public async Task A_revoke_refuses_the_next_call_and_a_widening_takes_the_next_start()
@@ -178,12 +178,12 @@ public sealed class HelpHousekeepingTests : IDisposable
         Handed("h1");
         Assert.Equal(HousekeepingAnswer.NotHanded, (await AnswerAsync(ledger, Request(ConfiguredAccess.Inspect))).Code);
 
-        // A start that was handed it, then the person revokes it while the conversation runs.
+        // A start that is handed it, then the person revokes it while the conversation runs.
         Handed("h1", ConfiguredAccess.Inspect);
         Choose("""{ "housekeeping": [] }""");
         Assert.Equal(HousekeepingAnswer.NotGranted, (await AnswerAsync(ledger, Request(ConfiguredAccess.Inspect))).Code);
 
-        // Resumed after the revoke: its new start was handed nothing, and the record still says none.
+        // Resumed after the revoke: its new start is handed nothing, and the record still says none.
         Handed("h1");
         Assert.Equal(HousekeepingAnswer.NotGranted, (await AnswerAsync(ledger, Request(ConfiguredAccess.Inspect))).Code);
         Assert.DoesNotContain("/api/registry", ledger.Asked);

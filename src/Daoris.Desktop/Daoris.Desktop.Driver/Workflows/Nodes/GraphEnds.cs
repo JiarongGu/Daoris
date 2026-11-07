@@ -1,23 +1,23 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A closure graph's end the milestone tells the person of (FABRIC-CLOSE1j; the fabric events design §E5): ended by their own done before
+/// A closure graph's end the milestone tells the person of : ended by their own done before
 /// its end (<see cref="QuestClosing.Overridden"/>), naming the nodes it stopped; or closed only in part (<see cref="QuestClosing.Partial"/>),
 /// naming the quest lost with its take and the close node, whose stop is offered while that node is live; or the person's word on its close
-/// taken back since the submission it names moved (<see cref="QuestClosing.TakenBack"/>, FABRIC-CLOSE1q4), naming the quest and the word.
+/// taken back after the submission it names moved (<see cref="QuestClosing.TakenBack"/>), naming the quest and the word.
 /// </summary>
 /// <param name="Unit">The unit (<see cref="WorkUnit.Id"/>).</param>
 /// <param name="Kind"><see cref="QuestClosing.Overridden"/>, <see cref="QuestClosing.Partial"/> or <see cref="QuestClosing.TakenBack"/>.</param>
-/// <param name="At">When it was found.</param>
+/// <param name="At">The moment the end is found.</param>
 public sealed record GraphEnd(string Unit, string Kind, DateTimeOffset At)
 {
     /// <summary>Overridden: the nodes the person's done stopped.</summary>
     public IReadOnlyList<string> Nodes { get; init; } = [];
 
-    /// <summary>Partially closed: the quest no longer done on the submission its close judged.</summary>
+    /// <summary>Partially closed: the quest is not done on the submission its close judged.</summary>
     public string? Quest { get; init; }
 
-    /// <summary>Partially closed: the close node, and the attempt the person's stop is said on (<c>WORK_HELD</c>'s door, PERFORM1g).</summary>
+    /// <summary>Partially closed: the close node, and the attempt the person's stop is said on (<c>WORK_HELD</c>'s door).</summary>
     public string? Node { get; init; }
 
     public int? Attempt { get; init; }
@@ -31,13 +31,13 @@ public sealed record GraphEnd(string Unit, string Kind, DateTimeOffset At)
     /// <summary>The words the person may say of it: <c>stop</c> while the close node is live again (<see cref="QuestClosing.Partly"/>), else none.</summary>
     public IReadOnlyList<string> Words { get; init; } = [];
 
-    /// <summary>A word taken back (FABRIC-CLOSE1q4, <see cref="QuestClosing.TakenBack"/>): the person's word the pass did not take, <c>record</c> or <c>stop</c>.</summary>
+    /// <summary>A word taken back (<see cref="QuestClosing.TakenBack"/>): the person's word the pass did not take, <c>record</c> or <c>stop</c>.</summary>
     public string? Word { get; init; }
 }
 
 /// <summary>
-/// The closure graphs' ends the person is told of, read from the units' node records' history (FABRIC-CLOSE1j): what <c>WORK_STATE</c>
-/// lists beside the held attempts. Read-only: no record is written, no lease taken. Derived, stored nowhere but the history it reads (§D0).
+/// The closure graphs' ends the person is told of, read from the units' node records' history: what <c>WORK_STATE</c>
+/// lists beside the held attempts. Read-only: no record is written, no lease taken. Derived, stored nowhere but the history it reads.
 /// </summary>
 public static class GraphEnds
 {
@@ -48,7 +48,7 @@ public static class GraphEnds
             .SelectMany(Of)
             .OrderBy(end => end.At)];
 
-    /// <summary>One record's ends: each override by the moment it stopped its nodes, and each quest found lost since its close.</summary>
+    /// <summary>One record's ends: each override by the moment it stopped its nodes, and each quest found lost after its close.</summary>
     public static IEnumerable<GraphEnd> Of(NodeRecord record)
     {
         foreach (var stop in record.History.Where(entry => entry.Why == QuestClosing.Overridden).GroupBy(entry => entry.At))
@@ -69,7 +69,7 @@ public static class GraphEnds
             };
         }
 
-        // FABRIC-CLOSE1q4: a word taken back on a close no longer listed as held (its node moved off), said here once; while the close is
+        // A word taken back on a close not listed as held (its node moved off) is said here once; while the close is
         // still listed, its held row says it (submission-moved), so it is not said twice.
         var taken = QuestClosing.TakenBack + " #";
         foreach (var entry in record.History.Where(entry => entry.Why.StartsWith(taken, StringComparison.Ordinal)))

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1 row 1d (CHATFLOW1f, the chat-flow design §4.5): a conversation's run bound to a graph version has the person's press for its
+/// A conversation's run bound to a graph version has the person's press for its
 /// candidate and the runtime for its landing. The candidate the press submitted stands where a quest stands for <c>claimed</c>, a real pass
 /// of the runtime judges the run's branch, and the door lands the tip the Accept covered; a later candidate reopens the same run.
 /// </summary>
@@ -172,7 +172,7 @@ public sealed class ChatGraphRunTests : ReviewLandingFixture
         Assert.Contains("quest.close", refused.Binding.Problem);
     }
 
-    /// <summary>CHATFLOW1i: a chat that took a quest, and the next record of its line, are that quest's work; a chat that took none is not.</summary>
+    /// <summary>A chat that took a quest, and the next record of its line, are that quest's work; a chat that took none is not.</summary>
     [Fact]
     public void A_chat_that_took_a_quest_is_that_quests_work_at_every_door_and_one_that_took_none_is_not()
     {
@@ -187,7 +187,7 @@ public sealed class ChatGraphRunTests : ReviewLandingFixture
         Assert.Equal(("q4", "q4", (string?)null), (ChatRuns.TakenOf("c1", Records), ChatRuns.TakenOf("c2", Records), ChatRuns.TakenOf("c3", Records)));
     }
 
-    /// <summary>CHATFLOW1h: the checks a conversation is held to are those its run's process hands, so a light chat is held to light and one that sets none to nothing.</summary>
+    /// <summary>The checks a conversation is held to are those its run's process hands, so a light chat is held to light and one that sets none to nothing.</summary>
     [Fact]
     public void A_chat_run_s_checks_are_those_its_process_hands_and_none_where_it_sets_none()
     {

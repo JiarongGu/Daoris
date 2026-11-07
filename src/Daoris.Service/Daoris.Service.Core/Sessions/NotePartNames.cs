@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// A session note's parts under the names this build reads (D232): a part whose values name a door <c>adapter</c> has it renamed
+/// A session note's parts under the names this build reads: a part whose values name a door <c>adapter</c> has it renamed
 /// <c>door</c>, and the reason <c>adapter</c> (the person changed the door since) is the reason <c>door</c>. The store moves its own
 /// notes as it opens, because a shared host opens the same schema and runs no desktop migration; a note that is not JSON is left as kept.
 /// </summary>

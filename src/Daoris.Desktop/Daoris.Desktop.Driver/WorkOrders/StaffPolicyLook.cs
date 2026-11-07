@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A quest whose last session ended past its transient bound under a role that moves on it (STAFFPOLICY1e): the course decides once,
+/// A quest whose last session ended past its transient bound under a role that moves on it: the course decides once,
 /// and the move is written down before the planner reads it, so a restart or a second look reads the one decision.
 /// </summary>
 [LookPass("policy", LookPhase.Read, "handovers")]

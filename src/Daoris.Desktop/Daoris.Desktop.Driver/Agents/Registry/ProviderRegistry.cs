@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>What an id resolved to, by the kind it was asked as (<see cref="ProviderRegistry.Resolve(string, IdKind)"/>).</summary>
+/// <summary>What an id resolves to, by the kind it is asked as (<see cref="ProviderRegistry.Resolve(string, IdKind)"/>).</summary>
 public sealed record ResolvedId(IdKind Kind, AgentDoor? Door, Provider? Provider, AccountPool? Pool);
 
 /// <summary>
-/// An agent as a roster, a probe and the account verbs read it (AGT7): its name, its program, its account facts, the home it runs in,
+/// An agent as a roster, a probe and the account verbs read it: its name, its program, its account facts, the home it runs in,
 /// who it is and who makes it, the words it says its accounts' limits, windows and sign-ins in, and the question its windows are
 /// asked by. A door's own is <see cref="ProviderRegistry.AgentNamed"/>; the agent that answers for a door's accounts is
 /// <see cref="ProviderRegistry.AccountAgentOf"/>.
@@ -15,9 +15,8 @@ public sealed record AccountAgent(
     TablesPart Tables, string? TurnReport, IUsageRead? Usage, string? AccountOf);
 
 /// <summary>
-/// Every provider and door this build and its enabled plugins carry, and the questions the contract asks of them (AGENTPROVIDER1 row
-/// a; the agent-provider design §2.2, §11): the registry answers each once, where the code once read the owner, its toolchain and its
-/// holder in several places.
+/// Every provider and door this build and its enabled plugins carry, and the questions the contract asks of them: the registry answers each once, for the owner, its toolchain and its
+/// holder.
 /// </summary>
 /// <remarks>
 /// <para><b>Identity's rules</b> are checked at registration: a provider's id is unique among providers and a door's among doors; a
@@ -33,8 +32,8 @@ public sealed class ProviderRegistry
     private readonly IReadOnlyList<string> _declared;
 
     /// <summary>
-    /// Registers providers, refusing a set that breaks the identity rules (design §2.2). <paramref name="declared"/> is every agent an
-    /// installed plugin's harness names, enabled or not (POOLSTRAY1): one no provider answers for is kept as an unavailable
+    /// Registers providers, refusing a set that breaks the identity rules. <paramref name="declared"/> is every agent an
+    /// installed plugin's harness names, enabled or not: one no provider answers for is kept as an unavailable
     /// descriptor, so turning a plugin off loses none of its wiring.
     /// </summary>
     public ProviderRegistry(IEnumerable<Provider> providers, IEnumerable<string>? declared = null)
@@ -97,7 +96,7 @@ public sealed class ProviderRegistry
 
     /// <summary>
     /// The registry this build carries: every provider registered (<see cref="Providers.Built"/>) with its doors. `claude-code` first
-    /// and supported, `codex` second and explicit (D23): an unknown name is an error naming what exists, never a silent fallback.
+    /// and supported, `codex` second and explicit: an unknown name is an error naming what exists, never a silent fallback.
     /// </summary>
     public static ProviderRegistry Built() => new(global::Daoris.Driver.Providers.Built());
 
@@ -105,7 +104,7 @@ public sealed class ProviderRegistry
     public IReadOnlyList<string> Names => [.. _doors.Keys.OrderBy(key => key, StringComparer.Ordinal)];
 
     /// <summary>
-    /// The agents whose accounts Daoris keeps (POOLSTRAY1, D197): every provider, door and account key, a disabled plugin's names too,
+    /// The agents whose accounts Daoris keeps: every provider, door and account key, a disabled plugin's names too,
     /// so turning a plugin off loses none of its wiring. A folder under the account homes naming none of these is no agent
     /// (<see cref="HarnessSettings.AccountsOf"/>).
     /// </summary>
@@ -122,20 +121,20 @@ public sealed class ProviderRegistry
     /// <summary>Every provider, in id order, unavailable descriptors among them.</summary>
     public IReadOnlyList<Provider> Providers { get; }
 
-    /// <summary>The names a plugin may not declare: the built set's doors and the agents its doors run as (D64's rule 3).</summary>
+    /// <summary>The names a plugin may not declare: the built set's doors and the agents its doors run as.</summary>
     public IReadOnlyList<string> Reserved { get; }
 
-    /// <summary>The agents whose accounts Daoris keeps (POOLSTRAY1): every provider, door and account key, a disabled plugin's names too.</summary>
+    /// <summary>The agents whose accounts Daoris keeps: every provider, door and account key, a disabled plugin's names too.</summary>
     public IReadOnlyList<string> Known { get; }
 
-    /// <summary>Each agent's facts and its doors' sheets, read from the registrations and the measurements table (COAGENT1e).</summary>
+    /// <summary>Each agent's facts and its doors' sheets, read from the registrations and the measurements table.</summary>
     public IAgentFacts Facts => LazyInitializer.EnsureInitialized(ref _facts, () => new ProviderFacts(this, Measurement.Table))!;
 
     private IAgentFacts? _facts;
 
     /// <summary>
     /// The agent a name is, as it declares itself: a door by its own declarations, or the agent a door runs as with no door of its own
-    /// here (CODEXACCT1, <c>codex</c>), by its provider's: its binary, sign-in, status question and account seam, what the roster's
+    /// here (<c>codex</c>), by its provider's: its binary, sign-in, status question and account seam, what the roster's
     /// probes and the agent verbs hand on. Null for an agent nobody declared.
     /// </summary>
     public AccountAgent? AgentNamed(string name) =>
@@ -143,13 +142,13 @@ public sealed class ProviderRegistry
             ? Declares(entry) ? AgentOf(entry) : null
             : _providers.TryGetValue(name, out var holder) && holder.Program.IsKnown ? HolderOf(holder) : null;
 
-    /// <summary>The plugin a door came from (D64), or null for a door this build carries and for a name that is no door.</summary>
+    /// <summary>The plugin a door came from, or null for a door this build carries and for a name that is no door.</summary>
     public string? DeclaredBy(string door) => _doors.TryGetValue(door, out var entry) ? entry.Door.Identity.DeclaredBy : null;
 
     /// <summary>Every door, in id order.</summary>
     public IReadOnlyList<DoorId> Doors => [.. _doors.Values.Select(entry => entry.Door.Id).OrderBy(id => id.Value, StringComparer.Ordinal)];
 
-    /// <summary>The door of this id; an unknown id, a provider's included, is an error naming what exists (D23).</summary>
+    /// <summary>The door of this id; an unknown id, a provider's included, is an error naming what exists.</summary>
     public AgentDoor Door(string id) => _doors.TryGetValue(id, out var found) ? found.Door : throw UnknownDoor(id);
 
     private DriverException UnknownDoor(string id) => new(
@@ -158,7 +157,7 @@ public sealed class ProviderRegistry
 
     public AgentDoor Door(DoorId id) => Door(id.Value);
 
-    /// <summary>The provider of this id, an unavailable descriptor too; an unknown id is an error naming what exists (D23).</summary>
+    /// <summary>The provider of this id, an unavailable descriptor too; an unknown id is an error naming what exists.</summary>
     public Provider Provider(string id) =>
         _providers.TryGetValue(id, out var found)
             ? found
@@ -172,7 +171,7 @@ public sealed class ProviderRegistry
     public ProviderId ProviderOf(DoorId door) => Entry(door).Provider.Id;
 
     /// <summary>
-    /// The door's account key (design §2.2): its harness's <c>accountOf</c> verbatim, else its provider's id, never followed further,
+    /// The door's account key: its harness's <c>accountOf</c> verbatim, else its provider's id, never followed further,
     /// and the name itself for a door with no program.
     /// </summary>
     public AccountKey OwnerOf(DoorId door) => Entry(door).Door.AccountOf ?? new AccountKey(door.Value);
@@ -193,7 +192,7 @@ public sealed class ProviderRegistry
     /// </summary>
     public string? BorrowedFrom(string agent) => OwnerOfAgent(agent).Value is var owner && !Ids.Same(owner, agent.Trim()) ? owner : null;
 
-    /// <summary>What an account key resolves to: the providers holding it and their doors, none selected first (C3-2.2).</summary>
+    /// <summary>What an account key resolves to: the providers holding it and their doors, none selected first.</summary>
     public AccountPool Pool(AccountKey key)
     {
         var holding = Providers.Where(provider => Ids.Same(provider.KeyOf().Value, key.Value)).ToList();
@@ -210,7 +209,7 @@ public sealed class ProviderRegistry
             [.. holding.SelectMany(provider => provider.Doors).Select(door => door.Id)]);
     }
 
-    /// <summary>Resolves an id by the kind of id its field holds (design §5, <see cref="RecordIds"/>); an unknown one is D23's error.</summary>
+    /// <summary>Resolves an id by the kind of id its field holds (<see cref="RecordIds"/>); an unknown one is an error naming what exists.</summary>
     public ResolvedId Resolve(string id, IdKind kind) => kind switch
     {
         IdKind.Door => new ResolvedId(kind, Door(id), null, null),
@@ -224,7 +223,7 @@ public sealed class ProviderRegistry
 
     // ---- What a door reads of its accounts: its own declarations, else what its account key's provider or door lends. ----
 
-    /// <summary>The words this door says an account's limit in: its own, else its owner's (AGT7).</summary>
+    /// <summary>The words this door says an account's limit in: its own, else its owner's.</summary>
     public LimitWords? LimitsOf(DoorId door) => Own(door).Tables.Limits ?? LentTo(door).Tables.Limits;
 
     /// <summary>The words this door's agent refuses a start for its sign-in in.</summary>
@@ -237,7 +236,7 @@ public sealed class ProviderRegistry
     public IUsageRead? UsageOf(DoorId door) => Own(door).Usage.Read ?? LentTo(door).Usage.Read;
 
     /// <summary>
-    /// The agent that answers for this door's accounts (AGT7): the door itself where it is keyed by its own name, else the door its key
+    /// The agent that answers for this door's accounts: the door itself where it is keyed by its own name, else the door its key
     /// names where this build carries one, else the holder of that name, else the door itself. Null for a door that declares no program.
     /// </summary>
     public AccountAgent? AccountAgentOf(DoorId door)
@@ -270,7 +269,7 @@ public sealed class ProviderRegistry
             ? AccountAgentOf(door.Door.Id)?.Accounts.SettingsFile
             : _providers.TryGetValue(agent, out var holder) && holder.Accounts.IsKnown ? holder.Accounts.Required.Facts.SettingsFile : null;
 
-    // ---- Whether an agent is listed or named: two rules, kept apart (AGENTPROVIDER1 row b, C1-4.1) ----
+    // ---- Whether an agent is listed or named: two rules, kept apart ----
 
     /// <summary>
     /// The roster's listing: a door is listed when it names a binary of its own or declares no program at all, or when the home's
@@ -357,7 +356,7 @@ public sealed class ProviderRegistry
     }
 
     /// <summary>
-    /// What this door reads beyond its own declarations, one level (O4-F1): from the provider its account key is, what it lends; from
+    /// What this door reads beyond its own declarations, one level: from the provider its account key is, what it lends; from
     /// the door its key names, what that door lends; nothing for a door keyed by its own name or whose key names nothing here.
     /// </summary>
     private LentPart LentTo(DoorId door)

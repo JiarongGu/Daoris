@@ -8,7 +8,7 @@ import i18n from '../locales/i18n';
 import type { Channel } from './channel';
 import { AttendedSession } from './AttendedSession';
 
-// SESSONE2c (D167 points 6 to 8; the co-working design §2.4): a session on an ask has its ask's channel as a panel under its head,
+// A session on an ask has its ask's channel as a panel under its head,
 // kept to its line of work, with To starting at its repository. A session with none draws none.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);

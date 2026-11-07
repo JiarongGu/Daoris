@@ -1,17 +1,16 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris workflow keep</c> was asked (WORKFLOW1f): the session whose work it keeps, and the person's words.</summary>
+/// <summary>What <c>daoris workflow keep</c> asks: the session whose work it keeps, and the person's words.</summary>
 public sealed record WorkflowKeepAsk(string Session, string? Words);
 
 /// <summary>
-/// <c>daoris workflow keep &lt;session&gt; ["…"]</c> (WORKFLOW1f; the workflow design §4.4, D50): the person's <i>Keep</i>.
+/// <c>daoris workflow keep &lt;session&gt; ["…"]</c>: the person's <i>Keep</i>.
 /// Where a kind chose a workflow that asks less of them, and the work changed paths outside the kind's, the gate holds it for
 /// their say-so; this keeps the kind's workflow for that work, with their words, on its run, and says what the gate says after.
 /// </summary>
 /// <remarks>
 /// <para><b>The person's alone</b>, as the second opinion's <i>Go on anyway…</i> is: no connector tool and no Ask Daoris card
-/// reaches it (D110). The screen's press is owed to the editor's row (WORKFLOW1g), and so are §4.4's other two, <i>Follow the
-/// other workflow</i> and <i>Choose…</i>, which bind a run again.</para>
+/// reaches it.</para>
 ///
 /// <para><b>Exit codes</b>: 0 kept, 1 refused (no tree of its own here, no quest, nothing of a kind's paths holds it), 2 the usage
 /// or a service that did not answer.</para>
@@ -40,7 +39,7 @@ public static class WorkflowKeepCommand
     }
 
     /// <summary>
-    /// The press over a session's work already found (design §4.4): the gate read as every door reads it, the person's say-so kept on
+    /// The press over a session's work already found: the gate read as every door reads it, the person's say-so kept on
     /// its run only where a kind's paths hold it, and the gate read again.
     /// </summary>
     /// <param name="door"><c>terminal</c> or <c>screen</c> (<see cref="ReviewDoors"/>).</param>

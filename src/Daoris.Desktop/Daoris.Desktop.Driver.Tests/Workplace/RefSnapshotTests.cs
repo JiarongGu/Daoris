@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A judgement reads a checkout's refs once (PROC1d-ii): `rev-parse --verify` was 389 of PROC1a's 1278 product starts, a branch's
-/// tip, a line's form, an upstream asked one at a time. A snapshot answers what git would, says where it cannot so git is asked
+/// A judgement reads a checkout's refs once, not `rev-parse --verify` for a branch's
+/// tip, a line's form and an upstream one at a time. A snapshot answers what git would, says where it cannot so git is asked
 /// as before, and is read again after any write its own flow makes.
 /// </summary>
 /// <remarks>
@@ -292,8 +292,8 @@ public sealed class RefSnapshotTests
     }
 
     /// <summary>
-    /// PROC1d-iii: the working trees are read once for a judgement, as its refs are (`worktree list` was 47 of PROC1a's product
-    /// starts), and a write in its flow drops them with the refs, so the next question lists them as they are now.
+    /// The working trees are read once for a judgement, as its refs are,
+    /// and a write in its flow drops them with the refs, so the next question lists them as they are now.
     /// </summary>
     [Fact]
     public async Task The_working_trees_are_listed_once_a_judgement_and_again_after_a_write()
@@ -335,7 +335,7 @@ public sealed class RefSnapshotTests
         Assert.Equal(3, _listed);
     }
 
-    /// <summary>The test seam that makes a list fail (AUTOTIDY1) still makes it null where the judgement holds one.</summary>
+    /// <summary>The test seam that makes a list fail still makes it null where the judgement holds one.</summary>
     [Fact]
     public async Task A_list_the_seam_fails_is_null_whatever_the_snapshot_holds()
     {
@@ -350,7 +350,7 @@ public sealed class RefSnapshotTests
 
     private static readonly string Root = Tree("engine");
 
-    /// <summary>The questions of commits by their full ids alone a judgement asks most (PROC1d-iv), as the product asks them.</summary>
+    /// <summary>The questions of commits by their full ids alone a judgement asks most, as the product asks them.</summary>
     private static string[][] ByIds =>
     [
         ["merge-base", "--is-ancestor", Main, Work],
@@ -373,7 +373,7 @@ public sealed class RefSnapshotTests
     }
 
     /// <summary>
-    /// PROC1d-iv: a question of commits by their full ids alone (whether one holds another, the files two differ in, how many commits
+    /// A question of commits by their full ids alone (whether one holds another, the files two differ in, how many commits
     /// one has beyond others) is asked of a checkout's git once a judgement, and every later asker is handed git's answer as given.
     /// Three branches that left the line at one commit asked the same pair each. A landing's table keeps the same questions.
     /// </summary>
@@ -396,7 +396,7 @@ public sealed class RefSnapshotTests
     }
 
     /// <summary>
-    /// PROC1d-iv: what names a ref or the head, reads the files, or could read another way under the person's configuration is never
+    /// What names a ref or the head, reads the files, or could read another way under the person's configuration is never
     /// kept: a judgement asks git each time, as before.
     /// </summary>
     [Theory]
@@ -428,7 +428,7 @@ public sealed class RefSnapshotTests
     }
 
     /// <summary>
-    /// PROC1d-iv, RECORDUNREAD1: only an answer git gave is kept; a git that could not answer (a missing object's 128, a start that
+    /// Only an answer git gave is kept; a git that could not answer (a missing object's 128, a start that
     /// failed, a throw, a cancel) is asked again at the next question, never read as "no". `merge-base`'s 1 is its "no".
     /// </summary>
     [Fact]
@@ -470,8 +470,8 @@ public sealed class RefSnapshotTests
     }
 
     /// <summary>
-    /// PROC1d-iv: a judgement keeps only its own checkout's answers, and only while it holds: another repository asks its own git; the
-    /// judgement again before an act takes its own refs and so asks afresh (D88); a write this flow starts drops what was kept with the
+    /// A judgement keeps only its own checkout's answers, and only while it holds: another repository asks its own git; the
+    /// judgement again before an act takes its own refs and so asks afresh; a write this flow starts drops what it kept with the
     /// refs; and a seam's snapshot, no checkout's, keeps nothing.
     /// </summary>
     [Fact]
@@ -501,7 +501,7 @@ public sealed class RefSnapshotTests
         Assert.Equal(2, asked.Count);
     }
 
-    /// <summary>PROC1d-iv: what a judgement kept ends with it: its caller, after it returns, asks git, and a seam's snapshot keeps nothing.</summary>
+    /// <summary>What a judgement kept ends with it: its caller, after it returns, asks git, and a seam's snapshot keeps nothing.</summary>
     [Fact]
     public async Task What_a_judgement_kept_is_not_its_caller_s_after()
     {

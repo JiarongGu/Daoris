@@ -4,46 +4,46 @@ using static Daoris.Driver.TreeRefs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One session's tree brought up to date at the person's press (REVIEWBASE2-i, D164's REVIEWBASE2 note), for what WSR6's look
+/// One session's tree brought up to date at the person's press, for what the look
 /// leaves alone: an open conversation's tree, and a tree detached from its branch. The line is fetched once, as the person, and the
-/// tree is replayed onto it by WSR6's own replay (D109). PART10k, out of <c>SessionTrees.Update.cs</c>.
+/// tree is replayed onto it by the look's own replay.
 /// </summary>
 /// <remarks>
 /// It takes the judging, the replay and the review's range as <see cref="TreeSync"/> does, and the follow for the layout's
-/// <c>BranchOfTree</c> (PART10l).
+/// <c>BranchOfTree</c>.
 /// </remarks>
 internal sealed class TreeUpdates(
     TreeContext context, TreeFollows follows, BranchJudging judging, BranchReplays replays, ReviewRanges ranges)
 {
     /// <summary>
     /// Bring <paramref name="tree"/> up to date with its repository's line, fetched now: a tree on a branch, the session's or one of
-    /// its own (TREEFOLLOW1), has its own commits replayed and the branch moved last; a detached tree is rebased in place. Each
+    /// its own, has its own commits replayed and the branch moved last; a detached tree is rebased in place. Each
     /// refusal is an answer (<see cref="TreeRefusal"/>, asked in <see cref="TreeFacts.First"/>'s order) and leaves the tree as it was.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>This writes into the person's repository</b>, so WSR6's every guard is here: the replay runs as the person, never
+    /// <para>🔴 <b>This writes into the person's repository</b>, so every guard is here: the replay runs as the person, never
     /// a force push and never a push; a conflict aborts it and names the files; the content proof finds nothing of the tree's own
     /// changed but what the line brought before anything is kept; a branch moves only from the commit it was judged at.</para>
     ///
-    /// <para><b>Only while nothing runs in the tree</b> (point 3). Whether a turn is taking or queued, or a driven session works,
+    /// <para><b>Only while nothing runs in the tree</b>. Whether a turn is taking or queued, or a driven session works,
     /// is the caller's to say, since only the door knows its chat runner: <paramref name="running"/> is asked first, and again once
-    /// the repository's trees are held (<see cref="TreeLock"/>, LEFT2) and the line fetched, as late as can be before the replay.
-    /// The record's waiting is no refusal here, as it is in WSR6's look.</para>
+    /// the repository's trees are held (<see cref="TreeLock"/>) and the line fetched, as late as can be before the replay.
+    /// The record's waiting is no refusal here, as it is in the look.</para>
     ///
-    /// <para><b>The line's latest</b> is origin's where the line here is behind it, which is what WSR6's pull would take, else the
+    /// <para><b>The line's latest</b> is origin's where the line here is behind it, which is what a pull would take, else the
     /// line here. The person's own line is not moved: the fetch moves only origin's ref. A line that cannot be fetched is refused in
-    /// git's words rather than judged against the last look's fetch (point 2); a repository with no <c>origin</c> has nothing to
+    /// git's words rather than judged against the last look's fetch; a repository with no <c>origin</c> has nothing to
     /// fetch, and is brought up to the line it has.</para>
     /// </remarks>
     /// <param name="tree">A session tree this home opened.</param>
     /// <param name="running">Whether something runs in the tree now.</param>
-    /// <param name="fetched">The caller fetched the line already (a start, LANDSYNC2), so this fetches nothing and refuses no fetch.</param>
+    /// <param name="fetched">The caller fetched the line already (a start), so this fetches nothing and refuses no fetch.</param>
     internal async Task<TreeUpdate> UpdateTreeAsync(
         string tree, Func<CancellationToken, Task<bool>> running, CancellationToken ct = default, bool fetched = false)
     {
         static TreeUpdate Refused(TreeFacts facts) => new(false, TreeUpdateWords.Refused(facts.First()!.Value, facts));
 
-        // One look (UIFREEZE1, PROC1d-i): git's guess at the line is asked once by the update and the judging it runs.
+        // One look: git's guess at the line is asked once by the update and the judging it runs.
         using var look = context.OneLook();
 
         // 🔴 Nothing else of a folder that is no tree of this home's is read: git would walk up from it to the repository above.
@@ -53,7 +53,7 @@ internal sealed class TreeUpdates(
         if (!context.Holds(full) || repository.Length == 0) return Refused(facts with { NotOurs = true });
         if (!await WorkingTree.IsTopLevelAsync(full, ct).ConfigureAwait(false))
         {
-            // GITWORKTREECONFIG1: a tree git binds to another checkout is one it reports another root for; said as that, asked only here.
+            // A tree git binds to another checkout is one it reports another root for; said as that, asked only here.
             return await TreeBinding.RefusalAsync(full, ct).ConfigureAwait(false) is { } elsewhere
                 ? new(false, $"Nothing was brought up to date: {elsewhere}.")
                 : Refused(facts with { NotOurs = true });
@@ -64,8 +64,8 @@ internal sealed class TreeUpdates(
         facts = facts with { Uncommitted = await StatusPathsAsync(full, ct).ConfigureAwait(false) };
         if (facts.First() is not null) return Refused(facts);
 
-        // The repository's own checkout, whose line is the repository's (as the review reads it, REVIEWBASE1), and the tree's
-        // branch, in one start (PROC1d-iii). Its branch is taken where that start gave a plain name or a detached HEAD; anything
+        // The repository's own checkout, whose line is the repository's (as the review reads it), and the tree's
+        // branch, in one start. Its branch is taken where that start gave a plain name or a detached HEAD; anything
         // else (no commit yet, or a name git had to tell from another) is asked as before, so the name is the one it was.
         var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         string? branch;
@@ -87,7 +87,7 @@ internal sealed class TreeUpdates(
         }
 
         if (here.Code != 0) return new(false, TreeUpdateWords.Left(facts, RebaseKind.Unknown, null, Failure(here.Err)));
-        // GITWORKTREECONFIG1: the root read with the tree's repository, git's own now, before anything is held or written in the tree.
+        // The root read with the tree's repository, git's own now, before anything is held or written in the tree.
         if (await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound)
         {
             return new(false, $"Nothing was brought up to date: {bound}.");
@@ -101,10 +101,10 @@ internal sealed class TreeUpdates(
         using var held = TreeLock.TryReplaying(context.Home, root, repository, TreeLock.Updating);
         facts = facts with { Held = held is null };
         if (facts.First() is not null) return Refused(facts);
-        // LINESTOGETHER1d: a tree bound into an operation bringing sessions together is left as it stands, its operation named.
+        // A tree bound into an operation bringing sessions together is left as it stands, its operation named.
         if (TogetherGuard.Refusal(context.Home, full) is { } together) return new(false, $"Nothing was brought up to date: {together}.");
 
-        // The one network step (point 2). FetchAsync names no address only where there is no `origin` at all: nothing to fetch.
+        // The one network step. FetchAsync names no address only where there is no `origin` at all: nothing to fetch.
         var (failed, url) = fetched ? (null, null) : await FetchAsync(context.Home, root, line, ct, repository, workspace).ConfigureAwait(false);
         var noOrigin = failed is not null && url is null;
         facts = facts with { NotFetched = noOrigin ? null : failed };
@@ -137,27 +137,27 @@ internal sealed class TreeUpdates(
     }
 
     /// <summary>
-    /// A session going on in an old tree starts from the line (LANDSYNC2, D87's 2026-10-15 amendment point 7): before a resume, words
+    /// A session going on in an old tree starts from the line: before a resume, words
     /// going on, a carry-on or a further part's start in a tree that stands, the line is fetched once, and where it holds some of the
     /// tree's commits (the walk by content or patch id, not merely because it moved) <see cref="UpdateTreeAsync"/> brings the tree up
     /// to date. What the session is told comes back with it.
     /// </summary>
     /// <remarks>
-    /// <para><b>Never a reason not to start.</b> A fetch that fails is judged against the last one and said in point 6's words, where the
-    /// person's own press refuses it (REVIEWBASE2-i point 2). A conflict, or any reason the press leaves a tree, leaves it as it was and
+    /// <para><b>Never a reason not to start.</b> A fetch that fails is judged against the last one and said in the words the person's own press would hear, where the
+    /// person's own press refuses it. A conflict, or any reason the press leaves a tree, leaves it as it stands and
     /// tells the session to replay its own commits itself.</para>
     ///
     /// <para><b>Before the start's own hold.</b> The replay holds the repository's trees alone (<see cref="TreeLock"/>), which a start
     /// takes shared, so the caller asks this before it takes its own; another start in the repository at that moment is the press's
     /// <c>Held</c>, told as any reason the tree was left.</para>
     ///
-    /// <para><b>A start's git, never a look's per tree</b> (UIFREEZE1): nothing where the tree is not this home's or has no line; else
+    /// <para><b>A start's git, never a look's per tree</b>: nothing where the tree is not this home's or has no line; else
     /// the fetch, the line's latest, where the tree leaves it and <see cref="LineHolds.JudgeBeyondAsync"/>'s one log, the line's files
     /// only where a squash could be read; the press's own only where the line holds some of its commits.</para>
     /// </remarks>
     internal async Task<TreeStartSync> StartInSyncAsync(string tree, CancellationToken ct = default)
     {
-        // One look (UIFREEZE1, PROC1d-i): git's guess at the line is asked once by the judgement and the press it may make.
+        // One look: git's guess at the line is asked once by the judgement and the press it may make.
         using var look = context.OneLook();
         var full = Path.GetFullPath(tree);
         var (workspace, repository) = context.OwnerOf(full);
@@ -190,7 +190,7 @@ internal sealed class TreeUpdates(
         var leaves = baseOut.Trim();
         if (baseCode != 0 || leaves == onto) return Left();
 
-        // Not merely because the line moved (point 7): only where it holds some of the tree's commits.
+        // Not merely because the line moved: only where it holds some of the tree's commits.
         if (await LineHolds.JudgeBeyondAsync(root, head, onto, leaves, leaves, line, walk: true, ct).ConfigureAwait(false)
             is not { HoldsAny: true } held)
         {
@@ -206,7 +206,7 @@ internal sealed class TreeUpdates(
     }
 
     /// <summary>
-    /// A step the person went on with after reopening the work it grew from (FABRIC-CLOSE1c5, §E5 as CLOSE1c amends it): before its
+    /// A step the person went on with after reopening the work it grew from: before its
     /// carried-on session starts, its tree is brought up to date with <paramref name="source"/>'s new submission at
     /// <paramref name="commit"/>, then with the line as any start's (<see cref="StartInSyncAsync"/>).
     /// </summary>
@@ -214,7 +214,7 @@ internal sealed class TreeUpdates(
     /// <param name="source">The quest the step grew from, as the session is told it (<c>#q1</c>).</param>
     /// <param name="commit">The new submission's commit off the wire; null where the host names none.</param>
     /// <remarks>
-    /// <para><b>A replay, as the tree sync's</b> (WSR6, D88): the step's own commits, from where its record says it grew (else where it
+    /// <para><b>A replay, as the tree sync's</b>: the step's own commits, from where its record says it grew (else where it
     /// leaves the commit), are rebased onto the commit in its own tree detached, proven, and its branch moved last from the commit
     /// judged; its record then grows from the commit. Never a merge, which the tree sync never makes either.</para>
     ///
@@ -236,7 +236,7 @@ internal sealed class TreeUpdates(
     }
 
     /// <summary>
-    /// The step's tree replayed onto <paramref name="commit"/> (FABRIC-CLOSE1c5), by <see cref="GoOnInSyncAsync"/>'s rules: what moved and
+    /// The step's tree replayed onto <paramref name="commit"/>, by <see cref="GoOnInSyncAsync"/>'s rules: what moved and
     /// what the session is told, or why it was left and that nothing else may change.
     /// </summary>
     private async Task<SubmissionOnto> OntoSubmissionAsync(string tree, string source, string commit, bool broughtForward, CancellationToken ct)
@@ -257,7 +257,7 @@ internal sealed class TreeUpdates(
 
         var here = await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false);
         if (here.Code != 0) return Left($"git could not read the tree: {Failure(here.Err)}");
-        // GITWORKTREECONFIG1: no switch or rebase runs in a tree git binds to another checkout.
+        // No switch or rebase runs in a tree git binds to another checkout.
         if (await TreeBinding.RefusalAsync(full, ct, here.TopLevel).ConfigureAwait(false) is { } bound) return Left(bound);
         var root = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(here.CommonDir.Trim()))!;
 
@@ -302,7 +302,7 @@ internal sealed class TreeUpdates(
             cut = baseOut.Trim();
         }
 
-        // 🔴 Replayed detached, the branch moved last and only from the commit judged, as WSR6's replay of a session's own tree.
+        // 🔴 Replayed detached, the branch moved last and only from the commit judged, as a session's own tree's replay.
         if (branch is not null)
         {
             var (detached, _, detachErr) = await WorkingTree.GitAsync(full, ["switch", "--quiet", "--detach"], ct).ConfigureAwait(false);
@@ -356,8 +356,8 @@ internal sealed class TreeUpdates(
     }
 
     /// <summary>
-    /// A tree put back after a replay onto a submission that was not kept (FABRIC-CLOSE1c5): on its branch at the commit judged, or
-    /// detached there where it was detached. True where it stands so again.
+    /// A tree put back after a replay onto a submission that is not kept: on its branch at the commit judged, or
+    /// detached there where it had been detached. True where it stands so again.
     /// </summary>
     private static async Task<bool> BackAsync(string tree, string? branch, string head, CancellationToken ct)
     {
@@ -372,16 +372,16 @@ internal sealed class TreeUpdates(
     private static Task<bool> NothingRuns(CancellationToken _) => Task.FromResult(false);
 
     /// <summary>
-    /// A tree on a branch, by WSR6's judgement and replay (<see cref="BranchJudging.JudgeReplayAsync"/>, <see cref="BranchReplays.ReplayAsync"/>): its own commits
+    /// A tree on a branch, by judgement and replay (<see cref="BranchJudging.JudgeReplayAsync"/>, <see cref="BranchReplays.ReplayAsync"/>): its own commits
     /// cut where its record says it grew from, rebased in its tree detached, proven, and the branch moved last from the commit judged,
-    /// its grown ledger recorded. A branch of its own (TREEFOLLOW1) has no entry of its own, and grew where its session branch did.
+    /// its grown ledger recorded. A branch of its own has no entry of its own, and grew where its session branch did.
     /// </summary>
     private async Task<TreeUpdate> UpdateBranchAsync(
         string tree, string root, string repository, string workspace, string line, string onto, string branch, TreeFacts facts,
         CancellationToken ct)
     {
         var grown = context.Grown.Of(repository, branch) ?? (follows.BranchOfTree(tree) is { } layout ? context.Grown.Of(repository, layout.Branch) : null);
-        // Nothing is in use by WSR6's word here: what runs in the tree was asked of the caller, inside the hold.
+        // Nothing is in use here: the caller is asked what runs in the tree, inside the hold.
         var judged = await judging.JudgeReplayAsync(
             root, repository, workspace, branch, landed: false, tree, grown?.From, grown?.GrewFrom, pushedOnRecord: false, line, onto,
             busy: [], ct).ConfigureAwait(false);
@@ -404,14 +404,14 @@ internal sealed class TreeUpdates(
     }
 
     /// <summary>
-    /// A detached tree rebased in place (point 4): its own commits are those after the newest commit it shares with the line
-    /// (<see cref="ReviewRanges.ReviewRangeAsync"/>, REVIEWBASE1), so none of the line's is replayed as its own; there is no ref to move. As WSR6
+    /// A detached tree rebased in place: its own commits are those after the newest commit it shares with the line
+    /// (<see cref="ReviewRanges.ReviewRangeAsync"/>), so none of the line's is replayed as its own; there is no ref to move. As the look
     /// does a session's tree, it is rebased where it stands, aborted on a conflict; the content proof compares the old HEAD and the
-    /// new, and where it fails HEAD is put back where it was.
+    /// new, and where it fails HEAD is put back where it stood.
     /// </summary>
     /// <remarks>
     /// No record's base cuts here: a chain's step grown from a parent's tip beyond the line would drop the parent's work it builds on,
-    /// which the proof cannot see, since the line lacks that work too (WSR6's <c>Waits</c>). Cut where it leaves the line, every
+    /// which the proof cannot see, since the line lacks that work too. Cut where it leaves the line, every
     /// commit beyond the line is replayed and nothing is lost.
     /// </remarks>
     private async Task<TreeUpdate> UpdateDetachedAsync(string tree, string root, string line, string onto, string head, CancellationToken ct)
@@ -422,7 +422,7 @@ internal sealed class TreeUpdates(
             return new(false, TreeUpdateWords.Left(new TreeFacts(), RebaseKind.Unknown, null, "git found no point where it left the line"));
         }
 
-        // LANDSYNC3 (D87's 2026-10-15 amendment point 1): what the line holds of its commits is left out, as a landing leaves it out,
+        // What the line holds of its commits is left out, as a landing leaves it out,
         // and the commits it lacks between them are replayed run by run; where git cannot list them, every commit is replayed as before.
         var held = await LineHolds.JudgeBeyondAsync(root, head, onto, from, from, line, walk: true, ct).ConfigureAwait(false);
         var had = held?.Kept ?? await CountAsync(root, $"{from}..{head}", ct).ConfigureAwait(false);

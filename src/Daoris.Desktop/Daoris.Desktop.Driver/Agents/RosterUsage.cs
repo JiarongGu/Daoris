@@ -11,14 +11,14 @@ internal sealed class RosterUsage(HarnessRoster roster)
     // as long as a reading stands before it is asked again.
     private readonly ConcurrentDictionary<string, DateTimeOffset> _usageAsked = new(StringComparer.OrdinalIgnoreCase);
 
-    // The usage history's last week in memory, read on as it grows (USAGEPROBE1): what each start's projection reads.
+    // The usage history's last week in memory, read on as it grows: what each start's projection reads.
     private UsageLedger? _ledger;
 
     private UsageLedger Ledger => LazyInitializer.EnsureInitialized(ref _ledger, () => new UsageLedger(roster.Home));
 
     /// <summary>
-    /// How this adapter's accounts' windows are asked (CODEXUSE1): its own question, else its owner's, since a door's readings
-    /// are its owner's as its accounts are (AGT7). Null asks nothing.
+    /// How this adapter's accounts' windows are asked: its own question, else its owner's, since a door's readings
+    /// are its owner's as its accounts are. Null asks nothing.
     /// </summary>
     public IUsageRead? UsageOf(string adapter) =>
         roster.Adapters.Names.Contains(adapter, StringComparer.OrdinalIgnoreCase)
@@ -26,7 +26,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
             : null;
 
     /// <summary>
-    /// Whether this adapter's accounts say what they have left (D130 §6): its door carries the agent's frame
+    /// Whether this adapter's accounts say what they have left: its door carries the agent's frame
     /// (<see cref="WindowsOf"/>), or its agent's server is asked (<see cref="UsageOf"/>). What switching before the limit waits
     /// for.
     /// </summary>
@@ -35,8 +35,8 @@ internal sealed class RosterUsage(HarnessRoster roster)
     /// <summary>
     /// The accounts of a list asked their windows at once, each under its own lock, before the walk reads what each said: each it
     /// could take whose last reading is older than its question's floor (<see cref="CodexUsage.Fresh"/>, or Claude's
-    /// <see cref="ClaudeUsage.Floor"/>, CODEXUSE1), and, for a start's walk (<paramref name="use"/>), only where a set point owes
-    /// it a question (USAGEPROBE1, <see cref="UsageProjection.Owed"/>).
+    /// <see cref="ClaudeUsage.Floor"/>), and, for a start's walk (<paramref name="use"/>), only where a set point owes
+    /// it a question (<see cref="UsageProjection.Owed"/>).
     /// </summary>
     /// <param name="use">The start's scope's use, whose curve the projections are measured against; null asks past the floor alone.</param>
     internal async Task FreshenAsync(
@@ -69,7 +69,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     }
 
     /// <summary>
-    /// Whether a start owes this account's maker a question now, and why (USAGEPROBE1); null where the walk ranks on what it
+    /// Whether a start owes this account's maker a question now, and why; null where the walk ranks on what it
     /// holds. A limit's sentence counts from this process's own hearing or from a cool-off ended within a day.
     /// </summary>
     internal ProbeWhy? Owed(string owner, string account, RotationUse use, DateTimeOffset now, IReadOnlyList<CoolingEntry> offered)
@@ -103,7 +103,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     }
 
     /// <summary>
-    /// An account's windows projected to now (USAGEPROBE1): its last reading plus Daoris's own turns on it since, by its measured
+    /// An account's windows projected to now: its last reading plus Daoris's own turns on it since, by its measured
     /// ratio, read from the usage history in memory; null where it said no number.
     /// </summary>
     public AccountProjection? ProjectionOf(string owner, string account, AccountSaid? said, DateTimeOffset now)
@@ -114,7 +114,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     }
 
     /// <summary>
-    /// The walk's facts with each account's projection beside its reading (USAGEPROBE1), for the start's line alone, which says
+    /// The walk's facts with each account's projection beside its reading, for the start's line alone, which says
     /// it as projected: the walk ranked on the readings.
     /// </summary>
     internal Dictionary<string, AccountFacts> Projected(
@@ -133,26 +133,26 @@ internal sealed class RosterUsage(HarnessRoster roster)
     }
 
     /// <summary>
-    /// The read at a running session's turn's end (SWITCH1c-ii; the switch design §1.2), where the curve's decision asks for it
+    /// The read at a running session's turn's end, where the curve's decision asks for it
     /// (<see cref="SwitchChoice.ReadOthers"/>): what a start's walk does for its list (<see cref="FreshenAsync"/>), for these
     /// accounts. Each present and ready (not cooling, not refused, not read signed out) whose last reading is older than its
     /// question's floor is asked, under its own lock; never a key, nor one a session of Daoris's runs on. A reading not had keeps
-    /// the older one; absent is never zero (D57). Nothing for an agent whose accounts are asked nothing.
+    /// the older one; absent is never zero. Nothing for an agent whose accounts are asked nothing.
     /// </summary>
     /// <param name="adapter">The session's adapter, whose question, or its owner's, is asked.</param>
-    /// <param name="owner">Whose accounts: the accounts' owner (AGT7).</param>
+    /// <param name="owner">Whose accounts: the accounts' owner.</param>
     public Task ReadUsageAsync(
         string adapter, string owner, IReadOnlyList<string> accounts, DriverConfig config, CancellationToken ct = default) =>
         FreshenAsync(adapter, owner, accounts, config, ct);
 
     /// <summary>
-    /// The accounts of a scope's list a running session could move to (SWITCH1c-ii; the switch design §2), in the list's order:
+    /// The accounts of a scope's list a running session could move to, in the list's order:
     /// what each last said of its windows, and whether it is ready by the walk's own judgements, before any probe: not cooling,
     /// not refused, not read signed out, and on this machine. Reads files, asks nothing.
     /// </summary>
-    /// <param name="owner">Whose accounts: the accounts' owner (AGT7).</param>
+    /// <param name="owner">Whose accounts: the accounts' owner.</param>
     /// <param name="offer">
-    /// The conversation's agent, its version and the model its record asks (D205 §3.5(a), MODELROLE1d2): a candidate whose offer reading
+    /// The conversation's agent, its version and the model its record asks: a candidate whose offer reading
     /// lacks or refused that model is not ready, as a start's walk passes it. Null judges no reading, as for a record that asks no model.
     /// </param>
     public IReadOnlyList<SwitchCandidate> SwitchCandidates(
@@ -198,7 +198,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
         }
     }
 
-    /// <summary>What an account last said of its windows, or null where nothing was or the file does not read.</summary>
+    /// <summary>What an account last said of its windows, or null where nothing is said or the file does not read.</summary>
     private AccountSaid? SaidOf(string owner, string account, DateTimeOffset now)
     {
         try
@@ -212,7 +212,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     }
 
     /// <summary>
-    /// Whether an account was asked, or said, within <paramref name="fresh"/> (the question's: <see cref="CodexUsage.Fresh"/>,
+    /// Whether an account is asked, or said, within <paramref name="fresh"/> (the question's: <see cref="CodexUsage.Fresh"/>,
     /// or Claude's <see cref="ClaudeUsage.Floor"/>): kept from a restart too.
     /// </summary>
     private bool Recent(string owner, string account, DateTimeOffset now, TimeSpan fresh)
@@ -229,12 +229,11 @@ internal sealed class RosterUsage(HarnessRoster roster)
     }
 
     /// <summary>
-    /// Ask one account's windows of its agent's server, and keep what it answered (CODEXUSE1): null where nothing was asked or
-    /// nothing could be had, and then nothing is kept. Never throws but for the caller's own stop.
+    /// Ask one account's windows of its agent's server, and keep what it answered: null where nothing is asked or
+    /// nothing can be had, and then nothing is kept. Never throws but for the caller's own stop.
     /// </summary>
     /// <param name="account">
-    /// The account of Daoris's whose home its server runs in: never none, so the tool's own sign-in is never read (POOL1a3, D197
-    /// point 3, amending CODEXUSE3).
+    /// The account of Daoris's whose home its server runs in: never none, so the tool's own sign-in is never read.
     /// </param>
     internal async Task<IReadOnlyList<WindowReading>?> AskUsageAsync(
         string adapter, string owner, string account, DriverConfig config, CancellationToken ct)
@@ -242,11 +241,11 @@ internal sealed class RosterUsage(HarnessRoster roster)
         if (UsageOf(adapter) is not { } question) return null;
         try
         {
-            // An account that is a key is billed by the key, not a plan's windows (AGT3): nothing to read.
+            // An account that is a key is billed by the key, not a plan's windows: nothing to read.
             if (HarnessKeys.Of(roster.Home, owner, account) is not null) return null;
             _usageAsked[HarnessRoster.AccountKey(owner, account)] = roster.Clock();
 
-            // One question per account at a time, and none while a session of Daoris's runs on it (TOOL6g).
+            // One question per account at a time, and none while a session of Daoris's runs on it.
             await using var held = await ProbeLock.TakeAsync(ProbeLock.PathOf(roster.Home, owner, account), ct: ct).ConfigureAwait(false);
             if (held is null || roster.Busy(owner, account)) return null;
 
@@ -260,14 +259,14 @@ internal sealed class RosterUsage(HarnessRoster roster)
                 if (UsageCommand(question, config) is not { } command) return null;
                 var toolchain = roster.AccountAgentOf(adapter) ?? roster.AgentOf(adapter)!;
                 // 🔴 Its server is started in the account's home, never with none, where the agent would answer for the
-                // person's own sign-in and might refresh their token (D197 point 3).
+                // person's own sign-in and might refresh their token.
                 var profileHome = HarnessSettings.ProfileHome(roster.Home, owner, account);
                 readings = await question.AskAsync(
                         new UsageAsk(command.Run, toolchain, profileHome, command.Managed, roster.Clock()) { Profile = account }, ct)
                     .ConfigureAwait(false);
             }
 
-            // Every window it said kept in the usage history first (USAGECAP1a1): the reader's own parse where it answered one,
+            // Every window it said kept in the usage history first: the reader's own parse where it answered one,
             // else the walk's readings as they are (a stand-in's, reader 0).
             var now = roster.Clock();
             var key = account;
@@ -297,7 +296,7 @@ internal sealed class RosterUsage(HarnessRoster roster)
     }
 
     /// <summary>
-    /// The server's command, as every spawn resolves its binary (D57): <c>driver.json</c>'s command for the question's harness,
+    /// The server's command, as every spawn resolves its binary: <c>driver.json</c>'s command for the question's harness,
     /// then its managed pin, then <c>PATH</c>. Null where it is pinned with nothing installed at the pin: nobody to ask.
     /// </summary>
     private (IReadOnlyList<string> Run, string? Managed)? UsageCommand(IUsageQuestion question, DriverConfig config)
@@ -311,8 +310,8 @@ internal sealed class RosterUsage(HarnessRoster roster)
     }
 
     /// <summary>
-    /// A press (ROSTER1): each of the agent's accounts asked, one at a time per account, whatever its last reading's age; never
-    /// the tool's own sign-in (POOL1a3, D197 point 3, amending CODEXUSE3).
+    /// A press: each of the agent's accounts asked, one at a time per account, whatever its last reading's age; never
+    /// the tool's own sign-in.
     /// </summary>
     internal async Task PressUsageAsync(string adapter, string owner, DriverConfig config, CancellationToken ct)
     {

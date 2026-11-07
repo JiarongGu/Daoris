@@ -8,32 +8,32 @@ import {
 } from '../person/standing';
 import { call, confirmBound } from './call';
 
-// The person's door in the window (PERSONDOOR1f, RPC1c; D156 points 2 and 4, the person-door design §2.2 and §4.2): the person
+// The person's door in the window: the person
 // key the shell holds for its host, kept in memory; the presses a terminal sent over the pipe that wait for the person's Confirm;
-// and, once the page holds the key, what waits at the service's own confirmations, as the shell tells it (NOTIFY2j). Every route here is the window's alone: the
+// and, once the page holds the key, what waits at the service's own confirmations, as the shell tells it. Every route here is the window's alone: the
 // pipe's census refuses each to a terminal, which asks and never answers.
 
 /** A press a terminal sent over the pipe, waiting for the window, as `PERSON_CONFIRMATIONS` answers it and `CONFIRMATIONS` tells it. */
 export type PipeConfirmation = {
   id: string; module: string; route: string; fields: ConfirmationField[];
   asker?: { process?: string | null; pid?: number | null } | null; asked: string;
-  /** Whether a terminal still waits on its line for it (the confirm-wait design §8.1); absent where the shell says nothing. */
+  /** Whether a terminal still waits on its line for it; absent where the shell says nothing. */
   waitedOn?: boolean | null;
-  /** That its Confirm is being judged against what it rests on (§5.2): its buttons are replaced meanwhile. */
+  /** That its Confirm is being judged against what it rests on: its buttons are replaced meanwhile. */
   checking?: boolean | null;
-  /** The longest that judgement may take, in milliseconds, which the Confirm waits for (§5.2). */
+  /** The longest that judgement may take, in milliseconds, which the Confirm waits for. */
   checkWithin?: number | null;
-  /** When a window first said its card was in front of the person (CONFIRMSEEN1); absent until then, and from a shell before it. */
+  /** When a window first said its card is in front of the person; absent until then, and from a shell without it. */
   shownAt?: string | null;
-  /** The values its sentence names by role (NOTIFY2b, the modules' `PipeWording`), beside `fields`; absent from a shell before them. */
+  /** The values its sentence names by role (the modules' `PipeWording`), beside `fields`; absent from a shell without them. */
   named?: ConfirmationNamed[] | null;
-  /** That it carries a key, so it is not kept across a restart (CONFIRMWAIT1a-ii, the confirm-wait design §7.1); absent before it. */
+  /** That it carries a key, so it is not kept across a restart; absent from a shell without it. */
   keyed?: boolean | null;
-  /** That it waits again from its record after a restart, its asker the record's (§7.2, §8.1); absent before it. */
+  /** That it waits again from its record after a restart, its asker the record's; absent from a shell without it. */
   restored?: boolean | null;
-  /** That its Confirm also lets its terminal speak for the person in the conversation until it lets go (RPC1g1); absent before it. */
+  /** That its Confirm also lets its terminal speak for the person in the conversation until it lets go; absent from a shell without it. */
   hold?: boolean | null;
-  /** Where its terminal stands, as the pipe's code, where that is to be said (CHANNELJOIN1c); absent before it. */
+  /** Where its terminal stands, as the pipe's code, where that is to be said; absent from a shell without it. */
   standing?: string | null;
 };
 
@@ -72,7 +72,7 @@ const fromPipe = (waiting: PipeConfirmation): Confirmation => ({
 });
 
 /**
- * What a terminal asked this window to confirm over the pipe (RPC1c): read as the page mounts, for a window opened or reloaded
+ * What a terminal asked this window to confirm over the pipe: read as the page mounts, for a window opened or reloaded
  * while one waits, then kept by the shell's `CONFIRMATIONS` at each change. None in a browser, which has no pipe.
  */
 export function useTerminalConfirmations(): Confirmation[] {
@@ -94,7 +94,7 @@ export function useTerminalConfirmations(): Confirmation[] {
   return (query.data ?? NONE).waiting.map(fromPipe);
 }
 
-/** What waits at the service's door as the shell tells it (NOTIFY2j), numbered so the newest telling is kept. */
+/** What waits at the service's door as the shell tells it, numbered so the newest telling is kept. */
 export type ServiceConfirmationsTold = { seq: number | null; waiting: ServiceConfirmation[] };
 
 /** A telling or a read of what waits at the service, or null where it is of no shape this reads. */
@@ -108,10 +108,10 @@ function serviceOf(told: unknown): ServiceConfirmationsTold | null {
 }
 
 /**
- * What waits at the service for the person's confirmation (PERSONDOOR1b's doors, D156 §4.2), asked only while the page holds the
- * person key: its Confirm and Refuse take the key, and a host handed none lists none. **Told, not polled** (NOTIFY2j, D196 point 4):
+ * What waits at the service for the person's confirmation, asked only while the page holds the
+ * person key: its Confirm and Refuse take the key, and a host handed none lists none. **Told, not polled**:
  * the shell holds one wait on the service and tells every window what waits at each change (`SERVICE_CONFIRMATIONS`), so each
- * window counts the one list it was told; read as the page mounts, for a window opened mid-wait. A browser keeps the poll of the
+ * window counts the one list it is told; read as the page mounts, for a window opened mid-wait. A browser keeps the poll of the
  * service's list. `read` says whether this window has read it at all, so its first read is told apart from an arrival.
  */
 export function useServiceConfirmations(held: boolean): { waiting: Confirmation[]; read: boolean } {
@@ -157,10 +157,10 @@ export function useServiceConfirmations(held: boolean): { waiting: Confirmation[
 }
 
 /**
- * The person's Confirm or Refuse (RPC1c, PERSONDOOR1f): a terminal's press by its confirmation's id over the bridge, the service's
- * at its own door with the key. One no longer waiting is answered, never thrown, for the card to say where it was pressed (the
- * UI/UX design's R3): the bridge's code (`gone`), or the host's own sentence. A terminal's Confirm is answered once its grounds are
- * judged (CONFIRMWAIT1a-i, the confirm-wait design §5.2), so it waits as long as the press says that may take: `changed` with the
+ * The person's Confirm or Refuse: a terminal's press by its confirmation's id over the bridge, the service's
+ * at its own door with the key. One that no longer waits is answered, never thrown, for the card to say where it is pressed:
+ * the bridge's code (`gone`), or the host's own sentence. A terminal's Confirm is answered once its grounds are
+ * judged, so it waits as long as the press says that may take: `changed` with the
  * ground's reason and its values, or `unread` where they could not be read just now.
  */
 export function useAnswerConfirmation() {
@@ -194,8 +194,8 @@ export function useAnswerConfirmation() {
 }
 
 /**
- * The window's word that a terminal's press is in front of the person (CONFIRMSEEN1): kept once by the shell, which tells every window
- * by `CONFIRMATIONS`; it moves no clock (CONFIRMWAIT1a-i). A service's confirmation has none: its door counts its
+ * The window's word that a terminal's press is in front of the person: kept once by the shell, which tells every window
+ * by `CONFIRMATIONS`; it moves no clock. A service's confirmation has none: its door counts its
  * own. Answered, never thrown: one no longer waiting is `gone`, which says nothing here, since the telling takes its card away.
  */
 export function useConfirmationShown() {
@@ -222,7 +222,7 @@ export function standingOf(raw: unknown): StandingConfirmationNow | null {
     holds: holdsOf(shaped.holds),
     holders: holdersOf(shaped.holders),
     stewardActs: stewardActsOf(shaped.stewardActs),
-    // STEWARDROLE1c (D209 §6.2): a missing desk reads as empty.
+    // A missing desk reads as empty.
     stewardDesk: stewardDeskOf(shaped.stewardDesk),
   };
 }
@@ -232,7 +232,7 @@ const text = (value: unknown): string | null => (typeof value === 'string' && va
 const DESK_STATES: readonly DeskRequestNow['state'][] = ['open', 'answered', 'declined'];
 
 /**
- * The steward's desk (STEWARDROLE1c, D209 §6.2), in the order sent, each read field by field; one with no id, act, target, why or time,
+ * The steward's desk, in the order sent, each read field by field; one with no id, act, target, why or time,
  * or with a state this page does not know, is left out.
  */
 function stewardDeskOf(raw: unknown): DeskRequestNow[] {
@@ -251,7 +251,7 @@ function stewardDeskOf(raw: unknown): DeskRequestNow[] {
   });
 }
 
-/** This run's steward acts (STEWARDROLE1b, D209 §5.1), in the order sent, each read field by field; one with no id, act or time is left out. */
+/** This run's steward acts, in the order sent, each read field by field; one with no id, act or time is left out. */
 function stewardActsOf(raw: unknown): StewardActNow[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((each): StewardActNow[] => {
@@ -272,7 +272,7 @@ function stewardActsOf(raw: unknown): StewardActNow[] {
   });
 }
 
-/** The roles a terminal holds this run (D233 point 2), each read field by field; one with no role, kind or holder is left out. */
+/** The roles a terminal holds this run, each read field by field; one with no role, kind or holder is left out. */
 function holdsOf(raw: unknown): RoleHoldNow[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((each): RoleHoldNow[] => {
@@ -290,7 +290,7 @@ function holdsOf(raw: unknown): RoleHoldNow[] {
   });
 }
 
-/** The living holders (STEWARDROLE1a-i, D209 §2.2), each read field by field; one with no id is left out. */
+/** The living holders, each read field by field; one with no id is left out. */
 function holdersOf(raw: unknown): HolderNow[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((each): HolderNow[] => {
@@ -306,11 +306,11 @@ function holdersOf(raw: unknown): HolderNow[] {
 }
 
 /**
- * The start of the terminal that holds a role the catalogue staffs with the terminal (D233 point 2): the window starts a holder's tab,
+ * The start of the terminal that holds a role the catalogue staffs with the terminal: the window starts a holder's tab,
  * Daoris's own pinned harness with the key in its environment, or adds the role to a living holder; `share` is the choice while a
  * holder lives, `own` or that holder's id. Staffing a role, and turning its terminal off, is the role door's (`SET_ROLE`). Sent from
  * the window alone (the census refuses it to a terminal). The answer is read field by field, so a refusal keeps its code; it never
- * carries a key. The route declares `sessions` and `driver`, so the state hub reads both again (D169 point 6).
+ * carries a key. The route declares `sessions` and `driver`, so the state hub reads both again.
  */
 export function useStartRoleTerminal() {
   return useMutation({
@@ -323,7 +323,7 @@ export function useStartRoleTerminal() {
 }
 
 /**
- * The person key the shell holds for its host (D156 point 2, design §2.2), asked as the page loads and held in `data/api.ts`'s
+ * The person key the shell holds for its host, asked as the page loads and held in `data/api.ts`'s
  * memory, never in the query cache, the page's storage or a URL; a reload asks again. Answers whether one is held, and whether the
  * ask has settled. None in a browser, or where the shell holds none.
  */
@@ -341,9 +341,9 @@ export function usePersonKey(): { held: boolean; settled: boolean } {
 }
 
 /**
- * Whether the window should say the host gates the person's acts with a key this page does not hold (PERSONDOOR1f, design §2.3's
+ * Whether the window should say the host gates the person's acts with a key this page does not hold (the
  * adoption notice): asked once the page's own ask for the key has settled empty, of the host's proof of possession. A host that
- * proves a key this window was never handed was started by something other than this window's shell.
+ * proves a key this window is never handed is started by something other than this window's shell.
  */
 export function useUnkeyedHost(person: { held: boolean; settled: boolean }): boolean {
   const { isAvailable } = useShenora();

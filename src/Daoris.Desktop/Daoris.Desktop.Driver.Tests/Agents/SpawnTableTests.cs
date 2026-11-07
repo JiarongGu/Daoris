@@ -5,9 +5,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row h (the agent-provider design §4.6, §11): each built-in door's spawn, a driven start's, a conversation's and a native
+/// Each built-in door's spawn, a driven start's, a conversation's and a native
 /// resume's, as the transports' one shell completes the door's recipe: the program, the argument vector, the input and Daoris's variables
-/// equal to the table, which is what each door's adapter class spawned before its recipe moved into its provider's folder. And s-v: which
+/// equal to the table. And which
 /// doors take Claude Code's seam.
 /// </summary>
 public sealed class SpawnTableTests
@@ -119,7 +119,7 @@ public sealed class SpawnTableTests
     }
 
     /// <summary>
-    /// Whose work a start serves is the request's (ENVLEAK1): a quest's variables, a brainstorm's pass naming no repository and no
+    /// Whose work a start serves is the request's: a quest's variables, a brainstorm's pass naming no repository and no
     /// service, and a conversation naming its own record and no target.
     /// </summary>
     [Fact]

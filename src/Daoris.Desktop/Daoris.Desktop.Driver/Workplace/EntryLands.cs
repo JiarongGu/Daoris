@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeRefs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One part an entry's Accept lands (ACCEPTALL1, D167's 2026-10-15 amendment point 1): its record's id and its tree on this machine.
+/// One part an entry's Accept lands: its record's id and its tree on this machine.
 /// An entry's parts are handed oldest first, in the order <see cref="SessionEntries.Read"/> lists them (their records' <c>created</c>,
 /// then id), which is the order they land in.
 /// </summary>
@@ -16,20 +16,20 @@ public sealed record EntryLandingPart(string Session, string Tree)
     public IWorkplaceGate? Gate { get; init; }
 
     /// <summary>
-    /// What the part is named for on its own (TREEFOLLOWNAME1): its own quest and title, which name its landing where its tree is on a
-    /// branch of its own (TREEFOLLOW1) and so lands as that branch. Null where the door gave none: the entry's subject names it.
+    /// What the part is named for on its own: its own quest and title, which name its landing where its tree is on a
+    /// branch of its own and so lands as that branch. Null where the door gave none: the entry's subject names it.
     /// </summary>
     public LandingSubject? Own { get; init; }
 
     /// <summary>
-    /// The result the press was made on for this part, its own quest's (FABRIC-CLOSE1h3, D173's note): judged again under the part's
+    /// The result the press is made on for this part, its own quest's: judged again under the part's
     /// own tree's hold, and before its push. Null holds to nothing: a part with no quest or no result in, or a door that read none.
     /// </summary>
     public PressedResult? Pressed { get; init; }
 }
 
 /// <summary>
-/// A part a later part of the same entry redid (ACCEPTALL1, D167's amendment point 3): its commits, replayed after that part's,
+/// A part a later part of the same entry redid: its commits, replayed after that part's,
 /// conflict with them or add nothing. The plan names it and offers to leave it out; only the person's choice leaves it out.
 /// </summary>
 /// <param name="By">The later part that redid it.</param>
@@ -38,35 +38,35 @@ public sealed record EntryLandingPart(string Session, string Tree)
 public sealed record PartSuperseded(string By, string Says, bool Conflicts);
 
 /// <summary>
-/// A part that conflicts with a later part of its entry and has work of its own beside the conflict (ACCEPTCONFLICT1, D167's note on
-/// point 3): not redone, so the plan never offers to leave it out; leaving it out would lose that work.
+/// A part that conflicts with a later part of its entry and has work of its own beside the conflict:
+/// not redone, so the plan never offers to leave it out; leaving it out would lose that work.
 /// </summary>
 /// <param name="By">The later part it conflicts with.</param>
 /// <param name="Says">The conflicting files.</param>
 public sealed record PartClash(string By, string Says);
 
-/// <summary>What an entry's Accept would do with one of its parts (ACCEPTALL1): its own plan, as its review's Accept would say it.</summary>
+/// <summary>What an entry's Accept would do with one of its parts: its own plan, as its review's Accept would say it.</summary>
 /// <param name="Plan">The part's landing plan, its branch the entry's; null for a part whose tree an earlier part's landing carries.</param>
 public sealed record EntryPartPlan(string Session, LandingPlan? Plan)
 {
-    /// <summary>The earlier part whose tree it shares, whose landing carries its commits once (point 1); null for a tree of its own.</summary>
+    /// <summary>The earlier part whose tree it shares, whose landing carries its commits once; null for a tree of its own.</summary>
     public string? SameTreeAs { get; init; }
 
-    /// <summary>A later part that redid its work (point 3); null where none did.</summary>
+    /// <summary>A later part that redid its work; null where none did.</summary>
     public PartSuperseded? Superseded { get; init; }
 
-    /// <summary>A later part it conflicts with while having work of its own (ACCEPTCONFLICT1); null where none.</summary>
+    /// <summary>A later part it conflicts with while having work of its own; null where none.</summary>
     public PartClash? Clash { get; init; }
 }
 
 /// <summary>
-/// What an entry's Accept would do (ACCEPTALL1, D167's amendment point 1): the rule's form, where the parts land (the entry's one
-/// branch, or the line a merge goes into), and each part, oldest first. A part on a branch of its own (TREEFOLLOW1) lands as that
+/// What an entry's Accept would do: the rule's form, where the parts land (the entry's one
+/// branch, or the line a merge goes into), and each part, oldest first. A part on a branch of its own lands as that
 /// branch, its plan's target.
 /// </summary>
 public sealed record EntryPlan(string Form, string Target, IReadOnlyList<EntryPartPlan> Parts);
 
-/// <summary>What became of one part at an entry's Accept (ACCEPTALL1), one of these words.</summary>
+/// <summary>What became of one part at an entry's Accept, one of these words.</summary>
 public static class EntryPartOutcome
 {
     /// <summary>Its work landed, as <see cref="EntryPartLanding.Landing"/> says.</summary>
@@ -75,7 +75,7 @@ public static class EntryPartOutcome
     /// <summary>It was refused, as <see cref="EntryPartLanding.Landing"/> says; the parts after it were not tried.</summary>
     public const string Refused = "refused";
 
-    /// <summary>The person chose to leave it out (point 3): nothing of it was landed, and its tree stays.</summary>
+    /// <summary>The person chose to leave it out: nothing of it is landed, and its tree stays.</summary>
     public const string LeftOut = "left-out";
 
     /// <summary>Its tree is an earlier part's, whose landing carried its commits.</summary>
@@ -84,12 +84,12 @@ public static class EntryPartOutcome
     /// <summary>An earlier part was refused, so it was not tried: the order is the ledger's, and a later part may build on it.</summary>
     public const string NotTried = "not-tried";
 
-    /// <summary>Its work was replayed onto the head bringing it in (LINESTOGETHER1d): the head's landing carries it, and it lands nothing itself.</summary>
+    /// <summary>Its work is replayed onto the head bringing it in: the head's landing carries it, and it lands nothing itself.</summary>
     public const string BroughtInto = "brought-into";
 
     /// <summary>
-    /// The person's Accept was kept as the review's word of the part's run (WORKFLOWCLEAN1 1c), whose <c>land</c> the runtime performs at its
-    /// pass: nothing was landed here, and the part is not refused.
+    /// The person's Accept is kept as the review's word of the part's run, whose <c>land</c> the runtime performs at its
+    /// pass: nothing is landed here, and the part is not refused.
     /// </summary>
     public const string Accepted = "accepted";
 }
@@ -98,7 +98,7 @@ public static class EntryPartOutcome
 public sealed record EntryPartLanding(string Session, string Outcome, TreeLanding? Landing = null);
 
 /// <summary>
-/// What came of an entry's Accept (ACCEPTALL1): whether every part it tried landed, its sentence, the branch (or line) the parts
+/// What came of an entry's Accept: whether every part it tried landed, its sentence, the branch (or line) the parts
 /// landed on, and each part. A part that landed before a later one was refused stays landed: each is its own landing, recorded.
 /// </summary>
 public sealed record EntryLanding(bool Landed, string Message, string? Branch, IReadOnlyList<EntryPartLanding> Parts);
@@ -113,7 +113,7 @@ public sealed record EntryStep(string Session, string? SameTreeAs, bool LeftOut)
 }
 
 /// <summary>
-/// An entry's Accept as decisions made before git is asked (ACCEPTALL1): the order and the person's choice, the branch's name after
+/// An entry's Accept as decisions made before git is asked: the order and the person's choice, the branch's name after
 /// a merged one, and a superseded part's verdict. Pure, so its table holds them without git.
 /// </summary>
 public static class EntryLandings
@@ -134,7 +134,7 @@ public static class EntryLandings
             var tree = Normal(part.Tree);
             var same = trees.GetValueOrDefault(tree);
             if (same is null) trees[tree] = part.Session;
-            // A tree is left out whole (REVIEWFLOW1d): its later parts are left out with its first, not said to share it.
+            // A tree is left out whole: its later parts are left out with its first, not said to share it.
             var gone = leaveOut.Contains(same ?? part.Session);
             steps.Add(new EntryStep(part.Session, gone ? null : same, gone));
         }
@@ -152,7 +152,7 @@ public static class EntryLandings
     public static string Candidate(string name, int n) => n <= 1 ? name : $"{name}-{n}";
 
     /// <summary>
-    /// The part a session's own Accept is named for (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): its entry's first, the records
+    /// The part a session's own Accept is named for: its entry's first, the records
     /// sharing its key oldest first by <c>created</c> then id, as <see cref="SessionEntries.Read"/> orders an entry's parts. Null where
     /// the session has no record here or is its entry's only part: it lands as before. <c>EntryAccepts.EntryLead</c> answers it.
     /// </summary>
@@ -166,7 +166,7 @@ public static class EntryLandings
     }
 
     /// <summary>
-    /// Whether <paramref name="earlier"/>'s work is superseded by a later part's (point 3), from two trials over trees: the later
+    /// Whether <paramref name="earlier"/>'s work is superseded by a later part's, from two trials over trees: the later
     /// part's work replayed onto the line (<paramref name="later"/>'s tree), then the earlier's after it. A conflict, or a tree no
     /// different from the later part's alone, is superseded; a trial git could not make says nothing.
     /// </summary>
@@ -177,7 +177,7 @@ public static class EntryLandings
         if (later is null) return (null, null);
         if (after.Conflicts is { } conflicts)
         {
-            // ACCEPTCONFLICT1: redone only where every file it changes is in the conflict; any other file is work of its own.
+            // Redone only where every file it changes is in the conflict; any other file is work of its own.
             var inConflict = files.Where(file => InConflict(conflicts, file)).ToList();
             return files.Count > 0 && inConflict.Count == files.Count
                 ? (new PartSuperseded(by, conflicts, Conflicts: true), null)
@@ -211,15 +211,15 @@ public static class EntryLandings
 }
 
 /// <summary>
-/// What an entry's Accept would do (ACCEPTALL1, D167's 2026-10-15 amendment points 1 to 3): the branch its parts would land on, in
+/// What an entry's Accept would do: the branch its parts would land on, in
 /// ledger order, each part's plan, and a part a later part redid. The landing itself is the run's <c>land</c> node's. Over the trees'
 /// context and the landing's judgement.
 /// </summary>
 internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandSyncs syncs)
 {
     /// <summary>
-    /// What an entry's Accept would do (point 1), said before the press: the branch its parts land on, each part's own plan, and a
-    /// part a later part superseded (point 3), tried over trees alone (<see cref="LineHolds.TrialTreeAsync"/>). It reaches no network
+    /// What an entry's Accept would do, said before the press: the branch its parts land on, each part's own plan, and a
+    /// part a later part superseded, tried over trees alone (<see cref="LineHolds.TrialTreeAsync"/>). It reaches no network
     /// and writes no ref and no tree.
     /// </summary>
     /// <param name="subject">What the entry is named for: its first part's, the chain's first quest walked up as a chain's is.</param>
@@ -247,7 +247,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
             if (sync is not null) judged.Add((at, sync));
         }
 
-        // Point 3: an earlier part whose kept commits, replayed after a later part's, conflict with them or add nothing.
+        // An earlier part whose kept commits, replayed after a later part's, conflict with them or add nothing.
         for (var i = 0; i < judged.Count; i++)
         {
             var (at, earlier) = judged[i];
@@ -275,7 +275,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     }
 
     /// <summary>
-    /// A part's own Accept, in its review (ACCEPTALL1b, D167's 2026-10-15 amendment point 2): the entry's Accept for that part alone, so
+    /// A part's own Accept, in its review: the entry's Accept for that part alone, so
     /// it lands as this entry's press would land it, under the entry's subject, on the entry's one branch (<see cref="BranchAsync"/>),
     /// joining it where it ran alongside. Under a merge rule there is no branch to join, and it merges into the line as before.
     /// </summary>
@@ -288,7 +288,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     }
 
     /// <summary>
-    /// Where the entry's parts land (point 1): under a branch rule, its one branch (<see cref="BranchAsync"/>); under a merge rule,
+    /// Where the entry's parts land: under a branch rule, its one branch (<see cref="BranchAsync"/>); under a merge rule,
     /// the line.
     /// </summary>
     private async Task<(string Form, string Target)> TargetAsync(IReadOnlyList<EntryLandingPart> parts, LandingSubject subject, CancellationToken ct)
@@ -300,7 +300,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     }
 
     /// <summary>
-    /// The entry's one branch (point 1), named by the rule for the entry's first part (the chain's first quest, as a chain's is), or,
+    /// The entry's one branch, named by the rule for the entry's first part (the chain's first quest, as a chain's is), or,
     /// where that branch's pull request was merged or closed, the first of its successors (<see cref="EntryLandings.Candidate"/>) that
     /// is free or stands open. Null under a merge rule, which makes no branch.
     /// </summary>
@@ -310,7 +310,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         var (workspace, repository) = context.OwnerOf(full);
         if (process is not { Named: true, Landing: { Form: LandingForm.Branch } landing }) return null;
 
-        // A conversation's entry comes named for its first part's work (ACCEPTFOOT2, `TreeLands.EntryForWorkAsync`), whichever part's
+        // A conversation's entry comes named for its first part's work (`TreeLands.EntryForWorkAsync`), whichever part's
         // tree this is; its opening never names it.
         var name = BranchPatterns.Branch(subject.NamedByOpening ? subject.ForWork(null) : subject, landing, repository);
         var here = Directory.Exists(full) ? await CommonDirAndBranchAsync(full, ct).ConfigureAwait(false) : null;
@@ -330,7 +330,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         return name;
     }
 
-    /// <summary>Whether a recorded branch's pull request was merged or closed: the platform's kept word, else D102's proof on its tip.</summary>
+    /// <summary>Whether a recorded branch's pull request is merged or closed: the platform's kept word, else the proof on its tip.</summary>
     private static async Task<bool> CompletedAsync(string root, LandedBranch recorded, string? line, CancellationToken ct)
     {
         if (recorded.PullRequestState is { State: PullRequestStates.Completed or PullRequestStates.Abandoned }) return true;
@@ -340,13 +340,13 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
     }
 
     /// <summary>
-    /// What one part's landing is named for (TREEFOLLOWNAME1): the entry's subject, unless the tree is on a branch of its own under a
-    /// branch rule (TREEFOLLOW1), which lands as that branch and so carries the part's own quest and title.
+    /// What one part's landing is named for: the entry's subject, unless the tree is on a branch of its own under a
+    /// branch rule, which lands as that branch and so carries the part's own quest and title.
     /// </summary>
     internal async Task<LandingSubject> NamedAsync(EntryLandingPart part, LandingSubject entry, string form, CancellationToken ct) =>
         form == LandingForm.Branch && part.Own is { } own && await FollowsOwnAsync(part.Tree, ct).ConfigureAwait(false) ? entry.NamedFor(own) : entry;
 
-    /// <summary>Whether a tree is on a branch of its own (TREEFOLLOW1), as <see cref="TreeLands.PlanRuleAsync"/> reads it.</summary>
+    /// <summary>Whether a tree is on a branch of its own, as <see cref="TreeLands.PlanRuleAsync"/> reads it.</summary>
     internal async Task<bool> FollowsOwnAsync(string tree, CancellationToken ct)
     {
         var full = Path.GetFullPath(tree);
@@ -358,15 +358,15 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
         subject with { Session = session, EntryBranch = form == LandingForm.Branch ? target : null, Entered = null };
 }
 
-/// <summary>An entry's Accept in words (ACCEPTALL1): a part joining the entry's branch, a conflict with its earlier work, and the answer.</summary>
+/// <summary>An entry's Accept in words: a part joining the entry's branch, a conflict with its earlier work, and the answer.</summary>
 public static class EntryLandWords
 {
-    /// <summary>A part that ran alongside, its commits replayed onto the entry's branch (point 2), said after the advance's sentence.</summary>
+    /// <summary>A part that ran alongside, its commits replayed onto the entry's branch, said after the advance's sentence.</summary>
     public static string Joined(string branch, int commits) =>
         $" Its {commits} commit(s) were replayed onto `{branch}`, since its work ran alongside its entry's earlier parts.";
 
     /// <summary>
-    /// A part's replay onto its entry's branch that conflicts with the entry's earlier work there (point 3): nothing made, git's lines,
+    /// A part's replay onto its entry's branch that conflicts with the entry's earlier work there: nothing made, git's lines,
     /// and the words its review offers to say to its session, asking it to replay its own commits onto that branch.
     /// </summary>
     public static TreeLanding Conflicted(string branch, string conflicts) =>
@@ -378,13 +378,13 @@ public static class EntryLandWords
             Conflict = new LandingConflict(conflicts, Rebase(branch, conflicts)),
         };
 
-    /// <summary>The words said to the later part's session where its work conflicts with its entry's earlier work (point 3).</summary>
+    /// <summary>The words said to the later part's session where its work conflicts with its entry's earlier work.</summary>
     public static string Rebase(string branch, string conflicts) =>
         $"Rebase your work onto `{branch}`: its entry's earlier work landed there, and landing yours after it conflicts with it: {conflicts} "
         + $"Replay only your own commits onto `{branch}`, keep what that earlier work does not already do, resolve any conflict, and check "
         + "that the work still holds. It is accepted again once your tree has changed.";
 
-    /// <summary>A gate that holds one part holds its entry's landing (point 4), in that gate's words.</summary>
+    /// <summary>A gate that holds one part holds its entry's landing, in that gate's words.</summary>
     public static string Held(string part, string says) =>
         $"Nothing was landed: a gate holds `{part}`, and what holds one part of an entry holds its landing. {says}";
 }

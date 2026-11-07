@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 points 2 and 8; the co-agent design §7.2, §7.6): a restart reconciles each piece's state with what it observes, by
+/// A restart reconciles each piece's state with what it observes, by
 /// each side effect's identity, never trusting the last state alone and never running an agent again unasked; the delivery receipt is
 /// claimed before a hand, moved along <c>from</c> only while it waits, and an uncertain attempt waits for the person.
 /// </summary>
@@ -115,7 +115,7 @@ public sealed class PartnerStatesTests
         Assert.Equal(new PartnerReceipt("p1", "lead", "partner:p1", PartnerDelivery.Waiting, Now), claimed);
         Assert.True(PartnerDelivery.MayHand(claimed));
 
-        // The lead handed over before the answer was taken: the claim moves to its successor, explicitly.
+        // The lead handed over before the answer is taken: the claim moves to its successor, explicitly.
         var moved = PartnerDelivery.Claim(claimed, "p1", "successor", Now.AddMinutes(1));
         Assert.Equal(("successor", "partner:p1", PartnerDelivery.Waiting), (moved.To, moved.Key, moved.Outcome));
 

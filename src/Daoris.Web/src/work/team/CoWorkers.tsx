@@ -22,9 +22,9 @@ export type CoWorkersProps = {
   /** *Pass to the lead* on an answer kept for the person, told back how it ended. */
   onPass?: (ask: string, answered: Answered) => void;
   passing?: boolean;
-  /** *Bring in another agent…*'s choices (COWORKUX1f): none, and the ⋯ is not drawn. */
+  /** *Bring in another agent…*'s choices: none, and the ⋯ is not drawn. */
   choices?: readonly BringInChoice[];
-  /** The agents outside Daoris on this line's channel, each beside the members with the person's *Remove* (CHANNELJOIN1c). */
+  /** The agents outside Daoris on this line's channel, each beside the members with the person's *Remove*. */
   outside?: readonly OutsideAgent[];
   onRemoveOutside?: RemoveOutside;
   removingOutside?: boolean;
@@ -33,9 +33,9 @@ export type CoWorkersProps = {
 };
 
 /**
- * The head's *Co-workers* (COWORKUX1, the co-worker design §6.2): the lead, then each agent working beside it, one row a member, in the
+ * The head's *Co-workers*: the lead, then each agent working beside it, one row a member, in the
  * parts strip's shape. A member's row opens its thread; an answer kept for the person offers *Pass to the lead*; an ask still waiting on
- * the person's yes keeps its presses and its wait's section. Its ⋯ holds *Bring in another agent…*. Nothing where nothing was asked.
+ * the person's yes keeps its presses and its wait's section. Its ⋯ holds *Bring in another agent…*. Nothing where nothing is asked.
  */
 export function CoWorkers({
   session, helpers, lead, onPass, passing = false, choices, outside = [], onRemoveOutside, removingOutside, inConversation, marked,

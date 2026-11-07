@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A conversation's own line where its limit's move could not open the next part (LIMITGOON1), by its code.</summary>
+/// <summary>A conversation's own line where its limit's move could not open the next part, by its code.</summary>
 public static class LimitNotes
 {
     /// <summary>
@@ -14,8 +14,8 @@ public static class LimitNotes
             .Then(" ", Noted.Said(why, NoteBy.Program));
 
     /// <summary>
-    /// LIMITGOON1's *stays* written as a wait (LIMITRESUME1c, D206 §3.5): no account of its agent has room, the first ready again at
-    /// <paramref name="first"/>'s <c>until</c>, the margin-added moment (§3.2), and it goes on by itself then, its words with it.
+    /// The *stays* of a limit's move written as a wait: no account of its agent has room, the first ready again at
+    /// <paramref name="first"/>'s <c>until</c>, the margin-added moment, and it goes on by itself then, its words with it.
     /// </summary>
     public static Noted Waits(CoolingEntry first, TimeZoneInfo zone) =>
         Noted.Of(
@@ -25,8 +25,8 @@ public static class LimitNotes
             ("owner", first.Agent), ("until", NoteCodes.Moment(first.Until)), ("why", CoolingWhy.Of(first)));
 
     /// <summary>
-    /// Why a conversation whose agent has no account left does not go on with another (LIMITGOON2, D205 §3.5(e)): it runs on the agent
-    /// the person picked, which never moves (§3.5(d)). Said before its wait's line.
+    /// Why a conversation whose agent has no account left does not go on with another: it runs on the agent
+    /// the person picked, which never moves. Said before its wait's line.
     /// </summary>
     public static Noted Picked(string agent) =>
         Noted.Of(
@@ -35,7 +35,7 @@ public static class LimitNotes
             ("owner", agent));
 
     /// <summary>
-    /// Why a conversation whose agent has no account left does not go on with another (LIMITGOON2, D205 §3.5(e)): no choice of its actor's
+    /// Why a conversation whose agent has no account left does not go on with another: no choice of its actor's
     /// on another agent can run now, or it has none. The walk's own words follow in the English alone, as a program's.
     /// </summary>
     public static Noted NoOtherChoice(string agent, string why) =>
@@ -45,21 +45,21 @@ public static class LimitNotes
                 ("owner", agent))
             .Then(" ", Noted.Said(why, NoteBy.Program));
 
-    /// <summary>The person's *Stop waiting* (LIMITRESUME1c, D206 §3.7): nothing goes on by itself, and their next word goes on as any does.</summary>
+    /// <summary>The person's *Stop waiting*: nothing goes on by itself, and their next word goes on as any does.</summary>
     public static Noted StoppedWaiting() =>
         Noted.Of(
             ChatNoteCodes.ChatLimitStoppedWaiting,
             "It no longer waits for its account's limit: your words stay with it, and it goes on when you write to it.");
 
-    /// <summary>The wake's first line (D206 §3.7, <c>limit.resumed</c>): its own account ready again at the margin-added <paramref name="until"/>.</summary>
+    /// <summary>The wake's first line (<c>limit.resumed</c>): its own account ready again at the margin-added <paramref name="until"/>.</summary>
     public static Noted Resumed(DateTimeOffset until) =>
         Noted.Of(
             HeldNoteCodes.LimitResumed, "Its account was ready again; it went on in its own conversation.",
             ("until", NoteCodes.Moment(until)));
 
     /// <summary>
-    /// Its own conversation could not be resumed at the wake, by the refusal's code, so it went on in a new part handed the brief (D206
-    /// §3.5, §3.7, <c>limit.resume-refused</c>).
+    /// Its own conversation could not be resumed at the wake, by the refusal's code, so it went on in a new part handed the brief
+    /// (<c>limit.resume-refused</c>).
     /// </summary>
     public static Noted ResumeRefused(ContinueReason why) =>
         Noted.Of(

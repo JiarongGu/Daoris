@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the integration step's runs are made with (INTEGRATE1f part f2): the environment they are composed from, the machine admission's
+/// What the integration step's runs are made with: the environment they are composed from, the machine admission's
 /// seams and the words said while they wait. The install's own by default; a test hands its own.
 /// </summary>
 internal sealed record IntegrationWorld
@@ -33,7 +33,7 @@ internal sealed record GatesRun(RunnerStandingKind Kind, string? Why = null)
 {
     public IReadOnlyList<GateFailure> Failures { get; init; } = [];
 
-    /// <summary>The gates that passed only on a second run alone (a FLAKE1 re-run): read as a pass, and said.</summary>
+    /// <summary>The gates that passed only on a second run alone (a flaky re-run): read as a pass, and said.</summary>
     public IReadOnlyList<string> Flaked { get; init; } = [];
 
     public IReadOnlyList<VerdictRun> Runs { get; init; } = [];
@@ -67,7 +67,7 @@ internal interface IGateRuns
 }
 
 /// <summary>
-/// A place in the machine's admission around one call (the integration design §4.5, §5.6): taken in the order the queue asks, and the
+/// A place in the machine's admission around one call: taken in the order the queue asks, and the
 /// candidate's job ended <b>before</b> it is let go. A call inside a hold (the confirm run's whole admission) takes none.
 /// </summary>
 internal sealed class Places(IntegrationVerdictAsk ask, CandidateJob job, IntegrationWorld world)

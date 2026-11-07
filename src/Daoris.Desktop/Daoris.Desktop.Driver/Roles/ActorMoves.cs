@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The machine log's line for a line that went on with another choice of its role (STAFFPOLICY1c2; the staff policy design §5).</summary>
+/// <summary>The machine log's line for a line that went on with another choice of its role.</summary>
 public static class ActorMoves
 {
     /// <summary>What <paramref name="action"/> is when no policy names it: the role's own order walked on.</summary>

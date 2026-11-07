@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1g4 (D238; ONEWAY1's area T, settled): a terminal's conversation is the running Daoris's, so no terminal path runs one. A source
+/// A terminal's conversation is the running Daoris's, so no terminal path runs one. A source
 /// scan, line comments read out: the conversation's runner is made by the instance's loop alone, the terminal's host names neither it nor
 /// its adapters and output, and the files the retired runner told its turns through are named by no source but the migration step that
 /// removes what an older build left.

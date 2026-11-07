@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { callLines, fileLines, fileName, namedLines, treePath } from './preview';
 
-// A file's preview (PREVIEW1, D111): the derivations the tool card, the review and the preview share.
+// A file's preview: the derivations the tool card, the review and the preview share.
 
 describe('the path a preview asks for', () => {
   const tree = 'C:\\daoris\\data\\trees\\default\\engine\\daoris-s1';

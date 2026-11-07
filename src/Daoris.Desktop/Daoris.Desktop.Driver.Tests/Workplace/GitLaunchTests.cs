@@ -5,16 +5,16 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP1a-i (D202 point 2, the git-app design P1.5): one counting seam beneath the three runners. Each start raises
+/// One counting seam beneath the three runners. Each start raises
 /// <see cref="WorkingTree.Started"/>, is classified by kind and node, counted in its flow's budget and timed at the gate; and it
-/// reaches git with the arguments its call site passed, nothing added (Codex R3-9). No git runs here: the gate's stand-in sees each
+/// reaches git with the arguments its call site passed, nothing added. No git runs here: the gate's stand-in sees each
 /// start's <see cref="ProcessStartInfo"/> and answers it with none.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class GitLaunchTests
 {
     /// <summary>
-    /// The census of today's arguments per kind: every command Review's chain starts, as its call site spells it (REVIEWLOCK1's
+    /// The census of today's arguments per kind: every command Review's chain starts, as its call site spells it (the review lock's
     /// flags among them), with the kind and the review's node the seam names it by. A call site that changes its arguments changes a
     /// row here, and the Process half's <c>ReviewStartsTests</c> holds the chain sends exactly these.
     /// </summary>
@@ -192,12 +192,11 @@ public sealed class GitLaunchTests
     }
 
     /// <summary>
-    /// The source census (the design §10.1, P1.5): in the trees' code, git starts through <c>WorkingTree.GitStart</c>, and only the
+    /// The source census: in the trees' code, git starts through <c>WorkingTree.GitStart</c>, and only the
     /// three runners beneath the seam call it or hand a start to the gate. A git started there any other way would be uncounted.
-    /// Read over every driver source by name, never by a folder (FOUNDATION1 mod-0, D166 point 4), since the trees' files leave
-    /// <c>Trees/</c> for their subdomains' folders, so it lists each start of the driver with the file that holds it: the others
-    /// are the seams of their own, each a start a census of its own holds (<c>ProcessStartsCensusTests</c>), and the trees' two are
-    /// the same as before.
+    /// Read over every driver source by name, never by a folder, since the trees' files sit
+    /// in their subdomains' folders, so it lists each start of the driver with the file that holds it: the others
+    /// are the seams of their own, each a start a census of its own holds (<c>ProcessStartsCensusTests</c>).
     /// </summary>
     /// <summary>The files, by name, that start a process: a git's start info (GitStart), a start handed to the gate, a child run, the runtime's start, or a git's info built by hand.</summary>
     private static SortedSet<string> StartFiles(IEnumerable<(string File, string Source)> sources) =>
@@ -206,7 +205,7 @@ public sealed class GitLaunchTests
                 @"\bGitStart\s*\(|\bProcessStarts\.\w+\.(?:StartAsync|RunAsync)\s*\(|\bStartAsync\s*\(\s*info\b|\bChildProcess\.RunAsync\s*\(|\bProcess\.Start\b|ProcessStartInfo\s*\(\s*""git"))
             .Select(each => each.File), StringComparer.Ordinal);
 
-    /// <summary>The files that may start a process, each for the seam it is (how many starts a listed file makes is not pinned, CENSUSRULES1).</summary>
+    /// <summary>The files that may start a process, each for the seam it is (how many starts a listed file makes is not pinned).</summary>
     private static readonly string[] StartingFiles =
     [
         "ActSteps.cs", "AgentStarts.cs", "ChildProcess.cs", "CodexUsage.cs", "DoctrineStatusRead.cs",
@@ -225,7 +224,7 @@ public sealed class GitLaunchTests
     public void No_git_is_started_in_the_trees_code_outside_the_seam()
     {
         // The trees' two: GitRuns (GitStart's definition, its calls, the Whole runner's ChildProcess runs and the other two runners' gate
-        // starts) and GeneratedWriters, a generator's shell (GEN1), which is no git. ActSteps' git is an act's effect step (GITAPP2a), started
+        // starts) and GeneratedWriters, a generator's shell, which is no git. ActSteps' git is an act's effect step, started
         // held in its act's job and counted at the seam as GitRunner.Held. The rest are other seams' starts (a harness, a plugin's tool, the
         // launcher's containment), none of them a git start of the trees'.
         var problems = StartProblems(StartFiles(SourceFiles.All(SourceFiles.DriverProject, "*.cs")
@@ -243,7 +242,7 @@ public sealed class GitLaunchTests
         Assert.Equal(3, Regex.Matches(tree, @"GitLaunch\.LaunchAsync\(").Count);
     }
 
-    /// <summary>A new file that starts a process fails the census; one more start in a listed file passes (CENSUSRULES1).</summary>
+    /// <summary>A new file that starts a process fails the census; one more start in a listed file passes.</summary>
     [Fact]
     public void A_start_in_a_new_file_fails_the_source_census_and_one_more_in_a_listed_file_passes()
     {

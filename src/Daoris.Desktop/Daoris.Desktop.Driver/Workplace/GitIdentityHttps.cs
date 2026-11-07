@@ -3,7 +3,7 @@ using static Daoris.Driver.GitIdentityActs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// HTTPS git identities (D198 point 4, D241 point 6; the git design §2.3): an identity kept with its token in
+/// HTTPS git identities: an identity kept with its token in
 /// <c>profiles/git/tokens/&lt;id&gt;/</c> (<see cref="GitTokens"/>), which the credential door answers to git for the identity's own host,
 /// and a test. The token is in no argument, answer, event or log line of Daoris's; Daoris reads it only to answer the door.
 /// </summary>
@@ -51,7 +51,7 @@ public static class GitIdentityHttps
     }
 
     /// <summary>
-    /// Test an HTTPS identity (§7.2 step 6): a read of <paramref name="address"/>, a repository on its host, as the identity's act is
+    /// Test an HTTPS identity: a read of <paramref name="address"/>, a repository on its host, as the identity's act is
     /// carried, nothing prompting. The answer is recorded on the identity.
     /// </summary>
     /// <exception cref="DriverException">No such identity, not an HTTPS one, no address on its host, or no git.</exception>

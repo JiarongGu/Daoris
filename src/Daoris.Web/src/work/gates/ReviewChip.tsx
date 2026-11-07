@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 import { Icon, Menu, Tip } from '../../design/ui';
 
 /**
- * A set-up waiting for the person's review on this machine, as the driver's state says it (`inReview`, REVIEWENV1d): the step,
+ * A set-up waiting for the person's review on this machine, as the driver's state says it (`inReview`): the step,
  * what it showed and where, and whether Daoris still serves its tab.
  */
 export type ReviewShown = {
@@ -15,7 +15,7 @@ export type ReviewShown = {
   shows?: string | null;
   served: boolean;
   /**
-   * The newest set-up of the step as its record says it, named whole (REVIEWENV1g): what *Reviewed* answers. The page adds it
+   * The newest set-up of the step as its record says it, named whole: what *Reviewed* answers. The page adds it
    * from the quests it holds; absent where it holds no whole one, and then no verdict is offered here.
    */
   setUp?: SetUpRef | null;
@@ -30,13 +30,12 @@ const CHIP = cn(
 );
 
 /**
- * The review's chip on the app strip, beside Daoris's browser's door (REVIEWENV1d; D154 point 8, the review environment design
- * §3.3): while a set-up waits for the person, it says the review is open, and its menu says what the step showed, whether its
+ * The review's chip on the app strip, beside Daoris's browser's door: while a set-up waits for the person, it says the review is open, and its menu says what the step showed, whether its
  * tab is still served, and offers *Show it again*.
  *
  * @remarks
  * **Beside the browser, never inside it.** Every page in Daoris's browser is one an agent can drive, so nothing the person
- * presses about a review is drawn there; the strip of the window beside it is where they answer (REVIEWENV1g): *Reviewed*,
+ * presses about a review is drawn there; the strip of the window beside it is where they answer: *Reviewed*,
  * naming the newest set-up its step's record holds, and *Not yet…*, which opens the step's page, where the words a not yet
  * needs are asked, since a menu holds no box.
  *
@@ -50,9 +49,9 @@ export function ReviewChip({ reviews = [], onShowAgain, onReviewed, onNotYet }: 
   reviews?: readonly ReviewShown[];
   /** *Show it again* for one set-up step. */
   onShowAgain: (quest: string) => void;
-  /** *Reviewed* for one set-up step, naming the set-up its record holds (REVIEWENV1g); absent, none is offered. */
+  /** *Reviewed* for one set-up step, naming the set-up its record holds; absent, none is offered. */
   onReviewed?: (quest: string, setUp: SetUpRef) => void;
-  /** *Not yet…*: the step's page, where the person's words are asked (REVIEWENV1g); absent, none is offered. */
+  /** *Not yet…*: the step's page, where the person's words are asked; absent, none is offered. */
   onNotYet?: (quest: string) => void;
 }) {
   const { t } = useTranslation();

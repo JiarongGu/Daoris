@@ -8,10 +8,10 @@ namespace Daoris.Driver;
 internal static class RequirementsPrompt
 {
     /// <summary>
-    /// What the person requires of the quest (DRIFT1c), beneath it and beside their words (DRIFT1d, D133 §4): each numbered
+    /// What the person requires of the quest, beneath it and beside their words: each numbered
     /// as the service numbers it, their words quoted verbatim line by line, and its check; then how a `done` answers each.
     /// Past <see cref="RequirementsLimit"/> each one left out is named, with where it is read whole. Nothing for a quest
-    /// with none, so its instruction reads as it did.
+    /// with none, so its instruction names none.
     /// </summary>
     internal static string Required(SessionTarget target)
     {
@@ -48,9 +48,9 @@ internal static class RequirementsPrompt
     }
 
     /// <summary>
-    /// What Daoris reads itself of one requirement (EVID1b, D144 §2), beneath its check: the paths it reads in the branch's last
-    /// commit when the session ends, so the session can commit a missing one itself, and a gate read from the landing queue
-    /// (EVID1d). Nothing for a requirement naming none, which reads as it did.
+    /// What Daoris reads itself of one requirement, beneath its check: the paths it reads in the branch's last
+    /// commit when the session ends, so the session can commit a missing one itself, and a gate read from the landing queue.
+    /// Nothing for a requirement naming none.
     /// </summary>
     internal static string Evidence(QuestRequirementView requirement)
     {
@@ -79,7 +79,7 @@ internal static class RequirementsPrompt
 
     /// <summary>
     /// How many requirements an instruction quotes whole by <see cref="RequirementsLimit"/>: the first always, then each while
-    /// its words, check and evidence fit beside those before it. The instruction and its account (CONTEXT1) count by this one
+    /// its words, check and evidence fit beside those before it. The instruction and its account count by this one
     /// rule.
     /// </summary>
     internal static int RequirementsShown(IReadOnlyList<QuestRequirementView> requirements)

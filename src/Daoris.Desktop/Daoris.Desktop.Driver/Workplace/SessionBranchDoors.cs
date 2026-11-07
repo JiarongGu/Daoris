@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's doors for a kept session branch (LAND3, LAND4; PART10l-ii, out of <c>SessionTrees.Tidy.cs</c>): what the clean-up's
+/// The person's doors for a kept session branch: what the clean-up's
 /// list offers beside a row, the session a row's tree is, and whether a removal names a path. Public and static, since the
-/// terminal and the bridge say them too and the tidy (<see cref="TreeTidies"/>) is internal over the trees' context, as
-/// <see cref="TreeFolders"/> was made public for the same reason in PART10k.
+/// terminal and the bridge say them too and the tidy (<see cref="TreeTidies"/>) is internal over the trees' context; <see cref="TreeFolders"/>
+/// is public for the same reason.
 /// </summary>
 public static class SessionBranchDoors
 {
     /// <summary>
-    /// The door offered beside a kept branch whose commits no branch of the person's holds (LAND3): a failed or superseded
+    /// The door offered beside a kept branch whose commits no branch of the person's holds: a failed or superseded
     /// attempt's, which no landing's tidy and no clean-up takes, is discarded only by the person saying so. Null for every
     /// other row, and for one git could not judge.
     /// </summary>
@@ -18,7 +18,7 @@ public static class SessionBranchDoors
         : null;
 
     /// <summary>
-    /// The door offered beside a kept branch whose tree is still here and holds commits no branch of the person's holds (LAND4):
+    /// The door offered beside a kept branch whose tree is still here and holds commits no branch of the person's holds:
     /// its session's landing, the review's Accept from a terminal, whatever that session's ending. The landing checks
     /// everything at its press. Null for a branch whose tree is gone (its discard is the door), with no commits, that no
     /// record of this machine's names, or that a session still holds.
@@ -30,7 +30,7 @@ public static class SessionBranchDoors
             : null;
 
     /// <summary>
-    /// The records a clean-up's list names each kept branch's session from (LAND4), or none where the service does not answer
+    /// The records a clean-up's list names each kept branch's session from, or none where the service does not answer
     /// them: the landing line beside a row is the list's convenience, and the list stands without it.
     /// </summary>
     public static async Task<IReadOnlyList<SessionRecord>> RecordsOrNoneAsync(ServiceClient service, CancellationToken ct = default)
@@ -46,7 +46,7 @@ public static class SessionBranchDoors
     }
 
     /// <summary>
-    /// The session a tree is (LAND4): the newest record of this machine's naming it, separators and case aside, as the reader's
+    /// The session a tree is: the newest record of this machine's naming it, separators and case aside, as the reader's
     /// <c>ReviewableTree</c> lets the newest stand for a tree. Null for no tree, or one no record of this machine's names.
     /// </summary>
     public static SessionRecord? SessionOfTree(IEnumerable<SessionRecord> records, string? tree) =>
@@ -60,7 +60,7 @@ public static class SessionBranchDoors
 
     /// <summary>
     /// Whether a removal names a tree by its path, as `trees remove` always took one: rooted, or holding a separator. A
-    /// session's branch (<c>daoris/…</c>), its tree's name (<c>s-…</c>) and a session's id are not paths (LAND3).
+    /// session's branch (<c>daoris/…</c>), its tree's name (<c>s-…</c>) and a session's id are not paths.
     /// </summary>
     public static bool NamesAPath(string named) =>
         !named.StartsWith(TreeFollows.SessionPrefix, StringComparison.Ordinal)

@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-C1a's proof, on what real harnesses wrote (2026-10-16, the probe kit with Daoris's own connector and this driver's
+/// Proof on what real harnesses wrote (2026-10-16, the probe kit with Daoris's own connector and this driver's
 /// lineage hook: <c>tools/fabric-probe/launch.mjs --connector … --lineage-hook …</c>). Each fixture's lineage file is the one the
 /// connector and the hook wrote, as they wrote it; each stream file is Claude Code's <c>task_*</c> lines off its
 /// <c>stream-json</c>, cut to their ids (its other fields carry the subagents' prompts and an output path), which this driver
 /// reads as a run does: each line's children read once (<see cref="NativeChildren"/>) and written by the lineage's part
 /// (<see cref="ChildBindings.ChildLine"/>). Claude Code 2.1.299 on <c>claude-sonnet-5-5</c>; Codex 0.160.0
-/// on <c>gpt-6.1-sol</c>, effort low; D173's note has the receipts.
+/// on <c>gpt-6.1-sol</c>, effort low.
 /// </summary>
 /// <remarks>Files only: the suite's fast half.</remarks>
 public sealed class ChildLineageReceiptTests
@@ -84,8 +84,8 @@ public sealed class ChildLineageReceiptTests
     }
 
     /// <summary>
-    /// COWORKVIEW1a (C10-1): an older build wrote a killed root's end unclean without reading its exit, so that end proves nothing,
-    /// and its running child reads not known under a chat's record; under a driven one its end was never recorded.
+    /// A killed root's end written unclean without reading its exit proves nothing, so its running child
+    /// reads not known under a chat's record; under a driven one its end is never recorded.
     /// </summary>
     [Fact]
     public void A_real_killed_root_s_unclean_end_from_before_row_a_leaves_its_running_child_not_known()

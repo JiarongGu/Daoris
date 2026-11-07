@@ -13,9 +13,9 @@ import { type ReviewFacts, SaveReview } from '../edit/SaveReview';
 const JUDGE_MS = 250;
 
 /**
- * **A saved workflow's next version** (WORKFLOWCLEAN1h-b): the editor's own judgement, review and save of a draft against the version it was
- * made from, with the places the append reaches let follow it by one consent (SETUPUX1s). `draft` is judged as `WORKFLOW_SAVE {plan}` once it
- * differs from `base`; the review opens only on a judgement of this very draft that holds; nothing is saved that was not reviewed.
+ * **A saved workflow's next version**: the editor's own judgement, review and save of a draft against the version it is
+ * made from, with the places the append reaches let follow it by one consent. `draft` is judged as `WORKFLOW_SAVE {plan}` once it
+ * differs from `base`; the review opens only on a judgement of this very draft that holds; nothing is saved unreviewed.
  *
  * A molecule: the bridge's answers arrive as props, and the judgement and the save go out. `updates` names the shipped default a version
  * updates its copy to, which the save keeps as where the version came from.

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1f-v part b (D212; the foundation design §3.3, §13.4, §13.5, §19.4, row f-v's proof): a quest's hand-over keeps its driven move record
+/// A quest's hand-over keeps its driven move record
 /// through a crash at each place its look passes. A hand-over decided by a terminal verb or a loop is taken from the store by the live loop's
 /// look: the session written <c>quiescing</c> while it runs, stopped once, the quest held on the agent named (<c>handed/&lt;quest&gt;.json</c>), then
 /// <c>old-ended</c>; the carry-on the next look starts goes on from the very move and closes it <c>delivered</c>, the protocol door telling that it
@@ -13,9 +13,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para>The places: <c>verb-dead</c>, the ask decided by a verb whose run is gone before the loop's look, received by that look; <c>loop-decided</c>,
 /// decided by a loop killed before its look, left at <c>decided</c> by the new loop's first look and then taken; <c>quiescing</c>, a loop killed after
-/// the session was stopped and the quest held, before <c>old-ended</c>: the take-up leaves the move, which the look takes without a second stop;
-/// <c>old-ended</c>, killed after it, before the carry-on began: a dead run's <c>old-ended</c> falls back (§13.5), and the carry-on, finding the
-/// quest held and the session stopped, decides its own move fresh. The carry-on's own boundaries are row f-iv's proof.</para>
+/// the session is stopped and the quest held, before <c>old-ended</c>: the take-up leaves the move, which the look takes without a second stop;
+/// <c>old-ended</c>, killed after it, before the carry-on began: a dead run's <c>old-ended</c> falls back, and the carry-on, finding the
+/// quest held and the session stopped, decides its own move fresh. The carry-on's own boundaries are <c>DrivenMoveCrashProcessTests</c>'.</para>
 /// <para>A text door's carry-on tells no write and closes by its phase (<c>undelivered</c>); <c>delivered</c> is proved on the protocol door, whose first
 /// prompt tells <see cref="CarryOnRecord.Written"/>. The text door's one case is <c>HandOverQuestTickTests</c>.</para>
 /// </remarks>

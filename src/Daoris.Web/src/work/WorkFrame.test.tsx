@@ -4,9 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 // The Work frame as a PAGE, in the shape `shell.test.tsx` already uses: the bridge mocked as present, because the frame
-// does not exist without one (D55). Everything a person does to a session happens here now — starting it, talking to it,
-// ending it, and watching its console — which is what "one home for the stream" (design §3) means as a test file.
-// WEBSPEED1 cut the one file, which ran 181 s alone, into parts that run beside each other: this part holds the frame
+// does not exist without one. Everything a person does to a session happens here — starting it, talking to it,
+// ending it, and watching its console — which is what "one home for the stream" means as a test file.
+// The suite is cut into parts that run beside each other: this part holds the frame
 // itself, a park's go-aheads and a session's rule proposal; `WorkFrame.conversation`, `.words`, `.landed` and `.geometry`
 // hold the rest, and what they share is in `test/workFrameBridge.ts` and `test/workFrameKit.tsx`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
@@ -30,7 +30,7 @@ function respond(url: string): Response {
 
 // 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer,
 // and a test that hid the console left it hidden for whichever console test ran next: four failed
-// in a shuffled order (UX5, 2026-09-26), and passed in file order only by luck of the order.
+// in a shuffled order, and passed in file order only by luck of the order.
 afterEach(() => window.localStorage.clear());
 
 describe('the Work frame', () => {
@@ -43,20 +43,20 @@ describe('the Work frame', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
-    // A draft outlives its test the way it outlives a reload (CONV4b).
+    // A draft outlives its test the way it outlives a reload.
     window.localStorage.removeItem('daoris.drafts');
   });
 
   /**
-   * UX5 U16: a maximized window showed the content, and the chat box, at half its width. U10 had held the head, the conversation and the
-   * composer to a 768px measure, and on a maximized window that is half of it. They follow the
-   * centre's width, as content does everywhere (platform language §4: content is shown as it is).
+   * A maximized window shows the content, and the chat box, at its full width: the head, the conversation and the
+   * composer are not held to a 768px measure, which on a maximized window is half of it. They follow the
+   * centre's width, as content does everywhere.
    * jsdom lays nothing out, so this holds the absence of a cap and the window holds the look.
    */
   /**
-   * SESSUX1c, D126 §4.1: Sessions' list gains its ⋯, which it never had. *Group by* is a choice of two, *State* the
-   * default and *Repository* the arrangement the list had before, ticked, and remembered for this viewer in the list's
-   * filters (D118 §3f); the default is nothing kept.
+   * Sessions' list has a ⋯. *Group by* is a choice of two, *State* the
+   * default and *Repository* the other arrangement, ticked, and remembered for this viewer in the list's
+   * filters; the default is nothing kept.
    */
   it('groups the session list by state or by repository from its ⋯, and remembers the choice', async () => {
     SESSIONS = [DRIVEN, PARKED];
@@ -82,7 +82,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * SESSONE1c, D167 point 5: *Ask* joins the ⋯'s *Group by*, by the reader's entries, which the shell always pushes; chosen, it is
+   * *Ask* joins the ⋯'s *Group by*, by the reader's entries, which the shell always pushes; chosen, it is
    * remembered beside the arrangement, and what no ask began is listed under *Not on an ask*.
    */
   it('offers Group by ask by the reader\'s entries, and remembers the choice', async () => {
@@ -107,7 +107,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * TITLEONE1: one piece of work, one name. A line of work an ask began is named in its head as its row names it, by the ask's
+   * One piece of work, one name. A line of work an ask began is named in its head as its row names it, by the ask's
    * short title, not by the quest's title cut from the ask's words.
    */
   it('names the head of a line of work an ask began as its row names it', async () => {
@@ -135,7 +135,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * ENTRY1b (D161's ENTRY1 note): a door into what waits on the person names a group of Sessions' list, which the frame
+   * A door into what waits on the person names a group of Sessions' list, which the frame
    * hands its rail: the group's heading is brought into view and focused, and the door told.
    */
   it('hands its rail the group a door names, which brings it into view and tells the door', async () => {
@@ -157,7 +157,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * ENTRY1g (D161's ENTRY1b note): where the person keeps the list by repository, a go shows it by state for the go, as the
+   * Where the person keeps the list by repository, a go shows it by state for the go, as the
    * ⋯ says, and remembers nothing: their arrangement is back once they choose it, or leave Sessions.
    */
   it('shows the list by state for a go where the person keeps it by repository, and remembers nothing', async () => {
@@ -182,7 +182,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * SESSUX1e, D126 §4.1: *Show archived* is a toggle in the list's ⋯, ticked as it stands and remembered beside the
+   * *Show archived* is a toggle in the list's ⋯, ticked as it stands and remembered beside the
    * arrangement; below a rule, *Archive what ended…* lists under the list's header before anything is archived.
    */
   it('shows archived sessions from the list’s ⋯, remembered, and says when nothing is archived', async () => {
@@ -267,7 +267,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * DOCK1b: a view moves
+   * A view moves
    * between the right side bar and the panel from its tab's menu, as VS Code's *Move to Panel* does,
    * is shown where it went, and stays there for this viewer.
    */
@@ -302,7 +302,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * DOCK1a: another view in the centre keeps the side bar and the panel,
+   * Another view in the centre keeps the side bar and the panel,
    * with their views, and has no session rail — the list is Sessions' own.
    */
   it('frames another view: its content in the centre, the side bar and the panel beside it, no rail', async () => {
@@ -340,10 +340,9 @@ describe('the Work frame', () => {
   });
 
   /**
-   * 🔴 USE1: every flexible box between a framed view and the frame's own root may shrink below its
-   * content. A flex item is otherwise no narrower than what it holds, and the frame's root had no
-   * `min-w-0`: a long title that should truncate widened every view but Sessions past the window on the
-   * install. jsdom has no layout, so the rule is held on the boxes themselves.
+   * 🔴 Every flexible box between a framed view and the frame's own root may shrink below its
+   * content. A flex item is otherwise no narrower than what it holds, and without `min-w-0` on the frame's root
+   * a long title that should truncate widens every view but Sessions past the window. jsdom has no layout, so the rule is held on the boxes themselves.
    */
   it('lets every flexible box around a framed view shrink below its content', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -368,7 +367,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * D118 §3c, audit SE11: off Sessions the side bar's timeline spoke for the attended session with the
+   * Off Sessions the side bar's timeline does not speak for the attended session with the
    * main area's sentence, *Choose a session in the session list*, on a view with no such list. It says
    * nothing is attended, and offers Sessions, where one is chosen.
    */
@@ -392,7 +391,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * UX6b (design §2.5, D150 §8): off Sessions the side bar kept an ended session from the day before, its whole done note
+   * Off Sessions the side bar does not keep an ended session from the day before, its whole done note
    * in italics running past the window's foot. Its views follow the attended session there only while it runs or waits on
    * the person: ended, they say so, its note is not drawn, and the side bar opens on Ask Daoris.
    */
@@ -442,8 +441,8 @@ describe('the Work frame', () => {
   });
 
   /**
-   * D118 §3b, audit SE11: a relaunch into Sessions with a session attended said *Nothing attended* while
-   * the list that holds it was still on its way, since the frame finds the attended session in that list.
+   * A relaunch into Sessions with a session attended does not say *Nothing attended* while
+   * the list that holds it is still on its way, since the frame finds the attended session in that list.
    * A first load is skeleton rows.
    */
   it('draws the attended session loading as skeleton rows, never as Nothing attended, while the list first loads', async () => {
@@ -456,7 +455,7 @@ describe('the Work frame', () => {
     expect(screen.queryByText('Nothing attended')).toBeNull();
   });
 
-  /** NEW1b: nothing attended is where a new conversation is asked for; the list's ＋ puts the focus in its prompt. */
+  /** Nothing attended is where a new conversation is asked for; the list's ＋ puts the focus in its prompt. */
   it('asks what to work on where nothing is chosen, and the list\'s ＋ puts the focus there', async () => {
     show(null);
     const main = await screen.findByRole('main');
@@ -469,7 +468,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * NEW1c, the entry design §1: a repository is added, or a folder imported, from the picker's foot without leaving Sessions,
+   * A repository is added, or a folder imported, from the picker's foot without leaving Sessions,
    * and the words typed before are kept. The drawers are Projects' own, mounted here; registering starts nothing.
    */
   describe('adding a repository from the composer', () => {
@@ -572,10 +571,9 @@ describe('the Work frame', () => {
   });
 
   /**
-   * D118 §3d, audit F10: a full side bar was `z-20` in the page's own stacking order, above the drawer's
-   * `z-10`, so below 768 px a drawer could open under it. The frame is a stacking context of its own, so
-   * every overlay drawn at the page's root — a drawer, a menu, the palette, Quick Ask — lies above all of it. The main
-   * area's own drawer went with NEW1b; the composer's chip menus are drawn there the same way.
+   * The frame is a stacking context of its own, so a full side bar's `z-20` does not put it above a drawer's `z-10`:
+   * every overlay drawn at the page's root — a drawer, a menu, the palette, Quick Ask — lies above all of it. The
+   * composer's chip menus are drawn there the same way.
    */
   it('opens an overlay above a full side bar: the frame keeps its layers to itself', async () => {
     window.localStorage.setItem('daoris.dockClosed', '0');
@@ -599,11 +597,11 @@ describe('the Work frame', () => {
 
   /**
    * The frame is told a beat after a drag starts and after it ends (Chromium drops a drag the page changes under): a
-   * timer of its own, which settles here, inside `act`, rather than after the test has read the page (FRAMEACT1).
+   * timer of its own, which settles here, inside `act`, rather than after the test has read the page.
    */
   const dragBeat = () => act(async () => { await new Promise((done) => setTimeout(done, 0)); });
 
-  /** DOCK1e: dragging a tab to the other region is the same move as the menu's, by the pointer. */
+  /** Dragging a tab to the other region is the same move as the menu's, by the pointer. */
   it('moves a view dragged by its tab to the panel', async () => {
     window.localStorage.setItem('daoris.dockClosed', '0');
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -628,14 +626,14 @@ describe('the Work frame', () => {
       .toBeInTheDocument();
     expect(screen.getByText('the ask panel')).toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!)).toEqual({ ask: 'panel' });
-    // And the machine log hears where it went (LOG1b): which view, which region.
+    // And the machine log hears where it went: which view, which region.
     expect(invoke).toHaveBeenCalledWith('DAORIS.LOG', 'EVENT', {
       payload: { event: 'panel.moved', data: { view: 'ask', region: 'panel' } },
     });
   });
 
   it('draws an emptied side bar while a view is dragged, so it can be dropped on', async () => {
-    // Everything moved to the panel, the workflow (WORKFLOW1c) and *At work* (COWORKVIEW1a) among it, and the side bar closed: it
+    // Everything moved to the panel, the workflow and *At work* among it, and the side bar closed: it
     // is not drawn at all.
     window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel', workflow: 'panel', atWork: 'panel' }));
     window.localStorage.setItem('daoris.dockClosed', '1');
@@ -699,7 +697,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * SESS1: who a session worked with, from what the records declare — a quest it published names it
+   * Who a session worked with, from what the records declare — a quest it published names it
    * (`publishedBy`), so its head says what it asked of another repository, and the quest opens where
    * quests are read.
    */
@@ -722,7 +720,7 @@ describe('the Work frame', () => {
       </QueryClientProvider>,
     );
 
-    // Folded to its line (HEADFIT1), opened in place on the press.
+    // Folded to its line, opened in place on the press.
     const worked = await screen.findByRole('region', { name: 'Who it worked with' });
     expect(worked).toHaveTextContent('asked 1 of another repository');
     await userEvent.click(within(worked).getByRole('button', { name: 'Show who it worked with' }));
@@ -732,7 +730,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * TRACE1b (D143, D50): how the attended session came to be, folded on its page and read through `TRACE` only on the
+   * How the attended session came to be, folded on its page and read through `TRACE` only on the
    * press, for that session; its quest opens where quests are read.
    */
   it('folds how the attended session came to be, reads it only on the press, and opens its quest', async () => {
@@ -775,7 +773,7 @@ describe('the Work frame', () => {
     show('c0ffee11');
 
     // The conversation's own width is ConversationView's, held beside its other tests. The record under the page header
-    // says no title of its own (UX7c, D152 §7), so it is found by its Details.
+    // says no title of its own, so it is found by its Details.
     const head = (await screen.findByRole('button', { name: /^Details/ })).closest('article')!;
     const composer = screen.getByRole('textbox', { name: 'Message' }).closest('form')!;
     expect(head.className).not.toMatch(/max-w-/);
@@ -785,8 +783,8 @@ describe('the Work frame', () => {
   it('is the rail and the attended session, bound by one selection', async () => {
     show('s1a2b3c4');
 
-    // The rail's row and the page header's title are the same derived identity, from one implementation (D126 §3.2); the
-    // record under the header does not say it a third time (UX7c, D152 §7).
+    // The rail's row and the page header's title are the same derived identity, from one implementation; the
+    // record under the header does not say it a third time.
     await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
     await vi.waitFor(() =>
       expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(2));
@@ -794,12 +792,12 @@ describe('the Work frame', () => {
   });
 
   /**
-   * RAIL1: a conversation's name is what was first said in it — the rail's row and the head read the
+   * A conversation's name is what the person first said in it — the rail's row and the head read the
    * same one, from one implementation — and a row's menu reviews that session's work in the dock.
    */
   it('names a conversation by its first line in the rail and the head, and reviews it from its row', async () => {
-    // A conversation's record names the checkout it works in (D51), which is work to read: Review is offered where
-    // there is some (SESSUX1d, D126 §3.1).
+    // A conversation's record names the checkout it works in, which is work to read: Review is offered where
+    // there is some.
     SESSIONS = [DRIVEN, { ...CHAT, tree: 'C:/somewhere/engine' }];
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SESSION_OPENINGS' ? { openings: { c0ffee11: 'Cap the hydration per frame' } } : DRIVER_STATE));
@@ -823,8 +821,8 @@ describe('the Work frame', () => {
   });
 
   /**
-   * 🔴 Seen on the window (CONV3's look): a session just started is attended before the list has
-   * fetched it, and the frame cleared the selection as a record that was gone, leaving "Nothing
+   * 🔴 A session just started is attended before the list has
+   * fetched it, and the frame must not clear the selection as a record that is gone, leaving "Nothing
    * attended" beside a running chat. Only a record the frame has seen can be gone.
    */
   it('keeps a just-started session attended until the list catches up with it', async () => {
@@ -845,9 +843,9 @@ describe('the Work frame', () => {
   });
 
   /**
-   * The console (D49 §2): the transcript capture, streaming. It reaches the page over the shell's
+   * The console: the transcript capture, streaming. It reaches the page over the shell's
    * bridge and has no HTTP route at all, because output is transcript-class material and never
-   * leaves the machine that produced it (D47 §4). Its home is the output panel now (D55).
+   * leaves the machine that produced it. Its home is the output panel.
    */
   it('asks the driver for the attended session\'s console and renders it verbatim', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
@@ -886,7 +884,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * CONSOLE2c: what the session runs beside itself is a tab of its own, and appears as it starts. The
+   * What the session runs beside itself is a tab of its own, and appears as it starts. The
    * panel shows the session's console until the person picks a stream, then tails that stream's key.
    */
   it('grows a tab for each stream the session runs, and a picked tab shows that stream', async () => {
@@ -917,7 +915,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * CONSOLE3a: the task in view carries its stop after the tabs, as VS Code's panel carries *Kill
+   * The task in view carries its stop after the tabs, as VS Code's panel carries *Kill
    * Terminal*, and it asks the driver to stop that task of that session. The session's own tab, a task
    * its harness cannot stop, and one that has ended carry none.
    */
@@ -951,9 +949,9 @@ describe('the Work frame', () => {
   });
 
   /**
-   * A stream's end reaches the page as its session's streams changing, never as a line (CONSOLE2c):
-   * the console tailing that stream asks again and stops saying it is live. Found stopping a task on
-   * the window (CONSOLE3a): the tab said stopped, and the console above its output still said live.
+   * A stream's end reaches the page as its session's streams changing, never as a line:
+   * the console tailing that stream asks again and stops saying it is live, so the tab and the console above its
+   * output do not disagree.
    */
   it('stops calling a stream live once its session says it ended', async () => {
     let live = true;
@@ -986,7 +984,7 @@ describe('the Work frame', () => {
 
   /**
    * A session watched to its end stops being called live: its console asks again when the driver says
-   * it ended. Found looking at CONSOLE3c: a completed chat's console still said live beside its
+   * it ended, so a completed chat's console does not say live beside its
    * `completed` badge.
    */
   it('stops calling a session live once the driver says it ended', async () => {
@@ -1058,7 +1056,7 @@ describe('the Work frame', () => {
     expect(await screen.findByRole('button', { name: /^Details/ })).toBeInTheDocument();
   });
 
-  /** The panel is a region a person owns: it grows, it shrinks, and only they close it (D55). */
+  /** The panel is a region a person owns: it grows, it shrinks, and only they close it. */
   it('resizes the output panel from the keyboard and remembers the height', async () => {
     show('s1a2b3c4');
 
@@ -1082,7 +1080,7 @@ describe('the Work frame', () => {
   });
 });
 
-/** A quest an ask asked (D65 §4): its sender names the ask, which is where the go-aheads its sessions asked are held. */
+/** A quest an ask asked: its sender names the ask, which is where the go-aheads its sessions asked are held. */
 const ASKED_QUEST = {
   id: 'q4sk00', from: 'ask #a5k001', to: 'engine', title: 'Ship the comparison report', body: 'Both sites need it.',
   status: 'Taken', filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
@@ -1116,10 +1114,10 @@ const ASK_WITH_GO_AHEADS = {
 };
 
 /**
- * KNOWUSE1a2 and GOAHEAD2b (D135 §2, D131, D137): a park that asked go-aheads shows them on its page with *Approve* and
+ * A park that asked go-aheads shows them on its page with *Approve* and
  * *Refuse*, and answering one there goes through one door, which sends the same session on once none of them is open, as
  * the ask's page does, and says which one it still waits on where one is. The go-aheads are read from its quest's ask, and
- * only where its quest was asked by one.
+ * only where an ask asked its quest.
  */
 describe('a park\'s go-aheads', () => {
   let ASKS: unknown[] = [ASK_WITH_GO_AHEADS];
@@ -1144,11 +1142,11 @@ describe('a park\'s go-aheads', () => {
   });
 
 
-  /** The box's go-ahead lines, where the box answers the park (PARKVIEW1): each with its own *Approve* and *Refuse*. */
+  /** The box's go-ahead lines, where the box answers the park: each with its own *Approve* and *Refuse*. */
   const boxLines = async () => within(await screen.findByRole('region', { name: 'It asks you' })).getAllByRole('listitem');
 
   /**
-   * PARKVIEW1 (the park's ask design §3): the park's box carries every press of what it asks, so the person answers in one place: the
+   * The park's box carries every press of what it asks, so the person answers in one place: the
    * head lists the go-aheads with none, and the strip draws none of them.
    */
   it('shows the go-aheads the park asked in its box, each with Approve and Refuse, the head listing them, and not another session\'s', async () => {
@@ -1191,7 +1189,7 @@ describe('a park\'s go-aheads', () => {
     }));
     expect(notify).toHaveBeenCalledWith("Approved go-ahead #2; the same session goes on with it at the driver's next look.");
     await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
-    // One press: neither the ask's own door nor the box's was asked as well.
+    // One press: neither the ask's own door nor the box's is asked as well.
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
     expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('/api/asks/a5k001/go-aheads/2', expect.anything());
     // The shell pushes the ask the press moved, so the go-ahead shows what became of it.
@@ -1213,7 +1211,7 @@ describe('a park\'s go-aheads', () => {
     expect(notify).toHaveBeenCalledWith("Refused go-ahead #1; the same session goes on with it at the driver's next look.");
   });
 
-  /** GOAHEAD2b: a go-ahead the park asked still open keeps it parked, as at the ask's door, and the page says which. */
+  /** A go-ahead the park asked still open keeps it parked, as at the ask's door, and the page says which. */
   it('says which go-ahead the park still waits on where the door kept it parked, the other one still answerable', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_GO_AHEAD'
       ? { message: 'Go-ahead 1 on ask `#a5k001` is approved.', sent: false, waits: true }
@@ -1286,7 +1284,7 @@ describe('a park\'s go-aheads', () => {
   });
 
   /**
-   * WAITFOOT1b (D168) and PARKVIEW1 (the park's ask design §3): the person reads the conversation's foot, where the park's question
+   * The person reads the conversation's foot, where the park's question
    * is, so what it asks stands there, in the box below the conversation's scroll, with every press of it; the strip, which counted
    * its question and drew its go-aheads beside the box's own field, draws none of the park's waits, whether or not the head's are on
    * screen, and the head lists the go-aheads with no press.
@@ -1322,7 +1320,7 @@ describe('a park\'s go-aheads', () => {
   });
 
   /**
-   * WAITFOOT1c (D168 point 4): each wait leads to the event in the conversation that raised it, from the head and from the strip,
+   * Each wait leads to the event in the conversation that raised it, from the head and from the strip,
    * and the event leads back to its wait at the foot. A go-ahead's call is joined on its input, never its title; one whose call
    * the conversation does not hold has no such press.
    */
@@ -1363,7 +1361,7 @@ describe('a park\'s go-aheads', () => {
       .map((said) => said.closest<HTMLElement>('[data-block]')).find(Boolean)!;
     await waitFor(() => expect(words.className).toContain('outline-accent'));
 
-    // And back: the call's mark names what waits from it, and *To the wait* leads to its line in the box (PARKVIEW1).
+    // And back: the call's mark names what waits from it, and *To the wait* leads to its line in the box.
     const block = call.closest<HTMLElement>('[data-block]')!;
     await userEvent.click(within(block).getByRole('button', { name: 'To the wait: go-ahead #1' }));
     await waitFor(() => expect(within(ask).getAllByRole('listitem')[0]).toHaveFocus());
@@ -1383,7 +1381,7 @@ describe('a park\'s go-aheads', () => {
     expect(within(again).getAllByRole('listitem')[0]!.className).not.toContain('outline-accent');
   });
 
-  // PARKVIEW1: the box that answers a park is always drawn, so *To the wait* leads to its line there, the head on screen or not.
+  // The box that answers a park is always drawn, so *To the wait* leads to its line there, the head on screen or not.
   it('leads a raising block\'s *To the wait* to the box\'s line while the head is on screen', async () => {
     const watched = watchScreen();
     try {
@@ -1419,7 +1417,7 @@ describe('a park\'s go-aheads', () => {
 });
 
 /**
- * PARKVIEW1 (the park's ask design §2-§4): a session parked on a production go-ahead and a question its agent asked through
+ * A session parked on a production go-ahead and a question its agent asked through
  * `question_ask`. What it asks stands in its box, every answer a press the box's words go with, each reaching the session through
  * a door the box already uses: a choice its label with the question's id, the free answer as before, and a go-ahead through the ask's
  * door, kept from sending the park on while its question waits.
@@ -1481,7 +1479,7 @@ describe('a park\'s question', () => {
     .filter(([, type]) => type === 'SESSION_INPUT')
     .map(([, , request]) => (request as { payload: unknown }).payload);
 
-  /** QUESTIONUI1a (the supervisor design §8.4): a row selected, then the box's own *Send* sends it with the box's words, once. */
+  /** A row selected, then the box's own *Send* sends it with the box's words, once. */
   it('sends the selected answer with the box\'s words through the box\'s one *Send*, once, naming the question', async () => {
     let settle: (answer: unknown) => void = () => {};
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -1531,7 +1529,7 @@ describe('a park\'s question', () => {
     ]));
   });
 
-  /** PARKANSWER1, QUESTIONUI1a: the head's card selects a row once its answer is opened, and its one *Send* combines it with its words. */
+  /** The head's card selects a row once its answer is opened, and its one *Send* combines it with its words. */
   it('answers the question from the head\'s card, its *Send* combining the selected answer with the card\'s words, once', async () => {
     show('g0ah3ad0');
     const card = (await screen.findByText('This one is waiting on you')).closest('section')!;
@@ -1539,7 +1537,7 @@ describe('a park\'s question', () => {
 
     await userEvent.click(within(card).getByRole('button', { name: 'Answer and carry on…' }));
     await userEvent.click(within(card).getByRole('radio', { name: /^1,200/ }));
-    // The frame's one selection (the design §8.4, round 3): chosen in the head, chosen in the box below.
+    // The frame's one selection: chosen in the head, chosen in the box below.
     expect(within(screen.getByRole('region', { name: 'It asks you' })).getByRole('radio', { name: /^1,200/ })).toBeChecked();
     await userEvent.type(within(card).getByLabelText('your answer — the same session goes on with these words'), 'tile only');
     await userEvent.click(within(card).getByRole('button', { name: 'Carry on with this answer' }));
@@ -1646,7 +1644,7 @@ describe('a park\'s question', () => {
 
     // Words alone, by *Send* and by Enter: refused, the words kept.
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear choice' }));
-    // FRAMEBOUNDS1: a real paste keeps the complete phrase and input event in this authorization sequence,
+    // A real paste keeps the complete phrase and input event in this authorization sequence,
     // avoiding a whole-frame render for each character; Enter and the following approval remain real interactions.
     const user = userEvent.setup();
     await user.click(screen.getByLabelText('Message'));
@@ -1669,8 +1667,8 @@ describe('a park\'s question', () => {
 });
 
 /**
- * PROPOSEHERE1b (D168 point 2, D74): auto mode refused a driven session's local branch delete, and its `permission_propose`
- * waited on the Agents page and the band while the person kept asking it in its conversation. Its own waiting proposals are a
+ * A driven session's waiting `permission_propose` is not left on the Agents page and the band while the person keeps
+ * asking it in its conversation. Its own waiting proposals are a
  * wait where they talk to it, in the head and at the foot; *Allow* settles it through the band's own door, then tells the
  * session it is allowed, so its next turn, composed with the rule, goes on. A session that takes no words is said so instead.
  */

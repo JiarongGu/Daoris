@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// SESSONE1c (D167 point 5): the rail over the driver's `entries`. The owner raised two asks, one over two repositories, and
-// the list showed eleven records; it shows three lines of work. An organism's test, so the bridge is mocked as present.
+// The rail over the driver's `entries`. Two asks, one over two repositories, make eleven records; the list
+// shows three lines of work. An organism's test, so the bridge is mocked as present.
 
 const { invoke, notifyReady, bridge } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -25,7 +25,7 @@ let ENTRIES: unknown = EVIDENCE_ENTRIES;
 let SESSIONS: unknown[] = EVIDENCE_SESSIONS;
 let GROUPINGS: unknown[] = EVIDENCE_GROUPINGS;
 
-/** What is unread on each ask's channel (SESSONE2c), by the ask's id; an ask not named reads as an empty channel. */
+/** What is unread on each ask's channel, by the ask's id; an ask not named reads as an empty channel. */
 let UNREAD: Record<string, number> = {};
 
 const drive = async (_module: string, type: string, options?: { payload?: { ask?: string } }) => {
@@ -156,7 +156,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
       expect(second).toHaveTextContent('app');
     });
 
-    /** SESSONE2c (D167): an ask's heading says what is unread on its channel, the person's count, and says nothing where none is. */
+    /** An ask's heading says what is unread on its channel, the person's count, and says nothing where none is. */
     it('says what is unread on an ask’s channel in its heading', async () => {
       UNREAD = { c98a7e: 2 };
       show({ arrangement: 'ask' });
@@ -166,7 +166,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
     });
 
     /**
-     * ACCEPTALL1 (D167's 2026-10-15 amendment point 4): an ask whose lines of work hold more than one part with work to land offers
+     * An ask whose lines of work hold more than one part with work to land offers
      * one Accept under its heading; its plan is read only once the ask opens, and the press lands the ask's work.
      */
     it("offers one Accept for an ask's work, reading its plan only once asked", async () => {
@@ -206,7 +206,7 @@ describe('the session rail over entries (SESSONE1c)', () => {
     });
   });
 
-  /** D167 point 5 and D126 §5.2: archive marks an entry's parts, so no part comes back as a row of its own. */
+  /** Archive marks an entry's parts, so no part comes back as a row of its own. */
   describe('archive', () => {
     it('sends every part of the entry to be archived from its row', async () => {
       invoke.mockImplementation(async (module: string, type: string) => (type === 'SESSION_ARCHIVE'

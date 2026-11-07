@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The repair a run's review Accept carries (WORKFLOWCLEAN1 1c; LANDBACK1): kept on the run's record beside the review's word, in place of the
-/// <see cref="CarriedAccepts"/> file, which is no longer written for a run. The performer keeps it when its landing is refused for work the
+/// The repair a run's review Accept carries: kept on the run's record beside the review's word. The performer keeps it when its landing is refused for work the
 /// session can clear; the pass accepts the review again at the new tip where the tip moved only by the session's own commits.
 /// </summary>
 public static class RunRepairs
@@ -23,7 +22,7 @@ public static class RunRepairs
     }
 
     /// <summary>
-    /// Whether <paramref name="tip"/> descends from the tip the Accept was given at, so the commits since are the session's own continuation:
+    /// Whether <paramref name="tip"/> descends from the tip the Accept is given at, so the commits since are the session's own continuation:
     /// asked of git, false where it cannot be told.
     /// </summary>
     public static async Task<bool> ContinuesAsync(string root, NodeRepair repair, string tip, CancellationToken ct)

@@ -4,7 +4,7 @@ import { opinionState } from '../gates/opinion';
 import type { GitHeld, QuietWait } from './attentionPushed';
 import { isTaskAct, type TaskAct } from '../../workflow/task/TaskPress';
 
-/** An act a row offers (design §6.2–§6.3), named as the row's press. */
+/** An act a row offers, named as the row's press. */
 export type AttentionActId =
   | 'publish' | 'choose' | 'retry' | 'approve' | 'refuse' | 'trust' | 'accept-departure' | 'accept-rule' | 'decline-rule'
   | 'sign-in' | 'sign-in-new' | 'read' | 'reviewed' | 'not-yet' | 'show-again' | 'opinion-again' | 'opinion-anyway'
@@ -44,7 +44,7 @@ export type AttentionActId =
   | 'pass-over'
   // A run's own declined request, asked again or gone on without, each the run's node word.
   | 'ask-again' | 'go-on'
-  // A person's task's presses (NODEKIT1 HUMAN), each the run's node word with the person's note.
+  // A person's task's presses, each the run's node word with the person's note.
   | 'task-done' | 'task-approve' | 'task-reject';
 
 /** The run's node word a person's task's press is (`task-done` is `done`); null for any other act. */
@@ -80,9 +80,9 @@ const CHOICE_ACTS: Readonly<Record<string, AttentionActId>> = {
 };
 
 /**
- * What a held tool call's row offers (D184 point 3): a press per choice its agent offered, in the agent's order, each
+ * What a held tool call's row offers: a press per choice its agent offered, in the agent's order, each
  * answering with that choice's id. A kind the page cannot name is left to the session's page, which says it by the agent's name; and
- * where no allow was offered, none is.
+ * where no allow is offered, none is.
  */
 function permissionOffers(item: Attention): AttentionOffer[] {
   return (item.permission?.choices ?? [])
@@ -91,7 +91,7 @@ function permissionOffers(item: Attention): AttentionOffer[] {
 }
 
 /**
- * The acts that ask once under the row before they do anything (design §6.3, D41 §4): a go-ahead's yes or no, which every
+ * The acts that ask once under the row before they do anything: a go-ahead's yes or no, which every
  * session on its ask is handed; a folder's trust and a widening of the rules, which widen what Daoris may do; and a choice of
  * receiver, which is a choice before it is a press.
  */
@@ -99,7 +99,7 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'choose', 'approve', 'refuse', 'trust', 'accept-rule',
   // A *not yet* asks for the person's words, which are what the set-up step's session acts on.
   'not-yet',
-  // *Go on anyway…* says what stays unsettled and takes the person's words (the second-agent design §8.5).
+  // *Go on anyway…* says what stays unsettled and takes the person's words.
   'opinion-anyway',
   // Ending a quiet session asks once, saying what it does and where the person's waiting words go.
   'quiet-carry-on', 'quiet-stop',
@@ -111,16 +111,16 @@ export const ASKS_ONCE: ReadonlySet<AttentionActId> = new Set([
   'task-done', 'task-approve', 'task-reject',
 ]);
 
-/** How many acts an account's row offers beside its door: three controls a row at most (design §9.3). */
+/** How many acts an account's row offers beside its door: three controls a row at most. */
 const ACCOUNT_ACTS = 2;
 
 /**
- * What an account's row offers (design §6.2–§6.3), each for one account: *Sign in* to each account the start passed
- * signed out, in the order it names them, and *Read* for one it names that no read answered (§5.3: a reading only on the
- * press). No *Let … run …*: every account of Daoris's serves every workspace (the account-pool design §4.3). A
+ * What an account's row offers, each for one account: *Sign in* to each account the start passed
+ * signed out, in the order it names them, and *Read* for one it names that no read answered (a reading only on the
+ * press). No *Let … run …*: every account of Daoris's serves every workspace. A
  * signed-out account's own row signs it in. Never the tool's own sign-in, which is the person's, nor where Daoris runs no
  * sign-in for the agent.
- * Where no Daoris account is signed in, *Sign in for Daoris* leads (D175 point 7): it names no account, and runs
+ * Where no Daoris account is signed in, *Sign in for Daoris* leads: it names no account, and runs
  * the add flow's sign-in in place. Two at most: the rest are on the agent's page, the row's door, and its line says them.
  */
 function accountOffers(item: Attention): AttentionOffer[] {
@@ -140,7 +140,7 @@ function accountOffers(item: Attention): AttentionOffer[] {
 }
 
 /**
- * What a row offers, in the order it shows them (design §6.2–§6.3): an act only where one press is safe and the row says
+ * What a row offers, in the order it shows them: an act only where one press is safe and the row says
  * what it does, and nothing where the answer needs reading first (a park's question, an intake's, a review), whose door is
  * the row's one control. **One rule per kind**, read by every row and the tests, so two rows of a kind cannot differ, and
  * each mirrors the record's own: a quest's page offers *Try again* on the planner's park and *Accept the departure* on a
@@ -152,21 +152,21 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
   switch (item.kind) {
     case 'proposal': return (item.publishTo?.length ?? 0) > 0 ? plain('publish', 'choose') : plain('choose');
     case 'parked-quest': return plain('retry');
-    // The person's own *Try again*, the parked quest's press (D209 §5.3, §5.4).
+    // The person's own *Try again*, the parked quest's press.
     case 'steward-stopped': return plain('retry');
     // *Try again* is the person's yes to one move (the retry door approves it, once).
     case 'policy-hold': return plain('retry');
-    // The run's existing *Pass over…* (§17.3), offered where the node it is said on is named.
+    // The run's existing *Pass over…*, offered where the node it is said on is named.
     case 'request-declined': return !item.declined ? [] : item.declined.request ? plain('ask-again', 'go-on') : plain('pass-over');
     // The presses the run's task waits for, as the driver names them.
     case 'task': return plain(...(item.task?.acts ?? []).filter(isTaskAct).map((act): AttentionActId => `task-${act}`));
     // Nothing on a stale one's ask could use a yes but whatever starts there next, which no session asked it for, so
     // its refusal is the one answer offered.
     case 'go-ahead': return item.stale ? plain('refuse') : plain('approve', 'refuse');
-    // A hold on the person's own sign-in's file offers no grant (D197 point 3): Daoris writes nothing there.
+    // A hold on the person's own sign-in's file offers no grant: Daoris writes nothing there.
     case 'trust': return item.trust && !item.trust.own ? plain('trust') : [];
     case 'departure': return plain('accept-departure');
-    // A set-up shown and waiting (design §3.3): the strip's chip's and the step's page's own presses, *Show it
+    // A set-up shown and waiting: the strip's chip's and the step's page's own presses, *Show it
     // again* only for a local set-up, which Daoris serves; *Skip…* is the step's page's, where the work is read.
     case 'set-up': return item.setUp ? plain('reviewed', 'not-yet', ...(item.local ? ['show-again' as const] : [])) : [];
     case 'rule': return plain('accept-rule', 'decline-rule');
@@ -177,12 +177,12 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
     case 'hand-over': return item.agent ? plain('hand-over', 'keep-agent') : [];
     // A tool call held for the person: its session's card's own presses, one each, as `PermissionAsks` says why.
     case 'permission': return permissionOffers(item);
-    // A third answer alone held for the person (§8.3): its session's page's own two presses, each one press.
+    // A third answer alone held for the person: its session's page's own two presses, each one press.
     case 'answer': return item.answer ? plain('go-on-answer', 'keep-answer') : [];
-    // A second opinion that waits on the person (§8.5): *Go on anyway…* only where no press of theirs is coming (the
+    // A second opinion that waits on the person: *Go on anyway…* only where no press of theirs is coming (the
     // work lands by itself, or none could be had and the rule requires one), and a pass asked again; the rest are its session's.
     case 'opinion': return opinionOffers(item);
-    // A plugin step's attempt held for the person (§D6): their three words, until one is recorded and the driver's next
+    // A plugin step's attempt held for the person: their three words, until one is recorded and the driver's next
     // look applies it; a held close its own, as the driver offers them. A unit only the clean-up's press settles has
     // that list, on its workspace's Branches, for its door, and no act of its own here.
     // A node record that does not read: its folder opened, where the person mends it; nothing else of Daoris's moves it.
@@ -192,14 +192,14 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
         : item.ended && endOffersStop(item.ended) ? plain('stop-partial') : [];
     case 'account-wait':
     case 'signed-out': return accountOffers(item);
-    // A held git remote (the git auth design §5.2): *Try again*, one press, which lifts its holds and connects nothing itself.
+    // A held git remote: *Try again*, one press, which lifts its holds and connects nothing itself.
     // A remote nothing serves once the home has moved is set up in Settings → Git, or kept on the person's own sign-ins
-    // there, confirmed in place; *Try again* would change nothing until one of them is done. Every other class offers what mends it
-    // (§7.4), then *Try again*.
+    // there, confirmed in place; *Try again* would change nothing until one of them is done. Every other class offers what mends it,
+    // then *Try again*.
     case 'git-held': return item.git ? plain(...gitHeldOffers(item.git)) : [];
-    // A git go-ahead's two answers (§6.6), as its session's head offers them.
+    // A git go-ahead's two answers, as its session's head offers them.
     case 'git-ask': return item.gitAsk ? plain('git-allow', 'git-refuse') : [];
-    // The session-watch design §2.3, §5.2: *End and carry on* for a quiet quest session alone, never a busy one; *Hand
+    // *End and carry on* for a quiet quest session alone, never a busy one; *Hand
     // over…* for a quest session; *Stop…* and *Leave it running* for every one, an intake's among them.
     case 'quiet': return item.quiet ? quietOffers(item.quiet) : [];
     default: return [];
@@ -207,7 +207,7 @@ export function attentionOffers(item: Attention): AttentionOffer[] {
 }
 
 /**
- * What a second opinion's row offers (the second-agent design §8.2, §8.5): a dispute where a press of the person's is
+ * What a second opinion's row offers: a dispute where a press of the person's is
  * coming (*Accept…* on its session's page) asks again only, since that press answers it; where none is (the work lands by
  * itself), *Go on anyway…* too. None to be had where the rule requires one, *Try again* and *Go on anyway…*; commits nobody read
  * where the work lands by itself, the same. The same agent fresh, *I looked myself…* and *Send back…* are on its session's page.
@@ -219,7 +219,7 @@ function opinionOffers(item: Attention): AttentionOffer[] {
   return [...(anyway ? [{ act: 'opinion-anyway' as const }] : []), { act: 'opinion-again' as const }];
 }
 
-/** What a quiet row offers (§2.3, §5.2), in its order. */
+/** What a quiet row offers, in its order. */
 function quietOffers(quiet: QuietWait): AttentionOffer[] {
   const acts: AttentionActId[] = [
     ...(!quiet.busy && !quiet.intake ? ['quiet-carry-on' as const] : []),
@@ -235,10 +235,10 @@ export function attentionActs(item: Attention): AttentionActId[] {
 }
 
 /**
- * What mends a held group, by its class and what serves it (the git auth design §7.4), then *Try again*: a refusal of an SSH
+ * What mends a held group, by its class and what serves it, then *Try again*: a refusal of an SSH
  * identity its public key and its host's key page, of an HTTPS one a sign-in again, under the person's own sign-ins Settings → Git; a
  * push refused another identity or the identity marked read only; an own-input hold the person's own sign-ins for it; a host's key under
- * an identity its comparison and trust. The move's row is §6.8's two presses alone.
+ * an identity its comparison and trust. The move's row is two presses alone.
  */
 export function gitHeldOffers(held: GitHeld): AttentionActId[] {
   if (held.class === 'no-identity') return ['git-set-up', 'git-keep-own'];

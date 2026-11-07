@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1c5 (D157's WORKFLOW1c5 note; <c>.claude/knowledge/twins.md</c>): the English a run says is held to one table, this
+/// The English a run says is held to one table (<c>.claude/knowledge/twins.md</c>), this
 /// suite's <c>fixtures/workflow-run-said.json</c>, which the page's <c>workflow/runSaid.test.ts</c> holds its catalogue to as well.
 /// <see cref="WorkflowRunWords"/> says each row's sentence word for word, so a sentence changed here alone fails here, and one
 /// changed in the table alone fails here until the words say it. The terminal's own words stay out of the table.
@@ -59,7 +59,7 @@ public sealed class WorkflowRunSaidTwinTests
         Assert.Equal(Text(row, "said"), WorkflowRunWords.Said(step));
     }
 
-    /// <summary>FABRIC-CUTOVER1e: what a graph run says above its nodes, line for line, as the table's <c>graph</c> rows have it.</summary>
+    /// <summary>What a graph run says above its nodes, line for line, as the table's <c>graph</c> rows have it.</summary>
     [Fact]
     public void A_graph_run_says_its_lines_in_the_tables_words()
     {
@@ -75,7 +75,7 @@ public sealed class WorkflowRunSaidTwinTests
     }
 
     /// <summary>
-    /// CHATFLOW1a (the chat-flow design §10): each code a read that names no run answers is said in the table's <c>none</c> words, which
+    /// Each code a read that names no run answers is said in the table's <c>none</c> words, which
     /// the page's en catalogue says too, and every code the driver answers has its row.
     /// </summary>
     [Fact]
@@ -90,7 +90,7 @@ public sealed class WorkflowRunSaidTwinTests
         Assert.Equal(WorkflowNoRun.All, none.Select(row => Text(row, "code")));
     }
 
-    /// <summary>CHATFLOW1c (the chat-flow design §4.4): a chat run's checks are said not yet enforced, in the table's words.</summary>
+    /// <summary>A chat run's checks are said not yet enforced, in the table's words.</summary>
     [Fact]
     public void A_chat_run_s_checks_are_said_not_yet_enforced_in_the_tables_words()
     {
@@ -119,7 +119,7 @@ public sealed class WorkflowRunSaidTwinTests
         var worded = WorkflowRunWords.Details.SelectMany(each => each.Value.Select(detail => $"{each.Key}.{detail}"));
 
         Assert.Empty(worded.Where(key => !rows.Contains(key)));
-        // FABRIC-CUTOVER1e: each detail a graph run's node is said by has a row with a node.
+        // Each detail a graph run's node is said by has a row with a node.
         var nodes = table.GetProperty("rows").EnumerateArray().Where(row => Text(row, "node") is not null).Select(row => Text(row, "detail")).ToHashSet(StringComparer.Ordinal);
         Assert.Empty(WorkflowGraphDetails.All.Where(detail => !nodes.Contains(detail)));
         foreach (var state in typeof(WorkflowRunStates).GetFields().Where(field => field.IsLiteral && field.FieldType == typeof(string)).Select(field => (string)field.GetValue(null)!))

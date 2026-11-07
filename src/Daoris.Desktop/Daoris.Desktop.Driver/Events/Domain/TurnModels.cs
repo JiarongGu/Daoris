@@ -3,40 +3,40 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>One model's share of a turn's tokens, as its door split them (USAGECAP1a2, D179 point 2).</summary>
+/// <summary>One model's share of a turn's tokens, as its door splits them.</summary>
 public sealed record ModelTokens(string Model, TurnTokens Tokens);
 
 /// <summary>
-/// Which models a turn's tokens were spent on, as its door said them (USAGECAP1a2, D179 point 2), for the usage history alone:
-/// carried in memory on the turn's event. D205 keeps reported names separately on the machine-local session record.
+/// Which models a turn's tokens are spent on, as its door says them, for the usage history alone:
+/// carried in memory on the turn's event. The reported names are kept separately on the machine-local session record.
 /// </summary>
 /// <remarks>
-/// <para><b>A split is taken only where it agrees with the turn's total.</b> The total is the door's measured per-turn report
-/// (CONV5); the split by model is not measured on either door. So the models the turn's answers named (or, named by none, the one
+/// <para><b>A split is taken only where it agrees with the turn's total.</b> The total is the door's measured per-turn report;
+/// the split by model is not measured on either door. So the models the turn's answers named (or, named by none, the one
 /// model whose share is the total) must sum to the total on every kind the total reports. Where the split read as the process's
 /// running total agrees, the turn's own is what grew since the turn before; where the split as reported agrees, it is the turn's
 /// own. Neither agreeing, there is no split: the model the answers named stands, and nothing is reconciled or guessed.</para>
 /// <para><b>A helper model's tokens</b> (a small model the harness called on its own, counted in the split and not in the total)
 /// make the turn not whole: they are kept beside the total, never added into it.</para>
 /// </remarks>
-/// <param name="Model">The one model the turn's total was spent on, or <see cref="Mixed"/> for several, or <see cref="Unknown"/>.</param>
-/// <param name="Split">Each model's share, where the door's split agreed with the total; null where it reported none or did not agree.</param>
+/// <param name="Model">The one model the turn's total is spent on, or <see cref="Mixed"/> for several, or <see cref="Unknown"/>.</param>
+/// <param name="Split">Each model's share, where the door's split agrees with the total; null where it reports none or does not agree.</param>
 /// <param name="Whole">
 /// False where a helper model's tokens fall outside the turn's total, true where the split holds none, null where no split says.
 /// </param>
 /// <param name="From">
 /// Where the attribution came from: the split's source (<see cref="FromModelUsage"/>, <see cref="FromQuota"/>, either with
-/// <see cref="Since"/> where it was read as a running total), or else where the model was named (<see cref="FromMessages"/>,
+/// <see cref="Since"/> where it is read as a running total), or else where the model is named (<see cref="FromMessages"/>,
 /// <see cref="FromUpdates"/>); null where nothing named one.
 /// </param>
 public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split, bool? Whole, string? From)
 {
-    /// <summary>D205: names in report order, captured before token attribution sorts or collapses them.</summary>
+    /// <summary>Names in report order, captured before token attribution sorts or collapses them.</summary>
     public IReadOnlyList<string> Reported { get; init; } = [];
-    /// <summary>The turn's total was spent on more than one model.</summary>
+    /// <summary>The turn's total is spent on more than one model.</summary>
     public const string Mixed = "mixed";
 
-    /// <summary>No model was named, or none as a plain name.</summary>
+    /// <summary>No model is named, or none as a plain name.</summary>
     public const string Unknown = "unknown";
 
     /// <summary>The native door: each top-level answer's <c>message.model</c>.</summary>
@@ -85,7 +85,7 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
     }
 
     /// <summary>
-    /// D205: the names a split says, in its order, whether or not its counts can be read — what ran is provenance apart from
+    /// The names a split says, in its order, whether or not its counts can be read — what ran is provenance apart from
     /// token attribution. Empty for any shape <see cref="Read"/> does not take.
     /// </summary>
     public static IEnumerable<string?> Names(JsonElement split) => split.ValueKind switch
@@ -98,7 +98,7 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
     /// <summary>
     /// A split from the wire: an object keyed by model (<c>modelUsage</c>) or an array of objects each naming its
     /// <c>model</c> (<c>quota.model_usage</c>), each model's counts read by <see cref="Counts"/>, from the entry's own
-    /// <c>token_count</c> where it has one (both protocol agents' measured shape, MODELROLE1a). Null for any other shape, an
+    /// <c>token_count</c> where it has one (both protocol agents' measured shape). Null for any other shape, an
     /// entry with no name, or a name twice.
     /// </summary>
     public static IReadOnlyDictionary<string, TurnTokens>? Read(JsonElement split)
@@ -132,7 +132,7 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
     /// One model's four counts, each by the names a wire is known to use for it: the protocol door's <c>usage</c>
     /// (<c>inputTokens</c>, <c>cachedReadTokens</c>), its quota's (<c>cachedInputTokens</c>), the SDK's <c>ModelUsage</c> (<c>cacheReadInputTokens</c>,
     /// <c>cacheCreationInputTokens</c>) and the Messages API's (<c>input_tokens</c>). Null where it names none. A zero stays
-    /// zero here: it is one model's share, and the turn's total is what says whether anything was reported.
+    /// zero here: it is one model's share, and the turn's total is what says whether anything is reported.
     /// </summary>
     public static TurnTokens? Counts(JsonElement entry)
     {
@@ -177,7 +177,7 @@ public sealed record TurnModels(string Model, IReadOnlyList<ModelTokens>? Split,
         return since;
     }
 
-    /// <summary>The models the total was spent on, where the split agrees with it: the named ones, or else the one whose share it is.</summary>
+    /// <summary>The models the total is spent on, where the split agrees with it: the named ones, or else the one whose share it is.</summary>
     private static IReadOnlyList<string>? Agreeing(IReadOnlyDictionary<string, TurnTokens> split, TurnTokens total, IReadOnlyList<string> named)
     {
         if (named.Count > 0) return Sums(named.Select(model => split.GetValueOrDefault(model)), total) ? named : null;

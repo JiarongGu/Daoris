@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The tier a brainstorm search found its sources by (BRAINSTORM1a, TIER1, D24), as the service client names it: <see cref="Meaning"/> where
+/// The tier a brainstorm search found its sources by, as the service client names it: <see cref="Meaning"/> where
 /// the search answered by semantic reading, <see cref="Words"/> otherwise. <see cref="BrainstormPackets.Meaning"/> and
 /// <see cref="BrainstormPackets.Words"/> are these, for the packet's reading.
 /// </summary>
@@ -15,10 +15,10 @@ public static class BrainstormTier
 }
 
 /// <summary>
-/// What a search of Daoris's own knowledge found for a brainstorm's packet (BRAINSTORM1a, D176 point 2), before the bounds: an
+/// What a search of Daoris's own knowledge found for a brainstorm's packet, before the bounds: an
 /// entry's kind, its path from the repository's root, its lines, its text, and the words that found it.
 /// </summary>
-/// <param name="Words">The wording of the question the search was asked in.</param>
+/// <param name="Words">The wording of the question the search took.</param>
 /// <param name="Tier">The tier of a source no search found (an asker's named one); null for a search's, which the search's tier names.</param>
 /// <param name="Reason">Why the packet takes it, where already known.</param>
 public sealed record BrainstormFound(string Kind, string Path, int? First, int? Last, string Text, string Words, string? Tier = null, string? Reason = null);

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CLEANUP1, the leftovers that never cleared (the fabric events design §C3, §D3): a landing whose branch the person removed reads as the
+/// The leftovers that never cleared: a landing whose branch the person removed reads as the
 /// person's end and retires; a doubt keeps it and says why; Daoris's own recoveries no record names are no unit, each kept by its rule; and
 /// none of them waits on the person. Pure over <see cref="InventoryFacts"/>, and the landings record's new field in a home of its own.
 /// </summary>
@@ -140,7 +140,7 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Equal(("recovery-ref", "recovery", "retained"), (entry.Kind, entry.Role, entry.Disposition));
         Assert.Contains("git update-ref -d refs/daoris/discarded/daoris/s-gone", entry.Detail, StringComparison.Ordinal);
         Assert.Null(entry.Until);
-        // RECOVERYVIEW1: it says whose, so a workspace's page lists its own.
+        // It says whose, so a workspace's page lists its own.
         Assert.Equal("engine", entry.Repository);
     }
 
@@ -205,7 +205,7 @@ public sealed class CleanupLeftoversTests : IDisposable
         var quiet = Path.Combine(engine, $"s-quiet-{stamp}");
         Directory.CreateDirectory(quiet);
         await File.WriteAllTextAsync(Path.Combine(quiet, "old.txt"), "written before the move\n");
-        // KEEP1a: the purge reads creation times too (Fable F1.1), so a file made before the move is made then.
+        // The purge reads creation times too, so a file made before the move is made then.
         File.SetCreationTimeUtc(Path.Combine(quiet, "old.txt"), moved.AddDays(-1).UtcDateTime);
         File.SetLastWriteTimeUtc(Path.Combine(quiet, "old.txt"), moved.AddDays(-1).UtcDateTime);
 
@@ -253,7 +253,7 @@ public sealed class CleanupLeftoversTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-UNKNOWN1b: a registered repository that no record and no tree names is read too, one listing of its checkout, so an
+    /// A registered repository that no record and no tree names is read too, one listing of its checkout, so an
     /// unrecorded <c>daoris/*</c> branch there can be seen. A part reads only the repositories it holds, and a registered repository whose
     /// checkout is not on this machine is said by nobody, since nothing of Daoris's is recorded there. Counted at the process seam, its
     /// stand-in starting nothing.
@@ -329,7 +329,7 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Empty(WorkWords.Recovery([]));
     }
 
-    /// <summary>The landings record keeps why a branch went (additive: an older trace reads with none), and leaves Daoris's own removal as it was.</summary>
+    /// <summary>The landings record keeps why a branch went (additive: an older trace reads with none), and leaves Daoris's own removal unchanged.</summary>
     [Fact]
     public void The_landings_record_keeps_why_a_branch_went_and_never_rewrites_daoris_own_removal()
     {
@@ -355,10 +355,10 @@ public sealed class CleanupLeftoversTests : IDisposable
         Assert.Empty(new LandedBranches(_home).All());
     }
 
-    // ---- (4) LANDRETIRE1: a landing branch withdrawn on a word
+    // ---- (4) A landing branch withdrawn on a word
 
     /// <summary>
-    /// A withdrawal writes the landing it was made of alone, as a trace with its reason and its recovery ref, and reads back the same; a new
+    /// A withdrawal writes the landing it concerns alone, as a trace with its reason and its recovery ref, and reads back the same; a new
     /// landing of the name keeps its standing, a trace is never written again, and a trace from before the field reads with none.
     /// </summary>
     [Fact]
@@ -428,7 +428,7 @@ public sealed class CleanupLeftoversTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 After review: an observation applies to the landing it was made of, by its identity (repository, branch, session, when recorded,
+    /// An observation applies to the landing it concerns, by its identity (repository, branch, session, when recorded,
     /// and the tip read), never by name: a new landing of the same name recorded since keeps its standing.
     /// </summary>
     [Fact]

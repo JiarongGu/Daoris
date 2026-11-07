@@ -14,7 +14,7 @@ internal sealed class SnapshotLook(ILookWiring wiring) : ILookPass
         round.State.Mark = wiring.Harnesses.Mark();
 
         // The starts still opening, read before the snapshot as well as at the plan, so one whose record opened while the snapshot
-        // was read is held by one of the two, whichever the ledger's answer missed.
+        // is read is held by one of the two, whichever the ledger's answer missed.
         round.State.ReservedBefore = wiring.Runs.Reserved;
         round.State.Snapshot = await wiring.Stages.TimeAsync("snapshot", () => wiring.Service.SnapshotAsync(ct)).ConfigureAwait(false);
     }

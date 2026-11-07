@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A person's task (§D5; NODEKIT1 HUMAN, D245's second note): a manual operation the run waits on until the person presses <i>Done</i>, or an
+/// A person's task: a manual operation the run waits on until the person presses <i>Done</i>, or an
 /// approval they <i>Approve</i> or <i>Reject</i>, as a release pipeline's manual action. Its outcome is written in the file, so a flowchart
 /// routes on it with a <c>when</c> wire: <c>done</c> for a task, <c>approved</c> for an approval, whose refusal is the graph's <c>rejected</c>
 /// wire as a review's changes are; one declaring none is a task reached with no outcome.

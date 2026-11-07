@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { aQuest } from '../quests/aQuest';
 
-// The one owner of each act on a session (SESSUX1d, D126 §3.1): whichever door pressed it, the row's ⋯ or the page
-// header, the act runs here. Over a mocked bridge, as an organism is held (components plan §3).
+// The one owner of each act on a session: whichever door pressed it, the row's ⋯ or the page
+// header, the act runs here. Over a mocked bridge, as an organism is held.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
@@ -26,7 +26,7 @@ import { WorkspaceScopeProvider } from '../data/scope';
 import { type SessionDoors, useSessionActs } from './sessionActs';
 
 /**
- * The names `SESSION_DELETE`'s `stayed` carries (SESSDEL1c, `.claude/knowledge/twins.md`): one table with the driver, its tests'
+ * The names `SESSION_DELETE`'s `stayed` carries (`.claude/knowledge/twins.md`): one table with the driver, its tests'
  * `fixtures/kept-names.json`, which its `KeptNamesTwinTests` holds `SessionHomeFiles`' names to. Each its driver's name and its
  * word on the wire.
  */
@@ -109,7 +109,7 @@ describe('the acts on a session', () => {
 
     act(() => result.current.run('detach', { session: session() }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:s1a2b3c4' } }));
-    // MAINWINDOWS3: a session naming no workspace is followed in the window that detached it.
+    // A session naming no workspace is followed in the window that detached it.
     expect(JSON.parse(window.localStorage.getItem('daoris.workspace.opened')!)['session:s1a2b3c4']).toEqual({ follows: 'main' });
 
     // …and one naming its workspace is held there, whatever this window moves to.
@@ -143,7 +143,7 @@ describe('the acts on a session', () => {
     expect(none.current.can('retry')).toBe(true);
   });
 
-  /** §3.3: a session waiting on you is stopped through the resolve, as its card's stop was; every other through the stop. */
+  /** A session waiting on you is stopped through the resolve, as its card's stop does; every other through the stop. */
   it('stops a session waiting on you through its resolve, and any other live one through the stop, saying what the driver did', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'STOP_SESSION'
       ? { stopped: true }
@@ -160,7 +160,7 @@ describe('the acts on a session', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('session s1a2b3c4 is being stopped — the record will say the person ended it.'));
   });
 
-  /** SESSUX1f (D126 §5.4): Delete… is the frame's to ask (it asks once under the header), and its second press is the owner's. */
+  /** Delete… is the frame's to ask (it asks once under the header), and its second press is the owner's. */
   it('hands Delete… to the frame, and its second press deletes by the id, saying so, and forgets the draft', async () => {
     const doors = { delete: vi.fn() };
     const { result: withDoor } = acts(doors);
@@ -182,9 +182,9 @@ describe('the acts on a session', () => {
   });
 
   /**
-   * SESSDEL1b (D126's SESSDEL1 note): `SESSION_DELETE` answers `stayed`, the names of what the disk would not let go of, and
-   * the toast still said everything went. It names what stayed in the reader's language, in the error's tone since not all
-   * of it went, and the ask still closes, since the record did. A delete that kept nothing says what it said.
+   * `SESSION_DELETE` answers `stayed`, the names of what the disk would not let go of. The page
+   * names what stayed in the reader's language, in the error's tone since not all
+   * of it went, and the ask still closes, since the record did. A delete that kept nothing says so plainly.
    */
   it('says which of what this machine kept stayed, by name, in both languages', async () => {
     invoke.mockImplementation(async () => ({ deleted: 'c0ffee00', removed: ['record', 'conversation', 'files'], stayed: ['transcript'] }));
@@ -214,7 +214,7 @@ describe('the acts on a session', () => {
   });
 
   /**
-   * SESSDEL1c: the page words the driver's names, and kept its own copy of them with no test holding the two together. Both
+   * The page words the driver's names. Both
    * catalogues word exactly the shared table's names, `other` aside (a name a later driver adds), and the toast says each in
    * the catalogue's words rather than as the name it is: a name on one side alone fails here or in the driver's twin.
    */
@@ -236,7 +236,7 @@ describe('the acts on a session', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('work.delete.stayed', { id: 'c0ffee00', what }), 'error'));
   });
 
-  /** PAUSE1e (D132 §7.1): a pause is the frame's to ask, naming its quest or its ask; Resume goes to the work's owner at once. */
+  /** A pause is the frame's to ask, naming its quest or its ask; Resume goes to the work's owner at once. */
   it('hands a pause to the frame with the work it names, and resumes the pause that holds its quest over the driver', async () => {
     const doors = { pause: vi.fn() };
     const { result: withDoor } = acts(doors);
@@ -262,7 +262,7 @@ describe('the acts on a session', () => {
   });
 
   /**
-   * MIXAGENT1b-i (D163): *Go on with another agent…*'s press asks `SESSION_HAND_OVER` with the reason `press`; a conversation
+   * *Go on with another agent…*'s press asks `SESSION_HAND_OVER` with the reason `press`; a conversation
    * that is not talking goes on at once, so the ask closes and the page attends the new conversation.
    */
   it('hands an idle conversation over by its press, closes the ask and attends the one it opened', async () => {
@@ -281,7 +281,7 @@ describe('the acts on a session', () => {
   });
 
   /**
-   * MIXAGENT2b (D163 point 2): *Ask another agent…*'s press asks `SESSION_HELPER_ASK` with the question and the agent the person
+   * *Ask another agent…*'s press asks `SESSION_HELPER_ASK` with the question and the agent the person
    * named, and closes the ask saying where the answer comes back; a refusal is said inside it in the page's words by its code, or
    * the driver's sentence for a code the page does not know.
    */
@@ -307,7 +307,7 @@ describe('the acts on a session', () => {
   });
 
   /**
-   * COAGENT1b (D199 point 2): *Ask another agent to work on a piece…*'s press asks `SESSION_PARTNER_ASK` with the piece, the agent and
+   * *Ask another agent to work on a piece…*'s press asks `SESSION_PARTNER_ASK` with the piece, the agent and
    * the paths, and says where it goes; a refusal is said inside the ask in the page's words by its code, or the driver's sentence for
    * a code the page does not know. A working piece's stop is its partner's record's stop.
    */
@@ -342,7 +342,7 @@ describe('the acts on a session', () => {
     expect(invoke).toHaveBeenLastCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 'pt1' } });
   });
 
-  /** MIXAGENT2b (D163 point 3): the person's yes to an agent's ask, by the session and the ask; a refusal by its code. */
+  /** The person's yes to an agent's ask, by the session and the ask; a refusal by its code. */
   it('says yes to an agent’s ask by its session and its id, and a refusal by its code', async () => {
     invoke.mockImplementationOnce(async () => ({ approved: true, why: null, message: 'yes' }));
     const { result } = acts();
@@ -359,7 +359,7 @@ describe('the acts on a session', () => {
   });
 
   /**
-   * HELPERNO1 (D163 point 3): the person's no to an agent's ask, by the session and the ask, said where it went; a refusal by its
+   * The person's no to an agent's ask, by the session and the ask, said where it went; a refusal by its
    * code, `approved` and `unread` among the no's own, or the driver's sentence for one the page does not know.
    */
   it('says no to an agent’s ask by its session and its id, and a refusal by its code', async () => {
@@ -386,7 +386,7 @@ describe('the acts on a session', () => {
     await waitFor(() => expect(told.refused).toHaveBeenLastCalledWith('The driver’s own sentence.'));
   });
 
-  /** MIXAGENT1b-ii (D163): Daoris's own offer is asked with its reason and as Daoris's own; a press names neither. */
+  /** Daoris's own offer is asked with its reason and as Daoris's own; a press names neither. */
   it('asks Daoris’s offer with its reason and asked-by daoris, which a press never sends', async () => {
     invoke.mockImplementation(async () => ({ sessionId: 'c2', kept: true, message: 'goes on.' }));
     const { result } = acts({ attend: vi.fn() });
@@ -468,7 +468,7 @@ describe('the acts on a session', () => {
     expect(told.refused).not.toHaveBeenCalled();
   });
 
-  /** UXFIX2: a refusal is said in the ask that was pressed, in the catalogue's words, and the ask stays open. */
+  /** A refusal is said in the ask the person pressed, in the catalogue's words, and the ask stays open. */
   it('says a delete the host refused in the catalogue’s words, inside the ask, which stays open', async () => {
     invoke.mockImplementation(async () => { throw refusal('SESSION_SERVED_QUEST', { session: 's1a2b3c4', quest: 'abc123' }); });
     const { result, notify } = acts();

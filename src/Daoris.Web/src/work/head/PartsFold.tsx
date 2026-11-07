@@ -9,7 +9,7 @@ import type { PartsProps } from './PartsStrip';
 const PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-small text-accent hover:underline';
 
 /**
- * **A session's parts, folded to one line** (HEADFIT1; the UI/UX design §3.7 and R4, the UX7 design §6.2): which part the page is
+ * **A session's parts, folded to one line**: which part the page is
  * on out of how many, and how the newest began, with a press that opens the parts' flowchart (`PartsFlow`) in its place.
  *
  * @remarks
@@ -60,7 +60,7 @@ export function PartsFold({ plan, defaultOpen = false, ...props }: PartsProps & 
     <nav aria-label={t('work.parts.title')} className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-small text-ink-faint">
       <span className="font-semibold">{t('work.parts.title')}</span>
       {/* One line, cut with its whole text on hover: the parts' list under *Show all* says every part in full, and the head keeps
-          its height now the newest part also says what ran (MODELROLE1b, the measured head's narrow ceiling). */}
+          its height now the newest part also says what ran (the measured head's narrow ceiling). */}
       <span className="min-w-0 flex-1 truncate text-ink-soft" title={summary}>{summary}</span>
       <button type="button" onClick={() => setOpen(true)} className={PRESS}>
         {t('work.parts.showAll')}

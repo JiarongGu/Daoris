@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own <c>request</c> node (INTEGRATE1p; the integration design §17.5): a waited node whose start publishes a quest to another
+/// Daoris's own <c>request</c> node: a waited node whose start publishes a quest to another
 /// repository under the request's key, <c>&lt;run&gt;/&lt;node&gt;/&lt;n&gt;</c>, and whose state is read from this machine's projection of that quest.
 /// </summary>
 /// <remarks>
 /// <para><b>The key is written first.</b> Step 1 is one locked edit that starts the node and keeps its attempt with the key; step 2 publishes; step 3
-/// keeps the answer. A quest the projection already holds under the key is never published again, and a publish whose answer was lost is sent once
+/// keeps the answer. A quest the projection already holds under the key is never published again, and a publish whose answer is lost is sent once
 /// more under the same key, which the exchange answers with the quest it made: no duplicate.</para>
 /// <para><b>Reached, failed, waiting.</b> The quest's done reaches it (its taking under <c>until: taken</c>); its decline fails it with
 /// <see cref="RequestOptions.DeclinedCode"/>. A quest not in the projection is unknown, never passed. Nothing of the receiving repository's files is read.</para>
@@ -21,7 +21,7 @@ public sealed class RequestStart(NodeRecordFiles records, Func<IRequestPort?> po
     /// <summary>The key a request's quest is published under: the run, the node and the node's attempt.</summary>
     public static string KeyOf(string run, string node, int attempt) => $"{run}/{node}/{attempt}";
 
-    /// <summary>What the node said since it was last asked.</summary>
+    /// <summary>What the node said at its last asking.</summary>
     public IReadOnlyList<string> TakeSaid()
     {
         var said = _said.ToList();

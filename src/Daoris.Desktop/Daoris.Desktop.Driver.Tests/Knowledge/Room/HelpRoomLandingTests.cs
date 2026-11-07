@@ -7,8 +7,8 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomLandingTests
 {
     /// <summary>
-    /// HELP8: the plugins that can land work here are named, so a landing rule the helper proposes names
-    /// one the route takes (D100); with none, it says so and that installing one is the person's.
+    /// The plugins that can land work here are named, so a landing rule the helper proposes names
+    /// one the route takes; with none, it says so and that installing one is the person's.
     /// </summary>
     [Fact]
     public void The_room_names_the_plugins_that_can_land_work_here()
@@ -21,7 +21,7 @@ public sealed class HelpRoomLandingTests
         Assert.Contains("Plugins that perform pull-request steps here: `example.github-pull-request`, `example.lands`.", some);
         Assert.Contains("No plugin that performs pull-request steps is installed here", none);
         Assert.Contains("`daoris plugin add <folder>`", none);
-        // UX6i2a (D150 §2): Settings → Plugins retired into the Plugins place with UX6j.
+        // The Plugins place is named, and Settings → Plugins is not.
         Assert.Contains("or the Plugins place), so never propose a workflow naming one", none);
         Assert.DoesNotContain("Settings → Plugins", none);
     }

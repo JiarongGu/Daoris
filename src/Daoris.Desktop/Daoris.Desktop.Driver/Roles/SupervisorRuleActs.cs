@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A rule of the person's that acted at a point on a line (the context counters design §4.7): the rule, the revision of its place's set,
+/// A rule of the person's that acted at a point on a line: the rule, the revision of its place's set,
 /// the count it watched and what that stood at, the point it acted at, and when.
 /// </summary>
 /// <param name="Point">Where it acted: <c>go-on</c>, <c>start</c> or <c>episode</c>.</param>
@@ -16,7 +16,7 @@ public sealed record RuleActed(string Line, string Session, SupervisorRule Rule,
 }
 
 /// <summary>
-/// The history of the rules' acts (§4.7): each act said once on the line as a <c>supervisor.rule</c> note, kept in the decision record beside the
+/// The history of the rules' acts: each act said once on the line as a <c>supervisor.rule</c> note, kept in the decision record beside the
 /// questions' decisions as <c>&lt;session&gt;.decisions/&lt;id&gt;.json</c> with <c>holder.kind</c> <c>rule</c>, and logged on the machine.
 /// A rule's file carries no <c>question</c> and no state lines: it is final as written, so the questions' reader and the start's sweep pass
 /// it by. It is read for the history alone, never to decide.

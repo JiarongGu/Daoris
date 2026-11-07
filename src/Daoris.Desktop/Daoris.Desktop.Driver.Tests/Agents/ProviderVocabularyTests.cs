@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row t (the agent-provider design §9, O1-F18): the censuses' ids and words are read off the registrations, every word the
-/// hand-kept seed held now declared by the provider that owns it, and a stand-in owning none.
+/// The censuses' ids and words are read off the registrations, every word declared by the provider that owns it, and a stand-in owning none.
 /// </summary>
 public sealed class ProviderVocabularyTests
 {

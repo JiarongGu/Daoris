@@ -315,19 +315,22 @@ public sealed class QuestStore
     /// id from before it is exactly the first six characters of the same ask's id now. A quest to
     /// LANES widens the same way, only when there are some, so every quest to a whole
     /// repository keeps its id and a lane's ask is not the repository's. A workflow request's key widens it the same way,
-    /// only when there is one, so distinct runs or nodes make distinct quests whatever their words.
+    /// only when there is one, so distinct runs or nodes make distinct quests whatever their words. The same words asked after the
+    /// first ask closed are a new ask: <paramref name="again"/> counts the closed ones before it, and zero is the id every quest has always had.
     /// </remarks>
     internal static string MakeId(
-        string from, string to, string title, string? parent = null, IReadOnlyList<string>? lanes = null, string? request = null) =>
+        string from, string to, string title, string? parent = null, IReadOnlyList<string>? lanes = null, string? request = null,
+        int again = 0) =>
         Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(
                 System.Text.Encoding.UTF8.GetBytes(
                     $"{from}->{to}:{title.Trim()}" + (parent is null ? "" : $"<-{parent}")
                     + (lanes is { Count: > 0 } ? $"@{string.Join('+', lanes.Order(StringComparer.Ordinal))}" : "")
-                    + (request is null ? "" : $"#{request}"))))[..IdLength]
+                    + (request is null ? "" : $"#{request}")
+                    + (again == 0 ? "" : $"~again{again}"))))[..IdLength]
             .ToLowerInvariant();
 
-    /// <summary>Publish a quest. Returns the existing one unchanged if it is already asked.</summary>
+    /// <summary>Publish a quest. Returns the quest standing under these words unchanged if one is open or taken.</summary>
     /// <param name="workspace">
     /// The circle both sides share — decided by <see cref="QuestExchange"/>, which is where the
     /// same-workspace clause lives. The store holds state; it does not judge who may ask whom.
@@ -361,7 +364,29 @@ public sealed class QuestStore
         string? parent = null,
         string? weight = null,
         IReadOnlyList<string>? paths = null,
-        string? request = null)
+        string? request = null) =>
+        (await PublishHeldAsync(
+            from, to, title, body, now, workspace, links, attachments, then, ct, publishedBy, lanes, requirements, shortTitle, review,
+            setUpIn, parent, weight, paths, request).ConfigureAwait(false)).Quest;
+
+    /// <summary><see cref="PublishAsync"/>, with <c>Held</c> true when the publish is a retry that writes nothing.</summary>
+    internal async Task<(Quest Quest, bool Held)> PublishHeldAsync(
+        string from, string to, string title, string body, DateTimeOffset now,
+        string? workspace,
+        IReadOnlyList<string>? links,
+        IReadOnlyList<QuestAttachment>? attachments,
+        IReadOnlyList<QuestStep>? then,
+        CancellationToken ct,
+        string? publishedBy,
+        IReadOnlyList<string>? lanes,
+        IReadOnlyList<QuestRequirement>? requirements,
+        string? shortTitle,
+        QuestReview? review,
+        string? setUpIn,
+        string? parent,
+        string? weight,
+        IReadOnlyList<string>? paths,
+        string? request)
     {
         return await WriteAsync(
             tx => Operations.Of<QuestPublishOperation>().PublishAsync(

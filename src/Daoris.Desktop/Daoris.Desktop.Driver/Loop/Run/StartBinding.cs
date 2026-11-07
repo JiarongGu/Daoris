@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 internal static class StartBinding
 {
     /// <summary>
-    /// A start's bind of its run before its take (D190's binding moment): Workflows' use case over the loop's service, home, choices
+    /// A start's bind of its run before its take: Workflows' use case over the loop's service, home, choices
     /// and plugins. A binding it made is kept for the next look's bind to say.
     /// </summary>
     public static async Task<WorkflowBind> AtStartAsync(LoopContext context, QuestView quest, string? workspace, CancellationToken ct)

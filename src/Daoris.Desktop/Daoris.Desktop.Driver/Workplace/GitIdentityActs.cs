@@ -11,13 +11,12 @@ public sealed record GitToolRun(int Code, string Output, string Error);
 /// <summary>A host's key as <c>ssh-keyscan</c> offered it: its line (<c>type base64</c>), its fingerprint, and whether it is the host's published one.</summary>
 public sealed record GitHostKey(string Key, string Fingerprint, bool? Published);
 
-/// <summary>A test's answer (§7.2 step 6): its result, the user the host named, the host's keys where it is not yet trusted, and the host's words.</summary>
+/// <summary>A test's answer: its result, the user the host named, the host's keys where it is not yet trusted, and the host's words.</summary>
 public sealed record GitTestAnswer(string Result, string? User, IReadOnlyList<GitHostKey> HostKeys, string? Words);
 
 /// <summary>
-/// The typed operations on git identities and their pointers (GITAUTH1c, D198 points 1, 4 and 5; the git-auth design §3, §7.2 and
-/// §8), each called by its terminal verb (D194 point 4): add an SSH identity by generating a key or importing the one file the
-/// person names, test it (trusting a host's key only where the person names its fingerprint, §3.5), rename it, set what it commits
+/// The typed operations on git identities and their pointers, each called by its terminal verb: add an SSH identity by generating a key or importing the one file the
+/// person names, test it (trusting a host's key only where the person names its fingerprint), rename it, set what it commits
 /// as, mark it read only on the host, remove it, make it its host's default, and point a repository's remote, a workspace's host or
 /// this machine's host at it or at the person's own sign-ins.
 /// </summary>
@@ -34,7 +33,7 @@ public static partial class GitIdentityActs
     /// <summary>Starts a program for these acts; a test hands a stand-in.</summary>
     public static Func<string, IReadOnlyList<string>, string, Task<GitToolRun>> Runner { get; set; } = RunAsync;
 
-    // ---- The ssh tools (D121 §2.5's choice) ----
+    // ---- The ssh tools ----
 
     /// <summary>
     /// The folder the OpenSSH tools an identity uses are in: beside the ssh the person chose in <c>tools.json</c>; else git's own,
@@ -75,7 +74,7 @@ public static partial class GitIdentityActs
     // ---- Add ----
 
     /// <summary>
-    /// Add an SSH identity (§7.2 steps 1-3, §8 <c>git identity add-ssh</c>): its folder made private first, then its key generated
+    /// Add an SSH identity (<c>git identity add-ssh</c>): its folder made private first, then its key generated
     /// (ed25519, or RSA 4096 where the host takes RSA alone or the person asks) or imported from the one file the person named.
     /// </summary>
     /// <exception cref="DriverException">A label in use, a host that does not read, an import refused, or ssh-keygen failed.</exception>
@@ -150,7 +149,7 @@ public static partial class GitIdentityActs
         return (name.Trim(), email.Trim());
     }
 
-    // ---- Test (§7.2 step 6, §3.5) ----
+    // ---- Test ----
 
     /// <summary>
     /// Test an SSH identity: where its host is not yet in Daoris's known hosts, answer <c>host-unknown</c> with the keys the host
@@ -199,8 +198,8 @@ public static partial class GitIdentityActs
     }
 
     /// <summary>
-    /// A host's greeting read (§7.2 step 6): github.com and gitlab.com name the account; Azure DevOps says it takes no shell, which is
-    /// reached; ssh's own refusals are classed as a git act's are (§5.1).
+    /// A host's greeting read: github.com and gitlab.com name the account; Azure DevOps says it takes no shell, which is
+    /// reached; ssh's own refusals are classed as a git act's are.
     /// </summary>
     public static GitTestAnswer Greeting(GitToolRun run)
     {
@@ -273,12 +272,12 @@ public static partial class GitIdentityActs
     }
 
     /// <summary>
-    /// The fingerprints a public host publishes for its SSH keys (§3.5), from the tool resources' list (<c>resources.json</c>'s
+    /// The fingerprints a public host publishes for its SSH keys, from the tool resources' list (<c>resources.json</c>'s
     /// <c>hostKeys</c>), so it updates without a release; null for a host that publishes none Daoris knows.
     /// </summary>
     public static IReadOnlyList<string>? Published(string host) => GitHostKeys.Published(host);
 
-    // ---- The rest of the family (§8) ----
+    // ---- The rest of the family ----
 
     /// <summary>Rename an identity; its label stays unique.</summary>
     public static GitIdentity Rename(string home, string name, string label)
@@ -290,7 +289,7 @@ public static partial class GitIdentityActs
         return Replace(home, identity with { Label = label });
     }
 
-    /// <summary>Set or clear what an identity commits as (§3.6).</summary>
+    /// <summary>Set or clear what an identity commits as.</summary>
     public static GitIdentity CommitsAs(string home, string name, string? author, string? email)
     {
         var identity = Find(home, name);
@@ -298,11 +297,11 @@ public static partial class GitIdentityActs
         return Replace(home, identity with { CommitsName = commitsName, CommitsEmail = commitsEmail });
     }
 
-    /// <summary>Mark an identity read only on the host, or not (§6.3). Turning it off is a widening.</summary>
+    /// <summary>Mark an identity read only on the host, or not. Turning it off is a widening.</summary>
     public static GitIdentity ReadOnly(string home, string name, bool on) => Replace(home, Find(home, name) with { ReadOnly = on });
 
     /// <summary>
-    /// Remove an identity (§7.1 <i>Remove…</i>): every pointer at it is cleared, each scope falling to the next step of §3.2, and its
+    /// Remove an identity: every pointer at it is cleared, each scope falling to the next step of the resolution order, and its
     /// key and token folders deleted. Answers the scopes that pointed at it.
     /// </summary>
     public static IReadOnlyList<string> Remove(string home, string name)
@@ -334,21 +333,21 @@ public static partial class GitIdentityActs
         return pointing;
     }
 
-    /// <summary>Make an identity its host's default, or clear the host's default (§8 <c>git default</c>).</summary>
+    /// <summary>Make an identity its host's default, or clear the host's default (<c>git default</c>).</summary>
     public static GitIdentity? Default(string home, string host, string? name)
     {
         var canonical = HostOf(host);
         var identity = name is null ? null : Find(home, name);
         if (identity is not null && identity.Host != canonical)
             throw new DriverException($"git: {identity.Label} is for {identity.Host}, not {canonical} (host-mismatch)");
-        // A host's default is per way: an SSH identity and an HTTPS one each serve their own addresses (§3.2 step 3).
+        // A host's default is per way: an SSH identity and an HTTPS one each serve their own addresses.
         GitIdentities.Change(home, all => [.. all.Select(each => each.Host != canonical || (identity is not null && each.Way != identity.Way)
             ? each : each with { Default = each.Id == identity?.Id })]);
         return identity;
     }
 
     /// <summary>
-    /// Point a repository's remote at an identity, at <c>own</c>, or clear it (§8 <c>git use</c>). Two remotes of one repository at one
+    /// Point a repository's remote at an identity, at <c>own</c>, or clear it (<c>git use</c>). Two remotes of one repository at one
     /// effective address must point at one identity: a choice that would differ is refused, naming the other remote.
     /// </summary>
     /// <param name="addresses">The repository's remotes and their effective addresses, as <c>GitRemotes.AddressOf</c> reads them.</param>

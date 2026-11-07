@@ -12,8 +12,7 @@ type Why = 'continue' | 'cooling' | 'opening' | 'resumed' | 'unreached' | 'hande
 export type NoteCode = { values: readonly string[]; key?: string; why?: Why; accounts?: readonly string[] };
 
 /**
- * Every code a writer declares, as the page words it: the page's half of the twin (D142 point 4; the language design §5;
- * `.claude/knowledge/twins.md`). `locales/note.test.ts` parses the driver's `NoteCodes` and the service's `LedgerNoteCodes`
+ * Every code a writer declares, as the page words it: the page's half of the twin (`.claude/knowledge/twins.md`). `locales/note.test.ts` parses the driver's `NoteCodes` and the service's `LedgerNoteCodes`
  * and holds this map to them code for code, with the same values, key and family, so a code a writer adds fails until it is
  * mapped here and worded in both catalogues.
  */
@@ -113,7 +112,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'started.uncopied-link': { values: ['modules'] },
   'started.uncopied-unignored': { values: ['modules'] },
   'started.uncopied-failed': { values: ['modules'] },
-  // The machine-local files a repository's gates read, copied into its tree read-only, and why a declared one was not.
+  // The machine-local files a repository's gates read, copied into its tree read-only, and why a declared one is not.
   'started.local-copied': { values: ['inputs'] },
   'started.local-missing': { values: ['input'] },
   'started.local-refused': { values: ['input'] },
@@ -188,7 +187,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.accepted': { values: ['branch'] },
   'landing.plugin-unready': { values: ['branch', 'plugin'] },
   'landing.plugin-failed': { values: ['branch', 'plugin'] },
-  // Its push held back after the branch was made, handed on at the look after the release.
+  // Its push held back after the branch is made, handed on at the look after the release.
   'landing.push-held': { values: ['branch', 'plugin'] },
   // Held back there by its landing's gate, the gate's sentence beneath it; a note from before it says `landing.push-held`.
   'landing.push-gated': { values: ['branch', 'plugin'] },
@@ -197,10 +196,10 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'landing.uncommitted': { values: ['paths'] },
   'landing.exists': { values: ['branch'] },
   'landing.refused': { values: [] },
-  // Its replay onto the line conflicts and its session was told to rebase in its own tree, the refusal beneath it.
+  // Its replay onto the line conflicts and its session is told to rebase in its own tree, the refusal beneath it.
   'landing.rebase': { values: [] },
   // The person's Accept carried a session on: its tree's uncommitted work, or the replay's conflict beneath it, and
-  // the yes that stays on it; carried on twice and still not clean it waits for review; and the landing that yes made once it was clean.
+  // the yes that stays on it; carried on twice and still not clean it waits for review; and the landing that yes makes once it is clean.
   'landing.carried-dirty': { values: ['paths'] },
   'landing.carried-conflict': { values: [] },
   'landing.carry-bound': { values: [] },
@@ -225,7 +224,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'ledger.went-on-helper-both': { values: ['at'] },
   // Daoris's own words alone: a reopen told, a step's go-on, never "your words".
   'ledger.went-on-daoris': { values: ['at'] },
-  // The supervisor's answer alone (D208): on the owner's behalf, never "your words".
+  // The supervisor's answer alone: on the owner's behalf, never "your words".
   'ledger.went-on-supervisor': { values: ['at'] },
   // A quest's note: the person marked it done, their words a part beneath it.
   'quest.person-done': { values: [] },
@@ -239,12 +238,12 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.said-at': { values: ['account', 'seen'] },
   'opening.said-nothing': { values: ['account'] },
   'opening.said-reached': { values: ['window'] },
-  // The agent's pace warning, never near; a line written before says `opening.said-near`, worded as it was.
+  // The agent's pace warning, never near; a line written before says `opening.said-near`, worded as before.
   'opening.said-near': { values: ['window'] },
   'opening.said-warned': { values: ['window'] },
   'opening.said-credits': { values: [] },
   'opening.said-used': { values: ['used', 'window'] },
-  // The scope's one number, no longer written; a line written before keeps it. Over its curve since.
+  // The scope's one number, only in a line written before.
   'opening.said-near-at': { values: ['near'] },
   'opening.said-over': { values: ['window', 'curve'] },
   // A window's use projected from its reading and Daoris's own turns since, never near or over.
@@ -258,11 +257,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'opening.moved-choice': { values: ['from', 'said'] },
   // A quest marked design ran on the order of the role taking design, Build's while none does; the role's name as written.
   'opening.design': { values: ['role'] },
-  // The account a start was refused for its sign-in and moved off, as named.
+  // The account a start is refused for its sign-in and moved off, as named.
   'opening.moved-off': { values: ['account'] },
-  // The agent and the model a start was refused and moved off; the account is not named.
+  // The agent and the model a start is refused and moved off; the account is not named.
   'opening.moved-off-model': { values: ['agent', 'model'] },
-  // A chat run's binding (the chat-flow design §4.3), said once in the conversation that grew its tree: the named workflow and
+  // A chat run's binding, said once in the conversation that grew its tree: the named workflow and
   // the repository or workspace that chose it (`owner`, set as code), the one bound with why it cannot land, or a bind the home did not keep.
   'chat.workflow': { values: ['workflow', 'version', 'owner'] },
   'chat.workflow-unread': { values: ['workflow', 'owner', 'problem'] },
@@ -276,7 +275,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A permission the rules refused: the call's title rides between the two as the agent's words.
   'refused.lead': { values: [] },
   'refused.governs': { values: [] },
-  // A permission held for the person under asking (D184): the call's title rides after the lead as the agent's words; a
+  // A permission held for the person under asking: the call's title rides after the lead as the agent's words; a
   // refusal leads with `refused.lead`, and its close says who or what refused it, the bound's minutes a fact.
   'asking.held': { values: [] },
   'asking.allowed': { values: [] },
@@ -307,14 +306,14 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'browser.withheld': { values: ['servers'] },
   'browser.no-host': { values: [] },
   'browser.none-up': { values: [] },
-  // The line a chat's agent was told of the browser it was handed: the line follows as a program's words.
+  // The line a chat's agent is told of the browser it is handed: the line follows as a program's words.
   'chat.told-browser': { values: [] },
-  // The repository's process a chat in a tree of its own was told: its commit rule's mode and where it was set,
+  // The repository's process a chat in a tree of its own is told: its commit rule's mode and where it is set,
   // the words following as a program's.
   'chat.told-process': { values: ['mode', 'source'] },
-  // The standing block a conversation's agent was told with its first message: the block follows as a program's words.
+  // The standing block a conversation's agent is told with its first message: the block follows as a program's words.
   'chat.told-block': { values: [] },
-  // The workflow draft open in the editor a chat's agent was told: what it was handed follows as a program's words.
+  // The workflow draft open in the editor a chat's agent is told: what it is handed follows as a program's words.
   'chat.told-draft': { values: [] },
   // A conversation handed to another agent: where the old one went, and where the new one came from and why.
   'chat.handed-over': { values: ['agent', 'session'] },
@@ -324,7 +323,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'moved.on': { values: ['session', 'agent', 'account', 'why', 'tokens', 'count'], why: 'handed' },
   'moved.from': { values: ['session', 'agent', 'account', 'why', 'tokens', 'count'], why: 'handed' },
   // A conversation moved to another account of its agent by the usage curve: where it went and where it came from,
-  // each account by the name the person gave it, and how far over its curve the account it left was.
+  // each account by the name the person gave it, and how far over its curve the account it left is.
   'chat.moved': { values: ['to', 'from', 'window', 'used', 'curve'], accounts: ['to', 'from'] },
   'chat.moved-from': { values: ['from', 'window', 'used', 'curve'], accounts: ['from'] },
   // A conversation whose account's limit refused its turn, whose move to the next account did not open.
@@ -338,7 +337,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // What a part left running when the next part starts in its tree: ended and waited for, or still there after the wait.
   'chat.left-ended': { values: ['count'] },
   'chat.left-running': { values: ['count', 'seconds'] },
-  // The limit's wake (D206 §3.7): its own conversation went on, or could not be resumed and went on briefed.
+  // The limit's wake: its own conversation goes on, or cannot be resumed and goes on briefed.
   'limit.resumed': { values: ['until'] },
   'limit.resume-refused': { values: ['why'], why: 'continue' },
   // A helper on another agent: on the asker, asked, answered or refused, with the agent and why; on the helper,
@@ -354,7 +353,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'helper.limited-no-reset': { values: ['agent'] },
   // The person's own ask of a helper, kept on the session whose next turn its answer is.
   'helper.person-asked': { values: [] },
-  // A partner's piece (D199 point 8): on the lead its course, on the partner whose session it works for. Notes, never words.
+  // A partner's piece: on the lead its course, on the partner whose session it works for. Notes, never words.
   'partner.asked': { values: ['agent'] },
   'partner.started': { values: ['agent', 'session'] },
   'partner.answered': { values: ['agent', 'session'] },
@@ -362,7 +361,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'partner.stopped': { values: ['agent'] },
   'partner.out-of-time': { values: ['agent'] },
   'partner.limited': { values: ['agent'] },
-  // A pass's provider kept failing past its tries or its minutes (D210 point 8): the agent and the tries made, then the provider's words.
+  // A pass's provider kept failing past its tries or its minutes: the agent and the tries made, then the provider's words.
   'partner.transient': { values: ['agent'] },
   'helper.transient': { values: ['agent', 'count'] },
   'opinion.transient': { values: ['agent', 'count'] },
@@ -372,7 +371,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   'partner.beyond': { values: ['count'] },
   'partner.kept': { values: ['why'], why: 'partner' },
   'partner.working': { values: ['session'] },
-  // The answers-alone bound (D188 point 4): a third answer in a row with nobody between held for the person, by the agent that
+  // The answers-alone bound: a third answer in a row with nobody between held for the person, by the agent that
   // answered; their *Go on with this answer*, which counts as their word; their *Not now*.
   'answers.held': { values: ['agent'] },
   'answers.passed': { values: [] },
@@ -392,6 +391,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The person's own ask names the path that made it; a hand-over let go that could not be taken is not taken, never refused.
   'handover.asked-terminal': { values: ['agent'] },
   'handover.asked-window': { values: ['agent'] },
+  'handover.asked-steward': { values: ['agent'] },
   'handover.not-taken': { values: ['agent', 'why'], why: 'handover' },
   'handover.not-taken-ends': { values: ['agent', 'why'], why: 'handover' },
   // A session's own background work: the work's names as code, a state as the harness said it; a program's words

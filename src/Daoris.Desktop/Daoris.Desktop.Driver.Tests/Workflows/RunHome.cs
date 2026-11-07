@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A home holding a run bound to a named workflow's graph version (FABRIC-CUTOVER1c; the cutover design §2, §3), and the units a pass reads for
+/// A home holding a run bound to a named workflow's graph version, and the units a pass reads for
 /// it: the run's quests here and the branch units their sessions worked, each linked as <see cref="WorkUnits.Linked"/> links them.
 /// </summary>
 internal static class RunHome

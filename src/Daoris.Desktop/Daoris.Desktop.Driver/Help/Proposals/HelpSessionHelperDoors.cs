@@ -3,13 +3,13 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <c>helper</c> and <c>pass</c> doors' fields of a session proposal's file (COWORKUX1): the agent, the ask the question asks again
+/// The <c>helper</c> and <c>pass</c> doors' fields of a session proposal's file: the agent, the ask the question asks again
 /// after or the answer to pass, and that the answer is the person's.
 /// </summary>
 public sealed record HelperProposalFields(string? Agent, string? Ask, bool ToMe);
 
 /// <summary>
-/// The <c>session</c> kind's helper doors (COWORKUX1, the co-worker design §7): the person's own ask of a helper, as the page's
+/// The <c>session</c> kind's helper doors: the person's own ask of a helper, as the page's
 /// <i>Ask another agent…</i> and <i>Ask again…</i> make it, and <i>Pass to the lead</i> on an answer kept for the person. A card judges
 /// what the machine's records show (the session is one of this machine's that is not Ask Daoris's conversation, the question is within
 /// its bound, the agent is one word); the ask itself is judged again as the door takes it, which knows the files.

@@ -8,9 +8,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The shell forwards a tick to the page when the asks CHANGED (INT4d): the attention band reads them
+/// The shell forwards a tick to the page when the asks CHANGED: the attention band reads them
 /// beside the sessions, and an ask made by the other door — a terminal, a teammate's sync — moves
-/// nothing else a tick reports, so without this the band missed it until the window was reloaded.
+/// nothing else a tick reports, so without this the band would miss it until the window is reloaded.
 /// </summary>
 public sealed class AskSignatureTests
 {
@@ -43,7 +43,7 @@ public sealed class AskSignatureTests
 }
 
 /// <summary>
-/// The intake session (D65 §1b, INT4b): an ask the declarations did not settle is answered by a
+/// The intake session: an ask the declarations do not settle is answered by a
 /// SESSION the driver opens in a room it owns — which reads the circle's declarations, publishes the
 /// quests onto the ask itself, and asks the person where the declarations do not settle it.
 /// </summary>
@@ -101,19 +101,19 @@ public sealed class IntakeTests : IDisposable
         Assert.Contains("declared nothing", agents);
         Assert.Contains("`legacy`", agents);
         Assert.Contains("not adopted", agents);
-        // Registered with a root is addressable (D70): it declares nothing, so only the person names it,
-        // and the room must not tell the intake that nothing there can see a quest (POLISH4).
+        // Registered with a root is addressable: it declares nothing, so only the person names it,
+        // and the room must not tell the intake that nothing there can see a quest.
         Assert.DoesNotContain("nothing there can see a quest", agents);
         Assert.Contains("- `newcomer` — says nothing about itself", agents);
         Assert.Contains("- `legacy` — not adopted, and no root is known for it on this machine", agents);
-        // One harness reads AGENTS.md, another CLAUDE.md (D59) — the room carries both, the canon's shape.
+        // One harness reads AGENTS.md, another CLAUDE.md — the room carries both, the canon's shape.
         Assert.Equal("@AGENTS.md\n", File.ReadAllText(Path.Combine(room, "CLAUDE.md")));
         Assert.DoesNotContain("\r", agents);
     }
 
     /// <summary>
     /// The room's allow-list is the intake's whole job and nothing else: read the family, publish. A
-    /// permission request over ACP is refused by construction (D52), so an unlisted tool is a stall.
+    /// permission request over ACP is refused by construction, so an unlisted tool is a stall.
     /// </summary>
     [Fact]
     public void The_room_allows_reading_the_family_and_publishing_and_nothing_outward_beyond_reading()
@@ -130,9 +130,9 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// A repository that declared nothing is shown by what its OWN files say (D77) — the first real
-    /// workspace was twenty-nine repositories and no declaration, and every ask parked. Labelled as its
-    /// own word, never as a declaration, and read without writing anything into it (D32).
+    /// A repository that declares nothing is shown by what its OWN files say, so a workspace of
+    /// undeclared repositories does not park every ask. Labelled as its
+    /// own word, never as a declaration, and read without writing anything into it.
     /// </summary>
     [Fact]
     public void A_repository_that_declared_nothing_is_shown_by_what_its_own_files_say()
@@ -179,8 +179,8 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// Two circles are two rooms, whatever their names are written in (REV3 driver F8). Every name with
-    /// no ASCII letter in it was folded to <c>default</c>, so two Chinese-named circles shared one room —
+    /// Two circles are two rooms, whatever their names are written in. A name with
+    /// no ASCII letter in it must not fold to <c>default</c>, or two Chinese-named circles would share one room —
     /// and the room is the intake's lock and holds each circle's declarations.
     /// </summary>
     [Theory]
@@ -216,14 +216,14 @@ public sealed class IntakeTests : IDisposable
         Assert.Contains("AGENTS.md", prompt);
         // Where the declarations do not settle it, the person decides — never a guess.
         Assert.Contains("do not guess", prompt, StringComparison.OrdinalIgnoreCase);
-        // It publishes; it never edits (D32).
+        // It publishes; it never edits.
         Assert.Contains("never edit", prompt, StringComparison.OrdinalIgnoreCase);
         // The no-model tier's proposal is offered as a proposal, not an answer.
         Assert.Contains("`media-api`", prompt);
     }
 
     /// <summary>
-    /// What a repository says about itself may decide (D77) — outranked by a declaration, and named as
+    /// What a repository says about itself may decide — outranked by a declaration, and named as
     /// the evidence, so the receiving agent can decline work that is not its own. A ticket is the
     /// person's material and never the intake's instructions (orca wraps it the same way), and a page
     /// behind a sign-in is read by a signed-in browser or said to be unread, never guessed at.
@@ -241,9 +241,8 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// The first real ask was a ticket's URL typed as the sentence, with no link given apart from it.
-    /// The browser guidance was offered only with links, so the intake found the browser on its own,
-    /// after `WebFetch` was refused. A URL in the words is a link as much as one in the field.
+    /// An ask can be a ticket's URL typed as the sentence, with no link given apart from it.
+    /// The browser guidance is offered with links, so a URL in the words must count: it is a link as much as one in the field.
     /// </summary>
     [Fact]
     public void A_url_in_the_sentence_is_read_like_a_link_and_the_sign_in_guidance_follows_it()
@@ -268,13 +267,13 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal("s1", info.Environment[IntakeRoom.SessionVariable]);
         Assert.Equal(target.Prompt, info.Environment["DAORIS_TARGET"]);
         Assert.Equal(target.Root, info.WorkingDirectory);
-        // Absent rather than blank: an intake serves no quest (the chat rule, D49 §3).
+        // Absent rather than blank: an intake serves no quest.
         Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ID"));
         Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ATTACHMENTS"));
     }
 
     /// <summary>
-    /// SESS1: a quest's session is named on its spawn too, as an intake's is, so a connector the harness
+    /// A quest's session is named on its spawn too, as an intake's is, so a connector the harness
     /// starts itself on the pipe door can say which session published a quest.
     /// </summary>
     [Fact]
@@ -299,7 +298,7 @@ public sealed class IntakeTests : IDisposable
 
         var info = ProviderRegistry.Built().Start("claude-code", target, ["claude"]);
 
-        // The intake's instruction is the composed prompt, written on the input and never an argument (AGENTLYNTAI1s-i).
+        // The intake's instruction is the composed prompt, written on the input and never an argument.
         Assert.Equal(target.Prompt, TargetPrompt.Compose(target));
         Assert.DoesNotContain(target.Prompt, info.ArgumentList);
         Assert.Equal("--permission-mode", info.ArgumentList[info.ArgumentList.IndexOf("-p") + 1]);
@@ -364,7 +363,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// D95: an ask is gone only because the person deleted it, which is the person settling it while the
+    /// An ask is gone only because the person deleted it, which is the person settling it while the
     /// intake ran — so the intake stands down, as it does when the ask is closed under it.
     /// </summary>
     [Fact]
@@ -377,7 +376,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// D95: a parked intake whose ask the person deleted has nothing left to wait for — its record ends,
+    /// A parked intake whose ask the person deleted has nothing left to wait for — its record ends,
     /// stopped, rather than asking the person about an ask that no longer exists.
     /// </summary>
     [Fact]
@@ -391,7 +390,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 ACPEND1: the protocol door's exit is 0 after a refused turn too. Read as a clean exit, an intake
+    /// The protocol door's exit is 0 after a refused turn too. Read as a clean exit, an intake
     /// the account's limit cut off would park "asking you", pointing at a question its transcript does
     /// not end with. What it published before the refusal still stands.
     /// </summary>
@@ -428,7 +427,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// USE1c: the service reports an ask whose quests have all closed as DONE, derived. A person who
+    /// The service reports an ask whose quests have all closed as DONE, derived. A person who
     /// published a parked intake's ask to a quest that closed before the next tick answered it all the
     /// same — read as unanswered, the intake would stay parked for good.
     /// </summary>
@@ -486,7 +485,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// MODELROLE1d (D205 §4.1): an intake walks Intake's effective order, an agent this machine lacks passed <c>unavailable</c> before any
+    /// An intake walks Intake's effective order, an agent this machine lacks passed <c>unavailable</c> before any
     /// account is asked, and opens on the next; with no choice that can run, the ask waits on the wait's sentence and nothing opens.
     /// </summary>
     [Fact]
@@ -537,7 +536,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// AUTONOMY1c (D184 points 2 and 3): under full access the route the intake chooses is taken without the person's accept. The
+    /// Under full access the route the intake chooses is taken without the person's accept. The
     /// same unsettled ask that parks above is told its choice is taken, publishes to it, and its record completes: nothing waits on
     /// the person, who may route it again.
     /// </summary>
@@ -580,7 +579,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITRESUME1h (D206 design §3.8): an intake an account's limit cut off ends <c>failed</c> with the flag and lets its ask go in the
+    /// An intake an account's limit cut off ends <c>failed</c> with the flag and lets its ask go in the
     /// same step, raising no <i>Ended</i>. The look picks the ask again and its start is held by the cool-off, with no record and no
     /// strike (an ask holds none); after the reset the next intake answers it.
     /// </summary>
@@ -664,8 +663,8 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1d (D205 §3.5(f), the row's test): an intake whose first account refuses Intake's model at the open, before any prompt,
-    /// ends <c>choice-not-offered</c> and lets its ask go in the same write, the reading kept; a driver started again, as after the app was
+    /// An intake whose first account refuses Intake's model at the open, before any prompt,
+    /// ends <c>choice-not-offered</c> and lets its ask go in the same write, the reading kept; a driver started again, as after the app is
     /// stopped between them, picks the ask as one never served, passes the refusing account by its reading and answers the ask once on
     /// the second account. Both records name the ask.
     /// </summary>
@@ -711,8 +710,8 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// The protocol door's intake on the stub's accounts (MODELROLE1d): it lists Claude's three model values, refuses at the set the
-    /// models its argument names for its account, as Claude's door was measured to (MODELROLE1a), and publishes onto its ask when prompted.
+    /// The protocol door's intake on the stub's accounts: it lists Claude's three model values, refuses at the set the
+    /// models its argument names for its account, as Claude's door does, and publishes onto its ask when prompted.
     /// </summary>
     private string RefusingAgent()
     {
@@ -771,8 +770,8 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 An intake is one turn (§1b), so it takes no messages on either door: the pipe door gives it
-    /// no stdin, and the protocol door's stdin carries the driver's own frames (INT4h). While it runs,
+    /// An intake is one turn, so it takes no messages on either door: the pipe door gives it
+    /// no stdin, and the protocol door's stdin carries the driver's own frames. While it runs,
     /// the process registry refuses a person's line for it, in a sentence that says where the answer
     /// goes — and the stop still reaches it.
     /// </summary>
@@ -798,7 +797,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// STOPRACE1: a stop made while the intake's protocol handshake is still open is the person's end, not a failed wire. An agent
+    /// A stop made while the intake's protocol handshake is still open is the person's end, not a failed wire. An agent
     /// that never answers makes that moment certain.
     /// </summary>
     [Fact]
@@ -826,7 +825,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1c (D170 point 4): an intake is handed the skills plugins hand sessions, by the harness's own door on either wire,
+    /// An intake is handed the skills plugins hand sessions, by the harness's own door on either wire,
     /// and the composed folder goes when its session does.
     /// </summary>
     [Theory]
@@ -851,7 +850,7 @@ public sealed class IntakeTests : IDisposable
     private static Task Until(Func<bool> condition) =>
         Poll.Until(condition, () => "the intake never started", Poll.Patience);
 
-    /// <summary>With no harness named for it, an ask is the declarations tier's alone — INT4a, unchanged.</summary>
+    /// <summary>With no harness named for it, an ask is the declarations tier's alone.</summary>
     [Fact]
     public async Task With_no_intake_harness_named_no_intake_runs()
     {
@@ -865,8 +864,8 @@ public sealed class IntakeTests : IDisposable
 
     /// <summary>
     /// An intake's room is Daoris's own folder, and the harness still has to have been told it may work
-    /// there (DEPLOY1). Held before anything opens, and reported as a fact the screen can offer the
-    /// person to grant (D73) — the room, the account's file, and the ask it held.
+    /// there. Held before anything opens, and reported as a fact the screen can offer the
+    /// person to grant — the room, the account's file, and the ask it held.
     /// </summary>
     [Fact]
     public async Task An_intake_in_a_room_the_harness_never_trusted_is_held_and_says_so_as_a_fact()
@@ -878,7 +877,7 @@ public sealed class IntakeTests : IDisposable
         File.WriteAllText(trustFile, """{"projects":{}}""");
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Harnesses), """{"defaults":{"claude-code":"work"}}""");
         // The connector default off: handed Daoris's rules with it on, an intake could publish in an
-        // untrusted room, and there would be nothing to hold for (measured, D73).
+        // untrusted room, and there would be nothing to hold for.
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Permissions), """{"defaultsOff":["connector"]}""");
         var claude = Path.Combine(_home, "claude.mjs");
         File.WriteAllText(claude, """
@@ -903,7 +902,7 @@ public sealed class IntakeTests : IDisposable
         Assert.Null(hold.Quest);
 
         // With the connector default on, the rules handed over at spawn let it publish untrusted
-        // (measured, D73): nothing is held, and the intake opens.
+        // nothing is held, and the intake opens.
         File.Delete(DaorisHome.Entry(_home, HomeEntry.Permissions));
         var open = await Driver(config, service).RunOnceAsync();
 
@@ -912,9 +911,9 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A real intake was refused `Read` on its own ask's kept file (INT4f's run): it lives under the
-    /// home, outside the room, and D52 refuses every request. The intake is handed a READ of exactly
-    /// that ask's folder — not the home, not another ask's — in the harness's own absolute form (INT4j).
+    /// An intake needs `Read` on its own ask's kept file: it lives under the
+    /// home, outside the room, and the protocol door refuses every request. The intake is handed a READ of exactly
+    /// that ask's folder — not the home, not another ask's — in the harness's own absolute form.
     /// </summary>
     [Fact]
     public async Task An_intake_may_read_its_own_asks_files_and_nothing_else_of_the_home()
@@ -940,9 +939,8 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 The first real intake was refused `WebFetch` (2026-09-27, FG5). The room's own allow-list
-    /// names it, but over the protocol door only the rules handed at spawn count, and those were the
-    /// machine's and the circle's. So the room's list rides with them now: the intake's job, handed
+    /// The room's own allow-list names `WebFetch`, but over the protocol door only the rules handed at spawn count,
+    /// and those are the machine's and the circle's. So the room's list rides with them: the intake's job, handed
     /// the harness's way. A deny the person wrote still wins, since the harness applies it over any allow.
     /// </summary>
     [Fact]
@@ -985,7 +983,7 @@ public sealed class IntakeTests : IDisposable
     }
 
     /// <summary>
-    /// The stub intake: a harness with real mechanics and no model. It reads the room it was spawned
+    /// The stub intake: a harness with real mechanics and no model. It reads the room it is spawned
     /// in, and publishes onto its ask through the service door its environment names — or, when the
     /// words do not settle it, says what it would ask and publishes nothing.
     /// </summary>
@@ -1035,7 +1033,7 @@ public sealed class IntakeTests : IDisposable
     /// <summary>
     /// A stand-in for the service's doors the intake crosses — a real loopback listener, because the
     /// stub agent is a real process that can only reach a real address. It keeps the records the way
-    /// the ledger and the desk would, and remembers what it was asked.
+    /// the ledger and the desk would, and remembers what it is asked.
     /// </summary>
     private sealed class StandInService : IAsyncDisposable
     {
@@ -1063,7 +1061,7 @@ public sealed class IntakeTests : IDisposable
                 {
                     ["id"] = ask.Id, ["workspace"] = ask.Workspace, ["sentence"] = ask.Sentence,
                     ["state"] = ask.State, ["tier"] = ask.Tier, ["links"] = new JsonArray([.. ask.Links.Select(l => (JsonNode)l)]),
-                    // Answered as the service answers them: each with where THIS machine keeps it (INT4j).
+                    // Answered as the service answers them: each with where THIS machine keeps it.
                     ["attachments"] = new JsonArray([.. ask.Attachments.Select(file => (JsonNode)new JsonObject
                     {
                         ["name"] = file.Name, ["sha256"] = file.Sha256, ["bytes"] = file.Bytes, ["path"] = file.Path,
@@ -1197,7 +1195,7 @@ public sealed class IntakeTests : IDisposable
                         session["state"] = body["state"]!.GetValue<string>();
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();
                         if (body["limit"]?.GetValue<bool>() == true) session["limit"] = true;
-                        // LIMITRESUME1h: the ledger clears the ask's binding in the same step, only where it still names this session.
+                        // The ledger clears the ask's binding in the same step, only where it still names this session.
                         if (body["unbindAsk"]?.GetValue<bool>() == true
                             && _asks.FirstOrDefault(a => a["intake"]?.GetValue<string>() == id) is { } freed)
                         {

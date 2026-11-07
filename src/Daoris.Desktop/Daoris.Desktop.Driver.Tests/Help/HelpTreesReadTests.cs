@@ -6,7 +6,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREELOOK1: one repository's part of the trees fact (FACTSPLIT1b) reads a tree again only where something its walk rests on
+/// One repository's part of the trees fact reads a tree again only where something its walk rests on
 /// moved, and asks every other one <c>git status</c>, a few trees at once; a tree that changed is still read. Real git under a
 /// scratch home, at as many kept trees as the install's machine log found (143-145).
 /// </summary>
@@ -37,9 +37,8 @@ public sealed class HelpTreesReadTests : IDisposable
     }
 
     /// <summary>
-    /// The row's proof: the part's step at 145 trees, the home's read first, again with nothing moved, which asks one
-    /// <c>git status</c> a tree, and once the line moved on; each says what the fixture holds of every tree. Before TREELOOK1 the
-    /// same fixture's step walked each tree one after another: 1409 git starts a read (D181's TREELOOK1 note has the times).
+    /// The part's step at 145 trees, the home's read first, again with nothing moved, which asks one
+    /// <c>git status</c> a tree, and once the line moved on; each says what the fixture holds of every tree.
     /// </summary>
     [Fact]
     public async Task A_part_of_a_hundred_and_forty_five_trees_reads_each_unchanged_tree_with_one_git_start()
@@ -147,7 +146,7 @@ public sealed class HelpTreesReadTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPNEWCHAT1 (the owner's report, 2026-10-24): the install's part asked 245 trees, 7 of them there, the rest gone or moved
+    /// The install's part asked 245 trees, 7 of them there, the rest gone or moved
     /// aside under <c>.tidied</c>, and its line said 245 at 7 to 15 s. A gone tree or one set aside is asked, holding nothing, and never
     /// walked: the line counts the tree that is there, the set-aside one starts no git, and the rest cost no more than the bound.
     /// </summary>
@@ -165,7 +164,7 @@ public sealed class HelpTreesReadTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(aside, "README.md"), "# engine\n");
         var gone = Enumerable.Range(0, 243).Select(i => Path.Combine(sessionTrees.TreesRoot, "default", "engine", $"s-90{i:d6}")).ToList();
         var part = Part([.. gone, aside, here]);
-        // The tree that is here, read once and again: what a read of it alone starts once its read is kept (TREELOOK1).
+        // The tree that is here, read once and again: what a read of it alone starts once its read is kept.
         await HelpFacts.ReadTreesAsync(_home, Part([here]), CancellationToken.None);
         var walkedHere = (await TimedAsync(ct => HelpFacts.ReadTreesAsync(_home, Part([here]), ct))).Starts;
         var times = new LookTimes();
@@ -185,8 +184,8 @@ public sealed class HelpTreesReadTests : IDisposable
     }
 
     /// <summary>
-    /// TREELOOK2: a tree whose commits the line holds by content (a content proof holds them) was never kept, so every read walked it in
-    /// full. A second read of it asks its two <c>status</c>es alone, says what it holds as the walk does, and still sees an edit made since.
+    /// A tree whose commits the line holds by content (a content proof holds them) has its read kept, so a
+    /// second read of it asks its two <c>status</c>es alone, says what it holds as the walk does, and still sees an edit made since.
     /// </summary>
     [Fact]
     public async Task A_tree_whose_commits_the_line_holds_by_content_is_not_walked_again_on_the_second_read()
@@ -234,8 +233,8 @@ public sealed class HelpTreesReadTests : IDisposable
     }
 
     /// <summary>
-    /// READSHARE1: the home's stamp reads the landings while the move that landed them still holds them, so a tree nothing moved in
-    /// is still asked its status alone; a stamp that could not read them is a stamp of its own, and walked every tree again.
+    /// The home's stamp reads the landings while the move that landed them still holds them, so a tree nothing moved in
+    /// is still asked its status alone; a stamp that could not read them is a stamp of its own, and every tree is walked again.
     /// </summary>
     [Fact]
     public async Task The_home_s_stamp_reads_the_landings_while_their_move_into_place_still_holds_them()

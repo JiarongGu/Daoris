@@ -5,15 +5,15 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where a circle stands on this machine (SYNC6a): what it has not pushed, the quests its last pass
+/// Where a circle stands on this machine: what it has not pushed, the quests its last pass
 /// could not bring level, the quests carrying a conflict, and how that pass ended.
 /// </summary>
 /// <param name="Synced">When a pass last reached the remote; a wall does not move it.</param>
 /// <param name="Tried">When a pass last ran, reaching the remote or not.</param>
 /// <param name="Problem">The wall the last pass hit; null when it reached the remote.</param>
 /// <param name="Undeclared">
-/// The machines of the workspace its remote last said had not declared they know a bound quest (FABRIC-CLOSE1i2), as the last pass
-/// heard them: empty where every one did, null where no pass heard the handshake, a host before it included.
+/// The machines of the workspace its remote last said had not declared they know a bound quest, as the last pass
+/// heard them: empty where every one did, null where no pass heard the handshake, an older host included.
 /// </param>
 public sealed record SyncStanding(
     string Workspace, bool Wired, int Ahead, IReadOnlyList<string> Behind, IReadOnlyList<string> Conflicts,
@@ -54,15 +54,15 @@ public sealed record SyncStanding(
 public static class RemoteSyncPayloads
 {
     /// <param name="SharesKnowledge">Whether its knowledge content feeds too — its manifest's second
-    /// declaration (D47 §4). The registration itself travels for every joined repository.</param>
+    /// declaration. The registration itself travels for every joined repository.</param>
     /// <param name="Root">
-    /// The checkout on THIS machine — kept so the driver can ask git where the tree stands (D48 §6),
+    /// The checkout on THIS machine — kept so the driver can ask git where the tree stands,
     /// and never written into any payload. The disclosure guarantee lives in the payload builders
     /// below, each of which has no field for a machine path; the tests assert on what goes on the
     /// wire, which is the only place the guarantee can be broken.
     /// </param>
-    /// <param name="Uses">What it says it depends on (D91), carried with the rest of the declaration.</param>
-    /// <param name="Lanes">The lanes it declares (D115 §2.2), as their words; none when the registry answered none.</param>
+    /// <param name="Uses">What it says it depends on, carried with the rest of the declaration.</param>
+    /// <param name="Lanes">The lanes it declares, as their words; none when the registry answers none.</param>
     public sealed record JoinedRepository(
         string Repository, string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
         IReadOnlyList<string> Packs, bool SharesKnowledge, string Root, IReadOnlyList<string>? Uses = null,
@@ -81,7 +81,7 @@ public static class RemoteSyncPayloads
         return names;
     }
 
-    /// <summary>The retires this machine owes a circle, by name, as its host answered (SYNC5b).</summary>
+    /// <summary>The retires this machine owes a circle, by name, as its host answers.</summary>
     public static IReadOnlyList<string> Retired(string retiredJson)
     {
         using var document = JsonDocument.Parse(retiredJson);
@@ -96,13 +96,13 @@ public static class RemoteSyncPayloads
 
     /// <summary>
     /// The joined repositories in a local registry answer that belong to one WORKSPACE — the only ones
-    /// that remote may hear of FROM here (D48 §5).
+    /// that remote may hear of FROM here.
     /// </summary>
     /// <remarks>
     /// Joined alone is not enough, on three counts. Mirrored-down teammate rows carry the flag too, and
     /// feeding one back up would speak for a repository this machine cannot see — worse, its empty
     /// entries feed is a replacement, wiping the teammate's shared knowledge from a machine that never
-    /// had it. The root is the checkout and the checkout is the authority (D47 §5), so a root is
+    /// had it. The root is the checkout and the checkout is the authority, so a root is
     /// required — and the local host answers roots to this loopback caller, so a rootless row IS a
     /// foreign one. And the workspace must match: a repository joined in another circle is a
     /// declaration addressed to a different deployment, which is the whole of the boundary.
@@ -134,16 +134,16 @@ public static class RemoteSyncPayloads
 
     /// <summary>
     /// One joined repository's registration, as the remote hears it: the declaration, no root — and the
-    /// commit its manifest stands on, so the deployment can order it against another checkout's (SYNC5b).
+    /// commit its manifest stands on, so the deployment can order it against another checkout's.
     /// </summary>
     /// <param name="defaultBranch">
-    /// The repository's canonical line, read from this checkout (D48 §6) — the deployment cannot ask
+    /// The repository's canonical line, read from this checkout — the deployment cannot ask
     /// git, so the machine holding the tree tells it. Omitted when git could not say, and omission
-    /// PRESERVES whatever was declared before: an unstated field must never erase one.
+    /// PRESERVES whatever is declared already: an unstated field must never erase one.
     /// </param>
-    /// <param name="declaredAt">The commit the manifest was read at; null when it names none — a checkout
+    /// <param name="declaredAt">The commit the manifest is read at; null when it names none — a checkout
     /// git cannot answer for, or a manifest with changes of its own not yet committed.</param>
-    /// <param name="onBase">The held declaration's commit git said this checkout descends from.</param>
+    /// <param name="onBase">The held declaration's commit git says this checkout descends from.</param>
     public static string Registration(
         JoinedRepository repo, string? defaultBranch = null, TreeProvenance? declaredAt = null, string? onBase = null) => Write(writer =>
     {
@@ -172,14 +172,14 @@ public static class RemoteSyncPayloads
 
     /// <summary>
     /// One sharing repository's content for the remote's ingest, stamped with the point in its history
-    /// that it came from (D48 §6).
+    /// that it came from.
     /// </summary>
     /// <remarks>
     /// An empty list still feeds: the remote's copy is a replacement, and a repository that deleted its
     /// knowledge means the deletion. That is only safe because the provenance travels with it — a
     /// replacement the receiver cannot order against what it holds is how two machines flap.
     /// </remarks>
-    /// <param name="onBase">The held commit git said this checkout descends from (SYNC5a); null lets
+    /// <param name="onBase">The held commit git says this checkout descends from; null lets
     /// commit time decide at the deployment.</param>
     public static (string Json, int Count) Entries(
         string repository, string entriesJson, TreeProvenance? provenance, string? onBase = null)
@@ -202,7 +202,7 @@ public static class RemoteSyncPayloads
                 writer.WriteString("body", Text(entry, "body"));
                 writer.WriteString("relativePath", Text(entry, "path"));
                 Copy(writer, entry, "anchor");
-                // ORIENT2e2: the lines of its file the entry is, as the local answer names them, so a shared
+                // The lines of its file the entry is, as the local answer names them, so a shared
                 // deployment's hit names them too. The deployment judges whether they can be the body's.
                 CopyWhole(writer, entry, "firstLine");
                 CopyWhole(writer, entry, "lastLine");
@@ -226,14 +226,14 @@ public static class RemoteSyncPayloads
         if (!string.IsNullOrWhiteSpace(onBase)) writer.WriteString("base", onBase);
     }
 
-    // ——— What is fed from a checkout besides its knowledge, and in what order (SYNC5a, MAP3b).
+    // ——— What is fed from a checkout besides its knowledge, and in what order.
 
     /// <param name="Json">The feed, or null when there is nothing this machine may send.</param>
     /// <param name="Problem">Why nothing goes — the reader's own sentence about this checkout's file.</param>
     public sealed record CodeMapFeed(string? Json, string? Problem);
 
     /// <summary>
-    /// This checkout's code map as the deployment hears it (MAP3b): the file it was read from and its
+    /// This checkout's code map as the deployment hears it: the file it is read from and its
     /// text in the file's own shape, rebuilt from what this machine's host judged — or no map, which is
     /// how a deletion travels.
     /// </summary>
@@ -322,12 +322,12 @@ public static class RemoteSyncPayloads
     public sealed record FeedPlan(bool Feed, string? Base, string? Note);
 
     /// <summary>
-    /// Whether to feed, and on what base (SYNC5a) — this machine's half of the ordering, decided from
+    /// Whether to feed, and on what base — this machine's half of the ordering, decided from
     /// what git answered about the held commit.
     /// </summary>
     /// <param name="what">What would be fed, as the note says it: "knowledge", "code map".</param>
     /// <param name="held">The commit the deployment holds, or null where nothing has fed.</param>
-    /// <param name="relation">What git said; null when there was nothing to ask.</param>
+    /// <param name="relation">What git said; null when there is nothing to ask.</param>
     public static FeedPlan Order(
         string repository, string what, TreeProvenance here, string? held, TreeRelation? relation)
     {
@@ -351,8 +351,8 @@ public static class RemoteSyncPayloads
         };
     }
 
-    // ——— The quest sync (D69). The host runs the pass — fetch, rebase, push — because a take claims by
-    // push from the door it was made at, and the tick runs the same code by asking for it. What comes
+    // ——— The quest sync. The host runs the pass — fetch, rebase, push — because a take claims by
+    // push from the door it is made at, and the tick runs the same code by asking for it. What comes
     // back to the driver is what a person should hear about the pass, never an operation.
 
     /// <param name="Wired">Whether the HOST has a remote for this circle — false when it reads another map than the driver.</param>
@@ -380,9 +380,9 @@ public static class RemoteSyncPayloads
             }
         }
 
-        // Said as what was refused: the push of the quest, whose operation the reason names (a publish, a move or a wait).
-        // A take is one move among them, and a lost take's refusal says the take lost, so "not taken" misread it
-        // (WAITCLAIM4). The answer's shape is read as every host sends it; only these words are the driver's.
+        // Said as what is refused: the push of the quest, whose operation the reason names (a publish, a move or a wait).
+        // A take is one move among them, and a lost take's refusal says the take lost, so "not taken" would misread it.
+        // The answer's shape is read as every host sends it; only these words are the driver's.
         if (root.TryGetProperty("refused", out var no) && no.ValueKind == JsonValueKind.Array)
         {
             foreach (var refusal in no.EnumerateArray())
@@ -411,7 +411,7 @@ public static class RemoteSyncPayloads
     public sealed record RegistryMirror(IReadOnlyList<(string Repository, string Json)> Write, IReadOnlyList<string> Retire);
 
     /// <summary>
-    /// The remote's registry as this machine should keep it (SYNC5b): the TEAM's rows, written when new
+    /// The remote's registry as this machine should keep it: the TEAM's rows, written when new
     /// or changed, and this circle's copies retired when the circle no longer lists them — filed in the
     /// workspace whose deployment answered.
     /// </summary>
@@ -420,11 +420,11 @@ public static class RemoteSyncPayloads
     /// included — because the machine that holds the checkout is the authority on it; writing the
     /// remote's stripped copy over it would erase the one field spawning needs. A copy another circle's
     /// sync keeps is that sync's, or two remotes naming one repository would take turns re-filing it. What
-    /// arrives makes teammates' repositories addressable here (D47 §5).</para>
+    /// arrives makes teammates' repositories addressable here.</para>
     ///
     /// <para>The workspace is stated rather than left silent, and that is this MACHINE's wiring
-    /// speaking, not the feed: a row that came from this workspace's deployment belongs to this
-    /// workspace by construction (D48 §5). Nothing in the remote's answer is consulted for it — a feed
+    /// speaking, not the feed: a row that comes from this workspace's deployment belongs to this
+    /// workspace by construction. Nothing in the remote's answer is consulted for it — a feed
     /// that could name its own circle could file itself into one nobody joined.</para>
     /// </remarks>
     /// <param name="localRegistryJson">This machine's registry, unscoped: the guard spans every circle.</param>
@@ -471,7 +471,7 @@ public static class RemoteSyncPayloads
         string.Join("\u001e", Strings(repo, "uses")),
         string.Join("\u001e", Lanes(repo).Select(lane => $"{lane.Id}\u001d{lane.Title}\u001d{lane.Summary}\u001d{lane.Steward}")));
 
-    /// <summary>A row's lanes (D115 §2.2), as a registry answers them: each lane's words, in order.</summary>
+    /// <summary>A row's lanes, as a registry answers them: each lane's words, in order.</summary>
     private static IReadOnlyList<LaneView> Lanes(JsonElement repo) =>
         Items(repo, "lanes")
             .Where(lane => Text(lane, "id") is { Length: > 0 })
@@ -481,7 +481,7 @@ public static class RemoteSyncPayloads
             .ToList();
 
     /// <summary>
-    /// A repository's lanes (D115 §2.2), written ALWAYS, `[]` for none: the deployment keeps a row's
+    /// A repository's lanes, written ALWAYS, `[]` for none: the deployment keeps a row's
     /// lanes when a registration says nothing of them, so silence here could never take one away.
     /// </summary>
     private static void WriteLanes(Utf8JsonWriter writer, IReadOnlyList<LaneView> lanes)
@@ -501,8 +501,8 @@ public static class RemoteSyncPayloads
     }
 
     /// <summary>
-    /// What a repository says it uses (D91), written only when it says something: a declaration of none
-    /// goes on the wire exactly as it did before the field existed.
+    /// What a repository says it uses, written only when it says something: a declaration of none
+    /// goes on the wire without the field.
     /// </summary>
     private static void WriteUses(Utf8JsonWriter writer, IReadOnlyList<string> uses)
     {
@@ -543,7 +543,7 @@ public static class RemoteSyncPayloads
         if (Text(element, name) is { } value) writer.WriteString(name, value);
     }
 
-    /// <summary>A whole number copied as it was answered; a null, a fraction or anything else is left out.</summary>
+    /// <summary>A whole number copied as answered; a null, a fraction or anything else is left out.</summary>
     private static void CopyWhole(Utf8JsonWriter writer, JsonElement element, string name)
     {
         if (element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number

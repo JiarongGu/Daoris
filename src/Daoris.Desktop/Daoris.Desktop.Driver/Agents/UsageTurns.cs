@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whose a session's turns are (USAGECAP1a2, D179 point 2), as its start chose: the account's owner (AGT7) and the account, the
+/// Whose a session's turns are, as its start chose: the account's owner and the account, the
 /// door it runs through, and what that door's token report means.
 /// </summary>
 /// <param name="Agent">The account's owner, or null for an agent that declares no accounts.</param>
@@ -23,7 +23,7 @@ public sealed record TurnBinding(string? Agent, string? Account, string Door, st
     /// <summary>The role's choice this part's start asked, as its policy keys it (the tuple's JSON); null where the start chose none.</summary>
     public string? Choice { get; init; }
 
-    /// <summary>The brainstorm a pass's turns are spent for (BRAINSTORM1c, D176 point 7); null for every other session.</summary>
+    /// <summary>The brainstorm a pass's turns are spent for; null for every other session.</summary>
     public string? Brainstorm { get; init; }
 
     /// <summary>A session's binding as its start chose the account: <paramref name="profile"/>, or null for the tool's own.</summary>
@@ -36,18 +36,18 @@ public sealed record TurnBinding(string? Agent, string? Account, string Door, st
     }
 }
 
-/// <summary>One turn as its session's record ended it (USAGECAP1a2), for <see cref="UsageHistory.Turned"/>.</summary>
+/// <summary>One turn as its session's record ended it, for <see cref="UsageHistory.Turned"/>.</summary>
 /// <param name="Seq">The turn's event's sequence in its session's record: with the session, the key against a turn heard twice.</param>
 /// <param name="Started">When the session took the turn's ask, or null where this process did not see it.</param>
-/// <param name="Ended">When the turn's end was recorded.</param>
+/// <param name="Ended">When the turn's end is recorded.</param>
 /// <param name="Tokens">Its four counts as the door reported them, or null where it reported none.</param>
 /// <param name="Models">The models its door said, or null where it said none.</param>
-/// <param name="Cancelled">Whether the turn was stopped.</param>
+/// <param name="Cancelled">Whether the turn is stopped.</param>
 public sealed record TurnSeen(
     string Session, long Seq, DateTimeOffset? Started, DateTimeOffset Ended, TurnTokens? Tokens, TurnModels? Models, bool Cancelled);
 
 /// <summary>
-/// The usage history's watch on the sessions' records (USAGECAP1a2, D179 point 2): each turn a record ends is kept in the turns'
+/// The usage history's watch on the sessions' records: each turn a record ends is kept in the turns'
 /// log, under the account its start chose (<see cref="Bound"/>), from the session's ask to the turn's end.
 /// </summary>
 /// <remarks>
@@ -112,7 +112,7 @@ public static class UsageTurns
     }
 
     /// <summary>
-    /// The choice a session's start asked (STAFFPOLICY1e2): its turns are kept naming it, so a role's daily budget of tokens is weighed against the
+    /// The choice a session's start asked: its turns are kept naming it, so a role's daily budget of tokens is weighed against the
     /// tuple its policy keys (<paramref name="choice"/>, its JSON), whatever slot it stands in now. Rebound where a start moves to another choice inside the same session.
     /// </summary>
     public static void ChoiceBound(string home, ISessionEvents events, string session, string choice)
@@ -120,7 +120,7 @@ public static class UsageTurns
         if (BindingOf(home, session) is { } binding) Bound(home, events, session, binding with { Choice = choice });
     }
 
-    /// <summary>A brainstorm pass's session is its brainstorm's (BRAINSTORM1c): its turns are kept naming it, beside the account its start chose.</summary>
+    /// <summary>A brainstorm pass's session is its brainstorm's: its turns are kept naming it, beside the account its start chose.</summary>
     public static void BrainstormBound(string home, ISessionEvents events, string session, string brainstorm)
     {
         if (BindingOf(home, session) is { } binding) Bound(home, events, session, binding with { Brainstorm = brainstorm });

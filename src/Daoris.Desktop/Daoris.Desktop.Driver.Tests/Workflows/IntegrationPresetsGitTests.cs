@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1q's second proof (the integration design §17.7, §18): the <i>Integrated into the line</i> preset as <c>workflow new --from</c>
+/// The <i>Integrated into the line</i> preset as <c>workflow new --from</c>
 /// saves it, bound to a done quest's run, taken through the runtime's own pass over real git and the home's own store. The landing is the
 /// request, the transport integrates the branch into the line, and the run's <c>integrate</c> and <c>line</c> nodes are reached.
 /// </summary>

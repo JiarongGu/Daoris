@@ -4,12 +4,12 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>role</c> proposal (FOUNDATION1y-i, the foundation design §2.7; O2-11): a working role of the role catalogue added or
+/// Ask Daoris's <c>role</c> proposal: a working role of the role catalogue added or
 /// changed (<c>set</c>), removed (<c>remove</c>) or given back its seed (<c>default</c>), or every seeded role at once (<c>default-all</c>,
-/// DEFAULTCONFIG1b's <i>Restore all role defaults</i>, naming no one role), by the role's id, its file's own <c>press</c>
+/// the <i>Restore all role defaults</i>, naming no one role), by the role's id, its file's own <c>press</c>
 /// carrying the record's fields, the choices and the revision Ask Daoris read. It is judged by the role door's judge, the one
 /// <c>SET_ROLE</c> and <c>daoris role</c> answer, and applied only by the person's press, through that door, in both modes: no
-/// <c>settings_*</c> grant reaches a role (D205 point 9). It extends what MODELROLE1h's <c>actor_propose</c> would be: a <c>set</c> of a
+/// <c>settings_*</c> grant reaches a role. It extends <c>actor_propose</c>: a <c>set</c> of a
 /// seeded role naming its choices sets that actor's order.
 /// </summary>
 /// <remarks>A <c>set</c> leaving a field out keeps the role's own, so a proposal of a seeded role's choices names its choices alone.</remarks>
@@ -25,14 +25,14 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         proposal with { RolePress = file.TryGetProperty("press", out var press) && press.ValueKind == JsonValueKind.Object ? press.Clone() : null };
 
     /// <summary>
-    /// ASKSCOPE1c: a role scoped to a workspace or a repository names it, the scope the press gives and the one the role stands in now
-    /// (REVIEW2 S3); <c>default-all</c> reaches every workspace.
+    /// A role scoped to a workspace or a repository names it, the scope the press gives and the one the role stands in;
+    /// <c>default-all</c> reaches every workspace.
     /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
     {
         if (proposal.Door == "default-all") return new([null], [null]) { Every = true };
         var scopes = new List<(string? Kind, string? Id)>();
-        // CONTEXTDRIVE1d: the supervisor's rules name the place they are for.
+        // The supervisor's rules name the place they are for.
         if (proposal.Target?.Trim() == SupervisorRuleDoor.Id && proposal.RolePress is { } rules && Text(rules, "place")?.Split(':', 2) is [var kind, var id])
         {
             scopes.Add((kind, id));
@@ -141,7 +141,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// CONTEXTDRIVE1d (the context counters design §7.6): a <c>set</c> of the supervisor carries a place's rules and the revision read, judged by
+    /// A <c>set</c> of the supervisor carries a place's rules and the revision read, judged by
     /// the rules' judge against the store now; the card says the place's rules before and after, and the terminal's twin.
     /// </summary>
     private static HelpPlan RulesPlan(HelpProposal proposal, string home)
@@ -171,7 +171,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// What a change does to a standing policy it does not name (REVIEW2 S2): a default, a remove or a set emptying the choices deletes it, and a
+    /// What a change does to a standing policy it does not name: a default, a remove or a set emptying the choices deletes it, and a
     /// set naming other choices re-keys it. Said on the card, so the revision the person presses holds it.
     /// </summary>
     private static string Unsaid(RoleChange change, IReadOnlyList<ActorChoice>? choices, RoleCatalog catalogue, RoleStaffing staffing, DriverConfig config)
@@ -198,7 +198,7 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// The card's before and after in the fold's words (STAFFPOLICY1g): <i>Build: First that can run → Spread by weight (3:1); on a limit: next
+    /// The card's before and after in the fold's words: <i>Build: First that can run → Spread by weight (3:1); on a limit: next
     /// by weight. This can spend differently.</i> A policy set for other choices ran in order, and the card says so.
     /// </summary>
     private static string PolicyDescribe(
@@ -270,5 +270,5 @@ internal sealed class HelpRoleProposals : IHelpProposalKind
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String && value.GetString() is { Length: > 0 } text ? text.Trim() : null;
 }
 
-/// <summary>A role change a proposal makes (FOUNDATION1y-i): applied as <c>SET_ROLE</c> applies it, through the role door.</summary>
+/// <summary>A role change a proposal makes: applied as <c>SET_ROLE</c> applies it, through the role door.</summary>
 public sealed record HelpRoleChange(RoleChange Change, IReadOnlyList<ActorChoice>? Choices, long? Read, RolePolicyPress? Policy = null);

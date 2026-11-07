@@ -3,7 +3,7 @@ using static Daoris.Driver.NodeGraphStarts;
 namespace Daoris.Driver;
 
 /// <summary>
-/// D157 §2.2's protected order before the landing (holds, opinion, look, landing), the one rule the gate kinds share. A kind takes its part by
+/// The protected order before the landing (holds, opinion, look, landing), the one rule the gate kinds share. A kind takes its part by
 /// its <see cref="INodeKind.Guard"/>, and the kit runs the rule once per save beside each kind's own (<see cref="NodeKit.Problems"/>): it reads
 /// the gates together, which no one node's rules can.
 /// </summary>
@@ -21,8 +21,8 @@ internal static class ProtectedOrder
         var passed = gates.Where(node => Guard(node) == LandingGuard.Passed).ToList();
 
         // Each gate is reached before every landing starts, through wires a reach satisfies, never a failure's or a rejection's path. The holds
-        // stay the rules' gate at the landing. FABRIC-CUTOVER1b (the cutover design §5.1): the opinion is not asked to reach a look. DECIDE1b: a
-        // decision's route is an order too, so a landing on one outcome's route is judged by the gates on that route.
+        // stay the rules' gate at the landing. The opinion is not asked to reach a look. A decision's route is an order too, so a landing on one
+        // outcome's route is judged by the gates on that route.
         var unreached = new HashSet<string>(StringComparer.Ordinal);
         foreach (var gate in gates)
         {
@@ -34,7 +34,7 @@ internal static class ProtectedOrder
             }
         }
 
-        // FABRIC-GRAPH1's review, finding 4: a gate that must be passed reaching a landing is not enough; no landing may start before one has
+        // A gate that must be passed reaching a landing is not enough; no landing may start before one has
         // passed, whichever member of an `anyOf` a run takes. One problem a landing they all reach, naming the first.
         if (passed.Count > 0)
         {
@@ -46,9 +46,9 @@ internal static class ProtectedOrder
             }
         }
 
-        // FABRIC-GRAPH1i: a skip satisfies `after` (§E2), so a person's skip of the look lets a wire from it pass while the opinion before it is
+        // A skip satisfies `after`, so a person's skip of the look lets a wire from it pass while the opinion before it is
         // unsettled, and reachability holds the order no further. Where the order holds by reach, each gate is wired straight into each landing,
-        // as the decoder wires a version's (FABRIC-GRAPH1h): a wire of the order's kinds, in no `anyOf` group, whose other members would let a
+        // as the decoder wires a version's: a wire of the order's kinds, in no `anyOf` group, whose other members would let a
         // way past it. Said only where the order is not already refused, so one fault is not two.
         if (problems.Count > 0) return problems;
         bool Wired(string from, string to) => ordered.Any(wire => wire.From!.Node == from && wire.To.Node == to && wire.Group?.Mode != WireGroupModes.AnyOf);

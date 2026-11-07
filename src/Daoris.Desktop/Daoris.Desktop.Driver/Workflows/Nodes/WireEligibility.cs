@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One node's eligibility as evaluated (§E2's blocked → ready): whether its groups and data inputs are satisfied, the witness of each
+/// One node's eligibility as evaluated: whether its groups and data inputs are satisfied, the witness of each
 /// <c>anyOf</c> group, the receipts it would consume, and the binding a start takes.
 /// </summary>
 public sealed record WireEligibility(string Node, bool Eligible)
@@ -24,12 +24,12 @@ public sealed record WireEligibility(string Node, bool Eligible)
     public NodeAcceptance? Binding { get; init; }
 
     /// <summary>
-    /// Why it is offered no start whatever its wires say (FABRIC-CUTOVER1a): <see cref="WireEvaluation.NoSubject"/>, no subject found for it this
+    /// Why it is offered no start whatever its wires say: <see cref="WireEvaluation.NoSubject"/>, no subject found for it this
     /// pass, or <see cref="WireEvaluation.NoRevision"/>, its branch subject's revision not handed in; null where it is judged on its subject.
     /// </summary>
     public string? Withheld { get; init; }
 
-    /// <summary>What a <c>wait.unit</c>'s <c>wait</c> wire names, for its adapter (WAITUNIT1): never an eligibility condition.</summary>
+    /// <summary>What a <c>wait.unit</c>'s <c>wait</c> wire names, for its adapter: never an eligibility condition.</summary>
     public WaitTarget? Waits { get; init; }
 
     /// <summary>The trigger firings a start on <see cref="Binding"/> makes: each trigger receipt it consumes that has not fired yet.</summary>

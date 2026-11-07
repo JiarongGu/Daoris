@@ -5,13 +5,11 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPSTUCK1: Ask Daoris's start waits for the machine's reading for its room only so long. On the owner's loaded machine the
-/// reading walked git across every tree and repository and did not answer, and the conversation placed for the person's words
-/// sat at <c>queued</c>: nothing said, no agent started, the words held for it. Since PARALLEL1a (D181 point 1) the room is
-/// written from the facts the judges keep and the start waits on nothing, the bound only a backstop for a home with no facts
-/// judged and no room written.
+/// Ask Daoris's start waits for the machine's reading for its room only so long. The room is written from the facts the
+/// judges keep and the start waits on nothing, the bound only a backstop for a home with no facts judged and no room
+/// written; a reading that never answers never leaves the conversation at <c>queued</c>.
 /// </summary>
-/// <remarks>No process: the start gate's stand-in answers the agent's start (PROCSTART2), and the service is a stand-in.</remarks>
+/// <remarks>No process: the start gate's stand-in answers the agent's start, and the service is a stand-in.</remarks>
 public sealed class HelpStartReadTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-help-read-" + Guid.NewGuid().ToString("N")[..8]);
@@ -61,7 +59,7 @@ public sealed class HelpStartReadTests : IDisposable
     }
 
     /// <summary>
-    /// PARALLEL1a (D181 point 1): a start before the machine's facts were ever judged, with a room written before, starts at once
+    /// A start before the machine's facts were ever judged, with a room written before, starts at once
     /// on that room, never waiting the bound: the agent is started in it, and its conversation says so first, by a code the page
     /// words. The reading left behind writes the room for the next conversation when it answers.
     /// </summary>
@@ -86,7 +84,7 @@ public sealed class HelpStartReadTests : IDisposable
             await runner.RunHelpAsync(placed, config, _ => late.Task).WaitAsync(Poll.Patience);
         }
 
-        // At once, though the bound is minutes: the agent's start was made, in the room.
+        // At once, though the bound is minutes: the agent's start is made, in the room.
         Assert.NotNull(spawned);
         Assert.Equal(Path.GetFullPath(HelpRoom.PathOf(_home)), Path.GetFullPath(spawned!.WorkingDirectory));
         var said = Assert.Single(events.Page("help0001").Events, e => e.Kind == SessionEventKind.Note && e.Parts is { Count: > 0 });
@@ -101,7 +99,7 @@ public sealed class HelpStartReadTests : IDisposable
     }
 
     /// <summary>
-    /// PARALLEL1a's proof: one repository's judge never answers, and a start does not wait on it. The room is written at once from
+    /// One repository's judge never answers, and a start does not wait on it. The room is written at once from
     /// the facts as they stand, saying that repository not read yet and the other's line, and the conversation says first that some
     /// of the machine is not read yet; the start's own path starts no git.
     /// </summary>
@@ -143,7 +141,7 @@ public sealed class HelpStartReadTests : IDisposable
             }
         }
 
-        // "At once" is told by the note, not the machine's clock (FLAKE1, 2026-10-30): with this start's read bound at five minutes, a start
+        // "At once" is told by the note, not the machine's clock: with this start's read bound at five minutes, a start
         // that waited on the judge would outlast Poll.Patience above, and would say the room as written rather than not read yet.
         Assert.Equal(0, gits);
         var agents = File.ReadAllText(Path.Combine(HelpRoom.PathOf(_home), "AGENTS.md"));
@@ -154,7 +152,7 @@ public sealed class HelpStartReadTests : IDisposable
     }
 
     /// <summary>
-    /// ASKSCOPE1b (D158's ASKSCOPE1 note point 4): a named workspace's start is the same start, no git on its press (D181): its own
+    /// A named workspace's start is the same start, no git on its press: its own
     /// room folder written at once from the facts projected to its workspace, its agent started there, and the machine's room
     /// not written. Another workspace's line not judged yet is no part of its room, so its conversation is told nothing is
     /// missing.
@@ -181,7 +179,7 @@ public sealed class HelpStartReadTests : IDisposable
         facts.Start();
         await facts.FirstAsync(HelpFacts.Lines, "engine", CancellationToken.None).WaitAsync(Poll.Patience);
         // The sessions, the history and the work are judged beside the lines, not before them: the room is written at once from the
-        // facts as last judged (PARALLEL1a), so wait for each it reads, or a busy machine writes it before they land.
+        // facts as last judged, so wait for each it reads, or a busy machine writes it before they land.
         await Poll.Until(
             () => HelpFacts.Read(facts.Current, config) is { NotReadYet: { Sessions: false, History: false, Work: false } },
             within: Poll.Patience);
@@ -242,7 +240,7 @@ public sealed class HelpStartReadTests : IDisposable
         Assert.Equal(("stopped", "queued"), (service.State("help0003"), service.State("help0004")));
     }
 
-    /// <summary>No room was ever written: nothing can serve, so the start ends failed saying why, by a code, never queued.</summary>
+    /// <summary>No room has ever been written: nothing can serve, so the start ends failed saying why, by a code, never queued.</summary>
     [Fact]
     public async Task A_reading_that_does_not_answer_in_time_with_no_room_written_ends_failed_saying_why()
     {

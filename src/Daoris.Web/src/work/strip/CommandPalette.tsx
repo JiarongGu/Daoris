@@ -6,13 +6,12 @@ import { cn } from '../../lib/cn';
 import { isComposing } from '../../lib/composing';
 
 /**
- * The command palette (SURF9): everything the application can do, by name.
+ * The command palette: everything the application can do, by name.
  *
  * @remarks
- * **It exists because the activity bar lost its labels.** SURF10 replaced a 15rem labelled sidebar
- * with a 48px icon rail and named the palette as where that discoverability would be paid back; this
- * is the payment. It is also the only affordance that scales past roughly seven top-level domains,
- * and Daoris now has Manage's six plus Work plus Review.
+ * **It carries what the labelless activity bar cannot.** The 48px icon rail has no labels, and the
+ * palette is where that discoverability is paid back. It is also the only affordance that scales past
+ * roughly seven top-level domains, and Daoris has Manage's six plus Work plus Review.
  *
  * **Presentational.** It is handed the commands and told whether it is open — so a browser's list, a
  * shell's list and a no-matches list are all reachable by passing props, and the registry that
@@ -21,11 +20,11 @@ import { isComposing } from '../../lib/composing';
  * **The list is never empty of meaning**: no match says so rather than showing a blank panel, because
  * an empty box reads as broken where a sentence reads as an answer.
  *
- * D41 §6 throughout: `role="dialog"` with `aria-modal` and ESC (`QuickPanel`), focus moved to the input
+ * Accessible throughout: `role="dialog"` with `aria-modal` and ESC (`QuickPanel`), focus moved to the input
  * on open, the active option tracked with `aria-activedescendant` so a screen reader follows the arrow
  * keys, and every row a real hit target.
  *
- * **What is typed can be asked** (DOCK1d): where Ask Daoris is here, the last row asks it the words
+ * **What is typed can be asked**: where Ask Daoris is here, the last row asks it the words
  * typed, whether or not a command matched — the command center's one question, as VS Code's palette
  * offers its chat the words it could not match.
  */
@@ -33,7 +32,7 @@ export function CommandPalette({ open, commands, onClose, onAsk }: {
   open: boolean;
   commands: Command[];
   onClose: () => void;
-  /** Asks Ask Daoris the words typed (DOCK1d); absent where there is no Ask Daoris. */
+  /** Asks Ask Daoris the words typed; absent where there is no Ask Daoris. */
   onAsk?: (question: string) => void;
 }) {
   const { t } = useTranslation();
@@ -87,7 +86,7 @@ export function CommandPalette({ open, commands, onClose, onAsk }: {
         value={typed}
         onChange={(event) => { setTyped(event.target.value); setActive(0); }}
         onKeyDown={(event) => {
-          // An input method's press is its own (IME1): its Enter accepts a candidate and runs nothing.
+          // An input method's press is its own: its Enter accepts a candidate and runs nothing.
           if (isComposing(event)) return;
           if (event.key === 'ArrowDown') { event.preventDefault(); move(1); }
           else if (event.key === 'ArrowUp') { event.preventDefault(); move(-1); }

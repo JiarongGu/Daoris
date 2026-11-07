@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row p (the agent-provider design §4.4): a start's connectors are handed by the door's own carrier, asked once, never by
-/// a caller's test of the door. Claude Code's native door writes the plan's file in its own layout and names it, the same file as before;
+/// A start's connectors are handed by the door's own carrier, asked once, never by
+/// a caller's test of the door. Claude Code's native door writes the plan's file in its own layout and names it;
 /// a door whose servers ride its wire, and one that takes none at its spawn, has no carrier there, and nothing is written for it.
 /// </summary>
 public sealed class ServerHandingTests : IDisposable

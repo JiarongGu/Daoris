@@ -1,23 +1,23 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run's published quests and asked helpers say beside the node that holds on them (INTEGRATE1o part o2; the integration design §17.3): the one
+/// What a run's published quests and asked helpers say beside the node that holds on them: the one
 /// reading the run's view and its <c>work.requests</c> share. Pure.
 /// </summary>
 public static class WorkRequests
 {
     /// <summary>
-    /// The code a <c>work.requests</c> node carries on the run's view while it holds on a declined quest (§17.3): the node stays active, never failed,
+    /// The code a <c>work.requests</c> node carries on the run's view while it holds on a declined quest: the node stays active, never failed,
     /// and waits on the person, whose pass over it lets the flow go on. It is read from the quests' records at each look, not stored on the node.
     /// </summary>
     public const string DeclinedCode = "declined";
 
-    /// <summary>Whether any request the work's sessions made as a quest was declined.</summary>
+    /// <summary>Whether any request the work's sessions made as a quest is declined.</summary>
     public static bool Declined(IEnumerable<WorkflowRunRequest> requests) =>
         requests.Any(request => request is { Kind: WorkflowRunRequestKinds.Quest, State: "declined" });
 
     /// <summary>
-    /// The requests as a run's view draws them (§17.3): each quest a session of the work <paramref name="published"/> (its repository, its state, the
+    /// The requests as a run's view draws them: each quest a session of the work <paramref name="published"/> (its repository, its state, the
     /// close's note, and whether a quest of the <paramref name="work"/> waits on it, <see cref="QuestView.Awaits"/>, until it closes), then each of
     /// the <paramref name="helpers"/> a session of the work asked, as a request to an agent.
     /// </summary>

@@ -3,14 +3,14 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Every kind of work read as one list of <see cref="WorkUnit"/>s (FABRIC-UNIT1a; the fabric events design §D2): the branch adapter
+/// Every kind of work read as one list of <see cref="WorkUnit"/>s: the branch adapter
 /// (<see cref="WorkInventory.Units"/>), the quest adapter (<see cref="QuestUnits"/>) and the ask adapter (<see cref="AskUnits"/>), and
 /// the links between them. Read-only throughout: the home's records as they stand, and the service's by GET; no store, no file, no write.
 /// </summary>
 public static class WorkUnits
 {
     /// <summary>
-    /// The units of every kind, linked: a session that served a quest worked the branch unit of its tree, so that unit was produced by
+    /// The units of every kind, linked: a session that served a quest worked the branch unit of its tree, so that unit is produced by
     /// the quest; and each link with an inverse (<see cref="WorkRelation.Inverse"/>) is kept both ways where both ends were read. A link
     /// names the other unit by its id and copies nothing of it. Where a session's tree names no one unit alone, none is linked by it.
     /// </summary>
@@ -48,7 +48,7 @@ public static class WorkUnits
     /// <param name="roots">Each repository's checkout, for the recovery refs (<see cref="WorkInventories.GatherAsync"/>).</param>
     /// <param name="inUse">The trees a session still running or waiting holds.</param>
     /// <param name="unlinked">
-    /// Where given, why the links sessions make were not read (FABRIC-CUTOVER1c; the cutover design §2.3): the service's lines of
+    /// Where given, why the links sessions make were not read: the service's lines of
     /// <paramref name="unread"/> alone, which the node runtime holds a run's branches on, never the inventory's.
     /// </param>
     public static async Task<IReadOnlyList<WorkUnit>> ReadAsync(
@@ -88,13 +88,13 @@ public static class WorkUnits
         }
 
         var branches = await BranchesAsync(sessions).ConfigureAwait(false);
-        // FABRIC-PERFORM1d: a quest's or an ask's receipts and attempts are its own, as a branch unit's are (WorkInventory's facts).
+        // A quest's or an ask's receipts and attempts are its own, as a branch unit's are (WorkInventory's facts).
         var owed = WorkObligations.Read(home, DateTimeOffset.UtcNow);
         return Linked(branches, WorkObligations.Attach(QuestUnits.Read(quests, sessions), owed), WorkObligations.Attach(AskUnits.Read(asks), owed), sessions);
     }
 
     /// <summary>
-    /// The branch units alone of the repositories <paramref name="only"/> holds (INTEGRATE1n part n3, F51): no quest, ask or session is asked of
+    /// The branch units alone of the repositories <paramref name="only"/> holds: no quest, ask or session is asked of
     /// the service, and no link is made. For a pass whose only work is a branch's <c>integrate</c>, which reads nothing else of any repository.
     /// </summary>
     public static async Task<IReadOnlyList<WorkUnit>> BranchesAsync(

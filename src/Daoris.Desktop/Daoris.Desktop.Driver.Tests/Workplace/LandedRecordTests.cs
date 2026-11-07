@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEW2 (D113): the landing record keeps a trace of a branch once it is gone, so the review of the session that
+/// The landing record keeps a trace of a branch once it is gone, so the review of the session that
 /// landed it can still say where its work went; and what that review says, in words. Files only, so this is the
 /// suite's fast half; the review over real git is <see cref="LandedReviewTests"/>.
 /// </summary>
@@ -149,7 +149,7 @@ public sealed class LandedRecordTests : IDisposable
     public void The_review_reads_as_landed_while_its_branch_stands_or_its_tree_is_gone(string state, bool treeGone, bool landed) =>
         Assert.Equal(landed, new LandedReview(Entry("feature/q1-fix", "s1"), state).ReadsAsLanded(treeGone));
 
-    /// <summary>ACCESSWORDS1: the review's note says the access setup accepted a landing, and at which level, only for its own landing.</summary>
+    /// <summary>The review's note says the access setup accepted a landing, and at which level, only for its own landing.</summary>
     [Fact]
     public void The_review_says_a_landing_the_access_setup_accepted()
     {
@@ -187,7 +187,7 @@ public sealed class LandedRecordTests : IDisposable
             Say(new LandedReview(gone, LandedState.Gone, Reads: new LandedReads(LandedKind.OnLine, "main", [], null))));
         Assert.EndsWith("inside `feature/q2-other`, whose work read on the line.",
             Say(new LandedReview(gone with { RemovedAs = LandedKind.Inside, RemovedOn = "feature/q2-other" }, LandedState.Gone)));
-        // PLUGHOOK1a: removed on the platform's word, which git confirmed.
+        // Removed on the platform's word, which git confirmed.
         Assert.EndsWith("The clean-up removed it once its pull request completed, as `acme.asks` answered, and its merge commit read on `origin/main`.",
             Say(new LandedReview(gone with
             {
@@ -203,7 +203,7 @@ public sealed class LandedRecordTests : IDisposable
         // A landing whose moment did not read says no moment rather than the year one.
         Assert.StartsWith("`s1a2b3c4` landed on `feature/q1-fix` in `engine`; ",
             Say(new LandedReview(entry with { LandedAt = DateTimeOffset.MinValue }, LandedState.Standing)));
-        // LAND2b: a landing at done says who accepted it; a press, and one from before it was kept, say what they always said.
+        // A landing at done says who accepted it; a press, and one recorded without it, say what they always said.
         Assert.Equal(
             "`s1a2b3c4` landed on `feature/q1-fix` in `engine` on 2026-09-30 12:00 UTC, accepted automatically when its quest was done; "
             + "that branch still stands. Its pull request: https://example.test/pr/7",
@@ -213,8 +213,8 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
-    /// LAND2b (D145 point 6, design §8): the record keeps who accepted a landing and the rule as it stood, read back whole; one
-    /// recorded before either was kept reads as neither, which a reader says is not kept (D143 point 3).
+    /// The record keeps who accepted a landing and the rule as it stood, read back whole; one
+    /// recorded without either reads as neither, which a reader says is not kept.
     /// </summary>
     [Fact]
     public void Who_accepted_a_landing_and_its_rule_round_trip_and_an_older_record_keeps_neither()
@@ -252,9 +252,9 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
-    /// PROCESS1b-ii (D164's PROCESS1b-ii note point 3): a squashing landing keeps the session tip it squashed, which proves the
+    /// A squashing landing keeps the session tip it squashed, which proves the
     /// session landed; a chain's later squash moves it to the new tip and keeps it on its advance; a fast-forward keeps the one it
-    /// had; and a record from before squashes has none, which proves nothing.
+    /// had; and a record without it has none, which proves nothing.
     /// </summary>
     [Fact]
     public void A_squashed_tip_round_trips_moves_with_an_advance_and_an_older_record_has_none()
@@ -280,9 +280,9 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-UNITLINK1 and FABRIC-CLOSE1h13 (D173's CLOSELAND1 note): an advance keeps the quest its session served, its branch work
-    /// unit and the submission its acceptance was made on, and the landing keeps its own session's quest and submission. Each is written
-    /// only where it is known, so an advance or a landing without them, and a record from before them, reads none, and equals itself
+    /// An advance keeps the quest its session served, its branch work
+    /// unit and the submission its acceptance is made on, and the landing keeps its own session's quest and submission. Each is written
+    /// only where it is known, so an advance or a landing without them, and an older record, reads none, and equals itself
     /// read twice.
     /// </summary>
     [Fact]
@@ -302,7 +302,7 @@ public sealed class LandedRecordTests : IDisposable
         Assert.Equal(("q2", "unit-b", new QuestSubmissionRef("laptop", 7)), (served.Quest, served.Unit, served.Submission));
         Assert.True(unwritten is { Quest: null, Unit: null, Submission: null });
 
-        // A landing written without them, as one from before them was, has none on disk and reads none.
+        // A landing written without them has none on disk and reads none.
         landings.Record(Entry("feature/q2-fix", "s4"));
         var written = File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Landings));
         foreach (var key in new[] { "\"served\"", "\"submission\"", "\"unit\"" })
@@ -326,9 +326,9 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
-    /// PLUGHOOK1a (D148 point 6, design §2.5): the entry keeps the latest answer about its pull request with who answered and
+    /// The entry keeps the latest answer about its pull request with who answered and
     /// when, the latest failed ask beside it, the session branches removed on its word, and a removal on it; each round trips,
-    /// a trace takes them as a standing entry does, and a record from before keeps none of them.
+    /// a trace takes them as a standing entry does, and an older record keeps none of them.
     /// </summary>
     [Fact]
     public void What_a_pull_requests_answer_chose_by_round_trips_on_a_standing_entry_and_a_trace()
@@ -369,7 +369,7 @@ public sealed class LandedRecordTests : IDisposable
         Assert.Null(first.PullRequestAskFailed);
         Assert.Equal([new CarriedBranch("daoris/s-1", "tip00001", At.AddHours(3), CarriedBy.Tidy)], first.Carried);
         Assert.Equal((LandedKind.PullRequest, "origin/main"), (first.RemovedAs, first.RemovedOn));
-        // A trace is asked about too, and a failure never overwrites a kept answer (here there was none).
+        // A trace is asked about too, and a failure never overwrites a kept answer (here there is none).
         var second = again.Landing("s2")!;
         Assert.NotNull(second.GoneAt);
         Assert.Null(second.PullRequestState);
@@ -415,7 +415,7 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
-    /// PLUGHOOK1c (D148 point 6, design §2.5): the review's sentence, which `trees land --plan` says, reads what the landing's plugin
+    /// The review's sentence, which `trees land --plan` says, reads what the landing's plugin
     /// last answered about its pull request, with when, and a failed ask beside it. A branch removed on that answer says it once.
     /// </summary>
     [Fact]
@@ -450,7 +450,7 @@ public sealed class LandedRecordTests : IDisposable
     }
 
     /// <summary>
-    /// PLUGHOOK1c: `trees state` names a landing by its session or its branch, standing or a trace, the newest first, since a trace's
+    /// `trees state` names a landing by its session or its branch, standing or a trace, the newest first, since a trace's
     /// pull request may still carry a session branch that stands.
     /// </summary>
     [Fact]
@@ -468,7 +468,7 @@ public sealed class LandedRecordTests : IDisposable
         Assert.Empty(landings.FindAll("feature/nothing"));
     }
 
-    /// <summary>A tree is gone where its record names none, its folder is not there, or only an empty folder is left (D109 §5).</summary>
+    /// <summary>A tree is gone where its record names none, its folder is not there, or only an empty folder is left.</summary>
     [Fact]
     public void A_tree_is_gone_where_nothing_or_only_an_empty_folder_is_left()
     {

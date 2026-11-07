@@ -4,14 +4,14 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>data/keeping.json</c>, what the disk cannot say again of the keeping rules' runs (CLEANUP1, D195 point 2; the cleanup design §2.3):
-/// each kind's last run, <c>last.&lt;kind&gt;</c>, and each download's first-unused time, <c>unused.&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>
-/// (KEEP1b), the start of its current unused stretch. A machine record: never synced, and no route answers it raw.
+/// <c>data/keeping.json</c>, what the disk cannot say again of the keeping rules' runs:
+/// each kind's last run, <c>last.&lt;kind&gt;</c>, and each download's first-unused time, <c>unused.&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>,
+/// the start of its current unused stretch. A machine record: never synced, and no route answers it raw.
 /// </summary>
 /// <remarks>
-/// <para><b>One way to write it</b> (Codex 4.1): <see cref="JsonKeeping.Save"/>, the file's keep lock held from its re-read to its rename,
+/// <para><b>One way to write it</b>: <see cref="JsonKeeping.Save"/>, the file's keep lock held from its re-read to its rename,
 /// each writer's edit only the key paths it changed, so the look's pass, a press's run and a terminal acting alone keep each other's
-/// entries. Beside a desktop a terminal's run holds no lease that would order them (D194 point 3): the lock does.</para>
+/// entries. Beside a desktop a terminal's run holds no lease that would order them: the lock does.</para>
 /// <para><b>A file that does not read is never written over</b>: the read says why, and the write refuses with it. Every field is added,
 /// never renamed (a stored shape); a reader meeting no file reads every kind as never cleaned.</para>
 /// </remarks>
@@ -62,8 +62,8 @@ public static class KeepingRecord
                 return Unread("its `last` is not an object");
             }
 
-            // KEEP1b: each download's first-unused time. An entry that is no time is no first-unused time, so its version does not go
-            // by its days; an `unused` that is no object is a record that does not read, so none does (the cleanup design §2.3).
+            // Each download's first-unused time. An entry that is no time is no first-unused time, so its version does not go
+            // by its days; an `unused` that is no object is a record that does not read, so none does.
             var unused = new Dictionary<string, DateTimeOffset>(StringComparer.Ordinal);
             var unusedRaw = new Dictionary<string, string>(StringComparer.Ordinal);
             if (root.TryGetProperty("unused", out var versions))
@@ -140,7 +140,7 @@ public static class KeepingRecord
 
     /// <summary>
     /// Downloads' first-unused times set (a time) or cleared (null) over the record as it stands now, <paramref name="read"/> being the record
-    /// as this writer read it (KEEP1b, the cleanup design §2.3): only those <c>unused</c> keys are this edit's, so another writer's entries
+    /// as this writer read it: only those <c>unused</c> keys are this edit's, so another writer's entries
     /// and its <c>last</c> stay. Null where it was written, or there was nothing to change; else why not, nothing written.
     /// </summary>
     public static string? WriteUnused(string home, KeepingFile read, IReadOnlyDictionary<string, DateTimeOffset?> changes)
@@ -254,7 +254,7 @@ public sealed record KeepingFile(
     bool Found, string? Problem, IReadOnlyDictionary<string, KeepingLast> Last, IReadOnlyDictionary<string, string> Raw, string? Schema)
 {
     /// <summary>
-    /// Each download's first-unused time that reads as one (KEEP1b), by <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>
+    /// Each download's first-unused time that reads as one, by <c>&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>
     /// (<see cref="DownloadKeeping.Key(string, string, string)"/>): the start of its current unused stretch.
     /// </summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Unused { get; init; } = new Dictionary<string, DateTimeOffset>();
@@ -263,7 +263,7 @@ public sealed record KeepingFile(
     public IReadOnlyDictionary<string, string> UnusedRaw { get; init; } = new Dictionary<string, string>();
 }
 
-/// <summary>A kind's last run (the cleanup design §2.3): when, through which door, which run, what it removed and what it kept, by why.</summary>
+/// <summary>A kind's last run: when, through which door, which run, what it removed and what it kept, by why.</summary>
 /// <param name="Door"><c>look</c>, <c>floor</c>, <c>press</c> or <c>terminal</c> (<see cref="KeepingRun"/>'s doors).</param>
 /// <param name="Removed">How many it removed: folders purged and package folders dropped.</param>
 /// <param name="Bytes">The bytes those held.</param>

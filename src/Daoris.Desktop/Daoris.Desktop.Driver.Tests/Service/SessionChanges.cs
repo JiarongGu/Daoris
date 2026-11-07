@@ -7,7 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// Wraps a stand-in service so it answers the sessions' change door (<c>GET /api/sessions/changes</c>) in the contract's shape, from
 /// what the stand-in answers the whole list (<c>/api/sessions?includeClosed=true</c>): every record changed, in the list's order, as a
 /// first read is. Every other request passes through, so no stand-in writes the change's shape itself. A list the stand-in refuses is
-/// handed back as it was refused, which is what the driver reads as a host before the door.
+/// handed back as refused, which is what the driver reads as a host before the door.
 /// </summary>
 internal sealed class SessionChanges(HttpMessageHandler inner) : DelegatingHandler(inner)
 {

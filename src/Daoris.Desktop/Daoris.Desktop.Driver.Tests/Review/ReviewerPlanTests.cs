@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1j part ii (the foundation design §2.4, D212's FOUNDATION1j notes): a second opinion's, a helper's and a partner's reviewer is
+/// A second opinion's, a helper's and a partner's reviewer is
 /// walked on the one start plan. The plan's loop walks the reviewer's order by maker and skips an agent held as a whole, the reviewer's own
-/// rule over that loop; each entry's accounts are the plan's one ask of D197's walk, so a start takes exactly one reservation, at its
+/// rule over that loop; each entry's accounts are the plan's one ask of the account walk, so a start takes exactly one reservation, at its
 /// selection; and each entry it passes is said in the plan's one vocabulary (<see cref="StartPasses"/>).
 /// </summary>
 /// <remarks>
@@ -89,7 +89,7 @@ public sealed class ReviewerPlanTests : IDisposable
     }
 
     /// <summary>
-    /// The reviewer's own rule over the plan's loop (D205 §4.1, MODELROLE1e): an agent held as a whole, by its cool-off, holds each of its
+    /// The reviewer's own rule over the plan's loop: an agent held as a whole, by its cool-off, holds each of its
     /// entries alike, so its later entry is neither asked nor passed, and a helper's walk is the plan of the helper's role.
     /// </summary>
     [Fact]
@@ -124,7 +124,7 @@ public sealed class ReviewerPlanTests : IDisposable
 
     /// <summary>
     /// A reviewer not installed and a name no agent of this machine answers are each passed <c>unavailable</c>, its own sentence kept, and the
-    /// helper's record's machine log line names them by the plan's codes (D205 §4.6 item 3), never the reviewer's.
+    /// helper's record's machine log line names them by the plan's codes, never the reviewer's.
     /// </summary>
     [Fact]
     public async Task What_the_walk_passed_is_logged_in_the_plan_s_words()

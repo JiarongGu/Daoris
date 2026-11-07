@@ -14,33 +14,52 @@ internal static class MovedParts
     }
 
     /// <summary>
-    /// A driven move to a new part said as it happens (D189 point 8): a coded line on the part it left and on the new part, each on
+    /// A driven move to a new part said as it happens: a coded line on the part it left and on the new part, each on
     /// its console too, with the context the part it left stood at and the brief's characters; and <c>session.moved</c> in the
     /// machine log. Every driven start that continues another says it, whatever moved it.
     /// </summary>
-    public static void Say(LoopContext context, PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief)
+    /// <param name="notCarried">The carry's code where a limit's move asked to carry its conversation and could not, said on the new part.</param>
+    public static void Say(
+        LoopContext context, PriorSession prior, string sessionId, string agent, string? account, string why, ComposedBrief brief, string? notCarried = null)
     {
         var used = RotatedOpening.ContextOf(context.Usage, context.Events, prior.Session);
         var ranOn = prior.Adapter ?? agent;
         var on = HandOverNotes.MovedOn(sessionId, agent, account, why, used, brief.Text.Length);
         var from = HandOverNotes.MovedFrom(prior.Session, ranOn, prior.Profile, why, used, brief.Text.Length);
-        foreach (var (session, line) in new[] { (prior.Session, on), (sessionId, from) })
-        {
-            context.Output?.Append(session, line.Note);
-            context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
-        }
+        var lines = new List<(string, Noted)> { (prior.Session, on), (sessionId, from) };
+        if (notCarried is not null) lines.Add((sessionId, CarriedNotes.NotCarried(notCarried)));
+        foreach (var (session, line) in lines) Keep(context, session, line);
 
-        context.Service.AccountSaid(Continuations.Moved(sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: true));
+        context.Service.AccountSaid(Continuations.Moved(sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: true, carry: notCarried));
     }
 
     /// <summary>
-    /// The session a quest's start continues, for its record's <c>from</c> link: the session the quest was handed over from, with the
+    /// A limit's move whose own conversation is carried to the new account, said on the part it left and in the machine log; the new
+    /// part's line is its resume's first (<see cref="CarriedNotes.From"/>).
+    /// </summary>
+    public static void SayCarried(LoopContext context, PriorSession prior, string sessionId, string agent, string? account, string why, CarryPlan.Carried carried)
+    {
+        var ranOn = prior.Adapter ?? agent;
+        Keep(context, prior.Session, CarriedNotes.On(sessionId, agent, account, why, carried.Tokens));
+        context.Service.AccountSaid(Continuations.Moved(
+            sessionId, prior.Session, ranOn, agent, prior.Profile, account, why, briefed: false,
+            carry: carried is CarryPlan.Compacted ? "compacted" : "whole"));
+    }
+
+    private static void Keep(LoopContext context, string session, Noted line)
+    {
+        context.Output?.Append(session, line.Note);
+        context.Events.Keep(session, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts }, say: null);
+    }
+
+    /// <summary>
+    /// The session a quest's start continues, for its record's <c>from</c> link: the session the quest is handed over from, with the
     /// hand-over's why and asker; else a session a limit cut off, carried on onto another account, Daoris's own move; else the
     /// curve's move. Every other carry-on names its link too, so the brief follows the line: <c>retry</c> where its resume fell back,
     /// else <c>carry-on</c>, the person's where their press released or brought it forward. A first start, a resume of its own record
     /// and a fresh start carry nothing on and say none. The link is the course's move, its why and who asked.
     /// </summary>
-    /// <param name="retried">Its record's resume was tried and fell back: a driven record's fallback.</param>
+    /// <param name="retried">Its record's resume is tried and falls back: a driven record's fallback.</param>
     /// <param name="pressed">The person's press carried it on: <i>Try again</i> after their stop, or a bring-forward.</param>
     /// <param name="handed">The quest's hand-over as held, or null.</param>
     /// <param name="carried">The record it carries on, where it carries one on, or null.</param>

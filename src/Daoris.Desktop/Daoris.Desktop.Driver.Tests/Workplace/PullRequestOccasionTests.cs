@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUGHOOK1a (D148 point 2, the plugin hooks design §2.1): a plugin is asked about a pull request only at an occasion that may
+/// A plugin is asked about a pull request only at an occasion that may
 /// remove something, never at each look of the loop, on a timer, at a press that removes, or at a read. A network call nobody
-/// waits on is the one D147 rejected for a fetch, and TOOL6g found the same shape costing an account. A source scan rather than
+/// waits on is a shape rejected for fetches and found costing an account. A source scan rather than
 /// a unit test, because the property is one every new caller must keep and the next one written will not know to.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
@@ -16,9 +16,8 @@ public sealed class PullRequestOccasionTests
         ["Daoris.Desktop.Driver", "Daoris.Desktop.Driver.Host", "Daoris.Desktop.Modules", "Daoris.Desktop.App"];
 
     /// <summary>
-    /// The occasions that may ask, each by the method it is asked from: LAND3's tidy, the clean-up's look, bringing up to date's
-    /// look after its fetch, <i>Ask again</i> (PLUGHOOK1c), and the due moments of FABRIC-END6 (the fabric events design §A4.3, the
-    /// owner's yes in D173's part C note), which amend D148 point 2's list. The reconcile of a delivery whose plugin dispatch left no
+    /// The occasions that may ask, each by the method it is asked from: the landing's tidy, the clean-up's look, bringing up to date's
+    /// look after its fetch, <i>Ask again</i>, and the due moments. The reconcile of a delivery whose plugin dispatch left no
     /// answer asks the plugin by its own wire (<c>ReconcileStepAsync</c>), never the query. Nothing else joins them.
     /// </summary>
     private static readonly string[] Occasions = ["CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync", "AskAtMomentAsync"];
@@ -39,8 +38,8 @@ public sealed class PullRequestOccasionTests
 
         Assert.True(calls.Count >= 3, $"expected to find the asks, found {calls.Count}");
         // The plugins are asked by the one helper the occasions share, and it by the occasions alone.
-        // The plugin wire is the shared context's since PART10i (`_context.Plugins.`; `_plugins.` before), and the asks' class
-        // holds that context as its constructor's `context` since PART10l (`context.Plugins.`).
+        // The plugin wire is the shared context's, which the asks' class
+        // holds as its constructor's `context` (`context.Plugins.`).
         static bool OnTheWire(string expression) => expression.Contains("context.Plugins.", StringComparison.Ordinal);
         Assert.All(calls.Where(call => OnTheWire(call.Expression)), call => Assert.Equal("AskStatesAsync", call.Method));
         var occasions = calls.Where(call => !OnTheWire(call.Expression)).ToList();
@@ -77,7 +76,7 @@ public sealed class PullRequestOccasionTests
     }
 
     /// <summary>
-    /// PUSH1c4a (D182): the clean-up's list of one repository, which the machine's facts judge at a ref's move and at a deadline, is
+    /// The clean-up's list of one repository, which the machine's facts judge at a ref's move and at a deadline, is
     /// no occasion. It reads the answers the landing record keeps and asks no plugin, so a mounted window's list costs no ask; the
     /// person's look (<c>CleanPlanAsync</c>) stays the occasion that asks.
     /// </summary>
@@ -93,7 +92,7 @@ public sealed class PullRequestOccasionTests
     }
 
     /// <summary>
-    /// PLUGHOOK1c (design §2.1 occasion 3): bringing up to date's look asks, after its fetch, where a merge commit first reaches
+    /// Bringing up to date's look asks, after its fetch, where a merge commit first reaches
     /// this machine, and it is started by a person's door alone: the page's *Look for updates*, Ask Daoris's card's first press
     /// and `trees sync`. Its press, which removes, asks nothing.
     /// </summary>
@@ -108,7 +107,7 @@ public sealed class PullRequestOccasionTests
             .ToList();
 
         Assert.Equal(["HelpSyncProposals.cs", "TreesConsole.cs", "TreesTidyDesk.cs"], doors);
-        // The look and the press are `TreeSync`'s since PART10j; the front keeps one-line calls, which hold no body to read.
+        // The look and the press are `TreeSync`'s; the front keeps one-line calls, which hold no body to read.
         var sync = File.ReadAllText(SourceFiles.Driver("TreeSync.cs"));
         var look = Body(sync, "SyncPlanAsync");
         var fetched = look.IndexOf("FetchedAsync(", StringComparison.Ordinal);
@@ -117,7 +116,7 @@ public sealed class PullRequestOccasionTests
         Assert.DoesNotContain("AskStatesAsync(", Body(sync, "SyncAsync"));
     }
 
-    /// <summary>PLUGHOOK1c (design §2.1 occasion 4): <i>Ask again</i> is a person's press: `trees state` today, the review's press with PLUGHOOK1d.</summary>
+    /// <summary><i>Ask again</i> is a person's press, the terminal's `trees state`.</summary>
     [Fact]
     public void Ask_again_is_a_persons_door()
     {
@@ -132,7 +131,7 @@ public sealed class PullRequestOccasionTests
     }
 
     /// <summary>
-    /// FABRIC-END6 (§A4.3): the due moments ask from the moments alone, whose wakes are origin's line moving, Daoris's push and the
+    /// The due moments ask from the moments alone, whose wakes are origin's line moving, Daoris's push and the
     /// window's focus, never a press and never a deadline; the trees' front is a one-line call.
     /// </summary>
     [Fact]
@@ -149,15 +148,15 @@ public sealed class PullRequestOccasionTests
 
     /// <summary>
     /// No look of the loop, and nothing on a timer, opens an occasion: the loop's files and the modules' loop name none of the
-    /// looks that ask, so a plugin is never asked a question nobody is waiting on (D147, D148 point 2).
+    /// looks that ask, so a plugin is never asked a question nobody is waiting on.
     /// </summary>
     [Fact]
     public void No_look_of_the_loop_opens_an_occasion()
     {
         var looks = new[] { "CleanPlanAsync", "SyncPlanAsync", "AskAgainAsync" };
-        // Each found by name at any depth of its project, so a move into a module's folder keeps it (STRUCT1, D166).
+        // Each found by name at any depth of its project, so a move into a module's folder keeps it.
         var loop = SourceFiles.All(SourceFiles.DriverProject, "Driver*.cs")
-            // The loop's classes that are not named Driver* (PART10m, D166), so the code moved out of its parts stays scanned.
+            // The loop's classes that are not named Driver*, so the code moved out of its parts stays scanned.
             .Append(SourceFiles.Driver("LoopContext.cs"))
             .Append(SourceFiles.Driver("OpinionDeliverer.cs"))
             .Append(SourceFiles.Driver("OpinionGateLook.cs"))

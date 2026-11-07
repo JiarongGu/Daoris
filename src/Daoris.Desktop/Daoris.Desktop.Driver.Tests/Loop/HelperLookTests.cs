@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT2a-ii (D163 point 2; the mixed agents design §3 and §5): the look's helper session, in process. The asks on file are
+/// The look's helper session, in process. The asks on file are
 /// read, judged and started beside the look; the state names the helper BEFORE its turn; what the helper said (its tool's answer,
 /// else its last words, else nothing) settles the ask; and the answer reaches the asker as a word marked as the helper's, through
 /// the local host's door, refused as the opinion's delivery is refused. The pass itself is a stand-in here (the real one is the
-/// <c>Process</c> half's <c>HelperProcessTests</c>), so nothing starts a process: the fast half (MOD8).
+/// <c>Process</c> half's <c>HelperProcessTests</c>), so nothing starts a process: the fast half.
 /// </summary>
 public sealed class HelperLookTests : IDisposable
 {
@@ -52,14 +52,14 @@ public sealed class HelperLookTests : IDisposable
         public string? LastWords { get; init; }
         public string Ended { get; init; } = "completed";
 
-        /// <summary>How many of its first runs an account's limit cuts off, failed with the flag and no answer (LIMITRESUME1h).</summary>
+        /// <summary>How many of its first runs an account's limit cuts off, failed with the flag and no answer.</summary>
         public int Limited { get; init; }
 
         public Task<HelperPassRun> RunAsync(HelperPassAsk ask, ReviewerChoice choice, CancellationToken ct)
         {
             Asked.Add(ask);
             ask.Opened?.Invoke(Helper);
-            // Its turn: the state it was started under is what `helper_answer` finds its ask by.
+            // Its turn: the state it is started under is what `helper_answer` finds its ask by.
             SeenAtTurn.Add(files.ReadState(ask.Ask.Id));
             if (Asked.Count <= Limited)
             {
@@ -76,13 +76,13 @@ public sealed class HelperLookTests : IDisposable
         }
     }
 
-    /// <summary>The asker's work in progress as the stand-in capture hands it (COAGENT1a): one changed file and one deletion.</summary>
+    /// <summary>The asker's work in progress as the stand-in capture hands it: one changed file and one deletion.</summary>
     private static readonly HelperCaptured Captured = new(
         "c0ffee123456", OpinionStandIn.Tip, At, [new CapturedFile("src/report.ts", new string('a', 64), 12)], ["old.md"], []);
 
     private static DriverConfig Drain(DriverConfig config, bool drained) => drained ? InstallUpdate.Drained(config) : config;
 
-    /// <param name="unset">No rule for the repository at all, so its workspace's or Daoris's default stands (HELPERDEFAULT1).</param>
+    /// <param name="unset">No rule for the repository at all, so its workspace's or Daoris's default stands.</param>
     private Daoris.Driver.Driver Driver(
         OpinionStandIn host, Pass? pass, HelperRule? rule = null, int cap = 3, ReviewerChoice? choice = null,
         Func<string, CancellationToken, Task<HelperCaptureRead>>? capture = null, Func<ReviewerChoice>? choose = null,
@@ -107,7 +107,7 @@ public sealed class HelperLookTests : IDisposable
         var host = new OpinionStandIn().Session("s1", state, tree: "trees/default/reports/s-1", kind: kind)
             .Session(Helper, "completed", adapter: "codex-acp", kind: "chat");
         host.Set(Helper, "serves", "s1");
-        // The ask a session's line is on is its entry's origin (COMMS1c), whoever asked its quest.
+        // The ask a session's line is on is its entry's origin, whoever asked its quest.
         host.Set("s1", "entry", "ask:a1/reports");
         // The host's one door for solicited answers is the only door a hand goes through.
         host.Answers = true;
@@ -139,7 +139,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// The asker's newest turn has ended (COAGENT1a): a running asker is between turns, so its work in progress may be captured and
+    /// The asker's newest turn has ended: a running asker is between turns, so its work in progress may be captured and
     /// its helper started; what happens to the answer after is what the test holds.
     /// </summary>
     private void TurnEnded(string asker = "s1") =>
@@ -162,7 +162,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2c (D168): an agent's ask that comes to wait on the person's word is said once in the look's report, so the loop's
+    /// An agent's ask that comes to wait on the person's word is said once in the look's report, so the loop's
     /// tick reaches the windows and the page asks what waits on the person again; the same wait at a later look says nothing.
     /// </summary>
     [Fact]
@@ -179,8 +179,8 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// DRAINHOLD1 (the driver follow-up): an update's drain holds the helper's start as it holds a quest's. Under the rule `on`, with a
-    /// free slot and an idle asker, no helper starts and the look says the drain's hold, once; the ask's state is left as it was; after
+    /// An update's drain holds the helper's start as it holds a quest's. Under the rule `on`, with a
+    /// free slot and an idle asker, no helper starts and the look says the drain's hold, once; the ask's state is left unchanged; after
     /// *Not now* (a look that no longer drains) the same ask starts.
     /// </summary>
     [Fact]
@@ -218,7 +218,7 @@ public sealed class HelperLookTests : IDisposable
         Assert.Empty(host.HelperHands);
     }
 
-    /// <summary>A person's yes (`approved`, MIXAGENT2b's press) lets it go under `ask`: a helper starts and answers.</summary>
+    /// <summary>A person's yes (`approved`) lets it go under `ask`: a helper starts and answers.</summary>
     [Fact]
     public async Task An_approved_ask_goes_under_the_rule_ask()
     {
@@ -235,7 +235,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// The person's no (HELPERNO1, the bridge's `SESSION_HELPER_DECLINE`): the ask is refused `declined` with its note already on
+    /// The person's no (the bridge's `SESSION_HELPER_DECLINE`): the ask is refused `declined` with its note already on
     /// the asker's record, so a look starts nothing, under any rule, and writes no second note and no line.
     /// </summary>
     [Theory]
@@ -273,11 +273,11 @@ public sealed class HelperLookTests : IDisposable
         Assert.DoesNotContain("trees", note.Text);
     }
 
-    // ——— HELPERDEFAULT1 (D163's 2026-10-24 note): where nothing is set, Daoris's own agents are asked at once.
+    // ——— Where nothing is set, Daoris's own agents are asked at once.
 
     /// <summary>
     /// An account of Daoris's for <paramref name="owner"/> in this test's own home, its folder on disk and its last reading
-    /// <paramref name="login"/> (ROSTER1): what the roster reads an agent set up and signed in by. Nothing is probed.
+    /// <paramref name="login"/>: what the roster reads an agent set up and signed in by. Nothing is probed.
     /// </summary>
     private void Account(string owner, string account, LoginState login = LoginState.In)
     {
@@ -393,8 +393,8 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// NOTIFY2h2 (D196's NOTIFY2h note): a refusal because the asker has left tells nobody, so it is news, a coded notice in <i>Done and
-    /// failed</i>; one the asker is told of on its own session (it cannot ask) is the log's alone. The line itself is as it was.
+    /// A refusal because the asker has left tells nobody, so it is news, a coded notice in <i>Done and
+    /// failed</i>; one the asker is told of on its own session (it cannot ask) is the log's alone. The line itself is unchanged.
     /// </summary>
     [Theory]
     [InlineData("gone", true)]
@@ -449,7 +449,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// CAPCOUNT1 (D130's note): the cap counts what the driver starts. A conversation the person holds (Ask Daoris's, here) takes no
+    /// The cap counts what the driver starts. A conversation the person holds (Ask Daoris's, here) takes no
     /// slot from a helper on a cap of one; an intake the driver started, or another helper, still does.
     /// </summary>
     [Fact]
@@ -473,7 +473,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// HELPERYES1 (D163 point 3): the person's yes outlives a full cap. The look that finds no slot leaves the ask `approved`
+    /// The person's yes outlives a full cap. The look that finds no slot leaves the ask `approved`
     /// (not `waiting/cap`, which the next look's judge would put back to waiting for a yes), and a look with a slot starts it
     /// without a second yes.
     /// </summary>
@@ -557,7 +557,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// FOUNDATION1 row p (the design §3.4 rule 5): a hand the host answers settled (its key's word was kept by an earlier hand, whose answer was
+    /// A hand the host answers settled (its key's word is kept by an earlier hand, whose answer is
     /// lost, and taken) marks the ask handed and dispatches nothing: no word is kept or sent, no `User` event and no note is recorded on the
     /// asker, and the ask is never handed again.
     /// </summary>
@@ -676,7 +676,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 COWORK1d (the message-urgency design §5): an urgent ask's answer reaches a running asker this loop runs at its next step,
+    /// An urgent ask's answer reaches a running asker this loop runs at its next step,
     /// where its door takes words then: kept on its record for its run with its level, held in its inbox under the record's id and sent
     /// at once, recorded as Daoris's words around the helper's claim, never the person's; and handed once.
     /// </summary>
@@ -747,7 +747,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2a-iii: a conversation asker is handed the answer, open between turns (`working`) or ended, and the driver leaves
+    /// A conversation asker is handed the answer, open between turns (`working`) or ended, and the driver leaves
     /// the shell's chat runner a shown event it hears (the person's say door's, reaching on `resume`) whose origin is never the
     /// person's: Daoris's words around the helper's claim. One still being started waits, as a quest's step in flight does.
     /// </summary>
@@ -792,8 +792,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// A restart: a `started` ask whose helper ended, the sweep's interrupted ending included, is settled at the next look (Codex's round-2
-    /// #8 on COWORKUX1): with an answer `helper_answer` saved before the cut it is delivered, whatever the helper's ending; with none it is
+    /// A restart: a `started` ask whose helper ended, the sweep's interrupted ending included, is settled at the next look: with an answer `helper_answer` saved before the cut it is delivered, whatever the helper's ending; with none it is
     /// refused no-answer, which brings a session waiting on it to the person.
     /// </summary>
     [Theory]
@@ -827,7 +826,7 @@ public sealed class HelperLookTests : IDisposable
         }
     }
 
-    // ——— HELPERWAIT1 (D163's and D188's notes): a session waiting on its own helper is not waiting on the person.
+    // ——— A session waiting on its own helper is not waiting on the person.
 
     /// <summary>An answer on file, as <c>helper_answer</c> writes it, and the ask answered by the helper that wrote it.</summary>
     private void Answered(string id = "a1", string answer = "The window is exclusive at src/report.ts:42.")
@@ -841,8 +840,8 @@ public sealed class HelperLookTests : IDisposable
         new([.. codes.Select(code => (JsonNode)new JsonObject { ["code"] = code, ["values"] = new JsonObject(), ["text"] = "a line." })]);
 
     /// <summary>
-    /// The asker parked as the install parked it before the rule: the clean-exit park, its quest taken, made at <paramref name="minute"/>
-    /// after the look's clock (the ask <c>a1</c> was made at its first minute).
+    /// The asker parked as an older install parks it: the clean-exit park, its quest taken, made at <paramref name="minute"/>
+    /// after the look's clock (the ask <c>a1</c> is made at its first minute).
     /// </summary>
     private OpinionStandIn ParkedHost(int minute = 5, string code = "ended.parked-asked", string? answer = null)
     {
@@ -858,7 +857,7 @@ public sealed class HelperLookTests : IDisposable
     private static SessionView Active(string state) => new("s1", "reports", state) { Quest = "q1" };
 
     /// <summary>
-    /// 🔴 The install's case, as Codex's round-2 #1 and #4 on COWORKUX1 read it: a session parked before the rule on the clean exit, after
+    /// A session parked before the rule on the clean exit, after
     /// its own helper ask, may have asked the person in its closing words alone, so nothing proves the park is no question of theirs. It
     /// stays parked, and its helper's answer waits, said once; once the person answers, the next look hands it beside their answer, never
     /// moving the park, so its go-on takes both in one prompt.
@@ -974,7 +973,7 @@ public sealed class HelperLookTests : IDisposable
         Assert.StartsWith("Helper codex-acp did not answer this question: the helper ended without an answer.\n\nIt stopped with its quest still taken", note);
     }
 
-    /// <summary>The look's records with session s1 ended waiting on its own helper, its quest still taken (HELPERWAIT1).</summary>
+    /// <summary>The look's records with session s1 ended waiting on its own helper, its quest still taken.</summary>
     private static Snapshot LeadWaiting() => new([new QuestView("q1", "ask #a1", "reports", "The work", "", "Taken")], [], [])
     {
         LastRun = new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase)
@@ -987,7 +986,7 @@ public sealed class HelperLookTests : IDisposable
     };
 
     /// <summary>
-    /// LIMITRESUME1h (D206 design §3.8): a helper an account's limit cut off, which its lead waits on, is never refused: the ask stays open,
+    /// A helper an account's limit cut off, which its lead waits on, is never refused: the ask stays open,
     /// <c>cooling</c> with its account's reset, so the lead keeps waiting and is never brought back to the person; the look runs it again
     /// once the walk gives an account, here another at the next look, and its answer settles the ask.
     /// </summary>
@@ -1019,7 +1018,7 @@ public sealed class HelperLookTests : IDisposable
         Assert.Single(HelperWaits.Open("s1", Files.Asks(), Files.ReadState));
 
         // Its account still cooling and none other ready: the lead waits, nothing runs, and nothing goes back to the person.
-        // A look while the last pass's claim is still let go starts nothing, so the test looks again until the walk was asked.
+        // A look while the last pass's claim is still let go starts nothing, so the test looks again until the walk is asked.
         async Task LookUntil(Func<bool> done)
         {
             for (var looks = 0; !done(); looks++)
@@ -1046,7 +1045,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITRESUME1h (D206 design §3.8): a limited helper whose lead no longer waits on it (it went on, or never ended its turn on it) is
+    /// A limited helper whose lead no longer waits on it (it has gone on, or never ended its turn on it) is
     /// refused <c>limited</c> at the next look, the asker's line saying when that account is ready again, and never run again.
     /// </summary>
     [Fact]
@@ -1075,8 +1074,8 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Codex's round-2 #5 on COWORKUX1: a failed move back to the person is tried again at the next look, though nothing moved the record,
-    /// and said once: a service that did not answer as a retry, one that refused the move to the person as theirs to look at.
+    /// A failed move back to the person is tried again at the next look, though nothing moves the record,
+    /// and said once: a service that does not answer as a retry, one that refused the move to the person as theirs to look at.
     /// </summary>
     [Theory]
     [InlineData("unreachable")]
@@ -1112,9 +1111,9 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1c (the co-worker design §5 point 4, §11 row 11; Codex's round-2 #5 and round-3 #6 on COWORKUX1): a move back to the
+    /// A move back to the
     /// person the service refused is kept on file with its refusal, the record <i>What needs you</i> says it from, from its first refusal
-    /// on; an unreachable service keeps none, since the retry at each look stands, and leaves a refusal already kept as it was. The move
+    /// on; an unreachable service keeps none, since the retry at each look stands, and leaves a refusal already kept unchanged. The move
     /// landing lets it go, and so does the session no longer waiting (its quest closed).
     /// </summary>
     [Theory]
@@ -1147,7 +1146,7 @@ public sealed class HelperLookTests : IDisposable
         Assert.Contains("this service does not make that move", back.Words);
         var first = back.At;
 
-        // Refused again, and then not reached: the one refusal stands, from when it was first said.
+        // Refused again, and then not reached: the one refusal stands, from when it is first said.
         await driver.HelpersAsync(Looked("Taken"), 0, [], CancellationToken.None);
         host.StateFailure = "unreachable";
         await driver.HelpersAsync(Looked("Taken"), 0, [], CancellationToken.None);
@@ -1160,8 +1159,8 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1c (the co-worker design §5 point 1, §11 row 11; Codex's round-2 #3): a go-ahead read the service does not answer, or
-    /// refuses, is no proof that none was asked, so the turn parks for the person rather than wait on its helper.
+    /// A go-ahead read the service does not answer, or
+    /// refuses, is no proof that none has been asked, so the turn parks for the person rather than wait on its helper.
     /// </summary>
     [Theory]
     [InlineData("unreachable")]
@@ -1179,7 +1178,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// COMMS1c: the ask is read from the session's entry, not its quest's sender. A line on no ask holds no go-ahead to read, so the ask's
+    /// The ask is read from the session's entry, not its quest's sender. A line on no ask holds no go-ahead to read, so the ask's
     /// failing read is never reached and the turn waits on its helper; a quest a sibling published, its line on the ask, reads it.
     /// </summary>
     [Fact]
@@ -1198,8 +1197,8 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Point 6, the cost: a hand held while its asker runs is said once, and while the look's own list shows the asker as it was when
-    /// the hand was held nothing is read again for it; once the asker moves, the next look hands it.
+    /// The cost: a hand held while its asker runs is said once, and while the look's own list shows the asker as it is when
+    /// the hand is held nothing is read again for it; once the asker moves, the next look hands it.
     /// </summary>
     [Fact]
     public async Task A_held_hand_is_said_once_and_read_again_only_once_its_asker_moves()
@@ -1226,8 +1225,8 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1 (the look stops retrying a hand it cannot make): a hand the host refuses is said once, and is not asked again while the
-    /// look's records show its asker as they did when it was refused; once the asker's record moves, the next look asks again.
+    /// The look stops retrying a hand it cannot make: a hand the host refuses is said once, and is not asked again while the
+    /// look's records show its asker as they do when it is refused; once the asker's record moves, the next look asks again.
     /// </summary>
     [Fact]
     public async Task A_hand_the_host_refuses_is_said_once_and_asked_again_only_once_its_asker_moves()
@@ -1255,7 +1254,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Codex's round-2 #2 and #7 on COWORKUX1: a hand that began (its mark written before the door) and whose outcome a restart lost is
+    /// A hand that began (its mark written before the door) and whose outcome a restart lost is
     /// never made again on the absence of evidence, since an event's write may have failed and a word may have moved: with nothing on the
     /// line it settles as uncertain for the person; a conversation's notice to its runner that the word waits is no evidence of a taking.
     /// </summary>
@@ -1287,7 +1286,7 @@ public sealed class HelperLookTests : IDisposable
     private static Provider Talk() => TestDoors.Door("talk", transport: Transport.Protocol, interactive: true, spawn: new TestDoors.RefusingSpawn("a judgement test spawns nothing"));
 
     /// <summary>
-    /// 🔴 HELPERWAIT1b2 (Codex's round-4 read of COWORKUX1): a hand to an ended conversation whose answer was lost kept the word, and the
+    /// A hand to an ended conversation whose answer is lost keeps the word, and the
     /// look that reads it back completes what the hand would have done before it marks the ask handed: the event the shell's chat runner
     /// hears, on the record that holds the word, under its id. The real runner goes the conversation on with it once, and a later look
     /// neither hands it nor tells the runner again; nothing else (the runner's come-up) would take it up while the shell runs.
@@ -1333,7 +1332,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1b2: an urgent ask's hand to a running asker this loop runs, whose answer was lost, kept the word on the record for its
+    /// An urgent ask's hand to a running asker this loop runs, whose answer is lost, keeps the word on the record for its
     /// run; the look that reads it back holds it in the run's inbox under the record's id, as the hand would have, so it reaches the next
     /// step, once, before the ask is marked handed. A later look holds nothing again.
     /// </summary>
@@ -1374,7 +1373,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HELPERWAIT1b (Codex's round-3 #4 on COWORKUX1): the line is followed as many links as the door's walk (<see cref="SolicitedHand.Bound"/>)
+    /// The line is followed as many links as the door's walk (<see cref="SolicitedHand.Bound"/>)
     /// at most, and one longer is refused with its reason, never handed to the part where the bound stopped, which the line has left; the
     /// answer stays with the helper for the person. A line of exactly the bound's links reaches its newest part.
     /// </summary>
@@ -1410,7 +1409,7 @@ public sealed class HelperLookTests : IDisposable
         Assert.Contains($"past {SolicitedHand.Bound} parts", Assert.Single(events));
     }
 
-    // ——— COMMS1b (the comms design §4.2, §13 points 1, 3 and 4): against a host with the one door for solicited answers.
+    // ——— Against a host with the one door for solicited answers.
 
     /// <summary>The host with the one door, the asker's helper answered on file.</summary>
     private OpinionStandIn Door(string state = "completed", string kind = "drive")
@@ -1499,7 +1498,7 @@ public sealed class HelperLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §13 point 4: a hand whose answer was lost after its keep marks its attempt as made under the key; a hand-over then moves the waiting
+    /// A hand whose answer is lost after its keep marks its attempt as made under the key; a hand-over then moves the waiting
     /// word to the new head, and the next look asks the door again, which answers it already waiting there, naming the record that holds it.
     /// The look finishes the dispatch on that record, once, and marks the ask handed: nothing is kept twice, and the left record is told nothing.
     /// </summary>
@@ -1574,7 +1573,7 @@ public sealed class HelperLookTests : IDisposable
         Assert.False(await driver.WaitsOnOwnHelperAsync("s1", quest, since, CancellationToken.None));
         Assert.True(await driver.WaitsOnOwnHelperAsync("s1", quest, At.AddMinutes(2), CancellationToken.None));
 
-        // 🔴 Codex's round-2 #3: a question on file that does not read is no proof none was asked, so the turn parks for the person.
+        // A question on file that does not read is no proof none has been asked, so the turn parks for the person.
         File.WriteAllText(DaorisHome.Entry(_home, HomeEntry.Sessions, "s1.question.json"), "{ \"id\": \"k1\", \"question\": ");
         Assert.False(await driver.WaitsOnOwnHelperAsync("s1", quest, At.AddMinutes(2), CancellationToken.None));
     }
@@ -1599,13 +1598,13 @@ public sealed class HelperLookTests : IDisposable
         Assert.DoesNotContain("claude-code", others);
         Assert.DoesNotContain("claude-code-acp", others);
 
-        // HELPERDEFAULT1: the default's agents are those set up here, never the asker's own family where none is named.
+        // The default's agents are those set up here, never the asker's own family where none is named.
         var setUp = HelperRule.Default.Over(["claude-code-acp", "codex-acp"]);
         Assert.Equal(["codex-acp"], HelperChoice.Candidates(Ask(null), setUp, adapters, "claude-code"));
         Assert.Equal(["claude-code-acp"], HelperChoice.Candidates(Ask("claude-code-acp"), setUp, adapters, "claude-code"));
     }
 
-    // ——— COAGENT1a (D199 point 5; the co-agent design §2.5): the asker's work in progress, captured at its turn boundary.
+    // ——— The asker's work in progress, captured at its turn boundary.
 
     /// <summary>
     /// An asker mid-turn is not captured: the ask waits `turn`, nothing is read of its tree, and the look after its turn's end

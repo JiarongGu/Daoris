@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The gates' runs of a repository that declares no runner (INTEGRATE1f part f2; the integration design §5.9 last paragraph): each declared
+/// The gates' runs of a repository that declares no runner: each declared
 /// gate's own <c>run</c> command, whole, as a step in the integration tree, in the candidate's job, composed with the gate environment, its
 /// exit its verdict; a probe being the gate run again. A failure names no test (the output is not read for tests), so it is signed by its
 /// step, and the merge tool's rule for a gate that names no test judges it. The caller is its own runner here, so the composition digest is

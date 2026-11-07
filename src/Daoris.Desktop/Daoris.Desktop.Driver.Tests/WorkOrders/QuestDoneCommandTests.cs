@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// QUESTCLOSE1 (D126's note, D50): <c>daoris quest done</c>, the terminal's door to the person's done, beside the quest
+/// <c>daoris quest done</c>, the terminal's door to the person's done, beside the quest
 /// page's <i>Mark done…</i>. It posts the person's words to the service's own door for it, never to respond's, and says the
 /// service's sentence: 0 closed, 1 refused (a closed quest, no such quest), 2 the usage.
 /// </summary>

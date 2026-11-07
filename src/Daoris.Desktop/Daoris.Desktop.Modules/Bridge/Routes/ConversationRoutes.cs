@@ -204,6 +204,7 @@ public sealed class ConversationRoutes(DriverContext context)
     [DriverRoute("SESSION_HAND_OVER", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_HAND_OVER", Session = "id")]
     [GroundSession("SESSION_HAND_OVER", "id")]
+    [GroundRefusal("SESSION_HAND_OVER", "hand-over", "id", "agent", "account", "said")]
     [Says("SESSION_HAND_OVER", "id:session", "agent:agent")]
     [Publishes("SESSION_HAND_OVER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionHandOverAsync(SessionHandOverPress press, CancellationToken cancellationToken)
@@ -243,8 +244,9 @@ public sealed class ConversationRoutes(DriverContext context)
                 .ConfigureAwait(false);
             if (answer.Kept)
             {
-                // The session's record names who asked, the person by the window's press.
-                HandOverAskNotes.Say(_loop.Events, _loop.Output, id, HandOverAskNotes.AskedBy(HandOverAsker.Window, agent));
+                // The session's record names who asked: the steward where its granted act runs this route, else the person by the window's press.
+                var asker = PipeDoor.Role?.Role == AppointedRoles.Steward ? HandOverAsker.Steward : HandOverAsker.Window;
+                HandOverAskNotes.Say(_loop.Events, _loop.Output, id, HandOverAskNotes.AskedBy(asker, agent));
                 SessionWatch.Of(_loop.Events).Pressed(id);
                 _loop.Nudge();
             }

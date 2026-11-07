@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Process starts, a few at a time and never on the caller's thread (UIFREEZE1): .NET starts every process under one lock, a
+/// Process starts, a few at a time and never on the caller's thread: .NET starts every process under one lock, a
 /// start an antivirus hook holds keeps it, and a sweep's git fan-out once parked 51 threads on it, the window's among them.
 /// </summary>
 /// <remarks>
@@ -20,7 +20,7 @@ public sealed class ProcessStartsTests
 
     private static ProcessStartInfo Info() => new("git") { UseShellExecute = false };
 
-    // LOOKWAIT1b: the clock a stage's span reads, in milliseconds, moved by hand so a wait's length is the test's to say.
+    // The clock a stage's span reads, in milliseconds, moved by hand so a wait's length is the test's to say.
     private long _now;
 
     private LookStages Stages() => new(clock: () => Volatile.Read(ref _now));
@@ -40,8 +40,8 @@ public sealed class ProcessStartsTests
     }
 
     /// <summary>
-    /// 🔴 LOOKWAIT1b (D181 point 6): a start a stage's work makes waits for its place, and the stage's line says that wait as its
-    /// queue, apart from its hold, so a stage slow for want of a place no longer reads as slow work.
+    /// 🔴 A start a stage's work makes waits for its place, and the stage's line says that wait as its
+    /// queue, apart from its hold, so a stage slow for want of a place does not read as slow work.
     /// </summary>
     [Fact]
     public async Task A_start_that_waits_for_a_place_in_a_stage_s_work_is_that_stage_s_queue_apart_from_its_hold()
@@ -153,7 +153,7 @@ public sealed class ProcessStartsTests
         Assert.Equal("landing=2000", stages.Take());
     }
 
-    /// <summary>A wait given up when its caller closes was still waited: the stage's queue says it.</summary>
+    /// <summary>A wait given up when its caller closes is still a wait: the stage's queue says it.</summary>
     [Fact]
     public async Task A_wait_given_up_is_still_the_queue_it_waited()
     {
@@ -185,7 +185,7 @@ public sealed class ProcessStartsTests
         Assert.Equal(ProcessStarts.Bound, ProcessStarts.Shared.Places);
     }
 
-    /// <summary>PARALLEL1d (D181 point 5): the background takes three of the four, so one is always a person's.</summary>
+    /// <summary>The background takes three of the four, so one is always a person's.</summary>
     [Fact]
     public void The_shared_gate_leaves_one_of_its_four_places_to_a_person()
     {
@@ -194,7 +194,7 @@ public sealed class ProcessStartsTests
     }
 
     /// <summary>
-    /// The row's proof (PARALLEL1d): four slow background starts held, as a git fan-out's are in an antivirus scan, and a
+    /// Four slow background starts held, as a git fan-out's are in an antivirus scan, and a
     /// person's agent start still starts, at once, while they are held.
     /// </summary>
     [Fact]
@@ -367,7 +367,7 @@ public sealed class ProcessStartsTests
             t_calling = false;
         }
 
-        // Every call came back to its caller while every start it made was still held.
+        // Every call comes back to its caller while every start it made stays held.
         Assert.All(calls, call => Assert.False(call.IsCompleted));
         Assert.True(SpinWait.SpinUntil(() => Volatile.Read(ref inside) == 4, Poll.Patience), "four starts never ran");
         // The rest wait on the gate, not on a thread: given the time, none more goes in.

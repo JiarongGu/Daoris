@@ -14,27 +14,27 @@ public sealed record LandedItem(
     public bool Removable => Kind is LandedKind.OnLine or LandedKind.Merged or LandedKind.Inside or LandedKind.PullRequest;
 
     /// <summary>
-    /// The latest answer about its pull request, where one is kept (PLUGHOOK1a, design §2.5): what a row says the platform
+    /// The latest answer about its pull request, where one is kept: what a row says the platform
     /// answered, and when.
     /// </summary>
     public PullRequestState? State { get; init; }
 
     /// <summary>
-    /// Why a kept answer does not clear it, where one is kept and does not (design §2.3): the state (<c>open</c>, <c>abandoned</c>,
+    /// Why a kept answer does not clear it, where one is kept and does not: the state (<c>open</c>, <c>abandoned</c>,
     /// <c>unknown</c>) or one of <see cref="PullRequestCodes"/>. Null where nothing is kept, or the answer cleared it.
     /// </summary>
     public string? StateCode { get; init; }
 
-    /// <summary>The latest ask that failed since that answer, where one did (design §2.4).</summary>
+    /// <summary>The latest ask that failed since that answer, where one did.</summary>
     public PullRequestAskFailed? AskFailed { get; init; }
 
     /// <summary>
-    /// Why this look did not ask about its pull request, where it would have (PLUGHOOK1c, design §2.1): no plugin to ask, the
+    /// Why this look did not ask about its pull request, where it would have: no plugin to ask, the
     /// plugin not ready, or the occasion's bound reached first. Null where it was asked, was not due, or its work reads on the line.
     /// </summary>
     public PullRequestNotAsked? NotAsked { get; init; }
 
-    /// <summary>When the landing recorded this branch (LANDRETIRE1 part 2), the age a row says; null where a row was made from no record.</summary>
+    /// <summary>When the landing recorded this branch, the age a row says; null where a row is made from no record.</summary>
     public DateTimeOffset? LandedAt { get; init; }
 
     /// <summary>The quest the landing is named for, where it names one.</summary>

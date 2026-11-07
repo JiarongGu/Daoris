@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAND3's terminal door, without git: a failed or superseded attempt's branch is offered for removal beside the clean-up's
+/// The terminal door, without git: a failed or superseded attempt's branch is offered for removal beside the clean-up's
 /// row, `trees remove` tells a path from a session or its branch, and the record finds a branch by either name. The git
 /// half is <c>LandingTidyTests</c>.
 /// </summary>
@@ -17,7 +17,7 @@ public sealed class SessionBranchDoorTests : IDisposable
         {
             Directory.Delete(_home, recursive: true);
         }
-        catch (DirectoryNotFoundException) { /* nothing was written */ }
+        catch (DirectoryNotFoundException) { /* nothing written */ }
     }
 
     /// <summary>Only a kept branch holding commits no branch of the person's holds is offered, and the offer is the door's words.</summary>
@@ -39,7 +39,7 @@ public sealed class SessionBranchDoorTests : IDisposable
     }
 
     /// <summary>
-    /// LAND4: beside a kept branch whose tree is still here and holds commits no branch of the person's holds, the session that
+    /// Beside a kept branch whose tree is still here and holds commits no branch of the person's holds, the session that
     /// tree is, the newest of this machine's naming it, and the door that accepts its work, whatever its ending. Never for a
     /// branch whose tree is gone (its discard is the door), one with no commits, one no record of this machine's names, or
     /// one a session still holds.
@@ -75,7 +75,7 @@ public sealed class SessionBranchDoorTests : IDisposable
         else Assert.Equal($"if its work is wanted: `daoris tree land 4e6837ed` accepts it (session 4e6837ed, {state}, its tree here)", offer);
     }
 
-    /// <summary>LAND4: records the service does not answer name no session, so a clean-up's list stands without its landing lines.</summary>
+    /// <summary>Records the service does not answer name no session, so a clean-up's list stands without its landing lines.</summary>
     [Fact]
     public async Task Records_the_service_does_not_answer_name_no_session()
     {

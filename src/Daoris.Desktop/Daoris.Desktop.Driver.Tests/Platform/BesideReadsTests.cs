@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The reads the home's own files make beside their writer (BINDRACE1, READSHARE1), declared in Platform so it names nothing of Store
-/// (FOUNDATION1 mod-ii): each reads a file while the move that landed it still holds it (<see cref="MoveHold"/>), and
+/// The reads the home's own files make beside their writer, declared in Platform so it names nothing of Store:
+/// each reads a file while the move that landed it still holds it (<see cref="MoveHold"/>), and
 /// <see cref="AtomicFile"/>'s spellings answer as they do.
 /// </summary>
 public sealed class BesideReadsTests : IDisposable

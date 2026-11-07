@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A hosted service's pull-request API on this machine's loopback (D241 points 5 and 8): the calls a pull-request plugin makes with the
+/// A hosted service's pull-request API on this machine's loopback: the calls a pull-request plugin makes with the
 /// identity's token, answered as GitHub's REST API and Azure DevOps' answer them, so a plugin pointed at <see cref="Address"/> opens and
 /// reads a pull request with no service, CLI or sign-in of anyone's. It admits only the tokens a test accepts and keeps none it is shown.
 /// </summary>
@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// where one is open for the branch); <c>GET …/pulls/{number}</c>; <c>GET …/pulls?head={owner}:{branch}&amp;state=all</c>. A token as
 /// <c>Bearer</c> or <c>token</c>; a refused one answers 401 <c>Bad credentials</c>.</para>
 /// <para>Azure DevOps' shape: <c>POST /{org}/{project}/_apis/git/repositories/{repo}/pullrequests</c> with <c>sourceRefName</c>,
-/// <c>targetRefName</c>, <c>title</c> and <c>description</c> (201, or 409 <c>TF401179</c> where one is active);
+/// <c>targetRefName</c>, <c>title</c> and <c>description</c> (201, or 409 where one is active);
 /// <c>GET …/pullrequests/{id}</c>; <c>GET …/pullrequests?searchCriteria.sourceRefName=…&amp;searchCriteria.status=all</c>. A token as
 /// HTTP Basic with an empty user, or <c>Bearer</c>; a refused one answers 401.</para>
 /// <para>A test moves a pull request as the service's people would: <see cref="Complete"/> merges it, <see cref="Abandon"/> closes it.
@@ -43,7 +43,7 @@ public sealed partial class PullRequestApiHost : IAsyncLifetime
         get { lock (_pulls) return [.. _pulls]; }
     }
 
-    /// <summary>Every call answered, in order, with whether its token was admitted.</summary>
+    /// <summary>Every call answered, in order, with whether its token is admitted.</summary>
     public IReadOnlyList<PullRequestApiCall> Calls
     {
         get { lock (_calls) return [.. _calls]; }
@@ -371,5 +371,5 @@ public sealed record HostedPullRequest(
     public const string Closed = "closed";
 }
 
-/// <summary>A call the stand-in API answered: its method, its target, and whether its token was admitted (never the token).</summary>
+/// <summary>A call the stand-in API answered: its method, its target, and whether its token is admitted (never the token).</summary>
 public sealed record PullRequestApiCall(string Method, string Target, bool Admitted);

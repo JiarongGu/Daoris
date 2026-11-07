@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The one reader of a remote's address (GITAUTH1b; the git-auth design §4.4): it takes Daoris's own prefix off, once, and no other
+/// The one reader of a remote's address: it takes Daoris's own prefix off, once, and no other
 /// code of the desktop's reads <c>remote get-url</c> or <c>remote -v</c>, so no address Daoris keeps, says or judges carries the prefix.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
@@ -14,7 +14,7 @@ public sealed class GitRemotesTests
 
     /// <summary>
     /// Files that name the words and read no address: the reader itself, the read-only classifier of git's commands, and a session's
-    /// words on what the command shows under the rewrite (GITAUTH1b), and the push act, which counts the push addresses a remote names (a
+    /// words on what the command shows under the rewrite, and the push act, which counts the push addresses a remote names (a
     /// push goes to the one its grant names) and says none of them.
     /// </summary>
     private static readonly string[] Excused = ["GitRemotes.cs", "RefSnapshot.cs", "GitRewriteWords.cs", "GitPushActs.cs"];

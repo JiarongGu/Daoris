@@ -6,11 +6,11 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A workspace plan's file, <c>&lt;home&gt;/setup/&lt;workspace&gt;.json</c> (WSSETUP6, D124 §4.1): the person's choices and
-/// the quests the plan published, machine-local under the home (D63).
+/// A workspace plan's file, <c>&lt;home&gt;/setup/&lt;workspace&gt;.json</c>: the person's choices and
+/// the quests the plan published, machine-local under the home.
 /// </summary>
 /// <remarks>
-/// <para><b>The driver's alone</b> (D124 §10: not <c>driver.json</c>, which two twins keep): no other artefact reads it, so it
+/// <para><b>The driver's alone</b> (not <c>driver.json</c>, which two twins keep): no other artefact reads it, so it
 /// has no twin. The file is named by the rule the intake's room is (<c>IntakeRoom.SafeName</c>), so two workspaces never share
 /// one, and it says its workspace's own spelling inside.</para>
 ///

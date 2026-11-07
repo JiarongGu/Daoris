@@ -39,11 +39,11 @@ public sealed record ServiceReply(int Status, string Payload)
     public bool Ok => Status is >= 200 and <= 299;
 
     /// <summary>
-    /// The tier the search answered with, as its <c>x-daoris-tier</c> header says it (TIER1, D24): read for a brainstorm's packet
-    /// (BRAINSTORM1a), which says which tier found its sources; null where the door carries no such header.
+    /// The tier the search answered with, as its <c>x-daoris-tier</c> header says it: read for a brainstorm's packet,
+    /// which says which tier found its sources; null where the door carries no such header.
     /// </summary>
     public string? Tier { get; init; }
 
-    /// <summary>The service host's process run; absent on a host before FOUNDATION1 d-i.</summary>
+    /// <summary>The service host's process run; absent on a host that does not report one.</summary>
     public string? Run { get; init; }
 }

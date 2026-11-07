@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTROOM1a (D177 points 1, 2 and 7): a meeting's packet is its own (<c>meeting: 1</c>), frozen and digested as the brainstorm's
+/// A meeting's packet is its own (<c>meeting: 1</c>), frozen and digested as the brainstorm's
 /// is, from the brainstorm's assembly of the sources, with the participants in the person's order and the transcript so far; a
 /// refresh is a new packet under a new digest; a message is read by its shape alone, and never names its author.
 /// </summary>

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The world a place's plan reads on this machine (AGENTSPLACE1a2): the service's registry and quests, and each repository's line as git objects
+/// The world a place's plan reads on this machine: the service's registry and quests, and each repository's line as git objects
 /// in its checkout here, with its <c>origin</c>'s host. No fetch, no tool's version, no account and no plugin is asked.
 /// </summary>
 public sealed class PlaceWorld(ServiceClient service) : IPlaceWorld

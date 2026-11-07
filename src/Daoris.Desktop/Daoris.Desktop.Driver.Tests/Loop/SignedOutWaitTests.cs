@@ -4,16 +4,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// UX6d1 (D150 §6.2, D130 §3.3, D125's TOOL6g note): a start held on accounts not signed in with none cooling waits for a
+/// A start held on accounts not signed in with none cooling waits for a
 /// person, not a time, and the look reports it as a wait as it reports a cool-off's: no time, its signed-out accounts named,
-/// an ask's intake among what it holds. Before, a wait was made only from a cool-off and a consideration names quests
-/// alone, so an intake held so was the machine log's <c>starts.waiting</c> line and nothing else, and *What needs you*
-/// could not list it.
+/// an ask's intake among what it holds, so *What needs you* can list an intake held so, not only the machine log's
+/// <c>starts.waiting</c> line.
 /// </summary>
 /// <remarks>
 /// Nothing here starts a process. The agent is present by a file look (<see cref="TestAgent.ProbeByPresence"/>), as
-/// <c>AccountNamesSaidTests</c>' walk is; its accounts read signed out within the hour, so a look asks none of them
-/// (ROSTER1); the quest's repository opens a tree per session, so its start asks git nothing before its selection holds it;
+/// <c>AccountNamesSaidTests</c>' walk is; its accounts read signed out within the hour, so a look asks none of them;
+/// the quest's repository opens a tree per session, so its start asks git nothing before its selection holds it;
 /// and the service's doors stand in (<see cref="StandInLedger"/>), its asks among them.
 /// </remarks>
 public sealed class SignedOutWaitTests : IDisposable
@@ -61,7 +60,7 @@ public sealed class SignedOutWaitTests : IDisposable
             "build", [new ActorChoice("fake")]),
         "intake", [new ActorChoice("fake")]);
 
-    /// <summary>A roster whose every account of the list read signed out a moment ago (TOOL6g), and none cools.</summary>
+    /// <summary>A roster whose every account of the list reads signed out a moment ago, and none cools.</summary>
     private HarnessRoster SignedOut()
     {
         var roster = new HarnessRoster(_adapters, Settings) { Clock = () => Now, Zone = Zone };
@@ -142,7 +141,7 @@ public sealed class SignedOutWaitTests : IDisposable
     }
 
     /// <summary>
-    /// OWNSPACE1a (D175 point 2): with no Daoris account at all, a start waits for a sign-in as one held on signed-out accounts
+    /// With no Daoris account at all, a start waits for a sign-in as one held on signed-out accounts
     /// does, naming none, so the look reports it as a wait and the log says it once; the tool's own home is never the fallback.
     /// </summary>
     [Fact]
@@ -164,7 +163,7 @@ public sealed class SignedOutWaitTests : IDisposable
         Assert.Equal(((DateTimeOffset?)null, (string?)null), (wait.Until, wait.Account));
         Assert.Equal(["a1"], wait.Asks);
         Assert.Empty(wait.SignedOut);
-        // OWNSPACE1b-B: a fact the page says the hold from, never an empty list.
+        // A fact the page says the hold from, never an empty list.
         Assert.True(wait.NoAccount);
         Assert.StartsWith("No `fake` account of Daoris's own is signed in", wait.Sentence);
         Assert.Single(lines, l => l.Event == "starts.waiting");

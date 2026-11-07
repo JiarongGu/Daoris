@@ -7,7 +7,7 @@ import type { CourseRead, LineSupervision } from './lineSupervision';
 import { SessionHead } from './SessionHead';
 import { SupervisorCourseCard } from './SupervisorCourseCard';
 
-// CONTEXTDRIVE1j (the context counters design §5): the supervisor's decision on a point a person's `refer` rule held a line at. The card
+// The supervisor's decision on a point a person's `refer` rule held a line at. The card
 // stands while the decision is held, with *Overrule*; the record's *Details*, opened, says it whole in every state. Held, gone on,
 // overruled, one that did not go on, and one left to the person; at the frame's widths, in English, 中文 and dark.
 

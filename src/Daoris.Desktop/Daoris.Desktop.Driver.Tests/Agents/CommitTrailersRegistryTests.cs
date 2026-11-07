@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row h: the commit trailer is told from the maker the registration states for a door (a plugin's own, any other's its
-/// provider's), never from the old seam's toolchain, and is the table it was for every built-in door and for a plugin's door that
+/// The commit trailer is told from the maker the registration states for a door (a plugin's own, any other's its
+/// provider's), never from the toolchain, and is the same table for every built-in door and for a plugin's door that
 /// declares <c>OpenAI</c>, <c>Anthropic</c> or none.
 /// </summary>
 public sealed class CommitTrailersRegistryTests

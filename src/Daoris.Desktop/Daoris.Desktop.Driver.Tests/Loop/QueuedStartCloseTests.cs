@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1f (D181's PARALLEL1de note, D137 §2.4, D104): a run that goes on with the person's words waits for its place to start on
+/// A run that goes on with the person's words waits for its place to start on
 /// the loop's token, so a driver closing while it waits ends the wait. No run of it began, so what the start took is put back: an
 /// ended record goes back as it ended with its words waiting, as a failed spawn's does, and nothing is handed on while the driver
 /// closes; a park, which back to waiting on the person the ledger would clear of its words, is closed as the close's interrupted
@@ -46,7 +46,7 @@ public sealed class QueuedStartCloseTests : IDisposable
 
     /// <summary>
     /// 🔴 An ended record the person wrote to: the move to working took it up, and the driver closed before its run started. It goes
-    /// back as it ended, its note as it was and its words waiting on it, and nothing is handed on as a fallback.
+    /// back as it ended, its note unchanged and its words waiting on it, and nothing is handed on as a fallback.
     /// </summary>
     [Fact]
     public async Task An_ended_records_run_closed_before_its_start_goes_back_as_it_ended_with_its_words()
@@ -74,7 +74,7 @@ public sealed class QueuedStartCloseTests : IDisposable
 
     /// <summary>
     /// 🔴 A park the person answered: back to waiting on the person the ledger would clear its words (a park asks anew), so the
-    /// close records it as the driver's, stopped and interrupted (D104), its words kept on it for the next start to go on with.
+    /// close records it as the driver's, stopped and interrupted, its words kept on it for the next start to go on with.
     /// Never ended as a fallback, which would carry its words to a new session as the driver closes.
     /// </summary>
     [Fact]
@@ -99,7 +99,7 @@ public sealed class QueuedStartCloseTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 A native run going on with words the person said while it worked (MSG1b): the driver closed while its run's go-on waited for a
+    /// 🔴 A native run going on with words the person said while it worked: the driver closed while its run's go-on waited for a
     /// place. That process never started, so the words it took are said never to have reached the session, never dropped unsaid.
     /// </summary>
     [Fact]
@@ -136,7 +136,7 @@ public sealed class QueuedStartCloseTests : IDisposable
     }
 
     /// <summary>
-    /// COWORKVIEW1a rule 4: a resume, moved first, writes its process's <c>start</c> as its move returns, before the start gate, under a
+    /// A resume, moved first, writes its process's <c>start</c> as its move returns, before the start gate, under a
     /// token of this Daoris process's. Put back before its spawn, that token is told so once and leaves, no line after its <c>start</c>.
     /// </summary>
     [Fact]

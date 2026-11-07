@@ -65,9 +65,9 @@ public sealed class TreeLeftoversTests : IDisposable
     }
 
     /// <summary>
-    /// TREECLEANFREE1: what outlives a holder's exit (a scanner's read of the folder) is a handle the clean-up meets as
+    /// What outlives a holder's exit (a scanner's read of the folder) is a handle the clean-up meets as
     /// well as the holder's. One that refuses every open fails the clean-up's look at the folder, and a clean-up that
-    /// passed over what it could not look at left the folder and said nothing: every press says what became of it.
+    /// passes over what it cannot look at leaves the folder and says nothing: every press says what became of it.
     /// </summary>
     [Theory]
     [InlineData(FolderHold.Exclusive)]

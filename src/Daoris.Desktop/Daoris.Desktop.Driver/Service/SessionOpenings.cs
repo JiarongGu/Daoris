@@ -17,12 +17,12 @@ public sealed class SessionOpenings
 
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
     /// <param name="setup">
-    /// That the quest is a set-up (<see cref="SetupQuests"/>), for the watchers alone (WSSETUP11): the ledger is not told, and the machine log
+    /// That the quest is a set-up (<see cref="SetupQuests"/>), for the watchers alone: the ledger is not told, and the machine log
     /// marks the session's start.
     /// </param>
-    /// <param name="from">The session this one carries on, why and who asked (MIXAGENT1a-iii), for its record; null for none.</param>
+    /// <param name="from">The session this one carries on, why and who asked, for its record; null for none.</param>
     /// <param name="access">
-    /// The access setup this start resolved (AUTONOMY1a, D184 point 1), each pause with its value, for its record, which keeps it on this
+    /// The access setup this start resolved, each pause with its value, for its record, which keeps it on this
     /// machine alone; null for none.
     /// </param>
     public async Task<(string? SessionId, string Message)> SessionAsync(
@@ -35,13 +35,13 @@ public sealed class SessionOpenings
             .ConfigureAwait(false);
 
     /// <summary>
-    /// <see cref="SessionAsync"/> through the keyed door (FOUNDATION1d-ii part 5, <see cref="SessionOpenDoors.OpenAsync"/>), asked to move
+    /// <see cref="SessionAsync"/> through the keyed door (<see cref="SessionOpenDoors.OpenAsync"/>), asked to move
     /// <paramref name="moves"/>' words onto the driven record it opens, in the open's own step: sent only to a host whose <c>opens</c> mark is 2,
     /// under a key of its own, so a host below it opens as before and moves nothing. A lost answer is held, naming the records that continue the
     /// one left, and opens nothing here.
     /// </summary>
     /// <param name="moves">
-    /// The words to move; null for an open that moves none, which still goes under its key (FOUNDATION1f-iv part a) and then names the record it
+    /// The words to move; null for an open that moves none, which still goes under its key and then names the record it
     /// continues by <paramref name="from"/>.
     /// </param>
     /// <param name="opens">The key the open is sent under: the move record's, written before the open; null draws one of the open's own.</param>
@@ -80,10 +80,10 @@ public sealed class SessionOpenings
             access is { Count: > 0 } ? new Dictionary<string, string>(access) : null, "build");
 
     /// <summary>
-    /// Ask the ledger to open a CHAT in a repository (D49 §3) — a person's session, serving no quest yet. A refusal is an answer, not an
+    /// Ask the ledger to open a CHAT in a repository — a person's session, serving no quest yet. A refusal is an answer, not an
     /// exception: the usual one is that the repository is busy, and the sentence names what holds it.
     /// </summary>
-    /// <param name="from">The conversation this one continues, handed over (MIXAGENT1a-iii), for its record; null for none.</param>
+    /// <param name="from">The conversation this one continues, handed over, for its record; null for none.</param>
     public async Task<(string? SessionId, string Message)> ChatAsync(
         string repository, string adapter, string? doorVersion = null, string? profile = null,
         string? tree = null, string? baseCommit = null, CancellationToken ct = default, ContinuedFrom? from = null) =>
@@ -93,7 +93,7 @@ public sealed class SessionOpenings
             .ConfigureAwait(false);
 
     /// <summary>
-    /// <see cref="ChatAsync"/> through the keyed door (FOUNDATION1d-ii part 4, <see cref="SessionOpenDoors.OpenAsync"/>), asked to move
+    /// <see cref="ChatAsync"/> through the keyed door (<see cref="SessionOpenDoors.OpenAsync"/>), asked to move
     /// <paramref name="moves"/>' words onto the record it opens in the open's own step: sent only to a host whose <c>opens</c> mark is 2, under a
     /// key of its own, so a host below it opens as before and moves nothing. A lost answer is held, naming the records that continue the one
     /// left, and opens nothing here.
@@ -118,7 +118,7 @@ public sealed class SessionOpenings
         new(repository, adapter, doorVersion, profile, tree, baseCommit, from?.Session, from?.Why, from?.By, "chat");
 
     /// <summary>
-    /// Ask the ledger to open an INTAKE for an ask (D65 §1b), in the room this side is about to run it in. A refusal is an answer, not an
+    /// Ask the ledger to open an INTAKE for an ask, in the room this side is about to run it in. A refusal is an answer, not an
     /// exception — usually that the ask is already answered.
     /// </summary>
     public async Task<(string? SessionId, string Message)> IntakeAsync(
@@ -130,15 +130,15 @@ public sealed class SessionOpenings
             .ConfigureAwait(false);
 
     /// <summary>
-    /// Ask the ledger to open Ask Daoris's conversation (HELP1a, D89), in the room this side is about to run it in. A refusal is an answer, not
+    /// Ask the ledger to open Ask Daoris's conversation, in the room this side is about to run it in. A refusal is an answer, not
     /// an exception — usually that one is already running in its workspace.
     /// </summary>
     /// <param name="workspace">
-    /// The workspace the person's window was on at the press, which the record keeps (ASKSCOPE1a); null sends none, which the ledger records as
-    /// <c>default</c>, as it did before.
+    /// The workspace the person's window is on at the press, which the record keeps; null sends none, which the ledger records as
+    /// <c>default</c>.
     /// </param>
     /// <param name="mode">
-    /// The access mode its start gets (HELPMODE1a2, D183 point 3), the effective one, which the record keeps; null sends none, which the ledger
+    /// The access mode its start gets, the effective one, which the record keeps; null sends none, which the ledger
     /// records as restricted.
     /// </param>
     public async Task<(string? SessionId, string Message)> HelpAsync(
@@ -158,7 +158,7 @@ public sealed class SessionOpenings
     /// <param name="kind">Which door this is, for the watchers (<see cref="SessionOpened"/>).</param>
     /// <param name="adapter">The adapter asked for — the record's own, when the answer carries one, wins.</param>
     /// <param name="repository">The repository asked for, where the door names one — the record's own wins.</param>
-    /// <param name="setup">That a driven session's quest is a set-up, for the watchers (WSSETUP11).</param>
+    /// <param name="setup">That a driven session's quest is a set-up, for the watchers.</param>
     private async Task<(string? SessionId, string Message)> OpenRecordAsync<TAnswer>(
         IRoute<TAnswer> route, Func<TAnswer, (SessionResponse? Session, string? Message)> read, string kind, string adapter,
         string? repository, CancellationToken ct, bool setup = false) where TAnswer : class
@@ -172,9 +172,9 @@ public sealed class SessionOpenings
         var (session, message) = read(answer);
         if (session?.Id is { } id)
         {
-            // What the ledger recorded rather than what was asked: a driven session names its quest, and the record answers with the quest's
+            // What the ledger recorded rather than what is asked: a driven session names its quest, and the record answers with the quest's
             // receiver; a blank adapter takes the ledger's default. The workspace is the record's too, the circle its repository is wired into
-            // on this machine (D48).
+            // on this machine.
             _service.RecordOpened(new SessionOpened(id, kind, session.Door ?? adapter, session.Repository ?? repository)
             {
                 Workspace = session.Workspace,

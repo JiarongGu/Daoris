@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's rooms written again as the facts they said were not read yet land (PARALLEL1a, D181 point 2): only a room that said
+/// Ask Daoris's rooms written again as the facts they said were not read yet land: only a room that said
 /// something not read yet, one writing at a time, and the landings meanwhile written once after. Each workspace's room is written
-/// from its own workspace's facts (ASKSCOPE1b, <see cref="HelpMachine.Within"/>), and a room that said nothing is not read yet is
+/// from its own workspace's facts (<see cref="HelpMachine.Within"/>), and a room that said nothing is not read yet is
 /// never written, whichever workspace's facts landed.
 /// </summary>
 /// <param name="describe">The whole machine from the facts as they stand now; null where they cannot say it yet. Reads no git.</param>

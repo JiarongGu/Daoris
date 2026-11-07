@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// dsh's spawn over the protocol door (ACP3/D53): <c>dsh --profile acp</c>, the automation surface its maker kept, with its stdin open
+/// dsh's spawn over the protocol door: <c>dsh --profile acp</c>, the automation surface its maker kept, with its stdin open
 /// for the driver's frames. 🔴 Its wire carries no posture (0.1.6-alpha.2 answers <c>session/new</c> with no <c>modes</c>), so the posture
-/// is its own variable read at boot, set by the recipe: <c>workspace-write</c> is D37 in its vocabulary, stated even where it is also its
+/// is its own variable read at boot, set by the recipe: <c>workspace-write</c> is the posture in its vocabulary, stated even where it is also its
 /// default, since a posture that happens to match somebody else's default is not one Daoris has set. It holds no conversation.
 /// </summary>
 internal sealed class DshSpawn : ISpawn
@@ -17,8 +17,8 @@ internal sealed class DshSpawn : ISpawn
     public const string PermissionVariable = "DSH_PERMISSION_MODE";
 
     /// <summary>
-    /// D37 in dsh's vocabulary: writes inside the workspace proceed, anything past the sandbox asks, which over ACP is refused by
-    /// construction (D52). Never <c>danger-full-access</c>, which is approvals off.
+    /// The posture in dsh's vocabulary: writes inside the workspace proceed, anything past the sandbox asks, which over ACP is refused by
+    /// construction. Never <c>danger-full-access</c>, which is approvals off.
     /// </summary>
     public const string Posture = "workspace-write";
 

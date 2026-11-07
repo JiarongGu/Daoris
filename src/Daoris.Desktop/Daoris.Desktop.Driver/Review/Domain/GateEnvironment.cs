@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The environment a gate is composed with (INTEGRATE1f part f1; the integration design §5.5; D215's note on INTEGRATE1a): a gate never
+/// The environment a gate is composed with: a gate never
 /// inherits a person's or the steward's shell, since Daoris starts it. Its environment is composed <b>from the one it is given</b>, never by
 /// inheriting and then adding, because an inherited block cannot lose a name: the Daoris names (the home, the roles, the keys, the capacity),
 /// git's repository-locating variables and the merge tool's switches are removed; the build servers of the gate's own are added; the names
@@ -16,7 +16,7 @@ namespace Daoris.Driver;
 /// shared, so both hold one table, the driver tests' <c>fixtures/gate-environment.json</c>, row for row (<c>GateEnvironmentTests</c>,
 /// <c>integration-gates.test.ts</c>). The tool also removes its tool tests' two stand-in variables, which no gate of the driver's meets, and
 /// gives no gate the hold marker until its own hold plumbing is built; a name folded by case is held once here, as a process environment on
-/// Windows holds it. The runner's own inputs (§5.9) are set on the runner's job alone by its caller, never on a gate, and the census names them there.
+/// Windows holds it. The runner's own inputs are set on the runner's job alone by its caller, never on a gate, and the census names them there.
 /// </remarks>
 internal static class GateEnvironment
 {

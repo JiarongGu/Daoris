@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris remote sync</c>'s pass through the running Daoris (RPCOPEN1, RPC1e, the terminal RPC design §7.2): each circle a
+/// <c>daoris remote sync</c>'s pass through the running Daoris: each circle a
 /// <c>SYNC_NOW</c>, the pass's report the same as the set's own, against a stand-in of the pipe that answers as the route does.
 /// </summary>
 public sealed class SyncThroughInstanceTests

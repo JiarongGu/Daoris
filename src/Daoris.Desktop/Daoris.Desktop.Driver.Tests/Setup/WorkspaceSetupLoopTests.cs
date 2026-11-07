@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Where the loop works a workspace plan (WSSETUP6, D124 §4.1): each look, before it reads the quests, so a set-up the plan
+/// Where the loop works a workspace plan: each look, before it reads the quests, so a set-up the plan
 /// publishes is planned and started in that same look; a home with no plan to work reads nothing; and a plan the service
 /// could not answer for is said, and the look goes on. Over the stand-in ledger and the stand-in run, with the plan's world
 /// standing in, so nothing here starts a process.
@@ -52,7 +52,7 @@ public sealed class WorkspaceSetupLoopTests : IDisposable
         Assert.Equal(quest.Id, WorkspaceSetupFile.Load(_home, "work").Plan!.Published["atlas"]);
     }
 
-    /// <summary>WORKFLOWCLEAN1 1f: the plan a place's apply writes is the plan the look works, one at a time, with nothing converted.</summary>
+    /// <summary>The plan a place's apply writes is the plan the look works, one at a time, with nothing converted.</summary>
     [Fact]
     public async Task A_plan_a_places_apply_wrote_is_worked_by_the_look_at_the_pace_it_asked()
     {

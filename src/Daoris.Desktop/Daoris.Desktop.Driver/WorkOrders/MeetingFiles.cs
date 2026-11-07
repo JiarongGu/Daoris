@@ -4,7 +4,7 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A meeting's request as its verb wrote it (AGENTROOM1a, D177 point 7): written once, never changed.</summary>
+/// <summary>A meeting's request as its verb writes it: written once, never changed.</summary>
 /// <param name="Agents">The adapters the person named, in the order their turns go.</param>
 public sealed record MeetingRequest(string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At);
 
@@ -16,7 +16,7 @@ public sealed record MeetingRequest(string Id, string Question, string? Reposito
 /// <param name="Packet">The digest of that round's packet; null before the look froze one.</param>
 public sealed record MeetingState(string Id, string State, int Round, string? Packet, string? Code, DateTimeOffset At);
 
-/// <summary>An answer Daoris refused (D177's trap, an agent answering for another): the turn it was written for, and why.</summary>
+/// <summary>An answer Daoris refused, an agent answering for another: the turn it is written for, and why.</summary>
 public sealed record MeetingRefused(string Turn, string Why);
 
 /// <summary>What Daoris relayed, in order, and what it refused: the meeting's own record of the conversation, kept by the driver alone.</summary>
@@ -26,9 +26,9 @@ public sealed record MeetingTranscript(IReadOnlyList<MeetingMessage> Messages, I
 }
 
 /// <summary>
-/// A meeting's records (AGENTROOM1a, D177 points 1 and 7), under the brainstorms' entry and apart from them:
+/// A meeting's records, under the brainstorms' entry and apart from them:
 /// <c>&lt;home&gt;/brainstorms/meetings/&lt;id&gt;/</c> holds <c>request.json</c>, <c>sent/&lt;round&gt;.json</c> (the
-/// person's press for each round) and <c>stop.json</c>, all three the service desk's writing (ONEWAY1t), and <c>state.json</c>, <c>packets/&lt;round&gt;.json</c>,
+/// person's press for each round) and <c>stop.json</c>, all three the service desk's writing, and <c>state.json</c>, <c>packets/&lt;round&gt;.json</c>,
 /// <c>transcript.json</c>, <c>passes/</c> and <c>read/</c> (the driver's); <c>answers/&lt;turn&gt;.json</c> is what a turn wrote. The
 /// rooms are under <c>brainstorm-rooms/meetings/&lt;id&gt;/</c>, and go when a round ends. Kept on this machine: nothing travels.
 /// </summary>
@@ -120,7 +120,7 @@ public sealed class MeetingFiles(string home)
 
     private string SentPath(string id, int round) => PathOf(id, "sent", string.Create(CultureInfo.InvariantCulture, $"{round}.json"));
 
-    /// <summary>Whether the person stopped it (D177's trap, the person leaving): the desk's file; the meeting ends at once, and nothing more goes.</summary>
+    /// <summary>Whether the person stopped it, leaving: the desk's file; the meeting ends at once, and nothing more goes.</summary>
     public bool Stopped(string id) => Turns.Stopped(id);
 
     public MeetingTranscript ReadTranscript(string id)

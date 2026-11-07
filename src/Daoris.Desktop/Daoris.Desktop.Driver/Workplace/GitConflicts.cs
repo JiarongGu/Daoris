@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 public sealed record ConflictHunk(string Id, IReadOnlyList<string> Before, IReadOnlyList<string> Ours, IReadOnlyList<string> Theirs, IReadOnlyList<string> After);
 
 /// <summary>
-/// A file in conflict as the page reads it (GITAPP2j): the index's three stages (<paramref name="Base"/>, <paramref name="Ours"/>,
+/// A file in conflict as the page reads it: the index's three stages (<paramref name="Base"/>, <paramref name="Ours"/>,
 /// <paramref name="Theirs"/> as <c>mode id</c>), the worktree file's id, and its conflicts. <paramref name="Why"/> is set, with no hunks, where the
 /// file cannot be resolved hunk by hunk here (not in conflict, one side deleted, binary, not UTF-8 text).
 /// </summary>
@@ -15,7 +15,7 @@ public sealed record FileConflict(
     string Path, string? Head, string Base, string Ours, string Theirs, string Worktree, string? Why, IReadOnlyList<ConflictHunk> Hunks);
 
 /// <summary>
-/// **A file in conflict, read by its stages** (GITAPP2j, D204, the git-writes design §8 Resolve). The three stages are merged by
+/// **A file in conflict, read by its stages**. The three stages are merged by
 /// <c>git merge-file --object-id</c> (no merge driver, no attribute, the configuration's conflict style set aside), whose marked output is read
 /// back as text between conflicts and the two sides of each conflict. The text is the stages' own bytes read as UTF-8; a file that is not is not
 /// resolved here.

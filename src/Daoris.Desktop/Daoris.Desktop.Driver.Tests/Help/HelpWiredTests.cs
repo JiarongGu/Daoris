@@ -6,12 +6,12 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HELPWIRED1 (D183 point 4, the Ask Daoris modes design §6 and §7): each start of Ask Daoris records what it handed its agent,
+/// Each start of Ask Daoris records what it handed its agent,
 /// read from the spawn's own inputs at the start and never worked out again from configuration: its mode, its agent and account,
 /// its folder, Daoris's tools, the skills, each server with its approval, the rules, the checkout grants, and in restricted mode
 /// what it lacks with each door. Kept beside the conversation's other files, appended at each start, and cleaned of every secret.
 /// </summary>
-/// <remarks>No process: the start gate's stand-in takes the agent's start (PROCSTART2), reading what the spawn was handed at that
+/// <remarks>No process: the start gate's stand-in takes the agent's start, reading what the spawn is handed at that
 /// moment, and the service is a stand-in.</remarks>
 public sealed class HelpWiredTests : IDisposable
 {
@@ -66,7 +66,7 @@ public sealed class HelpWiredTests : IDisposable
 
     /// <summary>
     /// Ask Daoris's start on <paramref name="adapter"/> in <paramref name="mode"/>, its agent's start taken by the stand-in, which
-    /// reads the settings and servers files the spawn was handed while they are there (a start that did not start removes them).
+    /// reads the settings and servers files the spawn is handed while they are there (a start that did not start removes them).
     /// </summary>
     private async Task<Spawned> StartAsync(
         StandInService service, string id, string adapter, string mode, IReadOnlyDictionary<string, string>? environment = null)
@@ -110,7 +110,7 @@ public sealed class HelpWiredTests : IDisposable
         [.. element.GetProperty(name).EnumerateArray().Select(each => each.GetString()!)];
 
     /// <summary>
-    /// The receipt equals what the spawn was given, field for field, in each mode on each Claude door: its rules are the settings
+    /// The receipt equals what the spawn is given, field for field, in each mode on each Claude door: its rules are the settings
     /// file's, its servers on the pipe the servers file's, Daoris's tools the allow-list's own (none in full), its folder the
     /// spawn's, its agent, version and account the selection's; a server is said handed, handed by full access without an
     /// approval, or withheld with why; and restricted mode says what it lacks, each with its door.
@@ -195,7 +195,7 @@ public sealed class HelpWiredTests : IDisposable
     }
 
     /// <summary>
-    /// The receipt leaks nothing (design §7): an account's key on the spawn's environment and a plugin server's secret in its
+    /// The receipt leaks nothing: an account's key on the spawn's environment and a plugin server's secret in its
     /// arguments and environment all reach the spawn, and none reaches the receipt kept or the answer made of it.
     /// </summary>
     [Fact]
@@ -221,7 +221,7 @@ public sealed class HelpWiredTests : IDisposable
     }
 
     /// <summary>
-    /// A headless start (design §7): no browser host runs, so the server that drives Daoris's browser is recorded withheld with
+    /// A headless start: no browser host runs, so the server that drives Daoris's browser is recorded withheld with
     /// that reason, never as an unresolved endpoint, and restricted mode says its door is the host.
     /// </summary>
     [Fact]
@@ -240,7 +240,7 @@ public sealed class HelpWiredTests : IDisposable
     }
 
     /// <summary>
-    /// HELPMODE1c2a (D183's note): the receipt says the housekeeping its start was handed, the operations chosen in the record at
+    /// The receipt says the housekeeping its start is handed, the operations chosen in the record at
     /// that moment, whatever the agent: on Claude its tools are on the allow-list beside the room's own, and on Codex, which takes
     /// no rules, the receipt still says them, since the driver judges each call by it. Nothing chosen is none handed.
     /// </summary>
@@ -261,7 +261,7 @@ public sealed class HelpWiredTests : IDisposable
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_inspect", claude.Tools);
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__housekeeping_clean_up", claude.Tools);
         Assert.DoesNotContain($"mcp__{KnowledgeConnector.ServerName}__housekeeping_discard_branch", claude.Tools);
-        // HELPMODE1c3: the chosen settings, kept beside housekeeping the same way.
+        // The chosen settings, kept beside housekeeping the same way.
         Assert.Equal([ConfiguredAccess.Cap], claude.Settings);
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__settings_cap", claude.Tools);
         using var settings = JsonDocument.Parse(spawned.Settings!);
@@ -276,7 +276,7 @@ public sealed class HelpWiredTests : IDisposable
     }
 
     /// <summary>
-    /// A conversation going on records a second receipt (design §6), its start said as going on, and the first is kept as it was;
+    /// A conversation going on records a second receipt, its start said as going on, and the first is kept unchanged;
     /// the route's reading answers the newest first.
     /// </summary>
     [Fact]
@@ -300,7 +300,7 @@ public sealed class HelpWiredTests : IDisposable
         var goOn = new GoingOn(
             new PriorSession("help0004", HelpRoom.PathOf(_home), "working", Repository: HelpRoom.Repository) { HelpMode = HelpModes.Restricted },
             new ResumeAsk("conv-help0004", [], "and now?"));
-        // HELPWIREDLIVE1b: the event is raised once the receipt is on disk, so a subscriber publishing on it reads the new one.
+        // The event is raised once the receipt is on disk, so a subscriber publishing on it reads the new one.
         var seen = new List<(string Id, int Receipts)>();
         runner.WiredKept += id => seen.Add((id, new HelpWired(_home).Read(id).Count));
         using (ProcessStarts.Within(_ => null))
@@ -314,14 +314,14 @@ public sealed class HelpWiredTests : IDisposable
         var receipts = new HelpWired(_home).Read("help0004");
         Assert.Equal([HelpWired.GoingOn, HelpWired.New], receipts.Select(receipt => receipt.Start));
         Assert.Equal(["2.1.300", "2.1.299"], receipts.Select(receipt => receipt.Version));
-        // The first, field for field as it was kept.
+        // The first, field for field as kept.
         Assert.Equal(HelpWired.Answer("help0004", [was]).GetRawText(), HelpWired.Answer("help0004", [receipts[1]]).GetRawText());
     }
 
     /// <summary>
-    /// ACCESSSWAP1 (D183 point 2): a conversation whose access changed while it ran resumes at its next words under the access chosen,
+    /// A conversation whose access changed while it ran resumes at its next words under the access chosen,
     /// and the resumed start's receipt names it: the mode widened and the housekeeping granted since, beside the first start's restricted
-    /// receipt with none; its record keeps the new mode, and the spawn resumes its own harness conversation (D131).
+    /// receipt with none; its record keeps the new mode, and the spawn resumes its own harness conversation.
     /// </summary>
     [Fact]
     public async Task A_conversation_resumed_after_its_access_changed_records_the_new_access()

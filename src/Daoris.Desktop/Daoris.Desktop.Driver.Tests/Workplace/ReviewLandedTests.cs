@@ -3,13 +3,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWLANDED1 (D102's REVIEWLANDED1 note): a session whose landing replayed its commits onto a line that had moved, and merged them,
-/// kept its review row and its tree could not be removed without <c>--force</c>, since the review and the removal judged by ancestry while
-/// <c>trees land --plan</c> read it landed; and a session landed on a <c>quest/</c> branch the parent merged and pruned was judged against
-/// a branch that no longer existed. Now the content proof reads the landing's own per-commit reading (<see cref="ReplayHolds"/>), so the
+/// A session whose landing replayed its commits onto a line that had moved, and merged them, reads as landed, and its tree is
+/// removed without <c>--force</c>; so does a session landed on a <c>quest/</c> branch the parent merged and pruned. The content proof reads
+/// the landing's own per-commit reading (<see cref="ReplayHolds"/>), so the
 /// review, the tidy and the removal read one answer; a commit truly not on the line is still kept and named as work to land.
 /// </summary>
-/// <remarks>Real git in a scratch repository: the landing's replay is made by hand as the parent's was, with a cherry-pick and a merge.</remarks>
+/// <remarks>Real git in a scratch repository: the landing's replay is made by hand as the parent makes it, with a cherry-pick and a merge.</remarks>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
 public sealed class ReviewLandedTests : LandedFixture
@@ -86,7 +85,7 @@ public sealed class ReviewLandedTests : LandedFixture
     }
 
     /// <summary>
-    /// The line as it stands, never a commit it passed (D102, D148): the line took the replay and changed the session's file again, so it
+    /// The line as it stands, never a commit it passed: the line took the replay and changed the session's file again, so it
     /// holds the patch but not the work, and the session stays to review.
     /// </summary>
     [Fact]

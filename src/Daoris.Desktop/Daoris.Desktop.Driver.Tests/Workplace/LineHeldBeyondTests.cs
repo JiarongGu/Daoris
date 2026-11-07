@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDSYNC3 (D87's 2026-10-15 amendment point 1): <i>Bring up to date</i> judges a branch's commits as a landing does, so it counts
-/// only what the line lacks. WSR6's plan said <i>replays 3 commit(s)</i> of a branch whose first was squash-merged. Pure: the one log
+/// <i>Bring up to date</i> judges a branch's commits as a landing does, so it counts
+/// only what the line lacks, where counting all would say <i>replays 3 commit(s)</i> of a branch whose first is squash-merged. Pure: the one log
 /// the look reads, what it leaves out, where the walk by content is worth asking, and the stretches a replay skips between.
 /// </summary>
 public sealed class LineHeldBeyondTests
@@ -68,7 +68,7 @@ public sealed class LineHeldBeyondTests
         Assert.Equal((2, 1), (held.Kept, held.LeftOut));
     }
 
-    /// <summary>Where the line holds none, the cut is where it was and every commit is its own, as WSR6 counted it.</summary>
+    /// <summary>Where the line holds none, the cut stays and every commit is its own.</summary>
     [Fact]
     public void Nothing_held_leaves_the_cut_and_counts_every_commit()
     {
@@ -100,7 +100,7 @@ public sealed class LineHeldBeyondTests
     }
 
     /// <summary>
-    /// A replay that skips commits replays the runs between them, each from the commit before its first (LANDSYNC1's stretches): the
+    /// A replay that skips commits replays the runs between them, each from the commit before its first: the
     /// same shape a landing's replay and <i>Bring up to date</i> take.
     /// </summary>
     [Fact]

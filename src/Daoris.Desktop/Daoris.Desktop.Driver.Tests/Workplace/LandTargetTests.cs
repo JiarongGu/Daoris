@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>REVIEW2: a <c>land</c>'s target is the tree's line, the only line a repository declares; no delivery is written for any other.</summary>
+/// <summary>A <c>land</c>'s target is the tree's line, the only line a repository declares; no delivery is written for any other.</summary>
 public sealed class LandTargetTests
 {
     private static BoundLand Bound(string method, string target) => new(method, target, false, null, null, "{}", "digest", "workflow:w@1:r");

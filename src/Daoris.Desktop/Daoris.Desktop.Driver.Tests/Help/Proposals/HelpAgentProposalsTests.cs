@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Driver.Tests;
 
-/// <summary>Ask Daoris's <c>agent</c> proposal (HELP6): an Update or a pin, where the Agents screen offers it.</summary>
+/// <summary>Ask Daoris's <c>agent</c> proposal: an Update or a pin, where the Agents screen offers it.</summary>
 public sealed class HelpAgentProposalsTests : HelpProposalsFixture
 {
     [Theory]
@@ -24,7 +24,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     [Theory]
     [InlineData("update", "dsh", null, "offers no Update")]
     [InlineData("update", "codex-acp", null, "not installed")]
-    // UX6e2: an agent is installed on its page in the Agents place, its Ways in.
+    // An agent is installed on its page in the Agents place, its Ways in.
     [InlineData("update", "codex-acp", null, "install it under Agents → the agent's page → Ways in → Install, or with `daoris agent install codex-acp`.")]
     [InlineData("update", "gpt-agent", null, "no agent `gpt-agent`")]
     [InlineData("pin", "dsh", "1.0.0", "no package or release channel")]
@@ -72,7 +72,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Contains("`update`, `pin`, `use`, `order` or `ready`", plan.Refusal);
     }
 
-    /// <summary>The machine with lists of its own (TOOL4g): the machine's <c>work, play</c>, and <c>lab</c>'s <c>work</c>.</summary>
+    /// <summary>The machine with lists of its own: the machine's <c>work, play</c>, and <c>lab</c>'s <c>work</c>.</summary>
     private static readonly HelpMachineFacts Listed = Machine with
     {
         Workspaces = ["default", "work", "lab"],
@@ -90,9 +90,8 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         new("p9", "agent", "use", agent, workspace, null, null, "the person asked", "h1", "proposed") { AccountUse = change };
 
     /// <summary>
-    /// TOOL4g's <c>use</c> (D130 §9, §16.6; POOL1b, §5.3): how the set is used, as <c>daoris agent account use</c> takes it, said in its
-    /// words; a door's accounts are its owner's (AGT7), so the command and the sentence name the owner. Before POOL1b it was said for
-    /// the machine (<i>On this machine</i>) or a workspace (<i>In `lab`</i>), whose terminal named <c>--workspace</c>.
+    /// The <c>use</c> door: how the set is used, as <c>daoris agent account use</c> takes it, said in its
+    /// words; a door's accounts are its owner's, so the command and the sentence name the owner.
     /// </summary>
     [Fact]
     public void How_the_set_is_used_is_judged_and_said_as_the_terminal_says_it()
@@ -103,7 +102,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
 
         Assert.Null(machine.Refusal);
         Assert.Equal("daoris agent account use claude-code order --keep play --early off --near 85", machine.Terminal);
-        // SWITCH1d: the old names said in the curve's terms, as the file reads them on.
+        // The old names said in the curve's terms, as the file reads them on.
         Assert.Equal("For every workspace, `claude-code` uses its accounts one by one, in order, keeps `play` for conversations, does not "
             + "switch accounts while a session runs and holds its own curve's five-hour window at 85%.", machine.Describe);
         Assert.Equal("daoris agent account use claude-code --no-keep", none.Terminal);
@@ -111,7 +110,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// SWITCH1d (D165 point 2; the switch design §5): the <c>use</c> door's <c>switch</c> and <c>curve</c>, as <c>profile use
+    /// The <c>use</c> door's <c>switch</c> and <c>curve</c>, as <c>profile use
     /// --switch</c>, <c>--curve</c> and <c>--no-curve</c> take them, said in the curve's terms.
     /// </summary>
     [Fact]
@@ -135,7 +134,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
             + "back to Daoris's.", off.Describe);
     }
 
-    /// <summary>SWITCH1d: a switch this build does not know, and a curve that breaks a rule, refused in the door's words.</summary>
+    /// <summary>A switch this build does not know, and a curve that breaks a rule, refused in the door's words.</summary>
     [Fact]
     public void A_switch_or_a_curve_the_route_would_refuse_is_refused()
     {
@@ -149,9 +148,8 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// <c>profile use</c>'s refusals, in its words, before the person ever sees a card. Since POOL1b (§5.3) on the set: an agent with no
-    /// account of Daoris's has nothing to use, a kept account is one of the set, and any workspace is refused; before, a scope with no list
-    /// of its own was refused, and a workspace's list held a kept account alone.
+    /// <c>profile use</c>'s refusals, in its words, before the person ever sees a card. On the set: an agent with no
+    /// account of Daoris's has nothing to use, a kept account is one of the set, and any workspace is refused.
     /// </summary>
     [Theory]
     [InlineData("claude-code", null, null, null, false, null, null, "a use names how the accounts are used")]
@@ -184,7 +182,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// The file's four fields, as the service's writer is to write them (TOOL4g): a field left out is no change, and a
+    /// The file's four fields, as the service's writer is to write them: a field left out is no change, and a
     /// <c>keep</c> of JSON null keeps none. A file of any other door names none of them.
     /// </summary>
     [Fact]
@@ -204,7 +202,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// SWITCH1d: the file's <c>switch</c> and <c>curve</c>, as the service's writer writes them: a curve of JSON null takes the
+    /// The file's <c>switch</c> and <c>curve</c>, as the service's writer writes them: a curve of JSON null takes the
     /// person's curve out, and one that breaks a rule is kept as the twins' sentence the card refuses with.
     /// </summary>
     [Fact]
@@ -230,8 +228,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// TOOL4l-b: the use, order and ready doors are listed, since the service's <c>agent_propose</c> writes them; <c>default</c> left with
-    /// POOL1b (D197 point 6), listed before it.
+    /// The use, order and ready doors are listed, since the service's <c>agent_propose</c> writes them.
     /// </summary>
     [Fact]
     public void The_account_doors_are_listed_beside_update_and_pin()
@@ -240,7 +237,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// The machine of an <c>order</c> (TOOL4l-b): <c>claude-code</c> has three accounts, a list of its own on the machine and a
+    /// The machine of an <c>order</c>: <c>claude-code</c> has three accounts, a list of its own on the machine and a
     /// default and a kept account in it, and <c>lab</c> a list and a default of its own, <c>trial</c> a default only.
     /// </summary>
     private static readonly HelpMachineFacts Walked = Machine with
@@ -274,10 +271,8 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         };
 
     /// <summary>
-    /// TOOL4l-b (D130 §9; POOL1b, §5.3): the set's order, the accounts named first and the rest after in the set's order, or cleared back
-    /// to the ids' order, as <c>daoris agent account order</c> takes it, said in its words; a door's accounts are its owner's (AGT7).
-    /// Before POOL1b this wrote a scope's list whole (<i>its starts may run on those accounts</i>) or sent a workspace back to the
-    /// machine's accounts, clearing its default with <c>profile default --clear</c>.
+    /// The set's order, the accounts named first and the rest after in the set's order, or cleared back
+    /// to the ids' order, as <c>daoris agent account order</c> takes it, said in its words; a door's accounts are its owner's.
     /// </summary>
     [Fact]
     public void An_order_is_judged_and_said_as_the_terminal_says_it()
@@ -295,8 +290,8 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
-    /// <c>profile order</c>'s refusals, in its words, before the person ever sees a card. Since POOL1b no default or kept account binds
-    /// the set's order, which holds every account; those rows, a workspace's clear and an unknown workspace were held here before.
+    /// <c>profile order</c>'s refusals, in its words, before the person ever sees a card. No default or kept account binds
+    /// the set's order, which holds every account.
     /// </summary>
     [Theory]
     [InlineData("claude-code", new string[0], null, false, "names the accounts to put first, in order, or clears")]
@@ -329,7 +324,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Equal("refused", HelpProposals.Find(_home, "p13")!.State);
     }
 
-    /// <summary>The order door's fields from the service's file (TOOL4l-a): the list in order, or <c>clear</c>; no other door reads them.</summary>
+    /// <summary>The order door's fields from the service's file: the list in order, or <c>clear</c>; no other door reads them.</summary>
     [Fact]
     public void The_order_doors_fields_are_read_from_its_file()
     {
@@ -349,7 +344,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Null(HelpProposals.Find(_home, "o3")!.AccountOrder);
     }
 
-    /// <summary>The <c>Walked</c> machine with <c>play</c> and the tool's own sign-in cooling (TOOL4l-b), as the cool-off file holds them.</summary>
+    /// <summary>The <c>Walked</c> machine with <c>play</c> and the tool's own sign-in cooling, as the cool-off file holds them.</summary>
     private static readonly HelpMachineFacts Cooling = Walked with
     {
         Cooling =
@@ -363,7 +358,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         new("p14", "agent", "ready", agent, null, null, null, "the person asked", "h1", "proposed") { ReadyAccount = account };
 
     /// <summary>
-    /// TOOL4l-b (D125 §2.3): <i>Try now</i>, an account's cool-off ended early as <c>daoris agent account ready</c> ends it, for an
+    /// <i>Try now</i>, an account's cool-off ended early as <c>daoris agent account ready</c> ends it, for an
     /// account of the door's owner that is cooling, or for the tool's own sign-in; said in its words.
     /// </summary>
     [Fact]
@@ -420,7 +415,7 @@ public sealed class HelpAgentProposalsTests : HelpProposalsFixture
         Assert.Equal("refused", HelpProposals.Find(_home, "p16")!.State);
     }
 
-    /// <summary>The ready door's account from the service's file (TOOL4l-a): an id, or <c>own</c>.</summary>
+    /// <summary>The ready door's account from the service's file: an id, or <c>own</c>.</summary>
     [Fact]
     public void The_ready_doors_account_is_read_from_its_file()
     {

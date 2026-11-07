@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITLOCK1 beside a session (GITAPP2's §3 <i>Beside a session</i>, D51's note): with trees off a driven session works in the person's
+/// Beside a session: with trees off a driven session works in the person's
 /// checkout itself, and the line's pull and a promotion each wait for it, read from the ledger inside the checkout's hold, said with the
 /// session and where to find it; once its quest is done they go on at the next look. A ledger that cannot be read holds them too. The
 /// ledger is the stand-in the looks read (<see cref="StandInLedger"/>), through the real client and <see cref="BranchTidying.BesideAsync"/>.
@@ -57,7 +57,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         Assert.Equal(await RevAsync(root, "origin/main"), await RevAsync(root, "main"));
     }
 
-    /// <summary>🔴 GITLOCK2: a session that ended, its quest still open, holds no checkout: the pull goes through.</summary>
+    /// <summary>A session that ended, its quest still open, holds no checkout: the pull goes through.</summary>
     [Fact]
     public async Task A_pull_beside_an_ended_session_whose_quest_is_still_open_goes_through()
     {
@@ -116,7 +116,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         return (root, opened, trees);
     }
 
-    /// <summary>🔴 GITLOCK2: a merge rule's Accept waits for the driven session in the checkout, and lands at the next look once it ends.</summary>
+    /// <summary>A merge rule's Accept waits for the driven session in the checkout, and lands at the next look once it ends.</summary>
     [Fact]
     public async Task A_merge_rule_s_accept_waits_for_a_driven_session_in_the_checkout_and_lands_once_it_ends()
     {
@@ -137,7 +137,7 @@ public sealed class CheckoutBesideGitTests : TreeSyncFixture
         Assert.Equal("cap the work per frame", (await File.ReadAllTextAsync(Path.Combine(root, "budget.ts"))).Trim());
     }
 
-    /// <summary>🔴 GITLOCK2: a landing out of a session's own tree is no session in the checkout: it lands with the ledger holding that tree.</summary>
+    /// <summary>A landing out of a session's own tree is no session in the checkout: it lands with the ledger holding that tree.</summary>
     [Fact]
     public async Task A_merge_rule_s_accept_out_of_a_sessions_own_tree_is_unaffected_by_the_ledger_holding_it()
     {

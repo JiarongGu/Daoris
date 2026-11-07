@@ -21,8 +21,8 @@ const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' |
 });
 
 /**
- * SESSWATCH1b (the session-watch design §2.1, §5.1): a quiet session Daoris's one word was kept for says it was told beside the quiet
- * it speaks of, and one it was not kept for says only that it is quiet. In both languages.
+ * A quiet session Daoris's one word is kept for says it is told beside the quiet
+ * it speaks of, and one it is not kept for says only that it is quiet. In both languages.
  */
 describe('a quiet session’s row', () => {
   beforeEach(() => {

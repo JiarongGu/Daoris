@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SESSONE2c (D167 points 6 to 8; the co-working design §2.4): the person's side of an ask's channel at a terminal,
+/// The person's side of an ask's channel at a terminal,
 /// <c>daoris ask channel &lt;id&gt; [--to &lt;repository&gt;] [--re &lt;message&gt;] ["words"]</c>, the twin of the ask page's
-/// <i>Channel</i> (D50). With no words it reads the channel and moves the person's mark; with words it posts them as the person's,
-/// to everyone or one repository. A service stood in: the fast half (MOD8).
+/// <i>Channel</i>. With no words it reads the channel and moves the person's mark; with words it posts them as the person's,
+/// to everyone or one repository. A service stood in: the fast half.
 /// </summary>
 public sealed class ChannelCommandTests
 {
@@ -104,7 +104,7 @@ public sealed class ChannelCommandTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1e (D188 point 2; the message-urgency design §8.6): the person's post is urgent unless <c>--ordinary</c> asked it to
+    /// The person's post is urgent unless <c>--ordinary</c> asked it to
     /// wait for each turn's end; <c>--urgent</c> says the default aloud; the two together, or a level with no words, is a problem.
     /// </summary>
     [Fact]
@@ -121,7 +121,7 @@ public sealed class ChannelCommandTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1e: the post carries its level to the person's door, <c>urgent</c> false for <c>--ordinary</c> and true by default, and
+    /// The post carries its level to the person's door, <c>urgent</c> false for <c>--ordinary</c> and true by default, and
     /// says the level the service kept; a host from before that keeps none is told nothing of it.
     /// </summary>
     [Theory]
@@ -142,7 +142,7 @@ public sealed class ChannelCommandTests
     }
 
     /// <summary>
-    /// 🔴 COWORK1e (the design §8.4): a read names an urgent message's level, never an ordinary one's or one's from before, and under
+    /// A read names an urgent message's level, never an ordinary one's or one's from before, and under
     /// each message says what it reached in each repository it addresses, worded as the page's receipts; a line carries none.
     /// </summary>
     [Fact]
@@ -175,7 +175,7 @@ public sealed class ChannelCommandTests
     }
 
     /// <summary>
-    /// COMMS1k (the comms design §7: <c>ask channel</c> gains the addressed rows): a read prints the messages to one part each beneath the
+    /// A read of <c>ask channel</c> prints the messages to one part each beneath the
     /// channel, apart from it, each with what it reached in that part's line.
     /// </summary>
     [Fact]
@@ -257,7 +257,7 @@ public sealed class ChannelCommandTests
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1b (the session-context design §7): a channel's message is marked as one on its <c>user</c> event by a field of its
+    /// A channel's message is marked as one on its <c>user</c> event by a field of its
     /// own, the message's id, as an opinion's is, so the page and the brief tell it by the field and never by Daoris's English. Another
     /// session's is Daoris's (<c>target</c>), the person's theirs; a word that came by no channel carries none.
     /// </summary>

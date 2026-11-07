@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's half of rows that touch the same files (INTEGRATE1l, the integration design §9): what each running unit of this machine has
+/// The look's half of rows that touch the same files: what each running unit of this machine has
 /// changed since it opened, for the planner's comparison at a start (<see cref="Snapshot.Changed"/>), and the observed overlap of two running
 /// units of one repository, each told once as an ordinary word.
 /// </summary>
@@ -49,7 +49,7 @@ public static class WorkOverlaps
 
     /// <summary>
     /// Tells each of two running units of one repository whose changes share a path, once for that pair: the other quest and the shared paths,
-    /// so whichever lands second knows it meets the other's work. Keys of sessions no longer running are let go.
+    /// so whichever lands second knows it meets the other's work. Keys of sessions that stopped running are let go.
     /// </summary>
     public static async Task TellAsync(string home, Snapshot snapshot, Say say, CancellationToken ct = default)
     {

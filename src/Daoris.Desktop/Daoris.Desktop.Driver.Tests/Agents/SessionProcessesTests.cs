@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// What a kill's failure may be and still mean the tree was already going (MOD8's finding, FIX-LOG): a whole-tree
+/// What a kill's failure may be and still mean the tree is already going: a whole-tree
 /// kill reports a process that refused access mid-exit inside an <see cref="AggregateException"/>, which a catch
-/// of the single types let through a person's stop and a chat's cleanup. The kill itself cannot be provoked on
+/// of the single types would let through a person's stop and a chat's cleanup. The kill itself cannot be provoked on
 /// demand; the rule deciding what to swallow can, and is held here.
 /// </summary>
 public sealed class SessionProcessesTests

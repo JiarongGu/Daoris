@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDNODE1b (the land node design §3, §4, §8 row 3): the delivery record, a desktop-store family over no git and no plugin. A delivery kept
+/// The delivery record, a desktop-store family over no git and no plugin. A delivery kept
 /// whole with its frozen intent and authorization under its key; concurrent starts for one unit making one; an unreconciled delivery blocking
 /// a new one for its unit until it settles; each phase written ahead and its outcome after, in order, an entry without its outcome read as such
 /// after a reopen; a take only from a dead run; a rollback refused while any delivery is unresolved, and no delivery started in the start's

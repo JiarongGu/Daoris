@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Where a verification run's files lie (FABRIC-PIPELINE1d; the pipeline design §4.3): a folder of its own under the home's workflows.</summary>
+/// <summary>Where a verification run's files lie: a folder of its own under the home's workflows.</summary>
 public static class VerifyFiles
 {
     /// <summary>The folder under the home's workflows that holds the landed and the person's verification runs.</summary>
@@ -28,7 +28,7 @@ public static class VerifyFiles
     public static string ResultOf(string home, string run, string invocation) => Path.Combine(AttemptFolder(home, run, invocation), Result);
 }
 
-/// <summary>A check's verdict (the pipeline design §4.1): reached, failed, or unknown, never passed or failed by a guess.</summary>
+/// <summary>A check's verdict: reached, failed, or unknown, never passed or failed by a guess.</summary>
 public static class VerifyVerdicts
 {
     public const string Reached = "reached";
@@ -41,7 +41,7 @@ public static class VerifyVerdicts
 /// <summary>One gate as a check ran it: its name as the declaration writes it, its verdict (the runner's words), its exit, its wall and its log.</summary>
 public sealed record VerifyGate(string Name, string Verdict, int? Exit = null)
 {
-    /// <summary>A gate the batch's paths did not reach, its newest pass on the line standing (the pipeline design §4.7): named, never run.</summary>
+    /// <summary>A gate the batch's paths did not reach, its newest pass on the line standing: named, never run.</summary>
     public const string Kept = "kept";
 
     public double? WallSeconds { get; init; }
@@ -51,7 +51,7 @@ public sealed record VerifyGate(string Name, string Verdict, int? Exit = null)
 }
 
 /// <summary>
-/// A check attempt's result (FABRIC-PIPELINE1d, schema 1), written in its attempt's folder once the job is empty and both slots are let go:
+/// A check attempt's result (schema 1), written in its attempt's folder once the job is empty and both slots are let go:
 /// the commit it judged, its verdict and why, each gate's evidence, and the declaration's blob it ran under.
 /// </summary>
 public sealed record VerifyResult(string Invocation, string Commit, string Verdict, string? Why, IReadOnlyList<VerifyGate> Gates)
@@ -59,10 +59,10 @@ public sealed record VerifyResult(string Invocation, string Commit, string Verdi
     /// <summary>The tip's declaration is not the one accepted: nothing ran, and the person's door is <i>Accept the gates</i>.</summary>
     public const string Changed = "changed";
 
-    /// <summary>It ran past its bound and was ended.</summary>
+    /// <summary>It ran past its bound and its job is ended.</summary>
     public const string Bound = "bound";
 
-    /// <summary>The person stopped it, and its job was ended.</summary>
+    /// <summary>The person stopped it, and its job is ended.</summary>
     public const string Stopped = "stopped";
 
     /// <summary>The runner's own run held its lock through every offer.</summary>
@@ -179,7 +179,7 @@ public sealed record VerifyJudged(VerifyResult? Result, bool Busy)
 }
 
 /// <summary>
-/// A check's verdict from what its runner said (the pipeline design §4.2's contract): a runner that answers by file is judged from its
+/// A check's verdict from what its runner said: a runner that answers by file is judged from its
 /// gates alone, against the accepted declaration and the gates the check names; an opaque runner is one check, by its exit.
 /// </summary>
 public static class VerifyJudge

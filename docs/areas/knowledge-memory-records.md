@@ -138,8 +138,11 @@ one job each, checked by `verify`.
     A quest id is twelve characters only: no lookup reads the six-character width. A closed (Done or Declined) quest is removed
     by one remover, `Core/Quests/QuestClosedRemoval.cs`: tombstoned with a `deleted` operation where it may have travelled (the delete applies to
     an open or a closed quest, never a taken one), simply gone where it never left. The home migration's `closed-quests` step
-    clears the closed six-character quests the same way; an open one stays until it closes, and the same words published again
-    make a new quest.
+    clears the closed six-character quests the same way; an open one stays until it closes. A quest's id derives from its
+    sender, receiver, title, lanes, workflow request key and parent. The same plain words published while that quest is open or
+    taken are a retry: the answer is that quest, said, and nothing is written. Published after it closed (done or declined), or
+    after this machine forgot it, they are a new ask under the next id (`~again<n>`), and the closed quest stays as it was. A
+    request key or a parent is a quest's identity, so it answers its own quest whatever became of it.
 32. Records sync, processes never. Session records, channel messages and code maps travel keyed by origin and id, a feed taken
     whole or refused whole. Only local knowledge feeds, replacing that repository's entries. No wire carries a root, a
     transcript or private content. (from D47)

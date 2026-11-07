@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
-/// <summary>A check's attempt as the heavy executor takes it (FABRIC-PIPELINE1d; the pipeline design §4.2).</summary>
+/// <summary>A check's attempt as the heavy executor takes it.</summary>
 /// <param name="Run">The run whose check it is; its folder is under the home's <c>workflows/lines/</c>.</param>
 /// <param name="Invocation">The attempt's invocation, which names its folder and its job.</param>
 /// <param name="Repository">The repository's name, as what is said names it.</param>
 /// <param name="Checkout">The repository's checkout Daoris knows: a runner starts there, and the commit is read there.</param>
 /// <param name="Commit">The full commit the check judges.</param>
-/// <param name="Accepted">The blob of <c>daoris.gates.json</c> the person accepted, <c>none</c> for this machine's mapping, or null where none was.</param>
+/// <param name="Accepted">The blob of <c>daoris.gates.json</c> the person accepted, <c>none</c> for this machine's mapping, or null where there is none.</param>
 public sealed record VerifySend(string Run, string Invocation, string Repository, string Checkout, string Commit, string? Accepted)
 {
     /// <summary>The gates the check names; null for the heavy gates, or the runner where the declaration names one.</summary>

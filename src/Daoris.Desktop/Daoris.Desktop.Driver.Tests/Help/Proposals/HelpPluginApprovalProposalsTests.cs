@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// HELPPLUG1c (D170's note): Ask Daoris proposes the person's approval of what a plugin's server offers it, the plugin kind's
+/// Ask Daoris proposes the person's approval of what a plugin's server offers it, the plugin kind's
 /// <c>approve</c>, and its withdrawal, <c>withdraw</c>. The card names the plugin, the server and each tool, its reads and its
 /// writes apart as the approval keeps them; the person's press writes the approval through the page's own code
-/// (<see cref="HelpGrants"/>). A server naming a generic execution tool is still refused, whoever proposes it (HELP4).
+/// (<see cref="HelpGrants"/>). A server naming a generic execution tool is still refused, whoever proposes it.
 /// </summary>
 public sealed class HelpPluginApprovalProposalsTests : HelpProposalsFixture
 {

@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The meeting at the look (AGENTROOM1a, D177 points 1, 2, 4 and 7): a request the person's verb wrote is frozen into its first
+/// The meeting at the look: a request the person's verb wrote is frozen into its first
 /// round's packet from the brainstorm's assembly and waits for their send; sent, each participant takes its turn in the person's
 /// order, one at a time, in a room holding that round's packet and nothing else; Daoris reads each turn's message by its shape, and
 /// relays it with its author from its own binding of the turn; and the round ends with the next round's packet frozen from the
@@ -12,16 +12,16 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>A turn is a brainstorm's pass</b> (<see cref="DriverBrainstorms.PassAsync{T}"/>): its slot under the cap, its own minutes
-/// and the round's deadline (the policy's pass and request minutes, D176 point 6), its one repair, a limit's restart on the next
+/// and the round's deadline (the policy's pass and request minutes), its one repair, a limit's restart on the next
 /// account, a crash, the person's stop and its record written as it starts. The turns go in sequence, never side by side, so a
 /// meeting's account runs one of its turns at a time.</para>
 ///
 /// <para><b>Within a round, no turn reads another's message of that round.</b> What goes to a maker is only a packet the person read
-/// before it went (D177 point 2's show), so each message names exactly what it answered; the round's messages reach the others in
+/// before it went, so each message names exactly what it answered; the round's messages reach the others in
 /// the next round's packet, which the person reads first.</para>
 ///
 /// <para><b>A turn's answer is read once, at its turn's end</b>, and moved out of the answers: one found there at any other moment
-/// (a second answer to a turn already read, or one written before its turn was granted) is refused, said, and reaches no one.</para>
+/// (a second answer to a turn already read, or one written before its turn is granted) is refused, said, and reaches no one.</para>
 ///
 /// <para><b>No real agent takes a turn yet</b>: no tool carries a meeting's message (the connector's <c>brainstorm_give</c> carries
 /// proposals), so with no stand-in a turn is refused, <c>no-message-tool</c>, and nothing is started or spent.</para>
@@ -35,7 +35,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     /// <summary>The code of a turn not started because no tool carries a meeting's message yet.</summary>
     internal const string NoMessageTool = "no-message-tool";
 
-    /// <summary>Why an answer was refused: it was found outside its turn, before it was granted or after it was read.</summary>
+    /// <summary>Why an answer is refused: it is found outside its turn, before the turn is granted or after the answer is read.</summary>
     internal const string OutsideTurn = "outside-turn";
 
     private static string Claim(string id) => $"meeting:{id}";
@@ -64,15 +64,15 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                             "meeting", $"meeting `{request.Id}` stopped by the person before round {state?.Round ?? 1} ran: nothing of it went to any agent."));
                         break;
                     case null when _context.Beside:
-                        // PARALLEL1b (D181 point 3): under the watch, the first round's packet frozen beside the look, once.
+                        // Under the watch, the first round's packet frozen beside the look, once.
                         _brainstorms.Freezing(request.Id, token => FreezeAsync(request, snapshot, files, token), ct, kind: "meeting");
                         break;
                     case null:
-                        // A round's packet frozen waits for the person's send (NOTIFY2h).
+                        // A round's packet frozen waits for the person's send.
                         events.Add(_context.Said.Wait("meeting", await FreezeAsync(request, snapshot, files, ct).ConfigureAwait(false)));
                         break;
                     case BrainstormStates.Frozen when state.Packet is { } digest && files.Sent(request.Id, state.Round) == digest:
-                        // DRAINHOLD1: a sent round's turns are sessions the drain waits on; it stays frozen and sent until a look that does not drain.
+                        // A sent round's turns are sessions the drain waits on; it stays frozen and sent until a look that does not drain.
                         if (_context.Config.Draining)
                         {
                             _context.DrainHolds(events, "meeting", request.Id, $"`{request.Id}`");
@@ -86,7 +86,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
                         Beside(request, state.Round, digest, _brainstorms.RuleOf(request.Repository, snapshot), files, ct);
                         break;
                     case BrainstormStates.Running when _context.Runs.TryOpinion(Claim(request.Id)):
-                        // Nothing in this driver runs it: the driver that did stopped. What was relayed is kept; nothing runs again by itself.
+                        // Nothing in this driver runs it: the driver running it stopped. Relayed messages are kept; nothing runs again by itself.
                         try
                         {
                             events.Add(_context.Said.News("meeting", new LookNews(LookSaid.MeetingCut, request.Id), Interrupted(request.Id, state, files)));
@@ -112,10 +112,10 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     }
 
     /// <summary>
-    /// The participants, in the person's order (D177 point 1): each agent the request names that the policy lists, or every one where
-    /// it lists none (D176 point 9), at most the policy's four, each with its maker; the ones the policy does not list, which take
+    /// The participants, in the person's order: each agent the request names that the policy lists, or every one where
+    /// it lists none, at most the policy's four, each with its maker; the ones the policy does not list, which take
     /// no turn; and the ones whose provider is not opened to the meeting's place, refused before anything goes to them, each by its
-    /// sentence, since a meeting's start is outside the plan and has no walk to pass them in (AGENTPROVIDER1 row u).
+    /// sentence, because a meeting's start is outside the plan and has no walk to pass them in.
     /// </summary>
     internal static (List<MeetingParticipant> Taking, List<string> Left, List<string> Closed) Participants(
         MeetingRequest request, BrainstormRule rule, ProviderRegistry adapters, ProviderReach reach)
@@ -147,7 +147,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     }
 
     /// <summary>
-    /// The first round's packet frozen (D177 point 2): the brainstorm's assembly of the question and its sources, and the participants
+    /// The first round's packet frozen: the brainstorm's assembly of the question and its sources, and the participants
     /// in order; written once, named by its digest, and shown before anything goes. Fewer than two the policy lets take a turn is no
     /// meeting: it ends, and nothing goes.
     /// </summary>
@@ -172,15 +172,15 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
             + $"Read it with `daoris brainstorm show {request.Id} --kind meeting`, and send it with `daoris brainstorm send {request.Id} --kind meeting`.";
     }
 
-    /// <summary>A round's line, classed where it is made (NOTIFY2h2).</summary>
+    /// <summary>A round's line, classed where it is made.</summary>
     private static StartRun Ran(LookClass @class, string line) => new(line, Opened: true) { Look = new LookClassed(@class, "meeting") };
 
     private static string Named(IEnumerable<MeetingParticipant> participants) =>
         string.Join(", ", participants.Select(each => $"{each.Id} `{each.Adapter}`"));
 
     /// <summary>
-    /// A meeting a driver that stopped left running (D177's trap, a restart around a dispatch and around an answer's write): each
-    /// turn it was running, and each it recorded answered but never relayed, ends as <c>interrupted</c>; what was relayed is kept;
+    /// A meeting a driver that stopped left running (a restart around a dispatch and around an answer's write): each
+    /// turn it left running, and each it recorded answered but never relayed, ends as <c>interrupted</c>; relayed messages are kept;
     /// and nothing runs again by itself.
     /// </summary>
     private static string Interrupted(string id, MeetingState state, MeetingFiles files)
@@ -216,7 +216,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
             {
                 files.WriteState(new MeetingState(request.Id, BrainstormStates.Ended, round, digest, "failed", DateTimeOffset.UtcNow));
                 files.RemoveRooms(request.Id);
-                // Stopped by a failure, not by the person: an end nobody pressed and nobody must answer (NOTIFY2h2).
+                // Stopped by a failure, not by the person: an end nobody pressed and nobody must answer.
                 return new StartRun($"meeting `{request.Id}` stopped in round {round}: {error.Message}", Opened: true)
                 {
                     Look = LookClassed.Noticed("meeting", new LookNews(LookSaid.MeetingFailed, request.Id)),
@@ -229,9 +229,9 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
         });
 
     /// <summary>
-    /// One round the person sent (D177 point 4): each participant's turn in their order, one at a time, within its own minutes and the
+    /// One round the person sent: each participant's turn in their order, one at a time, within its own minutes and the
     /// round's deadline; each message relayed as it is read; then the next round's packet frozen, or the meeting ended after its last.
-    /// The person's stop is watched throughout, and the rooms removed however the round ended. Its line is classed here (NOTIFY2h2): the
+    /// The person's stop is watched throughout, and the rooms removed however the round ended. Its line is classed here: the
     /// person's stop their own, a next round's packet a wait on their send, an end its page says.
     /// </summary>
     private async Task<StartRun> RoundAsync(MeetingRequest request, int round, string digest, BrainstormRule rule, MeetingFiles files, CancellationToken ct)
@@ -249,7 +249,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
         try
         {
             var minute = _brainstorms.Minute;
-            // On the clock each turn's cut is read on, as the brainstorm's deadline is (MEETCLOCK1).
+            // On the clock each turn's cut is read on, as the brainstorm's deadline is.
             var deadline = _context.BrainstormClock.GetUtcNow() + rule.Minutes.Request * minute;
             var kept = files.ReadTranscript(id);
             var messages = new List<MeetingMessage>(kept.Messages);
@@ -320,7 +320,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     }
 
     /// <summary>
-    /// Every answer waiting outside its turn (D177's trap, an agent answering for another): one for a turn already read, or for a
+    /// Every answer waiting outside its turn (an agent answering for another): one for a turn already read, or for a
     /// turn not yet granted, is refused, said, and removed unread, so it reaches no one.
     /// </summary>
     private static void Refuse(string id, MeetingFiles files, List<MeetingRefused> refused, List<string> said)
@@ -334,7 +334,7 @@ internal sealed class DriverMeetings(LoopContext context, DriverBrainstorms brai
     }
 
     /// <summary>
-    /// A real agent's meeting turn, refused and never started (AGENTROOM1a): its result tool is the connector's, and none carries a
+    /// A real agent's meeting turn, refused and never started: its result tool is the connector's, and none carries a
     /// meeting's message yet (<c>brainstorm_give</c> carries a generator's proposals), so a started turn could not answer.
     /// </summary>
     private static Task<BrainstormTurnRun> Unavailable(BrainstormTurn turn, CancellationToken ct) =>

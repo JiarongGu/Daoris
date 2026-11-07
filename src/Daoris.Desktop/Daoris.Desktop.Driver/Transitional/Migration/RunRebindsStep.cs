@@ -33,7 +33,7 @@ public sealed class RunRebindsStep : IHomeMigrationStep
             }
             catch (DriverException)
             {
-                // The role catalogue does not read: the run stays as it was, and its start says why.
+                // The role catalogue does not read: the run stays unchanged, and its start says why.
                 continue;
             }
 

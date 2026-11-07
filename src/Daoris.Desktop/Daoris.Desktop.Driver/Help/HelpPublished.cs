@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One thing an Ask Daoris conversation's Apply published (ASKQUESTS1, the Ask Daoris design §9 item 12): when, the proposal applied,
-/// its kind (<c>ask</c> or <c>setup</c>), the workspace it was asked at, and the ask and the quest by the ids the service answered. Ids
+/// One thing an Ask Daoris conversation's Apply published: when, the proposal applied,
+/// its kind (<c>ask</c> or <c>setup</c>), the workspace it asked in, and the ask and the quest by the ids the service answered. Ids
 /// and when only: their state is the service's, read live.
 /// </summary>
 public sealed record HelpPublishedEntry(DateTimeOffset At, string Proposal, string Kind, string? Workspace)
@@ -17,7 +17,7 @@ public sealed record HelpPublishedEntry(DateTimeOffset At, string Proposal, stri
 }
 
 /// <summary>
-/// What an Apply published, as its kind hands it to <see cref="HelpProposals.ApplyAsync"/> (ASKQUESTS1): the ask and the quest the
+/// What an Apply published, as its kind hands it to <see cref="HelpProposals.ApplyAsync"/>: the ask and the quest the
 /// service's answer named, and the workspace they were asked at.
 /// </summary>
 public sealed record HelpPublishing(string? Workspace, string? Ask, string? Quest)
@@ -27,9 +27,9 @@ public sealed record HelpPublishing(string? Workspace, string? Ask, string? Ques
 }
 
 /// <summary>
-/// The asks and quests one Ask Daoris conversation published (ASKQUESTS1), kept in <c>&lt;home&gt;/sessions/&lt;id&gt;.published.json</c>
+/// The asks and quests one Ask Daoris conversation published, kept in <c>&lt;home&gt;/sessions/&lt;id&gt;.published.json</c>
 /// beside its other files, oldest first, and answered newest first; a delete or a history clear takes the file with the rest
-/// (<see cref="SessionHomeFiles"/>, under Ask Daoris's own name). A conversation that applied before this row has none.
+/// (<see cref="SessionHomeFiles"/>, under Ask Daoris's own name). A conversation with no Apply has none.
 /// </summary>
 /// <remarks>
 /// <para><b>A file of its own, not a field of <see cref="HelpConversations"/>' file.</b> A build before this one rewrites that file whole
@@ -38,7 +38,7 @@ public sealed record HelpPublishing(string? Workspace, string? Ask, string? Ques
 ///
 /// <para><b>Written where the Apply runs, and read there.</b> The desktop host's Apply keeps an entry as the service answers, before the
 /// card settles (<see cref="HelpProposals.KeepPublished"/>), and its <c>HELP_PUBLISHED</c> reads them; no terminal door applies a
-/// proposal (D89), and neither the service nor a terminal reads it. A crash between the service's answer and the keep loses the entry,
+/// proposal, and neither the service nor a terminal reads it. A crash between the service's answer and the keep loses the entry,
 /// never the ask or the quest.</para>
 ///
 /// <para><b>A file that does not read is nothing kept</b>, as Ask Daoris's other files are: it lists nothing, and the next keep starts it
@@ -73,7 +73,7 @@ public sealed class HelpPublished(string home)
         }
     }
 
-    /// <summary>A conversation's list, the newest first; none for a conversation from before, an id no session's, or a file that does not read.</summary>
+    /// <summary>A conversation's list, the newest first; none for a conversation that kept none, an id no session's, or a file that does not read.</summary>
     public IReadOnlyList<HelpPublishedEntry> Read(string session) => SessionEventText.IsId(session) ? [.. Oldest(session).Reverse()] : [];
 
     private IReadOnlyList<HelpPublishedEntry> Oldest(string session)
@@ -93,7 +93,7 @@ public sealed class HelpPublished(string home)
         }
     }
 
-    /// <summary>An entry as it was written; one with no proposal, no kind or neither id is no entry.</summary>
+    /// <summary>An entry as written; one with no proposal, no kind or neither id is no entry.</summary>
     private static HelpPublishedEntry? ReadEntry(JsonElement element)
     {
         if (element.ValueKind != JsonValueKind.Object) return null;

@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// *Change the service's address* (WIRING1e, the this-Daoris design §4): <b>the account's</b> <c>DAORIS_SERVICE_URL</c> set to an
+/// *Change the service's address*: <b>the account's</b> <c>DAORIS_SERVICE_URL</c> set to an
 /// address of this machine, or cleared for the default. It takes effect when Daoris starts again, and a terminal reads it too.
 /// </summary>
 /// <remarks>
-/// Only this machine's own address is taken: the local service is sent this machine's paths, which no other host is (D46, D171's note).
+/// Only this machine's own address is taken: the local service is sent this machine's paths, which no other host is.
 /// A refusal writes nothing.
 /// </remarks>
 public static class AccountServiceAddress

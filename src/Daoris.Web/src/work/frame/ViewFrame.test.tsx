@@ -11,16 +11,16 @@ import { type ChoiceStanding, useListPanes } from './listPanes';
 import { type ListSpec, ViewFrame } from './ViewFrame';
 import { ViewMain } from './ViewMain';
 
-// A browser's frame (D118 §4, amending DOCK1a): the view's list and its main area, which hold nothing
-// machine-local, and never the side bar or the panel, which hold this machine's sessions (D47 §4).
+// A browser's frame: the view's list and its main area, which hold nothing
+// machine-local, and never the side bar or the panel, which hold this machine's sessions.
 
 const ROWS = ['Expose a streaming budget', 'Read the budget from the level file'];
 
 /**
  * The application's half, as `App` holds it in a browser: the lists' memory and a list laid over. `standings` is what
- * the view reads of each item (UX6b); an item it does not name still waits.
+ * the view reads of each item; an item it does not name still waits.
  *
- * A go's group (ENTRY1g) arrives with the view it opens, as `App.apply` sets both at once, and is brought into view as Quests
+ * A go's group arrives with the view it opens, as `App.apply` sets both at once, and is brought into view as Quests
  * brings it, from above the frame, once its list has `answered`. `view` is Quests, or a view of another list to go from.
  */
 function Browser({ withList = true, onMode, standings = {}, view = 'quests', go = null, answered = true, onBrought }: {
@@ -126,7 +126,7 @@ describe("a browser's frame", () => {
     const over = screen.getByRole('region', { name: 'Quests' });
     await userEvent.click(within(over).getByRole('button', { name: 'Expose a streaming budget' }));
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Quests' })).toBeNull());
-    // The application was told each mode, so its doors say whether the list is shown.
+    // The application is told each mode, so its doors say whether the list is shown.
     expect(modes).toEqual(expect.arrayContaining(['open', 'strip', 'over']));
   });
 
@@ -140,7 +140,7 @@ describe("a browser's frame", () => {
 });
 
 /**
- * ENTRY1g (D161's ENTRY1b note): a go to a group of the list lays it over the main area where it is a strip, whoever drew the
+ * A go to a group of the list lays it over the main area where it is a strip, whoever drew the
  * strip, so the group is brought into view there; and it stays laid over, as one the person opened does, until they let it
  * go. Nothing is remembered: the person's closing stands once it goes.
  */
@@ -196,7 +196,7 @@ describe('a go to a group of the list', () => {
     expect(screen.getByRole('heading', { name: 'Waiting on you' })).toHaveFocus();
   });
 
-  /** UX6b: a remembered item that closed is let go as the view opens, which is no choice, so the list stays laid over. */
+  /** A remembered item that closed is let go as the view opens, which is no choice, so the list stays laid over. */
   it('keeps the list laid over as the view lets go of a remembered item that closed', () => {
     widen(600);
     window.localStorage.setItem('daoris.list.quests.chosen', ROWS[1]!);
@@ -209,8 +209,8 @@ describe('a go to a group of the list', () => {
   });
 });
 
-// UX6b (design §1 rule 6): the list is told what its chosen item is now, and a remembered one that closed or went is let
-// go before the main area shows it. Quests reopened yesterday's done quest on the owner's install.
+// The list is told what its chosen item is now, and a remembered one that closed or went is let
+// go before the main area shows it, so a done quest is never reopened by memory.
 describe("a view's remembered choice", () => {
   const DONE = ROWS[1]!;
 
@@ -249,7 +249,7 @@ describe("a view's remembered choice", () => {
 });
 
 /**
- * UX6i (D150 §2.2): Knowledge's pane is one, and the list on it is its mode's. The mode's list keeps its chosen item, so a
+ * Knowledge's pane is one, and the list on it is its mode's. The mode's list keeps its chosen item, so a
  * remembered one that went is let go there; the pane's closing and width are the place's, whichever mode is drawn.
  */
 function Moded({ standing }: { standing: ChoiceStanding }) {

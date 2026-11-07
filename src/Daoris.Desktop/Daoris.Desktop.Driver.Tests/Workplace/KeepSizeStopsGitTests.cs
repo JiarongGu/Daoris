@@ -4,8 +4,8 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPSIZE1b's destructive paths over real git, each interleaved where a real stop, a real refusal or a real race lands (the keep-size design
-/// §3.1 to §3.5 as amended after Codex's reads; <see cref="SetAsideFaults"/>): the exact tip's holder moved between its protection and the
+/// The destructive paths over real git, each interleaved where a real stop, a real refusal or a real race lands
+/// (<see cref="SetAsideFaults"/>): the exact tip's holder moved between its protection and the
 /// branch's delete, a tracked file deleted between the judgement and the move, git's let-go and the folder's put-back both refused, a stop
 /// after the move and after a removal's rename, a stop at <c>judged</c>, and the press's run posting first and resuming before it removes.
 /// </summary>

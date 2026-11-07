@@ -5,7 +5,7 @@ using static Daoris.Desktop.Driver.Tests.ConformanceCases;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A stand-in's live cases (the agent-provider design §10): its doors' programs run as real model-free processes, through the door's own spawn
+/// A stand-in's live cases: its doors' programs run as real model-free processes, through the door's own spawn
 /// and today's transports, a protocol door's through <see cref="AcpSession"/> and a native one's through the plain capture. They run on the
 /// registry's <c>StandIn</c> providers alone, in <see cref="ProviderConformanceProcessTests"/>.
 /// </summary>
@@ -13,8 +13,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The program a case runs is the stand-in's own, laid out in its provider's folder (<c>Agents/Providers/&lt;Folder&gt;/Program/</c>) and
 /// carried beside the driver by the project's one glob, so it is run from this test's build output: the entry and each door's arguments
 /// are its <c>provider.json</c>'s, and a case names the scenario of the contract it plays (<c>--scenario</c>) and where the program keeps
-/// the protocol methods it was sent (<c>--seen</c>). What a check reads is what the contract fixes, said back in the stand-in's own lines,
-/// so nothing here names a stand-in by its id, and a later stand-in's program is run by the same cases (D213's row b part 3 note).
+/// the protocol methods it is sent (<c>--seen</c>). What a check reads is what the contract fixes, said back in the stand-in's own lines,
+/// so nothing here names a stand-in by its id, and a later stand-in's program is run by the same cases.
 /// </remarks>
 internal static class ConformanceLiveCases
 {
@@ -68,12 +68,12 @@ internal static class ConformanceLiveCases
 
     /// <summary>
     /// The case's door's program, as its <c>provider.json</c> lays it out and the build carries it: Node, the entry, the door's arguments,
-    /// then the case's own (a scenario, and where the protocol methods it was sent are kept).
+    /// then the case's own (a scenario, and where the protocol methods it is sent are kept).
     /// </summary>
     private static IReadOnlyList<string> Program(ConformanceRun run, params string[] more) =>
         ProviderFiles.Of(run.Provider.Id.Value).Command(run.TheDoor.Id.Value, more);
 
-    /// <summary>What a protocol run gave: its outcome or its failure, the methods the agent was sent, and the lines the session said.</summary>
+    /// <summary>What a protocol run gave: its outcome or its failure, the methods the agent is sent, and the lines the session said.</summary>
     private sealed record ProtocolRan(AcpOutcome? Outcome, Exception? Failed, IReadOnlyList<string> Methods, IReadOnlyList<string> Lines);
 
     /// <summary>The door's program started by the door's own spawn, and a run of the protocol transport over it.</summary>

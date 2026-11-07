@@ -4,7 +4,7 @@ import { attentionActs, attentionWorded, type PushedAttention } from './attentio
 import { SET_UP, STEP_SHOWN } from '../gates/reviewFixtures';
 
 /**
- * REVIEWENV1g (D154 point 8; the review environment design §3.3): *What needs you* lists a set-up step whose newest set-up
+ * *What needs you* lists a set-up step whose newest set-up
  * waits for the person's look, the set-up named as the row drew it. Which steps wait is .NET's (`AttentionStateSliceTests`' set-up
  * cases); the page words the row and offers the review's presses.
  */

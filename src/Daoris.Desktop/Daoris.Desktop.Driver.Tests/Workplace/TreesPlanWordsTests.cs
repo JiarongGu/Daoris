@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// RPC1b2 (the terminal RPC design §7.3, RPCOPEN1): each <c>trees</c> read's words (<see cref="TreesWords"/>'s plan functions, which
+/// Each <c>trees</c> read's words (<see cref="TreesWords"/>'s plan functions, which
 /// the alone path prints and the routes answer as <c>said</c>), and the verb as the running Daoris's client: the text its stand-in's
 /// answer is printed as equals the alone path's, case for case, and a read the instance does not answer in words is read alone.
 /// </summary>
@@ -116,7 +116,7 @@ public sealed class TreesPlanWordsTests
         Assert.Equal(["trees: `k` (game) has no part with work to land here."], lines);
     }
 
-    /// <summary>ACCEPTCONFLICT1: a clash is said as conflicting, naming the files, and never hints at leaving the part out.</summary>
+    /// <summary>A clash is said as conflicting, naming the files, and never hints at leaving the part out.</summary>
     [Fact]
     public void A_clash_is_said_as_conflicting_and_a_superseded_part_keeps_its_leave_out_hint()
     {

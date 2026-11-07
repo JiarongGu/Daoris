@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace Daoris.Driver;
 
-/// <summary>What a start through the launcher is (TERMTRUST1a; the machine log's <c>agent.contained</c> <c>kind</c>).</summary>
+/// <summary>What a start through the launcher is (the machine log's <c>agent.contained</c> <c>kind</c>).</summary>
 public enum ContainedKind
 {
     /// <summary>An agent's harness: a driven session, a carry-on, a conversation, an intake, a helper, a reviewer, a brainstorm pass, a workflow node.</summary>
@@ -16,7 +16,7 @@ public enum ContainedKind
     Piece,
 }
 
-/// <summary>Why a start was not contained (TERMTRUST1a; the machine log's <c>agent.contained</c> <c>why</c>).</summary>
+/// <summary>Why a start is not contained (the machine log's <c>agent.contained</c> <c>why</c>).</summary>
 public static class ContainedWhy
 {
     /// <summary>No launcher is laid out beside the home: a workspace build, a test's home.</summary>
@@ -36,14 +36,14 @@ public static class ContainedWhy
 }
 
 /// <summary>
-/// This Daoris process's agents' job (TERMTRUST1a part (i); D201 point 4; the terminal-trust design §3.3 point 3): one named job,
+/// This Daoris process's agents' job: one named job,
 /// <c>Local\daoris-agents-&lt;process id&gt;</c>, made empty at the first start that can be contained and held for the process's life, which every
 /// agent, plugin process and piece it starts is joined to from its first instruction, through the launcher (<see cref="PieceLauncher"/>).
 /// It ends what it holds as its last handle closes, this process's, so no agent outlives the Daoris that started it, as each agent's own job
-/// already had it (ORPHAN1).
+/// already had it.
 /// </summary>
 /// <remarks>
-/// <para><b>Best effort for the start, published for every judge</b> (Fable's F2): a start that cannot be contained (no launcher laid out,
+/// <para><b>Best effort for the start, published for every judge</b>: a start that cannot be contained (no launcher laid out,
 /// a job the system refuses, a name already held) is made as it was, and while any such start of this process lives, the process holds a
 /// second named object of the prefix, an event <c>Local\daoris-agents-&lt;process id&gt;-open</c>, which part (ii)'s judge reads as
 /// <c>untold</c>. A name lives only while a handle to it is open, so a reused process id meets no stale one.</para>
@@ -107,7 +107,7 @@ public sealed class AgentJobs : IDisposable
     /// <exception cref="DriverException">A piece that cannot be started through the launcher at all.</exception>
     public AgentStart Contain(ProcessStartInfo info, ContainedKind kind, string? launcher, string? piece = null)
     {
-        // A start already the launcher's (a run tried again on the same start, SESSCTX1c) is left as it is, read for what it joins.
+        // A start already the launcher's (a run tried again on the same start) is left as it is, read for what it joins.
         if (PieceLauncher.Carries(info))
         {
             var (call, _) = PieceLauncher.Read(info.ArgumentList);
@@ -226,7 +226,7 @@ public sealed class AgentJobs : IDisposable
 }
 
 /// <summary>
-/// One start's containment (TERMTRUST1a): whether it was made through the launcher, why not where it was not, and, for an uncontained one,
+/// One start's containment: whether it is made through the launcher, why not where it is not, and, for an uncontained one,
 /// its share of its process's open event, let go as its process ends (<see cref="Lives"/>) or as it is disposed unstarted.
 /// </summary>
 public sealed class AgentStart : IDisposable

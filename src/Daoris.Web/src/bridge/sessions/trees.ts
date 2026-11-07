@@ -3,7 +3,7 @@ import { keepPreviousData, type QueryClient, useMutation, useQuery, useQueryClie
 import { useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 // The shape lives beside the components that render it, so a molecule can name it without
-// importing this module (SURF6).
+// importing this module.
 import { REVIEW_BOUND_MINUTES, type SessionDiff } from '../../work/review/diff';
 import type { OpinionDetail, OpinionGate, OpinionWait } from '../../work/gates/opinion';
 import type { TreeFile } from '../../work/review/preview';
@@ -14,21 +14,21 @@ import { call, pressBound } from '../call';
 export type { DiffFile, SessionDiff } from '../../work/review/diff';
 export type { TreeFile } from '../../work/review/preview';
 
-// A session's tree on this machine (MOD3): what it did, the files in it, and the acts on it once
-// reviewed: land it by its repository's rule, hand its branch on, or discard it (D51, WSR1, WSR5).
+// A session's tree on this machine: what it did, the files in it, and the acts on it once
+// reviewed: land it by its repository's rule, hand its branch on, or discard it.
 
-/** How long the page waits for a review (REVIEW4): the page's patience, named in minutes beside the shape. */
+/** How long the page waits for a review: the page's patience, named in minutes beside the shape. */
 export const reviewBound = REVIEW_BOUND_MINUTES * 60_000;
 
-/** How long a review nobody looks at stays held: a return within it is served from it (REVIEW4). */
+/** How long a review nobody looks at stays held: a return within it is served from it. */
 const REVIEW_KEPT = 30 * 60_000;
 
 /** How long a live session's review is fresh: the moment every view's query is (`main.tsx`). */
 const LIVE_FRESH = 15_000;
 
 /**
- * How long a review nobody waits on is let run before the page leaves it (GITAPP1a-iii, the git-app design P1.6; provisional): a
- * return within it joins the read still running (REVIEW4), and past it the page sends `READ_LEAVE`, so the host stops its git.
+ * How long a review nobody waits on is let run before the page leaves it (provisional): a
+ * return within it joins the read still running, and past it the page sends `READ_LEAVE`, so the host stops its git.
  */
 export const READ_LEAVE_GRACE = 10_000;
 
@@ -45,12 +45,12 @@ type Reading = {
   done: boolean;
 };
 
-/** A read's id, the page's own per call (GITAPP1a-iii): what `READ_LEAVE` names, never the session, which two windows share. */
+/** A read's id, the page's own per call: what `READ_LEAVE` names, never the session, which two windows share. */
 let reads$ = 0;
 const readId = () => `${Date.now().toString(36)}-${(reads$ += 1).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 /**
- * The reads in flight, by session, for each query cache (REVIEW4). A return within a read waits on it rather than starting a
+ * The reads in flight, by session, for each query cache. A return within a read waits on it rather than starting a
  * second, and counts from its start. Kept beside the cache whose answer it becomes, so a second cache (a test's) never meets
  * another's.
  */
@@ -75,7 +75,7 @@ const listen = (reader: () => void) => {
 };
 
 /**
- * When the host's read of this session's review began, while one is in flight (REVIEW4): the review counts from it, so
+ * When the host's read of this session's review began, while one is in flight: the review counts from it, so
  * a return to a read still running says how long it has really been.
  *
  * @remarks Observed rather than read once: the query says it is fetching before its read begins (its first answer is
@@ -87,7 +87,7 @@ export const useReadingSince = (session: string | null): number | null => {
 };
 
 /**
- * The page leaves a read nobody waits on (GITAPP1a-iii): out of the table, so a return asks afresh, and `READ_LEAVE` sent, so the
+ * The page leaves a read nobody waits on: out of the table, so a return asks afresh, and `READ_LEAVE` sent, so the
  * host stops its git once no other window waits on it. A refusal of the route changes nothing: its read runs on.
  */
 function leave(client: QueryClient, session: string, entry: Reading) {
@@ -105,18 +105,18 @@ function leave(client: QueryClient, session: string, entry: Reading) {
 }
 
 /**
- * The review's answer, waited on until the person leaves (REVIEW4).
+ * The review's answer, waited on until the person leaves.
  *
  * @remarks
- * **Leaving cancels the page's wait, and then git** (GITAPP1a-iii, the git-app design P1.6). The query hands its signal here,
+ * **Leaving cancels the page's wait, and then git**. The query hands its signal here,
  * so a review that unmounts mid-read is cancelled and reverts: no clock runs and no state is held for a pane nobody looks at.
  * The read counts its waiters; once the last has gone it runs on for {@link READ_LEAVE_GRACE}, within which a return joins it
- * and what it answers with nobody waiting is put where a return reads first, as before. Past the grace the page sends
+ * and what it answers with nobody waiting is put where a return reads first. Past the grace the page sends
  * `READ_LEAVE` with the read's id, and a return after that asks afresh. A refusal with nobody waiting is dropped; a return asks.
  * The host binds each read to the window that asked, so a window destroyed mid-read leaves its reads with no script here.
  *
  * **An act that changed the tree asks afresh.** A landing or a discard invalidates the review; a read begun before it
- * answers for the tree as it was, so the read again starts its own, and the earlier one's answer is dropped.
+ * answers for the tree as it stood, so the read again starts its own, and the earlier one's answer is dropped.
  *
  * Exported for its own test (`trees.leave.test.ts`); a view reads the review through {@link useSessionDiff}.
  */
@@ -206,10 +206,10 @@ export function readDiff(client: QueryClient, session: string, signal: AbortSign
 export type ReviewRecord = { updated: string; live: boolean };
 
 /**
- * What a session actually did (SURF6, design §5).
+ * What a session actually did.
  *
  * @remarks
- * **Shell-only, structurally** — the same rule as the console (D47 §4): it is read off a checkout on
+ * **Shell-only, structurally** — the same rule as the console: it is read off a checkout on
  * this machine, so a browser has nothing to ask and is never asked to. `enabled` gates on the bridge
  * for that reason rather than as an optimisation.
  *
@@ -217,7 +217,7 @@ export type ReviewRecord = { updated: string; live: boolean };
  * changes far more often than anyone opens a review — so this is keyed by session and left to the
  * pane that renders it, never prefetched alongside the record.
  *
- * **An ended session's answer is kept** (REVIEW4): its committed range does not move once it ended, so a
+ * **An ended session's answer is kept**: its committed range does not move once it has ended, so a
  * second open is the first's answer, at once, for as long as nothing has moved since — an answer read
  * before the record's last move (it ended, it parked) is read again. A live session's is read again on
  * an open once the moment every view is fresh for has passed, the last answer held beneath it meanwhile;
@@ -237,7 +237,7 @@ export const useSessionDiff = (session: string | null, record?: ReviewRecord | n
     queryKey: keys.diff(session ?? ''),
     queryFn: ({ signal }) => readDiff(client, session!, signal),
     enabled: isAvailable && Boolean(session),
-    // Final once it ended and read after that, and read again on the next open if it was read before. A live session's
+    // Final once it ended and read after that, and read again on the next open if it is read before. A live session's
     // is fresh for the moment every view's is (`main.tsx`), so a glance at another tab and back does not run git again.
     staleTime: (held) => {
       if (settled === null) return LIVE_FRESH;
@@ -264,7 +264,7 @@ export const useSessionDiff = (session: string | null, record?: ReviewRecord | n
 export type TreeFiles = { session: string; files: string[]; unlisted: number };
 
 /**
- * The files in the session's tree, for the composer's `@` (CONV4d).
+ * The files in the session's tree, for the composer's `@`.
  *
  * @remarks
  * **Asked for only while a mention is being written** (`wanted`), and then kept by session, so the
@@ -287,7 +287,7 @@ export const useTreeFiles = (session: string | null, wanted: boolean) => {
 };
 
 /**
- * One file in the session's tree, read for its preview in the side bar (PREVIEW1, D111).
+ * One file in the session's tree, read for its preview in the side bar.
  *
  * @remarks
  * **Read when a door opens it**, and again on the preview's own *read it again*: the agent may be writing
@@ -309,7 +309,7 @@ export const useTreeFile = (session: string | null, path: string | null) => {
 };
 
 /**
- * The review's patch for one file, where the review already holds one (PREVIEW1, D111): read from the
+ * The review's patch for one file, where the review already holds one: read from the
  * review's own answer, never asked of git, so a preview opened from a tool card before anyone looked at
  * the review says nothing of changes rather than running a diff of its own.
  */
@@ -319,14 +319,14 @@ export const useReviewedPatch = (session: string | null, path: string | null): s
     queryKey: keys.diff(session ?? ''),
     // The review's own read, should anything ever run it from here: one read per session, within the review's bound.
     queryFn: ({ signal }) => readDiff(client, session!, signal),
-    // Never asked from here: the review asks, and this reads what it was answered.
+    // Never asked from here: the review asks, and this reads what it is answered.
     enabled: false,
   });
   return (path && reviewed.data?.files.find((file) => file.path === path)?.patch) || null;
 };
 
 /**
- * The two acts on a reviewed session (SURF6b, D51 rules 6–7).
+ * The two acts on a reviewed session.
  *
  * @remarks
  * **A refusal is an answer**, not an error: the repository's checkout is busy, the tree holds work
@@ -341,65 +341,64 @@ export const useReviewedPatch = (session: string | null, path: string | null): s
 export type TreeAct = { session: string; done: boolean; message: string };
 
 /**
- * One commit a landing leaves out because the line already holds it (LANDSYNC1, D87's 2026-10-15 amendment point 4): its short id,
+ * One commit a landing leaves out because the line already holds it: its short id,
  * subject, why (`content`, `patch`, or `empty` where the replay found it so), and the line's commit with the same patch.
  */
 export type LeftOutCommit = { commit: string; subject: string; why: string; on?: string | null };
 
-/** One commit a landing would replay onto the line, by its short id and subject (LANDSYNC1). */
+/** One commit a landing would replay onto the line, by its short id and subject. */
 export type LandsCommit = { commit: string; subject: string };
 
-/** A replay that conflicts with the line (D87's amendment point 5): git's lines, and the words its session is asked to rebase with. */
+/** A replay that conflicts with the line: git's lines, and the words its session is asked to rebase with. */
 export type LandingConflict = { says: string; words: string };
 
 /**
- * What accepting this session would do under its repository's landing rule (WSR1, D87): merge into
+ * What accepting this session would do under its repository's landing rule: merge into
  * the line, or the branch it would make — said before the press. Only for a session with a tree here.
- * Where the rule names a plugin (D100), which one pushes it, and the sentence a press would be refused
- * with where that plugin cannot land work now. And the review's gate while it holds the work (REVIEWENV1c), which the page
- * draws where *Accept…* would be (REVIEWENV1g); absent where nothing waits for a review. And the
- * second opinion's gate before it (XAGENT1f), wherever a level asks one, which the page draws beside the review's (XAGENT1g).
+ * Where the rule names a plugin, which one pushes it, and the sentence a press would be refused
+ * with where that plugin cannot land work now. And the review's gate while it holds the work, which the page
+ * draws where *Accept…* would be; absent where nothing waits for a review. And the
+ * second opinion's gate before it, wherever a level asks one, which the page draws beside the review's.
  */
 export const useLanding = (id: string | null, branch?: string | null) => {
   const { isAvailable } = useShenora();
   const named = branch?.trim() || null;
   return useQuery({
-    // LANDNAME1b: the plan asked again with a name the person entered, so a refusal shows before the press. The rule's own plan
+    // The plan asked again with a name the person entered, so a refusal shows before the press. The rule's own plan
     // keeps its key, and the previous answer stands while the next is read, so the ask's gates do not blink away as one types.
     queryKey: named ? [...keys.landing(id ?? ''), named] : keys.landing(id ?? ''),
     placeholderData: named ? keepPreviousData : undefined,
     queryFn: () => call('LANDING', { id: id ?? '', ...(named ? { branch: named } : {}) }) as Promise<{
       session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string; review?: ReviewWaits | null;
       /**
-       * The branch the press lands on already stands (ACCEPTALL1g): an entry's or a chain's, which the press moves on instead of
+       * The branch the press lands on already stands: an entry's or a chain's, which the press moves on instead of
        * making it. False or absent is a branch the press makes.
        */
       stands?: boolean;
       /**
-       * The target is the branch the session's own agent moved its tree onto (TREEFOLLOW1), which the press lands as it stands and
-       * makes no other (TREEFOLLOWWEB1). Absent, read as a branch the rule names.
+       * The target is the branch the session's own agent moved its tree onto, which the press lands as it stands and
+       * makes no other. Absent, read as a branch the rule names.
        */
       own?: boolean;
-      /** How many paths the tree holds uncommitted (REVIEWDIRTY1): 0 where clean. */
+      /** How many paths the tree holds uncommitted: 0 where clean. */
       uncommitted?: number;
       opinion?: OpinionGate | null;
       workflow?: import('../../workflow/gate').WorkflowGateState | null;
       /**
        * What the press would leave out because the line holds it, what it would replay onto the line, and a conflict it would be
-       * refused for (LANDSYNC1, D87's 2026-10-15 amendment): judged against the last fetch. `leftOut` is empty, beside `lands`, where
-       * the line holds none of the work but moved since it began, and the press replays it all onto the line first (LANDREBASE1);
+       * refused for: judged against the last fetch. `leftOut` is empty, beside `lands`, where
+       * the line holds none of the work but moved since it began, and the press replays it all onto the line first;
        * each absent where the work lands as made.
        */
       leftOut?: LeftOutCommit[] | null;
       lands?: LandsCommit[] | null;
       conflict?: LandingConflict | null;
       /**
-       * The branch its line of work landed on where the person left this part out of its entry's Accept (ACCEPTALL1c, D167's
-       * 2026-10-15 amendment point 3), as its conversation keeps it; absent where none did, or nothing accepted it since.
+       * The branch its line of work landed on where the person left this part out of its entry's Accept, as its conversation keeps it; absent where none did, or nothing accepted it since.
        */
       leftOutOf?: string | null;
       /**
-       * The person's Accept is kept on the session (LANDBACK1 part 1): it was carried on to commit its tree or resolve its conflict, and
+       * The person's Accept is kept on the session: it is carried on to commit its tree or resolve its conflict, and
        * lands when its tree is clean. `awaiting` while the carry-on's turn runs; `carries` of the Accept's two. Absent where none is
        * kept.
        */
@@ -410,9 +409,9 @@ export const useLanding = (id: string | null, branch?: string | null) => {
 };
 
 /**
- * The process a session's own tree runs under (PROCESS1e, D164's amendment point 3): how its work is committed and how it lands,
- * each with where it was set, for its *Details*. Read from the driver file alone, so it runs no git; none where the session has no
- * tree of its own here, which was told none. Shell-only: the rules and the tree are this machine's. Under the lines' key, so a rule
+ * The process a session's own tree runs under: how its work is committed and how it lands,
+ * each with where it is set, for its *Details*. Read from the driver file alone, so it runs no git; none where the session has no
+ * tree of its own here, which is told none. Shell-only: the rules and the tree are this machine's. Under the lines' key, so a rule
  * set on Setup or by Ask Daoris asks it again.
  */
 export const useSessionProcess = (session: string | null) => {
@@ -425,16 +424,15 @@ export const useSessionProcess = (session: string | null) => {
 };
 
 /**
- * What a press at the second opinion's gate came to (XAGENT1f's `OpinionPresses`): whether it was taken, the driver's sentence
- * (a refusal is an answer, as a landing's is), and the gate after it with the findings beside their answers (XAGENT1g).
+ * What a press at the second opinion's gate came to (`OpinionPresses`): whether it is taken, the driver's sentence
+ * (a refusal is an answer, as a landing's is), and the gate after it with the findings beside their answers.
  */
 export type OpinionPressed = {
   session?: string; done: boolean; message: string; opinion?: OpinionGate | string | null; detail?: OpinionDetail | null;
 };
 
 /**
- * A session's second opinion at its gate, with each finding beside the working session's answer (XAGENT1g; the second-agent
- * design §9): what the review's *Second opinion* draws. Shell-only: the opinion is this machine's (D47 §4).
+ * A session's second opinion at its gate, with each finding beside the working session's answer: what the review's *Second opinion* draws. Shell-only: the opinion is this machine's.
  */
 export const useOpinionGate = (id: string | null) => {
   const { isAvailable } = useShenora();
@@ -446,7 +444,7 @@ export const useOpinionGate = (id: string | null) => {
 };
 
 /**
- * What of the second opinion's gates waits on the person on this machine (XAGENT1g, design §9): a dispute, a required opinion
+ * What of the second opinion's gates waits on the person on this machine: a dispute, a required opinion
  * none could be had for, and commits nobody read where the work lands by itself, oldest first. *What needs you* lists them.
  * An answer of nothing reads as none. `enabled` lets a caller ask it only while there is work
  * it could name: an opinion is owed only on work Sessions' list places *To review*.
@@ -464,18 +462,18 @@ export const useOpinionWaits = (enabled = true) => {
 };
 
 /**
- * A press at the gate (XAGENT1f): the gate moved, so every landing's plan and gate is asked again, and the sessions, whose
+ * A press at the gate: the gate moved, so every landing's plan and gate is asked again, and the sessions, whose
  * reviewer a press may have started or stopped, whatever the driver said: a refusal reads the gate as it stands. The route
- * declares both, and the state hub asks them again in every window (STATEHUB1b, D169).
+ * declares both, and the state hub asks them again in every window.
  */
 function useOpinionChange<TVariables>(fn: (variables: TVariables) => Promise<OpinionPressed>) {
   return useMutation({ mutationFn: fn });
 }
 
 /**
- * *Ask now*, *Try again*, *Ask again* and *Ask the same agent, fresh* (the second-agent design §8.5): a pass on the session's work
+ * *Ask now*, *Try again*, *Ask again* and *Ask the same agent, fresh*: a pass on the session's work
  * the driver's next look starts, among the rule's reviewers only, or the working agent in a fresh conversation (`sameAgent`).
- * It spends an account at the person's choice, so no door but theirs presses it (§9).
+ * It spends an account at the person's choice, so no door but theirs presses it.
  */
 export const useAskOpinion = () => useOpinionChange(
   ({ id, reviewer, sameAgent, words, occasion }: {
@@ -486,17 +484,17 @@ export const useAskOpinion = () => useOpinionChange(
   }) as Promise<OpinionPressed>);
 
 /**
- * *Go on anyway…* (§8.5): what is unsettled stays so, the person's answer kept with their words at the commit that would land,
+ * *Go on anyway…*: what is unsettled stays so, the person's answer kept with their words at the commit that would land,
  * and the gate's next item follows. Nothing lands here.
  */
 export const useOpinionAnyway = () => useOpinionChange(
   ({ id, words }: { id: string; words?: string | null }) => call('OPINION_ANYWAY', { id, ...(words ? { words } : {}) }) as Promise<OpinionPressed>);
 
-/** *I looked myself…* (§8.5): the person's own reading kept in place of another agent's, with their words. */
+/** *I looked myself…*: the person's own reading kept in place of another agent's, with their words. */
 export const useOpinionMyself = () => useOpinionChange(
   ({ id, words }: { id: string; words?: string | null }) => call('OPINION_MYSELF', { id, ...(words ? { words } : {}) }) as Promise<OpinionPressed>);
 
-/** *Stop* (§8.5): the reviewer reading the opinion stopped, as the person's stop; that pass then says it gave none. */
+/** *Stop*: the reviewer reading the opinion stopped, as the person's stop; that pass then says it gave none. */
 export const useStopOpinion = () => useOpinionChange(
   ({ opinion }: { opinion: string }) => call('STOP_OPINION', { opinion }) as Promise<OpinionPressed>);
 
@@ -504,27 +502,27 @@ export const useStopOpinion = () => useOpinionChange(
  * Accept a session: its work lands as its repository's rule says — merged, or put on a branch. The push and the pull request
  * are the workflow's own steps after it, never this press's.
  *
- * Where *Accept…* was drawn with what the second opinion left unsettled, it sends back the gate's token (`answers`, XAGENT1f),
+ * Where *Accept…* is drawn with what the second opinion left unsettled, it sends back the gate's token (`answers`),
  * so the press answers what it showed; a gate that moved since answers nothing, and the door refuses in its sentence.
  *
- * What it moved is the route's to declare and the state hub's to ask again, in every window (STATEHUB1b, D169): every plan and
+ * What it moved is the route's to declare and the state hub's to ask again, in every window: every plan and
  * gate (the line moved, or a refusal fetched it), the sessions, its review and the clean-up's list. Asked here
- * alone, and never the plan after a done press, the plan read before it answered after a tab switch (STATEHUB1); the hook asks
- * nothing itself, a conflict's plan among it (STATEHUB1f).
+ * alone, and never the plan after a done press, the plan read before it answered after a tab switch; the hook asks
+ * nothing itself, a conflict's plan among it.
  */
 export const useLandSessionTree = () =>
   useMutation({
-    // Keyed by its route, so every view of the session reads it under way, not only the one that pressed (STATEHUB1c).
+    // Keyed by its route, so every view of the session reads it under way, not only the one that pressed.
     mutationKey: ['LAND_SESSION_TREE'],
     mutationFn: (land: string | { id: string; answers?: string | null; branch?: string | null }) => {
       const { id, answers, branch } = typeof land === 'string' ? { id: land, answers: null, branch: null } : land;
-      // LANDNAME1b: a name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
+      // A name the person entered replaces the rule's whole name; blank sends none, so the payload is today's.
       const named = branch?.trim();
-      // LANDSYNC1: what it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
+      // What it left out because the line holds it, and the conflict a refusal names with the words to rebase with.
       return call('LAND_SESSION_TREE', { id, ...(answers ? { answers } : {}), ...(named ? { branch: named } : {}) }, { timeoutMs: pressBound(1) }) as Promise<TreeAct & {
         branch?: string;
         leftOut?: LeftOutCommit[] | null;
-        /** CHATFLOW1d: what refused a chat run's press (`busy`, `elsewhere`, `moved`, `asked`), worded by the page; absent otherwise. */
+        /** What refused a chat run's press (`busy`, `elsewhere`, `moved`, `asked`), worded by the page; absent otherwise. */
         press?: string | null;
         conflict?: LandingConflict | null;
       }>;
@@ -533,8 +531,7 @@ export const useLandSessionTree = () =>
 
 /**
  * Discard a session's tree, its branch with it. Its review, the sessions, every plan and the clean-up's list, which the
- * session's head reads what it left from (SQUASHTIDY1b), are asked again by the state hub, as the route declares them
- * (STATEHUB1b, D169).
+ * session's head reads what it left from, are asked again by the state hub, as the route declares them.
  */
 export const useDiscardSessionTree = () =>
   useMutation({

@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1 1b (the workflow clean-up design §3): the terminal's doors that saved a list of steps refuse alike, in the one judge's words,
+/// The terminal's doors that saved a list of steps refuse alike, in the one judge's words,
 /// and write nothing: <c>apply</c> holding steps, <c>apply --as-graph</c> (folded into <c>workflow convert</c>), <c>edit</c>, <c>new --from</c> a
-/// version of steps or a step preset, and <c>import</c> of a file holding steps or a <c>handed</c>. A workflow saved as steps before is still read.
+/// version of steps or a step preset, and <c>import</c> of a file holding steps or a <c>handed</c>. A workflow saved as steps earlier is still read.
 /// </summary>
 public sealed class WorkflowAsGraphCommandTests : IDisposable
 {

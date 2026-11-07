@@ -5,12 +5,12 @@ namespace Daoris.Driver;
 /// <summary>
 /// A command that runs a package's program through <c>npx</c>, read as npm's own <c>exec</c> reads it: the package, its version as
 /// written (exact, a tag, a range, or none), the program named where <c>-p</c> named the package, and the arguments the program is
-/// handed. A session never starts one as written (LAUNCHCHAIN1): on Windows each <c>npx</c> is two <c>cmd</c>s, npm's own node and
+/// handed. A session never starts one as written: on Windows each <c>npx</c> is two <c>cmd</c>s, npm's own node and
 /// a console each before the program's node, so the package is resolved once into the toolchain and its script started by node.
 /// </summary>
 /// <param name="Package">The package's name, as npm spells it: <c>@scope/name</c> or <c>name</c>.</param>
-/// <param name="Version">The version as written after the name's <c>@</c>; null where none was.</param>
-/// <param name="Bin">The program named after a <c>-p</c> package; null where the package itself was named, and npm's rule picks.</param>
+/// <param name="Version">The version as written after the name's <c>@</c>; null where none is written.</param>
+/// <param name="Bin">The program named after a <c>-p</c> package; null where the package itself is named, and npm's rule picks.</param>
 /// <param name="Arguments">What follows the package or the program, handed to the program as written.</param>
 public sealed record NpxCommand(string Package, string? Version, string? Bin, IReadOnlyList<string> Arguments)
 {

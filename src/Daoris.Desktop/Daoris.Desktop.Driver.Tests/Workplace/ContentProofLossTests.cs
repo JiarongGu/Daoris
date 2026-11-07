@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SQUASHTIDY1c (D51 rule 7, D102's SQUASHTIDY1 and SQUASHTIDY1c notes): the content proof loses nothing it deletes. A second
-/// agent's read-only review named six ways it could; each is a test here, seen failing first in a real scratch repository, and
-/// each holds what the fix guarantees. Real git, and nothing reaches a network: an <c>origin</c> is a bare repository under the
+/// The content proof loses nothing it deletes. Six ways it could are each a test here, run in a real scratch repository, and
+/// each holds what the proof guarantees. Real git, and nothing reaches a network: an <c>origin</c> is a bare repository under the
 /// scratch folder.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -181,8 +180,8 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// TREEKEEP1: a file the session wrote after the tree opened, in an ignored folder that is no build's and that the checkout
-    /// holds too (a session's prepared requests in <c>devtools/.tmp</c>, found on the install), is its own: the tree stays, the
+    /// A file the session wrote after the tree opened, in an ignored folder that is no build's and that the checkout
+    /// holds too (a session's prepared requests in <c>devtools/.tmp</c>), is its own: the tree stays, the
     /// file named.
     /// </summary>
     [Fact]
@@ -210,7 +209,7 @@ public sealed class ContentProofLossTests : LandedFixture
         Assert.Contains(tree.Branch, await GitAsync(root, "branch", "--list", "daoris/*"));
     }
 
-    /// <summary>TREEKEEP1: a scratch file the checkout holds at the same path but differently is the session's edit, and keeps the tree.</summary>
+    /// <summary>A scratch file the checkout holds at the same path but differently is the session's edit, and keeps the tree.</summary>
     [Fact]
     public async Task A_scratch_file_the_checkout_holds_differently_keeps_the_tree_named()
     {
@@ -235,7 +234,7 @@ public sealed class ContentProofLossTests : LandedFixture
         Assert.True(File.Exists(edited));
     }
 
-    /// <summary>TREEKEEP1: a dependency folder is what an install writes and re-makes, so a file under one still goes with the tree.</summary>
+    /// <summary>A dependency folder is what an install writes and re-makes, so a file under one still goes with the tree.</summary>
     [Fact]
     public async Task A_file_written_under_node_modules_the_checkout_also_has_still_goes_with_the_tree()
     {
@@ -258,7 +257,7 @@ public sealed class ContentProofLossTests : LandedFixture
         Assert.False(Directory.Exists(tree.Path));
     }
 
-    /// <summary>TREEKEEP1: a shared ignored file the tree did not write since it opened is still shared, and goes.</summary>
+    /// <summary>A shared ignored file the tree did not write since it opened is still shared, and goes.</summary>
     [Fact]
     public async Task A_shared_ignored_file_not_written_since_the_tree_opened_still_goes_with_it()
     {
@@ -321,7 +320,7 @@ public sealed class ContentProofLossTests : LandedFixture
         Assert.True(File.Exists(Path.Combine(tree.Path, "local.db")));
     }
 
-    // ---- (4b) TIDYOUTPUT1: a tree whose only extras are build and check output is tidied ----
+    // ---- A tree whose only extras are build and check output is tidied ----
 
     private const string DeclaresOutput = """{ "integration": { "scratch": ["devtools/_test-results/**", "devtools/_e2e-*-data/**"] } }""";
 
@@ -333,7 +332,7 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// INTEGRATE1d (D218's note): the owner's acceptance, for integration, of the declaration at the line's tip, as the window's door
+    /// The owner's acceptance, for integration, of the declaration at the line's tip, as the window's door
     /// writes it. A declared scratch is a list of files the tidy deletes, so it counts only once accepted, as a command runs only then.
     /// </summary>
     private async Task AcceptTheLinesDeclarationAsync(string root)
@@ -353,9 +352,9 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// TIDYOUTPUT1: a tree holding only what its repository declares as output (a folder the checkout does not have, a folder it
+    /// A tree holding only what its repository declares as output (a folder the checkout does not have, a folder it
     /// has) and a build's <c>bin</c> and <c>obj</c> (a project the checkout never built) is tidied with the landing, unforced, where the
-    /// owner accepted that declaration for integration (INTEGRATE1d).
+    /// owner accepted that declaration for integration.
     /// </summary>
     [Fact]
     public async Task A_tree_holding_only_declared_output_and_a_builds_folders_is_tidied()
@@ -382,8 +381,8 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// INTEGRATE1d (D218's note): the same declaration on the line, never accepted for integration, declares nothing, so the tree keeps
-    /// what it kept before TIDYOUTPUT1 and names it; a project's <c>bin</c> and <c>obj</c> still go, since a tool names those.
+    /// The same declaration on the line, never accepted for integration, declares nothing, so the tree keeps
+    /// the declared output and names it; a project's <c>bin</c> and <c>obj</c> still go, since a tool names those.
     /// </summary>
     [Fact]
     public async Task Declared_output_under_a_declaration_never_accepted_keeps_the_tree_while_a_builds_folders_go()
@@ -407,7 +406,7 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// INTEGRATE1d: accepted, and the line's declaration changed since: the new one waits for the owner, and the tidy reads none, so the
+    /// Accepted, and the line's declaration changed since: the new one waits for the owner, and the tidy reads none, so the
     /// tree is kept and named as with no acceptance.
     /// </summary>
     [Fact]
@@ -433,7 +432,7 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// TIDYOUTPUT1: <c>bin</c> and <c>obj</c> inside an ignored folder that is no build's go with the tree as they do at its top: the
+    /// <c>bin</c> and <c>obj</c> inside an ignored folder that is no build's go with the tree as they do at its top: the
     /// folder is read file by file, and a build's folder in it is not the session's own.
     /// </summary>
     [Fact]
@@ -457,7 +456,7 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// TIDYOUTPUT1: beside declared output and a build's folders, an ignored file the repository declared nothing about, written
+    /// Beside declared output and a build's folders, an ignored file the repository declares nothing about, written
     /// after the tree opened, keeps the tree, and the words name that file, not the output.
     /// </summary>
     [Fact]
@@ -489,7 +488,7 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// TIDYOUTPUT1: a note a session wrote under <c>local/</c> is never removed, though the tree's other extras are output, and
+    /// A note a session wrote under <c>local/</c> is never removed, though the tree's other extras are output, and
     /// though the repository declares output of its own.
     /// </summary>
     [Fact]
@@ -517,7 +516,7 @@ public sealed class ContentProofLossTests : LandedFixture
     }
 
     /// <summary>
-    /// TREELOCAL1 meets TIDYOUTPUT1: a read-only copy of a machine-local input, with the checkout's bytes and written after the tree
+    /// A read-only copy of a machine-local input, with the checkout's bytes and written after the tree
     /// opened, is no work, so it does not keep the tree.
     /// </summary>
     [Fact]

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TOOL6g: one status question per configuration home at a time, across processes (<see cref="ProbeLock"/>). The CLI's
+/// One status question per configuration home at a time, across processes (<see cref="ProbeLock"/>). The CLI's
 /// <c>probelock.test.ts</c> holds the same rows: where each lock lives, and when one is taken for a holder that died.
 /// </summary>
 public sealed class ProbeLockTests : IDisposable
@@ -16,8 +16,8 @@ public sealed class ProbeLockTests : IDisposable
     }
 
     /// <summary>
-    /// Where each lock lives, relative to the home: the twin's <c>PATH_ROWS</c>, which reads these rows, cell for cell. In <c>run/</c>
-    /// since HOMELAYOUT3 (D172 §3.5); a home whose locks are still at <c>harnesses/.probing</c> is read there.
+    /// Where each lock lives, relative to the home: the twin's <c>PATH_ROWS</c>, which reads these rows, cell for cell. In <c>run/</c>;
+    /// a home whose locks are still at <c>harnesses/.probing</c> is read there.
     /// </summary>
     [Theory]
     [InlineData("claude-code", "account-1", "run/probing/claude-code/account-1.lock")]

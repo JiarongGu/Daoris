@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The tool calls announced and not yet finished in one session, by id, and those a steer cut (STEER2a): open when the steer was
+/// The tool calls announced and not yet finished in one session, by id, and those a steer cut: open when the steer is
 /// answered <c>injected</c>, and never heard of since. Written on the reader's thread, read by whoever steers.
 /// </summary>
 internal sealed class StepCalls
@@ -13,7 +13,7 @@ internal sealed class StepCalls
     private readonly HashSet<string> _finished = new(StringComparer.Ordinal);
     private readonly HashSet<string> _cut = new(StringComparer.Ordinal);
 
-    /// <summary>A steer was answered <c>injected</c>: every call still open is cut until it is heard again.</summary>
+    /// <summary>A steer is answered <c>injected</c>: every call still open is cut until it is heard again.</summary>
     public void CutOpen()
     {
         lock (_gate) _cut.UnionWith(_open);
@@ -37,9 +37,9 @@ internal sealed class StepCalls
     }
 
     /// <summary>
-    /// A call announced or updated: heard again, it was not cut. <c>pending</c> and <c>in_progress</c> open it, as does an
+    /// A call announced or updated: heard again, it is not cut. <c>pending</c> and <c>in_progress</c> open it, as does an
     /// announcement that says no status, which the protocol reads as <c>pending</c>; any other status finishes it. An update that says
-    /// no status keeps what the call was, so a finished call stays finished and is never closed as cut.
+    /// no status keeps what the call is, so a finished call stays finished and is never closed as cut.
     /// </summary>
     public void Track(JsonElement update, SessionEvent? mapped)
     {

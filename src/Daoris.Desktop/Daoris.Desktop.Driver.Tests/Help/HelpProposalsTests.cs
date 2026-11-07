@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's proposals, the driver's half (HELP1c, D89): the file the connector wrote, read here and
+/// Ask Daoris's proposals, the driver's half: the file the connector wrote, read here and
 /// judged with the route's own code before the person sees it — what it changes, the command that does
-/// the same (D50), or the route's refusal — then settled by the person's press.
+/// the same, or the route's refusal — then settled by the person's press.
 /// </summary>
 /// <remarks>
 /// What holds for every kind: reading, settling, dispatch. Each kind's judgement and Apply are held beside
-/// it under <c>Help/Proposals/</c> (MOD6).
+/// it under <c>Help/Proposals/</c>.
 /// </remarks>
 public sealed class HelpProposalsTests : HelpProposalsFixture
 {
@@ -42,7 +42,7 @@ public sealed class HelpProposalsTests : HelpProposalsFixture
         Assert.Equal(DaorisHome.Entry(_home, HomeEntry.HelpProposals), HelpProposals.FolderOf(_home));
     }
 
-    /// <summary>A kind no class judges is refused in the words it always was, and never shown (MOD6 kept them word for word).</summary>
+    /// <summary>A kind no class judges is refused in its fixed words, and never shown.</summary>
     [Theory]
     [InlineData("permission")]
     [InlineData("Setting")]

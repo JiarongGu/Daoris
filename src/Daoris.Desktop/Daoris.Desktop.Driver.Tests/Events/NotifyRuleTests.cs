@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 m-v (the foundation design §4.4): the notify rule in one table. The switch gates news alike; a Confirm waiting is a wait on the person,
-/// not news, and stays ungated (D196); a look's news is listed and counted and never said aloud.
+/// The notify rule in one table. The switch gates news alike; a Confirm waiting is a wait on the person,
+/// not news, and stays ungated; a look's news is listed and counted and never said aloud.
 /// </summary>
 public sealed class NotifyRuleTests
 {

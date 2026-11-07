@@ -4,10 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1a-i (D163 §2): the chat runner's ask. What the runner alone knows is refused before a box is kept: a conversation another
+/// The chat runner's ask. What the runner alone knows is refused before a box is kept: a conversation another
 /// Daoris process runs, which this one cannot end, and an agent its roster does not hold. The real client over an in-process ledger,
-/// nothing spawned, so the fast half; the runs that end a conversation and start another are the <c>Process</c> half's (named in the
-/// hand-back, as <c>ChatGoesOnProcessTests</c>' are for MSG1c).
+/// nothing spawned, so the fast half; the runs that end a conversation and start another are the <c>Process</c> half's.
 /// </summary>
 public sealed class HandOverRunnerTests : IDisposable
 {
@@ -70,8 +69,8 @@ public sealed class HandOverRunnerTests : IDisposable
     }
 
     /// <summary>
-    /// HANDWORDS1, TAKEWAITS1: a take's end is told, however it came out, with its move ended in the store by then, so the words the shell held
-    /// while it was taken go on to the conversation that continues it. Here the new one's adapter refuses to prepare, so it ends failed.
+    /// A take's end is told, however it came out, with its move ended in the store by then, so the words the shell held
+    /// while it is taken go on to the conversation that continues it. Here the new one's adapter refuses to prepare, so it ends failed.
     /// </summary>
     [Fact]
     public async Task A_takes_end_is_told_once_its_move_has_ended()
@@ -89,7 +88,7 @@ public sealed class HandOverRunnerTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MIXAGENT1a-iii (D163 point 4): a conversation started to go on from another opens its record naming that one, why and who
+    /// A conversation started to go on from another opens its record naming that one, why and who
     /// asked, read back as the record answers it; one started plainly names none. Nothing is spawned: the stand-in adapter refuses
     /// to prepare, after the record is open, so each record ends failed.
     /// </summary>

@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TREELINK1 (D51's note): the walk that takes a tree's links off before git removes it, over files alone: a link goes as a link and
+/// The walk that takes a tree's links off before git removes it, over files alone: a link goes as a link and
 /// what it points at stands, a link is never walked into, a tree whose own folder is a link stays, a tree with no link is left as it
-/// was, a gone tree is nothing to do, the tree's own <c>.git</c> is never looked into, and past its bound it takes nothing off and
-/// says why the tree stays. Each link is made as TREEDEPS1's copy makes one, a junction with no process on Windows. Git's removal
+/// stands, a gone tree is nothing to do, the tree's own <c>.git</c> is never looked into, and past its bound it takes nothing off and
+/// says why the tree stays. Each link is made as the dependency copy makes one, a junction with no process on Windows. Git's removal
 /// over them is <c>TreeLinkRemovalTests</c>'.
 /// </summary>
 public sealed class TreeLinksTests : IDisposable

@@ -29,7 +29,7 @@ describe('the composer', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     // Once: the button is the form's submit, and a click that also called `say` sent every message
-    // twice — seen as two "you" blocks once the record kept what was sent (CONV3).
+    // twice.
     expect(send).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledWith('cap hydration per frame', []);
     expect(box()).toHaveValue('');
@@ -47,7 +47,7 @@ describe('the composer', () => {
   });
 
   /**
-   * IME1: the Enter that accepts an input method's candidate is the input method's. Sent, it was half a message in
+   * The Enter that accepts an input method's candidate is the input method's. Sent, it would be half a message in
    * every conversation (sessions, chats, Ask Daoris), since this box is all of theirs.
    */
   it('sends nothing on the Enter an input method is composing with, and sends on the plain one after', () => {
@@ -107,7 +107,7 @@ describe('the composer', () => {
   });
 
   /**
-   * SESSUX1d (D126 §3.3): in Sessions the session's stop is its page header's, its one owner, so a chat's composer there
+   * In Sessions the session's stop is its page header's, its one owner, so a chat's composer there
    * keeps *Finish* and *Stop turn* and is handed no stop. Ask Daoris's panel, which holds its conversation on every view,
    * still hands it one.
    */
@@ -122,7 +122,7 @@ describe('the composer', () => {
     expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument();
   });
 
-  /** *Answer…* from a session's row puts the focus in the box at its foot (D126 §3.1), once per press. */
+  /** *Answer…* from a session's row puts the focus in the box at its foot, once per press. */
   it('takes the focus when it is told to, and again on a second telling', () => {
     const { rerender } = render(
       <Tooltip.Provider><Composer live onSend={() => {}} onFinish={() => {}} focus={0} /></Tooltip.Provider>,
@@ -150,16 +150,15 @@ describe('the composer', () => {
     expect(box()).toHaveValue('half a thought');
     expect(screen.getByText(/This session is over/)).toBeInTheDocument();
     // Read-only, not disabled: a disabled box's words cannot be selected, and they are the person's to
-    // copy out. And no send, which could only ever be a dead press (UX5 U9).
+    // copy out. And no send, which could only ever be a dead press.
     expect(box()).toHaveAttribute('readonly');
     expect(box()).not.toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
   /**
-   * UX5 U9, seen on the window: an ended session opened from the rail showed an empty box and a send
-   * under "What you typed is still here", when nothing was typed. A box where nothing listens is the
-   * one INT4h removed from the intake; here it is removed wherever nothing was written.
+   * An ended session opened from the rail shows no empty box and no send under "What you typed is still here",
+   * when nothing is typed. A box where nothing listens is removed wherever nothing is written.
    */
   it('offers no box to an ended session nobody was writing in, and keeps the meter', () => {
     show({ live: false, context: { door: 'structured' } });
@@ -172,7 +171,7 @@ describe('the composer', () => {
   });
 
   /**
-   * CONV4b: the third verb. Stopping the turn keeps the conversation, and is offered only while a turn
+   * The third verb. Stopping the turn keeps the conversation, and is offered only while a turn
    * runs on a door that can stop one — a text door cannot see where a turn ends, and a button that
    * could only be refused is worse than none.
    */
@@ -200,9 +199,9 @@ describe('the composer', () => {
   });
 
   /**
-   * COWORK1a (D188; the message-urgency design §8.1, trap 2): while a turn runs, one press, *Send*, at the person's default,
+   * While a turn runs, one press, *Send*, at the person's default,
    * and a menu of the three levels beside it, each sending the box's words at its level. Enter sends at the default. With
-   * nothing typed nothing presses now: the stop that press was is the keeping stop's own (trap 2).
+   * nothing typed nothing presses now: the stop that press would be is the keeping stop's own.
    */
   it('sends at the default while a turn runs, or at the level chosen from the menu beside it', async () => {
     const send = vi.fn();
@@ -230,7 +229,7 @@ describe('the composer', () => {
     expect(send).toHaveBeenLastCalledWith('and the changelog', []);
   });
 
-  /** COWORK1a (the design §8.1): *Now, cutting its step* is offered only where the agent steers; elsewhere it is disabled, saying why. */
+  /** *Now, cutting its step* is offered only where the agent steers; elsewhere it is disabled, saying why. */
   it.each([
     [{ nextStep: true, steers: false }, 'Its agent cannot be steered mid-turn, so these go at its next step.'],
     [{ nextStep: false, steers: false }, 'Its door cannot take words in a running turn, so these are held for its turn to end.'],
@@ -247,7 +246,7 @@ describe('the composer', () => {
     expect(send).toHaveBeenCalledWith('stop: the tests are in /spec', [], 'urgent');
   });
 
-  /** COWORK1a (the design §8.1, trap 23): a door that carries only text has no turns, so no level is offered, and its press says why. */
+  /** A door that carries only text has no turns, so no level is offered, and its press says why. */
   it('offers no level on a door that carries only text, and its press says why', async () => {
     show({ taking: false, context: { door: 'text' } });
 
@@ -259,7 +258,7 @@ describe('the composer', () => {
   });
 
   /**
-   * COWORK1a (the design §3.2): where words wait for the turn's end and the door can stop a turn keeping the session, the
+   * Where words wait for the turn's end and the door can stop a turn keeping the session, the
    * keeping stop stands beside them: it asks once, naming the step it cuts, and only the second press stops the turn. Not on a
    * door that takes words at its next step, where an urgent word reaches sooner, nor where nothing waits.
    */
@@ -284,7 +283,7 @@ describe('the composer', () => {
   });
 
   /**
-   * COWORK1a (the design §8.2): each waiting word of the person's has its level's menu: *Make urgent*, *Make ordinary*, and
+   * Each waiting word of the person's has its level's menu: *Make urgent*, *Make ordinary*, and
    * *Send now* where the agent steers, each changing the word by its id while it waits.
    */
   it('changes a waiting word’s level from its own menu', async () => {
@@ -319,7 +318,7 @@ describe('the composer', () => {
   });
 
   /**
-   * HELP4: words waiting while no turn runs are waiting for the conversation to open, not for a turn:
+   * Words waiting while no turn runs are waiting for the conversation to open, not for a turn:
    * the label says which. Seen on the window, where a new Ask Daoris conversation's first words said
    * they were waiting for a turn that did not exist yet.
    */
@@ -331,7 +330,7 @@ describe('the composer', () => {
   });
 
   /**
-   * HELP4: the driver counts words held for a door still opening as a turn on its way (`taking`), and
+   * The driver counts words held for a door still opening as a turn on its way (`taking`), and
    * says `opening` beside it — so the label follows `opening`, not `taking`, until the door is open.
    */
   it('says words wait for the conversation to open while the driver says it is opening', () => {
@@ -344,7 +343,7 @@ describe('the composer', () => {
   });
 
   /**
-   * CONV4b: a message sent while a turn runs waits for it (CONV4a), so the button says so, and what is
+   * A message sent while a turn runs waits for it, so the button says so, and what is
    * waiting is shown, in the order sent — it is in no record until it goes.
    */
   it('says a message sent now will wait, and shows what is waiting in order', async () => {
@@ -357,7 +356,7 @@ describe('the composer', () => {
     const waiting = screen.getByRole('list', { name: 'waiting for this turn to end' });
     const items = within(waiting).getAllByRole('listitem');
     expect(items.map((item) => item.textContent)).toEqual(['and test it', 'then commitplan.md']);
-    // A waiting message's files are named with it (CONV4c).
+    // A waiting message's files are named with it.
     expect(within(items[1]!).getByText('plan.md')).toBeInTheDocument();
 
     await userEvent.type(box(), 'and push nothing');
@@ -366,7 +365,7 @@ describe('the composer', () => {
   });
 
   /**
-   * SENDLOST1b: words on their way show the moment they are sent, as sending, apart from what waits behind a turn. Where the
+   * Words on their way show the moment they are sent, as sending, apart from what waits behind a turn. Where the
    * page stopped waiting on their send they say the machine has not answered yet, and offer no control: an edit or a removal
    * of words the machine may still take would send them twice.
    */
@@ -391,7 +390,7 @@ describe('the composer', () => {
   });
 
   /**
-   * ASKHIST1b: words waiting with a word wider than the box, a pasted URL as Ask Daoris's first words, stay inside it. Every
+   * Words waiting with a word wider than the box, a pasted URL as Ask Daoris's first words, stay inside it. Every
    * grid from them to the form bounds its column, or its widest word sets the width of the box and its presses too.
    */
   it('keeps waiting words with a word wider than the box inside it, broken at its edge', () => {
@@ -407,7 +406,7 @@ describe('the composer', () => {
   });
 
   /**
-   * CONV4c: files go with the message. Chosen, dropped or pasted, they wait above the box as chips a
+   * Files go with the message. Chosen, dropped or pasted, they wait above the box as chips a
    * person can take back off, travel with the next send, and are let go of once sent. A message may be
    * files alone.
    */
@@ -459,7 +458,7 @@ describe('the composer', () => {
   });
 
   /**
-   * CONV4b: the draft can be held above the composer — the frame keeps one per session — and then
+   * The draft can be held above the composer — the frame keeps one per session — and then
    * every keystroke is told, and sending empties it through the same door.
    */
   it('shows the draft it is given, and tells every change of it', async () => {
@@ -477,7 +476,7 @@ describe('the composer', () => {
   });
 
   /**
-   * ASKHIST1c: the files can be held above the composer too, so Ask Daoris keeps each conversation's attachments across its
+   * The files can be held above the composer too, so Ask Daoris keeps each conversation's attachments across its
    * history: shown as handed, every change told, and let go through the same door once sent.
    */
   it('shows the files it is given, and tells every change of them', async () => {
@@ -508,7 +507,7 @@ describe('the composer', () => {
     await i18n.changeLanguage('en');
   });
 
-  /** CONV5: the context ring sits under the box, where the reference keeps it — and only where it is handed one. */
+  /** The context ring sits under the box, where the reference keeps it — and only where it is handed one. */
   it('carries the context ring it is handed, and none when it is not', () => {
     const { unmount } = show({ context: { usage: { used: 34_120, size: 1_000_000, most: 34_120 }, door: 'structured' } });
     expect(screen.getByRole('meter', { name: 'context' })).toHaveTextContent('3%');
@@ -521,7 +520,7 @@ describe('the composer', () => {
 });
 
 /**
- * CONV4d: `@` a file in the session's tree. The mention is text and both doors expand it, so the
+ * `@` a file in the session's tree. The mention is text and both doors expand it, so the
  * composer only helps write it — the files come from the frame, which asks for them only while one is
  * being written.
  */
@@ -530,8 +529,7 @@ describe('a mention', () => {
   const files = () => screen.getByRole('listbox', { name: "files in this session's tree" });
 
   /**
-   * UX5 U64, seen on the window: the list ran the composer's whole width, about 1,900px on a
-   * maximized window, for rows about 450px wide. It is sized to its rows, within bounds.
+   * The list is sized to its rows, within bounds, not to the composer's whole width.
    */
   it('sizes its list to its rows, not to the box it completes', async () => {
     show({ mentions: tree });
@@ -563,7 +561,7 @@ describe('a mention', () => {
   });
 
   /**
-   * Seen on the window (CONV4d): React reads the selection on the same keydown that takes a file, and
+   * Seen on the window: React reads the selection on the same keydown that takes a file, and
    * that reading is the box BEFORE the file is in it. Taken as the caret, it put the caret back inside
    * the mention, and the list opened again on the half-word it had just replaced.
    */
@@ -602,7 +600,7 @@ describe('a mention', () => {
     expect(screen.getByRole('option', { name: 'docs/deep file.md' })).toHaveAttribute('aria-selected', 'true');
     await userEvent.keyboard('{Tab}');
 
-    // Both doors expand the quoted spelling and neither the escaped one (measured, CONV4d).
+    // Both doors expand the quoted spelling and neither the escaped one (measured).
     expect(box()).toHaveValue('@"docs/deep file.md" ');
   });
 
@@ -616,7 +614,7 @@ describe('a mention', () => {
     expect(box()).toHaveFocus();
   });
 
-  // IME1: while an input method composes, its Enter, Tab, arrows and Escape are its own, and the list keeps still.
+  // While an input method composes, its Enter, Tab, arrows and Escape are its own, and the list keeps still.
   it('leaves the list alone while an input method composes: no pick, no move, no close', () => {
     const send = vi.fn();
     show({ onSend: send, mentions: tree });
@@ -698,7 +696,7 @@ describe('a mention', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
-  // AGT6b (D98): one conversation's model and effort, as its agent offered them on the protocol door.
+  // One conversation's model and effort, as its agent offered them on the protocol door.
   // The names are the agent's own words; the control only says whose they are.
   const OPTIONS = [
     { id: 'model', name: 'Model', category: 'model', current: 'default',
@@ -731,7 +729,7 @@ describe('a mention', () => {
   });
 });
 
-/** QUEUEEDIT1b: a waiting message can be taken back out, or reworded in place, while it still waits. */
+/** A waiting message can be taken back out, or reworded in place, while it still waits. */
 describe('the composer, waiting messages with an id', () => {
   const WAITING = [{ id: 'a1', text: 'and test it', files: [] }, { id: 'b2', text: 'then commit', files: ['plan.md'] }];
 
@@ -767,7 +765,7 @@ describe('the composer, waiting messages with an id', () => {
     expect(box()).toHaveValue('half a thought');
   });
 
-  /** REWORDBOUND1 (D137 §2.4): a reword is words the door takes too, so the box's own bound refuses it as it refuses a send. */
+  /** A reword is words the door takes too, so the box's own bound refuses it as it refuses a send. */
   it('refuses a reword the door could not take, keeping the text and the edit in the box', async () => {
     const edit = vi.fn().mockResolvedValue({ done: true });
     show({ taking: true, onRemove: vi.fn(), onEdit: edit, accepts: (text: string) => text.length <= 20, queued: WAITING });

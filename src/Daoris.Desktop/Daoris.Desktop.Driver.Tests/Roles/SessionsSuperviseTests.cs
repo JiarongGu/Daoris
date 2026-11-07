@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SUPERVISOR1a-ii (D208; the supervisor design §2.2, §3.2, §4.4 and §11 row 1a-ii): <c>daoris session supervise</c>, the
+/// <c>daoris session supervise</c>, the
 /// holder's verb. It has no alone path; it takes no key as an argument and reads it from its terminal's environment alone; it sends
 /// nothing to a pipe whose server is not the install's <c>app/Daoris.Desktop.exe</c>; it sends a proof over the hello's nonce and never
 /// the key, so a fake server that draws its own nonce holds a proof no other nonce verifies, and one that relays a real nonce delivers
@@ -207,8 +207,8 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
     ];
 
     /// <summary>
-    /// SUPERVISOR1b (§3.1 <c>SUPERVISOR_DEFER</c>): <c>--leave &lt;bound&gt;</c> in place of <c>--choice</c> leaves the question to the
-    /// owner, a bound §4.1 names and each reason with its source; never both, never a bound it does not name.
+    /// <c>--leave &lt;bound&gt;</c> in place of <c>--choice</c> (<c>SUPERVISOR_DEFER</c>) leaves the question to the
+    /// owner, with a named bound and each reason with its source; never both, never an unnamed bound.
     /// </summary>
     [Fact]
     public void The_verb_reads_a_leave_in_place_of_a_choice_naming_one_of_the_bounds()
@@ -256,7 +256,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
     ];
 
     /// <summary>
-    /// CONTEXTDRIVE1j: a referred point is decided by <c>--point … --course go-on|hold</c>, sent as the role's third act,
+    /// A referred point is decided by <c>--point … --course go-on|hold</c>, sent as the role's third act,
     /// <c>SUPERVISOR_COURSE</c>, its proof over its own route's bytes; a course takes no choice or bound, and no act but go-on or hold.
     /// </summary>
     [Fact]
@@ -282,7 +282,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// NOBLOCK1: the listing is told by event, so the instance answers at once from what it holds; the verb asks again past
+    /// The listing is told by event, so the instance answers at once from what it holds; the verb asks again past
     /// <c>pending</c> and past an answer computed before its first ask, and lists the one computed after it.
     /// </summary>
     [Fact]
@@ -346,7 +346,7 @@ public sealed class SessionsSuperviseTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CONTEXTDRIVE1i (the context-counters design §5): the print hands the line's course as Daoris's facts, fenced as every part is, each
+    /// The print hands the line's course as Daoris's facts, fenced as every part is, each
     /// count cited as a reason's source names it, with its parts.
     /// </summary>
     [Fact]

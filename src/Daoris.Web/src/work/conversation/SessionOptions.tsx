@@ -5,9 +5,9 @@ import { SelectField } from '../../design/ui';
 export type SessionOptionChoice = { value: string; name: string; description?: string | null };
 
 /**
- * One of a conversation's options as its agent offered it on the protocol door (AGT6b, D98) — the
+ * One of a conversation's options as its agent offered it on the protocol door — the
  * model, or the effort the protocol calls a thought level. The shape lives here so a molecule names it
- * without importing the shell (SURF6).
+ * without importing the shell.
  */
 export type SessionOption = {
   id: string;
@@ -19,12 +19,12 @@ export type SessionOption = {
 };
 
 /**
- * A conversation's model and effort, beside its composer (AGT6b, D98): one choice each, as the agent
+ * A conversation's model and effort, beside its composer: one choice each, as the agent
  * offered them, and a change is the organism's to send.
  *
  * @remarks
  * **The agent's words, and Daoris's none.** Each option is named as the agent names it and offers
- * exactly the values it offered, so Daoris names no model of its own (D24); the label only says it is
+ * exactly the values it offered, so Daoris names no model of its own; the label only says it is
  * this conversation's. A value the agent reports that it did not list is still shown as itself, rather
  * than as an empty choice.
  */

@@ -3,8 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// The one owner of a review's presses (REVIEWENV1g): over a mocked bridge and a stubbed service, as an organism is held
-// (components plan §3).
+// The one owner of a review's presses: over a mocked bridge and a stubbed service, as an organism is held.
 
 const { invoke, shell } = vi.hoisted(() => ({ invoke: vi.fn(), shell: { here: true } }));
 
@@ -20,7 +19,7 @@ import type { Answered } from '../InlineConfirm';
 import { useReviewActs } from './reviewActs';
 import { STEP_SHOWN } from './reviewFixtures';
 
-/** What the stubbed service was sent, in order: where, and the body. */
+/** What the stubbed service is sent, in order: where, and the body. */
 const posted = () => vi.mocked(fetch).mock.calls.map(([path, init]) => ({
   path: String(path), body: init?.body ? JSON.parse(String(init.body)) : undefined,
 }));
@@ -36,9 +35,9 @@ function acts() {
 const answered = () => ({ done: vi.fn<Answered['done']>(), refused: vi.fn<Answered['refused']>() });
 
 /**
- * REVIEWENV1g (D154 point 8; the review environment design §3.3–§3.4, §3.6): each press of a review goes to its door, names the
+ * Each press of a review goes to its door, names the
  * set-up the view drew, and says the host's sentence; a *not yet*'s words go to the step's session as its next turn; a stale
- * verdict is refused inside the gate that was pressed.
+ * verdict is refused inside the gate that is pressed.
  */
 describe("a review's presses", () => {
   beforeEach(() => {

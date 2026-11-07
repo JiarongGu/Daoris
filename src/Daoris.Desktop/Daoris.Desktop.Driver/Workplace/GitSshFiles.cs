@@ -3,10 +3,10 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own ssh configuration and known hosts (GITAUTH1c, D198 point 4; the git-auth design §3.5 and §4.2):
+/// Daoris's own ssh configuration and known hosts:
 /// <c>profiles/git/ssh_config</c>, which the ssh door hands its ssh by <c>-F</c> so the person's own configuration is never read, and
 /// <c>profiles/git/known_hosts</c>, the only host keys an identity's connection trusts. A host's key enters the file only at a
-/// person's press (D73), never on first use in the background: ssh is told <c>StrictHostKeyChecking yes</c> and
+/// person's press, never on first use in the background: ssh is told <c>StrictHostKeyChecking yes</c> and
 /// <c>UpdateHostKeys no</c>, so ssh itself writes nothing there.
 /// </summary>
 /// <remarks>The paths and the door's arguments are the base library alone: the door compiles this in.</remarks>
@@ -50,7 +50,7 @@ public static class GitSshFiles
     }
 
     /// <summary>
-    /// The options the door hands an OpenSSH ssh for an identity's act (§4.2 step 3), before git's own <c>-p</c>, <c>-4</c>, <c>-6</c>
+    /// The options the door hands an OpenSSH ssh for an identity's act, before git's own <c>-p</c>, <c>-4</c>, <c>-6</c>
     /// and <c>SendEnv</c>: <c>BatchMode</c> first, Daoris's configuration, the identity's key alone, no agent, Daoris's known hosts
     /// checked strictly, no forwarding.
     /// </summary>
@@ -90,7 +90,7 @@ public static class GitSshFiles
     }
 
     /// <summary>
-    /// Trust one key for a host (§3.5, at a person's press): its line appended, any other key of that host's name taken out, so a
+    /// Trust one key for a host (at a person's press): its line appended, any other key of that host's name taken out, so a
     /// changed host is trusted again as the one key the person compared.
     /// </summary>
     public static void Trust(string home, string name, string key)
@@ -110,7 +110,7 @@ public static class GitSshFiles
         AtomicFile.WriteText(path, kept.ToString());
     }
 
-    /// <summary>Touch <c>run/git/used/&lt;id&gt;</c>, which the page reads as <i>last used</i> (§4.2 step 6).</summary>
+    /// <summary>Touch <c>run/git/used/&lt;id&gt;</c>, which the page reads as <i>last used</i>.</summary>
     public static void Used(string home, string id)
     {
         if (!GitIdentities.IsId(id)) return;

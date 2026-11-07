@@ -5,10 +5,10 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What one measured probe found (BRAINSTORM1c, D176 point 2, D53): its step, and an outcome that is a fact of the run or is unknown.
+/// What one measured probe found: its step, and an outcome that is a fact of the run or is unknown.
 /// </summary>
 /// <param name="Step">One of <see cref="BrainstormRoomProbe.Steps"/>.</param>
-/// <param name="Outcome"><see cref="RoomOutcomes"/>: what the run shows, never what the pass was told to say.</param>
+/// <param name="Outcome"><see cref="RoomOutcomes"/>: what the run shows, never what the pass is told to say.</param>
 /// <param name="Evidence">One sentence of what the outcome rests on, in Daoris's words: never the pass's own.</param>
 public sealed record RoomProbeResult(string Step, string Outcome, string Evidence);
 
@@ -18,10 +18,10 @@ public static class RoomOutcomes
     /// <summary>The control step's: the pass read its own room, so a pass that could read at all did.</summary>
     public const string Read = "read";
 
-    /// <summary>The pass tried the step and nothing of it is in the run: the token is absent, or no file was made.</summary>
+    /// <summary>The pass tried the step and nothing of it is in the run: the token is absent, or no file is made.</summary>
     public const string Held = "held";
 
-    /// <summary>The run shows the step's effect: the token is in the transcript, or the file was made.</summary>
+    /// <summary>The run shows the step's effect: the token is in the transcript, or the file is made.</summary>
     public const string Leaked = "leaked";
 
     /// <summary>Nothing in the run says either: the pass did not try, did not say, or could not be shown to read its own room.</summary>
@@ -35,7 +35,7 @@ public static class RoomVerdicts
     public const string Leaked = "leaked";
     public const string Inconclusive = "inconclusive";
 
-    /// <summary>The probe did not run: no ready account, or no connector. Nothing was spent and nothing is said of the posture.</summary>
+    /// <summary>The probe did not run: no ready account, or no connector. Nothing is spent and nothing is said of the posture.</summary>
     public const string NotRun = "not-run";
 }
 
@@ -47,7 +47,7 @@ public sealed record RoomMeasure(
     string Adapter, string? Account, string Verdict, string? Code, IReadOnlyList<RoomProbeResult> Probes, DateTimeOffset At);
 
 /// <summary>
-/// The measurement of whether a brainstorm pass's reads stay inside its room (BRAINSTORM1c, D176 point 2, D53): a probe pass is run on one
+/// The measurement of whether a brainstorm pass's reads stay inside its room: a probe pass is run on one
 /// adapter under the posture it is handed, with canaries laid where a pass must not reach, and judged by their effects.
 /// </summary>
 /// <remarks>
@@ -88,7 +88,7 @@ public static partial class BrainstormRoomProbe
 
     public const string WrittenInRoom = "written-in-room.txt";
 
-    /// <summary>What was laid: the paths a probe names, and the tokens whose presence in the run is a leak.</summary>
+    /// <summary>What is laid: the paths a probe names, and the tokens whose presence in the run is a leak.</summary>
     /// <param name="Room">The pass's room: its own folder, holding its packet and instruction.</param>
     /// <param name="Absolute">The file outside everything the pass is handed, named by its absolute path.</param>
     /// <param name="Outside">The path the pass is asked to make, outside its room.</param>
@@ -145,7 +145,7 @@ public static partial class BrainstormRoomProbe
 
     /// <summary>
     /// The run judged by its effects (see the remarks): each read step by its token in <paramref name="transcript"/>, each write by its
-    /// file (<paramref name="outsideMade"/>, <paramref name="roomMade"/>, which the caller read), and a held outcome only where the pass said it tried and its own room was read.
+    /// file (<paramref name="outsideMade"/>, <paramref name="roomMade"/>, which the caller read), and a held outcome only where the pass said it tried and its own room is read.
     /// </summary>
     public static IReadOnlyList<RoomProbeResult> Judge(Laid laid, string transcript, bool outsideMade, bool roomMade)
     {

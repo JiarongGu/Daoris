@@ -3,7 +3,7 @@ import { CheckField, Inline } from '../../design/ui';
 
 /** One acceptance of a declaration: its words, its standing and consequence, and whether the person can tick it now. */
 export type AcceptanceRow = {
-  /** What a tick is keyed by: the purpose, with the repository, line and blob it was read at. */
+  /** What a tick is keyed by: the purpose, with the repository, line and blob it is read at. */
   id: string;
   label: string;
   /** What the acceptance is for, where the caller says it apart from the standing. */
@@ -14,19 +14,19 @@ export type AcceptanceRow = {
   offered: boolean;
   /** The declaration's text it is of, shown once however many acceptances share it. */
   text?: string | null;
-  /** What names the text: the line and commit it was read at. */
+  /** What names the text: the line and commit it is read at. */
   textLabel?: string;
   /** Presses beside the standing (a withdrawal). */
   extra?: ReactNode;
 };
 
 /**
- * **Acceptances** (SETUPUX1k, the setup-UX design §2.2; Gates draws it too): the declaration at a line's tip shown once, and each purpose's
+ * **Acceptances** (Gates draws it too): the declaration at a line's tip shown once, and each purpose's
  * acceptance as its own tick, with the standing it leaves. A tick starts empty and is the person's alone: `ticked` is the ids chosen, and
  * `cleared` the reasons for ticks the caller dropped because the text read changed since.
  *
  * @remarks
- * A molecule: it keeps no tick and judges nothing; the caller binds each id to what was read and says what changed.
+ * A molecule: it keeps no tick and judges nothing; the caller binds each id to what is read and says what changed.
  */
 export function Acceptances({ rows, ticked, onTick, disabled = false, title, fold, cleared = [] }: {
   rows: readonly AcceptanceRow[];

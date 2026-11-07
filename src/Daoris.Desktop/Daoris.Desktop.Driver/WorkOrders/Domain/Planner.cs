@@ -38,7 +38,7 @@ public static class Planner
     /// </summary>
     internal static bool CarriesOn(PriorSession last) =>
         string.Equals(last.State, "failed", StringComparison.OrdinalIgnoreCase)
-        // A stop that was not the person's — the sweep's or a shutdown's.
+        // A stop that is not the person's — the sweep's or a shutdown's.
         || last is { State: "stopped", Interrupted: true }
         // The person's own stop, once they released it: a held one never reaches the planner's carry-on.
         || last.PersonStopped
@@ -67,7 +67,7 @@ public static class Planner
     /// an ordinary end, its record ended after the go-on, which neither that carry-on nor the telling reads. Null for every other end.
     /// </summary>
     /// <param name="started">The quest as the start that ran the session read it.</param>
-    /// <param name="after">The quest as it stands at the session's end; null where the service no longer answers it.</param>
+    /// <param name="after">The quest as it stands at the session's end; null where the service does not answer it.</param>
     internal static string? ReopenedFrom(QuestView started, QuestView? after) =>
         after is { HeldByReopen: true, Parent: { Length: > 0 } held } ? held
         : after is { Status: "Taken", HeldByReopen: false, Submission: null, GrewFrom: { } now, Parent: { Length: > 0 } source }
@@ -84,7 +84,7 @@ public static class Planner
     /// </summary>
     /// <remarks>
     /// A session the reopen stopped is carried on instead (<see cref="StoppedByReopen"/>), and a cut-off, a stop, a stand-down, a record
-    /// with words waiting and a running one read as before. <b>Once</b>, with nothing kept: the record that goes on moves after the step,
+    /// with words waiting and a running one keep their own reading. <b>Once</b>, with nothing kept: the record that goes on moves after the step,
     /// and a <c>ready</c> gives the step a result again. A step whose session ran across the go-on is not read here: its record ended after
     /// the step moved, as the reopen stopped it (<see cref="ReopenedFrom"/>), so it is carried on instead.
     /// </remarks>
@@ -111,7 +111,7 @@ public static class Planner
     /// </summary>
     internal static bool TakenAway(QuestView quest, PriorSession last, QuestTake take) => QuestTakes.TakenAway(quest, last, take);
 
-    /// <summary>When a taken quest's take was made (<see cref="QuestTakes.TakenAt"/>).</summary>
+    /// <summary>When a taken quest's take is made (<see cref="QuestTakes.TakenAt"/>).</summary>
     internal static DateTimeOffset? TakenAt(QuestView quest, QuestTake take) => QuestTakes.TakenAt(quest, take);
 
     /// <summary>Whether a record that stood down is carried on by the person's bring-forward of its lost take (<see cref="QuestTakes.BroughtForward"/>).</summary>

@@ -1,19 +1,19 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's conversations, kept (ASKHIST1): an earlier one goes on in its own harness conversation with the person's words,
-/// as a repository's chat does (MSG1c, D137 §2.2), and a new one can start from an earlier one's words. A registered executor; the
+/// Ask Daoris's conversations, kept: an earlier one goes on in its own harness conversation with the person's words,
+/// as a repository's chat does, and a new one can start from an earlier one's words. A registered executor; the
 /// going-on of an ended one is <see cref="ChatGoOn"/>'s, which reads this class's set-aside and room.
 /// </summary>
 /// <remarks>
-/// <para><b>One conversation runs in each workspace at a time</b> (HELP1a, ASKSCOPE1a), so going back to an earlier conversation,
+/// <para><b>One conversation runs in each workspace at a time</b>, so going back to an earlier conversation,
 /// or starting one from it, first sets aside its workspace's running one, which keeps its own id and can go on later. One
 /// answering a turn is never set aside: the words wait, said why, and the next word tries again.</para>
 ///
 /// <para><b>The room is written again</b> as every open writes it, from the machine as the shell hands it
-/// (<see cref="DescribeHelp"/>): since PARALLEL1a the facts the judges keep, as last judged, so no open waits on a reading of the
+/// (<see cref="DescribeHelp"/>): the facts the judges keep, as last judged, so no open waits on a reading of the
 /// machine; where nothing hands one, the room as last written serves and nothing outside it is read. It is the room of the
-/// conversation's workspace (ASKSCOPE1b, <see cref="HelpRoom.GoesOnIn"/>), the machine projected to it.</para>
+/// conversation's workspace (<see cref="HelpRoom.GoesOnIn"/>), the machine projected to it.</para>
 ///
 /// <para>It opens through the runner's own start and asks the runner's own turns whether one is taking, as <see cref="ChatHandOver"/>
 /// does.</para>
@@ -29,15 +29,15 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
     private static readonly TimeSpan SetAsideBound = TimeSpan.FromSeconds(10);
 
     /// <summary>
-    /// The machine as the room says it (ASKHIST1): the shell's reading, which <c>START_HELP</c> writes the room from, so a
+    /// The machine as the room says it: the shell's reading, which <c>START_HELP</c> writes the room from, so a
     /// conversation going on finds the room as an open would. Null where nothing reads it, or it read nothing.
     /// </summary>
     public Func<CancellationToken, Task<HelpMachine?>>? DescribeHelp { get; set; }
 
     /// <summary>
-    /// Start a new Ask Daoris conversation from an earlier one (ASKHIST1, D233): its workspace's running conversation set aside, a new
+    /// Start a new Ask Daoris conversation from an earlier one: its workspace's running conversation set aside, a new
     /// one opened as <c>START_HELP</c> opens one, and Daoris's brief of the earlier one's line (<see cref="ContextBriefs"/>) handed with
-    /// the person's first message, as every new part of a line is handed one. Never a summary: Daoris makes no model call (D24).
+    /// the person's first message, as every new part of a line is handed one. Never a summary: Daoris makes no model call.
     /// </summary>
     /// <param name="earlier">The earlier conversation, an Ask Daoris record of this machine's; the caller has judged that.</param>
     public async Task<ChatStart> StartHelpFromAsync(
@@ -51,13 +51,13 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
     }
 
     /// <summary>
-    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for (HELPSTART1b): its workspace's running conversation
+    /// The part of <see cref="StartHelpFromAsync"/> a person's press waits for: its workspace's running conversation
     /// set aside, the new one placed as <see cref="ChatRunner.PlaceHelpAsync"/> places one, and the earlier line's brief kept for it.
     /// The room is read and the agent spawned after, by <see cref="ChatRunner.RunHelpAsync"/>, off the request. A conversation
     /// not placed comes back with a null id and the sentence why; its message is what the finished start says.
     /// </summary>
-    /// <param name="workspace">The workspace the person's window was on at the press (ASKSCOPE1a): the new one's, whose running one is set aside.</param>
-    /// <param name="order">Ask Daoris's effective order, a new conversation's (MODELROLE1d), as <see cref="ChatRunner.PlaceHelpAsync"/> takes it.</param>
+    /// <param name="workspace">The workspace the person's window showed at the press: the new one's, whose running one is set aside.</param>
+    /// <param name="order">Ask Daoris's effective order, a new conversation's, as <see cref="ChatRunner.PlaceHelpAsync"/> takes it.</param>
     public async Task<HelpPlaced> PlaceHelpFromAsync(
         string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default,
         IReadOnlyList<ActorEffective>? order = null)
@@ -92,7 +92,7 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
     }
 
     /// <summary>
-    /// Set aside its workspace's running conversation (HELP1a holds one at a time, ASKSCOPE1a one in each workspace): each other
+    /// Set aside its workspace's running conversation (one runs at a time in each workspace): each other
     /// Ask Daoris conversation of that workspace running here is stopped, keeping its own id to go on later, and waited for until
     /// its record ends; another workspace's runs on. One answering a turn is never stopped: its id comes back instead
     /// (<see cref="HeldWords.Answering"/> says why).
@@ -129,10 +129,10 @@ internal sealed class ChatHelp(IExecutorWiring wiring) : IChatHelping
     }
 
     /// <summary>
-    /// The room of <paramref name="workspace"/> as the machine stands now (ASKSCOPE1b: its facts projected to it, in its own
-    /// folder), written again as an open writes it, and what reading across lets it read (D107); the room as last written,
+    /// The room of <paramref name="workspace"/> as the machine stands now (its facts projected to it, in its own
+    /// folder), written again as an open writes it, and what reading across lets it read; the room as last written,
     /// reading nothing outside it, where nothing hands a reading, the reading failed, or it did not answer within
-    /// <see cref="HelpStart.ReadBound"/> (HELPSTUCK1), which the conversation <paramref name="sessionId"/> is told.
+    /// <see cref="HelpStart.ReadBound"/>, which the conversation <paramref name="sessionId"/> is told.
     /// </summary>
     /// <param name="workspace">The workspace whose room it goes on in (<see cref="HelpRoom.GoesOnIn"/>); null is <c>default</c>'s.</param>
     public async Task<(string Room, IReadOnlyList<HelpRead> Reads)> HelpRoomNowAsync(string sessionId, string? workspace, CancellationToken ct)

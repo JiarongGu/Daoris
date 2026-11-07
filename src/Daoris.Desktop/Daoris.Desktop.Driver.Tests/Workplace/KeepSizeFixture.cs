@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What KEEPSIZE1b's two Process classes share (<see cref="KeepSizeGitTests"/>, <see cref="KeepSizeStopsGitTests"/>): the look's tidy of
+/// What the two Process classes share (<see cref="KeepSizeGitTests"/>, <see cref="KeepSizeStopsGitTests"/>): the look's tidy of
 /// <c>engine</c>, the record pass over a door that keeps or refuses as the test says, and the purge with or without the registry's checkout
-/// for the hour's holding check. Split in two so neither class is the git half's wall (PROCSPEED1b).
+/// for the hour's holding check. Split in two so neither class is the git half's wall.
 /// </summary>
 public abstract class KeepSizeFixture : BranchTidyingFixture
 {

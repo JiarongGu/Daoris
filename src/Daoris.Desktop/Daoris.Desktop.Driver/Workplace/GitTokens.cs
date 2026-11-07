@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An identity's tokens (D241 point 6; the git design §2.3), kept beside the keys in <c>profiles/git/tokens/&lt;id&gt;/</c>: the
+/// An identity's tokens, kept beside the keys in <c>profiles/git/tokens/&lt;id&gt;/</c>: the
 /// folder limited to the person's account before a byte is written (<see cref="GitPrivateFolder"/>), the tokens plaintext at rest as
-/// the keys and D67's API keys are. <c>https</c> is the token git's HTTPS act carries, answered by the credential door alone;
+/// the keys and the API keys are. <c>https</c> is the token git's HTTPS act carries, answered by the credential door alone;
 /// <c>api</c> is the token a hosted service's API act is handed. A token is read only by the credential door and by the act it is
 /// handed to; no answer, event, log line or page row carries it, only whether one is set. The base library alone: the doors compile it in.
 /// </summary>

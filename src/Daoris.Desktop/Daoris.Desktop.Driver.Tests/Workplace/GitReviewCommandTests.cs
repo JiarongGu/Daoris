@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP1a-i's terminal door (D202 point 2, the git-app design P1.5): <c>daoris git review &lt;session&gt; [--json] [--time]</c>,
+/// The terminal door <c>daoris git review &lt;session&gt; [--json] [--time]</c>,
 /// its words read, its review said, and <c>review.read</c>'s fields, which name no path. The read itself is the route's code, which
 /// <c>ReviewStartsTests</c> counts in real git; here git is a stand-in answer.
 /// </summary>

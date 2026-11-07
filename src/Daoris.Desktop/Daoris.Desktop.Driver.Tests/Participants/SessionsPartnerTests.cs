@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (D199 point 2; the co-agent design §6.4): the person's terminal door to a piece, <c>daoris session partner</c>. Its
+/// The person's terminal door to a piece, <c>daoris session partner</c>. Its
 /// ask is written by the one judge and writer the page's press shares (<see cref="PartnerPersonAsk"/>), as the person's, at the exact
 /// commit the lead's tree stands at with its uncommitted paths, for the driver's look to take; its list reads the box; its stop is the
-/// partner's record's stop. The tree is read by a stand-in, so nothing starts a process (MOD8).
+/// partner's record's stop. The tree is read by a stand-in, so nothing starts a process.
 /// </summary>
 public sealed class SessionsPartnerTests : IDisposable
 {

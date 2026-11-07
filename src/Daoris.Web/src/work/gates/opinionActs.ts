@@ -18,7 +18,7 @@ export type OpinionTarget = {
 };
 
 /**
- * **The one owner of the second opinion's presses** (XAGENT1g; D155 point 10, the second-agent design §8.5, §9): the session's
+ * **The one owner of the second opinion's presses**: the session's
  * head and *What needs you* each press this, so an ask, a stop and the person's answer have one implementation whichever door
  * pressed it, as `reviewActs.ts` is the one owner of a review's.
  *
@@ -26,10 +26,10 @@ export type OpinionTarget = {
  * **An organism**: it holds the bridge's hooks, so the gate and the rows, which press them, hold none.
  *
  * **Each press is the driver's own** (`OpinionPresses`, the terminal's `daoris session opinion`): a refusal is an answer, the
- * driver's sentence said inside the gate that was pressed (UXFIX2), and a press taken says the driver's sentence. None is Ask
- * Daoris's (§9): asking spends an account at the person's choice, and going on or reading it themselves is a judgement.
+ * driver's sentence said inside the gate that is pressed, and a press taken says the driver's sentence. None is Ask
+ * Daoris's: asking spends an account at the person's choice, and going on or reading it themselves is a judgement.
  *
- * **Send back… is D137's box**: the person's own words to the working session as its next turn, through the door the
+ * **Send back… is the session's box**: the person's own words to the working session as its next turn, through the door the
  * terminal's `sessions say` takes (`SESSION_INPUT`). A browser has no shell, so none of these is offered there.
  */
 export function useOpinionActs({ notify }: { notify: Notify }) {

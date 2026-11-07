@@ -6,7 +6,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// An opinion's delivery file (XAGENT1e), <c>&lt;home&gt;/opinions/&lt;id&gt;/delivered.json</c> (<see cref="OpinionDeliveries"/>): read
+/// An opinion's delivery file, <c>&lt;home&gt;/opinions/&lt;id&gt;/delivered.json</c> (<see cref="OpinionDeliveries"/>): read
 /// without trusting its shape, written whole, atomically, as BOM-less UTF-8 with LF.
 /// </summary>
 /// <remarks>The use case decides what is kept; this reads and writes it.</remarks>

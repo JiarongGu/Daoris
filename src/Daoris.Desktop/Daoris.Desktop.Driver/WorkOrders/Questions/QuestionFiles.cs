@@ -5,7 +5,7 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A driven session's question to the person (PARKVIEW1, the park's ask design §2): one file per session under the home's sessions
+/// A driven session's question to the person: one file per session under the home's sessions
 /// folder, <c>&lt;session&gt;.question.json</c>, read as the connector's <c>question_ask</c> writes it (the service's
 /// <c>QuestionBox</c>). The file is the contract; the two share no code, and both read the one table
 /// <c>fixtures/park-question.json</c> (the page's reader of the route's answer too).
@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 /// <remarks>
 /// <para><b>Gone as each run of its record opens</b> (<see cref="Clear"/>), so while a resumed run works no question of the park
 /// before it stands, and a press another window made on it is refused as changed; <b>bound to its park as the run concludes</b>
-/// (<see cref="SettleRun"/>): kept only where the run parks and the question was asked since the run last handed its agent words, or
-/// does not read (HELPERWAIT1b), deleted otherwise. So a question on file while its record is parked is its last turn's. The connector writes during the run, and
+/// (<see cref="SettleRun"/>): kept only where the run parks and the question has been asked since the run last handed its agent words, or
+/// does not read, deleted otherwise. So a question on file while its record is parked is its last turn's. The connector writes during the run, and
 /// these clear before it and settle after it, so two never write at once.</para>
 ///
 /// <para><b>Read sharing the file's delete</b>, so a page reading it never holds a settle's delete back; a delete the disk still
@@ -62,8 +62,8 @@ public sealed class QuestionFiles(string home)
     }
 
     /// <summary>
-    /// Whether the session asked the person a question at or after <paramref name="since"/> (HELPERWAIT1; Codex's round-2 #3 on COWORKUX1):
-    /// false where no file is on disk or its question was asked before, true where it was asked since, and null where a file is there and
+    /// Whether the session asked the person a question at or after <paramref name="since"/>:
+    /// false where no file is on disk or its question is older, true where it is newer, and null where a file is there and
     /// does not read (busy, broken, past a bound), which a caller deciding that nobody waits on the person must read as a question.
     /// </summary>
     public bool? AskedSince(string session, DateTimeOffset since)
@@ -76,12 +76,12 @@ public sealed class QuestionFiles(string home)
     internal static ParkQuestion? Parsed(string text, string session, Func<DateTimeOffset> written) => ParkQuestions.Parsed(text, session, written);
 
     /// <summary>
-    /// Bind the session's question to the park its run ended in (the design §2): kept where <paramref name="state"/> parks and the
-    /// question was asked at or after <paramref name="since"/>; deleted otherwise, and said where the disk would not let it go.
+    /// Bind the session's question to the park its run ended in: kept where <paramref name="state"/> parks and the
+    /// question has been asked at or after <paramref name="since"/>; deleted otherwise, and said where the disk would not let it go.
     /// </summary>
     /// <remarks>
-    /// 🔴 HELPERWAIT1b (Codex's round-3 #1 on COWORKUX1): a park keeps a file that does not read (busy, broken, past a bound) too. Neither its
-    /// question nor when it was asked can be read, so nothing proves it was not this turn's; it is what made the turn park rather than wait
+    /// A park keeps a file that does not read (busy, broken, past a bound) too. Neither its
+    /// question nor its time can be read, so nothing proves it is not this turn's; it is what made the turn park rather than wait
     /// on its helper (<see cref="AskedSince"/> null), and a park never shows it, since a read of it is none. The next run's opening clears it.
     /// </remarks>
     public QuestionSettle Settle(string session, string state, DateTimeOffset since)
@@ -96,18 +96,18 @@ public sealed class QuestionFiles(string home)
     /// <summary>
     /// <see cref="Settle"/> at a run's conclusion: since the run's last handing of words, the later of its opening and the newest
     /// moment its record shows words handed to its agent (<see cref="SessionEvents.LastHandedAt"/>). A run that went on in the same
-    /// record with the person's words (MSG1b, on either door) asked its last turn's question after them; one asked before them may
+    /// record with the person's words (on either door) asked its last turn's question after them; one asked before them may
     /// have been answered by them, and goes.
     /// </summary>
     public QuestionSettle SettleRun(string session, string state, DateTimeOffset openedAt, SessionEvents events) =>
         Settle(session, state, events.LastHandedAt(session) is { } handed && handed > openedAt ? handed : openedAt);
 
     /// <summary>
-    /// The session's question gone as a run of its record opens (Fable's read, Q2): the park it asked in is over, so a press another
+    /// The session's question gone as a run of its record opens: the park it asked in is over, so a press another
     /// window still shows it with is refused as changed at once rather than taken for the run's own question.
     /// </summary>
     /// <summary>
-    /// Write <paramref name="question"/> back as its session's question, with the same id (SUPERVISOR1a-i, D208; the supervisor design §6.3):
+    /// Write <paramref name="question"/> back as its session's question, with the same id:
     /// a park restored after its run's opening cleared the file gets its question again, from the decision's snapshot, so the owner's card
     /// has its choices to press. False where the id is not a session's or the disk would not take it.
     /// </summary>
@@ -175,7 +175,7 @@ public sealed class QuestionFiles(string home)
     }
 }
 
-/// <summary>What a settle or a clear did with a session's question: there was none, it is kept for the park, it went, or it stayed.</summary>
+/// <summary>What a settle or a clear did with a session's question: there is none, it is kept for the park, it goes, or it stays.</summary>
 public enum QuestionSettle
 {
     None,
@@ -187,7 +187,7 @@ public enum QuestionSettle
 }
 
 /// <summary>
-/// How a pressed answer of a park's question rides the person's words (PARKVIEW1, the design §4; Fable's read, Q4): the page sends the
+/// How a pressed answer of a park's question rides the person's words: the page sends the
 /// label, then the person's own words after a blank line, naming the question; the words are marked with the label, and the session is
 /// handed them as <c>chose: &lt;label&gt;</c> before the person's own.
 /// </summary>

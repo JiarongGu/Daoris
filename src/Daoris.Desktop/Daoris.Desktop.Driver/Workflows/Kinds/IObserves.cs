@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A kind whose node's outcome is read from records in the pass (D247 §3.3): the wire evaluation asks it of an active or unknown node still
+/// A kind whose node's outcome is read from records in the pass: the wire evaluation asks it of an active or unknown node still
 /// bound, and the pass begins its node once its wires fire.
 /// </summary>
 public interface IObserves

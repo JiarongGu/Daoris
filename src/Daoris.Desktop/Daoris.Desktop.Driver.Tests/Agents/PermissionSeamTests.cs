@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// How the rules reach a session (PERM1, D72): the harness's own way of taking a settings file at spawn,
+/// How the rules reach a session: the harness's own way of taking a settings file at spawn,
 /// in each door's vocabulary — and nothing handed to a harness a Claude Code rule means nothing to.
 /// </summary>
 /// <remarks>
@@ -20,8 +20,8 @@ public sealed class PermissionSeamTests
     private static readonly string File = Path.Combine(TestHomes.Root, "daoris-home", "spawn", "s1.settings.json");
 
     /// <summary>
-    /// `--settings &lt;file&gt;` — *"load additional settings from"* (`claude --help`, 2.1.280, HELP3's
-    /// evidence): the command-line tier, which the harness merges with the person's and the repository's
+    /// `--settings &lt;file&gt;` — *"load additional settings from"* (`claude --help`, 2.1.280):
+    /// the command-line tier, which the harness merges with the person's and the repository's
     /// own, `deny` winning.
     /// </summary>
     [Fact]

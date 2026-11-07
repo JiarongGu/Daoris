@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1b (the co-agent design §7.1): a piece's box under the home's <c>partners</c> entry. The ask is written once and never
+/// A piece's box under the home's <c>partners</c> entry. The ask is written once and never
 /// again; the state carries every side effect's identity and is read back whole; the facts and the delivery receipt round-trip; an
 /// unreadable file is told apart from an absent one, which a restart reads as uncertain.
 /// </summary>

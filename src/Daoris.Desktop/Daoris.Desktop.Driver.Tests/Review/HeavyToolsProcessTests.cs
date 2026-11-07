@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1a3's proof (D180's HEAVYRUN1a3 note): a gate run through <c>yarn test</c> or <c>pnpm test</c> hands the tool the bound in
-/// the form the version its folder records takes. Each tool is a stub first on the PATH the gates inherit, recording the words it was
-/// handed in the folder it ran in; how each version hands them on to the script was read from its source.
+/// A gate run through <c>yarn test</c> or <c>pnpm test</c> hands the tool the bound in
+/// the form the version its folder records takes. Each tool is a stub first on the PATH the gates inherit, recording the words it is
+/// handed in the folder it runs in; how each version hands them on to the script is taken from its source.
 /// </summary>
 /// <remarks>
 /// Real processes: the Process half's. The shell is not asked to look in a gate's own folder (a machine may set
@@ -48,7 +48,7 @@ public sealed class HeavyToolsProcessTests : IDisposable
         int exit;
         try
         {
-            // Prepended, so every other tool stays where it was.
+            // Prepended, so every other tool stays where it is.
             Environment.SetEnvironmentVariable("PATH", bin + Path.PathSeparator + path);
             exit = await HeavyRun.RunAsync(new HeavyRunAsk(null), world, said, CancellationToken.None).WaitAsync(Poll.Patience);
         }

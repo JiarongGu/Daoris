@@ -1,16 +1,16 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The kind of line a resume is for (FOUNDATION1a-i, the foundation design §3.2): what its caller can do with the account rule's answer,
+/// The kind of line a resume is for: what its caller can do with the account rule's answer,
 /// which decides whether a cooling own account is moved off, whether the walk is asked where the own account cannot carry the words, and
-/// whether that walk counts the start it picks. The values are the three flags LIMITSWITCH1 and LIMITSWITCH2 gave the roster's resume,
+/// whether that walk counts the start it picks. The values are the three flags the roster's resume takes,
 /// named by the lines that pass them. The default is a driven record that cannot switch.
 /// </summary>
 /// <param name="Sort">Which line.</param>
 /// <param name="Carries">
 /// The line's runner can carry the words to a new part by itself, and they are the person's: a closed quest's session where the shell has a
 /// runner, a conversation whose words a person said. A driven record of an open or taken quest always can; Ask Daoris's room never does,
-/// since it goes elsewhere only at a limit (D205 §3.5(e)).
+/// since it goes elsewhere only at a limit.
 /// </param>
 public readonly record struct LineKind(LineSort Sort = LineSort.DrivenClosed, bool Carries = false)
 {
@@ -20,19 +20,19 @@ public readonly record struct LineKind(LineSort Sort = LineSort.DrivenClosed, bo
     /// <summary>A closed quest's session, which carries on only where the shell's chat runner opens a new part of it (<paramref name="carries"/>).</summary>
     public static LineKind DrivenClosed(bool carries) => new(LineSort.DrivenClosed, carries);
 
-    /// <summary>The limited record's own account asked before the walk (LIMITRESUME1b step 1): a probe that walks nothing and moves nothing.</summary>
+    /// <summary>The limited record's own account asked before the walk: a probe that walks nothing and moves nothing.</summary>
     public static LineKind DrivenLimit => new(LineSort.DrivenLimit);
 
-    /// <summary>An ended conversation, whose runner's ended move opens the new part and counts its start once (LIMITSWITCH2).</summary>
+    /// <summary>An ended conversation, whose runner's ended move opens the new part and counts its start once.</summary>
     public static LineKind Conversation(bool carries) => new(LineSort.Conversation, carries);
 
-    /// <summary>Ask Daoris's own conversation: it waits for its own account (D137 §2.2, D205 §3.5(e)).</summary>
+    /// <summary>Ask Daoris's own conversation: it waits for its own account.</summary>
     public static LineKind AskDaoris => new(LineSort.Conversation);
 
     /// <summary>An account that cannot carry the words is replaced by the walk's pick, where one is asked.</summary>
     public bool Walks => Sort is LineSort.DrivenOpen or LineSort.DrivenClosed;
 
-    /// <summary>The own account cooling, its words go on now in a new part where another account is ready (LIMITSWITCH1, LIMITSWITCH2).</summary>
+    /// <summary>The own account cooling, its words go on now in a new part where another account is ready.</summary>
     public bool Switches => Carries && Sort != LineSort.DrivenLimit;
 
     /// <summary>The switch's walk counts the start it picks: only the driver's carry-on, which opens on that pick.</summary>
@@ -57,14 +57,14 @@ public enum LineSort
 
 /// <summary>What moved the line, apart from its account: the person's choice and a limit's end.</summary>
 /// <param name="NewSession">The person chose to go on in a new session rather than wait for a cooling account.</param>
-/// <param name="Limited">An account's limit ended the record (LIMITRESUME1b): its words go where the line goes, never waiting.</param>
+/// <param name="Limited">An account's limit ended the record: its words go where the line goes, never waiting.</param>
 public readonly record struct LineTrigger(bool NewSession = false, bool Limited = false);
 
 /// <summary>The account a line is held to: none, a handed quest's named account, or a hand-over press's account opened as a pick.</summary>
-/// <remarks>No record keeps an account pick yet (FOUNDATION1a-ii's), so a resume's constraint is always none.</remarks>
+/// <remarks>No record keeps an account pick, so a resume's constraint is always none.</remarks>
 public readonly record struct LineConstraint(LineBinding Binding = LineBinding.None, string? Account = null)
 {
-    /// <summary>The line's own account, or a start's walk, as before.</summary>
+    /// <summary>The line's own account, or a start's walk.</summary>
     public static LineConstraint None => default;
 
     /// <summary>A handed quest's named account: asked for first, then the walk of the same agent's accounts (<c>SelectHandedAsync</c>).</summary>
@@ -82,9 +82,9 @@ public enum LineBinding { None, Handed, Pick }
 /// asked model is not offered there, and its cool-off whatever else holds it.
 /// </summary>
 /// <param name="Hold">What holds the account from carrying the words; <see cref="NextHold.Ready"/> where nothing does.</param>
-/// <param name="NotOffered">The account's reading does not offer the record's asked model (D205 §3.5(a)); only read of a ready account.</param>
+/// <param name="NotOffered">The account's reading does not offer the record's asked model; only read of a ready account.</param>
 /// <param name="Cooling">The account's cool-off, which a cooling account always has and an account that cannot run there may have as well.</param>
-/// <param name="NoAccounts">The adapter has no toolchain and so no accounts: it spawns as it always did and walks as a start does.</param>
+/// <param name="NoAccounts">The adapter has no toolchain and so no accounts: it spawns plainly and walks as a start does.</param>
 public readonly record struct LineOwn(NextHold Hold, bool NotOffered = false, CoolingEntry? Cooling = null, bool NoAccounts = false)
 {
     /// <summary>An account cooling or not, as a reader of the cooling store alone sees it.</summary>
@@ -94,7 +94,7 @@ public readonly record struct LineOwn(NextHold Hold, bool NotOffered = false, Co
     public static LineOwn Without => new(NextHold.Ready, NoAccounts: true);
 }
 
-/// <summary>Where the rule asks the walk (the foundation design's row a-i): the three places today's resume walks, and a handed quest's start.</summary>
+/// <summary>Where the rule asks the walk: the three places the roster's resume walks, and a handed quest's start.</summary>
 public enum LineWalkPlace
 {
     /// <summary>An adapter with no accounts walks as a start does, counted, whatever the line's flags say.</summary>
@@ -116,20 +116,20 @@ public enum LineWalkPlace
 /// </summary>
 public sealed record LineAsk(LineWalkPlace Place, bool Counts, bool NotOffered = false, string? Named = null);
 
-/// <summary>Which accounts a reset is the earliest of (the foundation design §3.2 step 5, row a-i): each caller's own set as today.</summary>
+/// <summary>Which accounts a reset is the earliest of: each caller's own set.</summary>
 public enum ResetSet
 {
     /// <summary>The walk's states: an order with none ready, its first reset (<c>HarnessRoster.Unready</c>).</summary>
     Walk,
 
-    /// <summary>The switch's walk against the own reset, the own account's included where it may resume there (LIMITSWITCH1, O2-4).</summary>
+    /// <summary>The switch's walk against the own reset, the own account's included where it may resume there.</summary>
     Switch,
 
     /// <summary>A limited conversation's wake: every cooling account of the agent, the walk's or not (<c>HarnessRoster.CoolingsOf</c>).</summary>
     Wake,
 }
 
-/// <summary>What would put a hold right (the foundation design §3.2 step 5): named, since the rule says it where nothing cools.</summary>
+/// <summary>What would put a hold right: named, since the rule says it where nothing cools.</summary>
 public enum LineRepair
 {
     /// <summary>Nothing to repair: the hold is a refusal that passes by itself or is for the person's press.</summary>
@@ -147,7 +147,7 @@ public enum LineRepair
     /// <summary>The provider's refusal to clear: it refused the account's credential.</summary>
     ClearRefusal,
 
-    /// <summary>The set to change: the work no longer uses the account, or it is kept for conversations.</summary>
+    /// <summary>The set to change: the work does not use the account, or it is kept for conversations.</summary>
     ChangeSet,
 
     /// <summary>The agent to install: nothing of it is here, or a pin has nothing installed at it.</summary>
@@ -186,17 +186,17 @@ public abstract record LineAnswer
 }
 
 /// <summary>
-/// The account rule as one call (FOUNDATION1a-i, the foundation design §3.2): what a line whose conversation lives on one account does
-/// when that account cannot carry its words, as LIMITSWITCH1 and LIMITSWITCH2 built it and <see cref="ResumeChoice"/>, the roster's resume,
+/// The account rule as one call: what a line whose conversation lives on one account does
+/// when that account cannot carry its words, as <see cref="ResumeChoice"/>, the roster's resume,
 /// the chat's go-on, Ask Daoris's, the limits wake and the closed quest's hold read it. Pure: it asks nothing and writes nothing.
 /// </summary>
 /// <remarks>
-/// <para><b>The walk is a lazy input</b>, asked only where today's code walks and never handed up front, since a walk counts the start it
+/// <para><b>The walk is a lazy input</b>, asked only where the roster walks and never handed up front, since a walk counts the start it
 /// chooses: where the own account cools under a line that switches, in the roster's own <c>ElsewhereAsync</c> for an account that cannot carry,
 /// and for an adapter with no toolchain. A caller that cannot hand a walk it has not yet made runs the rule twice
 /// (<see cref="DecideAsync"/>), the second time with the walk's answer where the first asked for it.</para>
 /// <para><b>Nothing here changes an answer.</b> Each branch is one the roster's resume took, in its order; the earliest reset is each caller's own
-/// set (<see cref="Earliest"/>); and a reset over exactly the accounts a line may take is FOUNDATION1a-iii's.</para>
+/// set (<see cref="Earliest"/>).</para>
 /// </remarks>
 public static class LineAccount
 {
@@ -210,7 +210,7 @@ public static class LineAccount
     public static NextHold OwnHold(CoolingEntry? cooling) => cooling is null ? NextHold.Ready : NextHold.Cooling;
 
     /// <summary>
-    /// The earliest reset of the set <paramref name="set"/> names, where each caller reads its own as today. <see cref="ResetSet.Walk"/> reads
+    /// The earliest reset of the set <paramref name="set"/> names, where each caller reads its own. <see cref="ResetSet.Walk"/> reads
     /// <paramref name="states"/>; <see cref="ResetSet.Switch"/> the own reset and the walk's against it, the walk's only where strictly earlier;
     /// <see cref="ResetSet.Wake"/> <paramref name="coolings"/>. Null where the set has none.
     /// </summary>
@@ -248,8 +248,8 @@ public static class LineAccount
         };
 
     /// <summary>
-    /// The rule: what the line does with its own account's hold. <paramref name="walk"/> is asked at most once, and only where today's resume
-    /// walks (<see cref="LineAsk"/>); where it is not asked nothing walked and nothing was counted.
+    /// The rule: what the line does with its own account's hold. <paramref name="walk"/> is asked at most once, and only where the roster's resume
+    /// walks (<see cref="LineAsk"/>); where it is not asked nothing walks and nothing is counted.
     /// </summary>
     /// <param name="own">The account the line's conversation lives on, as the roster reads it before any probe.</param>
     /// <param name="trigger">The person's new session and a limit's end.</param>
@@ -299,7 +299,7 @@ public static class LineAccount
 
         if (!ready) return Elsewhere(own, held, notOffered: false, line, walk);
 
-        // Ready, the asked model not offered there: the walk takes the same choice's other accounts with the own one passed (§3.5(a)).
+        // Ready, the asked model not offered there: the walk takes the same choice's other accounts with the own one passed.
         return own.NotOffered ? Elsewhere(own, NextHold.Refused, notOffered: true, line, walk) : new LineAnswer.Resume();
     }
 

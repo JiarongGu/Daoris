@@ -4,7 +4,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The claiming instruction (D46 §3), composed once and delivered per harness. Project-agnostic on
+/// The claiming instruction, composed once and delivered per harness. Project-agnostic on
 /// purpose: it travels to repositories that know nothing of this one's decision numbering, so it
 /// speaks in the canon's names, never in D-numbers.
 /// </summary>
@@ -12,8 +12,8 @@ public static class TargetPrompt
 {
     /// <summary>
     /// Bind the maker of this start, including a start continuing another maker's work: told that maker's trailer too where the part
-    /// before it left work uncommitted in the tree (MAKERTRAIL2). Its standing block is bound to the harness too: the tree's skills where
-    /// it loads none itself, and the rules where it cuts the native instruction file (CONTEXTONE1c).
+    /// before it left work uncommitted in the tree. Its standing block is bound to the harness too: the tree's skills where
+    /// it loads none itself, and the rules where it cuts the native instruction file.
     /// </summary>
     internal static SessionTarget ForStart(SessionTarget target, ProviderRegistry adapters, AgentDoor adapter) =>
         target with
@@ -30,7 +30,7 @@ public static class TargetPrompt
     public static string Compose(SessionTarget target) => Composed(target).Text;
 
     /// <summary>
-    /// The instruction a session is handed, and the composer's account of it (CONTEXT1, D143 point 1): the same words as
+    /// The instruction a session is handed, and the composer's account of it: the same words as
     /// <see cref="Compose"/>, joined from named pieces, each counted as it joins, so the account's sizes add up to the text.
     /// </summary>
     public static ComposedInstruction Composed(SessionTarget target)
@@ -44,13 +44,13 @@ public static class TargetPrompt
     }
 
     /// <summary>
-    /// The standing block the instruction ends with (CONTEXTONE1c), fitted to the <paramref name="before"/> characters composed ahead of
+    /// The standing block the instruction ends with, fitted to the <paramref name="before"/> characters composed ahead of
     /// it: inline, or the line naming its file; null where the target carries none.
     /// </summary>
     internal static StandingBlockTold? Block(SessionTarget target, int before) =>
         target.Block is { } facts ? AgentContext.Current.Block(facts, before) : null;
 
-    /// <summary>Whether the target's standing block goes through its file (CONTEXTONE1c): what the start writes, and lets the session read.</summary>
+    /// <summary>Whether the target's standing block goes through its file: what the start writes, and lets the session read.</summary>
     internal static bool Filed(SessionTarget target) => Block(target, Before(target)) is { Filed: true };
 
     private static int Before(SessionTarget target) => target.Prompt is { } prompt
@@ -78,10 +78,10 @@ public static class TargetPrompt
         new(HandedSections.Requirements, RequirementsPrompt.Required(target)),
         new(HandedSections.Words, AskedPrompt.Words(target)),
         new(HandedSections.GoAheads, AskedPrompt.GoAheads(target)),
-        // What waited on the ask's channel for this line of work (SESSONE2b), counted with what the sessions before it left, as the
-        // parts before it are (SESSONE1d), so no page catalogue changed.
+        // What waited on the ask's channel for this line of work, counted with what the sessions before it left, as the
+        // parts before it are, so no page catalogue changed.
         new(HandedSections.CarryOn, AgentWorkWords.Current.Channel(target.Channel)),
-        // CONTEXTDRIVE1b: a start's line's course, counted in the brief's own section; a carry-on's brief carries it among its own.
+        // A start's line's course, counted in the brief's own section; a carry-on's brief carries it among its own.
         .. (target.Course?.Pieces ?? []).Select(piece => new Piece(piece.Section, piece.Text)),
     ];
 
@@ -91,48 +91,48 @@ public static class TargetPrompt
     /// </summary>
     internal static IEnumerable<Piece> Tail(SessionTarget target, string close) =>
     [
-        // What its start did against the line, in a tree that stands (LANDSYNC2): the driver's own words, so counted with the close
+        // What its start did against the line, in a tree that stands: the driver's own words, so counted with the close
         // they come before, and no page catalogue changed.
         new(HandedSections.Close, target.InSync is { Length: > 0 } told ? $"\n{told}\n" : ""),
-        // What its tree's open copied of the checkout's dependencies (TREEDEPS1): the driver's own words, counted with the close.
+        // What its tree's open copied of the checkout's dependencies: the driver's own words, counted with the close.
         new(HandedSections.Close, target.Dependencies is { Length: > 0 } copied ? $"\n{copied}\n" : ""),
-        // Its repository's heavy gates, once at its end through the slot (HEAVYRUN1b1): the driver's own words, counted with the close.
+        // Its repository's heavy gates, once at its end through the slot: the driver's own words, counted with the close.
         new(HandedSections.Close, target.Heavy is { Length: > 0 } heavy ? $"\n{heavy}\n" : ""),
-        // A set-up step's own section (REVIEWENV1c, design §2.2), before the close it changes, and accounted as its own since the
-        // page words it (REVIEWENV1c2).
+        // A set-up step's own section, before the close it changes, and accounted as its own since the
+        // page words it.
         new(HandedSections.SetUp, WorkplacePrompt.SetUp(target)),
         new(HandedSections.Close, close),
         new(HandedSections.Close, target.CommitTrailer is { } trailer ? $"\n\n{trailer}\n" : ""),
         new(HandedSections.Language, AskedPrompt.Language(target)),
         new(HandedSections.Close, "\n"),
         new(HandedSections.Landing, WorkplacePrompt.Landing(target)),
-        // The browser handed, a block of its own (BRWHINT1b); the driver's own words, so counted with the close.
+        // The browser handed, a block of its own; the driver's own words, so counted with the close.
         new(HandedSections.Close, target.Browser is { } browser ? $"\n{browser}\n" : ""),
         new(HandedSections.Reading, WorkplacePrompt.Reading(target)),
         .. AskedPrompt.AskingPieces(target, lead: "\n"),
         new(HandedSections.Proposing, "\n\n" + AskedPrompt.Proposing),
         new(HandedSections.Boundary, "\n\n" + WorkplacePrompt.Boundary(target)),
-        // A held remote's Git section (GITAUTH1a, the git-auth design §5.3): the driver's own words, beside the boundary and counted
+        // A held remote's Git section: the driver's own words, beside the boundary and counted
         // with it.
         new(HandedSections.Boundary, target.Git is { Length: > 0 } git ? $"\n\n{git}" : ""),
     ];
 
     /// <summary>
-    /// How a session ends a quest its closure graph closes (FABRIC-CLOSE1l, folding CLOSE1g; the fabric events design §E5): `ready`, never
+    /// How a session ends a quest its closure graph closes: `ready`, never
     /// `done`, which the service refuses on a bound quest, naming `ready`.
     /// </summary>
     internal const string ReadyWords =
         "Never `done`: its graph refuses it, and closes\nthe quest itself once its holds and gates are through.";
 
     /// <summary>
-    /// Why the session before did not finish: cut off (D80), or stopped to ask the person, who has
-    /// answered (STANDDOWN2) — in their words, which are the reason this session exists — or stopped by the
-    /// person, who has since released the quest (SESSUX1b).
+    /// Why the session before did not finish: cut off, or stopped to ask the person, who has
+    /// answered — in their words, which are the reason this session exists — or stopped by the
+    /// person, who has since released the quest.
     /// </summary>
     /// <remarks>
-    /// The ask's words are the source of what the person said (DRIFT1b, D133 §2): an answer quoted among them above is
+    /// The ask's words are the source of what the person said: an answer quoted among them above is
     /// pointed to rather than quoted twice. One that is not there, on a quest no ask asked, an answer given before the
-    /// words were kept, or words that could not be read, is quoted here as it always was.
+    /// words were kept, or words that could not be read, is quoted here.
     /// </remarks>
     internal static string Before(SessionTarget target, string record) => target.PersonSaid is { } said
         ? (AgentWorkWords.Current.Quotes(target.Words, said)
@@ -158,7 +158,7 @@ public static class TargetPrompt
     /// </summary>
     internal const int RequirementsLimit = 8_000;
 
-    /// <summary>The most earlier parts a further part of a session is told of by name (SESSONE1d): the newest, the rest counted.</summary>
+    /// <summary>The most earlier parts a further part of a session is told of by name: the newest, the rest counted.</summary>
     internal const int PartsShown = 3;
 
     internal static string DaorisWaited(IReadOnlyList<SaidWordView> words) => ResumedPrompt.DaorisWaited(words);

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1d (the staff policy design §3.3, §9 row d): the one reader of a role's order for every line but a start's own walk: the role a
+/// The one reader of a role's order for every line but a start's own walk: the role a
 /// line is bound to, its order as the policy arranges it, and an arrangement kept to one agent's alternatives where a rule names the agents.
 /// </summary>
 public sealed class RoleOrdersTests : IDisposable
@@ -88,7 +88,7 @@ public sealed class RoleOrdersTests : IDisposable
 
         // The policy would put A2 first and B1 last: a's two entries still come before b's, in the arranged order between them.
         Assert.Equal([A2, A1, B1], RoleOrders.WithinAgents(asked, [A2, B1, A1]));
-        // An entry the arrangement left out stays out; an unchanged arrangement is the order exactly as it was.
+        // An entry the arrangement left out stays out; an unchanged arrangement is the stored order exactly.
         Assert.Equal([A1, B1], RoleOrders.WithinAgents(asked, [A1, B1]));
         IReadOnlyList<ActorEffective> interleaved = [A1, B1, A2];
         Assert.Same(interleaved, RoleOrders.WithinAgents(interleaved, interleaved));

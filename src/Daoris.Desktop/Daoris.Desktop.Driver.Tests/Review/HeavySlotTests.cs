@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1a (D180's HEAVYRUN1 note): one heavy-run slot per repository, across its trees. Two driven sessions on one repository
-/// each ran its full build and suites at once; the slot is what makes the second wait. Files only, so it is the fast half's: the
+/// One heavy-run slot per repository, across its trees. Two driven sessions on one repository
+/// would each run their full build and suites at once; the slot makes the second wait. Files only, so it is the fast half's: the
 /// processes a run holds are <see cref="HeavyRunProcessTests"/>'.
 /// </summary>
 public sealed class HeavySlotTests : IDisposable
@@ -172,7 +172,7 @@ public sealed class HeavySlotTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 HEAVYSLOT1 (the UI/UX design §3.5), two runs: the holder's record says the gate it runs and since when, the run waiting
+    /// Two runs: the holder's record says the gate it runs and since when, the run waiting
     /// behind it keeps a record of its own while it waits, and the look reads both; once the holder lets go, the waiter takes the slot
     /// and its wait is gone. Read from the records, never a run's output.
     /// </summary>

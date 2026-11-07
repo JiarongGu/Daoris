@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <param name="Lines">The lines newer than what was asked for, oldest first.</param>
+/// <param name="Lines">The lines newer than what is asked for, oldest first.</param>
 /// <param name="Sequence">The newest sequence this session has produced — what to ask after next.</param>
 /// <param name="Live">Whether more is coming. False once the session's process has ended.</param>
 /// <param name="Dropped">
@@ -11,7 +11,7 @@ public sealed record ConsoleTail(
     IReadOnlyList<ConsoleLine> Lines, long Sequence, bool Live, long Dropped);
 
 /// <summary>
-/// One session's streams, kept under that session (CONSOLE2) — what a door hands the wire so a
+/// One session's streams, kept under that session — what a door hands the wire so a
 /// subagent's lines and a task's output land beside the session rather than in it.
 /// </summary>
 public sealed class SessionStreams(SessionOutput output, string sessionId) : ISessionStreams
@@ -26,27 +26,27 @@ public sealed class SessionStreams(SessionOutput output, string sessionId) : ISe
 /// <summary>One stream under a session, as a reader lists them.</summary>
 /// <param name="Key">What to tail it by — <see cref="SessionOutput.Key"/>.</param>
 /// <param name="State">How it ended, in the wire's word, or null while it runs.</param>
-/// <param name="CanStop">Whether a person can stop it now (CONSOLE3a): its harness said so, and it runs.</param>
+/// <param name="CanStop">Whether a person can stop it now: its harness said so, and it runs.</param>
 public sealed record StreamState(string Key, string Kind, string Name, bool Live, string? State, bool CanStop = false);
 
 /// <summary>
-/// What a session is saying, as it says it (D49 §2) — the transcript capture, teed into memory.
+/// What a session is saying, as it says it — the transcript capture, teed into memory.
 /// </summary>
 /// <remarks>
 /// <para><b>The file stays the record; this is the window.</b> The transcript on disk is unbounded and
-/// durable (D46 §4); this holds the last few hundred lines per session so a person can watch one
+/// durable; this holds the last few hundred lines per session so a person can watch one
 /// without the shell reading a growing file. Losing it costs nothing — the file is still there.</para>
 ///
 /// <para><b>It never reaches the service.</b> Output is transcript-class material: it can carry
-/// machine paths, and a transcript never leaves the machine that produced it (D47 §4). So this lives
+/// machine paths, and a transcript never leaves the machine that produced it. So this lives
 /// beside <see cref="SessionProcesses"/>, in the driver, read only over the shell's own bridge — there
 /// is no HTTP surface onto it, which is a structural guarantee rather than a policed one.</para>
 ///
 /// <para><b>Bounded twice</b>: lines per session, and sessions retained. A live session is never
-/// evicted; an ended one is kept only long enough that a person who was watching can still read how
+/// evicted; an ended one is kept only long enough that a person who is watching can still read how
 /// it finished.</para>
 ///
-/// <para><b>A session's streams are buffers of their own</b> (CONSOLE2): each subagent and each
+/// <para><b>A session's streams are buffers of their own</b>: each subagent and each
 /// background task it runs, under <see cref="Key"/>, so any reader tails one exactly as it tails a
 /// session. They ride with their session: they are not counted as sessions retained, they leave
 /// when it is evicted, and its end is theirs.</para>
@@ -77,7 +77,7 @@ public sealed class SessionOutput : ISessionOutput
         public SessionStream? Stream;
         public string? State;
 
-        /// <summary>When a stream was opened, which is the order a reader lists them in.</summary>
+        /// <summary>When a stream is opened, which is the order a reader lists them in.</summary>
         public long Opened;
     }
 
@@ -89,7 +89,7 @@ public sealed class SessionOutput : ISessionOutput
     public Func<DateTimeOffset> Clock { get; set; } = () => default;
 
     /// <summary>
-    /// Each live session's newest line, its own or any of its streams' (COWORKVIEW1a, <i>last heard</i>), held in memory alone. A
+    /// Each live session's newest line, its own or any of its streams' (<i>last heard</i>), held in memory alone. A
     /// session that said nothing, or whose console closed, has no row.
     /// </summary>
     public IReadOnlyDictionary<string, DateTimeOffset> HeardNow()
@@ -114,7 +114,7 @@ public sealed class SessionOutput : ISessionOutput
 
     /// <summary>
     /// Begin a stream under a session. Opening one already open changes nothing, so an announcement
-    /// the wire repeats does not reset what was said.
+    /// the wire repeats does not reset what is said.
     /// </summary>
     public void Open(string sessionId, SessionStream stream)
     {
@@ -131,7 +131,7 @@ public sealed class SessionOutput : ISessionOutput
     }
 
     /// <summary>
-    /// Raised with a session's id when one of its streams opens or ends (CONSOLE2c) — how a page's
+    /// Raised with a session's id when one of its streams opens or ends — how a page's
     /// console grows a tab while the session runs. Guarded as <see cref="Lined"/> is.
     /// </summary>
     public event Action<string>? Streamed;
@@ -150,7 +150,7 @@ public sealed class SessionOutput : ISessionOutput
 
     /// <summary>
     /// End a stream, in the wire's word. The last ending is the one kept: a task that finished on its
-    /// own is said <c>stopped</c> and then <c>completed</c> (CONSOLE2a).
+    /// own is said <c>stopped</c> and then <c>completed</c>.
     /// </summary>
     public void End(string sessionId, string streamId, string? state)
     {

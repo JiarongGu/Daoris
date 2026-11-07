@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1 1b: a list of steps is no longer saved by any door, yet a file saved as steps before still reads and binds. A test that
+/// A list of steps is saved by no door, yet a file saved as steps earlier still reads and binds. A test that
 /// needs one writes the file as an older build left it, which no door of this build can.
 /// </summary>
 internal static class StoredSteps

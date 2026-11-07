@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rules a second opinion's session is handed (XAGENT1d, D155 point 5; the second-agent design §5.2, §5.4), over the ones
+/// The rules a second opinion's session is handed, over the ones
 /// every session is: where its agent takes Daoris's rules, every edit tool is denied, the <c>commit</c> default is withheld,
 /// and its connector offers reading and <c>opinion_give</c>, and nothing that closes, publishes, permits or asks.
 /// </summary>
@@ -9,14 +9,14 @@ namespace Daoris.Driver;
 /// <para><b>Laid over the person's composition, never instead of it.</b> The defaults still on, the machine's rules, the
 /// workspace's and the repository's are composed as for any session (<see cref="PermissionRules.Compose"/>); this takes away
 /// what a reviewer is not given and adds what it is denied. A person's own deny is handed as written, and deny wins at the
-/// harness (D72). <c>no-push</c> and the tree guard, on its copy, stand as for every session.</para>
+/// harness. <c>no-push</c> and the tree guard, on its copy, stand as for every session.</para>
 ///
 /// <para><b>Denied, not only withheld.</b> The copy holds the repository's own settings, whose allow-list may name an edit, a
-/// commit or a connector tool; only a deny outranks it there. The copy is the floor whatever an agent's rules say (§5.1): these
-/// rules are what Claude Code honours on top of it (PERM1), measured for a reviewer by XAGENT1j.</para>
+/// commit or a connector tool; only a deny outranks it there. The copy is the floor whatever an agent's rules say: these
+/// rules are what Claude Code honours on top of it.</para>
 ///
 /// <para><b>Reading is its job</b>, so its history is read with git's own reading commands unasked, as an intake's room names
-/// its tools (FG5): an ask is a refusal here (D52). With <c>verify</c>, what the repository declares safe is the person's rules'
+/// its tools: an ask is a refusal here. With <c>verify</c>, what the repository declares safe is the person's rules'
 /// to allow, as for any session; no rule here widens it.</para>
 /// </remarks>
 public static class OpinionPermissions
@@ -24,8 +24,8 @@ public static class OpinionPermissions
     private const string Connector = $"mcp__{KnowledgeConnector.ServerName}__";
 
     /// <summary>
-    /// Its connector's tools it may call: the knowledge it reads, the quests it reads and their handbacks (HANDBACK1), a repository's
-    /// memory it reads (KNOWCENTRAL2b), and its one say. The service's <c>CallTable.ReviewerServed</c> serves a reviewer the same on every
+    /// Its connector's tools it may call: the knowledge it reads, the quests it reads and their handbacks, a repository's
+    /// memory it reads, and its one say. The service's <c>CallTable.ReviewerServed</c> serves a reviewer the same on every
     /// door, held to this list by its tests.
     /// </summary>
     private static readonly string[] Offered =
@@ -35,13 +35,13 @@ public static class OpinionPermissions
     ];
 
     /// <summary>
-    /// Its connector's tools it is never given (§5.4): a quest's take and close, a publish, a go-ahead's ask, a rule's proposal,
-    /// a set-up's serving and its ready, a working session's answer, a helper's ask and answer (MIXAGENT2a-i: a reviewer asks for
-    /// no helper, and is none), the ask's channel (SESSONE2b, D167 point 7: each answers one question, and the service refuses both
-    /// it anyway), an ask to hand over (MIXAGENT1c: a reviewer and a helper answer one question and go on with nobody), a line's
-    /// history (SESSCTX1f: neither continues another session, and the record it would read is the working session's), the
-    /// machine's own index rebuild, a park's question (PARKVIEW1: neither parks, and the service refuses both it anyway), and a change to
-    /// a repository's memory or a proposal of one (KNOWCENTRAL2b: neither keeps memory, and a proposal is a quest).
+    /// Its connector's tools it is never given: a quest's take and close, a publish, a go-ahead's ask, a rule's proposal,
+    /// a set-up's serving and its ready, a working session's answer, a helper's ask and answer (a reviewer asks for
+    /// no helper, and is none), the ask's channel (each answers one question, and the service refuses both
+    /// it anyway), an ask to hand over (a reviewer and a helper answer one question and go on with nobody), a line's
+    /// history (neither continues another session, and the record it would read is the working session's), the
+    /// machine's own index rebuild, a park's question (neither parks, and the service refuses both it anyway), and a change to
+    /// a repository's memory or a proposal of one (neither keeps memory, and a proposal is a quest).
     /// </summary>
     private static readonly string[] Acting =
     [
@@ -60,7 +60,7 @@ public static class OpinionPermissions
 
     /// <summary>
     /// What it is denied in the harness's own rule language: every tool that writes a file, and git's acts that make or move a
-    /// commit, a branch or a tag, each also in the option-first form a rule must name apart (UNBLOCK4's lesson).
+    /// commit, a branch or a tag, each also in the option-first form a rule must name apart.
     /// </summary>
     private static readonly string[] Writing =
     [
@@ -70,7 +70,7 @@ public static class OpinionPermissions
     ];
 
     /// <summary>
-    /// What auto mode's classifier is told beside the rules (D122 §3.7): the forms no rule can name. Handed after the harness's
+    /// What auto mode's classifier is told beside the rules: the forms no rule can name. Handed after the harness's
     /// own list and the defaults', never instead of them.
     /// </summary>
     public const string HardDeny =
@@ -84,7 +84,7 @@ public static class OpinionPermissions
     /// taken out of its allows, its offered tools and its reading added, and its writes and the acting tools denied, each rule once.
     /// </summary>
     /// <summary>
-    /// What a helper's session (MIXAGENT2a-ii) is told to the classifier beside the rules: the reviewer's words for a helper, which
+    /// What a helper's session is told to the classifier beside the rules: the reviewer's words for a helper, which
     /// reads one question's answer and changes nothing.
     /// </summary>
     public const string HelperHardDeny =
@@ -94,7 +94,7 @@ public static class OpinionPermissions
         + "closing, declining or publishing a quest; and asking another agent for help. A helper reads and answers, and changes nothing.";
 
     /// <param name="helper">
-    /// A helper's session (MIXAGENT2a-ii) rather than a reviewer's: the same read-only shape with its one tool <c>helper_answer</c>
+    /// A helper's session rather than a reviewer's: the same read-only shape with its one tool <c>helper_answer</c>
     /// in place of <c>opinion_give</c>, which it is denied, as is <c>helper_ask</c> (a helper asks for no helper).
     /// </param>
     public static RuleLists Shape(RuleLists composed, bool helper = false)

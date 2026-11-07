@@ -3,8 +3,8 @@ using System.Net.WebSockets;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's browser as a set-up step's review uses it (REVIEWENV1d): the shell implements it, over its own CDP connection to its
-/// own browser; a host with no shell has none, and the planner sits a local set-up step there (REVIEWENV1c).
+/// Daoris's browser as a set-up step's review uses it: the shell implements it, over its own CDP connection to its
+/// own browser; a host with no shell has none, and the planner sits a local set-up step there.
 /// </summary>
 /// <remarks>
 /// A failure is thrown as <see cref="InvalidOperationException"/>, <see cref="TimeoutException"/>, an HTTP or socket failure, or
@@ -13,8 +13,8 @@ namespace Daoris.Driver;
 public interface IReviewTabs
 {
     /// <summary>
-    /// Bring the browser up and open the quest's tab, titled, in front; or bring the one already open forward (design §2.3 step
-    /// 1). A tab an agent opens over CDP has no window (the in-app browser design, §3.2), so the step works in this one.
+    /// Bring the browser up and open the quest's tab, titled, in front; or bring the one already open forward.
+    /// A tab an agent opens over CDP has no window, so the step works in this one.
     /// </summary>
     Task OpenAsync(string quest, string title, CancellationToken ct = default);
 
@@ -33,11 +33,10 @@ public interface IReviewTabs
 }
 
 /// <summary>
-/// The review's showing, as the driver keeps it (REVIEWENV1d, D154 point 5; design §2.3 steps 1–5, §3.3): a set-up step's tab
+/// The review's showing, as the driver keeps it: a set-up step's tab
 /// opened before its session, the folder its session named served there once its set-up is posted, kept served from look to
 /// look until the person's verdict, and served again at their <i>Show it again</i>. Daoris holds it, not the session: a session's
-/// own interception ends with it, and the next reload would quietly load the person's own server (measured,
-/// <c>docs/2026-10-09-review-serving-evidence.md</c> §1 row 4).
+/// own interception ends with it, and the next reload would quietly load the person's own server.
 /// </summary>
 /// <remarks>
 /// <para><b>One per shell</b>, shared by every look's driver as the browser is, since a serving outlives the look and the

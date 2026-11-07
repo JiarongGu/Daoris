@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The exchanges half of <i>At work</i> (COMMS1i, the comms design §7, §13 point 12): the attended line's requests of others, read by the
+/// The exchanges half of <i>At work</i>: the attended line's requests of others, read by the
 /// one read (<see cref="Exchanges.Of"/>) over the home's helper, piece and hand-over files, the quests and records the caller holds, and
 /// the reviewers' records, each file taken with its health. The window's read and the terminal's verb fill the composition's port with it.
 /// </summary>
@@ -19,7 +19,7 @@ public static class AtWorkExchangeReading
         attended => Of(Look(home, records, quests, reviewers), attended);
 
     /// <summary>
-    /// A reviewer's record as an opinion asked on the line it serves (COMMS1i, D203's <c>serves</c>): reading while its session runs, failed
+    /// A reviewer's record as an opinion asked on the line it serves (its <c>serves</c>): reading while its session runs, failed
     /// where it failed, else ended. Null for a record that reads no opinion, or one that names no line it serves (an opinion from before the
     /// mark), which is on no line.
     /// </summary>
@@ -70,7 +70,7 @@ public static class AtWorkExchangeReading
     }
 
     /// <summary>
-    /// What each line on this machine waits on, for Ask Daoris's room (COMMS1i, the comms design §7): each line's head among
+    /// What each line on this machine waits on, for Ask Daoris's room: each line's head among
     /// <paramref name="records"/> (a record no other continues, and no helper's, partner's or reviewer's) with the requests of its line it
     /// still waits on, in the verb's words, by the same read <i>At work</i> draws; and the sources not read.
     /// </summary>

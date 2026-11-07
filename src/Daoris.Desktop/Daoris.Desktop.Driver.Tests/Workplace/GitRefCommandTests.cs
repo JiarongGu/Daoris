@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2c's terminal verb (D204; the git-writes design §9): <c>git branch|tag &lt;repository&gt; &lt;name&gt; [&lt;commit&gt;] [--plan|--yes]</c>.
+/// The terminal verb <c>git branch|tag &lt;repository&gt; &lt;name&gt; [&lt;commit&gt;] [--plan|--yes]</c>.
 /// A plan says what it would make and writes nothing; <c>--yes</c> with a Daoris running is the person's press over the pipe, its words
 /// the route's; with none it runs the journal's act itself, refused from a session's terminal.
 /// </summary>

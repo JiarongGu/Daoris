@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One entry of an actor's effective order (D205 §4.0): who runs, with what, and <c>From</c>, what the record keeps as its <c>choice</c>:
+/// One entry of an actor's effective order: who runs, with what, and <c>From</c>, what the record keeps as its <c>choice</c>:
 /// <c>1</c> to <c>4</c>, <c>before</c>, <c>rule-default</c>, <c>pick</c> or <c>handed</c>.
 /// </summary>
 public sealed record ActorEffective(string Agent, string? Model, string? Effort, string From)
@@ -16,17 +16,17 @@ public sealed record ActorEffective(string Agent, string? Model, string? Effort,
 }
 
 /// <summary>
-/// The actors' one judge and one reading (D205 §3.1, §4.0, §6.1, MODELROLE1c): <see cref="Judge"/> refuses alike for the screen, the
+/// The actors' one judge and one reading: <see cref="Judge"/> refuses alike for the screen, the
 /// terminal and a proposal, and <see cref="Effective"/> answers every start, the editor and the terminal the order a start walks.
 /// </summary>
 /// <remarks>
-/// An actor's stored state is one of three (§4.0): absent, <i>as before</i>, read from today's keys at account default; <c>[]</c>,
+/// An actor's stored state is one of three: absent, <i>as before</i>, read from today's keys at account default; <c>[]</c>,
 /// <i>off</i>, for Intake and Ask Daoris alone; or one to four choices. A stored entry that does not read is kept as its error and holds
-/// the start that reads it (<see cref="ActorUnreadableException"/>), never silently read as <i>as before</i> (§6.4).
+/// the start that reads it (<see cref="ActorUnreadableException"/>), never silently read as <i>as before</i>.
 /// </remarks>
 public static class ActorChoices
 {
-    /// <summary>The nine actors' wire ids, in the screen's order (§2.2): the settings' <see cref="ActorKey.Ids"/>.</summary>
+    /// <summary>The nine actors' wire ids, in the screen's order: the settings' <see cref="ActorKey.Ids"/>.</summary>
     public static IReadOnlyList<string> Ids => ActorKey.Ids;
 
     /// <summary>The most choices an actor holds: the most voices a brainstorm takes (<c>BrainstormDesk.MostAgents</c>).</summary>
@@ -35,7 +35,7 @@ public static class ActorChoices
     /// <summary>Whether <paramref name="actor"/> may be <i>off</i>: Intake and Ask Daoris, whose absent key is off today.</summary>
     public static bool MayBeOff(string actor) => ActorKey.MayBeOff(actor);
 
-    /// <summary>The supported harness (D23): the agent a seeded Build, Chat or Brainstorm starts on, and where Build's order names none.</summary>
+    /// <summary>The supported harness: the agent a seeded Build, Chat or Brainstorm starts on, and where Build's order names none.</summary>
     public const string DefaultAgent = "claude-code";
 
     /// <summary>
@@ -44,15 +44,15 @@ public static class ActorChoices
     /// </summary>
     public static string BuildAgent(DriverConfig config) => ActorKey.FirstAgent("build", config) ?? DefaultAgent;
 
-    /// <summary>The six roles with an order of their own (the oneway design §2, and Design): each holds a written order, never <i>as before</i>.</summary>
+    /// <summary>The six roles with an order of their own: each holds a written order, never <i>as before</i>.</summary>
     public static IReadOnlyList<string> Ordered { get; } = ["build", "design", "chat", "brainstorm", "intake", "ask-daoris"];
 
     /// <summary>The model and effort Design runs on where nothing else is set: judgement is its work (<c>docs/model-roles.md</c>, build-judgement).</summary>
     public static ActorChoice DesignSeed { get; } = new(DefaultAgent, "opus", "high");
 
     /// <summary>
-    /// A role's seed (ONEWAY1b): the written order a fresh home starts with and the role door's <c>default</c> writes, what a home with none
-    /// of the old keys ran; null for Second opinion, Partner and Helper, whose caller's rule decides who runs.
+    /// A role's seed: the written order a fresh home starts with and the role door's <c>default</c> writes, what a home with none
+    /// of the four staffing keys ran; null for Second opinion, Partner and Helper, whose caller's rule decides who runs.
     /// </summary>
     public static IReadOnlyList<ActorChoice>? Seed(string role) => role switch
     {
@@ -76,8 +76,8 @@ public static class ActorChoices
     }
 
     /// <summary>
-    /// <paramref name="actor"/>'s effective order (§4.0): its entries as stored, or, <i>as before</i>, read from today's keys at account
-    /// default (§6.1). A <paramref name="pick"/> or a <paramref name="handed"/> agent overrides who runs, its model the actor's first
+    /// <paramref name="actor"/>'s effective order: its entries as stored, or, <i>as before</i>, read from today's keys at account
+    /// default. A <paramref name="pick"/> or a <paramref name="handed"/> agent overrides who runs, its model the actor's first
     /// entry for that agent; a <paramref name="fence"/>'s agents decide who, each taking the actor's entries for it, else
     /// <c>rule-default</c>. Second opinion and Partner have no order of their own, and Helper <i>as before</i> is
     /// <c>HelperChoice.Candidates</c>: each reads empty here, its caller's own rule deciding.
@@ -128,8 +128,8 @@ public static class ActorChoices
     }
 
     /// <summary>
-    /// The agent a new chat starts on, and the order it walks (the foundation design §2.4's third row, FOUNDATION1j part iii): the person's
-    /// <paramref name="named"/> agent alone, its model Chat's first entry for it (D205 §3.5(d)); else Chat's order, whose first agent the
+    /// The agent a new chat starts on, and the order it walks: the person's
+    /// <paramref name="named"/> agent alone, its model Chat's first entry for it; else Chat's order, whose first agent the
     /// start asks. The same answer for the page's press, a conversation started from words and a terminal's, never the machine's
     /// <c>adapter</c> key: Chat left unset answers that key itself (<see cref="FirstAgent"/>), which is read only where the order is empty,
     /// as no order of Chat's is (Chat cannot be off).
@@ -145,7 +145,7 @@ public static class ActorChoices
 
     /// <summary>
     /// <paramref name="config"/> with <paramref name="actor"/>'s order set (or, null, back to no order of its own), judged first, and
-    /// written through (§6.4).
+    /// written through.
     /// </summary>
     /// <exception cref="DriverException">The judge's refusal; nothing changed.</exception>
     public static DriverConfig With(DriverConfig config, string actor, IReadOnlyList<ActorChoice>? choices)
@@ -206,7 +206,7 @@ public static class ActorChoices
 public sealed record ActorView(string Id, string State, IReadOnlyList<ActorEffective> Choices, string? Error)
 {
     /// <summary>
-    /// The order a start would walk now where the role's set policy arranges it otherwise than its stored order (STAFFPOLICY1d), for the page's
+    /// The order a start would walk now where the role's set policy arranges it otherwise than its stored order, for the page's
     /// hand-over offer; null where it is the stored order, or the role's is not asked.
     /// </summary>
     public IReadOnlyList<ActorEffective>? Arranged { get; init; }
@@ -225,7 +225,7 @@ public sealed record ActorView(string Id, string State, IReadOnlyList<ActorEffec
     }
 }
 
-/// <summary>An actor's stored entry in <c>driver.json</c> that does not read: the start that reads it holds with this sentence (§6.4).</summary>
+/// <summary>An actor's stored entry in <c>driver.json</c> that does not read: the start that reads it holds with this sentence.</summary>
 public sealed class ActorUnreadableException(string actor, string why)
     : DriverException($"driver.json's `actors.{actor}` {why}, so {actor} starts nothing until it is set again (`daoris role set {actor} …`).")
 {

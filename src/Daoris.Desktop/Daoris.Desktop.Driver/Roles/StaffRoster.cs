@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>The roster's one ledger of role starts, made by the roles above it (STAFFPOLICY1c), shared by every start of the process.</summary>
+/// <summary>The roster's one ledger of role starts, made by the roles above it, shared by every start of the process.</summary>
 public static class StaffRoster
 {
     /// <summary>

@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What one session's own tree holds that no branch of the person's does (SESSUX1a, D126 §2.1), by D88's proof: its
+/// What one session's own tree holds that no branch of the person's does, by the landed proof: its
 /// uncommitted changes and its unlanded commits, the fact *To review* is read from. Real git throughout, so this is the
 /// suite's Process half; the reader over a judgement handed in is <see cref="SessionGroupsTests"/>.
 /// </summary>
@@ -36,7 +36,7 @@ public sealed class SessionTreeWorkTests : IDisposable
         await CommitAsync(tree.Path, "one.txt", "one");
         await CommitAsync(tree.Path, "two.txt", "two");
 
-        Assert.Equal(new TreeWork(2, 0), await trees.WorkAsync(tree.Path));
+        Assert.Equal(new TreeWork(2, 0) { Unlanded = 2 }, await trees.WorkAsync(tree.Path));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public sealed class SessionTreeWorkTests : IDisposable
         var tree = await trees.OpenAsync(root, "engine", "aurora");
         await File.WriteAllTextAsync(Path.Combine(tree.Path, "draft.txt"), "half done\n");
 
-        Assert.Equal(new TreeWork(0, 1), await trees.WorkAsync(tree.Path));
+        Assert.Equal(new TreeWork(0, 1) { Unlanded = 0 }, await trees.WorkAsync(tree.Path));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class SessionTreeWorkTests : IDisposable
 
         var work = await trees.WorkAsync(tree.Path);
 
-        Assert.Equal(new TreeWork(0, 0), work);
+        Assert.Equal(new TreeWork(0, 0) { Unlanded = 0 }, work);
         Assert.False(work!.Holds);
     }
 
@@ -83,7 +83,7 @@ public sealed class SessionTreeWorkTests : IDisposable
         Assert.Null(await trees.WorkAsync(Path.Combine(trees.TreesRoot, "aurora", "engine", "s-gone")));
     }
 
-    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>, PROCSPEED1b): no test here reads its first commit.</summary>
+    /// <summary>A copy of the run's plain seed (<see cref="GitSeed.PlainAsync"/>): no test here reads its first commit.</summary>
     private Task<string> RepositoryAsync(string name) => GitSeed.PlainAsync(Path.Combine(_scratch, name), name);
 
     private static async Task CommitAsync(string tree, string file, string content)

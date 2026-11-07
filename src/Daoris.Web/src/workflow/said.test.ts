@@ -4,7 +4,7 @@ import type { WorkflowStep } from './current';
 import { BRANCH_YOU_PUSH, INTEGRATE_OWNER, LIMITS } from './fixtures';
 import { edgeSaid, limitSaid, partSaid, sourceSaid, stepSet, stepTitle } from './said';
 
-// INTEGRATE1n part n1 (the integration design §17.4): a graph's `integrate` node is a step this page words, as the driver's
+// A graph's `integrate` node is a step this page words, as the driver's
 // `WorkflowRunWords.Title` words it in the terminal, so a workflow that names it does not read "a step this page has no words for".
 
 const stepOf = (kind: string): WorkflowStep => ({
@@ -36,13 +36,13 @@ describe('stepTitle', () => {
     expect(stepTitle(i18n.getFixedT('zh'), stepOf('integrate'))).toBe('集成请求');
   });
 
-  // INTEGRATE1p (§17.5): a graph's `request` node, another repository asked as a step, named as the driver's title names it.
+  // A graph's `request` node, another repository asked as a step, named as the driver's title names it.
   it('names the request step in English and in 中文', () => {
     expect(stepTitle(i18n.getFixedT('en'), stepOf('request'))).toBe('The quest to another repository');
     expect(stepTitle(i18n.getFixedT('zh'), stepOf('request'))).toBe('给另一个仓库的委托');
   });
 
-  // D245: the steps past a pull request, the watch on it and the tidy of the chain, named as the driver's title names them.
+  // The steps past a pull request, the watch on it and the tidy of the chain, named as the driver's title names them.
   it('names the monitor and the tidy steps in English and in 中文', () => {
     expect(stepTitle(i18n.getFixedT('en'), stepOf('monitor'))).toBe("The pull request's watch");
     expect(stepTitle(i18n.getFixedT('zh'), stepOf('monitor'))).toBe('等待拉取请求合并');
@@ -50,7 +50,7 @@ describe('stepTitle', () => {
     expect(stepTitle(i18n.getFixedT('zh'), stepOf('tidy'))).toBe('清理委托链');
   });
 
-  // INTEGRATE1r: Current's integrate step is named, said where it was read, and its limit said in the reader's words, not as recorded.
+  // Current's integrate step is named, said where it is read, and its limit said in the reader's words, not as recorded.
   it("says Current's integrate step: its press, its source and its limit in both languages", () => {
     for (const [language, title, limit] of [
       ['en', 'The integration request', /^Not integrated yet: the rule carries `integrate`/],
@@ -66,8 +66,8 @@ describe('stepTitle', () => {
     }
   });
 
-  // INTEGRATE1r part r3: the integrate step says what the rule asks, composed from its three settings as the terminal composes it
-  // (`WorkflowWords`), so the tab no longer shows a step with a title and no setting.
+  // The integrate step says what the rule asks, composed from its three settings as the terminal composes it
+  // (`WorkflowWords`), so the tab shows no step with a title and no setting.
   it("says the integrate step's settings: who requests it, its gates and its conflicts, in both languages", () => {
     const of = (settings: Record<string, string>): WorkflowStep => ({ ...INTEGRATE_OWNER, settings });
     const en = i18n.getFixedT('en');

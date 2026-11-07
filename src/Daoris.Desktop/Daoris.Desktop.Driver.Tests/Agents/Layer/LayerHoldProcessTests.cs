@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A held <see cref="LayerRun"/> (AGENTLYNTAI1d): the steps today's driven run takes around each process, through its executor's host
+/// A held <see cref="LayerRun"/> : the steps today's driven run takes around each process, through its executor's host
 /// (<see cref="LayerHold"/>): the downloads kept, each process's lineage token on its environment and handed the process the layer started,
 /// the watch told each line, its prompt's words written as the write returns, the wait under the start's bound and the watch's quiet (whose
 /// kill its readings say nothing of), a go-on with held words, and the native resume's one retry. Real node processes over the tests' provider.

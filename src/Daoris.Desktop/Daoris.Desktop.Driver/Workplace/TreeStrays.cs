@@ -4,7 +4,7 @@ using static Daoris.Driver.TreeGit;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a folder under a repository's trees that is no tree of its own was to the look (AUTOTIDY2c, OPENCUT1): the machine log's
+/// What a folder under a repository's trees that is no tree of its own is to the look: the machine log's
 /// <c>branch.tidied</c> <c>kind</c>, beside the clean-up's kinds.
 /// </summary>
 public static class StrayKind
@@ -12,11 +12,11 @@ public static class StrayKind
     /// <summary>A folder git lists no tree in: one a removed tree left, a half-removed tree's, or one a session wrote beside its tree.</summary>
     public const string Folder = "stray";
 
-    /// <summary>A tree whose opening was cut off: locked by an open that no running process holds (OPENCUT1).</summary>
+    /// <summary>A tree whose opening is cut off: locked by an open that no running process holds.</summary>
     public const string Opening = "opening";
 }
 
-/// <summary>A folder under a repository's trees that the look met as no tree of its own (AUTOTIDY2c, OPENCUT1): moved aside, or kept and why.</summary>
+/// <summary>A folder under a repository's trees that the look met as no tree of its own: moved aside, or kept and why.</summary>
 /// <param name="Folder">Where it was, under the trees home.</param>
 /// <param name="Kind">What it was (<see cref="StrayKind"/>).</param>
 /// <param name="Moved">Whether it was moved aside.</param>
@@ -40,8 +40,8 @@ public sealed record StrayResult(string Folder, string Kind, bool Moved, string 
 }
 
 /// <summary>
-/// The look's own tidy of the folders under a repository's trees that are no tree of its own (AUTOTIDY2c, OPENCUT1; D88's
-/// AUTOTIDY2c note): each folder git lists no tree in, and each tree whose opening was cut off, moved aside whole into the trees
+/// The look's own tidy of the folders under a repository's trees that are no tree of its own:
+/// each folder git lists no tree in, and each tree whose opening got cut off, moved aside whole into the trees
 /// home's <c>.tidied</c>, as the look moves a tree's folder, so nothing in it is lost before the purge's fourteen days.
 /// </summary>
 /// <remarks>
@@ -53,10 +53,10 @@ public sealed record StrayResult(string Folder, string Kind, bool Moved, string 
 ///
 /// <para><b>What stays.</b> A folder a session running or waiting names, or a review shows from; a link; the folders other flows
 /// make and remove themselves outside the repository's hold (an opinion's copy, a replay's tree), whose next pass moves aside what
-/// a killed one left (<see cref="PassLeftovers"/>, STRAYOTHERS1); every tree git lists that is not a
+/// a killed one left (<see cref="PassLeftovers"/>); every tree git lists that is not a
 /// cut-off opening's; and everything, where git could not list the trees or the service did not say which sessions run.</para>
 ///
-/// <para><b>Judged, held, judged again.</b> As the session branches are (AUTOTIDY2a): judged before the hold, the sessions asked only
+/// <para><b>Judged, held, judged again.</b> As the session branches are: judged before the hold, the sessions asked only
 /// where something may go, so a look with nothing to move asks nothing more and holds nothing; then inside the repository's hold
 /// (<see cref="TreeLock"/>), which every start takes while it opens a tree, with the sessions asked again, each judged again and
 /// moved only where it is judged the same. A move is never cancelled halfway.</para>
@@ -72,19 +72,19 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     /// <summary>
     /// What the folders start with that other flows make under a repository's trees and remove themselves, outside the repository's
     /// hold: an opinion's copy (<see cref="OpinionTree.Prefix"/>) and a replay's tree (<see cref="BranchReplays.Prefix"/>). What a
-    /// killed pass of theirs left, the next pass of its kind moves aside (<see cref="PassLeftovers"/>, STRAYOTHERS1).
+    /// killed pass of theirs left, the next pass of its kind moves aside (<see cref="PassLeftovers"/>).
     /// </summary>
     private static readonly string[] OthersOwn = [PassLeftovers.OpinionCopyPrefix, BranchReplays.Prefix];
 
     /// <summary>A folder judged to go: what it is, and for a cut-off opening its branch, the commit judged, its lock's reason and why.</summary>
     private sealed record Found(string Folder, string Kind, string? Branch = null, string? Tip = null, string? Reason = null, string? Clause = null)
     {
-        /// <summary>The other ref that held the branch's tip when it was judged, at its commit then (FABRIC-END4a, second review): the delete verifies it.</summary>
+        /// <summary>The other ref that held the branch's tip when it is judged, at its commit then: the delete verifies it.</summary>
         public (string Ref, string Commit)? Holder { get; init; }
     }
 
     /// <summary>
-    /// The look's tidy of the folders under one repository's trees (AUTOTIDY2c, OPENCUT1): what it moved aside and what it kept. A
+    /// The look's tidy of the folders under one repository's trees: what it moved aside and what it kept. A
     /// repository it could not judge, or held by a start, is left quietly for a later look: its session branches' pass says so.
     /// </summary>
     /// <param name="inUse">The trees sessions still running or waiting name, and those a review shows from.</param>
@@ -97,9 +97,9 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
         var trees = Path.Combine(context.TreesRoot, space, repository);
         // Asked before any git, so a repository with nothing under its trees costs nothing.
         if (!Directory.Exists(trees) || !Directory.EnumerateDirectories(trees).Any()) return [];
-        // Its trees reached through a link are somewhere else (AUTOTIDY1), and git lists them where they are.
+        // Its trees reached through a link are somewhere else, and git lists them where they are.
         if (context.Worktrees.LinkBelowTreesRoot(trees) is not null) return [];
-        // A checkout that is not a repository of its own would list the trees of the repository above it (FIX-LOG), and every
+        // A checkout that is not a repository of its own would list the trees of the repository above it, and every
         // folder here would be none of them.
         if (!Directory.Exists(Path.Combine(root, ".git"))) return [];
         var (topCode, toplevel, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
@@ -132,7 +132,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
 
     /// <summary>
     /// The folders under <paramref name="trees"/> that go, judged now, and those whose folders could not be read. A list of the
-    /// working trees git could not give is never "no tree here" (AUTOTIDY1): nothing goes.
+    /// working trees git could not give is never "no tree here": nothing goes.
     /// </summary>
     private async Task<(List<Found> Found, List<StrayResult> Unread)> FindAsync(
         string root, string trees, IReadOnlySet<string> busy, DateTimeOffset now, CancellationToken ct)
@@ -155,7 +155,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
 
             try
             {
-                // A link is somewhere else: a move would take the link alone, and the purge never follows one (TIDIEDLINK1).
+                // A link is somewhere else: a move would take the link alone, and the purge never follows one.
                 if (new DirectoryInfo(folder).Attributes.HasFlag(FileAttributes.ReparsePoint)) continue;
                 if (WrittenSince(folder, now - Quiet)) continue;
             }
@@ -175,7 +175,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     }
 
     /// <summary>
-    /// A tree git lists whose opening was cut off (OPENCUT1): a session tree's folder, locked by an opening no running process holds,
+    /// A tree git lists whose opening is cut off: a session tree's folder, locked by an opening no running process holds,
     /// on its own branch or none yet, whose branch holds no commit another ref does not. Null where it is any other tree.
     /// </summary>
     private static async Task<Found?> OpeningAsync(string root, string folder, string name, WorktreeEntry entry, CancellationToken ct)
@@ -211,7 +211,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
         if (code != 0) return null;
         var others = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(row => row.Split(' ', 2))
-            // A recovery ref or a piece's frozen ref holds nothing of the branch's (COAGENT1b, the co-agent design §2.4).
+            // A recovery ref or a piece's frozen ref holds nothing of the branch's.
             .Where(parts => parts.Length == 2 && parts[1] != $"refs/heads/{branch}" && ContentHolds.AnyRef(parts[1]))
             .Select(parts => (Ref: parts[1], Commit: parts[0]))
             .ToList();
@@ -220,13 +220,13 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
     }
 
     /// <summary>
-    /// A cut-off opening's tree let go of (OPENCUT1): its lock first, since git keeps a locked tree's record; then its folder moved
+    /// A cut-off opening's tree let go of: its lock first, since git keeps a locked tree's record; then its folder moved
     /// aside and its record let go of, as the look takes a tree (<see cref="TreeSetAside.MoveAsideAsync(string, string, string, string, CancellationToken)"/>);
     /// then its branch, only while it is the commit judged. A tree that stays is locked again as it was found.
     /// </summary>
     private async Task<StrayResult> CutOffAsync(string root, string workspace, string repository, Found cut, CancellationToken done)
     {
-        // GITWORKTREECONFIG1: a tree git binds to another checkout keeps its lock, its folder and its branch, said, before any git write.
+        // A tree git binds to another checkout keeps its lock, its folder and its branch, said, before any git write.
         if (await TreeBinding.RefusalAsync(cut.Folder, done).ConfigureAwait(false) is { } bound)
         {
             return new StrayResult(cut.Folder, StrayKind.Opening, false, bound) { Branch = cut.Branch, Kept = TidyKept.Refused };
@@ -251,7 +251,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
             };
         }
 
-        // In one transaction with the ref that held its tip when judged (FABRIC-END4a, second review).
+        // In one transaction with the ref that held its tip when judged.
         var branchKept = cut is { Branch: { } branch, Tip: { } tip, Holder: { } holder }
             ? await content.DeleteJudgedAsync(root, repository, branch, tip, [holder], done).ConfigureAwait(false)
             : null;

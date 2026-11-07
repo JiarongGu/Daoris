@@ -11,7 +11,7 @@ import type { DiffFile, LineBehind, ReviewKnown } from './diff';
 import type { DiffLayout } from './PatchView';
 import { NothingToLand, ReviewFailed, ReviewFiles, ReviewHead, ReviewReading } from './ReviewFrame';
 
-// The review while git reads (REVIEW4), as the side bar holds it at a usual width: loading at once, slow with how long,
+// The review while git reads, as the side bar holds it at a usual width: loading at once, slow with how long,
 // each kind of refusal with its next move, loaded, and reading again behind the last answer — in light and dark, and
 // 中文 where its words differ.
 
@@ -45,7 +45,7 @@ function Pane({ children }: { children: ReactNode }) {
 
 /**
  * The loaded review with the reader's marks held as the pane holds them; the first file open on its patch. The branch is the
- * record's guess unless the answer named the tree's own (REVIEWBASE4).
+ * record's guess unless the answer named the tree's own.
  */
 function Loaded({ refreshing = null, behind = null, branch = KNOWN.branch, detached = false }: {
   refreshing?: number | null;
@@ -181,7 +181,7 @@ export const ReadyDark: Story = { ...Ready, decorators: [dark] };
 /** Loaded, in 中文. */
 export const ReadyChinese: Story = { ...Ready, decorators: [chinese] };
 
-/** A tree holding work no commit does (REVIEWDIRTY1): the committed files, then the uncommitted under their own heading, at 680 px. */
+/** A tree holding work no commit does: the committed files, then the uncommitted under their own heading, at 680 px. */
 function Dirty({ committed = true }: { committed?: boolean }) {
   const [open, setOpen] = useState<Record<string, boolean>>({ 'uncommitted:src/report/draft.ts': true });
   const [viewed, setViewed] = useState<Record<string, boolean>>({});
@@ -231,7 +231,7 @@ export const ReadingAgain: Story = { render: () => <Loaded refreshing={Date.now(
 export const ReadingAgainDark: Story = { ...ReadingAgain, decorators: [dark] };
 
 /**
- * Work not based on the latest line (REVIEWBASE1): the line the host knows has 7 commits this work does not, said under the facts
+ * Work not based on the latest line: the line the host knows has 7 commits this work does not, said under the facts
  * with *Updates*, the door that says whether the tree can be brought up to date.
  */
 export const BehindTheLine: Story = { render: () => <Loaded behind={{ line: 'main', commits: 7, ahead: 4 }} /> };
@@ -244,7 +244,7 @@ export const BehindTheLineChinese: Story = { ...BehindTheLine, decorators: [chin
 
 /**
  * A tree whose HEAD the line holds whole, as the review's pane says it: its work merged, then the line checked out detached and
- * its `daoris/` branch deleted (REVIEWBASE4). The head names no branch, the foot says there is nothing to land where *Accept* would
+ * its `daoris/` branch deleted. The head names no branch, the foot says there is nothing to land where *Accept* would
  * be, and *Discard tree* leads.
  */
 function NothingBeyond() {
@@ -273,7 +273,7 @@ function NothingBeyond() {
 }
 
 /**
- * REVIEWFLOW1a (D168's table): the review's foot, where the person's reading stops, draws the session's *Accept all* in the part's
+ * The review's foot, where the person's reading stops, draws the session's *Accept all* in the part's
  * own *Accept*'s place, with *Discard tree* beside it, at the width the view is given.
  */
 function SessionAcceptAtTheFoot({ asking = false }: { asking?: boolean }) {
@@ -298,7 +298,7 @@ export const SessionAcceptAtTheFootNarrowChinese: Story = { render: () => <Sessi
 export const SessionAcceptAtTheFootDark: Story = { render: () => <SessionAcceptAtTheFoot />, decorators: [storyWidths.half, dark] };
 export const SessionAcceptAtTheFootAskingNarrowDark: Story = { render: () => <SessionAcceptAtTheFoot asking />, decorators: [storyWidths.narrow, dark] };
 
-/** Nothing beyond the line (REVIEWBASE1), where "Nothing landed" would be false, and nothing to land (REVIEWBASE4). */
+/** Nothing beyond the line, where "Nothing landed" would be false, and nothing to land. */
 export const NothingBeyondTheLine: Story = { render: () => <NothingBeyond /> };
 
 /** Nothing beyond the line, in dark. */
@@ -307,14 +307,14 @@ export const NothingBeyondTheLineDark: Story = { ...NothingBeyondTheLine, decora
 /** Nothing beyond the line, in 中文. */
 export const NothingBeyondTheLineChinese: Story = { ...NothingBeyondTheLine, decorators: [chinese] };
 
-/** A tree its agent switched to a branch of its own (TREEFOLLOW1): the head names that branch, not the record's `daoris/` guess. */
+/** A tree its agent switched to a branch of its own: the head names that branch, not the record's `daoris/` guess. */
 export const OnItsOwnBranch: Story = { render: () => <Loaded branch="feature/TK-9-report-header" /> };
 
 /** On its own branch, in dark. */
 export const OnItsOwnBranchDark: Story = { ...OnItsOwnBranch, decorators: [dark] };
 
 /**
- * A detached tree holding commits beyond the line (REVIEWBASE4): *detached HEAD* in the branch's place, and the range apart, since
+ * A detached tree holding commits beyond the line: *detached HEAD* in the branch's place, and the range apart, since
  * HEAD is past the commit the review is measured from.
  */
 export const DetachedWithWork: Story = {

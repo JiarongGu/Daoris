@@ -3,9 +3,9 @@ import { Button } from '../../design/ui';
 import type { WorkflowRepository } from '../current';
 
 /**
- * **A workspace's repositories against its Workflow** (SETUPUX1o): each follows it, or sets a rule of its own and so follows its own, which a
- * rule it sets replaces whole (D145 §1, D154 §1.3, D155 §2.3); one that sets its own is a door to its own Workflow. Null where the registry
- * was not read.
+ * **A workspace's repositories against its Workflow**: each follows it, or sets a rule of its own and so follows its own, which a
+ * rule it sets replaces whole; one that sets its own is a door to its own Workflow. Null where the registry
+ * is not read.
  */
 export function PlaceRepositories({ repositories, onOpen }: { repositories: WorkflowRepository[] | null; onOpen?: (repository: string) => void }) {
   const { t } = useTranslation();

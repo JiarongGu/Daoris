@@ -3,12 +3,12 @@ using static Daoris.Desktop.Driver.Tests.GateFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>D157's gates and the built-in observers as one set: what each compares in its binding, and the evaluation moving the gates on their records.</summary>
+/// <summary>The gates and the built-in observers as one set: what each compares in its binding, and the evaluation moving the gates on their records.</summary>
 public sealed class GateKindsTests
 {
     /// <summary>
-    /// FABRIC-CUTOVER1a (the cutover design §2.1, §11.2): a run's node is kept on the run's record and observes the subject its kind names, so
-    /// each observer compares its binding's subject where it compared its unit: <c>claimed</c> a quest, <c>handed</c>, the opinion and the look
+    /// A run's node is kept on the run's record and observes the subject its kind names, so
+    /// each observer compares its binding's subject, not its unit: <c>claimed</c> a quest, <c>handed</c>, the opinion and the look
     /// a branch, the go-ahead the run itself. A binding on another subject is no observation, and one naming none names its own unit, as
     /// every binding written before does.
     /// </summary>

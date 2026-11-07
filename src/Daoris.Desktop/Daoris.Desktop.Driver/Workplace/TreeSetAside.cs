@@ -7,7 +7,7 @@ using static Daoris.Driver.SetAsideReads;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the look's own tidy decides of one session branch and does to its tree (AUTOTIDY1; PART10l-ii, out of
+/// What the look's own tidy decides of one session branch and does to its tree (out of
 /// <c>SessionTrees.Auto.cs</c>): which branches it takes without a press, its last guards right before one goes, the tree's folder
 /// moved aside rather than deleted, and the later purge of what was moved. Over the trees' context alone: the clean-up's sweep
 /// (<see cref="TreeSweeps"/>) takes it for its by-itself path, and the look's pass (<see cref="AutoTidies"/>) takes the sweep.
@@ -15,23 +15,23 @@ namespace Daoris.Driver;
 internal sealed class TreeSetAside(TreeContext context)
 {
     /// <summary>
-    /// Whether the look takes this session branch without a press (AUTOTIDY1, AUTOTIDY2a): every kind the press clears
+    /// Whether the look takes this session branch without a press: every kind the press clears
     /// (<see cref="SweepItem.Removable"/>: empty, landed by ancestry or by content, carried), with every guard read. With no tree
     /// it goes; with a tree, only one of this home's on a branch that moved since it grew (<see cref="SweepItem.Worked"/>). A tree
-    /// whose branch never moved is a conversation's place, which words to its session go on in (D137): removed, they could not,
+    /// whose branch never moved is a conversation's place, which words to its session go on in: removed, they could not,
     /// so it stays the press's, whatever its kind. A tree holding only ignored paths goes: by the owner's decision a finished session's
-    /// own scratch goes with its tree, named in its record (KEEPSIZE1b, the keep-size design §3.2); uncommitted and untracked paths keep
+    /// own scratch goes with its tree, named in its record; uncommitted and untracked paths keep
     /// it, as the judgement's <c>dirty</c>.
     /// A landed branch goes only once its work is on the line (<see cref="SweepItem.OnLine"/>): landed on another branch of the
     /// person's alone, its pull request may still be open and its session asked to change it in its own tree, so the look waits
-    /// for the merge D88 began from, and the press may take it before by the person's choice.
+    /// for the merge it began from, and the press may take it before by the person's choice.
     /// </summary>
     internal bool GoesByItself(SweepItem item) =>
         item is { Removable: true, Unread: false }
         && (item.Kind != SweepKind.Landed || item.OnLine)
         && (item.Tree is null || (context.Holds(item.Tree) && item.Worked));
 
-    /// <summary>The folder under the trees home the look's own tidy moves a tree's folder aside into (AUTOTIDY1).</summary>
+    /// <summary>The folder under the trees home the look's own tidy moves a tree's folder aside into.</summary>
     internal const string SetAsideFolder = ".tidied";
 
     /// <summary>How a folder moved aside is named after its tree: the tree's name, then the moment it was moved, in UTC.</summary>
@@ -41,7 +41,7 @@ internal sealed class TreeSetAside(TreeContext context)
     internal string SetAsideRoot => Path.Combine(context.TreesRoot, SetAsideFolder);
 
     /// <summary>
-    /// Every place the set-aside folders lie (KEEPSIZE1a, the keep-size design §1.1): <c>.tidied</c> under each place of the trees
+    /// Every place the set-aside folders lie: <c>.tidied</c> under each place of the trees
     /// entry (<see cref="TreeContext.TreesRoots"/>), the new first. A folder moves into <see cref="SetAsideRoot"/> alone; the folders set
     /// aside before the home's layout moved stay at the old place, where the purge, the slim, the press, the floor, the look and the card
     /// read them too.
@@ -52,7 +52,7 @@ internal sealed class TreeSetAside(TreeContext context)
     private static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
     /// <summary>
-    /// The look's last guards (AUTOTIDY1), asked after the press's judgement and its judgement again, right before anything
+    /// The look's last guards, asked after the press's judgement and its judgement again, right before anything
     /// moves: each keeps the branch for the press, saying why. Null where none keeps it.
     /// </summary>
     /// <remarks>
@@ -62,10 +62,10 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <item>A tree a person locked (<c>git worktree lock</c>).</item>
     /// <item>A tracked path marked <c>assume-unchanged</c> or <c>skip-worktree</c>: an edit to it reads as clean to git's status.</item>
     /// <item>Another repository in the tree, a <c>.git</c> file or folder below its top, which the tree's own status skips: read
-    /// from the folders themselves, not through git. One under a path git ignores goes aside with the tree (OVERVIEWNOISE1a).</item>
+    /// from the folders themselves, not through git. One under a path git ignores goes aside with the tree.</item>
     /// </list>
     /// What cannot be read keeps it too.
-    /// <para>KEEP1a (Fable F1.5): handed the package folders judged before the hold (<see cref="TreeSlims.JudgeAsync"/>), it checks them
+    /// <para>Handed the package folders judged before the hold (<see cref="TreeSlims.JudgeAsync"/>), it checks them
     /// again by the reads it already makes, its index read and its one walk, and puts those that still hold in <paramref name="confirmed"/>
     /// (<see cref="TreeSlims.Confirmed"/>): what the manifest may name. None where a guard keeps the branch.</para>
     /// </remarks>
@@ -74,7 +74,7 @@ internal sealed class TreeSetAside(TreeContext context)
     {
         if (item.Tree is not { } tree)
         {
-            // TREEFOLLOW1: the folder here is a tree git lists, on the branch its agent made; it is not this branch's, so nothing of
+            // The folder here is a tree git lists, on the branch its agent made; it is not this branch's, so nothing of
             // it is read as unreadable, and it stays untouched.
             if (item.TreeOn is not null) return null;
             var folder = context.TreeAt(item.Workspace, item.Repository, item.Branch[TreeFollows.SessionPrefix.Length..]);
@@ -115,8 +115,8 @@ internal sealed class TreeSetAside(TreeContext context)
             return (TidyKept.Unread, $"its tree's folders could not be read: {error.Message}", TidyCause.Folders);
         }
 
-        // OVERVIEWNOISE1a: a repository under an ignored path (a test's scratch under `_fixtures/`) is ignored content like any
-        // other, and goes with the folder as the tree's own scratch does (KEEPSIZE1b, §3.2); only one git would not ignore keeps the tree.
+        // A repository under an ignored path (a test's scratch under `_fixtures/`) is ignored content like any
+        // other, and goes with the folder as the tree's own scratch does; only one git would not ignore keeps the tree.
         foreach (var path in nested)
         {
             var (ignoredCode, _, ignoredErr) = await WorkingTree.GitAsync(tree, ["check-ignore", "--quiet", "--", path + "/"], ct).ConfigureAwait(false);
@@ -128,7 +128,7 @@ internal sealed class TreeSetAside(TreeContext context)
 
         if (judged is { Count: > 0 } && confirmed is not null)
         {
-            // KEEP1a: the judgement checked again by these same reads, the index's and the walk's, so the hold gains no git of its own.
+            // The judgement checked again by these same reads, the index's and the walk's, so the hold gains no git of its own.
             var indexed = listed.Split('\0', StringSplitOptions.RemoveEmptyEntries)
                 .Where(entry => entry.Length > 2).Select(entry => entry[2..]).ToHashSet(StringComparer.Ordinal);
             confirmed.AddRange(TreeSlims.Confirmed(judged, indexed, nested, links));
@@ -138,7 +138,7 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// The look's removal of a tree (AUTOTIDY1): never a delete. Its folder is moved aside, in one rename on the same volume,
+    /// The look's removal of a tree: never a delete. Its folder is moved aside, in one rename on the same volume,
     /// into <see cref="SetAsideRoot"/>, then git lets go of its record of that tree alone (<c>git worktree remove</c> of a tree
     /// whose folder is gone deletes nothing but the record). A write that lands after the last look lands in the folder moved
     /// aside, so nothing is lost.
@@ -146,10 +146,10 @@ internal sealed class TreeSetAside(TreeContext context)
     /// <remarks>
     /// On Windows a folder whose files something holds open cannot be renamed: the tree is in use, and stays (<c>busy</c>), for
     /// a later look. Where git will not let go of the record, the folder is put back. Called with a token nothing cancels.
-    /// <para>KEEP1a (Codex 2.4): handed the package folders the last look confirmed, it chooses the folder's name first and writes its
+    /// <para>Handed the package folders the last look confirmed, it chooses the folder's name first and writes its
     /// manifest beside where it will go, <c>judged</c>, before the move, then <c>moved</c> once git let go of the tree; a move refused or a
     /// folder put back takes the manifest with it, so only a tree git no longer knows is ever slimmed (<see cref="SlimManifest"/>).</para>
-    /// <para>KEEPSIZE1b (the keep-size design §3.3): handed a finished tree's facts, it writes the schema-2 manifest whatever the slim found,
+    /// <para>Handed a finished tree's facts, it writes the schema-2 manifest whatever the slim found,
     /// and a manifest it cannot write keeps the tree: nothing moves, and the caller drops the tip's ref.</para>
     /// </remarks>
     internal Task<(bool Gone, string? To, string? Code, string Sentence)> MoveAsideAsync(
@@ -191,7 +191,7 @@ internal sealed class TreeSetAside(TreeContext context)
 
             to = moved.To;
 
-            // 🔴 Codex's read of the design, finding 2: what the tree holds read again in the moved folder, while git still knows it, so a change
+            // 🔴 What the tree holds read again in the moved folder, while git still knows it, so a change
             // made between the judgement's read and the move (a tracked file deleted at the top, which leaves no later time on anything that
             // stays) keeps the tree: put back, as git's refusal below puts it back.
             if (finished is not null && await UncommittedAsync(to!, ct).ConfigureAwait(false) is { } dirty)
@@ -222,7 +222,7 @@ internal sealed class TreeSetAside(TreeContext context)
 
     /// <summary>
     /// A folder under the trees home moved aside, in one rename on the same volume, into <see cref="SetAsideRoot"/> under its
-    /// workspace and repository, named for the moment it moved (AUTOTIDY1; AUTOTIDY2c, a folder that is no tree): where it went,
+    /// workspace and repository, named for the moment it moved (a folder that is no tree): where it went,
     /// or why it stays, as the machine log's code and a clause. A refused rename is a folder something uses (<c>busy</c>).
     /// </summary>
     /// <param name="what">What something is using, in the clause: <c>its tree</c>, or the folder itself.</param>
@@ -251,15 +251,15 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// Where a folder moved aside now goes: <see cref="SetAsideRoot"/>, its workspace and repository, its name and this moment, in UTC
-    /// (AUTOTIDY1). Chosen before the move, so a manifest can be written beside it first (KEEP1a).
+    /// Where a folder moved aside now goes: <see cref="SetAsideRoot"/>, its workspace and repository, its name and this moment, in UTC.
+    /// Chosen before the move, so a manifest can be written beside it first.
     /// </summary>
     internal string AsideName(string folder, string workspace, string repository) =>
         Path.Combine(SetAsideRoot, workspace, repository,
             $"{Path.GetFileName(Path.TrimEndingDirectorySeparator(folder))}-{DateTimeOffset.UtcNow.ToString(SetAsideStamp, CultureInfo.InvariantCulture)}");
 
     /// <summary>
-    /// The manifest of a folder about to move, written <c>judged</c> beside where it goes (KEEP1a, Codex 2.4); its path, or null where it
+    /// The manifest of a folder about to move, written <c>judged</c> beside where it goes; its path, or null where it
     /// was not written, so the folder moves whole as before. Never written where that folder is reached through a link, which the move
     /// refuses too.
     /// </summary>
@@ -285,7 +285,7 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// §3.5's resume: a branch with no tree deleted by the look, whose folder was moved aside before and stopped or refused, marks the manifest
+    /// The resume: a branch with no tree deleted by the look, whose folder is moved aside and stopped or refused, marks the manifest
     /// of that branch and tip <c>deleted</c>, at every place of the trees entry, so the folder reaches its record at the next pass.
     /// </summary>
     internal void MarkDeletedOf(string workspace, string repository, string branch, string tip, DateTimeOffset at)
@@ -312,16 +312,16 @@ internal sealed class TreeSetAside(TreeContext context)
     internal static DateTimeOffset? MovedAt(string name) => SetAsideMarks.MovedAt(name);
 
     /// <summary>
-    /// The folders the look moved aside that have waited <paramref name="after"/> (AUTOTIDY1): each deleted where nothing in it
+    /// The folders the look moved aside that have waited <paramref name="after"/>: each deleted where nothing in it
     /// was written after it was moved, and kept, saying why, where something was, or where it holds a link outside a build folder,
     /// is reached through one, or cannot be read.
     /// </summary>
     /// <remarks>
     /// <para>A path past Windows' 260 characters, as a tree's own <c>node_modules</c> holds one, is read and deleted as any other
-    /// (AUTOTIDY2b, proven over a deep tree): .NET hands Windows such a path in its extended form, as git's <c>core.longpaths</c>
+    /// (proven over a deep tree): .NET hands Windows such a path in its extended form, as git's <c>core.longpaths</c>
     /// does for the tree's own record.</para>
     ///
-    /// <para><b>Links</b> (TIDIEDLINK1, D88's note): a link under a build folder (<see cref="TreeScratch.UnderBuildFolder"/>), as
+    /// <para><b>Links</b>: a link under a build folder (<see cref="TreeScratch.UnderBuildFolder"/>), as
     /// npm's workspaces and pnpm make under <c>node_modules</c>, goes with its folder as a link, its own entry alone; what it points
     /// at stays wherever it is. Nothing here ever reads, clears or deletes through a link (<see cref="DeleteNeverFollowing"/>).</para>
     /// </remarks>
@@ -329,12 +329,12 @@ internal sealed class TreeSetAside(TreeContext context)
     internal IReadOnlyList<SetAside> PurgeSetAside(DateTimeOffset now, TimeSpan after) => PurgeSetAside(now, after, () => false, out _);
 
     /// <summary>
-    /// <inheritdoc cref="PurgeSetAside(DateTimeOffset, TimeSpan)"/> Within the Keeping pass's budget (KEEP1a, the cleanup design §3.1):
+    /// <inheritdoc cref="PurgeSetAside(DateTimeOffset, TimeSpan)"/> Within the Keeping pass's budget:
     /// once <paramref name="spent"/> says so, between folders and never inside one's delete, it stops, and the next pass takes up the
     /// rest; a folder whose delete failed for the same reason as at its last try waits a day. A folder's manifest goes with it. With no
     /// registry to run a holding check in, it takes no recorded folder by the hour (<see cref="PurgeSetAsideAsync"/>).
     /// </summary>
-    /// <param name="only">The folders a press listed (KEEP1e, the cleanup design §3.3): only those are met, each judged again as the purge
+    /// <param name="only">The folders a press listed: only those are met, each judged again as the purge
     /// judges every folder; null meets every folder past its days. A folder not met keeps what <c>purge-failed.json</c> says of it.</param>
     internal IReadOnlyList<SetAside> PurgeSetAside(
         DateTimeOffset now, TimeSpan after, Func<bool> spent, out bool stopped, Func<string, bool>? only = null, bool whole = false)
@@ -346,13 +346,13 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// KEEPSIZE1b (the keep-size design §3.4): one purge for the hour and the days, each folder's moment and wait a function of its class
+    /// One purge for the hour and the days, each folder's moment and wait a function of its class
     /// (<see cref="SetAsideEligibility"/>): a recorded folder an hour after its record, under no <c>whole</c>; one awaiting its record, or whose
     /// manifest does not read, never; any other its days after the moment in its name. A finished folder's threshold for a write is its
     /// manifest's <c>read</c>, and its own top is read too. Each folder that goes is renamed into <c>.going</c> first, with a record of its
     /// removal (<see cref="GoingRecord"/>).
     /// <para>🔴 A recorded folder goes by the hour only on a holding check run right before its rename, in the root
-    /// <paramref name="rootOf"/> gives (Codex's read of the branch, finding 1): a check that fails for certain makes it <c>unmarked</c>, one
+    /// <paramref name="rootOf"/> gives: a check that fails for certain makes it <c>unmarked</c>, one
     /// that cannot run or read keeps it as it is, and with no <paramref name="rootOf"/> none is taken by the hour.</para>
     /// </summary>
     internal async Task<(IReadOnlyList<SetAside> Purged, bool Stopped)> PurgeSetAsideAsync(
@@ -361,11 +361,11 @@ internal sealed class TreeSetAside(TreeContext context)
     {
         var state = new PurgeState();
         var results = new List<SetAside>();
-        // KEEPSIZE1a: every place of the trees entry, each with its own record of what it could not delete.
+        // Every place of the trees entry, each with its own record of what it could not delete.
         foreach (var root in SetAsideRoots)
         {
             if (!Directory.Exists(root)) continue;
-            // KEEPSIZE1b (§3.4, Codex's read of the design, finding 5): what a stop left in `.going` first, within the budget.
+            // What a stop left in `.going` first, within the budget.
             await ResumeGoingAsync(root, rootOf, spent, state, results, ct).ConfigureAwait(false);
             await PurgeAtAsync(root, now, days, whole, spent, state, only, rootOf, results, ct).ConfigureAwait(false);
         }
@@ -437,12 +437,12 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// A set-aside folder removed (KEEPSIZE1b, the keep-size design §3.4): renamed first into <c>.tidied/.going/</c>, so nothing is half deleted
+    /// A set-aside folder removed: renamed first into <c>.tidied/.going/</c>, so nothing is half deleted
     /// under the name a person opened, then deleted never following a link, and its manifest with it. A refused rename keeps it whole,
     /// <c>busy</c>.
-    /// <para>🔴 Where it would go is reached through no link (the second maker's read, finding 2): a link on the way into <c>.going</c>, asked
+    /// <para>🔴 Where it would go is reached through no link: a link on the way into <c>.going</c>, asked
     /// before the folders are made and again after, keeps the folder where it is, <c>linked</c>, as <see cref="MoveFolderAside"/> keeps a move.</para>
-    /// <para>Codex's read of the design, finding 5: a record of the removal goes beside it in <c>.going</c> before the rename (its door, when, the
+    /// <para>A record of the removal goes beside it in <c>.going</c> before the rename (its door, when, the
     /// threshold, and whether its delete began), and its manifest stays where it was until the delete ends, so a stop at any moment is
     /// resumed by <see cref="ResumeGoingAsync"/> with the folder's identity whole.</para>
     /// </summary>
@@ -483,7 +483,7 @@ internal sealed class TreeSetAside(TreeContext context)
         if (SetAsideFaults.Current?.StopAfterRename == true) throw new SetAsideStop();
         try
         {
-            // The last fixes' check, finding 8: the rules' doors read the folder again under `.going`, where nothing writes by its old name, so a
+            // The rules' doors read the folder again under `.going`, where nothing writes by its old name, so a
             // write between the purge's read and the rename puts it back whole; the press removes what its list disclosed and was chosen.
             if (door != GoingDoors.Press
                 && SetAsideKeeps.WrittenSince(going, threshold, SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest, top) is { } late)
@@ -509,11 +509,11 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// What a stop left under one place's <c>.tidied/.going</c> (Codex's read of the design, finding 5), each folder within the budget: one whose
+    /// What a stop left under one place's <c>.tidied/.going</c>, each folder within the budget: one whose
     /// delete never began, or whose record does not read, goes back to its place whole; one whose delete began finishes only where no file
     /// in it was written since its removal began and, for the hour's door, its holding check passes now; else what remains goes back, the
-    /// result says why, and a finished folder's manifest ends <c>unmarked</c> with that why (the last fixes' check, finding 8). 🔴 A folder
-    /// reached through a link on the way, <c>.going</c> or any level below it included, is never touched (the second maker's read, finding 2).
+    /// result says why, and a finished folder's manifest ends <c>unmarked</c> with that why. 🔴 A folder
+    /// reached through a link on the way, <c>.going</c> or any level below it included, is never touched.
     /// </summary>
     private async Task ResumeGoingAsync(
         string root, Func<string, string, string?>? rootOf, Func<bool> spent, PurgeState state, List<SetAside> results, CancellationToken ct)
@@ -549,7 +549,7 @@ internal sealed class TreeSetAside(TreeContext context)
             string? back;
             try
             {
-                // The last fixes' check, finding 9: a folder whose remains cannot be read is put back, never a purge that throws.
+                // A folder whose remains cannot be read is put back, never a purge that throws.
                 back = record is null ? "its removal's record does not read, so it was put back"
                     : !record.Started ? "its removal stopped before its delete began, so it was put back whole"
                     : SetAsideKeeps.FileWrittenSince(folder, record.At) is { } late ? $"something in it was written after its removal began ({late}), so what remains was put back"
@@ -575,7 +575,7 @@ internal sealed class TreeSetAside(TreeContext context)
                     if (Directory.Exists(place)) throw new IOException($"{place} is there again");
                     Directory.Move(folder, place);
                     TryDelete(path);
-                    // The last fixes' check, finding 8: a finished folder whose delete began is no longer what was recorded, so whatever put it back,
+                    // A finished folder whose delete began is no longer what is recorded, so whatever put it back,
                     // a late write or a check that did not pass or could not run, it ends unmarked, saying why, and waits its days.
                     if (record is { Started: true }) Unmark(place, back);
                     results.Add(new SetAside(place, moved, false, back, SetAsideKept.Returned));
@@ -609,7 +609,7 @@ internal sealed class TreeSetAside(TreeContext context)
     internal static long DeleteNeverFollowing(string folder) => SetAsideDeleting.DeleteNeverFollowing(folder);
 
     /// <summary>
-    /// Where the purge keeps the folders whose delete it could not finish (CLEANUP1, re-check), beside them: a delete refused after the
+    /// Where the purge keeps the folders whose delete it could not finish (re-check), beside them: a delete refused after the
     /// read found nothing late (a file held open against it) shows in no read the inventory can repeat, so it is kept here, and the
     /// inventory reads it (<see cref="Failed"/>). Each pass writes what it met, so a folder a later pass deletes leaves it.
     /// </summary>

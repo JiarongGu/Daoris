@@ -6,7 +6,7 @@ import type { HelperAskRow, HelperWait } from '../../work/waits/HelperAsks';
 import { type ParkQuestion, readQuestion } from '../../work/waits/parkQuestion';
 import { call } from '../call';
 
-/** What *Ask another agent…* answered (D163): the ask's id where it was written, else why not by its code, and the driver's sentence. */
+/** What *Ask another agent…* answers: the ask's id where it is written, else why not by its code, and the driver's sentence. */
 export type HelperAsked = { asked: string | null; why: string | null; message: string };
 
 /** What the person's yes to an agent's ask answered: whether the ask has it, else why not by its code. */
@@ -18,14 +18,14 @@ export type HelperDeclined = { declined: boolean; why: string | null; message: s
 export const word = (value: unknown): string | null => (typeof value === 'string' && value ? value : null);
 
 /**
- * *Ask another agent…* (D163 point 2; the mixed-agents design §3): the person's own ask of a helper for a session, the
+ * *Ask another agent…* : the person's own ask of a helper for a session, the
  * file `daoris session helper` writes, for the driver's next look to take. The question as written and the agent the person
  * named, none where Daoris chooses. Read field by field, so a refusal keeps its code for the page to word. The sessions and the
- * driver are asked again by the state hub (D169), and with the sessions the session's asks, which sit under their key.
+ * driver are asked again by the state hub, and with the sessions the session's asks, which sit under their key.
  */
 export const useAskHelper = () => useMutation({
   mutationFn: async (ask: { session: string; question: string; agent?: string | null; after?: string; toPerson?: boolean }): Promise<HelperAsked> => {
-    // *Ask again…* (COWORKUX1d): the ask it follows, and from a member's thread an answer kept for the person.
+    // *Ask again…*: the ask it follows, and from a member's thread an answer kept for the person.
     const answer = (await call('SESSION_HELPER_ASK', {
       id: ask.session, question: ask.question, ...(ask.agent ? { agent: ask.agent } : {}),
       ...(ask.after ? { after: ask.after } : {}), ...(ask.toPerson ? { toPerson: true } : {}),
@@ -38,7 +38,7 @@ export const useAskHelper = () => useMutation({
 export type HelperPassed = { passed: boolean; why: string | null; message: string };
 
 /**
- * *Pass to the lead* (COWORKUX1d, the co-worker design §7): an answer the person asked for themselves sent to the session that asked, the
+ * *Pass to the lead*: an answer the person asked for themselves sent to the session that asked, the
  * helper's word with its mark unchanged and the person's press beside it, at the driver's next look. Read field by field.
  */
 export const usePassHelper = () => useMutation({
@@ -70,7 +70,7 @@ const readHelpers = (answer: unknown): HelperAskRow[] => {
       startedOn: word(row.startedOn),
       // A cooling ask's account's reset.
       until: word(row.until),
-      // COWORKUX1d: the ask it follows, where its answer goes, and whether the person's answer waits on their pass or was passed.
+      // The ask it follows, where its answer goes, and whether the person's answer waits on their pass or is passed.
       after: word(row.after),
       to: word(row.to),
       kept: row.kept === true,
@@ -93,14 +93,14 @@ export const useSessionHelpers = (session: string | null | undefined) => {
   });
 };
 
-/** What *Ask another agent to work on a piece…* answered: the piece's id where it was written, else why not by its code. */
+/** What *Ask another agent to work on a piece…* answers: the piece's id where it is written, else why not by its code. */
 export type PartnerAsked = { asked: string | null; why: string | null; message: string };
 
 /**
- * *Ask another agent to work on a piece…* (D199 point 2; the co-agent design §2.3 step 1, §6.1): the person's own ask of a
+ * *Ask another agent to work on a piece…*: the person's own ask of a
  * piece for a session, the file `daoris session partner` writes at the commit the session's tree stands at, for the driver's
  * next look to judge. The piece as written, the agent the person named and the paths it is about. Read field by field, so a refusal
- * keeps its code for the page to word. The sessions and the driver are asked again by the state hub (D169), and with the sessions the
+ * keeps its code for the page to word. The sessions and the driver are asked again by the state hub, and with the sessions the
  * session's pieces, which sit under their key.
  */
 export const useAskPartner = () => useMutation({
@@ -116,7 +116,7 @@ export const useAskPartner = () => useMutation({
 export type PartnerActed = { acted: boolean; why: string | null; message: string };
 
 /**
- * A piece's later act (COAGENT1b2, D199; the co-agent design §6.1): the person's *Discard…* or *Hand over what it left* on one of a
+ * A piece's later act: the person's *Discard…* or *Hand over what it left* on one of a
  * session's pieces, the file the driver's next look takes and does. A refusal keeps its code for the page to word. The sessions and the
  * driver are asked again by the state hub, and with them the session's pieces.
  */
@@ -129,7 +129,7 @@ export const usePartnerAct = () => useMutation({
 });
 
 /**
- * The pieces a session asked (the co-agent design §6.1), oldest first, each as the driver's look left it, read off this
+ * The pieces a session asked, oldest first, each as the driver's look left it, read off this
  * machine's own files: shell-only, and asked only for a session of this machine's. Under the sessions' key, so a look's tick and the
  * session's moves ask them again, as its helpers' asks are.
  */
@@ -144,9 +144,9 @@ export const useSessionPartners = (session: string | null | undefined) => {
 };
 
 /**
- * The person's yes to an agent's ask under the `helpers` rule's `ask` (D163 point 3; design §5): the `approved` state
+ * The person's yes to an agent's ask under the `helpers` rule's `ask`: the `approved` state
  * the driver's look reads, by the session and the ask. A refusal is the answer, by its code. The sessions and the driver are asked
- * again by the state hub (D169).
+ * again by the state hub.
  */
 export const useApproveHelper = () => useMutation({
   mutationFn: async (yes: { session: string; ask: string }): Promise<HelperApproved> => {
@@ -158,9 +158,9 @@ export const useApproveHelper = () => useMutation({
 });
 
 /**
- * The person's no to an agent's ask the driver's look holds waiting on their word (D163 point 3): the ask refused
+ * The person's no to an agent's ask the driver's look holds waiting on their word: the ask refused
  * `declined` and its note on the asking session's record, at once, by the session and the ask. A refusal is the answer, by its
- * code. The sessions and the driver are asked again by the state hub (D169).
+ * code. The sessions and the driver are asked again by the state hub.
  */
 export const useDeclineHelper = () => useMutation({
   mutationFn: async (no: { session: string; ask: string }): Promise<HelperDeclined> => {
@@ -172,7 +172,7 @@ export const useDeclineHelper = () => useMutation({
 });
 
 /**
- * A session's agent's own ask to hand it over (D163 point 3), as the driver's look left it, read off this machine's own
+ * A session's agent's own ask to hand it over, as the driver's look leaves it, read off this machine's own
  * files: shell-only, and asked only for a session of this machine's; null where its agent asked none. Under the sessions' key, so a
  * look's tick and the session's moves ask it again, as its helpers' asks are.
  */
@@ -194,7 +194,7 @@ export const useSessionHandOverAsk = (session: string | null | undefined) => {
 };
 
 /**
- * A parked session's question to the person (the park's ask design §2), as its agent asked it through `question_ask` and
+ * A parked session's question to the person, as its agent asked it through `question_ask` and
  * the driver kept it for the park its last turn ended in, read off this machine's own files: shell-only, and asked only for a park of
  * this machine's still waiting on the person (null asks nothing); null where none is kept. Under the sessions' key, so a look's tick
  * and the session's moves ask it again, as its hand-over ask is.
@@ -215,7 +215,7 @@ export type HandOverWord = { stands: boolean; why: string | null; message: strin
 /**
  * The person's yes to their session's agent's ask to hand it over: a conversation this shell holds is handed over at
  * once, anything else is `approved` for the driver's look. A refusal is the answer, by its code. The sessions and the driver are
- * asked again by the state hub (D169).
+ * asked again by the state hub.
  */
 export const useApproveHandOver = () => useMutation({
   mutationFn: async (yes: { session: string; ask: string }): Promise<HandOverWord> => {
@@ -240,7 +240,7 @@ export const useDeclineHandOver = () => useMutation({
 });
 
 /**
- * What of the agents' asks waits on the person's word across this machine's sessions (D168): *What needs you*'s rows,
+ * What of the agents' asks waits on the person's word across this machine's sessions: *What needs you*'s rows,
  * oldest first, read off this machine's own files, so shell-only. Under the sessions' key, so every tick asks it again, and the
  * driver's look says a new one in its report, which is a tick. A row with no id, session or question is left out.
  */

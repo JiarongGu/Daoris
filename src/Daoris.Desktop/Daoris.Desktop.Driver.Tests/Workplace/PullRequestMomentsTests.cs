@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-END6 (the design §A4.3, link 6 of §C6): a plugin is asked about an open pull request at origin's line heard moving, right
-/// after Daoris pushes, and at the window's focus; the line is fetched only where the moment did not bring it; both within D148's
+/// A plugin is asked about an open pull request at origin's line heard moving, right
+/// after Daoris pushes, and at the window's focus; the line is fetched only where the moment did not bring it; both within the
 /// minute; never at a removing press. A fake world counts each ask, fetch, line read and registry read, on a clock that stands still;
 /// <see cref="PullRequestMomentsGitTests"/> runs the real asks over real git to an end no press made.
 /// </summary>
@@ -90,8 +90,8 @@ public sealed class PullRequestMomentsTests : IDisposable
 
     /// <summary>
     /// Origin's line heard moving (the person's fetch, through the ref watch) asks each open pull request of that repository once and
-    /// fetches nothing: the fetch was the moment. The first reading is the line's baseline, and a ref move that leaves origin's line
-    /// where it was is no moment.
+    /// fetches nothing: the fetch is the moment. The first reading is the line's baseline, and a ref move that leaves origin's line
+    /// in place is no moment.
     /// </summary>
     [Fact]
     public async Task Origin_s_line_moving_asks_each_open_pull_request_once_and_fetches_nothing()
@@ -123,7 +123,7 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
-    /// D148's minute bounds every moment: a second inside it asks nothing and fetches nothing, whichever moment it is, and the first
+    /// The minute bounds every moment: a second inside it asks nothing and fetches nothing, whichever moment it is, and the first
     /// after it asks again. The record's last ask counts, and so does this process's own.
     /// </summary>
     [Fact]
@@ -150,7 +150,7 @@ public sealed class PullRequestMomentsTests : IDisposable
         Assert.Single(_world.Asked);
         Assert.Single(_world.Fetches);
 
-        // A plugin that was not ready kept nothing on the record: this process's own ask still bounds the minute.
+        // A plugin not ready keeps nothing on the record: this process's own ask still bounds the minute.
         _world.Keeps = false;
         _now += TimeSpan.FromSeconds(41);
         moments.Focused();
@@ -163,7 +163,7 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
-    /// GITAUTH1a: a moment reads its fetch's answer. One that failed (a held origin's sentence, which connected nothing) still asks the
+    /// A moment reads its fetch's answer. One that failed (a held origin's sentence, which connected nothing) still asks the
     /// plugin, which asks the host's own service, and the next moment past the minute calls the fetch again only for the hold to answer
     /// it: the hold, not the moment, keeps it from connecting (<c>GitHoldsProcessTests</c>).
     /// </summary>
@@ -184,7 +184,7 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-END6b: origin's line moving inside a pull request's minute stays a moment. Nothing is asked inside the minute, at the move
+    /// Origin's line moving inside a pull request's minute stays a moment. Nothing is asked inside the minute, at the move
     /// or at a wake after it; the first wake past the minute asks once, fetching nothing the person's fetch brought within it; a wake after
     /// that asks nothing more, the move having been asked about.
     /// </summary>
@@ -208,13 +208,13 @@ public sealed class PullRequestMomentsTests : IDisposable
         await Step(moments);
         Assert.Single(_world.Asked);
 
-        // A ref move at +50 s that leaves origin's line where it was: still inside the minute.
+        // A ref move at +50 s that leaves origin's line in place: still inside the minute.
         _now += TimeSpan.FromSeconds(30);
         PullRequestMoments.Moved(_home, Repository("engine"));
         await Step(moments);
         Assert.Single(_world.Asked);
 
-        // The first wake past the minute, at +65 s: the move is asked about, once, and nothing is fetched (the person's was at +20 s).
+        // The first wake past the minute, at +65 s: the move is asked about, once, and nothing is fetched (the person's came at +20 s).
         _now += TimeSpan.FromSeconds(15);
         PullRequestMoments.Moved(_home, Repository("engine"));
         await Step(moments);
@@ -296,8 +296,8 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
-    /// Never at a removing press (D148 point 2, the owner's answer): a press is no moment, and the sweep's own ref moves, a branch
-    /// deleted, leave origin's line where it was, so nothing is asked and nothing fetched.
+    /// Never at a removing press: a press is no moment, and the sweep's own ref moves, a branch
+    /// deleted, leave origin's line in place, so nothing is asked and nothing fetched.
     /// </summary>
     [Fact]
     public async Task A_removing_press_asks_and_fetches_nothing()
@@ -318,8 +318,8 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-END6c, finding 1: a removing press, bringing up to date or a landing holding the repository, a moment skips it, fetching
-    /// and asking nothing, rather than run beside it; it is owed, and asked once the hold is let go, whatever moment it was.
+    /// A removing press, bringing up to date or a landing holding the repository, a moment skips it, fetching
+    /// and asking nothing, rather than run beside it; it is owed, and asked once the hold is let go, whichever moment it is.
     /// </summary>
     [Fact]
     public async Task A_moment_skips_a_held_repository_and_asks_once_it_is_let_go()
@@ -349,7 +349,7 @@ public sealed class PullRequestMomentsTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-END6c, finding 2: D148's minute is shared with every other occasion in this process. A look asking the pull request now
+    /// The minute is shared with every other occasion in this process. A look asking the pull request now
     /// leaves a moment nothing to ask, and a moment's ask leaves the look's minute taken.
     /// </summary>
     [Fact]
@@ -445,7 +445,7 @@ public sealed class PullRequestMomentsTests : IDisposable
 
         public int LineReads { get; private set; }
 
-        /// <summary>Whether an answer is kept on the record, as a plugin that answered is; false is one that was not ready.</summary>
+        /// <summary>Whether an answer is kept on the record, as a plugin that answered is; false is one not ready.</summary>
         public bool Keeps { get; set; } = true;
 
         public IReadOnlyList<LandedBranch> Open() => [.. Entries.Where(PullRequestMoments.Concerns)];
@@ -469,7 +469,7 @@ public sealed class PullRequestMomentsTests : IDisposable
 
         public void HeardFetched(RefRepository repository, string line, DateTimeOffset at) => FetchedAt[repository.Repository] = at;
 
-        /// <summary>What the fetch answers: null where it fetched, else why not (GITAUTH1a).</summary>
+        /// <summary>What the fetch answers: null where it fetched, else why not.</summary>
         public string? Failing { get; set; }
 
         public Task<string?> FetchAsync(RefRepository repository, string line, CancellationToken ct)

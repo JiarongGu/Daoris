@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The work wire against a real plugin process (FABRIC-PERFORM1a; the fabric events design §C4): a stand-in started by the lease's loop as the
+/// The work wire against a real plugin process: a stand-in started by the lease's loop as the
 /// driver starts any plugin, told what is awaited, heard, asked to perform, crashed, restarted after its wait with a new generation, and the
 /// events it sent before it crashed refused as stale. Also the 64 KB bound on a real pipe, which a fake's lines cannot prove.
 /// </summary>
@@ -64,7 +64,7 @@ public sealed class WorkProcessTests : IDisposable
     public void Dispose()
     {
         _log.Dispose();
-        // FLAKE1: a process lets go of its folder a moment after it is told to stop, as HookTests waits for.
+        // A process lets go of its folder a moment after it is told to stop, as HookTests waits for.
         for (var attempt = 0; Directory.Exists(_home); attempt++)
         {
             try
@@ -172,8 +172,8 @@ public sealed class WorkProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: the 64 KB bound is the work wire's. A query plugin, speaking no work point, that answers with a 70 KB
-    /// diagnostic is heard as it was before the bound — it had been dropped, and the ask waited out its patience.
+    /// The 64 KB bound is the work wire's. A query plugin, speaking no work point, that answers with a 70 KB
+    /// diagnostic is heard, not dropped to leave the ask waiting out its patience.
     /// </summary>
     [Fact]
     public async Task A_state_answer_over_64_KB_from_a_plugin_that_speaks_no_work_point_is_delivered()
@@ -196,8 +196,8 @@ public sealed class WorkProcessTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: a plugin that stops reading its stdin is ended within its grace. Its pipe full, a call's write held the wire,
-    /// and the disposal's `shutdown` waited on it with no bound: the process outlived the lease and the loop that owned it. TESTCLOCK2: the
+    /// A plugin that stops reading its stdin is ended within its grace. Its pipe full, a call's write holds the wire,
+    /// and the disposal's `shutdown` would wait on it with no bound: the process would outlive the lease and the loop that owns it. The
     /// grace is read on a clock the test moves, so the disposal waits until its grace and ends at it, where the machine's clock timed it.
     /// </summary>
     [Fact]

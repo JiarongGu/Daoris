@@ -3,8 +3,8 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The operations bringing sessions together (LINESTOGETHER1d), stepped before the look's starts take a head's word: looked at by
-/// the process holding the home's lease, each stepped by the records, a landing settled, one whose sessions were deleted dropped.
+/// The operations bringing sessions together, stepped before the look's starts take a head's word: looked at by
+/// the process holding the home's lease, each stepped by the records, a landing settled, one whose sessions are deleted dropped.
 /// Nothing is asked of the service while none is kept.
 /// </summary>
 [LookPass("together", LookPhase.Local, "lines")]

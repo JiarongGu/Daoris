@@ -4,7 +4,7 @@ import { Button } from '../../design/ui';
 import { SessionConversation } from './SessionConversation';
 import { drawnOf } from './line';
 
-/** One earlier part of a line, as its record says it (SWITCHCTX1c-i): what its conversation is read by, and how it began. */
+/** One earlier part of a line, as its record says it: what its conversation is read by, and how it began. */
 export type EarlierPart = {
   id: string;
   adapter?: string;
@@ -17,7 +17,7 @@ export type EarlierPart = {
 };
 
 /**
- * The press above the oldest part drawn (SWITCHCTX1c-i): how many earlier parts it draws, by the count and not by the language's
+ * The press above the oldest part drawn: how many earlier parts it draws, by the count and not by the language's
  * plural rule, since zh has one form and says the single part as its own sentence.
  */
 export function ShowEarlier({ count, onPress }: { count: number; onPress: () => void }) {
@@ -30,7 +30,7 @@ export function ShowEarlier({ count, onPress }: { count: number; onPress: () => 
 }
 
 /**
- * **The parts a session's page draws above the attended one** (SWITCHCTX1c-i; the switch-context design §2.7): the parts it
+ * **The parts a session's page draws above the attended one**: the parts it
  * continues by `from`, oldest first, each its own conversation, read-only and read with its own record's liveness. At most the three
  * nearest are drawn; above them one press draws up to three more, and says how many.
  *

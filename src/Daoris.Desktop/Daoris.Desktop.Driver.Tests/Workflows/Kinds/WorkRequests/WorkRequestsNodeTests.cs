@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1o part o2 (the integration design §17.3, §17.6): the <c>work.requests</c> node observed from the quests' records alone. The quests a
+/// The <c>work.requests</c> node observed from the quests' records alone. The quests a
 /// run's sessions published are found by <c>PublishedBy</c> as <see cref="AskWork"/> joins them; the node is reached once each is done, stays active
 /// while one is open or taken, and stays active on a decline, which reaches nothing and fails nothing: the person's pass is what lets the flow go on.
 /// </summary>

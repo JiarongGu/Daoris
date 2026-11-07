@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The look's half of a pause (PAUSE1b, design §2.3): which quests the pauses in <c>driver.json</c> hold now. The planner reads
+/// The look's half of a pause: which quests the pauses in <c>driver.json</c> hold now. The planner reads
 /// the answer and never a second copy of the work's rule, which is <see cref="AskWork"/>'s.
 /// </summary>
 /// <remarks>
-/// <b>Read again at every look</b> (design §1): a chain's step published by a close, or a question asked a second before the
+/// <b>Read again at every look</b>: a chain's step published by a close, or a question asked a second before the
 /// pause, joins the work as it appears, so nothing of a paused work slips past a pause made a moment earlier.
 /// </remarks>
 public static class PausedWork
@@ -35,7 +35,7 @@ public static class PausedWork
 
     /// <summary>
     /// The snapshot with its paused set, read from the service's quests and records where <c>driver.json</c> holds a pause,
-    /// and as it was where it holds none, which asks nothing more of the service.
+    /// and unchanged where it holds none, which asks nothing more of the service.
     /// </summary>
     /// <remarks>
     /// 🔴 A read that fails fails the look: a paused work read as no work would start what the person paused.

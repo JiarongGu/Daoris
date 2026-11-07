@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEP1a's foundations (D195 points 1, 2 and 4; the cleanup design §2.1, §2.3 and §3.1): the kinds' table and the one effective policy
+/// The foundations: the kinds' table and the one effective policy
 /// every reader of the set-aside days reads, <c>keeping.json</c> written only through the keep lock and keeping what another writer
 /// wrote, and the run lock tried and never waited for, its holder named. Files only, in a home under <c>_fixtures/</c>; the holder a
 /// real ended process left is <see cref="KeepingSlimTests"/>'.
@@ -41,8 +41,8 @@ public sealed class KeepingTests : IDisposable
     }
 
     /// <summary>
-    /// KEEP1b, §2.1: the downloads' kind, every version made again by its next pin or use, seven days by default into its current unused
-    /// stretch, the person's 0 to 365 or <c>never</c>; and the one policy, which says the same where the person chose nothing (KEEP1d).
+    /// The downloads' kind, every version made again by its next pin or use, seven days by default into its current unused
+    /// stretch, the person's 0 to 365 or <c>never</c>; and the one policy, which says the same where the person chose nothing.
     /// </summary>
     [Fact]
     public void The_downloads_kind_and_its_policy_keep_seven_days_of_an_unused_stretch()
@@ -56,7 +56,7 @@ public sealed class KeepingTests : IDisposable
     }
 
     /// <summary>
-    /// KEEP1b, §2.3 (Fable F2.1): each download's first-unused time, <c>unused.&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>, set and
+    /// Each download's first-unused time, <c>unused.&lt;agent|tool&gt;/&lt;name&gt;/&lt;version&gt;</c>, set and
     /// cleared under the keep lock, an edit of only the keys it changed: another writer's <c>last</c> and an entry it never read stay.
     /// </summary>
     [Fact]
@@ -120,8 +120,8 @@ public sealed class KeepingTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 §2.3 (Codex 4.1): another writer's change landing between this writer's read and its write is kept, its kinds, its first-unused
-    /// times and a key this build has no field for; only <c>last.set-aside</c> is this edit's. An atomic rename alone lost it (CONFIGLOCK1).
+    /// Another writer's change landing between this writer's read and its write is kept, its kinds, its first-unused
+    /// times and a key this build has no field for; only <c>last.set-aside</c> is this edit's. An atomic rename alone would lose it.
     /// </summary>
     [Fact]
     public void Another_writer_s_change_between_the_read_and_the_write_keeps_both()
@@ -141,7 +141,7 @@ public sealed class KeepingTests : IDisposable
         Assert.False(File.Exists(KeepLock.PathOf(KeepingRecord.PathOf(_home))));
     }
 
-    /// <summary>§2.3: a record that does not read is never written over; the write says why and leaves the file as it was.</summary>
+    /// <summary>A record that does not read is never written over; the write says why and leaves the file unchanged.</summary>
     [Fact]
     public void A_record_that_does_not_read_is_never_written_over()
     {

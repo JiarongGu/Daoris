@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the driver keeps of each opinion it delivers (XAGENT1e): <c>&lt;home&gt;/opinions/&lt;id&gt;/delivered.json</c>, beside the
-/// pass's diff (§4): whether its findings went to the person and why, the working session's answers as read when its turn
-/// ended, and the recheck asked or why none was. This machine's own, as the opinion is (D47 §4).
+/// What the driver keeps of each opinion it delivers: <c>&lt;home&gt;/opinions/&lt;id&gt;/delivered.json</c>, beside the
+/// pass's diff: whether its findings went to the person and why, the working session's answers as read when its turn
+/// ended, and the recheck asked or why none is. This machine's own, as the opinion is.
 /// </summary>
 /// <remarks>
 /// <para>A file that does not read is nothing done: the next look reads the host and the record again, never the words lost.</para>
@@ -27,7 +27,7 @@ public sealed class OpinionDeliveries(string home)
         }
     }
 
-    /// <summary>What was kept for <paramref name="opinion"/>; <see cref="OpinionDelivered.None"/> where nothing reads.</summary>
+    /// <summary>What is kept for <paramref name="opinion"/>; <see cref="OpinionDelivered.None"/> where nothing reads.</summary>
     public OpinionDelivered Read(string opinion) => PathOf(opinion) is { } path ? OpinionDeliveryFiles.Read(path) : OpinionDelivered.None;
 
     /// <summary>Its findings went to the person, and why: kept once, the first reason standing.</summary>
@@ -37,7 +37,7 @@ public sealed class OpinionDeliveries(string home)
     /// <summary>The answers as read when the working session's turn ended: the latest reading stands.</summary>
     public OpinionDelivered Answered(string opinion, OpinionReading reading) => Keep(opinion, kept => kept with { Answered = reading });
 
-    /// <summary>The recheck asked, by its opinion's id, or why none was: kept once.</summary>
+    /// <summary>The recheck asked, by its opinion's id, or why none is: kept once.</summary>
     public OpinionDelivered Rechecked(string opinion, string? recheck, string? why) =>
         Keep(opinion, kept => kept.Recheck is not null || kept.RecheckWhy is not null ? kept : kept with { Recheck = recheck, RecheckWhy = why });
 

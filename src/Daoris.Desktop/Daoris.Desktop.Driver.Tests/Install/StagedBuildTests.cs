@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// UPDATE1 (D139 §4–§6): a build staged beside an install is checked before anything is replaced, swapped in by the
+/// A build staged beside an install is checked before anything is replaced, swapped in by the
 /// launcher with a journal while the application is closed, and rolled back to the build before it when it fails.
 /// </summary>
 /// <remarks>
@@ -31,7 +31,7 @@ public sealed class StagedBuildTests : IDisposable
         try { Directory.Delete(_install, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    // ——— The check (§4).
+    // ——— The check.
 
     [Fact]
     public void Nothing_staged_is_no_build_and_no_problem()
@@ -149,7 +149,7 @@ public sealed class StagedBuildTests : IDisposable
         Assert.Equal(code, StagedBuild.Check(_install)?.Code);
     }
 
-    // ——— The swap (§5).
+    // ——— The swap.
 
     [Fact]
     public void The_swap_moves_the_staged_build_in_starts_it_and_once_it_confirms_removes_the_build_before_it()
@@ -180,7 +180,7 @@ public sealed class StagedBuildTests : IDisposable
         Assert.Equal(SwapPhase.Installed, journal.Phase);
         Assert.Equal("b1", journal.Id);
         Assert.True(journal.Confirmed);
-        // The application that confirmed said it was updated; the launcher keeps the mark as it finishes.
+        // The application that confirmed said it updated; the launcher keeps the mark as it finishes.
         Assert.True(journal.Told);
     }
 
@@ -272,7 +272,7 @@ public sealed class StagedBuildTests : IDisposable
 
     /// <summary>
     /// A file in <c>app/</c> held for longer than the wait: the swap rolls back <c>busy</c>, which is true, since nothing
-    /// was replaced, and the journal names what was held and for how long (SWAP2). The clock is the test's, so the two
+    /// is replaced, and the journal names what is held and for how long. The clock is the test's, so the two
     /// minutes pass in a moment against a real hold.
     /// </summary>
     [Fact]
@@ -303,7 +303,7 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     /// <summary>
-    /// DEPLOYBUSY1: a hold that outlasts the wait names the file Windows found held and the process holding it, in the hold
+    /// A hold that outlasts the wait names the file Windows found held and the process holding it, in the hold
     /// and in the journal's detail, so a <c>busy</c> says who and not only that. The holder here is this test's own process.
     /// </summary>
     [Fact]
@@ -333,8 +333,7 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     /// <summary>
-    /// DEPLOYBUSY1: a hold that gave way still names what held it, found at the first refusal: the rehearsal's update met one
-    /// of forty-one seconds that let go, and the next one did not.
+    /// A hold that gives way still names what held it, found at the first refusal.
     /// </summary>
     [Fact]
     public void A_hold_that_gave_way_still_names_what_held_it()
@@ -369,7 +368,7 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     /// <summary>
-    /// DEPLOYBUSY1: a hold is asked again as it lasts, and the last answer is kept: one moment's holder can be a passer-by,
+    /// A hold is asked again as it lasts, and the last answer is kept: one moment's holder can be a passer-by,
     /// as a program that opened a file for a moment at the first refusal is, while another holds the folder for the rest.
     /// </summary>
     [Fact]
@@ -416,7 +415,7 @@ public sealed class StagedBuildTests : IDisposable
 
     /// <summary>
     /// The scanner opens a new build's files and lets go within seconds; a move it refuses for a moment is tried again,
-    /// so an update is not rolled back for a hold that gives way (FIX-LOG 2026-10-07, the deployment rehearsal's update).
+    /// so an update is not rolled back for a hold that gives way.
     /// </summary>
     [Fact]
     public void A_file_held_in_app_for_a_moment_does_not_roll_the_swap_back()
@@ -424,8 +423,8 @@ public sealed class StagedBuildTests : IDisposable
         if (!OperatingSystem.IsWindows()) return;
         Stage();
 
-        // Let go by the swap's own clock, as the longer hold below is: a thread-pool task's delay was starved past the whole wait
-        // on a loaded machine, and the swap rolled back (the full set on 9717f8d).
+        // Let go by the swap's own clock, as the longer hold below is: a thread-pool task's delay can starve past the whole wait
+        // on a loaded machine, and the swap rolls back.
         var held = new FileStream(Path.Combine(_install, "app", "Daoris.Desktop.App.dll"), FileMode.Open, FileAccess.Read, FileShare.None);
         var now = Start;
         SwapOutcome outcome;
@@ -454,12 +453,11 @@ public sealed class StagedBuildTests : IDisposable
         Assert.True(Assert.Single(StagedBuild.ReadJournal(_install)!.Holds!).Released);
     }
 
-    // ——— Holds outlasted, measured, and said as what they were (SWAP2).
+    // ——— Holds outlasted, measured, and said as what they were.
 
     /// <summary>
-    /// The deployment rehearsal twice met a hold longer than the ten seconds the swap once waited (50 tries, 200 ms apart),
-    /// each with a build running beside it. A real file in <c>app/</c>, held for twenty-five seconds by the test's clock and
-    /// let go when they have passed, no longer rolls the update back with the wait as it stands.
+    /// A hold longer than ten seconds, with a build running beside it: a real file in <c>app/</c>, held for twenty-five seconds
+    /// by the test's clock and let go when they have passed, does not roll the update back.
     /// </summary>
     [Fact]
     public void A_hold_longer_than_the_old_ten_seconds_still_swaps_and_the_journal_says_how_long_it_lasted()
@@ -605,7 +603,7 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     /// <summary>
-    /// The launcher's catch (D139 §6): an error part way through a swap is put right from its journal, as a launcher that
+    /// The launcher's catch: an error part way through a swap is put right from its journal, as a launcher that
     /// died is; only with no swap under way does an update asked for refuse the staged build, and then as <c>error</c>.
     /// </summary>
     [Fact]
@@ -659,7 +657,7 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     /// <summary>
-    /// A journal a reader holds open for a moment without delete sharing is still written (AtomicFile's REV3 measurement):
+    /// A journal a reader holds open for a moment without delete sharing is still written:
     /// the launcher reads it every poll while the new application writes its confirmation.
     /// </summary>
     [Fact]
@@ -669,8 +667,8 @@ public sealed class StagedBuildTests : IDisposable
         StagedBuild.WriteJournal(_install, new SwapRecord(SwapPhase.Started, "b1", "0.0.1", null, Start, []));
 
         var reader = new FileStream(StagedBuild.JournalOf(_install), FileMode.Open, FileAccess.Read, FileShare.Read);
-        // On a thread of its own, not the pool's: a loaded run's starved pool once let the reader go past the write's four seconds of
-        // retries (FLAKE1, four times by 2026-10-26), which is the pool's wait, not the journal's.
+        // On a thread of its own, not the pool's: a loaded run's starved pool can let the reader go past the write's four seconds of
+        // retries, which is the pool's wait, not the journal's.
         var letGo = Task.Factory.StartNew(() =>
         {
             Thread.Sleep(150);
@@ -682,7 +680,7 @@ public sealed class StagedBuildTests : IDisposable
         Assert.Equal(SwapPhase.Confirmed, StagedBuild.ReadJournal(_install)!.Phase);
     }
 
-    /// <summary>A journal written before SWAP2 has no holds, and reads as it did; one with holds reads them back.</summary>
+    /// <summary>A journal with no holds reads as having none; one with holds reads them back.</summary>
     [Fact]
     public void A_journal_s_holds_read_back_and_one_without_reads_as_before()
     {
@@ -690,7 +688,7 @@ public sealed class StagedBuildTests : IDisposable
         Assert.DoesNotContain("holds", File.ReadAllText(StagedBuild.JournalOf(_install)));
         Assert.Null(StagedBuild.ReadJournal(_install)!.Holds);
 
-        // DEPLOYBUSY1: what was found held, and by what, reads back too; a hold without them reads as it did.
+        // What is found held, and by what, reads back too; a hold without them reads without them.
         SwapHold[] holds =
         [
             new("app", "update/previous/app", 12_345, 62, true),
@@ -724,7 +722,7 @@ public sealed class StagedBuildTests : IDisposable
         Assert.Same(SwapOutcome.Nothing, new InstallSwap(_install, start: _ => 1, alive: _ => true).Held("nothing staged"));
     }
 
-    // ——— What a launcher that died left (§6).
+    // ——— What a launcher that died left.
 
     [Fact]
     public void A_launcher_that_died_mid_swap_is_undone_by_the_next_start_from_its_journal()
@@ -762,7 +760,7 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SWAPLEASE2 (the terminal RPC design §5): a crashed swap's roll-back moves <c>app/</c> as the swap does, so it holds the
+    /// A crashed swap's roll-back moves <c>app/</c> as the swap does, so it holds the
     /// home's lease as the swap does. A verb holding the home for the whole of the wait: nothing is moved, the journal is kept
     /// for the next start, and who held it is said; once it lets go, the roll-back runs holding the lease, and lets it go after.
     /// </summary>
@@ -808,7 +806,7 @@ public sealed class StagedBuildTests : IDisposable
     }
 
     /// <summary>
-    /// SWAPLEASE2: a start with nothing to put right takes no lease, so an act holding the home costs it no wait; and finishing a
+    /// A start with nothing to put right takes no lease, so an act holding the home costs it no wait; and finishing a
     /// confirmed swap moves nothing, so it does not wait for the new application, which holds the home for its life.
     /// </summary>
     [Fact]

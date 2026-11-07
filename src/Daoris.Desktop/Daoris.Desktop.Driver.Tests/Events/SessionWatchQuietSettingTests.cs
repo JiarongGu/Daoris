@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The watcher's quiet read (D200, the session-watch design §3): Q is the machine's <c>quietMinutes</c>, which each look hands it, so a
+/// The watcher's quiet read: Q is the machine's <c>quietMinutes</c>, which each look hands it, so a
 /// session unheard for longer than the default and shorter than the setting is not marked; a test's pinned bound stays as pinned.
 /// </summary>
 public sealed class SessionWatchQuietSettingTests : IDisposable

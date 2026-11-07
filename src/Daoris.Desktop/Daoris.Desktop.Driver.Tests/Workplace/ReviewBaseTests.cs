@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWBASE1 (D164's note): a session tree's review measures from the newest commit its work shares with the line, so a tree
+/// A session tree's review measures from the newest commit its work shares with the line, so a tree
 /// that took in newer line commits shows its own changes alone, and says how far the latest known line is past it. Real git in
 /// scratch repositories, `origin` a bare one beside each; the review fetches nothing, so what it reads is what the last fetch left.
 /// </summary>
@@ -121,7 +121,7 @@ public sealed class ReviewBaseTests : LandedFixture
     }
 
     /// <summary>
-    /// The record's base is gone from the tree's history (its parent was rewritten and the tree replayed onto the new one): the
+    /// The record's base is gone from the tree's history (its parent got rewritten and the tree replayed onto the new one): the
     /// grown ledger's word on where it grows from now stands, as before, ahead of the line it is newer than.
     /// </summary>
     [Fact]
@@ -162,7 +162,7 @@ public sealed class ReviewBaseTests : LandedFixture
     }
 
     /// <summary>
-    /// REVIEWBASE3 (D164's REVIEWBASE1 note): a chain's step grew from its parent's tip and then merged the line, so the record's base
+    /// A chain's step grew from its parent's tip and then merged the line, so the record's base
     /// and the line's are incomparable. Measured from the line's, the parent's work read as the step's; measured from a merge of the
     /// two (in trees, nothing on disk), the step's own changes stand alone. The base the page names is still the line's commit.
     /// </summary>
@@ -181,7 +181,7 @@ public sealed class ReviewBaseTests : LandedFixture
         Assert.Equal(["own.txt"], await ChangedAsync(tree.Path, range.Reads));
         // What it read before: the parent's work beside its own.
         Assert.Equal(["own.txt", "parent.txt"], await ChangedAsync(tree.Path, range.From));
-        // The parent's commit, its own and its merge are beyond the line; nothing of the tree was touched by the read.
+        // The parent's commit, its own and its merge are beyond the line; the read touches nothing of the tree.
         Assert.Equal(new LineBehind("main", 0, 3), range.Behind);
         Assert.Equal(status, await GitAsync(tree.Path, "status", "--porcelain", "--untracked-files=all"));
     }

@@ -17,20 +17,20 @@ public sealed record PermissionChoice(string Id, string Name, string Kind)
     public bool Allows => Kind == AllowOnce;
 
     /// <summary>
-    /// Whether the person may choose it (AUTONOMY1b3a): this call's allow, and either rejection. A standing allow is a rule for the
-    /// rest of the session, which is a rule proposal's to change (D74), never one call's press; a kind this build does not know is
+    /// Whether the person may choose it: this call's allow, and either rejection. A standing allow is a rule for the
+    /// rest of the session, which is a rule proposal's to change, never one call's press; a kind this build does not know is
     /// never read as an allow.
     /// </summary>
     public bool Choosable => Kind is AllowOnce or RejectOnce or RejectAlways;
 }
 
-/// <summary>A permission request held for the person (AUTONOMY1b3a), as the page and the terminal read it.</summary>
+/// <summary>A permission request held for the person, as the page and the terminal read it.</summary>
 /// <param name="Session">The Daoris session whose agent asked.</param>
 /// <param name="Request">The request's id on the agent's wire, which the answer names.</param>
-/// <param name="Call">The tool call it asks for, by the wire's id, or null where the request named none.</param>
+/// <param name="Call">The tool call it asks for, by the wire's id, or null where the request names none.</param>
 /// <param name="Title">The call's title as the agent wrote it, bounded (the agent's words, which may hold a path); null where it gave none.</param>
-/// <param name="Choices">What the person may choose, in the agent's order: never a standing allow, and no allow at all where none was offered.</param>
-/// <param name="Since">When it was held, by this machine's clock.</param>
+/// <param name="Choices">What the person may choose, in the agent's order: never a standing allow, and no allow at all where none is offered.</param>
+/// <param name="Since">When the hold began, by this machine's clock.</param>
 public sealed record HeldPermission(
     string Session, string Request, string? Call, string? Title, IReadOnlyList<PermissionChoice> Choices, DateTimeOffset Since)
 {
@@ -38,7 +38,7 @@ public sealed record HeldPermission(
     public string? Kind { get; init; }
 
     /// <summary>
-    /// When nobody's answer releases it, by this machine's clock: its door's bound from <see cref="Since"/> (PERMUNTIL1), so the page
+    /// When nobody's answer releases it, by this machine's clock: its door's bound from <see cref="Since"/>, so the page
     /// says the driver's bound rather than a copy of it.
     /// </summary>
     public DateTimeOffset Until { get; init; }
@@ -54,10 +54,10 @@ public static class PermissionWhy
     /// <summary>The person answered it.</summary>
     public const string Answered = "answered";
 
-    /// <summary>The turn it was asked in was cancelled: the person's stop of the turn, or words sent that stop it.</summary>
+    /// <summary>The turn it is asked in is cancelled: the person's stop of the turn, or words sent that stop it.</summary>
     public const string Cancelled = "cancelled";
 
-    /// <summary>The session ended: it closed, its stream ended (a stop's kill among the causes), or its reader was let go.</summary>
+    /// <summary>The session ended: it closed, its stream ended (a stop's kill among the causes), or its reader is let go.</summary>
     public const string Ended = "ended";
 
     /// <summary>Nobody answered it within its bound (<see cref="HeldPermissions.Bound"/>).</summary>
@@ -69,7 +69,7 @@ public static class PermissionWhy
 public sealed record PermissionAnswer(bool Answered, string? Why, string Message);
 
 /// <summary>
-/// The permission requests this process's driven sessions hold for the person (AUTONOMY1b3a, D184 point 3): under a repository's
+/// The permission requests this process's driven sessions hold for the person: under a repository's
 /// <c>asking</c> permission prompts, the protocol door holds each tool request its agent sends instead of refusing it, until the person
 /// answers it with an option the agent offered, or the session releases it.
 /// </summary>
@@ -78,10 +78,10 @@ public sealed record PermissionAnswer(bool Answered, string? Why, string Message
 /// with it, so nothing here is written. Keyed by the session and the request's id on its wire.</para>
 ///
 /// <para><b>Never an invented allow.</b> The answer names an option the agent offered, by its id; a standing allow is refused (a rule is
-/// proposed, D74), and so is an option it never offered. A refusal naming no option takes the offered one-time rejection, else none,
-/// which the wire says as <c>cancelled</c>. Daoris answers nothing allowing by itself: only the person's press does (D37, D52).</para>
+/// proposed), and so is an option it never offered. A refusal naming no option takes the offered one-time rejection, else none,
+/// which the wire says as <c>cancelled</c>. Daoris answers nothing allowing by itself: only the person's press does.</para>
 ///
-/// <para><b>Bounded</b> (REV3: an unanswered request is a turn hung for ever): each hold is released at <see cref="Bound"/>, and at
+/// <para><b>Bounded</b>: an unanswered request is a turn hung for ever, so each hold is released at <see cref="Bound"/>, and at
 /// its session's cancel, close or stream's end, whichever comes first.</para>
 ///
 /// <para><b>Told as it moves</b>: <see cref="Changed"/> names a session whenever what it holds moved, after the registry's lock is let
@@ -91,7 +91,7 @@ public sealed class HeldPermissions
 {
     /// <summary>
     /// How long a request waits for the person before it is refused: a request nobody answers is refused so the turn goes on with what
-    /// it can do (D184; its reason its own since SESSWATCH1a took the session's time limit away, D200), and long enough for a person at
+    /// it can do, and long enough for a person at
     /// the window to read and press.
     /// </summary>
     public static readonly TimeSpan Bound = TimeSpan.FromMinutes(15);
@@ -131,7 +131,7 @@ public sealed class HeldPermissions
 
     /// <summary>
     /// The person's answer to <paramref name="request"/> of <paramref name="session"/>: an offered option by its id, or null to refuse.
-    /// It ends the hold where it stands; otherwise the hold waits on as it was, and the answer says why by its code.
+    /// It ends the hold where it stands; otherwise the hold waits on unchanged, and the answer says why by its code.
     /// </summary>
     public PermissionAnswer Answer(string session, string request, string? option)
     {

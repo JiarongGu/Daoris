@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVENTHOOK1b (the event hook design §4.1, §4.4, §4.5): the point's teller. Every <c>seq</c> minted once under one lock, whatever the
+/// The point's teller. Every <c>seq</c> minted once under one lock, whatever the
 /// lease says; told only where the set holds it; a queue and a teller per plugin, made only once one listens; a full queue drops its oldest
 /// and the next event says <c>missed</c>; a plugin joins at an exact <c>seq</c>; three late answers in a row stop that plugin alone.
 /// </summary>

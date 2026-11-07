@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>browser</c> proposal (HELP10): Daoris's browser's settings, as Settings → Browser and
+/// Ask Daoris's <c>browser</c> proposal: Daoris's browser's settings, as Settings → Browser and
 /// <c>daoris browser</c> set them — which browser, where the page's links open, other software's extensions, a favorite.
 /// </summary>
 public sealed class HelpBrowserProposalsTests : HelpProposalsFixture

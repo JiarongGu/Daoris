@@ -3,7 +3,7 @@ using static Daoris.Desktop.Driver.Tests.HoldFixture;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>LANDNODE1k: <c>quest.holds</c> is reached once nothing of its quest's own holds the work, and kept active with its reason while something does.</summary>
+/// <summary>The <c>quest.holds</c> node is reached once nothing of its quest's own holds the work, and kept active with its reason while something does.</summary>
 public sealed class QuestHoldsNodeTests
 {
     [Fact]

@@ -1,6 +1,6 @@
 namespace Daoris.Knowledge;
 
-/// <summary>How a walk of a line forward ended (FOUNDATION1 rows d-i and d-ii, D212; the foundation design §3.4 rule 2, §19.13).</summary>
+/// <summary>How a walk of a line forward ended.</summary>
 public enum LineEnd
 {
     /// <summary>At the line's head: a record nothing here continues.</summary>
@@ -13,7 +13,7 @@ public enum LineEnd
     Bound,
 }
 
-/// <summary>A line walked forward from a record: its head where one was reached, and each record the walk visited, the named first.</summary>
+/// <summary>A line walked forward from a record: its head where one is reached, and each record the walk visited, the named first.</summary>
 /// <param name="Head">The head, or null where the walk ended on a cycle or at the bound.</param>
 /// <param name="Records">Every record visited, the one named first and the head, where reached, last.</param>
 /// <param name="End">How the walk ended.</param>
@@ -24,7 +24,7 @@ public static class Lines
 {
     /// <summary>
     /// The most hops a walk of a line follows, forward to its head (<see cref="WalkAsync"/>) and back along <c>from</c> for the settlement
-    /// (<see cref="SaidKeys"/>), one bound for both (row d-ii, D212's note of the part). A line of 256 parts is far past any the install makes,
+    /// (<see cref="SaidKeys"/>), one bound for both. A line of 256 parts is far past any the install makes,
     /// and each hop is one indexed probe, so the bound costs a short line nothing. A walk that reaches it is refused with a sentence, never read
     /// as far as it got: a settlement read over a line cut short could keep a taken word a second time.
     /// </summary>
@@ -67,7 +67,7 @@ public static class Lines
     }
 
     /// <summary>
-    /// The head of the line <paramref name="named"/> is on, with the hop <see cref="WalkAsync"/> lacks (LINESTOGETHER1a): a chain step
+    /// The head of the line <paramref name="named"/> is on, with the hop <see cref="WalkAsync"/> lacks: a chain step
     /// continues its parent quest's line, so the walk goes on from the newest step that has a run here. Null where a walk ended on a
     /// cycle or the bound.
     /// </summary>
@@ -75,8 +75,8 @@ public static class Lines
         (await LineOfAsync(sessions, quests, named, ct).ConfigureAwait(false)).Head;
 
     /// <summary>
-    /// The walk <see cref="HeadOfLineAsync"/> takes, chain hops included, with every record it visited, the one named first (LINESTOGETHER1b:
-    /// a moved word is looked for on each of them).
+    /// The walk <see cref="HeadOfLineAsync"/> takes, chain hops included, with every record it visited, the one named first:
+    /// a moved word is looked for on each of them.
     /// </summary>
     public static Task<LineWalk> LineOfAsync(SessionStore sessions, QuestStore quests, Session named, CancellationToken ct = default) =>
         LineOfAsync(new StoreLineFacts(sessions, quests), named, ct);

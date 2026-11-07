@@ -4,8 +4,8 @@ import { aQuest } from '../../quests/aQuest';
 import { MonoWell } from '../../design/ui';
 import { StreamTile } from './StreamTile';
 
-// The monitor's unit, in every state it has (SURF8). A tile is a molecule, so each of these is
-// reached by passing props — no driver, no service, no arranged world (components plan §2).
+// The monitor's unit, in every state it has. A tile is a molecule, so each of these is
+// reached by passing props — no driver, no service, no arranged world.
 
 /** Relative to now, so a story reads as a duration rather than as the age of this file. */
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
@@ -57,7 +57,7 @@ type Story = StoryObj<typeof StreamTile>;
 
 export const Working: Story = {};
 
-/** The one priority rule: what needs a person outranks what is busy (components plan §3a). */
+/** The one priority rule: what needs a person outranks what is busy. */
 export const AwaitingPerson: Story = {
   args: {
     session: { ...SESSION, state: 'awaiting-person', updated: at(11) },
@@ -65,7 +65,7 @@ export const AwaitingPerson: Story = {
   },
 };
 
-/** A conversation has no quest, so its identity is derived rather than invented (design §3). */
+/** A conversation has no quest, so its identity is derived rather than invented. */
 export const Conversation: Story = {
   args: {
     session: { ...SESSION, kind: 'chat', quest: undefined, repository: 'platform' },
@@ -88,7 +88,7 @@ export const Silent: Story = {
 };
 
 /**
- * Somebody else's machine. The record travelled here and the console did not (D47 §4), so the tile
+ * Somebody else's machine. The record travelled here and the console did not, so the tile
  * says where it runs rather than showing an empty well that would read as silence.
  */
 export const Elsewhere: Story = {

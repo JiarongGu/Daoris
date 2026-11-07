@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ContextRing } from './ContextRing';
 
-// How full a session's context is (CONV5), in each state the ring can be in. Absent is never zero:
+// How full a session's context is, in each state the ring can be in. Absent is never zero:
 // the three "not measured" states each say which absence they are.
 
 const meta: Meta<typeof ContextRing> = {

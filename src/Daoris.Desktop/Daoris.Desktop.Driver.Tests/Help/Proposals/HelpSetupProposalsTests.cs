@@ -4,12 +4,12 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// Ask Daoris's <c>setup</c> proposal (D170 point 1; WORKFLOWCLEAN1 1f): the one door is <c>place</c>, a place's set-up with adoption in its
+/// Ask Daoris's <c>setup</c> proposal: the one door is <c>place</c>, a place's set-up with adoption in its
 /// ask, proposed as the plan <c>daoris place … --plan</c> prints and opened on the page that applies it.
 /// </summary>
 public sealed class HelpSetupProposalsTests : HelpProposalsFixture
 {
-    /// <summary>The repository-alone door is gone, and a door the kind never had is refused alike, each naming the one door.</summary>
+    /// <summary>A repository-alone door and a door the kind never had are refused alike, each naming the one door.</summary>
     [Theory]
     [InlineData("setup")]
     [InlineData("register")]
@@ -27,7 +27,7 @@ public sealed class HelpSetupProposalsTests : HelpProposalsFixture
         Assert.Equal(["place"], new HelpSetupProposals().Doors);
     }
 
-    // AGENTSPLACE1k: the `place` door, a place's quick set-up proposed as the plan `place … --plan` prints.
+    // The `place` door, a place's quick set-up proposed as the plan `place … --plan` prints.
 
     private static async Task<(HelpProposal Proposal, HelpMachineFacts Facts)> PlacedAsync(PlaceAsk ask)
     {
@@ -69,7 +69,7 @@ public sealed class HelpSetupProposalsTests : HelpProposalsFixture
         Assert.Equal(("aurora", "engine"), (go.Workspace, go.Repository));
     }
 
-    /// <summary>SETUPUX1j: Ask Daoris proposes keeping how a place lands, and the page opens on it with the ask carried whole.</summary>
+    /// <summary>Ask Daoris proposes keeping how a place lands, and the page opens on it with the ask carried whole.</summary>
     [Fact]
     public async Task A_place_door_proposes_keeping_how_it_lands_and_hands_that_ask_to_the_page()
     {

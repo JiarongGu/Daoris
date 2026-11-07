@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The integration declaration each repository's owner accepted, as <c>driver.json</c> keeps it (INTEGRATE1d, D215 point 2): the
+/// The integration declaration each repository's owner accepted, as <c>driver.json</c> keeps it: the
 /// settings' own reading, and the setter the Accept door will call, which keeps only what the landed route's acceptance would.
 /// </summary>
 public sealed class IntegrationGatesKeyTests

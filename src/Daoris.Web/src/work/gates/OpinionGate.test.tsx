@@ -9,7 +9,7 @@ import { FileOpener } from '../review/preview';
 const gate = () => screen.getByRole('region', { name: 'Second opinion' });
 
 /**
- * XAGENT1g (D155 points 8–10; the second-agent design §8.5, §9): *Second opinion* in each state of §8.5's table, its findings
+ * *Second opinion* in each state of the gate's table, its findings
  * beside the working session's answers, and each press: one ask for *Ask now*, *Try again* and *Ask again*, *Stop…* asking once,
  * and *Go on anyway…*, *I looked myself…* and *Send back…* taking the person's words.
  */
@@ -139,7 +139,7 @@ describe('the second opinion’s gate', () => {
     expect(gate()).toHaveTextContent('src/catalog/ and its tests');
   });
 
-  /** XAGENT1g4b (§6.3, D57 §4): the reviewer's measured use beside what it read; absent says not measured, never 0. */
+  /** The reviewer's measured use beside what it read; absent says not measured, never 0. */
   it('shows the reviewer’s measured use, and says not measured where the door carried none', () => {
     const { rerender } = render(<OpinionGate gate={GATES.disputed} detail={{ ...DETAIL, first: { ...DETAIL.first!, usage: { used: 41_200, size: 200_000 } } }} />);
 

@@ -5,8 +5,8 @@ using Lyntai.Processes;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The layer's runner, Daoris's launcher (the agent-lyntai design §5.5): a start through Platform's agent route, every raw line heard by the
-/// watch before any reader takes it, the lines outside a frame and the stderr kept as the harness's own, what was written on stdin recorded,
+/// The layer's runner, Daoris's launcher: a start through Platform's agent route, every raw line heard by the
+/// watch before any reader takes it, the lines outside a frame and the stderr kept as the harness's own, what is written on stdin recorded,
 /// no clock on a turn whatever window it is handed, a read bounded by its patience, and a stop Daoris's kill of the tree. Real node
 /// processes over the tests' scenario program.
 /// </summary>

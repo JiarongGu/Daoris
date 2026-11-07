@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What one status answer says of a home (D66 §3, ACCOUNTID1): signed in or not, and on a yes who, with the organisation
+/// What one status answer says of a home: signed in or not, and on a yes who, with the organisation
 /// and the plan the agent names beside them, each null where it says none. Read fresh and written nowhere.
 /// </summary>
 public readonly record struct LoginRead(LoginState Login, string? Account, string? Org = null, string? Plan = null);
@@ -19,7 +19,7 @@ public readonly record struct LoginRead(LoginState Login, string? Account, strin
 /// <remarks>
 /// <para><b>Patterns, not exit codes.</b> Both supported harnesses exit 0 whether or not they are
 /// logged in, so the exit code says nothing and the OUTPUT is the answer. Verified against the real
-/// binaries before this was written, because every clause of it is a claim about somebody else's
+/// binaries, because every clause of it is a claim about somebody else's
 /// tool.</para>
 ///
 /// <para><b>Neither pattern matching means <see cref="LoginState.Unknown"/></b>, never logged-out: an
@@ -29,22 +29,22 @@ public readonly record struct LoginRead(LoginState Login, string? Account, strin
 /// <param name="LoggedIn">A pattern whose presence means yes.</param>
 /// <param name="LoggedOut">A pattern whose presence means no.</param>
 /// <param name="Account">
-/// A pattern whose first group is <b>who</b> is signed in there, read from the same answer (D66 §3):
+/// A pattern whose first group is <b>who</b> is signed in there, read from the same answer:
 /// an account is named by who signed in rather than by a name typed before anyone knew. Taken only on
 /// a yes. Null asks nobody's name.
 /// </param>
 /// <param name="Org">
-/// A pattern whose first group is the organisation the sign-in is in, read from the same answer and only on a yes
-/// (ACCOUNTID1): one email may sign in to two organisations, and this is what tells the two accounts apart. Read fresh,
-/// held in memory, written nowhere (D66's ACCOUNTID1 note). Null asks none.
+/// A pattern whose first group is the organisation the sign-in is in, read from the same answer and only on a yes:
+/// one email may sign in to two organisations, and this is what tells the two accounts apart. Read fresh,
+/// held in memory, written nowhere. Null asks none.
 /// </param>
-/// <param name="Plan">The plan the sign-in is on, read as <paramref name="Org"/> is (ACCOUNTID1). Null asks none.</param>
+/// <param name="Plan">The plan the sign-in is on, read as <paramref name="Org"/> is. Null asks none.</param>
 public sealed record LoginQuestion(
     IReadOnlyList<string> Arguments, string LoggedIn, string LoggedOut, string? Account = null,
     string? Org = null, string? Plan = null)
 {
     /// <summary>
-    /// What one answer says (CODEXACCT1, read in one place so a table can hold it): yes where <see cref="LoggedIn"/> matches,
+    /// What one answer says (read in one place so a table can hold it): yes where <see cref="LoggedIn"/> matches,
     /// with who where <see cref="Account"/> reads one; else no where <see cref="LoggedOut"/> matches; else unknown. Matched
     /// without case, the yes first, since it is the specific one.
     /// </summary>
@@ -84,7 +84,7 @@ public sealed record LoginQuestion(
 }
 
 /// <summary>
-/// What one of a harness's own commands runs as (D57 rule 4; <see cref="HarnessProbe.CommandOf"/>): the command and its
+/// What one of a harness's own commands runs as (<see cref="HarnessProbe.CommandOf"/>): the command and its
 /// arguments' head, the pin's executable where it came from a pin, and the version pinned.
 /// </summary>
 /// <param name="Harness">Whose command: the name its pin and its <c>driver.json</c> command are kept under.</param>

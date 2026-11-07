@@ -5,7 +5,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// KEEPSIZE1b over real git (D195's keep-size notes; the keep-size design §2 and §3, as amended after Codex's reads): a finished tree's record
+/// Over real git: a finished tree's record
 /// kept, and its tree let go an hour after. The look holds the exact tip and writes a schema-2 manifest; the record pass after the hold
 /// composes the record from the manifest by <c>git log --first-parent</c> and posts it; the one purge takes a recorded folder an hour after
 /// its record is acknowledged, on a holding check run right before its rename, renamed into <c>.going</c> first, and every other class by its

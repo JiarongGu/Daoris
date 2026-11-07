@@ -22,7 +22,7 @@ internal static class SetAsideMarks
     }
 
     /// <summary>
-    /// A finished tree's manifest marked at a step after its move (KEEPSIZE1b, the keep-size design §3.5): <c>deleted</c> with when, or
+    /// A finished tree's manifest marked at a step after its move: <c>deleted</c> with when, or
     /// <c>refused</c>. Only a schema-2 manifest at <c>moved</c>, <c>judged</c> or <c>refused</c>; one that does not write stays as it was, and
     /// the resume reads git again at the next pass.
     /// </summary>
@@ -39,7 +39,7 @@ internal static class SetAsideMarks
         }
     }
 
-    /// <summary>The manifest of a move refused or a folder put back, gone with the attempt (Codex 2.4).</summary>
+    /// <summary>The manifest of a move refused or a folder put back, gone with the attempt.</summary>
     internal static void Forget(string? path)
     {
         // Left at `judged`, the next pass drops it and keeps any folder beside it whole.
@@ -84,12 +84,12 @@ internal static class SetAsideMarks
         }
     }
 
-    /// <summary><see cref="FailedPath"/> of one place's <c>.tidied</c> (KEEPSIZE1a): each place keeps its own, naming its folders from it.</summary>
+    /// <summary><see cref="FailedPath"/> of one place's <c>.tidied</c>: each place keeps its own, naming its folders from it.</summary>
     internal static string FailedPathOf(string root) => Path.Combine(root, "purge-failed.json");
 
     /// <summary>
     /// The folders this pass could not delete, kept where the inventory reads them; written only where they changed, gone where none. A
-    /// folder that failed the same way twice carries <c>tried</c>, when (KEEP1a: it waits a day from there), a field added after the rest.
+    /// folder that failed the same way twice carries <c>tried</c>, when (it waits a day from there), a field added after the rest.
     /// </summary>
     internal static void KeepFailed(string root, IReadOnlyList<(string Folder, string Why, DateTimeOffset? Tried)> failed)
     {
@@ -128,7 +128,7 @@ internal static class SetAsideMarks
     }
 
     /// <summary>
-    /// <see cref="Failed"/>'s folders under one place's <c>.tidied</c>, each with when it last failed as before, where it did (KEEP1a's
+    /// <see cref="Failed"/>'s folders under one place's <c>.tidied</c>, each with when it last failed, where it did (the
     /// day's wait).
     /// </summary>
     internal static Dictionary<string, (string? Why, DateTimeOffset? Tried)> FailedEntries(string root)

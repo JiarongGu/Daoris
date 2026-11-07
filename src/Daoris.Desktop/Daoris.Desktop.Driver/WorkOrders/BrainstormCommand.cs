@@ -4,10 +4,10 @@ using Daoris.Contracts.Brainstorms;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The brainstorm at the terminal (BRAINSTORM1a, D176 points 1, 2 and 8; ONEWAY1t): <c>daoris brainstorm "&lt;question&gt;"</c>
+/// The brainstorm at the terminal: <c>daoris brainstorm "&lt;question&gt;"</c>
 /// asks the running service's desk, the one writer of a request, which the driver's look takes, so every pass runs in whichever
 /// process holds the loop. <c>send</c>, <c>stop</c> and <c>clear</c> are the desk's presses; <c>show</c> and <c>list</c> read the
-/// records here, which the look and the desk share. <c>--kind meeting</c> asks a meeting of the same desk (D177). With no service
+/// records here, which the look and the desk share. <c>--kind meeting</c> asks a meeting of the same desk. With no service
 /// running the verb says so and writes nothing.
 /// </summary>
 [CommandGroup("brainstorm", "show", "send", "stop", "clear", "list", "measure", Takes = "\"<question>\"")]
@@ -22,7 +22,7 @@ public static class BrainstormCommand
 
     /// <summary>
     /// Exit codes as every verb's: 0 done, 1 refused or no service, 2 a line this verb does not read. <paramref name="doors"/> null
-    /// finds the service as a terminal does; <paramref name="now"/> is unused, since the desk stamps what it writes.
+    /// finds the service as a terminal does; <paramref name="now"/> is unused: the desk stamps what it writes.
     /// </summary>
     public static int Run(string[] args, string home, TextWriter output, DateTimeOffset now, IServiceDoors? doors = null)
     {
@@ -40,7 +40,7 @@ public static class BrainstormCommand
         {
             case ["list"]:
                 return List(files, output);
-            // The folder that holds every meeting is no brainstorm (AGENTROOM1a): the desk refuses it a press, and a read says so.
+            // The folder that holds every meeting is no brainstorm: the desk refuses it a press, and a read says so.
             case ["show", var id] when BrainstormFiles.Reserved(id):
                 output.WriteLine($"daoris: there is no brainstorm `{id}` on this machine.");
                 return 1;
@@ -62,7 +62,7 @@ public static class BrainstormCommand
 
     /// <summary>
     /// The line without its <c>--kind</c> pair, and whether it names a meeting; null where the kind is none of the two or is named
-    /// twice. A meeting's line is a brainstorm's with the kind named, which the meeting verb reads as it always has.
+    /// twice. A meeting's line is a brainstorm's with the kind named.
     /// </summary>
     private static (string[] Args, bool Meeting)? Kind(string[] args)
     {
@@ -112,7 +112,7 @@ public static class BrainstormCommand
                 case "--source":
                     sources.Add(rest[at + 1]);
                     break;
-                // The caller's own id (BRAINSTORM1b, D176 point 6), which the desk judges: asked again under it, the same brainstorm.
+                // The caller's own id, which the desk judges: asked again under it, the same brainstorm.
                 case "--id":
                     named = rest[at + 1];
                     break;
@@ -155,7 +155,7 @@ public static class BrainstormCommand
             BrainstormStates.Running => "Sent, and running.",
             _ => $"Ended ({state.Code ?? "no document"}): {(state.Code == BrainstormStates.NoAgent ? "no agent could answer, and the packet is kept" : "no document was kept")}.",
         });
-        // Where no document was kept, the passes are what there is to read: each with its state, its codes and the walk's sentence.
+        // Where no document is kept, the passes are what there is to read: each with its state, its codes and the walk's sentence.
         if (state.State == BrainstormStates.Ended)
         {
             foreach (var pass in files.ReadPasses(id))
@@ -169,7 +169,7 @@ public static class BrainstormCommand
         return 0;
     }
 
-    /// <summary>The packet whole, as the person reads it before it goes: the question, each source with where it came from, and what was left out.</summary>
+    /// <summary>The packet whole, as the person reads it before it goes: the question, each source with where it came from, and what is left out.</summary>
     internal static string Packet(string id, BrainstormPacket packet)
     {
         var text = new StringBuilder();
@@ -181,8 +181,8 @@ public static class BrainstormCommand
     }
 
     /// <summary>
-    /// A packet's sources as the person reads them, each with where it came from, and what was left out: a brainstorm's, and a
-    /// meeting's, whose sources are the brainstorm's assembly (AGENTROOM1a, D177 point 2).
+    /// A packet's sources as the person reads them, each with where it came from, and what is left out: a brainstorm's, and a
+    /// meeting's, whose sources are the brainstorm's assembly.
     /// </summary>
     internal static void Sources(
         StringBuilder text, string? repository, string? tier, IReadOnlyList<BrainstormSource> sources, IReadOnlyList<BrainstormLeftOut> leftOut)
@@ -218,7 +218,7 @@ public static class BrainstormCommand
     }
 }
 
-/// <summary>The limits a brainstorm request is held to before the policy names its own (D176 point 9's proposed defaults).</summary>
+/// <summary>The limits a brainstorm request is held to before the policy names its own.</summary>
 public static class DriverBrainstormLimits
 {
     /// <summary>At most four makers: the policy's own bound (<see cref="BrainstormRules.MostAgents"/>).</summary>

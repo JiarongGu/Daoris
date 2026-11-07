@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a person tells a driven session while it works (SESS3), handed over where the protocol door allows and its urgency asks
-/// (COWORK1a, D188): an urgent word at once, where the agent takes a prompt during its turn (STEER1, D136); an ordinary word, and
+/// What a person tells a driven session while it works, handed over where the protocol door allows and its urgency asks:
+/// an urgent word at once, where the agent takes a prompt during its turn; an ordinary word, and
 /// every word on a door that takes none during a turn, as the next prompt of the same session when the running turn ends. No
 /// word stops the turn: the person's keeping stop does, pressed on its own (<see cref="SendNowAsync"/>).
 /// </summary>
 /// <remarks>
 /// <para><b>Why a prompt and never a line.</b> A driven session is handed its whole quest in one turn, and on the
-/// protocol door its stdin carries the driver's own frames (D53), which is why it takes no person's line (INT4i). A
+/// protocol door its stdin carries the driver's own frames, which is why it takes no person's line. A
 /// prompt is the door's own way of adding words. Where the agent says it takes one during a turn, the words go at once
 /// and reach it at its next step; anywhere else they wait for the turn to end, and nothing lands in the middle of a turn
 /// or a frame.</para>
@@ -21,9 +21,9 @@ namespace Daoris.Driver;
 /// ends, and an inbox with nothing held and nothing on its way closes in the same breath, so a word said as the session
 /// winds up is refused, and the person told, rather than kept where nobody reads it.</para>
 ///
-/// <para><b>The keeping stop stops the turn and withdraws nothing</b>, the reverse of a conversation's stop (CONV4a), which
+/// <para><b>The keeping stop stops the turn and withdraws nothing</b>, the reverse of a conversation's stop, which
 /// hands queued words back: here the person stops the turn so what is held goes next. It is the person's own press, never a
-/// word's (D188 point 1): *now* on a door that holds words for the turn's end holds them and stops nothing, said so. With
+/// word's: *now* on a door that holds words for the turn's end holds them and stops nothing, said so. With
 /// nothing held it stops nothing: ending the work is the session's own stop. On a door that takes words at its next step it is
 /// not needed, since an urgent word reaches sooner, and a stop while one is on its way would answer it cancelled while the agent
 /// may still act on it, so there it stops nothing either.</para>
@@ -71,20 +71,20 @@ public sealed class DrivenInbox : IAgentInbox
     }
 
     /// <summary>
-    /// Whether any word is held for the run, Daoris's own among them (COWORK1b), which <see cref="State"/> never lists as the
+    /// Whether any word is held for the run, Daoris's own among them, which <see cref="State"/> never lists as the
     /// person's: what the run reads before it waits on a session's background work.
     /// </summary>
     public bool Holds
     {
         get
         {
-            // COWORK1d: a claim that only rides makes no turn, so it is no reason to go on.
+            // A claim that only rides makes no turn, so it is no reason to go on.
             lock (_state.Gate) return !_state.Closed && _state.Turns();
         }
     }
 
     /// <summary>
-    /// Whether another agent's claim may be held now (COWORK1d, the message-urgency design §2.3, trap 3): the door is known, the inbox
+    /// Whether another agent's claim may be held now: the door is known, the inbox
     /// open, and the answer to its last open prompt not yet read. Once that answer is read the turn is over, and a claim written as a
     /// prompt would start one of its own; it waits for the entry's next part, or the agent's own read.
     /// </summary>
@@ -97,7 +97,7 @@ public sealed class DrivenInbox : IAgentInbox
     }
 
     /// <summary>
-    /// The answer to the last prompt open on the wire was read (COWORK1d, the design §2.3): told on the reader's thread before the run
+    /// The answer to the last prompt open on the wire is read: told on the reader's thread before the run
     /// judges its next step, so a claim arriving from here on is refused (<see cref="TakesClaims"/>). A prompt sent again opens it.
     /// </summary>
     public void LastAnswered()
@@ -109,7 +109,7 @@ public sealed class DrivenInbox : IAgentInbox
     }
 
     /// <summary>
-    /// When a word said now reaches the session (MSG1d, D137 §5.3), which the modules answer the page with: null until the
+    /// When a word said now reaches the session, which the modules answer the page with: null until the
     /// door is known, since a word said while it opens waits for its first prompt either way, and null once it has closed.
     /// </summary>
     public DrivenReach? Reach
@@ -121,14 +121,14 @@ public sealed class DrivenInbox : IAgentInbox
     }
 
     /// <summary>
-    /// When a word said now at <paramref name="level"/> reaches the session (COWORK1a, the design §3.0): an ordinary one at the
+    /// When a word said now at <paramref name="level"/> reaches the session: an ordinary one at the
     /// turn's end on every door, any other at <see cref="Reach"/>. Null as <see cref="Reach"/> is.
     /// </summary>
     public DrivenReach? ReachAt(MessageLevel level) => _state.ReachAt(level);
 
     /// <summary>
-    /// Whether the agent steers (STEER2a): a word at <c>now</c> cuts its step in flight, where anywhere else it is told why not
-    /// (COWORK1a, the design §8.1). False until the door is known, and once it has closed.
+    /// Whether the agent steers: a word at <c>now</c> cuts its step in flight, where anywhere else it is told why not.
+    /// False until the door is known, and once it has closed.
     /// </summary>
     public bool Steers
     {
@@ -139,8 +139,8 @@ public sealed class DrivenInbox : IAgentInbox
     }
 
     /// <summary>
-    /// Whether the door can stop a turn and keep the session (COWORK1a, the design §3.2): where words wait for the turn's end, the
-    /// keeping stop is offered beside them. False on the native door's run (MSG1b), which has no such interrupt and whose stop ends
+    /// Whether the door can stop a turn and keep the session: where words wait for the turn's end, the
+    /// keeping stop is offered beside them. False on the native door's run, which has no such interrupt and whose stop ends
     /// the session, until the door is known, and once it has closed.
     /// </summary>
     public bool KeepingStop
@@ -160,7 +160,7 @@ public sealed class DrivenInbox : IAgentInbox
     public void Flow() => _holds.Flow();
 
     /// <summary>
-    /// Told each word with when it reaches the session, the moment it is said (STEER1) — or, said before the door is
+    /// Told each word with when it reaches the session, the moment it is said — or, said before the door is
     /// known, when it is. Called under the inbox's lock, so told in order; a listener's failure is its own.
     /// </summary>
     public void OnSaid(Action<ChatMessage, DrivenReach> said)
@@ -169,7 +169,7 @@ public sealed class DrivenInbox : IAgentInbox
     }
 
     /// <summary>
-    /// Told each held word the person took back or reworded (QUEUEEDIT1a), after it was told as said: the record settles it
+    /// Told each held word the person took back or reworded, after it is told as said: the record settles it
     /// as withdrawn. Called under the inbox's lock, in order; a listener's failure is its own.
     /// </summary>
     public void OnWithdrawn(Action<ChatMessage> withdrawn)
@@ -187,10 +187,10 @@ public sealed class DrivenInbox : IAgentInbox
     /// <summary>Called once, when it closes — how the registry forgets it.</summary>
     /// <param name="closing">Told as it closes.</param>
     /// <param name="personStopped">
-    /// Whether the person stopped the session (COWORK1c), asked as it closes: then the words kept for its run leave the record with
-    /// it, as they always left the session; closed by anything else, they stay on the record for the session's go-on.
+    /// Whether the person stopped the session, asked as it closes: then the words kept for its run leave the record with
+    /// it, as they leave the session; closed by anything else, they stay on the record for the session's go-on.
     /// </param>
-    /// <param name="left">Told the words kept for the run that stay on the record as it closes under them (COWORK1c).</param>
+    /// <param name="left">Told the words kept for the run that stay on the record as it closes under them.</param>
     internal void OnClosing(Action closing, Func<bool>? personStopped = null, Action<IReadOnlyList<ChatMessage>>? left = null)
     {
         lock (_state.Gate)
@@ -202,7 +202,7 @@ public sealed class DrivenInbox : IAgentInbox
     }
 
     /// <summary>
-    /// The take-offs on their way (COWORK1c), in order: what completes once every kept word handed to the wire so far has left the
+    /// The take-offs on their way, in order: what completes once every kept word handed to the wire so far has left the
     /// record, or failed to and waits to be tried again. Never faults.
     /// </summary>
     public Task TakingOff
@@ -217,11 +217,11 @@ public sealed class DrivenInbox : IAgentInbox
     public Task<InboxKept> KeepAsync(ISaidDoor door, ChatMessage message, CancellationToken ct) => _keeps.KeepAsync(door, message, ct);
 
     /// <summary>
-    /// <see cref="KeepAsync"/> where the record can keep the word, and held in this process alone, as before, where it cannot: no
-    /// service yet (<paramref name="door"/> null), one from before COWORK1c that refuses a running record, a record that refuses it
-    /// for any reason, or one that did not answer. Words said to a session this process runs are never lost to a record that will not
+    /// <see cref="KeepAsync"/> where the record can keep the word, and held in this process alone where it cannot: no
+    /// service yet (<paramref name="door"/> null), one that refuses a running record, a record that refuses it
+    /// for any reason, or one that does not answer. Words said to a session this process runs are never lost to a record that will not
     /// keep them; a restart loses only those. Never <see cref="InboxKeep.Refused"/>. A record that is no longer its line's head
-    /// (FOUNDATION1d-ii) answers <see cref="InboxKeep.Continued"/>, never held here: the caller says the word at the head.
+    /// answers <see cref="InboxKeep.Continued"/>, never held here: the caller says the word at the head.
     /// </summary>
     public async Task<InboxKept> KeepOrHoldAsync(ISaidDoor? door, ChatMessage message, CancellationToken ct)
     {

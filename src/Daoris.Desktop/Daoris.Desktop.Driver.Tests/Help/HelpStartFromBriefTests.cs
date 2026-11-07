@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D233 choice 2: an Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line with the person's
+/// An Ask Daoris conversation started from an earlier one is handed Daoris's brief of that one's line with the person's
 /// first message, never its transcript. The brief is the prompt's first part, and the record keeps it as Daoris's first prompt, with its
 /// account and the session it continues, ahead of the person's words.
 /// </summary>

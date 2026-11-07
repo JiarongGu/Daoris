@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// </summary>
 /// <remarks>
 /// <para><b>Nothing here is a chat loop.</b> Daoris pipes text and observes; the harness carries the model and the conversation. A Daoris-owned
-/// loop calling a model API was rejected in the design: it would duplicate what every harness already is, and produce sessions with no
+/// loop calling a model API is not built: it would duplicate what every harness already is, and produce sessions with no
 /// doctrine path into them.</para>
 ///
 /// <para><b>A chat may open on a dirty tree</b>, where a driven session may not. The clean-tree rule exists because an unattended agent would
@@ -88,7 +88,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         PluginLog? plugins = null)
     {
         _home = home;
-        // The roster of the home it was handed, as every other default here is, or the file the override names. Shared with the driver where a
+        // The roster of the home it is handed, as every other default here is, or the file the override names. Shared with the driver where a
         // shell has both, so a probe is paid for once.
         harnesses ??= new HarnessRoster(adapters, HarnessSettings.ResolvePath(home));
         // Its turns kept in the usage history, watched once however many runners share the record.
@@ -287,7 +287,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     }
 
     /// <summary>Place a new Ask Daoris conversation from an earlier one's words, its room read and agent spawned after (<see cref="ChatHelp.PlaceHelpFromAsync"/>).</summary>
-    /// <param name="workspace">The workspace the person's window was on at the press, as <see cref="PlaceHelpAsync"/> takes it.</param>
+    /// <param name="workspace">The workspace the person's window is on at the press, as <see cref="PlaceHelpAsync"/> takes it.</param>
     public Task<HelpPlaced> PlaceHelpFromAsync(
         string earlier, string adapter, DriverConfig config, string? workspace = null, CancellationToken ct = default,
         IReadOnlyList<ActorEffective>? order = null) =>
@@ -324,7 +324,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
         Func<string, string, Task>? onEnded = null, CancellationToken ct = default, string? model = null, string? effort = null) =>
         Executors.Of<ChatHandOver>().HandOverAsync(sessionId, agent, account, why, askedBy, config, onEnded, ct, model, effort);
 
-    /// <summary>Judge a conversation by its account's usage curve and, where the decision says so, move it (<see cref="CurveMove.MoveAsync"/>): null where nothing was judged.</summary>
+    /// <summary>Judge a conversation by its account's usage curve and, where the decision says so, move it (<see cref="CurveMove.MoveAsync"/>): null where nothing is judged.</summary>
     internal Task<SwitchChoice?> MoveByCurveAsync(
         string sessionId, DriverConfig config, Func<string, string, Task>? onEnded, CancellationToken ct = default) =>
         Curve.MoveAsync(sessionId, config, onEnded, ct);
@@ -384,7 +384,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     /// <summary><see cref="ClosedNote"/> with its code.</summary>
     public static Noted ClosedNoted => Noted.Of(ChatNoteCodes.ChatClosed, ClosedNote);
 
-    /// <inheritdoc cref="ChatStarts.StartAsync(string, string, DriverConfig, Func{string, string, Task}?, string?, bool?, CancellationToken, string?, ContinuedFrom?, IReadOnlyList{ActorEffective}?, EarlierMaker?, HarnessSelection?, bool, bool, MoveWords?)"/>
+    /// <inheritdoc cref="ChatStarts.StartAsync(string, string, DriverConfig, Func{string, string, Task}?, string?, bool?, CancellationToken, string?, ContinuedFrom?, IReadOnlyList{ActorEffective}?, EarlierMaker?, HarnessSelection?, bool, bool, MoveWords?, ChatLimitCarry?)"/>
     public Task<ChatStart> StartAsync(
         string repository, string adapter, DriverConfig config,
         Func<string, string, Task>? onEnded = null, string? profile = null, bool? ownTree = null,
@@ -445,8 +445,8 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     internal Task<ChatStart> RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
-        ChatPending? pending = null) =>
-        _run.RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending);
+        ChatPending? pending = null, bool working = false) =>
+        _run.RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending, working);
 
     /// <summary>A conversation's start refused at its open moved on: the refused record and the replacement that took its words (<see cref="ChatReplacement.Replaced"/>).</summary>
     public event Action<string, string>? Replaced
@@ -460,7 +460,7 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
 
     /// <summary>
     /// Ends every conversation and waits for each record (<see cref="StopAll"/>). Dispose it inside the scope of the
-    /// <see cref="ServiceClient"/> it was given: its conclusions go through that client, and a runner stopped after the client was disposed
+    /// <see cref="ServiceClient"/> it is given: its conclusions go through that client, and a runner stopped after the client is disposed
     /// writes nothing.
     /// </summary>
     public void Dispose() => StopAll(TimeSpan.FromSeconds(10));
@@ -565,8 +565,15 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     // implement it where they stand; the internal ones, whose places are internal records, answer it here.
     Task<ChatStart> IChatRunning.RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
-        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending) =>
-        RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending);
+        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn, ActorEffective? chosen, ChatPending? pending,
+        bool working) =>
+        RunAsync(actor, sessionId, message, agent, selection, config, place, onEnded, ct, goOn, chosen, pending, working);
+
+    Task<ChatStart> IChatRunning.StartAsync(
+        string repository, string adapter, DriverConfig config, Func<string, string, Task>? onEnded, string? profile, bool? ownTree,
+        CancellationToken ct, string? tree, ContinuedFrom? from, IReadOnlyList<ActorEffective>? order, EarlierMaker? leftBy,
+        HarnessSelection? settled, bool picked, bool ownFirst, MoveWords? moves, ChatLimitCarry? carries) =>
+        _starts.StartAsync(repository, adapter, config, onEnded, profile, ownTree, ct, tree, from, order, leftBy, settled, picked, ownFirst, moves, carries);
 
     ChatPlace IChatRunning.RepositoryPlace(
         DriverConfig config, IReadOnlyList<RepoView> registry, RepoView known, string repository, string workTree, IReadOnlyList<string>? continued,
@@ -597,13 +604,13 @@ public sealed class ChatRunner : IDisposable, IChatPressing, IChatSendBacks, IEx
     internal static IEnumerable<SessionEvent> Recorded(ChatMessage message, IReadOnlyList<SessionEvent>? shown = null) =>
         ChatRecorded.Recorded(message, shown);
 
-    /// <summary>What the agent was told beside the person's words, as the record keeps it (<see cref="ChatRecorded.Told"/>).</summary>
+    /// <summary>What the agent is told beside the person's words, as the record keeps it (<see cref="ChatRecorded.Told"/>).</summary>
     internal static SessionEvent? Told(ChatMessage message) => ChatRecorded.Told(message);
 
-    /// <summary>The browser the agent was handed and told of, as the record keeps it (<see cref="ChatRecorded.ToldBrowser"/>).</summary>
+    /// <summary>The browser the agent is handed and told of, as the record keeps it (<see cref="ChatRecorded.ToldBrowser"/>).</summary>
     internal static SessionEvent? ToldBrowser(ChatMessage message) => ChatRecorded.ToldBrowser(message);
 
-    /// <summary>The repository's process the agent was told, as the record keeps it (<see cref="ChatRecorded.ToldProcess"/>).</summary>
+    /// <summary>The repository's process the agent is told, as the record keeps it (<see cref="ChatRecorded.ToldProcess"/>).</summary>
     internal static SessionEvent? ToldProcess(ChatMessage message) => ChatRecorded.ToldProcess(message);
 
     /// <inheritdoc cref="ChatTold.Process"/>

@@ -3,13 +3,13 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A brainstorm's request as its verb wrote it (BRAINSTORM1a, D176 point 1): written once, never changed.</summary>
+/// <summary>A brainstorm's request as its verb writes it: written once, never changed.</summary>
 /// <param name="Agents">The adapters the request names, in order; empty for the machine's own agent.</param>
 /// <param name="Sources">The repository-relative paths the asker named with <c>--source</c>; null where none (and for a request written before the option).</param>
 public sealed record BrainstormRequest(
     string Id, string Question, string? Repository, IReadOnlyList<string> Agents, DateTimeOffset At, IReadOnlyList<string>? Sources = null);
 
-/// <summary>Where a brainstorm stands, as the driver alone writes it (the helper's file shape, D163).</summary>
+/// <summary>Where a brainstorm stands, as the driver alone writes it.</summary>
 /// <param name="Packet">The digest of the packet frozen for it; null before the look froze one.</param>
 /// <param name="Code">Why it ended as it did, where it did not end with a document's ranking: a fixed code.</param>
 public sealed record BrainstormState(string Id, string State, string? Packet, string? Code, DateTimeOffset At);
@@ -21,13 +21,13 @@ public static class BrainstormStates
     public const string Running = "running";
     public const string Ended = "ended";
 
-    /// <summary>The code of a brainstorm no agent could answer (D176 point 10): the packet is kept.</summary>
+    /// <summary>The code of a brainstorm no agent could answer: the packet is kept.</summary>
     public const string NoAgent = "no-agent";
 
     /// <summary>The code of a brainstorm whose synthesis did not finish: the document is unranked.</summary>
     public const string Unranked = "unranked";
 
-    /// <summary>The code of a brainstorm the person stopped (D176 point 6): what answered is kept, unranked.</summary>
+    /// <summary>The code of a brainstorm the person stopped: what answered is kept, unranked.</summary>
     public const string Stopped = "stopped";
 
     /// <summary>The code of a brainstorm whose driver stopped while it ran: what answered is kept, and nothing runs again by itself.</summary>
@@ -35,10 +35,10 @@ public static class BrainstormStates
 }
 
 /// <summary>
-/// A brainstorm's records under <c>&lt;home&gt;/brainstorms/&lt;id&gt;/</c> (D176 point 8, D172's <c>data/brainstorms</c>), each file written
-/// atomically by one writer: <c>request.json</c>, <c>sent.json</c> and <c>stop.json</c> by the service's desk (ONEWAY1t), <c>state.json</c>,
+/// A brainstorm's records under <c>&lt;home&gt;/brainstorms/&lt;id&gt;/</c>, each file written
+/// atomically by one writer: <c>request.json</c>, <c>sent.json</c> and <c>stop.json</c> by the service's desk, <c>state.json</c>,
 /// <c>packet.json</c>, <c>passes/</c> and the document by the driver, and <c>answers/&lt;turn&gt;.json</c> by the pass's result tool.
-/// The rooms are under <c>brainstorm-rooms/&lt;id&gt;/</c> (D172's <c>work/</c>), and go when the brainstorm ends.
+/// The rooms are under <c>brainstorm-rooms/&lt;id&gt;/</c>, and go when the brainstorm ends.
 /// </summary>
 public sealed class BrainstormFiles(string home)
 {
@@ -46,7 +46,7 @@ public sealed class BrainstormFiles(string home)
     private readonly string[] _under = [];
 
     /// <summary>
-    /// A meeting's turns (AGENTROOM1a, D177 point 1): the pass records, the answers and the rooms a brainstorm's pass keeps, under
+    /// A meeting's turns: the pass records, the answers and the rooms a brainstorm's pass keeps, under
     /// <paramref name="under"/> in the same entries, so a pass runs a meeting's turn as it runs a brainstorm's, apart from them.
     /// </summary>
     internal BrainstormFiles(string home, string under) : this(home) => _under = [under];
@@ -59,7 +59,7 @@ public sealed class BrainstormFiles(string home)
     public string Rooms(string id) => DaorisHome.Entry(home, HomeEntry.BrainstormRooms, [.. _under, id]);
 
     /// <summary>
-    /// The folder that holds every meeting (<see cref="MeetingFiles.Under"/>) is no brainstorm's id (AGENTROOM1a): named as one, a
+    /// The folder that holds every meeting (<see cref="MeetingFiles.Under"/>) is no brainstorm's id: named as one, a
     /// brainstorm's clear would take every meeting with it.
     /// </summary>
     public static bool Reserved(string id) => string.Equals(id, MeetingFiles.Under, StringComparison.OrdinalIgnoreCase);
@@ -134,10 +134,10 @@ public sealed class BrainstormFiles(string home)
         using (root) return Text(root.RootElement, "packet");
     }
 
-    /// <summary>Whether the person stopped it (BRAINSTORM1b, D176 point 6): the desk's file, which ends every pass and keeps what answered.</summary>
+    /// <summary>Whether the person stopped it: the desk's file, which ends every pass and keeps what answered.</summary>
     public bool Stopped(string id) => File.Exists(PathOf(id, "stop.json"));
 
-    /// <summary>Each pass's record as it was last written, in pass order; one unreadable is not a pass here.</summary>
+    /// <summary>Each pass's record as last written, in pass order; one unreadable is not a pass here.</summary>
     public IReadOnlyList<BrainstormPassRecord> ReadPasses(string id)
     {
         var folder = PathOf(id, "passes");
@@ -217,25 +217,25 @@ public sealed class BrainstormFiles(string home)
     }
 
     /// <summary>
-    /// The id a room measurement of <paramref name="agent"/> is kept under (BRAINSTORM1c): its own folder beside the brainstorms', holding no
+    /// The id a room measurement of <paramref name="agent"/> is kept under: its own folder beside the brainstorms', holding no
     /// request, so it is no brainstorm to <c>list</c>, <c>show</c> or the look, and <c>clear</c> removes it as it removes one.
     /// </summary>
     public static string MeasureId(string agent) => "measure-" + agent;
 
-    /// <summary>A room measurement kept as evidence (BRAINSTORM1c): its JSON and the Markdown the person reads, atomically.</summary>
+    /// <summary>A room measurement kept as evidence: its JSON and the Markdown the person reads, atomically.</summary>
     public void WriteMeasure(string id, RoomMeasure measure)
     {
         Bytes(PathOf(id, "room-measure.json"), BrainstormRoomProbe.Json(measure));
         Bytes(PathOf(id, "room-measure.md"), System.Text.Encoding.UTF8.GetBytes(BrainstormRoomProbe.Markdown(measure)));
     }
 
-    /// <summary>The measurement a room measurement's Markdown kept, or null where none was.</summary>
+    /// <summary>The measurement a room measurement's Markdown kept, or null where there is none.</summary>
     public string? MeasureText(string id) => ReadText(PathOf(id, "room-measure.md"));
 
     /// <summary>The brainstorm's rooms removed; what could not be, said, never thrown.</summary>
     public string? RemoveRooms(string id) => Remove(Rooms(id));
 
-    /// <summary>The brainstorm cleared (D176 point 8): its records, its packet and its rooms. What could not be removed is said.</summary>
+    /// <summary>The brainstorm cleared: its records, its packet and its rooms. What could not be removed is said.</summary>
     public string? Clear(string id) => RemoveRooms(id) ?? Remove(Folder(id));
 
     internal static string? Remove(string folder)

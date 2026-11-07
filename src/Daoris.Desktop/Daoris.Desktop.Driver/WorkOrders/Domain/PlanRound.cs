@@ -96,7 +96,7 @@ internal sealed class PlanRound
 
             // The person wrote to its last session here, parked or ended: that record goes on with their words. Before the
             // person's stop, which the words release as Try again does: the same session goes on with them. Or the session its
-            // reopen names was told it: see WordsOn.
+            // reopen names, told it: see WordsOn.
             if (reading.WordsOn(quest) is { } written)
             {
                 considerations.Add(saying.GoOn(quest, written));
@@ -139,8 +139,8 @@ internal sealed class PlanRound
                 continue;
             }
 
-            // A session that committed work and failed before it took its quest (its connector could not start) left the quest
-            // open, and was started again in a new tree, which built the same work from nothing. Where its tree holds commits
+            // A session that committed work and failed before it took its quest (its connector could not start) leaves the quest
+            // open, to be started again in a new tree that would build the same work from nothing. Where its tree holds commits
             // beyond its start, the quest is carried on there, as a cut-off of a take is; the strikes still count it, so a quest
             // that fails so again parks for the person with its work in the tree. Whatever holds the carry-on, its verdict names the
             // work, so the sessions' groups read that tree as one the quest goes back into.

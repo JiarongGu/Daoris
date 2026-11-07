@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A pass's fixed instruction (BRAINSTORM1a, D176 points 2-4): the packet named first and unchanged by its digest, so every pass reads
+/// A pass's fixed instruction: the packet named first and unchanged by its digest, so every pass reads
 /// what the person saw; then the pass's one job and its one result tool. Never the caller's conversation, another pass's answer, or
 /// which other makers run.
 /// </summary>
@@ -45,7 +45,7 @@ public static class BrainstormInstruction
         + "hard-to-reverse or risky. Every proposal id appears exactly once: in one group, or in `leftOut` as `{ id, why }`.\n\n"
         + "You change nothing: your ranking is a claim a person reads, and nobody can ask you anything after.\n";
 
-    /// <summary>The one repair (D176 point 3): the validator's codes in fixed words, and the same job again.</summary>
+    /// <summary>The one repair: the validator's codes in fixed words, and the same job again.</summary>
     public static string Repair(string instruction, IReadOnlyList<string> codes) =>
         instruction + "\nYour last answer was refused by Daoris's validator, with these codes: " + string.Join(", ", codes)
         + ". Answer again, whole, through the same tool. This is your last turn.\n";

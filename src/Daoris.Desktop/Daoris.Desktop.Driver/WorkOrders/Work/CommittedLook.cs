@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The commits a failed session left beyond its start (RETRYWORK1), for each open quest it failed before taking, so the planner
+/// The commits a failed session left beyond its start, for each open quest it failed before taking, so the planner
 /// carries the quest on in that tree rather than building its work again in a new one. No git starts where no such quest is.
 /// </summary>
 [LookPass("committed", LookPhase.Read, "policy")]

@@ -3,14 +3,14 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONTEXTONE1d (D230 point 3): the switch that loads a session's tools at its start is read in one place, and every process made from
+/// The switch that loads a session's tools at its start is read in one place, and every process made from
 /// an adapter, a start's, a go-on's or a conversation's, passes through it before it runs. A source scan, as
 /// <see cref="EveryChildIsHandedTheToolsTests"/> holds the tools' environment: the next spawn written will not know to ask.
 /// </summary>
 /// <remarks>
 /// <b>Equipped</b> is a call to <c>Equip(</c>, or the process handed on to the driver's <c>Prepare(adapter</c> or a host's
 /// <c>Prepared(adapter</c>, which call it, within the statements after the process is made; either may be handed the registry the run
-/// was started from first (<c>Prepared(adapters, adapter</c>).
+/// is started from first (<c>Prepared(adapters, adapter</c>).
 /// </remarks>
 [Trait(Category.Name, Category.Census)]
 public sealed class ToolsAtTheStartCensusTests

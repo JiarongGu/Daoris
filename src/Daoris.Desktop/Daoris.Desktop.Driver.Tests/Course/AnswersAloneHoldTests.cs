@@ -4,8 +4,8 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The answers-alone bound held where a line would go on (COWORK1e, D188 point 4; the message-urgency design §2.3, §8.3, trap 11): the
-/// line's count kept in its admission (COMMS1g), and a third answer in a row with nobody between marked
+/// The answers-alone bound held where a line would go on: the
+/// line's count kept in its admission, and a third answer in a row with nobody between marked
 /// <see cref="GoOnMarks.AnswersAlone"/> with the agent that answered, said once in the conversation, so every look leaves it waiting for
 /// the person. The person's *Go on with this answer* takes the mark away and counts as their word; their *Not now* keeps the answer for
 /// them, so it goes on only beside words of theirs.
@@ -144,7 +144,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.False(new AnswersAloneHold(Events, Marks, Admissions).Holds(Asker("s2", from: null, Answer()), Records(HelperRecord), At));
     }
 
-    // ——— COMMS1g: the count kept in the line's admission.
+    // ——— The count kept in the line's admission.
 
     /// <summary>Each go-on's prompt as its session takes it: the answer, the agent acting on it, the turn's end.</summary>
     private void Took(string session, SessionEvent word)
@@ -201,8 +201,8 @@ public sealed class AnswersAloneHoldTests : IDisposable
     }
 
     /// <summary>
-    /// A hand-over's brief and a restart keep the count, and the log the count was seeded from going (D195's retention, or a file lost)
-    /// resets nothing, where the events alone counted it again from nothing.
+    /// A hand-over's brief and a restart keep the count, and the log the count is seeded from going (by retention, or a file lost)
+    /// resets nothing, where the events alone would count it again from nothing.
     /// </summary>
     [Fact]
     public void A_hand_over_and_a_restart_keep_the_count_and_a_lost_log_resets_nothing()
@@ -250,8 +250,8 @@ public sealed class AnswersAloneHoldTests : IDisposable
     }
 
     /// <summary>
-    /// D79's resume opens a run of its quest with no <c>from</c>: it is on its quest's line (<see cref="LineKeys.Of"/>), so the count the
-    /// first run left carries to it, where the record's own <c>from</c> walk started again from nothing.
+    /// A quest's resume opens a run of its quest with no <c>from</c>: it is on its quest's line (<see cref="LineKeys.Of"/>), so the count the
+    /// first run left carries to it, where the record's own <c>from</c> walk would start again from nothing.
     /// </summary>
     [Fact]
     public void D79s_resume_is_on_its_quests_line_and_keeps_the_count()
@@ -279,7 +279,7 @@ public sealed class AnswersAloneHoldTests : IDisposable
         Assert.True(Hold.Holds(asker with { Said = [Answer()] }, records, At));
     }
 
-    /// <summary>A conversation never waits on a quest (COWORKVIEW1 R11.2 point 5), so no quest's result counts on its line or wakes it.</summary>
+    /// <summary>A conversation never waits on a quest, so no quest's result counts on its line or wakes it.</summary>
     [Fact]
     public void A_conversation_is_never_counted_a_quests_result()
     {

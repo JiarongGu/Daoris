@@ -6,7 +6,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PERF2: the look's <c>overlaps</c> and the workflow <c>nodes</c> on a benchmark home (ten open trees, each a driven session's, and thirty
+/// The look's <c>overlaps</c> and the workflow <c>nodes</c> on a benchmark home (ten open trees, each a driven session's, and thirty
 /// runs bound to a shipped graph with its gates), each read warm, the git it starts counted through the process gate
 /// (<see cref="GitStartTally"/>). A look where nothing moved starts no git for either; a look after one tree moved reads that tree alone.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
     private string _root = "";
     private string _home = "";
 
-    // Each open tree with its driven session and the commit it was opened at.
+    // Each open tree with its driven session and the commit it is opened at.
     private readonly List<(string Session, string Tree, string BaseCommit)> _trees = [];
 
     public async Task InitializeAsync()
@@ -93,38 +93,11 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
     public async Task Nodes_read_a_run_again_only_where_its_records_moved()
     {
         var home = _home;
-        var digest = RunHome.SaveGraph(home, WorkflowPresets.WithGraphGates(WorkflowDefaults.All[0].Graph(), opinion: true, look: true).ToJsonString());
-        var now = DateTimeOffset.UtcNow;
-        var units = new List<WorkUnit>();
-        for (var at = 0; at < RunCount; at++)
-        {
-            var run = $"r{at:D2}";
-            RunHome.Bind(home, run, digest, now.AddMinutes(-RunCount + at));
-            // The runs with a tree are done, so their content, opinion and look are read; ten more work on; the rest are done with no branch.
-            units.Add(RunHome.QuestUnit(RunHome.Quest(run, at is >= TreeCount and < 2 * TreeCount ? "Taken" : "Done")));
-            if (at >= TreeCount) continue;
-            var (session, tree, _) = _trees[at];
-            units.Add(RunHome.Branch($"branch-{at}", TreeTips.Branch(tree)!, now.AddHours(-1), [run]) with { Executors = [session] });
-        }
-
-        var read = new NodeUnitsRead(units, new Dictionary<string, string> { [Repository] = _root });
-        var runtime = new NodeRuntime(new NodeRecordFiles(home, () => true), new ObservedPort(), () => DateTimeOffset.UtcNow, () => true);
         using var client = _ledger.Client();
-        Task<NodeRuntimePass> PassAsync(bool whole)
-        {
-            var gates = new NodeGates(home, client);
-            return runtime.PassAsync(new NodeRuntimeLook(DriverConfig.Empty, whole)
-            {
-                Units = _ => Task.FromResult(read),
-                Steps = () => [],
-                Tips = NodeTips.ReadAsync,
-                Remotes = NodeTips.RemotesAsync,
-                Gates = gates.ReadAsync,
-                Content = gates.ContentAsync,
-                Bound = NodeRuntime.BoundIn(home),
-            }, CancellationToken.None);
-        }
+        // The runs with a tree are done, so their content, opinion and look are read; ten more work on; the rest are done with no branch.
+        var passes = Passes(client, RunCount, at => (at is >= TreeCount and < 2 * TreeCount ? "Taken" : "Done", at < TreeCount));
 
+        Task<NodeRuntimePass> PassAsync(bool whole) => passes(whole);
         await PassAsync(whole: true);
         var (whole, wholeMs, _) = await CountedAsync("a whole pass where nothing moved", () => PassAsync(whole: true));
         var (wake, _, _) = await CountedAsync("a wake's pass where nothing moved", () => PassAsync(whole: false));
@@ -141,12 +114,89 @@ public sealed class LookWorkBenchProcessTests(ITestOutputHelper output) : IAsync
         Assert.True(wholeMs <= StageBudget.TotalMilliseconds, $"a whole pass took {wholeMs} ms where nothing moved");
         var others = _trees.Select(each => each.Tree).Where(tree => tree != moved).Select(Path.GetFileName).ToList();
         Assert.DoesNotContain(one.Starts, start => others.Any(other => start.EndsWith(other!, StringComparison.Ordinal)));
-        Assert.True(one.Starts.Count <= MovedTreeStarts, one.Report("a whole pass after one tree moved"));    }
+        Assert.True(one.Starts.Count <= MovedTreeStarts, one.Report("a whole pass after one tree moved"));
 
-    // The moved tree's gates read again for its run's content, opinion and look, as a landing door reads them. Each fact is read once: its
-    // layout (one rev-parse), its status (the head and the branch it is on), the commits no branch holds (one log), the repository's line
-    // (two starts, origin's HEAD and the ref listing), then the content proof's merge-base, its files changed and the branches by date.
-    private const int MovedTreeStarts = 8;
+        // A second tree that moves reads what its own move touched: the repository's line and its branches by date stand, as its refs do.
+        var next = _trees[4].Tree;
+        await File.WriteAllTextAsync(Path.Combine(next, "moved.txt"), "moved\n");
+        await GitAsync(next, "add", "moved.txt");
+        await GitAsync(next, "commit", "--quiet", "-m", "moved");
+        var (two, _, _) = await CountedAsync("a whole pass after a second tree moved", () => PassAsync(whole: true));
+        Assert.True(two.Starts.Count <= NextTreeStarts, two.Report("a whole pass after a second tree moved"));
+    }
+
+    // The moved tree is read again for its run's content, as a landing door reads it. Each fact is read once: its layout (one rev-parse), its
+    // status (the head and the branch it is on), the commits no branch holds (one log), the repository's line (origin's HEAD is a file; one
+    // listing of the refs), then the content proof's merge-base, its files changed and the branches by date. The next tree to move asks the
+    // branches by date no more, which its repository's counted refs, unmoved by a session's commits, still answer.
+    private const int MovedTreeStarts = 7;
+
+    private const int NextTreeStarts = 6;
+
+    /// <summary>Runs bound to a shipped graph with its gates, as <paramref name="shape"/> says, and the runtime's passes over them.</summary>
+    private Func<bool, Task<NodeRuntimePass>> Passes(ServiceClient client, int runs, Func<int, (string Status, bool Tree)> shape)
+    {
+        var home = _home;
+        var digest = RunHome.SaveGraph(home, WorkflowPresets.WithGraphGates(WorkflowDefaults.All[0].Graph(), opinion: true, look: true).ToJsonString());
+        var now = DateTimeOffset.UtcNow;
+        var units = new List<WorkUnit>();
+        for (var at = 0; at < runs; at++)
+        {
+            var run = $"r{at:D2}";
+            RunHome.Bind(home, run, digest, now.AddMinutes(-runs + at));
+            var (status, tree) = shape(at);
+            units.Add(RunHome.QuestUnit(RunHome.Quest(run, status)));
+            if (!tree) continue;
+            var (session, folder, _) = _trees[at];
+            units.Add(RunHome.Branch($"branch-{at}", TreeTips.Branch(folder)!, now.AddHours(-1), [run]) with { Executors = [session] });
+        }
+
+        var read = new NodeUnitsRead(units, new Dictionary<string, string> { [Repository] = _root });
+        var runtime = new NodeRuntime(new NodeRecordFiles(home, () => true), new ObservedPort(), () => DateTimeOffset.UtcNow, () => true);
+        return whole =>
+        {
+            var gates = new NodeGates(home, client);
+            return runtime.PassAsync(new NodeRuntimeLook(DriverConfig.Empty, whole)
+            {
+                Units = _ => Task.FromResult(read),
+                Steps = () => [],
+                Tips = NodeTips.ReadAsync,
+                Remotes = NodeTips.RemotesAsync,
+                Gates = gates.ReadAsync,
+                Content = gates.ContentAsync,
+                Bound = NodeRuntime.BoundIn(home),
+            }, CancellationToken.None);
+        };
+    }
+
+    private const int ManyRuns = 300;
+    private const int LiveCount = 5;
+
+    [Fact]
+    public async Task A_look_over_many_runs_with_five_live_reads_what_moved_alone()
+    {
+        using var client = _ledger.Client();
+        var passes = Passes(client, ManyRuns, at => (at < LiveCount ? "Taken" : "Done", at < LiveCount));
+        for (var turn = 0; turn <= ManyRuns / NodeRuntime.UnitsPerPass; turn++) await passes(true);
+        foreach (var file in Directory.GetFiles(NodeRecordFiles.FolderOf(_home), "*.json")) File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddHours(-1));
+        await passes(true);
+        var (still, stillMs, _) = await CountedAsync("a whole pass over many runs where nothing moved", () => passes(true));
+
+        // Each live session commits.
+        foreach (var (_, tree, _) in _trees.Take(LiveCount))
+        {
+            await File.WriteAllTextAsync(Path.Combine(tree, "live.txt"), "live\n");
+            await GitAsync(tree, "add", "live.txt");
+            await GitAsync(tree, "commit", "--quiet", "-m", "live");
+        }
+
+        var (moved, movedMs, _) = await CountedAsync("a whole pass after five live trees moved", () => passes(true));
+        output.WriteLine($"five moved: {movedMs} ms");
+        Assert.Empty(still.Starts);
+        Assert.True(stillMs <= StageBudget.TotalMilliseconds, $"a whole pass took {stillMs} ms where nothing moved");
+        Assert.Empty(moved.Starts);
+        Assert.True(movedMs <= StageBudget.TotalMilliseconds, $"a whole pass took {movedMs} ms after five live trees moved");
+    }
 
     [Fact]
     public async Task A_staged_edit_is_read_at_the_next_look_and_one_not_staged_once_the_kept_read_is_old()

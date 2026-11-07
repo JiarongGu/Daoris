@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FLOWCHART2e (D223; the flowchart design §4, §8.5): a proposal against the open draft said as its changes. Steps match by id, ways by
+/// A proposal against the open draft said as its changes. Steps match by id, ways by
 /// structure then id, and nothing that runs differently is folded away: a way whose id changed is shown, and so are the entries and the end.
 /// Each change names the changes it needs with it.
 /// </summary>

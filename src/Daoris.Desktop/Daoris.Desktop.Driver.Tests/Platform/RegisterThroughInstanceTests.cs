@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>daoris repository register</c> through the running Daoris (RPCOPEN1, RPC1e, the terminal RPC design §7.2 and §7.3): each repository
+/// <c>daoris repository register</c> through the running Daoris: each repository
 /// a <c>REGISTRY_REFRESH</c>, the verb's words the same as alone, case for case, against a stand-in of the pipe that answers as the
 /// route does, from the same follow.
 /// </summary>

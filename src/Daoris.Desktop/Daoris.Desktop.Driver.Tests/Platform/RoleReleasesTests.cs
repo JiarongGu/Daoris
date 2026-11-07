@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>roleReleases</c> in <c>driver.json</c> (STEWARDROLE1b, D209 §4.3, §5.1a, Codex's final read, finding 7): the steward's releases are
+/// <c>roleReleases</c> in <c>driver.json</c>: the steward's releases are
 /// kept in a key of their own, never in the owner's <c>released</c> or <c>transientReleased</c>, whose readers ignore any field they do
 /// not know. So the owner's readers find no release of the steward's to take as theirs, a rewrite without the key leaves the quest held,
 /// and an owner's own release beside it stays usable.

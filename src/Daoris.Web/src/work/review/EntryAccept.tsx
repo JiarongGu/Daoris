@@ -5,8 +5,8 @@ import { Button, CheckField, Inline } from '../../design/ui';
 import { type Answered, InlineConfirm } from '../InlineConfirm';
 import type { LandingConflict, LandsCommit, LeftOutCommit } from './LandingSync';
 
-// Declared here, structurally equal to bridge/sessions/entries.ts's shapes, so this molecule imports no bridge domain (LANDSYNC1w).
-/** One part as an entry's Accept would land it (ACCEPTALL1): its own plan, what holds it, and what superseded it. */
+// Declared here, structurally equal to bridge/sessions/entries.ts's shapes, so this molecule imports no bridge domain.
+/** One part as an entry's Accept would land it: its own plan, what holds it, and what superseded it. */
 export type EntryAcceptPart = {
   session: string;
   form?: string | null;
@@ -15,38 +15,38 @@ export type EntryAcceptPart = {
   leftOut?: LeftOutCommit[] | null;
   lands?: LandsCommit[] | null;
   conflict?: LandingConflict | null;
-  /** The gate's sentence where a gate holds it; a gate on one part holds its whole line of work (D167's amendment point 4). */
+  /** The gate's sentence where a gate holds it; a gate on one part holds its whole line of work. */
   held?: string | null;
-  /** What its own Accept would be refused for (a standing branch somebody else made, a plugin's trouble), which holds the line's press too (STANDSREFUSE1b). */
+  /** What its own Accept would be refused for (a standing branch somebody else made, a plugin's trouble), which holds the line's press too. */
   problem?: string | null;
   /** The earlier part whose tree it shares, whose landing carries it. */
   sameTreeAs?: string | null;
   /** A later part that redid its work (point 3): replayed after it, it conflicts or adds nothing. */
   superseded?: { by: string; says: string; conflicts: boolean } | null;
-  /** A later part it conflicts with while having work of its own (ACCEPTCONFLICT1): never redone, so never offered for leaving out. */
+  /** A later part it conflicts with while having work of its own: never redone, so never offered for leaving out. */
   clash?: { by: string; says: string } | null;
 };
 
 /** The session's press as its hosts are handed it: the props of `EntryAccept`, the frame's. */
 export type EntryPress = Parameters<typeof EntryAccept>[0];
 
-/** Where an entry's parts would land (D167's amendment point 1): its one branch, or the line a merge goes into, and each part. */
+/** Where an entry's parts would land: its one branch, or the line a merge goes into, and each part. */
 export type EntryAcceptPlan = { entry: string; repository: string; form: string; target: string; parts: EntryAcceptPart[] };
 
 /**
- * **One Accept for a line of work, or for an ask** (ACCEPTALL1, D167's 2026-10-15 amendment): a press beside the Parts strip of an
+ * **One Accept for a line of work, or for an ask**: a press beside the Parts strip of an
  * entry whose parts' trees offer work, and under an ask's heading in Sessions' list by ask; its ask, the head's own Accept's, says
  * where the parts land in the order they ran, what each leaves out because the line holds it, which part a later one redid with the
  * person's choice to leave it out, and what holds a part. The move lands them; nothing is destroyed, so it wears the primary's hue.
  *
  * @remarks
  * **A molecule**: the plans arrive as props, read by the frame once the ask is open, and the press goes out with the parts left out.
- * - **A superseded part lands unless the person leaves it out** (point 3): the choice is theirs, never a default.
- * - **A gate holding any part of a line of work holds its landing** (point 4): the ask says which and offers no move. Under an
+ * - **A superseded part lands unless the person leaves it out**: the choice is theirs, never a default.
+ * - **A gate holding any part of a line of work holds its landing**: the ask says which and offers no move. Under an
  *   ask, the gate holds only its own repository's entry, and the move lands the others.
  */
 export function EntryAccept({ scope, offered, open, onOpen, plans, reading = false, busy = false, held = false, draw, numberOf, onLand }: {
-  /** Its ask is open in another place (the head or the foot), so this press waits: one place at a time (D168 point 3). */
+  /** Its ask is open in another place (the head or the foot), so this press waits: one place at a time. */
   held?: boolean;
   /** Only the press, or only its ask, where the line of a host cannot hold the ask beside it; both where absent. */
   draw?: 'press' | 'ask';
@@ -84,8 +84,8 @@ export function EntryAccept({ scope, offered, open, onOpen, plans, reading = fal
   if (draw === 'press') return null;
 
   const read = !reading && plans ? plans : null;
-  // A gate on a kept part of a line of work holds all of it (point 4); under an ask, only its own repository's.
-  // A part that would be refused holds it the same way (STANDSREFUSE1b), unless the person leaves that part out.
+  // A gate on a kept part of a line of work holds all of it; under an ask, only its own repository's.
+  // A part that would be refused holds it the same way, unless the person leaves that part out.
   const heldOf = (plan: EntryAcceptPlan) => plan.parts.some((part) => (part.held || part.problem) && !leaving.has(part.session));
   const gated = (plan: EntryAcceptPlan) => plan.parts.some((part) => part.held && !leaving.has(part.session));
   const blocked = scope === 'entry' && read !== null && read.some(heldOf);

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR5a, what keeps a landed branch whatever its files say: checked out anywhere, moved since its push,
-/// no longer the landing's, moved since the list, not named by the press, or leaned on by a session branch
+/// What keeps a landed branch whatever its files say: checked out anywhere, moved since its push,
+/// taken from the landing, moved since the list, not named by the press, or leaned on by a session branch
 /// that stays.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -54,7 +54,7 @@ public sealed class LandedKeepTests : LandedFixture
 
     /// <summary>
     /// A person's own branch is never judged: one the record never named, and one that took a recorded
-    /// name after the landing's branch was deleted — its history is not the landing's.
+    /// name after the landing's branch is deleted — its history is not the landing's.
     /// </summary>
     [Fact]
     public async Task A_branch_that_took_a_recorded_name_since_is_not_judged()
@@ -115,8 +115,8 @@ public sealed class LandedKeepTests : LandedFixture
     }
 
     /// <summary>
-    /// A session branch kept in use leans on the landed branch for its own proof (D88 counts a branch of the
-    /// person's as holding its commits): the landed branch waits for it. Not in use, both go — the session's first.
+    /// A session branch kept in use leans on the landed branch for its own proof (a branch of the
+    /// person's counts as holding its commits): the landed branch waits for it. Not in use, both go — the session's first.
     /// </summary>
     [Fact]
     public async Task A_landed_branch_a_kept_session_branch_leans_on_waits_for_it()

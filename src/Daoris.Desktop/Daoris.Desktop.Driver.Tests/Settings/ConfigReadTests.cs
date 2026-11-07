@@ -3,11 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// CONFIGREAD1: a <c>driver.json</c> that does not read is said, naming the file and where, and never thrown as the
-/// parser's own exception. Every door loads it through <see cref="DriverConfig.Load"/> (CONFIGSEAM1), and each says a
-/// <see cref="DriverException"/>'s sentence: the headless host's one catch with exit 2 (REV3), the modules' route as the
-/// driver's refusal, and the loop's look with what the loop does about it. The headless host ended on the parser's stack
-/// trace until then (HOSTSTART2).
+/// A <c>driver.json</c> that does not read is said, naming the file and where, and never thrown as the
+/// parser's own exception. Every door loads it through <see cref="DriverConfig.Load"/>, and each says a
+/// <see cref="DriverException"/>'s sentence: the headless host's one catch with exit 2, the modules' route as the
+/// driver's refusal, and the loop's look with what the loop does about it.
 /// </summary>
 public sealed class ConfigReadTests : IDisposable
 {
@@ -75,8 +74,8 @@ public sealed class ConfigReadTests : IDisposable
     }
 
     /// <summary>
-    /// A missing file is still the empty config's choices, and a file that reads still reads (D46 §6). The missing one carries its path and
-    /// <c>{}</c> (FABRIC-GRAPH1's second re-check, finding 2), so its save is an edit like any other.
+    /// A missing file is still the empty config's choices, and a file that reads still reads. The missing one carries its path and
+    /// <c>{}</c>, so its save is an edit like any other.
     /// </summary>
     [Fact]
     public void A_missing_file_and_a_good_one_are_not_refused()

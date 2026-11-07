@@ -3,7 +3,7 @@ import { MERGE_GRAPH } from '../graphFixtures';
 import type { EditorRole, PaletteKind, WorkflowListAnswer, WorkflowPaletteAnswer, WorkflowSaveAnswer } from './answers';
 import { draftOf, graphOf } from './graphDraft';
 
-// The step editor's answers as the driver gives them (WORKFLOWEDIT1b), for its page tests and its stories: a palette of every kind the
+// The step editor's answers as the driver gives them, for its page tests and its stories: a palette of every kind the
 // shipped workflows hold, each with the driver's own authority, and the Local release plugin's three steps; the defaults listed with their
 // graphs, and roles.
 
@@ -70,7 +70,7 @@ export const DOCUMENTS_GRAPH = {
   wires: [{ id: 'a', kind: 'after', from: 'work', to: 'landing' }, { id: 'c', kind: 'after', from: 'landing', to: 'line' }],
 };
 
-/** The release default's graph (DEFAULTCONFIG1c): the work checked and reviewed, landed, then Local release's find, release and publish. */
+/** The release default's graph: the work checked and reviewed, landed, then Local release's find, release and publish. */
 export const RELEASE_GRAPH = {
   schemaVersion: 2, entries: ['work'], end: 'line',
   nodes: [

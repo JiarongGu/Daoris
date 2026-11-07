@@ -1,20 +1,20 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <c>brainstorm</c> posture (BRAINSTORM1a2; D176 points 1 and 2, its amendment of D72): what a brainstorm's pass is handed where
+/// The <c>brainstorm</c> posture: what a brainstorm's pass is handed where
 /// its agent takes Daoris's rules. Reading in its room and its one result tool, and nothing else: no edit tool, no shell, no web, no
 /// <c>commit</c>, and no connector tool beyond its result, so no knowledge search, no quest, no helper's ask and no channel.
 /// </summary>
 /// <remarks>
 /// <para><b>Laid over the person's composition, narrowing only.</b> The person's asks and denies are handed as written, and deny wins
-/// at the harness (D72). Their allows are not: a pass reads its room alone (D176 point 2), and a person's allow of a shell command, a
-/// folder or the web was made for sessions that work in a repository, which a pass is not. Every connector tool but the turn's is
+/// at the harness. Their allows are not: a pass reads its room alone, and a person's allow of a shell command, a
+/// folder or the web is made for sessions that work in a repository, which a pass is not. Every connector tool but the turn's is
 /// denied by name, since the person's composition and the defaults name them all, and an unlisted one is the classifier's to judge.</para>
 ///
-/// <para><b>Two forms, by what the harness takes</b> (BRAINSTORM1c). A harness that takes Daoris's rules (Claude Code, by either door) is
+/// <para><b>Two forms, by what the harness takes</b>. A harness that takes Daoris's rules (Claude Code, by either door) is
 /// handed these rules. One that takes none (Codex) is handed its own mode that changes nothing (<see cref="Posture"/>), required, so it
 /// never runs a pass in its writing mode; beside it the room's contents are the floor. Whether either keeps a pass's reads inside its
-/// room is the measurement's (<c>BrainstormRoomMeasure</c>, D53), run on real makers by the owner's go.</para>
+/// room is the measurement's (<c>BrainstormRoomMeasure</c>), run on real makers by the owner's go.</para>
 /// </remarks>
 public static class BrainstormPermissions
 {
@@ -30,7 +30,7 @@ public static class BrainstormPermissions
     public static string ToolOf(string turn) => turn.StartsWith('s') ? Synthesize : Give;
 
     /// <summary>
-    /// The protocol-door posture a pass asks of <paramref name="adapter"/> (BRAINSTORM1c): its mode that changes nothing, marked required
+    /// The protocol-door posture a pass asks of <paramref name="adapter"/>: its mode that changes nothing, marked required
     /// (<see cref="PostureAsked.Required"/>), where it takes no rules to narrow it with (<see cref="AgentDoor.ReadingPosture"/>);
     /// null otherwise, which keeps the adapter's own posture and leaves a rule-taking harness to <see cref="Shape"/>.
     /// </summary>
@@ -67,7 +67,7 @@ public static class BrainstormPermissions
     private static readonly string[] Withheld = ["Edit", "Write", "NotebookEdit", "Bash", "WebFetch", "WebSearch"];
 
     /// <summary>
-    /// What auto mode's classifier is told beside the rules (D122 §3.7): the forms no rule can name. Handed after the harness's own
+    /// What auto mode's classifier is told beside the rules: the forms no rule can name. Handed after the harness's own
     /// list and the defaults', never instead of them.
     /// </summary>
     public const string HardDeny =

@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The decisions' files under the home (§3.4): written once, their state lines appended, and read back only as history, for the card
+/// The decisions' files under the home: written once, their state lines appended, and read back only as history, for the card
 /// after a restart and the start's sweep; a decision's behaviour is decided from memory (<see cref="SupervisorBook"/>), never from here.
 /// </summary>
 internal sealed class SupervisorDecisionFiles(string home)
@@ -78,7 +78,7 @@ internal sealed class SupervisorDecisionFiles(string home)
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("question", out var asked)) return null;
             var question = ParkQuestions.Parsed(asked.GetRawText(), session, () => DateTimeOffset.MinValue);
-            // An answer names its choice; a defer (SUPERVISOR1b) its bound, and no choice.
+            // An answer names its choice; a defer its bound, and no choice.
             var bound = Json.Text(root, "bound");
             if (question is null || (Json.Text(root, "choice") ?? (bound is null ? null : "")) is not { } choice) return null;
             var reasons = Json.Items(root, "reasons")
@@ -108,8 +108,8 @@ internal sealed class SupervisorDecisionFiles(string home)
     }
 
     /// <summary>
-    /// A decision's file: an answer's names its <paramref name="choice"/>, a defer's its <paramref name="bound"/> (SUPERVISOR1b); the counts
-    /// its holder was handed beside the question's snapshot, where the keeping read them (CONTEXTDRIVE1i).
+    /// A decision's file: an answer's names its <paramref name="choice"/>, a defer's its <paramref name="bound"/>; the counts
+    /// its holder is handed beside the question's snapshot, where the keeping reads them.
     /// </summary>
     public static string DecisionJson(
         string id, string session, string? choice, string? bound, IReadOnlyList<SupervisorReason> reasons, SupervisorHolder holder,

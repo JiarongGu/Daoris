@@ -7,8 +7,8 @@ import { APPEND, judgedFor, PALETTE, ROLES } from '../edit/editFixtures';
 import { MERGE_GRAPH } from '../graphFixtures';
 import { LandOptions } from './LandOptions';
 
-// WORKFLOWCLEAN1h-b: the Landing row under a saved version is the land step's options, saved as the version's next, with the places an
-// append reaches let follow it by one consent (SETUPUX1s).
+// The Landing row under a saved version is the land step's options, saved as the version's next, with the places an
+// append reaches let follow it by one consent.
 
 afterEach(async () => {
   vi.restoreAllMocks();

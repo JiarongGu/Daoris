@@ -8,26 +8,26 @@ namespace Daoris.Driver;
 /// <param name="Exit">0 where something is run; 1 a gate named that is not heavy; 2 nothing there to run.</param>
 public sealed record HeavyChoice(IReadOnlyList<HeavyGate> Gates, string? Refusal, int Exit);
 
-/// <summary>The gates a run reads and where they come from (HEAVYRUN1b2a): the repository's own file, or this machine's mapping for it.</summary>
+/// <summary>The gates a run reads and where they come from: the repository's own file, or this machine's mapping for it.</summary>
 /// <param name="Gates">In order: the file's, each marked or not, or the mapping's, every one heavy.</param>
-/// <param name="Repository">The name the mapping was looked for under, or null where none was.</param>
+/// <param name="Repository">The name the mapping is looked up under, or null where it is not looked up.</param>
 /// <param name="Mapped">Whether the gates are this machine's mapping, the file marking none.</param>
 public sealed record HeavyDeclared(IReadOnlyList<HeavyGate> Gates, string? Repository, bool Mapped);
 
-/// <summary>Whether a checkout's own file marks heavy gates (HEAVYRUN1b2c).</summary>
+/// <summary>Whether a checkout's own file marks heavy gates.</summary>
 /// <param name="Marks">True where it marks some; false where it marks none or there is no file; null where it cannot be told.</param>
 /// <param name="Names">The heavy gates' names, in order, where it marks some.</param>
 /// <param name="Refusal">Why it cannot be told; null otherwise.</param>
 public sealed record HeavyMarks(bool? Marks, IReadOnlyList<string> Names, string? Refusal)
 {
-    /// <summary>The gates it declares and does not mark heavy, in order (FABRIC-PIPELINE1b): a light pipeline's sessions run these.</summary>
+    /// <summary>The gates it declares and does not mark heavy, in order: a light pipeline's sessions run these.</summary>
     public IReadOnlyList<string> Light { get; init; } = [];
 }
 
 /// <summary>
-/// Which gates a repository's heavy run runs (HEAVYRUN1a, D180's HEAVYRUN1 note): those its <c>daoris.gates.json</c> marks
+/// Which gates a repository's heavy run runs: those its <c>daoris.gates.json</c> marks
 /// <c>"heavy": true</c>, where it declares its gates, in the order it declares them; a repository names its heavy gates itself. Where
-/// it marks none, this machine's mapping for it (<see cref="HeavyMapping"/>, HEAVYRUN1b2a), never an edit to it.
+/// it marks none, this machine's mapping for it (<see cref="HeavyMapping"/>), never an edit to it.
 /// </summary>
 /// <remarks>
 /// The file's other readers, the devkit's <c>GateDeclaration</c> and the merge tool's <c>readDeclared</c>, read a gate's name, command and
@@ -91,7 +91,7 @@ public static class HeavyGates
     }
 
     /// <summary>
-    /// The gates a run of <paramref name="checkout"/> reads (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note): its own file's where it marks a
+    /// The gates a run of <paramref name="checkout"/> reads: its own file's where it marks a
     /// heavy gate, else this machine's mapping for <paramref name="repository"/> where it sets one, else its own file's, marking none.
     /// The mapping is asked for only where the file marks none, so a repository that declares its heavy gates is never read past.
     /// </summary>
@@ -112,7 +112,7 @@ public static class HeavyGates
     }
 
     /// <summary>
-    /// Whether <paramref name="checkout"/>'s own file wins (HEAVYRUN1b2c): it marks a heavy gate (true, their names), marks none or has no
+    /// Whether <paramref name="checkout"/>'s own file wins: it marks a heavy gate (true, their names), marks none or has no
     /// file (false, this machine's list is used), or does not read (null, the driver's words). A read of the one file; it never asks the
     /// mapping and never throws, since "cannot tell" is never "marks none".
     /// </summary>
@@ -148,7 +148,7 @@ public static class HeavyGates
     /// <summary>Every heavy gate in declared order, or the one <paramref name="named"/>; or why none, with the exit that says it.</summary>
     public static HeavyChoice Choose(IReadOnlyList<HeavyGate> declared, string? named) => Choose(declared, named, mappedFor: null);
 
-    /// <summary>The file's gates, <paramref name="mappedFor"/> naming the repository this machine was asked for a mapping for, if any.</summary>
+    /// <summary>The file's gates, <paramref name="mappedFor"/> naming the repository whose mapping this machine looked up, if any.</summary>
     private static HeavyChoice Choose(IReadOnlyList<HeavyGate> declared, string? named, string? mappedFor)
     {
         var heavy = declared.Where(gate => gate.Heavy).ToList();

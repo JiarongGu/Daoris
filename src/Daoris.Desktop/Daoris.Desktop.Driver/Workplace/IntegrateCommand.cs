@@ -14,9 +14,9 @@ public sealed record IntegrateAsk(string Repository)
 }
 
 /// <summary>
-/// <c>daoris integrate &lt;repository&gt;</c> (INTEGRATE1h; the integration design §5.8): shows a repository's integration, read from the
+/// <c>daoris integrate &lt;repository&gt;</c>: shows a repository's integration, read from the
 /// record; <c>--plan &lt;branch&gt;</c> previews a branch onto the line in git's objects alone (<see cref="IntegrationPlans"/>). <c>--request</c>,
-/// <c>--drop</c>, <c>--recheck</c>, <c>--decide</c> and <c>--order</c> are the owner's acts, Person routes: a card in Daoris's window (D156),
+/// <c>--drop</c>, <c>--recheck</c>, <c>--decide</c> and <c>--order</c> are the owner's acts, Person routes: a card in Daoris's window,
 /// which this terminal asks and never answers.
 /// </summary>
 [CommandGroup("integrate", Whole = true)]
@@ -123,7 +123,7 @@ public static class IntegrateCommand
         return said;
     }
 
-    /// <summary>The owner's acts, one Person route of the driver's module: a card in Daoris's window (D156) the terminal waits on.</summary>
+    /// <summary>The owner's acts, one Person route of the driver's module: a card in Daoris's window the terminal waits on.</summary>
     public static InstanceRoute Route { get; } = new(InstanceRoute.DriverModule, "INTEGRATE", RouteClass.Person);
 
     /// <summary>The acts the route answers.</summary>

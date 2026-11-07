@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// STAFFPOLICY1d, the order readers' census (the staff policy design §3.3, §9 row d): every direct reader of a role's stored order
+/// The order readers' census: every direct reader of a role's stored order
 /// (<c>ActorChoices.Effective</c>) is named with why it may read the order as stored, so a reader added later that should read the arranged
 /// one (<see cref="RoleOrders"/>, or the start plan) fails here until it joins, with its reason.
 /// </summary>

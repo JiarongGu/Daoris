@@ -4,11 +4,11 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1 row b, part 2 (the agent-provider design §10; D213's row b part 2 note): the conformance suite, the contract's meter. A
+/// The conformance suite, the contract's meter. A
 /// theory over every provider and door the registry holds (<c>ProviderRegistry.Built()</c>), every provider the registration
 /// list holds (<c>Providers.Built()</c>) and a plugin's provider made in a test home, run per provider, so a provider that answers the
 /// contract wrongly fails here rather than in a caller. Each case a provider cannot pass yet is held in its own <c>pending.json</c>, named
-/// with the row of §11 that makes it pass; a pending case that passes fails the suite until its line goes, and a line naming no case the
+/// with the row that makes it pass; a pending case that passes fails the suite until its line goes, and a line naming no case the
 /// suite runs fails it too.
 /// </summary>
 /// <remarks>
@@ -115,7 +115,7 @@ public sealed class ProviderConformanceTests(ITestOutputHelper output) : IDispos
     ];
 
     /// <summary>
-    /// The layout (D213's row b part 2 note): every provider the suite runs brings its own file, beside its <c>provider.json</c> where it has a
+    /// The layout: every provider the suite runs brings its own file, beside its <c>provider.json</c> where it has a
     /// folder and else under <c>fixtures/providers/&lt;id&gt;/</c>, each in the one shape, and no file stands for a provider nobody runs.
     /// </summary>
     [Fact]

@@ -1,7 +1,7 @@
 import type { CurrentWorkflow, WorkflowIntegration, WorkflowStart, WorkflowStep } from './current';
 
 // What `WORKFLOW_CURRENT` answers, for the stories and the tests: each step a cell of the driver's shared table
-// (`Daoris.Desktop.Driver.Tests/fixtures/workflow-current.json`, WORKFLOW1a), its rows renamed to this suite's
+// (`Daoris.Desktop.Driver.Tests/fixtures/workflow-current.json`), its rows renamed to this suite's
 // repositories, so a story cannot draw a step the derivation would never make.
 
 /** The driver's words for each limit, as the table holds them (`WorkflowLimits.Table`). */
@@ -37,7 +37,7 @@ export const MERGE_YOU_ACCEPT: WorkflowStep = {
   settings: { form: 'merge', accept: 'you', pattern: null, plugin: null, tidy: false }, runtime: 'built', limit: null,
 };
 
-/** The workspace's second opinion before landing and between steps, its recheck off: in part, since XAGENT1f's gate. */
+/** The workspace's second opinion before landing and between steps, its recheck off: in part. */
 export const OPINION: WorkflowStep = {
   id: 'opinion', kind: 'opinion', participation: 'agent', executor: 'agent', press: null,
   source: { rule: 'opinion', level: 'workspace' },
@@ -67,7 +67,7 @@ export const PULL_REQUEST: WorkflowStep = {
 };
 
 /**
- * A named version's go-ahead after the landing (FLOWCHART1d; the workflow design §3.6, `WorkflowKindTable`'s `go-ahead` row): the
+ * A named version's go-ahead after the landing (`WorkflowKindTable`'s `go-ahead` row): the
  * person's yes to release to prod, its refusal waiting for them rather than stopping the run. In part: no step raises one yet.
  */
 export const GO_AHEAD_WAIT: WorkflowStep = {
@@ -77,7 +77,7 @@ export const GO_AHEAD_WAIT: WorkflowStep = {
 };
 
 /**
- * A check on the pull request a newer driver may answer (FLOWCHART1d; the workflow design §3.3, §3.7): this build runs none, so its
+ * A check on the pull request a newer driver may answer: this build runs none, so its
  * kind has no words here, and what follows its failure is a failure path: sent back once, then you.
  */
 export const CHECK_SEND_BACK: WorkflowStep = {
@@ -105,7 +105,7 @@ export const FULL = current({
 });
 
 /**
- * The repository's branch rule for you to push, carrying `integrate` (INTEGRATE1r; the integration design §17.4): Current draws the
+ * The repository's branch rule for you to push, carrying `integrate`: Current draws the
  * step after the landing, declared, on your press, with its limit *not integrated yet*. A cell of its node kind, never of the steps'.
  */
 export const BRANCH_YOU_PUSH: WorkflowStep = {
@@ -134,18 +134,18 @@ export const PLUGIN_UNREADY = current({
   version: '24bf4508996f',
 });
 
-/** A branch rule for you to push that carries `integrate`: the step after the landing, the table's row (INTEGRATE1r). */
+/** A branch rule for you to push that carries `integrate`: the step after the landing, the table's row. */
 export const INTEGRATING = current({
   repository: 'engine', workspace: 'default', registered: true, startHolds: [],
   steps: [WORK(), BRANCH_YOU_PUSH, INTEGRATE_OWNER], version: '05b1cc9a230c',
 });
 
-/** A line's tip and the declaration's blob there, as the driver reads them (FABRIC-PIPELINE1a). */
+/** A line's tip and the declaration's blob there, as the driver reads them. */
 export const ACCEPTED_BLOB = '3b18e512dba79e4c8300dd08aeb37f8e728b8dad';
 export const CHANGED_BLOB = '0e5751c026e543b2e8ab2eb06099daa1d1e5df47';
 
 /**
- * The start node (FABRIC-PIPELINE1a, the pipeline design §1.3): nothing names a workflow by default, Documentation goes to its own
+ * The start node: nothing names a workflow by default, Documentation goes to its own
  * workflow by the workspace's choice, and the work that lands is verified by `web-verify`, its gates accepted at the line's tip.
  */
 export const START: WorkflowStart = {
@@ -175,7 +175,7 @@ export const GATES_CHANGED: WorkflowStart = {
 const INTEGRATION_TIP = { line: 'main', commit: 'aa11bb22cc33dd44ee55ff6677889900aabbccdd' };
 const INTEGRATION_TEXT = '{\n  "integration": { "scratch": ["dist/", "coverage/"] }\n}';
 
-/** The integration declaration accepted as the tip holds it (INTEGRATE1d). */
+/** The integration declaration accepted as the tip holds it. */
 export const INTEGRATION_ACCEPTED: WorkflowIntegration = {
   gates: ACCEPTED_BLOB, state: 'accepted', tip: { ...INTEGRATION_TIP, gates: ACCEPTED_BLOB },
 };
@@ -203,7 +203,7 @@ export const NO_VERIFICATION: WorkflowStart = {
 /** Everything at once, with its start node first. */
 export const ROUTED = current({ ...FULL, start: START });
 
-/** A newer driver's check after the pull request, and its failure path (FLOWCHART1d). */
+/** A newer driver's check after the pull request, and its failure path. */
 export const WITH_A_FAILURE_PATH = current({ ...FULL, steps: [...FULL.steps, CHECK_SEND_BACK], version: '5d1c0e7a92b4' });
 
 /**

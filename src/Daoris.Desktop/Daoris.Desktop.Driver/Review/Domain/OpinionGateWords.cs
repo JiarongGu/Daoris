@@ -2,7 +2,7 @@ using System.Globalization;
 
 namespace Daoris.Driver;
 
-/// <summary>The words of the second opinion's gate (design §8.5's table): what it says in the driver's English, and the terminal's doors it names.</summary>
+/// <summary>The words of the second opinion's gate: what it says in the driver's English, and the terminal's doors it names.</summary>
 public static class OpinionGateWords
 {
     /// <summary>The terminal's verb for a door, naming the session where the state knows it.</summary>
@@ -10,7 +10,7 @@ public static class OpinionGateWords
         $"`daoris session opinion {verb} {gate.Session ?? "<session>"}{(words is null ? "" : $" {words}")}`";
 
     /// <summary>
-    /// What the gate says (design §8.5's table): the state, why, and the terminal's doors that move it, where it holds; what let
+    /// What the gate says: the state, why, and the terminal's doors that move it, where it holds; what let
     /// it go, where it does.
     /// </summary>
     public static string Says(OpinionGateState gate)
@@ -26,7 +26,7 @@ public static class OpinionGateWords
                 $"Waits for a second opinion: it is asked once this chain's last step in `{gate.Repository}` is done, and quest `#{gate.Later}` "
                 + $"still works there, so one opinion reads the chain's whole work. {Verb(gate, "ask")} asks one for this work now, or {anyway} "
                 + "lets it go on without one.",
-            // CHATFLOW1d (the chat-flow design §5.2): a chat run's opinion is asked by the person's press, never at a look.
+            // A chat run's opinion is asked by the person's press, never at a look.
             OpinionGateStates.NotAsked when gate.Run is not null => gate.Asked
                 ? $"Waits for a second opinion: it is asked, and {Reviewer(gate)} reads it from the driver's next look; press Accept again once it settles."
                 : $"Waits for a second opinion: one from {Reviewer(gate)} is asked when you press Accept.",
@@ -60,7 +60,7 @@ public static class OpinionGateWords
             OpinionGateStates.Answered => gate.Person?.Said == ReviewVerdicts.Reviewed
                 ? $"Your Reviewed answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}."
                 : $"Your Accept answered the second opinion{Answering(gate)}{WordsSaid(gate.Person)}.",
-            // WORKFLOW1f (the workflow design §3.7): the named workflow's step sits, saying what declares it; the person's own answers
+            // The named workflow's step sits, saying what declares it; the person's own answers
             // are the floor, as they are where no opinion can be had.
             OpinionGateStates.CannotStart => $"Waits for a second opinion, and it cannot start: {gate.Problem} {anyway} lets it land "
                 + $"without one, or {Verb(gate, "myself", "\"…\"")} records your own reading.",
@@ -69,14 +69,14 @@ public static class OpinionGateWords
     }
 
     /// <summary>
-    /// The reviewer a chat run's press asks (CHATFLOW1d): the rule's first, in backticks, as the look walks them from it; the look may
+    /// The reviewer a chat run's press asks: the rule's first, in backticks, as the look walks them from it; the look may
     /// choose a later one where the first cannot read.
     /// </summary>
     internal static string Reviewer(OpinionGateState gate) =>
         gate.Rule?.Rule.Reviewers.FirstOrDefault() is { } first ? $"`{first}`" : "another agent";
 
     /// <summary>
-    /// What a chat run's press says where it asked the opinion (CHATFLOW1d, the chat-flow design §5.2 point 3): the refusal on every door,
+    /// What a chat run's press says where it asked the opinion: the refusal on every door,
     /// whose words ask the person to press again once it settles.
     /// </summary>
     public static string AskedAtPress(OpinionGateState gate) =>

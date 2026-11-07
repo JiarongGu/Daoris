@@ -7,12 +7,12 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 row d-ii part 3 (D212's note of the part; the foundation design §3.4 rule 3, §19.12): the keyed open moving the old part's words,
+/// The keyed open moving the old part's words,
 /// end to end, the service's own host started in a process of its own over a scratch home (<see cref="RealServiceHost"/>), so the open's
 /// exclusive step, the receipt in <c>session_opens</c> and the trigger that settles each moved word on the record it left are the real ones,
 /// and the open goes through the driver's own door (<see cref="SessionOpenDoors"/>), which reads <c>opens: 2</c> and sends <c>moves</c>. The
 /// person's word the course read and named, and the person's word kept after the read, move to B under their keys; the retry of one named to
-/// A is answered settled, naming B; the open's answer lost and asked again after every moved word was taken on B answers the same B and the
+/// A is answered settled, naming B; the open's answer lost and asked again after every moved word is taken on B answers the same B and the
 /// same transfer, and moves nothing more.
 /// </summary>
 [Trait(Category.Name, Category.Process)]

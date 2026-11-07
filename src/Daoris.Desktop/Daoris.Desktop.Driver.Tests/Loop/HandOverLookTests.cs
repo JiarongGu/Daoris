@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// MIXAGENT1a-ii (D163 point 1): the driver's look takes a quest's session hand-over, whose move the ask decided in the move store
-/// (FOUNDATION1f-v part c; an older build's box is imported into it). The move is judged again, the
+/// The driver's look takes a quest's session hand-over, whose move the ask decided in the move store
+/// (a box left by an older build is imported into it). The move is judged again, the
 /// running session is stopped as the person's with a line of its own, the quest is held on the named agent in
 /// <c>&lt;home&gt;/handed/&lt;quest&gt;.json</c>, and the next look carries it on, the stop read as released; the store goes when the quest
 /// leaves this machine.
@@ -50,7 +50,7 @@ public sealed class HandOverLookTests : IDisposable
 
     private MoveRecord? MoveFrom(string left) => Store("run-probe").Of(left).LastOrDefault();
 
-    /// <summary>The loop's driven holder (FOUNDATION1f-v part c): the lease holder's scope over the home's store, under its own run.</summary>
+    /// <summary>The loop's driven holder: the lease holder's scope over the home's store, under its own run.</summary>
     private ConversationMoves Moves() =>
         new(_home, _ledger.Client(), new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)), store: Store(), scope: MoveTakeUpScope.LeaseHolder);
 
@@ -86,8 +86,8 @@ public sealed class HandOverLookTests : IDisposable
 
     /// <summary>
     /// 🔴 A running quest session with a move decided is stopped at once with its own coded line, the quest is held on the named agent, and the
-    /// move goes on to <c>old-ended</c> for the carry-on to continue (FOUNDATION1f-v part c), written <c>quiescing</c> while the session ran and
-    /// never as a box; the next look reads that stop as released and carries the quest on, with a sentence that says it was handed over.
+    /// move goes on to <c>old-ended</c> for the carry-on to continue, written <c>quiescing</c> while the session ran and
+    /// never as a box; the next look reads that stop as released and carries the quest on, with a sentence that says it is handed over.
     /// </summary>
     [Fact]
     public async Task A_running_quest_session_is_stopped_the_quest_held_on_the_named_agent_and_carried_on_at_the_next_look()
@@ -164,7 +164,7 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-v part c: an older build's quest box is imported once by the driven take-up and set aside, each look that finds one pending,
+    /// 🔴 An older build's quest box is imported once by the driven take-up and set aside, each look that finds one pending,
     /// and its move is taken as an ask's is: the session stopped, the quest held on the agent named, no box taken as a file.
     /// </summary>
     [Fact]
@@ -190,7 +190,7 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1f-v part c: a move the terminal decided is claimed by the terminal's run, which goes no further with it, so the loop's look
+    /// 🔴 A move the terminal decided is claimed by the terminal's run, which goes no further with it, so the loop's look
     /// takes it whether that run is gone (it quit at once) or still lives, and a live shell's own decision is left to it.
     /// </summary>
     [Theory]
@@ -252,7 +252,7 @@ public sealed class HandOverLookTests : IDisposable
         Assert.Empty(store.All());
         Assert.Contains(closed.Events, line => line == "hand-over  `#q1` has closed: it goes back to this machine's agent.");
 
-        // Taken elsewhere: the person's stop is the last run here (so a look reads its claim), and the claim says it was lost.
+        // Taken elsewhere: the person's stop is the last run here (so a look reads its claim), and the claim says it is lost.
         _ledger.Publish("q2", "engine");
         _ledger.Driven("s2", "q2", Path.Combine(_home, "tree-s2"), state: "stopped");
         store.Write("q2", new HandedQuest("codex-acp", null, "s2", HandOverWhy.Press, HandOverBy.Person, T0));
@@ -296,9 +296,9 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MIXAGENT1a-iii (D163 point 4): the session a quest's start continues, for its record. The carry-on of the session the quest
-    /// was handed over from names it with the hand-over's why and asker; a carry-on onto another account after a limit names the
-    /// cut-off session as Daoris's move. SESSCTX1b (D189 point 4): every other carry-on names its link too, `carry-on`, so the
+    /// 🔴 The session a quest's start continues, for its record. The carry-on of the session the quest
+    /// is handed over from names it with the hand-over's why and asker; a carry-on onto another account after a limit names the
+    /// cut-off session as Daoris's move. Every other carry-on names its link too, `carry-on`, so the
     /// brief follows the line; a first start, a resume and a fresh start carry nothing on and name none.
     /// </summary>
     [Fact]
@@ -322,7 +322,7 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 WALKAGENT1: a limit's move onto another agent is the limit's move whatever the two accounts are named, since an account belongs to
+    /// 🔴 A limit's move onto another agent is the limit's move whatever the two accounts are named, since an account belongs to
     /// its agent; the same agent on the same account is still Daoris's carry-on, and an agent left unsaid compares accounts alone.
     /// </summary>
     [Fact]
@@ -338,7 +338,7 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1i path 3 (the foundation design §10 row 1i): the link a carry-on's new part names is the course's move, its why and who
+    /// 🔴 The link a carry-on's new part names is the course's move, its why and who
     /// asked: a hand-over's own, a limit's onto another account, the fall-back's `retry`, the person's press, else Daoris's `carry-on`.
     /// </summary>
     [Fact]
@@ -362,7 +362,7 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SESSCTX1b (D189 point 4, D131 point 3): a driven record whose resume was refused goes on in a new part named `retry`; one the
+    /// 🔴 A driven record whose resume is refused goes on in a new part named `retry`; one the
     /// person released with *Try again* or brought forward is their press, `person`; a hand-over and a move onto another account
     /// keep their own why, whichever way it went on.
     /// </summary>
@@ -381,9 +381,9 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 SWITCH1c-iii (D165 point 3, the switch design §4): a carry-on that starts on the account the curve ranks first, which moves
+    /// 🔴 A carry-on that starts on the account the curve ranks first, which moves
     /// it off the last session's account, names that session with `curve` and `daoris`; one that stays, one moved for another reason
-    /// (a cooling account, a limit reached) and a limit's own move say what they always said.
+    /// (a cooling account, a limit reached) and a limit's own move keep their own link.
     /// </summary>
     [Fact]
     public void A_carry_on_the_curve_moves_to_another_account_names_the_curve()
@@ -391,11 +391,11 @@ public sealed class HandOverLookTests : IDisposable
         PriorSession Prior(string session, bool limit = false, string? profile = "account-1") =>
             new(session, null, "stopped") { Limit = limit, Profile = profile };
 
-        // Moved: the walk's first step was an account over its curve, or the most room under it, and the account changed.
+        // Moved: the walk's first step is an account over its curve, or the most room under it, and the account changes.
         Assert.Equal(new ContinuedFrom("s1", "curve", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.OverCurve));
         Assert.Equal(new ContinuedFrom("s1", "curve", "daoris"), Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-2", OpeningWhy.MostRoom));
 
-        // Stays: the same account, whatever the walk said, is a carry-on (SESSCTX1b).
+        // Stays: the same account, whatever the walk said, is a carry-on.
         var carried = new ContinuedFrom("s1", "carry-on", "daoris");
         Assert.Equal(carried, Daoris.Driver.MovedParts.ContinuesFrom(null, Prior("s1"), "account-1", OpeningWhy.MostRoom));
         // Moved for another reason than the curve is no curve's move, and nothing is claimed of a start no walk chose.
@@ -409,7 +409,7 @@ public sealed class HandOverLookTests : IDisposable
     }
 
     /// <summary>
-    /// SWITCH1c-iii: the opening line of a carry-on the curve moved says why, in English and by code (the page words it in both
+    /// The opening line of a carry-on the curve moved says why, in English and by code (the page words it in both
     /// languages from the `opening.carried-on` reason it already has): the session, the account and the curve's step, no limit's turn.
     /// </summary>
     [Fact]

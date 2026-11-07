@@ -6,7 +6,7 @@ import { CodeBlock, WRAP_BELOW } from './CodeBlock';
 import { Markdown } from './Markdown';
 
 /**
- * ASKHIST1c: a fenced block's long lines in a narrow pane. They scrolled sideways, cut off at Ask Daoris's dock. A named
+ * A fenced block's long lines in a narrow pane scroll sideways, cut off at Ask Daoris's dock. A named
  * *Wrap* control sits beside *Copy*; until the person presses it, the block wraps where its own pane is narrow (a container
  * query on the block, never the window), and Copy keeps the original text whichever way it is shown.
  */

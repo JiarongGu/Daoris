@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { BrowserDoor } from './BrowserDoor';
 
-// Daoris's browser's door on the strip (BRW7), and who is driving it (BRW8), in each state a person can
+// Daoris's browser's door on the strip, and who is driving it, in each state a person can
 // meet: nobody, one session, two, a name too long for the chip, and a window with nowhere to open one.
 
 const meta: Meta = { title: 'Work/Browser door' };

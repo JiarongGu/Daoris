@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// PREVIEW1 (D111): a file a tool card or the review named, read in the side bar's preview. The Work frame
+// A file a tool card or the review named, read in the side bar's preview. The Work frame
 // as a page over a mocked bridge, as the rest of its suite runs: the doors, the tab, the host's answer.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -20,7 +20,7 @@ const REGISTRY = [{
   owns: [], accepts: [], packs: [], entries: 1, root: ROOT,
 }];
 
-/** A conversation in the repository's checkout: its record names the checkout as its tree (D51). */
+/** A conversation in the repository's checkout: its record names the checkout as its tree. */
 const CHAT = {
   id: 'c0ffee11', quest: null, repository: 'engine', door: 'stub', state: 'working', tree: ROOT,
   kind: 'chat', created: '2026-09-30T10:00:00Z', updated: '2026-09-30T10:05:00Z',
@@ -99,7 +99,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     SESSIONS = [CHAT];
     frame('c0ffee11');
 
-    // The dock opens on demand (UX5 U7): closed until the door is pressed.
+    // The dock opens on demand: closed until the door is pressed.
     await userEvent.click(await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' }));
 
     const side = screen.getByRole('complementary', { name: 'right side bar' });
@@ -133,11 +133,11 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
 
   /**
    * With every view moved to the panel the side bar is not drawn; a preview draws it with its one tab, and
-   * closing it leaves nothing there, so the side bar closes, as one a moved view leaves does (DOCK1b).
+   * closing it leaves nothing there, so the side bar closes, as one a moved view leaves does.
    */
   it('opens a side bar that holds nothing else, and closes it again with the preview', async () => {
     SESSIONS = [CHAT];
-    // Every view the side bar holds by default moved to the panel, the workflow (WORKFLOW1c) among them.
+    // Every view the side bar holds by default is in the panel, the workflow among them.
     window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel', workflow: 'panel', atWork: 'panel' }));
     frame('c0ffee11');
     const door = await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' });
@@ -159,7 +159,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     const side = await screen.findByRole('complementary', { name: 'right side bar' });
     await userEvent.click(await within(side).findByRole('tab', { name: 'Review' }));
 
-    // A deleted file is not in the tree any more, so it offers no preview (UX5 U66).
+    // A deleted file is not in the tree, so it offers no preview.
     await within(side).findByText('src/legacy.ts');
     expect(within(side).queryByRole('button', { name: 'preview src/legacy.ts' })).toBeNull();
 
@@ -177,7 +177,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     expect(within(side).getByRole('tab', { name: 'Review', selected: true })).toBeInTheDocument();
   });
 
-  /** The host's refusal is its sentence, in the preview that asked, with the path as it was asked for. */
+  /** The host's refusal is its sentence, in the preview that asked, with the path as the page asked for it. */
   it('says the host\'s refusal where the file would have been', async () => {
     SESSIONS = [CHAT];
     invoke.mockImplementation(async (module: string, type: string) => {

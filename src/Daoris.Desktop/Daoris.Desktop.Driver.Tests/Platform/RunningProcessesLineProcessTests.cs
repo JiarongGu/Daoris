@@ -4,7 +4,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>D249: the census is read as a process stops. The line names each purpose that still holds a process, by id, and is not written where none does.</summary>
+/// <summary>The census is read as a process stops. The line names each purpose that still holds a process, by id, and is not written where none does.</summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class RunningProcessesLineProcessTests : IDisposable
 {

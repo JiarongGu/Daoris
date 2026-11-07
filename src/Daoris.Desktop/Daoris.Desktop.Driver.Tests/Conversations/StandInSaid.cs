@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// A record's <c>said</c> as a stand-in (COWORK1c): each word appended in the order its keep arrives, under the record's own id, kept
+/// A record's <c>said</c> as a stand-in: each word appended in the order its keep arrives, under the record's own id, kept
 /// once by its key, and taken off by id. A keep can be held after its append and before its answer (<see cref="Answering"/>), which
 /// is how two writes return out of order; a take-off can be held too (<see cref="TakingOff"/>).
 /// </summary>
@@ -28,16 +28,16 @@ internal sealed class StandInSaid : ISaidDoor
     public string? Refusing { get; set; }
 
     /// <summary>
-    /// The head of the record's line where it is no longer the record itself (FOUNDATION1d-ii part 1): every keep is refused <c>continued</c>,
+    /// The head of the record's line where it is no longer the record itself: every keep is refused <c>continued</c>,
     /// naming it, as a host with the <c>head</c> mark answers before any other refusal, and nothing is kept; null keeps as ever.
     /// </summary>
     public string? Continues { get; set; }
 
-    /// <summary>Every attempt answered not marked (AGENTERRORS1, Codex's finding 4): a record that would not mark a word.</summary>
+    /// <summary>Every attempt answered not marked: a record that would not mark a word.</summary>
     public bool RefusingAttempts { get; set; }
 
     /// <summary>
-    /// Each producer's key the line settled, with the record its word left (FOUNDATION1 row p, the design §3.4 rule 5): a keyed keep with no word
+    /// Each producer's key the line settled, with the record its word left: a keyed keep with no word
     /// waiting under it is answered <see cref="SayAnswer.Settled"/>, with no word, as the service's say door answers a client that asks, and
     /// the stand-in keeps nothing.
     /// </summary>
@@ -83,13 +83,13 @@ internal sealed class StandInSaid : ISaidDoor
         return new SayAnswer(true, "kept") { Word = kept };
     }
 
-    /// <summary>Every id marked attempted, in the order the marks arrived (COWORK1c).</summary>
+    /// <summary>Every id marked attempted, in the order the marks arrive.</summary>
     public List<string> Attempted { get; } = [];
 
-    /// <summary>Where set, the answer to a mark names none of the words asked: a word is marked as the service marks one, only where it waits (FOUNDATION1 row p).</summary>
+    /// <summary>Where set, the answer to a mark names none of the words asked: a word is marked as the service marks one, only where it waits.</summary>
     public Func<IReadOnlyList<string>, IReadOnlyList<string>>? Naming { get; set; }
 
-    /// <summary>Where set, a mark commits and its answer is then lost: the record holds the attempt and the dispatcher never hears so (FOUNDATION1 row p).</summary>
+    /// <summary>Where set, a mark commits and its answer is then lost: the record holds the attempt and the dispatcher never hears so.</summary>
     public bool AnswerLost { get; set; }
 
     public Task<IReadOnlyList<string>> AttemptAsync(IReadOnlyList<string> ids, CancellationToken ct)

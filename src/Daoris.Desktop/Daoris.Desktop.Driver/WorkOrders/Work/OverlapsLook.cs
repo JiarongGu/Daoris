@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What each running unit changed (INTEGRATE1l, the integration design §9): a git read of each running tree that moved since the last look
+/// What each running unit changed: a git read of each running tree that moved since the last look
 /// (<see cref="TreeChangesKept"/>), and the quests whose integration request is open, for the planner's comparison at a start.
 /// </summary>
 [LookPass("overlaps", LookPhase.Read, "committed")]

@@ -4,7 +4,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Merging a session tree into the canonical line (D51 rule 6, design §5, SURF6b).
+/// Merging a session tree into the canonical line.
 /// </summary>
 /// <remarks>
 /// <para>🔴 This is the one place Daoris writes into a checkout it did not create, so these tests are
@@ -56,8 +56,8 @@ public sealed class TreeMergeTests : IDisposable
 
     /// <summary>
     /// 🔴 The `reaching-in` guard, and the reason this is a press rather than an automation.
-    /// Uncommitted work in the repository's own checkout is exactly what that document was written
-    /// from, and merging into it is how you lose it.
+    /// Uncommitted work in the repository's own checkout is exactly what that document
+    /// protects, and merging into it is how you lose it.
     /// </summary>
     [Fact]
     public async Task It_refuses_into_a_checkout_somebody_is_working_in()
@@ -74,7 +74,7 @@ public sealed class TreeMergeTests : IDisposable
 
         Assert.False(merged.Merged);
         Assert.Contains("not clean", merged.Message);
-        // Untouched: nothing was staged, stashed or committed on anybody's behalf.
+        // Untouched: nothing is staged, stashed or committed on anybody's behalf.
         Assert.Contains("mid-edit", await File.ReadAllTextAsync(Path.Combine(root, "README.md")));
         Assert.DoesNotContain("cap hydration", await GitAsync(root, "log", "--oneline"));
     }
@@ -128,7 +128,7 @@ public sealed class TreeMergeTests : IDisposable
         Assert.Equal(before, (await GitAsync(root, "rev-parse", "HEAD")).Trim());
     }
 
-    /// <summary>A conflict aborts, and the checkout is exactly as it was found.</summary>
+    /// <summary>A conflict aborts, and the checkout is exactly as it stood before.</summary>
     [Fact]
     public async Task A_conflicting_merge_aborts_and_leaves_the_checkout_alone()
     {
@@ -155,9 +155,9 @@ public sealed class TreeMergeTests : IDisposable
     }
 
     /// <summary>
-    /// HOOKMERGE1: a repository whose own commit-msg hook refuses the merge's message (one naming the session's branch, found in a
-    /// repository scanning messages for a private name) is told that it was the hook, with the hook's own words, and never that it
-    /// conflicted; the hook is not skipped, and the checkout is as it was.
+    /// A repository whose own commit-msg hook refuses the merge's message (one naming the session's branch, found in a
+    /// repository scanning messages for a private name) is told that the hook refused, with the hook's own words, and never that it
+    /// conflicted; the hook is not skipped, and the checkout is unchanged.
     /// </summary>
     [Fact]
     public async Task A_merge_its_repositorys_hook_refuses_says_the_hook_and_its_words()
@@ -207,7 +207,7 @@ public sealed class TreeMergeTests : IDisposable
         var opened = await trees.OpenAsync(root, "engine", "aurora");
         await CommitInAsync(opened.Path, "budget.ts", "cap the work", "cap hydration");
 
-        // Before merging, removal refuses and names the unmerged commits (D51 rule 7).
+        // Before merging, removal refuses and names the unmerged commits.
         var refused = await trees.RemoveAsync(opened.Path);
         Assert.False(refused.Removed);
         Assert.Contains("has not taken", refused.Message);

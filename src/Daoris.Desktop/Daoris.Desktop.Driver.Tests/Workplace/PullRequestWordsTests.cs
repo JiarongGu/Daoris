@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUGHOOK1c (D148 point 6, the plugin hooks design §2.3–§2.5): the kept answer said in the driver's words, one way for every
+/// The kept answer said in the driver's words, one way for every
 /// terminal door that reads it (the clean-up's rows and bringing up to date's, <c>trees land --plan</c>, <c>trees state</c>,
 /// <c>git branches</c>, <c>trace</c> and Ask Daoris's room): its state, when and by which plugin, what keeps a branch it does not
-/// clear, a failed ask beside it, and why nothing was asked.
+/// clear, a failed ask beside it, and why nothing is asked.
 /// </summary>
 public sealed class PullRequestWordsTests
 {
@@ -50,8 +50,8 @@ public sealed class PullRequestWordsTests
     }
 
     /// <summary>
-    /// A row that is kept says what was kept of its pull request and why it does not clear the branch (design §2.3), a failed
-    /// ask beside the answer it never overwrote (§2.4), and why nothing was asked (§2.1). A row with none of them says nothing.
+    /// A row that is kept says what is kept of its pull request and why it does not clear the branch, a failed
+    /// ask beside the answer it never overwrote, and why nothing is asked. A row with none of them says nothing.
     /// </summary>
     [Fact]
     public void A_rows_clause_says_the_answer_what_keeps_the_branch_a_failure_and_why_nothing_was_asked()
@@ -81,8 +81,8 @@ public sealed class PullRequestWordsTests
     }
 
     /// <summary>
-    /// The clean-up's rows and bringing up to date's (design §2.5): a landed branch that is kept says what its pull request's
-    /// answer was and why it does not clear it, or why nothing was asked; one that goes says only what proved it, and a session's
+    /// The clean-up's rows and bringing up to date's: a landed branch that is kept says what its pull request's
+    /// answer says and why it does not clear it, or why nothing is asked; one that goes says only what proved it, and a session's
     /// row says nothing of a pull request.
     /// </summary>
     [Fact]
@@ -118,7 +118,7 @@ public sealed class PullRequestWordsTests
             SyncWords.Describe(replay with { Branch = "daoris/s-1", Landed = false }));
     }
 
-    /// <summary><c>trees state</c> after an answer: who was asked, what is kept with its address, and what that proves here.</summary>
+    /// <summary><c>trees state</c> after an answer: who is asked, what is kept with its address, and what that proves here.</summary>
     [Fact]
     public void Asking_again_says_who_answered_what_is_kept_and_what_it_proves_here()
     {
@@ -138,7 +138,7 @@ public sealed class PullRequestWordsTests
             said);
     }
 
-    /// <summary>What the kept answer proves here, for each code of design §2.3 and a branch that is gone.</summary>
+    /// <summary>What the kept answer proves here, for each code and a branch that is gone.</summary>
     [Theory]
     [InlineData(null, true, false, "its merge commit is on `origin/main` here; the session branches at or under the commit it merged go at the clean-up.")]
     [InlineData(PullRequestCodes.Beyond, true, false, "its merge commit is on `origin/main` here, but the branch holds commits its pull request did not carry, so it stays; the session branches under the commit it merged go at the clean-up.")]

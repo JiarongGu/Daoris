@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The bound a light session's call may run to before the watcher tells it (FABRIC-PIPELINE1c, the pipeline design §3.1, §3.2): the
+/// The bound a light session's call may run to before the watcher tells it: the
 /// pipeline's <c>callMinutes</c>, 20 by default. Under Current no rule sets it, and a steps version's <c>work</c> takes no such field, so
 /// their light sessions' bound is the default; a graph version's <c>claimed</c> option is read from the version its run bound, with its
 /// <c>checks</c> (<see cref="MinutesOf"/>), and kept beside them by the start (<see cref="SessionChecks.HeldMinutes"/>), so every run of
@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 /// </summary>
 public static class CallBound
 {
-    /// <summary><c>callMinutes</c>' default: a judgement the install measures (D192's checks).</summary>
+    /// <summary><c>callMinutes</c>' default: a judgement the install measures.</summary>
     public const int Default = 20;
 
     /// <summary>The option's name, on a graph version's <c>claimed</c> node and beside a session's kept checks.</summary>

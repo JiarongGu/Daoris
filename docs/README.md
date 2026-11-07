@@ -254,6 +254,8 @@ holds remaining work (D127/D159). Paths are relative to this file. Historical do
 |`2026-11-06-node-kit-design.md`|Proposed design: NODEKIT1 (D247)
 |`2026-11-06-lyntai-requests.md`|Quest text: needs of Lyntai's agent layer (D248)
 |`2026-11-07-backlog-plan-3.md`|Plan: backlog chunks BL70-BL82
+|`2026-11-08-supervisor-kinds-design.md`|Proposed design: SUPERVISOR2, supervisors of a kind (D233)
+|`2026-11-08-supervisor-kinds-reads.md`|Reads: SUPERVISOR2
 
 ## UI, browser, tools and plugin contracts
 

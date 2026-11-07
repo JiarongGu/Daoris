@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COWORKVIEW1e-iii: the at-work answer's hint (the design §6.4 point 3), drawn where the attended part's newest generation started at least
+/// The at-work answer's hint, drawn where the attended part's newest generation started at least
 /// two subagents and the repository's routing standing is not open; the standing is the judge's, asked only where the hint can be drawn.
 /// </summary>
 public sealed class AtWorkHintTests

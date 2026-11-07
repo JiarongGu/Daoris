@@ -16,18 +16,18 @@ internal static class IntakeRoomPaths
     /// <summary>
     /// A circle's name as one folder: ASCII letters, digits, `-` and `_`, lower case — and, when that
     /// lost anything, a short hash of the exact name beside it, so two circles are never one room.
-    /// A workspace plan's file is named by the same rule (WSSETUP6), so two circles never share one.
+    /// A workspace plan's file is named by the same rule, so two circles never share one.
     /// </summary>
     /// <remarks>
-    /// 🔴 Every name with no ASCII letter in it used to fold to <c>default</c>, and `my circle` and
-    /// `my-circle` to one folder (REV3). The room is the intake's lock and holds its circle's
-    /// declarations, so two circles in one room blocked each other and read each other's family.
+    /// 🔴 A name with no ASCII letter in it must not fold to <c>default</c>, nor `my circle` and
+    /// `my-circle` to one folder. The room is the intake's lock and holds its circle's
+    /// declarations, so two circles in one room would block each other and read each other's family.
     /// A name that is already a folder name stays exactly that, so no existing room moves.
     /// </remarks>
     internal static string SafeName(string workspace)
     {
         var name = workspace.Trim().ToLowerInvariant();
-        if (name.Length == 0) name = "default";   // silence is the default circle, as everywhere (D48)
+        if (name.Length == 0) name = "default";   // silence is the default circle, as everywhere
         var safe = new string(name
             .Select(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' ? c : '-').ToArray()).Trim('-');
         if (safe == name && safe.Length > 0) return safe;

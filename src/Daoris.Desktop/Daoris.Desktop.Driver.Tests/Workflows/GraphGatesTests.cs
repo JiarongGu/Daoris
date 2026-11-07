@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOWCLEAN1 1c (the cleanup design §2.6): a graph's gates are read straight from its nodes' options, with the refusals that a gate chooses
+/// A graph's gates are read straight from its nodes' options, with the refusals that a gate chooses
 /// only among what the repository declares, and a bad option holds the run naming its node. Pure: no file.
 /// </summary>
 public sealed class GraphGatesTests

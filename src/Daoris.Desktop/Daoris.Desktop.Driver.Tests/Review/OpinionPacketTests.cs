@@ -3,12 +3,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1d (D155 points 5 and 6; the second-agent design §4–§5): what a pass hands its reviewer, read from facts with no
+/// What a pass hands its reviewer, read from facts with no
 /// model — the candidate as git names it, the repository's own rules by path — and what holds it beside the instruction: the
 /// rules handed, the posture recorded, its one turn's bound, and the words its door refuses.
 /// </summary>
 /// <remarks>
-/// Runs no process, so it is in the fast half (MOD8): git's own reading of a candidate, and the clone it is read in, are
+/// Runs no process, so it is in the fast half: git's own reading of a candidate, and the clone it is read in, are
 /// <see cref="ReviewTreeTests"/>'.
 /// </remarks>
 public sealed class OpinionPacketTests : IDisposable
@@ -32,11 +32,11 @@ public sealed class OpinionPacketTests : IDisposable
         File.WriteAllText(full, text);
     }
 
-    // ——— A chat run's work (CHATFLOW1d, the chat-flow design §7).
+    // ——— A chat run's work.
 
     /// <summary>
-    /// A chat run's pass is handed its conversation's opening, the person's own first words, named as the opening and never as what was
-    /// asked, since the work may have moved past it; no quest and no ask's words, and never the conversation itself.
+    /// A chat run's pass is handed its conversation's opening, the person's own first words, named as the opening and never as the
+    /// request, since the work may have moved past it; no quest and no ask's words, and never the conversation itself.
     /// </summary>
     [Fact]
     public void A_chat_runs_packet_names_its_opening_as_the_opening_and_hands_no_conversation()
@@ -172,9 +172,9 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.True(PermissionRules.AllowsConnector(handed, "opinion_give"));
         Assert.True(PermissionRules.AllowsConnector(handed, "knowledge_search"));
         Assert.True(PermissionRules.AllowsConnector(handed, "quest_list"));
-        // HANDBACK1: a quest's handback is read as its quests are.
+        // A quest's handback is read as its quests are.
         Assert.True(PermissionRules.AllowsConnector(handed, "handback_read"));
-        // KNOWCENTRAL2b: a repository's memory is read as its knowledge is, and changed or corrected by no reviewer.
+        // A repository's memory is read as its knowledge is, and changed or corrected by no reviewer.
         Assert.True(PermissionRules.AllowsConnector(handed, "memory_search"));
         Assert.True(PermissionRules.AllowsConnector(handed, "memory_get"));
         foreach (var tool in new[]
@@ -190,7 +190,7 @@ public sealed class OpinionPacketTests : IDisposable
     }
 
     /// <summary>
-    /// MIXAGENT2a-ii (D163 point 2): a helper is handed the reviewer's read-only shape with its own one tool, `helper_answer`: it
+    /// A helper is handed the reviewer's read-only shape with its own one tool, `helper_answer`: it
     /// can never ask for a helper (depth one) nor give an opinion, and every edit stays denied.
     /// </summary>
     [Fact]
@@ -229,7 +229,7 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.Contains("Bash(git diff:*)", handed.Allow);
         Assert.Contains("Bash(git show:*)", handed.Allow);
         Assert.Contains("Read(//c/notes/**)", handed.Allow);
-        // The person's deny is handed as written, and deny wins at the harness (D72): Daoris owns the union, never the precedence.
+        // The person's deny is handed as written, and deny wins at the harness: Daoris owns the union, never the precedence.
         Assert.Contains("Bash(git log:*)", handed.Deny);
         Assert.Equal(handed.Allow.Distinct(StringComparer.Ordinal).Count(), handed.Allow.Count);
         Assert.Equal(handed.Deny.Distinct(StringComparer.Ordinal).Count(), handed.Deny.Count);
@@ -272,7 +272,7 @@ public sealed class OpinionPacketTests : IDisposable
     [InlineData(45, 2, 2)]
     public void A_pass_is_bounded_by_the_rule_s_minutes_never_by_a_session_s_time_only_the_tests_backstop_first(int? minutes, int? testBound, int bound)
     {
-        // SESSWATCH1a (D200): no session timeout caps a reviewer, so it is told the minutes it gets.
+        // No session timeout caps a reviewer, so it is told the minutes it gets.
         var rule = new OpinionRule(["codex-acp"], [OpinionRules.Landing], Minutes: minutes);
 
         Assert.Equal(bound, OpinionPass.Bound(rule, DriverConfig.Empty with { TestBound = testBound }));
@@ -318,7 +318,7 @@ public sealed class OpinionPacketTests : IDisposable
     [Fact]
     public void An_opinion_s_folder_is_under_the_home_by_its_id_and_never_a_path_its_id_could_name()
     {
-        // Under `work/opinions/` in a new home (HOMELAYOUT3).
+        // Under `work/opinions/` in a new home.
         Assert.Equal(Path.Combine(_tree, "work", "opinions", "op1"), OpinionPackets.Folder(_tree, "op1"));
         Assert.Throws<DriverException>(() => OpinionPackets.Folder(_tree, "../elsewhere"));
         Assert.Throws<DriverException>(() => OpinionPackets.Folder(_tree, ""));
@@ -362,7 +362,7 @@ public sealed class OpinionPacketTests : IDisposable
         Assert.False(Directory.Exists(clone));
     }
 
-    // TREELINK1b: .NET's recursive delete throws on a junction and is not proven safe against what it points at.
+    // .NET's recursive delete throws on a junction and is not proven safe against what it points at.
     [Fact]
     public void A_clone_holding_a_link_goes_as_a_link_and_what_it_points_at_stands()
     {

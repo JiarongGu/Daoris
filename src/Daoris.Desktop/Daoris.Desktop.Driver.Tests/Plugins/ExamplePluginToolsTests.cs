@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUGTOOL1b (D150 point 7) as D241 point 5 left it: each pull-request example plugin opens and reads its pull request through its
+/// Each pull-request example plugin opens and reads its pull request through its
 /// service's REST API, so it declares Node.js alone, the one program it starts. No <c>git</c>, <c>gh</c> or <c>az</c> is declared, checked
-/// or started. Each floor is read by the driver's catalogue as written, and the README's <i>Why each version</i> says where it was read.
+/// or started. Each floor is read by the driver's catalogue as written, and the README's <i>Why each version</i> says where it comes from.
 /// </summary>
 public sealed class ExamplePluginToolsTests
 {

@@ -5,29 +5,29 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>The last test of a git identity (the git-auth design §3.1): its answer, the user the host named, and when.</summary>
+/// <summary>The last test of a git identity: its answer, the user the host named, and when.</summary>
 /// <param name="Result"><c>reached</c>, <c>refused</c>, <c>host-unknown</c>, <c>host-changed</c> or <c>unreachable</c>.</param>
 /// <param name="User">The account the host named, where it names one.</param>
 /// <param name="At">When the test ran.</param>
 public sealed record GitIdentityTest(string Result, string? User, DateTimeOffset At);
 
 /// <summary>
-/// A git identity (GITAUTH1c, D198 point 1; the git-auth design §3.1): who Daoris's git acts as on one code host. Holds no secret: an
+/// A git identity: who Daoris's git acts as on one code host. Holds no secret: an
 /// SSH identity's key is its type and fingerprint here, and its bytes live in <c>profiles/git/keys/&lt;id&gt;/</c>
 /// (<see cref="GitKeys"/>).
 /// </summary>
 /// <param name="Id">Stable, drawn at random (<c>gi-</c> and twelve hex digits); never shown as the name.</param>
 /// <param name="Label">The person's name for it, unique on the machine.</param>
 /// <param name="Host">The host it signs in to, canonical (<see cref="GitHosts.Canonical"/>), with a port where not the default.</param>
-/// <param name="Way"><c>ssh</c>, or <c>https</c> (GITAUTH1d).</param>
+/// <param name="Way"><c>ssh</c>, or <c>https</c>.</param>
 /// <param name="User">The account on the host, as the host named it at a test, else as the person typed it.</param>
-/// <param name="CommitsName">The name a commit carries where §3.6 applies; null for none.</param>
-/// <param name="CommitsEmail">The email a commit carries where §3.6 applies; null for none.</param>
+/// <param name="CommitsName">The name a commit carries under this identity; null for none.</param>
+/// <param name="CommitsEmail">The email a commit carries under this identity; null for none.</param>
 /// <param name="KeyType">An SSH key's type: <c>ed25519</c>, <c>rsa-4096</c>, <c>ecdsa-256</c>.</param>
 /// <param name="Fingerprint">An SSH key's SHA-256 fingerprint, as OpenSSH writes it (<c>SHA256:…</c>).</param>
-/// <param name="ReadOnly">The person's statement that the host grants it reading alone (§6.3).</param>
+/// <param name="ReadOnly">The person's statement that the host grants it reading alone.</param>
 /// <param name="Test">The last test, or null where none ran.</param>
-/// <param name="Default">Whether it is its host's default (§3.2 step 3).</param>
+/// <param name="Default">Whether it is its host's default.</param>
 public sealed record GitIdentity(
     string Id, string Label, string Host, string Way, string? User, string? CommitsName, string? CommitsEmail,
     string? KeyType, string? Fingerprint, bool ReadOnly, GitIdentityTest? Test, bool Default)
@@ -35,13 +35,13 @@ public sealed record GitIdentity(
     /// <summary>The SSH way.</summary>
     public const string Ssh = "ssh";
 
-    /// <summary>The HTTPS way (GITAUTH1d).</summary>
+    /// <summary>The HTTPS way.</summary>
     public const string Https = "https";
 }
 
 /// <summary>
-/// The machine's one set of git identities (GITAUTH1c, D198 point 1; the git-auth design §3.1-§3.2), kept in
-/// <c>data/git-identities.json</c>, which holds no secret (D172 point 3), written whole or not at all. Read by the driver and by the
+/// The machine's one set of git identities, kept in
+/// <c>data/git-identities.json</c>, which holds no secret, written whole or not at all. Read by the driver and by the
 /// ssh door, which compiles this in, so the base library alone.
 /// </summary>
 /// <remarks>
@@ -167,13 +167,13 @@ public static class GitIdentities
 }
 
 /// <summary>
-/// A code host's name as identities and addresses compare it (GITAUTH1c; the git-auth design §3.1): lower-cased, a default port
+/// A code host's name as identities and addresses compare it: lower-cased, a default port
 /// dropped, and Azure DevOps' SSH hosts named as the service is (<c>dev.azure.com</c>), so an identity for Azure DevOps serves its
 /// <c>ssh.dev.azure.com</c> addresses. The base library alone.
 /// </summary>
 public static class GitHosts
 {
-    /// <summary>The hosts the door and the page know by name, with the SSH host each serves and its key page (§7.2).</summary>
+    /// <summary>The hosts the door and the page know by name, with the SSH host each serves and its key page.</summary>
     public static readonly IReadOnlyDictionary<string, (string SshHost, string? KeyPage)> Known = new Dictionary<string, (string, string?)>(StringComparer.Ordinal)
     {
         ["github.com"] = ("github.com", "https://github.com/settings/keys"),
@@ -206,12 +206,12 @@ public static class GitHosts
         return colon > 0 && !target.StartsWith('[') ? (target[..colon], target[(colon + 1)..]) : (target, null);
     }
 
-    /// <summary>Whether a host takes RSA keys alone (§7.2): Azure DevOps, as its documentation says.</summary>
+    /// <summary>Whether a host takes RSA keys alone: Azure DevOps, as its documentation says.</summary>
     public static bool RsaAlone(string host) => Canonical(host) == "dev.azure.com";
 }
 
 /// <summary>
-/// An SSH identity's key folder (GITAUTH1c, D198 point 4; the git-auth design §3.4): <c>profiles/git/keys/&lt;id&gt;/</c>, made with
+/// An SSH identity's key folder: <c>profiles/git/keys/&lt;id&gt;/</c>, made with
 /// its access limited to the person's Windows account (inherited entries removed; SYSTEM and Administrators keep their implicit
 /// reach) <b>before</b> a key byte is written into it, by generation or import. The public key read and its fingerprint computed
 /// here; the private key is never read but by <see cref="Import"/>, from the one file the person names.
@@ -245,7 +245,7 @@ public static class GitKeys
         return folder;
     }
 
-    /// <summary>Remove an identity's key folder whole (§7.1 <i>Remove…</i>).</summary>
+    /// <summary>Remove an identity's key folder whole.</summary>
     public static void Remove(string home, string id)
     {
         if (!GitIdentities.IsId(id)) return;
@@ -313,7 +313,7 @@ public static class GitKeys
     public sealed record ImportRead(byte[] Bytes, string PublicLine, string Type, string Fingerprint);
 
     /// <summary>
-    /// Read the one key file the person named for an import (§3.3's one read of the person's own, §7.2): an OpenSSH private key with
+    /// Read the one key file the person named for an import, the one read of the person's own: an OpenSSH private key with
     /// no passphrase. Refused with one line naming why: no such file, too large, encrypted, another format.
     /// </summary>
     /// <exception cref="DriverException">The file is not a key Daoris can use.</exception>

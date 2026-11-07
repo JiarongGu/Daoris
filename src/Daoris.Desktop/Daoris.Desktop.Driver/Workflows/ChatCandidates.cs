@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One candidate of a graph-bound chat run (the chat-flow design §4.5): the tip a press submitted, and the earlier tips it superseded in place.</summary>
+/// <summary>One candidate of a graph-bound chat run: the tip a press submitted, and the earlier tips it superseded in place.</summary>
 public sealed record ChatCandidate(int Number, string Tip, DateTimeOffset At, IReadOnlyList<string> Superseded)
 {
     /// <summary>The id the run's <c>claimed</c> observes it by, <c>chat-&lt;first&gt;#&lt;n&gt;</c>, one per candidate of the run.</summary>
@@ -25,12 +25,12 @@ public enum CandidateSubmitted
     /// <summary>The candidate submitted and unlanded took the new tip, keeping its number.</summary>
     Superseded,
 
-    /// <summary>The tip was the one already submitted: nothing changed.</summary>
+    /// <summary>The tip is the one already submitted: nothing changed.</summary>
     Unchanged,
 }
 
 /// <summary>
-/// A graph-bound chat run's candidates (CHATFLOW1f, the chat-flow design §4.5), <c>&lt;home&gt;/workflows/candidates/chat-&lt;first&gt;.json</c>: the
+/// A graph-bound chat run's candidates, <c>&lt;home&gt;/workflows/candidates/chat-&lt;first&gt;.json</c>: the
 /// subject a conversation's <c>claimed</c> observes in place of a quest. Submitted only at the person's press, never at a turn's end; a press at a
 /// new tip over a candidate that is submitted and unlanded supersedes it in place, and one past a landed candidate opens the next. Machine-local,
 /// written whole and atomically, and taken with the record its run is keyed by (<see cref="ChatRuns.Files"/>).
@@ -45,7 +45,7 @@ public static class ChatCandidates
             ? Path.Combine(WorkplaceRunFiles.CandidatesFolder(home), run + ".json")
             : throw new DriverException($"`{run}` is no chat run.");
 
-    /// <summary>The run's candidates; null where none was submitted or the file does not read.</summary>
+    /// <summary>The run's candidates; null where none is submitted or the file does not read.</summary>
     public static ChatCandidateFile? Read(string home, string run)
     {
         if (!WorkplaceRunFiles.IsChatRun(run) || !SafeNames.IsPlainId(run)) return null;
@@ -66,10 +66,10 @@ public static class ChatCandidates
     }
 
     /// <summary>
-    /// A press's submission at <paramref name="tip"/>: the next candidate where the newest has landed (or none was submitted), the newest taking the
+    /// A press's submission at <paramref name="tip"/>: the next candidate where the newest has landed (or none is submitted), the newest taking the
     /// tip in place where it is submitted and unlanded at another, and nothing where it is the tip already submitted.
     /// </summary>
-    /// <param name="landed">Whether a tip was landed on this branch (as a landing record says it, squashed or not).</param>
+    /// <param name="landed">Whether a tip landed on this branch (as a landing record says it, squashed or not).</param>
     public static (ChatCandidate Candidate, CandidateSubmitted What) Submit(
         string home, string run, string repository, string? workspace, string branch, string tip, DateTimeOffset at, Func<string, bool> landed)
     {

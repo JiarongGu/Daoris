@@ -6,10 +6,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-CLOSE1c3 (the fabric events design §E5; D173's CLOSE1c note; D156, D50): <c>daoris quest reopen</c> and <c>quest
+/// <c>daoris quest reopen</c> and <c>quest
 /// go-on</c>, the terminal's doors to the person's reopen of a sealed submission and their go-on with the step it held, beside the
 /// quest page's <i>Reopen…</i> and <i>Go on with it</i>. The reopen names the quest's current submission, read just before; each says
-/// the service's sentence: 0 moved, 1 refused, 2 the usage. Runs no process: the fast half (MOD8).
+/// the service's sentence: 0 moved, 1 refused, 2 the usage. Runs no process: the fast half.
 /// </summary>
 public sealed class QuestReopenCommandTests
 {

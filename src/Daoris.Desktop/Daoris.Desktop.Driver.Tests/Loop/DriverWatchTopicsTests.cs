@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The look's topics (FABRIC-EVENT3a, the fabric events design §A3, §C5, §C6 link 5): a wake runs the local plan alone, and the
-/// remote sync keeps its own clock, the <c>look</c> topic's deadline (<c>pollSeconds</c>), where the whole look runs as it did.
+/// The look's topics: a wake runs the local plan alone, and the
+/// remote sync keeps its own clock, the <c>look</c> topic's deadline (<c>pollSeconds</c>), where the whole look runs.
 /// Canary 4: more wakes are not more whole looks, so a thousand wakes run no remote sync.
 /// </summary>
 /// <remarks>
-/// Over the real client and planner with the service's doors and each start's run standing in, in-process, as the DEV3 tests
-/// drive the watch. The remote sync is a set over an empty map that counts its passes, since each pass reads the map first.
+/// Over the real client and planner with the service's doors and each start's run standing in, in-process, as the other watch tests
+/// drive it. The remote sync is a set over an empty map that counts its passes, since each pass reads the map first.
 /// </remarks>
 public sealed class DriverWatchTopicsTests : IDisposable
 {
@@ -57,12 +57,12 @@ public sealed class DriverWatchTopicsTests : IDisposable
                 else watch.Said($"s{wake}");
             }
 
-            // The last wake carries a quest an agent published: the look after it plans it, so every wake before it was looked at.
+            // The last wake carries a quest an agent published: the look after it plans it, so every wake before it is looked at.
             _ledger.Publish("q1", "engine");
             watch.Nudge(ChangeTopics.Ledger, "quests");
             await Poll.Until(() => runs.Started.Count == 1, () => "q1 never started", Poll.Patience);
 
-            // TESTCLOCK1: the run starts inside the look and the look is reported after it, so the second report is waited for.
+            // The run starts inside the look and the look is reported after it, so the second report is waited for.
             await Poll.Until(() => Count(reports) >= 2, () => $"{Count(reports)} look(s)", Poll.Patience);
             Assert.Equal(synced, Passes());
 
@@ -118,7 +118,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-EVENT3b: the loop holds one wait on the service's change stream, so a quest an agent published starts at once, with
+    /// The loop holds one wait on the service's change stream, so a quest an agent published starts at once, with
     /// no nudge, long before <c>pollSeconds</c>, and without the remote sync.
     /// </summary>
     [Fact]
@@ -152,7 +152,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-EVENT3c (the message-urgency design §5, §14): the change stream's <c>channel</c> family wakes the channel's delivery, so
+    /// The change stream's <c>channel</c> family wakes the channel's delivery, so
     /// the person's message to a parked part's repository is kept on its record at once, with no nudge, long before
     /// <c>pollSeconds</c>, and without the remote sync.
     /// </summary>
@@ -206,7 +206,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
             await Poll.Until(() => Count(reports) >= 1, () => "no look", Poll.Patience);
             var synced = Passes();
 
-            // TESTWAIT6: wakes go on until the loop's own signals say enough, two deadlines passed and more looks than a bare
+            // Wakes go on until the loop's own signals say enough, two deadlines passed and more looks than a bare
             // deadline would make, not for a stretch of the machine's clock, which a loaded run starved of wakes. Each wake waits
             // for the look it woke, so a stream of wakes is what the loop saw.
             var wakes = 0;
@@ -259,7 +259,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
                 () => Snapshot(reports).Any(report => report.Concluded.Any(ended => ended.Quest == "q1")),
                 () => "the ending was never reported", Poll.Patience);
 
-            // PARALLEL1b: the sync after the ending runs beside the look that reported it, so its pass is waited for.
+            // The sync after the ending runs beside the look that reported it, so its pass is waited for.
             await Poll.Until(() => Passes() > synced, () => "no sync after the ending", Poll.Patience);
             Assert.Equal(synced + 1, await SyncedAsync(watch));
         }
@@ -279,7 +279,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
 
     private int Passes() => Volatile.Read(ref _passes);
 
-    /// <summary>The passes counted once no sync works beside the looks (PARALLEL1b): a whole look's pass runs on after it reports.</summary>
+    /// <summary>The passes counted once no sync works beside the looks: a whole look's pass runs on after it reports.</summary>
     private async Task<int> SyncedAsync(DriverWatch watch)
     {
         await Poll.Until(() => !watch.Running.Syncing, () => "the sync beside the looks never ended", Poll.Patience);
@@ -317,7 +317,7 @@ public sealed class DriverWatchTopicsTests : IDisposable
             .ToArray();
 
     /// <summary>
-    /// Canary 4 on git (FABRIC-END3): a thousand ref hints on a repository holding Daoris's work are judged by the ref watch alone,
+    /// A thousand ref hints on a repository holding Daoris's work are judged by the ref watch alone,
     /// and run no look and no remote sync.
     /// </summary>
     [Fact]
@@ -354,9 +354,9 @@ public sealed class DriverWatchTopicsTests : IDisposable
     }
 
     /// <summary>
-    /// PARALLEL1a (D181 point 2): each move a source heard is told to the facts' judges, a topic's wake as it comes and a repository's
+    /// Each move a source hears is told to the facts' judges, a topic's wake as it comes and a repository's
     /// refs once the ref watch judges them; a plain nudge, a press, is no move and tells nothing, and a ref is never told twice.
-    /// OWNMOVES1: a ref Daoris moved itself is told as its own, and a hint as none.
+    /// A ref Daoris moved itself is told as its own, and a hint as none.
     /// </summary>
     [Fact]
     public async Task A_move_heard_is_told_to_the_facts_judges_and_a_press_is_not()

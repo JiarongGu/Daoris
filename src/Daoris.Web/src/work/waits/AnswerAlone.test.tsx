@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { AnswerAlone, type AnswerWait, answerAloneSaid, answerFor } from './AnswerAlone';
 
-// COWORK1e (D188 point 4; the message-urgency design §8.3): a third answer in a row with nobody between waits for the person, with
+// A third answer in a row with nobody between waits for the person, with
 // *Go on with this answer* and *Not now*. Props only: the frame holds the answer and its pending.
 
 const WAIT: AnswerWait = { session: 's1a2b3c4', agent: 'codex-acp', words: ['w3'], since: '2026-10-21T09:00:00Z' };
@@ -34,7 +34,7 @@ describe('a third answer alone, held for the person', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  // CONTEXTDRIVE1h: the rule that held it said once, where it is held, with the door to change it where one is given.
+  // The rule that held it said once, where it is held, with the door to change it where one is given.
   it('says the rule that held it, and offers Change the rule… only where the door is given', async () => {
     const held: AnswerWait = { ...WAIT, rule: { place: 'machine', at: 2, n: 2, count: 'answers-alone', do: 'hold' } };
     const onChangeRule = vi.fn();

@@ -1,5 +1,5 @@
 /**
- * The record of the finished tree a session ran in (KEEPSIZE1), as `SESSION_RECORD` passes the service's answer through: what is kept
+ * The record of the finished tree a session ran in, as `SESSION_RECORD` passes the service's answer through: what is kept
  * once the tree is let go. A shape the page reads, never builds.
  */
 export type SessionRecord = {
@@ -9,7 +9,7 @@ export type SessionRecord = {
     line?: string | null;
     tip: string;
     grewFrom?: string | null;
-    /** The recovery ref holding the tip, where one was written. */
+    /** The recovery ref holding the tip, where one is written. */
     ref?: string | null;
     hold: { kind: string; where?: string | null };
     landing?: { branch: string; line?: string | null; at: string; pullRequest?: string | null } | null;

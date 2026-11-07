@@ -18,7 +18,7 @@ internal static class SessionsGoingOn
 
     /// <summary>
     /// A conversation opened with the words a session could not go on with, by the host's door, which sends the route to the running
-    /// Daoris and holds what it opens (RPC1g3, D238); its exit is the conversation's. A world with no door has nothing to start it in.
+    /// Daoris and holds what it opens; its exit is the conversation's. A world with no door has nothing to start it in.
     /// </summary>
     internal static async Task<int> StartFromAsync(SessionsWorld world, string id, TextWriter output, CancellationToken ct)
     {
@@ -78,7 +78,7 @@ internal static class SessionsGoingOn
     }
 
     /// <summary>
-    /// A hand-over to a named agent (RPC1g3, D238): a quest's own session is a driven move the running Daoris judges or this run decides,
+    /// A hand-over to a named agent: a quest's own session is a driven move the running Daoris judges or this run decides,
     /// through the press as every verb sends it; a conversation goes on in a new one the running Daoris opens, which the host's door
     /// holds. A world with no door has nothing to hand it to.
     /// </summary>

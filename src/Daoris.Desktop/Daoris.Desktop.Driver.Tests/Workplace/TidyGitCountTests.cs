@@ -5,7 +5,7 @@ using static Daoris.Desktop.Driver.Tests.GitFixture;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The look's tidy asks git of the repository once, not once per tree (PERF1c): on a home of two dozen trees it made 32 git starts a
+/// The look's tidy asks git of the repository once, not once per tree: on a home of two dozen trees, asking per tree made 32 git starts a
 /// look, 5.5 to 22 s where one start costs a third of a second to two seconds, 24 of them each tree's branch asked of the tree. Each
 /// tree's branch is read from the one list of the repository's working trees, and the checkout's top, its trees and its branches by
 /// date are each read once a look. What is asked per branch is the end's judgement of its own commits, in the process holding the
@@ -44,15 +44,15 @@ public sealed class TidyGitCountTests(ITestOutputHelper output) : BranchTidyingF
         Assert.True(many.Count <= Ceiling, report);
     }
 
-    // The end's judgement of a branch's own commits (PERF1g): where it left the line, which is also whether the line holds its tip, its
+    // The end's judgement of a branch's own commits: where it left the line, which is also whether the line holds its tip, its
     // tree, and the files it changed. What no branch of the person's holds is one walk of every session branch, not a start a branch
-    // (it was 5 a branch: the line's ancestry, the tree, where it left the line, its files, and its commits no person's branch holds).
+    // (separate starts for the line's ancestry, the tree, where it left the line, its files, and its commits no person's branch holds would be 5 a branch).
     private const int PerBranch = 2;
 
-    // On six trees, 57 git starts before PERF1c and 38 after it: each tree's branch asked of the tree, the checkout's top and its trees
+    // On six trees, asking per tree takes 57 git starts and the one list 38: each tree's branch asked of the tree, the checkout's top and its trees
     // asked by each stage, the session branches listed again, and every branch listed by date and each pair's files compared both ways
-    // per branch. Measured 26 (OPTIMIZE1a, 2026-11-06), two trees 14: the checkout's trees listed twice, by the stages and by the
-    // judgement. Then 20, two trees 12: each branch's tree is the refs' one listing's (`%(tree)`), no start a branch.
+    // per branch. Measured 26, two trees 14, with the checkout's trees listed twice, by the stages and by the
+    // judgement; 20, two trees 12, with each branch's tree the refs' one listing's (`%(tree)`), no start a branch.
     private const int Ceiling = 20;
 
     /// <summary>The git a look asks, its second over the same home: the first reads what a running driver's first look reads.</summary>

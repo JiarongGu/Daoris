@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WSR6's replays, and what they leave: a step grown from work not on the line waits, a pushed or dirty branch is left, a
-/// conflict is aborted and named, the press acts only on what was listed, and a tree folder held open is said plainly and
-/// removed once free. Split from <see cref="TreeSyncTests"/> (PROC1b).
+/// Replays, and what they leave: a step grown from work not on the line waits, a pushed or dirty branch is left, a
+/// conflict is aborted and named, the press acts only on what the list showed, and a tree folder held open is said plainly and
+/// removed once free. Split from <see cref="TreeSyncTests"/>.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -91,7 +91,7 @@ public sealed class TreeSyncReplayTests : TreeSyncFixture
 
     /// <summary>
     /// The press acts only on the rows the person saw listed: a branch listed is replayed, one not listed is not,
-    /// and a row that is no longer what was listed is left and says so.
+    /// and a row that no longer matches the list is left and says so.
     /// </summary>
     [Fact]
     public async Task The_press_acts_only_on_what_was_listed()
@@ -158,7 +158,7 @@ public sealed class TreeSyncReplayTests : TreeSyncFixture
 
         // The holder's exit frees what the holder held. What else holds the folder past it (a scanner's read, a child) is not the
         // holder's to release, and one press tries once: a press that leaves the folder says why, and the next goes on the
-        // clean-up's word, not on a time (TREECLEANFREE1: the folder was found after one press, which had said nothing of it).
+        // clean-up's word, not on a time.
         var done = await trees.CleanAsync([], Nobody);
         for (var waited = 0; Directory.Exists(tree.Path); waited += 50)
         {

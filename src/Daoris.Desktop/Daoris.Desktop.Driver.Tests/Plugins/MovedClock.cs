@@ -1,9 +1,9 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A clock that stands still until the test moves it (TESTCLOCK2, the modules tests' RPC1c clock): a timer it made fires only once
+/// A clock that stands still until the test moves it: a timer it makes fires only once
 /// <see cref="Advance"/> passes its time, so a plugin's grace is the test's to spend, never the machine's load. <see cref="Timed"/>
-/// says a timer was made, so the test moves the clock only once the code is waiting on it.
+/// says a timer exists, so the test moves the clock only once the code is waiting on it.
 /// </summary>
 internal sealed class MovedClock : TimeProvider
 {
@@ -15,7 +15,7 @@ internal sealed class MovedClock : TimeProvider
     /// <summary>Done once the code has made its first timer on this clock.</summary>
     public Task Timed => _timed.Task;
 
-    /// <summary>Whether a timer made on this clock is due and has not fired (AGENTERRORS1a): the code waits on it now.</summary>
+    /// <summary>Whether a timer made on this clock is due and has not fired: the code waits on it.</summary>
     public bool Waiting
     {
         get
@@ -25,7 +25,7 @@ internal sealed class MovedClock : TimeProvider
     }
 
     /// <summary>
-    /// When each timer made on this clock is due, earliest first, those not fired (AGENTERRORS1, the tick tests' determinism): what
+    /// When each timer made on this clock is due, earliest first, those not fired: what
     /// the code waits on, so a test moves the clock to exactly the moment a wait it can name ends, never by a guess of its own.
     /// </summary>
     public IReadOnlyList<DateTimeOffset> Pending

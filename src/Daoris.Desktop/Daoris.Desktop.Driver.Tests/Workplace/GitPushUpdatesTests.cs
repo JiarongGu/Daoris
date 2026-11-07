@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// D233 choice 3: the doors judge a push's force and delete for every agent, whatever its harness's rules. The helper reads git's
+/// The doors judge a push's force and delete for every agent, whatever its harness's rules. The helper reads git's
 /// <c>push</c> lines; the ssh door reads receive-pack's commands, forwarded byte for byte once judged; a force or delete is refused
 /// unless Dangerous allows it, and the landing's grant passes it as it passes the landing's push.
 /// </summary>
@@ -178,7 +178,7 @@ public sealed class GitPushUpdatesTests
 
         Assert.Equal((false, "dangerous-denied"), (forced.Allowed, forced.Code));
         Assert.Equal((true, true), (forcedExact.Allowed, forcedExact.UsedGrant));
-        // D241 point 2: a tag is the same act as a branch, its grant naming it for Write, and the place's Dangerous value decides it.
+        // A tag is the same act as a branch, its grant naming it for Write, and the place's Dangerous value decides it.
         Assert.Equal((false, "dangerous-denied", GitPushUpdates.DeniedLine(GitPushKind.Tag)), (tagDenied.Allowed, tagDenied.Code, tagDenied.Line));
         Assert.Equal((true, "granted", true), (tagAllowed.Allowed, tagAllowed.Code, tagAllowed.UsedGrant));
         Assert.Equal((false, "grant-bound"), (tagElsewhere.Allowed, tagElsewhere.Code));

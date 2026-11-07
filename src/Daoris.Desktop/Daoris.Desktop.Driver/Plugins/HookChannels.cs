@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin's hook started and spoken to (D64 §4): the channel the hook set and the landing start through, so neither,
-/// nor another module, names the process behind it (STRUCT3a).
+/// A plugin's hook started and spoken to: the channel the hook set and the landing start through, so neither,
+/// nor another module, names the process behind it.
 /// </summary>
 public static class HookChannels
 {

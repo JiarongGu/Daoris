@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { HandOverAsk } from './HandOverAsk';
 
-// MIXAGENT1b-iii (D163): the hand-over's ask lists the offer's candidates, other tools, first, and still lets the person choose
+// The hand-over's ask lists the offer's candidates, other tools, first, and still lets the person choose
 // anything the roster has; with no choice made it opens on the first of them.
 const roster = {
   harnesses: ['claude-code', 'claude-code-acp', 'codex'],

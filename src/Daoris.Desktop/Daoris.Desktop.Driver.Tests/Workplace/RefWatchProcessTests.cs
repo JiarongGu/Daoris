@@ -5,14 +5,13 @@ using Xunit.Abstractions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ref watch over the machine's own watcher and real git (FABRIC-END3, the design §A5's open questions and canary 10's first
-/// numbers): each of git's ref writes judged once, within a second of git's exit, by the real end keeper; a ref deleted is judged and is
+/// The ref watch over the machine's own watcher and real git: each of git's ref writes judged once, within a second of git's exit, by the real end keeper; a ref deleted is judged and is
 /// no end; and what the watchers hold for the most repositories watched. A handful of git operations on one scratch repository under
 /// the repository's <c>_fixtures/</c>, never a load and never the owner's.
 /// </summary>
 /// <remarks>
 /// Real watchers, whose events arrive on the machine's own time, each judged within a second, and the handles of the whole process
-/// measured, which every class beside it moves: so it runs alone, after the rest (<see cref="Alone"/>, PROCPAR1).
+/// measured, which every class beside it moves: so it runs alone, after the rest (<see cref="Alone"/>).
 /// </remarks>
 [Collection(Alone.Name)]
 [Trait(Category.Name, Category.Process)]
@@ -74,7 +73,7 @@ public sealed class RefWatchProcessTests(ITestOutputHelper output) : LandedFixtu
     }
 
     /// <summary>
-    /// Canary 10's numbers for the ref watch: the process's handles and nonpaged memory before, with <see cref="ChangeWatch.MostRoots"/>
+    /// The numbers for the ref watch: the process's handles and nonpaged memory before, with <see cref="ChangeWatch.MostRoots"/>
     /// repositories' common dirs watched (subfolders and all), and once disposed. Folders, not repositories: a watcher's cost is its folder's.
     /// </summary>
     [Fact]

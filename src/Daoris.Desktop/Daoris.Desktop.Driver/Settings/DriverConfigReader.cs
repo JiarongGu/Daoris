@@ -11,12 +11,12 @@ internal static class DriverConfigReader
 {
     public static DriverConfig Parse(string json)
     {
-        // A key written twice in one object reads as its last value in its first place, as the CLI's JSON.parse reads it (the re-check's
-        // finding 3); the text read stays as written, and no edit is written over it (Save).
+        // A key written twice in one object reads as its last value in its first place, as the CLI's JSON.parse reads it;
+        // the text read stays as written, and no edit is written over it (Save).
         using var document = JsonDocument.Parse(JsonKeeping.Once(json));
         var root = document.RootElement;
-        // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind
-        // (CONFIGREAD1): said here, so the reader can say it with its file.
+        // Each field below asks the root for a property, which throws a runtime exception naming no file for any other kind:
+        // said here, so the reader can say it with its file.
         if (root.ValueKind != JsonValueKind.Object) throw new JsonException("it holds no JSON object");
         var (actors, actorErrors) = ActorKey.Read(root);
         var empty = DriverConfig.Empty;
@@ -28,28 +28,28 @@ internal static class DriverConfigReader
             PollSeconds: Math.Max(1, Int(root, "pollSeconds") ?? empty.PollSeconds),
             Commands: CommandMap(root),
             Trees: Json.Strings(root,"trees"),
-            // Absent means ON (SURF5b): every machine that already has a driver.json predates this
+            // Absent means ON: every machine that already has a driver.json predates this
             // field, and reading silence as "off" would ship the feature switched off everywhere it
             // matters most — a machine that has been driving for a while.
             Notify: Bool(root, "notify") ?? empty.Notify,
             Forgiven: ForgivenMap(root))
         {
-            // The text read, which the writer keeps every key it does not own from (FABRIC-GRAPH1's review, finding 1).
+            // The text read, which the writer keeps every key it does not own from.
             Source = json,
             // Out of its bounds, or not a whole number, is the default: never a bound the doors would refuse.
             QuietMinutes = QuietSetting.Read(Int(root, QuietSetting.File)),
-            // Each actor's order (MODELROLE1c, D205 §9.1): an entry that does not read is kept as its error, and holds its starts.
+            // Each actor's order: an entry that does not read is kept as its error, and holds its starts.
             Actors = actors,
             ActorErrors = actorErrors,
-            // Restricted unless the file names full (HELPMODE1a1): never widened by a value it does not know.
+            // Restricted unless the file names full: never widened by a value it does not know.
             HelpMode = HelpModeNames.Named(Json.NonEmpty(root, "helpMode")) == HelpModeNames.Full ? HelpModeNames.Full : HelpModeNames.Restricted,
-            // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
+            // Absent, or less than a minute, or not a whole number, is the default hour: never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
             Released = SessionMap(root, "released"),
             TransientReleased = TransientReleaseMap(root, "transientReleased"),
             RoleReleases = RoleReleaseMap(root, "roleReleases"),
-            // Each set-up quest against its repository, read as a release's session is (AGENTSPLACE1b).
+            // Each set-up quest against its repository, read as a release's session is.
             Admitted = SessionMap(root, "admitted"),
             PausedAsks = PauseMap(root, "pausedAsks"),
             PausedQuests = PauseMap(root, "pausedQuests"),
@@ -58,10 +58,10 @@ internal static class DriverConfigReader
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Languages = LanguageMap(root, "languages"),
             WorkspaceLanguages = LanguageMap(root, "workspaceLanguages"),
-            // A rule with a problem is not read, and `false` only for a repository (REVIEWENV1a).
+            // A rule with a problem is not read, and `false` only for a repository.
             Reviews = ReviewKey.Map(root, "reviews", allowNone: true),
             WorkspaceReviews = ReviewKey.Map(root, "workspaceReviews", allowNone: false),
-            // A rule with a problem is not read, and `false` only for a repository (XAGENT1a).
+            // A rule with a problem is not read, and `false` only for a repository.
             Opinions = OpinionKey.Map(root, "opinions", allowNone: true),
             WorkspaceOpinions = OpinionKey.Map(root, "workspaceOpinions", allowNone: false),
             Helpers = HelperKey.Map(root, "helpers"),
@@ -72,25 +72,25 @@ internal static class DriverConfigReader
             WorkspaceBrainstorms = BrainstormKey.Map(root, "workspaceBrainstorms"),
             Commits =CommitKey.Map(root, "commits"),
             WorkspaceCommits = CommitKey.Map(root, "workspaceCommits"),
-            // An entry with a problem, or naming nothing, is not read (WORKFLOW1e).
+            // An entry with a problem, or naming nothing, is not read.
             Workflows = WorkflowKey.Map(root, "workflows", workspace: false),
             WorkspaceWorkflows = WorkflowKey.Map(root, "workspaceWorkflows", workspace: true),
-            // A default that is no workflow's id is not read (WORKFLOWCLEAN1 1a).
+            // A default that is no workflow's id is not read.
             DefaultWorkflow = root.TryGetProperty("defaultWorkflow", out var homeDefault) && homeDefault.ValueKind == JsonValueKind.String
                 && homeDefault.GetString() is { } homeId && homeId != WorkflowKey.Current && WorkflowKey.IsId(homeId) ? homeId : null,
             LinePolicies = LinePolicyKey.PolicyMap(root, "linePolicies"),
             WorkspaceLinePolicies = LinePolicyKey.PolicyMap(root, "workspaceLinePolicies"),
-            // Read as a stored shape (INTEGRATE1d): a value that is no blob id and not `none` is not read, and shadows none.
+            // Read as a stored shape: a value that is no blob id and not `none` is not read, and shadows none.
             IntegrationGates = IntegrationGatesKey.Map(root),
-            // Read as a stored shape (AUTONOMY1a): a pause this build does not know passed over, a value it does not know read as today's.
+            // Read as a stored shape: a pause this build does not know passed over, a value it does not know read as today's.
             Access = AccessKey.Map(root, "access"),
             WorkspaceAccess = AccessKey.Map(root, "workspaceAccess"),
             MachineAccess = AccessKey.Machine(root),
-            // Read as a stored shape (HEAVYRUN1b2a): a list with a gate that does not read is not read, whole.
+            // Read as a stored shape: a list with a gate that does not read is not read, whole.
             HeavyGates = HeavyKey.Map(root),
-            // Read as a stored shape (FABRIC-PIPELINE1b): a value that is no choice is not read, and shadows none.
+            // Read as a stored shape: a value that is no choice is not read, and shadows none.
             SessionChecks = SessionChecksKey.Map(root),
-            // Read as a stored shape (KEEP1d): a value out of its kind's bounds is not read, and its kind keeps its default.
+            // Read as a stored shape: a value out of its kind's bounds is not read, and its kind keeps its default.
             Keep = KeepChoices.Read(root),
             ReadAcross = FlagMap(root, "readAcross"),
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
@@ -120,7 +120,7 @@ internal static class DriverConfigReader
     }
 
     /// <summary>
-    /// The transient releases as written (AGENTERRORS1a2): an entry with no session or no <c>ended</c> that reads as a moment is none,
+    /// The transient releases as written: an entry with no session or no <c>ended</c> that reads as a moment is none,
     /// so a release whose end is unsaid passes nothing; a quest named twice in any case is read where first written.
     /// </summary>
     private static IReadOnlyDictionary<string, TransientRelease> TransientReleaseMap(JsonElement container, string name)
@@ -145,7 +145,7 @@ internal static class DriverConfigReader
     }
 
     /// <summary>
-    /// The pauses (PAUSE1a): each id an object, read where first written in any case. Its <c>at</c> is read only as ISO 8601
+    /// The pauses: each id an object, read where first written in any case. Its <c>at</c> is read only as ISO 8601
     /// writes a moment, and a time that does not read leaves the pause standing with its time unknown: the pause is the
     /// person's, and the time only says when. Its <c>stopped</c> is read as <c>released</c> is.
     /// </summary>
@@ -164,7 +164,7 @@ internal static class DriverConfigReader
     }
 
     /// <summary>
-    /// The standing answers (KNOWUSE1b): each repository an object whose <c>says</c> is text, read without the spaces around it,
+    /// The standing answers: each repository an object whose <c>says</c> is text, read without the spaces around it,
     /// and read where first written in any case. Its <c>at</c> is read only as ISO 8601 writes a moment, and a time that does not
     /// read leaves the answer standing with its time unknown. Blank words, an entry that is not an object, and a map that is not
     /// one are none.
@@ -191,14 +191,14 @@ internal static class DriverConfigReader
 
     /// <summary>
     /// A moment as ISO 8601 writes it, and only so: to the second, with a fraction or not, in UTC or at an offset. The same
-    /// forms <see cref="AccountCooling"/> reads (TOOL4d), and the CLI's <c>cooling.ts</c> (<c>isoMoment</c>): a lenient parse
+    /// forms <see cref="AccountCooling"/> reads, and the CLI's <c>cooling.ts</c> (<c>isoMoment</c>): a lenient parse
     /// would read <i>Oct 2</i> as this year's.
     /// </summary>
     private static DateTimeOffset? Moment(string? text) => Moments.ReadStrict(text);
 
     /// <summary>
-    /// A map of names to booleans; an entry of any other type is not read (D107). A name written twice in any case is read where first
-    /// readable, as the CLI reads it (CASEMAP1, D173's CONFIG1 note: the last value was read here, each spelling there).
+    /// A map of names to booleans; an entry of any other type is not read. A name written twice in any case is read where first
+    /// readable, as the CLI reads it.
     /// </summary>
     private static IReadOnlyDictionary<string, bool> FlagMap(JsonElement root, string name)
     {
@@ -219,10 +219,10 @@ internal static class DriverConfigReader
     }
 
     /// <summary>
-    /// The declared relationships (D107): each repository's list of other names, once each in any case, in
+    /// The declared relationships: each repository's list of other names, once each in any case, in
     /// the order first written. A list that is not one, an entry that is not a name, and the repository
     /// itself are not read; a repository left with none has no entry. A repository written twice in any case
-    /// is read where first readable, as the CLI reads it (CASEMAP1: the last list was read here).
+    /// is read where first readable, as the CLI reads it.
     /// </summary>
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> TargetMap(JsonElement root, string name)
     {
@@ -250,7 +250,7 @@ internal static class DriverConfigReader
     }
 
     /// <summary>
-    /// The session languages (LANG1c): each name a code of the table, read in any case without the spaces around it. A code
+    /// The session languages: each name a code of the table, read in any case without the spaces around it. A code
     /// the table does not hold, a value that is not text, a blank name and a map that is not one are not read; a name written
     /// twice in any case is read where first written.
     /// </summary>
@@ -273,7 +273,7 @@ internal static class DriverConfigReader
 
     /// <summary>
     /// A map of names to branch names; an entry that is not one git would take is skipped. A name written twice in any case is read
-    /// where first readable, as the CLI reads it (CASEMAP1: the first spelling was kept here with the last value).
+    /// where first readable, as the CLI reads it.
     /// </summary>
     private static IReadOnlyDictionary<string, string> BranchMap(JsonElement root, string name)
     {
@@ -294,8 +294,8 @@ internal static class DriverConfigReader
     }
 
     /// <summary>
-    /// The releases (SESSUX1b), and a pause's stops (PAUSE1a): each quest against a session's id, read without the spaces
-    /// around it; the admissions (AGENTSPLACE1b) against a repository's name alike. A blank value, one that is not text, a map
+    /// The releases, and a pause's stops: each quest against a session's id, read without the spaces
+    /// around it; the admissions against a repository's name alike. A blank value, one that is not text, a map
     /// that is not one, and a quest written again in another case are not read.
     /// </summary>
     private static IReadOnlyDictionary<string, string> SessionMap(JsonElement container, string name)
@@ -322,7 +322,7 @@ internal static class DriverConfigReader
         {
             foreach (var property in element.EnumerateObject())
             {
-                // A quest written twice in any case is read where first readable, as the CLI reads it (CASEMAP1).
+                // A quest written twice in any case is read where first readable, as the CLI reads it.
                 if (property.Value.ValueKind == JsonValueKind.Number
                     && property.Value.TryGetInt32(out var mark) && mark > 0 && !forgiven.ContainsKey(property.Name))
                 {
@@ -366,8 +366,8 @@ internal static class DriverConfigReader
             ? value.GetBoolean()
             : null;
 
-    // A number that is not a whole one is refused as it always was, now in words that name the field (CONFIGREAD1): the
-    // runtime's own said only that an item was in an invalid format.
+    // A number that is not a whole one is refused in words that name the field: the
+    // runtime's own says only that an item is in an invalid format.
     private static int? Int(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number
             ? value.TryGetInt32(out var number) ? number : throw new JsonException($"`{name}` is not a whole number")

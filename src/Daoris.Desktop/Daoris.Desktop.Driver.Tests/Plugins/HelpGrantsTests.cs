@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// What a plugin hands Ask Daoris reaches it only as the person approved it (HELPPLUG1a's tightening, D170's note): the exact
+/// What a plugin hands Ask Daoris reaches it only as the person approved it: the exact
 /// tools a server declares, approved on the plugin's page or at its terminal twin, asked again when an update adds or widens
 /// one; a write outside Daoris never allowed silently; and no generic execution tool, whatever the manifest says.
 /// </summary>
@@ -56,7 +56,7 @@ public sealed class HelpGrantsTests : IDisposable
     }
 
     /// <summary>
-    /// D89's "every change is confirmed": a write the person did not accept is asked, which in Ask Daoris's asking mode is
+    /// Every change is confirmed: a write the person did not accept is asked, which in Ask Daoris's asking mode is
     /// refused; one an update adds after the approval is asked too, never allowed silently.
     /// </summary>
     [Fact]
@@ -121,7 +121,7 @@ public sealed class HelpGrantsTests : IDisposable
         }
     }
 
-    /// <summary>No generic execution tool for the helper (HELP4, D170): judged by the tool's name, refused with a reason, never approved.</summary>
+    /// <summary>No generic execution tool for the helper: judged by the tool's name, refused with a reason, never approved.</summary>
     [Theory]
     [InlineData("run_command")]
     [InlineData("shell")]
@@ -158,7 +158,7 @@ public sealed class HelpGrantsTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1c: a server that waits says whether it was never approved or was approved and an update changed its tools since,
+    /// A server that waits says whether it is not yet approved or an update changed its approved tools,
     /// so the page and the room say "changed since: asks again" rather than taking it away in silence.
     /// </summary>
     [Fact]
@@ -175,8 +175,8 @@ public sealed class HelpGrantsTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1c: the person accepts each write on its own: all the reads, and only the writes they chose, the rest asked, which
-    /// Ask Daoris's asking mode refuses (D89). An approval naming a write the server does not declare approves nothing.
+    /// The person accepts each write on its own: all the reads, and only the writes they chose, the rest asked, which
+    /// Ask Daoris's asking mode refuses. An approval naming a write the server does not declare approves nothing.
     /// </summary>
     [Fact]
     public void Approved_with_the_writes_the_person_chose_allows_those_and_asks_the_others()

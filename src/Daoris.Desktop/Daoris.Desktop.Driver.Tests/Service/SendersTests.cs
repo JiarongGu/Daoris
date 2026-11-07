@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COMMS1a (the comms design §3.3, §13 point 11): who said a word, read once. This is the driver's twin of the service's
+/// Who said a word, read once. This is the driver's twin of the service's
 /// <c>Senders</c>, held to <c>fixtures/senders.json</c> among the service's tests, which the page's <c>sender.test.ts</c> reads as well,
 /// row for row. It reads a kept word (<see cref="SaidWordView"/>) and an event (<see cref="SessionEvent"/>), which carries no key, so it
 /// tells a partner from a helper by the work of the record the event names.

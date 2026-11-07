@@ -7,10 +7,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The trust hold, said in a shape a screen can act on (D73) — not only in a sentence.
+/// The trust hold, said in a shape a screen can act on — not only in a sentence.
 /// </summary>
 /// <remarks>
-/// <para>The hold was a sentence, and a sentence is for a person: a page that classified it by
+/// <para>A hold in words alone is for a person: a page that classified it by
 /// matching the words would turn every rewording into a silent change of behaviour. So a tick reports
 /// each trust hold as a fact — the folder the harness has not trusted, the file the driver read that
 /// from, and the quest (or ask) it held — which is what the screen's *trust this folder…* grants,
@@ -57,7 +57,7 @@ public sealed class TrustHoldTickTests : IDisposable
 
     /// <summary>
     /// 🔴 <b>Measured (2026-09-24): the rules Daoris hands over at spawn reach an untrusted session, on
-    /// both doors</b> (`docs/2026-09-24-deploy1-acp-trust-evidence.md`). With PERM1's `connector`
+    /// both doors</b> (`docs/2026-09-24-deploy1-acp-trust-evidence.md`). With the `connector`
     /// default carried, the session can take and close its quest in a folder nobody trusted, so there
     /// is nothing to hold for: trust then decides only whether the repository's OWN allow-list counts.
     /// </summary>

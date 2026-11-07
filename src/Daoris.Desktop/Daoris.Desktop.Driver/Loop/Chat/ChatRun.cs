@@ -33,7 +33,7 @@ internal sealed class ChatRun(
     public async Task<ChatStart> RunAsync(
         string actor, string sessionId, string message, ChatAgent agent, HarnessSelection selection, DriverConfig config,
         ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct, GoingOn? goOn = null, ActorEffective? chosen = null,
-        ChatPending? pending = null)
+        ChatPending? pending = null, bool working = false)
     {
         var home = Context.Home;
         var service = Context.Service;
@@ -76,8 +76,8 @@ internal sealed class ChatRun(
         string? helpMode = null;
         try
         {
-            // A conversation going on is working already: the ledger moved it there before anything was spawned.
-            if (goOn is null) await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
+            // A conversation going on is working already: the ledger moved it there before anything is spawned.
+            if (goOn is null && !working) await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
             // Ask Daoris's place under the mode the person chose, refused where its agent has none such.
             var ran = goOn is null ? null : HelpModes.Recorded(goOn.Record.HelpMode);
@@ -104,6 +104,7 @@ internal sealed class ChatRun(
                 Home = home,
             };
             var info = agent.Prepare(request, selection);
+            if (goOn?.Carried is { } carriedOn) LimitCarried.Compact(info, carriedOn.Plan);
 
             // Its standing block, on its harness, told with a new conversation's first message and never at a go-on, which resumes the same
             // conversation; a hand-over's adds the memory its brief hands on.
@@ -164,7 +165,7 @@ internal sealed class ChatRun(
             }
 
             // The servers the plugins hand every session, on this door too. The protocol door carries them on `session/new`; a driven or
-            // intake session on the pipe is handed a file, and a conversation on the pipe was handed nothing at all. A room has no `.mcp.json`
+            // intake session on the pipe is handed a file, and a conversation on the pipe is handed nothing at all. A room has no `.mcp.json`
             // of its own, so its connector goes in the same file.
             var onWire = agent.Abilities.ServersOnWire;
             offered = onWire || place.ConnectorOnPipe
@@ -200,7 +201,7 @@ internal sealed class ChatRun(
             }
 
             // Reported alone, so a refusal here costs the record its provenance, never the conversation. An override re-applied is the person's
-            // change, never the open's asked, so the record's asked is left as it was.
+            // change, never the open's asked, so the record's asked is left unchanged.
             if (overriding is null)
             {
                 using var startLog = new MachineLog(home, "driver");
@@ -229,7 +230,7 @@ internal sealed class ChatRun(
         }
         catch (Exception error)
         {
-            // What the run was handed goes with it: a token never spawned, a go-on's among them, or one its spawn let go.
+            // What the run is handed goes with it: a token never spawned, a go-on's among them, or one its spawn let go.
             if (run is not null) await run.DisposeAsync().ConfigureAwait(false);
             else if (goOn?.Proc is { } moved) LineageTokens.Current.Unspawned(moved);
             // The record exists and must say what happened, or it sits at `queued` or `starting` forever holding the repository, the same rule
@@ -270,18 +271,18 @@ internal sealed class ChatRun(
             Context.HelpModes[sessionId] = helpMode;
         }
 
-        // On the protocol door a conversation is one session held over the wire: opened once, each message a turn on it. It used to be spawned
-        // as a pipe, and a person's words went into the JSON-RPC stream as raw text, so the harness declared itself interactive and could not
+        // On the protocol door a conversation is one session held over the wire: opened once, each message a turn on it. Spawned
+        // as a pipe, a person's words would go into the JSON-RPC stream as raw text, so the harness would declare itself interactive and could not
         // hold a conversation at all.
         ProtocolChat? chat = null;
         NativeChat? native = null;
         var mapper = agent.StructuredOutput();
-        // The turn's end it was last judged at by its account's usage curve: told under its turns' own lock, in order.
+        // The turn's end last judged by its account's usage curve: told under its turns' own lock, in order.
         DateTimeOffset? judged = null;
-        // Whether a turn's refusal was read for its account's limit since the last turn's end was judged: set on the turn's own thread, taken
+        // Whether a turn's refusal is read for its account's limit since the last turn's end is judged: set on the turn's own thread, taken
         // at its end.
         var limitedTurn = 0;
-        // Whether a turn ended past its transient episode since the last turn's end was judged: its line's rules judge that end.
+        // Whether a turn ended past its transient episode since the last turn's end is judged: its line's rules judge that end.
         var transientTurn = 0;
         // Only a repository's chat has a chat run; Ask Daoris, a helper and a reviewer have none, which the bind reads too.
         var bindsRun = actor == "chat";
@@ -449,7 +450,7 @@ internal sealed class ChatRun(
 
         var watch = watching.WatchAsync(
             sessionId, run, transcript, onEnded, Measured, rules, mapper, chat, native, servers, Said,
-            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid }, actorRun, actorLog,
+            new ChatWatched(agent.Name, place.Keeps, goOn) { Skills = skills, Preamble = modeSaid, Working = working }, actorRun, actorLog,
             // The native door's failed result read for the account's limit, concluded at its turn's end as a protocol conversation's refused
             // turn is: the account cools, its cooling line stands before the turn's end, and that end moves it to the next account.
             // And an open's refused model kept as the account's refusal before its re-ask walks on.
@@ -471,7 +472,7 @@ internal sealed class ChatRun(
         Context.Watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => Context.Watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
-        // Where its open was refused and the re-ask answered another session, the replacement opens once this run let its process, its files
+        // Where its open is refused and the re-ask answered another session, the replacement opens once this run let its process, its files
         // and its turns go, in the same call as far as the person is concerned.
         if (pending is not null) _ = wiring.Of<ChatReplacement>().ReplaceAsync(watch, pending, sessionId, selection);
         // A go-on whose wire refused the resume as lost goes on in a new part, once its watch let its process, its files and its turns go.
@@ -479,9 +480,10 @@ internal sealed class ChatRun(
         {
             _ = AfterAsync(
                 watch,
-                () => goOn.Ask.Refused is { Lost: true } lost
-                    ? goOnDoor.LostAsync(goOn.Record, lost, agent.Name, config, onEnded, held: false, CancellationToken.None)
-                    : Task.FromResult(new ChatStart(null, "")));
+                () => goOn.Ask.Refused is not null && goOn.Carried is { } carried ? carried.FallBackAsync()
+                    : goOn.Ask.Refused is { Lost: true } lost
+                        ? goOnDoor.LostAsync(goOn.Record, lost, agent.Name, config, onEnded, held: false, CancellationToken.None)
+                        : Task.FromResult(new ChatStart(null, "")));
         }
 
         return new(sessionId, message);

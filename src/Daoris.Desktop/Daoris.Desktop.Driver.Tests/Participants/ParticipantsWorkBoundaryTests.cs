@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xii part 2, the Participants cuts of the three families above it (Review, Work orders and Workflows): the behaviour they
+/// The Participants cuts of the three families above it (Review, Work orders and Workflows): the behaviour they
 /// keep, written against the surface that exists on both sides of them (what the looks' judges keep for the plan, a loop's reserved and
 /// bound starts, a conversation's chat run read at a turn's end and at a spawn, and the helper pass's opening line), so the same cases
 /// pass on the base and after it. The seams the cuts add are <c>ParticipantsAbovePortsTests</c>'.

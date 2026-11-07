@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The preview's link refusal over a REAL link (PREVIEW1, D111): the fast tests hold the walk through the
+/// The preview's link refusal over a REAL link: the fast tests hold the walk through the
 /// reader's seam, and these hold that the seam as shipped sees what the file system made.
 /// </summary>
 /// <remarks>
-/// A process class (MOD8): Windows makes a link without the symlink privilege only as a junction, and only
+/// A process class: Windows makes a link without the symlink privilege only as a junction, and only
 /// `mklink /J` makes one, so these start `cmd`. Elsewhere a symbolic link needs no process.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]

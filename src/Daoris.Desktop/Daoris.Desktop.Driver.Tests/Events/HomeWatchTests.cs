@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The home's record files on the change watch (FABRIC-EVENT4, the design §A4.1 and link 7): <c>driver.json</c>, the plugins
+/// The home's record files on the change watch (link 7): <c>driver.json</c>, the plugins
 /// folder, <c>lines-moved.json</c> and the held words each wake their topic within the debounce, are found by the topic's
 /// deadline when their source is silent, and the loop's own writes wake nothing. On the fake source.
 /// </summary>
@@ -85,7 +85,7 @@ public sealed class HomeWatchTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITRESUME1c (D206 §3.4): the cooling store and the harness settings wake the <c>accounts</c> topic within the debounce, so an
+    /// The cooling store and the harness settings wake the <c>accounts</c> topic within the debounce, so an
     /// account freed early (<i>Try now</i>, a sign-in, an account added) wakes the look whose limits stage reads its stamp.
     /// </summary>
     [Fact]
@@ -183,7 +183,7 @@ public sealed class HomeWatchTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-EVENT5a: a proposal written to Ask Daoris's folder by another process is heard as the <c>help</c> topic, found by the
+    /// A proposal written to Ask Daoris's folder by another process is heard as the <c>help</c> topic, found by the
     /// deadline where the source is silent, and a proposal rewritten with its state kept (a card's units kept) or a claim is no new proposal.
     /// </summary>
     [Fact]
@@ -214,7 +214,7 @@ public sealed class HomeWatchTests : IDisposable
     }
 
     /// <summary>
-    /// HELP-PROPOSAL-SETTLED1: a proposal settled by another process (a terminal's Apply, through <see cref="HelpProposals.Settle"/>)
+    /// A proposal settled by another process (a terminal's Apply, through <see cref="HelpProposals.Settle"/>)
     /// rewrites the file under its name, and is heard within the debounce, with the deadline an hour away, so an open window's card
     /// goes; and found by the deadline where the source is silent.
     /// </summary>
@@ -238,7 +238,7 @@ public sealed class HomeWatchTests : IDisposable
     }
 
     /// <summary>
-    /// NOTIFY2f (the notification design §2.5): <c>notices.json</c> written by another process is heard as the <c>notices</c> topic, and
+    /// <c>notices.json</c> written by another process is heard as the <c>notices</c> topic, and
     /// found by the deadline where the source is silent; this process's own write through <see cref="Notices"/> wakes nothing, its writer
     /// pushing it.
     /// </summary>

@@ -5,7 +5,7 @@ using Daoris.Contracts.Brainstorms;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The terminal's way to the brainstorm desk (ONEWAY1t): the running service's <c>/api/brainstorms</c> doors, which are the one
+/// The terminal's way to the brainstorm desk: the running service's <c>/api/brainstorms</c> doors, which are the one
 /// writer of a request, a send and a stop. With no service running the verb says so and writes nothing; it never writes the files
 /// itself, and what it prints of a press is the desk's own sentence.
 /// </summary>

@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What an ended session's own tree offers to land (LAND4): the commits on it no branch of the person's holds, by D88's
+/// What an ended session's own tree offers to land: the commits on it no branch of the person's holds, by the content
 /// proof, whatever the session's ending, with the branch and the tree they are on. The press is the review's Accept, at any
 /// of its doors, so everything a landing checks is checked there; this only says there is work a press would land.
 /// </summary>
-/// <param name="Branch">The session's branch, <c>daoris/</c> and its tree's name, as the layout names it (D51).</param>
+/// <param name="Branch">The session's branch, <c>daoris/</c> and its tree's name, as the layout names it.</param>
 /// <param name="Tree">The tree's name under its repository's folder: never a path.</param>
 /// <param name="Commits">The commits a landing would carry: a proven count, above zero.</param>
 /// <param name="Uncommitted">Its uncommitted paths, which a branch leaves behind; null where git could not say.</param>
@@ -13,22 +13,22 @@ public sealed record LandOffer(string Branch, string Tree, int Commits, int? Unc
 {
     /// <summary>
     /// The offer a judged tree makes, or null: only commits git counted, above zero. Uncommitted work alone lands nothing, and
-    /// a count git could not give offers no press, though it stays to review (the clean-up's keep, D88). Commits the line holds
-    /// by content offer none either (SQUASHTIDY1b): accepting them would make a branch of work already there.
+    /// a count git could not give offers no press, though it stays to review (the clean-up's keep). Commits the line holds
+    /// by content offer none either: accepting them would make a branch of work already there.
     /// </summary>
     public static LandOffer? Of(string tree, TreeWork work)
     {
         if (work.Commits is not > 0 || work.Held is not null || TreeNames.Normal(tree).Split('/')[^1] is not { Length: > 0 } name) return null;
-        // The tree's own branch where it moved onto one (TREEFOLLOW1), else the layout's name for it.
+        // The tree's own branch where it moved onto one, else the layout's name for it.
         return new LandOffer(work.Branch ?? TreeFollows.SessionPrefix + name, name, work.Commits.Value, work.Uncommitted);
     }
 }
 
 /// <summary>
-/// What an ended session's own tree offers where its commits are held by content (SQUASHTIDY1b): no landing, since accepting
+/// What an ended session's own tree offers where its commits are held by content: no landing, since accepting
 /// would make a branch of work a squash merge or a cherry-pick already put elsewhere, but where its work is, in Discard's own
 /// clause, and the review's Discard, unforced, naming the ref its commits stay at. The press is that Discard, which judges
-/// again and keeps the ref at its press (SQUASHTIDY1c); this only says what it would do.
+/// again and keeps the ref at its press; this only says what it would do.
 /// </summary>
 /// <param name="Branch">The session's branch, as <see cref="LandOffer.Branch"/>.</param>
 /// <param name="Tree">The tree's name under its repository's folder: never a path.</param>
@@ -56,7 +56,7 @@ public sealed record DiscardOffer(string Branch, string Tree, HeldWork Work)
     public string? KeptAt => Work.Keeps is { } reference ? ContentHold.KeptAt(Branch, reference) : null;
 
     /// <summary>
-    /// What a landing of this tree says at every door (SQUASHTIDY1f): refused, where its work is in the clause the page says where
+    /// What a landing of this tree says at every door: refused, where its work is in the clause the page says where
     /// <i>Accept…</i> would be, why landing it again is refused, and its discard, or why its tree stays where the discard would not
     /// go unforced. The press's refusal and the plan before it say it alike, so it names no tense.
     /// </summary>

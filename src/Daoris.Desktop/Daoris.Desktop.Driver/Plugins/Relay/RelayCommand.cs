@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>events relay</c> (EVENTHOOK1c; the event hook design §6.1): <c>--where</c> lays this build's copy out in the home and prints its
+/// <c>events relay</c>: <c>--where</c> lays this build's copy out in the home and prints its
 /// command; <c>--once</c>, run from that copy, serves one pipe for the <c>event-relay</c> plugin and prints one batch. The host routes it at
 /// its entry, after the role terminal's gate and before the home's adoption, the generic lease and the machine log, so every line either
 /// form writes, on either stream, is one of <see cref="RelaySaid"/>: one catch here says any failure by its closed code. It holds no key

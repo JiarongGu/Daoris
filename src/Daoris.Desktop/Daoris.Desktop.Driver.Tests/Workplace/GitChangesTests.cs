@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// GITAPP2b (D204, the git-writes design §1 and §4): the Changes tab's read. Three fresh observations of a checkout, HEAD to index,
+/// The Changes tab's read. Three fresh observations of a checkout, HEAD to index,
 /// index to worktree, and status's untracked and unmerged entries, each started through the counting seam as a question and
-/// nothing else. A staged addition whose file was then removed shows in both diffs.
+/// nothing else. A staged addition whose file is then removed shows in both diffs.
 /// </summary>
 /// <remarks>Real git in scratch repositories under the repository's <c>_fixtures</c>, with a home of the fixture's own.</remarks>
 [Trait(Category.Name, Category.Process)]
@@ -54,7 +54,7 @@ public sealed class GitChangesTests : LandedFixture
         Assert.Equal(["own.txt"], read.Unstaged.Select(entry => entry.Path));
         Assert.Equal('M', read.Unstaged[0].Status);
         Assert.Equal(["fresh.txt"], read.Untracked);
-        // A read refreshes nothing and takes no lock: the index is the bytes it was.
+        // A read refreshes nothing and takes no lock: the index keeps its bytes.
         Assert.Equal(before, File.ReadAllBytes(index));
         Assert.False(File.Exists(index + ".lock"));
     }

@@ -6,9 +6,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// SYNCMERGE1c3 (D178 points 2, 7, 8): <c>daoris remote sync forward &lt;quest&gt; &lt;machine&gt; &lt;sequence&gt;</c>, the terminal's door to
+/// <c>daoris remote sync forward &lt;quest&gt; &lt;machine&gt; &lt;sequence&gt;</c>, the terminal's door to
 /// the person's bring-forward of one side of two machines' work on a quest, beside <c>sync dismiss</c>. Exit 0 brought forward, 1 refused
-/// or lost again, 2 the usage. Runs no process: the fast half (MOD8).
+/// or lost again, 2 the usage. Runs no process: the fast half.
 /// </summary>
 public sealed class SyncForwardCommandTests
 {

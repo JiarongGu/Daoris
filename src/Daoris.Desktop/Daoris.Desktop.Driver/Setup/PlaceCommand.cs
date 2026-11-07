@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// <c>daoris place &lt;repository&gt;… --preset &lt;id&gt; [--with opinion,look,adoption] [--what-it-builds &lt;kind&gt;] [--drive] (--plan | --apply
-/// [--accept &lt;repository&gt;:landed|integration,…])</c> (AGENTSPLACE1a2, AGENTSPLACE1b3; the Agents-place design §4): <c>PLACE_PLAN</c>'s and
+/// [--accept &lt;repository&gt;:landed|integration,…])</c>: <c>PLACE_PLAN</c>'s and
 /// <c>PLACE_APPLY</c>'s terminal twin, the same plan and the same apply from the same code in English. Through the running Daoris where one answers,
 /// alone otherwise. <c>--plan</c> reads and writes nothing. <c>--apply</c> is the person's press: through a running Daoris it waits for their Confirm on
 /// the window's card, once, and runs only then; alone it is the person's own terminal acting as the window's press would.
@@ -201,7 +201,7 @@ public static class PlaceCommand
     /// </summary>
     private static async Task<int> ApplyAloneAsync(PlaceWords words, TextWriter output, PlaceApplyDoors? doors, InstanceWorld? instance, CancellationToken ct)
     {
-        // A session's terminal never applies alone (D194 point 5); the running Daoris's window confirms the same press.
+        // A session's terminal never applies alone; the running Daoris's window confirms the same press.
         if (instance?.Environment(DriverChoicesCommand.SessionVariable) is { Length: > 0 })
         {
             output.WriteLine($"place: {DriverChoicesCommand.SessionsTerminal}");

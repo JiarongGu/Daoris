@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run's read reads under a home beside the service (WORKFLOW1c, the workflow design §5.1): the landing record, the due list,
+/// What a run's read reads under a home beside the service: the landing record, the due list,
 /// each session's conversation record for its acceptance, and whether a tree stands on this machine. The reads behind
-/// <see cref="IWorkflowRunRecords"/> (STRUCT3b, D166).
+/// <see cref="IWorkflowRunRecords"/>.
 /// </summary>
 public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
 {
@@ -11,7 +11,7 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
     public IReadOnlyList<LandedBranch> Landings() => new LandedBranches(home).Entries();
 
     /// <summary>
-    /// When each session's work was accepted into its line (D100): the newest acceptance its conversation's record keeps, read
+    /// When each session's work is accepted into its line: the newest acceptance its conversation's record keeps, read
     /// from the writer's own words (<see cref="LandingNotes.IsAcceptance"/>). A teammate's record is on its machine.
     /// </summary>
     public IReadOnlyDictionary<string, DateTimeOffset> Acceptances(IReadOnlyList<TracedSession> sessions)
@@ -52,7 +52,7 @@ public sealed class WorkflowRunRecords(string home) : IWorkflowRunRecords
     /// <summary>Whether a run is bound here.</summary>
     public bool Bound(string run) => WorkflowRunBindings.Bound(home, run);
 
-    /// <summary>Whether a live conversation is between turns, by what its runner wrote as each turn ended and each word was said.</summary>
+    /// <summary>Whether a live conversation is between turns, by what its runner writes as each turn ends and each word is said.</summary>
     public bool Between(string session)
     {
         try

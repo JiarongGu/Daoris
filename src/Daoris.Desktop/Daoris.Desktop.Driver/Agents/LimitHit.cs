@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a limit says was hit, where the door named a window rather than a sentence (the agent-lyntai design §5.3, round 5):
-/// <see cref="LimitSeen.Hit"/> is a payload the account lines say, so it is Daoris's own window name, as today's sentence names that window,
+/// What a limit says is hit, where the door named a window rather than a sentence:
+/// <see cref="LimitSeen.Hit"/> is a payload the account lines say, so it is Daoris's own window name, as a sentence names that window,
 /// and never a vendor's.
 /// </summary>
 public static class LimitHit

@@ -31,7 +31,7 @@ internal sealed class ClaimedStart(IStartsWiring wiring, IReadOnlyList<RepoView>
                 .ConfigureAwait(false);
 
             // A start refused for its account's sign-in goes on under the next account the walk gives, once, in this start; where the
-            // walk gives none (or the same), the first run's end stands as it was.
+            // walk gives none (or the same), the first run's end stands.
             if (run.SignedOutOn is { } signedOut
                 && await MovedAsync(start, again => wiring.RunAsync(
                     start, registry, own, () => wiring.Runs.Release(again.Holding), again.Fresh, ct, movedOff: signedOut, movedFrom: run.Ended?.Adapter), ct)
@@ -40,7 +40,7 @@ internal sealed class ClaimedStart(IStartsWiring wiring, IReadOnlyList<RepoView>
                 return movedOn;
             }
 
-            // The same, for a model its agent refused; a walk that gives nothing runnable leaves the first run's end as it was.
+            // The same, for a model its agent refused; a walk that gives nothing runnable leaves the first run's end standing.
             if (run.ModelRefusedOn is { } refusedOn
                 && await MovedAsync(start, again => wiring.RunAsync(
                     start, registry, own, () => wiring.Runs.Release(again.Holding), again.Fresh, ct, movedOffModel: refusedOn), ct)

@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
 
-/// <summary>A failure is one thing for the quest's count and for its run on one choice (CONTEXTDRIVE1t, the read's N4).</summary>
+/// <summary>A failure is one thing for the quest's count and for its run on one choice.</summary>
 public sealed class FailureDefinitionTests
 {
     private const string Quiet = """[{ "code": "ended.quiet", "values": { "minutes": "10" } }]""";

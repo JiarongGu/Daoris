@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The milestone in a terminal's words (FABRIC-MILESTONE1a, D50): `daoris tree state` and `work state`. In the library, so
-/// a test holds the sentences; the page's own words are MILESTONE1b's.
+/// The milestone in a terminal's words: `daoris tree state` and `work state`. In the library, so
+/// a test holds the sentences.
 /// </summary>
 public static class WorkWords
 {
@@ -55,7 +55,7 @@ public static class WorkWords
 
     private static string Gone(InventoryEntry entry) => $"{entry.Kind} `{entry.Resource}`" + (entry.Proof is { } proof ? $" ({proof})" : "");
 
-    /// <summary>The recoveries no unit names (CLEANUP1, <see cref="WorkInventory.Recoveries"/>), each with its rule; nothing where there are none.</summary>
+    /// <summary>The recoveries no unit names (<see cref="WorkInventory.Recoveries"/>), each with its rule; nothing where there are none.</summary>
     public static IEnumerable<string> Recovery(IReadOnlyList<InventoryEntry> recoveries)
     {
         if (recoveries.Count == 0) yield break;

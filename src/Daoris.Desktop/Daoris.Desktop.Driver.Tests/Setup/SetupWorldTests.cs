@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LAYOUT7: the doors the set-up press reads and asks through, over an in-process stand-in for the service: the index's
+/// The doors the set-up press reads and asks through, over an in-process stand-in for the service: the index's
 /// entries for one repository, and one ask with its receiver named, as the person's.
 /// </summary>
 public sealed class SetupWorldTests
