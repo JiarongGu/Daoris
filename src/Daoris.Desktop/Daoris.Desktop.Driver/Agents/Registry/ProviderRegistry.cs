@@ -187,6 +187,12 @@ public sealed class ProviderRegistry
         return _providers.TryGetValue(given, out var provider) ? provider.KeyOf() : new AccountKey(given);
     }
 
+    /// <summary>
+    /// The owner whose accounts <paramref name="agent"/> runs on where that is another agent's (a door onto them), else null: the one reading
+    /// of <see cref="OwnerOfAgent"/> that asks whether an agent lists accounts of its own.
+    /// </summary>
+    public string? BorrowedFrom(string agent) => OwnerOfAgent(agent).Value is var owner && !Ids.Same(owner, agent.Trim()) ? owner : null;
+
     /// <summary>What an account key resolves to: the providers holding it and their doors, none selected first (C3-2.2).</summary>
     public AccountPool Pool(AccountKey key)
     {

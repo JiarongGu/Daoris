@@ -87,16 +87,14 @@ public sealed class TransportRunTests : IDisposable
         Assert.False(((TransportRun)run).Started);
     }
 
-    /// <summary>A native run is one process to its end: no turn to stop with the session kept, no task to stop, no choice to carry on a session.</summary>
+    /// <summary>A native run is one process to its end: no turn to stop with the session kept and no task to stop.</summary>
     [Fact]
-    public async Task A_native_run_has_no_turn_or_task_to_stop_and_no_choice_to_carry()
+    public async Task A_native_run_has_no_turn_or_task_to_stop()
     {
         var run = Over("stub");
 
         await Refused(run.StopTurnAsync(CancellationToken.None), "a stop that keeps the conversation");
         await Refused(run.StopTaskAsync("t-1", CancellationToken.None), "one task stopped");
-        var choice = new ActorAsked("stub", new ActorValue("entry", "m-2", true), new ActorValue("entry", null, false));
-        await Refused(run.ApplyChoiceAsync(choice, CancellationToken.None), TransportRun.ChoiceAbility);
 
         Assert.False(run.Started);
     }
@@ -254,7 +252,7 @@ public sealed class TransportRunTests : IDisposable
 
         Assert.Equal(
             [
-                "ApplyChoiceAsync", "CloseAsync", "EndAsync", "HandCarriers", "HandSink", "OpenAsync",
+                "CloseAsync", "EndAsync", "HandCarriers", "HandSink", "OpenAsync",
                 "ResumeAsync", "StopTaskAsync", "StopTurnAsync",
             ],
             methods);

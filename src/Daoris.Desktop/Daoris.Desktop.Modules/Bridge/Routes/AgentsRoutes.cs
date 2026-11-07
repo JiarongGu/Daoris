@@ -130,7 +130,7 @@ public sealed class AgentsRoutes(DriverContext context)
                     // which is why the surface listed `claude-code` and `claude-code-acp` as two
                     // things a person has to have opinions about. They are one tool and one
                     // account; the second is a way in. The page groups on these two fields.
-                    AccountOf = toolchain?.AccountOf,
+                    AccountOf = harnesses.Adapters.BorrowedFrom(report.Adapter),
                     // What a person calls the tool, and whose it is (AGT1) — `dsh` meant nothing
                     // to the owner until it said.
                     toolchain?.Product,

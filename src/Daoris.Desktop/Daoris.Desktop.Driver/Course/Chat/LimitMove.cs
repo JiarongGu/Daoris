@@ -158,7 +158,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         var selection = picked
             ? null!
             : await context.Harnesses
-                .SelectAsync(agent.Id.Value, config, workspace, null, StartKind.Conversation, ct, counts: !isHelp).ConfigureAwait(false);
+                .SelectAsync(agent.Id.Value, config, workspace, null, StartKind.Conversation, ct, prior.ModelOn(ranOn), counts: !isHelp).ConfigureAwait(false);
         Elsewhere? elsewhere = null;
         var answer = picked ? NoRoom : new LineAnswer.Elsewhere(selection, NextHold.Ready);
         if (!picked && (!selection.Allowed || string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase)))

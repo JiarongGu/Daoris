@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -37,6 +38,18 @@ public sealed class BuildDoorTests : IDisposable
         Assert.Equal("nobody-knows", refused.Door);
         Assert.Equal(UnknownDoorException.Words("nobody-knows"), refused.Message);
         Assert.Throws<UnknownDoorException>(() => SetupWorld.Unadopted(Build(order), _home));
+    }
+
+    // The terminal's consoles once asked Adoption.Unadopted of Build's first agent alone; the loop, set-up and the window ask the whole order.
+    [Fact]
+    public void No_terminal_console_asks_a_door_of_its_own_but_reads_Builds_whole_order_through_set_up()
+    {
+        var own = SourceFiles.All("Daoris.Desktop.Driver.Host", "*.cs")
+            .Where(path => Regex.IsMatch(File.ReadAllText(path), @"\bAdoption\s*\.\s*Unadopted\s*\(|\bSessionsConsole\s*\.\s*Unadopted\s*\(|catch\s*\(DriverException[^)]*UnknownDoorException"))
+            .Select(Path.GetFileName)
+            .ToList();
+
+        Assert.True(own.Count == 0, "a console reads BuildDoor through SetupWorld.Unadopted, and lets an unknown door refuse:\n" + string.Join('\n', own));
     }
 
     [Fact]

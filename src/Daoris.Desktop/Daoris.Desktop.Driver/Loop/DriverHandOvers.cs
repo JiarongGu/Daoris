@@ -415,17 +415,7 @@ internal sealed class DriverHandOvers(LoopContext context, Func<ConversationMove
         return [.. reports.Select(report => new HandOverDoor(report.Adapter, report.Present, AccountOfDoor(report.Adapter)))];
     }
 
-    private string? AccountOfDoor(string adapter)
-    {
-        try
-        {
-            return _context.Harnesses.AgentOf(adapter)?.AccountOf;
-        }
-        catch (DriverException)
-        {
-            return null;
-        }
-    }
+    private string? AccountOfDoor(string adapter) => _context.Harnesses.Adapters.BorrowedFrom(adapter);
 
     /// <summary>
     /// The accounts the roster holds for an agent that holds conversations, or null where it has none such: the chat runner's own
