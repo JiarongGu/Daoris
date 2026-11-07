@@ -95,6 +95,19 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Null(entry.Manifest.Hooks);
     }
 
+    [Theory]
+    [InlineData("""{ "id": "bar", "apiVersion": 99 }""")]
+    [InlineData("""{ "id": "bar", "apiVersion": "2" }""")]
+    public void A_refused_version_is_a_row_under_its_folder_name_whatever_id_the_manifest_claims(string manifest)
+    {
+        Plugin("foo", manifest);
+
+        var entry = Assert.Single(PluginCatalog.Load(_home).Plugins);
+
+        Assert.Equal("foo", entry.Manifest.Id);
+        Assert.Equal("foo", Path.GetFileName(entry.Data));
+    }
+
     [Fact]
     public void A_non_integer_api_version_is_malformed_rather_than_old()
     {
