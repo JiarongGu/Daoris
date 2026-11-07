@@ -150,7 +150,8 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 
 **Landing**
 
-28. For a graph run the runtime is the one performer of `land`. The pass that finds it active at its tip starts it once on the
+28. For a graph run the runtime is the one performer of `land`. A `land` with no review before it is made active, with no press, in
+    the round that readies it at its standing tree's tip, and the pass that finds it active at its tip starts it once on the
     landing door, off the pass, under the tree's hold and the delivery key, so a press and a pass land one delivery. A `land` whose
     subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. Where the
     branch's tip no longer reads (its tree tidied), a step bound there keeps its binding's revision and one not bound yet takes the commit
@@ -194,8 +195,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     the part ended, and a closed request reaches the person's task and ends nothing (`TidyRunGitTests`). The web reads a pull-request step as a
     plugin's `<plugin>/pull-request` or an older steps version's bare `pull-request` (`isPullRequestStep`), and a graph run finished at its
     `tidy` as merged. (from D245, D247)
-32. A merge runs through the integration transport under the legacy policy: the owner's press, no gates, one at a time, a merge
-    commit. (from D215)
+32. A merge runs through the integration transport under the legacy policy: no gates, one at a time, a merge commit. The person's
+    press is requested at the `press` door and settled *merged on the person's press*; an automatic `land`'s delivery at its own
+    `landing` door (`IntegrationRequester.Landing`), which its delivery's standing authority admits, settled *merged by its workflow's
+    landing, with no press*. (from D215)
 33. Each delivery's phases are written ahead of their effects: prepared, ref written, recorded, plugin dispatched, plugin answered.
     A restart settles it phase by phase. A preparation cut by a stop is read withdrawn, no checkout needed, and its unit's next landing
     goes on from it; a delivery whose every entry is a preparation its landing withdrew (a refusal made nothing) is settled withdrawn at
@@ -251,7 +254,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
     reading the repositories from the service's registry table: each steps, `handed` or `land`+`accept` newest gets the next
     version as a graph; each place on the landing rules follows the home default or a saved copy of what its rules drew; a rule's
     `integrate` becomes its line's policy; the landing rules and work cycles leave `driver.json`. A version the save refuses is
-    left, said. There is no door, receipt or undo. (from D232)
+    left, said. Its `run-rebinds` step (`RunRebindsStep`) binds a run whose version does not read here (Current's, or one its
+    workflow's file no longer holds as a graph) and that has no node record again, as a first start binds it, to the place's choice
+    today; a run whose place chooses nothing that binds is left as it was. There is no door, receipt or undo. (from D232)
 45. There is no landing rule: no type, reader or writer of `landings` or `workspaceLandings` outside the migration, which reads them raw
     (`MigratedPlaces`) and takes them out of `driver.json` once. Every door that lands, plans, names a branch or says how work lands reads
     the run's bound `land`; work no version governs lands as the declared merge and is held by its gate. A line's integration reads
