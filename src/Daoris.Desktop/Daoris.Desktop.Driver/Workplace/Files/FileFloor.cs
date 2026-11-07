@@ -13,9 +13,8 @@ internal sealed record FileFloorFacts(IReadOnlyCollection<string> Tracked, IRead
 /// </summary>
 internal static class FileFloor
 {
-    /// <summary>The settings a copy would widen a session's permissions with, past the ones Daoris composes for it.</summary>
-    internal static readonly string[] Settings =
-        [".claude/settings.local.json", ".claude/settings.json", ".mcp.json", ".vscode/settings.json", ".vscode/settings.local.json"];
+    /// <summary>The settings a copy would widen a session's permissions with, past the ones Daoris composes for it: shipped data.</summary>
+    private static IReadOnlyList<string> Settings => FileSignatures.Shipped.Settings;
 
     internal const string Tracked = "git tracks it";
 

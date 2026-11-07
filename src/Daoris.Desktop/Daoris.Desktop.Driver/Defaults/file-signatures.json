@@ -4,6 +4,7 @@
     "local/", ".env", ".env.*", "*.local.json", "local.settings.json", "appsettings.*.local.json", "*.pem", "*.key", "*.pfx",
     ".claude/settings.local.json", ".vscode/settings.local.json"
   ],
+  "settings": [".claude/settings.local.json", ".claude/settings.json", ".mcp.json", ".vscode/settings.json", ".vscode/settings.local.json"],
   "scripts": [
     "*.mjs", "*.cjs", "*.js", "*.ts", "*.ps1", "*.sh", "*.cmd", "*.bat", "*.py", "*.json", "*.csproj", "*.fsproj", "*.props",
     "*.targets", "*.toml", "*.yml", "*.yaml", "Makefile", "*.mk", "*.gradle", "*.kts", "CMakeLists.txt"

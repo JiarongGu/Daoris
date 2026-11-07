@@ -39,6 +39,9 @@ internal sealed class FileSignatures
 
     internal IReadOnlyList<string> Scripts { get; }
 
+    /// <summary>The harnesses' and editors' settings files the floor never copies.</summary>
+    internal IReadOnlyList<string> Settings { get; private init; } = [];
+
     /// <exception cref="FormatException">A row or a rule of it does not read: the data is the desktop's own, so it is a defect.</exception>
     internal static FileSignatures Parse(string text)
     {
@@ -55,7 +58,7 @@ internal sealed class FileSignatures
         }
 
         if (problems.Count > 0) throw new FormatException($"the file signatures do not read: {string.Join("; ", problems)}");
-        return new FileSignatures(rows, Json.Strings(root, "local"), Json.Strings(root, "scripts"));
+        return new FileSignatures(rows, Json.Strings(root, "local"), Json.Strings(root, "scripts")) { Settings = Json.Strings(root, "settings") };
     }
 
     /// <summary>Every row a tracked file's name reaches, each of its rules made relative to that file's folder.</summary>
