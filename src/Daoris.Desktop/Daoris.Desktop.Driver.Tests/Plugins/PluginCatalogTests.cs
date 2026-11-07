@@ -95,6 +95,16 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Null(entry.Manifest.Hooks);
     }
 
+    [Fact]
+    public void A_placeholder_inside_a_longer_word_is_replaced_in_place_and_the_word_is_not_made_a_path()
+    {
+        var folder = Path.Combine(_home, "plugins", "acme.agent");
+        var data = Path.Combine(_home, "plugins", ".data", "acme.agent");
+
+        Assert.Equal($"--user-data-dir={data}/profile", PluginFolders.Expand("--user-data-dir=${data}/profile", folder, null));
+        Assert.Equal(Path.GetFullPath(Path.Combine(folder, "plugin.mjs")), PluginFolders.Expand("${plugin}/plugin.mjs", folder, null));
+    }
+
     [Theory]
     [InlineData("""{ "id": "bar", "apiVersion": 99 }""")]
     [InlineData("""{ "id": "bar", "apiVersion": "2" }""")]
