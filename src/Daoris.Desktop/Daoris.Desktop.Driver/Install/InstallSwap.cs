@@ -334,9 +334,11 @@ public sealed class InstallSwap(
             var source = Full(from);
             var target = Full(to);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            MoveHeld(source, target);
+            // Journalled first: a launcher that dies just after the move has no other record of it, and the undo skips a move
+            // whose source is not there.
             moves.Add(new SwapMove(from, to));
             Journal(record with { Moves = moves.ToList() });
+            MoveHeld(source, target);
         }
     }
 
