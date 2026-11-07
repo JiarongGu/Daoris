@@ -24,16 +24,85 @@ public sealed class StewardStandingTests : Bridge
     {
         public InstancePipe? Pipe { get; set; }
 
+        public RoleActTests.World World { get; } = new();
+
         public List<(string Route, RoleJudgement? Role)> Ran { get; } = [];
+
+        /// <summary>That every route but the role's answers as a refusal of its own, as a place's workflow choice it cannot keep.</summary>
+        public bool Refuses { get; set; }
 
         public override string ModuleName => DriverModule.Name;
 
         protected override async Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
         {
-            if (request.Type == RoleRoutes.Act) return await SupervisorDoor.ActAsync(Pipe, request.Payload, cancellationToken);
+            if (request.Type == RoleRoutes.Act) return await SupervisorDoor.ActAsync(Pipe, request.Payload, cancellationToken, world: World);
             lock (Ran) Ran.Add((request.Type!, PipeDoor.Role));
-            return new { Kept = true };
+            return Refuses ? new { Done = false, Refused = "reach", Message = "Nothing could start there." } : new { Done = true };
         }
+    }
+
+    /// <summary>The steward's terminal started over a served pipe with the build's own table, the steward holding <paramref name="acts"/>.</summary>
+    private (InstancePipe Pipe, StandingConfirmation Judge, string Key, string Generation) Appointed(
+        IMessageDispatcher dispatcher, MachineLog log, params string[] acts)
+    {
+        var standing = new StandingConfirmation(
+            Home, log, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked()).Staff(RoleKit.Steward(acts));
+        var pipe = new InstancePipe(dispatcher, Bus, Home, log, version: "9.9.9-test", standing: standing) { Grounds = new StubGrounds() };
+        Assert.NotNull(pipe.Serve());
+        var (change, key) = RoleKit.Start(standing, RoleKit.Stewarding(share: null));
+        Assert.True(change.Answer.Done, change.Answer.Message);
+        return (pipe, standing, key!, RoleKit.GenerationOf(standing, AppointedRoles.Steward));
+    }
+
+    private const string Workflow = """{"repository":"engine","workflow":"review"}""";
+
+    [Fact]
+    public async Task The_steward_s_workflow_choice_runs_its_route_under_the_role_s_door_with_no_card_and_is_the_steward_s()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule();
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.Workflow);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
+        var nonce = NonceOf(await client.HelloAsync(HomeId))!;
+        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act,
+            RoleKit.Act(key, nonce, generation, act: StewardActNames.Workflow, form: Workflow)));
+
+        Assert.True(answer.GetProperty("data").GetProperty("done").GetBoolean(), answer.GetRawText());
+        var ran = Assert.Single(driver.Ran);
+        Assert.Equal("WORKFLOW_USE", ran.Route);
+        Assert.Equal(StewardActNames.Workflow, ran.Role?.Act);
+        Assert.False(Confirming(client));
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        var did = Assert.Single(judge.StewardActsNow());
+        Assert.Equal((StewardActNames.Workflow, "engine"), (did.Act, did.Repository));
+    }
+
+    [Fact]
+    public async Task A_workflow_choice_its_route_refuses_is_refused_and_not_the_steward_s()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule { Refuses = true };
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.Workflow);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        await using var client = await PipeClient.ConnectAsync(pipe.Name!);
+        var nonce = NonceOf(await client.HelloAsync(HomeId))!;
+        var answer = await client.AnswerAsync(await client.SendAsync(DriverModule.Name, RoleRoutes.Act,
+            RoleKit.Act(key, nonce, generation, act: StewardActNames.Workflow, form: Workflow)));
+
+        Assert.False(answer.GetProperty("data").GetProperty("done").GetBoolean(), answer.GetRawText());
+        Assert.Equal("reach", answer.GetProperty("data").GetProperty("why").GetString());
+        Assert.Empty(judge.StewardActsNow());
     }
 
     private (IMessageDispatcher Dispatcher, ServiceProvider Services) Compose(MachineLog log, IIpcModule module)
@@ -209,7 +278,7 @@ public sealed class StewardStandingTests : Bridge
     }
 
     public static TheoryData<string[]> Verbs => [["drive", "engine"], ["undrive", "engine"], ["trees", "engine", "on"], ["hold", "engine"],
-        ["resume", "engine"], ["stop", "s1a2b3c4"], ["finish", "s1a2b3c4"], ["retry", "#q-1"]];
+        ["resume", "engine"], ["stop", "s1a2b3c4"], ["finish", "s1a2b3c4"], ["retry", "#q-1"], ["workflow", "engine", "review"]];
 
     /// <summary>Each act the steward's verb makes asks outside its acts as a person's route that takes the verb's form as its own press.</summary>
     [Theory]

@@ -123,6 +123,7 @@
   "notifications.steward.did.stop": "Stopped",
   "notifications.steward.did.finish": "Finished",
   "notifications.steward.did.retry": "Tried again",
+  "notifications.steward.did.workflow": "Chose the workflow of",
   "notifications.steward.target.session": "session {{session}} of #{{quest}}",
   "notifications.steward.target.quest": "#{{quest}}",
   "notifications.steward.target.sessionOnly": "session {{session}}",
@@ -149,5 +150,6 @@
   "notifications.steward.desk.act.resume": "Resume",
   "notifications.steward.desk.act.stop": "Stop",
   "notifications.steward.desk.act.finish": "Finish",
-  "notifications.steward.desk.act.retry": "Try again"
+  "notifications.steward.desk.act.retry": "Try again",
+  "notifications.steward.desk.act.workflow": "Choose the workflow"
 }

@@ -347,6 +347,7 @@
   "agents.setup.roles.hold.act.stop": "停止",
   "agents.setup.roles.hold.act.finish": "完成",
   "agents.setup.roles.hold.act.retry": "重试",
+  "agents.setup.roles.hold.act.workflow": "为仓库选择工作流",
   "agents.setup.roles.hold.act.setup": "设置",
   "agents.setup.sessions.title": "会话",
   "agents.setup.workflow.title": "工作流",

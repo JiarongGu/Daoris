@@ -123,6 +123,7 @@
   "notifications.steward.did.stop": "停止了",
   "notifications.steward.did.finish": "完成了",
   "notifications.steward.did.retry": "重试了",
+  "notifications.steward.did.workflow": "选择了工作流：",
   "notifications.steward.target.session": "委托 #{{quest}} 的会话 {{session}}",
   "notifications.steward.target.quest": "#{{quest}}",
   "notifications.steward.target.sessionOnly": "会话 {{session}}",
@@ -149,5 +150,6 @@
   "notifications.steward.desk.act.resume": "恢复",
   "notifications.steward.desk.act.stop": "停止",
   "notifications.steward.desk.act.finish": "完成",
-  "notifications.steward.desk.act.retry": "重试"
+  "notifications.steward.desk.act.retry": "重试",
+  "notifications.steward.desk.act.workflow": "选择工作流"
 }

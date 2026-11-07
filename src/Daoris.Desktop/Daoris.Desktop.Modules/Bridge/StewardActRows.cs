@@ -126,6 +126,8 @@ public static class StewardWhy
     public const string WordsWaiting = "words-waiting";
     public const string NotParked = "not-parked";
     public const string Ended = "ended";
+    public const string Refused = "refused";
+    public const string NoRoute = "no-route";
 }
 
 /// <summary>
@@ -145,6 +147,7 @@ public static class StewardActRows
         new StopAct(),
         new FinishAct(),
         new RetryAct(),
+        StewardRouteAct.Workflow,
     ];
 
     /// <summary>

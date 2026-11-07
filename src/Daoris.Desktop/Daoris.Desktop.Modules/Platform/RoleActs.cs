@@ -42,6 +42,18 @@ public sealed record RoleActRun(string Id, string Role, string Act, JsonElement 
 {
     /// <summary>What the steward's acts read and change (STEWARDROLE1b): the driver bridge's own, or a test's stand-in; null for none.</summary>
     public IStewardWorld? World { get; init; }
+
+    /// <summary>
+    /// Runs a route of the driver module with a payload inside the door the act runs in (STEWARDROLE1d's route acts), so the owner's
+    /// marks pass it by as they pass every role's act by; null where no pipe runs it.
+    /// </summary>
+    public Func<string, JsonElement, CancellationToken, Task<JsonElement>>? Route { get; init; }
+}
+
+/// <summary>An act's handler's refusal as data (STEWARDROLE1d): its route kept nothing, so the act is refused with that code and is not the role's.</summary>
+public sealed class RoleActRefused(string why) : Exception(why)
+{
+    public string Why { get; } = why;
 }
 
 /// <summary>

@@ -39,10 +39,10 @@ public static class StewardCommand
     /// <summary>What the verb's usage says.</summary>
     public const string Usage =
         "usage: daoris steward acts | drive <repo> | undrive <repo> | trees <repo> on | hold <repo> | resume <repo> | stop <id> | "
-        + "finish <id> | retry <quest> | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
+        + "finish <id> | retry <quest> | workflow <repo> <workflow> | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
 
     /// <summary>The acts a request may ask for: those the steward's verbs make.</summary>
-    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry"];
+    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow"];
 
     /// <summary>The one line the desk's print says before its first fence (D208 §4.4).</summary>
     public const string Header =
@@ -64,6 +64,7 @@ public static class StewardCommand
         ["stop", var id] when Named(id) => ("stop", new { id, said = true }),
         ["finish", var id] when Named(id) => ("finish", new { id, state = "completed", said = true }),
         ["retry", var quest] when Named(quest) => ("retry", new { quest = quest.TrimStart('#') }),
+        ["workflow", var repo, var workflow] when Named(repo) && Named(workflow) => ("workflow", new { repository = repo, workflow }),
         _ => null,
     };
 

@@ -18,11 +18,11 @@ public static class AppointedRoles
     /// <summary>The supervisor's acts: an answer to a parked question, and a question left to the person with a bound.</summary>
     public static IReadOnlyList<string> SupervisorActs { get; } = ["answer", "defer"];
 
-    /// <summary>The steward's acts: the eight of its table, then the set-up act, held only where the person lists it.</summary>
+    /// <summary>The steward's acts: the nine of its table, then the set-up act, held only where the person lists it.</summary>
     public static IReadOnlyList<string> StewardActs { get; } =
     [
         StewardActNames.Drive, StewardActNames.Undrive, StewardActNames.Trees, StewardActNames.Hold, StewardActNames.Resume,
-        StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Setup,
+        StewardActNames.Stop, StewardActNames.Finish, StewardActNames.Retry, StewardActNames.Workflow, StewardActNames.Setup,
     ];
 
     /// <summary>The acts <paramref name="kind"/> may hold; none for a kind this build does not know.</summary>
@@ -52,6 +52,7 @@ public static class StewardActNames
     public const string Stop = "stop";
     public const string Finish = "finish";
     public const string Retry = "retry";
+    public const string Workflow = "workflow";
     public const string Setup = "setup";
 }
 
