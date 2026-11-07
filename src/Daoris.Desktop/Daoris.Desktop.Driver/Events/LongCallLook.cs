@@ -11,7 +11,7 @@ public sealed record LongCallStep(string Session, string Key, string Title, Time
 }
 
 /// <summary>
-/// A light session's long calls, as the watcher's one look sees them (FABRIC-PIPELINE1c, D192 point 5's fourth layer; SESSWATCH1b): a running
+/// A light session's long calls, as the watcher's one look sees them: a running
 /// call (<see cref="RunningCalls"/>) or a background task past the pipeline's <see cref="CallBound"/> is found once, by its start or its id.
 /// A call held for the person's answer is their wait and found never. Found only where the door takes an urgent word at its next step: where
 /// it takes words at its turn's end the call has ended before a word could reach it, and the rail's time says it instead.

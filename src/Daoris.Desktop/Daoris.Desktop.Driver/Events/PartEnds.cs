@@ -3,7 +3,7 @@ using System.Collections.Frozen;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One row of the service's event journal as the driver reads it (FOUNDATION1 l-i, the foundation design §4.1): the raw transition and the
+/// One row of the service's event journal as the driver reads it: the raw transition and the
 /// snapshot its coding needs, the lists the triggers comma-joined already split. Never a text.
 /// </summary>
 public sealed record JournalEntry(
@@ -12,8 +12,8 @@ public sealed record JournalEntry(
     string? FromSession = null);
 
 /// <summary>
-/// A part that ended (§4.2's <c>part.ended</c>), judged from its journal row alone: the record, the state it took, the note's <c>ended.*</c>
-/// code as its reason and its class, one closed code. Keyed by the store and the position, the occurrence's one key (§4.5).
+/// A part that ended (<c>part.ended</c>), judged from its journal row alone: the record, the state it took, the note's <c>ended.*</c>
+/// code as its reason and its class, one closed code. Keyed by the store and the position, the occurrence's one key.
 /// </summary>
 /// <param name="Reason">The note's first <c>ended.*</c> code, or null where it carried none.</param>
 /// <param name="Conversation">Whether the record is a conversation, a chat: the one filter of <c>SESSION_ENDED</c>.</param>
@@ -21,7 +21,7 @@ public sealed record PartEnded(
     long Position, string Store, string Session, string State, string? Reason, string Class, bool Conversation, string? Workspace, DateTimeOffset At, bool Limited);
 
 /// <summary>
-/// The one judge of an end (FOUNDATION1 l-i, the foundation design §4.2): <c>part.ended</c>, its reason and class, from a journal row's state, its
+/// The one judge of an end: <c>part.ended</c>, its reason and class, from a journal row's state, its
 /// limit flag and its note's codes, and the table that says who reads which end. Four meanings of <i>ended</i> become one event and four
 /// filters (<see cref="EndReaders"/>).
 /// </summary>
@@ -33,7 +33,7 @@ public static class PartEnds
     /// <summary>The ledger's closed states, compared without case or hyphens (the journal spells them as the record does).</summary>
     private static readonly FrozenSet<string> Closed = new[] { "completed", "declined", "stooddown", "failed", "stopped" }.ToFrozenSet(StringComparer.Ordinal);
 
-    /// <summary>The closed class codes of §4.2.</summary>
+    /// <summary>The closed class codes.</summary>
     public static readonly IReadOnlyList<string> Classes =
     [
         "completed", "failed", "limited", "transient-bound", "access", "stopped-person", "stopped-role", "stopped-daoris", "refused-choice",
@@ -80,7 +80,7 @@ public static class PartEnds
     private static readonly FrozenSet<string> AccessCodes =
         new[] { "account.refused", "account.refused-own", "account.refused-model" }.ToFrozenSet(StringComparer.Ordinal);
 
-    /// <summary>What a notification reads: the cause of each class, one table (§4.2).</summary>
+    /// <summary>What a notification reads: the cause of each class, one table.</summary>
     public static readonly IReadOnlyDictionary<string, string> Causes = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["completed"] = "agent",
@@ -116,7 +116,7 @@ public static class PartEnds
 
     /// <summary>
     /// The class of an end from its state, its limit flag and its note's codes: a code that names who ended it first, then the limit, then an
-    /// account's refusal, then the state's own. What nothing said is <c>unknown</c>, never a guess (D173).
+    /// account's refusal, then the state's own. What nothing says is <c>unknown</c>, never a guess.
     /// </summary>
     public static string ClassOf(string state, bool limited, IEnumerable<string> codes)
     {
@@ -146,7 +146,7 @@ public static class PartEnds
     private static string Spelled(string state) => Norm(state) == "stooddown" ? "stood-down" : Norm(state);
 }
 
-/// <summary>Who reads an end: <c>part.ended</c>'s four meanings, each a filter (§4.2, the survey's §3.4 row 1).</summary>
+/// <summary>Who reads an end: <c>part.ended</c>'s four meanings, each a filter.</summary>
 public enum EndReader
 {
     /// <summary>The page's <c>SESSION_ENDED</c>: a conversation's end.</summary>
@@ -159,7 +159,7 @@ public enum EndReader
     Notified,
 }
 
-/// <summary>The one table of what each reader of an end takes (FOUNDATION1 l-ii to l-v).</summary>
+/// <summary>The one table of what each reader of an end takes.</summary>
 public static class EndReaders
 {
     /// <summary>The classes the person is not told an end of: their own stop, an account's limit and an agent's refusal of the choice.</summary>
@@ -176,7 +176,7 @@ public static class EndReaders
 
     /// <summary>
     /// Whether an end of this class is news to tell the person (<i>Ended</i>): everything but their own stop, an account's limit, which goes on
-    /// by itself and says so as its own news (LIMITRESUME1a), and an agent's refusal of the choice, which a fallback answers (D205 §3.5(c)).
+    /// by itself and says so as its own news, and an agent's refusal of the choice, which a fallback answers.
     /// </summary>
     public static bool Notifies(string endClass) => !Silent.Contains(endClass);
 }

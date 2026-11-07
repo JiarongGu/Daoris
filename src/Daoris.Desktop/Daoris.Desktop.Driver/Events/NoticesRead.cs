@@ -3,14 +3,13 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A press waiting for the person's confirmation, as the terminal says it (NOTIFY2i): by its act and the session it is about, never a value
+/// A press waiting for the person's confirmation, as the terminal says it: by its act and the session it is about, never a value
 /// it carries. <see cref="Source"/> is <c>terminal</c> for a press sent over the pipe, <c>service</c> for one at the service's door.
 /// </summary>
 /// <param name="Act">A terminal's press by its route, its module before it where the module is not the driver's (as a notice names one); the
 /// service's by its own act.</param>
 /// <param name="Session">The session a terminal's press is about, where its wording names one.</param>
-/// <param name="Expires">When the service's door refuses it by its time; null for a terminal's, which waits until the person answers
-/// (CONFIRMWAIT1a-i).</param>
+/// <param name="Expires">When the service's door refuses it by its time; null for a terminal's, which waits until the person answers.</param>
 public sealed record PressWaiting(
     string Source, string Id, string Act, string? Session, DateTimeOffset? Asked, DateTimeOffset? Expires, bool Shown);
 
@@ -19,12 +18,12 @@ public sealed record PressWaiting(
 /// <param name="Says">Its note's, detail's or title's first line, where it has one.</param>
 public sealed record NeedWaiting(string Group, string Kind, string Subject, string? Workspace, DateTimeOffset? Since, string? Says);
 
-/// <summary>An ask with messages past the person's mark (NOTIFY2g's <c>messages</c> partition): the service's count and its newest.</summary>
+/// <summary>An ask with messages past the person's mark: the service's count and its newest.</summary>
 public sealed record AskUnread(string Ask, string? Workspace, bool Teammate, int Unread, string? Who, string? Line, DateTimeOffset? At);
 
 /// <summary>
-/// What came to the person, as <c>daoris notices</c> reads it (NOTIFY2i): the running Daoris's presses, rows and messages where it
-/// answered, null where they were not read; and the notices of the record either way.
+/// What came to the person, as <c>daoris notices</c> reads it: the running Daoris's presses, rows and messages where it
+/// answers, null where they are not read; and the notices of the record either way.
 /// </summary>
 public sealed record NoticesLook(
     IReadOnlyList<PressWaiting>? Presses, IReadOnlyList<NeedWaiting>? Needs, IReadOnlyList<AskUnread>? Messages, IReadOnlyList<Notice> Notices)
@@ -34,7 +33,7 @@ public sealed record NoticesLook(
 }
 
 /// <summary>
-/// <c>daoris notices</c> (NOTIFY2i, D196 point 8, the notification design §9): what came to the person, read and never changed — what
+/// <c>daoris notices</c>: what came to the person, read and never changed — what
 /// waits for their confirmation, what needs them by group, unread messages by ask, and <i>Done and failed</i>, as text or <c>--json</c>.
 /// </summary>
 /// <remarks>
@@ -69,7 +68,7 @@ public static class NoticesRead
 
     /// <summary>
     /// A row's group, the page's <c>attentionGroup</c>: its kind's, but a hand-over ask whose session stands still on it and an integration's
-    /// wait that holds its line or its unit's flow (INTEGRATE1h) and a held git remote a session waits on (GITAUTH1e), which hold work, and a
+    /// wait that holds its line or its unit's flow and a held git remote a session waits on, which hold work, and a
     /// stale go-ahead, which waits for the person's word.
     /// </summary>
     public static string Group(string kind, bool stands, bool stale) =>
@@ -215,7 +214,7 @@ public static class NoticesRead
 
     /// <summary>
     /// The <c>--json</c> form: <c>{ from, presses, needs, messages, notices }</c>, <c>from</c> <c>instance</c> or <c>record</c>, each live
-    /// group null where it was not read, and every notice of the record, read or not.
+    /// group null where it is not read, and every notice of the record, read or not.
     /// </summary>
     public static string Json(NoticesLook look) => JsonFile.Serialize(writer =>
     {

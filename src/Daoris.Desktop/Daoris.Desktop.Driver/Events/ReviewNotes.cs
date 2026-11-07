@@ -17,7 +17,7 @@ public static class ReviewNotes
     /// <summary>The tree's commit could not be read.</summary>
     public static Noted NoCommit() => Noted.Of(ChatNoteCodes.ReviewNoCommit, "its set-up was not posted: its tree's commit could not be read.");
 
-    /// <summary>Posted with the commit Daoris read, the service's message and then what was served, each as its own words.</summary>
+    /// <summary>Posted with the commit Daoris read, the service's message and then what is served, each as its own words.</summary>
     /// <param name="commit">The full commit id; the 8-character short id is the value.</param>
     public static Noted Posted(string commit, string named, string message, string? served)
     {

@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>One line of the machine log, as a reader holds it (LOG1c): the four fields every line has, its data, and the line as written.</summary>
+/// <summary>One line of the machine log, as a reader holds it: the four fields every line has, its data, and the line as written.</summary>
 public sealed record LogLine(DateTimeOffset Time, string Source, string Level, string Event, JsonElement Data, string Raw)
 {
     /// <summary>The time as the log writes it: UTC, with milliseconds.</summary>
@@ -34,13 +34,13 @@ public sealed record LogRead(IReadOnlyList<LogLine> Lines, int Skipped);
 public sealed record LogArguments(LogFilter Filter, bool Json, string? Problem);
 
 /// <summary>
-/// The machine log's reader (LOG1c, D94): every source's files under the home's <c>logs/</c>, merged by
+/// The machine log's reader: every source's files under the home's <c>logs/</c>, merged by
 /// time, filtered — one reading for both doors, <c>daoris logs</c> and the Settings domain's
 /// <c>DAORIS.LOG</c> · <c>LINES</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>A twin</b>: <c>tools/usage-report.mjs</c> reads the same lines with its own code, and the two
-/// share none. The format is the contract (<c>docs/2026-09-30-machine-log-design.md</c> §3), and each
+/// share none. The format is the contract, and each
 /// side's tests hold the same parse table: what is a line, and what is skipped.</para>
 ///
 /// <para><b>A line that cannot be read is skipped and counted, never thrown.</b> The log is evidence; a
@@ -54,7 +54,7 @@ public sealed record LogArguments(LogFilter Filter, bool Json, string? Problem);
 [CommandGroup("logs", Whole = true)]
 public static class MachineLogReader
 {
-    /// <summary>Every process kind that writes a file: the design's §2.</summary>
+    /// <summary>Every process kind that writes a file.</summary>
     public static readonly IReadOnlyList<string> Sources = ["desktop", "host", "mcp", "browser", "driver"];
 
     /// <summary>The levels a filter may name as its floor.</summary>

@@ -16,7 +16,7 @@ public static class OpeningWhy
     /// <summary>The account its scope begins at is not signed in.</summary>
     public const string SignedOut = "signed-out";
 
-    /// <summary>The account its scope begins at was passed because another question held its lock past the start's patience.</summary>
+    /// <summary>The account its scope begins at is passed because another question holds its lock past the start's patience.</summary>
     public const string Locked = "locked";
 
     /// <summary>It runs on the account kept for conversations, which is where its scope begins.</summary>
@@ -55,7 +55,7 @@ public static class OpeningWhy
     /// <summary>Its week resets first, when the reset's time alone ranked: nothing writes it now (<see cref="Lapses"/> does).</summary>
     public const string Lapsing = "lapsing";
 
-    /// <summary>More of its week would lapse at its reset, per hour left: the window, its unused share, its reset and when that reading was seen.</summary>
+    /// <summary>More of its week would lapse at its reset, per hour left: the window, its unused share, its reset and when that reading is seen.</summary>
     public const string Lapses = "lapses";
 
     /// <summary>It has the most room under its curve, on its tightest window.</summary>
@@ -64,7 +64,7 @@ public static class OpeningWhy
     /// <summary>It is furthest behind its week's pace: written under <c>switch: off</c> only.</summary>
     public const string Behind = "behind";
 
-    /// <summary>The account it was weighed against is ahead of its week's pace: under <c>switch: off</c> only, as <see cref="Behind"/>.</summary>
+    /// <summary>The account it is weighed against is ahead of its week's pace: under <c>switch: off</c> only, as <see cref="Behind"/>.</summary>
     public const string Ahead = "ahead";
 
     /// <summary>Daoris has not started on it yet.</summary>
@@ -76,7 +76,7 @@ public static class OpeningWhy
     /// <summary>It is a workspace's default.</summary>
     public const string Default = "default";
 
-    /// <summary>It was the default this machine's own list gave: nothing writes it now, and it is said without the list's name.</summary>
+    /// <summary>It is the default this machine's own list gives: nothing writes it, and it is said without the list's name.</summary>
     public const string DefaultHere = "default-here";
 
     /// <summary>It comes first in a workspace's list.</summary>

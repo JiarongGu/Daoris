@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where the files of the driver's home topics are, for a topic whose files belong to a subdomain above the events (FOUNDATION1 mod-vii,
-/// the design §14.3): the watch names the topic, and the subdomain that owns the files answers their places, once, when the driver's
+/// Where the files of the driver's home topics are, for a topic whose files belong to a subdomain above the events:
+/// the watch names the topic, and the subdomain that owns the files answers their places, once, when the driver's
 /// assembly loads (<see cref="Answer"/>), before any watch is built. The watch is built by the look, by the shell's loop and by every test,
 /// so the answer is installed where the topic's owner sits and no construction site hands the watch anything.
 /// </summary>
@@ -19,7 +19,7 @@ public static class HomeTopics
     private static readonly ConcurrentDictionary<string, string> Subjects = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// Answers the places of a topic's files under a home, for the topic's owner (FOUNDATION1 mod-vii), and, where its wake names what
+    /// Answers the places of a topic's files under a home, for the topic's owner, and, where its wake names what
     /// moved by something other than the topic's own name, that name (<paramref name="subject"/>).
     /// </summary>
     internal static void Answer(string topic, Func<string, HomePart[]> places, string? subject = null)

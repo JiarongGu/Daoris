@@ -2,7 +2,7 @@ using System.Runtime.ExceptionServices;
 
 namespace Daoris.Driver;
 
-/// <summary>The events a chain carries (FABRIC-CHAIN2, the design §C5): each a wake naming a subject, never a value.</summary>
+/// <summary>The events a chain carries: each a wake naming a subject, never a value.</summary>
 public static class ChainEvents
 {
     /// <summary>A repository's refs moved: the ref watcher, Daoris's own ref moves, a fetch's completion.</summary>
@@ -11,20 +11,20 @@ public static class ChainEvents
     /// <summary>A file of the home's record folders changed: a request, the configuration, a lock.</summary>
     public const string Home = "home";
 
-    /// <summary>A ledger family moved: the service's change stream (§A4.2), or a session leaving its tree or ending.</summary>
+    /// <summary>A ledger family moved: the service's change stream, or a session leaving its tree or ending.</summary>
     public const string Ledger = "ledger";
 
-    /// <summary>A route answered a person's or a terminal's press (D169): never a publish of the chain's own.</summary>
+    /// <summary>A route answered a person's or a terminal's press: never a publish of the chain's own.</summary>
     public const string Press = "press";
 
     /// <summary>The window has the person's focus (the shell only).</summary>
     public const string Focus = "focus";
 
-    /// <summary>A plugin's believed <c>work/step</c> (§C4).</summary>
+    /// <summary>A plugin's believed <c>work/step</c>.</summary>
     public const string PluginStep = "plugin.step";
 
     /// <summary>
-    /// The evaluation runtime's own wake (FABRIC-RUN1d, §A3): a timer its records persist came due, or the awaited set it told changed. Link 8
+    /// The evaluation runtime's own wake: a timer its records persist came due, or the awaited set it told changed. Link 8
     /// alone hears it, so it runs no local plan.
     /// </summary>
     public const string Nodes = "nodes";
@@ -32,11 +32,11 @@ public static class ChainEvents
     /// <summary>A process ended.</summary>
     public const string Exit = "exit";
 
-    /// <summary>A topic's deadline: the whole topic is due (§C5). A link hears it as <see cref="TimerOf"/> its topic.</summary>
+    /// <summary>A topic's deadline: the whole topic is due. A link hears it as <see cref="TimerOf"/> its topic.</summary>
     public const string Timer = "timer";
 
     /// <summary>
-    /// The start's reconciliation (§C6, §C7): every topic judged whole and every pending effect found from the persisted facts, so
+    /// The start's reconciliation: every topic judged whole and every pending effect found from the persisted facts, so
     /// a crash between recording a fact and acting on it loses nothing. Not a source: <see cref="Chain.RecoverAsync"/> says it once.
     /// </summary>
     public const string Start = "start";
@@ -70,7 +70,7 @@ public sealed record ChainEvent(string Type, string Subject, string? Topic = nul
     internal static ChainEvent Started { get; } = new(ChainEvents.Start, ChainEvents.Start);
 }
 
-/// <summary>The sorts of link (the design §C6).</summary>
+/// <summary>The sorts of link.</summary>
 public enum ChainKind
 {
     /// <summary>Fires when a fact changes, never on a fact that stands: it emits only what its judgement found changed (link 1).</summary>
@@ -87,37 +87,36 @@ public enum ChainKind
 }
 
 /// <summary>
-/// The design §C6's links by number, which is their rank. Which rows are bound, and by whom, is D173's FABRIC-CHAIN2 note. Ranks 3
-/// (<c>work/ended</c> to the plugins) and 4 (<c>STATE_CHANGED</c>) were declared and bound nowhere, and are gone (FOUNDATION1s, the
-/// foundation design §7 row 14); the rest keep their numbers, which the machine log's <c>chain.*</c> lines name.
+/// The links by number, which is their rank. Ranks 3 and 4 are unused; the rest keep their numbers, which the machine log's
+/// <c>chain.*</c> lines name.
 /// </summary>
 public static class ChainRanks
 {
-    /// <summary>The end judgement for a repository or a unit (§B4).</summary>
+    /// <summary>The end judgement for a repository or a unit.</summary>
     public const int Judge = 1;
 
-    /// <summary>The look's automatic tidy, judging again inside its hold (D88).</summary>
+    /// <summary>The look's automatic tidy, judging again inside its hold.</summary>
     public const int Tidy = 2;
 
     /// <summary>The local plan.</summary>
     public const int Plan = 5;
 
-    /// <summary>A plugin's <c>work/state</c> ask with a fetch of the line (§A4.3).</summary>
+    /// <summary>A plugin's <c>work/state</c> ask with a fetch of the line.</summary>
     public const int Ask = 6;
 
     /// <summary>A home folder's reader.</summary>
     public const int Read = 7;
 
     /// <summary>
-    /// The evaluation runtime (FABRIC-RUN1, <see cref="NodeRuntime"/>): a reader of the units' node records, on every wake the local plan
+    /// The evaluation runtime (<see cref="NodeRuntime"/>): a reader of the units' node records, on every wake the local plan
     /// hears and on the <c>look</c> topic's deadline, after the plan, so a session the plan ended is read by it in the same wake; and alone on
-    /// a plugin's step and its own wakes (FABRIC-RUN1d).
+    /// a plugin's step and its own wakes.
     /// </summary>
     public const int Nodes = 8;
 }
 
 /// <summary>
-/// One row of the link table (the design §C6): its rank, what it hears, and what it may emit. An effect's
+/// One row of the link table: its rank, what it hears, and what it may emit. An effect's
 /// <see cref="Wakes"/> are the events that can unblock it without any of its facts changing.
 /// </summary>
 public sealed record ChainLink(int Rank, string Id, ChainKind Kind, IReadOnlyList<string> On, IReadOnlyList<string> Emits)
@@ -130,7 +129,7 @@ public sealed record ChainLink(int Rank, string Id, ChainKind Kind, IReadOnlyLis
 }
 
 /// <summary>
-/// The link table (FABRIC-CHAIN2, the design §C6), ranked: a link may emit only events that links ranked above it hear, so a wake
+/// The link table, ranked: a link may emit only events that links ranked above it hear, so a wake
 /// runs each link at most once, in rank order, and no link wakes itself. A table that breaks a rule is never built.
 /// </summary>
 public sealed class ChainTable
@@ -147,9 +146,9 @@ public sealed class ChainTable
     public IReadOnlyList<ChainLink> Links { get; }
 
     /// <summary>
-    /// The fixed links of §C6. What judges, what may remove and when, what is published, and that every topic keeps its
-    /// reconciliation stay fixed under any cycle (§C6); a workspace's bounded menu, if it comes, adds only effects that write no
-    /// ref and no ledger family a link hears (FABRIC-CHAIN3).
+    /// The fixed links. What judges, what may remove and when, what is published, and that every topic keeps its
+    /// reconciliation stay fixed under any cycle; a workspace's bounded menu, if it comes, adds only effects that write no
+    /// ref and no ledger family a link hears.
     /// </summary>
     public static ChainTable Fixed { get; } = new(
     [
@@ -164,7 +163,7 @@ public sealed class ChainTable
         },
         new(ChainRanks.Plan, "plan", ChainKind.Reader, [ChainEvents.Ledger, ChainEvents.TimerOf(ChangeTopics.Look)], []),
         new(ChainRanks.Ask, "ask", ChainKind.Reader, [ChainEvents.Refs, ChainEvents.Press, ChainEvents.Focus], []),
-        // Each home folder's reader hears its own deadline: the requests folder's, and the record files' (FABRIC-EVENT4).
+        // Each home folder's reader hears its own deadline: the requests folder's, and the record files'.
         new(ChainRanks.Read, "read", ChainKind.Reader,
         [
             ChainEvents.Home, ChainEvents.TimerOf(ChangeTopics.Requests), ChainEvents.TimerOf(ChangeTopics.Config),
@@ -172,8 +171,8 @@ public sealed class ChainTable
             ChainEvents.TimerOf(ChangeTopics.Update), ChainEvents.TimerOf(ChangeTopics.Help), ChainEvents.TimerOf(ChangeTopics.Gates),
             ChainEvents.TimerOf(ChangeTopics.Notices), ChainEvents.TimerOf(ChangeTopics.Accounts),
         ], []),
-        // FABRIC-RUN1: the evaluation runtime hears the look's deadline and a plugin's step; it writes only the units' node records, which no
-        // link hears, and emits nothing. FABRIC-RUN1d: and its own wakes, which with a plugin's step it alone hears, so neither runs the local
+        // The evaluation runtime hears the look's deadline and a plugin's step; it writes only the units' node records, which no
+        // link hears, and emits nothing. It also hears its own wakes, which with a plugin's step it alone hears, so neither runs the local
         // plan. A ledger change is no pass of its own: a wake's pass judges the units as the last look read them, so it would find nothing the
         // change moved, and a pass asked while one works runs again after it.
         new(ChainRanks.Nodes, "nodes", ChainKind.Reader,
@@ -253,11 +252,11 @@ public enum ChainOutcome
     /// <summary>It happened: its unit no longer meets its condition (a removed unit is a trace).</summary>
     Done,
 
-    /// <summary>It was refused (the tree busy): not an outcome; the effect stays pending.</summary>
+    /// <summary>It is refused (the tree busy): not an outcome; the effect stays pending.</summary>
     Refused,
 
     /// <summary>
-    /// Refused with no try made, since nothing the last refusal rested on changed (FABRIC-END4a, second review): no try, so the unit's
+    /// Refused with no try made, since nothing the last refusal rested on changed: no try, so the unit's
     /// deadline stays counted from the last real one.
     /// </summary>
     Settled,
@@ -286,15 +285,15 @@ public interface IChainEffect
     Task<ChainTry> TryAsync(string unit, CancellationToken ct);
 
     /// <summary>
-    /// The same, saying whether the unit's deadline is what woke it (FABRIC-END4a, second review): a <paramref name="due"/> try is a real
+    /// The same, saying whether the unit's deadline is what woke it: a <paramref name="due"/> try is a real
     /// one, never answered <see cref="ChainTry.Settled"/>, so a settle can never outlast the deadline.
     /// </summary>
     Task<ChainTry> TryAsync(string unit, bool due, CancellationToken ct) => TryAsync(unit, ct);
 }
 
 /// <summary>
-/// The chains (FABRIC-CHAIN2, the design §C6), on the change watch's topic queue: each topic's wake becomes an event, and its
-/// deadline a <c>timer</c> event (§C5); the event runs the links that hear it in rank order, each at most once, and what a link
+/// The chains, on the change watch's topic queue: each topic's wake becomes an event, and its
+/// deadline a <c>timer</c> event; the event runs the links that hear it in rank order, each at most once, and what a link
 /// emits is heard by the links above it in the same wake.
 /// </summary>
 /// <remarks>
@@ -304,14 +303,14 @@ public interface IChainEffect
 /// deadlines alone tries a unit at most once per deadline while nothing changes. The start's <see cref="RecoverAsync"/> judges
 /// every topic whole and finds every pending effect, so a crash between a fact and its effect loses nothing.</para>
 ///
-/// <para><b>Convergence</b> (§C6): ranks make a wake finite and keep a link from waking itself; an effect's echo through the world
+/// <para><b>Convergence</b>: ranks make a wake finite and keep a link from waking itself; an effect's echo through the world
 /// (the tidy's deleted branch, heard by the ref watcher) comes back as a new wake, judged once, and emits nothing, because a fact
 /// link emits only on a change and a removed unit is a trace that meets no effect's condition.</para>
 ///
-/// <para><b>In memory only:</b> which unit was tried when, for the deadline's bound. A restart loses it, and the start's
-/// reconciliation tries each pending unit once; a chain's progress is never a second record (§C7).</para>
+/// <para><b>In memory only:</b> which unit is tried when, for the deadline's bound. A restart loses it, and the start's
+/// reconciliation tries each pending unit once; a chain's progress is never a second record.</para>
 ///
-/// <para>The machine log, with codes and no words (§C7): <c>chain.fired</c> (link, topic, count) when a link acted,
+/// <para>The machine log, with codes and no words: <c>chain.fired</c> (link, topic, count) when a link acted,
 /// <c>chain.pending</c> (link, code, count) when an effect stays pending (<c>refused</c>, <c>failed</c>) or is found at the start
 /// (<c>recovered</c>), and <c>chain.dropped</c> (code, link, event) when a link emitted outside its row (<c>undeclared</c>).</para>
 /// </remarks>
@@ -373,7 +372,7 @@ public sealed class Chain
     public void Hint(string topic, string subject) => _watch.Hint(topic, subject);
 
     /// <summary>
-    /// The start's reconciliation (§C6): one wake with every topic's deadline and the start, so every topic is judged whole and
+    /// The start's reconciliation: one wake with every topic's deadline and the start, so every topic is judged whole and
     /// every effect's pending units, read from the persisted facts, are tried once. What the links acted on.
     /// </summary>
     public Task<int> RecoverAsync(CancellationToken ct)
@@ -517,7 +516,7 @@ public sealed class Chain
                 else
                 {
                     refused++;
-                    // FABRIC-END4a, second review: a settled answer made no try, so the deadline stays the last real try's.
+                    // A settled answer made no try, so the deadline stays the last real try's.
                     if (tried.Outcome == ChainOutcome.Settled)
                     {
                         lock (_gate)

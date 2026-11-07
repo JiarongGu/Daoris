@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace Daoris.Driver;
 
-/// <summary>What a source says moved under a root it watches: a hint, never a value (FABRIC-EVENT2, the design §A3).</summary>
+/// <summary>What a source says moved under a root it watches: a hint, never a value.</summary>
 public enum ChangeKind
 {
     Created,
@@ -25,10 +25,10 @@ public static class ChangeWhy
     /// <summary>Its last judgement failed, so it is unknown and tried again, sooner than its deadline.</summary>
     public const string Retry = "retry";
 
-    /// <summary>Its root's folder, absent until now, was opened at a reconciliation.</summary>
+    /// <summary>Its root's folder, absent before, is opened at a reconciliation.</summary>
     public const string Opened = "opened";
 
-    /// <summary>Its root was opened again: a back-off after a loss ended, or the folder was replaced at its path.</summary>
+    /// <summary>Its root is opened again: a back-off after a loss ended, or the folder is replaced at its path.</summary>
     public const string Reopened = "reopened";
 
     /// <summary>Its root's watcher overflowed or lost its handle: what it missed is unknown.</summary>
@@ -38,7 +38,7 @@ public static class ChangeWhy
     public const string Resumed = "resumed";
 
     /// <summary>
-    /// This process moved it itself (FABRIC-END3: a tree opened, <i>Accept</i>, the tidy's removals): judged at once, without the quiet
+    /// This process moved it itself (a tree opened, <i>Accept</i>, the tidy's removals): judged at once, without the quiet
     /// window, and the watcher's echo already heard is taken up with it (<see cref="ChangeWatch.Now"/>).
     /// </summary>
     public const string Own = "own";
@@ -50,71 +50,71 @@ public static class ChangeTopics
     /// <summary>The requests and presses a terminal writes into the home's <c>sessions/requests/</c> (row 7).</summary>
     public const string Requests = "requests";
 
-    /// <summary>A repository's refs, heard in its common git dir (§A4.1): the tidy's pace is its deadline (§C5), FABRIC-END3 its root.</summary>
+    /// <summary>A repository's refs, heard in its common git dir: the tidy's pace is its deadline.</summary>
     public const string Refs = "refs";
 
-    /// <summary>The part of the look no event yet carries, which the ledger wakes: <c>pollSeconds</c> is its deadline (§C5).</summary>
+    /// <summary>The part of the look no event yet carries, which the ledger wakes: <c>pollSeconds</c> is its deadline.</summary>
     public const string Look = "look";
 
     /// <summary>
-    /// A ledger family moved, the subject naming it (§A4.2's change stream): its wake runs the look's local plan alone, the remote
-    /// sync left to the <see cref="Look"/> topic's deadline (FABRIC-EVENT3a).
+    /// A ledger family moved, the subject naming it: its wake runs the look's local plan alone, the remote
+    /// sync left to the <see cref="Look"/> topic's deadline.
     /// </summary>
     public const string Ledger = LedgerChanges.Topic;
 
-    /// <summary>The driver's configuration file (<c>driver.json</c>), heard moving; the loop reads it afresh at each look (FABRIC-EVENT4, link 7).</summary>
+    /// <summary>The driver's configuration file (<c>driver.json</c>), heard moving; the loop reads it afresh at each look.</summary>
     public const string Config = "config";
 
-    /// <summary>The plugins folder, heard when a plugin arrives, leaves or changes its manifest (FABRIC-EVENT4, link 7).</summary>
+    /// <summary>The plugins folder, heard when a plugin arrives, leaves or changes its manifest.</summary>
     public const string Plugins = "plugins";
 
-    /// <summary><c>lines-moved.json</c>, which says a repository's line moved and is to be followed (FABRIC-EVENT4, link 7).</summary>
+    /// <summary><c>lines-moved.json</c>, which says a repository's line moved and is to be followed.</summary>
     public const string Lines = "lines";
 
-    /// <summary>The held words' file under the sessions folder, which another process or a clear may change (FABRIC-EVENT4, link 7).</summary>
+    /// <summary>The held words' file under the sessions folder, which another process or a clear may change.</summary>
     public const string Words = "words";
 
     /// <summary>
-    /// The landing gate's files (FABRIC-END7): a second opinion's record, where the person's answer is kept, and the workflows, a
+    /// The landing gate's files: a second opinion's record, where the person's answer is kept, and the workflows, a
     /// version and a run's binding with the person's say-so. Another process's write wakes the look's plan, whose landing looks at
     /// the due entries a gate holds.
     /// </summary>
     public const string Gates = "gates";
 
     /// <summary>
-    /// A proposal arriving in Ask Daoris's folder, written by the connector in another process (FABRIC-EVENT5a): told to the window
+    /// A proposal arriving in Ask Daoris's folder, written by the connector in another process: told to the window
     /// as <c>help</c>, which needs no look, so the shell's watch alone listens for it.
     /// </summary>
     public const string Help = "help";
 
     /// <summary>
-    /// What a held conversation's wait is computed from (LIMITRESUME1c, D206 §3.4): the cooling store, which *Try now* and a sign-in end a
+    /// What a held conversation's wait is computed from: the cooling store, which *Try now* and a sign-in end a
     /// cool-off in, and the harness settings an added account changes. It wakes the look early, whose limits stage then reads its stamp.
     /// </summary>
     public const string Accounts = "accounts";
 
     /// <summary>
-    /// <c>notices.json</c>, written by any process on the home (NOTIFY2f, the notification design §2.5): read again by each process's
+    /// <c>notices.json</c>, written by any process on the home: read again by each process's
     /// <c>notices</c> slice, which needs no look, so the shell's watch alone listens for it.
     /// </summary>
     public const string Notices = "notices";
 
-    /// <summary>The staged update's folder and the person's request, the installing shell's alone (FABRIC-EVENT4, link 7).</summary>
+    /// <summary>The staged update's folder and the person's request, the installing shell's alone.</summary>
     public const string Update = "update";
 
     /// <summary>
-    /// The sessions' lineage files (COWORKVIEW1a, the design §4.1): heard by the window's own process, whoever holds the home's lease,
+    /// The sessions' lineage files: heard by the window's own process, whoever holds the home's lease,
     /// and judged by the held read that registered them, which compares with what each composition read.
     /// </summary>
     public const string Lineage = "lineage";
 
     /// <summary>
-    /// A timer the units' node records persist came due (FABRIC-RUN1: a retry's delay, a running answer's wait, an attempt's deadline): a
+    /// A timer the units' node records persist came due (a retry's delay, a running answer's wait, an attempt's deadline): a
     /// wake of the evaluation runtime, link 8, at the moment the record names rather than at the look's deadline.
     /// </summary>
     public const string Nodes = "nodes";
 
-    /// <summary>The window has the person's focus (FABRIC-END6): a moment to ask about an open pull request, the shell's alone (link 6).</summary>
+    /// <summary>The window has the person's focus: a moment to ask about an open pull request, the shell's alone (link 6).</summary>
     public const string Focus = "focus";
 }
 
@@ -122,7 +122,7 @@ public static class ChangeTopics
 public sealed record ChangeWake(string Topic, string Subject, string Why);
 
 /// <summary>
-/// The seam a watcher sits behind (FABRIC-EVENT2): <see cref="FolderWatcherSource"/> on the machine, a fake in a test that raises
+/// The seam a watcher sits behind: <see cref="FolderWatcherSource"/> on the machine, a fake in a test that raises
 /// moves, overflows, renames and losses, or raises nothing at all.
 /// </summary>
 public interface IChangeSource
@@ -144,19 +144,19 @@ public interface IChangeSink
 /// <summary>One open watch on one folder.</summary>
 public interface IChangeHandle : IDisposable
 {
-    /// <summary>Whether the folder at the path is still the one this handle opened: false once it is gone or was replaced.</summary>
+    /// <summary>Whether the folder at the path is still the one this handle opened: false once it is gone or replaced.</summary>
     bool Same { get; }
 }
 
 /// <summary>
-/// The change watch (FABRIC-EVENT2, the design §A3 and §A4.1): roots a source watches, each hint debounced per topic and subject
+/// The change watch: roots a source watches, each hint debounced per topic and subject
 /// into its topic's queue, drained in one step by the topic's judge, one judgement per subject at a time, with each topic's
 /// deadline as the reconciliation behind every source, and the watcher's recovery.
 /// </summary>
 /// <remarks>
-/// <para><b>A hint is a wake, never a fact</b> (D173's events note; the design §A1). A source says a topic and a subject, and the
-/// judge reads its store afresh: a hint's path is never read as a value, and a replace is told as a deletion then a rename (§A5).
-/// A missed hint costs latency, never correctness, since each subject is judged at its topic's deadline whatever was heard; an
+/// <para><b>A hint is a wake, never a fact</b>. A source says a topic and a subject, and the
+/// judge reads its store afresh: a hint's path is never read as a value, and a replace is told as a deletion then a rename.
+/// A missed hint costs latency, never correctness, since each subject is judged at its topic's deadline whatever is heard; an
 /// extra one costs one judgement.</para>
 ///
 /// <para><b>The queue.</b> A hint waits for <see cref="Quiet"/> after the last for its subject, at most <see cref="Cap"/> after the
@@ -167,7 +167,7 @@ public interface IChangeHandle : IDisposable
 /// <para><b>Recovery</b>, since a watcher fails quietly as well as loudly. Each open has a generation, and a callback from an old
 /// one is dropped. A loss judges its root at once and reopens it, with a back-off once it is lost again within <see cref="Calm"/>,
 /// and after <see cref="Tries"/> tries leaves it to its deadline, said once. A root absent, gone, or replaced at its path is found
-/// at its reconciliation, never in a loop. A wait that overran by <see cref="Asleep"/> was the machine asleep: every root is
+/// at its reconciliation, never in a loop. A wait that overran by <see cref="Asleep"/> means the machine slept: every root is
 /// reopened and judged (<see cref="Resumed"/>, which a host that hears the power events may call itself). At most
 /// <see cref="MostRoots"/> roots are watched; the rest stay on their deadline, said once.</para>
 ///
@@ -203,7 +203,7 @@ public sealed class ChangeWatch : IAsyncDisposable
     /// <summary>The longest the watch sleeps between its steps.</summary>
     public static readonly TimeSpan Longest = TimeSpan.FromMinutes(1);
 
-    /// <summary>A sleep that overran by this much was the machine asleep.</summary>
+    /// <summary>A sleep that overran by this much means the machine slept.</summary>
     public static readonly TimeSpan Asleep = TimeSpan.FromSeconds(30);
 
     private readonly IChangeSource _source;
@@ -232,10 +232,10 @@ public sealed class ChangeWatch : IAsyncDisposable
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
     }
 
-    /// <summary>Where each judgement that was not an idle deadline, each loss and each failure is written; none by default.</summary>
+    /// <summary>Where each judgement that is not an idle deadline, each loss and each failure is written; none by default.</summary>
     public MachineLog? Log { get; set; }
 
-    /// <summary>Callbacks dropped because their watcher's generation was no longer the root's.</summary>
+    /// <summary>Callbacks dropped because their watcher's generation is not the root's.</summary>
     internal int Dropped => Volatile.Read(ref _dropped);
 
     /// <summary>Judgements begun.</summary>
@@ -273,8 +273,8 @@ public sealed class ChangeWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// A subject judged at its topic's deadline though no root names it (FABRIC-CHAIN2): a topic only hints feed keeps its
-    /// reconciliation, and a chain's topic is judged whole there (§C5's <c>timer</c>).
+    /// A subject judged at its topic's deadline though no root names it: a topic only hints feed keeps its
+    /// reconciliation, and a chain's topic is judged whole there (its <c>timer</c>).
     /// </summary>
     public void Subject(string topic, string subject)
     {
@@ -298,9 +298,9 @@ public sealed class ChangeWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// This process moved <paramref name="subject"/> itself and is done writing (FABRIC-END3, the design §B4): due at once, without the
-    /// quiet window, so the next read does not wait on the debounce. A watcher's events arrive before the writer's process exits (§A5,
-    /// measured), so the echo already heard is taken up with it, and the move is judged once.
+    /// This process moved <paramref name="subject"/> itself and is done writing: due at once, without the
+    /// quiet window, so the next read does not wait on the debounce. A watcher's events arrive before the writer's process exits
+    /// (measured), so the echo already heard is taken up with it, and the move is judged once.
     /// </summary>
     public void Now(string topic, string subject)
     {
@@ -315,7 +315,7 @@ public sealed class ChangeWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// Let go of every root naming <paramref name="topic"/>'s <paramref name="subject"/> (FABRIC-END3: a repository that no longer holds
+    /// Let go of every root naming <paramref name="topic"/>'s <paramref name="subject"/> (a repository that stops holding
     /// Daoris's work): its watchers closed, so nothing they still say is heard, and a root the cap left on its deadline takes each place
     /// given back, opened and judged.
     /// </summary>
@@ -483,7 +483,7 @@ public sealed class ChangeWatch : IAsyncDisposable
                 return;
             }
 
-            // A sleep that overran was the machine asleep: what changed meanwhile is unknown (§A4.1).
+            // A sleep that overran means the machine slept: what changed meanwhile is unknown.
             if (_clock() - before > wait + Asleep) Resumed();
         }
     }
@@ -550,7 +550,7 @@ public sealed class ChangeWatch : IAsyncDisposable
             }
         }
 
-        // The next deadline counts from these judgements: the step that was asleep on the old one looks again.
+        // The next deadline counts from these judgements: the step asleep on the earlier deadline looks again.
         Poke();
     }
 
@@ -843,7 +843,7 @@ public sealed class ChangeWatch : IAsyncDisposable
 
         public int Generation { get; set; }
 
-        /// <summary>Whether it was ever open, so its next open is a reopen.</summary>
+        /// <summary>Whether it has been open, so its next open is a reopen.</summary>
         public bool Ever { get; set; }
 
         public string? LostWhy { get; set; }
@@ -854,7 +854,7 @@ public sealed class ChangeWatch : IAsyncDisposable
 
         public DateTimeOffset? ReopenAt { get; set; }
 
-        /// <summary>Whether its being left to its deadline was said, so it is said once.</summary>
+        /// <summary>Whether its being left to its deadline has been said, so it is said once.</summary>
         public bool Said { get; set; }
     }
 

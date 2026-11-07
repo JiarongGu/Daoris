@@ -21,7 +21,7 @@ public static class StartNoteCodes
     public static readonly NoteCode StartedUncopiedUnignored = new("started.uncopied-unignored", ["modules"]);
     public static readonly NoteCode StartedUncopiedFailed = new("started.uncopied-failed", ["modules"]);
 
-    // The machine-local files a repository's gates read, copied into its tree read-only, after the opening; and why one was not.
+    // The machine-local files a repository's gates read, copied into its tree read-only, after the opening; and why one is not.
     public static readonly NoteCode StartedLocalCopied = new("started.local-copied", ["inputs"]);
     public static readonly NoteCode StartedLocalMissing = new("started.local-missing", ["input"]);
     public static readonly NoteCode StartedLocalRefused = new("started.local-refused", ["input"]);
@@ -42,7 +42,7 @@ public static class StartNoteCodes
     public static readonly NoteCode StartedAnswer = new("started.answer", ["quest", "session"]);
     public static readonly NoteCode StartedReleased = new("started.released", ["quest", "session"]);
 
-    // A quest carried on after the steward's stop of its session was released.
+    // A quest carried on after the steward's stop of its session is released.
     public static readonly NoteCode StartedReleasedSteward = new("started.released-steward", ["quest", "session"]);
     public static readonly NoteCode StartedCutOff = new("started.cut-off", ["quest", "session"]);
 
@@ -77,7 +77,7 @@ public static class StartNoteCodes
     public static readonly NoteCode WentNewSession = new("went.new-session", ["why"]) { Why = NoteCodes.Continue };
     public static readonly NoteCode WentCarriedOn = new("went.carried-on", ["why"]) { Why = NoteCodes.Continue };
 
-    // ——— A conversation's first line, where a start's account was chosen: said in the conversation's record, which never leaves the
+    // ——— A conversation's first line, where a start's account is chosen: said in the conversation's record, which never leaves the
     // machine, so its values name accounts and a workspace. The line, then the rest's step and a refused turn riding inside it, then
     // what each account said, a line per account and one per thing it said.
     public static readonly NoteCode OpeningOpened = new("opening.opened", ["account", "why"]) { Why = NoteCodes.Opening };
@@ -124,7 +124,7 @@ public static class StartNoteCodes
     public static readonly NoteCode OpeningMovedOff = new("opening.moved-off", ["account"]);
 
     // A start whose model its agent refused (or answered with another) went on under the walk's next answer, which says the agent and
-    // the model; the account is never named, since it was not at fault.
+    // the model; the account is never named, since it is not at fault.
     public static readonly NoteCode OpeningMovedOffModel = new("opening.moved-off-model", ["agent", "model"]);
 
     // ——— A resumed conversation's first line (<see cref="Continuations.Opening"/>): the adapter it resumed on is a fact, and a version

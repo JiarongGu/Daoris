@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a claimed piece of news says to the person (FOUNDATION1 m-ii): the attention event the shell's notifier and a headless console already
+/// What a claimed piece of news says to the person: the attention event the shell's notifier and a headless console
 /// read, made from the journal's row and the session's record. The row never carries a repository or a word of a note, so they are read from
 /// the record when the piece is shown, after its claim.
 /// </summary>
@@ -9,7 +9,7 @@ public static class NewsAttention
 {
     /// <summary>
     /// The record <paramref name="told"/> is shown with, or null where it cannot be read this moment: the piece is then told by its id alone,
-    /// since the claim was made, and a second telling would break the once.
+    /// since the claim is already made, and a second telling would break the once.
     /// </summary>
     public static async Task<SessionView?> ReadAsync(ServiceClient service, NewsTold told, CancellationToken ct)
     {
