@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PLUG8: the kit a session makes a plugin with. `new` writes a folder a plugins repository can hold —
+/// The kit a session makes a plugin with. `new` writes a folder a plugins repository can hold —
 /// a manifest, a wire script, its self-contained wire test and a README — and `try` starts a plugin as
 /// the driver would and checks every answer by the driver's own reader.
 /// </summary>
@@ -24,12 +24,12 @@ public sealed class PluginKitTests : IDisposable
 
     public PluginKitTests() => Directory.CreateDirectory(_scratch);
 
-    /// <summary>The Daoris home a trial keeps its scratch under (D63).</summary>
+    /// <summary>The Daoris home a trial keeps its scratch under.</summary>
     private string Home => Path.Combine(_scratch, "home");
 
     public void Dispose()
     {
-        // A plugin's process stands in its folder a moment after it is told to go (FLAKE1).
+        // A plugin's process stands in its folder a moment after it is told to go.
         for (var attempt = 0; Directory.Exists(_scratch); attempt++)
         {
             try
@@ -59,13 +59,13 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.SessionEnded)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(30), PluginKit.Find(HookPoints.State)!.Patience);
         Assert.Equal(TimeSpan.FromSeconds(10), PluginKit.Find(HookPoints.StateChanged)!.Patience);
-        // The work wire's peer waits its default for the awaited set's answer and an attempt's receipt (FABRIC-PERFORM1a).
+        // The work wire's peer waits its default for the awaited set's answer and an attempt's receipt.
         Assert.Equal(HookPeer.DefaultPatience, PluginKit.Find(HookPoints.Watch)!.Patience);
         Assert.Equal(HookPeer.DefaultPatience, PluginKit.Find(HookPoints.Perform)!.Patience);
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1e: the work points' samples are the work wire's own messages. The awaited set and an attempt are written by the
+    /// The work points' samples are the work wire's own messages. The awaited set and an attempt are written by the
     /// writer the hook set sends with and read back whole; the event a performer sends, made a plugin's own, is one the hook set's
     /// reader takes, bound to its invocation, with its receipt and what it made.
     /// </summary>
@@ -114,13 +114,13 @@ public sealed class PluginKitTests : IDisposable
             await set.EndedAsync(PluginKit.SampleEnding, CancellationToken.None);
         }
 
-        // The query's frame, through an occasion's asks (PLUGHOOK1a).
+        // The query's frame, through an occasion's asks.
         var landed = new LandedBranch("engine", "default", PluginKit.SampleState.Branch, "main", PluginKit.SampleState.PushedTip!, "s1a2b3c4",
             "0fda18", "Expose a streaming budget", DateTimeOffset.UnixEpoch);
         await new LandingPlugins(home, start: (_, _, _) => Task.FromResult<IHookChannel>(new RecordingChannel(HookPoints.All, told)))
             .AskStatesAsync([new StateAsk(landed, "acme.every", PluginKit.SampleState)]);
 
-        // The change's frame, through the loop's set as the shell's bus tells it (STATEHUB1g).
+        // The change's frame, through the loop's set as the shell's bus tells it.
         await using (var set = new HookSet(home, start: (_, _, _) => Task.FromResult<IHookChannel>(channel)))
         {
             await set.ReconcileAsync(PluginCatalog.Load(home), CancellationToken.None);
@@ -154,7 +154,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md"], written);
         Assert.Equal(written.OrderBy(n => n, StringComparer.Ordinal), Directory.GetFiles(folder).Select(Path.GetFileName).OrderBy(n => n, StringComparer.Ordinal));
 
-        // The manifest is one the catalogue reads as sound, speaking where it was asked to.
+        // The manifest is one the catalogue reads as sound, speaking where it is asked to.
         var (manifest, problem) = PluginCatalog.ReadFolder(folder);
         Assert.Null(problem);
         Assert.Equal("acme.quiet-hours", manifest.Id);
@@ -162,7 +162,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal([HookPoints.QuestConsider], manifest.Hooks!.Points);
         Assert.Equal(["node", Path.Combine(folder, "plugin.mjs")], manifest.Hooks.Command.Select(Path.GetFullPath).Skip(1).Prepend("node"));
         Assert.Empty(manifest.Harnesses);
-        // It declares no tools until it runs one (PLUGTOOL1a): `tools: []`, read as none.
+        // It declares no tools until it runs one: `tools: []`, read as none.
         Assert.Empty(manifest.Tools);
         Assert.Null(manifest.ToolsProblem);
 
@@ -174,7 +174,7 @@ public sealed class PluginKitTests : IDisposable
             Assert.DoesNotContain("\r", Encoding.UTF8.GetString(bytes));
         }
 
-        // The wire script answers the point it was made for, and only that one.
+        // The wire script answers the point it serves, and only that one.
         var script = File.ReadAllText(Path.Combine(folder, "plugin.mjs"));
         Assert.Contains("'quest/consider'", script);
         Assert.DoesNotContain("'work/land'", script);
@@ -201,7 +201,7 @@ public sealed class PluginKitTests : IDisposable
     public void A_query_plugin_carries_the_helper_that_runs_a_platform_s_tool_and_its_quoting()
     {
         Assert.DoesNotContain("function run(", PluginKit.Plan("acme.gate", [HookPoints.QuestConsider], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content);
-        // A query asks its platform's tool (PLUGHOOK1a), so it carries the helper.
+        // A query asks its platform's tool, so it carries the helper.
         var asks = PluginKit.Plan("acme.asks", [HookPoints.State], _scratch).Files.Single(f => f.Name == "plugin.mjs").Content;
         Assert.Contains("'work/state'", asks);
         Assert.Contains("function run(", asks);
@@ -300,10 +300,10 @@ public sealed class PluginKitTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PROC1g: the wire test ends once its plugin leaves at `shutdown`. The grace it races is a bound on a plugin that stays,
+    /// The wire test ends once its plugin leaves at `shutdown`. The grace it races is a bound on a plugin that stays,
     /// never a wait on one that went: its timer left running held every run open for the whole grace after the plugin had gone.
     /// Here the grace is ten minutes, past the run's own limit (<see cref="RunAsync"/>'s ninety seconds), so a run that waits it out never
-    /// ends at all (TESTCLOCK2), where the machine's clock timed a minute's grace against thirty seconds.
+    /// ends at all, where the machine's clock timed a minute's grace against thirty seconds.
     /// </summary>
     [Fact]
     public async Task A_wire_test_ends_once_its_plugin_leaves_not_when_the_grace_runs_out()
@@ -338,9 +338,9 @@ public sealed class PluginKitTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1a, round 2: try reads a plugin's stdout under the bound the driver reads it under. A query's answer over 64 KB from a
+    /// Try reads a plugin's stdout under the bound the driver reads it under. A query's answer over 64 KB from a
     /// plugin that speaks no work point passes, as the driver takes it; one past the answers' bound fails at once with the reason, as the
-    /// driver fails it — where try had read it whole and passed a plugin the driver then never heard.
+    /// driver fails it, never passing a plugin the driver would not hear.
     /// </summary>
     [Theory]
     [InlineData(70_000, true)]
@@ -378,14 +378,13 @@ public sealed class PluginKitTests : IDisposable
         var step = Failed(trial, HookPoints.QuestConsider);
         Assert.Contains("which is not a decision", step.Sentence);
         Assert.Contains("the driver would hold the quest", step.Sentence);
-        // The rest of the conversation still ran: the process was well, only its answer was not.
+        // The rest of the conversation still runs: the process is well, only its answer is not.
         Assert.True(trial.Steps.Single(s => s.Name == "shutdown").Ok);
     }
 
     /// <remarks>
-    /// 🔴 PLUGKIT2: the one second was the whole trial's, so node's start and the handshake outlasted it under load and
-    /// `work/state` was never asked. The second is the point's call's now, the handshake waits the point's own patience, and
-    /// this plugin's handshake comes later than the second, as a loaded machine's did.
+    /// The one second is the point's call's, not the whole trial's, and the handshake waits the point's own patience, so node's
+    /// start under load never starves `work/state`: this plugin's handshake comes later than the second, as a loaded machine's does.
     /// </remarks>
     [Fact]
     public async Task A_silent_plugin_is_still_running_and_said_nothing_within_the_patience()
@@ -573,8 +572,8 @@ public sealed class PluginKitTests : IDisposable
 
     /// <summary>
     /// What a trial keeps goes under the home, never the system's temporary folder, which is under the
-    /// user profile where nothing of Daoris's lives (D63, the owner's call): a dot-folder the catalogue
-    /// skips, gone once the trial ends. The plugin is told that folder, so it can say where it was.
+    /// user profile where nothing of Daoris's lives: a dot-folder the catalogue
+    /// skips, gone once the trial ends. The plugin is told that folder, so it can say where it runs.
     /// </summary>
     [Fact]
     public async Task A_trials_scratch_is_under_the_homes_plugins_folder_and_goes_after()
@@ -591,7 +590,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Empty(PluginCatalog.Load(Home).Plugins);
     }
 
-    /// <summary>With no home named, the terminal's folder trial refuses, as every writer does (D63), and says what needs none.</summary>
+    /// <summary>With no home named, the terminal's folder trial refuses, as every writer does, and says what needs none.</summary>
     [Fact]
     public async Task The_terminal_refuses_a_folder_trial_with_no_home()
     {
@@ -654,11 +653,11 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(1, trial.ExitCode);
     }
 
-    // ——— the tools it declares (PLUGTOOL1a)
+    // ——— the tools it declares
 
     /// <summary>
     /// `try` finds each tool a manifest declares as the driver would, asks its version against its range, and runs its
-    /// checks, each a step in its own sentence, before it starts the plugin (D150 point 7, the UX6 design §7.2).
+    /// checks, each a step in its own sentence, before it starts the plugin.
     /// </summary>
     [Fact]
     public async Task Try_finds_each_declared_tool_asks_its_version_and_runs_its_checks_each_in_its_own_sentence()
@@ -705,7 +704,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.StartsWith("not ready: It exits clean. `node -e process.exit(3)` exited 3. Run `node -e", Failed(trial, "node check 1").Sentence);
         Assert.Contains("has the `id` `Az`, which is not one", Failed(trial, "tool 2").Sentence);
         Assert.Contains("`daoris-no-such-program` is not on this machine's PATH", Failed(trial, "tool acme-missing").Sentence);
-        // The plugin itself was tried, and answered well.
+        // The plugin itself is tried, and answers well.
         Assert.All(trial.Steps.Skip(4), s => Assert.True(s.Ok, s.Sentence));
         // 🔴 The fix is shown, never run.
         Assert.False(File.Exists(marker));
@@ -753,7 +752,7 @@ public sealed class PluginKitTests : IDisposable
         { HookPoints.QuestConsider, "null", false },
         { HookPoints.SessionEnded, "{}", true },
         { HookPoints.SessionEnded, "null", true },
-        // PLUGHOOK1a: the query's answer, as HookStateTests holds the driver's reader to the same rows.
+        // The query's answer, as HookStateTests holds the driver's reader to the same rows.
         { HookPoints.State, """{"state":"open"}""", true },
         { HookPoints.State, """{"state":"abandoned","pullRequest":null,"at":"2026-10-04T14:02:11Z","message":"abandoned"}""", true },
         { HookPoints.State, """{"state":"unknown","message":"no pull request from that branch"}""", true },
@@ -768,7 +767,7 @@ public sealed class PluginKitTests : IDisposable
         { HookPoints.State, """{"state":"open","at":"yesterday"}""", false },
         { HookPoints.State, """{"state":"open","message":7}""", false },
         { HookPoints.State, "null", false },
-        // STATEHUB1g: an observation's answer is not read, as session/ended's is not.
+        // An observation's answer is not read, as session/ended's is not.
         { HookPoints.StateChanged, "{}", true },
         { HookPoints.StateChanged, "null", true },
     };
@@ -884,7 +883,7 @@ public sealed class PluginKitTests : IDisposable
     }
 
     /// <summary>
-    /// PLUGUI1d (D119 §4.2): a trial of an installed plugin from a terminal is one <c>plugin.tried</c> line, its
+    /// A trial of an installed plugin from a terminal is one <c>plugin.tried</c> line, its
     /// history; a folder's trial is printed and never kept, since its id may name an installed plugin it is not.
     /// </summary>
     [Fact]
@@ -899,7 +898,7 @@ public sealed class PluginKitTests : IDisposable
             Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder], new StringWriter(), Home, log: log));
         }
 
-        // Each trial's start says its containment too (TERMTRUST1a, agent.contained): codes only, never the plugin, so no history of it.
+        // Each trial's start says its containment too (agent.contained): codes only, never the plugin, so no history of it.
         var line = Assert.Single(MachineLogReader.Read(DaorisHome.Entry(Home, HomeEntry.Logs), new LogFilter()).Lines,
             each => each.Event != "agent.contained");
         Assert.Equal("plugin.tried", line.Event);
@@ -908,7 +907,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal("terminal", line.Data.GetProperty("door").GetString());
     }
 
-    // ——— a plugin that works (FABRIC-PERFORM1e)
+    // ——— a plugin that works
 
     [Fact]
     public void A_new_performer_declares_its_step_and_what_it_makes_and_carries_the_kit_s_work_files()
@@ -972,7 +971,7 @@ public sealed class PluginKitTests : IDisposable
     }
 
     /// <summary>
-    /// §D9's gate in a plugins repository: `node --test` runs the wire test and the contract test, with nothing of Daoris's installed, and
+    /// The gate in a plugins repository: `node --test` runs the wire test and the contract test, with nothing of Daoris's installed, and
     /// a fresh performer passes both, in the stand-in world.
     /// </summary>
     [Fact]
@@ -1061,7 +1060,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Contains("on `acme.deploy/receipt@1:i-1`", cycle.Steps.Single(step => step.Name == "eligible").Sentence);
         Assert.Contains("which its step tries again", cycle.Steps.Single(step => step.Name == "failure").Sentence);
         Assert.Contains("removed, then already-gone, removed once", cycle.Steps.Single(step => step.Name == "cleanup").Sentence);
-        // The cycle's scratch goes with it, under the home's trials (D63).
+        // The cycle's scratch goes with it, under the home's trials.
         Assert.Empty(Directory.EnumerateFileSystemEntries(PluginTrials.TrialsOf(Home)));
     }
 
@@ -1113,7 +1112,7 @@ public sealed class PluginKitTests : IDisposable
     }
 
     /// <summary>
-    /// PLUGINSTEP1a: <c>examples/plugins/local-release</c> keeps the kit's files as the kit writes them (its cycle fixture is its own, naming
+    /// <c>examples/plugins/local-release</c> keeps the kit's files as the kit writes them (its cycle fixture is its own, naming
     /// the tail), and declares find, release and publish as three performed, idempotent, reconciled steps.
     /// </summary>
     [Fact]
@@ -1141,7 +1140,7 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal("local-release/release@1", manifest.Steps[1].Inputs["release"]);
         Assert.Equal("local-release/release@1", manifest.Steps[2].Inputs["release"]);
 
-        // SETUPUX1f: each step says what it does in both languages, and none says it publishes anywhere: it copies into its own registry folder.
+        // Each step says what it does in both languages, and none says it publishes anywhere: it copies into its own registry folder.
         Assert.All(manifest.Steps, step =>
         {
             Assert.NotNull(step.Title);
@@ -1194,7 +1193,7 @@ public sealed class PluginKitTests : IDisposable
         File.WriteAllText(path, script.Replace(from, to, StringComparison.Ordinal));
     }
 
-    /// <summary>Put a manifest's tools where the scaffold wrote none (PLUGTOOL1a).</summary>
+    /// <summary>Put a manifest's tools where the scaffold wrote none.</summary>
     private static void DeclareTools(string folder, string tools)
     {
         var path = Path.Combine(folder, "plugin.json");

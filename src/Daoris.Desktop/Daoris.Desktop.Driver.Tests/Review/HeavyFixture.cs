@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A repository the heavy run's tests run in (HEAVYRUN1a): a checkout and a linked tree of it, laid out as git lays them out, with no
+/// A repository the heavy run's tests run in: a checkout and a linked tree of it, laid out as git lays them out, with no
 /// git run, so the slot reads them from git's own files as it reads a real one; a home of its own; and the gates each declares.
 /// Scratch in the repository's gitignored <c>_fixtures/</c>, never OS temp.
 /// </summary>

@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin with a pull-request step is started per place (D241 point 5): each repository and workspace that awaits it has a process of its
+/// A plugin with a pull-request step is started per place: each repository and workspace that awaits it has a process of its
 /// own, handed the token of the identity serving that place's origin and no other's, and a place whose hand is refused has none. The
 /// runtime still sees one plugin, its generations unique across its places. Driven through fakes on the channel: no process starts.
 /// </summary>

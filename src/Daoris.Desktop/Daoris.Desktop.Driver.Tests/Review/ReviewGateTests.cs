@@ -3,11 +3,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1c (D154 points 3, 4, 7 and 9; the review environment design §1.4, §2.1, §3.1–§3.2): the driver's half of the review.
+/// The driver's half of the review.
 /// The level's table reads, from the most specific down, the person's skip, a set-up step in the chain, the chain's choice, the
 /// ask's choice, the repository's rule, the workspace's, and nothing; the gate lets work go only on the person's <i>reviewed</i> of
 /// a set-up whose commit holds what lands, or their skip; the planner sits a set-up step it cannot honestly start. Pure tables,
-/// with git's ancestry stood in for: the fast half (MOD8). <see cref="ReviewLandingTests"/> holds the doors over real git.
+/// with git's ancestry stood in for: the fast half. <see cref="ReviewLandingTests"/> holds the doors over real git.
 /// </summary>
 public sealed class ReviewGateTests
 {
@@ -195,7 +195,7 @@ public sealed class ReviewGateTests
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1h (§E5): in a closure graph a set-up step's work is finished at its submission, since no Done is written before the
+    /// In a closure graph a set-up step's work is finished at its submission, since no Done is written before the
     /// graph's end. Taken there, with what it showed posted and the person's reviewed on it, it lets the work go as a done step does; with
     /// nothing posted it is still being set up. A chain step at its unheld submission published its set-up step, which then decides, never
     /// the copy still in its <c>then</c>; a held one has published nothing yet.
@@ -236,7 +236,7 @@ public sealed class ReviewGateTests
         Assert.Equal(ReviewStates.NotHeld, gate.State);
         Assert.Contains("what you reviewed does not hold these commits", gate.Says);
         Assert.Contains($"`{Later[..8]}` is not that commit or one before it", gate.Says);
-        // The set-up step was reviewed, so a skip there is refused: the skip goes on the chain's work.
+        // The set-up step is reviewed, so a skip there is refused: the skip goes on the chain's work.
         Assert.Contains("`daoris quest review q1 skip", gate.Says);
 
         // Git that cannot say holds nothing either.
@@ -327,7 +327,7 @@ public sealed class ReviewGateTests
         Assert.Equal(new CannotShowFact("unnamed", "local"), unnamed.CannotShow);
         Assert.Equal(new CannotShowFact("no-window", "local", "http://localhost:4200"), headless.CannotShow);
 
-        // A local environment that declares no address says so by its code (CANNOTSHOW1a).
+        // A local environment that declares no address says so by its code.
         var addressless = driven with
         {
             WorkspaceReviews = new Dictionary<string, ReviewRule>(StringComparer.OrdinalIgnoreCase)
@@ -405,7 +405,7 @@ public sealed class ReviewGateTests
                             new AskWordView(AskWordView.NotYet, "the total is off", at.AddHours(1), Quest: "q2"),
                             new AskWordView(AskWordView.Reviewed, "right now", at.AddHours(2), Quest: "q2"),
                             new AskWordView(AskWordView.Skipped, "a readme change", at.AddHours(3), Quest: "q4"),
-                            // SESSONE2b: the person's message on the ask's channel, said to no session.
+                            // The person's message on the ask's channel, said to no session.
                             new AskWordView(AskWordView.Channel, "use the older bridge", at.AddHours(4)),
                         ],
                         GoAheads = [],

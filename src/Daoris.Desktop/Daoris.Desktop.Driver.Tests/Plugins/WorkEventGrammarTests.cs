@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVENTHOOK1b (the event hook design §4.3): the census over <see cref="HookFrames.Event"/>. Every kind's frame reads against
+/// The census over <see cref="HookFrames.Event"/>. Every kind's frame reads against
 /// <see cref="WorkEventGrammar"/>; a field outside the kind's closed list, a name, and an id outside its shape fail it; a required field
 /// that fails is told as <c>events.missed</c> in its place, and an optional one, an adapter outside the build's names among them, is left out.
 /// </summary>
@@ -33,11 +33,10 @@ public sealed class WorkEventGrammarTests
         new WorkEvent(WorkEventKinds.QuestCloseLost, At) { Quest = "48f8ed9121ec", State = "taken" },
         new WorkEvent(WorkEventKinds.ConfirmationEnded, At) { Confirmation = "0123456789abcdef0123456789abcdef", End = "withdrawn" },
         new WorkEvent(WorkEventKinds.WorkEnded, At) { Session = "4b62a9fe", Quest = "48f8ed9121ec" },
-        // Version 3 (CHANNELJOIN1d, the event channel design §5.7).
         new WorkEvent(WorkEventKinds.ChannelPosted, At) { Message = "0a1b2c3d", Ask = "a1b2c3", Poster = "o0123abc", By = "outside", Urgent = true },
     ];
 
-    /// <summary>CHANNELJOIN1d: a poster or a message outside its minted shape, or a class outside the four, is dropped or told as missed.</summary>
+    /// <summary>A poster or a message outside its minted shape, or a class outside the four, is dropped or told as missed.</summary>
     [Fact]
     public void A_channel_posted_field_outside_its_shape_is_left_out_and_a_class_outside_the_four_is_told_as_missed()
     {

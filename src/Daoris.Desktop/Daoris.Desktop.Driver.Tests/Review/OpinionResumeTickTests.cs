@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1e (D155 point 7; the second-agent design §6.3–§6.7) through REAL ticks, on both doors: a session closes its quest,
+/// Through REAL ticks, on both doors: a session closes its quest,
 /// another agent's findings are handed to its record as a word whose <c>by</c> names the opinion, and at the next look the same
 /// record goes on in its own conversation with them, exactly as the host composed them. The stub fixes the finding, commits, and
 /// answers it through the stand-in's door for the connector's <c>opinion_answer</c>; as its turn ends the driver reads the answer
@@ -15,7 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// person instead, unanswered, and nothing carries them to a new session.
 /// </summary>
 /// <remarks>
-/// The stand-in service models MSG1a and XAGENT1c as far as these ticks reach: words kept on an ended record, with <c>by</c>;
+/// The stand-in service models, as far as these ticks reach, words kept on an ended record, with <c>by</c>;
 /// taken off by their ids; the ledger's one move out of an ended state; and an opinion read back with the answers kept. The
 /// answer door, <c>POST /api/opinions/{id}/answers</c>, is the stand-in's alone: a real session answers through its connector.
 /// </remarks>
@@ -32,7 +32,7 @@ public sealed class OpinionResumeTickTests : IDisposable
         + "and not facts.\n\nFinding 1 (must, sure), at `README.md:1`: The heading says \"engine\" and nothing else.";
 
     /// <summary>
-    /// CONTEXTDRIVE1b (§3 point 2): a go-on's words end with Daoris's count for its line, here the findings' go-on by an answer alone
+    /// A go-on's words end with Daoris's count for its line, here the findings' go-on by an answer alone
     /// and the default rule that holds the line for the person, handed after them.
     /// </summary>
     private const string Counted = "Daoris's count for this line: 1 go-on by answers alone in a row; Daoris waits for the person after 2.";
@@ -168,7 +168,7 @@ public sealed class OpinionResumeTickTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 CHATFLOW1e (the chat-flow design §6.1 (b), (c)) on both doors: a chat run's live conversation, between turns, takes another agent's
+    /// On both doors, a chat run's live conversation, between turns, takes another agent's
     /// findings as a turn of its own through the shell's runner, exactly as the host composed them and never as the person's words; the word
     /// leaves its record once on the wire, and the answers are read at that turn's own end, its tip the tree's as it ended.
     /// </summary>
@@ -382,7 +382,7 @@ public sealed class OpinionResumeTickTests : IDisposable
     /// <summary>
     /// A stand-in for Claude Code's native door: it answers its version and its login question; run with a prompt it speaks
     /// <c>stream-json</c>, naming its conversation <c>native-1</c>. A first run takes and closes the quest; a resumed run fixes the
-    /// finding in its tree, commits, and answers it. Each run logs what it was resumed with, and whether the rules it was handed
+    /// finding in its tree, commits, and answers it. Each run logs what it is resumed with, and whether the rules it is handed
     /// (<c>--settings</c>) allow <c>opinion_answer</c>.
     /// </summary>
     private string NativeHarness()
@@ -440,7 +440,7 @@ public sealed class OpinionResumeTickTests : IDisposable
     }
 
     /// <summary>
-    /// The service as MSG1a and XAGENT1c have it, as far as these ticks reach: sessions with their adapter, account, tree, base
+    /// The service, as far as these ticks reach: sessions with their adapter, account, tree, base
     /// and take; the ledger's moves, with the one move out of an ended state to working where words wait; words kept on an ended
     /// record with their <c>by</c>, taken off by their ids; a quest's take and done; and one opinion, read back with the answers
     /// its working session gave.
@@ -456,7 +456,7 @@ public sealed class OpinionResumeTickTests : IDisposable
 
         public string Url { get; }
 
-        /// <summary>Each take of words: the session, the ids joined, and the session that took them where it was another.</summary>
+        /// <summary>Each take of words: the session, the ids joined, and the session that took them where it is another.</summary>
         public List<(string Session, string Ids, string? By)> Taken { get; } = [];
 
         public List<string> Attempted { get; } = [];
@@ -654,7 +654,7 @@ public sealed class OpinionResumeTickTests : IDisposable
                         var note = body["note"]?.GetValue<string>();
                         if (!Live.Contains(from))
                         {
-                            // MSG1a's one move out of an ended state: to working, with words waiting.
+                            // The ledger's one move out of an ended state: to working, with words waiting.
                             if (to != "working" || session["said"]!.AsArray().Count == 0)
                             {
                                 return (409, $$"""{"error":"Session `{{id}}` is {{from}} — a finished session does not move."}""");
@@ -671,7 +671,7 @@ public sealed class OpinionResumeTickTests : IDisposable
                         return (200, new JsonObject { ["session"] = Wire(session), ["message"] = "moved" }.ToJsonString());
                     }
 
-                    // OPINIONATTEMPT1: the real ledger records the attempt before the protocol door writes the word.
+                    // The real ledger records the attempt before the protocol door writes the word.
                     case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/attempt", StringComparison.Ordinal):
                     {
                         var session = Find(IdOf(path, "/attempt"));

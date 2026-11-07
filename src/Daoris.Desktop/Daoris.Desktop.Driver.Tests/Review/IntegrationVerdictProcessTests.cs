@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1f part f2's proof, with real processes (the integration design §4.5, §5.6, §5.9): a candidate's gates run through a stand-in
+/// With real processes: a candidate's gates run through a stand-in
 /// runner that honours the contract, or each gate whole where the repository declares none; the candidate's job closed, a grandchild ended,
 /// before any place in the machine's admission is let go; the confirm run waiting for a session's heavy run, held to the whole machine,
 /// inconclusive when a newcomer holds a place beside it, and ended by a drop with its job; and a failure placed on the member that made it.
@@ -226,7 +226,7 @@ public sealed class IntegrationVerdictProcessTests : LandedFixture, IDisposable
 
     /// <summary>
     /// 🔴 A job closed ends a grandchild, and before the place is let go: the runner starts a detached child that beats, and the verdict is
-    /// back only once the child is gone; the beat the child last wrote when the place was seen free is the last it ever wrote.
+    /// back only once the child is gone; the beat the child last wrote when the place is seen free is the last it ever writes.
     /// </summary>
     [Fact]
     public async Task A_job_closed_ends_a_grandchild_before_the_place_in_the_admission_is_let_go()

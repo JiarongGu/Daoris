@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1b2a (D180's HEAVYRUN1b2a note): <c>daoris place heavy</c>, the terminal's door to this machine's heavy gates for a
+/// <c>daoris place heavy</c>, the terminal's door to this machine's heavy gates for a
 /// repository whose own <c>daoris.gates.json</c> marks none. It reads and writes the driver's file alone, through
 /// <see cref="HeavyMapping.Apply"/>, so it refuses what the page's door will, in the same words, with nothing written; and it never
 /// touches the repository.

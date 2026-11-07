@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1b (D192 point 5) through a REAL tick: a driven start in a repository whose sessions run light. Its session is told its
+/// Through a REAL tick: a driven start in a repository whose sessions run light. Its session is told its
 /// light gates and its heavy gates as the verification's, and, on an agent that takes no rules from Daoris, that they are said rather than
 /// refused; while it runs, its tree's git lock names it and its checks are kept by its id where <c>run-heavy</c> reads them (the pair
-/// <see cref="HeavyRunCommandTests"/> refuses); once its run ends, the kept checks are gone. FABRIC-PIPELINE1b3: a run bound to a named
+/// <see cref="HeavyRunCommandTests"/> refuses); once its run ends, the kept checks are gone. A run bound to a named
 /// workflow's version takes its <c>claimed</c> node's checks at its first start, where its repository sets no rule. A real process (node), a real git repository and a stand-in service on a loopback port, the
 /// shape <see cref="StartInSyncTickTests"/> uses; no model and no account.
 /// </summary>
@@ -45,7 +45,7 @@ public sealed class SessionChecksStartTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1b3 (D192's FABRIC-PIPELINE1b2 note, point 5): a run's first start binds it before its take (FABRIC-CUTOVER1g), so a
+    /// A run's first start binds it before its take, so a
     /// run bound to a graph version takes its <c>claimed</c> node's <c>checks</c> at its first start, and keeps its <c>callMinutes</c> beside
     /// them for the long-call watch, where its repository sets no rule.
     /// </summary>
@@ -102,7 +102,7 @@ public sealed class SessionChecksStartTests : IDisposable
     }
 
     /// <summary>
-    /// The pipe door's stand-in harness: it writes down what it was handed, its tree's git lock and the checks kept by its id, then takes
+    /// The pipe door's stand-in harness: it writes down what it is handed, its tree's git lock and the checks kept by its id, then takes
     /// the quest and closes it.
     /// </summary>
     private string Agent()

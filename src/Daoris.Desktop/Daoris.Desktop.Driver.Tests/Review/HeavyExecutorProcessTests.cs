@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1d's executor (the pipeline design §4.2), on scratch repositories with stand-in gates: two verifications never overlap
+/// The verification executor, on scratch repositories with stand-in gates: two verifications never overlap
 /// and wait in the order sent; a repository whose slot a heavy run holds keeps another's run from nothing; a gate's failure, a runner's
 /// answer by file, busy, a changed declaration, the bound, the person's stop and a restart each come to their result in the attempt's
 /// folder; the job's first process runs below normal and a <c>clock</c> gate at normal.

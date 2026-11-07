@@ -3,9 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin's tools (PLUGTOOL1a, D150 point 7, the UX6 design §7.2): the manifest's <c>tools</c>, the programs its process
-/// runs, read by the catalogue by one table, to which the CLI's <c>plugins.ts</c> held its twin
-/// (<see cref="The_tools_read_as_the_cli_reads_them"/>) until it left with <c>daoris plugin</c>'s TypeScript (PUSH1f2f).
+/// A plugin's tools: the manifest's <c>tools</c>, the programs its process
+/// runs, read by the catalogue by one table.
 /// </summary>
 /// <remarks>
 /// 🔴 <b>A problem in <c>tools</c> never refuses the plugin</b>: it is that tool's sentence, and the plugin still
@@ -191,7 +190,7 @@ public sealed class PluginToolsTests : IDisposable
         Assert.Equal("terraform", Assert.Single(written.Tools).Id);
     }
 
-    /// <summary>Daoris's own tools are the three it runs itself, and the only tools it declares: no hosted service's command line is one (D242 point 3).</summary>
+    /// <summary>Daoris's own tools are the three it runs itself, and the only tools it declares: no hosted service's command line is one.</summary>
     [Fact]
     public void Daoris_declares_only_the_three_tools_it_runs()
     {

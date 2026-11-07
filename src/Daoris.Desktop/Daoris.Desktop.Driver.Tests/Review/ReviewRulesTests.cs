@@ -5,12 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1a (D154 point 2, the review-environment design §1.1–§1.3, §1.7): the review rule, <c>reviews</c> and
+/// The review rule, <c>reviews</c> and
 /// <c>workspaceReviews</c> in <c>driver.json</c> — read, refused, resolved, said and edited. Nothing here starts a process.
 /// </summary>
 /// <remarks>
-/// Held, cell for cell, to ONE table, this suite's <c>fixtures/review-rules.json</c>, which the service's tool test reads too (the
-/// CLI's twin, <c>reviews.ts</c>, left with the driver family's TypeScript in PUSH1f2b).
+/// Held, cell for cell, to ONE table, this suite's <c>fixtures/review-rules.json</c>, which the service's tool test reads too.
 /// </remarks>
 public sealed class ReviewRulesTests : IDisposable
 {
@@ -65,7 +64,7 @@ public sealed class ReviewRulesTests : IDisposable
         "gate", row => (Cell(row, 0)!, Cell(row, 1)!, row[2].EnumerateArray().Select(each => each.GetString()!).ToArray()));
 
     /// <summary>
-    /// REVIEWENV1c2: what each door says after the rule's sentences, now that the landing's gate reads the rule (REVIEWENV1c): that
+    /// What each door says after the rule's sentences, given that the landing's gate reads the rule: that
     /// work waiting for the person's review lands only on their verdict, by the terminal's door, and that no set-up step is composed
     /// for them yet; nothing after none here, where nothing waits.
     /// </summary>
@@ -146,7 +145,7 @@ public sealed class ReviewRulesTests : IDisposable
     }
 
     /// <summary>
-    /// A place on a saved workflow has its look decided by that workflow's <c>look</c> node (WORKFLOWCLEAN1 1h): `required` is refused in the
+    /// A place on a saved workflow has its look decided by that workflow's <c>look</c> node: `required` is refused in the
     /// shared edit, coded, naming the node; an environment put without it, or a place on Current, is unchanged.
     /// </summary>
     [Fact]

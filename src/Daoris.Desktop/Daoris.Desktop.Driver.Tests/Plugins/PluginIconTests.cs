@@ -5,10 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin's icon (PLUGUI2, D140, the catalogue design §3): the manifest's <c>icon</c>, a path inside the plugin's folder
-/// to an SVG or a PNG, read by the catalogue, and the file judged where it is drawn. The rules' one table: the CLI's
-/// <c>plugins.ts</c> held its twin to <see cref="The_icon_reads_as_the_cli_reads_it"/> until it left with <c>daoris plugin</c>'s
-/// TypeScript (PUSH1f2f).
+/// A plugin's icon: the manifest's <c>icon</c>, a path inside the plugin's folder
+/// to an SVG or a PNG, read by the catalogue, and the file judged where it is drawn. The rules' one table.
 /// </summary>
 /// <remarks>
 /// 🔴 <b>An icon's problem never refuses the plugin</b>: an icon is how a plugin is recognised, never what it does, so a
@@ -89,7 +87,7 @@ public sealed class PluginIconTests : IDisposable
     }
 
     /// <summary>
-    /// The icon's table (D140 §3.1): [case, the manifest's <c>icon</c> as JSON or null for none, the file a row writes from
+    /// The icon's table: [case, the manifest's <c>icon</c> as JSON or null for none, the file a row writes from
     /// the plugin's folder or null, its kind, what it draws as (<c>svg</c>, <c>png</c>) or null, a fragment of its problem
     /// or null]. The rules are checked in this order and the first problem is said. The twin is
     /// <c>plugin-icons.test.ts</c>'s <c>ICON_ROWS</c>.
@@ -159,7 +157,7 @@ public sealed class PluginIconTests : IDisposable
 
     /// <summary>
     /// A file the system will not read says so in Daoris's words, never the system's: its message names the file's whole
-    /// path, and the page shows the sentence whole (D140 point 5).
+    /// path, and the page shows the sentence whole.
     /// </summary>
     [Fact]
     public void An_icon_that_cannot_be_read_names_no_folder()
@@ -226,7 +224,7 @@ public sealed class PluginIconTests : IDisposable
         Assert.Equal("svg", PluginIcon.Read(refused.Folder, refused.Manifest).Type);
     }
 
-    /// <summary>An offer is read as written (PLUG9): its icon is read the same way.</summary>
+    /// <summary>An offer is read as written: its icon is read the same way.</summary>
     [Fact]
     public void A_manifest_read_as_written_reads_its_icon()
     {

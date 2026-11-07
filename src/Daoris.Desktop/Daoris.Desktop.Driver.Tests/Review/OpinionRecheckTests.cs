@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1e (D155 point 7; the second-agent design §6.5–§6.6): the one recheck. It is due only where the working session
+/// The one recheck. It is due only where the working session
 /// answered a finding fixed with a commit its turn made, under a rule that keeps it; it reads the commits from the first pass's
 /// tip to the working tree's tip as the turn ended, by the same reviewer walked again for its account, handed the first pass's
 /// findings and the answers; it runs once; and its findings go to the person, never back to the working session.
@@ -43,7 +43,7 @@ public sealed class OpinionRecheckTests : IDisposable
             adapters[name] = Adapter(name, new TestAgent(
                 Binary: [absent.Contains(name) ? "daoris-xagent1e-no-such-command" : Command], VersionArguments: [],
                 ProfileVariable: real.Home.Variable, AccountOf: real.AccountOf, ProbeByPresence: true, Product: real.Product, Maker: real.Maker,
-                // A test double whose own home is nobody's (OWNSPACE1a): the recheck is this file's subject, not the account.
+                // A test double whose own home is nobody's: the recheck is this file's subject, not the account.
                 RunsInOwnHome: true));
         }
 
@@ -56,7 +56,7 @@ public sealed class OpinionRecheckTests : IDisposable
     private static readonly OpinionPassAsk Asked =
         new(OpinionRules.Landing, "s1", "reports", "D:/checkouts/reports", OpinionStandIn.Base, OpinionStandIn.Tip, Rule) { Workspace = "work" };
 
-    /// <summary>The passes the driver asked, with the choice each was asked with.</summary>
+    /// <summary>The passes the driver asks, with the choice each is asked with.</summary>
     private readonly List<(OpinionPassAsk Ask, ReviewerChoice Choice)> _passes = [];
 
     private Daoris.Driver.Driver Driver(OpinionStandIn host, StandInGit git, params string[] absent)
@@ -110,7 +110,7 @@ public sealed class OpinionRecheckTests : IDisposable
         new("s1", tip, DateTimeOffset.UnixEpoch, [new OpinionAnswerRead(1, "must", counts) { Said = counts }]);
 
     /// <summary>
-    /// 🔴 One recheck, only where a finding was answered fixed with a commit the turn made (design §6.5), under a rule that keeps
+    /// One recheck, only where a finding is answered fixed with a commit the turn made, under a rule that keeps
     /// it; never of a recheck, and never before the working session's answers are read.
     /// </summary>
     [Fact]
@@ -153,7 +153,7 @@ public sealed class OpinionRecheckTests : IDisposable
         Assert.Contains("Recheck op2 reads the commits since.", delivered.Line);
         Assert.Equal("op2", new OpinionDeliveries(_home).Read("op1").Recheck);
 
-        // What waits for the person: the recheck's own `must`; the first pass's `must` was fixed, so it waits for nothing.
+        // What waits for the person: the recheck's own `must`; the first pass's `must` is fixed, so it waits for nothing.
         Assert.Equal("first [] raised [1]", Disputes(delivered.Disputes!));
 
         // Once: the look after asks no second recheck.
@@ -170,7 +170,7 @@ public sealed class OpinionRecheckTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITRESUME1j (D206; the limit-resume design §3.6): the recheck judges its reviewer against every maker the line ran on.
+    /// The recheck judges its reviewer against every maker the line ran on.
     /// s1 went on with Claude Code from s0, cut off by its limit on Codex, so Codex reading it again is the work's own family, never
     /// another maker's.
     /// </summary>

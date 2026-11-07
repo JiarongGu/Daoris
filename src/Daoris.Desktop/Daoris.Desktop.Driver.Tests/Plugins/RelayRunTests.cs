@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One relay's life over its real pipe (EVENTHOOK1c; the event hook design §6.1 steps 1 to 6, §9's 1c proofs): the test is the plugin, a
+/// One relay's life over its real pipe: the test is the plugin, a
 /// client found by the relay's own subscriber file, and the relay's lease, job check and clock are the test's. Every line of both streams
 /// is read against <see cref="RelaySaid"/>'s shapes, and nothing a client wrote ever reaches either.
 /// </summary>
@@ -155,7 +155,7 @@ public sealed class RelayRunTests : IDisposable
             }
             catch (IOException)
             {
-                // Refused before its line was read: the relay closed the pipe.
+                // Refused before its line is read: the relay closes the pipe.
             }
         }
 

@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (PUSH1f2f, D194 point 6, the alone-path design §3): each case of <c>daoris plugin</c>, as the CLI's
-/// TypeScript verb said it before it retired (<c>fixtures/plugins-text.json</c>), said again by <see cref="PluginCommand"/> acting alone
+/// The port keeps today's text: each case of <c>daoris plugin</c>, as the CLI's
+/// TypeScript verb recorded it (<c>fixtures/plugins-text.json</c>), said again by <see cref="PluginCommand"/> acting alone
 /// on a root of its own, an install's folder whose <c>data/</c> is the home: the same lines on each stream, the same exit, and every file
 /// under the root after it the same, a JSON file compared as JSON. A row the port changes on purpose says why under <c>changed</c>.
 /// </summary>

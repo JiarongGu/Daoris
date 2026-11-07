@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PERFORM1b against a real plugin process (the fabric events design §D6): a stand-in performer, its step declared in its manifest,
+/// Performing against a real plugin process: a stand-in performer, its step declared in its manifest,
 /// asked to perform by the lease's loop, which ends before the completion comes. A new loop over the same home reads the attempt from the
 /// unit's record, offers no new attempt, asks <c>work/reconcile</c> of the plugin's new process with the same key, and records the outcome:
 /// one delivery and one external effect across the restart.
@@ -22,7 +22,7 @@ public sealed class WorkPerformProcessTests : IDisposable
     private readonly DateTimeOffset _now = new(2026, 10, 17, 9, 0, 0, TimeSpan.Zero);
 
     /// <summary>
-    /// The stand-in: a performer that keeps each key it was given in its own folder, durably, and makes its effect once per key; it
+    /// The stand-in: a performer that keeps each key it is given in its own folder, durably, and makes its effect once per key; it
     /// acknowledges an attempt and says nothing more, and answers <c>work/reconcile</c> from what it kept.
     /// </summary>
     private const string Script = """
@@ -73,7 +73,7 @@ public sealed class WorkPerformProcessTests : IDisposable
     public void Dispose()
     {
         _log.Dispose();
-        // FLAKE1: a process lets go of its folder a moment after it is told to stop, as WorkProcessTests waits for.
+        // A process lets go of its folder a moment after it is told to stop, as WorkProcessTests waits for.
         for (var attempt = 0; Directory.Exists(_home); attempt++)
         {
             try

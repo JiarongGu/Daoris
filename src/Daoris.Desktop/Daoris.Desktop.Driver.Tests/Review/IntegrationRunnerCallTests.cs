@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// INTEGRATE1f part f2: the verdict port's wiring, and the caller of a repository's declared runner (the integration design §5.5, §5.9;
-/// D192's runner contract): the environment it sets, on the runner's process alone, through the gate environment's composition; and how
+/// The verdict port's wiring, and the caller of a repository's declared runner: the environment it sets, on the runner's process alone, through the gate environment's composition; and how
 /// the exit and the answer file are read. Files and pure functions, no process.
 /// </summary>
 /// <remarks>One case plants a variable in the process's environment, which every child a class beside it starts inherits, so it runs alone.</remarks>
@@ -105,7 +104,7 @@ public sealed class IntegrationRunnerCallTests
     private static string Plan(string commit = Tip, string blob = Blob) =>
         $$"""{ "schema": 2, "mode": "plan", "commit": "{{commit}}", "base": "{{Base}}", "declaration": "{{blob}}", "run": [ { "name": "unit", "why": "x" } ], "kept": [ { "name": "lint", "why": "kept", "tree": "t", "standing": "exact" } ], "deferred": [] }""";
 
-    /// <summary>Exit 75 is busy whatever was written; so is an answer that says it (D192).</summary>
+    /// <summary>Exit 75 is busy whatever is written; so is an answer that says it.</summary>
     [Fact]
     public void Exit_75_and_busy_true_are_busy()
     {

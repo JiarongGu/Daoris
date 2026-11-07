@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1e (D155 point 7; the second-agent design §6.3–§6.7): a second opinion delivered. A first pass's findings go once to
+/// A second opinion delivered. A first pass's findings go once to
 /// the working session as its next turn, through the local host's door, marked as another agent's claims and never the
 /// person's; at its turn's end, never into a step in flight; to the person where it cannot take them. Its answers are read as
 /// its turn ends, a fix's commit checked from git and a finding left unanswered read as unresolved. A pass that gave no
@@ -13,7 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </summary>
 /// <remarks>
 /// The host is <see cref="OpinionStandIn"/>, in process, and git is <see cref="StandInGit"/>: nothing here starts a process, so
-/// the fast half (MOD8). The resumed turn itself rides D137's door, whose rows are <c>AcpResumeTests</c>,
+/// the fast half. The resumed turn itself rides the resume door, whose rows are <c>AcpResumeTests</c>,
 /// <c>NativeResumeTests</c> and the <c>Process</c> half's <c>OpinionResumeTickTests</c>.
 /// </remarks>
 public sealed class OpinionDeliveryTests : IDisposable
@@ -45,7 +45,7 @@ public sealed class OpinionDeliveryTests : IDisposable
 
     /// <summary>
     /// 🔴 A first pass's findings go to its working session once, as a word on its record whose <c>by</c> names the opinion,
-    /// when that record has ended: it goes on with them at the driver's next look, its own conversation resumed (D137). The
+    /// when that record has ended: it goes on with them at the driver's next look, its own conversation resumed. The
     /// look after sees them with the session, and hands nothing again.
     /// </summary>
     [Fact]
@@ -66,7 +66,7 @@ public sealed class OpinionDeliveryTests : IDisposable
     }
 
     /// <summary>
-    /// A running turn takes another agent's claims at its end, never at its next step (D136, design §6.3), and a park after the
+    /// A running turn takes another agent's claims at its end, never at its next step, and a park after the
     /// person's answer: nothing is handed while it runs or waits, and the look after its turn ends hands them.
     /// </summary>
     [Theory]
@@ -87,10 +87,10 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.Equal(["op1"], host.Hands);
     }
 
-    // ——— COMMS1b (the comms design §4.2, §13 points 1 and 2): against a host with the one door for solicited answers.
+    // ——— Against a host with the one door for solicited answers.
 
     /// <summary>
-    /// 🔴 §13 point 1 (B1): the deliverer reads whether the park was answered, as the helper's look does. A park still waiting on the person
+    /// The deliverer reads whether the park has been answered, as the helper's look does. A park still waiting on the person
     /// waits; once the person answered it, the findings are handed beside their answer, under the opinion's key.
     /// </summary>
     [Fact]
@@ -189,7 +189,7 @@ public sealed class OpinionDeliveryTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1i path 5 (the foundation design §10 row 1i): the findings a working session never takes are the course's answer for a
+    /// The findings a working session never takes are the course's answer for a
     /// solicited answer, <c>Never</c> by why, and a session that takes them is the course's resume.
     /// </summary>
     [Fact]
@@ -212,7 +212,7 @@ public sealed class OpinionDeliveryTests : IDisposable
     }
 
     /// <summary>
-    /// Words the working session could not go on with are marked by their ids (MSG1b): a look that finds the handed word marked
+    /// Words the working session could not go on with are marked by their ids: a look that finds the handed word marked
     /// says the findings went to the person, with the mark's reason, and keeps it.
     /// </summary>
     [Fact]
@@ -231,7 +231,7 @@ public sealed class OpinionDeliveryTests : IDisposable
     }
 
     /// <summary>
-    /// COWORK1e (the message-urgency design §8.3): findings the answers-alone bound holds wait for the person's choice, still handed to
+    /// Findings the answers-alone bound holds wait for the person's choice, still handed to
     /// their session; once the person says *Not now* they go to the person, unanswered, as findings nobody takes do.
     /// </summary>
     [Fact]
@@ -320,11 +320,11 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.Equal(OpinionDeliveryStates.Unknown, (await Deliver(new OpinionStandIn(), "nothing1")).State);
     }
 
-    // ——— The words, read and resumed (D137 as D155 amends it).
+    // ——— The words, read and resumed.
 
     /// <summary>
-    /// The record's words are read with <c>by</c> (XAGENT1c): another agent's claims, never the person's. Absent, they are the
-    /// person's, as every word kept before was.
+    /// The record's words are read with <c>by</c>: another agent's claims, never the person's. Absent, they are the
+    /// person's.
     /// </summary>
     [Fact]
     public void A_word_is_read_with_the_opinion_it_is_from()
@@ -485,7 +485,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.StartsWith("— the answers to Codex (OpenAI)'s 2 findings", note.Text);
     }
 
-    /// <summary>What the driver keeps of an opinion reads back as it was written, and a file that does not read is nothing kept.</summary>
+    /// <summary>What the driver keeps of an opinion reads back as written, and a file that does not read is nothing kept.</summary>
     [Fact]
     public void What_is_kept_of_a_delivery_reads_back()
     {
@@ -514,7 +514,7 @@ public sealed class OpinionDeliveryTests : IDisposable
         Assert.Null(store.PathOf("../elsewhere"));
     }
 
-    // ——— A chat run's send-back (CHATFLOW1e; the chat-flow design §6, §6.1, §6.2).
+    // ——— A chat run's send-back.
 
     /// <summary>A chat run's first pass, asked at the person's press with their turn count then.</summary>
     private static OpinionPassAsk OnRun(int turns = 0) => Asked with { Run = "chat-c1", Turns = turns };

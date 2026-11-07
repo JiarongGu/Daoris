@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// COAGENT1e (the co-agent design §3.4): a harness may name its own words for the asking and the full postures beside its one
+/// A harness may name its own words for the asking and the full postures beside its one
 /// <c>posture</c>, trimmed and never a reason to refuse the plugin; a blank or a non-text word is none, and the door speaks what the
-/// manifest said, so a start in that posture is no longer refused for want of one.
+/// manifest said, so a start in that posture is not refused for want of one.
 /// </summary>
 public sealed class PluginPosturesTests : IDisposable
 {

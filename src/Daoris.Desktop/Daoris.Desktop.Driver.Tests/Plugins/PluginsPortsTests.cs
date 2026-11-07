@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FOUNDATION1 mod-xvii, the Plugins cuts: the seams they add. The step rules Workflows installs being the node table's, a supplied
+/// The Plugins cuts: the seams they add. The step rules Workflows installs being the node table's, a supplied
 /// operation consulted for each step a manifest declares, and the work runtime's ports being the plugins' own (the hook set implements
 /// them). What the cuts keep is <c>PluginsBoundaryTests</c>'.
 /// </summary>
@@ -16,7 +16,7 @@ public sealed class PluginsPortsTests : IDisposable
 
     public void Dispose() => GitSeed.Remove(_home);
 
-    /// <summary>Answers as the installed operation does and counts what it was asked, so a class running beside this one reads no difference.</summary>
+    /// <summary>Answers as the installed operation does and counts what it is asked, so a class running beside this one reads no difference.</summary>
     private sealed class Counting(IPluginStepRules actual) : IPluginStepRules
     {
         private int _asked;

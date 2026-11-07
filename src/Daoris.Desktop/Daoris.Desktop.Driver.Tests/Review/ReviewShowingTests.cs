@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// REVIEWENV1d (D154 point 5; the review environment design §2.3 steps 1–5, §3.3): what the driver asks of Daoris's browser for a
+/// What the driver asks of Daoris's browser for a
 /// set-up step. Its tab is opened before its session, titled for its quest; once its set-up is posted, the folder its session
 /// named is served to that tab at the rule's address only, from the build's own base, and kept served across looks until the
 /// person's verdict or their skip, or until the step's tree goes; and <i>Show it again</i> serves the newest set-up again. The

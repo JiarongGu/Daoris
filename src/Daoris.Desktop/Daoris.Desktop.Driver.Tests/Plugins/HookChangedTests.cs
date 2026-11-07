@@ -7,15 +7,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A plugin observes the driver's state as it changes (STATEHUB1g, D169 point 9): <c>state/changed</c>, an observation the shell's bus
+/// A plugin observes the driver's state as it changes: <c>state/changed</c>, an observation the shell's bus
 /// feeds, told over the hook wire and contained, and never on the path of the press whose change it tells.
 /// </summary>
 /// <remarks>Fakes over in-memory streams only: no process starts here.</remarks>
 public sealed class HookChangedTests : IDisposable
 {
-    // FLAKE1 (TESTPATIENCE2's shape, which its sweep missed: the bound is handed to a peer, not a WaitAsync): the in-memory
-    // handshake is not the claim, so it waits with the suite's one patience. At ten seconds a loaded fast half (candidate
-    // f306b46) left the sample plugin unstarted, 6 of 6 alone five times.
+    // The in-memory handshake is not the claim, so it waits with the suite's one patience (the bound is handed to a peer,
+    // not a WaitAsync). At ten seconds a loaded fast half left the sample plugin unstarted.
     private static readonly TimeSpan Patience = Poll.Patience;
 
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-changed-" + Guid.NewGuid().ToString("N")[..8]);
@@ -128,7 +127,7 @@ public sealed class HookChangedTests : IDisposable
     public void The_point_is_an_observation_added_after_the_others_and_kept_running_beside_the_loop()
     {
         Assert.Equal("state/changed", HookPoints.StateChanged);
-        // A point is additive (PLUGHOOK1a): the earlier points keep their places.
+        // A point is additive: the earlier points keep their places.
         Assert.Equal([HookPoints.QuestConsider, HookPoints.SessionEnded, HookPoints.State, HookPoints.StateChanged], HookPoints.All.Take(4));
         // The loop's set keeps its process: the shell's bus tells it, and a landing never does.
         Assert.Contains(HookPoints.StateChanged, HookPoints.Loop);

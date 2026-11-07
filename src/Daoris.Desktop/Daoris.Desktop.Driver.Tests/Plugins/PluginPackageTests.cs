@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A Daoris plugin package and its reader, offline (PLUGDIST1a, D120; the distribution design §5.1 and §5.7): a
+/// A Daoris plugin package and its reader, offline: a
 /// <c>.nupkg</c> is a zip whose <c>.nuspec</c> says it is of the type <c>DaorisPlugin</c>, at a type version whose
 /// major number is the plugin API, with no dependencies, and whose plugin folder is under <c>plugin/</c>. Read
 /// before anything is extracted, then <c>plugin/**</c> alone extracted into a stage under the home, read there by
@@ -158,8 +158,8 @@ public sealed class PluginPackageTests : IDisposable
     }
 
     /// <summary>
-    /// What a package is refused for, each before anything is installed (§5.1, §5.7). A row names the package it
-    /// builds; every refusal ends saying nothing was installed, and leaves no plugin and no stage under the home.
+    /// What a package is refused for, each before anything is installed. A row names the package it
+    /// builds; every refusal says so in its last sentence, and leaves no plugin and no stage under the home.
     /// </summary>
     [Theory]
     [InlineData("not a zip", "does not open as a zip")]

@@ -5,8 +5,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The work wire's contract, <c>work.perform@1</c> (FABRIC-PERFORM1a; the fabric events design §C4, §D6): each message written and read back
-/// is the message written, and a plugin's event of the wrong shape is refused naming its first broken field (§C4's fifth rule, <c>shape</c>).
+/// The work wire's contract, <c>work.perform@1</c>: each message written and read back
+/// is the message written, and a plugin's event of the wrong shape is refused naming its first broken field (<c>shape</c>).
 /// </summary>
 public sealed class WorkWireTests
 {
@@ -22,7 +22,7 @@ public sealed class WorkWireTests
     public void The_points_and_methods_are_named_once()
     {
         Assert.Equal(["work/watch", "work/step", "work/perform"], HookPoints.Work);
-        // FABRIC-PERFORM1e: they joined the kit's points after the earlier ones, in their order, and work/event (EVENTHOOK1b) after them,
+        // They follow the kit's earlier points in their order, and work/event follows them,
         // so every earlier point keeps its place.
         Assert.Equal([.. HookPoints.Work, HookPoints.Event], HookPoints.All.TakeLast(4));
         Assert.Equal(("hook/work/watch", "hook/work/perform", "hook/work/reconcile", "work/step"),
@@ -208,7 +208,7 @@ public sealed class WorkWireTests
         Assert.Equal(field is null, read is not null);
     }
 
-    /// <summary>The bounds on an event's words (§C4, §D6): a message of 300 characters, 8 outputs, a reference of 200, and one past each.</summary>
+    /// <summary>The bounds on an event's words: a message of 300 characters, 8 outputs, a reference of 200, and one past each.</summary>
     [Theory]
     [InlineData(300, 8, 200, null)]
     [InlineData(301, 8, 200, "evidence")]
@@ -227,7 +227,7 @@ public sealed class WorkWireTests
         Assert.Equal(field, broken);
     }
 
-    /// <summary>FABRIC-PERFORM1d (§D3): what an attempt created rides its completion and its reconciliation, whatever its state, as receipts.</summary>
+    /// <summary>What an attempt created rides its completion and its reconciliation, whatever its state, as receipts.</summary>
     [Fact]
     public void Resources_round_trip_on_a_completion_and_a_reconciliation()
     {
@@ -265,7 +265,7 @@ public sealed class WorkWireTests
         Assert.Equal("resources", field);
     }
 
-    /// <summary>§D3's bound on one frame's resources: eight, and one past it.</summary>
+    /// <summary>The bound on one frame's resources: eight, and one past it.</summary>
     [Theory]
     [InlineData(8, true)]
     [InlineData(9, false)]
@@ -287,7 +287,7 @@ public sealed class WorkWireTests
         { CleanupDispositions.Failed, null, "locked" },
     };
 
-    /// <summary>FABRIC-PERFORM1d (§D3): <c>work/cleanup { receipt, resource, idempotencyKey }</c>, and each disposition, written and read back.</summary>
+    /// <summary><c>work/cleanup { receipt, resource, idempotencyKey }</c>, and each disposition, written and read back.</summary>
     [Theory]
     [MemberData(nameof(CleanupAnswers))]
     public void A_cleanup_call_and_each_answer_round_trip(string disposition, string? proof, string? message)

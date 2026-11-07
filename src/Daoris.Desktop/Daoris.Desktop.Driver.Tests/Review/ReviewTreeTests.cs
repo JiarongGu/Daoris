@@ -6,14 +6,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1d (D155 point 5; the second-agent design §5.1): a reviewer's own tree is a clone of the repository at the candidate,
+/// A reviewer's own tree is a clone of the repository at the candidate,
 /// made by Daoris under the home's trees, with no remote, and removed when the pass ends. A ref the reviewer writes there never
 /// reaches the repository, and nothing in it is read back. Then the pass itself, end to end with no model: the candidate read,
 /// the copy made, the record opened, a reviewer that does not follow its instruction run in its copy, and the copy gone after.
 /// </summary>
 /// <remarks>
 /// Real git and a real process — node, the stand-in harness every gate already needs — against a stand-in service on a
-/// loopback port, so the class is in the real-process half (MOD8).
+/// loopback port, so the class is in the real-process half.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class ReviewTreeTests : IDisposable
@@ -192,7 +192,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Equal(OpinionPosture.CopyAlone, run.Posture);
         Assert.Null(run.TreeLeft);
 
-        // What the record was asked for: the candidate by full ids, the reviewer as the walk chose it, the work's families by
+        // What the record is asked for: the candidate by full ids, the reviewer as the walk chose it, the work's families by
         // owner, what held it, the rule's minutes, and its own tree.
         var asked = Assert.Single(service.Asked);
         Assert.Equal("landing", asked["occasion"]!.GetValue<string>());
@@ -220,7 +220,7 @@ public sealed class ReviewTreeTests : IDisposable
         Assert.Contains(_tip, saw["target"]!.GetValue<string>());
         Assert.Equal(["starting", "working", "completed"], service.States("r1"));
 
-        // The copy is gone, nothing it wrote reached the repository, and the diff it was handed stays with the opinion.
+        // The copy is gone, nothing it wrote reaches the repository, and the diff it is handed stays with the opinion.
         Assert.False(Directory.Exists(tree));
         Assert.Equal(before, Refs());
         Assert.Contains("stub: wrote and committed in its copy", File.ReadAllText(DaorisHome.Entry(_home, HomeEntry.Sessions,"r1.log")));
@@ -228,7 +228,7 @@ public sealed class ReviewTreeTests : IDisposable
     }
 
     /// <summary>
-    /// HELPPLUG1c (D170 point 4): a reviewer is handed the skills plugins hand sessions, by the harness's own door on either wire
+    /// A reviewer is handed the skills plugins hand sessions, by the harness's own door on either wire
     /// (a skill's own tools are never pre-approved, so the reviewer's read-only rules stand), and the folder goes with its pass.
     /// </summary>
     [Theory]
@@ -292,7 +292,7 @@ public sealed class ReviewTreeTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 MODELROLE1e (D205 §3.5(f), the row's test): a reviewer whose first account refuses the Second opinion actor's model at the open,
+    /// A reviewer whose first account refuses the Second opinion actor's model at the open,
     /// before any prompt, is handled inside the pass's own call. The refused reviewer's record ends `choice-not-offered`, the agent's other
     /// account is walked with the first passed, a second opinion is asked of the host for the replacement in the same copy, the gate is told
     /// the replacement, and the pass answers once, by the replacement.
@@ -346,7 +346,7 @@ public sealed class ReviewTreeTests : IDisposable
     }
 
     /// <summary>
-    /// STOPRACE1: a stop made while the reviewer's protocol handshake is still open is the person's end, not a failed wire. An agent
+    /// A stop made while the reviewer's protocol handshake is still open is the person's end, not a failed wire. An agent
     /// that never answers makes that moment certain.
     /// </summary>
     [Fact]
@@ -388,7 +388,7 @@ public sealed class ReviewTreeTests : IDisposable
         return script;
     }
 
-    /// <summary>The protocol door's reviewer on the stub's accounts (MODELROLE1e): it refuses at the open the models its argument names for its account.</summary>
+    /// <summary>The protocol door's reviewer on the stub's accounts: it refuses at the open the models its argument names for its account.</summary>
     private string RefusingReviewer()
     {
         var script = Path.Combine(_home, "refusing-reviewer.mjs");
@@ -465,9 +465,9 @@ public sealed class ReviewTreeTests : IDisposable
     }
 
     /// <summary>
-    /// The service's doors a pass crosses (XAGENT1c's <c>POST /api/opinions</c> and the ledger's state door), on a real loopback
+    /// The service's doors a pass crosses (<c>POST /api/opinions</c> and the ledger's state door), on a real loopback
     /// listener, because the stub reviewer is a real process. It opens the reviewer's record as the desk would, or refuses it in
-    /// the desk's words, and remembers what it was asked.
+    /// the desk's words, and remembers what it is asked.
     /// </summary>
     private sealed class OpinionStandIn : IAsyncDisposable
     {

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1a2 (D180's HEAVYRUN1 note): a heavy gate's test runner is held to two workers where the repository declares it Jest or
+/// A heavy gate's test runner is held to two workers where the repository declares it Jest or
 /// Vitest, at an installed version whose worker flag is known, and runs as written, saying why, everywhere else; an owner's own bound
 /// is never doubled. Reading the repository's files starts no process, so these are the fast half's; <see cref="HeavyRunProcessTests"/>
 /// shows the bound reaching the runner through npm.
@@ -14,7 +14,7 @@ public sealed class HeavyWorkersTests : IDisposable
 
     public void Dispose() => _fixture.Dispose();
 
-    /// <summary>A runner the gate names itself, or through <c>npx</c>, at each version whose flag was read: the flag at its end.</summary>
+    /// <summary>A runner the gate names itself, or through <c>npx</c>, at each version whose flag is known: the flag at its end.</summary>
     [Theory]
     [InlineData("jest", "jest@27.5.1", "jest --maxWorkers=2", "Jest 27.5.1")]
     [InlineData("jest --ci", "jest@29.7.0", "jest --ci --maxWorkers=2", "Jest 29.7.0")]
@@ -57,7 +57,7 @@ public sealed class HeavyWorkersTests : IDisposable
     }
 
     /// <summary>
-    /// A version whose worker flag was not read here runs as written, saying so: one between or beyond those read, and a prerelease,
+    /// A version whose worker flag is not known here runs as written, saying so: one between or beyond those known, and a prerelease,
     /// which promises nothing of its major's flags.
     /// </summary>
     [Theory]
@@ -95,7 +95,7 @@ public sealed class HeavyWorkersTests : IDisposable
 
     /// <summary>
     /// 🔴 Never doubled: a command or a script that already names a worker bound or a pool keeps the owner's, untouched, at a version
-    /// whose flag is known. <c>npm test -- --maxWorkers=2</c> is the bound an owner writes into this machine's mapping (D180's HEAVYRUN1b2a note).
+    /// whose flag is known. <c>npm test -- --maxWorkers=2</c> is the bound an owner writes into this machine's mapping.
     /// </summary>
     [Theory]
     [InlineData("jest --maxWorkers=4", null, "`unit` names its own worker bound (`--maxWorkers=4`), so it runs as written.")]
@@ -346,7 +346,7 @@ public sealed class HeavyWorkersTests : IDisposable
 
     /// <summary>
     /// A yarn or pnpm whose version is recorded nowhere, or whose nearest <c>packageManager</c> names another tool, or whose version's
-    /// forwarding was not read (pnpm 12 ships native; yarn 5, pnpm 5 and a prerelease were not read) runs as written, saying so.
+    /// forwarding is not known (pnpm 12 ships native; yarn 5, pnpm 5 and a prerelease are not known) runs as written, saying so.
     /// </summary>
     [Theory]
     [InlineData("yarn test", null, "`unit` runs yarn's `test` script, and which yarn version runs it is recorded neither by a `packageManager` field nor by its install, so it runs as written.")]

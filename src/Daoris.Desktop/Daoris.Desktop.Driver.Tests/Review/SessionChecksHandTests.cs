@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1b (D192 point 5; the pipeline design §3.2's first and third layers): what a driven session is told and handed under its
+/// What a driven session is told and handed under its
 /// run's checks. Under <c>light</c> its words name the light gates and the heavy gates as the verification's; where its agent takes
 /// Daoris's rules (Claude Code) each heavy gate's declared command is denied exactly, never as a prefix, and auto mode's classifier is told
 /// one sentence; where it takes none (Codex, dsh) nothing is handed and its words say so. Under <c>heavy-at-end</c> its words are the
@@ -143,7 +143,7 @@ public sealed class SessionChecksHandTests : IDisposable
         Launcher();
         var handed = HeavyTold.Hand(_fixture.Checkout, Home, "engine", SessionChecks.HeavyAtEnd, takesRules: true);
 
-        // HEAVYQUEUE1: beside the checks' own words, a long test command is told to go through the verb.
+        // Beside the checks' own words, a long test command is told to go through the verb.
         Assert.Equal($"{AtEnd} {HeavyTold.Focused}", handed.Words);
         Assert.Empty(handed.Deny);
         Assert.Null(handed.HardDeny);
@@ -259,7 +259,7 @@ public sealed class SessionChecksHandTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1b3 (D192's FABRIC-PIPELINE1b2 note, point 5): a run bound to a graph version takes its <c>claimed</c> node's
+    /// A run bound to a graph version takes its <c>claimed</c> node's
     /// <c>checks</c>, read from the version as its file holds it, never the repository's rule, and its <c>callMinutes</c> beside them. Read
     /// as written: a value no choice, or a bound that is no whole number of minutes from one, is none; and a version that is not the one its
     /// run bound gives nothing.

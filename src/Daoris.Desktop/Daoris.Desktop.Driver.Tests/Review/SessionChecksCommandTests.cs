@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// FABRIC-PIPELINE1b (D192 point 4, D50): <c>daoris place checks</c>, the terminal's door to which checks a repository's sessions run
+/// <c>daoris place checks</c>, the terminal's door to which checks a repository's sessions run
 /// under Current. It reads and writes the driver's file alone, through <see cref="SessionChecks.Apply"/>, so it refuses what Setup's door
 /// does, in the same words, with nothing written.
 /// </summary>

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// EVENTHOOK1d-i (D244 points 1 and 2, the event channel design §3.1, §3.2): the lease's teller of the quests' moves, each <c>quests</c> row
+/// The lease's teller of the quests' moves, each <c>quests</c> row
 /// of the journal the kind it says, handed to its sink in position order; a take told nothing; one <c>events.missed</c> at the first place
 /// of its life and one for each batch whose history is incomplete; its cursor held in memory and never kept.
 /// </summary>
@@ -66,7 +66,7 @@ public sealed class WorkEventTellerTests
         new(position, Moved.ToUnixTimeMilliseconds(), message, "channel", change, null, null, null, null, null, marks.Split(','), "team", null,
             Ask: ask, Message: message, FromSession: by);
 
-    /// <summary>CHANNELJOIN1d (D244; the event channel design §5.7): a message kept is told with its poster's class read from the poster's id.</summary>
+    /// <summary>A message kept is told with its poster's class read from the poster's id.</summary>
     [Fact]
     public async Task A_message_kept_is_told_with_its_poster_s_class_and_a_member_s_join_none()
     {

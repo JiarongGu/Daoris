@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// XAGENT1f (D155 points 2, 9 and 10; the second-agent design §2.1, §7, §8.1, §8.5): the second opinions owed at a look and the
+/// The second opinions owed at a look and the
 /// person's presses, over real git. A done in a tree of its own under a rule that reads it is owed one; the look asks the pass
 /// beside itself, from where the work leaves the line to its tip, keeps it at the gate the moment the host opens it, and sits the
 /// chain's set-up step while an agent is still at work on it; once settled, it asks nothing more. The presses keep the person's
@@ -63,7 +63,7 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
-    /// DRAINHOLD1 (the driver follow-up): an update's drain holds the second opinion's pass, a reviewer's session in a copy. The owed
+    /// An update's drain holds the second opinion's pass, a reviewer's session in a copy. The owed
     /// opinion is still judged and its quests still sit, but no pass starts, none is kept at the gate, and the look says the drain's hold
     /// once; after *Not now* the pass is asked.
     /// </summary>
@@ -93,7 +93,7 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 LIMITRESUME1j (D206; the limit-resume design §3.6): an opinion asked on a line that ran on two makers refuses a reviewer of
+    /// An opinion asked on a line that ran on two makers refuses a reviewer of
     /// either as another maker's. s1's work went on with Claude Code from s0, cut off by its limit on Codex; the look judges the work's
     /// families from every part of the line, so a listed reviewer of either maker reads it only as the same agent, fresh, and says
     /// that no other maker's agent could.
@@ -119,7 +119,7 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1d (the chat-flow design §5.2 point 3, §7): a due a chat run's press wrote names its run and no quest. The look reads the run's
+    /// A due a chat run's press wrote names its run and no quest. The look reads the run's
     /// process and gate, asks the pass at the tip the press captured, not the tree's HEAD a later turn moved, hands it the conversation's
     /// opening and no quest, keeps it under the run's key, and holds no quest's set-up step.
     /// </summary>
@@ -162,7 +162,7 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
-    /// CHATFLOW1d (the chat-flow design §5.2 point 3, §7, the Opus check's finding 5): <i>Ask now</i> on a chat run reads its work instead of
+    /// <i>Ask now</i> on a chat run reads its work instead of
     /// refusing it, and writes its due at <c>landing</c>, never at the rule's first occasion <c>steps</c>, which would close it past at once;
     /// carrying the tree's HEAD and the person's turn count read at its press. The request is kept under the run's key.
     /// </summary>
@@ -247,7 +247,7 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
-    /// LIMITRESUME1h (D206 design §3.8): a pass an account's limit ended is gated <c>Unavailable</c> / <c>Cooling</c> with its account's
+    /// A pass an account's limit ended is gated <c>Unavailable</c> / <c>Cooling</c> with its account's
     /// reset read from the cool-off its session wrote, so the look asks nothing before it and asks the pass again by itself after it,
     /// never waiting on the person's <i>Try again</i>.
     /// </summary>
@@ -318,7 +318,7 @@ public sealed class OpinionLookTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1d (the cutover design §4): a run bound to a graph version is asked its second opinion only once its record has begun its
+    /// A run bound to a graph version is asked its second opinion only once its record has begun its
     /// <c>opinion</c> node; while a check its graph places before the opinion waits, the look asks nothing, and once the pass begins the opinion
     /// the next look asks it.
     /// </summary>
@@ -378,7 +378,7 @@ public sealed class OpinionLookTests : IDisposable
             var real = ProviderRegistry.Built().AgentNamed(name)!;
             adapters[name] = Adapter(name, new TestAgent(
                 Binary: [Command], VersionArguments: [], ProfileVariable: real.Home.Variable, AccountOf: real.AccountOf, ProbeByPresence: true,
-                // A test double whose own home is nobody's (OWNSPACE1a): the look's pass is this file's subject, not the account.
+                // A test double whose own home is nobody's: the look's pass is this file's subject, not the account.
                 Product: real.Product, Maker: real.Maker, RunsInOwnHome: true));
         }
 

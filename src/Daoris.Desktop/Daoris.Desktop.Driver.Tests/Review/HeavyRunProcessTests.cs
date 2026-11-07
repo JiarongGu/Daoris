@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// HEAVYRUN1a's proof (D180's HEAVYRUN1 note), on a fixture repository: two runs of one repository's heavy gates never overlap,
+/// On a fixture repository: two runs of one repository's heavy gates never overlap,
 /// whichever tree each runs in; a gate's failure and a cancel end everything the run started before its slot is let go; and a
 /// wrapper killed outright admits no second run beside what it left. Each gate is a node script that marks its start and end in one
 /// log and starts a detached child beating a heartbeat, the shape of a build's lingering workers.
@@ -194,9 +194,9 @@ public sealed class HeavyRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// HEAVYRUN1a2's proof: a gate whose npm script runs Jest, and one whose script runs Vitest, reach their runner with two workers at
+    /// A gate whose npm script runs Jest, and one whose script runs Vitest, reach their runner with two workers at
     /// most, through npm, and the run says what it bound. Each runner is a stub in the checkout's <c>node_modules/.bin</c>, where npm
-    /// finds a script's command, recording the words it was handed; each package's version is one whose flag was read.
+    /// finds a script's command, recording the words it is handed; each package's version is one whose flag is known.
     /// </summary>
     [Fact]
     public async Task A_gate_s_runner_is_handed_two_workers_through_npm()
@@ -325,7 +325,7 @@ public sealed class HeavyRunProcessTests : IDisposable
     /// <summary>
     /// 🔴 A wrapper killed outright, as a session's end kills it, closes its job and its slot with its process. The second run, waiting
     /// in a tree of the same repository, starts only once nothing of the first is left: its job is gone, and the child it left beating
-    /// beat last before the second began. Its gate's output reached the terminal as it was said, never held back to its end.
+    /// beat last before the second began. Its gate's output reaches the terminal as it is said, never held back to its end.
     /// </summary>
     [Fact]
     public async Task A_wrapper_killed_outright_admits_no_second_run_beside_what_it_left()
@@ -362,7 +362,7 @@ public sealed class HeavyRunProcessTests : IDisposable
     }
 
     /// <summary>
-    /// HEAVYQUEUE1: a session's focused command takes a place in the machine's admission behind the merge queue's gate, runs once it has
+    /// A session's focused command takes a place in the machine's admission behind the merge queue's gate, runs once it has
     /// it, hands what it starts the hold it is inside, fails as a gate does, and lets its place go as it ends.
     /// </summary>
     [Fact]
