@@ -96,4 +96,53 @@ public sealed class LayerWorkTests
         Assert.Equal(expected, read);
         Assert.True(Assert.IsType<WireReading.TaskEnded>(read[^1]).AfterTurn);
     }
+
+    /// <summary>
+    /// A command's update is its ending's first word: the notification that follows is the end said, and where none follows the close ends it
+    /// in the update's last word, marked where that update came after the turn's terminal, as the native reader closes its stream.
+    /// </summary>
+    [Fact]
+    public void A_command_its_update_ended_with_no_notification_is_ended_at_the_close_as_the_native_reader_ends_it()
+    {
+        var native = new NativeTasks();
+        var frames = new[]
+        {
+            System("task_started", new { task_id = "b1", description = "gates", task_type = "local_bash" }),
+            System("task_updated", new { task_id = "b1", patch = new { status = "running" } }),
+            System("task_started", new { task_id = "b2", description = "dev", task_type = "local_bash" }),
+            System("task_updated", new { task_id = "b2", patch = new { status = "running" } }),
+            NativeFrame.Of("""{"type":"result","subtype":"success","is_error":false}"""),
+            System("task_updated", new { task_id = "b1", patch = new { status = "killed" } }),
+        };
+        var expected = frames.Select(native.Read).OfType<WireReading>().ToList();
+        expected.AddRange(native.Close());
+        var translation = Readings();
+        var read = new List<WireReading>();
+
+        read.AddRange(translation.Read(new AgentTaskStarted("b1", "local_bash", "gates", null)));
+        read.AddRange(translation.Read(new AgentTaskUpdated("b1", "running")));
+        read.AddRange(translation.Read(new AgentTaskStarted("b2", "local_bash", "dev", null)));
+        read.AddRange(translation.Read(new AgentTaskUpdated("b2", "running")));
+        translation.Read(new SessionEnded(ProviderVerdict.Ok, false, "success", null, null, null));
+        read.AddRange(translation.Read(new AgentTaskUpdated("b1", "killed")));
+        read.AddRange(translation.Close());
+
+        Assert.Equal(expected, read);
+        var ended = Assert.IsType<WireReading.TaskEnded>(Assert.Single(read.OfType<WireReading.TaskEnded>()));
+        Assert.Equal(("b1", "killed", true), (ended.Task, ended.Word, ended.AfterTurn));
+    }
+
+    [Fact]
+    public void A_notification_after_an_update_is_the_end_and_the_close_ends_it_no_second_time()
+    {
+        var translation = Readings();
+
+        translation.Read(new AgentTaskStarted("b1", "local_bash", "gates", null));
+        translation.Read(new AgentTaskUpdated("b1", "killed"));
+        var ended = Assert.IsType<WireReading.TaskEnded>(Assert.Single(translation.Read(new AgentTaskEnded("b1", "stopped"))));
+
+        Assert.Equal("stopped", ended.Word);
+        Assert.Empty(translation.Close());
+        Assert.Empty(Readings().Read(new AgentTaskUpdated("never-started", "killed")));
+    }
 }

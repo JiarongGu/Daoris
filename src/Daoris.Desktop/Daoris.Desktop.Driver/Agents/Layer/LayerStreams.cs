@@ -21,6 +21,7 @@ internal sealed class LayerStreams(IStreamsReader beside, Func<LayerReadings> tr
     /// <summary>True when the event was a child's, said on its stream, so the session's translation never reads it.</summary>
     public bool Take(AgentStreamEvent evt)
     {
+        if (evt is AgentTaskOutputFile { TaskId: { Length: > 0 } task, Path: { Length: > 0 } path }) beside.Followed(task, path);
         if (Spawner(evt) is not { Length: > 0 } call) return false;
         if (!_children.TryGetValue(call, out var words)) _children[call] = words = translation();
         foreach (var reading in words.Read(evt))

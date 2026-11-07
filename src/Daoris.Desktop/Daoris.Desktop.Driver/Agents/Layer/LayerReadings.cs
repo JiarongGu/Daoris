@@ -104,6 +104,8 @@ internal sealed class LayerReadings(
         }
     }
 
+    public IReadOnlyList<WireReading> Close() => _work.Close();
+
     private readonly object _held = new();
 
     private IReadOnlyList<WireReading>? _naming;
@@ -137,6 +139,7 @@ internal sealed class LayerReadings(
         LayerEnded ended => Ending(ended),
         AgentTaskStarted started => Work(_work.Started(started)),
         AgentTaskEnded ended => Work(_work.Ended(ended, afterTurn: Ended is not null)),
+        AgentTaskUpdated updated => Report(() => _work.Updated(updated, afterTurn: Ended is not null)),
         AgentTaskOutputFile file => Report(() => _work.Output(file)),
         _ => [],
     };

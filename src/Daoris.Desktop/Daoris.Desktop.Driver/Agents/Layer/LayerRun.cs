@@ -288,6 +288,7 @@ internal sealed class LayerRun(
             Handed(leg, leg.Readings.Flush());
             // Said while the transcript is still open: what it left running ended with it.
             if (leg.Streams is { } streams) await streams.EndAllAsync().ConfigureAwait(false);
+            Handed(leg, leg.Readings.Close());
             leg.Started.TrySetResult(null);
             Close();
         }
