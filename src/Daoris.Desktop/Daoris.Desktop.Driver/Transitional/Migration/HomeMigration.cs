@@ -60,8 +60,7 @@ public static class HomeMigration
         var record = DaorisHome.Entry(home, HomeEntry.Migration);
         if (Done(record) is { } done && steps.All(step => done.Contains(step.Name))) return new(Name, [], []);
 
-        // The launcher's swap holds the home until this very application confirms, which comes after this run, so waiting for it can only
-        // time out; nothing else runs from the folder it is replacing, so the swap's hold is the guard and the steps run under it.
+        // The swap lets go only after this application confirms, which follows this run: waiting for it only times out.
         using var lease = HomeLease.TryAcquire(home, LeaseKind.Migration, out var holder, "migration")
             ?? (holder is { Kind: LeaseKind.Swap } ? null : HomeLease.Await(home, LeaseKind.Migration, "migration", leaseWait ?? HomeLease.Wait, out holder));
         if (lease is null && holder is not { Kind: LeaseKind.Swap })
