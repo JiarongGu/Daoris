@@ -71,7 +71,7 @@ public sealed class DriverModuleRoleTerminalTests : DriverModuleBridge
 
     /// <summary>A judge whose catalogue staffs the repository's own supervisor with the terminal.</summary>
     private StandingConfirmation Judge() =>
-        new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: true, walk: new StandingConfirmationTests.Walked())
+        new StandingConfirmation(Home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), walk: new StandingConfirmationTests.Walked())
             .Staff(RoleKit.Supervisor(Supervisor, RoleKit.Repository("engine")));
 
     [Fact]

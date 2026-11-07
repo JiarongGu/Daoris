@@ -6,8 +6,7 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// A request on a connection that said its hello, admitted or refused (the terminal RPC design §4.2, §6): the pipe's own answered
-/// now, the census's class judged, the id bound to its route, payload and key, and a person's press judged by the standing confirmation
-/// and then reserved for its card. It binds the id in the pipe's state (<see cref="PipeState"/>) under its gate.
+/// now, the census's class judged, the id bound to its route, payload and key, and a person's press reserved for its card. It binds the id in the pipe's state (<see cref="PipeState"/>) under its gate.
 /// </summary>
 internal sealed class PipeAdmission(InstancePipe pipe)
 {
@@ -162,23 +161,9 @@ internal sealed class PipeAdmission(InstancePipe pipe)
             return (null, answer);
         }
 
-        // TERMTRUST1a (D201, the terminal-trust design §5 step 3): the person's standing confirmation is judged first, under its lock, and a
-        // press it covers is admitted there, once: run as a confirmed press is, said to the log and the terminal, with no card. A revoke
-        // after the admission does not recall it; a press it does not cover asks as before, saying why where the grant names it.
-        // A start that holds is the person's Confirm alone: the standing confirmation never covers words said as the person.
-        StandingJudgement? judged = holding || asked ? null : pipe.StandingConfirmation.Judge(request.Module, request.Type, request.Payload, connection.Client);
-        if (judged is { Covered: true })
-        {
-            _log.Info(PipeConfirmations.LogEvent, ("state", "standing"), ("route", $"{request.Module}.{request.Type}"), ("door", PipeDoor.Terminal));
-            _ = connection.WriteAsync(Told(InstancePipe.Standing, new { id }));
-            _ = pipe.RunAsync(request, id, binding, mine, standing: true);
-            return (null, answer);
-        }
+        var why = placeSaid;
 
-        var why = judged is { Said: true } ? judged.Why : placeSaid;
-
-        // CONFIRMWAIT1a-i (the confirm-wait design §5.2): after the standing judgement, so a press it admits is never refused here, a
-        // person's press whose route names no grounds is refused at once, no read made; then a place among the ten is held, told to no
+        // CONFIRMWAIT1a-i (the confirm-wait design §5.2): a person's press whose route names no grounds is refused at once, no read made; then a place among the ten is held, told to no
         // window yet, so one past them is refused before any read. The grounds are read in the press's own task, outside every lock.
         if (_census.Targets.Row(request.Module, request.Type, request.Payload) is not { } row)
         {
@@ -241,8 +226,8 @@ internal sealed class PipeAdmission(InstancePipe pipe)
 
     /// <summary>
     /// The notification that tells the terminal its press waits for the person in the window (RPC1c), naming its request; no time, since
-    /// none ends it (CONFIRMWAIT1a-i). With <c>standing</c>, why the person's standing confirmation, on and naming the press, did not cover
-    /// it (TERMTRUST1a, §5 step 5), a field an older terminal ignores.
+    /// none ends it (CONFIRMWAIT1a-i). With <c>standing</c>, why the terminal's place is not told as outside
+    /// (CHANNELJOIN1c), a field an older terminal ignores.
     /// </summary>
     /// <param name="checking">
     /// That its grounds are being read before its card (CONFIRMWAIT1, §15.2 item 9): the terminal hears its id then, before any read.

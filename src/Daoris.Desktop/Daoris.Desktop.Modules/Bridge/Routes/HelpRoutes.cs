@@ -336,7 +336,7 @@ public sealed class HelpRoutes(DriverContext context)
         // taken and marked the owner's before the edit, the edit inside them.
         await using var owned = await OwnerMarks.EnterAsync(
             _loop.Pipe?.StandingConfirmation, _context.OwnerScopesOf(), plan.Refusal is null ? Owned(HelpProposals.Owned(proposal)) : [],
-            PipeDoor.Standing, cancellationToken).ConfigureAwait(false);
+            cancellationToken).ConfigureAwait(false);
         var applied = await HelpProposals.ApplyAsync(
             _loop.Home, proposal, plan, new HelpScreenDoors(_context, service), Say, cancellationToken).ConfigureAwait(false);
         // A delete or an ask moves the work; a set-up publishes an ask its session takes at the next look.

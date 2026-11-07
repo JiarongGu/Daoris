@@ -1,50 +1,13 @@
-using System.Security.Cryptography;
-using System.Security.Principal;
-using System.Text;
 using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop;
 
-/// <summary>The presses the standing confirmation may name (D201 point 2, the terminal-trust design §2.1), by the names its record keeps.</summary>
-public static class StandingPresses
-{
-    /// <summary>Stop a session: <c>STOP_SESSION { id, said: true }</c>.</summary>
-    public const string Stop = "stop";
-
-    /// <summary>Finish a session that waits on the person, with none of their words: <c>RESOLVE_SESSION { id, state: "completed", said: true }</c>.</summary>
-    public const string Finish = "finish";
-
-    /// <summary>Hold a repository: <c>SET_HOLD { repository, held: true }</c>.</summary>
-    public const string Hold = "hold";
-
-    /// <summary>Resume a repository a covered hold held during this run: <c>SET_HOLD { repository, held: false }</c>.</summary>
-    public const string Resume = "resume";
-
-    /// <summary>
-    /// The presses this build's table names, in the order the window offers them. A grant names its own (§2.3): a press a later build
-    /// adds (TERMTRUST1b's <c>done</c>) covers nothing until the person grants it.
-    /// </summary>
-    public static IReadOnlyList<string> Built { get; } = [Stop, Finish, Hold, Resume];
-}
-
-/// <summary>Why a press the standing confirmation could have covered asks (the terminal-trust design §5 step 3, §7.2), by code.</summary>
+/// <summary>Why a role's act or a card's ask is refused or noted where the terminal's place is not told as outside, by code.</summary>
 public static class StandingWhy
 {
-    /// <summary>The grant is off, or its record is not honoured.</summary>
-    public const string Off = "off";
-
-    /// <summary>No press of the build's table, or one the record does not name.</summary>
+    /// <summary>The act is not one the roles' methods name.</summary>
     public const string NotNamed = "not-named";
-
-    /// <summary>The press is not its verb's form: another field, another value, a name twice.</summary>
-    public const string Form = "form";
-
-    /// <summary>A resume of a hold this run's memory does not hold.</summary>
-    public const string NotHeldHere = "not-held-here";
-
-    /// <summary>A finish of a session with a process on this machine.</summary>
-    public const string RunningHere = "running-here";
 
     /// <summary>The terminal's process is in a job a Daoris on this Windows session made for its agents.</summary>
     public const string InAgentJob = "in-agent-job";
@@ -53,44 +16,10 @@ public static class StandingWhy
     public const string Untold = "untold";
 }
 
-/// <summary>How the standing confirmation's record was read at the instance's start (the machine log's <c>person.standing</c> <c>state</c>).</summary>
-public static class StandingRead
-{
-    /// <summary>A record of this machine and account, read.</summary>
-    public const string Found = "found";
-
-    /// <summary>A record that does not read: off.</summary>
-    public const string Unread = "unread";
-
-    /// <summary>A record of a newer <c>schemaVersion</c>: off, and never written over by this build.</summary>
-    public const string Newer = "newer";
-
-    /// <summary>A record of another machine or account (a <c>data/</c> folder copied here): off, and left.</summary>
-    public const string OtherMachine = "other-machine";
-}
-
-/// <summary>One judgement: covered, or asks with why (<see cref="StandingWhy"/>); <see cref="Press"/> the press of the table it was, or null.</summary>
-/// <param name="Said">Whether the <c>asked</c> line says <see cref="Why"/>: only where the grant is on and names such a press (§7.2).</param>
-public sealed record StandingJudgement(bool Covered, string? Why, string? Press, bool Said)
-{
-    internal static StandingJudgement Asks(string why, string? press, bool said) => new(false, why, press, said);
-}
-
-/// <summary>What the window's row reads (<c>STATE</c>'s <c>standingConfirmation</c>, the terminal-trust design §6.1).</summary>
-/// <param name="Offered">Whether this build offers the grant (D201's note on order: once part (i) has landed and been looked at on the install).</param>
-/// <param name="On">Whether it is on now, honoured, and names a press.</param>
-/// <param name="Presses">The presses granted, in the build's order.</param>
-/// <param name="Built">The presses this build's table names.</param>
-/// <param name="Since">When the grant was made, or null.</param>
-/// <param name="Unread">Why the record found is not honoured (<see cref="StandingRead"/>'s <c>unread</c>, <c>newer</c>, <c>other-machine</c>), or null.</param>
-/// <param name="Unwritten">That the last revoke could not write its record, so the next start may read it as on.</param>
-/// <param name="Used">How many presses it covered since this Daoris started.</param>
-/// <param name="Held">The repositories a covered hold held during this run, which a covered resume may release.</param>
+/// <summary>What the window reads of the roles' judge (<c>STATE</c>'s <c>standingConfirmation</c>): the terminals that hold a role, the steward's acts and its desk.</summary>
 /// <param name="Holds">The roles a terminal holds this run, each by its catalogue id; a role staffed by the terminal and not here is not started.</param>
 /// <param name="Holders">The holders living this run, each with its roles and when its tab was opened, which a later start may add a role to.</param>
-public sealed record StandingNow(
-    bool Offered, bool On, IReadOnlyList<string> Presses, IReadOnlyList<string> Built, DateTimeOffset? Since, string? Unread,
-    bool Unwritten, int Used, IReadOnlyList<string> Held, IReadOnlyList<RoleHoldNow>? Holds = null, IReadOnlyList<HolderNow>? Holders = null)
+public sealed record StandingNow(IReadOnlyList<RoleHoldNow> Holds, IReadOnlyList<HolderNow> Holders)
 {
     /// <summary>The steward's acts this run, newest first (STEWARDROLE1b, D209 §5.3), from memory alone: the line's entries.</summary>
     public IReadOnlyList<StewardActNow> StewardActs { get; init; } = [];
@@ -107,7 +36,7 @@ public sealed record StandingNow(
 public sealed record StewardActNow(
     string Id, string Act, string? Repository, string? Quest, string? Session, DateTimeOffset At, bool Standing, bool Waiting);
 
-/// <summary>A grant's or a revoke's answer: done, or refused as data with a code the page words.</summary>
+/// <summary>A start of a role's terminal answered: done, or refused as data with a code the page words.</summary>
 public sealed record StandingChange(bool Done, string? Why, string? Message);
 
 /// <summary>
@@ -148,73 +77,26 @@ public sealed record RoleJudgement(
 }
 
 /// <summary>
-/// The person's standing confirmation (TERMTRUST1a part (ii), D201; the terminal-trust design): a grant made in the window, with the
-/// person's own press, that lets the presses it names, in exactly their verbs' forms and conditions, from a terminal's process in no job
-/// any Daoris on this Windows session made for an agent, run without a card. Everything else asks as today.
+/// The roles' judge (D233 point 2; the supervisor design §2.2; D209): the supervisor and the steward are catalogue roles, staffed through
+/// the role door, read live from the catalogue (<see cref="Appointed"/>). A role staffed by the terminal is held this run once the window
+/// starts its terminal (<see cref="StartAsync"/>), a generation drawn for that hold and the holder key's SHA-256 kept in this instance's
+/// memory alone, so after a restart the role is not started until the window starts it again. A role's act is judged by its own method
+/// (<see cref="JudgeRole"/>) under one lock and the caller's look, against the role's record as it stands, then by the holder's proof over
+/// the connection's nonce; and the decisions' admission (<see cref="IDecisionAdmission"/>) answers the effective supervisor's hold and
+/// window from the same memory and the catalogue.
 /// </summary>
 /// <remarks>
-/// <para><b>The record</b> (§4.2): <c>data/standing-confirmation.json</c> (<see cref="HomeEntry.StandingConfirmation"/>), <c>presses</c>,
-/// <c>since</c>, and <c>machine</c>, a SHA-256 of this machine's name and the account's SID. Read at the instance's start
-/// (<see cref="Load"/>, before the pipe serves) and kept in memory, written through on each grant and revoke, atomically, and by
-/// nothing else; a write by another process while Daoris runs is not read until the next start. Absent, unreadable, newer or another
-/// machine's: off, said in the log and under the row, and never written over by a build that cannot read it.</para>
-///
-/// <para><b>The hold's memory</b> (§4.2): a covered <c>hold</c> that changed a repository from not held to held is remembered for this
-/// run, with its moment; any other change of that repository's hold forgets it (<see cref="Forget"/>), as does a hold the file no longer
-/// says, and a start remembers nothing. A covered <c>resume</c> is covered only for a repository remembered so, never a hold the
-/// person made, one made alone, or one from before the start.</para>
-///
-/// <para><b>One lock</b> (§3.3 point 5, §4.3): a press is judged and admitted under it, its use counted and a hold remembered there, so a
-/// revoke after it does not recall it and one before it is heard; a revoke clears the memory under it before its record is written.</para>
-///
-/// <para><b>Until part (i) lands</b> every agent of this process is uncontained, so the caller's look (<see cref="StandingCaller"/>)
-/// answers <see cref="StandingWhy.Untold"/> and this covers nothing (D201's note on order). The grant is offered only where
-/// <see cref="Offered"/> says so.</para>
-///
-/// <para><b>The roles' terminals</b> (D233 point 2; the supervisor design §2.2): the supervisor and the steward are catalogue roles,
-/// staffed through the role door, read live from the catalogue (<see cref="Appointed"/>). A role staffed by the terminal is held this run
-/// once the window starts its terminal (<see cref="StartAsync"/>), a generation drawn for that hold and the holder key's SHA-256 kept in
-/// this instance's memory alone, so after a restart the role is not started until the window starts it again. A role's act is judged by
-/// its own method (<see cref="JudgeRole"/>) under the same lock and caller look, against the role's record as it stands, then by the
-/// holder's proof over the connection's nonce; and the decisions' admission (<see cref="IDecisionAdmission"/>) answers the effective
-/// supervisor's hold and window from the same memory and the catalogue.</para>
-///
-/// <para><b>One mutation step</b> (§2.3): every read-modify-write of the record and the memory it installs runs whole under the lock. The
-/// lock is never held across an await nor while a decision's lock is taken: the sweep of an ended hold's decisions runs after its step
+/// <para><b>One mutation step</b> (§2.3): every read-modify-write of the memory runs whole under the lock. The lock is never held across
+/// an await nor while a decision's lock is taken: the sweep of an ended hold's decisions runs after its step
 /// (<see cref="HoldChange.Ended"/>).</para>
 ///
 /// <para><b>Its parts and their state.</b> The memory and its one lock are <see cref="StandingState"/>'s, which every part reaches: the
-/// grant's record and judgement <see cref="StandingGrant"/>'s, the roles' terminals <see cref="RoleTerminals"/>'s, the role method and the
-/// decisions' admission <see cref="RoleJudge"/>'s, the acts' memory and the owner's marks <see cref="RoleActsLedger"/>'s and the steward's
-/// own record <see cref="StewardRecord"/>'s. This type keeps the doors, the window's reading and what the loop hands in.</para>
+/// roles' terminals <see cref="RoleTerminals"/>'s, the role method and the decisions' admission <see cref="RoleJudge"/>'s, the acts'
+/// memory and the owner's marks <see cref="RoleActsLedger"/>'s and the steward's own record <see cref="StewardRecord"/>'s. This type keeps
+/// the doors, the window's reading and what the loop hands in.</para>
 /// </remarks>
 public sealed class StandingConfirmation : IDecisionAdmission
 {
-    /// <summary>The machine log's event for a grant, a revoke, and what a start found (§7.2).</summary>
-    public const string LogEvent = "person.standing";
-
-    /// <summary>The record's version this build reads and writes.</summary>
-    public const int SchemaVersion = 1;
-
-    /// <summary>The event that tells every window a press ran under it (§5 step 4), which the line in <i>Notifications</i> counts.</summary>
-    public const string UsedEvent = "STANDING_USED";
-
-    /// <summary>
-    /// Whether this build offers the grant on This Daoris (D201's note on order, 2026-10-23): not until part (i), the containment, has
-    /// landed and its case 4 has been looked at on the install. A build that offers it sets this true; until then the row says it is
-    /// not offered yet and the grant's route refuses <c>not-offered</c>, while a revoke is always taken.
-    /// </summary>
-    public const bool OfferedInThisBuild = false;
-
-    /// <summary>The refusal of a grant this build does not offer yet.</summary>
-    public const string NotOffered = "not-offered";
-
-    /// <summary>The refusal of a grant naming a press this build's table does not name.</summary>
-    public const string UnknownPress = "unknown-press";
-
-    /// <summary>A grant whose record could not be written, so nothing was turned on; or a revoke's, turned off for this run alone.</summary>
-    public const string Unwritten = "unwritten";
-
     /// <summary>A start naming no appointed role of the catalogue.</summary>
     public const string UnknownRole = "unknown-role";
 
@@ -242,31 +124,25 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>The bridge's driver module, whose routes the table names (the census's <c>DAORIS.DRIVER</c>).</summary>
     internal const string DriverModuleName = "DAORIS.DRIVER";
 
-    private readonly string _home;
     private readonly StandingState _state = new();
-    private readonly StandingGrant _grant;
     private readonly RoleTerminals _terminals;
     private readonly RoleJudge _judge;
     private readonly RoleActsLedger _ledger;
     private readonly StewardRecord _steward;
 
-    /// <param name="home">The home whose record this is.</param>
+    /// <param name="home">The home whose catalogue and desk these are.</param>
     /// <param name="log">The machine log.</param>
     /// <param name="caller">Where a terminal's process stands (<see cref="StandingCaller"/> on Windows); a test hands its own.</param>
-    /// <param name="clock">The clock a grant's moment is read by.</param>
-    /// <param name="offered">Whether the grant is offered (<see cref="OfferedInThisBuild"/> where none is named).</param>
-    /// <param name="machine">This machine and account, as the record binds them (<see cref="ThisMachine"/> where none is named).</param>
+    /// <param name="clock">The clock a hold's moment is read by.</param>
     /// <param name="walk">The configuration walk every <c>Role</c> route's admission runs (<see cref="HolderWalk.System"/> where none is named).</param>
     /// <param name="desk">Who a desk request is counted against (<see cref="DeskCaller.System"/> where none is named; STEWARDROLE1c).</param>
     public StandingConfirmation(
-        string home, MachineLog? log = null, IStandingCaller? caller = null, TimeProvider? clock = null, bool? offered = null,
-        string? machine = null, IHolderWalk? walk = null, IDeskCaller? desk = null)
+        string home, MachineLog? log = null, IStandingCaller? caller = null, TimeProvider? clock = null, IHolderWalk? walk = null,
+        IDeskCaller? desk = null)
     {
-        _home = home;
         Log = log ?? MachineLog.None;
         Caller = caller ?? new StandingCaller();
         Clock = clock ?? TimeProvider.System;
-        Offered = offered ?? OfferedInThisBuild;
         Walk = walk ?? HolderWalk.System;
         RunStarted = Clock.GetUtcNow();
         DeskCaller = desk ?? (Caller is StandingCaller jobs ? Desktop.DeskCaller.System(jobs) : new DeskCaller(_ => null, new SystemProcesses(), Clock, Environment.ProcessId));
@@ -283,7 +159,6 @@ public sealed class StandingConfirmation : IDecisionAdmission
                 return [];
             }
         };
-        _grant = new StandingGrant(this, _state, machine ?? ThisMachine());
         _terminals = new RoleTerminals(this, _state);
         _judge = new RoleJudge(this, _state);
         _ledger = new RoleActsLedger(this, _state);
@@ -323,9 +198,6 @@ public sealed class StandingConfirmation : IDecisionAdmission
         return filed;
     }
 
-    /// <summary>Whether this instance offers the grant (D201's note on order).</summary>
-    public bool Offered { get; }
-
     /// <summary>The configuration walk (D209 §6.1), run for every route of the census's <c>Role</c> class.</summary>
     public IHolderWalk Walk { get; }
 
@@ -353,15 +225,6 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>Where a terminal's process stands.</summary>
     public IStandingCaller Caller { get; }
 
-    /// <summary>Whether a process for a session runs on this machine (the loop's registry, which the loop hands in); none runs nothing.</summary>
-    public Func<string, bool> RunsHere { get; set; } = _ => false;
-
-    /// <summary>Whether <c>driver.json</c> holds a repository now (the loop's file, which the loop hands in); none holds nothing.</summary>
-    public Func<string, bool> HeldNow { get; set; } = _ => false;
-
-    /// <summary>Told a press it covered, with the window's count (<see cref="UsedEvent"/>); none tells nobody.</summary>
-    public Action<long, DateTimeOffset>? Used { get; set; }
-
     /// <summary>
     /// The run's gates (STEWARDROLE1a-ii, D209 §5.4), one per workspace, repository and quest: a role's act holds its target's and its
     /// dependencies' alone; an owner's press holds what it resolves to beside the owner's other presses. Never the judge's lock.
@@ -371,12 +234,6 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>When this run began, after which a person's door's write on a quest's records marks it (§5.4, <see cref="OwnerRecords"/>).</summary>
     public DateTimeOffset RunStarted { get; }
 
-    /// <summary>The record's path.</summary>
-    public string RecordPath => DaorisHome.Entry(_home, HomeEntry.StandingConfirmation);
-
-    /// <summary>Read the record once, before the pipe serves (§4.2): <see cref="StandingGrant.Load"/>.</summary>
-    public void Load() => _grant.Load();
-
     /// <summary>What the window's row reads now.</summary>
     public StandingNow Now()
     {
@@ -384,8 +241,6 @@ public sealed class StandingConfirmation : IDecisionAdmission
         lock (_state.Gate)
         {
             return new StandingNow(
-                Offered, _grant.IsOn, _state.Presses, StandingPresses.Built, _state.Since, _state.Unread, _state.Unwritten, _state.Used,
-                [.. _state.Held.Keys.Order(StringComparer.OrdinalIgnoreCase)],
                 [.. _state.Holds.Select(each => new RoleHoldNow(each.Role, each.Kind, each.Holder, each.Since, _state.Answers.GetValueOrDefault(each.Generation)))],
                 [.. _state.Holders.Values.OrderBy(each => each.Since).Select(each => new HolderNow(each.Id, each.Since, _state.RolesOf(each.Id)))])
             {
@@ -394,9 +249,6 @@ public sealed class StandingConfirmation : IDecisionAdmission
             };
         }
     }
-
-    /// <summary>The window's grant or revoke (<c>SET_STANDING_CONFIRMATION</c>, §4.1): <see cref="StandingGrant.Set"/>.</summary>
-    public StandingChange Set(IReadOnlyList<string> presses) => _grant.Set(presses);
 
     // ——— The roles' terminals (D233 point 2; D209 §2.2, §3.3, §3.4, §5.1a).
 
@@ -434,7 +286,7 @@ public sealed class StandingConfirmation : IDecisionAdmission
     public RoleScope? ActTarget(string id) => _ledger.ActTarget(id);
 
     /// <summary>The owner's mark (STEWARDROLE1a-ii, D209 §5.4): <see cref="RoleActsLedger.MarkOwner"/>.</summary>
-    public void MarkOwner(OwnerResolved resolved, bool standing) => _ledger.MarkOwner(resolved, standing);
+    public void MarkOwner(OwnerResolved resolved) => _ledger.MarkOwner(resolved);
 
     /// <summary>Whether the owner acted on <paramref name="target"/> this run (§5.4).</summary>
     public bool IsOwnerSet(RoleScope target) => _ledger.IsOwnerSet(target);
@@ -499,38 +351,4 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     /// <summary>The steward's acts this run, newest first, as the window's line reads them (§5.3): <see cref="StewardRecord.StewardActsNow"/>.</summary>
     public IReadOnlyList<StewardActNow> StewardActsNow() => _steward.StewardActsNow();
-
-    /// <summary>A change of a repository's hold but a covered one: the run forgets it held it (§4.2, <see cref="StandingGrant.Forget"/>).</summary>
-    public void Forget(string repository) => _grant.Forget(repository);
-
-    /// <summary>Judge a terminal's press of the person's (§5 step 3) and admit it where it is covered: <see cref="StandingGrant.Judge"/>.</summary>
-    /// <param name="module">The press's module.</param>
-    /// <param name="route">Its route.</param>
-    /// <param name="payload">Its payload as the terminal sent it.</param>
-    /// <param name="client">The terminal's process, held by the pipe from the connection's taking.</param>
-    public StandingJudgement Judge(string module, string route, JsonElement? payload, PipeClientProcess? client) =>
-        _grant.Judge(module, route, payload, client);
-
-    /// <summary>Whether the payload is exactly the press's form (§2.1): <see cref="StandingGrant.IsForm"/>.</summary>
-    internal static bool IsForm(string press, JsonElement? payload) => StandingGrant.IsForm(press, payload);
-
-    /// <summary>
-    /// This machine and account, as the record binds them (§4.2): a SHA-256, in hex, of the machine's name and the account's SID (its name
-    /// off Windows), so a <c>data/</c> folder copied to another machine or account is not honoured there.
-    /// </summary>
-    public static string ThisMachine()
-    {
-        string account;
-        if (OperatingSystem.IsWindows())
-        {
-            using var identity = WindowsIdentity.GetCurrent();
-            account = identity.User?.Value ?? Environment.UserName;
-        }
-        else
-        {
-            account = Environment.UserName;
-        }
-
-        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"{Environment.MachineName}\n{account}")));
-    }
 }

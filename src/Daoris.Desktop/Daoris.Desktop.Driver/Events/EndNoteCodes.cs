@@ -136,8 +136,6 @@ public static class EndNoteCodes
     public static readonly NoteCode StoppedCheckpointMoved = new("stopped.checkpoint-moved", []);
     public static readonly NoteCode StoppedOrphan = new("stopped.orphan", []);
 
-    // A stop or a finish run under the standing confirmation, after the move's own note.
-    public static readonly NoteCode StandingTerminal = new("standing.terminal", []);
     public static readonly NoteCode UpdateClosed = new("update.closed", ["build"]);
 
     // ——— A permission the rules refused: the lead and the closing sentence are Daoris's facts; the call's title between them is the

@@ -122,11 +122,8 @@ internal sealed class InstanceStandIn : IAsyncDisposable
     /// </summary>
     public bool Confirming { get; set; }
 
-    /// <summary>With <see cref="Confirming"/>, why the person's standing confirmation did not cover the press (TERMTRUST1a), or null for none.</summary>
+    /// <summary>With <see cref="Confirming"/>, the note beside the wait: why the pipe could not place the terminal (CHANNELJOIN1c), or null for none.</summary>
     public string? StandingWhy { get; set; }
-
-    /// <summary>Whether a press is told it runs under the person's standing confirmation (TERMTRUST1a, <c>STANDING</c>) before it is answered.</summary>
-    public bool Standing { get; set; }
 
     /// <summary>
     /// <c>RESULT</c>'s state for a press it was asked about: <c>answered</c> (with <see cref="Data"/>, or <see cref="ResultRefused"/>'s
@@ -275,16 +272,6 @@ internal sealed class InstanceStandIn : IAsyncDisposable
                                     : new { id, expires = DateTimeOffset.UtcNow.AddMinutes(2) }),
                             },
                         },
-                    }));
-                }
-
-                if (Standing)
-                {
-                    await WriteAsync(server, JsonSerializer.Serialize(new
-                    {
-                        category = "notification",
-                        id = Guid.NewGuid().ToString("N"),
-                        payload = new[] { new { module = "DAORIS.PIPE", type = "STANDING", payload = new { id } } },
                     }));
                 }
 

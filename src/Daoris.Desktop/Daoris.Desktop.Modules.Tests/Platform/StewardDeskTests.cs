@@ -65,7 +65,6 @@ public sealed class StewardDeskTests : IDisposable
     public void Nothing_is_granted()
     {
         var judge = Judge(new Keyed("caller"));
-        judge.Load();
         var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         var before = Acts(judge);
@@ -341,7 +340,6 @@ public sealed class StewardDeskTests : IDisposable
     public void COMMS1l_a_revoke_between_admission_and_act_answers_nothing_and_the_restart_revives_no_grant()
     {
         var judge = Judge(new Keyed("caller"));
-        judge.Load();
         var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         var generation = RoleKit.GenerationOf(judge, AppointedRoles.Steward);
@@ -356,7 +354,6 @@ public sealed class StewardDeskTests : IDisposable
         Assert.Equal(DeskStates.Open, judge.Desk.Now().Single(each => each.Id == asked).State);
 
         var after = Judge(new Keyed("caller"));
-        after.Load();
         Assert.Equal(DeskStates.Interrupted, after.Desk.Now().Single(each => each.Id == asked).State);
         var again = SupervisorProof.Nonce();
         var judged = RoleKit.JudgeAct(after, RoleKit.Act(key!, again, generation, act: "drive", form: """{"repository":"engine","drivable":true}"""), again);
@@ -372,7 +369,6 @@ public sealed class StewardDeskTests : IDisposable
     public void COMMS1l_a_role_s_name_in_a_request_grants_nothing()
     {
         var judge = Judge(new Keyed("caller"));
-        judge.Load();
         var (change, _) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         var before = Acts(judge);
@@ -384,7 +380,6 @@ public sealed class StewardDeskTests : IDisposable
         Assert.Equal(before, Acts(judge));
         Assert.Empty(judge.StewardActsNow());
         var after = Judge(new Keyed("caller"));
-        after.Load();
         var kept = Assert.Single(after.Desk.Now());
         Assert.Equal((DeskStates.Interrupted, "steward"), (kept.State, kept.Target));
         Assert.Empty(after.StewardActsNow());
@@ -524,7 +519,6 @@ public sealed class StewardDeskTests : IDisposable
         };
         Assert.NotNull(pipe.Serve());
         module.Pipe = pipe;
-        judge.Load();
         var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         await Task.CompletedTask;

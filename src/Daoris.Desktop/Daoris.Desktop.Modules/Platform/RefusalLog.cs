@@ -82,24 +82,15 @@ public static class PipeDoor
 
     private static readonly AsyncLocal<string?> Current = new();
 
-    private static readonly AsyncLocal<bool> Granted = new();
-
     /// <summary>The door the request this call runs for came in by, or null for the page's.</summary>
     public static string? Now => Current.Value;
-
-    /// <summary>
-    /// Whether the request this call runs for came in by the terminal's door and was admitted under the person's standing confirmation
-    /// (TERMTRUST1a, D201 point 7, the terminal-trust design §5 step 4), with no card: its door is still <see cref="Terminal"/>, so every
-    /// handler that refuses the terminal refuses it too, and the press's route writes the record's mark from this.
-    /// </summary>
-    public static bool Standing => Current.Value == Terminal && Granted.Value;
 
     private static readonly AsyncLocal<RoleJudgement?> Appointed = new();
 
     /// <summary>
     /// The role act the request this call runs for was covered as (SUPERVISOR1a-ii, D208; the supervisor design §11 row 1a-ii): the
     /// appointment the judge's role method found it under, read by a role's handler, which refuses every door but a covered terminal's;
-    /// null for every other request. Never <see cref="Standing"/>, which is the presses' alone.
+    /// null for every other request.
     /// </summary>
     public static RoleJudgement? Role => Current.Value == Terminal && Appointed.Value is { Covered: true } covered ? covered : null;
 
@@ -112,26 +103,22 @@ public static class PipeDoor
     public static PipeClientProcess? Client => Current.Value == Terminal ? Connected.Value : null;
 
     /// <summary>What the pipe holds around a dispatch: the request came in by the terminal's door until disposed.</summary>
-    internal static IDisposable Enter(PipeClientProcess? client = null) => Enter(standing: false, role: null, client);
-
-    /// <summary>The same, for a press the standing confirmation admitted (<see cref="Standing"/>).</summary>
-    internal static IDisposable EnterStanding(PipeClientProcess? client = null) => Enter(standing: true, role: null, client);
+    internal static IDisposable Enter(PipeClientProcess? client = null) => Enter(role: null, client);
 
     /// <summary>The same, for a role's act the judge's role method covered (<see cref="Role"/>).</summary>
-    internal static IDisposable EnterRole(RoleJudgement covered, PipeClientProcess? client = null) => Enter(standing: false, role: covered, client);
+    internal static IDisposable EnterRole(RoleJudgement covered, PipeClientProcess? client = null) => Enter(role: covered, client);
 
-    private static IDisposable Enter(bool standing, RoleJudgement? role, PipeClientProcess? client)
+    private static IDisposable Enter(RoleJudgement? role, PipeClientProcess? client)
     {
-        var before = (Current.Value, Granted.Value, Appointed.Value, Connected.Value);
+        var before = (Current.Value, Appointed.Value, Connected.Value);
         Current.Value = Terminal;
-        Granted.Value = standing;
         Appointed.Value = role;
         Connected.Value = client;
         return new Restore(before);
     }
 
-    private sealed class Restore((string? Door, bool Standing, RoleJudgement? Role, PipeClientProcess? Client) before) : IDisposable
+    private sealed class Restore((string? Door, RoleJudgement? Role, PipeClientProcess? Client) before) : IDisposable
     {
-        public void Dispose() => (Current.Value, Granted.Value, Appointed.Value, Connected.Value) = before;
+        public void Dispose() => (Current.Value, Appointed.Value, Connected.Value) = before;
     }
 }

@@ -305,7 +305,7 @@ public sealed class RoleActTests : IDisposable
         else
         {
             object payload = between == "STOP_SESSION" ? new { id = "s1" } : new { quest = "q1" };
-            await using (await OwnerMarks.EnterAsync(served.Judge, served.Scopes, DriverModule.OwnerDoor(between, JsonSerializer.SerializeToElement(payload))!, false, CancellationToken.None))
+            await using (await OwnerMarks.EnterAsync(served.Judge, served.Scopes, DriverModule.OwnerDoor(between, JsonSerializer.SerializeToElement(payload))!, CancellationToken.None))
             {
             }
         }
@@ -331,7 +331,6 @@ public sealed class RoleActTests : IDisposable
         var release = world.Config().RoleReleaseFor("q1")!;
 
         var restarted = Judge();
-        restarted.Load();
 
         Assert.False(new RoleStarts(restarted, world.Path).Released("q1", release));
         Assert.Equal(1, RoleStarts.Sweep(restarted, world.Path));
@@ -359,7 +358,7 @@ public sealed class RoleActTests : IDisposable
 
         await using (await OwnerMarks.EnterAsync(
                          served.Judge, served.Scopes, DriverModule.OwnerDoor("SET_DRIVABLE", JsonSerializer.SerializeToElement(new { repository = "engine", drivable = true }))!,
-                         false, CancellationToken.None))
+                         CancellationToken.None))
         {
         }
 
@@ -496,7 +495,6 @@ public sealed class RoleActTests : IDisposable
     private (StandingConfirmation Judge, string Key) Appointed()
     {
         var judge = Judge();
-        judge.Load();
         var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         return (judge, key!);
@@ -564,7 +562,6 @@ public sealed class RoleActTests : IDisposable
         };
         Assert.NotNull(pipe.Serve());
         module.Pipe = pipe;
-        judge.Load();
         var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         await Task.CompletedTask;

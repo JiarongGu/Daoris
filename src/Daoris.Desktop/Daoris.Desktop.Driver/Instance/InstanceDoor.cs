@@ -349,25 +349,12 @@ public static class InstanceDoor
     public const string Confirming = "CONFIRMING";
 
     /// <summary>
-    /// The notification that tells this terminal its press runs under the person's standing confirmation, with no card
-    /// (<c>InstancePipe.Standing</c>, TERMTRUST1a, D201 point 7).
-    /// </summary>
-    public const string Standing = "STANDING";
-
-    /// <summary>What the terminal says on its error stream as its press runs under the standing confirmation (the terminal-trust design §6.2).</summary>
-    public const string RanStanding = "ran under your standing confirmation; nothing was asked in Daoris's window";
-
-    /// <summary>
-    /// Why a press the person's standing confirmation names still waits for the window (the terminal-trust design §5 step 5), by the code
-    /// <c>CONFIRMING</c>'s <c>standing</c> carries; null for a code this build does not know, which says the plain wait.
+    /// Why a press that waits for the window carries a note beside it (CHANNELJOIN1c), by the code <c>CONFIRMING</c>'s <c>standing</c>
+    /// carries; null for a code this build does not know, which says the plain wait.
     /// </summary>
     public static string? StandingWhy(string? code) => code switch
     {
-        "in-agent-job" => "its standing confirmation does not cover a press from inside an agent Daoris runs",
-        "untold" => "Daoris could not tell this terminal is outside every agent it runs, so its standing confirmation does not cover it",
-        "form" => "its standing confirmation covers only the verb's own form of this press",
-        "not-held-here" => "its standing confirmation resumes only a hold a terminal made under it since Daoris started",
-        "running-here" => "it runs here now, and its standing confirmation finishes only a session with nothing of it running",
+        "untold" => "Daoris could not tell this terminal is outside every agent it runs",
         _ => null,
     };
 
@@ -647,7 +634,7 @@ public static class InstanceDoor
             if (!each.TryGetProperty("payload", out var status) || InstanceClient.Text(status, "id") != id) continue;
             if (InstanceClient.Text(each, "module") == InstanceClient.PipeModule && InstanceClient.Text(each, "type") == Confirming)
             {
-                // TERMTRUST1a: where the person's standing confirmation names this press and did not cover it, the wait says why.
+                // Where the pipe could not place the terminal, the wait says so.
                 var why = StandingWhy(InstanceClient.Text(status, "standing")) is { } standing ? $"; {standing}" : "";
                 world.Error.WriteLine(
                     $"{world.Verb}: waiting for you to confirm this in Daoris's window (request {id}{why}); `daoris press result {id}` says "
@@ -657,12 +644,6 @@ public static class InstanceDoor
                 // verb killed now leaves its key kept as long as the card may live.
                 if (world.Home is { } home) new SentPresses(home).Waiting(id, DateTimeOffset.UtcNow);
                 confirming = true;
-                continue;
-            }
-
-            if (InstanceClient.Text(each, "module") == InstanceClient.PipeModule && InstanceClient.Text(each, "type") == Standing)
-            {
-                world.Error.WriteLine($"{world.Verb}: {RanStanding}.");
                 continue;
             }
 
