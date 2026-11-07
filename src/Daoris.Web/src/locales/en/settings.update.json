@@ -14,7 +14,7 @@
   "settings.update.nothingRuns": "Nothing runs now, so it installs at the next look.",
   "settings.update.waiting": "You said Not now: work goes on, and this build waits for your word.",
   "settings.update.applying": "Installing: Daoris closes and starts again in a moment.",
-  "settings.update.refused": "Not installed: {{why}} It is not tried again; the next build staged replaces it.",
+  "settings.update.refused": "Not installed: {{why}} Update now checks it again; the next build staged replaces it.",
   "settings.update.join": "{{first}} {{second}}",
   "settings.update.build": "Build",
   "settings.update.version": "Version",

@@ -14,7 +14,7 @@
   "settings.update.nothingRuns": "现在没有在运行的工作，下一次检查时就会安装。",
   "settings.update.waiting": "你选了「暂不更新」：工作照常进行，这个构建等你发话。",
   "settings.update.applying": "正在安装：Daoris 会关闭，并在稍后重新启动。",
-  "settings.update.refused": "未安装：{{why}}不会再尝试它；下一个暂存的构建会替换它。",
+  "settings.update.refused": "未安装：{{why}}“立即更新”会再检查一次；下一个暂存的构建会替换它。",
   "settings.update.join": "{{first}}{{second}}",
   "settings.update.build": "构建",
   "settings.update.version": "版本",

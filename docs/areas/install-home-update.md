@@ -27,12 +27,13 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `StagedBuild` | `Drv/Install/StagedBuild.cs` | `update/` layout, manifest read and check, the swap journal, the request reader, what runs from a folder |
 | `InstallSwap`, `HeldFiles` | `Drv/Install/InstallSwap.cs`, `HeldFiles.cs` | The swap, confirm, roll back, recover; who holds a file. Compiled into the launcher |
 | `InstallUpdate` | `Drv/Install/InstallUpdate.cs` | `data/update.json` written and cleared; the drained config; the drain's hold words |
-| `InstallUpdater` | `Mod/Update/InstallUpdater.cs` | The application's half: watch, drain, check, start the launcher, close, say the outcome |
+| `InstallUpdater` | `Mod/Update/InstallUpdater.cs` | The application's half: watch, drain, check, start the launcher, close, say the outcome; each build's refusal kept with the word it met (`UpdateRefusals.cs`) |
 | `UpdateModule`, `UpdateLauncher` | `Mod/Update/UpdateModule.cs`, `UpdateLauncher.cs` | The page's `STATE`/`SET`; the launcher's start through the start gate |
 | `UpdateCommand` | `Drv/Install/UpdateCommand.cs` | The terminal's door, `daoris update` |
 | `StartConfirmation` | `Drv/Install/StartConfirmation.cs` | Whether this start can still be rolled back, read from the swap journal |
 | `HomeLastBuild` | `Drv/Install/HomeLastBuild.cs` | `data/last-build.json`: the newest build that ran on the home; the launcher's refusal of an older one. Compiled into the launcher |
 | `InstallRollback` | `Drv/Workplace/InstallRollback.cs` | Refuses going back to an older build while a delivery is unresolved |
+| `UpdateRefusal` | `Drv/Install/UpdateRefusal.cs` | Why a staged build is not installed now, asked by the application and `daoris update --now` alike |
 | `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: the connection, the writer stamp, settled-gated imports; its numbered steps are `DesktopStoreSteps.cs` beside it (`DesktopStore.Steps` is the door), its open options `DesktopStoreOptions.cs` |
 | `HomeMigration` | `Drv/Transitional/Migration/HomeMigration.cs`, its steps beside it | The release's one migration: its steps, each file copied into `data/salvage/` first, each step recorded |
 | `Tools` | `Drv/Install/Tools.cs` (records in `ToolWay.cs`, `ToolsRead.cs`) | `tools.json`: the declared tools, each one's way, the resolution, the children's environment |
@@ -139,7 +140,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     which it says. `--stage --from-gated <commit>` builds the gate tree's commit under its lock. (from D115, D180)
 36. `--stage` builds the same build into `update/staged/`, with `build.json` (schema 1: id, version, commit, time, every file's
     size and SHA-256). It refuses a non-install, a swap under way, and a missing `--service` where the install carries its HTTP
-    host. A running install is never refused. A publish in place removes anything staged. (from D139)
+    host. A running install is never refused. A publish in place removes anything staged. A build's version is the release's,
+    `canon/canon.json`'s: the desktop's `Directory.Build.props` stamps it on every assembly and `build.json` names it, so the running
+    build, the launcher's read of `app/` and a stage's manifest read one number. (from D139, D233)
 
 **Updating**
 
@@ -152,7 +155,9 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     and the terminal are idle. (from D139)
 40. Before closing for a build, the application checks it: every listed file with its size and hash, nothing unlisted, the
     launcher, the application and its library, and the host where the install carries one. It refuses going back to an older
-    version while a delivery is unresolved. A refusal closes nothing. (from D139, D215)
+    version while a delivery is unresolved. `UpdateRefusal` is that one check, which `daoris update --now` asks too: refused, it says
+    the sentence, names the deliveries, writes the word and exits 1. A refusal closes nothing, is said again at every look, and holds
+    for its build until the person's next word, from the banner, Settings or the terminal, which checks again. (from D139, D215)
 41. *Update now* is the person closing Daoris. It does not wait; driven sessions are recorded stopped and carried on at the
     next start. (from D139)
 42. The application starts `Daoris.exe --update --after <pid>` and closes. The launcher waits up to three minutes for it and
@@ -214,11 +219,11 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
   stop writing.
 - **A tool:** `Tools.Declared` and `Drv/resources.json`.
 
-**Tests that pin the area.** Driver: `Install/StagedBuildTests`, `InstallUpdateTests`, `UpdateDrainTests`,
+**Tests that pin the area.** Driver: `Install/StagedBuildTests`, `BuildVersionTests`, `InstallUpdateTests`, `UpdateDrainTests`,
 `UpdateCommandTests`, `StartConfirmationTests`, `HeldFilesTests`, the `Tool*Tests`; `Platform/DaorisHomeTests`, `HomeLeaseTests`,
 `HomeIdentityTests`; `Store/DesktopStore*Tests`; `Install/HomeMigrationTests`;
 `Service/ServiceHostLocatorTests`; `PinnedUpdatesTests`. Modules: `Update/InstallHomeTests`,
-`HomePlacingProcessTests`, `AppWorkingFolderProcessTests`, `InstallUpdaterTests`, `UpdateModuleTests`, `UpdateRelaunchGateTests`,
+`HomePlacingProcessTests`, `AppWorkingFolderProcessTests`, `InstallUpdaterTests`, `UpdateRefusalRetryTests`, `UpdateModuleTests`, `UpdateRelaunchGateTests`,
 `UpdateWatchTests`; `Windows/TaskbarIdentityTests`; `EveryModuleChildIsHandedTheToolsTests`. Service:
 `Platform/DaorisHomeTests`. CLI: `test/platform/home.test.ts`, `home-census.test.ts`, `tool-test/desktop-publish.test.ts`,
 `test/deployment-rehearsal.test.ts`.
