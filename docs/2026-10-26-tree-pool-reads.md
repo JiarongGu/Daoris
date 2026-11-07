@@ -1,4 +1,4 @@
-# TREEPOOL1: the reads of rounds 1 and 2 (D191)
+# TREEPOOL1: the reads of rounds 1 to 3 (D191)
 
 Codex's read and the independent Opus 5.5 reader's foundation read of `docs/2026-10-26-tree-pool-design.md` and D214, round 1, both at
 `3f55eb1e5`, each run by the steward from outside the install, read-only, neither seeing the other's, verbatim but for their headings set one
@@ -7,6 +7,12 @@ finding of both, one row each, and each changed passage of the design and D214 i
 the Opus reader's finding n.
 
 Both makers' reads of round 2, at `d595cabd6`, follow in the same way. Round 3 answers every finding of both, one row each, and each changed passage of the design and D214 is marked *(C2-n.m)* for Codex's §n item m or *(O2-Fn)* for the Opus reader's finding n.
+
+**Round 4 is out for both makers' reads** (2026-11-07). On the owner's choice of that day, a slot keeps a fixed path, so its builds stay valid
+and a reused tree skips the first build; round 4 is written from main at `75a4b694be`, answers the independent read of round 3 below in the
+design's §24, one row each, and marks each changed passage *(R4-Fn)*, or *(R4)* where the fixed path alone changed it. Codex's read and the
+independent Opus reader's are owed before any of it is accepted, and nothing is built until then. Round 4 also moved the design's own superseded
+round text to the end of this file, under *Moved from the design at round 4*.
 
 ## Codex, round 1
 
