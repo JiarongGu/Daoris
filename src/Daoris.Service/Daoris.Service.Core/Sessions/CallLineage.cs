@@ -20,8 +20,8 @@ namespace Daoris.Knowledge;
 /// <para>🔴 <b>Ids only.</b> A value that is not shaped as an id (a path, a blank, a sentence) is not kept (D46, D47), only named
 /// in <see cref="Malformed"/>.</para>
 /// </remarks>
-/// <param name="Harness">The agent whose key the call carried, one of <see cref="Readers"/>' <see cref="ICallKeys.Harness"/>.</param>
-public sealed record CallLineage(string Harness)
+/// <param name="Door">The agent whose key the call carried, one of <see cref="Readers"/>' <see cref="ICallKeys.Door"/>.</param>
+public sealed record CallLineage(string Door)
 {
     /// <summary>Claude Code, by the name the driver gives its harness.</summary>
     public const string Claude = ClaudeCallKeys.Agent;

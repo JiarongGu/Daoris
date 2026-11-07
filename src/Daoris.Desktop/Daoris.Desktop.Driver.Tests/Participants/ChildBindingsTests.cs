@@ -45,7 +45,7 @@ public sealed class ChildBindingsTests
     }
 
     private static string Call(string toolUse, string? proc = null) =>
-        Line(new JsonObject { ["by"] = "call", ["tool"] = "knowledge_search", ["harness"] = "claude-code", ["toolUse"] = toolUse }, proc);
+        Line(new JsonObject { ["by"] = "call", ["tool"] = "knowledge_search", ["door"] ="claude-code", ["toolUse"] = toolUse }, proc);
 
     private static string HookCall(string toolUse, string? agent, string? proc = null) => Line(new JsonObject
     {
@@ -71,7 +71,7 @@ public sealed class ChildBindingsTests
     {
         var line = new JsonObject { ["at"] = Moment(second), ["by"] = by, ["event"] = @event, ["agent"] = agent };
         if (by == "hook") line["session"] = Session;
-        if (word is not null) line[by == "acp" ? "state" : "status"] = word;
+        if (word is not null) line[by == "announced" ? "state" : "status"] = word;
         if (proc is not null) line["proc"] = proc;
         return line.ToJsonString();
     }
@@ -82,7 +82,7 @@ public sealed class ChildBindingsTests
         Said("stream", @event, agent, second, proc, status);
 
     private static string AcpAt(string @event, string agent, int second, string? proc = null, string? state = null) =>
-        Said("acp", @event, agent, second, proc, state);
+        Said("announced", @event, agent, second, proc, state);
 
     private static string HookCallAt(string toolUse, string agent, int second, string? proc = null) => Stamped(HookCall(toolUse, agent, proc), second);
 
@@ -92,7 +92,7 @@ public sealed class ChildBindingsTests
     {
         var line = new JsonObject
         {
-            ["at"] = Moment(second), ["by"] = "call", ["tool"] = "knowledge_search", ["harness"] = "codex", ["thread"] = thread, ["root"] = "t-root",
+            ["at"] = Moment(second), ["by"] = "call", ["tool"] = "knowledge_search", ["door"] ="codex", ["thread"] = thread, ["root"] = "t-root",
         };
         if (parent is not null) line["parent"] = parent;
         if (proc is not null) line["proc"] = proc;
@@ -244,7 +244,7 @@ public sealed class ChildBindingsTests
     {
         static string Codex(string thread, string? parent) => Line(new JsonObject
         {
-            ["by"] = "call", ["tool"] = "knowledge_search", ["harness"] = "codex", ["thread"] = thread, ["parent"] = parent,
+            ["by"] = "call", ["tool"] = "knowledge_search", ["door"] ="codex", ["thread"] = thread, ["parent"] = parent,
             ["kind"] = parent is null ? null : "thread_spawn", ["source"] = parent is null ? "user" : "subagent", ["root"] = "t-root",
         });
 
@@ -308,7 +308,7 @@ public sealed class ChildBindingsTests
                 ["by"] = "hook", ["event"] = "call", ["agentUnreadable"] = true, ["toolUse"] = "toolu_x", ["tool"] = Tool, ["session"] = Session,
             }),
             Call("toolu_x"),
-            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"helper_ask","harness":"codex","thread":"t2","root":"t1","malformed":"parent"}""",
+            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"helper_ask","door":"codex","thread":"t2","root":"t1","malformed":"parent"}""",
         };
 
         var bound = ChildBindings.Fold(lines);
@@ -321,7 +321,7 @@ public sealed class ChildBindingsTests
     public void Nothing_written_is_nothing_known_and_a_line_that_does_not_read_is_skipped()
     {
         var none = ChildBindings.Fold([]);
-        var noise = ChildBindings.Fold(["not json", "[]", "{\"by\":42}", "{\"by\":\"call\",\"harness\":\"claude-code\",\"toolUse\":\"a\\\\b\"}", ""]);
+        var noise = ChildBindings.Fold(["not json", "[]", "{\"by\":42}", "{\"by\":\"call\",\"door\":\"claude-code\",\"toolUse\":\"a\\\\b\"}", ""]);
 
         Assert.Null(none.Harness);
         Assert.Empty(none.Children);
@@ -350,8 +350,8 @@ public sealed class ChildBindingsTests
     {
         var lines = new[]
         {
-            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"knowledge_search","harness":"claude-code","toolUse":"toolu_1"}""",
-            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"knowledge_get","harness":"codex","thread":"t2","parent":"t1","kind":"thread_spawn","source":"subagent","root":"t1"}""",
+            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"knowledge_search","door":"claude-code","toolUse":"toolu_1"}""",
+            """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"knowledge_get","door":"codex","thread":"t2","parent":"t1","kind":"thread_spawn","source":"subagent","root":"t1"}""",
             """{"at":"2026-10-16T08:30:00.123Z","by":"call","tool":"daoris_me"}""",
             """{"at":"2026-10-16T08:30:00.123Z","by":"call"}""",
         };
@@ -407,21 +407,21 @@ public sealed class ChildBindingsTests
     public void The_protocol_door_s_lines_name_the_child_its_label_its_place_and_the_word_its_wire_said()
     {
         Assert.Equal(
-            """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a1","depth":1,"name":"Reader","task":"Read the README."}""",
+            """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"started","agent":"a1","depth":1,"name":"Reader","task":"Read the README."}""",
             Seen("a1", "Reader", "Read the README.", depth: 1));
         Assert.Equal(
-            """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a2:generation:2","parent":"a1"}""",
+            """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"started","agent":"a2:generation:2","parent":"a1"}""",
             Seen("a2:generation:2", parent: "a1"));
         Assert.Equal(
-            """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a3","name":"D:/fam/x"}""",
+            """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"started","agent":"a3","name":"D:/fam/x"}""",
             Seen("a3", "D:/fam/x", parent: "../up"));
         Assert.Null(Seen("../a4", "Bad", depth: 1));
 
         Assert.Equal(
-            """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1","state":"completed"}""",
+            """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"ended","agent":"a1","state":"completed"}""",
             End("a1", "completed"));
-        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}""", End("a1", null));
-        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}""", End("a1", "no word/here"));
+        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"ended","agent":"a1"}""", End("a1", null));
+        Assert.Equal("""{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"ended","agent":"a1"}""", End("a1", "no word/here"));
         Assert.Null(End("a b", "completed"));
     }
 
@@ -737,7 +737,7 @@ public sealed class ChildBindingsTests
         Assert.All(bound.Children, child =>
         {
             Assert.Equal(Working, child.State);
-            Assert.Equal(["hook", "acp"], child.Provenance);
+            Assert.Equal(["hook", "announced"], child.Provenance);
         });
         Assert.Equal(1, bound.Unmatched);
     }

@@ -15,7 +15,7 @@ public sealed class CodexCallKeys : ICallKeys
     /// <summary>Codex's turn metadata.</summary>
     public const string Turn = "x-codex-turn-metadata";
 
-    public string Harness => Agent;
+    public string Door => Agent;
 
     public string Key => Turn;
 

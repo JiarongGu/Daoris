@@ -143,7 +143,7 @@ public sealed class ChildLineageTests : IDisposable
 
         var lines = File.ReadAllLines(ChildLineage.PathOf(_home, "s1")).Select(line => JsonDocument.Parse(line).RootElement).ToList();
         Assert.Equal(
-            [("acp", "started", "a1", "0123456789abcdef"), ("acp", "ended", "a1", "0123456789abcdef")],
+            [("announced", "started", "a1", "0123456789abcdef"), ("announced", "ended", "a1", "0123456789abcdef")],
             lines.Select(line => (line.GetProperty("by").GetString(), line.GetProperty("event").GetString(), line.GetProperty("agent").GetString(), line.GetProperty("proc").GetString())));
     }
 

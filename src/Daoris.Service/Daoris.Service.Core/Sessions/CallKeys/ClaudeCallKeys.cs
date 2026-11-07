@@ -14,7 +14,7 @@ public sealed class ClaudeCallKeys : ICallKeys
     /// <summary>Claude Code's id of the call, the hook's <c>tool_use_id</c>.</summary>
     public const string ToolUse = "claudecode/toolUseId";
 
-    public string Harness => Agent;
+    public string Door => Agent;
 
     public string Key => ToolUse;
 

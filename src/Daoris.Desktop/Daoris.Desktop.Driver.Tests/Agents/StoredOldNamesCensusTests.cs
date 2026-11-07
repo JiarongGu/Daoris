@@ -46,12 +46,7 @@ public sealed class StoredOldNamesCensusTests : IDisposable
         ],
         ["Ask Daoris's wired file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/WiredFilesStep.cs"],
         ["the usage file"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/UsageFileStep.cs"],
-        ["the lineage"] =
-        [
-            "Daoris.Desktop/Daoris.Desktop.Driver/Events/Chain.cs",
-            "Daoris.Desktop/Daoris.Desktop.Driver/Participants/Domain/ChildBindings.cs",
-            "Daoris.Service/Daoris.Service.Core/Sessions/LineageFile.cs",
-        ],
+        ["the lineage files"] = ["Daoris.Desktop/Daoris.Desktop.Driver/Transitional/Migration/LineageFilesStep.cs"],
         ["not a seam's word"] =
         [
             "Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpWired.cs",

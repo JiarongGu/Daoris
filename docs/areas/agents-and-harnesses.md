@@ -482,8 +482,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   meeting's packet again under the digest of what it now holds), the machine log's lines (`session.*`, `agent.*`, `account.*`,
   `opinion.asked`, `harness.*` and the refusal log say `door`; `session.reopened`'s words-door is `saidAt`; a line already written is
   read by the older word, `doorOf` in the usage report and the orient report's `door ?? adapter`, until those files age out), `START_CHAT`'s press (`door`, from the page and from
-  `daoris chat --agent`) and the trace answer's `agent.door` and `agent.doorVersion`; **t-iii**, the lineage's `harness` and `acp` signal, the service's `LineageFile`, which a plugin
-  may read, so its end waits on that contract (the page's catalogue keys `harness.wire.acp` and `harness.wire.pipe` keep their names).
+  `daoris chat --agent`) and the trace answer's `agent.door` and `agent.doorVersion` (the page's catalogue keys `harness.wire.acp` and
+  `harness.wire.pipe` keep their names).
   Done: the account presses (`AccountsReadPress`, `AccountUsePress`, `HarnessActionPress`, `HarnessInputPress`, `HarnessCancelPress`,
   `AgentSettingsPress`), the `HARNESSES` and `ACCOUNTS` answers, the `HARNESS_ENDED` news and the attention slice's account row name their
   door by `door`, as do the terminal's senders of the presses, `PipeReads`' grounds, the refusal log's read of a request and the page's
@@ -494,7 +494,9 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   name their door by `door` (the `usage-file` step), as the pushed usage slice's sessions do; a door's failure is met on `native` or
   `protocol` and a line of the door's own beside a failed result is `DoorWhere.Lines`; the driver state names the agents of Intake and
   Ask Daoris `intakeAgent` and `helperAgent`; the sheet's `transport` (`protocol` or `native`, `Sheet.TransportWord`) reaches the page
-  as the roster row's and the door sheet's `transport`. Not a seam's word, so
+  as the roster row's and the door sheet's `transport`; the lineage's call lines name the door by `door` and a child the protocol door
+  announced is `"by":"announced"` (the service's `LineageFile` and Participants' `ChildBindings`), the `lineage-files` step converting
+  an older file's `harness` and `"by":"acp"`. Not a seam's word, so
   with no end: the instance's `run/pipe`, dsh's own `acp` profile, the doctrine layout's `harness`, and a lack's granting door
   `harness` (another agent's, `HelpWired.DoorHarness`).
 - The agent-layer adoption (D213's notes of 2026-10-29 and 2026-10-30, D248): Daoris's providers consumed from the sibling
