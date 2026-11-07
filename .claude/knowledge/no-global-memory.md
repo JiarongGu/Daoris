@@ -28,4 +28,6 @@ changes.
   decision; a repeatable procedure is a skill in the repository.
 - **About to save a project- or feedback-shaped memory? Stop:** that is a repository document. The same
   holds for a per-project memory the tooling keeps outside the repository.
-- A product's own memory feature is a different thing entirely; this rule is about the assistant's.
+- **A memory the repository itself owns is not global.** One written by the repository's own sessions, reviewed
+  with their work and read by every other session there, is repository knowledge, and a fact you confirmed belongs
+  in it. This rule is about the assistant's own memory, which no clone carries.
