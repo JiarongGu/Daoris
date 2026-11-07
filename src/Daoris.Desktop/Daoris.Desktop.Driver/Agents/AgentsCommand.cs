@@ -33,7 +33,7 @@ public static class AgentsCommand
 
     public const string Usage =
         """
-        usage: daoris agent list
+        usage: daoris agent list [--again]                     what was read; --again asks each agent and account now
                daoris agent rules [list] · allow|ask|deny|remove <rule> [--workspace <name> | --repository <name>]
                daoris agent rules default <id> on|off · proposals · accept|decline <id> [--note "…"]
                daoris agent trust <agent> <folder> [--account <account>] [--yes | --dry-run]
@@ -122,8 +122,8 @@ public static class AgentsCommand
 
         try
         {
-            // A read that asks each agent, said here: no press, no lease, and from a session's terminal too.
-            if (verb == "list") return await AgentListCommand.RunAsync(world, ct).ConfigureAwait(false);
+            // A read of what was read, said here, `--again` asking each agent anew: no lease, and from a session's terminal too.
+            if (verb == "list") return await AgentListCommand.RunAsync(world, again: args.Contains("--again", StringComparer.Ordinal), ct).ConfigureAwait(false);
 
             // The long verbs (PUSH1f2e5, the alone-path design §1.4): no route takes them, and each holds no lease at its top.
             if (verb == "install") return await AgentLongCommand.InstallAsync(args, world, ct).ConfigureAwait(false);

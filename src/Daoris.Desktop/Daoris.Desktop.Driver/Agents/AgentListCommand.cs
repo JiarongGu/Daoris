@@ -1,10 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris agent [list]</c> (PUSH1f2e4, D194, the alone-path design §5): this machine's agents and the accounts they run as, the
-/// words <c>daoris agent</c> and <c>daoris agent list</c> hand this program. Each agent is asked its version by the binary a start
-/// would run (<see cref="HarnessProbe"/>, D57 rule 4), and each of its accounts whether it is signed in, under the account's probe lock;
-/// what an account was read as is kept where the driver keeps its own readings (<c>reads.json</c>, AGENTREAD1). Beneath each agent its
+/// <c>daoris agent [list] [--again]</c> (PUSH1f2e4, D194, the alone-path design §5): this machine's agents and the accounts they run as,
+/// the words <c>daoris agent</c> and <c>daoris agent list</c> hand this program. Each agent says the version the binary a start would
+/// run answered (<see cref="HarnessProbe"/>, D57 rule 4), asked only where its files changed since (PERF3), and each of its accounts
+/// what was last read of its sign-in, as the page says them: what the driver keeps of its own readings (<c>reads.json</c>, AGENTREAD1).
+/// <c>--again</c> is the terminal's press: each binary asked anew and each account under its probe lock, each answer kept. Beneath each agent its
 /// pin, its accounts with each one's cool-off and last reading, each list with how it is used and its next start, and the plugins'
 /// declared harnesses after the build's (D64). A read: it holds no lease and is said from a session's terminal. Its print is the CLI's
 /// <c>list</c> and <c>accountLines</c>, ported whole (<c>fixtures/agents-text.json</c>).
@@ -19,7 +20,7 @@ internal static class AgentListCommand
     private static readonly string Under = $"  {"",-Name} ";
 
     /// <summary>The list, said: the wiring file read, each agent of the build, each plugin's harness, and what an account is.</summary>
-    public static async Task<int> RunAsync(AgentsWorld world, CancellationToken ct)
+    public static async Task<int> RunAsync(AgentsWorld world, bool again, CancellationToken ct)
     {
         void Say(string line) => world.Instance.Out.WriteLine(line);
         var path = AgentsCommand.WiringPath(world);
@@ -34,7 +35,7 @@ internal static class AgentListCommand
         foreach (var name in AgentsCommand.Named(world, path).Where(each => set.DeclaredBy(each) is null))
         {
             var toolchain = set.AgentNamed(name)!;
-            var report = await ProbeAsync(name, toolchain, settings, home, set.OwnerOfAgent(name).Value, now, ct).ConfigureAwait(false);
+            var report = await ProbeAsync(name, toolchain, settings, home, set.OwnerOfAgent(name).Value, now, again, ct).ConfigureAwait(false);
             Say("");
             // What it IS, before what state it is in: `dsh` meant nothing to the owner until it said whose.
             var state = report.Present ? report.Version ?? "null" : $"absent — {report.Problem}";
@@ -94,7 +95,7 @@ internal static class AgentListCommand
             }
             else
             {
-                var probed = await ProbeAsync(name, toolchain, settings, home, set.OwnerOfAgent(name).Value, now, ct).ConfigureAwait(false);
+                var probed = await ProbeAsync(name, toolchain, settings, home, set.OwnerOfAgent(name).Value, now, again, ct).ConfigureAwait(false);
                 state = probed.Present ? probed.Version ?? "null" : $"absent — {probed.Problem}";
             }
 
@@ -110,17 +111,22 @@ internal static class AgentListCommand
     }
 
     /// <summary>
-    /// One agent probed as the CLI's <c>probe</c> asked it: its version by the binary a start runs, each of its own accounts' sign-in (a
-    /// door's are its owner's, and are asked under the owner), never the tool's own sign-in, which is the person's. Each reading is kept
-    /// in <c>reads.json</c> at the answer's moment. A pin with nothing installed at it is absent, its accounts listed unknown.
+    /// One agent as the CLI's <c>probe</c> said it: its version by the binary a start runs, each of its own accounts' sign-in as last read
+    /// (a door's are its owner's, said under the owner), never the tool's own sign-in, which is the person's. With
+    /// <paramref name="again"/> the binary and each account are asked, each reading kept in <c>reads.json</c> at the answer's moment. A
+    /// pin with nothing installed at it is absent, its accounts listed unknown.
     /// </summary>
     private static async Task<HarnessReport> ProbeAsync(
-        string name, AccountAgent toolchain, HarnessSettings settings, string home, string owner, DateTimeOffset now, CancellationToken ct)
+        string name, AccountAgent toolchain, HarnessSettings settings, string home, string owner, DateTimeOffset now, bool again,
+        CancellationToken ct)
     {
+        var reads = AccountReads.Of(home, owner);
+        var kept = new HarnessReport(name, true, null, null, null, null,
+            [.. reads.Accounts.Select(read => new ProfileReport(read.Key, "", read.Value.Login, Read: read.Value.At))]);
         var report = await HarnessProbe.ProbeAsync(
-            name, toolchain, command: null, settings, home, ct, accountOf: owner,
+            name, toolchain, command: null, settings, home, ct, accountOf: owner, prior: kept, again: again,
             // A door asks no account: its list is its owner's, said under the owner.
-            asks: owner == name ? null : _ => false,
+            asks: again && owner == name ? null : _ => false,
             clock: () => now,
             answered: (account, said, at) =>
             {

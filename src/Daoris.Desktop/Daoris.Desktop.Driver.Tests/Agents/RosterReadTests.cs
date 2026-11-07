@@ -126,25 +126,27 @@ public sealed class RosterReadTests : IDisposable
     }
 
     /// <summary>
-    /// STARTSPROBE1: nor does a view's read ask the agent's binary again where the cached report says the agent is absent. It refuses
-    /// as the report says, though the binary is there now; a start asks again, finds it and goes on.
+    /// STARTSPROBE1 and PERF3: nor does a view's read start the agent's binary. An agent found by presence is read by its file alone,
+    /// each time, so a view refuses while the file is not there and, once it is, finds it with no start; a start goes on.
     /// </summary>
     [Fact]
-    public async Task A_view_s_read_of_a_start_asks_no_binary_again_where_the_report_says_the_agent_is_absent()
+    public async Task A_view_s_read_of_a_start_starts_no_binary_and_finds_an_agent_once_its_file_is_there()
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_home, "gone", "account-1"));
         new HarnessSettings().WithDefault("gone", "account-1").Save(Settings);
         var roster = Roster(NoAsk);
         Assert.False((await roster.ReportAsync("gone", Config with { Actors = StaffedRoles.On("gone") }))!.Present);
+        Assert.Contains("is not installed on this machine", (await roster.WiringAsync("gone", Config with { Actors = StaffedRoles.On("gone") }, "aurora")).Refusal);
         File.WriteAllText(Gone, "");
 
         var wiring = await roster.WiringAsync("gone", Config with { Actors = StaffedRoles.On("gone") }, "aurora");
 
-        Assert.Contains("is not installed on this machine", wiring.Refusal);
+        Assert.DoesNotContain("is not installed on this machine", wiring.Refusal ?? "", StringComparison.Ordinal);
 
         var selection = await roster.SelectAsync("gone", Config with { Actors = StaffedRoles.On("gone") }, "aurora", null);
 
         Assert.True(selection.Allowed, selection.Refusal);
+        Assert.Empty(Asked);
     }
 
     /// <summary>What a press read before a restart is what the start meets: an account read signed out is walked past.</summary>

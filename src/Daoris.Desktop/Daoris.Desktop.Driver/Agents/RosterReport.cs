@@ -15,8 +15,8 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// <remarks>
     /// <para>🔴 <b>No account is asked to answer a look</b>, at a cold cache either: a start, a panel, the page's roster and a
     /// restart read <see cref="AccountReads"/>, so the first roster read after the application starts asks nothing, where it
-    /// asked every named account (UX6e). The binary is asked its version once a process, which is a question of the binary
-    /// and never of an account's home (§5.3).</para>
+    /// asked every named account (UX6e). The binary is asked its version once per binary, kept under the home and asked again
+    /// where its files changed (PERF3), which is a question of the binary and never of an account's home (§5.3).</para>
     /// <para>🔴 <b>One press of a harness at a time</b> (TOOL6g): a caller that finds one in flight takes its answer. Each
     /// account inside it is asked under its <see cref="ProbeLock"/>, and one a session of Daoris's runs on is not asked and
     /// keeps its word and its time. A press is a person looking again, so it lets a refused account of that agent through
@@ -85,33 +85,30 @@ internal sealed class RosterReport(HarnessRoster roster)
             name, toolchain, config.Commands.GetValueOrDefault(name), roster.Settings, roster.Home, CancellationToken.None,
             busy: account => Busy(owner, account), prior: prior,
             asks: holder is null ? null : _ => false, clock: roster.Clock,
-            answered: (account, said, at) => roster.Keep(owner, account, said, at), accountOf: owner).ConfigureAwait(false);
-        roster._binaries[name] = new HarnessRoster.Binary(report.Present, report.Version, report.Problem);
+            answered: (account, said, at) => roster.Keep(owner, account, said, at), accountOf: owner, again: true).ConfigureAwait(false);
         if (holder is { } agent)
         {
             await HarnessProbe.ProbeAsync(
                 agent.Name, agent, config.Commands.GetValueOrDefault(agent.Name), roster.Settings, roster.Home, CancellationToken.None,
                 busy: account => Busy(owner, account), prior: prior, clock: roster.Clock,
-                answered: (account, said, at) => roster.Keep(owner, account, said, at)).ConfigureAwait(false);
+                answered: (account, said, at) => roster.Keep(owner, account, said, at), again: true).ConfigureAwait(false);
         }
         // And each account's windows, where its agent's server is asked them (CODEXUSE1); the own sign-in's never (D197 point 3).
         await roster.PressUsageAsync(name, owner, config, CancellationToken.None).ConfigureAwait(false);
     }
 
-    /// <summary>What the binary last answered, asked once a process, or again where <paramref name="again"/>; never an account.</summary>
-    private async Task<HarnessRoster.Binary> BinaryOfAsync(string name, AccountAgent toolchain, DriverConfig config, bool again, CancellationToken ct)
-    {
-        if (!again && roster._binaries.TryGetValue(name, out var known)) return known;
-
-        await Fly($"{name}/binary", async () =>
+    /// <summary>
+    /// What the binary answered: kept under the home and asked again only where its files changed (PERF3), or where
+    /// <paramref name="again"/>; never an account.
+    /// </summary>
+    private Task<HarnessRoster.Binary> BinaryOfAsync(string name, AccountAgent toolchain, DriverConfig config, bool again, CancellationToken ct) =>
+        Fly($"{name}/binary{(again ? "/again" : "")}", async () =>
         {
             var report = await HarnessProbe.ProbeAsync(
                 name, toolchain, config.Commands.GetValueOrDefault(name), roster.Settings, roster.Home, CancellationToken.None,
-                asks: _ => false, accountOf: roster.Adapters.OwnerOfAgent(name).Value).ConfigureAwait(false);
-            roster._binaries[name] = new HarnessRoster.Binary(report.Present, report.Version, report.Problem);
-        }, ct).ConfigureAwait(false);
-        return roster._binaries.TryGetValue(name, out var asked) ? asked : new HarnessRoster.Binary(false, null, null);
-    }
+                asks: _ => false, clock: roster.Clock, accountOf: roster.Adapters.OwnerOfAgent(name).Value, again: again).ConfigureAwait(false);
+            return new HarnessRoster.Binary(report.Present, report.Version, report.Problem);
+        }, ct);
 
     /// <summary>
     /// One harness's report from what is known (ROSTER1): the accounts on disk now, each with what was last read of it and
@@ -178,12 +175,24 @@ internal sealed class RosterReport(HarnessRoster roster)
     /// Run <paramref name="work"/> unless one under <paramref name="flight"/> is in flight, whose end is then awaited instead
     /// (TOOL6g): its own task, never a caller's token, so a caller that stops waiting leaves the others their answer.
     /// </summary>
-    private async Task Fly(string flight, Func<Task> work, CancellationToken ct)
+    private Task Fly(string flight, Func<Task> work, CancellationToken ct) =>
+        Fly(flight, async () =>
+        {
+            await work().ConfigureAwait(false);
+            return true;
+        }, ct);
+
+    /// <summary><see cref="Fly(string, Func{Task}, CancellationToken)"/>, with the flight's answer shared by every caller that came.</summary>
+    private async Task<T> Fly<T>(string flight, Func<Task<T>> work, CancellationToken ct)
     {
-        Task running;
+        Task<T> running;
         lock (_probing)
         {
-            if (!_probing.TryGetValue(flight, out running!))
+            if (_probing.TryGetValue(flight, out var flying))
+            {
+                running = (Task<T>)flying;
+            }
+            else
             {
                 running = Task.Run(work, CancellationToken.None);
                 _probing[flight] = running;
@@ -198,7 +207,7 @@ internal sealed class RosterReport(HarnessRoster roster)
             }
         }
 
-        await running.WaitAsync(ct).ConfigureAwait(false);
+        return await running.WaitAsync(ct).ConfigureAwait(false);
     }
 
     // What is in flight for each harness, by name and kind — a press, with or without the own sign-in, or its binary
