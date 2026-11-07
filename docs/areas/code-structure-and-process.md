@@ -21,6 +21,7 @@ finishes first and the whole set runs once.
 | The split tools | `tools/desktop-publish/`, `orient-index/`, `usage-report/`, `desktop/`, `knowledge-bench/`, `process-reach/`; the CLI's `doctrine/sync*.ts` | each large tool is a thin runner beside a folder of modules by responsibility, and `materialize.ts` holds `commandSync` over the sync plan, changes and apply modules; every export stays importable from the old path |
 | The web's plain modules | `src/Daoris.Web/src/` | a plain module that grew past 40 KB keeps its path as the import point and re-exports what moved to modules of one responsibility beside it (the conversation's codes, the note codes, attention's counts and offers, the session groups and helper asks, the driver's considerations); the bridge files keep each route's typed call |
 | The partials gate | `tools/partials.mjs` | no type split by hand across files |
+| The comment gate | `tools/comment-gate.mjs`, the `comments` gate | for each source file a change touches (the working tree against its merge-base with main, or `--tip <ref>`), the share of its lines that are comment-only does not rise, and a comment it adds names no row id, decision number or history word (`was`, `used to`, `formerly`, `previously`); a new file is held to the second rule alone, a renamed one against its old self |
 | The route declarations | `src/Daoris.Contracts/`, the HTTP host's `Routes/`, the driver's `ServiceClient.SendAsync` | each HTTP route declared once as its request record; the host's one binder maps each domain's module, and the driver sends the record |
 | The page's contracts | `tools/contracts.mjs`, `tools/contracts/` | writes the page's types for the declared routes and the window routes' marks, and says when they are stale |
 | The settings list | the driver's `Settings/List/MachineSettings.cs`; the page's `SETTINGS` | every machine setting declared once, with the one key each of its doors spells; the modules' `MachineSettingsCensusTests` and the page's `settings/everySetting.test.tsx` hold the doors to it |
@@ -50,7 +51,7 @@ finishes first and the whole set runs once.
    `tools/orient-index.mjs` writes the order to `docs/index/registered.md`. (from D231)
 4. A file over 40 KB does not grow, and a new file does not start over it. The ratchet's list only tightens. (from D231)
 5. Comments say what the code cannot: why a choice was made, a trap, a boundary's contract. Row ids, decision numbers and history
-   live in the commits and the decisions. (from D231)
+   live in the commits and the decisions; the comment gate refuses what a change adds against it. (from D231, D235)
 6. Each job is done one way. A change that supersedes an older way removes it in the same chunk. A kept older reading has a register
    entry with its end. (from D228)
 7. Each contract is declared once, beside its handler. The rest (clients, the page's types, tables, maps) is generated or

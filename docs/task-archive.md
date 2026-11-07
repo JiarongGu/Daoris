@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## COMMENTGATE1 (the gate) — a changed file's comments do not grow and name no row (2026-11-07)
+
+> **COMMENTGATE1** (D235, the gate half): Outcome: `tools/comment-gate.mjs` with its `node --test` file and the `comments` gate in `daoris.gates.json`; it reads the change from git and refuses a changed file whose comment-only share rises, and an added comment that names a row id, a decision number or a history word. It refused fixtures adding a `D99` and a row id and passed a change that only removes comments. The pass that strips the existing ones stays on the backlog row.
+
 ## BUILDSTAMP1 — the commit stamped only where a publish builds (2026-11-07)
 
 > **BUILDSTAMP1** (TREEPOOL1 round 5, row 0; R5.8): the SDK stamped the commit into every assembly, so every switch between commits recompiled every .NET project. Outcome: a root `Directory.Build.props`, imported by the desktop's, the service's and the devkit's, gives a development build no git query, no source link and `<version>+dev`; every publish recipe and the devkit's release pass `-p:DaorisStamp=true` and carry `<version>+<commit>` (a scratch publish read `0.0.1+<its commit>`). After a switch between two commits of one tree, both desktop test projects compiled 12 of 12 before and none after; an unchanged build none either way (`BuildVersionTests`, `publish-stamp.test.ts`).
