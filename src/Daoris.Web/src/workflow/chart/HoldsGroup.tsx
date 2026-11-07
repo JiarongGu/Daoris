@@ -4,7 +4,7 @@ import type { NodeContext } from '../../design/FlowCanvas';
 import { NodeFrame } from './NodeFrame';
 import type { ChartStep } from './stepKinds';
 
-// The declared checks, requests and holds drawn as one node (FLOWCHART2a; `graphFlow`'s holds group): folded to its title and its
+// The declared checks, requests and holds drawn as one node (`graphFlow`'s holds group): folded to its title and its
 // members and the press that opens them. Opened, its first member carries the press that folds them again (`HoldsPress`, which `StepNode`
 // draws). A caller opens it where a refusal lies inside it, by handing `graphFlow` the group open.
 

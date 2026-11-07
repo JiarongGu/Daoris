@@ -4,8 +4,8 @@ import { call } from '../call';
 import { heldNumbered, isPending } from '../state/held';
 import type { AtWorkA, AtWorkAskA, AtWorkAt, AtWorkHeld } from '../../work/atWork/types';
 
-// Who is at work on a session (COWORKVIEW1a, the cowork view design §3.8 and §4.1): the shell's one numbered read, composed from
-// the records Daoris keeps (its parts, its lineage), never from the conversation's text. On an ask (COWORKVIEW1d) the same route is
+// Who is at work on a session: the shell's one numbered read, composed from
+// the records Daoris keeps (its parts, its lineage), never from the conversation's text. On an ask the same route is
 // keyed `{ ask }` and answers a branch of its own.
 
 export type { AtWorkA, AtWorkAskA, AtWorkAt, AtWorkChild, AtWorkHeld } from '../../work/atWork/types';
@@ -55,7 +55,7 @@ export function readAtWork(wire: unknown): AtWorkHeld | null {
 }
 
 /**
- * The number rule (§4.1, C4-3.1, C5-2.3): a delivery to a query whose data carries no number is taken; of the same epoch, a higher
+ * The number rule: a delivery to a query whose data carries no number is taken; of the same epoch, a higher
  * number replaces and a lower or equal one is dropped; an event of another epoch is never installed (`another`), a reply's taken.
  */
 export function byNumber(held: AtWorkHeld | undefined, next: AtWorkHeld, reply: boolean): AtWorkHeld | 'dropped' | 'another' {
@@ -84,7 +84,7 @@ function told(client: QueryClient, queryKey: QueryKey, wire: unknown) {
   else if (taken !== 'dropped') client.setQueryData(queryKey, taken);
 }
 
-/** The query's own fetch: the fence opened as it begins and closed as it settles, its reply first, then what was held beside it. */
+/** The query's own fetch: the fence opened as it begins and closed as it settles, its reply first, then what it held beside it. */
 export async function askAtWork(client: QueryClient, queryKey: QueryKey, session: string): Promise<AtWorkHeld> {
   return askAtWorkOf(client, queryKey, { session });
 }
@@ -107,7 +107,7 @@ export async function askAtWorkOf(client: QueryClient, queryKey: QueryKey, targe
     }
     return (settled = applyHeld(settled, fence, () => { another = true; }) ?? READING);
   } catch (error) {
-    // A refusal of the bridge itself: what was held beside the fetch is written by the number rule against what the query holds.
+    // A refusal of the bridge itself: what the fetch held beside it is written by the number rule against what the query holds.
     const written = applyHeld(client.getQueryData<AtWorkHeld>(queryKey), fence, () => { another = true; });
     if (written) client.setQueryData(queryKey, written);
     throw error;
@@ -128,7 +128,7 @@ function applyHeld(start: AtWorkHeld | undefined, fence: AtWorkHeld[], again: ()
 }
 
 /**
- * Who is at work on an ask (COWORKVIEW1d), held as `AtWorkHeld` like a session's: its lines of work folded to counts and its quests.
+ * Who is at work on an ask, held as `AtWorkHeld` like a session's: its lines of work folded to counts and its quests.
  * Asked only while the ask's page shows (`enabled`), and again at each `atWork` wake.
  */
 export const useAskAtWork = (ask: string | null | undefined, { enabled = true }: { enabled?: boolean } = {}) => {

@@ -3,8 +3,8 @@ import type { GraphFlow } from '../graphFlow';
 import type { GraphProblem } from './answers';
 import { refusalSaid } from './editWords';
 
-// The driver's refusals placed on the drawing (FLOWCHART2c; the flowchart design §3): a step the judgement names wears its sentence and
-// declined's outline and a *To put right* chip the canvas places beside it (CANVAS1b), its sentence in the description, a way it names
+// The driver's refusals placed on the drawing: a step the judgement names wears its sentence and
+// declined's outline and a *To put right* chip the canvas places beside it, its sentence in the description, a way it names
 // a ⚠ chip with a word and its sentence in the source's foot and to a reader. A refusal naming neither
 // is the head's alone. Pure: the drawing in, the drawing out.
 
@@ -32,7 +32,7 @@ export function withRefusals(t: TFunction, i18n: I18n, flow: GraphFlow, problems
     edges: flow.edges.map((edge) => {
       const refused = atWay.get(edge.id);
       if (!refused) return edge;
-      // The sentence is said in the source's description, never as a line in its foot, which would move every rank below (CANVAS1b).
+      // The sentence is said in the source's description, never as a line in its foot, which would move every rank below.
       const note = refused.map((words) => t('workflow.edit.chart.refusedSays', { says: edge.says, words })).join(' ');
       return { ...edge, problem: t('workflow.edit.chart.refusedWay'), note };
     }),

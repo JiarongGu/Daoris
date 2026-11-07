@@ -8,10 +8,10 @@ import { NodeFeet, NodeFrame, type SelectHow } from './NodeFrame';
 import { PortRow, splitFeet } from './PortRow';
 import { type ChartStep, VARIANT_GLYPH } from './stepKinds';
 
-// One node for each palette kind (FLOWCHART2a; the flowchart design §2): the surface is every node's, and the kind is carried by its
+// One node for each palette kind: the surface is every node's, and the kind is carried by its
 // glyph, its who and, for a decision, the row of ports on its lower edge, never by a rotated box, which could not wrap 中文. Its state
 // is a pill and a border, in words and never by hue alone; where a run paints one it paints it here without moving the node. In the
-// editor (FLOWCHART2b) a press selects it and a port's press starts that outcome's way.
+// editor a press selects it and a port's press starts that outcome's way.
 
 export function StepNode({ context, step, edit }: { context: NodeContext; step: ChartStep; edit?: ChartEdit }) {
   const { t } = useTranslation();

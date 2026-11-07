@@ -6,7 +6,7 @@ import { type Answered, InlineConfirm } from '../work/InlineConfirm';
 import type { NodeAct, NodeWordAnswer, NodeWordAsk, RunStep } from './run';
 import { isTaskAct, TASK_ACTS, TaskPress } from './task/TaskPress';
 
-/** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence (D182). */
+/** The refusals of `WORKFLOW_NODE` the page words in the reader's language; any other is the driver's own sentence. */
 const WORDED: ReadonlySet<string> = new Set([
   'worded', 'ended', 'no-words', 'not-skippable', 'not-in-table', 'not-held', 'promoted', 'not-request', 'not-review', 'not-sendable',
   'not-task', 'not-waiting',
@@ -22,17 +22,17 @@ export function nodeWordRefused(t: ReturnType<typeof useTranslation>['t'], answe
 }
 
 /**
- * **The person's skip and stop of a graph run's node** (FABRIC-CUTOVER1f; D190 point 6, the cutover design §5.2): under a node, the acts the
- * driver's one table takes where it stands (`acts`), each asking once in the page (UXFIX2), a skip with the words it keeps; and a word the
+ * **The person's skip and stop of a graph run's node**: under a node, the acts the
+ * driver's one table takes where it stands (`acts`), each asking once in the page, a skip with the words it keeps; and a word the
  * person gave and the driver's next look has not applied yet (`asked`), drawn with their words in place of the presses.
  *
  * @remarks
- * **The driver judges, the page draws** (D157 §7): which acts a node offers is the driver's, so a go-ahead nobody raised is passed over here
+ * **The driver judges, the page draws**: which acts a node offers is the driver's, so a go-ahead nobody raised is passed over here
  * and a landing is offered its stop alone. Each press goes out with its run and node (`onWord`) and comes back answered: kept closes the ask,
  * a refusal is said in it by its code, in the driver's sentence where the page has no words for the code.
  *
  * **A skip goes on without the node; a stop ends what waits on it**, so the stop asks in danger's hue and the skip in the primary's. A
- * review's *Ask for changes…* (DECIDE1c) sends the person's words back to the work in place of their Accept, so it asks for them.
+ * review's *Ask for changes…* sends the person's words back to the work in place of their Accept, so it asks for them.
  *
  * A molecule: the step and the press arrive as props.
  */
@@ -73,7 +73,7 @@ export function NodeWord({ run, step, onWord }: {
     <div className="grid min-w-0 gap-1.5">
       {asking === null && (
         <div className="flex flex-wrap items-center gap-1.5">
-          {/* NODEKIT1 HUMAN: a waiting task's Done, or an approval's Approve and Reject, lead. */}
+          {/* A waiting task's Done, or an approval's Approve and Reject, lead. */}
           {acts.filter(isTaskAct).map((act) => (
             <Button key={act} variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking(act)}>
               {t(`workflow.run.node.${act}`)}
@@ -94,13 +94,13 @@ export function NodeWord({ run, step, onWord }: {
               {t('workflow.run.node.stop')}
             </Button>
           )}
-          {/* INTEGRATE1p: a ready request under `start: you` waits for the person's send. */}
+          {/* A ready request under `start: you` waits for the person's send. */}
           {acts.includes('send') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('send')}>
               {t('workflow.run.node.send')}
             </Button>
           )}
-          {/* INTEGRATE1p (C33): a declined request is asked again or gone on without. */}
+          {/* A declined request is asked again or gone on without. */}
           {acts.includes('ask-again') && (
             <Button variant="ghost" className="min-h-0 px-1.5 py-0.5 text-small" onClick={() => setAsking('ask-again')}>
               {t('workflow.run.node.askAgain')}

@@ -6,7 +6,7 @@ import { choiceLabel, optionLabel } from './editWords';
 import { type DraftNode, optionOf } from './graphDraft';
 import { type RolePlace, StepRole } from './StepRole';
 
-/** The option a step names the role that takes it by (ROLESTEP1b; the driver's `NodeOptionFields.Role`). */
+/** The option a step names the role that takes it by (the driver's `NodeOptionFields.Role`). */
 export const ROLE_OPTION = 'role';
 
 /** The option a land names its target line by. */
@@ -21,7 +21,7 @@ export type OptionValue = string | boolean | string[] | undefined;
 const fieldClass = 'min-h-[1.9rem] min-w-0 max-w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink';
 
 /**
- * **A step's options** (WORKFLOWEDIT1b, SETUPUX1r): each field the palette says its kind reads (`NodeOptionFields`), worded in the page's
+ * **A step's options**: each field the palette says its kind reads (`NodeOptionFields`), worded in the page's
  * words with the name the saved step uses left to *Details*, drawn by its type, a choice from the code's own list, and the role that takes
  * it offered from the working roles that do its work. A molecule: the step and the roles arrive as props, and each change goes out, an
  * emptied one clearing the option.
@@ -32,7 +32,7 @@ export function StepOptions({ node, fields, roleTakes, roles, place = null, staf
   /** The works a role does this step's work by, its own first; none where no agent session takes it. */
   roleTakes: string[];
   roles: EditorRole[];
-  /** The place the editor opened from, which a step's role is given and named for; and the role editor's reads and presses (SETUPUX1t). */
+  /** The place the editor opened from, which a step's role is given and named for; and the role editor's reads and presses. */
   place?: RolePlace | null;
   staffing?: StepStaffing;
   /** The lines the place declares, which a landing's target is chosen from; none, and the target is typed. */

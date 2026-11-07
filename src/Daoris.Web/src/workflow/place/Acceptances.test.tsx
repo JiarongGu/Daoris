@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Acceptances, type AcceptanceRow } from './Acceptances';
 
-// SETUPUX1k (the setup-UX design §2.2's review): the one *Acceptances* molecule Gates and the set-up's review draw: each declaration's text shown
+// The one *Acceptances* molecule Gates and the set-up's review draw: each declaration's text shown
 // once, each acceptance its own tick, unticked until the person ticks it, with its standing and consequence in words.
 
 const TEXT = 'gates: [lint, tests]\n';

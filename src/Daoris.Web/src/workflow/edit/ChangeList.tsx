@@ -9,8 +9,8 @@ import { howSaid, stepTitle } from './editWords';
 import { draftOf } from './graphDraft';
 import type { DraftProposal, Mark, Union } from './proposalTake';
 
-// Ask Daoris's proposal listed change by change (FLOWCHART2f; D223 §4.3, §8.6): each change in the page's words, marked as the chart marks
-// it, with a door to its step, what taking it brings with it, and *Take* and *Leave*; a change the draft no longer holds the base of says
+// Ask Daoris's proposal listed change by change: each change in the page's words, marked as the chart marks
+// it, with a door to its step, what taking it brings with it, and *Take* and *Leave*; a change whose base the draft does not hold says
 // so, with *Leave* and *Ask again*. A molecule: the rows arrive worded, and every press goes out.
 
 /** How a change stands in the person's review. */
@@ -26,7 +26,7 @@ export type ChangeRow = {
   state: RowState;
   /** The other changes taking it brings, in words. */
   with: readonly string[];
-  /** The change its take was refused at, where that is another. */
+  /** The change its take is refused at, where that is another. */
   staleAt: string | null;
 };
 
@@ -35,7 +35,7 @@ const record = (value: unknown): Record<string, unknown> =>
 const nodesOf = (graph: unknown) => (Array.isArray(record(graph).nodes) ? (record(graph).nodes as unknown[]).map(record) : []);
 const wiresOf = (graph: unknown) => (Array.isArray(record(graph).wires) ? (record(graph).wires as unknown[]).map(record) : []);
 
-/** A step's title by its id, from the proposal's graph or, for one it removes, the draft it was proposed against; its id where neither holds it. */
+/** A step's title by its id, from the proposal's graph or, for one it removes, the draft it is proposed against; its id where neither holds it. */
 function titleIn(t: TFunction, i18n: I18n, palette: WorkflowPaletteAnswer | null, proposal: DraftProposal, id: string): string {
   const kind = kindOf(proposal, id);
   return kind ? stepTitle(t, i18n, palette, { kind }) : id;
@@ -98,7 +98,7 @@ const TONE = { added: 'open', removed: 'declined', changed: 'taken' } as const;
 export const MARK_SIGN: Record<Mark, string> = { added: '+', removed: '−', changed: '~' };
 
 /**
- * The union drawn as the proposal marks it (D223 §4.3): a step new, to remove or changed wears the word in a pill, a step to remove drawn
+ * The union drawn as the proposal marks it: a step new, to remove or changed wears the word in a pill, a step to remove drawn
  * dashed besides; a way new or to remove says so in its cause, which the rail and a reader hear, and the chart's chip shows beside it.
  */
 export function withChanges(t: TFunction, flow: GraphFlow, union: Union | null): GraphFlow {

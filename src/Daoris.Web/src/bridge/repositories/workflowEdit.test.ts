@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// WORKFLOWEDIT1a: the step editor's three reads call their routes and type what the driver answers.
+// The step editor's three reads call their routes and type what the driver answers.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async (): Promise<unknown> => null) }));
 
@@ -56,7 +56,7 @@ describe('the step editor reads', () => {
     const answer = await result.current.onPlan!({ repository: 'engine', workflow: 'verify-docs', version: 2 });
 
     expect(answer.expected).toBe('use-1');
-    // The editor's own reads on mount (Ask Daoris's draft proposals, FLOWCHART2f) are not the plan's; the plan is one call and no workflow read.
+    // The editor's own reads on mount (Ask Daoris's draft proposals) are not the plan's; the plan is one call and no workflow read.
     const workflowCalls = invoke.mock.calls.map((call) => (call as unknown[])[1]).filter((route) => String(route).startsWith('WORKFLOW_'));
     expect(workflowCalls).toEqual(['WORKFLOW_USE']);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORKFLOW_USE', expect.objectContaining({

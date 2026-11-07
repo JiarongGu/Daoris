@@ -22,9 +22,9 @@ import {
 } from './notices';
 import { pushedOf } from './state/slices';
 
-// Done and failed as the shell pushes it (NOTIFY2f, the notification design §2.5): the `news` partition composed newest first, a
+// Done and failed as the shell pushes it: the `news` partition composed newest first, a
 // notice of a shape the page cannot read dropped, nothing until the owner judged; and the person's read and dismissal as presses.
-// Messages beside it (NOTIFY2g): the `messages` partition, keyed by ask, and the `answered` notices, which are Messages', never Done
+// Messages beside it: the `messages` partition, keyed by ask, and the `answered` notices, which are Messages', never Done
 // and failed's; each read in the window's scope.
 
 const NEWS = {

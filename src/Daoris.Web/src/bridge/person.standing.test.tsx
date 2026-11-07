@@ -42,7 +42,7 @@ describe('the standing confirmation over the bridge', () => {
 
   it('reads STATE’s standingConfirmation field by field, a null the bridge left out read as none', () => {
     expect(standingOf({})).toEqual({ holds: [], holders: [], stewardActs: [], stewardDesk: [] });
-    // D233 point 2: the roles a terminal holds this run, each read field by field; one with no role, kind or holder left out.
+    // The roles a terminal holds this run, each read field by field; one with no role, kind or holder left out.
     expect(standingOf({
       holders: [{ id: 'h1', since: '2026-10-24T14:02:00Z', roles: ['steward', 'supervisor'] }, { roles: ['steward'] }],
       holds: [
@@ -62,7 +62,7 @@ describe('the standing confirmation over the bridge', () => {
     expect(standingOf([])).toBeNull();
   });
 
-  // STEWARDROLE1b (D209 §5.1, §5.3): this run's steward acts newest first, each read field by field; a missing list reads as none.
+  // This run's steward acts newest first, each read field by field; a missing list reads as none.
   it("reads this run's steward acts field by field", () => {
     expect(standingOf({
       stewardActs: [
@@ -79,7 +79,7 @@ describe('the standing confirmation over the bridge', () => {
     expect(standingOf({})).toMatchObject({ stewardActs: [], holds: [] });
   });
 
-  // STEWARDROLE1c (D209 §6.2): the steward's desk, each request read field by field, its words as the caller wrote them; one with a
+  // The steward's desk, each request read field by field, its words as the caller wrote them; one with a
   // field missing or a state this page does not know left out, and a missing desk read as empty.
   it("reads the steward's desk field by field", () => {
     expect(standingOf({

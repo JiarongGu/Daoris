@@ -6,17 +6,17 @@ import type { WorkflowSaveAnswer, WorkflowSaveAsk, WorkflowUseAnswer, WorkflowUs
 import type { NodeWordAnswer, NodeWordAsk, RunScope, WorkflowRunAnswer } from '../../workflow/run';
 import { call } from '../call';
 
-// How work moves in a repository or a workspace (WORKFLOW1b; D157 point 7, the workflow design §2.7, §6.1): its Current
+// How work moves in a repository or a workspace: its Current
 // workflow, which the driver derives from this machine's driver file, plugins and registry exactly as `daoris
 // workflow show` reads them. The page draws it and derives nothing.
 
 /**
  * A repository's or a workspace's Current. Desktop-only: the rules, the plugins and the workflows are this machine's
- * (design §2.4), so a browser asks nothing and its page has no Workflow tab. `enabled: false` asks nothing, so a page asks
+ * so a browser asks nothing and its page has no Workflow tab. `enabled: false` asks nothing, so a page asks
  * only while its Workflow tab shows; and it is asked again each time the tab is shown, since a rule changed on Setup, a
  * plugin switched on or a repository moved to another workspace each changes what it draws.
  *
- * Given a `route` (`default`, `kind:<name>` or `landed`), the answer also carries `effective`, the graph that route follows (SETUPUX1b); the
+ * Given a `route` (`default`, `kind:<name>` or `landed`), the answer also carries `effective`, the graph that route follows; the
  * read writes nothing, and the answer of the route before it stays in place while the next is read.
  */
 export const useWorkflowCurrent = (scope: WorkflowScope | null, { enabled = true, route }: { enabled?: boolean; route?: string | null } = {}) => {
@@ -38,7 +38,7 @@ export const useWorkflowCurrent = (scope: WorkflowScope | null, { enabled = true
 };
 
 /**
- * The Current workflow of each repository named (COMPANYVIEW1d): By repository asks only the repositories a person has opened, for
+ * The Current workflow of each repository named: By repository asks only the repositories a person has opened, for
  * their integration declaration's state, so a list of many repositories reads none until a row opens.
  */
 export const useWorkflowCurrents = (repositories: readonly string[]) => {
@@ -66,7 +66,7 @@ export const acceptGatesPress = (repository: string, landed: { workflow: string;
 });
 
 /**
- * The person's press on the landed route (FABRIC-PIPELINE1a; the pipeline design §1.3, §4.2): Setup's route row and the Workflow tab's
+ * The person's press on the landed route: Setup's route row and the Workflow tab's
  * *Accept the gates*. `workflow` is a verification workflow's id, `current` for no verification, or null for the workspace's again;
  * for a repository naming one, the driver reads the `daoris.gates.json` at its line's tip and accepts it by its blob. Every workflow
  * answer is asked again after it, since each page's start node reads the route.
@@ -81,14 +81,14 @@ export const useSetLanded = () => {
 };
 
 /**
- * What `INTEGRATION_GATES` answers: the start node as it now stands, whether the acceptance was kept, and the refusal's code (`moved`
- * where the tip no longer holds the blob the person read, `unread`) with the driver's sentence.
+ * What `INTEGRATION_GATES` answers: the start node as it now stands, whether the acceptance is kept, and the refusal's code (`moved`
+ * where the tip does not hold the blob the person read, `unread`) with the driver's sentence.
  */
 export type IntegrationAnswer = { start: WorkflowStart | null; done: boolean; refused: string | null; message: string | null };
 
 /**
- * The person's acceptance of a repository's integration declaration (INTEGRATE1d; the integration design §17.7): the blob of the
- * `daoris.gates.json` `integration` they read, or `clear` to withdraw it. A blob that is no longer the tip's is refused `moved`, as an
+ * The person's acceptance of a repository's integration declaration: the blob of the
+ * `daoris.gates.json` `integration` they read, or `clear` to withdraw it. A blob that is not the tip's is refused `moved`, as an
  * answer, never thrown. Every workflow answer is asked again after it, since each start node reads the acceptance.
  */
 export const useAcceptIntegration = () => {
@@ -100,10 +100,10 @@ export const useAcceptIntegration = () => {
 };
 
 /**
- * Where a session's, a quest's or an ask's work stands in its workflow (WORKFLOW1c; D157 point 11, the workflow design §5.1, §7):
+ * Where a session's, a quest's or an ask's work stands in its workflow:
  * the runs the driver reads from this machine's records, one per chain and repository; or a repository's line, its newest verifications
- * with their verdicts (FABRIC-PIPELINE1d). Desktop-only, as Current is: the landing
- * record and the sessions' records are this machine's (D47 §4), so a browser asks nothing and draws no run. `enabled: false`
+ * with their verdicts. Desktop-only, as Current is: the landing
+ * record and the sessions' records are this machine's, so a browser asks nothing and draws no run. `enabled: false`
  * asks nothing, so a page asks only while what draws it shows; every tick asks it again, under the driver's key.
  */
 export const useWorkflowRun = (scope: RunScope | null, { enabled = true }: { enabled?: boolean } = {}) => {
@@ -124,7 +124,7 @@ export const useWorkflowRun = (scope: RunScope | null, { enabled = true }: { ena
 export type VerifyAnswer = { repository: string; done: boolean; refused: string | null; message: string };
 
 /**
- * The person's verification of a branch or a commit (FABRIC-PIPELINE1d part 5), the page's half of `daoris gate verify`: bound under the
+ * The person's verification of a branch or a commit, the page's half of `daoris gate verify`: bound under the
  * landed route's gates they accepted, for the running driver to verify after any verification ahead of it. A refusal is an answer with the
  * driver's sentence, never thrown. Its verdict shows on the repository's line (`useWorkflowRun({ line })`), which the state hub asks again
  * under the driver's key.
@@ -135,8 +135,8 @@ export const useVerify = () => useMutation({
 });
 
 /**
- * The person's skip or stop of a graph run's node (FABRIC-CUTOVER1f; D190 point 6, the cutover design §5.2), the page's half of
- * `daoris workflow skip|stop`: kept on the run's record by the driver for its next look, which applies it. Answers what was kept, or
+ * The person's skip or stop of a graph run's node, the page's half of
+ * `daoris workflow skip|stop`: kept on the run's record by the driver for its next look, which applies it. Answers what it kept, or
  * the refusal's code and the driver's sentence, never thrown; the run's view is asked again by the state hub under the driver's key.
  */
 export const useRunNodeWord = () => useMutation({
@@ -150,7 +150,7 @@ export const useRunNodeWord = () => useMutation({
 });
 
 /**
- * `WORKFLOW_SAVE` and `WORKFLOW_USE` (AGENTSPLACE1c), this domain's writes as `WorkflowRoutes.cs` answers them: a version saved, or
+ * `WORKFLOW_SAVE` and `WORKFLOW_USE`, this domain's writes as `WorkflowRoutes.cs` answers them: a version saved, or
  * judged unsaved with `plan`, and a version chosen for a place. The step editor's bridge (`workflowEdit.ts`) presses them through these.
  */
 export const askWorkflowSave = (ask: WorkflowSaveAsk) => call('WORKFLOW_SAVE', ask) as Promise<WorkflowSaveAnswer>;

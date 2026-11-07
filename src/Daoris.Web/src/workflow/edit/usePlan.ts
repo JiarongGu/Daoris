@@ -5,7 +5,7 @@ import type { WorkflowUseAnswer, WorkflowUseAsk } from './answers';
 
 /**
  * The plan of one choice (`WORKFLOW_USE {plan: true}`, which writes nothing), read once `wanted` and again after `again` is asked, the newest
- * request alone heard. The token is the plan's where it was read for this very ask and the driver did not refuse it (SETUPUX1p).
+ * request alone heard. The token is the plan's where it is read for this very ask and the driver does not refuse it.
  */
 export function usePlan(
   ask: WorkflowUseAsk | null, wanted: boolean, sender: ((ask: WorkflowUseAsk) => Promise<WorkflowUseAnswer>) | undefined,

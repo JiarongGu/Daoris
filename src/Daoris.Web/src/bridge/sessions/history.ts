@@ -5,9 +5,9 @@ import {
 } from '../../work/history/history';
 import { call, lookBound } from '../call';
 
-// Clearing finished history from this machine (HIST1e, D153; the history-clearing design §5, §6.1, §6.3): what a clear of a
+// Clearing finished history from this machine: what a clear of a
 // workspace, a closed quest's work, its failed sessions or an ask's work would take and keep, and the clear itself. The
-// driver library's `HistoryClearing` answers both, which `daoris history` and its `clear` verbs call too (D50).
+// driver library's `HistoryClearing` answers both, which `daoris history` and its `clear` verbs call too.
 
 /**
  * The shapes the routes answer live with the screen's own rule (`work/history/history.ts`), since a molecule may read a shape and
@@ -18,8 +18,7 @@ export type {
 } from '../../work/history/history';
 
 /**
- * Under its own root, so a tick asks none of them again: a workspace's reading walks the home's files (design §12 leaves how
- * long unmeasured), and a closed quest's plan changes only by a press, which asks it again. Each is asked while a page that
+ * Under its own root, so a tick asks none of them again: a workspace's reading walks the home's files, and a closed quest's plan changes only by a press, which asks it again. Each is asked while a page that
  * shows it is in front, and once more on every clear.
  */
 export const historyKey = (target: HistoryTarget) => ['history', target.scope, target.id] as const;
@@ -28,15 +27,14 @@ export const historyKey = (target: HistoryTarget) => ['history', target.scope, t
 export const ALL_HISTORY =['history'] as const;
 
 /**
- * The reading walks the home's files and the second press removes them, each after asking the service (§2.4, §5): either may
- * outlast the bridge's default 30 seconds on a large home, so the page waits as long as a look over one workspace may take
- * (WSR7).
+ * The reading walks the home's files and the second press removes them, each after asking the service: either may
+ * outlast the bridge's default 30 seconds on a large home, so the page waits as long as a look over one workspace may take.
  */
 const HISTORY_BOUND = lookBound(1);
 
 /**
- * The first press's answer (`HISTORY_PLAN`, design §5 step 1): every unit with what it takes and why it would stay, and for a
- * workspace the reading. Shell-only: a browser has no driver and no home (D47 §4), and `available` says so, so the pages
+ * The first press's answer (`HISTORY_PLAN`): every unit with what it takes and why it would stay, and for a
+ * workspace the reading. Shell-only: a browser has no driver and no home, and `available` says so, so the pages
  * offer no clear there.
  */
 export const useHistoryPlan = (target: HistoryTarget | null, { enabled = true }: { enabled?: boolean } = {}) => {
@@ -57,14 +55,14 @@ export const useHistoryPlan = (target: HistoryTarget | null, { enabled = true }:
 };
 
 /**
- * The second press (`HISTORY_CLEAR`, design §5 step 2): exactly the units the first press listed, each judged again by the
+ * The second press (`HISTORY_CLEAR`): exactly the units the first press listed, each judged again by the
  * driver as it goes. A workspace's press with no unit takes its left-over files and, where it keeps no ask, its intake's
  * room. What it took leaves the quests, the asks and the sessions, and every plan is stale: the route's `STATE_CHANGED`
- * asks each again, in every window (STATEHUB1d, D169).
+ * asks each again, in every window.
  *
  * @remarks
  * The plans are asked again here too, without cancelling the hub's read: a press refused for a unit that changed since the
- * list is an error, which publishes nothing (D169 point 5), and its plan is stale all the same.
+ * list is an error, which publishes nothing, and its plan is stale all the same.
  */
 export const useClearHistory = () => {
   const client = useQueryClient();

@@ -9,14 +9,14 @@ export type PlanState =
   | { key: string; state: 'failed'; why: string }
   | { key: string; state: 'read'; answer: WorkflowUseAnswer };
 
-/** The token a press carries: the plan's, where it was read for this very ask and the driver did not refuse it. */
+/** The token a press carries: the plan's, where it is read for this very ask and the driver does not refuse it. */
 export function planToken(plan: PlanState | null, key: string): string | null {
   if (plan === null || plan.key !== key || plan.state !== 'read') return null;
   return plan.answer.refused ? null : plan.answer.expected ?? null;
 }
 
 /**
- * **The plan of a choice** (SETUPUX1p; the Setup design's §2.3), in the driver's words: what a cleared default's kinds keep, the part of the
+ * **The plan of a choice**, in the driver's words: what a cleared default's kinds keep, the part of the
  * person the choice lowers, the places it changes and the driver's own account. Nothing is judged here: a refusal is the driver's sentence.
  *
  * A molecule: the plan arrives as a prop.

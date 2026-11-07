@@ -1,5 +1,5 @@
 /**
- * A workflow draft's fingerprint (FLOWCHART2d, D223; the flowchart design §8.7): the digest of exactly the graph the editor holds, which
+ * A workflow draft's fingerprint: the digest of exactly the graph the editor holds, which
  * its judgement keys on and Ask Daoris's draft door proposes against. Not a secret: an identity for this draft's state.
  */
 

@@ -3,15 +3,15 @@ import barrel from './shell.ts?raw';
 import * as shell from './shell';
 
 /**
- * The bridge by domain (MOD3): each domain's types and calls live in `bridge/<domain>.ts`, and `shell.ts`
- * is only the barrel re-exporting them. One file held every call and type the page asks the shell, and
- * ten of eighteen branches in three days edited it (`docs/2026-09-30-parallel-development-design.md`).
+ * The bridge by domain: each domain's types and calls live in `bridge/<domain>.ts`, and `shell.ts`
+ * is only the barrel re-exporting them. One file holding every call and type the page asks the shell would
+ * be edited by most parallel branches.
  *
  * The rule is held here because it breaks one convenient line at a time: a hook added to the barrel
  * "for now" is how the god file comes back. A new domain is a new file and one line in the barrel.
  */
 
-// The barrel sits beside its domains since STRUCT5c (D166), and is none of them; since STRUCT5c-ii a domain may sit in a
+// The barrel sits beside its domains, and is none of them; a domain may sit in a
 // scope folder below it, and is named by its path from here (`sessions/conversation`).
 // The contracts tool writes `generated/` (routes and their words): the domains import it by path, and it is no domain.
 const sources = import.meta.glob(['./**/*.ts', '!./shell.ts', '!./generated/**'], { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;

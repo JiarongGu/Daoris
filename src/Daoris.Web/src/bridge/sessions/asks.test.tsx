@@ -3,13 +3,13 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// An ask's channel, as hooks (SESSONE2c, D167): its read, the person's post and their mark, each one route of DAORIS.DRIVER,
-// which the page names only here (MOD3, MOD5).
+// An ask's channel, as hooks: its read, the person's post and their mark, each one route of DAORIS.DRIVER,
+// which the page names only here.
 
 const { invoke, available, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
   available: { value: true },
-  // The state hub's ear (STATEHUB1h, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  // The state hub's ear: what the mocked shell publishes after a press reaches it, as the kit's pump would.
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
@@ -92,9 +92,9 @@ describe('the asks domain', () => {
   });
 
   /**
-   * NOTIFY2g (the notification design §2.5): once the `notices` slice is live with its `messages` partition, each ask's count is the
+   * Once the `notices` slice is live with its `messages` partition, each ask's count is the
    * partition's, the service's own, with no CHANNEL_READ per ask; an ask the partition does not hold (a closed one a rail names) is
-   * still pulled, and a slice without the partition pulls every one as before.
+   * still pulled, and a slice without the partition pulls every one.
    */
   it('reads the counts from the messages partition once live, with no CHANNEL_READ per ask, and pulls where it is not', async () => {
     const live = async (partitions: Record<string, unknown>) => {
@@ -134,7 +134,7 @@ describe('the asks domain', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_READ', { payload: { ask: 'a1' } });
   });
 
-  /** SESSONE2h: the asks held elsewhere are one read of the driver, under the asks' key; a shell before it answers none. */
+  /** The asks held elsewhere are one read of the driver, under the asks' key; a shell that answers something else gives none. */
   it('lists the asks held elsewhere on ASKS_ELSEWHERE, and none from a shell that answers something else', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const held = { id: '7e6f51', workspace: 'default', origins: ['key-a'], latest: '2026-10-15T09:00:00Z', messages: 2, unread: 1 };
@@ -173,7 +173,7 @@ describe('the asks domain', () => {
   });
 
   /**
-   * COWORK1d (the message-urgency design §4.2): the person's *Send to its session* is CHANNEL_FORWARD with the message and the
+   * The person's *Send to its session* is CHANNEL_FORWARD with the message and the
    * repository whose line of work it goes to; the answer's code is read, and one of another shape is a refusal said `other`.
    */
   it('sends a message on to its session on CHANNEL_FORWARD and reads the answer’s code', async () => {
@@ -193,7 +193,7 @@ describe('the asks domain', () => {
   });
 
   /**
-   * STATEHUB1h (D169): the post's route publishes the asks, whose key holds each channel, so the window's hub asks the channel
+   * The post's route publishes the asks, whose key holds each channel, so the window's hub asks the channel
    * again, as every other window's does; the hook asks nothing again itself.
    */
   it('asks the channel again after a post, through what its route publishes', async () => {

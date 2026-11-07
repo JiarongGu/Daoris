@@ -6,8 +6,8 @@ import type { Answered } from '../../work/InlineConfirm';
 import { GATES_CHANGED, INTEGRATION_ACCEPTED, INTEGRATION_CHANGED, INTEGRATION_UNACCEPTED, START } from '../fixtures';
 import { PlaceGates } from './PlaceGates';
 
-// AGENTSPLACE1h (the Agents-place design §3): Gates shows the declaration once, with two choices, each naming its purpose, blob and standing,
-// and one confirmation applying the ones chosen, each by the blob that was read. A molecule: every state is reached by its props.
+// Gates shows the declaration once, with two choices, each naming its purpose, blob and standing,
+// and one confirmation applying the ones chosen, each by the blob that is read. A molecule: every state is reached by its props.
 
 const landedWaits = GATES_CHANGED.landed;
 
@@ -15,7 +15,7 @@ const landedWaits = GATES_CHANGED.landed;
 const keeps = () => vi.fn((answered: Answered) => answered.done());
 const keepsIntegration = () => vi.fn((_request: unknown, answered: Answered) => answered.done());
 
-// The language goes back inside `act`, with the page still drawn (FRAMEACT1).
+// The language goes back inside `act`, with the page still drawn.
 afterEach(async () => { await act(async () => { await i18n.changeLanguage('en'); }); });
 
 describe("a place's Gates", () => {

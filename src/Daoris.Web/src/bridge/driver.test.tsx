@@ -4,7 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { getBridge } from '@shenora/react';
 
-// The driver's own calls, as hooks (MOD3: moved from `shell.test.tsx` beside the domain they call).
+// The driver's own calls, as hooks.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -31,8 +31,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * A publish is looked at now, not at the next poll: the route existed and nothing called it (REV3
-   * CLEAN1). A refused nudge is swallowed — the poll looks anyway, and it is not the person's news.
+   * A publish is looked at now, not at the next poll. A refused nudge is swallowed — the poll looks anyway, and it is not the person's news.
    */
   it('a nudge lands on DAORIS.DRIVER, and a refused one says nothing', async () => {
     invoke.mockImplementation(async () => null);
@@ -46,9 +45,9 @@ describe('the driver domain', () => {
   });
 
   /**
-   * *Sync now* (SYNC6b) is the tick's own pass for one circle, run by the shell's driver loop — so it
-   * lands on DAORIS.DRIVER naming the circle. A pass that answers is published by the route (STATEHUB1d, D169), so the state
-   * hub asks where it stands again in every window; one refused as an error publishes nothing (D169 point 5), and the hook
+   * *Sync now* is the tick's own pass for one circle, run by the shell's driver loop — so it
+   * lands on DAORIS.DRIVER naming the circle. A pass that answers is published by the route, so the state
+   * hub asks where it stands again in every window; one refused as an error publishes nothing, and the hook
    * asks again itself, since a pass that failed part way may have recorded where it stood.
    */
   it('Sync now lands on DAORIS.DRIVER naming the circle, and the standing refetches after a failure', async () => {
@@ -72,10 +71,10 @@ describe('the driver domain', () => {
   });
 
   /**
-   * LOOK2a: Settings → Workspace, opened as the shell started, asked for the lines at once, was refused *still coming
-   * up*, and kept that answer until *Bring up to date* happened to ask again. The driver says when its service is up,
+   * Settings → Workspace, opened as the shell starts, asks for the lines at once, is refused *still coming
+   * up*, and would keep that answer until *Bring up to date* happened to ask again. The driver says when its service is up,
    * and everything it refused as not ready is asked again then — under its own key or not — while an answer refused
-   * for a reason of its own is left as it was.
+   * for a reason of its own is left alone.
    */
   it('what the driver refused while it came up is asked again when it says it is up', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -114,7 +113,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * COMPANYVIEW1c: the roles' structure is asked by event naming its places and works, under the driver's key, and read field by field,
+   * The roles' structure is asked by event naming its places and works, under the driver's key, and read field by field,
    * a part the shell left out read as none.
    */
   it('the roles structure is asked by event naming its places', async () => {
@@ -146,7 +145,7 @@ describe('the driver domain', () => {
     });
   });
 
-  /** AGENTSPLACE1a: the places by event, and a part the shell left out read as none. */
+  /** The places by event, and a part the shell left out read as none. */
   it('the places are asked by event with their page and fold', async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;

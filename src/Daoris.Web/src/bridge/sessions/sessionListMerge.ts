@@ -26,7 +26,7 @@ const sorted = (parts: ReadonlyMap<string, Part>): Session[] =>
 /**
  * The widest session list composed from the workspaces' partitions (`mergeKeyed` writes a new partition object for a change and
  * keeps every unmoved record's own object), kept from one call to the next: a call finds the records whose object is not the one
- * it composed last time and merges those into the list it holds, in the service's order, where the whole list was sorted again at
+ * it composed last time and merges those into the list it holds, in the service's order, rather than sorting the whole list again at
  * every change. The list is the same as sorting the whole, which the page's test holds.
  */
 export function sessionsComposer(): (partitions: ReadonlyMap<string, unknown>, judged: boolean) => Session[] | undefined {

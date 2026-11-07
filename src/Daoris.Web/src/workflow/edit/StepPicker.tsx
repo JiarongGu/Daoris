@@ -8,7 +8,7 @@ import type { WorkflowPaletteAnswer } from './answers';
 import { stepAbout, stepTitle } from './editWords';
 import { type StepChoice, stepChoices } from './graphDraft';
 
-// The step picker (FLOWCHART2b; the flowchart design §2, D221 §2.3): every step the palette offers, searchable and grouped, the place the
+// The step picker: every step the palette offers, searchable and grouped, the place the
 // new step goes said above it, so an insertion names the way it replaces. A kind added to the driver or a plugin installed is offered with
 // no change here; a plugin's steps stand under the plugin, titled by their manifest's words.
 

@@ -7,7 +7,7 @@ import { drawnFromJson, FINISHED, graphFlow, WORKFLOW_TRACK } from './graphFlow'
 import type { ChartNode } from './chart/stepKinds';
 import { MERGE_GRAPH, RELEASE_GRAPH, TWO_OUTCOMES_GRAPH } from './graphFixtures';
 
-// SETUPUX1n (D221; the Setup design's §2.3 and §5 row n): one drawing of a workflow graph for the place, the editor and a run, always
+// One drawing of a workflow graph for the place, the editor and a run, always
 // top to bottom in sections and never left to right, its endings drawn as they are, its holds in one group, on a 14rem track. The
 // shipped workflows are read from the driver's own data, so a changed default is a changed drawing here.
 
@@ -128,7 +128,7 @@ describe('the shipped workflows, read from the driver\'s own data', () => {
     }
   });
 
-  // SETUPUX1u: a run passes the outcome a decision returned, and the drawing says which route that was.
+  // A run passes the outcome a decision returned, and the drawing says which route it took.
   it('draws a run\'s decision: the route its outcome took reached, the others not taken, and Finished after the one taken', () => {
     const decided = (outcome: 'release' | 'none') => {
       const graph = drawnFromJson(t, i18n, shipped('release').graph);
@@ -242,7 +242,7 @@ describe('a graph drawn through the module', () => {
   });
 });
 
-// FLOWCHART2a (D223): the components are handed what to draw: each step's variant, a decision's outcomes as ports, each unrouted
+// The components are handed what to draw: each step's variant, a decision's outcomes as ports, each unrouted
 // outcome a ◎, the terminals and the group for what they are, and the data wires apart from the ways on.
 describe('a graph handed to the chart\'s components (FLOWCHART2a)', () => {
   const stepOf = (flow: ReturnType<typeof draw>, id: string) => (flow.nodes.find((each) => each.id === id) as ChartNode).step!;

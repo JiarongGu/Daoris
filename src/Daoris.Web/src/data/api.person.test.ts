@@ -2,15 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api, holdPersonKey, holdsPersonKey } from './api';
 
 /**
- * PERSONDOOR1f (D156 point 2, the person-door design §2.2, §2.3 and §5.2): the person key the shell answers is held in memory and
+ * The person key the shell answers is held in memory and
  * sent as `Daoris-Person` on every write and no read; one the host refuses `stale` is asked of the shell again and the write sent
- * once more; the shell answering none leaves every write as it was.
+ * once more; the shell answering none leaves every write unchanged.
  */
 
 const KEY = 'k'.repeat(43);
 const NEW = 'n'.repeat(43);
 
-/** Each request the stubbed host was sent: its method and the key it carried, if any. */
+/** Each request sent to the stubbed host: its method and the key it carried, if any. */
 function carried(fetcher: ReturnType<typeof vi.fn>): { method: string; key: string | null }[] {
   return (fetcher.mock.calls as [string, RequestInit | undefined][]).map(([, init]) => ({
     method: init?.method ?? 'GET',

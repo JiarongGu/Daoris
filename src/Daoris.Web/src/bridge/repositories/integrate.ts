@@ -3,7 +3,7 @@ import { useShenora } from '@shenora/react';
 import { call } from '../call';
 import { askHeld, isPending } from '../state/held';
 
-// A repository's integration (INTEGRATE1h; the integration design §5.8): the Integration view's read and the owner's acts.
+// A repository's integration: the Integration view's read and the owner's acts.
 
 /** A request as the view says it: its unit, branch, frozen tip and where it stands. */
 export type IntegrationRequestRow = {
@@ -14,7 +14,7 @@ export type IntegrationRequestRow = {
   since: string;
   unit?: string | null;
   said?: string | null;
-  /** Where an order moved a queued request (INTEGRATE1h): first or last; absent where it stands by arrival. */
+  /** Where an order moved a queued request: first or last; absent where it stands by arrival. */
   ordered?: 'first' | 'last' | null;
 };
 
@@ -31,11 +31,11 @@ export type IntegrationCandidateRow = {
   members: IntegrationMemberRow[];
   steps: IntegrationStepRow[];
   at?: string | null;
-  /** What holds it (INTEGRATE1h adds `decide`: the policy held it for the owner's decide). */
+  /** What holds it (`decide`: the policy holds it for the owner's decide). */
   holds?: 'decide' | 'conflict' | 'promotion' | null;
   release?: string | null;
   by?: string | null;
-  /** The judge's words a decide hold was made with. */
+  /** The judge's words a decide hold carries. */
   why?: string | null;
   /** A decide recorded on it that the line's run has still to act on. */
   decided?: IntegrationDecide | null;
@@ -43,7 +43,7 @@ export type IntegrationCandidateRow = {
 
 export type IntegrationSupersededRow = { request: string; commit: string; subject: string; by: string; files: number };
 
-/** A landed branch whose integration waits for the owner's card (INTEGRATE1h), as the runtime last judged it. */
+/** A landed branch whose integration waits for the owner's card, as the runtime last judged it. */
 export type IntegrationWaitingRow = { unit: string; branch: string; tip: string; code: string; said: string; since?: string | null };
 
 /** `INTEGRATION`'s answer for a repository. */
@@ -54,11 +54,11 @@ export type IntegrationLook = {
   handedBack: IntegrationRequestRow[];
   superseded: IntegrationSupersededRow[];
   promoted: IntegrationRequestRow[];
-  /** Absent from a driver before INTEGRATE1h, read as none. */
+  /** Absent from an older driver, read as none. */
   waiting?: IntegrationWaitingRow[];
 };
 
-/** The owner's decide on a held candidate (§4.5, §8). */
+/** The owner's decide on a held candidate. */
 export type IntegrationDecide = 'split' | 'hand-back' | 'land';
 
 /** A unit's one line: its integration state, the line, and the step it is at. */
@@ -105,7 +105,7 @@ export type IntegrateAct =
   | { repository: string; act: 'answer'; request: string; commit: string; answer: 'superseded' | 'rebase' };
 
 /**
- * The owner's act: a request, a drop or a recheck; and (INTEGRATE1h) a decide on a held candidate, a queued request's order and a
+ * The owner's act: a request, a drop or a recheck; and a decide on a held candidate, a queued request's order and a
  * superseded commit's answer. The state hub asks the look again in every window.
  */
 export const useIntegrate = () =>

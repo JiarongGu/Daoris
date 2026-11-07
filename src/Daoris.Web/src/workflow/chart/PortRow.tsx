@@ -2,10 +2,10 @@ import { cn } from '../../lib/cn';
 import type { NodeContext, NodeFoot } from '../../design/FlowCanvas';
 import type { ChartPort } from './stepKinds';
 
-// A decision's outcomes as ports on the node's lower edge (FLOWCHART2a; the flowchart design §2): one cell for each, in the declared
+// A decision's outcomes as ports on the node's lower edge: one cell for each, in the declared
 // order, ● where a route follows it and ○ where it ends at a ◎. A port is a foot line made visible: pressing it moves the focus to its
 // target as the foot's line does, and the foot then omits that line, so nothing is said twice. The route leaves the port's own box.
-// In the editor (FLOWCHART2b) a port's press starts its way instead, routed or not, and its name says so.
+// In the editor a port's press starts its way instead, routed or not, and its name says so.
 
 /** The ports with the foot line each carries, and the rest of the foot, which stays the node's. */
 export function splitFeet(ports: ChartPort[], feet: NodeFoot[]): { ported: { port: ChartPort; foot: NodeFoot | undefined }[]; rest: NodeFoot[] } {

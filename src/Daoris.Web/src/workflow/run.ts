@@ -1,8 +1,7 @@
 import type { Session } from '../data/api';
 import type { WorkflowStep } from './current';
 
-// Where a piece of work stands in its workflow, as the shell answers it (WORKFLOW1c; D157 point 11, the workflow design §5.1–§5.2,
-// §7): the driver's `WorkflowRunReader`, read from the records that already exist. The page draws it and derives nothing: where
+// Where a piece of work stands in its workflow, as the shell answers it: the driver's `WorkflowRunReader`, read from the records that already exist. The page draws it and derives nothing: where
 // each step stands is the driver's, and only the words and the doors are the page's.
 
 /** Where a step stands (design §5.2), as the driver spells it (`WorkflowRunStates`). */
@@ -44,31 +43,31 @@ export interface RunStep {
   /** A code the record kept: a hold, a landing try's, a pass's failure, an ask's, who accepted. */
   code?: string | null;
   /**
-   * On a run bound to a graph version (FABRIC-CUTOVER1e), the node's own kind (`claimed`, `handed`, a plugin's `<plugin>/<node>`); its
+   * On a run bound to a graph version, the node's own kind (`claimed`, `handed`, a plugin's `<plugin>/<node>`); its
    * detail is then its record's state (`GRAPH_DETAILS`). None on a steps run's step, and on a look the work added beside a graph.
    */
   node?: string | null;
   /** What a graph run's node observes: `quest` (its `quest`), `branch` (its `branch` at its `commit`) or `landing`; none for the run itself. */
   on?: string | null;
   /**
-   * What the person may say of a graph run's node now (FABRIC-CUTOVER1f), as the driver's one table takes it: `skip`, `stop`. None where it
+   * What the person may say of a graph run's node now, as the driver's one table takes it: `skip`, `stop`. None where it
    * offers neither, on a steps run's step, and from a shell before it.
    */
   acts?: string[] | null;
-  /** The person's word on a graph run's node, kept and not applied yet (FABRIC-CUTOVER1f); none where none waits. */
+  /** The person's word on a graph run's node, kept and not applied yet; none where none waits. */
   asked?: NodeWordKept | null;
-  /** The gate a failed check named (FABRIC-PIPELINE1d); none on another step, and from a shell before it. */
+  /** The gate a failed check named; none on another step, and from a shell before it. */
   gate?: string | null;
-  /** A check's attempt held unknown for the person, or settled by their stop (FABRIC-PIPELINE1d); none on another step. */
+  /** A check's attempt held unknown for the person, or settled by their stop; none on another step. */
   held?: CheckHeld | null;
   /**
-   * The requests the work's sessions made (INTEGRATE1o part o2; the integration design §17.3), on the work step only: the quests they
+   * The requests the work's sessions made, on the work step only: the quests they
    * published and the helpers they asked. None where there are none, and from a shell before it.
    */
   requests?: RunRequest[] | null;
   /**
-   * The unit's integration state as the integration record says it (INTEGRATE1h; the integration design §17.9), on the `integrate`
-   * node only; none from a shell before it, or where nothing was asked.
+   * The unit's integration state as the integration record says it, on the `integrate`
+   * node only; none from a shell before it, or where nothing is asked.
    */
   integration?: { state: string; line: string; step?: string | null } | null;
 }
@@ -82,7 +81,7 @@ export interface RunRequest {
   kind: string;
   /** The quest's id, or the helper's session. */
   id: string;
-  /** The repository the quest was asked of; the helper's agent. */
+  /** The repository the quest is asked of; the helper's agent. */
   to: string;
   /** A quest's status lowercased (`open`, `taken`, `done`, `declined`); a helper's `working`, `done`, `failed` or `stopped`. */
   state: string;
@@ -96,7 +95,7 @@ export interface RunRequest {
 }
 
 /**
- * A check held unknown (FABRIC-PIPELINE1d, the pipeline design §4.1): its unit and attempt, for the person's word (`WORK_HELD`), the words they
+ * A check held unknown: its unit and attempt, for the person's word (`WORK_HELD`), the words they
  * may say (`again` is *Run again*, `stop` is *Not now*), and the word they gave that the driver's next look has not applied yet.
  */
 export interface CheckHeld {
@@ -122,8 +121,8 @@ export interface CheckHeldAnswer {
 }
 
 /**
- * What the person may say of a graph run's node (FABRIC-CUTOVER1f): pass it over for the run, or stop it; a declined request's ask again and go
- * on (INTEGRATE1p); a review's changes, with their words (DECIDE1c).
+ * What the person may say of a graph run's node: pass it over for the run, or stop it; a declined request's ask again and go
+ * on; a review's changes, with their words.
  */
 export type NodeAct = 'skip' | 'stop' | 'send' | 'ask-again' | 'go-on' | 'changes' | 'done' | 'approve' | 'reject';
 
@@ -158,11 +157,11 @@ export interface GraphWire {
   from: string;
   to: string;
   kind: string;
-  /** The outcome a `when` wire follows (DECIDE1c); none on every other kind. */
+  /** The outcome a `when` wire follows; none on every other kind. */
   outcome?: string | null;
 }
 
-/** A way back to a node before its source (DECIDE1c), taken `on` the source's `rejected`, its `failed` or one of its outcomes. */
+/** A way back to a node before its source, taken `on` the source's `rejected`, its `failed` or one of its outcomes. */
 export interface GraphBack {
   from: string;
   to: string;
@@ -170,7 +169,7 @@ export interface GraphBack {
 }
 
 /**
- * A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e; D190 points 2 and 3): its graph's entries, end and wires, the
+ * A run bound to a graph version, drawn from its record: its graph's entries, end and wires, the
  * subjects its nodes observe, and what its record says of it. Its nodes are the run's steps, each with its `node`.
  */
 export interface GraphRun {
@@ -188,11 +187,11 @@ export interface GraphRun {
   unread: boolean;
   /** The quest it ended at, where its record keeps its end. */
   ended?: string | null;
-  /** Its `back` wires, apart from `wires`, which the run is read along (DECIDE1c); none from a shell before it. */
+  /** Its `back` wires, apart from `wires`, which the run is read along; none from a shell before it. */
   backs?: GraphBack[] | null;
-  /** The nodes no route can start any more given the outcomes reached (DECIDE1c); none from a shell before it. */
+  /** The nodes no route can start any more given the outcomes reached; none from a shell before it. */
   notTaken?: string[] | null;
-  /** Each reached decision's outcome, by node (DECIDE1c); none from a shell before it. */
+  /** Each reached decision's outcome, by node; none from a shell before it. */
   outcomes?: Record<string, string> | null;
 }
 
@@ -213,26 +212,26 @@ export interface WorkflowRun {
   workflowGate?: import('./gate').WorkflowGateState | null;
   /**
    * Its graph digest, bound identity when named, start plugins and each limit's sentence; and the route that chose its workflow, as its
-   * binding keeps it (FABRIC-PIPELINE1a): the level, and the kind with its label where one chose it.
+   * binding keeps it: the level, and the kind with its label where one chose it.
    */
   workflow: {
     version: string; startHolds: string[]; limits: Record<string, string>; id?: string | null; boundVersion?: number | null;
     route?: { level: string; kind?: string | null; label?: string | null } | null;
   };
   steps: RunStep[];
-  /** A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e); none for a steps run, and from a shell before it. */
+  /** A run bound to a graph version, drawn from its record; none for a steps run, and from a shell before it. */
   graph?: GraphRun | null;
   /**
-   * A chat run (CHATFLOW1c, the chat-flow design §4.1, §4.4): its key, `chat-<first>`, its checks where its repository sets them, and whether
-   * they are enforced for a conversation, which they are not before CHATFLOW1h. None for a quest's run, and from a shell before it.
+   * A chat run: its key, `chat-<first>`, its checks where its repository sets them, and whether
+   * they are enforced for a conversation, which they are not yet. None for a quest's run, and from a shell before it.
    */
   chat?: { run: string; checks?: string | null; enforced: boolean } | null;
-  /** A verification run's commit, branch and verdict (FABRIC-PIPELINE1d); none for a chain's or a chat's, and from a shell before it. */
+  /** A verification run's commit, branch and verdict; none for a chain's or a chat's, and from a shell before it. */
   line?: RunLine | null;
 }
 
 /**
- * A verification run as a repository's line reads it (FABRIC-PIPELINE1d, the pipeline design §4.4): the commit it judged, the branch it was
+ * A verification run as a repository's line reads it: the commit it judged, the branch
  * asked of, who asked it and when, its verdict, and each gate as its checks' newest results say.
  */
 export interface RunLine {
@@ -257,8 +256,7 @@ export interface RunLine {
 }
 
 /**
- * What `WORKFLOW_RUN` answers: the runs, or none with the driver's English sentence and, from a driver with CHATFLOW1a, its code (the
- * chat-flow design §10), which the page words in the reader's language, with the record's id and the workflow's id its words name.
+ * What `WORKFLOW_RUN` answers: the runs, or none with the driver's English sentence and, from a driver that sends one, its code, which the page words in the reader's language, with the record's id and the workflow's id its words name.
  */
 export interface WorkflowRunAnswer {
   runs: WorkflowRun[];
@@ -292,7 +290,7 @@ export function runTone(state: string): 'open' | 'done' | 'declined' | 'neutral'
 export const standsAt = (run: WorkflowRun): RunStep | null => run.steps.find((step) => step.step.id === run.at) ?? null;
 
 /**
- * Whether the driver's record says the run finished (SETUPUX1u): it has no step to stand at, and nothing in it is unread or held, or a graph
+ * Whether the driver's record says the run finished: it has no step to stand at, and nothing in it is unread or held, or a graph
  * Daoris has not judged. *Finished* is drawn from this alone, never from a step's being done.
  */
 export const finishedBy = (run: WorkflowRun): boolean =>
@@ -305,7 +303,7 @@ export function openedBy(run: WorkflowRun): string | null {
   return [...run.steps].reverse().find((step) => step.state !== 'not-reached')?.step.id ?? null;
 }
 
-/** Whether the outcomes a graph run reached leave no route to this step (DECIDE1c, the driver's `notTaken`). */
+/** Whether the outcomes a graph run reached leave no route to this step (the driver's `notTaken`). */
 export const notTakenBy = (run: WorkflowRun, step: RunStep): boolean => run.graph?.notTaken?.includes(step.step.id) ?? false;
 
 /** Whether a run waits on the person now: the step it stands at waits for their press. */

@@ -4,9 +4,9 @@ import {
   flagOf, KNOWN_KINDS, KNOWN_LIMITS, namesOf, textOf, type CurrentWorkflow, type WorkflowStep, yourPart,
 } from './current';
 
-// What a Current says in the reader's language (WORKFLOW1b, the workflow design §6.2): each step's title, who acts, what it
-// is set to, where it was set, what moves work on after it, and its limit. Every sentence is composed from the step's typed
-// fields, so it cannot drift from what the driver drew (design §2.5); a name from the person's file (an environment, a
+// What a Current says in the reader's language: each step's title, who acts, what it
+// is set to, where it is set, what moves work on after it, and its limit. Every sentence is composed from the step's typed
+// fields, so it cannot drift from what the driver drew; a name from the person's file (an environment, a
 // branch pattern, a plugin's id, a reviewer) is set as code and never translated.
 
 /** Names set as code: `a`, `b`. */
@@ -88,7 +88,7 @@ export function stepSet(t: TFunction, step: WorkflowStep): string | null {
       const plugin = textOf(step, 'plugin');
       return plugin ? t('workflow.set.pullRequest', { plugin }) : null;
     }
-    // INTEGRATE1r part r3: a graph-only kind (F43), said as the terminal says it (`WorkflowWords`): a value this page does not know reads
+    // A graph-only kind, said as the terminal says it (`WorkflowWords`): a value this page does not know reads
     // as the owner's, no gates, back to its session, as the driver reads an absent or unrecognised one.
     case 'integrate': {
       const request = textOf(step, 'request');
@@ -104,7 +104,7 @@ export function stepSet(t: TFunction, step: WorkflowStep): string | null {
 }
 
 /**
- * Where a step was read from (design §2.7, its source): this repository's rule, its workspace's, Daoris's default, or for
+ * Where a step is read from (its source): this repository's rule, its workspace's, Daoris's default, or for
  * the work, always. On a workspace's page a rule at the workspace's level is this workspace's own.
  */
 export function sourceSaid(t: TFunction, step: WorkflowStep, page: 'repository' | 'workspace', workspace: string): string {

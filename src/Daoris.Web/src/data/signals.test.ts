@@ -5,9 +5,9 @@ import {
 } from './signals';
 
 /**
- * Why a quest is sitting, in the driver's own words. The driver has said this every tick since D46
- * ("sitting must always say why"); the page dropped it, and the Overview asked "is anything
- * sitting" without ever answering "why" (deployed application, 2026-09-23).
+ * Why a quest is sitting, in the driver's own words. The driver says this every tick
+ * ("sitting must always say why"); the Overview must not ask "is anything
+ * sitting" without ever answering "why".
  */
 describe('sittingBecause', () => {
   const considered: Consideration[] = [
@@ -33,8 +33,8 @@ describe('sittingBecause', () => {
 });
 
 /**
- * REV3 web-rest F13: both windows capped the notices on screen and THEN added the new one, so the
- * corner held four where the limit says three.
+ * Capping the notices on screen and THEN adding the new one would leave the
+ * corner holding four where the limit says three.
  */
 describe('withNotice', () => {
   it('adds the newest and keeps the limit, counting the one just added', () => {
@@ -45,8 +45,8 @@ describe('withNotice', () => {
   });
 
   /**
-   * 🔴 UX5 U30: with the service stopped, the page's own request and the driver's tick said the same
-   * thing in the same moment, and the corner held it twice. A sentence already on screen is said
+   * 🔴 With the service stopped, the page's own request and the driver's tick say the same
+   * thing in the same moment, and the corner would hold it twice. A sentence already on screen is said
    * once: its newest copy replaces it, so it moves to the newest place and its timer starts again.
    */
   it('says a sentence already on screen once, its newest copy replacing it', () => {
@@ -77,7 +77,7 @@ describe('capped', () => {
 });
 
 /**
- * 🔴 UX5 U27: in 中文 every outstanding row said *搁置 —* over the driver's English. The driver's
+ * 🔴 In 中文 an outstanding row must not say *搁置 —* over the driver's English. The driver's
  * sentence is Daoris's own voice, so it is chrome, and chrome translates. It translates by VERDICT,
  * never by matching the English, and only where the words need nothing the page lacks. Every other
  * verdict keeps the driver's words, since its sentence names what the page is not told (a session,
@@ -109,7 +109,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * SESSUX1b, SESSUX1d (D126 §3.3): a quest the person's stop holds says so in 中文 too, naming the session from the
+   * A quest the person's stop holds says so in 中文 too, naming the session from the
    * tick's `heldBy` rather than out of the driver's English, with the terminal's door that releases it. With no session
    * named, the driver's words stand.
    */
@@ -129,7 +129,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * REVIEWENV1c2: a set-up step the planner sits because it cannot be shown here (`CannotShow`, REVIEWENV1c) says so in 中文,
+   * A set-up step the planner sits because it cannot be shown here (`CannotShow`) says so in 中文,
    * with the driver's sentence as written beneath: it names an environment, an address and the door that declares one, none of
    * which the tick carries. English passes the driver's words through, as every verdict's does.
    */
@@ -163,7 +163,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * UPDATE1 (D139 §2): a quest an update's drain holds says so in 中文 from the tick's `forUpdate`, never from the driver's
+   * A quest an update's drain holds says so in 中文 from the tick's `forUpdate`, never from the driver's
    * English; any other `Blocked` hold keeps the driver's words.
    */
   it('says an update’s hold in 中文 from the tick’s fact, and no other Blocked hold', async () => {
@@ -181,7 +181,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * SESSUX1i (D126 §4.6): a quest parked on its failed sessions is *What needs you*'s row, and its detail is this
+   * A quest parked on its failed sessions is *What needs you*'s row, and its detail is this
    * sentence. The tick carries the number the planner parked it at (`strikes`), so 中文 says it, with the terminal's
    * door. With no number (a park not read yet), the driver's words stand.
    */
@@ -200,7 +200,7 @@ describe('sittingSentence', () => {
     expect(sittingSentence(sits('Exhausted', reason))).toBe(reason);
   });
 
-  /** CONTEXTDRIVE1g: a park carrying its failures rule's number says the rule beside the count, in both languages. */
+  /** A park carrying its failures rule's number says the rule beside the count, in both languages. */
   it('says a park by the failures rule with its number', async () => {
     const parked: Consideration = { ...sits('Exhausted', 'parked'), quest: '9a9492', strikes: 3, parksAt: 3 };
 
@@ -213,7 +213,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * TOOL4g (D125 §4): a quest held because every account its start may use is cooling waits for an account. The tick names
+   * A quest held because every account its start may use is cooling waits for an account. The tick names
    * whose account, which and until when, so 中文 says it from those facts; English is the driver's own sentence. Any other
    * hold at spawn keeps the driver's words in both.
    */
@@ -238,7 +238,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * TOOL6g: a hold that passed accounts not signed in names each and its sign-in, beside a wait on a cooling account or with
+   * A hold that passed accounts not signed in names each and its sign-in, beside a wait on a cooling account or with
    * none cooling, so a person reading *waits for account-1* knows a sign-in frees it. 中文 says it from the tick's
    * `signedOut`; English is the driver's own sentence, which says the same.
    */
@@ -261,7 +261,7 @@ describe('sittingSentence', () => {
     expect(waits).toContain('account-2、account-3 未登录');
     expect(waits).toContain('`daoris agent login claude-code --profile account-2`');
     expect(waits).toContain('`daoris agent login claude-code --profile account-3`');
-    // The Agents place, where Settings → Agents went (UX6e, D150 §5).
+    // The Agents place, not Settings → Agents.
     expect(waits).toContain('「智能体」');
     expect(waits).not.toContain('设置 → 智能体');
     const none = sittingSentence(alone);
@@ -271,7 +271,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * ACCT2b (D125's ACCT2b note): the tick carries the name the person gave each account beside its id, so 中文 says the
+   * The tick carries the name the person gave each account beside its id, so 中文 says the
    * name, as the driver's English does; an account with no name is said by its id; the sign-in keeps the id.
    */
   it('says each account by the name the tick carries, its sign-in by its id, and an unnamed one by its id', async () => {
@@ -295,7 +295,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * OWNSPACE1b-B (D175 point 3): no Daoris account is signed in, said from the tick's `noAccount` fact. English passes the driver's
+   * No Daoris account is signed in, said from the tick's `noAccount` fact. English passes the driver's
    * sentence (its only copy); 中文 says it from the agent, with the terminal's twin of the sign-in.
    */
   it('says a hold for no Daoris account from the fact, never from an empty list', async () => {
@@ -312,7 +312,7 @@ describe('sittingSentence', () => {
     expect(said).not.toContain(reason);
   });
 
-  /** ACCTQUOTE1 (D125's ACCTQUOTE1 note): each sign-in is a command a person pastes, so its id is spelled for a shell. */
+  /** Each sign-in is a command a person pastes, so its id is spelled for a shell. */
   it('spells each sign-in\'s account for a shell, and names one no shell can take by a placeholder', async () => {
     const reason = 'no `claude-code` account this start may use is ready.';
     const signedOut: Consideration = {
@@ -329,7 +329,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * PAUSE1e (D132 §2.3): a paused quest says whose pause holds it, from the tick's `pausedBy`, with the terminal's door that
+   * A paused quest says whose pause holds it, from the tick's `pausedBy`, with the terminal's door that
    * resumes it: an ask's pause and a quest's own say it in their own words. With no pause named (the
    * fact), the driver's words stand.
    */
@@ -352,8 +352,8 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * CARRY2c (D80's CARRY2b note): a quest whose take is not this machine's said the driver's English in both languages. The
-   * tick now names whose the take is (`takenBy`): the machine and its session where a record named them, a take made here,
+   * A quest whose take is not this machine's would say the driver's English in both languages. The
+   * tick names whose the take is (`takenBy`): the machine and its session where a record names them, a take made here,
    * and the session here not carried on, so 中文 says it from those facts in each of its three forms. English is the driver's
    * own sentence; with no facts, the driver's words stand in both.
    */
@@ -403,7 +403,7 @@ describe('sittingSentence', () => {
   });
 
   /**
-   * OVERVIEWNOISE1c: the six verdicts that kept the driver's English are worded by the code the tick names beside them, in each
+   * The six verdicts that keep the driver's English are worded by the code the tick names beside them, in each
    * language, with the facts it carries — the cap as a number, the session, the other quest — and the terminal's doors verbatim.
    */
   describe('the verdicts the page words by their code', () => {
@@ -419,7 +419,7 @@ describe('sittingSentence', () => {
       ['RepositoryBusy', { code: 'repository', session: 's1' }, 'Session `s1` is active in the receiver\'s repository — one session per repository, whose root is its one tree. Sessions there run side by side once they open trees of their own.', /会话 `s1` 正在受托方的仓库中运行/],
       ['RepositoryBusy', { code: 'queued', quest: 'q7' }, 'Queued behind quest `#q7` in the receiver\'s repository — oldest first, one at a time.', /排在委托 `#q7` 之后——先到先办/],
       ['RepositoryBusy', { code: 'repositoryOpening', quest: 'q7' }, 'Queued behind quest `#q7`, which is starting in the receiver\'s repository — one session per repository, whose root is its one tree.', /排在委托 `#q7` 之后：它正在受托方的仓库中启动/],
-      // INTEGRATE1l: a start held under `overlap: wait`, its meeting paths said.
+      // A start held under `overlap: wait`, its meeting paths said.
       ['RepositoryBusy', { code: 'overlaps', quest: 'q7', paths: ['src/frame/**', 'docs/cap.md'] }, 'Waits for quest `#q7`: both touch `src/frame/**` · `docs/cap.md`. It starts once that work is integrated.', /等待委托 `#q7`：两者都涉及 `src\/frame\/\*\*` · `docs\/cap.md`/],
       ['Waiting', { code: 'asked', quest: 'q2', repository: 'Backend' }, 'Waits on `#q2`, asked of `Backend` — it goes on, in the same tree, once that is answered.', /在等 `#q2`（已向 `Backend` 提出）/],
       ['Waiting', { code: 'unreadRunning', quest: 'q2', repository: 'Backend', session: 's9' }, 'Waits on `#q2`, which `Backend` closed done: its evidence is read when session `s9` ends — it goes on, in the same tree, once that evidence is found.', /会话 `s9` 停下时读取/],
@@ -439,10 +439,10 @@ describe('sittingSentence', () => {
       ['SourceReopened', { code: 'withdrawn', quest: 'q1' }, 'Quest `#9a9492` grew from the work of `#q1`, which you reopened: it is withdrawn, and nothing starts it until you go on with it on the new work or abandon it.', /它已撤回/],
       ['SourceReopened', { code: 'held', quest: 'q1' }, 'Quest `#9a9492` grew from the work of `#q1`, which you reopened: it is set aside, and nothing carries it on until you go on with it on the new work or abandon it.', /它已搁置/],
       ['TransientHeld', { code: 'transient', session: 's1' }, "Its last session's provider kept failing: it waits for your words or Try again.", /服务方一直出错：它在等你的话或「重试」/],
-      // STAFFPOLICY1e: a role policy's ask and its bound of moves, answered by Try again's door.
+      // A role policy's ask and its bound of moves, answered by Try again's door.
       ['PolicyHeld', { code: 'policy-ask', session: 's1' }, 'Your supervisor rule asks before it moves this quest to another choice: Try again says yes to one move.', /你的主管规则在把这项委托改用其他选择之前先问你/],
       ['PolicyHeld', { code: 'moves-bound', session: 's1' }, 'This quest made the moves to another choice your supervisor rule allows for today: Try again says yes to one more.', /今天已按你的主管规则改用其他选择达到上限/],
-      // STEWARDROLE1b (D209 §5.1, §3.1a): the steward's stop held for a Try again, and a start held out of the owner's checkout.
+      // The steward's stop held for a Try again, and a start held out of the owner's checkout.
       ['Stopped', { code: 'steward', session: 's1' }, 'The steward stopped session `s1`; Try again, by the steward or the owner, carries it on.', /^管家停止了会话 `s1`；管家或所有者「重试」会让它继续。$/],
       ['Blocked', { code: 'checkout', session: 's1' }, 'Its earlier work is in your checkout, so carrying it on is yours.', /^它之前的工作在你的检出里，所以由你来让它继续。$/],
     ];

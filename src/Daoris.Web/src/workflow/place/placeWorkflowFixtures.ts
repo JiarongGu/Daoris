@@ -4,7 +4,7 @@ import type { CurrentWorkflow, WorkflowStart } from '../current';
 import { EFFECTIVE_CURRENT, EFFECTIVE_DOCS, EFFECTIVE_LANDED_NONE, EFFECTIVE_RELEASE } from './effectiveFixtures';
 import { FULL, NO_VERIFICATION, START } from '../fixtures';
 
-// A place's Workflow for the stories and the measured check (SETUPUX1o): the engine of the workspace aurora, whose default work follows a
+// A place's Workflow for the stories and the measured check: the engine of the workspace aurora, whose default work follows a
 // saved release workflow, whose documentation work follows another, and whose landed work is verified by nothing.
 
 const nothing = () => {};

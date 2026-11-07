@@ -9,7 +9,7 @@ import { answerOf, GO_AHEAD_REFUSAL, GRAPH_RUN, IN_REVIEW, LANDED } from './runF
 import { WorkflowRunView } from './WorkflowRunView';
 import { WorkflowTab } from './WorkflowTab';
 
-// FLOWCHART1d (D186; the flowchart design §2.4, §2.5, §5.1): the Workflow tab and the side bar's Workflow view draw the workflow and
+// The Workflow tab and the side bar's Workflow view draw the workflow and
 // its run on `Flow`, through `graphFlow`: top to bottom where the pane holds a step's 14rem track, and the rail, today's list, below it.
 // The rail's words are `WorkflowTab.test.tsx`'s and `WorkflowRunView.test.tsx`'s, unchanged; jsdom lays nothing out, so the pane's width
 // is stood in for here, and the edges' geometry is the measured-box check's.
@@ -131,7 +131,7 @@ describe("the Workflow tab's flowchart", () => {
     const { container, unmount } = render(<WorkflowTab page="repository" name="engine" current={WITH_A_FAILURE_PATH} />);
     expect(ids()).toContain('checks:failed');
     expect(node('Sent back once, then you').className).toMatch(/border-dashed/);
-    // FABRIC-CUTOVER1e: a check is titled as a graph run's check node is, where it was a step this page had no words for.
+    // A check is titled as a graph run's check node is, where it is a step this page has no words for.
     expect(feet(node('The checks'))).toEqual(['Sent back once, then you, if it fails']);
     // The outcome follows the check alone, a rank of one: top to bottom at a 680 px window's main area, the rail below the track.
     resizeTo(576);
@@ -179,7 +179,7 @@ describe("the Workflow view's run on the flowchart", () => {
     expect(within(run()).queryByRole('listitem', { name: /^Finished/ })).toBeNull();
   });
 
-  // SETUPUX1u: Enter on a node opens its record, where its door stands; the step the run stands at is open already.
+  // Enter on a node opens its record, where its door stands; the step the run stands at is open already.
   it('opens a step\'s record with Enter on its node, and its door is in the record', async () => {
     paneWidth = 672;
     const doors = { session: vi.fn(), quest: vi.fn(), ask: vi.fn(), review: vi.fn() };
@@ -206,12 +206,12 @@ describe("the Workflow view's run on the flowchart", () => {
     await userEvent.keyboard('{Enter}');
     expect(node('Your look in dev', run())).toHaveTextContent('Skipped for this work, by you.');
     // The go-ahead's refusal waits for the person: its failure path, dashed, to its outcome.
-    // FABRIC-CUTOVER1e: a go-ahead is titled as a graph run's go-ahead is, where it was a step this page had no words for.
+    // A go-ahead is titled as a graph run's go-ahead is, where it is a step this page has no words for.
     expect(feet(node('Your go-ahead', run()))).toEqual(['Waits for you, if you refuse it']);
     expect(screen.queryByText(/taken/)).toBeNull();
   });
 
-  // FABRIC-CUTOVER1e (D186's FLOWCHART1d note): a graph run's drawing is the first that holds a group: its fork and its join are drawn as
+  // A graph run's drawing is the first that holds a group: its fork and its join are drawn as
   // its graph's wires hold them, each node lit by its record.
   it("draws a graph run's fork and join by its wires, each node lit by its record", () => {
     paneWidth = 1232;

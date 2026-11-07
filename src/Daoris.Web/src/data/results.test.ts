@@ -4,8 +4,8 @@ import { PAGE_SHOWN, page } from './results';
 const rows = (n: number) => Array.from({ length: n }, (_, index) => index);
 
 /**
- * Search paging, after a broad query on the deployed application returned exactly forty results
- * with nothing saying that was a limit (D62).
+ * Search paging: a broad query returning exactly forty results
+ * must not leave nothing saying that is a limit.
  */
 describe('page', () => {
   it('shows everything when the service had no more to give', () => {

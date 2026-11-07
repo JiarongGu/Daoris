@@ -13,7 +13,7 @@ export type GitLogCommit = {
 
 export type GitGraphPage = { tips: string[]; sinceParted: boolean; page: number; commits: GitLogCommit[]; more: boolean };
 
-/** The review's changes (REVIEW3), bounded: the list is whole, a patch may be dropped. */
+/** The review's changes, bounded: the list is whole, a patch may be dropped. */
 export type GitChanges = {
   files: { path: string; status: string; added: number | null; removed: number | null; patch: string | null }[];
   truncated: string | null;

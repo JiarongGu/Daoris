@@ -14,7 +14,7 @@ import { draftOf, graphOf } from './graphDraft';
 import { proposalOf, RELEASE_CARD, RELEASE_PROPOSAL } from './proposalFixtures';
 import { canon, type ProposalShown } from './proposalTake';
 
-// FLOWCHART2f (D223 §4, §7 row f, §8.6): Ask Daoris's proposal drawn on the editor's chart and taken whole or change by change, through a
+// Ask Daoris's proposal drawn on the editor's chart and taken whole or change by change, through a
 // stubbed bridge. Each state the person meets: a proposal fresh, partly taken, a change gone stale, every change taken, the proposal set
 // aside, and a take undone with its record. Opening the editor settles nothing, a take saves and chooses nothing, and the press naming every
 // change taken or left goes once.
@@ -60,7 +60,7 @@ const wrap = (node: ReactNode) => (
 );
 
 const asked = (type: string) => invoke.mock.calls.filter((call) => call[1] === type).map((call) => (call[2] as { payload: Record<string, unknown> }).payload);
-/** The graph the newest judge was handed: the draft as it is. */
+/** The graph the newest judge is handed: the draft as it is. */
 const judgedGraph = () => asked('WORKFLOW_SAVE').at(-1)!.graph as Record<string, unknown>;
 const stepIds = () => (judgedGraph().nodes as { id: string }[]).map((node) => node.id);
 /** Nothing saved and nothing chosen: no save but a plan, and no use. */
@@ -227,7 +227,7 @@ describe('a proposal drawn on the chart', () => {
   });
 
   it('a stale change: refused by name with *Ask again*, the rest still takeable', async () => {
-    // The person took away the landing's way to the line, which the proposal renumbers, since Ask Daoris was told the draft.
+    // The person took away the landing's way to the line, which the proposal renumbers, since Ask Daoris is told the draft.
     await open({ startFrom: { graph: { ...MERGE_GRAPH, wires: MERGE_GRAPH.wires.filter((wire) => wire.id !== 'c') } } });
     await screen.findByRole('region', { name: /Ask Daoris proposes a change/ });
     expect(row('way:~e')).toHaveAttribute('data-change-state', 'stale');

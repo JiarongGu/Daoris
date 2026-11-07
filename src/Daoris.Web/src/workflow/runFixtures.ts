@@ -2,7 +2,7 @@ import { BRANCH_AUTOMATIC, GO_AHEAD_WAIT, LIMITS, LOOK, MERGE_YOU_ACCEPT, OPINIO
 import type { RunStep, WorkflowRun, WorkflowRunAnswer } from './run';
 import type { WorkflowStep } from './current';
 
-// What `WORKFLOW_RUN` answers, for the stories and the tests (WORKFLOW1c): a run at each stage a person meets it, each step a cell
+// What `WORKFLOW_RUN` answers, for the stories and the tests: a run at each stage a person meets it, each step a cell
 // of the driver's shared table (`fixtures.ts`) beside where `WorkflowRuns.Derive` would put it from the records named in its
 // comment (`WorkflowRunTests`' rows), so a story draws what the driver reads.
 
@@ -53,7 +53,7 @@ export const IN_REVIEW = run([
 ], { quests: ['q1', 'q2'], session: 's2' });
 
 /**
- * Held for an opinion: its gate's `with-session` (XAGENT1f), Codex's three findings with the working session, which answers them
+ * Held for an opinion: its gate's `with-session`, Codex's three findings with the working session, which answers them
  * as its next turn (*findings with the working session wait on its agent*). The landing is not reached until the gate settles.
  */
 export const HELD_FOR_OPINION = run([
@@ -65,7 +65,7 @@ export const HELD_FOR_OPINION = run([
 /**
  * A dispute the gate holds on the person (*a dispute waits on you*): a `must` the working session did not fix. Its door opens the
  * review, where the gate's presses stand beside *Accept…*; the attended session's own run draws the gate under the step, *Go on
- * anyway…* among its presses (XAGENT1g).
+ * anyway…* among its presses.
  */
 export const OPINION_DISPUTED = run([
   at(WORK(), 'done', 'finished', { session: 's1', quest: 'q1', agent: 'claude-code', at: AT, count: 1, of: 1 }),
@@ -109,7 +109,7 @@ export const FAILED = run([
 ]);
 
 /**
- * A named version's run (FLOWCHART1d): the work done, the landing waiting for the person's accept, then a go-ahead to release to
+ * A named version's run: the work done, the landing waiting for the person's accept, then a go-ahead to release to
  * prod whose refusal waits for them, its failure path drawn; a second opinion passed over where nothing asked for one, and the look
  * the person skipped, each saying who passed it over in its own words.
  */
@@ -121,7 +121,7 @@ export const GO_AHEAD_REFUSAL = run([
   at(GO_AHEAD_WAIT, 'not-reached', ''),
 ], { workflow: { version: '5d1c0e7a92b4', startHolds: [], limits: limitsOf([at(OPINION, '', ''), at(LOOK, '', ''), at(GO_AHEAD_WAIT, '', '')]), id: 'release', boundVersion: 2 } });
 
-/** A graph run's node's cell, as `WorkflowGraphRuns.Derive` reads a node as a step (FABRIC-CUTOVER1e): bound by the version, run whole. */
+/** A graph run's node's cell, as `WorkflowGraphRuns.Derive` reads a node as a step: bound by the version, run whole. */
 const nodeCell = (
   id: string, kind: string, participation: WorkflowStep['participation'], executor: WorkflowStep['executor'],
   press: WorkflowStep['press'] = null, settings: WorkflowStep['settings'] = {},
@@ -130,9 +130,9 @@ const nodeCell = (
 const BRANCH = 'daoris/q1-fix-the-header';
 
 /**
- * A run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e): the claim reached on its quest, then a fork, the build observed
- * on the run's branch while the lint is reached there, joined before the second opinion, not reached behind the join (FABRIC-CUTOVER1d begins
- * it as any node once its wires let it start); the landing and the deploy after it not reached; a failure of the join stops the run.
+ * A run bound to a graph version, drawn from its record: the claim reached on its quest, then a fork, the build observed
+ * on the run's branch while the lint is reached there, joined before the second opinion, not reached behind the join (it begins
+ * as any node once its wires let it start); the landing and the deploy after it not reached; a failure of the join stops the run.
  */
 export const GRAPH_RUN = run([
   at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
@@ -162,8 +162,8 @@ export const GRAPH_RUN = run([
 });
 
 /**
- * A graph run whose go-ahead waits on the person, with a look the chain's choice added beside its graph (D190 point 7), which holds the
- * landing as D154's gate does; the version's own graph holds no look.
+ * A graph run whose go-ahead waits on the person, with a look the chain's choice added beside its graph, which holds the
+ * landing as a gate does; the version's own graph holds no look.
  */
 export const GRAPH_RUN_ADDED_LOOK = run([
   at(nodeCell('claimed', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
@@ -182,7 +182,7 @@ export const GRAPH_RUN_ADDED_LOOK = run([
 });
 
 /**
- * A graph run whose go-ahead nobody raised (FABRIC-CUTOVER1f; the cutover design §5.2): the go-ahead under way offers the person's skip and
+ * A graph run whose go-ahead nobody raised: the go-ahead under way offers the person's skip and
  * stop, the landing behind it not reached offers neither.
  */
 export const GRAPH_RUN_GO_AHEAD = run([
@@ -202,7 +202,7 @@ export const GRAPH_RUN_GO_AHEAD = run([
 });
 
 /**
- * DECIDE1c: a graph run whose review waits on the person's Accept, which offers their changes beside its stop; its changes go back to the work.
+ * A graph run whose review waits on the person's Accept, which offers their changes beside its stop; its changes go back to the work.
  */
 export const GRAPH_RUN_REVIEW = run([
   at(nodeCell('work', 'work', 'agent', 'agent'), 'done', 'reached', { node: 'claimed', on: 'quest', quest: 'q1' }),
@@ -222,7 +222,7 @@ export const GRAPH_RUN_REVIEW = run([
 });
 
 /**
- * DECIDE1c: a graph run past its landing whose plugin's find came to `none`, so its release is not taken and the run stands nowhere: the
+ * A graph run past its landing whose plugin's find came to `none`, so its release is not taken and the run stands nowhere: the
  * find's `when release` route and the review's way back to the work are drawn, and the find says its outcome.
  */
 export const GRAPH_RUN_DECIDED = run([
@@ -251,7 +251,7 @@ export const GRAPH_RUN_DECIDED = run([
 });
 
 /**
- * SETUPUX1u: the same run when the find came to `release`: the release is recorded and copied, and the run finished there, with the
+ * The same run when the find came to `release`: the release is recorded and copied, and the run finished there, with the
  * find saying its outcome and the route it took.
  */
 export const GRAPH_RUN_RELEASED = run([
@@ -278,8 +278,8 @@ export const GRAPH_RUN_GO_AHEAD_KEPT: WorkflowRun = {
 };
 
 /**
- * INTEGRATE1o part o2 (the integration design §17.3): the work held on its requests. Its session published a quest to another repository, which
- * was declined, and asked a helper; the work's own node draws each, and the hold, active with a decline, waits on the person, whose
+ * The work held on its requests. Its session published a quest to another repository, which
+ * came back declined, and asked a helper; the work's own node draws each, and the hold, active with a decline, waits on the person, whose
  * *Pass over…* lets the flow go on. Another quest, done, shows its close's note.
  */
 export const GRAPH_RUN_REQUESTS = run([
@@ -304,7 +304,7 @@ export const GRAPH_RUN_REQUESTS = run([
   },
 });
 
-/** INTEGRATE1h (§17.9): the unit's `integrate` node under way, in a candidate at its replay, with its record's head drawn on it. */
+/** The unit's `integrate` node under way, in a candidate at its replay, with its record's head drawn on it. */
 export const GRAPH_RUN_INTEGRATE = run([
   at(nodeCell('integrate', 'integrate', 'automatic', 'daoris'), 'working', 'active', {
     node: 'integrate', integration: { state: 'in-candidate', line: 'main', step: 'replay' },
@@ -320,7 +320,7 @@ export const GRAPH_RUN_INTEGRATE = run([
 });
 
 /**
- * A graph run whose check stands as `state` and `detail` say, with the facts the driver reads of it (FABRIC-PIPELINE1d, the pipeline design §4.4):
+ * A graph run whose check stands as `state` and `detail` say, with the facts the driver reads of it:
  * its gate where it failed, its held attempt where it is unknown for the person.
  */
 export const checkRun = (state: string, detail: string, facts: Partial<RunStep> = {}): WorkflowRun => run([
@@ -357,8 +357,8 @@ export const GRAPH_RUN_UNJUDGED = run([
 });
 
 /**
- * A chat's run (CHATFLOW1c, the chat-flow design §4.2, §4.4): its conversation between turns with two commits beyond the line, waiting for the
- * person's Accept; its second opinion, which that Accept asks (CHATFLOW1d); and its checks, `light`, not yet enforced for a conversation.
+ * A chat's run: its conversation between turns with two commits beyond the line, waiting for the
+ * person's Accept; its second opinion, which that Accept asks; and its checks, `light`, not yet enforced for a conversation.
  */
 export const CHAT_RUN = run([
   at(WORK(), 'waiting-on-you', 'land', { session: 'c2', agent: 'claude-code', at: AT, count: 2 }),

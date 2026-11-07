@@ -11,7 +11,7 @@ import { MERGE_GRAPH } from '../graphFixtures';
 import { ChangeWorkflow } from './ChangeWorkflow';
 import { EFFECTIVE_CURRENT, EFFECTIVE_DOCS } from './effectiveFixtures';
 
-// SETUPUX1p (D221; the Setup design's §2.3): Change… has three tabs, previews the selected candidate through the place's chart, reads the plan
+// Change… has three tabs, previews the selected candidate through the place's chart, reads the plan
 // of a choice only where WORKFLOW_LIST announces it, and chooses with the plan's token. A molecule: the lists arrive as props, and the plan,
 // the save and the choice go out.
 
@@ -68,7 +68,7 @@ beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
 });
 
-// The language goes back inside `act`, with the page still drawn (FRAMEACT1).
+// The language goes back inside `act`, with the page still drawn.
 afterEach(async () => {
   vi.unstubAllGlobals();
   await act(async () => { await i18n.changeLanguage('en'); });
@@ -176,7 +176,7 @@ describe('Change…: selecting a candidate against a driver that announces no pl
     expect(screen.queryByRole('button', { name: 'Use Verify the docs first here' })).toBeDisabled();
   });
 
-  // WORKFLOWCLEAN1h-b: Current is no candidate; its tab is the conversion's door.
+  // Current is no candidate; its tab is the conversion's door.
   it('offers Current only as the conversion, with no choice and no copy of it', async () => {
     const onConvert = vi.fn();
     const { onUse, onSave } = draw({ onConvert });

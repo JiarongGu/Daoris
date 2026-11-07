@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// The page's report into the machine log (LOG1b, D94). The bridge is mocked, and switched on and off,
+// The page's report into the machine log. The bridge is mocked, and switched on and off,
 // because the whole contract is those two cases: a shell hears one request, a browser nothing at all.
 
 const { bridge } = vi.hoisted(() => ({ bridge: { isAvailable: false, invoke: vi.fn() } }));
@@ -77,7 +77,7 @@ describe('the page\'s report into the machine log', () => {
 });
 
 /**
- * PAGELOOP1 (D217): a render the error screen caught names where it broke, which the window's `error` line could not, since React
+ * A render the error screen caught names where it broke, which the window's `error` line cannot, since React
  * hands the component stack to a boundary alone. The top frames' component names, never a frame's address; and the view.
  */
 describe("a render's failure, as the log keeps it", () => {

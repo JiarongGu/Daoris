@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NODE_KINDS } from '../../data/generated/service';
 import { variantOf, VARIANT_GLYPH } from './stepKinds';
 
-// FLOWCHART2a (D223): a step is drawn by the variant of its kind, in the graph's words and in a Current's; a kind the page has none
+// A step is drawn by the variant of its kind, in the graph's words and in a Current's; a kind the page has none
 // for is `unknown`, never dropped.
 
 describe('the variant of a kind', () => {

@@ -1,6 +1,5 @@
-// The circle a registry row belongs to (D48): its own, or `default` for a row that names none,
-// so one such family stays one circle. Every picker derives its list here (REV3 CLEAN1:
-// six wrote it out, and a seventh dropped the rows naming none, so it offered no `default` at all).
+// The circle a registry row belongs to: its own, or `default` for a row that names none,
+// so one such family stays one circle. Every picker derives its list here, so none can drop the rows naming none.
 
 /** The circle a row that names none is in. */
 export const DEFAULT_WORKSPACE = 'default';

@@ -2,10 +2,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora } from '@shenora/react';
 import { keys } from '../../data/queries';
 
-// Which deployment serves each workspace here (MOD3): the machine's wiring, over `remotes.json`.
+// Which deployment serves each workspace here: the machine's wiring, over `remotes.json`.
 
 /**
- * The machine's wiring: which deployment serves each workspace here (D48 §5, D50).
+ * The machine's wiring: which deployment serves each workspace here.
  *
  * @remarks
  * Shell-only, like every control — and for a sharper reason than the others. This is machine-local

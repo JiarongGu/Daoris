@@ -3,8 +3,8 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// The work of an ask or a quest, as hooks (PAUSE1e, D132 §7.3): its plan, a pause, a resume and an abandon, each one route of
-// DAORIS.DRIVER, which the page names only here (MOD3, MOD5).
+// The work of an ask or a quest, as hooks: its plan, a pause, a resume and an abandon, each one route of
+// DAORIS.DRIVER, which the page names only here.
 
 const { invoke, available } = vi.hoisted(() => ({ invoke: vi.fn(), available: { value: true } }));
 
@@ -67,7 +67,7 @@ describe('the work domain', () => {
     expect(workKey({ scope: 'ask', id: 'a1' }).slice(0, 1)).toEqual(keys.allQuests);
   });
 
-  /** A browser has no driver (D47 §4): nothing is asked, and the pages say the terminal's commands instead. */
+  /** A browser has no driver: nothing is asked, and the pages say the terminal's commands instead. */
   it('asks nothing in a browser, and says there is no driver to ask', () => {
     available.value = false;
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -98,7 +98,7 @@ describe('the work domain', () => {
     }));
 
     // Each move changes what the quests, the asks, the sessions and the driver say, and the routes declare it: the state hub
-    // asks them again in every window (STATEHUB1d, D169 point 6), the hook none.
+    // asks them again in every window, the hook none.
     expect(invalidated).not.toHaveBeenCalled();
   });
 
