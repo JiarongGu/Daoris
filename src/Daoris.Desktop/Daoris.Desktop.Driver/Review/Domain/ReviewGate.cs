@@ -51,7 +51,7 @@ public static class ReviewStates
     /// <summary>The level says review, and no set-up step shows it yet.</summary>
     public const string NotShown = "not-shown";
 
-    /// <summary>The set-up step is open, taken or working, or its set-up is not posted yet.</summary>
+    /// <summary>The set-up step is open, taken or working, or not posted yet.</summary>
     public const string BeingSetUp = "being-set-up";
 
     /// <summary>Shown, and waiting for the person's look.</summary>
@@ -205,32 +205,8 @@ public static class ReviewGate
     public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) =>
         chain.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase))?.Id;
 
-    /// <summary>
-    /// The quests of the <c>follows</c> chain <paramref name="id"/> is a step of: up to its first quest, then every
-    /// step published after, in the order the quests are listed. A quest the list does not hold has no chain here.
-    /// </summary>
-    public static IReadOnlyList<QuestView> ChainOf(IReadOnlyList<QuestView> quests, string id)
-    {
-        var byId = quests.GroupBy(quest => quest.Id, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
-        if (!byId.TryGetValue(id.TrimStart('#'), out var first)) return [];
-
-        // Up to the first quest; a parent seen twice, which no chain makes, ends the walk rather than looping.
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { first.Id };
-        while (first.Parent is { Length: > 0 } parent && seen.Add(parent) && byId.TryGetValue(parent, out var above)) first = above;
-
-        var chain = new List<QuestView> { first };
-        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { first.Id };
-        for (var next = 0; next < chain.Count; next++)
-        {
-            foreach (var step in quests.Where(quest => Same(quest.Parent, chain[next].Id)))
-            {
-                if (visited.Add(step.Id)) chain.Add(step);
-            }
-        }
-
-        return chain;
-    }
+    /// <inheritdoc cref="QuestChains.Of"/>
+    public static IReadOnlyList<QuestView> ChainOf(IReadOnlyList<QuestView> quests, string id) => new QuestChains(quests).Of(id);
 
     /// <summary>
     /// The level's table for the chain's work in <paramref name="repository"/>, read from the most specific down;

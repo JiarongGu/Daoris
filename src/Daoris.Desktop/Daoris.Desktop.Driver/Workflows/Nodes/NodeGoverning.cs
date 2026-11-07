@@ -102,9 +102,10 @@ internal static class NodeGoverning
                       + "while a run bound to a graph version is open there, and every binding on that run's record is kept.");
         }
 
+        var reads = new RunReads(read, owners);
         foreach (var run in runs ?? [])
         {
-            if (Governs(run, read, owners, steps, identities, said) is { } one) governed.Add(one);
+            if (Governs(run, read, reads, owners, steps, identities, said) is { } one) governed.Add(one);
         }
 
         return governed;
@@ -159,13 +160,46 @@ internal static class NodeGoverning
         return identity;
     }
 
+    /// <summary>What every run of a read is judged from, indexed once: asked of each run, a scan of the units for it grew with the square of them.</summary>
+    private sealed class RunReads
+    {
+        public RunReads(NodeUnitsRead read, RunOwners owners)
+        {
+            Units = read.Units.GroupBy(unit => unit.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
+            Quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
+            Chains = new QuestChains(Quests);
+            var branches = read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch).ToList();
+            BranchesOf = branches.ToLookup(unit => owners.Owns(unit)?.Run, StringComparer.Ordinal);
+            foreach (var branch in branches)
+            {
+                foreach (var link in branch.Links.Where(link => link.Relation == WorkRelation.ProducedBy).Distinct())
+                {
+                    if (!ProducedBy.TryGetValue(link.Unit, out var same)) ProducedBy[link.Unit] = same = [];
+                    same.Add(branch);
+                }
+            }
+        }
+
+        public Dictionary<string, WorkUnit> Units { get; }
+
+        public List<QuestView> Quests { get; }
+
+        public QuestChains Chains { get; }
+
+        /// <summary>The branch units by the run that owns them.</summary>
+        public ILookup<string?, WorkUnit> BranchesOf { get; }
+
+        /// <summary>The branch units by the unit a link says produced them, in the order of the units.</summary>
+        public Dictionary<string, List<WorkUnit>> ProducedBy { get; } = new(StringComparer.Ordinal);
+    }
+
     /// <summary>
     /// A run bound to a graph version, as the runtime governs it: its own unit under its version's graph, named by its binding's run, and what
     /// its nodes observe this look. Null where it is not judged now: its version does not read (held whole, said), or it ended and its chain
     /// has not come back here, or no start or first look asked a pass for it.
     /// </summary>
     private static GovernedUnit? Governs(
-        GraphRun run, NodeUnitsRead read, RunOwners owners, IReadOnlyList<NodeDeclaration> steps, Dictionary<string, string> identities,
+        GraphRun run, NodeUnitsRead read, RunReads reads, RunOwners owners, IReadOnlyList<NodeDeclaration> steps, Dictionary<string, string> identities,
         ICollection<string>? said)
     {
         var binding = run.Binding;
@@ -198,15 +232,14 @@ internal static class NodeGoverning
             };
         }
 
-        var units = read.Units.GroupBy(unit => unit.Id, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
-        var quests = read.Units.Select(unit => unit.Records.Quest).OfType<QuestView>().ToList();
+        var (units, quests) = (reads.Units, reads.Quests);
 
         // Its work here is its chain's quests in its repository, never a look's set-up step, which a run's work leaves out. A conversation's
         // run has no quest; its newest candidate, submitted at the person's press, stands in the quest's place, and a run with none yet
         // judges nothing.
         var chat = run.Candidate?.Newest;
         if (ChatRuns.IsChatRun(binding.Run) && chat is null) return null;
-        List<QuestView> work = chat is not null ? [] : ReviewGate.ChainOf(quests, binding.Run)
+        List<QuestView> work = chat is not null ? [] : reads.Chains.Of(binding.Run)
             .Where(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase) && quest.SetUpIn is null).ToList();
         var newest = work.LastOrDefault();
 
@@ -221,10 +254,10 @@ internal static class NodeGoverning
 
         // The branch its newest session worked, the newest opened of those the newest quest produced, whether its tree stands or not; one held
         // between two runs is no subject. Every branch of its quests, its former subjects included, is what an answer maps back by.
-        var branches = read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch && owners.Owns(unit)?.Run == binding.Run).ToList();
+        var branches = reads.BranchesOf[binding.Run].ToList();
         var produced = newest is null ? null : new WorkLink(WorkRelation.ProducedBy, QuestUnits.IdOf(newest.Id));
         var newestBranch = chat is not null ? branches.FirstOrDefault() : produced is null ? null
-            : read.Units.Where(unit => unit.Kind == WorkUnitKind.Branch && unit.Links.Contains(produced)).MaxBy(Opened);
+            : reads.ProducedBy.GetValueOrDefault(produced.Unit)?.MaxBy(Opened);
         var branch = newestBranch is not null && owners.Keeps(newestBranch) == RunOwners.Run ? newestBranch : null;
 
         // The go-aheads on its ask that a session serving one of its quests, or a request naming one, asked.
@@ -294,11 +327,24 @@ internal static class NodeGoverning
     /// </summary>
     public static Func<WorkUnit, IReadOnlyCollection<QuestView>, DecodedVersion?> BoundIn(string home)
     {
-        var store = new WorkflowFiles(home);
+        var store = new StampedWorkflows(new WorkflowFiles(home), home);
         var runs = new WorkflowRunFiles(home);
-        return (unit, quests) => unit.Records.Quest is not { } quest
-            ? null
-            : WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(ReviewGate.ChainOf([.. quests], quest.Id), unit.Owner.Repository ?? "") ?? quest.Id);
+        // The chains of one list of quests, indexed once for every quest asked of it.
+        var gate = new object();
+        IReadOnlyCollection<QuestView>? indexed = null;
+        QuestChains? chains = null;
+        return (unit, quests) =>
+        {
+            if (unit.Records.Quest is not { } quest) return null;
+            QuestChains known;
+            lock (gate)
+            {
+                if (!ReferenceEquals(indexed, quests)) (indexed, chains) = (quests, new QuestChains([.. quests]));
+                known = chains!;
+            }
+
+            return WorkflowRunNodes.VersionOf(store, runs, WorkflowRunBindings.RunOf(known.Of(quest.Id), unit.Owner.Repository ?? "") ?? quest.Id);
+        };
     }
 
     /// <summary>Every quest a read holds, by id.</summary>

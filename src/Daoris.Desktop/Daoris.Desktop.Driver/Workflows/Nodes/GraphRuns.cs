@@ -67,11 +67,12 @@ public sealed class GraphRuns(NodeRecordFiles records)
     {
         lock (_lock)
         {
+            var stamps = new Dictionary<string, (DateTime? Written, long Length)>(StringComparer.Ordinal);
             // The verification runs, bound in a folder of their own, beside the chains'.
             var lines = VerifyRuns.All(records.Home).Select(line =>
             {
                 var (ended, recorded) = EndOf(line.Run);
-                return new GraphRun(line.Binding, VersionOf(line.Binding), ended) { Recorded = recorded, Line = line };
+                return new GraphRun(line.Binding, VersionOf(line.Binding, stamps), ended) { Recorded = recorded, Line = line };
             }).ToList();
             var folder = WorkflowRunBindings.FolderOf(records.Home);
             if (!Directory.Exists(folder))
@@ -114,7 +115,7 @@ public sealed class GraphRuns(NodeRecordFiles records)
 
                 if (kept.Binding is not { } bound || !GraphRun.Names(bound)) continue;
                 var (ended, recorded) = EndOf(bound.Run);
-                runs.Add(new GraphRun(bound, VersionOf(bound), ended)
+                runs.Add(new GraphRun(bound, VersionOf(bound, stamps), ended)
                 {
                     Recorded = recorded, Candidate = ChatRuns.IsChatRun(bound.Run) ? ChatCandidates.Read(records.Home, bound.Run) : null,
                 });
@@ -139,14 +140,19 @@ public sealed class GraphRuns(NodeRecordFiles records)
     /// decodes): read again only where that file changed, so a version that stops reading (its file removed or damaged, its version gone or not
     /// the one the run started on) holds the run whole until it reads again.
     /// </summary>
-    private DecodedVersion VersionOf(WorkflowRunBinding binding)
+    private DecodedVersion VersionOf(WorkflowRunBinding binding, Dictionary<string, (DateTime? Written, long Length)> stamps)
     {
         var number = binding.Version ?? 0;
         DecodedVersion Unread(string why) => new(number, null, null, null, why);
         if (!WorkflowNamed.IsId(binding.Workflow)) return Unread($"`{binding.Workflow}` is not a workflow's id.");
-        var file = new FileInfo(WorkflowStore.PathOf(records.Home, binding.Workflow));
-        DateTime? written = file.Exists ? file.LastWriteTimeUtc : null;
-        var length = file.Exists ? file.Length : -1;
+        // A workflow file is stated once for the runs of one read, which mostly share it.
+        if (!stamps.TryGetValue(binding.Workflow, out var stamp))
+        {
+            var file = new FileInfo(WorkflowStore.PathOf(records.Home, binding.Workflow));
+            stamps[binding.Workflow] = stamp = (file.Exists ? file.LastWriteTimeUtc : null, file.Exists ? file.Length : -1);
+        }
+
+        var (written, length) = stamp;
         if (_versions.TryGetValue(binding.Run, out var kept) && kept.Written == written && kept.Length == length) return kept.Decoded;
         var read = new WorkflowFiles(records.Home).Load(binding.Workflow)?.Read;
         var stored = read?.Versions.FirstOrDefault(each => each.Version == number);
@@ -298,14 +304,14 @@ public sealed class RunOwners
 
     private static string ChatKey(string? repository, string? branch) => $"{repository?.ToLowerInvariant()}\n{branch}";
 
-    private readonly IReadOnlyList<QuestView> _all;
+    private readonly QuestChains _chains;
 
     private readonly HashSet<string> _unreadIn = new(StringComparer.OrdinalIgnoreCase);
 
     public RunOwners(IReadOnlyDictionary<string, QuestView> quests, IReadOnlyList<GraphRun> runs, bool attributionRead)
     {
         _quests = new(quests, StringComparer.Ordinal);
-        _all = [.. quests.Values];
+        _chains = new QuestChains([.. quests.Values]);
         _runs = runs.GroupBy(run => run.Run, StringComparer.Ordinal).ToDictionary(same => same.Key, same => same.First(), StringComparer.Ordinal);
         foreach (var chat in runs.Where(run => run.Candidate is not null)) _chatBranches[ChatKey(chat.Candidate!.Repository, chat.Candidate.Branch)] = chat.Run;
         if (!attributionRead)
@@ -321,7 +327,7 @@ public sealed class RunOwners
     public string RunOf(QuestView quest)
     {
         if (_runOf.TryGetValue(quest.Id, out var run)) return run;
-        return _runOf[quest.Id] = WorkflowRunBindings.RunOf(ReviewGate.ChainOf(_all, quest.Id), quest.To) ?? quest.Id;
+        return _runOf[quest.Id] = WorkflowRunBindings.RunOf(_chains.Of(quest.Id), quest.To) ?? quest.Id;
     }
 
     /// <summary>The graph run a quest is of, or null where its run is not bound to a graph version. A home binding none reads no chain.</summary>
