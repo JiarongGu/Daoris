@@ -482,6 +482,9 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>The session of the steward's own stop of <paramref name="quest"/> that still stands: <see cref="StewardRecord.StewardStopOf"/>.</summary>
     public string? StewardStopOf(string quest) => _steward.StewardStopOf(quest);
 
+    /// <summary>Whether the steward's own pause of <paramref name="quest"/> still stands: <see cref="StewardRecord.StewardPaused"/>.</summary>
+    public bool StewardPaused(string quest) => _steward.StewardPaused(quest);
+
     /// <summary>Whether a steward's act caused a start of <paramref name="quest"/>: <see cref="StewardRecord.StewardCaused"/>.</summary>
     public bool StewardCaused(string repository, string quest) => _steward.StewardCaused(repository, quest);
 

@@ -70,7 +70,7 @@ export type StewardActNow = {
 };
 
 /** The acts a steward's line and ask have words for (the steward design §3.1 rows 1 to 8, and a repository's workflow); a later build's is said by its name. */
-export const STEWARD_ACTS = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow'] as const;
+export const STEWARD_ACTS = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean'] as const;
 
 /** Whether the page has words for this act. */
 export const stewardActKnown = (act: string) => (STEWARD_ACTS as readonly string[]).includes(act);

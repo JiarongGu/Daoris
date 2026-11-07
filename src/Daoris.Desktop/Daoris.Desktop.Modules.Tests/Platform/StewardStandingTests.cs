@@ -31,12 +31,19 @@ public sealed class StewardStandingTests : Bridge
         /// <summary>That every route but the role's answers as a refusal of its own, as a place's workflow choice it cannot keep.</summary>
         public bool Refuses { get; set; }
 
+        /// <summary>What the owner's marks read the quest and session scopes by; none reads nothing, as the acts of a repository need.</summary>
+        public IOwnerScopes? Scopes { get; set; }
+
+        /// <summary>The plugin the landing's plan names as the one that pushes the branch, or none.</summary>
+        public string? Pushing { get; set; }
+
         public override string ModuleName => DriverModule.Name;
 
         protected override async Task<object?> RouteMessageAsync(IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
         {
-            if (request.Type == RoleRoutes.Act) return await SupervisorDoor.ActAsync(Pipe, request.Payload, cancellationToken, world: World);
+            if (request.Type == RoleRoutes.Act) return await SupervisorDoor.ActAsync(Pipe, request.Payload, cancellationToken, Scopes, World);
             lock (Ran) Ran.Add((request.Type!, PipeDoor.Role));
+            if (request.Type == "LANDING") return new { Session = "s1", Form = "branch", Plugin = Pushing };
             return Refuses ? new { Done = false, Refused = "reach", Message = "Nothing could start there." } : new { Done = true };
         }
     }
@@ -277,8 +284,197 @@ public sealed class StewardStandingTests : Bridge
         Assert.Empty(driver.Ran);
     }
 
+    private const string Quest = """{"quest":"q1"}""";
+    private const string Tree = """{"id":"s1"}""";
+
+    /// <summary>Each route act: its name, its form, the person's route it asks as and runs, and the world's move where it is no route of the pipe's.</summary>
+    public static TheoryData<string, string, string, string?> QuestAndTreeActs => new()
+    {
+        { StewardActNames.Pause, Quest, "WORK_PAUSE", "pause q1" },
+        { StewardActNames.Unpause, Quest, "WORK_RESUME", "unpause q1" },
+        { StewardActNames.Done, Quest, "QUEST_DONE", null },
+        { StewardActNames.Delete, Quest, "QUEST_DELETE", null },
+        { StewardActNames.Land, Tree, "LAND_SESSION_TREE", null },
+        { StewardActNames.Clean, Tree, "DISCARD_SESSION_TREE", null },
+    };
+
+    /// <summary>Quest <c>q1</c> and its session <c>s1</c> in a tree of the home's own, as the scopes stand-in names them.</summary>
+    private void Seed(StewardModule driver)
+    {
+        driver.World.Root = Home;
+        driver.Scopes = new OwnerSetTests.Scopes();
+        driver.World.Records["s1"] = new PriorSession("s1", driver.World.TreeOf("s1"), "completed") { Quest = "q1", Repository = "engine" };
+    }
+
+    private async Task<(JsonElement Answer, PipeClient Client, string Id)> ActAsync(
+        InstancePipe pipe, string key, string generation, string act, string form)
+    {
+        var client = await PipeClient.ConnectAsync(pipe.Name!);
+        var nonce = NonceOf(await client.HelloAsync(HomeId))!;
+        var id = await client.SendAsync(DriverModule.Name, RoleRoutes.Act, RoleKit.Act(key, nonce, generation, act: act, form: form));
+        return (default, client, id);
+    }
+
+    [Theory]
+    [MemberData(nameof(QuestAndTreeActs))]
+    public async Task A_quest_or_tree_act_the_person_granted_runs_with_no_card_and_is_the_steward_s(string act, string form, string route, string? moved)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule();
+        Seed(driver);
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.Pause, act);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        // Resuming is the steward's own pause's alone, so that one is made first.
+        if (act == StewardActNames.Unpause)
+        {
+            var (_, before, beforeId) = await ActAsync(pipe, key, generation, StewardActNames.Pause, form);
+            await using (before) Assert.True((await before.AnswerAsync(beforeId)).GetProperty("data").GetProperty("done").GetBoolean());
+        }
+
+        var (_, client, id) = await ActAsync(pipe, key, generation, act, form);
+        await using var connected = client;
+        var answer = await client.AnswerAsync(id);
+
+        Assert.True(answer.GetProperty("data").GetProperty("done").GetBoolean(), answer.GetRawText());
+        Assert.False(Confirming(client));
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        if (moved is null) Assert.Contains(route, driver.Ran.Select(each => each.Route));
+        else Assert.Equal(moved, driver.World.Moved[^1]);
+        Assert.Equal(act, judge.StewardActsNow()[0].Act);
+        Assert.Contains(Lines("role.act"), line => line.GetProperty("data").GetProperty("act").GetString() == act);
+    }
+
+    [Theory]
+    [MemberData(nameof(QuestAndTreeActs))]
+    public async Task A_quest_or_tree_act_not_granted_asks_the_person_as_its_route_s_press(string act, string form, string route, string? moved)
+    {
+        _ = moved;
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule();
+        Seed(driver);
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.Hold);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        var (_, client, _) = await ActAsync(pipe, key, generation, act, form);
+        await using var connected = client;
+        await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => $"{act} was not asked");
+
+        Assert.Equal(("DAORIS.DRIVER", route), (pipe.Confirmations.Now().Waiting[0].Module, pipe.Confirmations.Now().Waiting[0].Route));
+        Assert.Empty(driver.Ran);
+        Assert.Empty(driver.World.Moved);
+        Assert.Empty(judge.StewardActsNow());
+        Assert.Contains(Lines("role.asked"), line => line.GetProperty("data").GetProperty("act").GetString() == act);
+    }
+
+    [Theory]
+    [MemberData(nameof(QuestAndTreeActs))]
+    public async Task A_quest_or_tree_act_the_person_takes_back_asks_again(string act, string form, string route, string? moved)
+    {
+        _ = moved;
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule();
+        Seed(driver);
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, act);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        // Resuming is the steward's own pause's alone: the act that was granted is another's, so take a pause as made, then none granted.
+        var earlier = act == StewardActNames.Unpause ? StewardActNames.Pause : act;
+        judge.Staff(RoleKit.Steward([earlier]));
+        var (_, first, firstId) = await ActAsync(pipe, key, generation, earlier, form);
+        await using (first) Assert.True((await first.AnswerAsync(firstId)).GetProperty("data").GetProperty("done").GetBoolean());
+        judge.Staff(RoleKit.Steward([]));
+
+        var (_, next, _) = await ActAsync(pipe, key, generation, act, form);
+        await using var connected = next;
+        await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => $"{act} after the take-back was not asked");
+        Assert.Equal(route, pipe.Confirmations.Now().Waiting[0].Route);
+    }
+
+    [Fact]
+    public async Task A_landing_whose_plan_names_a_pushing_plugin_is_refused_and_the_press_is_never_sent()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule { Pushing = "push-to-origin" };
+        Seed(driver);
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, StewardActNames.Land);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        var (_, client, id) = await ActAsync(pipe, key, generation, StewardActNames.Land, Tree);
+        await using var connected = client;
+        var answer = await client.AnswerAsync(id);
+
+        Assert.False(answer.GetProperty("data").GetProperty("done").GetBoolean(), answer.GetRawText());
+        Assert.Equal("landing-pushes", answer.GetProperty("data").GetProperty("why").GetString());
+        Assert.DoesNotContain("LAND_SESSION_TREE", driver.Ran.Select(each => each.Route));
+        Assert.Empty(judge.StewardActsNow());
+    }
+
+    [Theory]
+    [InlineData("""{"id":"s1","force":true}""")]
+    [InlineData("""{"id":"s1","follow":true}""")]
+    [InlineData("""{"id":"s1","branch":"main"}""")]
+    [InlineData("""{"id":"s1","path":"x"}""")]
+    public void A_tree_act_takes_the_session_alone_so_no_option_of_the_press_is_the_steward_s(string form)
+    {
+        var element = JsonDocument.Parse(form).RootElement;
+        Assert.False(StewardActs.Table[StewardActNames.Land].IsForm(element));
+        Assert.False(StewardActs.Table[StewardActNames.Clean].IsForm(element));
+    }
+
+    public static TheoryData<string> Updates => [StewardActNames.UpdateNow, StewardActNames.UpdateCancel];
+
+    [Theory]
+    [MemberData(nameof(Updates))]
+    public async Task An_update_act_granted_runs_with_no_card_and_not_granted_is_refused_with_nothing_asked(string act)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var log = new MachineLog(Home, "desktop");
+        var driver = new StewardModule();
+        var (dispatcher, services) = Compose(log, driver);
+        using var composed = services;
+        var (pipe, judge, key, generation) = Appointed(dispatcher, log, act);
+        using var served = pipe;
+        driver.Pipe = pipe;
+
+        var (_, granted, grantedId) = await ActAsync(pipe, key, generation, act, "{}");
+        await using (granted)
+        {
+            Assert.True((await granted.AnswerAsync(grantedId)).GetProperty("data").GetProperty("done").GetBoolean());
+            Assert.False(Confirming(granted));
+        }
+
+        Assert.Equal([act == StewardActNames.UpdateNow ? "update now" : "update cancel"], driver.World.Moved);
+        Assert.Equal(act, Assert.Single(judge.StewardActsNow()).Act);
+
+        judge.Staff(RoleKit.Steward([]));
+        var (_, revoked, revokedId) = await ActAsync(pipe, key, generation, act, "{}");
+        await using var connected = revoked;
+        var refused = await revoked.AnswerAsync(revokedId);
+        Assert.Equal(RoleWhy.NotGranted, CodeOf(refused));
+        Assert.Empty(pipe.Confirmations.Now().Waiting);
+        Assert.Single(driver.World.Moved);
+    }
+
     public static TheoryData<string[]> Verbs => [["drive", "engine"], ["undrive", "engine"], ["trees", "engine", "on"], ["hold", "engine"],
-        ["resume", "engine"], ["stop", "s1a2b3c4"], ["finish", "s1a2b3c4"], ["retry", "#q-1"], ["workflow", "engine", "review"]];
+        ["resume", "engine"], ["stop", "s1a2b3c4"], ["finish", "s1a2b3c4"], ["retry", "#q-1"], ["workflow", "engine", "review"],
+        ["pause", "q1"], ["unpause", "q1"], ["done", "q1"], ["delete", "q1"], ["land", "s1"], ["clean", "s1"]];
 
     /// <summary>Each act the steward's verb makes asks outside its acts as a person's route that takes the verb's form as its own press.</summary>
     [Theory]

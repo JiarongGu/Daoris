@@ -114,6 +114,7 @@
   "note.intake.person-deleted": "The person deleted ask #{{ask}}, so there is nothing left for it to wait on.",
   "note.stopped.paused-ask": "Paused with ask #{{ask}}.",
   "note.stopped.paused-quest": "Paused with quest #{{quest}}.",
+  "note.stopped.paused-quest-steward": "The steward paused quest #{{quest}}.",
   "note.stopped.abandoned-ask": "Ask #{{ask}} abandoned.",
   "note.stopped.abandoned-quest": "Quest #{{quest}} abandoned.",
   "note.stopped.checkpoint-finished": "The person finished this at a checkpoint.",

@@ -23,6 +23,9 @@ public static class RecordNotes
     /// <summary>A checkpoint's stop that was the steward's (<see cref="EndNoteCodes.StoppedCheckpointStoppedSteward"/>).</summary>
     public const string StoppedCheckpointStoppedSteward = "stopped.checkpoint-stopped-steward";
 
+    /// <summary>A quest's work paused by the steward (<see cref="EndNoteCodes.StoppedPausedQuestSteward"/>).</summary>
+    public const string StoppedPausedQuestSteward = "stopped.paused-quest-steward";
+
     /// <summary>A session that ended waiting on its own helper (<see cref="EndNoteCodes.EndedAwaitsHelper"/>).</summary>
     public const string EndedAwaitsHelper = "ended.awaits-helper";
 

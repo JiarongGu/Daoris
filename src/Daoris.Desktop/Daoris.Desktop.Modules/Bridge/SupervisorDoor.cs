@@ -193,8 +193,8 @@ public static class SupervisorDoor
     /// </summary>
     public static async Task<IReadOnlyList<RoleScope>?> DependenciesAsync(RoleScope target, IOwnerScopes? scopes, CancellationToken ct)
     {
-        // STEWARDROLE1c: a desk request is no repository's nor quest's, and depends on nothing.
-        if (scopes is null || target.Kind == StewardDesk.Kind) return [target];
+        // STEWARDROLE1c: a desk request, and an update (STEWARDROLE1d), is no repository's nor quest's, and depends on nothing.
+        if (scopes is null || target.Kind == StewardDesk.Kind || target.Kind == StewardUpdateAct.Kind) return [target];
         try
         {
             var gates = new List<RoleScope> { target };
