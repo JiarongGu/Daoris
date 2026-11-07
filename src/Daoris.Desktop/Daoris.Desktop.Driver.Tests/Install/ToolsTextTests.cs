@@ -6,8 +6,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The port keeps today's text (PUSH1f2c, D194 point 6, the alone-path design §3): each case of <c>daoris tool</c>, as the CLI's
-/// TypeScript verb said it before it retired (<c>fixtures/tools-text.json</c>), said again by <see cref="ToolsCommand"/> acting alone on
+/// The port keeps the text: each case of <c>daoris tool</c>, as the CLI's
+/// TypeScript verb said it (<c>fixtures/tools-text.json</c>), said again by <see cref="ToolsCommand"/> acting alone on
 /// a home of its own with no <c>PATH</c>, as <c>win-x64</c>: the same lines on each stream, the same exit, <c>tools.json</c> after it the
 /// same, and the same versions downloaded. A row the port changes on purpose says why under <c>changed</c>.
 /// </summary>

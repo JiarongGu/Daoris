@@ -7,7 +7,7 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomOwnPluginsTests
 {
     /// <summary>
-    /// PLUG9 (d): the install's own plugins not installed here are named by id, with what each speaks on and
+    /// The install's own plugins not installed here are named by id, with what each speaks on and
     /// what it needs, so Ask Daoris can propose installing one — by its id, never a path — before making one.
     /// </summary>
     [Fact]
@@ -47,7 +47,7 @@ public sealed class HelpRoomOwnPluginsTests
             }
 
             Offer("github-pull-request", """{ "id": "github-pull-request", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/perform"] } }""");
-            // HELPPLUG1a: a server declared for Ask Daoris is not one it hands every session.
+            // A server declared for Ask Daoris is not one it hands every session.
             Offer("tickets", """
                 { "id": "tickets", "servers": [
                     { "name": "tickets", "command": ["tickets"], "to": ["help"], "allow": ["search"] }, { "name": "docs", "command": ["docs"] } ] }

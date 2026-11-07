@@ -3,10 +3,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// PARALLEL1a (D181 points 1-2): Ask Daoris's room is written from the facts the judges keep, never from a read of its own. A
-/// repository whose line was not judged yet is said *not read yet*, as are the sessions, the history and the work; a ref moved
+/// Ask Daoris's room is written from the facts the judges keep, never from a read of its own. A
+/// repository whose line is not judged yet is said *not read yet*, as are the sessions, the history and the work; a ref moved
 /// judges that repository's line again alone, and the next room has it; a room that said something not read yet is written again
-/// as the facts land. FACTSPLIT1a: the work is judged per repository, a part each, merged as the room reads it. FACTSPLIT1b: the
+/// as the facts land. The work is judged per repository, a part each, merged as the room reads it. The
 /// sessions' trees alike, beside the look without them, which a ref never moves.
 /// </summary>
 /// <remarks>No process and no git, but where a test counts git's starts: the judges are stand-ins.</remarks>
@@ -71,8 +71,8 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// PUSH1b1: the line as far as the checkout's guess was judged, which the room and the lines slice both read: what is set first,
-    /// with no checkout what is set alone, else the judged guess, and none where it was not judged yet. It asks no git.
+    /// The line as far as the checkout's guess is judged, which the room and the lines slice both read: what is set first,
+    /// with no checkout what is set alone, else the judged guess, and none where it is not judged yet. It asks no git.
     /// </summary>
     [Fact]
     public void The_line_as_far_as_it_was_judged_is_what_is_set_then_the_judged_guess_and_none_where_none_was_judged()
@@ -134,7 +134,7 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Equal(
             [(HelpFacts.Lines, "site"), (HelpFacts.Trees, "site"), (HelpFacts.Work, "site"), (HelpFacts.Sweep, "site")],
             HelpFacts.Woken(ChangeTopics.Refs, "site", facts));
-        // PUSH1c4a: the sweep's parts are the repositories with a checkout here alone, which the clean-up's list judges.
+        // The sweep's parts are the repositories with a checkout here alone, which the clean-up's list judges.
         Assert.Equal(
             [
                 (HelpFacts.Machine, HelpFacts.Whole), (HelpFacts.Sessions, HelpFacts.Whole), (HelpFacts.History, HelpFacts.Whole),
@@ -222,7 +222,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1a (D181 points 2-3): one repository's refs judge its part of the work again alone. The other repository's part
+    /// One repository's refs judge its part of the work again alone. The other repository's part
     /// and the part of the repositories with no checkout here stand as last judged.
     /// </summary>
     [Fact]
@@ -256,7 +256,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// OVERVIEWNOISE1b: a part of the work reads the trees its own repositories' sessions recorded, from the sessions' look, so each
+    /// A part of the work reads the trees its own repositories' sessions recorded, from the sessions' look, so each
     /// tree joins the session that recorded it; a teammate's record and another part's are left out. A look whose recorded trees moved
     /// judges again each part they moved in, and no other.
     /// </summary>
@@ -306,8 +306,8 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1a: the room reads the work as it read the whole, merged from the parts: by repository as the lines are, the
-    /// repositories with no checkout here last. While any part was never judged the work is not read yet, as the whole was.
+    /// The room reads the work merged from the parts: by repository as the lines are, the
+    /// repositories with no checkout here last. While any part is never judged the work is not read yet.
     /// </summary>
     [Fact]
     public void The_room_reads_the_work_merged_from_its_parts_and_none_while_a_part_is_not_judged_yet()
@@ -337,8 +337,8 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// PUSH1c2a: the work's parts as a slice pushes them, each by its subject in the merge's order (by repository, the rest's last),
-    /// with its part as last judged or none where it never was, so a part never judged is told apart from one judged empty; none
+    /// The work's parts as a slice pushes them, each by its subject in the merge's order (by repository, the rest's last),
+    /// with its part as last judged or none where it is never judged, so a part never judged is told apart from one judged empty; none
     /// before the service's answers, which name the parts.
     /// </summary>
     [Fact]
@@ -362,7 +362,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1b (D181 points 2-3): one repository's refs judge its part of the sessions' trees again alone, and never the look
+    /// One repository's refs judge its part of the sessions' trees again alone, and never the look
     /// without them. The other repository's part and the part of the repositories with no checkout here stand as last judged.
     /// </summary>
     [Fact]
@@ -403,7 +403,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 OWNMOVES1 (D181 points 2-3, D182 point 4): Daoris's own ref move, a landing or an <i>Accept</i>, judges its repository's
+    /// Daoris's own ref move, a landing or an <i>Accept</i>, judges its repository's
     /// trees and work parts at once, past the rest a burst of hints is held to, so a landed tree's offer leaves within one judgement;
     /// another repository's plain refs in the same moment are still held. The facts' clock never moves.
     /// </summary>
@@ -452,7 +452,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PUSH1c4a (D182): the clean-up's list is judged per repository with a checkout here, from the service's answers the facts hold
+    /// The clean-up's list is judged per repository with a checkout here, from the service's answers the facts hold
     /// (its workspace, its checkout, the trees sessions hold), and none for the repositories with none, which the list never judges.
     /// A plain hint within the rest is held, as the work's; Daoris's own move judges its repository's part at once.
     /// </summary>
@@ -502,7 +502,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PUSH1c4a: a repository the registry no longer names drops its part of the sweep, and one whose workspace moved in the service's
+    /// A repository the registry no longer names drops its part of the sweep, and one whose workspace moved in the service's
     /// answers, which its line is read under, is judged again as they land; no other.
     /// </summary>
     [Fact]
@@ -539,8 +539,8 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// PUSH1c4a: the sweep's parts as a slice pushes them, each repository with a checkout here in name order with its plan as last
-    /// judged, or none where it never was; none at all before the service's answers.
+    /// The sweep's parts as a slice pushes them, each repository with a checkout here in name order with its plan as last
+    /// judged, or none where it is never judged; none at all before the service's answers.
     /// </summary>
     [Fact]
     public void The_sweep_s_parts_are_named_in_order_each_as_last_judged_or_none_where_never()
@@ -559,8 +559,8 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1b: the room reads the sessions as it read the whole look, the look without trees with every part's trees merged
-    /// in by their path; while the look or any part was never judged the sessions are not read yet, as the whole was.
+    /// The room reads the sessions as the look without trees with every part's trees merged
+    /// in by their path; while the look or any part is never judged the sessions are not read yet.
     /// </summary>
     [Fact]
     public void The_room_reads_the_sessions_merged_from_the_look_and_its_trees_and_none_while_one_is_not_judged_yet()
@@ -595,7 +595,7 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Contains(", 2 to review, 0 working, 0 resuming later, 1 ended.\n", HelpRoom.Render(Describe(read, DriverConfig.Empty)));
     }
 
-    /// <summary>🔴 FACTSPLIT1b: a repository the registry no longer names drops its part of the trees; what is left is read whole.</summary>
+    /// <summary>A repository the registry no longer names drops its part of the trees; what is left is read whole.</summary>
     [Fact]
     public async Task A_repository_gone_from_the_registry_loses_its_part_of_the_trees()
     {
@@ -620,7 +620,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1b: the trees a part judges are read from the look, so a session ending, which moves its records and no ref, judges
+    /// The trees a part judges are read from the look, so a session ending, which moves its records and no ref, judges
     /// its repository's part again as the look lands: at once, not held by the rest its refs keep, and no other part.
     /// </summary>
     [Fact]
@@ -668,7 +668,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1b: one repository's judgement of its trees starts git in its own trees alone, in every workspace's folder of it;
+    /// One repository's judgement of its trees starts git in its own trees alone, in every workspace's folder of it;
     /// another repository's trees start none, nor does the look landing again with no tree of a part moved.
     /// </summary>
     [Fact]
@@ -730,7 +730,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PUSH1c1 (D182 point 4): a door that reads the look itself, the Sessions list's, takes each tree's judgement from the part that
+    /// A door that reads the look itself, the Sessions list's, takes each tree's judgement from the part that
     /// asked it, a tree asked and not answered holding nothing to review, and walks none; asked of some sessions, their trees alone.
     /// </summary>
     [Fact]
@@ -768,8 +768,8 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PUSH1c1: a tree no part asked yet, its session having ended after the facts' look, is walked alone, as the door walked every
-    /// tree before; and the facts' look is judged afresh, not held by its rest, so its part asks it and the next door walks none.
+    /// A tree no part asked yet, its session having ended after the facts' look, is walked alone;
+    /// and the facts' look is judged afresh, not held by its rest, so its part asks it and the next door walks none.
     /// </summary>
     [Fact]
     public async Task A_tree_no_part_asked_yet_is_walked_alone_and_the_facts_look_judged_afresh()
@@ -811,7 +811,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PUSH1c1: a door asking before the parts' first judgement waits for it, and walks none: every window that asks then waits on
+    /// A door asking before the parts' first judgement waits for it, and walks none: every window that asks then waits on
     /// the one judgement, never a walk of its own.
     /// </summary>
     [Fact]
@@ -845,8 +845,8 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PUSH1c1: where the parts' first judgement does not come within the wait, a door walks what is still not judged, as it did
-    /// before; the wait is once, so the next door walks at once rather than wait again.
+    /// Where the parts' first judgement does not come within the wait, a door walks what is still not judged;
+    /// the wait is once, so the next door walks at once rather than wait again.
     /// </summary>
     [Fact]
     public async Task A_door_whose_parts_never_answer_walks_after_its_wait_and_the_next_waits_no_more()
@@ -873,8 +873,8 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 PUSH1c1 (D182 point 4, the row's proof): once the parts are judged, the door each window's tick asks starts no git, a second
-    /// window none either, where facts never started walk each tree with git as the door did before.
+    /// Once the parts are judged, the door each window's tick asks starts no git, a second
+    /// window none either, where facts never started walk each tree with git.
     /// </summary>
     [Fact]
     public async Task A_door_once_the_parts_are_judged_starts_no_git_for_any_window()
@@ -934,7 +934,7 @@ public sealed class HelpFactsTests : IDisposable
         Assert.Null(facts.Current.Of(HelpFacts.Lines, "site"));
     }
 
-    /// <summary>🔴 FACTSPLIT1a: a repository the registry no longer names drops its part of the work; what is left is read whole.</summary>
+    /// <summary>A repository the registry no longer names drops its part of the work; what is left is read whole.</summary>
     [Fact]
     public async Task A_repository_gone_from_the_registry_loses_its_part_of_the_work()
     {
@@ -959,7 +959,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1a: the work's trees in use are the service's answers its part was made from, so a session letting its tree go
+    /// The work's trees in use are the service's answers its part is made from, so a session letting its tree go
     /// judges that repository's part again as the answers land, and no other.
     /// </summary>
     [Fact]
@@ -1007,7 +1007,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1a: a repository the trees name with no checkout here keeps its line in the part of its own, read from the home as
+    /// A repository the trees name with no checkout here keeps its line in the part of its own, read from the home as
     /// the module reads it, and the room says it; the part of the repository with a checkout reads none of it.
     /// </summary>
     [Fact]
@@ -1030,7 +1030,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1a: what the inventory could not read names its repository as data, so a workspace's room keeps its own
+    /// What the inventory could not read names its repository as data, so a workspace's room keeps its own
     /// repository's line though its words name another workspace's, and the other room never has it.
     /// </summary>
     [Fact]
@@ -1053,7 +1053,7 @@ public sealed class HelpFactsTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 FACTSPLIT1a: one repository's judgement of its work starts git in its own trees, in every workspace's folder of it, and in
+    /// One repository's judgement of its work starts git in its own trees, in every workspace's folder of it, and in
     /// its own checkout alone; another repository's trees are never listed.
     /// </summary>
     [Fact]
@@ -1179,7 +1179,7 @@ public sealed class HelpFactsTests : IDisposable
     private static Func<string, CancellationToken, Task<TreeWork?>> StandIn(IReadOnlyDictionary<string, TreeWork> work) =>
         (tree, _) => Task.FromResult(work.TryGetValue(SessionGroups.Normal(tree), out var each) ? each : null);
 
-    /// <summary>A door's own walk, standing in: each tree it was asked, and <paramref name="work"/> for every one.</summary>
+    /// <summary>A door's own walk, standing in: each tree it is asked, and <paramref name="work"/> for every one.</summary>
     private static Func<string, CancellationToken, Task<TreeWork?>> Walk(List<string> walked, TreeWork? work = null) => (tree, _) =>
     {
         lock (walked) walked.Add(tree);

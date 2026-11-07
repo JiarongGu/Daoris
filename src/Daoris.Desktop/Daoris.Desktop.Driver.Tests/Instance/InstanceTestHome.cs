@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// An install's home with a stand-in of the running Daoris's pipe on it (RPCOPEN1), for the cases of a verb that goes through the
+/// An install's home with a stand-in of the running Daoris's pipe on it, for the cases of a verb that goes through the
 /// instance: the verb's own words from the route's answer, held to the alone path's. Windows only, as the pipe is.
 /// </summary>
 internal sealed class InstanceTestHome : IAsyncDisposable
@@ -14,7 +14,7 @@ internal sealed class InstanceTestHome : IAsyncDisposable
 
     public InstanceTestHome()
     {
-        // An install, as FINDDAORIS1 knows one: its marker beside `app/`, the driver host under it, its home in `data/`.
+        // An install, as the finder knows one: its marker beside `app/`, the driver host under it, its home in `data/`.
         var install = Path.Combine(_root, "install");
         Directory.CreateDirectory(install);
         File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "");
@@ -52,7 +52,7 @@ internal sealed class InstanceTestHome : IAsyncDisposable
     {
         In = input ?? Console.In,
         Home = Home,
-        // 🔴 Never the account's: a test reads no variable it was not handed (D171's FINDDAORIS1 note).
+        // 🔴 Never the account's: a test reads no variable it is not handed.
         Environment = _ => null,
         BaseDirectory = _app,
         Status = _ => new ServiceStatus("lexical", Id),

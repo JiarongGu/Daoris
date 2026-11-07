@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// ASKSCOPE1c (D158's ASKSCOPE1 note point 5): Ask Daoris's tools are bound by its conversation's workspace, in restricted mode. Its
+/// Ask Daoris's tools are bound by its conversation's workspace, in restricted mode. Its
 /// connector is handed its room's workspace as its circle, the checkouts it may read are its workspace's where reading across
 /// allows them, and its rules carry the person's denies for that workspace. In full access the shell reaches anything, so the
-/// room says the workspace is no fence, and the connector stays scoped. <c>default</c>'s room is the whole machine, as before.
+/// room says the workspace is no fence, and the connector stays scoped. <c>default</c>'s room is the whole machine.
 /// </summary>
 /// <remarks>No process and no git: the fast half.</remarks>
 public sealed class HelpCircleTests : IDisposable
@@ -60,8 +60,8 @@ public sealed class HelpCircleTests : IDisposable
 
     /// <summary>
     /// 🔴 The checkout grants intersect: the checkouts a workspace's room may read are its own workspace's, and of those only the
-    /// ones reading across already allows (D107: a repository's own setting, then its workspace's). <c>default</c>'s room reads
-    /// every readable one, as before.
+    /// ones reading across already allows (a repository's own setting, then its workspace's). <c>default</c>'s room reads
+    /// every readable one.
     /// </summary>
     [Fact]
     public void A_workspace_s_room_reads_its_own_checkouts_where_reading_across_allows()
@@ -102,7 +102,7 @@ public sealed class HelpCircleTests : IDisposable
         var alpha = HelpPlacement.In(_home, HelpRoom.PathOf(_home, "alpha"), [new("engine", "alpha", "/alpha/engine")], "alpha");
 
         var rules = alpha.Rules(file, "s1");
-        // HELPMODE1c4: its checkouts are read through the judged tool, not a rule on the checkout.
+        // Its checkouts are read through the judged tool, not a rule on the checkout.
         Assert.Contains($"mcp__{KnowledgeConnector.ServerName}__checkout_read", rules.Allow);
         Assert.DoesNotContain("Read(//alpha/engine/**)", rules.Allow);
         Assert.Contains("Read(//alpha/secret/**)", rules.Deny);
@@ -120,7 +120,7 @@ public sealed class HelpCircleTests : IDisposable
 
     /// <summary>
     /// The room says the binding in its first lines. Restricted: its tools answer for its workspace and refuse another. Full
-    /// access (the modes design §7's trap, a workspace's label read as confinement): the shell reaches beyond the workspace, the
+    /// access (a workspace's label is no confinement): the shell reaches beyond the workspace, the
     /// workspace is no fence, and the connector is still scoped. <c>default</c>'s room says neither.
     /// </summary>
     [Fact]

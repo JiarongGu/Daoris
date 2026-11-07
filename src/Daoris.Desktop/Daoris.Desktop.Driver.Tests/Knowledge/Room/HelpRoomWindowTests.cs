@@ -6,8 +6,8 @@ namespace Daoris.Driver.Tests;
 public sealed class HelpRoomWindowTests
 {
     /// <summary>
-    /// HELP2: asked what the panel held, the helper guessed that the View menu names each view's region,
-    /// which it does not — its room said nothing of the window. The room says how the window is laid out
+    /// Asked what the panel holds, the helper never guesses that the View menu names each view's region,
+    /// which it does not. The room says how the window is laid out
     /// and how a view moves, by the names the window uses, and that where the views stand now arrives with
     /// the person's message.
     /// </summary>
@@ -22,7 +22,7 @@ public sealed class HelpRoomWindowTests
             "the right side bar", "the panel", "Notifications, the timeline, the review, the workflow, At work and the console", "Every view sits in one frame",
             "tab list", "right-click", "drag", "Reset view locations",
             "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
-            // The person's own terminal (CONSOLE4b), and that it is theirs rather than a session's.
+            // The person's own terminal, and that it is theirs rather than a session's.
             "terminal: the person's own shell", "never a session's",
         })
         {
@@ -31,16 +31,16 @@ public sealed class HelpRoomWindowTests
 
         // It cannot see the window: what it is told of it comes with the message, and otherwise it asks.
         Assert.Contains("You cannot see the window", agents);
-        // UX6i2a (D150 §2): the activity bar holds the eight places Go opens, Knowledge where Convergence and Search were
-        // (UX6i) and Plugins after Agents, with Settings at its foot.
+        // The activity bar holds the eight places Go opens, Knowledge holding Convergence and Search
+        // and Plugins after Agents, with Settings at its foot.
         Assert.Contains("Sessions, Quests, Repositories, Map, Knowledge, Agents and Plugins, with Settings at its foot", agents);
         Assert.Contains("Knowledge's list switches between Search and Convergence", agents);
         Assert.DoesNotContain("Convergence, Search", agents);
     }
 
     /// <summary>
-    /// UX7a (D152 §1): the menu bar holds the window's verbs and places, as VS Code's does, and lists every key, so asked
-    /// where a verb is the helper names a menu the window has rather than guessing one, as HELP2's guessed a region.
+    /// The menu bar holds the window's verbs and places, as VS Code's does, and lists every key, so asked
+    /// where a verb is the helper names a menu the window has rather than guessing one.
     /// </summary>
     [Fact]
     public void The_room_names_the_menu_bar_by_its_menus_and_where_every_key_is_listed()
@@ -53,8 +53,8 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
-    /// WORKFLOW1c4 (D157 point 12; the workflow design §7): the session's *Workflow* view joined the views that stand in the
-    /// two regions and move between them, beside the timeline and the review, so the room no longer counts five; asked where
+    /// The session's *Workflow* view is among the views that stand in the
+    /// two regions and move between them, beside the timeline and the review; asked where
     /// a piece of work stands, the helper names the view the window has, and the room's doors say what it draws.
     /// </summary>
     [Fact]
@@ -69,7 +69,7 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
-    /// COWORKVIEW1a (the cowork view design §5.1): *At work* joined the views, after the workflow; asked who works on a session, the
+    /// *At work* is among the views, after the workflow; asked who works on a session, the
     /// helper names it, and that it reads Daoris's records, never the conversation's text.
     /// </summary>
     [Fact]
@@ -82,7 +82,7 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
-    /// NOTIFY2b (D196 point 3, the notification design §2.1, §4): *Notifications* is a view of the regions, on the right by default,
+    /// *Notifications* is a view of the regions, on the right by default,
     /// which the title bar's bell shows; it holds the presses waiting for the person's confirmation and *What needs you*, and Overview
     /// keeps a summary of it. Asked where a terminal's press waits, the helper names the view the window has, and that only the
     /// person confirms it there.
@@ -100,7 +100,7 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
-    /// FRAME1i-a (D118 point 3): the preface names the item the view has open, by the id a go names, so "what is this?" is
+    /// The preface names the item the view has open, by the id a go names, so "what is this?" is
     /// answered about it.
     /// </summary>
     [Fact]
@@ -113,8 +113,8 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
-    /// FRAME1i-b (D118 point 4): every view but Overview and Map has a list, and the list shows or hides by four doors, so the
-    /// room no longer ties the list and Ctrl+B to Sessions alone.
+    /// Every view but Overview and Map has a list, and the list shows or hides by four doors, so the
+    /// room does not tie the list and Ctrl+B to Sessions alone.
     /// </summary>
     [Fact]
     public void The_room_says_every_view_but_overview_and_map_has_a_list_and_its_four_doors()
@@ -127,7 +127,7 @@ public sealed class HelpRoomWindowTests
     }
 
     /// <summary>
-    /// HELP10: PREVIEW1's file preview (D111) — its two doors, where it opens, that it reads and never writes — so the
+    /// The file preview — its two doors, where it opens, that it reads and never writes — so the
     /// helper asked how to read a file an agent touched points at it rather than at an editor there is none of.
     /// </summary>
     [Fact]

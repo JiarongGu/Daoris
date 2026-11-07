@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// The room's <see cref="HelpRoomExchanges"/> (COMMS1i, the comms design §7): Ask Daoris reads what each line waits on as a fact, from the
+/// The room's <see cref="HelpRoomExchanges"/>: Ask Daoris reads what each line waits on as a fact, from the
 /// exchanges' one read, so it says what waits on what as listed and proposes no act for an answer another agent owes.
 /// </summary>
 public sealed class HelpRoomExchangesTests

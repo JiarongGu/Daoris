@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A verb's door to the running Daoris (RPC1b, the terminal RPC design §7.2 and §7.4), row by row of the switch, against a stand-in
+/// A verb's door to the running Daoris, row by row of the switch, against a stand-in
 /// of the pipe: alone where no instance runs, sent where one answers, refused where one lives and does not answer or refuses the
-/// hello, and never alone once a request was sent and its answer lost.
+/// hello, and never alone once a request is sent and its answer lost.
 /// </summary>
 /// <remarks>Windows only, as the pipe is: each test serves its own stand-in in process, on its own home's name.</remarks>
 public sealed class InstanceDoorTests : IAsyncLifetime
 {
-    /// <summary>A press the census opens, as a verb's would be: the trees verbs' are all the person's (D171's RPC1a note).</summary>
+    /// <summary>A press the census opens, as a verb's would be: the trees verbs' are all the person's.</summary>
     private static readonly InstanceRoute Open = new("TEST.PRESS", "MOVE", RouteClass.Open);
 
     private readonly string _root = Path.Combine(TestHomes.Root, "daoris-instance-door-tests", Guid.NewGuid().ToString("N")[..8]);
@@ -26,7 +26,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
 
     public Task InitializeAsync()
     {
-        // An install, as FINDDAORIS1 knows one: its marker beside `app/`, the driver host under it, its home in `data/`.
+        // An install, as the finder knows one: its marker beside `app/`, the driver host under it, its home in `data/`.
         var install = Path.Combine(_root, "install");
         Directory.CreateDirectory(install);
         File.WriteAllText(Path.Combine(install, DaorisHome.InstallMarker), "");
@@ -56,14 +56,14 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     {
         Home = _home,
         Owners = owners,
-        // 🔴 Never the account's: a test reads no variable it was not handed (D171's FINDDAORIS1 note).
+        // 🔴 Never the account's: a test reads no variable it is not handed.
         Environment = environment ?? (_ => null),
         BaseDirectory = baseDirectory ?? _app,
         Status = _ => new ServiceStatus("lexical", statusHome ?? _id),
         Out = _out,
         Error = _error,
         Verb = "trees",
-        // TESTWAIT7: a stand-in that answers is waited for for minutes, as a loaded machine needs; the bound only elapses where a
+        // A stand-in that answers is waited for for minutes, as a loaded machine needs; the bound only elapses where a
         // case serves nothing (`answer:` short there, as no load can make a pipe nobody serves answer).
         Answer = answer ?? TimeSpan.FromMinutes(2),
         Wait = wait ?? TimeSpan.FromMinutes(2),
@@ -76,7 +76,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         return Task.FromResult(0);
     }
 
-    /// <summary>The answer in the verb's words: its message, exit 0 where done and 1 where refused as data (§6).</summary>
+    /// <summary>The answer in the verb's words: its message, exit 0 where done and 1 where refused as data.</summary>
     private int Words(JsonElement answer)
     {
         _out.WriteLine($"trees: {answer.GetProperty("message").GetString()}");
@@ -148,7 +148,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// RPC1c: a person's press goes to the instance that answers, which shows it in the window; the terminal says it waits there,
+    /// A person's press goes to the instance that answers, which shows it in the window; the terminal says it waits there,
     /// then says the answer the confirmed press gave, and nothing is done alone.
     /// </summary>
     [Fact]
@@ -166,7 +166,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Equal(0, _alone);
         var id = Assert.Single(standIn.Presses).GetProperty("id").GetString();
         Assert.Equal($"trees: archived s1a2b3c4.{Environment.NewLine}", _out.ToString());
-        // CONFIRMWAIT1b (the confirm-wait design §4.1): the id, and the two verbs that read and take it back, said at once.
+        // The id, and the two verbs that read and take it back, said at once.
         Assert.Equal(
             $"trees: waiting for you to confirm this in Daoris's window (request {id}); `daoris press result {id}` says how it ended, "
             + $"and `daoris press withdraw {id}` takes it back…{Environment.NewLine}",
@@ -174,7 +174,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CONFIRMWAIT1b (design §4.1): with <c>--no-wait</c> (a wait of zero) the verb returns once the instance says <c>CONFIRMING</c>,
+    /// With <c>--no-wait</c> (a wait of zero) the verb returns once the instance says <c>CONFIRMING</c>,
     /// having said the id and its two verbs, and asks <c>RESULT</c>: a press <c>waiting</c> is exit 1 and kept past the day.
     /// </summary>
     [Fact]
@@ -203,8 +203,8 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CONFIRMWAIT1b (design §4.1): the verb's own wait over with the press still waiting is not lost and not an error: <c>RESULT</c>'s
-    /// <c>waiting</c> is said with the id and its two verbs, exit 1; today's instance, which answers <c>running</c>, is said as today, exit 2.
+    /// The verb's own wait over with the press still waiting is not lost and not an error: <c>RESULT</c>'s
+    /// <c>waiting</c> is said with the id and its two verbs, exit 1; an instance that answers <c>running</c> is said so, exit 2.
     /// </summary>
     [Theory]
     [InlineData("waiting", 1)]
@@ -224,12 +224,12 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         var id = Assert.Single(standIn.Presses).GetProperty("id").GetString()!;
         if (state == "waiting") Assert.Contains(InstanceDoor.StillWaiting("trees", id), _error.ToString());
         else Assert.Contains($"Daoris was still working on it (request {id})", _error.ToString());
-        // CONFIRMWAIT1 (§15.2 item 6): nothing found it ended, so its key is kept past the day either way.
+        // Nothing found it ended, so its key is kept past the day either way.
         Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2)));
     }
 
     /// <summary>
-    /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the verb marks its record waiting as soon as the instance says the id, before
+    /// The verb marks its record waiting as soon as the instance says the id, before
     /// any <c>RESULT</c>, so a verb whose harness is killed after the id, or whose <c>RESULT</c> does not read, leaves the key kept.
     /// </summary>
     [Fact]
@@ -249,7 +249,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (design §4.1, §7.2): the close answers a line waiting on a press <c>waiting</c>, <c>why: close</c>, the press kept
+    /// The close answers a line waiting on a press <c>waiting</c>, <c>why: close</c>, the press kept
     /// in its record across the restart: said as the verb's own wait's end, with the id and its two verbs, exit 1, and kept past the day.
     /// </summary>
     [Fact]
@@ -271,7 +271,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.NotNull(new SentPresses(_home).Find(id, DateTimeOffset.UtcNow.AddDays(2))?.WaitingAt);
     }
 
-    /// <summary>CONFIRMWAIT1b (design §4.1, §5.1): <c>already</c> is exit 0, its sentence on the error stream, nothing done alone.</summary>
+    /// <summary><c>already</c> is exit 0, its sentence on the error stream, nothing done alone.</summary>
     [Fact]
     public async Task Already_set_is_exit_0_with_its_sentence()
     {
@@ -289,8 +289,8 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// RPC1c: the person's refusal, and two minutes with no answer, are the verb's exit 1 with the instance's sentence; nothing is done
-    /// alone. CONFIRMWAIT1b (design §2): a ground that changed, a withdrawal and a loss are the person's or the asker's word too.
+    /// The person's refusal, and two minutes with no answer, are the verb's exit 1 with the instance's sentence; nothing is done
+    /// alone. A ground that changed, a withdrawal and a loss are the person's or the asker's word too.
     /// </summary>
     [Theory]
     [InlineData("refused")]
@@ -315,7 +315,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.Equal("", _out.ToString());
     }
 
-    /// <summary>A person's press with no instance running acts alone, as it always did (§7.2); a window's route is never sent.</summary>
+    /// <summary>A person's press with no instance running acts alone; a window's route is never sent.</summary>
     [Fact]
     public async Task A_person_route_with_no_instance_acts_alone_and_a_window_route_is_never_sent()
     {
@@ -427,10 +427,10 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// A pipe this terminal does not take as its user's (PIPEOWNER1) refuses the press saying so, at once and never as a pipe that
+    /// A pipe this terminal does not take as its user's refuses the press saying so, at once and never as a pipe that
     /// did not answer, exit 2, nothing sent and nothing done alone: one another account serves, whose ACL refuses the connect, or
-    /// one whose owner the terminal does not take, as a terminal that is not elevated did an elevated Daoris's before the pipe was
-    /// its user's. The owners taken are the world's here, so no second elevation is needed.
+    /// one whose owner the terminal does not take, as an elevated Daoris's is to a terminal that is not elevated.
+    /// The owners taken are the world's here, so no second elevation is needed.
     /// </summary>
     [Theory]
     [InlineData("acl")]
@@ -680,7 +680,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CONFIRMWAIT1b (design §4.2): <c>result</c> says a press still <c>waiting</c> as the verb's own end does, exit 1, and keeps it past
+    /// <c>result</c> says a press still <c>waiting</c> as the verb's own end does, exit 1, and keeps it past
     /// the day; its ending's refusals are exit 1 where they are the person's or the asker's word, aligned with the press, else 2; and
     /// <c>unknown</c> says what is so.
     /// </summary>
@@ -728,9 +728,9 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CONFIRMWAIT1b (design §4.3): <c>withdraw &lt;id&gt;</c> sends the pipe's own <c>WITHDRAW { id, key }</c> with the kept key on a
+    /// <c>withdraw &lt;id&gt;</c> sends the pipe's own <c>WITHDRAW { id, key }</c> with the kept key on a
     /// new connection, never the kit's <c>CANCEL</c>, and says each answer: taken back exit 0; confirmed meanwhile, nothing cancelled, exit
-    /// 1; already ended, with its ending, exit 1; another key's exit 2; and today's instance, which has no such route, exit 2, saying so.
+    /// 1; already ended, with its ending, exit 1; another key's exit 2; and an instance that has no such route, exit 2, saying so.
     /// </summary>
     [Theory]
     [InlineData("withdrawn", 0, "took back request {id}: it was not done, and its card is gone from Daoris's window.")]
@@ -763,7 +763,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
         Assert.DoesNotContain(standIn.Sent, each => each.GetProperty("type").GetString() == "CANCEL");
     }
 
-    /// <summary>CONFIRMWAIT1b: an id this terminal never sent is withdrawn from nothing, and the instance is not asked.</summary>
+    /// <summary>An id this terminal never sent is withdrawn from nothing, and the instance is not asked.</summary>
     [Fact]
     public async Task Withdraw_of_an_id_it_never_sent_asks_nothing()
     {
@@ -779,7 +779,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CONFIRMWAIT1b (design §4.1): <c>--wait &lt;minutes&gt;</c>, 0 to 30, and <c>--no-wait</c>, which is <c>--wait 0</c>, are taken
+    /// <c>--wait &lt;minutes&gt;</c>, 0 to 30, and <c>--no-wait</c>, which is <c>--wait 0</c>, are taken
     /// from the words in the host's entry before any verb reads them; no flag leaves the wait unset, and a wait out of bounds, without
     /// its minutes, or said twice is a problem.
     /// </summary>
@@ -811,7 +811,7 @@ public sealed class InstanceDoorTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// CONFIRMWAIT1b (design §4.1, §11): Ctrl+C still withdraws nothing, and the families' one sentence says both verbs, read by each of
+    /// Ctrl+C still withdraws nothing, and the families' one sentence says both verbs, read by each of
     /// the four consoles; no client of this machine writes the kit's <c>CANCEL</c>.
     /// </summary>
     [Fact]

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 CONNECTOR2, whole: the host started with the entry's variables ONLY, as Codex starts it, answers `initialize`;
-/// the same start without the home exits 2 and answers nothing (the reproduction, pinned). Runs the development build's
+/// The host started with the entry's variables ONLY, as Codex starts it, answers `initialize`;
+/// the same start without the home exits 2 and answers nothing. Runs the development build's
 /// host, so it needs `Daoris.Service.Mcp` built; it is skipped-by-failure otherwise, with the path in the message.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -15,8 +15,8 @@ public sealed class KnowledgeConnectorStartTests : IDisposable
         WorkspaceRoot.Folder, "_fixtures", "connector-start-" + Guid.NewGuid().ToString("N")[..8]);
 
     /// <remarks>
-    /// The host holds its store (`knowledge.db`) until its process has gone, so a delete made the moment it is killed met
-    /// the file still open in the full run (FLAKE1, 2026-10-12). The test waits for the exit; a straggling handle still
+    /// The host holds its store (`knowledge.db`) until its process has gone, so a delete made the moment it is killed can meet
+    /// the file still open. The test waits for the exit; a straggling handle still
     /// gets a few tries here, and then the folder is left: the next run's fresh name never collides with it.
     /// </remarks>
     public void Dispose()

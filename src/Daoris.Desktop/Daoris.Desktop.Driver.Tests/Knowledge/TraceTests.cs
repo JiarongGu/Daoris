@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// TRACE1 (D143): <c>daoris trace &lt;commit|session|quest&gt;</c>, one read from a commit back to its ask. Six stores
+/// <c>daoris trace &lt;commit|session|quest&gt;</c>, one read from a commit back to its ask. Six stores
 /// already hold a change's provenance (the service's session records, quests and asks; this machine's events, rules files and
 /// landings) and nothing read them together. Each link is printed from the store that keeps it, and a link nothing keeps is
 /// said missing, never guessed.
@@ -30,7 +30,7 @@ public sealed class TraceTests : IDisposable
     private static DateTimeOffset At(int hour, int minute) => new(2026, 10, 3, hour, minute, 0, TimeSpan.Zero);
 
     /// <summary>
-    /// CHATFLOW1a (the chat-flow design §4.2): a record is read with the six fields that tell its kind and its line apart, as the service
+    /// A record is read with the six fields that tell its kind and its line apart, as the service
     /// answers this machine: <c>opinion</c>, <c>serves</c>, <c>piece</c>, <c>from</c>, <c>entry</c> and <c>tookQuest</c>; a record
     /// answering none reads none, and its origin is the entry's first half.
     /// </summary>
@@ -54,7 +54,7 @@ public sealed class TraceTests : IDisposable
 
     private const string Answer = "common-report, not a report type of its own";
 
-    /// <summary>The ask the quest was asked by: its sentence, an answer to the first session, and one go-ahead approved.</summary>
+    /// <summary>The ask the quest comes from: its sentence, an answer to the first session, and one go-ahead approved.</summary>
     private static string AskJson() =>
         $$$"""
         {"id":"a1","workspace":"work","sentence":"{{{Sentence}}}","state":"Published","tier":"intake","quests":["q1"],"intake":"i1",
@@ -78,7 +78,7 @@ public sealed class TraceTests : IDisposable
     };
 
     /// <summary>
-    /// The drift's shape (D133): an intake, then a quest's first session cut off by an account's limit, and a carry-on on another
+    /// The drift's shape: an intake, then a quest's first session cut off by an account's limit, and a carry-on on another
     /// account in the same tree that closed it done and whose work landed on a branch.
     /// </summary>
     private static JsonArray Sessions() =>
@@ -109,7 +109,7 @@ public sealed class TraceTests : IDisposable
 
     /// <summary>
     /// A service standing in: each request recorded with its method, then answered, or 404 where nothing is. A quest's moves
-    /// (FLOWCHART1a2) are answered by <paramref name="moves"/> with its status, and with none a host from before the door's 404.
+    /// are answered by <paramref name="moves"/> with its status, and with none the door's 404.
     /// </summary>
     private sealed class StandIn(
         JsonArray sessions, JsonArray quests, Func<string, string?> asks, Func<string, (HttpStatusCode Status, string Body)?>? moves = null)
@@ -187,7 +187,7 @@ public sealed class TraceTests : IDisposable
 
         Assert.Equal(0, exit);
         Assert.StartsWith("trace: quest #q1", said);
-        // The ask, and the person's words verbatim, each saying how and when it was given.
+        // The ask, and the person's words verbatim, each saying how and when it is given.
         Assert.Contains("ask #a1 · the service's ask record", said);
         Assert.Contains("  > " + Sentence, said);
         Assert.Contains("2026-10-03 09:20 UTC · answered session s1, on quest #q1\n      > " + Answer, said);
@@ -306,7 +306,7 @@ public sealed class TraceTests : IDisposable
 
     /// <summary>
     /// A landing into the line makes no branch, so <c>landings.json</c> holds none: the acceptance the press kept in the session's
-    /// record is read instead (D100), and it says no commit of the merge's own.
+    /// record is read instead, and it says no commit of the merge's own.
     /// </summary>
     [Fact]
     public async Task A_merge_into_the_line_is_read_from_the_acceptance_its_record_keeps()
@@ -323,9 +323,9 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// CONTEXT1: an instruction is read by its sections from the account kept beside it, in the driver's words, each with what
-    /// its bound left out, then what was handed beside it and what was not; never its words. One from before the account was
-    /// kept says so.
+    /// An instruction is read by its sections from the account kept beside it, in the driver's words, each with what
+    /// its bound left out, then what is handed beside it and what is not; never its words. One with no kept account
+    /// says so.
     /// </summary>
     [Fact]
     public async Task An_instruction_is_read_by_the_sections_its_account_keeps_and_one_from_before_says_not_kept()
@@ -351,13 +351,13 @@ public sealed class TraceTests : IDisposable
         Assert.Contains("      the standing block: ", s2);
         Assert.Contains("        left out: 2 indexes counted, not named, past the 8 it names", s2);
         Assert.Contains("      the permission rules: 12 handed beside it", s2);
-        // What could have been handed and was not, after what was.
+        // What could be handed and is not, after what is.
         Assert.Contains("      not handed:\n        the session language: none set for its repository or its workspace on this machine\n", s2);
         Assert.True(s2.IndexOf("the permission rules", StringComparison.Ordinal) < s2.IndexOf("not handed:", StringComparison.Ordinal), s2);
         Assert.DoesNotContain("The ticket asks for a daily comparison report", said);
     }
 
-    /// <summary>A live session's rules are read from the file it was handed, by count, while it runs.</summary>
+    /// <summary>A live session's rules are read from the file it is handed, by count, while it runs.</summary>
     [Fact]
     public async Task A_running_sessions_rules_are_read_from_the_file_it_was_handed()
     {
@@ -371,7 +371,7 @@ public sealed class TraceTests : IDisposable
 
     /// <summary>
     /// A departure is read as its done wrote it and the hold as the quest keeps it, and an instruction the record cut is sized by
-    /// what the record says it was, not by what it kept.
+    /// the size the record says, not by what it kept.
     /// </summary>
     [Fact]
     public async Task A_departure_its_hold_and_a_cut_instruction_are_read_as_kept()
@@ -392,8 +392,8 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// EVID1b (D144 §5): what was kept of a done's evidence reads back as kept: each requirement's evidence with what was read of
-    /// it, the verdict's commit, how it was chosen, which session's end and which machine, and the hold's cause with its doors.
+    /// What is kept of a done's evidence reads back as kept: each requirement's evidence with what is read of
+    /// it, the verdict's commit, how it is chosen, which session's end and which machine, and the hold's cause with its doors.
     /// </summary>
     [Fact]
     public async Task A_dones_evidence_and_its_hold_are_read_as_kept()
@@ -429,7 +429,7 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1c6: a submission whose answers name no evidence has its commit read alone at its session's end, and the trace says it as
+    /// A submission whose answers name no evidence has its commit read alone at its session's end, and the trace says it as
     /// the submission's commit, never as evidence read with nothing found.
     /// </summary>
     [Fact]
@@ -449,7 +449,7 @@ public sealed class TraceTests : IDisposable
         Assert.DoesNotContain("evidence read at", said);
     }
 
-    /// <summary>EVID1b: a done whose evidence nobody read yet says so, and says the driver reads it when the session ends.</summary>
+    /// <summary>A done whose evidence nobody read yet says so, and says the driver reads it when the session ends.</summary>
     [Fact]
     public async Task A_dones_unread_evidence_says_it_is_not_read_yet()
     {
@@ -494,7 +494,7 @@ public sealed class TraceTests : IDisposable
         Assert.DoesNotContain("account none named", said);
     }
 
-    /// <summary>Nothing found is an answer, exit 1, naming what was searched.</summary>
+    /// <summary>Nothing found is an answer, exit 1, naming what it searched.</summary>
     [Fact]
     public async Task Nothing_found_says_what_was_searched()
     {
@@ -528,8 +528,8 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Read-only: the home is byte for byte what it was, and every request to the service is a read. The trace writes nothing
-    /// anywhere (D143).
+    /// 🔴 Read-only: the home is byte for byte unchanged, and every request to the service is a read. The trace writes nothing
+    /// anywhere.
     /// </summary>
     [Fact]
     public async Task The_trace_writes_nothing_and_only_reads()
@@ -546,8 +546,8 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// REVIEWENV1c (design §3.5): the landing record's review reads back on the landing it let go, the person's reviewed with its
-    /// environment, set-up step and commit, or their skip with their words; a landing no review was asked of says nothing of one.
+    /// The landing record's review reads back on the landing it let go, the person's reviewed with its
+    /// environment, set-up step and commit, or their skip with their words; a landing no review is asked of says nothing of one.
     /// </summary>
     [Fact]
     public async Task A_landings_review_reads_back_as_reviewed_or_skipped()
@@ -580,7 +580,7 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// WORKFLOW1f (the workflow design §5.5): the landing record's named workflow reads back on the landing it decided, its version
+    /// The landing record's named workflow reads back on the landing it decided, its version
     /// and the level that chose it; a landing under Current, and one from before, says nothing of one.
     /// </summary>
     [Fact]
@@ -608,9 +608,9 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// LAND2b (D145 point 6, design §8): a landing at the quest's done is read back as accepted automatically, with the rule it
-    /// was made under; the conversation's acceptance note is read as one; the due list's tries are each read by their code. A
-    /// landing from before who accepted it was kept says so, never guessed.
+    /// A landing at the quest's done is read back as accepted automatically, with the rule it
+    /// is made under; the conversation's acceptance note is read as one; the due list's tries are each read by their code. A
+    /// landing that keeps no record of who accepted it says so, never guessed.
     /// </summary>
     [Fact]
     public async Task An_automatic_acceptance_reads_back_with_its_rule_its_note_and_each_try()
@@ -636,7 +636,7 @@ public sealed class TraceTests : IDisposable
         Assert.Contains("pushed by plugin acme.lands, pull request https://example.test/pull/7; accepted automatically when its quest was done; "
             + "under the workspace's rule, naming plugin acme.lands, accepting automatically", block);
 
-        // A landing recorded before LAND2b kept who accepted it: said not kept, and no rule is made up.
+        // A landing recorded with no acceptance is said not kept, and no rule is made up.
         new LandedBranches(_home).Record(new LandedBranch(
             "dashboards", "work", "feature/q1-fix-the-dashboard-figure", "main", "1a2b3c4d5e6f708192a3b4c5d6e7f80910111213", "s2", "q1",
             "Fix the dashboard figure", At(10, 5)));
@@ -645,7 +645,7 @@ public sealed class TraceTests : IDisposable
         Assert.DoesNotContain("'s rule, naming", Block(older, "session s2"));
     }
 
-    /// <summary>ACCESSWORDS1: a landing the access setup accepted says so in the trace, with the level that set it; a rule's own switch does not.</summary>
+    /// <summary>A landing the access setup accepted says so in the trace, with the level that set it; a rule's own switch does not.</summary>
     [Fact]
     public async Task A_landing_the_access_setup_accepted_reads_back_saying_so()
     {
@@ -662,7 +662,7 @@ public sealed class TraceTests : IDisposable
         Assert.Contains("under the workspace's rule, naming no plugin, accepted by the access setup (machine)", Block(said, "session s2"));
     }
 
-    /// <summary>ACCESSWORDS1c: a landing the person pressed under the access setup keeps the level, and the trace does not credit the setup with it.</summary>
+    /// <summary>A landing the person pressed under the access setup keeps the level, and the trace does not credit the setup with it.</summary>
     [Fact]
     public async Task A_landing_the_person_pressed_under_the_access_setup_does_not_say_the_setup_accepted_it()
     {
@@ -682,7 +682,7 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// PLUGHOOK1c (D148 point 6, design §2.5): a landing reads back with what its plugin last answered about its pull request, with
+    /// A landing reads back with what its plugin last answered about its pull request, with
     /// when, and a failed ask beside it. The trace reads the kept answer and asks nothing.
     /// </summary>
     [Fact]
@@ -705,8 +705,8 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// FLOWCHART1c (D186; the flowchart design §2.7, §10's row): a landing that carries several sessions' work reads back whole from
-    /// each session it names, with the session it was made for, each advance that moved it on with its session, who accepted it, its
+    /// A landing that carries several sessions' work reads back whole from
+    /// each session it names, with the session it is made for, each advance that moved it on with its session, who accepted it, its
     /// unit and its quest, and the units it carries. A session that only moved the branch on reads it too (<see cref="LandedBranch.Names"/>),
     /// so neither the shared landing nor its advances are lost to one session; a landing that names neither reads back for neither.
     /// </summary>
@@ -751,7 +751,7 @@ public sealed class TraceTests : IDisposable
     }
 
     /// <summary>
-    /// FLOWCHART1c: a landing from before its advances and units were kept answers none of either, and its words say nothing of them;
+    /// A landing that keeps no advances and units answers none of either, and its words say nothing of them;
     /// the session that made it is still named.
     /// </summary>
     [Fact]
@@ -772,7 +772,7 @@ public sealed class TraceTests : IDisposable
 
     /// <summary>A service that cannot be read is said, store by store, and a trace that needed it could not: exit 2.</summary>
     /// <summary>
-    /// A quest's moves as the service's door answers them (FLOWCHART1a2), in the order its history replays: a take, another machine's
+    /// A quest's moves as the service's door answers them, in the order its history replays: a take, another machine's
     /// take kept as a conflict and dismissed by its reference, a done that held it, a second done the replay did not apply, this
     /// machine's yes still pending though its clock made it earliest, and a kind this driver does not know.
     /// </summary>
@@ -791,7 +791,7 @@ public sealed class TraceTests : IDisposable
         """;
 
     /// <summary>
-    /// FLOWCHART1a2 (D186; the flowchart design §2.1, trap 20): the quest's link carries its moves and the terminal says them, in the
+    /// The quest's link carries its moves and the terminal says them, in the
     /// order they replay and never by time: each with its machine, its time and the remote's number or none, one the replay did not
     /// apply said recorded and not applied, the hold one set or let go, a dismissal matched to its conflict by its reference, and a
     /// kind this driver does not know shown as recorded. The moves are read for the quest the trace reached, and for no other.

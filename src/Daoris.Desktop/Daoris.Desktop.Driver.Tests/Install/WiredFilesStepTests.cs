@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1t (D232): Ask Daoris's wired files (<c>&lt;session&gt;.wired.json</c>) name each receipt's door by <c>door</c> and its
+/// Ask Daoris's wired files (<c>&lt;session&gt;.wired.json</c>) name each receipt's door by <c>door</c> and its
 /// transport by <c>transport</c>, <c>native</c> or <c>protocol</c>, after the home's migration: an older receipt's <c>harness</c> is the
 /// door and its <c>door</c>, <c>pipe</c> or <c>acp</c>, the transport.
 /// </summary>

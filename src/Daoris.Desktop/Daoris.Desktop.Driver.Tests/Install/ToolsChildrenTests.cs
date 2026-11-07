@@ -5,13 +5,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One answer for Daoris and every child (TOOLS5, D121; the tools design §2.4, §2.6, §2.7): the tables the CLI's <c>tools.ts</c>
-/// was held to, row for row, until its one child became Daoris's driver program, which hands its own children the tools (PUSH1f2f).
+/// One answer for Daoris and every child: the tables the CLI's <c>tools.ts</c> is held to, row for row.
 /// </summary>
 /// <remarks>
 /// <para><b>The environment</b>: a child's <c>PATH</c> is each tool that is managed or a named file, in the declared
 /// order, its folders first, then the <c>PATH</c> it inherited; with every tool the system's it is the inherited one
-/// exactly. <b>The install's doctrine tool</b> (WSSETUP3, D124 §1.3): an install's <c>app/bin/</c> beside the home
+/// exactly. <b>The install's doctrine tool</b>: an install's <c>app/bin/</c> beside the home
 /// comes first of all, and no install is no change. <b>A command's first word</b>: a name a tool answers for is that
 /// tool's, by its way, and never falls back to <c>PATH</c>; any other name is the caller's own resolver's.</para>
 /// <para>Every case runs in a temporary directory, and nothing here starts a program: the files are empty, and
@@ -124,7 +123,7 @@ public sealed class ToolsChildrenTests : IDisposable
 
     private static string? Spelled(string? path) => path is not null && Windows ? path.ToLowerInvariant() : path;
 
-    // ── The environment (§2.4) ──────────────────────────────────────────────────────────────────────
+    // ── The environment ──────────────────────────────────────────────────────────────────────
 
     [Theory]
     [InlineData("no file", null, "two", "unchanged")]
@@ -156,7 +155,7 @@ public sealed class ToolsChildrenTests : IDisposable
         else Assert.Equal([Tools.PathVariable], variables.Keys);
     }
 
-    // ── The install's doctrine tool (D124 §1.3, WSSETUP3) ─────────────────────────────────────────────
+    // ── The install's doctrine tool ─────────────────────────────────────────────
 
     /// <summary>
     /// Lay out beside the home what the install cell names: <c>none</c>, nothing; <c>bin</c>, an install's
@@ -231,7 +230,7 @@ public sealed class ToolsChildrenTests : IDisposable
         Assert.Equal(Path.Combine(_root, "app", "bin"), Tools.InstallBin(_root));
     }
 
-    /// <summary>HOMELAYOUT4: a development run's one root is its home and its Daoris folder, so its launchers are in its own <c>app/bin/</c>.</summary>
+    /// <summary>A development run's one root is its home and its Daoris folder, so its launchers are in its own <c>app/bin/</c>.</summary>
     [Fact]
     public void A_dev_runs_root_holds_its_own_app_bin_and_a_data_folder_of_no_install_is_a_root_of_its_own()
     {
@@ -254,7 +253,7 @@ public sealed class ToolsChildrenTests : IDisposable
         Assert.All(GitWiring.Prompts, pair => Assert.Equal(pair.Value, info.Environment[pair.Key]));
     }
 
-    /// <summary>GITAUTH1a: with a home and without one, a start is handed the prompt variables and loses the inherited ones that prompt.</summary>
+    /// <summary>With a home and without one, a start is handed the prompt variables and loses the inherited ones that prompt.</summary>
     [Fact]
     public void Every_start_is_handed_the_prompt_variables_and_loses_the_inherited_askpass_and_traces()
     {
@@ -275,7 +274,7 @@ public sealed class ToolsChildrenTests : IDisposable
         }
     }
 
-    /// <summary>GITAUTH1a, the design §4.5: the terminal's shells are the person's own, so its block takes none of the prompt variables.</summary>
+    /// <summary>The terminal's shells are the person's own, so its block takes none of the prompt variables.</summary>
     [Fact]
     public void The_terminals_environment_takes_none_of_the_prompt_variables()
     {
@@ -306,7 +305,7 @@ public sealed class ToolsChildrenTests : IDisposable
         Assert.Equal(before, after);
     }
 
-    // ── A command's first word (§2.4, §2.7) ─────────────────────────────────────────────────────────
+    // ── A command's first word ─────────────────────────────────────────────────────────
 
     [Theory]
     [InlineData("a name no tool answers for is the caller's", null, "python", "not a tool")]
@@ -363,7 +362,7 @@ public sealed class ToolsChildrenTests : IDisposable
         Assert.Contains("daoris tool use node system", resolution.Problem);
     }
 
-    // ── Daoris's own git (§2.4) ─────────────────────────────────────────────────────────────────────
+    // ── Daoris's own git ─────────────────────────────────────────────────────────────────────
 
     [Fact]
     public void Daoris_own_git_is_the_file_tools_resolves_and_its_start_carries_the_tools_PATH()
@@ -372,7 +371,7 @@ public sealed class ToolsChildrenTests : IDisposable
 
         var (info, refusal) = WorkingTree.GitStart(_root, ["status"], Home);
 
-        // The fixture's package has no git behind its launcher, so the record's file starts (GITSTART5 below has one).
+        // The fixture's package has no git behind its launcher, so the record's file starts.
         Assert.Null(refusal);
         Assert.Equal(Folder("managed:git/cmd/git.exe", null), info!.FileName);
         Assert.Equal(["-c", "core.longpaths=true", "status"], info.ArgumentList);
@@ -382,7 +381,7 @@ public sealed class ToolsChildrenTests : IDisposable
     [Fact]
     public void A_managed_git_laid_out_as_Git_for_Windows_starts_past_its_launcher_with_the_launchers_variables()
     {
-        // GITSTART5: the version's package as Git for Windows lays it out, its record naming the launcher.
+        // The version's package as Git for Windows lays it out, its record naming the launcher.
         Touch(Folder("managed:git/mingw64/bin/git.exe", null));
         Directory.CreateDirectory(Folder("managed:git/usr/bin", null));
         Write("""{"tools":{"git":{"use":"managed","version":"2.51.0"}}}""");
@@ -441,11 +440,11 @@ public sealed class ToolsChildrenTests : IDisposable
         var found = CommandPresence.Resolve("git", startable: true);
 
         Assert.Null(refusal);
-        // GITSTART1: where PATH finds Git for Windows' launcher, its real git starts directly.
+        // Where PATH finds Git for Windows' launcher, its real git starts directly.
         Assert.Equal(found is null ? "git" : GitForWindows.Behind(found)?.Git ?? found, info!.FileName);
     }
 
-    // ── A hook's first word (§2.4) ──────────────────────────────────────────────────────────────────
+    // ── A hook's first word ──────────────────────────────────────────────────────────────────
 
     private PluginEntry Plugin(params string[] command) =>
         new(new PluginManifest("probe", 1, "probe", "1.0.0", "", [], new PluginHooks(command, ["quest/consider"]), []),
@@ -484,7 +483,7 @@ public sealed class ToolsChildrenTests : IDisposable
         Assert.Equal(CommandPresence.Resolve("python", startable: true) ?? "python", info.FileName);
     }
 
-    // ── npm in a pin, and agent install on the system's (§2.7) ─────────────────────────────────────
+    // ── npm in a pin, and agent install on the system's ─────────────────────────────────────
 
     [Fact]
     public void A_pins_npm_is_the_one_tools_resolves()
@@ -528,7 +527,7 @@ public sealed class ToolsChildrenTests : IDisposable
         Assert.Equal(["claude", "install"], HarnessActions.OnTheSystem(["claude", "install"], Inherited("two")));
     }
 
-    // ── The tree guard's node (§2.4) ────────────────────────────────────────────────────────────────
+    // ── The tree guard's node ────────────────────────────────────────────────────────────────
 
     [Fact]
     public void The_tree_guard_is_written_with_the_node_tools_resolves()
@@ -555,7 +554,7 @@ public sealed class ToolsChildrenTests : IDisposable
         Assert.Contains("never falls back to PATH", refused.Message);
     }
 
-    // ── The terminal's shells (§2.6) ────────────────────────────────────────────────────────────────
+    // ── The terminal's shells ────────────────────────────────────────────────────────────────
 
     [Fact]
     public void A_managed_pwsh_is_the_terminals_and_a_minimal_git_falls_back_to_the_systems_bash()

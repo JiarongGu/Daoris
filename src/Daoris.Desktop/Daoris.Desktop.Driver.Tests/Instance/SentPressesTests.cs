@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The presses a terminal sent (RPC1j), each with the key that reads it, kept until its answer or a read finds it ended and a day after,
-/// thirty days from when it was sent at most (CONFIRMWAIT1b; CONFIRMWAIT1, the confirm-wait design §15.2 item 6), in the home's kept
+/// The presses a terminal sent, each with the key that reads it, kept until its answer or a read finds it ended and a day after,
+/// thirty days from when it is sent at most, in the home's kept
 /// <c>profiles/pipe-sent</c>: <see cref="SentPresses.Find"/> and the prune read one rule, each against the time a test hands it.
 /// </summary>
 public sealed class SentPressesTests : IDisposable
@@ -32,7 +32,7 @@ public sealed class SentPressesTests : IDisposable
     private string PathOf(string id) => Path.Combine(DaorisHome.Entry(_home, HomeEntry.PipeSent), id + ".json");
 
     /// <summary>
-    /// CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): a press nothing has found ended keeps its key thirty days from when it was sent,
+    /// A press nothing has found ended keeps its key thirty days from when it is sent,
     /// so a verb killed before it read the press waiting leaves no card without its key; the next command's prune does not take it.
     /// </summary>
     [Fact]
@@ -99,8 +99,8 @@ public sealed class SentPressesTests : IDisposable
     }
 
     /// <summary>
-    /// CONFIRMWAIT1 (§15.2 item 6): the keys live in <c>profiles/pipe-sent</c>, so clearing <c>run/</c> while Daoris is closed, as D172
-    /// allows, loses none; a press kept under <c>run/pipe/sent</c> by a build before is still found there.
+    /// The keys live in <c>profiles/pipe-sent</c>, so clearing <c>run/</c> while Daoris is closed
+    /// loses none; a press kept under <c>run/pipe/sent</c> by a build before is still found there.
     /// </summary>
     [Fact]
     public void Clearing_run_loses_no_key_and_a_press_kept_by_a_build_before_is_still_found()

@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// The room's <see cref="HelpRoomTerminalActs"/> (D233 point 1): each act the person runs at a terminal that no proposal takes, named
+/// The room's <see cref="HelpRoomTerminalActs"/>: each act the person runs at a terminal that no proposal takes, named
 /// with its commands, so the helper names the command rather than calling a missing card a limit of its own.
 /// </summary>
 public sealed class HelpRoomTerminalActsTests
@@ -41,7 +41,7 @@ public sealed class HelpRoomTerminalActsTests
     }
 
     /// <summary>
-    /// ONEWAY1ai-ii: each command is a command of the one tree, so the helper never sends the person to a verb that is not there: it
+    /// Each command is a command of the one tree, so the helper never sends the person to a verb that is not there: it
     /// is spelled <c>daoris …</c> and the tree runs its words, neither refusing them as an old form nor answering with its usage.
     /// </summary>
     [Fact]

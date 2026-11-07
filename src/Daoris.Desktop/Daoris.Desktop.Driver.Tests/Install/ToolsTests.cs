@@ -5,11 +5,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// <c>$DAORIS_HOME/tools.json</c> and its resolution (TOOLS2, D121; the tools design §2.1–§2.3, §5): the
-/// file's one reader's tables, to which the CLI's <c>tools.ts</c> was held row for row until its last reader left (PUSH1f2f).
+/// <c>$DAORIS_HOME/tools.json</c> and its resolution: the
+/// file's one reader's tables, to which the CLI's <c>tools.ts</c> is held row for row.
 /// </summary>
 /// <remarks>
-/// <para>The file's rules (§2.2), each a table below:</para>
+/// <para>The file's rules, each a table below:</para>
 /// <list type="number">
 /// <item>No file, no entry, or <c>"use": "system"</c> is the system's.</item>
 /// <item><c>managed</c> needs an exact version of one to four numbers; <c>file</c> needs a whole path. An
@@ -22,13 +22,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// said on a read.</item>
 /// <item>Setting one way clears the others, and a writer keeps what it has no field for.</item>
 /// </list>
-/// <para>Then the resolution (§2.3): the way set decides which file starts, and a managed version nobody
+/// <para>Then the resolution: the way set decides which file starts, and a managed version nobody
 /// downloaded, or a named file that is gone, refuses — never a fall back to <c>PATH</c>.</para>
 /// <para>🔴 <b>The CLI reads these theories.</b> <c>tools.test.ts</c>'s <i>the driver's tables are these
 /// tables</i> parses each reading and resolution <c>[InlineData]</c> row here and holds it to its own table, cell for cell
 /// and in order, so a row changed on one side alone fails <c>npm run verify</c>. Keep each row on one line, its
-/// cells literals. The writes' tables are this side's alone since PUSH1f2c (D194), when the CLI's writers left with
-/// <c>daoris tool</c>.</para>
+/// cells literals. The writes' tables are this side's alone: the CLI has no writers.</para>
 /// <para>Every case runs in a temporary directory, and nothing here starts a program: presence is a file on
 /// disk.</para>
 /// </remarks>
@@ -74,7 +73,7 @@ public sealed class ToolsTests : IDisposable
         _ => null,
     };
 
-    // ── The declared tools (§2.1) ──────────────────────────────────────────────────────────────────
+    // ── The declared tools ──────────────────────────────────────────────────────────────────
 
     [Fact]
     public void The_tools_are_declared_in_code_in_the_order_a_childs_PATH_takes_them()
@@ -279,7 +278,7 @@ public sealed class ToolsTests : IDisposable
         Assert.Equal(["`locations` is not a list: it is kept, and no location is read"], read.Notes);
     }
 
-    // ── The resolution (§2.3). The CLI's `a tool resolves as the driver resolves it`, row for row ────
+    // ── The resolution. The CLI's `a tool resolves as the driver resolves it`, row for row ────
 
     /// <remarks>
     /// Every row is <c>pwsh</c>. <paramref name="record"/> is the managed folder: null for none, empty for a
@@ -457,7 +456,7 @@ public sealed class ToolsTests : IDisposable
         Assert.Equal(before, File.ReadAllText(ToolsFile));
     }
 
-    // ── Managed, written (TOOLS4, rule 6): only over a version that is downloaded. The CLI's `managed is written…` ──
+    // ── Managed, written (rule 6): only over a version that is downloaded. The CLI's `managed is written…` ──
 
     /// <summary>A downloaded version as the resolution finds it: its record, naming an executable that is there.</summary>
     private void Downloaded(string tool, string version)
@@ -498,7 +497,7 @@ public sealed class ToolsTests : IDisposable
         }
     }
 
-    // ── Locations, written (rule 5's write side, TOOLS4). The CLI's `a location is added or removed…` ──────────────
+    // ── Locations, written (rule 5's write side). The CLI's `a location is added or removed…` ──────────────
 
     [Theory]
     [InlineData("add to no file", null, "add", "https://a.example/r.json", """["https://a.example/r.json"]""", true, null)]
@@ -541,9 +540,9 @@ public sealed class ToolsTests : IDisposable
     }
 
     /// <summary>
-    /// The keep lock over each writer's read and its write (PUSH1f2c, D194 point 3, the alone-path design §1.4): another writer's
+    /// The keep lock over each writer's read and its write: another writer's
     /// change attempted after this one read the file lands after this one's write, on the file as this one left it, and both are kept.
-    /// With the lock taken only at the write, a location another writer added in between was lost: the edit of <c>locations</c> is the
+    /// With the lock taken only at the write, a location another writer added in between would be lost: the edit of <c>locations</c> is the
     /// list written whole. The other writer is started from the moment this one has read, and given a moment to land where it can.
     /// </summary>
     [Theory]

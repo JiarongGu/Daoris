@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1t (D232): the usage file's entries name the door a session ran on by <c>door</c> after the home's migration; an older
+/// The usage file's entries name the door a session ran on by <c>door</c> after the home's migration; an older
 /// entry's <c>harness</c> is that door.
 /// </summary>
 public sealed class UsageFileStepTests : IDisposable

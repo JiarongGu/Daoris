@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// CONTEXTDRIVE1k (the context counters design §7.6): the room says the supervisor's rules where the home holds some, in the terminal's words and
+/// The room says the supervisor's rules where the home holds some, in the terminal's words and
 /// by place, the machine's first; a room built by hand, or a home with none, says nothing of them.
 /// </summary>
 public sealed class HelpRoomRulesTests

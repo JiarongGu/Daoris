@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// REVIEW2 T12: a door's row says how Ask Daoris meets it (it proposes it, only when the person asks for it, or never) from its typed
+/// A door's row says how Ask Daoris meets it (it proposes it, only when the person asks for it, or never) from its typed
 /// answer, and a row that proposes names a door its proposal kind takes, so the room cannot say a proposal no kind makes, nor carry the
 /// fact hand-written a second time.
 /// </summary>

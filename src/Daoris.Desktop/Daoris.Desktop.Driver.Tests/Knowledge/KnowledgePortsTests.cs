@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The ports Knowledge declares and the subdomains above it answer (FOUNDATION1 mod-viii, the design §14.3): a trace's reading of a
+/// The ports Knowledge declares and the subdomains above it answer: a trace's reading of a
 /// session's events, answered by the context. Each answer is installed when the driver's assembly loads, so the host's terminal, the
 /// shell's route and every test read what they always read; a test may put another in and puts it back.
 /// </summary>

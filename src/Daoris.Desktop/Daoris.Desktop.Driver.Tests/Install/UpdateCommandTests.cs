@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// UPDATE1 (D139 §3, D50): `daoris update`, the terminal's door to the banner's verbs — what is staged and how the
+/// `daoris update`, the terminal's door to the banner's verbs — what is staged and how the
 /// last swap ended, and <c>--when-idle</c>, <c>--now</c> and <c>--cancel</c> written to the same request the screen writes.
 /// </summary>
 public sealed class UpdateCommandTests : IDisposable
@@ -135,7 +135,7 @@ public sealed class UpdateCommandTests : IDisposable
         Assert.Contains("ended before it came up", said);
     }
 
-    /// <summary>SWAP2: what the swap found held, and for how long, said beside how it ended; nothing of holds when it met none.</summary>
+    /// <summary>What the swap found held, and for how long, said beside how it ended; nothing of holds when it met none.</summary>
     [Fact]
     public void The_last_swap_names_what_it_found_held_and_for_how_long()
     {
@@ -153,7 +153,7 @@ public sealed class UpdateCommandTests : IDisposable
         Assert.DoesNotContain("Held", Run().Said);
     }
 
-    /// <summary>DEPLOYBUSY1: a hold says what was found held, and by which process, where that was found; as before where not.</summary>
+    /// <summary>A hold says what it found held, and by which process, where it could tell.</summary>
     [Fact]
     public void A_hold_says_what_held_it_where_that_was_found()
     {
