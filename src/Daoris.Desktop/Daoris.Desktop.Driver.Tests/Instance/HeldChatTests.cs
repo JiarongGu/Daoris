@@ -99,7 +99,7 @@ public sealed class HeldChatTests : IAsyncLifetime
         Assert.True(start.GetProperty("hold").GetBoolean());
         var payload = start.GetProperty("payload");
         Assert.Equal("game", payload.GetProperty("repository").GetString());
-        Assert.Equal("stub", payload.GetProperty("adapter").GetString());
+        Assert.Equal("stub", payload.GetProperty("door").GetString());
         Assert.Equal("work", payload.GetProperty("profile").GetString());
         Assert.True(payload.GetProperty("ownTree").GetBoolean());
         Assert.Contains("chat: conversation c1 started.", _error.Text);

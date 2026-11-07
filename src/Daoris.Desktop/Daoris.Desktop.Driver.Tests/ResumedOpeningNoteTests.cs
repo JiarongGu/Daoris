@@ -24,7 +24,7 @@ public sealed class ResumedOpeningNoteTests
         Assert.Equal(english, Continuations.Opening("claude-code", null, null, answer, findings, persons));
         Assert.Equal(["resumed.opening"], NoteAssert.Codes(line.Parts));
         NoteAssert.Holds(line);
-        Assert.Equal(("claude-code", why), (line.Parts[0].Value("adapter"), line.Parts[0].Value("why")));
+        Assert.Equal(("claude-code", why), (line.Parts[0].Value("door"), line.Parts[0].Value("why")));
     }
 
     /// <summary>A version that moved is a part of its own, riding inside the line, and the English says it as it always did.</summary>
@@ -58,7 +58,7 @@ public sealed class ResumedOpeningNoteTests
         Assert.Equal("— what you said while it worked is the next turn of its own conversation, resumed on `claude-code`.", line.Text);
         Assert.Equal(["resumed.native"], NoteAssert.Codes(line.Parts));
         NoteAssert.Holds(line.Text, line.Parts);
-        Assert.Equal("claude-code", line.Parts![0].Value("adapter"));
+        Assert.Equal("claude-code", line.Parts![0].Value("door"));
     }
 
     /// <summary>The ask writes the line's parts into the record with its English; an ask handed English alone writes none.</summary>
