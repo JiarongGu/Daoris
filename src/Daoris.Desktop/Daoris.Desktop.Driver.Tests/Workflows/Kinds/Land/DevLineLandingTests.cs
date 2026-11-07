@@ -46,6 +46,7 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
     [InlineData("quest-moved")]
     [InlineData("own-branch")]
     [InlineData("moved-on")]
+    [InlineData("carried-on")]
     public async Task A_dev_line_run_whose_tree_stands_with_a_commit_beyond_its_line_lands_with_no_press(string shape)
     {
         using var lease = HomeLease.TryAcquire(_home, LeaseKind.Headless, out _);
@@ -82,6 +83,22 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
                 await InventoryPassAsync(root, door);
                 _world.Quests["q1"] = _world.Quests["q1"] with { Status = "Done", Updated = DateTimeOffset.UtcNow };
                 break;
+            case "carried-on":
+                // The two Lyntai runs' shape: published, taken, its session cut by the install's update and carried on in the same tree by a
+                // new session, which commits more and says done; a pass at each move.
+                _world.Quests["q1"] = _world.Quests["q1"] with { Status = "Open", Updated = DateTimeOffset.UtcNow.AddMinutes(-61) };
+                _world.Records[0] = _world.Records[0] with { State = "running" };
+                await InventoryPassAsync(root, door);
+                _world.Quests["q1"] = _world.Quests["q1"] with { Status = "Taken", Updated = DateTimeOffset.UtcNow.AddMinutes(-60) };
+                await InventoryPassAsync(root, door);
+                _world.Records[0] = _world.Records[0] with { State = "failed" };
+                await InventoryPassAsync(root, door);
+                _world.Records.Add(new SessionRecord("s2", "engine", "running") { Quest = "q1", Tree = tree, Created = DateTimeOffset.UtcNow });
+                await InventoryPassAsync(root, door);
+                await CommitAsync(tree, "s2.txt", "the work of s2", "the work of s2");
+                _world.Records[1] = _world.Records[1] with { State = "completed" };
+                _world.Quests["q1"] = _world.Quests["q1"] with { Status = "Done", Updated = DateTimeOffset.UtcNow };
+                break;
         }
 
         // The loop's turn: the look learns where each tree is (TREEFOLLOW1), the ref watch keeps what the line holds, then a pass judges the runs
@@ -97,6 +114,7 @@ public sealed class DevLineLandingTests : ReviewLandingFixture
         // A line that moved replays the work onto it, under another commit; the line holds the session's file either way.
         Assert.True((await GitAsync(root, "show", "main:s1.txt")).Trim() == "the work of s1", Said());
         if (shape == "moved-on") Assert.True((await GitAsync(root, "show", "main:own.txt")).Trim() == "more work of s1", Said());
+        if (shape == "carried-on") Assert.True((await GitAsync(root, "show", "main:s2.txt")).Trim() == "the work of s2", Said());
         var said = Said();
         Assert.True(said.StartsWith(string.Join(", ", Steps.Select(node => $"{node} {NodeStates.Reached}")) + "\n", StringComparison.Ordinal), said);
 
