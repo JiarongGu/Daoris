@@ -6,37 +6,34 @@ import { REACH } from './reach-table.mjs';
 import { isLongGate } from './plan.mjs';
 import { pad } from './format.mjs';
 
-// ---------------------------------------------------------------------------------------------------
-// GATE3: the gates a merge's paths can reach
+// test-map: strings name paths as data — the path checks name the paths they place, which the tool does not read
 
 /**
  * The gates every merge runs, whatever it changed: the universal gates scan every file, the code map
  * maps all the code, the census of test units reads every suite's
- * sources (CISCOPE1c), and the CLI's `verify` holds the records, the lanes, the canon and the tools' tests.
+ * sources, and the CLI's `verify` holds the records, the lanes, the canon and the tools' tests.
  */
 export const BASELINE = Object.freeze(['universal', 'code-map', 'test-map', 'cli']);
 
 /**
- * GATESLIM1: what a merge blocks on by default: the universal gates (which hold the sensitive-patterns scan, never to reach a
- * commit) and the code map. Every other gate is listed and skipped, "in the CI beside"
- * (`--ci`, CI1); `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
- *
- * CISCOPE1c (D207): and the census of test units' check (`tools/test-map.mjs check`, about 20 s), which reads every suite's
- * sources and holds the hand rows of `REACH` below, the whole-suite files and the skips to them.
+ * What a merge blocks on by default: the universal gates (which hold the sensitive-patterns scan, never to reach a
+ * commit), the code map, and the census of test units' check (`tools/test-map.mjs check`, about 20 s), which reads every
+ * suite's sources and holds the lane table's hand rows, the whole-suite files and the skips to them. Every other gate is
+ * listed and skipped, "in the CI beside" (`--ci`); `--gated` runs what the merge's paths reach, `--full` every gate,
+ * `--rerun <gate>` a named one.
  */
 export const BLOCKING = Object.freeze(['universal', 'code-map', 'test-map']);
 
 /**
- * MERGETSC1: the light checks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides
- * that each typecheck may not together (RAILLINE1's stories named a helper STORYGAP1 had renamed, 2026-10-21), and the CI
- * beside found it hours after the commit; the web's `tsc --noEmit` takes about a minute. Each is reached by its own
- * `paths`, and by a path the lane table's every-gate rule places (the gates, the scripts, the lanes), never by the rest of
- * the table: a path no rule of `REACH` places reaches every other gate, and a typecheck stays a minute of the merges that
- * change what it reads. `--gated` runs it where reached, `--full` always.
+ * The light checks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides that each
+ * typecheck may not together, and the CI beside finds that hours after the commit; the web's `tsc --noEmit` takes about a
+ * minute. Each is reached by its own `paths`, and by a path the lane table's every-gate rule places (the gates, the
+ * scripts, the lanes), never by the rest of the table: a path no rule of `REACH` places reaches every other gate, and a
+ * typecheck stays a minute of the merges that change what it reads. `--gated` runs it where reached, `--full` always.
  *
- * MERGEWEBRULES1: the web's design and structure tests are a second such check, reached the same way. HEAVYSLOT1 and
- * ACCESSASK1's stories each broke `design/tokens.test.ts` (a line's measure, a native control), which only the CI beside's
- * `web-unit` ran, hours after their merges; the two files run in a minute or two, most of it jsdom starting.
+ * The web's design and structure tests are a second such check, reached the same way: a story can break
+ * `design/tokens.test.ts` (a line's measure, a native control), which only the CI beside's `web-unit` would run; the two
+ * files run in a minute or two, most of it jsdom starting. The desktop's censuses are a third.
  */
 export const PATH_CHECKS = Object.freeze([
   {
@@ -58,7 +55,7 @@ export const PATH_CHECKS = Object.freeze([
 
 const pathCheckOf = (gate, pathChecks = PATH_CHECKS) => pathChecks.find((check) => check.gate === gate) ?? null;
 
-/** Of `paths`, the ones that reach a path check (MERGETSC1): its own, and those the lane table sends to every gate. */
+/** Of `paths`, the ones that reach a path check: its own, and those the lane table sends to every gate. */
 const pathCheckPaths = (check, paths, reach, lanes) => {
   const own = laneMatcher(check.paths);
   const readRule = ruleReader(reach, lanes);
@@ -70,7 +67,7 @@ export function ruleFor(path, rules, lanes) {
   return ruleReader(rules, lanes)(path);
 }
 
-/** Compile a reached rule once within this read; a later read sees the configuration afresh (SCOPEPLAN1). */
+/** Compile a reached rule once within this read; a later read sees the configuration afresh. */
 function ruleReader(rules, lanes) {
   const matchers = new Map();
   return (path) => rules.find((rule) => {
@@ -91,7 +88,7 @@ const namedGates = (reach) => new Set(reach.flatMap((rule) => (rule.gates === '*
 /**
  * Which of the plan's gates a merge runs, and why each runs or is skipped, in the plan's order. A gate is
  * `reached` when it is the baseline, a changed path's rule names it, a path has no rule, or no rule names
- * the gate at all. A merge runs what is reached but the long gates (GATE5), which say they are in the full
+ * the gate at all. A merge runs what is reached but the long gates, which say they are in the full
  * set before staging; `full` runs every gate. `reached` is the lane table's answer, run or not, which is what
  * its tests hold to the code. `unplaced` is the paths no rule placed.
  */
@@ -124,7 +121,7 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
     if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
     const check = pathCheckOf(gate.name, pathChecks);
     if (check) {
-      // MERGETSC1, MERGEWEBRULES1: a path check blocks the merges whose paths reach what it reads, and only those.
+      // A path check blocks the merges whose paths reach what it reads, and only those.
       const by = pathCheckPaths(check, changed, reach, lanes);
       if (full) return { gate, run: true, reached: by.length > 0, why: '--full runs every gate' };
       if (by.length === 0) return { gate, run: false, reached: false, why: gated ? 'no changed path reaches it' : 'in the CI beside' };
@@ -134,7 +131,7 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
     if (full) return { gate, run: true, reached, why: '--full runs every gate' };
     const detail = reached ? `; ${why.replace(/^everything runs: /, '')}` : '';
     if (isLongGate(gate)) return { gate, run: false, reached, why: `in the full set before staging${detail}` };
-    // GATESLIM1: a merge blocks on the checks alone; the CI beside (--ci, CI1) runs the rest, and --gated runs what is reached.
+    // A merge blocks on the checks alone; the CI beside (--ci) runs the rest, and --gated runs what is reached.
     if (!gated) return { gate, run: false, reached, why: `in the CI beside${detail}` };
     return { gate, run: reached, reached, why };
   });
@@ -142,7 +139,7 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
 }
 
 /**
- * Of `paths`, the ones that reach `gate` by the lane table, read as `selectGates` reads it (GATE6): every path reaches
+ * Of `paths`, the ones that reach `gate` by the lane table, read as `selectGates` reads it: every path reaches
  * a baseline gate and a gate no rule names, a path no rule places reaches every gate, and any other reaches the gates
  * its rule names. A verdict stays good until one of these changes, so the stage and `--rerun` ask this of the paths
  * changed since it was given. The test of the table checks that it and `selectGates` agree on every case.

@@ -32,9 +32,6 @@ export class Refusal extends Error {
 
 const usageError = (message) => new Refusal(message, 2, true);
 
-// ---------------------------------------------------------------------------------------------------
-// Arguments
-
 export function parseArgs(argv) {
   const options = {
     branches: [], keepGoing: false, commitCheck: true, resume: false, dropBatch: false, plan: false, prune: false, autoPrune: true,
@@ -51,7 +48,7 @@ export function parseArgs(argv) {
   let messageNext = false;
   const flags = [];
   for (const arg of argv) {
-    // CISCOPE1e: the word after --message is its file.
+    // The word after --message is its file.
     if (messageNext) {
       messageNext = false;
       if (arg.startsWith('-')) throw usageError('--message names its file: --message <file under local/>');
@@ -59,7 +56,7 @@ export function parseArgs(argv) {
       continue;
     }
     if (arg.startsWith('-')) flags.push(arg);
-    // GATEWT1: the word right after --beside, if it is no option, is the commit it gates. CI1: so is the word after --ci.
+    // The word right after --beside or --ci, if it is no option, is the commit it gates.
     const besideCommit = besideNext && !arg.startsWith('-');
     const ciCommit = ciNext && !arg.startsWith('-');
     besideNext = false;
@@ -71,11 +68,11 @@ export function parseArgs(argv) {
       options.ci = true;
       ciNext = true;
     } else if (arg === '--stage') {
-      // CIFAST1: the stage path, its commit right after it as after --ci.
+      // The stage's path, its commit right after it as after --ci.
       options.ciStage = true;
       ciNext = !options.ciCommit;
     } else if (arg === '--night') {
-      // CISCOPE1d: the nightly run by hand, every gate whole, its commit right after it as after --ci.
+      // The nightly run by hand, every gate whole, its commit right after it as after --ci.
       options.ciNight = true;
       ciNext = !options.ciCommit;
     } else if (arg === '--watch') options.watch = true;
@@ -111,7 +108,7 @@ export function parseArgs(argv) {
     else if (arg === '--rerun') rerun = true;
     else if (arg.startsWith('-')) throw usageError(`unknown option '${arg}'`);
     else if (rerun) {
-      // GATE4: what follows --rerun are gates, not branches.
+      // What follows --rerun are gates, not branches.
       if (options.rerun.includes(arg)) throw usageError(`'${arg}' is named twice`);
       options.rerun.push(arg);
     } else {
@@ -122,7 +119,7 @@ export function parseArgs(argv) {
     }
   }
   if (messageNext) throw usageError('--message names its file: --message <file under local/>');
-  // CISCOPE1e: the queue's verbs, each alone with what it takes.
+  // The queue's verbs, each alone with what it takes.
   if (options.recheck && !options.queue) throw usageError("--recheck is the queue's: --queue --recheck rechecks a stop on the base");
   if (options.queueRun) {
     if (flags.length > 1 || options.branches.length) throw usageError('--queue-run is the runner, started by the queue: it takes nothing else');
@@ -150,8 +147,8 @@ export function parseArgs(argv) {
   if (options.ciStage && !options.ci) throw usageError("--stage is the CI's: --ci --stage [<commit>] gates a commit to stage, its rehearsals with it");
   if (options.ciNight && !options.ci) throw usageError("--night is the CI's: --ci --night [<commit>] runs every gate whole, as the nightly run does");
   if (options.ci) {
-    // CI1: one run of the CI, its watch, or the stop asked of the watch; each a verb alone. CIFAST1: a run for a stage.
-    // REVIEW2 T5: a plain CI run always keeps going and a stage's ends at its first failure, so the flag would change nothing; refused rather than ignored.
+    // One run of the CI, a run for a stage, its watch, or the stop asked of the watch; each a verb alone.
+    // A plain CI run always keeps going and a stage's ends at its first failure, so the flag would change nothing; refused rather than ignored.
     if (flags.includes('--keep-going')) throw usageError('--keep-going is not taken beside --ci: a plain CI run keeps going past a failure anyway, and a --stage run ends at its first failure by design');
     if (flags.some((flag) => !['--ci', '--stage', '--night', '--watch', '--stop', '--one-at-a-time'].includes(flag))) {
       throw usageError('--ci takes only a commit, --stage, --night, --watch, --stop and --one-at-a-time');
@@ -167,7 +164,7 @@ export function parseArgs(argv) {
     if (options.branches.length) throw usageError("--ci takes no branch: it gates a commit, main's tip unless named, in the gate tree");
     return options;
   }
-  // INTEGRATE1j (D192 point 9): the flag alone makes `--full --beside` the declared runner; anywhere else it is a mistake.
+  // The flag alone makes `--full --beside` the declared runner; anywhere else it is a mistake.
   if (options.daorisVerify && !(options.full && options.beside)) {
     throw usageError("--daoris-verify is the declared runner's: --full --beside --daoris-verify, its inputs in DAORIS_VERIFY_*");
   }
@@ -212,7 +209,7 @@ export function parseArgs(argv) {
       throw usageError(`${options.resume ? '--continue' : '--drop-batch'} takes no branch: it acts on the batch already recorded`);
     }
   } else if (options.branches.length === 0 && !(options.full && !options.plan)) {
-    // `--full` alone gates the checkout as it stands (GATE3); everything else names a branch.
+    // `--full` alone gates the checkout as it stands; everything else names a branch.
     throw usageError('name the branch to merge');
   }
   return options;

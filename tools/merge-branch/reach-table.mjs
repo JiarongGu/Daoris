@@ -42,11 +42,11 @@ export const REACH = Object.freeze([
   // the tool-tests gate, no longer part of verify. These rules come first and keep what each path reached before.
   {
     paths: [
-      'tools/merge-branch.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs', 'tools/test-map.mjs', 'tools/test-recall.mjs',
-      'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
+      'tools/merge-branch.mjs', 'tools/merge-branch/**', 'tools/move-code.mjs', 'tools/doc-duplicates.mjs', 'tools/process-reach.mjs',
+      'tools/test-map.mjs', 'tools/test-recall.mjs', 'tools/merge-queue.mjs', 'src/Daoris.Cli/tool-test/**', 'src/Daoris.Cli/test/_fixture.ts',
     ],
     gates: ['tool-tests'],
-    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool and what it imports (the Process census, PROCREACH1, among them), the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",
+    why: "the merge tool's, the publisher's and the set-up kit's tests, which `tool-tests` runs and verify does not (GATESLIM1): the merge tool, its modules and what it imports (the Process census, PROCREACH1, among them), the mover that splits it, the census of every test unit with its failure reader and recall (CISCOPE1c), the merge queue and the admission record (CISCOPE1e), the tests, and the fixture they share",
   },
   // HEAVYQUEUE1: the machine's heavy-run admission, which the merge tool's gates take places in; its own tests run in verify.
   {

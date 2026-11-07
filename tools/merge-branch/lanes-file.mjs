@@ -1,9 +1,6 @@
 /**
  * The lanes file's grammar: a lane's globs, and whether a path is the lane's.
  */
-// ---------------------------------------------------------------------------------------------------
-// Lanes
-
 const escapeRegExp = (text) => text.replace(/[.+^${}()|[\]\\]/g, '\\$&');
 
 /** A lane path as a pattern: `*` stays in a folder, `**` crosses folders, `{a,b}` is either. */
@@ -32,7 +29,7 @@ export function globToRegExp(glob) {
 /**
  * A lane's paths as one test: a path is the lane's when one of its globs matches it and none of its `!`
  * globs does. A `!` glob carves a narrower lane's paths out of a wider one: the web's shell owns the
- * page but its Settings (LEFT1).
+ * page but its Settings.
  */
 export function laneMatcher(paths) {
   const include = paths.filter((path) => !path.startsWith('!')).map(globToRegExp);
