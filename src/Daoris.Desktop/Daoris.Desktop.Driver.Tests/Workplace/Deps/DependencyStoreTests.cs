@@ -8,7 +8,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// tracked script whose behaviour its tracked `lock.txt` chooses, so each case is a commit; and npm's own `npm ci` over a `file:`
 /// package, read from the shipped signature. Fixtures live under the repository's gitignored `_fixtures/`, never OS temp.
 /// </summary>
+/// <remarks>Alone: it plants variables in the process's environment, which every class beside it would read.</remarks>
 [Trait(Category.Name, Category.Process)]
+[Collection(Alone.Name)]
 public sealed class DependencyStoreTests : IDisposable
 {
     private const string Script = """
