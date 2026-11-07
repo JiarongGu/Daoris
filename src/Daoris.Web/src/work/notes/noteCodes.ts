@@ -322,6 +322,11 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // A session's move to a new part: on the part it left and on the new part, each with why by the hand-over's reasons.
   'moved.on': { values: ['session', 'agent', 'account', 'why', 'tokens', 'count'], why: 'handed' },
   'moved.from': { values: ['session', 'agent', 'account', 'why', 'tokens', 'count'], why: 'handed' },
+  // A move onto another account of the same agent that carried its own conversation, whole or for its agent to compact, or could not.
+  'moved.carried-on': { values: ['session', 'agent', 'account', 'why', 'tokens'], why: 'handed' },
+  'moved.carried-from': { values: ['session', 'agent', 'account', 'why', 'tokens'], why: 'handed' },
+  'moved.compacted-from': { values: ['session', 'agent', 'account', 'why', 'tokens', 'bound'], why: 'handed' },
+  'moved.not-carried': { values: ['reason'] },
   // A conversation moved to another account of its agent by the usage curve: where it went and where it came from,
   // each account by the name the person gave it, and how far over its curve the account it left is.
   'chat.moved': { values: ['to', 'from', 'window', 'used', 'curve'], accounts: ['to', 'from'] },
