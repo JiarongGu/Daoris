@@ -20,7 +20,7 @@ web paths are under `src/Daoris.Web/src/`.
 | `Program` | `App/Program.cs` | Composes the shell: the browser argument first, home, log, host start, engine, modules, dispatcher middleware |
 | `MainForm`, `SecondaryForm` | `App/MainForm.cs`, `App/SecondaryForm.cs`, `App/SecondaryWindowHost.cs` | The frameless main window; framed secondary windows (`monitor`, `session:<id>`) |
 | `DriverModule` and the route classes | `Modules/Bridge/DriverModule.cs`, `Modules/Bridge/Routes/<Domain>Routes.cs` | `DAORIS.DRIVER`: one handler class per domain, each route `[DriverRoute]`, each press `[Publishes]` |
-| Route-class helpers | `Modules/Bridge/Routes/GitRefDesk.cs`, `GitAnswers.cs`, `LinesWires.cs`, `WorkWires.cs`, `SweepWires.cs`, `TreesTidyDesk.cs`, `WorkflowAnswers.cs`, `DriverStateAnswer.cs`, `HelpScreenDoors.cs`, `HelpMachineDesk.cs`, `HelpProposalFacts.cs`, `TreesLandDesk.cs`, `TreesHandDesk.cs`, `TreesReviewWires.cs`, `SessionsMoveDesk.cs`, `SessionsAskDesk.cs`, `SessionsWaitDesk.cs`, `SessionsRecordDesk.cs`, `SessionsGroupsDesk.cs`, `SessionsGroupsWires.cs` | A route class keeps its marks and one-line doors (so callers and the page's bridge file are unchanged); the bodies and wire shapes of git's ref acts, the lines, work and sweep answers, the clean-up and sync, the workflow answers, the driver's state, Ask Daoris's Apply doors, room judges and proposal facts, the landing and hand-off presses with the review and preview wires, and a session's moves, asks, waits, record and groups sit in types of their own beside it (D231) |
+| Route-class helpers | `Modules/Bridge/Routes/GitRefDesk.cs`, `GitAnswers.cs`, `LinesWires.cs`, `WorkWires.cs`, `SweepWires.cs`, `TreesTidyDesk.cs`, `WorkflowAnswers.cs`, `DriverStateAnswer.cs`, `HelpScreenDoors.cs`, `HelpMachineDesk.cs`, `HelpProposalFacts.cs`, `TreesLandDesk.cs`, `LandPresses.cs`, `TreesReviewWires.cs`, `SessionsMoveDesk.cs`, `SessionsAskDesk.cs`, `SessionsWaitDesk.cs`, `SessionsRecordDesk.cs`, `SessionsGroupsDesk.cs`, `SessionsGroupsWires.cs` | A route class keeps its marks and one-line doors (so callers and the page's bridge file are unchanged); the bodies and wire shapes of git's ref acts, the lines, work and sweep answers, the clean-up and sync, the workflow answers, the driver's state, Ask Daoris's Apply doors, room judges and proposal facts, the landing press, answered once per session and held in words while it goes on (`LandPresses`), with the review and preview wires, and a session's moves, asks, waits, record and groups sit in types of their own beside it (D231) |
 | `SessionWords` and its parts | `Modules/Loop/SessionWords.cs`, `HeldWordsQueue.cs`, `HeldWordsDisk.cs`, `HeldSay.cs`, `WordsAnswer.cs`, `WordsRead.cs`, `WordsReach.cs`, `WordsQueueEdits.cs`, `WordsShown.cs` | The person's words to a session: `SessionWords` judges and says them; the words held for a record to end wait in `HeldWordsQueue` (its pump) and in the held file `HeldWordsDisk` writes whole; the record read, the reach a word would have, the take-back and move of a waiting word and the lines shown in the conversation each have a type of their own |
 | `AttentionStateSlice` helpers | `Modules/Loop/AttentionWaits.cs`, `AttentionFacts.cs`, `AttentionSessionRows.cs`, `AttentionMachineRows.cs`, `AttentionJson.cs` | The waits read off files and memory, the judge's input record, and the session and machine groups of `NeedsAPerson`'s rows, in the order it judges them; the slice and `NeedsAPerson` keep their doors |
 | `StatePublisher` | `Modules/Platform/StatePublisher.cs` | Innermost middleware: `STATE_CHANGED` after a press answers; `UNDER_WAY` while presses run |
@@ -38,14 +38,14 @@ web paths are under `src/Daoris.Web/src/`.
 | `TerminalModule`, `LogModule` | `Modules/Windows/TerminalModule.cs`, `Modules/Platform/LogModule.cs` | The person's own shells; the page's report into the machine log |
 | `App` | `app/App.tsx` composes; `app/shell/` holds its hooks (state, feeds, figures, opener, commands, shortcuts, doors, views, attention doors, context doors) and `app/shellHelpers.ts` its constants | The window's frame: places, strip, menus, views, dock, drawers |
 | Frame regions | `work/frame/` (`frame.tsx`, `ViewFrame`, `ListPane`, `ViewMain`, `RightDock`, `placements.ts`) | Activity bar, strip, status bar, list pane, main area, side bar and panel, and where views stand |
-| `WorkFrame` | `work/WorkFrame.tsx` (68 KB: outline only) | Sessions: the rail, the attended session's page, its head, waits and review, composed from its hooks |
+| `WorkFrame` | `work/WorkFrame.tsx` (31 KB: outline only) | Sessions: the rail, the attended session's page, its head, waits and review, composed from its hooks |
 | `WorkFrame`'s hooks | `work/frame/useFrameLayout.ts`, `useDockViews.ts`, `layoutMemory.ts`; `work/head/useAttendedSession.ts`, `useAttendedRecord.ts`, `useHeadAsks.ts`, `useAttendedHead.tsx`; `work/conversation/useAttendedBox.ts`, `useWords.ts`, `useBoxWords.ts`; `work/start/useNewStart.ts`, `StartPane.tsx`; `work/review/useSessionLanding.ts`; `work/waits/useAttendedWaits.ts` | One part each of what the frame reads and presses (D231): the columns and regions, the attended session and its record, its box and words, a new conversation, the header and its questions, the landing, and what waits on the person; each that reaches the bridge is a named organism of the presentational boundary |
 | `WorkFrame`'s composed parts | `work/frame/regionSurface.tsx`, `OutputPanel.tsx`; `work/rail/useSessionsList.tsx`; `work/start/agentRoster.ts`; `work/head/AttendedPane.tsx`, `partRows.ts`, `HeadNote.tsx`, `headRows.tsx`; `work/conversation/AttendedConversation.tsx`, `AttendedBoxes.tsx`, `useSeekPart.ts`, `NoteLines.tsx`, `BlockLines.tsx`, `saidDoors.ts`; `work/attention/AskOnce.tsx`, `rowRules.ts` | What the frame composes from those hooks (D231): each region's surface and the streams, Sessions' list, the agent roster, the record, the conversation and its boxes; the frame holds the hooks and the layout, each part takes the hooks' results as typed objects. `ConversationView`, `AttentionRow`, `frame.tsx` and `SessionHead` each keep their component and hand their leaf lines, rules and panel to files of their own, all under 40 KB |
 | A session's note | `work/Note.tsx`, `work/noteLines.ts`, `work/notes/noteCodes.ts`; the home migration's `note-records` step | Drawn from its coded parts only (D142): a record with no parts draws nothing, a part the page cannot word is shown marked as recorded, and the migration clears the note of a finished session record that has no parts; `Note`, `Said`, the waiting cards and `NoteRecord` take parts alone, no `note` prop |
 | Command table | `menus/commands.ts`, `menus/shortcuts.ts`, `menus/ContextMenu.tsx`, `work/strip/` | Every verb once; the menu bar, palette, command center, keys and the right-click menu |
 | Notifications | `notifications/`, `work/attention/` | The bell, the view and its four groups; *What needs you* |
-| Bridge and state hub | `bridge/<domain>.ts`, `bridge/state/stateHub.ts`, `app/ShellSignals.tsx`, `data/api.ts` | The page's calls; scope invalidation; pushed slices fed to the query cache; the person key on writes |
-| Design language | `tokens.css`, `design/ui.tsx`, `design/atoms/`, `design/theme.ts`, `design/phases.tsx` | Tokens as the Tailwind theme; the atoms, one file per family under `design/atoms/` and re-exported by `design/ui.tsx` (`Pill`, `Drawer`, `Toasts`, `SettingList`, `FormGrid`, `PhaseList`) |
+| Bridge and state hub | `bridge/<domain>.ts` (or `bridge/<domain>/` for `agents`, `repositories`, `sessions`), `bridge/state/stateHub.ts`, `app/ShellSignals.tsx`, `data/api.ts` | The page's calls; scope invalidation; pushed slices fed to the query cache; the person key on writes |
+| Design language | `tokens.css`, `design/ui.tsx`, `design/atoms/`, `design/theme.ts`, `design/phases.tsx` | Tokens as the Tailwind theme; the atoms, one file per family under `design/atoms/` and re-exported by `design/ui.tsx` (`Pill`, `Drawer`, `Toasts`, `SettingList`, `FormGrid`); `PhaseList` is `design/phases.tsx`'s |
 | Flows and canvas | `design/canvas/LifeFlow.tsx`, `design/FlowNodeBox.tsx`, `design/RankedFlow.tsx`, `design/flowTypes.ts`, `design/flowParts.tsx`, `design/flowLayout.ts`, `design/canvas/` | The flowchart engine (ranked layout, ink, folds, rail) and one viewport for every graph (`Canvas`, `PositionedCanvas`, `SuppliedCanvas`); the landing, quest, parts and session life-flows and a workflow's routes draw through `LifeFlow` and the chart through `FlowChart`, both in the canvas's viewport; there is no `Flow.tsx` |
 | Translation | `locales/<lang>/<area>.json`, `locales/i18n.ts`, `languages.ts`, `authored.ts`, `glossary.json`; `scripts/i18n-check.mjs`, `scripts/names-check.mjs` | Catalogues per shipped language, authored text, the glossary and its checks |
 | Views | `overview/`, `quests/`, `projects/`, `map/`, `knowledge/`, `agents/` (`setup/`, `roles/`), `plugins/`, `settings/domains.ts` | Each place's view, list and pages |
@@ -157,7 +157,7 @@ web paths are under `src/Daoris.Web/src/`.
 37. A head shows the state, the title and two facts. A session's title takes one line; a quest's or an ask's takes two.
     The acts hold still. The id moves to ⋯ and *Details*. (from D152, D162)
 38. Every wait shows in the head and in the foot's panel above the composer. Both places get the same press from the
-    frame, and a press in one disables the other. One pure rule (`work/waits.ts`) says which waits stand. (from D168, D185)
+    frame, and a press in one disables the other. One pure rule (`work/waits/waits.ts`) says which waits stand. (from D168, D185)
 39. There is no text editor. A file's preview is a read-only side-bar tab from the session's tree (`SESSION_FILE`).
     It shows at most 256 KiB, and a path outside the tree is refused. (from D55, D111)
 40. *New conversation* starts from the person's words in a repository they pick, with tree, agent and account chips.
@@ -176,7 +176,7 @@ web paths are under `src/Daoris.Web/src/`.
 
 **Flowcharts and the canvas**
 
-45. One primitive draws every flow (`Flow` over `RankedFlow`). It is laid out in layers, deterministically, from the
+45. One primitive draws every flow (`RankedFlow`, which `LifeFlow` and `FlowChart` draw through). It is laid out in layers, deterministically, from the
     record and never guessed. By the pane's width it runs left to right, top to bottom, or as a rail. (from D186)
 46. Edges are ink, never a status hue. The nodes are one ordered list with one Tab stop. The edges are one
     `aria-hidden` drawing. (from D186)
@@ -203,7 +203,7 @@ web paths are under `src/Daoris.Web/src/`.
 **Daoris's browser**
 
 54. The browser is this executable started with `--daoris-browser` first. It runs in Chromium's own windows, in a
-    process of its own, on a profile at `<home>/browser/engine`. The shell stops it once the shell is gone. The engine
+    process of its own, on a profile at `<home>/profiles/browser/engine`. The shell stops it once the shell is gone. The engine
     is the kit's codecs package (`Shenora.Chromium.Codecs.win-x64`, its own build of CEF), so the browser plays H.264,
     AAC and HEVC, HEVC through the machine's decoder. The codecs are patent-licensed, and the package carries no
     licence. The modules' test project builds this application on Windows, and `CodecPlaybackProcessTests` plays a
@@ -226,11 +226,11 @@ web paths are under `src/Daoris.Web/src/`.
     End walk it, → and ← open, close and climb, Enter chooses; a workspace opens by its chevron or →, apart from being chosen.
     A row's second line is a need (⚠ and its first reason), *Held*, *Adoption running*, or how it lands; the *Needs attention*
     chip carries the count of places in hand that need a look. The chosen place is kept across searches and pages
-    (`setup/useKeptPlace.ts`). It stays dark until `daoris.agents.setup` is `on`. (from D221, D150)
+    (`setup/useKeptPlace.ts`). (from D221, D150)
 59. An agent's page heads in one line. Each account is one row with one act by its state. An account is read only when
     the person presses or something has run, never on a timer. (from D152, D150)
-60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes, Integration, Workflow
-    and Setup; a workspace's are Details, Branches, Workflow and Setup. (from D150, D147)
+60. Repositories lists by workspace. A repository's tabs are Details, Branches, History, Changes and Integration; a
+    workspace's are Details, Branches and Workflow. Their setup and rules are the place's, in Agents → Setup. (from D150, D147)
 61. Knowledge is one place with two modes, Search (the default) and Convergence. The Map is a read-only view of the
     workspace's repositories and what moved between them, plus the code map, drawn on the canvas. The code map holds
     its modules in their folders, folded together or one at a time (each open folder's header has its *Fold*); a cycle, across folders too, is one card in the
@@ -243,7 +243,7 @@ web paths are under `src/Daoris.Web/src/`.
     from a code map chooses and reveals the repository and returns the focus. Find is offered from 13 items on both
     levels: it matches a repository's name and then what it says it owns and accepts, or a module's id and then its
     folder's path, says which in the result, and steps nothing while an input method composes. The list is one tree on
-    both levels (`map/MapTree.tsx`, the WAI pattern of the set-up tree): one row in the tab order, each row's count and
+    both levels (`map/list/MapTree.tsx`, the WAI pattern of the set-up tree): one row in the tab order, each row's count and
     state in words, a code folder a group and a cycle a group under it. Below 36rem the list is the reading and the
     detail opens in place under the chosen row. *Which quests* is first the last 30 days, a choice kept stays, and with
     nothing chosen the line under the drawing says why no connection shows (all hidden, none in the window with what
@@ -290,7 +290,7 @@ a probe, git through a counting seam, a source that only names a start, a proces
 - **A new driver route** follows `.claude/knowledge/bridge-presses.md`. It needs the handler and its `[Publishes]`, the
   desktop README's row, the hook in `bridge/<domain>.ts`, its class, drain and owner in its marks (and its wording and grounds
   if `Person`), and its words in both catalogues. The page's route names, `PUBLISHES` and the person's presses' keys are
-  generated from the marks into `bridge/generated/routes.ts`.
+  generated from the marks into `bridge/generated/routes.ts`, which is never committed.
 - **A new pushed slice** follows `.claude/knowledge/pushed-slices.md`: the `StateSlice` owner, its wakes, the
   `DriverLoop.Slices` entry, the page's `SliceSpec` and `ShellSignals`' `PUSHED`.
 - **A wait on the person** follows `.claude/knowledge/person-waits.md`; **new words** `translation-parity.md`, plus a
@@ -313,28 +313,26 @@ a probe, git through a counting seam, a source that only names a start, a proces
 3. D75 §1 (menus Daoris · Workspace · Agents · View) vs D152 §1: D152 is right, per `menus/commands.ts:57-66`.
 4. D150 §2 (refresh and language move to "the Daoris menu") vs D152 §1 (there is no Daoris menu): D152 is right.
 5. D75 §2 and D150 §2 (seven Settings domains, without This Daoris or Git) vs `settings/domains.ts:51` (nine): the code is right.
-6. Code vs code: `settings/domains.ts:49` says "eight"; Ask Daoris's twins (`help/places.ts:46`, `Help/Proposals/HelpGoProposals.cs:341`) omit `tools`, so no go opens Settings → Tools. Intent unclear.
-7. D150 §6 (*What needs you* leads Overview) vs D196 §5 (Overview keeps a summary): D196 is right (`overview/OverviewView.tsx:79`, `app/App.tsx:1491`). The comment at `work/attention/AttentionBand.tsx:41` is stale.
+6. Code vs code: `settings/domains.ts:49` says "eight"; Ask Daoris's twins (`help/places.ts:46`, `Help/Proposals/HelpGoProposals.cs:344`) omit `tools`, so no go opens Settings → Tools. Intent unclear.
+7. D150 §6 (*What needs you* leads Overview) vs D196 §5 (Overview keeps a summary): D196 is right (`overview/OverviewView.tsx:79`, `app/shell/useViewLayouts.tsx:86`). The comment at `work/attention/AttentionBand.tsx:41` is stale.
 8. D30 (convergence is the knowledge half's primary view) vs `knowledge/modes.ts:21` (Search is the default) and D40 (Overview is the landing): the code is right.
 9. D41 (a right drawer is the single detail-and-form surface; global state sits in the sidebar) vs D118 §3 (a record opens in the main area) and D56 (the status bar): D118 and D56 are right.
 10. D41 and D42 (toasts carry the service's sentence verbatim) vs D142, D182 §2 and D185 R3 (coded verdicts worded by the page, said where the action started): the later ones are right. An unknown code still shows the driver's sentence.
 11. D42 (TanStack invalidation after every mutation) vs D169 §6 and D182 §7 (one state hub by declared scope, plus pushed slices): D169 and D182 are right (`bridge/state/stateHub.ts`).
 12. D169 §3 (an event never says what a thing is) vs D182 §2 (pushed with its data): both run. D182 governs the 16 slices, and `STATE_CHANGED` covers the scopes not yet moved.
-13. D78 (a framed WebView2 window of the shell) and D84 (Daoris's UI stays on WebView2; the engine is fetched like a harness) vs D85, D92 and D99: D99 is right (`App/Program.cs:48`; the kit pins CEF, `App/Daoris.Desktop.App.csproj:40`).
-14. D85 (the browser renders inside Daoris's windows under Shenora's frame) vs D99 (a process of its own in Chromium's windows): D99 is right (`App/Program.cs:242-247`).
+13. D78 (a framed WebView2 window of the shell) and D84 (Daoris's UI stays on WebView2; the engine is fetched like a harness) vs D85, D92 and D99: D99 is right (`App/Program.cs:44-49`; the kit pins CEF, `App/Daoris.Desktop.App.csproj:40`).
+14. D85 (the browser renders inside Daoris's windows under Shenora's frame) vs D99 (a process of its own in Chromium's windows): D99 is right (`App/Program.cs:251-253`).
 15. D186 §2 and §9 (no pan, no zoom, laid out by hand) vs D224 (one canvas with pan, zoom and a minimap): D224 is right (`design/canvas/Canvas.tsx`, `design/FlowCanvas.tsx:1-3`).
 16. D185's and D186's heads say "proposed"; their notes record acceptance on 2026-10-20: the notes are right.
 17. D97 (six steps, with "what is driven" and "how work lands" apart) vs `help/setup.ts:5` (five steps; both are one `setUp` step): the code is right.
 18. D116 (names and budgets in English and Chinese only) vs D222 §3 (any number of catalogues): D222 is right. `names:check` holds every catalogue and each `term.<tag>`.
-19. D221 (Agents → Setup is the one set-up experience) vs `agents/modes.ts:40` (dark unless `daoris.agents.setup` is `on`): the code is today's truth, and the light-up is still open.
 
 ## Open
 
 - **CANVAS1g**: the canvas in the installed window, with FLOWCHART2h.
-- **SETUPUX1x, SETUPUX1y**: the set-up experience seen in the installed window, then Agents → Setup lit by default.
-- **AGENTSPLACE1**: the place pages carry the Roles, Workflow and Sessions sections, which `setupLit` waits on.
+- **SETUPUX1x**: the set-up experience seen in the installed window, and its fixes.
+- **AGENTSPLACE1l**: the Agents place seen in the installed window.
 - **FLOWCHART2h**: the workflow editor seen in the installed window.
-- **COMPANYVIEW1**: the agents' structure configured and seen, as a list and as a diagram (remaining rows).
 - **MAPUX1**: the Map's UI and UX (`docs/2026-11-06-map-ux-design.md`). Built: the tiers' content, the choice forward, its
   line and the detail's door to the repository's page, *Back to the map* choosing and revealing the repository, find on
   the level shown, the list as one tree, the empty and failing cases, and *Which quests* opening on the last 30 days.
