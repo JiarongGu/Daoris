@@ -140,8 +140,9 @@ public sealed class IntegrationTransport(string home, IntegrationTransportWorld?
             {
                 return; // The driver ends: a candidate cut here is the next come-up's.
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException or DriverException)
+            catch (Exception error)
             {
+                // Any failure, the service's transport errors among them: a faulted loop is never replaced, so no line would run again.
                 _world.Said?.Invoke($"integration: `{next.Repository}`'s line `{next.Line}` was not run ({error.Message}); it is tried again at the next send.");
             }
         }
