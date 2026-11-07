@@ -62,6 +62,12 @@ internal static class LimitCarried
             ? context.Adapters.Resume(door, SpawnRequests.Of(target, context.Config.Commands.GetValueOrDefault(door.Id.Value)) with { Resume = carried.Conversation })
             : null;
 
+    /// <summary>Takes the copy of a carry the door would not resume out of the account's home it lies in.</summary>
+    public static void Withdraw(LoopContext context, AgentDoor door, HarnessSelection selection, string tree, CarryPlan.Carried carried)
+    {
+        if (selection.Profile is { Length: > 0 }) LimitCarry.Withdrawn(LimitCarry.Declared(context.Adapters, door.Id), selection.ProfileHome, tree, carried.Conversation);
+    }
+
     /// <summary>The compaction's variables set on the process, where it is compacted first.</summary>
     public static void Compact(ProcessStartInfo info, CarryPlan.Carried carried)
     {

@@ -39,4 +39,6 @@ internal sealed class StubConversationHome : IConversationHome, IConversationCar
         CarriedFiles.Replace(source, Path.Combine(to, Folder, conversation));
         return null;
     }
+
+    public void Remove(string to, string tree, string conversation) => File.Delete(Path.Combine(to, Folder, conversation));
 }

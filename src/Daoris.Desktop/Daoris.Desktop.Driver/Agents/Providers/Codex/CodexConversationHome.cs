@@ -39,4 +39,16 @@ internal sealed class CodexConversationHome : IConversationHome, IConversationCa
         CarriedFiles.Replace(file, placed);
         return null;
     }
+
+    /// <inheritdoc/>
+    public void Remove(string to, string tree, string conversation)
+    {
+        var sessions = Path.Combine(to, "sessions");
+        if (!Directory.Exists(sessions)) return;
+        foreach (var file in Directory.EnumerateFiles(sessions, "*.jsonl", SearchOption.AllDirectories)
+                     .Where(each => Path.GetFileNameWithoutExtension(each).EndsWith(conversation, StringComparison.OrdinalIgnoreCase)))
+        {
+            File.Delete(file);
+        }
+    }
 }

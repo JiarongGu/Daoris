@@ -128,6 +128,30 @@ public sealed class LimitCarryTickTests : IDisposable
         }
     }
 
+    /// <summary>🔴 A carried resume the door refuses after the copy goes on in the brief, said with why, and the copy is removed.</summary>
+    [Fact]
+    public async Task A_carried_resume_the_door_refuses_falls_back_to_the_brief_and_removes_its_copy()
+    {
+        var (service, lines, driver) = await LimitedAsync("refused");
+        await using var _ = service;
+
+        var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
+
+        var seen = Said(service, look);
+        Assert.True((service.State("s2"), service.Status("q1")) == ("completed", "Done"), seen);
+        Assert.Contains("carrying on quest", Blocks(Heard().Last(line => line["method"]!.GetValue<string>() == "session/prompt")));
+        Assert.False(File.Exists(Path.Combine(Home("account-2"), StubConversationHome.Folder, "conv-s1")), seen);
+        Assert.True(File.Exists(Path.Combine(Home("account-1"), StubConversationHome.Folder, "conv-s1")), seen);
+        Assert.Contains(Codes("s2"), part => part.Code == "moved.not-carried" && Equals(part.Value("reason"), LimitCarry.Refused));
+        lock (lines)
+        {
+            var moved = lines.Where(line => line.Event == "session.moved").ToList();
+            Assert.Contains(moved[0].Data, field => field is ("carry", "whole"));
+            Assert.Contains(moved[^1].Data, field => field is ("briefed", true));
+            Assert.Contains(moved[^1].Data, field => field is ("carry", LimitCarry.Refused));
+        }
+    }
+
     /// <summary>The first look: the session takes its quest on account-1, says its context and is refused by that account's limit.</summary>
     private async Task<(SessionMessagesTickTests.SaidStandIn Service, List<AccountLine> Lines, Daoris.Driver.Driver Driver)> LimitedAsync(string mode)
     {
@@ -212,7 +236,7 @@ public sealed class LimitCarryTickTests : IDisposable
               } else if (frame.method === 'session/resume' || frame.method === 'session/load') {
                 const id = frame.params?.sessionId;
                 heard({ method: frame.method, conversation: id });
-                if (existsSync(kept(id))) {
+                if (mode !== 'refused' && existsSync(kept(id))) {
                   conversation = id;
                   resumed = true;
                   send({ jsonrpc: '2.0', id: frame.id, result: {} });
