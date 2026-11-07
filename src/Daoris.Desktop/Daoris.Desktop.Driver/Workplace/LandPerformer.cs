@@ -94,6 +94,7 @@ public sealed class LandPerformer(
         if (record is not { Tree: { Length: > 0 } tree }) return null;
         var entry = EntryOf(record.Id, "", start, tree);
         if (PieceLandings.Refused(record) is { } partner) return Workflow(entry, partner, line: null);
+        if (LandTries.Landed(entry, start.Tip)) return null;
         if (TreeFolders.TreeGone(tree)) return Tried(entry, LandingCode.Gone, start.Tip, "gone", new TreeLanding(false, Words(LandingCode.Gone, null)));
         var (tip, status, uncommitted) = await ReadTreeAsync(tree, ct).ConfigureAwait(false);
         if (!LandTries.ShouldTry(entry, tip, status)) return null;
@@ -130,6 +131,8 @@ public sealed class LandPerformer(
     private async Task<(string? Said, Choice? Choice)> JudgeAsync(
         LandEntry entry, IWorkplaceLandingWorld world, Records looked, LandStart run, CancellationToken ct)
     {
+        if (LandTries.Landed(entry, run.Tip)) return (null, null);
+
         // The review's word stands for the person's Accept, and its carry-on is a repair kept beside it on the run's record.
         var carried = CarriedOf(entry, run);
         var config = DriverConfig.Load(DriverConfig.ResolvePath(home));

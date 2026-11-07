@@ -380,6 +380,30 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
         Assert.Equal(DeliverySettlements.Delivered, delivery.Settled);
     }
 
+    /// <summary>
+    /// A run's landing is done with its landing: its tree tidied afterwards, the looks that follow try it no more, so the machine log holds the
+    /// one <c>landing.auto</c> line of its landing and no <c>gone</c> after it.
+    /// </summary>
+    [Fact]
+    public async Task A_landed_run_whose_tree_is_tidied_is_not_tried_again_at_the_next_looks()
+    {
+        var (root, tree, branch, door) = await ReviewedRunAsync(ReviewedLand("""{"method":"merge"}"""));
+        Assert.True(RunNodeWords.Word(new NodeRecordFiles(_home, () => true), "q1", "review", NodeWordActs.Accept, null).Done);
+        await PassAsync(root, branch, tree, door: door);
+        await door.IdleAsync();
+        Assert.Equal([LandingCode.Landed], _lines.Where(line => line.Event == "landing.auto").Select(CodeOf));
+
+        await GitAsync(root, "worktree", "remove", "--force", tree);
+        var after = Door();
+        await PassAsync(root, branch, door: after);
+        await PassAsync(root, branch, door: after);
+        await after.IdleAsync();
+
+        Assert.Equal([LandingCode.Landed], _lines.Where(line => line.Event == "landing.auto").Select(CodeOf));
+    }
+
+    private static string? CodeOf(LandingLine line) => line.Data.First(each => each.Key == "code").Value as string;
+
     /// <summary>A branch method makes its branch from the intent alone, with no plugin asked, and the landing record names it.</summary>
     [Fact]
     public async Task A_branch_land_makes_its_branch_through_the_performer()
