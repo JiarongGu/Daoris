@@ -73,6 +73,9 @@ public sealed class QuestionSupervisorDecisions
     public Task<SupervisorKept> CourseAsync(SupervisorCourse course, ReferredPoint point, DateTimeOffset now, CancellationToken ct = default) =>
         _courses.KeepAsync(course, point, now, ct);
 
+    /// <summary>A session's course decisions as the page and the print read them (<see cref="SupervisorReads.CoursesOf"/>).</summary>
+    public IReadOnlyList<SupervisorCourseView> CoursesOf(string session) => _reads.CoursesOf(session);
+
     /// <summary>Release each held go-on whose moment came (<see cref="SupervisorCourses.ReleaseAsync"/>).</summary>
     public Task<IReadOnlyList<SupervisorState>> ReleaseCoursesAsync(
         CourseLine line, DateTimeOffset now, IReadOnlyCollection<string>? counts = null, CancellationToken ct = default) =>

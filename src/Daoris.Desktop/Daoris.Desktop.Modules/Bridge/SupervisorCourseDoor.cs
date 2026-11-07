@@ -40,7 +40,7 @@ public static class SupervisorCourseDoor
         {
             if (record.Teammate || record.Repository is not { } repository || points.Open(record.Session, loop.Look.Latest) is not { } open) continue;
             if (!loop.Supervisor.Refers(record.Session, open.Id) || admission.Admit(repository) is not { Why: null, Generation: { } generation }) continue;
-            waiting.Add(new { Session = record.Session, Repository = repository, Point = open.Id, Count = open.Rule.Count, N = open.N, Generation = generation });
+            waiting.Add(new { Session = record.Session, Repository = repository, Point = open.Id, Count = open.Rule.Count, N = open.N, Rule = open.Rule.Id, Place = open.Rule.Place, Generation = generation });
         }
 
         return waiting;

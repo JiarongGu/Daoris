@@ -28,6 +28,9 @@ public static class OpenRoutes
     /// <summary><c>sessions</c>' list.</summary>
     public static InstanceRoute SessionGroups { get; } = Open("SESSION_GROUPS");
 
+    /// <summary><c>sessions supervise &lt;id&gt;</c>'s read of the course decisions on a session's referred points.</summary>
+    public static InstanceRoute Supervised { get; } = Open("SESSION_SUPERVISOR");
+
     /// <summary><c>sessions at-work</c>: who is at work on a session.</summary>
     public static InstanceRoute AtWork { get; } = Open("SESSION_AT_WORK");
 
