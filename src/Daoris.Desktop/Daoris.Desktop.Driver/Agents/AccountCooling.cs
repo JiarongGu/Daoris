@@ -151,8 +151,15 @@ public static class AccountCooling
     /// </summary>
     /// <param name="model">The model the start asks; null for the account default, or a reader with no start, held by every cool-off.</param>
     public static CoolingEntry? Of(string home, string agent, string? account, DateTimeOffset now, string? model = null) =>
-        Read(home, now).Where(entry => Same(entry, agent, account) && (entry.Model is null || ModelLimits.Holds(entry.Model, model)))
-            .MaxBy(entry => entry.Until);
+        Holding(home, agent, now, model).Where(entry => Same(entry, agent, account)).MaxBy(entry => entry.Until);
+
+    /// <summary>
+    /// Every cool-off of the agent's accounts that holds a start of <paramref name="model"/> at <paramref name="now"/> (<see cref="Of"/>'s
+    /// reading, over all of them): the whole account's always, a model family's unless the start names another.
+    /// </summary>
+    public static IEnumerable<CoolingEntry> Holding(string home, string agent, DateTimeOffset now, string? model = null) =>
+        Read(home, now).Where(entry => string.Equals(entry.Agent, agent, StringComparison.OrdinalIgnoreCase)
+            && (entry.Model is null || ModelLimits.Holds(entry.Model, model)));
 
     /// <summary>
     /// Cool an account (a limit read): its entry replaced whole, a model family's beside the account's under <c>models</c>, each keeping

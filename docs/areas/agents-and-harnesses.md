@@ -196,8 +196,12 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     account runs. The cap stays one number per machine. (from D130, D165, D197)
 30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model
     names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
-    another, its hold naming the family's limit (`held.cooling-model`). A refused or signed-out account is passed until a
-    person acts. With no account ready the start waits, saying the soonest way out. (from D125, D130, D205)
+    another, its hold naming the family's limit (`held.cooling-model`). Every reader that knows a line's model reads it the
+    same way, the model being `PriorSession.ModelOn` (the record's choice with the composer's kept change over it): a
+    resume's own account, a limited line's wait and its candidate test (`LimitWaits`), the accounts a limit move or the
+    curve could move to (`SwitchCandidates`), a carry-on's hold and the hand-over press (`SessionCooling`, `GoOnNew`), all
+    through `CoolingOf` and `CoolingsOf` with the model, over `AccountCooling.Holding`. A refused or signed-out account is
+    passed until a person acts. With no account ready the start waits, saying the soonest way out. (from D125, D130, D205)
 31. A running session moves at its turn's end to another account of the same agent with room (10 points under its curve on
     every window), never mid-turn, and not again within 30 minutes unless refused. Where none has room, the `handOver` rule
     decides another agent. (from D165, D163)
@@ -352,10 +356,10 @@ Agents page, and `orient-index` and `code-map` once files move.
 
 ## Open
 
-- A model family's cool-off: only the start walk and a resume's own-account judgement read the start's model; a limited line's
-  wait (`LimitWaits`, `CoolingsOf`), a carry-on's hold and the usage questions read every cool-off of the account. No sentence
-  naming a family's limit is recorded yet (`ClaudeLimits.Words.Recorded`), and `get_usage` has answered the families' weeks null
-  on every account read so far (`docs/2026-10-12-usage-read-evidence.md`).
+- A model family's cool-off: no sentence naming a family's limit is recorded yet (`ClaudeLimits.Words.Recorded`), and
+  `get_usage` has answered the families' weeks null on every account read so far (`docs/2026-10-12-usage-read-evidence.md`).
+  The listings and counts that show every cool-off of an account (`AccountsRoutes`, the terminal's agent list, `Offered`) read
+  the whole of it by design: they ask no start.
 - **AGENTPROVIDER1d**'s rest: s-ix on, whose three cells are named in the design (`p-claude-bare`, `p-dsh` and `p-b`, where the
   page's own-home question reads the owner's first door and the walk the door's own), waits on the owner's choice: the page's agent
   card is one per account key, so which door's home it speaks for where an owner's doors disagree is not yet chosen

@@ -50,13 +50,25 @@ public sealed class SessionWordsWaitingTests : IDisposable
     private static readonly CoolingEntry Cooling = new("claude", "work", Reset, Stated: true, Window: null, Seen: T0, Session: null);
 
     /// <summary>The home's cool-offs, standing in: the account <c>work</c> of <c>claude-code</c> cools, every other is ready.</summary>
-    private static CoolingEntry? CoolingOf(string? adapter, string? profile) =>
+    private static CoolingEntry? CoolingOf(string? adapter, string? profile, string? model = null) =>
         adapter == "claude-code" && profile == "work" ? Cooling : null;
+
+    /// <summary>The same, the cool-off being the account's Opus week (MODELROLE1k2): a start asking another family is ready.</summary>
+    private static CoolingEntry? OpusWeek(string? adapter, string? profile, string? model) =>
+        CoolingOf(adapter, profile) is { } cooling && ModelLimits.Holds("opus", model) ? cooling with { Model = "opus" } : null;
+
+    /// <summary>The record asking <paramref name="model"/> of its entry, as a conversation started on a choice keeps it.</summary>
+    private static JsonObject Asking(JsonObject record, string model)
+    {
+        record["asked"] = System.Text.Json.Nodes.JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(
+            new ActorAsked("claude-code", new("entry", model, true), new("account-default", null, false)), ActorRun.Json));
+        return record;
+    }
 
     private static string Json(params JsonObject[] records) => new JsonArray([.. records]).ToJsonString();
 
     private SessionLook Waiting(
-        string json, Consideration[]? considered = null, bool fresh = true, Func<string?, string?, CoolingEntry?>? coolingOf = null) =>
+        string json, Consideration[]? considered = null, bool fresh = true, Func<string?, string?, string?, CoolingEntry?>? coolingOf = null) =>
         SessionGroups.Waiting(
             SessionLook.From(json, [], considered ?? [], _ => 0), json, _home, DriverConfig.Empty with { Actors = StaffedRoles.On("claude-code") }, fresh,
             coolingOf ?? CoolingOf, TimeZoneInfo.Utc);
@@ -119,6 +131,27 @@ public sealed class SessionWordsWaitingTests : IDisposable
     }
 
     /// <summary>
+    /// MODELROLE1k2: a chat held by an account at its Opus week is held for an Opus line, which says the reset, and not for a Sonnet line,
+    /// whose own account is ready for Sonnet: its words wait for nothing the cool-off names.
+    /// </summary>
+    [Fact]
+    public void A_chat_held_while_its_account_is_at_its_opus_week_is_held_for_an_opus_line_and_not_for_a_sonnet_one()
+    {
+        var json = Json(
+            Asking(Record("c1", "completed", kind: "chat", said: ["w1"]), "opus"),
+            Asking(Record("c2", "completed", kind: "chat", said: ["w2"]), "sonnet"));
+        foreach (var session in new[] { "c1", "c2" })
+        {
+            Events.Append(session, new SessionEvent { Kind = SessionEventKind.Note, Text = ResumeWords.NotYet + "work is cooling." });
+        }
+
+        var look = Waiting(json, fresh: false, coolingOf: OpusWeek);
+
+        Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset), (look.Held["c1"].Why, look.Held["c1"].Until));
+        Assert.Equal(WordsHold.Waits, look.Held["c2"].Why);
+    }
+
+    /// <summary>
     /// LIMITSWITCH2 (D137's note of 2026-10-25): a chat whose runner held its words because every account of its agent cools is held until the
     /// earliest reset of any, naming that account, never its own account's alone; Ask Daoris's room alone keeps its own.
     /// </summary>
@@ -136,7 +169,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
         }
 
         var earlier = new CoolingEntry("claude", "home", Reset.AddHours(-1), Stated: true, Window: null, Seen: T0, Session: null);
-        var look = Waiting(json, fresh: false, coolingOf: (adapter, profile) => profile == "home" ? earlier : CoolingOf(adapter, profile));
+        var look = Waiting(json, fresh: false, coolingOf: (adapter, profile, _) => profile == "home" ? earlier : CoolingOf(adapter, profile));
 
         Assert.Equal(
             (WordsHold.Cooling, (DateTimeOffset?)Reset.AddHours(-1), "home"),
@@ -213,18 +246,18 @@ public sealed class SessionWordsWaitingTests : IDisposable
         // quest's session's words there too.
         Assert.Empty(Waiting(json, taken).Held);
         Assert.Empty(Waiting(json, closed).Held);
-        var closedHeld = Waiting(json, closed, coolingOf: (adapter, profile) => new CoolingEntry("claude", profile, Reset, Stated: true, Window: null, Seen: T0, Session: null)).Held["s1"];
+        var closedHeld = Waiting(json, closed, coolingOf: (adapter, profile, _) => new CoolingEntry("claude", profile, Reset, Stated: true, Window: null, Seen: T0, Session: null)).Held["s1"];
         Assert.EndsWith(ResumeWords.ChatDoor("s1"), closedHeld.Reason);
 
         // Every account cools, `home` first: the earliest reset of any holds them, naming it.
         var earlier = new CoolingEntry("claude", "home", Reset.AddHours(-1), Stated: true, Window: null, Seen: T0, Session: null);
-        CoolingEntry? Both(string? adapter, string? profile) => profile == "home" ? earlier : CoolingOf(adapter, profile);
+        CoolingEntry? Both(string? adapter, string? profile, string? model) => profile == "home" ? earlier : CoolingOf(adapter, profile);
         var held = Assert.Single(Waiting(json, taken, coolingOf: Both).Held).Value;
         Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset.AddHours(-1), "home"), (held.Why, held.Until, held.Account));
         Assert.StartsWith(LimitResume.Waits(earlier, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")).Note, held.Reason);
 
         // The own account the earliest: its own words and its own account.
-        var own = Assert.Single(Waiting(json, taken, coolingOf: (adapter, profile) => profile == "home"
+        var own = Assert.Single(Waiting(json, taken, coolingOf: (adapter, profile, _) => profile == "home"
             ? new CoolingEntry("claude", "home", Reset.AddHours(3), Stated: true, Window: null, Seen: T0, Session: null)
             : CoolingOf(adapter, profile)).Held).Value;
         Assert.Equal((Reset, "work"), (own.Until, own.Account));
@@ -261,7 +294,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
         Assert.Empty(Waiting(rebase, closedRebase).Held);
 
         var earlier = new CoolingEntry("claude", "home", Reset.AddHours(-1), Stated: true, Window: null, Seen: T0, Session: null);
-        CoolingEntry? Both(string? adapter, string? profile) => profile == "home" ? earlier : CoolingOf(adapter, profile);
+        CoolingEntry? Both(string? adapter, string? profile, string? model) => profile == "home" ? earlier : CoolingOf(adapter, profile);
         var held = Assert.Single(Waiting(rebase, closedRebase, coolingOf: Both).Held).Value;
         Assert.Equal((WordsHold.Cooling, (DateTimeOffset?)Reset.AddHours(-1), "home"), (held.Why, held.Until, held.Account));
         Assert.StartsWith(LimitResume.Waits(earlier, TimeZoneInfo.Utc, AccountNames.Of(_home, "claude")).Note, held.Reason);
@@ -318,7 +351,7 @@ public sealed class SessionWordsWaitingTests : IDisposable
         var json = Json(Record("s2", "completed", "q2", said: ["w2"], door: "codex"));
         Consideration[] considered = [GoesOn(Quest("q2", "Taken"), json, "s2")];
 
-        var held = Assert.Single(Waiting(json, considered, coolingOf: (adapter, profile) => adapter == "codex" && profile == "work" ? Cooling : null).Held);
+        var held = Assert.Single(Waiting(json, considered, coolingOf: (adapter, profile, _) => adapter == "codex" && profile == "work" ? Cooling : null).Held);
 
         Assert.Equal(("s2", WordsHold.Cooling, (DateTimeOffset?)Reset), (held.Key, held.Value.Why, held.Value.Until));
     }

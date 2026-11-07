@@ -111,7 +111,7 @@ internal sealed class CurveMove(IExecutorWiring wiring) : IExecutor
 
         // MODELROLE1d2 (D205 §3.5(a)): each candidate judged by its offer reading for the model the record asks, the composer's kept
         // change's where one is, so the move never takes an account that does not offer the conversation's model.
-        var model = (prior.Asked ?? ActorAsked.Before(agent)).Overlaid(ActorOverride.Read(prior.Override)).NamedModel;
+        var model = prior.ModelOn(agent);
         (string, string?, string)? offer = model is null
             ? null
             : (agent, (await _context.Harnesses.ReportAsync(agent, config, refresh: false, ct).ConfigureAwait(false))?.Version, model);

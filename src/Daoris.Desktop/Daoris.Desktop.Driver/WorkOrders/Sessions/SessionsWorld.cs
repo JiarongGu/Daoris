@@ -58,7 +58,7 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
     /// The cool-off a start on an adapter would read for an account, or null where it is ready (<c>hand-over</c> naming no agent): read from this
     /// home's cool-offs by the account's owner, as the roster reads them, plugins' harnesses included.
     /// </summary>
-    public Func<string?, string?, CoolingEntry?>? CoolingOf { get; init; }
+    public Func<string?, string?, string?, CoolingEntry?>? CoolingOf { get; init; }
 
     /// <summary>
     /// The conversation opened with the words a session could not go on with (<c>start-from</c>): the host's chat door, which sends the

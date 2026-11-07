@@ -15,7 +15,7 @@ internal static class LimitRuled
     public static StartedFrom? Holds(
         ChatContext context, LimitWaits waits, ConversationRules rules, PriorSession prior, string sessionId, ITurnedChat chat, string ranOn)
     {
-        var until = context.Harnesses.CoolingOf(ranOn, prior.Profile)?.Until;
+        var until = context.Harnesses.CoolingOf(ranOn, prior.Profile, prior.ModelOn(ranOn))?.Until;
         if (rules.Judge(prior, sessionId, StaffConditions.Limit, until) is not { } ruled) return null;
         var now = context.Harnesses.Clock();
         string count, does;
@@ -36,7 +36,7 @@ internal static class LimitRuled
                 return null;
         }
 
-        if (!chat.Turns.Limited) waits.Wait(sessionId, chat, ranOn, prior.Profile);
+        if (!chat.Turns.Limited) waits.Wait(sessionId, chat, ranOn, prior.Profile, prior.ModelOn(ranOn));
         rules.Said(ruled, sessionId, count, does, n, "limit");
         return new StartedFrom(null, false, null, $"`{sessionId}`'s rule on {count} says {does}, so it waits on `{prior.Profile}`.");
     }

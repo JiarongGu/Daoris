@@ -783,7 +783,7 @@ public sealed class AccountRotationTickTests : IDisposable
         Assert.Single(Events("s1"), e => e.Text?.StartsWith("— it does not go on yet:", StringComparison.Ordinal) == true);
         Assert.Equal(1, service.SessionCount);
 
-        var chose = await GoOnNew.AskAsync(client, _home, (adapter, profile) => roster.CoolingOf(adapter ?? "acp-stub", profile), "s1", Seen);
+        var chose = await GoOnNew.AskAsync(client, _home, (adapter, profile, model) => roster.CoolingOf(adapter ?? "acp-stub", profile, model), "s1", Seen);
         Assert.True(chose.Sent, chose.Message);
         // Every account still cools, so the choice has nowhere to carry the words yet: they stay, and the choice stays.
         await driver.RunOnceAsync().WaitAsync(Poll.Patience);

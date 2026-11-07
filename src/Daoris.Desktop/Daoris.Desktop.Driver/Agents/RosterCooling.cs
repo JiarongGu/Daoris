@@ -152,19 +152,20 @@ internal sealed class RosterCooling(HarnessRoster roster)
         }
     }
 
-    /// <summary>The account's cool-off now, or null when it is ready, a start on this adapter as <paramref name="profile"/> would read it.</summary>
-    public CoolingEntry? CoolingOf(string adapter, string? profile) =>
-        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent ? AccountCooling.Of(roster.Home, agent, profile, roster.Clock()) : null;
+    /// <summary>
+    /// The account's cool-off now, or null when it is ready, a start on this adapter as <paramref name="profile"/> would read it.
+    /// </summary>
+    /// <param name="model">The model the start asks (MODELROLE1k2): a model family's cool-off holds only a start of that family; null is account default.</param>
+    public CoolingEntry? CoolingOf(string adapter, string? profile, string? model = null) =>
+        CoolingAgent(roster.Adapters.Door(adapter)) is { } agent ? AccountCooling.Of(roster.Home, agent, profile, roster.Clock(), model) : null;
 
     /// <summary>
-    /// Every account of the adapter's owner cooling now, earliest ready first (LIMITRESUME1c, D206 §3.2): what a conversation held by
-    /// its limit computes its wait from. None for an adapter that has no accounts.
+    /// Every account of the adapter's owner cooling now for a start of <paramref name="model"/>, earliest ready first (LIMITRESUME1c,
+    /// D206 §3.2): what a conversation held by its limit computes its wait from. None for an adapter that has no accounts.
     /// </summary>
-    public IReadOnlyList<CoolingEntry> CoolingsOf(string adapter) =>
+    public IReadOnlyList<CoolingEntry> CoolingsOf(string adapter, string? model = null) =>
         CoolingAgent(roster.Adapters.Door(adapter)) is { } agent
-            ? [.. AccountCooling.Read(roster.Home, roster.Clock())
-                .Where(entry => string.Equals(entry.Agent, agent, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(entry => entry.Until)]
+            ? [.. AccountCooling.Holding(roster.Home, agent, roster.Clock(), model).OrderBy(entry => entry.Until)]
             : [];
 
     /// <summary>

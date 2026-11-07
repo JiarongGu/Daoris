@@ -319,6 +319,70 @@ public sealed class LimitWaitsProcessTests : IDisposable
         Assert.Equal(1, ledger.Count);
     }
 
+    /// <summary>A model family's cool-off of <paramref name="account"/>, as the cooling store keeps it under the account (MODELROLE1k).</summary>
+    private void CoolingModel(string account, DateTimeOffset until, string model) =>
+        AccountCooling.Cool(_home, new CoolingEntry("stub", account, until, Stated: true, "weekly", _now, null, Model: model), _now);
+
+    /// <summary>The record asking <paramref name="model"/> of its entry, as a conversation started on a choice keeps it.</summary>
+    private static void Asking(ChatLedger ledger, string session, string model) =>
+        ledger.Edit(session, record =>
+            record["asked"] = System.Text.Json.JsonSerializer.SerializeToNode(
+                new ActorAsked("acp-stub", new("entry", model, true), new("account-default", null, false)), ActorRun.Json));
+
+    /// <summary>
+    /// 🔴 MODELROLE1k2: an ended chat's waiting words are held by the cool-off of its own model, as the walk reads it: an Opus line on an
+    /// account at its Opus week, the other account cooling longer, waits for the earlier reset and goes on there.
+    /// </summary>
+    [Fact]
+    public async Task An_opus_line_s_waiting_words_are_held_by_its_accounts_opus_week_and_go_on_at_its_reset()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-1").Say("w1", "Hello again.");
+        Asking(ledger, "c1", "opus");
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = ProviderRegistry.Built();
+        var roster = Roster(adapters);
+        CoolingModel("account-1", _now.AddHours(1), "opus");
+        CoolingModel("account-2", _now.AddDays(1), "opus");
+        using var runner = Runner(client, adapters, roster, events);
+
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        Assert.True(runner.Waits.Holds("c1"));
+        Assert.Empty(StubFile.Lines(Heard));
+
+        _now = _now.AddHours(2);
+        var woke = Assert.Single(await runner.WakeLimitsAsync(config));
+        Assert.Equal("c1", woke.SessionId);
+        await Poll.Until(() => Prompts.Any(line => line.Contains("Hello again.", StringComparison.Ordinal)), () => Seen(ledger, events, "c1"));
+        Assert.StartsWith("prompt[account-1]", Prompts.Single(line => line.Contains("Hello again.", StringComparison.Ordinal)), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// 🔴 MODELROLE1k2: the same words of a Sonnet line wait for nothing, its own account being ready for Sonnet: the stage holds no
+    /// conversation, and it asks the service for no wait.
+    /// </summary>
+    [Fact]
+    public async Task A_sonnet_line_s_waiting_words_are_not_held_by_its_accounts_opus_week()
+    {
+        var ledger = new ChatLedger().Register("engine", _root);
+        ledger.Chat("c1", "completed", "acp-stub", _root, profile: "account-1").Say("w1", "Hello again.");
+        Asking(ledger, "c1", "sonnet");
+        new HarnessConversations(_home).Keep("c1", "acp-stub", "conv-account-1");
+        var config = Config();
+        var events = Events;
+        using var client = ledger.Client();
+        var adapters = ProviderRegistry.Built();
+        var roster = Roster(adapters);
+        CoolingModel("account-1", _now.AddDays(1), "opus");
+        using var runner = Runner(client, adapters, roster, events);
+
+        Assert.Empty(await runner.WakeLimitsAsync(config));
+        Assert.False(runner.Waits.Holds("c1"));
+    }
+
     /// <summary>The person's words as MSG1d's say door leaves them: kept on the record, and shown in its conversation, which the runner hears.</summary>
     private static void Said(ChatLedger ledger, SessionEvents events, string session, string id, string text)
     {

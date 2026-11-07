@@ -47,6 +47,15 @@ public static class ActorAskedChoices
         }
     }
 
+    extension(PriorSession prior)
+    {
+        /// <summary>
+        /// The model its next start on <paramref name="agent"/> asks (MODELROLE1k2): its choice's, the composer's kept change laid over it; null
+        /// for account default. A model family's cool-off holds a start of that family alone, so this is what every reader of a line's cool-off asks.
+        /// </summary>
+        public string? ModelOn(string agent) => (prior.Asked ?? ActorAsked.Before(agent)).Overlaid(ActorOverride.Read(prior.Override)).NamedModel;
+    }
+
     extension(ActorAsked asked)
     {
         /// <summary>

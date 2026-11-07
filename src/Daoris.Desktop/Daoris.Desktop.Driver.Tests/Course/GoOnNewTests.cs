@@ -48,7 +48,7 @@ public sealed class GoOnNewTests : IDisposable
     private Task<GoOnNewAnswer> AskAsync(Room room, string id, CoolingEntry? cooling = null)
     {
         var client = room.Client();
-        return GoOnNew.AskAsync(client, _home, (_, _) => cooling ?? Cooling, id, T0.AddMinutes(30));
+        return GoOnNew.AskAsync(client, _home, (_, _, _) => cooling ?? Cooling, id, T0.AddMinutes(30));
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ public sealed class GoOnNewTests : IDisposable
         var room = new Room([Record("s1", said: ["w1"])], [Quest("q1", "Taken")]);
         var client = room.Client();
 
-        var answer = await GoOnNew.AskAsync(client, _home, (_, _) => null, "s1", T0);
+        var answer = await GoOnNew.AskAsync(client, _home, (_, _, _) => null, "s1", T0);
 
         Assert.Equal((false, GoOnNew.NotCooling), (answer.Sent, answer.Why));
         Assert.Equal(
@@ -169,33 +169,57 @@ public sealed class GoOnNewTests : IDisposable
         var client = room.Client();
         var heard = new List<LineCourse>();
 
-        var kept = await GoOnNew.AskAsync(client, _home, (_, _) => Cooling, "s1", T0, heard.Add);
+        var kept = await GoOnNew.AskAsync(client, _home, (_, _, _) => Cooling, "s1", T0, heard.Add);
         Assert.True(kept.Sent);
         var wait = Assert.IsType<LineCourse.Wait>(Assert.Single(heard));
         Assert.Equal((CourseWaitWhy.AccountCooling, Cooling.Until), (wait.Why, wait.Until));
         Assert.Equal(["w1"], new NewSessionChoices(_home).Read("s1")!.Said);
 
         heard.Clear();
-        var closed = await GoOnNew.AskAsync(client, _home, (_, _) => Cooling, "cl0sed00", T0, heard.Add);
+        var closed = await GoOnNew.AskAsync(client, _home, (_, _, _) => Cooling, "cl0sed00", T0, heard.Add);
         Assert.Equal((false, GoOnNew.Closed), (closed.Sent, closed.Why));
         var hold = Assert.IsType<LineCourse.Hold>(Assert.Single(heard));
         Assert.Equal((CourseHoldWhy.Refused, GoOnNew.Closed), (hold.Why, hold.Code));
         Assert.Equal([CourseDoor.StartFrom], hold.Doors);
 
         heard.Clear();
-        var later = await GoOnNew.AskAsync(client, _home, (_, _) => Cooling, "e4rl1er0", T0, heard.Add);
+        var later = await GoOnNew.AskAsync(client, _home, (_, _, _) => Cooling, "e4rl1er0", T0, heard.Add);
         Assert.Equal((false, WordsNever.Superseded), (later.Sent, later.Why));
         Assert.Equal(CourseNeverWhy.Superseded, Assert.IsType<LineCourse.Never>(Assert.Single(heard)).Why);
 
         heard.Clear();
-        var continued = await GoOnNew.AskAsync(client, _home, (_, _) => Cooling, "h4nd3d00", T0, heard.Add);
+        var continued = await GoOnNew.AskAsync(client, _home, (_, _, _) => Cooling, "h4nd3d00", T0, heard.Add);
         Assert.Equal((false, WordsNever.Continued), (continued.Sent, continued.Why));
         Assert.IsType<LineCourse.Never>(Assert.Single(heard));
 
         heard.Clear();
-        var cold = await GoOnNew.AskAsync(client, _home, (_, _) => null, "s1", T0, heard.Add);
+        var cold = await GoOnNew.AskAsync(client, _home, (_, _, _) => null, "s1", T0, heard.Add);
         Assert.Equal((false, GoOnNew.NotCooling), (cold.Sent, cold.Why));
         Assert.Equal(GoOnNew.NotCooling, Assert.IsType<LineCourse.Hold>(Assert.Single(heard)).Code);
+    }
+
+    /// <summary>
+    /// MODELROLE1k2: a carry-on in a new session is kept while its account is at the Opus week that its line asks, and refused as not
+    /// cooling for a line asking Sonnet, which the account carries on as it is.
+    /// </summary>
+    [Fact]
+    public async Task A_model_s_cool_off_keeps_the_choice_for_its_own_line_and_leaves_another_family_s_line_to_go_on_where_it_is()
+    {
+        static JsonObject Asking(JsonObject record, string model)
+        {
+            record["asked"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(
+                new ActorAsked("claude-code", new("entry", model, true), new("account-default", null, false)), ActorRun.Json));
+            return record;
+        }
+
+        var room = new Room([Asking(Record("s1", said: ["w1"]), "opus"), Asking(Record("s2", quest: "q2", said: ["w2"]), "sonnet")], [Quest("q1", "Taken"), Quest("q2", "Taken")]);
+        CoolingEntry? OpusWeek(string? adapter, string? profile, string? model) => ModelLimits.Holds("opus", model) ? Cooling with { Model = "opus" } : null;
+
+        var opus = await GoOnNew.AskAsync(room.Client(), _home, OpusWeek, "s1", T0.AddMinutes(30));
+        var sonnet = await GoOnNew.AskAsync(room.Client(), _home, OpusWeek, "s2", T0.AddMinutes(30));
+
+        Assert.True(opus.Sent, $"{opus.Why}: {opus.Message}");
+        Assert.Equal((false, GoOnNew.NotCooling), (sonnet.Sent, sonnet.Why));
     }
 
     // ——— The kept choice.
@@ -256,7 +280,7 @@ public sealed class GoOnNewTests : IDisposable
     public async Task The_terminal_says_what_comes_of_it_in_one_line()
     {
         var room = new Room([Record("s1", said: ["w1"]), Record("cl0sed00", quest: "q4", said: ["w1"])], [Quest("q1", "Taken"), Quest("q4", "Done")]);
-        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, false, null) { CoolingOf = (_, _) => Cooling };
+        var world = new SessionsWorld(room.Client(), _home, DriverConfig.Empty, false, null) { CoolingOf = (_, _, _) => Cooling };
 
         var output = new StringWriter();
         Assert.Equal(0, await SessionsCommand.RunAsync(SessionsCommand.Read(["hand-over", "s1"], out _)!, world, output));

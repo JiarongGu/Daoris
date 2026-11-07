@@ -82,9 +82,9 @@ public static class GoOnNew
     public const string NotCooling = "not-cooling";
 
     /// <summary>Judge and keep the choice for a session of this machine's.</summary>
-    /// <param name="coolingOf">The cool-off a start on an adapter would read for an account, or null where it is ready.</param>
+    /// <param name="coolingOf">The cool-off a start on an adapter would read for an account and the model its line asks (MODELROLE1k2), or null where it is ready.</param>
     public static Task<GoOnNewAnswer> AskAsync(
-        ServiceClient service, string home, Func<string?, string?, CoolingEntry?> coolingOf, string id, DateTimeOffset now,
+        ServiceClient service, string home, Func<string?, string?, string?, CoolingEntry?> coolingOf, string id, DateTimeOffset now,
         CancellationToken ct = default) =>
         AskAsync(service, home, coolingOf, id, now, null, ct);
 
@@ -94,7 +94,7 @@ public static class GoOnNew
     /// nothing a person reads changes. <paramref name="decided"/> hears what the course answered: a test's, no person's.
     /// </summary>
     internal static async Task<GoOnNewAnswer> AskAsync(
-        ServiceClient service, string home, Func<string?, string?, CoolingEntry?> coolingOf, string id, DateTimeOffset now,
+        ServiceClient service, string home, Func<string?, string?, string?, CoolingEntry?> coolingOf, string id, DateTimeOffset now,
         Action<LineCourse>? decided, CancellationToken ct = default)
     {
         var json = await service.SessionRecordsJsonAsync(ct).ConfigureAwait(false);
@@ -192,11 +192,11 @@ public static class GoOnNew
 
     // The cool-off a start on the record's adapter would read for its account: its wait, where there is one. An adapter this build no
     // longer has: nothing cools on it, and its own judgement says why it cannot go on.
-    private static CourseAccount? CoolingFact(Func<string?, string?, CoolingEntry?> coolingOf, PriorSession prior)
+    private static CourseAccount? CoolingFact(Func<string?, string?, string?, CoolingEntry?> coolingOf, PriorSession prior)
     {
         try
         {
-            return coolingOf(prior.Adapter, prior.Profile) is { } cooling
+            return coolingOf(prior.Adapter, prior.Profile, prior.ModelOn(prior.Adapter ?? "")) is { } cooling
                 ? new CourseAccount(new LineAnswer.Wait(cooling, [cooling], ResetSet.Switch, NextHold.Cooling, OwnFirst: true))
                 : null;
         }

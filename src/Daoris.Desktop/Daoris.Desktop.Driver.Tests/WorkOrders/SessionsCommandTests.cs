@@ -327,7 +327,7 @@ public sealed class SessionsCommandTests : IDisposable
         var world = World(ledger, service) with
         {
             Config = DriverConfig.Empty with { Drivable = ["engine"] },
-            CoolingOf = (adapter, profile) => adapter == "claude-code" && profile == "work" ? cooling : null,
+            CoolingOf = (adapter, profile, _) => adapter == "claude-code" && profile == "work" ? cooling : null,
         };
 
         var (exit, said) = await RunAsync(ledger, [], world: world);
@@ -365,10 +365,10 @@ public sealed class SessionsCommandTests : IDisposable
         });
         var ledger = new Ledger([record], [Quest("q5", "Trim the readme", "Done")]);
         using var service = ledger.Client();
-        SessionsWorld Cooling(Func<string?, string?, CoolingEntry?> coolingOf) =>
+        SessionsWorld Cooling(Func<string?, string?, string?, CoolingEntry?> coolingOf) =>
             World(ledger, service) with { Config = DriverConfig.Empty with { Drivable = ["engine"] }, CoolingOf = coolingOf };
 
-        var (_, said) = await RunAsync(ledger, [], world: Cooling((adapter, profile) =>
+        var (_, said) = await RunAsync(ledger, [], world: Cooling((adapter, profile, _) =>
             adapter != "claude-code" ? null : profile == "work" ? own : profile == "home" ? other : null));
 
         Assert.Contains("Resumes later (1)\n  r3base00  waiting for a limit to reset  engine — Trim the readme", said);
@@ -378,7 +378,7 @@ public sealed class SessionsCommandTests : IDisposable
         Assert.DoesNotContain("so your words wait to go on in it then", said);
         Assert.Contains("`daoris session start-from r3base00`.", said);
 
-        var (_, ready) = await RunAsync(ledger, [], world: Cooling((adapter, profile) => adapter == "claude-code" && profile == "work" ? own : null));
+        var (_, ready) = await RunAsync(ledger, [], world: Cooling((adapter, profile, _) => adapter == "claude-code" && profile == "work" ? own : null));
         Assert.DoesNotContain("Resumes later", ready);
     }
 
