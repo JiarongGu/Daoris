@@ -439,3 +439,64 @@ to its copy whatever the defaults say (`Loop/Session/SessionRules.cs:92`), and t
   (`Modules/Platform/RoleActsLedger.cs:28`).
 - **The attempt**: a late, foreign or second block dropped, a closed subject never handed again.
 - **The releases**: only the person's stop and pause are read, so a point stays its kind's to release.
+
+
+## Codex, round 2
+
+Codex's narrow read of rows a, c, e, f and g as round 2 left them, at `30f8e89eff`, run by the steward from outside the install, read-only, without seeing the independent Opus reader's; verbatim but for its headings set down.
+
+Read at `30f8e89eff`. No files changed; no builds or tests run. D233’s latest note settles landings: they retain the window.
+
+| Row | Verdict | Reason |
+|---|---|---|
+| a | **Another round** | The migration relies on a minimum-build record whose write may fail without stopping conversion. |
+| c | **Another round** | Generation and restart semantics are answered; the rule-taking harness’s containment remains incomplete. |
+| e | **Another round** | Widening recovery can restore an allow after the person takes it back. |
+| f | **Ready to build** | Attribution, replacement, attempt binding and the application cutoff are specified. |
+| g | **Ready to build** | The standing allow agrees with TREEPOOL1 §30.4; its stated build dependencies remain. |
+
+My round-1 findings:
+
+1. **Partly answered.** `not-converted`, conversion of historical revisions and rejection of unreached records address the original exposure. The durable launcher boundary still needs the correction below.
+2. **Answered.** Admission reads kind, place and act at release, with an explicit cutoff; terminal revocation no longer depends on a sweep.
+3. **Answered.** Typed subjects remain whole through proof, attempt, keeping and release.
+4. **Answered.** Effect-based placement and subtype-specific grants distinguish held requests, widenings and steward requests. This also requires global default switches to resolve at the machine, regardless of their submitted `scope`.
+5. **Partly answered.** Shared conditional settlement addresses competing answers. Its recovery procedure still permits replay over a later withdrawal.
+6. **Answered.** The authored node word survives serialization and application, and the person replaces an unapplied supervisor word under the record lock.
+7. **Answered.** Every kind and attempt participates in startup closure; interrupted or discarded decisions leave their subjects to the person instead of restarting deliberation.
+8. **Partly answered.** Empty attempt folders and truthful per-harness reporting address the missing-place and overstated-posture issues. The explicitly permitted `copy-alone` choice is accepted. The claimed control boundary on a rule-taking harness still has the bypass below.
+9. **Answered.** Row g now installs a standing allow for later starts, matching §30.4. No once-only consumption remains to define.
+
+Three blocking findings remain. Code paths below follow the design’s Driver/Modules convention.
+
+**B1 — Blocking, row a: conversion is not conditional on durably excluding older builds.**
+
+**Where:** SUPERVISOR2 §4, migration boundary; `Modules/Update/InstallUpdater.cs:190–198`, `Roles/RoleHold.cs:121–135`, `Modules/Platform/RoleJudge.cs:162–166`; `Install/HomeLastBuild.cs`.
+
+**Sequence:** The update confirms. Keeping its version in the home’s minimum-build record fails; `InstallUpdater` catches that failure and explicitly defers keeping it until another start. Independently, `HomeMigration.RunAfterSwapAsync` proceeds after the swap releases the home. The supervisor step completes, enabling new role writes. The application then ends before another successful stamp. Launching the previous build against that home passes its older minimum-build record. Its parser accepts the qualified authority strings and ignores `decides`; its supervisor judge still bypasses grants.
+
+Thus the role door’s `not-converted` check can open even though the boundary §4 relies on was never established.
+
+**Smallest change:** Before converting supervisor records, successfully keep and verify the release’s minimum-build version. Failure leaves this step incomplete and the role door `not-converted`. Add a proof where that write fails while the migration’s own writes remain possible. This implements the chosen older-build refusal.
+
+**B2 — Blocking, row e: replaying `settling` can undo Take back.**
+
+**Where:** SUPERVISOR2 §5.3, lines 508–515; `Agents/RuleProposals.cs:220–231`; `Agents/Permissions.cs:399–416`.
+
+**Sequence:** A supervisor’s yes writes `settling` and its receipt, then saves an allow. The process crashes before marking the proposal settled. The person removes that visible allow through their rules verb while the application is down. At the next tick, the proposed recovery saves the change again and marks it settled. `PermissionRules.Add` drops the matching rule and adds it again, restoring access after the person withdrew it. If the person replaced it with an exact deny, replay drops that too.
+
+The proposal lock serializes answers to that proposal. The receipt stored there does not establish whether the permission mutation already happened and was subsequently reversed. Idempotence without intervening edits does not preserve a later decision.
+
+**Smallest change:** Save the applied receipt atomically with the permission mutation, and retain its consumed or revoked status when Take back changes the rule. Recovery must complete settlement without reapplying an already-applied receipt. Prove crash → withdrawal → recovery leaves access withdrawn.
+
+**B3 — Blocking, row c: denying management verbs leaves an inherited interpreter allow able to change the controls directly.**
+
+**Where:** SUPERVISOR2 §2.8, particularly lines 249–260; `Review/Domain/OpinionPermissions.cs:100–117`; `Loop/Session/SessionRules.cs`; `Workplace/TreeGuard.cs:14–21`.
+
+**Sequence:** The person’s composition permits `Bash(python:*)`. The supervise shape retains that allow: the reviewer shape removes selected allows and adds named tool, git and connector denies. The added management-verb denies do not match a Python program. The turn runs such a program to modify the home’s permissions directly, widening subsequent access without its decision reaching any kind’s keeping.
+
+The tree guard expressly does not refuse a program’s own file writes, whose targets it cannot read from the command. The classifier’s hard-deny sentence remains the remaining protection for this form. Consequently, checking grants on the returned decision does not bound everything the turn can do.
+
+**Smallest change:** For supervise turns on the rule-taking harness, deny unrestricted shell/interpreter execution, or provide an enforced execution boundary that prevents those writes. Extend the installed proof to an inherited interpreter allow attempting a direct permission-file write. This need not change development sessions or refuse the owner-authorized `copy-alone` choices.
+
+I found nothing further in kind-first resolution, structural refusal to fall through, agent-generation separation, the exact one-request steward approval, or held-request arbitration. I found **no further defect in row f or row g** within the requested scope.
