@@ -24,6 +24,11 @@ is accepted, and nothing is built until then.
 design's §26. The independent Opus reader's read of round 6 is below, under *Opus (independent), round 6*: another round for row 2, on its
 F1 to F3. Codex's read of round 6 is owed.
 
+**Round 7, for rows 3 and 4** (2026-11-08), is written from main at `a94a922745` and answers, in the design's §27, Codex's read of round 6
+for rows 3 and 4 and the round-6 independent read's F1 and F9 where they meet row 4. The independent Opus reader's read of round 7 is
+below, under *Opus (independent), round 7*: another round, narrowly, for row 3 on its F3 and for row 4 on its F1 and F2. Codex's read of
+round 7 is owed.
+
 ## Codex, round 1
 
 Codex's read of round 1 at `3f55eb1e5`: another round. It finds four wrong claims (two blocking: an interrupted move that is no interrupted
@@ -2102,3 +2107,187 @@ Below, **Design** means `docs/2026-10-26-tree-pool-design.md`; code paths beginn
 I found **no additional defect** in the revised same-line-only takeover rule or the ref-backed release predicate. Claim groups also address the identified shared-build races when their closures are complete and stable. The sparse/index-bit refusals, explicit signing, pathspec translation and selective commit interface answer those private-index points; hook confinement remains finding 2.
 
 For row 4, I found **no new work-loss case in the described claim fencing, named-job takeover, holder checks or non-forcing switch**. Its remaining blocker above concerns what the next line is allowed to reuse.
+
+## Opus (independent), round 7
+
+The independent Opus 5.5 reader's read of round 7, rows 3 and 4 alone, at main `8c8e0f86bd`: 11 findings, 3 of them blocking, one in
+row 3 and two in row 4. I read the owner's choices as given (D214's notes of 2026-11-07 and 2026-11-08): the kept slot first, the store
+the one way a tree gets its dependencies, no Dev Drive, and this repository's sessions on kept slots with its pool on after rows 3 and 4.
+- **The record holds.** A placement record read at every take, a declared cache the only tolerance, writable copies and a link-safe
+  removal answer Codex 9 as it asked.
+- **The fill holds where it judges.** Only Daoris's own install fills, in a tree no session worked in, and the judgement refuses a
+  tracked change, a stray ignored path, a link out of the tree and the tree's path. What it cannot see should be said (F8, F9).
+- **Path-bound installs and keyed intermediates hold as classes**, with precisions (F6, F10).
+- **Three cases still give a session a wrong install or move a running slot:**
+  - the configuration each manager reads from the user's folders is in no key (F3);
+  - the take's install runs before the record opens and outside the start's hold, where a pull's replay reads the slot as free (F1);
+  - the landing's follow tests the slot against an in-use set the census does not name (F2).
+
+  Each has a small change inside the owner's frame, and none reopens a choice.
+
+**Verdict: row 3, another round narrowly on F3; row 4, another round narrowly on F1 and F2.** The rest are named changes (§3).
+
+Read at main `8c8e0f86bd`, which holds round 7's `4cef4d2ba0` and D214's note of 2026-11-08. Of the files round 7 cites, only
+`tools/merge-rows.mjs` changed after its `a94a922745`, in its comment alone. I read with git and read-only commands, ran
+`npm config list --json` once to see what it prints, built nothing and changed no file but this one; what I say of pnpm, yarn, pip, uv,
+cargo and NuGet is from their documentation. A bare path is under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and `Design` is
+`docs/2026-10-26-tree-pool-design.md`.
+
+### 1. Round 7's answers (§27)
+
+| Finding | Round 7 | Holds? |
+|---|---|---|
+| Codex 8 (blocking) the key names a lockfile | The key names the install; only Daoris's own install fills | **In part.** The tracked inputs, the command, the toolchain and an environment by selection hold (`Review/Domain/GateEnvironment.cs:23-28`, `:66-75`; `Workplace/IntegrationDeclaration.cs:27`, `:209-216`). The managers' configuration outside the tree is unkeyed (F3), and `prepare` also writes git's common hooks folder (F9) |
+| Codex 9 caches against added packages | A placement record; declared `caches` | **Yes**: TREEDEPS1 skips its three caches rather than tolerating additions (`Workplace/TreeDependencies.cs:44-45`, `:248`). A failing record is still the slot's at the judgement and the finish (F7) |
+| Codex 10 (blocking) a carried environment | `bound` kept in place by key and record; intermediates keyed | **Yes** as classes (`Workplace/TreeOpening.cs:133`; `Workplace/TreeScratch.cs:20`). The toolchain key is read at the wrong moment (F6); the uv example reinstalls at every take (F10) |
+| Codex 7 the helper's capture | Closed for a pooled asker; in the census | **Yes**: the capture is handed the record's path (`Loop/Helpers/HelperSettling.cs:37`) and reads `HEAD` and status there (`Participants/Helpers/HelperCapture.cs:99-104`) |
+| Opus F9 the census; *spoken to* | Row 4 builds both; holders through `InUseAsync` | **Yes** (`Workplace/TidyHolders.cs:16-24`, `:30-37`, `:52`) |
+| Opus F1 for row 4 | Each in-use set adds the held line's slot | **In part.** The five tests stand as cited. The landing's set and the follow's test are missing (F2); a slot under a take is in no set before its record (F1) |
+| Round 6's F10 | The store serves trees alone | **Yes** (`Workplace/TreeOpening.cs:172`; `Workplace/TreeReturns.cs:121`) |
+| Round 5's F9, F10, F11 (a) | The take's phases; copies; no template; no Dev Drive | **In part**: the install's place in the take (F1) |
+| Round 7's own: the accepted declaration | `trees` only from the accepted blob at the line's tip | **Yes** for what acts (`Workplace/TreeScratch.cs:46-51`; `Workplace/IntegrationAcceptance.cs:91-97`); the whole-file test costs the saving here (F5) |
+| Round 7's own: TREEDEPS1, §18 item 10 | The owner's | Answered by D214's note of 2026-11-08, which §18 does not yet say (F11) |
+
+### 2. Findings
+
+1. **Blocking (row 4). The take's install runs before its record opens and outside the start's hold, where a pull's replay reads the
+   slot as free.**
+   - **Where:** Design:854 orders a take's phases `checked`, `installed`, `opening-record`; Design:1185 runs the install "outside the
+     start's shared hold", Design:1191-1192 the take inside it. That hold is the run's from `GrowTree` until the record opens, "so bringing
+     the repository up to date cannot rebase the tree a session is starting in" (`Loop/Run/Tree/GrowTree.cs:3-9`, `:96-98`;
+     `Loop/Run/Open/OpenRecord.cs:119-120`).
+   - **What goes wrong:**
+     - B's take switches `k-1` to `daoris/s-B` at the line's tip `L1`. The root key has moved (the root `package.json` changed in 26
+       commits in two weeks), so `npm ci` runs, 72 to 93 s, the hold let go.
+     - The line moves to `L2`, a median 4.7 minutes apart here. The look's pull takes the repository alone (`Workplace/TreeSync.cs:211`)
+       and judges `daoris/s-B`: its tree is `k-1` by git's list (`Workplace/BranchJudging.cs:45`, `:51`); not busy, since no record names B and
+       the census adds a slot only for a held line; clean, `npm ci` writing an ignored folder (`:117-124`); behind (`:130`). So it is
+       replayed in `k-1` (`:161`) while the install runs there.
+     - The record then opens at `L2` over a dependency installed and keyed at `L1`, which nothing reads again: where `L2` changed a key
+       file, B's whole session tests against the old install. The fill may also seal an install whose scripts read files the replay
+       was rewriting.
+   - **Smallest change:** run the take's install where row 3 runs a fresh tree's, a stage after `open` and before `hand`, once
+     `kept_trees.line` is written, so the in-use sets hold the slot; the claim then ends at `opened`. Or count a slot under a claim in
+     every in-use set, from `tree_claims`. Row 3's "after the open" (Design:2294) should say *after the record's open*. Row 4's proof: the
+     line moved during a take's install, the slot's branch not replayed.
+
+2. **Blocking (row 4). The landing's follow tests the slot against an in-use set the census does not name.**
+   - **Where:** Design:971-975 names `TidyHolders`' sets, `HelpHousekeeping`'s and the inventory's, and five tests. The landing reads
+     none of them: `LandPerformer` hands `TreeLands.LandAsync` its world's set (`Workplace/LandPerformer.cs:111`, `:251`), the active
+     sessions' trees alone (`Review/ReviewLandingWorld.cs:43-46`), and LANDSYNC1's follow tests the landed tree against it
+     (`Workplace/LandingPress.cs:339-342`; `Workplace/TreeLandSyncs.cs:206`).
+   - **What goes wrong:** row e lands a pooled line from its slot, so the follow's tree is `k-1` while the set names `s-B`. A landing
+     that replayed (the line held some of B's commits) reaches the follow while B's next part runs or waits there. The test passes, and
+     with `k-1` clean on its branch the follow detaches it, moves `daoris/s-B` and switches back (`TreeLandSyncs.cs:216-222`), under the
+     running session. At `s-B` today it answers "a session still running or waiting holds it", and the tree stays.
+   - **Smallest change:** the census's third list adds `ServiceReviewLandingWorld.InUseAsync` and the follow's test, and the slot is added
+     where each set is built, this one among them. Row 4's proof: a replaying landing with its line's session running in the slot leaves
+     the slot as it was.
+
+3. **Blocking (row 3). The key leaves out the configuration each manager reads from outside the tree.**
+   - **Where:** R5.6's key and environment (Design:465-470), which passes "the user's … folders"; the proof's "a changed `.npmrc`"
+     (Design:2308) is a tracked one in a `key`.
+   - **What goes wrong:** npm and pnpm read the user's and the global `npmrc`, yarn the home folder's `.yarnrc.yml`, pip its `pip.ini`, uv
+     its `uv.toml`. The person sets pnpm's `node-linker=hoisted`, yarn's `nodeLinker`, or npm's `ignore-scripts=true` or `omit=dev`, for
+     another project. Every fill after it installs that layout; every entry sealed before still hits at its key and is placed, its record
+     holding, and an entry placed every day ages out only by size (Design:497). Sessions test against a layout no fresh install makes:
+     Codex 8's case, through a file outside the tree. A `bound` `.venv` kept at its key meets it too.
+   - **Smallest change:** key each manager's effective configuration by a `toolchain` command that prints it in the install's
+     environment, the conventions naming each (`npm config list --json`, which names no tree path here; `pnpm config list --json`;
+     `pip config list`), and this repository's declaration adding npm's. A command whose output names the tree only makes every key miss.
+     Row 3's proof: a user-level setting changed at one lockfile, missing.
+
+4. **Not blocking, before row 3. An install killed after the record opened is met by its carry-on, which clears nothing.**
+   - **Where:** "a folder with no record … is cleared before anything reads it" (Design:489) is done only by an open, a remake and a take
+     (Design:1182-1183, :2293-2295).
+   - **What goes wrong:** a shutdown kills each session and carries it on (driving rule 41). Carried on in its tree by `GrowTree`'s resume
+     (`:23-34`), or in its own slot by §5.1 choice 1's steps 1, 4 and 6, the session starts over a half-written folder, unsaid. Today's
+     copy runs under the opening lock, whose undo takes the tree (`Workplace/TreeOpening.cs:170-172`).
+   - **Smallest change:** every start into a tree clears a declared dependency with no placement record and installs it before its
+     agent, as a take does. Proof: an install killed by a restart, then the carry-on.
+
+5. **Not blocking, before row g. Acceptance of the whole gates file darkens the classes at every gate edit.**
+   - **Where:** Design:394-398 and §27's own row; `Workplace/IntegrationAcceptance.cs:91-97` reads the accepted text only where its blob is
+     the tip's.
+   - **What goes wrong:** this repository's gates file changed in 10 commits from 2026-10-25 to 2026-11-08, three on 2026-11-07, nine
+     outside `trees`. From each until the owner accepts again, TREEDEPS1 gone, a fresh tree is placed nothing and its session runs `npm
+     ci`, and every take renews its slot: intermediates and dependencies moved aside, then built and installed again, the churn the owner
+     chose to end.
+   - **Smallest change:** act where the tip's parsed `trees` equals the accepted blob's, read from the accepted text, so only a change to
+     `trees` itself waits for the owner.
+
+6. **Not blocking, before row 4b. The toolchain key is read at the take, not where the intermediates were built.**
+   - **Where:** `kept_trees.toolchain`, "at its last take" (Design:2332-2333); the renewal (Design:1179-1181).
+   - **What goes wrong:** A takes `k-1` at main, `dotnet --version` T1. A's session commits a `global.json` selecting T2 and builds, so
+     `obj/` is T2's. A is let go unlanded; B takes `k-1` at main, reads T1, equal to the column, and builds over T2's `obj/`. The same with
+     `rust-toolchain.toml`, `.nvmrc` or `.python-version`.
+   - **Smallest change:** the end's read of the slot (§6) writes the toolchain key into `line_ends` and the column, and a take renews
+     where its key differs from the last let-go's.
+
+7. **Not blocking, before row 4b. A dependency whose record fails is still the slot's at the judgement and the finish.**
+   - **Where:** Design:1125-1126 counts a dependency "with its placement record" as the slot's; the finish keeps the slot's
+     (Design:1411-1414); the take replaces a failing one by removal (Design:492-494), never aside.
+   - **What goes wrong:** A's session edits a file under `node_modules/x/` for a patch it has not yet written, or runs `pip install` into
+     its `.venv`, and is let go unlanded or finishes. Its slot is handed on and B's take deletes the folder. Today those writes go aside
+     with the whole tree and wait D195's hour or days.
+   - **Smallest change:** the judgement and the finish read each namespace against its record, as the take does. A failing one is the
+     line's own: it holds a live line's slot under §18 item 4 (a), and goes aside with a finished line's record.
+
+8. **Not blocking. A secret in `env`, and the inputs a fill reads unkeyed.**
+   - `env` is keyed by "every name and value" (Design:468-469), and the record holds "the key" (Design:488). A private registry's token
+     is the common `env`. Keep the key as its hash alone; let `env` mark a secret name, keyed by name and never written to a record, a note
+     or a log; and have the fill's scan look for each secret value as it looks for the tree's path, sealing nothing where an install wrote
+     one (a generated client that inlines its connection string).
+   - The fill runs after `placed` makes TREELOCAL1's copies again (Design:1182-1183), and in a slot beside another line's intermediates,
+     so an install script reading a `local/` file or an ignored generated file is keyed by nothing. Run installs before the local copies,
+     and let R5.5's `key` statement read "no other file, tracked or ignored".
+
+9. **Not blocking. What the fill cannot see, and two fills of one key.**
+   - This repository's `prepare` also writes git's common hooks folder (`tools/index-hook.mjs:49-69`), beside `.git/config` (`:76-82`;
+     `tools/merge-rows.mjs:270-276`); Design:430-431 names the configuration and `docs/index/` alone. The judgement reads the tree only:
+     say that a write to git's common folder or the user's home is the accepted declaration's to answer for.
+   - Both `--install`s exit 2 where git cannot take `config.lock`, which fails `npm ci`. Two starts after one `package.json` change fill
+     the root key at once (Design:480 lets a second sealer discard its own), and the loser starts without its dependency. One fill per key
+     at a time, the second waiting for the seal and placing it, closes the race and saves an install.
+
+10. **Not blocking. The uv example reinstalls at every take.**
+    - Python writes `__pycache__/` into the `.venv`'s packages at import, outside any `caches`, so the record fails after any test run.
+      The example's intermediate `**/__pycache__/` reaches inside the dependency, a meeting the reader passes, since `RoomPaths.Meet`
+      probes literal heads (`Workplace/RoomPaths.cs:31-42`), and nothing says which class wins.
+    - Declare `"caches": ["**/__pycache__/"]` on the `.venv`; say a dependency's folder is its own against every other class's glob; and
+      key the interpreter (`uv python find`), since `pyvenv.cfg` leads outside the tree to one the person may upgrade or remove.
+
+11. **Not blocking. Nits.**
+    - The take's clear removes only what git ignores at the slot's new `HEAD`, §11's rule (Design:1452), since a returning line's commit
+      may track a path the accepted declaration names.
+    - Installs in one tree run one at a time, each judged against the status the last left.
+    - A placement copies by its entry's manifest; a source missing or of another size (a scanner's quarantine) evicts the entry and
+      falls to the install.
+    - npm's hidden lockfile gets its time after the folders, as TREEDEPS1 gives it (`Workplace/TreeDependencies.cs:268-273`), or npm
+      reads the whole tree.
+    - A conversation's open (`Loop/Chat/ChatStarts.cs:207`) has no run stage after its record: name where its install runs.
+    - A runner that skips its tool's own check (`dotnet build --no-restore` over `obj/project.assets.json`) reads another line's restore
+      where a fresh tree refuses: R5.5's output rule should read "uses without its tool's own check".
+    - D214's note of 2026-11-08 answers §18 items 2 and 10, which still ask (Design:1931-1933, :2002-2010).
+
+**11 findings, 3 of them blocking.**
+
+### 3. Verdict, and where I found nothing
+
+**Verdict: row 3, another round narrowly on F3; row 4, another round narrowly on F1 and F2, after row 3.**
+- F3: the managers' configuration keyed through a printed `toolchain` output.
+- F1: the take's install after the record's open, or a claimed slot in every in-use set.
+- F2: the landing's in-use set in the census, and the slot added there.
+
+F4, F8, F9 and F11 land with row 3, and F5 before row g; F6, F7 and F10 before row 4b. The steward can check each without another read.
+
+**Where I found nothing:**
+- the claim, its generation, the named job and the takeover (§2.3);
+- the switch and the order `cleared`, `placed`, `checked`, hook; submodules refused; the first two census lists;
+- npm's workspace junctions made again inside the tree;
+- pnpm's hard links, sealed by copy;
+- NuGet's packages outside the tree, with restore's own check;
+- cargo's fingerprints over `target/`;
+- yarn's PnP paths, relative to a cache every tree of one repository reaches from the same depth.
+
+Nothing I found loses committed work, and none of the three reopens the owner's choices.
