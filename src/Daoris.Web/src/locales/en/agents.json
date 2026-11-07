@@ -356,6 +356,7 @@
   "agents.setup.roles.hold.act.updatecancel": "put a staged update away",
   "agents.setup.roles.hold.act.land": "land a session's tree, never pushing",
   "agents.setup.roles.hold.act.clean": "clean a session's tree, never forced",
+  "agents.setup.roles.hold.act.handover": "hand a session over to another agent or account",
   "agents.setup.roles.hold.act.setup": "set up",
   "agents.setup.sessions.title": "Sessions",
   "agents.setup.workflow.title": "Workflow",

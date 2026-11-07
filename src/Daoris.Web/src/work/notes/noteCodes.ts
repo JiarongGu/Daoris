@@ -392,6 +392,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // The person's own ask names the path that made it; a hand-over let go that could not be taken is not taken, never refused.
   'handover.asked-terminal': { values: ['agent'] },
   'handover.asked-window': { values: ['agent'] },
+  'handover.asked-steward': { values: ['agent'] },
   'handover.not-taken': { values: ['agent', 'why'], why: 'handover' },
   'handover.not-taken-ends': { values: ['agent', 'why'], why: 'handover' },
   // A session's own background work: the work's names as code, a state as the harness said it; a program's words

@@ -132,6 +132,7 @@
   "notifications.steward.did.updatecancel": "Put the staged update away",
   "notifications.steward.did.land": "Landed the tree of",
   "notifications.steward.did.clean": "Cleaned the tree of",
+  "notifications.steward.did.handover": "Handed over",
   "notifications.steward.target.session": "session {{session}} of #{{quest}}",
   "notifications.steward.target.quest": "#{{quest}}",
   "notifications.steward.target.sessionOnly": "session {{session}}",
@@ -167,5 +168,6 @@
   "notifications.steward.desk.act.updatenow": "Install the update",
   "notifications.steward.desk.act.updatecancel": "Put the update away",
   "notifications.steward.desk.act.land": "Land the tree",
-  "notifications.steward.desk.act.clean": "Clean the tree"
+  "notifications.steward.desk.act.clean": "Clean the tree",
+  "notifications.steward.desk.act.handover": "Hand over"
 }

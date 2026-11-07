@@ -386,16 +386,18 @@ describe('noteLines', () => {
     const notTaken = (code: string, why: string) => coded(code, '…', { agent: 'codex-acp', why });
 
     it('names each asker, in English and 中文', () => {
-      const parts = [asked('handover.asked'), asked('handover.asked-terminal'), asked('handover.asked-window')];
+      const parts = [asked('handover.asked'), asked('handover.asked-terminal'), asked('handover.asked-window'), asked('handover.asked-steward')];
       expect(parts.map((part) => noteLines(t, { parts: [part] }, 'en')[0].text)).toEqual([
         'Its agent asked to hand this session over; it waits for your yes or no to go on with codex-acp.',
         'You asked at a terminal to hand this session over to codex-acp: Daoris takes it at its next look.',
         'You asked in the window to hand this session over to codex-acp: Daoris takes it at its next look.',
+        'The steward asked to hand this session over to codex-acp: Daoris takes it at its next look.',
       ]);
       expect(parts.map((part) => noteLines(zh, { parts: [part] }, 'zh')[0].text)).toEqual([
         '它的智能体要求转交这个会话；转交给 codex-acp 前，等你同意或拒绝。',
         '你在终端要求把这个会话转交给 codex-acp：Daoris 会在下一次查看时接手。',
         '你在窗口中要求把这个会话转交给 codex-acp：Daoris 会在下一次查看时接手。',
+        '管家要求把这个会话转交给 codex-acp：Daoris 会在下一次查看时接手。',
       ]);
     });
 

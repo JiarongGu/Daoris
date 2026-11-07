@@ -343,6 +343,7 @@
   "note.handover.why.waiting": "它已有另一个转交在等待",
   "note.handover.asked-terminal": "你在终端要求把这个会话转交给 {{agent}}：Daoris 会在下一次查看时接手。",
   "note.handover.asked-window": "你在窗口中要求把这个会话转交给 {{agent}}：Daoris 会在下一次查看时接手。",
+  "note.handover.asked-steward": "管家要求把这个会话转交给 {{agent}}：Daoris 会在下一次查看时接手。",
   "note.handover.not-taken": "转交给 {{agent}} 没有完成：{{why}}。这个会话继续由它自己的智能体做。",
   "note.handover.not-taken-ends": "转交给 {{agent}} 没有完成：{{why}}。这个会话不会再继续。",
   "note.browser.withheld": "—— {{servers}} 要使用 Daoris 自己的浏览器，但没有交给它：",
