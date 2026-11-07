@@ -50,6 +50,8 @@ public sealed class DependencyStoreTests : IDisposable
         await GitAsync(Root, "init", "-q", "-b", "main");
         await GitAsync(Root, "config", "user.email", "test@example.com");
         await GitAsync(Root, "config", "user.name", "Test");
+        // A file written back is compared byte for byte: git checks it out as committed.
+        await GitAsync(Root, "config", "core.autocrlf", "false");
         await File.WriteAllTextAsync(Path.Combine(Root, ".gitignore"), "deps/\nout/\n");
         // CommonJS by its name: the fixture sits under this repository, whose package says its scripts are modules.
         await File.WriteAllTextAsync(Path.Combine(Root, "install.cjs"), Script);
