@@ -413,7 +413,6 @@
   "projects.setup.clear": "Clear",
   "projects.setup.twin.drive": "`daoris place drive|undrive {{repository}}`",
   "projects.setup.twin.hold": "`daoris place hold|resume {{repository}}`",
-  "projects.setup.heldStanding": "held from a terminal, under your standing confirmation",
   "projects.setup.stewardSet": "Set by the steward at {{time}}",
   "projects.setup.twin.trees": "`daoris place trees {{repository}} on|off`",
   "projects.setup.twin.line": "`daoris place line {{repository}} <branch>|--clear`",

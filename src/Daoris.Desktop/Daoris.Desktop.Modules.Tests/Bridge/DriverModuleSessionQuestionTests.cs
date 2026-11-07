@@ -174,6 +174,48 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
         Assert.False(read[0].TryGetProperty("word", out _));
     }
 
+    /// <summary>
+    /// The supervisor's course decision on a point a person's rule referred reads beside the question decisions, as codes and moments for
+    /// the page to word: the point, its count and value, the rule and its place, the act, the holder and where it stands. The owner's
+    /// <b>Overrule</b> of it is the same press as an answer's, and the read says it overruled; no sentence, receipt or word comes with it.
+    /// </summary>
+    [Fact]
+    public async Task A_course_decision_reads_back_beside_the_decisions_and_the_owners_overrule_takes_it_back()
+    {
+        var loop = Loop();
+        const string json = """[{"id":"s1","repository":"engine","state":"awaiting-person","quest":"q1","kind":"driven","created":"2026-10-22T08:00:00Z"}]""";
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new Records(json))));
+        var decisions = new QuestionSupervisorDecisions(loop.Home, new Appointed());
+        loop.Supervisor = decisions;
+        var module = new DriverModule(Bus, loop);
+        var at = DateTimeOffset.UtcNow;
+        var rule = new SupervisorRule("aa", SupervisorRules.AnswersAlone, "in-a-row", 2, SupervisorRules.Refer, null, "repository:engine", null);
+        var open = new RuleActed("s1", "s1", rule, 1, 2, true, "answers", at);
+
+        var none = (await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" })).GetProperty("courses");
+        Assert.Empty(none.EnumerateArray());
+
+        var kept = await decisions.CourseAsync(
+            new SupervisorCourse("s1", open.Id, "g-1", SupervisorCourseActs.GoOn, [new("The helper's answers are on the brief's question.", "the helper's answer w9")], new("terminal", null)),
+            new ReferredPoint("engine", open, null), at);
+        Assert.True(kept.Kept, kept.Why);
+
+        var held = (await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" })).GetProperty("courses").EnumerateArray().Single();
+        Assert.Equal((kept.Decision, open.Id, "answers-alone", 2, "aa", "repository:engine", "go-on", "held", "terminal"),
+            (held.GetProperty("id").GetString(), held.GetProperty("point").GetString(), held.GetProperty("count").GetString(), held.GetProperty("n").GetInt32(),
+                held.GetProperty("rule").GetString(), held.GetProperty("place").GetString(), held.GetProperty("do").GetString(),
+                held.GetProperty("state").GetString(), held.GetProperty("holder").GetProperty("kind").GetString()));
+        Assert.True(DateTimeOffset.Parse(held.GetProperty("goesOnAt").GetString()!) > DateTimeOffset.Parse(held.GetProperty("keptAt").GetString()!));
+        Assert.False(held.GetProperty("earlier").GetBoolean());
+        Assert.False(held.TryGetProperty("receipt", out _));
+        Assert.Empty((await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" })).GetProperty("decisions").EnumerateArray());
+
+        var overruled = await AnswerAsync(module, "SUPERVISOR_OVERRULE", new { id = "s1", decision = kept.Decision });
+        Assert.Equal((true, "overruled"), (overruled.GetProperty("done").GetBoolean(), overruled.GetProperty("state").GetString()));
+        var back = (await AnswerAsync(module, "SESSION_SUPERVISOR", new { id = "s1" })).GetProperty("courses").EnumerateArray().Single();
+        Assert.Equal("overruled", back.GetProperty("state").GetString());
+    }
+
     private sealed class Records(string json) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>

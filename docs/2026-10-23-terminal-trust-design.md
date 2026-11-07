@@ -3,7 +3,8 @@
 **Status: accepted (D201, by the steward 2026-10-23), round 3.** Written by Claude Opus from the code at `f506863e7`; revised after Codex's read (D191), whose twelve
 findings (eight blocking) were each checked against the code and taken, after the author's own check found one more and measured one
 fact, and after Fable's foundation read (D191's amendment: the design changes D156 point 4 and the containment every agent start rests
-on), whose ten findings (three blocking) were each checked and taken or answered (§11). Nothing is built.
+on), whose ten findings (three blocking) were each checked and taken or answered (§11). Nothing is built. **Since 2026-11-07 (D201's note) the grant this
+design describes is deleted: its four presses are the steward's acts, and its route, record, row and note part are gone from the code.**
 
 This design serves two parts of D193's company: **management** (the steward runs the owner's install for development and testing, and
 should not stop at the owner's desk for each routine act) and **the owner's attention** (D37: the person sets the target and verifies

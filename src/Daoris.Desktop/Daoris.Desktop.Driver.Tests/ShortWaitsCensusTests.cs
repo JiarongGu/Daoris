@@ -64,6 +64,8 @@ public sealed class ShortWaitsCensusTests
 
     private const string Driver = SourceFiles.DriverTestsProject;
 
+    private const string Modules = SourceFiles.ModulesTestsProject;
+
     /// <summary>What each listed short bound is, by <c>project/path: bound</c>, and why none of its sites is a wait on a signal.</summary>
     private static readonly (string Site, string Reason)[] Listed =
     [
@@ -86,12 +88,14 @@ public sealed class ShortWaitsCensusTests
         ($"{Driver}/Loop/HomeSizeBenchProcessTests.cs: TimeSpan BesideBudget", "an elapsed-time bound that states the claim: the work beside a look ends before the next"),
         ($"{Driver}/Loop/HomeSizeBenchProcessTests.cs: TimeSpan LookBudget", "an elapsed-time bound that states the claim: a look past the service's reads"),
         ($"{Driver}/Loop/HomeSizeBenchProcessTests.cs: TimeSpan ReviewBudget", "an elapsed-time bound that states the claim: what a tree's ignored build adds to a read"),
+        ($"{Driver}/Loop/LookWorkBenchProcessTests.cs: TimeSpan StageBudget", "an elapsed-time bound that states the claim: a look's overlaps, and a whole pass, where nothing moved take a second at most"),
         ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Second", "an input: a meeting's minute shrunk, which the product spends"),
         ($"{Driver}/Loop/MeetingTests.cs: TimeSpan Tenth", "an input: a meeting's minute shrunk, which the product spends"),
         ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMilliseconds(20))", "a window in which nothing happens: past the bound the ask is no longer waited on, and the claim is that it says false"),
         ($"{Driver}/Workflows/GraphPressTests.cs: WaitAsync(TimeSpan.FromMinutes(1))", "the product's own timeout argument on its pass asks, not a wait of the test's: its answer is read after the pass is done"),
         ($"{Driver}/Workplace/RefWatchProcessTests.cs: TimeSpan Within", "an elapsed-time bound that states the claim: a judgement begun within a second of git's exit"),
         ($"{Driver}/Workplace/SetAsideSlimTests.cs: TimeSpan Budget", "an input: the budget the keep's set-aside is handed"),
+        ($"{Modules}/Loop/SessionReadsBenchProcessTests.cs: TimeSpan WaitingBudget", "an elapsed-time bound that states the claim: the words waiting on three thousand ended chats read from one parse of the list"),
     ];
 
     /// <summary>What differs between the short bounds a scan found and the ones listed, each as a sentence.</summary>

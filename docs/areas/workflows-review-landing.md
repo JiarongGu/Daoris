@@ -153,7 +153,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they name ano
 28. For a graph run the runtime is the one performer of `land`. A `land` with no review before it is made active, with no press, in
     the round that readies it at its standing tree's tip, and the pass that finds it active at its tip starts it once on the
     landing door, off the pass, under the tree's hold and the delivery key, so a press and a pass land one delivery. A `land` whose
-    subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. Where the
+    subject moved while it was active runs again at the new tip once every delivery at the old one reads certain by phase. A run's
+    branch-side steps bind the tip of the branch its work stands on: the one its tree's agent moved onto, where the look learned it
+    (TREEFOLLOW1, the session branch's `now`), else its session branch; the end keeper judges that branch's tip, so a moved tree's
+    `content.holds` reads the tree at its bound commit and its merge is the one `landing` and `line` read. Where the
     branch's tip no longer reads (its tree tidied), a step bound there keeps its binding's revision and one not bound yet takes the commit
     its session branch records the line holding, so work merged outside the run reads its holds, landing and line reached and the run
     ends. The plan of a merge whose tree is gone names the line the settings set, else the one its session branch grew from, else says it

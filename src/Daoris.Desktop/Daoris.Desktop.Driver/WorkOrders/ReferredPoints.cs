@@ -1,18 +1,6 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the supervisor's course act is kept against (CONTEXTDRIVE1j): the line's repository, the point a <c>refer</c> holds it at (none
-/// where none is open), and the counts the keeping read, which a reason's <c>count:</c> source names.
-/// </summary>
-public sealed record ReferredPoint(string Repository, RuleActed? Open, IReadOnlyList<CountFact>? Counts);
-
-/// <summary>
-/// The release side of a referred point, as the look reads it at a course decision's release: why the point no longer takes the
-/// supervisor's go-on (null where it does), whether the line's session runs a turn now, and the count's own door.
-/// </summary>
-public sealed record CourseLine(Func<string, string, string?> Why, Func<string, bool> Running, Func<string, bool> GoOn);
-
-/// <summary>
 /// The points a <c>refer</c> rule holds a line at (CONTEXTDRIVE1j; the context counters design §4.6 point 3), read for the holder's list, at
 /// the keeping of the supervisor's course act and again at its release, which goes through the count's own door.
 /// <list type="bullet">
@@ -73,6 +61,17 @@ public sealed class ReferredPoints(string home, ISessionEvents events, GoOnMarks
     }
 
     /// <summary>
+    /// The quest's door as the supervisor goes through it: its own <i>Try again</i> (<paramref name="retry"/>, true where it was done), and where
+    /// it was, the note on the line that says who released it.
+    /// </summary>
+    private bool TryAgain(string session, Func<string, bool>? retry, IReadOnlyList<Consideration>? plan)
+    {
+        if (retry is null || Open(session, plan) is not { } open || !retry(open.Line)) return false;
+        events.Keep(session, AnswersAloneNotes.Retried(), say: null);
+        return true;
+    }
+
+    /// <summary>
     /// The release side, each record read by <paramref name="recordOf"/> and its run by <paramref name="running"/>. Given the planner's
     /// <paramref name="plan"/> and the quest's own <paramref name="retry"/> (its <i>Try again</i>, true where it was done), a quest's point is
     /// released through that door; without them only answers alone's is.
@@ -81,9 +80,7 @@ public sealed class ReferredPoints(string home, ISessionEvents events, GoOnMarks
         Func<string, PriorSession?> recordOf, Func<string, bool> running, IReadOnlyList<Consideration>? plan = null, Func<string, bool>? retry = null) =>
         new(
             (session, point) => Why(recordOf(session), session, point, plan), running,
-            session => marks.Read(session) is { Why: GoOnMarks.AnswersAlone }
-                ? GoOn(session)
-                : retry is not null && Open(session, plan) is { } open && retry(open.Line));
+            session => marks.Read(session) is { Why: GoOnMarks.AnswersAlone } ? GoOn(session) : TryAgain(session, retry, plan));
 
     // The plan holds the quest the act is on, on the session it acted on: parked by its failed sessions, or asking at that part's end.
     private static bool Holds(IReadOnlyList<Consideration> plan, RuleActed act, string session) =>

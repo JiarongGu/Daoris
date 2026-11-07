@@ -128,31 +128,6 @@ public sealed class PersonRoutes(DriverLoop loop)
                 "This no longer waits: it was answered in another window, or its terminal took it back."));
     }
 
-    // TERMTRUST1a (D201 point 5, the terminal-trust design §4.1): the person's standing confirmation, granted or revoked in the window
-    // alone. `presses`, the names ticked, `[]` to turn it off; answered `{ done, why?, message? }`, a refusal as data: `window-only` for
-    // the terminal's door (the census refuses it first), `not-offered` for a grant this build does not offer yet (D201's note on order),
-    // `unknown-press`, `newer` for a record a newer Daoris wrote, and `unwritten` for a record that could not be written (a revoke still
-    // stands for this run). It moves STATE's `standingConfirmation`.
-    [DriverRoute("SET_STANDING_CONFIRMATION", PipeClass.Window)]
-    [Owner("SET_STANDING_CONFIRMATION", None = OwnerNone.MachineSetting)]
-    [Publishes("SET_STANDING_CONFIRMATION", StateScopes.Driver)]
-    private Task<object?> SetStandingConfirmationAsync(StandingConfirmationPress press, CancellationToken cancellationToken)
-    {
-        if (PipeDoor.Now == PipeDoor.Terminal)
-        {
-            return Task.FromResult<object?>(new StandingChange(false, "window-only", "Only Daoris's window grants or revokes the standing confirmation."));
-        }
-
-        if (press.Presses is not { } presses)
-        {
-            return Task.FromResult<object?>(new StandingChange(false, "presses", "The standing confirmation is set by the presses ticked, a list."));
-        }
-
-        return Task.FromResult<object?>(_loop.Pipe is { } pipe
-            ? pipe.StandingConfirmation.Set(presses)
-            : new StandingChange(false, "no-pipe", "This Daoris serves no terminal, so it has no standing confirmation."));
-    }
-
     // D233 point 2: the start of the terminal that holds a role the role door staffed with the terminal, in the window alone, since the
     // key passes from the window to the tab. `{ role, share? }`, `role` the role's catalogue id, `share` the choice while a holder lives
     // (`own`, or a living holder's id). A new holder's tab is started first, Daoris's own pinned harness with the key in its environment,

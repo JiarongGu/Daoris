@@ -93,12 +93,6 @@ public sealed class InstancePipe : IDisposable
     /// <summary>The notification that tells a terminal its press waits for the person in the window (RPC1c), naming its request.</summary>
     public const string Confirming = "CONFIRMING";
 
-    /// <summary>
-    /// The notification that tells a terminal its press runs under the person's standing confirmation, with no card (TERMTRUST1a, D201
-    /// point 7, the terminal-trust design §5 step 4), naming its request.
-    /// </summary>
-    public const string Standing = "STANDING";
-
     /// <summary>The person refused the press in the window: nothing ran.</summary>
     public const string Refused = "refused";
 
@@ -181,7 +175,7 @@ public sealed class InstancePipe : IDisposable
     /// <param name="version">The build, as the hello names it.</param>
     /// <param name="limits">The bounds (<see cref="PipeLimits"/>'s where none are named).</param>
     /// <param name="clock">The clock a confirmation's ask and showing are written by, and the oldest's age read by: the system's, or a test's.</param>
-    /// <param name="standing">The person's standing confirmation (TERMTRUST1a): this home's where none is named; a test hands its own.</param>
+    /// <param name="standing">The roles' judge: this home's where none is named; a test hands its own.</param>
     public InstancePipe(
         IMessageDispatcher dispatcher, IEventBus bus, string home, MachineLog? log = null, PipeCensus? census = null,
         string? version = null, PipeLimits? limits = null, TimeProvider? clock = null, StandingConfirmation? standing = null)
@@ -208,14 +202,11 @@ public sealed class InstancePipe : IDisposable
         // CONFIRMWAIT1 (the confirm-wait design §15.2 item 8): each ending is written to the press's record before it is told or run.
         Confirmations.Persisting = Asking.Persisted;
         StandingConfirmation = standing ?? new StandingConfirmation(home, Log, clock: clock);
-        // Every window is told a use (§5 step 4), which the line in Notifications counts; never a value, only the count and its moment.
-        StandingConfirmation.Used ??= (seq, at) => _bus.Emit(StatePublisher.Module, StandingConfirmation.UsedEvent, new { Seq = seq, At = at });
         if (StandingConfirmation.Caller is StandingCaller look) look.OwnPipe = () => Name;
     }
 
     /// <summary>
-    /// The person's standing confirmation (TERMTRUST1a, D201): read as the pipe is first served, judged before a person's press is shown
-    /// to the window, granted and revoked only by the window's <c>SET_STANDING_CONFIRMATION</c>.
+    /// The roles' judge (D209): the terminals that hold a role this run, the role's acts judged and the steward's record and desk.
     /// </summary>
     public StandingConfirmation StandingConfirmation { get; }
 
@@ -336,8 +327,6 @@ public sealed class InstancePipe : IDisposable
             }
 
             _homeId = id;
-            // TERMTRUST1a (§4.2): the standing confirmation's record is read before the pipe serves, and kept in memory.
-            StandingConfirmation.Load();
             // The journal's folder is D172's `pipe` entry, asked of the table as every home path is (HOMELAYOUT2).
             // CONFIRMWAIT1a-ii (§7.2): made by the restore where it ran first, which journals what it brought back or lost.
             State.Journal ??= new PipeJournal(DaorisHome.Entry(Home, HomeEntry.Pipe), Limits.Kept);
@@ -597,12 +586,11 @@ public sealed class InstancePipe : IDisposable
     /// A press, run on the instance's lifetime and never the connection's (§6.1), its lines kept either side. One whose first
     /// line cannot be written is refused and never dispatched, so no id runs that the journal does not hold.
     /// </summary>
-    /// <param name="standing">That the person's standing confirmation admitted it (TERMTRUST1a): run inside <see cref="PipeDoor.EnterStanding"/>.</param>
     /// <param name="role">The role act the judge's role method covered (SUPERVISOR1a-ii): run inside <see cref="PipeDoor.EnterRole"/>.</param>
     /// <param name="begun">Told once the journal's first line is written or failed, before anything runs (CONFIRMWAIT1a-ii, §7.1).</param>
     /// <param name="client">The connection's client, which an open route that counts its caller reads (<see cref="PipeDoor.Client"/>; STEWARDROLE1c).</param>
     internal async Task RunAsync(
-        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered, bool standing = false,
+        IpcRequest request, string id, PipeBinding binding, TaskCompletionSource<string> answered,
         RoleJudgement? role = null, Action? begun = null, PipeClientProcess? client = null)
     {
         string text;
@@ -618,7 +606,7 @@ public sealed class InstancePipe : IDisposable
             else
             {
                 IpcResponse response;
-                using (role is not null ? PipeDoor.EnterRole(role, client) : standing ? PipeDoor.EnterStanding(client) : PipeDoor.Enter(client))
+                using (role is not null ? PipeDoor.EnterRole(role, client) : PipeDoor.Enter(client))
                 {
                     response = await Dispatcher.DispatchAsync(request, Lifetime.Token).ConfigureAwait(false);
                 }

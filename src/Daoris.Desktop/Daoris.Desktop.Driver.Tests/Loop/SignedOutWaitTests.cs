@@ -138,7 +138,7 @@ public sealed class SignedOutWaitTests : IDisposable
         var data = line.Data.ToDictionary(field => field.Key, field => field.Value);
         Assert.Equal(
             ("fake", null, "default", null, 1, "account-1,account-2"),
-            (data["adapter"], data["account"], data["workspace"], data["until"], data["quests"], data["signedOut"]));
+            (data["door"], data["account"], data["workspace"], data["until"], data["quests"], data["signedOut"]));
     }
 
     /// <summary>

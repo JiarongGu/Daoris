@@ -66,43 +66,11 @@ public sealed class OwnerSetTests : IDisposable
         var (_, key) = Appointed(judge);
         var plan = HelpProposals.Owned(new HelpProposal("p1", "setting", "undrive", "engine", null, null, null, "", "h1", "proposed"));
 
-        await using (await OwnerMarks.EnterAsync(judge, new Scopes(), HelpRoutes.Owned(plan), standing: false, CancellationToken.None))
+        await using (await OwnerMarks.EnterAsync(judge, new Scopes(), HelpRoutes.Owned(plan), CancellationToken.None))
         {
         }
 
         Assert.Equal(RoleWhy.OwnerSet, Act(judge, key, RoleKit.Probe.Named, """{"repository":"engine"}""").Why);
-    }
-
-    /// <summary>
-    /// D201's <c>Forget</c> moved into the mark: a hold the standing confirmation covered is forgotten by the owner's own press on the
-    /// repository, through any door, so its covered resume asks (<c>not-held-here</c>, the role's <c>not-own</c> in 1b); the covered
-    /// press's own mark keeps it.
-    /// </summary>
-    [Fact]
-    public async Task The_owner_s_resume_and_hold_after_a_covered_hold_leave_the_covered_resume_asking()
-    {
-        var held = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var judge = Judge(offered: true);
-        judge.HeldNow = held.Contains;
-        Assert.True(judge.Set(StandingPresses.Built).Done);
-        Assert.True(judge.Judge(DriverModule.Name, "SET_HOLD", Payload(new { repository = "engine", held = true }), null).Covered);
-        held.Add("engine");
-
-        // The covered press's own mark (under the standing door) keeps the hold it remembered.
-        await MarkAsync(judge, "SET_HOLD", new { repository = "engine", held = true }, standing: true);
-        Assert.True(judge.Judge(DriverModule.Name, "SET_HOLD", Payload(new { repository = "engine", held = false }), null).Covered);
-        held.Remove("engine");
-
-        // Held again by the covered press; then the owner's own Resume and Hold, from the window or Ask Daoris.
-        Assert.True(judge.Judge(DriverModule.Name, "SET_HOLD", Payload(new { repository = "engine", held = true }), null).Covered);
-        held.Add("engine");
-        await MarkAsync(judge, "SET_HOLD", new { repository = "engine", held = false });
-        held.Remove("engine");
-        await MarkAsync(judge, "SET_HOLD", new { repository = "engine", held = true });
-        held.Add("engine");
-
-        var resume = judge.Judge(DriverModule.Name, "SET_HOLD", Payload(new { repository = "engine", held = false }), null);
-        Assert.Equal((false, StandingWhy.NotHeldHere), (resume.Covered, resume.Why));
     }
 
     [Theory]
@@ -152,7 +120,7 @@ public sealed class OwnerSetTests : IDisposable
 
         var applied = Judge();
         var plan = HelpProposals.Owned(new HelpProposal("p2", "setting", "line", null, "games", "develop", null, "", "h1", "proposed"));
-        await using (await OwnerMarks.EnterAsync(applied, new Scopes(), HelpRoutes.Owned(plan), standing: false, CancellationToken.None))
+        await using (await OwnerMarks.EnterAsync(applied, new Scopes(), HelpRoutes.Owned(plan), CancellationToken.None))
         {
         }
 
@@ -247,7 +215,7 @@ public sealed class OwnerSetTests : IDisposable
         await inside.Task.WaitAsync(Poll.Patience);
         var owner = Task.Run(async () =>
         {
-            await using (await OwnerMarks.EnterAsync(served.Judge, served.Scopes, DriverModule.OwnerDoor("RETRY_QUEST", Payload(new { quest = "q1" }))!, false, CancellationToken.None))
+            await using (await OwnerMarks.EnterAsync(served.Judge, served.Scopes, DriverModule.OwnerDoor("RETRY_QUEST", Payload(new { quest = "q1" }))!, CancellationToken.None))
             {
             }
         });
@@ -266,7 +234,7 @@ public sealed class OwnerSetTests : IDisposable
         var waiting = served.AnswerAsync(QuestProbe.Named, """{"quest":"q2"}""");
         await Task.Delay(100);
         Assert.False(waiting.IsCompleted);
-        served.Judge.MarkOwner(new OwnerResolved([new RoleScope(OwnerKinds.Quest, "q2")], [], false), standing: false);
+        served.Judge.MarkOwner(new OwnerResolved([new RoleScope(OwnerKinds.Quest, "q2")], [], false));
         await held.DisposeAsync();
         var refused = await waiting;
         // An act that reached the gate finds the mark set there and answers so; on a loaded machine it may reach the door only after
@@ -379,14 +347,13 @@ public sealed class OwnerSetTests : IDisposable
         }
     }
 
-    private StandingConfirmation Judge(bool steward = true, bool offered = false) =>
-        new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside), offered: offered,
+    private StandingConfirmation Judge(bool steward = true) =>
+        new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
             walk: new StandingConfirmationTests.Walked()).Acting(steward, new RoleKit.Probe(), new QuestProbe());
 
     /// <summary>The steward's terminal started on <paramref name="judge"/>, the key its stand-in tab was handed.</summary>
     private static (HoldChange Change, string Key) Appointed(StandingConfirmation judge)
     {
-        judge.Load();
         var (change, key) = RoleKit.Start(judge, RoleKit.Stewarding(share: null));
         Assert.True(change.Answer.Done, change.Answer.Message);
         return (change, key!);
@@ -400,10 +367,10 @@ public sealed class OwnerSetTests : IDisposable
     }
 
     /// <summary>An owner's press of <paramref name="route"/> marked as the router marks it.</summary>
-    private static async Task MarkAsync(StandingConfirmation judge, string route, object payload, bool standing = false, IOwnerScopes? scopes = null)
+    private static async Task MarkAsync(StandingConfirmation judge, string route, object payload, IOwnerScopes? scopes = null)
     {
         var named = DriverModule.OwnerDoor(route, payload is JsonElement element ? element : Payload(payload)) ?? [];
-        await using (await OwnerMarks.EnterAsync(judge, scopes ?? new Scopes(), named, standing, CancellationToken.None))
+        await using (await OwnerMarks.EnterAsync(judge, scopes ?? new Scopes(), named, CancellationToken.None))
         {
         }
     }

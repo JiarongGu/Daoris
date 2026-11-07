@@ -136,7 +136,7 @@ export const HOME_ENTRIES = [
   row('keeping', 'data', 'data/keeping.json', 'keeping.json'),
   row('notices', 'data', 'data/notices.json', 'notices.json'),
   row('git-identities', 'data', 'data/git-identities.json', 'data/git-identities.json'),
-  // TERMTRUST1a (D201 point 6): named here, never read by the CLI.
+  // D201's grant, deleted: named here, never read by the CLI, so the desktop's migration finds a stored record to remove.
   row('standing-confirmation', 'data', 'data/standing-confirmation.json', 'data/standing-confirmation.json'),
   // MODELROLE1c2 (D205 §9.2): named here, never read by the CLI.
   row('agent-offers', 'data', 'data/agent-offers.json', 'data/agent-offers.json'),

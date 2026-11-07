@@ -18,7 +18,7 @@ import type { ParkQuestion } from '../waits/parkQuestion';
 import { type DetailRow, DetailsFold } from './DetailsFold';
 import { AccessChip, accessRow, startedFull } from './AccessFact';
 import { gitAccessRow, type SessionGitAccessHold } from './GitAccessFact';
-import { countRows, type LineSupervision, NO_SUPERVISION, supervisorRow } from './lineSupervision';
+import { countRows, courseRow, type LineSupervision, NO_SUPERVISION, supervisorRow } from './lineSupervision';
 import { ChoiceChip } from './ChoiceChip';
 import type { WaitEvents } from '../waits/anchors';
 import type { Answered } from '../InlineConfirm';
@@ -116,8 +116,10 @@ export function SessionHead({
   onAnswerSession, onAnswerChoice, answerPick, branch, ownBranch, onReview, onDiscardBranch, discardingBranch = false, headed = false, goAheads = [], onGoAhead,
   ownSignIn = false, nameOf, lands, landing, planning, onLand, onSayRebase, onName, discards, onDiscardTree, review, behind, opinion, onOpenQuest,
   continues, helps, onOpenSession, heavy, process, workAsk, workBusy = false, toEvent, rules, ruleAsk, seek, helpers, permissions, answers, gitAsks,
-  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess, terminalHold, supervision = NO_SUPERVISION,
+  question = null, parkBox = false, pieces, entry, waitingOn, gitAccess, terminalHold, supervisorCourse, supervision = NO_SUPERVISION,
 }: {
+  /** The supervisor's decision on a point its rule referred, the frame's `SessionSupervisorCourse`: *Overrule* while it is held. */
+  supervisorCourse?: ReactNode;
   /** The line's counts and the acts the person's rules made on it: *Details*' course rows and its Supervisor line. Absent, none is drawn. */
   supervision?: LineSupervision;
   /** A terminal holding this conversation (RPC1g1, D238), the frame's `SessionTerminalHold`: absent where none can be read. */
@@ -349,6 +351,7 @@ export function SessionHead({
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {terminalHold}
+      {supervisorCourse}
       {/* A member's thread (COWORKUX1b, d): whom it works for, *Back to lead*, and once it answered, *Ask again…* and the pass. */}
       {helpers?.team?.thread && <MemberThread {...helpers.team.thread} lead={helps?.title ?? helpers.team.thread.lead} />}
       {answered !== null && <AnsweredPark answer={answered} />}
@@ -582,6 +585,7 @@ export function SessionHead({
           // The line's counts and what the person's rules did with them (CONTEXTDRIVE1h), as the driver counted them.
           ...countRows(t, supervision),
           supervisorRow(t, supervision),
+          courseRow(t, supervision),
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool({ door: session.door, doorVersion: session.doorVersion }) },
           ...actorRows(t, session),

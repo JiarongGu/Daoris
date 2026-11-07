@@ -142,6 +142,44 @@ public sealed class SupervisorQuestCourseTests : IDisposable
         Assert.Equal(["q1"], tried);
     }
 
+    private int Notes(string code) =>
+        new SessionEvents(DaorisHome.Entry(_home, HomeEntry.Sessions)).After("s1", 0).Events
+            .Count(e => e.Kind == SessionEventKind.Note && e.Parts?.Any(part => part.Code == code) == true);
+
+    /// <summary>The person sees who released the quest: a note on its line when the supervisor makes its <i>Try again</i>, and none where it did not.</summary>
+    [Fact]
+    public async Task The_supervisors_try_again_is_said_on_the_quests_line_and_a_refused_one_says_nothing()
+    {
+        var book = Book(Rule(SupervisorRules.Failures, 3, SupervisorRules.Refer));
+        var act = Kept(Acts([Parked], book).Single());
+        var decisions = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        var points = Points(book);
+        await decisions.CourseAsync(
+            new SupervisorCourse("s1", act.Id, "g-1", SupervisorCourseActs.GoOn, [new SupervisorReason("Its failures were the account's.", "the quest's failed sessions in its records")], new SupervisorHolder(RoleHolders.Terminal, null)),
+            points.PointOf(Last, null, [Parked]), At);
+
+        Assert.Equal(0, Notes(HeldNoteCodes.SupervisorRetried.Code));
+        Assert.Equal([SupervisorState.WentOn], await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false, [Parked], _ => true), At.AddMinutes(2), [SupervisorRules.Failures]));
+
+        Assert.Equal(1, Notes(HeldNoteCodes.SupervisorRetried.Code));
+        Assert.Equal(0, Notes(HeldNoteCodes.AnswersSupervised.Code));
+    }
+
+    [Fact]
+    public async Task A_try_again_the_quests_door_refused_leaves_no_note()
+    {
+        var book = Book(Rule(SupervisorRules.Failures, 3, SupervisorRules.Refer));
+        var act = Kept(Acts([Parked], book).Single());
+        var decisions = new QuestionSupervisorDecisions(_home, new Admits("g-1"));
+        var points = Points(book);
+        await decisions.CourseAsync(
+            new SupervisorCourse("s1", act.Id, "g-1", SupervisorCourseActs.GoOn, [new SupervisorReason("Its failures were the account's.", "the quest's failed sessions in its records")], new SupervisorHolder(RoleHolders.Terminal, null)),
+            points.PointOf(Last, null, [Parked]), At);
+
+        Assert.Equal([SupervisorState.Stale], await decisions.ReleaseCoursesAsync(points.Line(_ => Last, _ => false, [Parked], _ => false), At.AddMinutes(2), [SupervisorRules.Failures]));
+        Assert.Equal(0, Notes(HeldNoteCodes.SupervisorRetried.Code));
+    }
+
     [Fact]
     public async Task A_quests_point_is_left_to_the_answers_alone_release_and_the_quests_to_its_own()
     {

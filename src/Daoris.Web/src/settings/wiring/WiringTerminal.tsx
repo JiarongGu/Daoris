@@ -38,16 +38,11 @@ function Found({ found }: { found: SystemWiring['terminal']['firstDaoris'] }) {
  * @remarks
  * A molecule: drawn from props. It sets nothing and copies nothing itself: the PATH presses and *Copy a terminal line* come in as `setup`.
  */
-export function WiringTerminal({ terminal, variables, standing, setup }: {
+export function WiringTerminal({ terminal, variables, setup }: {
   terminal: SystemWiring['terminal'];
   variables: SystemWiring['variables'];
   /** The set-up rows (WIRING1e): *Put on my PATH* and *Copy a terminal line*, drawn by the domain; none where the shell offers none. */
   setup?: ReactNode;
-  /**
-   * The standing confirmation's row (TERMTRUST1a, `WiringStanding`), beside the launchers and the address file; none where the
-   * shell says none (an older one, or one serving no pipe), which draws no row.
-   */
-  standing?: ReactNode;
 }) {
   const { t } = useTranslation();
   const { address } = terminal;
@@ -98,7 +93,6 @@ export function WiringTerminal({ terminal, variables, standing, setup }: {
           </p>
         )}
       </SettingRow>
-      {standing}
       {setup}
       {ACCOUNT_VARIABLES.map((name) => {
         const found = variables.find((variable) => variable.name === name);

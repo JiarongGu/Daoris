@@ -8,9 +8,6 @@ namespace Daoris.Driver;
 /// </param>
 public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
 {
-    /// <summary>The code a finish under the standing confirmation answers where a process for the session runs here.</summary>
-    public const string RunningHere = "running-here";
-
     /// <summary>The sessions a verb names.</summary>
     public IReadOnlyList<string> Ids { get; init; } = [];
 
@@ -61,13 +58,6 @@ public sealed record SessionsAsk(string Verb) : ISupervisorAsk, IParticipantsAsk
 
     /// <summary>A helper ask's <c>--to-me</c>: its answer is the person's until <c>sessions pass</c>.</summary>
     public bool ToMe { get; init; }
-
-    /// <summary>
-    /// That the press runs under the person's standing confirmation: the pipe admitted it with no card. A stop's records gain
-    /// <see cref="EndNoteCodes.StandingTerminal"/>; a finish never takes the request folder, answering <c>running-here</c> where a
-    /// process for the session runs here, and is moved by the ledger only from <c>awaiting-person</c>.
-    /// </summary>
-    public bool Standing { get; init; }
 
     /// <summary>
     /// The supervisor's answer (<c>sessions supervise &lt;id&gt; --choice …</c>): its question, generation, label and reasons; or its

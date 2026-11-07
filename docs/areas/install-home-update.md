@@ -32,8 +32,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `UpdateCommand` | `Drv/Install/UpdateCommand.cs` | The terminal's door, `daoris update` |
 | `StartConfirmation` | `Drv/Install/StartConfirmation.cs` | Whether this start can still be rolled back, read from the swap journal |
 | `HomeLastBuild` | `Drv/Install/HomeLastBuild.cs` | `data/last-build.json`: the newest build that ran on the home; the launcher's refusal of an older one. Compiled into the launcher |
-| `InstallRollback` | `Drv/Workplace/InstallRollback.cs` | Refuses going back to an older build while a delivery is unresolved |
-| `UpdateRefusal` | `Drv/Install/UpdateRefusal.cs` | Why a staged build is not installed now, asked by the application and `daoris update --now` alike |
+| `InstallRollback`, `DeliveryGoingBack` | `Drv/Workplace/InstallRollback.cs`, `Drv/Workplace/DeliveryGoingBack.cs` | Refuses going back to an older build while a delivery is unresolved; installs that refusal into Install's port |
+| `UpdateRefusal`, `GoingBackRefusals` | `Drv/Install/UpdateRefusal.cs`, `Drv/Install/GoingBackRefusals.cs` | Why a staged build is not installed now, asked by the application and `daoris update --now` alike, and the version this build runs; the going back asked through the port Workplace fills, the deliveries being above Install |
 | `DesktopStore` | `Drv/Store/DesktopStore.cs` | `data/desktop.db`: the connection, the writer stamp, settled-gated imports; its numbered steps are `DesktopStoreSteps.cs` beside it (`DesktopStore.Steps` is the door), its open options `DesktopStoreOptions.cs` |
 | `HomeMigration` | `Drv/Transitional/Migration/HomeMigration.cs`, its steps beside it | The release's one migration: its steps, each file copied into `data/salvage/` first, each step recorded |
 | `Tools` | `Drv/Install/Tools.cs` (records in `ToolWay.cs`, `ToolsRead.cs`) | `tools.json`: the declared tools, each one's way, the resolution, the children's environment |

@@ -29,7 +29,7 @@ export type WiringDoors = {
  * the whole domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1). A molecule: every state by props.
  */
 export function WiringCards({
-  wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space, standing, onOpen, terminalSetup, addressSetup,
+  wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space, onOpen, terminalSetup, addressSetup,
 }: {
   /** *Open* on a folder or file row, by the id the read gave (WIRING1e). */
   onOpen?: (id: string) => void;
@@ -49,8 +49,6 @@ export function WiringCards({
   onDownloads?: () => void;
   /** The Disk space card (KEEP1c), after Folders: the domain draws it from its own read (`WiringSpace`). */
   space?: ReactNode;
-  /** The Terminal card's standing confirmation row (TERMTRUST1a): the domain draws it from the driver's state (`WiringStanding`). */
-  standing?: ReactNode;
 }) {
   return (
     <>
@@ -68,7 +66,7 @@ export function WiringCards({
         onTools={doors.tools}
         onDriver={doors.driver}
       />
-      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} standing={standing} setup={terminalSetup} />
+      <WiringTerminal terminal={wiring.terminal} variables={wiring.variables} setup={terminalSetup} />
       <WiringKnowledge knowledge={wiring.knowledge} tier={wiring.service.tier} tierWhy={wiring.service.tierWhy} onAi={doors.ai} />
       <WiringLogs logs={wiring.logs} onOpenFolder={onOpenLogFolder} onLog={doors.logs} />
       {wiring.toolHome && <WiringToolHome toolHome={wiring.toolHome} measuring={wiring.measuring} />}

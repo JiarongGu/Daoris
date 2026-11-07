@@ -17,6 +17,9 @@ public static class HeldNoteCodes
     public static readonly NoteCode AnswersSupervised = new("answers.supervised", []);
     public static readonly NoteCode SupervisorUnreferred = new("supervisor.unreferred", []);
 
+    // The same, on a quest its failures parked or its failed choice asked about: the supervisor made the quest's own *Try again*.
+    public static readonly NoteCode SupervisorRetried = new("supervisor.retried", []);
+
     // ——— A rule of the person's acted on the line: the count it reads (`counted`, a name) and what it stood at, the rule's bound, its place
     // and its act. Its own value names, since `count` and `at` are a number and a moment on every other note.
     public static readonly NoteCode SupervisorRule = new("supervisor.rule", ["counted", "n", "bound", "place", "do"]);

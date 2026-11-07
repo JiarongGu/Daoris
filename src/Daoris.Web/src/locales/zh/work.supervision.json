@@ -7,5 +7,21 @@
   "work.supervision.acted": "你的主管规则已生效 {{count}} 次，最近一次在 {{when}}：{{counted}} {{n}}，{{act}}",
   "work.supervision.acted_other": "你的主管规则已生效 {{count}} 次，最近一次在 {{when}}：{{counted}} {{n}}，{{act}}",
   "work.supervision.chip": "{{counted}} {{n}}／{{at}}",
-  "work.supervision.chipTip": "你的规则在这项计数到 {{at}} 时生效；现在是 {{n}}。"
+  "work.supervision.chipTip": "你的规则在这项计数到 {{at}} 时生效；现在是 {{n}}。",
+  "work.supervision.decision": "主管的决定",
+  "work.supervision.cardTitle": "主管的决定",
+  "work.supervision.referred": "你为{{counted}}（{{place}}）设的规则在 {{n}} 时请主管判断；它决定{{choice}}，{{when}}。",
+  "work.supervision.whole": "{{says}}{{stands}}",
+  "work.supervision.choice.go-on": "继续",
+  "work.supervision.choice.hold": "交给你处理",
+  "work.supervision.course.held": "到 {{at}} 时继续，除非你否决它。",
+  "work.supervision.course.went-on": "已继续。",
+  "work.supervision.course.overruled": "你否决了它。",
+  "work.supervision.course.stale": "没有继续：{{why}}。",
+  "work.supervision.course.left": "等你处理。",
+  "work.supervision.why.rule-holds": "你的规则现在拦住了这条线",
+  "work.supervision.why.answered": "这个节点已另行处理",
+  "work.supervision.why.role-changed": "主管的角色变了",
+  "work.supervision.overrule": "否决",
+  "work.supervision.overruleRefused": "它已经继续了，无法否决。"
 }

@@ -81,6 +81,7 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         return new
         {
             Decisions = _loop.Supervisor.History(press.Id).Select(SupervisorDecisionRow).ToList(),
+            Courses = _loop.Supervisor.CoursesOf(press.Id).Select(SupervisorCourseRow).ToList(),
             Counts = SessionCountsWire.Counts(facts),
             Acts = SessionCountsWire.Acts(facts),
         };
@@ -94,6 +95,25 @@ internal sealed class SessionsWaitDesk(DriverContext context)
         view.Choice,
         view.Bound,
         Reasons = view.Reasons.Select(reason => new { reason.Says, reason.Source }).ToList(),
+        Holder = new { view.Holder.Kind, view.Holder.Parent },
+        State = SupervisorStates.Spell(view.State),
+        view.Why,
+        KeptAt = Moments.Write(view.KeptAt),
+        GoesOnAt = Moments.Write(view.GoesOnAt),
+        StateAt = Moments.Write(view.StateAt),
+        view.Earlier,
+    };
+
+    /// <summary>One course decision as the page reads it: the point's count, value, rule and place, the act and where it stands, no sentence.</summary>
+    internal static object SupervisorCourseRow(SupervisorCourseView view) => new
+    {
+        view.Id,
+        view.Point,
+        view.Count,
+        view.N,
+        view.Rule,
+        view.Place,
+        view.Do,
         Holder = new { view.Holder.Kind, view.Holder.Parent },
         State = SupervisorStates.Spell(view.State),
         view.Why,

@@ -700,6 +700,7 @@ function RuleHeldHead(args: ComponentProps<typeof SessionPageHead>) {
   const chip = supervisionChip(t, {
     counts: [{ count: 'answers-alone', n: 2, known: 'exact', from: 'admission', watch: { at: 2, do: 'hold', place: 'repository:engine' } }],
     acts: [],
+    courses: [],
   });
   return <Page><SessionPageHead {...args} chip={chip} /></Page>;
 }
