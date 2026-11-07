@@ -67,7 +67,8 @@ public sealed class QuestionSupervisorDecisions
     }
 
     /// <summary>Whether a holder is admitted for <paramref name="repository"/> now: the agent supervisor is on there.</summary>
-    public bool Admits(string? repository) => repository is not null && _admission.Admit(repository) is { Why: null, Generation: not null };
+    public bool Admits(string? repository) =>
+        repository is not null && _admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: repository), SupervisorKinds.Answer) is { Why: null, Generation: not null };
 
     /// <summary>Keep a course act on a referred point (<see cref="SupervisorCourses.KeepAsync"/>).</summary>
     public Task<SupervisorKept> CourseAsync(SupervisorCourse course, ReferredPoint point, DateTimeOffset now, CancellationToken ct = default) =>

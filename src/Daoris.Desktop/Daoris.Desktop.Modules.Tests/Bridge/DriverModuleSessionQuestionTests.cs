@@ -96,7 +96,7 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
     /// <summary>The injected admission: the door that answers it lands in 1a-ii, and production refuses every act.</summary>
     private sealed class Appointed : IDecisionAdmission
     {
-        public DecisionAdmitted Admit(string repository) => new("g-1", null);
+        public DecisionAdmitted Admit(string kind, RolePlace place, string? act) => new("g-1", null);
     }
 
     /// <summary>The records, and the take-back door answering done, each word it took kept.</summary>

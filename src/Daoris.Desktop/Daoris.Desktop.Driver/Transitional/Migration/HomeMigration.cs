@@ -48,7 +48,11 @@ public static class HomeMigration
         new LineageFilesStep(),
         new BrainstormFilesStep(),
         new StandingGrantStep(),
+        new SupervisorStep(),
     ];
+
+    /// <summary>Whether <paramref name="home"/>'s record holds <paramref name="step"/> of this migration as done.</summary>
+    public static bool Recorded(string home, string step) => Done(DaorisHome.Entry(home, HomeEntry.Migration)) is { } done && done.Contains(step);
 
     /// <summary>
     /// Run the steps <paramref name="home"/>'s record does not hold, under the home's lease, recording each as it finishes. A lease still

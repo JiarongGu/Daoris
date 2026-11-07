@@ -18,7 +18,7 @@ public sealed class RoleVerb : ChoiceVerb
 
     private const string Grammar =
         "`driver role set <id> [--name \"…\"] [--name-in <tag>=\"…\"]… [--takes <work,…>] [--scope machine|workspace:<id>|repository:<id>] "
-        + "[\"<agent> [<model>|-] [<effort>|-]\" … | off]`, an appointed role's `[--acts <act,…>] [--holder terminal|rules|none] [--window <1-60>]`, "
+        + "[\"<agent> [<model>|-] [<effort>|-]\" … | off]`, an appointed role's `[--decides <kind,…>|every] [--acts <act,…>] [--holder terminal|rules|none] [--window <1-60>]`, "
         + "`driver role remove <id>`, `driver role default <id>` or `driver role default --all`";
 
     /// <summary><c>role suggested [--use]</c>: the choices Daoris suggests for the seeded roles, said, or with <c>--use</c> set through the role door; null for the rest.</summary>
@@ -349,6 +349,7 @@ public sealed class RoleVerb : ChoiceVerb
         var takes = current?.Takes ?? [];
         var scope = current?.Scope ?? RoleScope.Everywhere;
         var (acts, holder, window, appointed) = (current?.Hold?.Acts, current?.Hold?.Holder, current?.Hold?.Window ?? RoleHold.DefaultWindow, current?.Hold is not null);
+        var decides = current?.Hold?.Decides;
         var entries = new List<ActorChoice>();
         var off = false;
         for (var at = 0; at < rest.Count; at++)
@@ -361,6 +362,10 @@ public sealed class RoleVerb : ChoiceVerb
                 case "--zh": name = NameIn(name, $"zh={Value()}"); break;
                 case "--takes": takes = [.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)]; break;
                 case "--scope": scope = Scope(Value()); break;
+                case "--decides":
+                    var kinds = Value();
+                    (decides, appointed) = (kinds == "every" ? [] : [.. kinds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)], true);
+                    break;
                 case "--acts": (acts, appointed) = ([.. Value().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)], true); break;
                 case "--holder": (holder, appointed) = (Value() is var held && held == "none" ? null : held, true); break;
                 case "--window":
@@ -377,12 +382,14 @@ public sealed class RoleVerb : ChoiceVerb
         if (off && entries.Count > 0) throw new ChoiceWords($"`off` is a role's whole staffing, never beside its choices: {Grammar}.");
         if (name is null) throw new ChoiceWords($"a new role names itself (`--name`): {Grammar}.");
         IReadOnlyList<ActorChoice>? choices = off ? [] : entries.Count > 0 ? entries : null;
-        // An appointed role keeps its acts in place of work, its kind its own or the one its acts name; the judge refuses a record holding both.
+        // An appointed role keeps its acts in place of work, its kind its own, a supervisor's where it names what it decides, or the one
+        // its acts name, so a new supervisor with nothing granted is set as the editor makes it; the judge refuses a record holding both.
         if (appointed)
         {
-            var kind = current?.Hold?.Kind ?? AppointedRoles.KindOf(acts ?? [])
-                ?? throw new ChoiceWords($"a new appointed role names the supervisor's acts or the steward's (`--acts`): {Grammar}.");
-            return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Appointed, takes, scope, new RoleHold(kind, acts ?? [], holder, window))), choices);
+            var kind = current?.Hold?.Kind ?? (decides is not null ? AppointedRoles.Supervisor : AppointedRoles.KindOf(acts ?? []))
+                ?? throw new ChoiceWords($"a new appointed role names what the supervisor decides (`--decides`) or the steward's acts (`--acts`): {Grammar}.");
+            var hold = new RoleHold(kind, acts ?? [], holder, window) { Decides = decides ?? [] };
+            return (RoleChange.Set(new RoleRecord(id, name, RoleRecord.Appointed, takes, scope, hold)), choices);
         }
 
         if (takes.Count == 0) throw new ChoiceWords($"a new role names the work it takes (`--takes`): {Grammar}.");

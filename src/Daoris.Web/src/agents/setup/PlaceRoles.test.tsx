@@ -321,7 +321,7 @@ describe('A place page, Roles', () => {
   // A workspace's supervisor is a role of the catalogue, placed at the workspace: its place's Roles holds it among the Appointed roles.
   const SUPERVISOR: RoleRow = {
     id: 'supervisor', state: 'set', seeded: false, name: { en: 'Supervisor', zh: '督导' }, takes: [], scopeKind: 'workspace', scopeId: 'aurora', revision: 1,
-    hold: { kind: 'supervisor', acts: ['answer'], holder: 'rules', window: 5 },
+    hold: { kind: 'supervisor', acts: ['question.answer'], holder: 'rules', window: 5 },
   };
 
   it("holds a workspace's supervisor among its Appointed roles, held by its rules, and a repository's place none", async () => {

@@ -26,7 +26,7 @@ internal sealed class SupervisorReleasing(SupervisorBook book, IDecisionAdmissio
             {
                 if (!book.Live.TryGetValue(id, out var decision) || decision.State != SupervisorState.Held) return (SupervisorState?)null;
                 if (decision.Receipt is null && now < decision.GoesOnAt) return null;
-                if (admission.Admit(decision.Repository) is not { Why: null, Generation: { } generation } || generation != decision.Generation)
+                if (admission.Admit(SupervisorKinds.Question, new RolePlace(Repository: decision.Repository), SupervisorKinds.Answer) is not { Why: null, Generation: { } generation } || generation != decision.Generation)
                 {
                     return book.Move(decision, SupervisorState.Stale, now, SupervisorWhy.Revoked);
                 }

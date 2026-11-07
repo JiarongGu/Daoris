@@ -29,8 +29,11 @@ public sealed class RoleCatalogJudgeTests : IDisposable
 
     private static string? Code(RoleRefusal? refusal) => refusal?.Code;
 
-    private static RoleRecord Supervisor(string id, RoleScope? scope = null, string? holder = RoleHolders.Terminal, int window = RoleHold.DefaultWindow) =>
-        new(id, AuthoredText.Of("Supervisor"), RoleRecord.Appointed, [], scope ?? Workspace(), new RoleHold(AppointedRoles.Supervisor, AppointedRoles.SupervisorActs, holder, window));
+    private static RoleRecord Supervisor(
+        string id, RoleScope? scope = null, string? holder = RoleHolders.Terminal, int window = RoleHold.DefaultWindow, IReadOnlyList<string>? decides = null,
+        IReadOnlyList<string>? acts = null) =>
+        new(id, AuthoredText.Of("Supervisor"), RoleRecord.Appointed, [], scope ?? Workspace(),
+            new RoleHold(AppointedRoles.Supervisor, acts ?? (decides is null ? SupervisorKinds.Seeded : []), holder, window) { Decides = decides ?? [] });
 
     /// <summary>The supervisor and the steward are seeded catalogue roles, judged by the one judge as every role is.</summary>
     [Fact]
@@ -76,9 +79,54 @@ public sealed class RoleCatalogJudgeTests : IDisposable
         var catalog = RoleCatalog.Of([RoleCatalogTests.Stored(Supervisor("supervisor-w1"))]);
         Assert.Equal("two-roles-one-work", Code(catalog.Judge(RoleChange.Set(Supervisor("lead-w1")))));
         Assert.Null(catalog.Judge(RoleChange.Set(Supervisor("lead-w2", Workspace("w2")))));
-        Assert.Equal("supervisor-w1", catalog.Appointed(AppointedRoles.Supervisor, new RolePlace("w1", "engine"))?.Id);
-        Assert.Equal(AppointedRoles.Supervisor, catalog.Appointed(AppointedRoles.Supervisor, new RolePlace("w2", "engine"))?.Id);
-        Assert.Equal(AppointedRoles.Steward, catalog.Appointed(AppointedRoles.Steward, new RolePlace("w1", "engine"))?.Id);
+        Assert.Equal("supervisor-w1", catalog.Supervising(SupervisorKinds.Question, new RolePlace("w1", "engine")).Role?.Id);
+        Assert.Equal(AppointedRoles.Supervisor, catalog.Supervising(SupervisorKinds.Question, new RolePlace("w2", "engine")).Role?.Id);
+        Assert.Equal(AppointedRoles.Steward, AppointedRoles.StewardOf(catalog.HoldingActs)?.Id);
+    }
+
+    [Fact]
+    public void A_generic_supervisor_and_one_of_a_kind_share_a_scope_but_two_of_one_kind_or_two_generic_never_do()
+    {
+        var catalog = RoleCatalog.Of([RoleCatalogTests.Stored(Supervisor("supervisor-w1")), RoleCatalogTests.Stored(Supervisor("gatekeeper", decides: [SupervisorKinds.Allow, SupervisorKinds.Landing]))]);
+        Assert.Null(catalog.Judge(RoleChange.Set(Supervisor("asker", decides: [SupervisorKinds.Question], acts: ["question.answer"]))));
+        var twin = catalog.Judge(RoleChange.Set(Supervisor("keeper", decides: [SupervisorKinds.Landing])));
+        Assert.Equal("two-roles-one-work", Code(twin));
+        Assert.Contains("`gatekeeper` already decides `landing`", twin!.Said, StringComparison.Ordinal);
+        Assert.Equal("two-roles-one-work", Code(catalog.Judge(RoleChange.Set(Supervisor("second-w1")))));
+        Assert.Null(catalog.Judge(RoleChange.Set(Supervisor("keeper", Workspace("w2"), decides: [SupervisorKinds.Landing]))));
+    }
+
+    [Fact]
+    public void The_machine_s_generic_supervisor_is_not_removed_scoped_away_or_given_kinds()
+    {
+        var supervisor = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Supervisor);
+        Assert.Equal(SupervisorKinds.Seeded, supervisor.Hold!.Acts);
+        Assert.True(supervisor.Hold.Generic);
+        Assert.Equal("may-not-be-off", Code(Seeded.Judge(RoleChange.Set(supervisor with { Hold = supervisor.Hold with { Decides = [SupervisorKinds.Question], Acts = ["question.answer"] } }))));
+        Assert.Null(Seeded.Judge(RoleChange.Set(Supervisor("asker", RoleScope.Everywhere, decides: [SupervisorKinds.Question]))));
+    }
+
+    [Fact]
+    public void A_supervisor_decides_kinds_of_the_vocabulary_and_grants_only_their_acts()
+    {
+        Assert.Null(Seeded.Judge(RoleChange.Set(Supervisor("gatekeeper", decides: [SupervisorKinds.Allow], acts: ["allow.once", "allow.reject"]))));
+        Assert.Null(Seeded.Judge(RoleChange.Set(Supervisor("gatekeeper", decides: [SupervisorKinds.Allow], acts: []))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("gatekeeper", decides: ["go-ahead"])))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("gatekeeper", decides: [SupervisorKinds.Allow], acts: ["question.answer"])))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("gatekeeper", decides: [SupervisorKinds.Allow, SupervisorKinds.Allow])))));
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(Supervisor("old", acts: ["answer", "defer"])))));
+        var steward = RoleCatalog.Seed.Single(role => role.Id == AppointedRoles.Steward);
+        Assert.Equal("bad-record", Code(Seeded.Judge(RoleChange.Set(steward with { Hold = steward.Hold! with { Decides = [SupervisorKinds.Question] } }))));
+    }
+
+    [Fact]
+    public void A_supervisor_s_decides_is_written_and_read_back_and_a_generic_one_writes_none()
+    {
+        var gatekeeper = Supervisor("gatekeeper", decides: [SupervisorKinds.Allow], acts: ["allow.once"]);
+        var read = RoleCatalog.Of([RoleCatalogTests.Stored(gatekeeper), RoleCatalogTests.Stored(Supervisor("supervisor-w1"))]);
+        Assert.Equal([SupervisorKinds.Allow], read.Slots.Single(slot => slot.Id == "gatekeeper").Role!.Hold!.Decides);
+        Assert.Empty(read.Slots.Single(slot => slot.Id == "supervisor-w1").Role!.Hold!.Decides);
+        Assert.DoesNotContain("decides", RoleCatalogTests.Stored(Supervisor("supervisor-w1")).Record, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -175,7 +223,7 @@ public sealed class RoleCatalogJudgeTests : IDisposable
         Assert.Equal(
             [
                 "appointed-not-configurable", "mixed-shape", "unknown-work", "bad-record", "may-not-be-off", "two-roles-one-work", "choices",
-                "policy",
+                "policy", "not-converted",
             ],
             RoleCatalog.Codes);
     }

@@ -69,7 +69,14 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 7. `supervisor` (held by the person's rules) and `steward` (held by no one) are seeded machine-wide; a seeded id keeps its
    shape and kind (`mixed-shape`). An agent holder is refused `appointed-not-configurable`, as are choices on an appointed role.
    The steward works on the machine alone and is never held by rules; the supervisor's holder is rules or the terminal, its
-   window 1 to 60 minutes; two of one kind never share a scope; the machine's supervisor may not be removed. (from D233)
+   window 1 to 60 minutes. A supervisor's `decides` names the kinds of decision it answers (`SupervisorKinds`: `question`,
+   `course`, `limit`, `allow`, `files`, `landing`); none makes it its scope's generic supervisor, which answers what no kind
+   takes there. Its `authority` grants acts as `<kind>.<act>`, only of the kinds it decides, each off on a new record; the seed
+   grants `question.answer`, `course.go-on` and `limit.move`. A scope holds one generic supervisor and one per kind
+   (`two-roles-one-work`); the machine's generic supervisor may not be removed, scoped away or given kinds (`may-not-be-off`).
+   The role door writes no supervisor record before the home's `supervisor-kinds` migration step is recorded (`not-converted`);
+   that step first keeps this build as the home's newest build and reads it back, then grants a stored `answer` as the seed's
+   three and drops `defer` in `roles` and every `role_revisions` row, and gives each decision file its `kind`. (from D233)
 8. A start keeps its role and the role's revision on its binding, and a census holds the two to the work. Changing or
    removing a role touches no running session; a continuation reads the role that takes its work now. (from D212)
 9. One door changes roles: `RoleDoor`, reached by `SET_ROLE`, `SET_ROLES`, `daoris role` and `role_propose`
@@ -189,9 +196,17 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 
 **The supervisor and the steward**
 
-41. They are staffed through the role door like every role (`SET_ROLE`, `driver role set --acts --holder --window`,
-    `role_propose`). The act judge reads the catalogue at each act, answer and admission: the most specific scope's role of the
-    kind that covers the place, held by the terminal. Ask Daoris may explain the supervisor, never overrule it. (from D233)
+41. They are staffed through the role door like every role (`SET_ROLE`, `driver role set --decides --acts --holder --window`,
+    `role_propose`). The act judge reads the catalogue at each act, answer and admission. One resolver
+    (`SupervisorResolution.Find`, `RoleCatalog.Supervising`) names who decides a decision of a kind at a place, kind first: the
+    repository's, the workspace's, then the machine's supervisor deciding the kind, else the repository's, the workspace's, then
+    the machine's generic one, the repository placed in the workspace `repository_workspaces` keeps. An unreadable appointed
+    record covering the place, or a workspace map that does not read, makes the decision the person's. The admission
+    (`Admit(kind, place, act)`) answers that supervisor's hold where its holder is the started terminal and
+    `SupervisorGrants.Covers` grants the act, else `not-staffed`, `not-started` or `not-granted`; a leave asks no grant. The judge
+    refuses a holder's answer or go-on its grants do not cover `not-granted`, and the keeping, the releases and the tickets ask the
+    admission with the decision's kind and act, so a grant taken away by any process stops the next step. The steward is the
+    catalogue's one steward. Ask Daoris may explain the supervisor, never overrule it. (from D233)
 42. A role held by the terminal acts once the window starts its terminal (`START_ROLE_TERMINAL`, the window's alone); unstarted
     is `not-started`, another holder `not-staffed`, a hold the role no longer reads as `role-changed`. Unstaffed is off. The
     agent supervisor is on for a place exactly where its supervisor's holder is `terminal` and that terminal is started: the
@@ -203,8 +218,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     writes, running only read tools and its roles' verbs. Every other verb refuses `role-terminal`. (from D208, D209)
 45. The holder key is drawn at the appointment, kept only as a hash in memory, and stripped from every other start. The
     verb sends an HMAC proof over the hello's nonce, only to the install's own executable. (from D208, D209)
-46. The supervisor answers a parked session's recorded question with one offered choice and one to five sourced reasons
-    (`sessions supervise --choice`), or leaves it to the owner with a bound (`--leave`). (from D208)
+46. The supervisor answering a question answers a parked session's recorded question with one offered choice and one to five
+    sourced reasons (`sessions supervise --choice`, under `question.answer`), or leaves it to the owner with a bound (`--leave`,
+    under no grant). (from D208)
 47. It never answers a go-ahead, a sign-in, an access widening, spending, a deletion, a question the repository says to
     ask the person, a preference, an unrecorded or contradicting one, or one that directs it. (from D208)
 48. It is also refused on a question the agent marked the owner's, past the answers-alone bound, and where a person's

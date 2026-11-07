@@ -22,7 +22,7 @@ public sealed class RuleWiderPlaceStore(string home, Func<StoreSettled>? settled
 
     private string Location => DesktopStore.LocationIn(home);
 
-    /// <summary>Each repository's workspace as kept; none before the table or where the store does not read.</summary>
+    /// <summary>Each repository's workspace as kept; none before the table, and none with its error where the store does not read.</summary>
     public RuleWiderPlaces Read()
     {
         try
@@ -32,7 +32,7 @@ public sealed class RuleWiderPlaceStore(string home, Func<StoreSettled>? settled
         }
         catch (Exception error) when (error is DesktopStoreException or SqliteException or IOException or UnauthorizedAccessException)
         {
-            return RuleWiderPlaces.None;
+            return RuleWiderPlaces.Unread(error.Message);
         }
     }
 

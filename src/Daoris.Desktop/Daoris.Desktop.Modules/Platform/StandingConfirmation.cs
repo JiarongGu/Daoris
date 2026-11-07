@@ -147,11 +147,12 @@ public sealed class StandingConfirmation : IDecisionAdmission
         RunStarted = Clock.GetUtcNow();
         DeskCaller = desk ?? (Caller is StandingCaller jobs ? Desktop.DeskCaller.System(jobs) : new DeskCaller(_ => null, new SystemProcesses(), Clock, Environment.ProcessId));
         Desk = new StewardDesk(Clock, DaorisHome.Entry(home, HomeEntry.StewardDesk));
-        Appointed = () =>
+        Wider = new RuleWiderPlaceStore(home).Read;
+        Slots = () =>
         {
             try
             {
-                return RoleCatalog.ReadHome(home).HoldingActs;
+                return RoleCatalog.ReadHome(home).Slots;
             }
             catch (DriverException)
             {
@@ -169,15 +170,24 @@ public sealed class StandingConfirmation : IDecisionAdmission
 
     internal TimeProvider Clock { get; }
 
-    /// <summary>The catalogue's appointed roles as they stand now, read at each judgement; a test hands its own.</summary>
-    public Func<IReadOnlyList<RoleRecord>> Appointed { get; set; }
+    /// <summary>The catalogue's slots as they stand now, read at each judgement, its unreadable records among them; a test hands its own.</summary>
+    public Func<IReadOnlyList<RoleSlot>> Slots { get; set; }
+
+    /// <summary>
+    /// Each repository's workspace as the store keeps it for the rules in every process, read at each judgement; a map that did not read
+    /// says so, and the decisions it cannot place are the person's. A test hands its own.
+    /// </summary>
+    public Func<RuleWiderPlaces> Wider { get; set; }
+
+    /// <summary>The catalogue's appointed roles that read, the supervisors and the steward, as they stand now.</summary>
+    public IReadOnlyList<RoleRecord> Appointed() => [.. Slots().Select(slot => slot.Role).OfType<RoleRecord>().Where(role => role.Hold is not null)];
 
     /// <summary>Whether a holder holds the steward: what the desk, the steward's starts and the owner's marks wait on.</summary>
-    public bool StewardStaffed => Staffed(AppointedRoles.Steward, new RolePlace()) is { Hold.Holder: not null };
+    public bool StewardStaffed => AppointedRoles.StewardOf(Appointed()) is { Hold.Holder: not null };
 
-    // The role of a kind at a place, as the catalogue says now (the most specific scope's), or null.
-    internal RoleRecord? Staffed(string kind, RolePlace place) =>
-        Appointed().Where(role => role.Hold?.Kind == kind && role.Scope.Covers(place)).OrderByDescending(role => role.Scope.Rank).FirstOrDefault();
+    internal SupervisorFound Supervising(string kind, RolePlace place) => SupervisorResolution.Find(Slots(), kind, place, Wider());
+
+    internal RolePlace Placed(string repository) => new(Wider().WorkspaceOf.GetValueOrDefault(repository), repository);
 
     /// <summary>The steward's desk: the requests, which grant nothing.</summary>
     public StewardDesk Desk { get; }
@@ -215,12 +225,6 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// sweep as a start's change answers them.
     /// </summary>
     public Action<IReadOnlyList<string>>? Ended { get; set; }
-
-    /// <summary>
-    /// The workspace the registry places a repository in, as the loop last read it; null where it places it in none or the
-    /// registry is not read yet, so a workspace's supervisor covers nothing it cannot place. Read under the judge's lock: it never awaits.
-    /// </summary>
-    public Func<string, string?> WorkspaceOf { get; set; } = _ => null;
 
     /// <summary>Where a terminal's process stands.</summary>
     public IStandingCaller Caller { get; }
@@ -267,10 +271,10 @@ public sealed class StandingConfirmation : IDecisionAdmission
     public IReadOnlyList<string> HolderEnded(string tab) => _terminals.HolderEnded(tab);
 
     /// <summary>The decisions' admission: <see cref="RoleJudge.Admit"/>.</summary>
-    public DecisionAdmitted Admit(string repository) => _judge.Admit(repository);
+    public DecisionAdmitted Admit(string kind, RolePlace place, string? act) => _judge.Admit(kind, place, act);
 
-    /// <summary>Whether a supervisor's hold is the effective one for a repository: <see cref="RoleJudge.Covers"/>.</summary>
-    public string? Covers(string generation, string repository) => _judge.Covers(generation, repository);
+    /// <summary>Whether a supervisor's hold is the effective one for a kind at a repository: <see cref="RoleJudge.Covers"/>.</summary>
+    public string? Covers(string generation, string kind, string repository) => _judge.Covers(generation, kind, repository);
 
     /// <summary>The judge's role method, for every route of the census's <c>Role</c> class: <see cref="RoleJudge.JudgeRole"/>.</summary>
     /// <param name="nonce">The connection's hello's nonce, taken for this act (each is used once), or null where it was used or expired.</param>

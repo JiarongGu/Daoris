@@ -44,7 +44,7 @@ public sealed class SupervisorScopeTests : IDisposable
         var standing = new StandingConfirmation(_home, null, new StandingConfirmationTests.Placed(StandingPlace.Outside),
             walk: new StandingConfirmationTests.Walked())
         {
-            WorkspaceOf = repository => _placed.GetValueOrDefault(repository),
+            Wider = () => RuleWiderPlaces.From(_placed.Select(pair => (pair.Key, (string?)pair.Value))),
         };
         return standing.Staff(staffed);
     }
