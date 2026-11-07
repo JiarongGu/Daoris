@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isComposing } from './composing';
 
 /**
- * IME1: a key an input method is composing with is the input method's, never the page's. Enter that accepts a
+ * A key an input method is composing with is the input method's, never the page's. Enter that accepts a
  * candidate sent a half-written message from every conversation's composer, because nothing asked.
  */
 describe('isComposing', () => {

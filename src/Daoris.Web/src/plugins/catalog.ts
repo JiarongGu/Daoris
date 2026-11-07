@@ -1,7 +1,7 @@
 import type { PluginSourceShown } from './PluginUpdate';
 
 /**
- * A server a plugin offers Ask Daoris (HELPPLUG1a, D170 point 3), as the driver's `PLUGINS` answers it: its name, the tools
+ * A server a plugin offers Ask Daoris, as the driver's `PLUGINS` answers it: its name, the tools
  * that read and those that write outside Daoris, as the plugin declares them, and the person's approval as it stands (D170's
  * note): `approved` (with the writes they `accepted`), `waits`, or `refused` with the driver's sentence.
  */
@@ -12,12 +12,12 @@ export type HelpServerShown = {
   state?: 'approved' | 'waits' | 'refused';
   accepted?: string[];
   refusal?: string | null;
-  /** Where it waits: approved once, and an update has changed its tools since, so it asks again (HELPPLUG1c). */
+  /** Where it waits: approved once, and an update has changed its tools since, so it asks again. */
   changed?: boolean;
 };
 
 /**
- * A skill a plugin hands (HELPPLUG1b, D170 point 4), as the driver's `PLUGINS` answers it: its name, who it is handed to
+ * A skill a plugin hands, as the driver's `PLUGINS` answers it: its name, who it is handed to
  * (`sessions`, `help` or both), and the driver's sentence where it is not handed.
  */
 export type SkillShown = { name: string; to: string[]; problem?: string | null };
@@ -40,7 +40,7 @@ export type StepShown = {
 export type ResourceShown = { schema: string; role: string };
 
 /**
- * One readiness check of a tool a plugin declares (ADOSIGNIN1), as the driver's `PLUGINS` answers it and as `PLUGIN_TOOLS` and
+ * One readiness check of a tool a plugin declares, as the driver's `PLUGINS` answers it and as `PLUGIN_TOOLS` and
  * `PLUGIN_TOOL_FIX` read it again. `ready` and `sentence` are absent until the person has pressed *Check*.
  */
 export type ToolCheckShown = {
@@ -74,7 +74,7 @@ export type ToolShown = {
   checks: ToolCheckShown[];
 };
 
-// The Plugins view's list and page as values (PLUGUI1b, D119 §3.1): a plugin's state, its group, and what the list's
+// The Plugins view's list and page as values: a plugin's state, its group, and what the list's
 // chosen item names. Pure, so every machine a person could have is an argument, and the list, the strip and the page
 // read one answer.
 
@@ -93,31 +93,31 @@ export type PluginOfferShown = {
   harnesses: string[];
   points: string[];
   servers: string[];
-  /** The servers it would hand Ask Daoris (HELPPLUG1a); left out where there is none. */
+  /** The servers it would hand Ask Daoris; left out where there is none. */
   helpServers?: HelpServerShown[];
-  /** The skills it would hand (HELPPLUG1b); left out where there is none. */
+  /** The skills it would hand; left out where there is none. */
   skills?: SkillShown[];
-  /** The steps it declares and what they create (FABRIC-UNIT1e); left out where there is none. */
+  /** The steps it declares and what they create; left out where there is none. */
   steps?: StepShown[];
   resources?: ResourceShown[];
   needs: string[];
   installed: boolean;
-  /** Its declared icon as its own bytes (PLUGUI2, D140 §3.2), never a path; absent until the host answers it. */
+  /** Its declared icon as its own bytes, never a path; absent until the host answers it. */
   icon?: string | null;
   iconProblem?: string | null;
 };
 
 /**
- * An installed copy of one of the install's own plugins that is older than the shipped one, or changed from it (LANDPIN3).
+ * An installed copy of one of the install's own plugins that is older than the shipped one, or changed from it.
  * `changed` at an older version is a copy edited since its install from the offer; `unjudged` is an older one with no record of
- * the files its install copied (LANDPIN3b), left out where it is judged.
+ * the files its install copied, left out where it is judged.
  */
 export type PluginShippedShown = {
   state: 'older' | 'changed'; installed: string; shipped: string; changes?: string | null; unjudged?: boolean;
 };
 
 /**
- * One installed plugin as the driver's `PLUGINS` answers it (D64). The bridge's own type is the same shape; the
+ * One installed plugin as the driver's `PLUGINS` answers it. The bridge's own type is the same shape; the
  * view's molecules name their props here rather than reach the bridge.
  */
 export type PluginShown = {
@@ -139,34 +139,34 @@ export type PluginShown = {
   folder: string;
   /** Where what it keeps lives, which an update never touches and a removal leaves. */
   data: string;
-  /** Where it came from (D103). Left out where there is none. */
+  /** Where it came from. Left out where there is none. */
   source?: PluginSourceShown;
   /**
-   * Whether an update waits (D119 §2, PLUGUI1e): `waits` when its source declares something different, `current` when
+   * Whether an update waits: `waits` when its source declares something different, `current` when
    * the same, null with no record that reads. Left out where there is none.
    */
   update?: 'waits' | 'current' | null;
   /**
-   * Against the install's own plugin of its id (LANDPIN3): `older` with both versions and what the newer brings, or `changed`
+   * Against the install's own plugin of its id: `older` with both versions and what the newer brings, or `changed`
    * where its files are not the shipped ones; null where it needs no word. Left out where there is none.
    */
   shipped?: PluginShippedShown | null;
-  /** Its declared icon as its bytes, a data URI the driver built (D140 §3.2); none where it declares none. */
+  /** Its declared icon as its bytes, a data URI the driver built; none where it declares none. */
   icon?: string | null;
-  /** Why its declared icon is not drawn, in the reader's sentence (D140 §3.1). */
+  /** Why its declared icon is not drawn, in the reader's sentence. */
   iconProblem?: string | null;
-  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each (HELPPLUG1a); left out where there is none. */
+  /** The servers it hands Ask Daoris, with what Ask Daoris may call on each; left out where there is none. */
   helpServers?: HelpServerShown[];
-  /** The skills it hands sessions or Ask Daoris (HELPPLUG1b); left out where there is none. */
+  /** The skills it hands sessions or Ask Daoris; left out where there is none. */
   skills?: SkillShown[];
-  /** The steps it declares and what they create (FABRIC-UNIT1e); left out where there is none. */
+  /** The steps it declares and what they create; left out where there is none. */
   steps?: StepShown[];
   resources?: ResourceShown[];
-  /** The tools it declares as its manifest says them (ADOSIGNIN1); nothing is found by reading. Left out where there is none. */
+  /** The tools it declares as its manifest says them; nothing is found by reading. Left out where there is none. */
   tools?: ToolShown[];
 };
 
-/** One of Daoris's own plugins the install carries (D103), with what its manifest declares and its README needs. */
+/** One of Daoris's own plugins the install carries, with what its manifest declares and its README needs. */
 export type OfferShown = {
   id: string;
   name: string;
@@ -177,16 +177,16 @@ export type OfferShown = {
   harnesses: string[];
   points: string[];
   servers: string[];
-  /** The servers it would hand Ask Daoris (HELPPLUG1a); left out where there is none. */
+  /** The servers it would hand Ask Daoris; left out where there is none. */
   helpServers?: HelpServerShown[];
-  /** The skills it would hand (HELPPLUG1b); left out where there is none. */
+  /** The skills it would hand; left out where there is none. */
   skills?: SkillShown[];
-  /** The steps it declares and what they create (FABRIC-UNIT1e); left out where there is none. */
+  /** The steps it declares and what they create; left out where there is none. */
   steps?: StepShown[];
   resources?: ResourceShown[];
   needs: string[];
   installed: boolean;
-  /** Its declared icon as its bytes (D140 §3.2); none where it declares none. */
+  /** Its declared icon as its bytes; none where it declares none. */
   icon?: string | null;
   iconProblem?: string | null;
 };
@@ -209,7 +209,7 @@ export function pluginState(plugin: Pick<PluginShown, 'enabled' | 'problem' | 'r
 export const speaks = (plugin: Pick<PluginShown, 'problem' | 'points'>): boolean => !plugin.problem && plugin.points.length > 0;
 
 /**
- * The catalogue's sections (D140 §2), each in the person's reading order. *Available*, what a package source offers,
+ * The catalogue's sections, each in the person's reading order. *Available*, what a package source offers,
  * joins them with PLUGDIST1e.
  */
 export type PluginGroups = {
@@ -242,7 +242,7 @@ export function pluginGroups(plugins: readonly PluginShown[], offers: readonly O
 /** Every installed plugin in the list's order, as the strip marks them: offers are not on the strip. */
 export const stripOrder = (groups: PluginGroups): PluginShown[] => groups.installed;
 
-/** The word for where a plugin came from, on its row's meta line (D140 §2), by the kinds the driver answers. */
+/** The word for where a plugin came from, on its row's meta line, by the kinds the driver answers. */
 const SOURCE_WORD: Record<PluginSourceShown['kind'], string> = {
   offer: 'plugin.from.offer',
   folder: 'plugin.from.folder',
@@ -254,15 +254,15 @@ const SOURCE_WORD: Record<PluginSourceShown['kind'], string> = {
 export const sourceWord = (source: PluginSourceShown | undefined): string | null =>
   (source && Object.hasOwn(SOURCE_WORD, source.kind) ? SOURCE_WORD[source.kind] : null);
 
-/** An update waits: its source declares something different (D119 §2), or it is older than the install's own copy (LANDPIN3). Not a state, since it waits on nobody. */
+/** An update waits: its source declares something different, or it is older than the install's own copy. Not a state, since it waits on nobody. */
 export const updateWaits = (plugin: Pick<PluginShown, 'update' | 'shipped'>): boolean =>
   plugin.update === 'waits' || plugin.shipped?.state === 'older';
 
-/** It is a copy of one of the install's own plugins whose files the person changed (LANDPIN3): said, and never replaced by a press. */
+/** It is a copy of one of the install's own plugins whose files the person changed: said, and never replaced by a press. */
 export const shippedChanged = (plugin: Pick<PluginShown, 'shipped'>): boolean => plugin.shipped?.state === 'changed';
 
 /**
- * Its press takes the install's own copy (LANDPIN3): it is older than the one the install ships and has no record of its own to
+ * Its press takes the install's own copy: it is older than the one the install ships and has no record of its own to
  * update from. A plugin whose record is a folder or an offer is updated from it, as before.
  */
 export const takesShipped = (plugin: Pick<PluginShown, 'shipped' | 'source'>): boolean =>
@@ -270,7 +270,7 @@ export const takesShipped = (plugin: Pick<PluginShown, 'shipped' | 'source'>): b
 
 const OFFER = 'offer:';
 
-/** An offer's item: an offer and an installed plugin may share an id, so the list names which (D119 §3.1). */
+/** An offer's item: an offer and an installed plugin may share an id, so the list names which. */
 export const offerItem = (id: string) => `${OFFER}${id}`;
 
 /** What the list's chosen item shows in the main area. */
@@ -278,12 +278,12 @@ export type Chosen =
   | { kind: 'none' }
   | { kind: 'plugin'; plugin: PluginShown }
   | { kind: 'offer'; offer: OfferShown }
-  /** No longer on this machine: removed at a terminal or by hand (D119 §3.2). */
+  /** No longer on this machine: removed at a terminal or by hand. */
   | { kind: 'gone' };
 
 /**
  * What a chosen item names, on the catalogue as it stands. **Once an offer is installed, the list chooses the
- * installed plugin** (D119 §3.1), so an offer's item that names one installed since reads as that plugin.
+ * installed plugin**, so an offer's item that names one installed since reads as that plugin.
  */
 export function chosenOf(item: string | null, plugins: readonly PluginShown[], offers: readonly OfferShown[]): Chosen {
   if (!item) return { kind: 'none' };

@@ -70,7 +70,7 @@ describe("a workspace's history on its Details", () => {
         units: [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }],
       },
     })));
-    // Two of three went: the list closes, and says what went and what was kept in no plain success's tone (HIST1n).
+    // Two of three went: the list closes, and says what went and what was kept in no plain success's tone.
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Cleared 2 of 3 from aurora, 14.6 MB. 1 changed since the list and was kept.', 'error'));
     // The reading is asked again, so the page says what is kept now.
     await waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'HISTORY_PLAN').length).toBeGreaterThan(1));
@@ -78,7 +78,7 @@ describe("a workspace's history on its Details", () => {
   });
 
   /**
-   * HIST1n (the second-opinion review's afternoon round, `historyActs.ts:31`): a press whose every unit changed since the list
+   * A press whose every unit changed since the list
    * closed its list as though it had cleared them, in a success's tone. Nothing went, so the list stays, saying why inside it.
    */
   it('keeps the list open, its reasons inside, where every unit it listed was kept', async () => {

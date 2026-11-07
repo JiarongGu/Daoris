@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// Settings → Git in SHELL mode (GITAUTH1e): every call goes over the bridge to DAORIS.DRIVER and nothing over the service, since an
-// identity's key is this machine's (D47 §4). The identities are `TOOLS_LIST`'s `identities`; each press is `GIT_IDENTITY` or `GIT_USE`.
+// Settings → Git in SHELL mode: every call goes over the bridge to DAORIS.DRIVER and nothing over the service, since an
+// identity's key is this machine's. The identities are `TOOLS_LIST`'s `identities`; each press is `GIT_IDENTITY` or `GIT_USE`.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -70,7 +70,7 @@ describe('the git domain', () => {
     expect(screen.getByText('ssh-ed25519 AAAAExample daoris')).toBeInTheDocument();
   });
 
-  // GITAUTH1e (§7.4): a held remote's door opens Settings → Git with its add form on the remote's host, and tells the door when it closes.
+  // A held remote's door opens Settings → Git with its add form on the remote's host, and tells the door when it closes.
   it('opens its add form on the host a door names', async () => {
     const closed = vi.fn();
     show(<SettingsView notify={() => {}} section="git" gitHost="gitlab.com" onGitHostClosed={closed} />);

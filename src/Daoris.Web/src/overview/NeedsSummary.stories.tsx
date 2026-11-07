@@ -47,7 +47,7 @@ export const Nothing: Story = { args: { attention: { ...KNOWN, rows: [] }, press
 /** A plain browser: the app's to judge. */
 export const InABrowser: Story = { args: { attention: { state: 'app' }, presses: [], onNotifications: undefined } };
 
-/** *Done and failed*'s line after what waits (NOTIFY2f): its notices, and how many are unread. */
+/** *Done and failed*'s line after what waits: its notices, and how many are unread. */
 const NOTICES: Notice[] = [
   { id: 'ended-s1', kind: 'ended', at: ago(5), read: false, repository: 'game', state: 'failed' },
   { id: 'ended-s2', kind: 'ended', at: ago(90), read: true, repository: 'engine', state: 'completed' },
@@ -56,7 +56,7 @@ export const WithDoneAndFailed: Story = { args: { notices: NOTICES } };
 export const WithDoneAndFailedChinese: Story = { args: { notices: NOTICES }, decorators: [chinese] };
 export const WithDoneAndFailedNarrow: Story = { args: { notices: NOTICES }, decorators: [storyWidths.narrow] };
 
-/** *Messages*' line before what ended (NOTIFY2g): its items, an ask's and a teammate's and an answer, and how many are unread. */
+/** *Messages*' line before what ended: its items, an ask's and a teammate's and an answer, and how many are unread. */
 const MESSAGES: AskMessages[] = [
   { ask: 'a1', workspace: 'default', teammate: false, unread: 3 },
   { ask: '7e6f51', workspace: 'default', teammate: true, unread: 1 },

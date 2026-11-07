@@ -1,7 +1,7 @@
 import type { PresetWorkflow } from '../../workflow/edit/answers';
 import type { PlaceApplied, PlaceAsk, PlaceDeclaration, PlacePlanned, PlaceRefusal, PlaceRepositoryPlan, PlaceSide } from './placePlan';
 
-// A place's plan as `PLACE_PLAN` answers it, for the set-up's tests and stories (AGENTSPLACE1j): two repositories of the workspace *aurora*,
+// A place's plan as `PLACE_PLAN` answers it, for the set-up's tests and stories: two repositories of the workspace *aurora*,
 // each with the facts the driver reads. What the ask changes follows the driver's rules only as far as the page shows them.
 
 const side = (driven: boolean, preset: string | null = null): PlaceSide => ({ driven, held: false, trees: driven, match: { preset, own: [] } });

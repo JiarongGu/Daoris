@@ -9,7 +9,7 @@ import { Button } from './Button';
 /* ---------------------------------------------------------------- drawer */
 
 /**
- * A dialog's Escape, kept while an input method composes (IME1). Radix closes a dialog on any Escape, heard on the
+ * A dialog's Escape, kept while an input method composes. Radix closes a dialog on any Escape, heard on the
  * document before the field it was pressed in, so dropping a composition in Quick Ask's box or the palette's field
  * closed the box with it. Prevented, Radix leaves the dialog open; it prevented the same press itself when it closed.
  */
@@ -18,7 +18,7 @@ const composingEscape = (event: KeyboardEvent) => {
 };
 
 /**
- * How many drawers this window has open, for the toasts (UXTOAST1). A drawer holds the toasts' corner whole, so while one
+ * How many drawers this window has open, for the toasts. A drawer holds the toasts' corner whole, so while one
  * is open they stand beside it; the drawer and the corner are siblings under the page, never one inside the other, so
  * the count is the window's rather than a context's.
  */
@@ -39,17 +39,17 @@ const countDrawer = (by: 1 | -1) => {
 };
 
 /**
- * The single detail-and-form surface (D41), on Radix Dialog: focus is trapped, ESC and the scrim
+ * The single detail-and-form surface, on Radix Dialog: focus is trapped, ESC and the scrim
  * dismiss, and the list behind it survives. Every pixel is ours; the behaviour is not hand-rolled.
  * Radix gives the focus back on close only to a `Dialog.Trigger`, which this has none of: a caller
- * that opens it by state gives the focus back itself, a beat after the close (FLOWCHART2b).
+ * that opens it by state gives the focus back itself, a beat after the close.
  */
 export function Drawer({ title, meta, onClose, footer, children }: {
   title: string; meta?: ReactNode; onClose: () => void; footer?: ReactNode;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
-  // Counted before the drawer is painted, so a toast is never drawn over it for a frame (UXTOAST1).
+  // Counted before the drawer is painted, so a toast is never drawn over it for a frame.
   useLayoutEffect(() => {
     countDrawer(1);
     return () => countDrawer(-1);
@@ -72,7 +72,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
           // `ui.test.tsx`, because a claim nothing checks is one nobody notices going wrong.
           aria-modal="true"
           onEscapeKeyDown={composingEscape}
-          // 🔴 `top-9`, like the scrim beside it — the strip is the window's title bar (D56), and
+          // 🔴 `top-9`, like the scrim beside it — the strip is the window's title bar, and
           // the caption buttons the window paints there are painted OVER the page. A panel that
           // started at the top put its own header, close button included, under them: on the
           // deployed application the drawer's × sat exactly beneath the window's ✕, neither
@@ -80,7 +80,7 @@ export function Drawer({ title, meta, onClose, footer, children }: {
           className={cn(
             'fixed bottom-6 right-0 top-9 z-10 flex flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
             // Never over the activity bar (3rem): the frame is three bars, and an overlay sits between
-            // them (POLISH3). A wide one read a source file until FRAME1f gave an entry the main area (U43). The toasts
+            // them. A wide one read a source file until FRAME1f gave an entry the main area (U43). The toasts
             // stand this width in from the right while it is open (`Toasts`, UXTOAST1), and `ui.test.tsx` holds the two
             // together.
             'w-[min(32rem,calc(100%-3rem))]',
@@ -110,13 +110,13 @@ export function Drawer({ title, meta, onClose, footer, children }: {
 /* ---------------------------------------------------------------- the palette's box */
 
 /**
- * A box at the palette's place (SURF9, DOCK1d): the command palette, and Quick Ask, which is Ask Daoris's conversation
+ * A box at the palette's place: the command palette, and Quick Ask, which is Ask Daoris's conversation
  * in the same place. Near the top, not centred, since what it holds grows downward and a centred box jumps as it does;
  * modal on Radix Dialog, as the drawer is, with the title bar and the status bar left live around it (`tokens.test.ts`'s
  * scrim bounds), and Escape or a press outside closing it.
  *
  * @remarks
- * Two boxes wrote this out on their own beside the drawer, so the atoms did not own the dialog primitive (MENU1). The
+ * Two boxes wrote this out on their own beside the drawer, so the atoms did not own the dialog primitive. The
  * size is by what it holds: a list grows to its rows up to 60% of the window (the palette), a conversation keeps one
  * height it fills (`fill`), and a conversation is wider (`wide`).
  */

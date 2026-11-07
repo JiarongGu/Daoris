@@ -48,15 +48,15 @@ export type IntegrationTabProps = {
   onDrop?: (request: string) => void;
   /** *Check again*: have the line looked at now. */
   onRecheck?: () => void;
-  /** The owner's decide on a candidate the policy held for one (INTEGRATE1h): *Split*, *Hand back*, *Land*. */
+  /** The owner's decide on a candidate the policy held for one: *Split*, *Hand back*, *Land*. */
   onDecide?: (candidate: string, decide: Decide) => void;
-  /** A queued request moved first or last in its line's queue (INTEGRATE1h). */
+  /** A queued request moved first or last in its line's queue. */
   onOrder?: (request: string, place: 'first' | 'last') => void;
-  /** A superseded commit answered (INTEGRATE1h): *Superseded*, or *Rebase it*, which asks its session. */
+  /** A superseded commit answered: *Superseded*, or *Rebase it*, which asks its session. */
   onAnswer?: (request: string, commit: string, answer: 'superseded' | 'rebase') => void;
-  /** The owner's card for a landing whose integration waits for it (INTEGRATE1h): *Request into the line*. */
+  /** The owner's card for a landing whose integration waits for it: *Request into the line*. */
   onRequest?: (branch: string) => void;
-  /** The related sessions' read, drawn read-only after the history (LINESTOGETHER1c). */
+  /** The related sessions' read, drawn read-only after the history. */
   related?: ReactNode;
 };
 

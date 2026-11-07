@@ -18,13 +18,13 @@ export type FindingsAnswer =
   | { state: 'answered'; findings: Convergence[]; at: number; more: boolean; comparing: boolean };
 
 /**
- * **Convergence's list** (FRAME1f, D118 §2): the similarity, then the findings. A finding is a row of the list, and
+ * **Convergence's list**: the similarity, then the findings. A finding is a row of the list, and
  * choosing one reads it in the main area: the service's sentence, then its entries whole.
  *
  * @remarks
  * **A molecule**: the similarity and the answer arrive, and every move and press goes out.
  *
- * - **The similarity is a control, not a constant** (D30): the useful value depends on the embedder and the corpus,
+ * - **The similarity is a control, not a constant**: the useful value depends on the embedder and the corpus,
  *   and the tier's note says what this deployment can find, beneath it.
  * - **A row is the finding's entries**, by their titles, then what kind of likeness it is and how alike, then the
  *   repositories that reached it. A likeness in different words, the finding no text comparison can make, wears the
@@ -38,7 +38,7 @@ export function FindingList({ threshold, onThreshold, semantic, answer, chosen, 
   /** The similarity as the slider stands. */
   threshold: number;
   onThreshold: (value: number) => void;
-  /** This deployment matches meaning too (D24), which the note under the similarity says. */
+  /** This deployment matches meaning too, which the note under the similarity says. */
   semantic: boolean;
   answer: FindingsAnswer;
   /** The list's chosen item: a finding's name (`findingId`). */

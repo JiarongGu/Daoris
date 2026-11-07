@@ -56,7 +56,7 @@ describe('SettingsView in a browser', () => {
   ];
 
   /**
-   * UX6g (D150 §3.1): Workspace left Settings for Repositories, whose list is a group per workspace and whose workspace's
+   * Workspace left Settings for Repositories, whose list is a group per workspace and whose workspace's
    * page a browser is given too (`ProjectsView.test.tsx`). A window that remembered the domain opens on Appearance.
    */
   it('opens a remembered Workspace domain on Appearance, since it left for Repositories', async () => {
@@ -67,7 +67,7 @@ describe('SettingsView in a browser', () => {
   });
 
   /**
-   * A browser is never offered a machine's domain (D47 §4, D75): not a disabled one, none. A domain it
+   * A browser is never offered a machine's domain: not a disabled one, none. A domain it
    * was asked for that it cannot show, one a shell remembered, opens on Appearance.
    */
   it('offers only what a browser may know, and opens a machine domain on Appearance', async () => {
@@ -81,8 +81,8 @@ describe('SettingsView in a browser', () => {
   });
 
   /**
-   * SETUP1a (D97): Get started leads the list, a browser's too, holding what a browser can know — the
-   * registry — and saying the rest is the desktop's (D47 §4). Nothing else of a machine is asked for.
+   * Get started leads the list, a browser's too, holding what a browser can know — the
+   * registry — and saying the rest is the desktop's. Nothing else of a machine is asked for.
    */
   it('opens Get started first in the list, with only the step a browser can know', async () => {
     view('start');
@@ -97,9 +97,9 @@ describe('SettingsView in a browser', () => {
 });
 
 /**
- * FRAME1g (D118 §2, §3a; audit ST1–ST3, ST10): Settings' domains are its list pane, 176–320 px and 176 to
+ * Settings' domains are its list pane, 176–320 px and 176 to
  * start, where they were a fixed 11 rem column drawn inside the page; the domain is the main area, named by
- * its header. A browser keeps the list and the main area (D118 §4).
+ * its header. A browser keeps the list and the main area.
  */
 describe("Settings' list pane and main area", () => {
   beforeEach(() => {
@@ -152,7 +152,7 @@ describe("Settings' list pane and main area", () => {
   });
 
   /**
-   * ST10: below a 768 px viewport the list stacked above the domain at the column's full width, ten rows over
+   * Below a 768 px viewport the list stacked above the domain at the column's full width, ten rows over
    * the domain on a shell. It never stacks now: at 680 px it stays beside the domain where there is room.
    */
   it('stays beside the domain at a 680 px window, never above it', () => {

@@ -16,7 +16,7 @@ export function useShortcuts({ commandState, commandDoors, translate, openMenu, 
   setMnemonics: React.Dispatch<React.SetStateAction<boolean>>;
   setOpenMenu: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
-  // The keys (D152 §3.4), read from the one table at the press, so a key runs what its menu row runs and only while it
+  // The keys, read from the one table at the press, so a key runs what its menu row runs and only while it
   // applies: a field keeps what a field means, the terminal that and a shell's next line, and a browser what it keeps.
   const tableNow = useRef<() => ReturnType<typeof commandTable>>(() => []);
   tableNow.current = () => commandTable(commandState(), commandDoors, translate);

@@ -9,7 +9,7 @@ import { Door, Fact, WiringCard } from './WiringParts';
  * that opens the folder and the door to the Machine log; and whether the window's engine log is there.
  *
  * @remarks
- * A molecule: drawn from props. *Open the folder* is the Machine log's own press, kept where it stood (LOG1c); no other press
+ * A molecule: drawn from props. *Open the folder* is the Machine log's own press, kept where it stood; no other press
  * of this page opens a folder (that, and a copied line, are WIRING1e's).
  */
 export function WiringLogs({ logs, onOpenFolder, onLog }: {

@@ -26,10 +26,10 @@ export interface ToolDoor {
   problem?: string | null;
   transport?: string | null;
   accountOf?: string | null;
-  /** What a person calls the tool this door runs, and who makes it (AGT1). Left out where it has none. */
+  /** What a person calls the tool this door runs, and who makes it. Left out where it has none. */
   product?: string | null;
   maker?: string | null;
-  /** The agent's declared two-letter mark on the Agents strip (ACCTUX2), or null where none is declared. Left out where it has none. */
+  /** The agent's declared two-letter mark on the Agents strip, or null where none is declared. Left out where it has none. */
   mark?: string | null;
   /**
    * Whether this harness can be pinned at all — false where it declares no package for Daoris to
@@ -40,24 +40,24 @@ export interface ToolDoor {
   /** Whether this door can run the tool's sign-in — false where it declares no login flow. Left out where it has none. */
   signsIn?: boolean;
   /**
-   * Whether its agent signs in by a device code beside its own sign-in (CODEXLOGIN1): Codex's browser first, its device code
+   * Whether its agent signs in by a device code beside its own sign-in: Codex's browser first, its device code
    * offered beside it. Left out where it has none, read as no.
    */
   deviceCode?: boolean;
   /**
-   * Which Update this door has (USE1a): `pin` moves its pin to the newest release, `tool` runs the
+   * Which Update this door has: `pin` moves its pin to the newest release, `tool` runs the
    * tool's own updater, and absent means none — so no Update is offered, rather than one that can
    * only be refused.
    */
   updates?: 'pin' | 'tool' | null;
   /**
-   * Whether Daoris has an installer for this agent (INSTALLDOOR1). False means it is installed with its maker's own tooling,
+   * Whether Daoris has an installer for this agent. False means it is installed with its maker's own tooling,
    * so no Install is offered, only how to install it. Left out where it has none, read as true: today's Install.
    */
   installs?: boolean;
-  /** Whether this agent takes an API key from Daoris (AGT3) — only where its key variable was measured. */
+  /** Whether this agent takes an API key from Daoris — only where its key variable was measured. */
   takesKey?: boolean;
-  /** The version this machine pinned, or null for whatever is on `PATH` (TOOL2/D57). */
+  /** The version this machine pinned, or null for whatever is on `PATH`. */
   pinned?: string | null;
   /**
    * The managed binary actually installed at that pin, or null. `pinned` without `managed` is a pin
@@ -66,30 +66,30 @@ export interface ToolDoor {
    */
   managed?: string | null;
   /**
-   * Whether a session on this door keeps a conversation's structure (D76 §1) — the protocol door, or
+   * Whether a session on this door keeps a conversation's structure — the protocol door, or
    * a native door whose adapter reads the harness's own structured output. What an empty record is
-   * read by (CONV3b).
+   * read by.
    */
   structured?: boolean;
   /**
-   * Whether a session on this door is handed Daoris's rules file (PERM1, D72): an agent's page has *What it may do* only
-   * where a door onto it is (UX6e, D150 §5.1). Left out where it has none.
+   * Whether a session on this door is handed Daoris's rules file: an agent's page has *What it may do* only
+   * where a door onto it is. Left out where it has none.
    */
   takesRules?: boolean;
   profiles?: Account[];
   /** What the tool says about logging in to its OWN configuration home — the account a person has before naming any. */
   ownLogin?: string | null;
-  /** Who is signed in to that home, when the tool says (D66 §3). */
+  /** Who is signed in to that home, when the tool says. */
   ownAccount?: string | null;
-  /** The organisation and the plan the tool names beside who (ACCOUNTID1), as an account's; left out where it has none. */
+  /** The organisation and the plan the tool names beside who, as an account's; left out where it has none. */
   ownOrg?: string | null;
   ownPlan?: string | null;
-  /** When that home's state was last read (UX6e): only at a person's press (TOOL6g), so null before one. */
+  /** When that home's state was last read: only at a person's press, so null before one. */
   ownRead?: string | null;
-  /** The plugin this door was declared by (D64), or null for one the build carries. */
+  /** The plugin this door was declared by, or null for one the build carries. */
   plugin?: string | null;
   /**
-   * What the tool itself offers for an account's model and effort (AGT6, D98): its own aliases and the
+   * What the tool itself offers for an account's model and effort: its own aliases and the
    * efforts its settings keep. Null where Daoris does not know the tool's settings, and nothing is then
    * offered. Left out where it has none.
    */
@@ -102,14 +102,14 @@ export interface ToolDoor {
   sessionChoices?: SettingsChoices | null;
 }
 
-/** The choices a tool offers for an account's own settings, in its own words (AGT6). */
+/** The choices a tool offers for an account's own settings, in its own words. */
 export interface SettingsChoices {
   models: string[];
   efforts: string[];
 }
 
 /**
- * An account's own model and effort, as the tool's settings file under it says (AGT6). Null is not set:
+ * An account's own model and effort, as the tool's settings file under it says. Null is not set:
  * the tool's own default. `problem` is the driver's sentence when the file could not be read.
  */
 export interface AccountSettings {
@@ -150,15 +150,15 @@ export interface AccountSettingsChange {
 
 /**
  * One account: the directory's name, where it is, its state — and who is signed in there, by the
- * tool's own answer (D66 §3). A person knows an account by its name (ACCT2); `name` is its id, what a terminal types.
+ * tool's own answer. A person knows an account by its name; `name` is its id, what a terminal types.
  */
 export interface Account {
-  /** Its stable id (ACCT2): its folder's name, an old `account-N` or a fresh `acct-` and eight hex characters. */
+  /** Its stable id: its folder's name, an old `account-N` or a fresh `acct-` and eight hex characters. */
   name: string;
-  /** The person's name for it (ACCT2), null where they gave none; left out where it has none. */
+  /** The person's name for it, null where they gave none; left out where it has none. */
   displayName?: string | null;
   home: string;
-  /** Asked of the tool, and one of three answers (SES3): only a definite `out` refuses. */
+  /** Asked of the tool, and one of three answers: only a definite `out` refuses. */
   login: 'in' | 'out' | 'unknown';
   account?: string | null;
   /**
@@ -167,15 +167,15 @@ export interface Account {
    */
   org?: string | null;
   plan?: string | null;
-  /** An account that is an API key (AGT3): its handle, never the key. */
+  /** An account that is an API key: its handle, never the key. */
   key?: string | null;
-  /** Its own model and effort (AGT6), where the tool's settings are known; absent or null otherwise. */
+  /** Its own model and effort, where the tool's settings are known; absent or null otherwise. */
   settings?: AccountSettings | null;
-  /** When its state was last read (UX6e, D150 §5.3); null where it never was, and left out where it has none. */
+  /** When its state was last read; null where it never was, and left out where it has none. */
   read?: string | null;
 }
 
-/** How a sheet's row is known (COAGENT1 §3.1): absent is a statement, and its fallback applies. */
+/** How a sheet's row is known: absent is a statement, and its fallback applies. */
 export type SheetSource = 'declared' | 'negotiated' | 'measured' | 'absent';
 
 /** One capability of a door's sheet, as the driver's `SheetRow` answers it. */
@@ -192,10 +192,10 @@ export type SheetRow = {
   fallback: string;
 };
 
-/** One door's sheet (COAGENT1 §3): its word and each capability. */
+/** One door's sheet: its word and each capability. */
 export type DoorSheet = { door: string; transport: 'protocol' | 'native'; rows: SheetRow[] };
 
-/** What a person can do with an agent's accounts, by its own flows (AGT7, CODEXACCT1, AGENTMARK1). */
+/** What a person can do with an agent's accounts, by its own flows. */
 export type AgentActs = { signsIn: boolean; takesKey: boolean; deviceCode: boolean; installs: boolean };
 
 /** One agent as the roster's sheet half answers it (COAGENT1e, the agent-provider design §6). */
@@ -216,7 +216,7 @@ export interface Tool {
   /** The tool's id — `claude-code`, `codex`, `dsh` — which is what a terminal types. */
   name: string;
   /**
-   * What a person calls it and whose it is (AGT1), from the first door that says — or null, and a
+   * What a person calls it and whose it is, from the first door that says — or null, and a
    * surface shows the id. `dsh` meant nothing to the owner until it said it was DeepSeek's.
    */
   product: string | null;
@@ -234,24 +234,24 @@ export interface Tool {
   ownLogin: string;
   /** Who is signed in to the tool's own home, where any door says. */
   ownAccount: string | null;
-  /** Its organisation and plan (ACCOUNTID1), from the door that says who; absent from a surface built before them. */
+  /** Its organisation and plan, from the door that says who; absent from a surface built before them. */
   ownOrg?: string | null;
   ownPlan?: string | null;
-  /** When the tool's own home was last read, by the door whose word on it stands (UX6e); null where it never was. */
+  /** When the tool's own home was last read, by the door whose word on it stands; null where it never was. */
   ownRead: string | null;
-  /** Whether any door onto it is handed Daoris's rules file (UX6e, D150 §5.1). */
+  /** Whether any door onto it is handed Daoris's rules file. */
   takesRules: boolean;
   /**
-   * What a person can do with its accounts, as the roster's sheet answers it for the agent (COAGENT1e): never a door standing for
+   * What a person can do with its accounts, as the roster's sheet answers it for the agent: never a door standing for
    * its agent. Null where the roster's sheet does not name it, and a control is then offered as before it said.
    */
   acts?: AgentActs | null;
   /** The door its account acts run through: the sheet's lead, the door named for the agent first; its own name where none says. */
   lead?: string;
-  /** Each door's sheet (COAGENT1 §3): what a session on it can do and how that is known; empty where the roster's sheet is absent. */
+  /** Each door's sheet: what a session on it can do and how that is known; empty where the roster's sheet is absent. */
   sheet?: DoorSheet[];
   /**
-   * What the tool offers for an account's model and effort (AGT6), from the first door that says; null
+   * What the tool offers for an account's model and effort, from the first door that says; null
    * where the doors say none, and a surface then offers nothing and says so; undefined from an older
    * shell that never said, and a surface then says nothing either way.
    */
@@ -259,8 +259,8 @@ export interface Tool {
 }
 
 /**
- * Which transport this machine's starts ride: the configured adapter's own `transport`, as the roster says it
- * (INT3c). Null when it cannot be read — no adapter, one the roster does not carry, or a transport it does
+ * Which transport this machine's starts ride: the configured adapter's own `transport`, as the roster says it.
+ * Null when it cannot be read — no adapter, one the roster does not carry, or a transport it does
  * not name — and a surface then says nothing rather than guess.
  */
 export function doorOf(adapter: string | undefined, doors: readonly ToolDoor[]): 'protocol' | 'native' | null {
@@ -269,7 +269,7 @@ export function doorOf(adapter: string | undefined, doors: readonly ToolDoor[]):
 }
 
 /**
- * What a person calls an account (ACCTNAME1, D152 §4.2): by its owner, or a door onto it, and its id, or none for the tool's
+ * What a person calls an account: by its owner, or a door onto it, and its id, or none for the tool's
  * own home. `settings/accounts/namer.ts` makes one from the roster; a molecule is handed it, since it holds no roster of its own.
  */
 export type AccountNamer = (owner: string, profile?: string | null) => string;
@@ -340,7 +340,7 @@ export function byTool(doors: readonly ToolDoor[], agents: readonly AgentSheet[]
       }
     }
 
-    // The agent the roster's sheet answers for this tool: by its id, else by any of its doors (COAGENT1e).
+    // The agent the roster's sheet answers for this tool: by its id, else by any of its doors.
     const agent = agents.find((each) => each.id === name)
       ?? agents.find((each) => each.doors.some((sheet) => doorsInOrder.some((door) => door.door === sheet.door)));
 
@@ -358,14 +358,14 @@ export function byTool(doors: readonly ToolDoor[], agents: readonly AgentSheet[]
       ownLogin: doorsInOrder.map((door) => door.ownLogin).find((state) => state && state !== 'unknown')
         ?? 'unknown',
       ownAccount: doorsInOrder.map((door) => door.ownAccount).find(Boolean) ?? null,
-      // Beside who, from the door that says who (ACCOUNTID1): two doors' halves would describe two readings.
+      // Beside who, from the door that says who: two doors' halves would describe two readings.
       ownOrg: doorsInOrder.find((door) => door.ownAccount)?.ownOrg ?? null,
       ownPlan: doorsInOrder.find((door) => door.ownAccount)?.ownPlan ?? null,
       // Read where the word on it stands: the door whose definite answer the state above takes, else any door's reading.
       ownRead: (doorsInOrder.find((door) => door.ownLogin && door.ownLogin !== 'unknown')
         ?? doorsInOrder.find((door) => door.ownRead))?.ownRead ?? null,
       takesRules: doorsInOrder.some((door) => door.takesRules === true),
-      // One file per account whichever door reads it (AGT7), so the first door to offer choices speaks for
+      // One file per account whichever door reads it, so the first door to offer choices speaks for
       // all; a door that said none says none, and a shell that never said leaves it unsaid.
       settingsChoices: doorsInOrder.map((door) => door.settingsChoices).find(Boolean)
         ?? (doorsInOrder.some((door) => door.settingsChoices === null) ? null : undefined),

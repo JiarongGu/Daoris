@@ -16,7 +16,7 @@ import { PublishedList } from './PublishedList';
 import { starters } from './starters';
 import { TAKEN, WORKING } from '../quests/fixtures';
 
-// Ask Daoris (HELP1, D89): its panel on a machine that lacks everything, on one that lacks nothing,
+// Ask Daoris: its panel on a machine that lacks everything, on one that lacks nothing,
 // and in Chinese widths by the same props.
 
 const meta = {
@@ -30,7 +30,7 @@ type Story = StoryObj<typeof meta>;
 
 export const LacksEverything: Story = {
   args: {
-    // The setup guide's standing (SETUP1a): the starters lead to it while it is not done.
+    // The setup guide's standing: the starters lead to it while it is not done.
     setup: { done: 0, of: 5 },
     starters: starters({
       repositories: [], drivable: [], waiting: 2, unnamedLines: [], helper: null,
@@ -54,7 +54,7 @@ export const OneLine: Story = {
 
 export const LacksNothing: Story = { args: { helper: 'claude-code-acp' } };
 
-/** HELP1a: the conversation takes the panel, and the composer sits at its foot. The record's own look is the conversation's stories'. */
+/** The conversation takes the panel, and the composer sits at its foot. The record's own look is the conversation's stories'. */
 export const Talking: Story = {
   args: {
     helper: 'claude-code-acp',
@@ -72,7 +72,7 @@ export const Talking: Story = {
   },
 };
 
-/** HELP1c: what the conversation proposes sits under it, for the person to apply or not. */
+/** What the conversation proposes sits under it, for the person to apply or not. */
 export const Proposing: Story = {
   args: {
     ...Talking.args,
@@ -97,7 +97,7 @@ export const Proposing: Story = {
 };
 
 /**
- * HELP6: a card for each door built since — an agent's update, an account's model and effort, a delete of
+ * A card for each door built since — an agent's update, an account's model and effort, a delete of
  * a record made by mistake, and a go to a screen, which changes nothing and carries no command.
  */
 export const ProposingEveryKind: Story = {
@@ -137,7 +137,7 @@ export const ProposingEveryKind: Story = {
                 harnesses: [], servers: [{ name: 'browser', command: ['npx', '-y', '@playwright/mcp@latest'] }], copied: true,
               },
             },
-            // HELP10: the browser's settings, and bringing up to date before and after the person looked.
+            // The browser's settings, and bringing up to date before and after the person looked.
             {
               id: 'b1', kind: 'browser' as const,
               describe: 'Links on the page open in Daoris\'s browser, from the next click. A sign-in link always opens in the system\'s browser.',
@@ -181,7 +181,7 @@ export const ProposingEveryKind: Story = {
                 apart: ['docs', 'site', 'tools'],
               },
             },
-            // COWORKUX1: the helper and pass doors of a session proposal.
+            // The helper and pass doors of a session proposal.
             {
               id: 'y4', kind: 'session' as const,
               describe: 'Ask agent `codex`, read-only, a question about session `s1`\'s work at the driver\'s next look. Its answer comes to you, and reaches that session only once you pass it to the lead.',
@@ -200,7 +200,7 @@ export const ProposingEveryKind: Story = {
 };
 
 /**
- * ASKDISMISS1: the block a published quest leaves in the conversation, once a session has taken the quest: a go card, its
+ * The block a published quest leaves in the conversation, once a session has taken the quest: a go card, its
  * sentence the driver's saying the quest is taken, *Go there* beside *Dismiss*, which only takes the card away.
  */
 export const ProposingAGoToATakenQuest: Story = {
@@ -226,7 +226,7 @@ export const ProposingAGoToATakenQuest: Story = {
 
 export const ProposingAGoToATakenQuestChinese: Story = { args: ProposingAGoToATakenQuest.args, decorators: [chinese] };
 
-// WORKFLOW1h-d: a workflow version's card (design §8.2): a new one, an edit, and a draft that offers only Not now.
+// A workflow version's card (design §8.2): a new one, an edit, and a draft that offers only Not now.
 const WORKFLOW_SHOWN = {
   id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
   diff: ['− Your look in local', '~ Landing on a branch: accept=automatic'],
@@ -251,7 +251,7 @@ const workflowCards = (): ReactNode => (
         terminal: 'daoris workflow apply docs-to-pr plan.json --base 1',
         workflow: { ...WORKFLOW_SHOWN, choose: false, needs: ['The plugin `azure-devops-pull-request` is not installed: add it on Plugins.'] },
       },
-      // FABRIC-PIPELINE1i: a verification pipeline's graph for the landed route, lowering the person's part; a kind's route alone.
+      // A verification pipeline's graph for the landed route, lowering the person's part; a kind's route alone.
       {
         id: 'w4', kind: 'workflow' as const, describe: 'Save `line-verify` v1 → v2 (Verify the line).', why: 'you asked failures to ask for their fix',
         terminal: 'daoris workflow apply line-verify <file> --base 1',
@@ -270,7 +270,7 @@ const workflowCards = (): ReactNode => (
   </ul>
 );
 
-/** WORKFLOW1h-d: the three workflow cards in a conversation, as the panel draws them. */
+/** The three workflow cards in a conversation, as the panel draws them. */
 export const ProposingWorkflows: Story = {
   args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, proposals: workflowCards() } },
 };
@@ -291,7 +291,7 @@ export const Ended: Story = {
   args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, ended: true } },
 };
 
-// ASKHIST1c: the open conversation as the dock holds it, at its 300 px floor and at the 430 px the owner's window gave it,
+// The open conversation as the dock holds it, at its 300 px floor and at the 430 px the owner's window gave it,
 // side by side in a panel's height; and the whole frame at 680 px, where the dock is the frame.
 
 const PASTED = 'to complete this https://example.atlassian.net/browse/TK-2205?focusedCommentId=1234567&page=com.example.plugin.tabpanels%3Acomments so the sprint closes';
@@ -344,7 +344,7 @@ const docked = { args: { helper: 'claude-code-acp', framed: false }, decorators:
 export const Open: Story = { ...docked, args: { ...docked.args, conversation: conversation() } };
 
 /**
- * ASKQUESTS1: what the conversation published, its strip under the head and outside the words' scroll, folded to its line and
+ * What the conversation published, its strip under the head and outside the words' scroll, folded to its line and
  * opened; its rows' own states are `PublishedList`'s stories.
  */
 const publishedStrip = (open: boolean) => {
@@ -476,7 +476,7 @@ const history = (
   />
 );
 
-/** ASKHIST1: the history open in the conversation's place, with its own head, and no box while it is. */
+/** The history open in the conversation's place, with its own head, and no box while it is. */
 export const History: Story = {
   ...docked, args: { ...docked.args, conversation: conversation({ historyOpen: true, history }) },
 };

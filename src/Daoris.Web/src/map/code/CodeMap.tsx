@@ -92,7 +92,7 @@ function CodeEdges({ lines, context, focus, name }: { lines: readonly CodeLine[]
 }
 
 /**
- * A repository's code, drawn (MAP3a; CANVAS1f; D224): folders as nested boxes, the modules in a folder in layers by dependency, each
+ * A repository's code, drawn: folders as nested boxes, the modules in a folder in layers by dependency, each
  * arrow pointing from a module to what it depends on. Display only: a press chooses a module or a line, a press on a closed folder
  * opens it, a second press, Escape or the ground releases. Presentational: everything arrives as props.
  *
@@ -202,7 +202,7 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
       : t('code.cycleLabel', { count: group.modules.length });
   };
   const titleOf = (id: string) => nameOf(id);
-  // Find reaches a module by its id, and by its folder's path, which a result says (MAPUX1d).
+  // Find reaches a module by its id, and by its folder's path, which a result says.
   const findItems = useMemo(
     () => [...tree.modules].map(([id, module]) => {
       const dir = dirOf(module.path);
@@ -285,7 +285,7 @@ export function CodeMapDetail({ modules, dependencies, selected, file, fed, onSe
   /** Which committed file the map was read from — said, so a person knows where to change it. */
   file: string;
   /**
-   * Where the map came from when this machine has no checkout of the repository (MAP3e): a teammate's,
+   * Where the map came from when this machine has no checkout of the repository: a teammate's,
    * brought down by the sync. Said, because the file line alone would claim a checkout read here.
    */
   fed?: Provenance;

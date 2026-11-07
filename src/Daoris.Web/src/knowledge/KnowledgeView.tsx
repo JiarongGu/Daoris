@@ -9,7 +9,7 @@ import type { ListPanes } from '../work/frame/listPanes';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 
 /**
- * Knowledge's mode as the application holds it (UX6i, D150 §2.2): the one it was left in, remembered for the place, and
+ * Knowledge's mode as the application holds it: the one it was left in, remembered for the place, and
  * a change of it.
  *
  * @remarks
@@ -31,8 +31,8 @@ export function useKnowledgeMode(lists: ListPanes): [KnowledgeMode, (mode: Knowl
 }
 
 /**
- * **The Knowledge place** (UX6i, D150 §2.2): Search and Convergence, two views of one index, as one place whose list's
- * head switches between them. What it hands the frame (D118 §5) is the mode's own list and main area, on Knowledge's pane.
+ * **The Knowledge place**: Search and Convergence, two views of one index, as one place whose list's
+ * head switches between them. What it hands the frame is the mode's own list and main area, on Knowledge's pane.
  *
  * @remarks
  * **Each mode keeps today's list, main area, filters and memory** (D118 §3f, FRAME1f): the mode's view hands its list
@@ -54,9 +54,9 @@ export function useKnowledgeView({ active, mode, onMode, lists, notify, semantic
   /** The application's list memory: each mode's chosen item and filters are its own list's. */
   lists: ListPanes;
   notify: Notify;
-  /** Whether this deployment matches meaning too (D24): each mode words its answers by it. */
+  /** Whether this deployment matches meaning too: each mode words its answers by it. */
   semantic: boolean;
-  /** Words another door asked Search for (CTX1), once per `id`. */
+  /** Words another door asked Search for, once per `id`. */
   handed?: { text: string; id: number } | null;
   onHanded?: () => void;
 }): ViewLayout {

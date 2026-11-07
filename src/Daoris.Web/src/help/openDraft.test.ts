@@ -30,7 +30,7 @@ describe('the open draft', () => {
     expect(openDraftNow()?.selected).toBe('line');
   });
 
-  /** FLOWCHART2d: sent where its fingerprint moved since this conversation was told, never again unchanged. */
+  /** Sent where its fingerprint moved since this conversation was told, never again unchanged. */
   it('is told with its fingerprint, and not again while the fingerprint is the one told', () => {
     const sent = draftToTell(draft, undefined)!;
     expect(sent.fingerprint).toBe(fingerprintOf(graph));
@@ -40,7 +40,7 @@ describe('the open draft', () => {
     expect(draftToTell(null, undefined)).toBeUndefined();
   });
 
-  /** FLOWCHART2f: a proposal names the draft it was made against by its fingerprint, and the editor takes its changes against that graph. */
+  /** A proposal names the draft it was made against by its fingerprint, and the editor takes its changes against that graph. */
   it('is kept as told, its graph by its fingerprint and the conversations told it, newest last', () => {
     const heard: string[][] = [];
     const stop = onTold(() => heard.push([...toldSessions()]));

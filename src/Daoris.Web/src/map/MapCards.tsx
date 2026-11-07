@@ -11,7 +11,7 @@ export type SessionWords = { parked: string; working: string };
 /** A session on the repository, parked first: it is the one a person acts on, and a repository may hold one of each. */
 const sessionOf = (node: MapNode) => (node.parked ? 'parked' : node.working ? 'working' : null);
 
-/** The ring a session there draws, kept at every tier: a shape as well as a hue (D41). */
+/** The ring a session there draws, kept at every tier: a shape as well as a hue. */
 function SessionRing({ there, inset, radius }: { there: 'parked' | 'working'; inset: string; radius: string }) {
   return (
     <span

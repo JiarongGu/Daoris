@@ -8,7 +8,7 @@ import { storyWidths } from './storyWidths';
 import { InlineConfirm } from '../work/InlineConfirm';
 
 // Every state of every primitive, on the shipped components — including the states real data rarely
-// shows. This is where the design is reviewed and kept (D42); the product cannot drift from it,
+// shows. This is where the design is reviewed and kept; the product cannot drift from it,
 // because it IS the product's code.
 
 const meta: Meta = { title: 'Design/Components' };
@@ -42,7 +42,7 @@ export const Pills: StoryObj = {
 };
 
 /**
- * Red drawn as words (UXFIX5): a danger button's label, a declined pill's word, a failed mark's word, a refusal and a
+ * Red drawn as words: a danger button's label, a declined pill's word, a failed mark's word, a refusal and a
  * diff's removed count, in the danger ink on each of the four surfaces; the line, the field and the mark stay declined's
  * hue. `tokens.test.ts` computes each at 4.5:1 or more; these are where the eye checks it.
  */
@@ -70,7 +70,7 @@ export const Danger: StoryObj = { render: () => <DangerWords /> };
 export const DangerDark: StoryObj = { render: () => <InTheme theme="dark"><DangerWords /></InTheme> };
 
 /**
- * Every other status hue drawn as words (UXFIX5c): each pill's word, a waiting mark's word, a diff's added count and its
+ * Every other status hue drawn as words: each pill's word, a waiting mark's word, a diff's added count and its
  * letters, and a sentence, in each hue's ink on the four surfaces; the line, the field and the mark stay the hue.
  * `tokens.test.ts` computes each at 4.6:1 or more on its own field; these are where the eye checks it.
  */
@@ -251,7 +251,7 @@ export const FormGridsHalf: StoryObj = { render: () => <FormGridsCards />, decor
 export const FormGridsNarrow: StoryObj = { render: () => <FormGridsCards />, decorators: [storyWidths.narrow] };
 
 /**
- * A code span breaks only between its words (LOOK5): the installed window broke a setting's terminal twin inside
+ * A code span breaks only between its words: the installed window broke a setting's terminal twin inside
  * `--no-keep` and `--workspace`, in 中文, at a narrow row. Three widths and both languages, a word wider than its
  * line, and a command a screen sets itself.
  */
@@ -284,8 +284,8 @@ export const CodeSpans: StoryObj = {
 };
 
 /**
- * The meanings a liveness mark carries, each wearing its word; `done` and `waits` are a fact's marks (MILESTONEUX1). There is
- * no story here for a dot without a label, because the component cannot render one — which is the point (D41 §6).
+ * The meanings a liveness mark carries, each wearing its word; `done` and `waits` are a fact's marks. There is
+ * no story here for a dot without a label, because the component cannot render one — which is the point.
  */
 export const Dots: StoryObj = {
   render: () => (
@@ -413,7 +413,7 @@ export const DrawerDetail: StoryObj = {
 };
 
 /**
- * A toast while a drawer is open (UXTOAST1): it stands at the drawer's left edge, over the scrim, so the ask open at the
+ * A toast while a drawer is open: it stands at the drawer's left edge, over the scrim, so the ask open at the
  * drawer's foot keeps its presses in view. In the corner it lay over them, since the drawer holds that corner whole.
  */
 export const ToastBesideDrawer: StoryObj = {
@@ -437,7 +437,7 @@ export const ToastBesideDrawer: StoryObj = {
 };
 
 /**
- * A menu longer than the window (MENU1): a receiver filter over sixty repositories, open. Its content is capped at
+ * A menu longer than the window: a receiver filter over sixty repositories, open. Its content is capped at
  * the room on its side and scrolls inside it, with the theme's bar, where it ran off the window. The filter's shape is
  * the list's ⋯: a group named for what it chooses, the chosen one ticked, a rule, and a toggle.
  */

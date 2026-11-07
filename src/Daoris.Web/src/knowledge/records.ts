@@ -60,7 +60,7 @@ export function findingTitle(finding: Pick<Convergence, 'entries'>): string {
 }
 
 /**
- * Which tier made a search's answer (TIER1, D24): the one that ANSWERED, from the service's header, never the one
+ * Which tier made a search's answer: the one that ANSWERED, from the service's header, never the one
  * configured; an answer without the header names none, and the configured tier is then all there is to say. `none`
  * is no half answering, which is not the same as nothing matching.
  */

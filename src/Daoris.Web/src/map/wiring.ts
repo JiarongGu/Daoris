@@ -1,9 +1,9 @@
 /**
- * The wiring answer's shape (MAP1b) — held here, beside what draws it, and imported by the shell's
+ * The wiring answer's shape — held here, beside what draws it, and imported by the shell's
  * query the way `work/review/diff.ts` is: a molecule may not import the shell module at all, types included.
  */
 
-/** Which rung of the resolution answered (D49 §4) — the order a start asks in. */
+/** Which rung of the resolution answered — the order a start asks in. */
 export type ChoiceFrom = 'picked' | 'workspace' | 'machine' | 'unset';
 
 /**
@@ -13,12 +13,12 @@ export type ChoiceFrom = 'picked' | 'workspace' | 'machine' | 'unset';
 export type StartWiring = {
   /**
    * The job this start is for: a driven session's work, or — once an agent is named for it — the
-   * intake an ask in this circle opens (INT4b, AGT6). Each circle's jobs arrive together, work first.
+   * intake an ask in this circle opens. Each circle's jobs arrive together, work first.
    */
   job: 'work' | 'intake';
   workspace: string;
   adapter: string;
-  /** Whose accounts it runs as (AGT7): the adapter itself, or the tool a door opens onto. */
+  /** Whose accounts it runs as: the adapter itself, or the tool a door opens onto. */
   owner: string;
   product?: string | null;
   /** The account by its directory name; null is the tool's own home, the account it signs in to itself. */

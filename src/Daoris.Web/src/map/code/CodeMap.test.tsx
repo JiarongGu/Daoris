@@ -244,7 +244,7 @@ describe('the code map detail', () => {
   });
 
   /**
-   * MAP3e: a teammate's map came down with the sync, so it says where from — the commit, its line and
+   * A teammate's map came down with the sync, so it says where from — the commit, its line and
    * whose key fed it — rather than implying this machine read a checkout it does not have.
    */
   it('says where a fed map came from: the commit, its line, and who fed it', () => {

@@ -43,7 +43,7 @@ export type HeavyMarks = {
   marks: boolean | null;
   names: string[];
   refusal?: string | null;
-  /** The gates the file declares and does not mark heavy (FABRIC-PIPELINE1b); absent where the answer lacks it. */
+  /** The gates the file declares and does not mark heavy; absent where the answer lacks it. */
   light?: string[];
 };
 
@@ -78,7 +78,7 @@ const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raise
  * **This machine's heavy gates for a repository** (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): the builds and suites a driven session
  * runs once, at its end, through `daoris gate run`, one run at a time in the repository, used only where the repository's own
  * `daoris.gates.json` marks no heavy gate. A row of its Setup's section of their own, the same `heavyGates` `daoris place heavy`
- * edits (D50), kept on this machine and never written into the repository.
+ * edits, kept on this machine and never written into the repository.
  *
  * @remarks
  * **The list is one sequence, edited whole** (D180: one gate at a time was rejected, since the order is the point). *Edit*, or *Add

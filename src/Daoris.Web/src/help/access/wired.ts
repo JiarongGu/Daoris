@@ -1,8 +1,8 @@
-// Ask Daoris's mode and its receipts as shapes (HELPMODE1b, HELPWIRED1; D183 points 1 and 4): the bridge answers them, and the
+// Ask Daoris's mode and its receipts as shapes: the bridge answers them, and the
 // panel's molecules draw them. Types alone, so a molecule takes them here and never from a bridge domain (the presentational
 // boundary, `design/presentational.test.ts`).
 
-/** Ask Daoris's access modes (D183 point 1): restricted, which reads and proposes, or full, which acts itself. */
+/** Ask Daoris's access modes: restricted, which reads and proposes, or full, which acts itself. */
 export type HelpMode = 'restricted' | 'full';
 
 /**
@@ -60,7 +60,7 @@ export type HelpReceipt = {
   checkouts: HelpWiredCheckout[];
   /** In restricted mode, what it lacks with the door that grants each; none in full access. */
   lacks: HelpWiredLack[];
-  /** What its door said it loaded (HELPWIRED1b); null until its init frame came, and on a start before it or a door that sends none. */
+  /** What its door said it loaded; null until its init frame came, and on a start before it or a door that sends none. */
   loaded?: HelpWiredLoaded | null;
 };
 

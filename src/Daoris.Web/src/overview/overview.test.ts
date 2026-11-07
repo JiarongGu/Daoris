@@ -6,7 +6,7 @@ const repo = (name: string, total: number, local = total): IndexedRepository =>
 
 /**
  * The Overview's repository chart, capped after the deployed application showed what the fixture
- * could not (D62): two repositories in the dev loop, fourteen on a real machine.
+ * could not: two repositories in the dev loop, fourteen on a real machine.
  */
 describe('ranked', () => {
   it('puts the biggest first', () => {

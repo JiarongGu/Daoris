@@ -7,7 +7,7 @@ import { saidLine } from './accounts';
 import { type CurvePoint, type CurveScope, ownPoints } from './usageCurves';
 
 /**
- * The usage curve on the page (SWITCH1d; D165 point 2; the switch design §2 and §5), since PUSH1e judged in .NET alone (D182 point
+ * The usage curve on the page (SWITCH1d; D165 point 2; the switch design §2 and §5), since PUSH1e judged in.NET alone (D182 point
  * 6): the driver's `UsageCurves` measures each window and the accounts' answer carries the verdicts, a window's curve now in whole
  * points and whether it is over it, and each scope's accounts whose tightest window is over its curve. The page words them. 🔴 The
  * driver's `fixtures/usage-curves.json` holds the words: every `tightest` row's clause is the page's, given the verdict .NET
@@ -37,7 +37,7 @@ describe('the usage curve, as .NET judges it and the page words it (PUSH1e)', ()
   });
 
   /**
-   * SWITCH1d: the page's said line marks a window over its curve with the curve's value now, as the terminal's `saidLine` and the
+   * The page's said line marks a window over its curve with the curve's value now, as the terminal's `saidLine` and the
    * start's line do, each row's clause in the page's words, which name the session window *five-hour*.
    */
   for (const [name, , , said, tightest, clause] of TABLE.tightest) {

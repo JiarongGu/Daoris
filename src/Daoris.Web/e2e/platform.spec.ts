@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = dirname(dirname(dirname(dirname(fileURLToPath(import.meta.url)))));
 
-// The platform, driven over the example family (D39, D42) — the shipped bundle, the real host, the
+// The platform, driven over the example family — the shipped bundle, the real host, the
 // real QuestExchange. One store per run; the tests tell one story in order.
 test.describe.configure({ mode: 'serial' });
 
@@ -14,7 +14,7 @@ test.describe.configure({ mode: 'serial' });
 const nav = (page: Page, name: string) =>
   page.getByRole('navigation').getByRole('button', { name });
 
-/** Quests' list pane, which a browser keeps beside the main area (FRAME1d, D118 §4). */
+/** Quests' list pane, which a browser keeps beside the main area. */
 const questList = (page: Page) => page.getByRole('complementary', { name: 'Quests' });
 
 /**
@@ -24,7 +24,7 @@ const questList = (page: Page) => page.getByRole('complementary', { name: 'Quest
 const record = (page: Page) => page.getByRole('main');
 
 /**
- * Repositories' list pane (FRAME1e): a group per workspace, headed by its row (UX6g), then its adopted and its registered
+ * Repositories' list pane: a group per workspace, headed by its row, then its adopted and its registered
  * not adopted, each row named by its repository.
  */
 const repositoryList = (page: Page) => page.getByRole('complementary', { name: 'Repositories' });
@@ -39,8 +39,8 @@ async function chooseRepository(page: Page, name: string) {
 }
 
 /**
- * Knowledge's list pane (UX6i, D150 §2.2): the two-way choice at its head, then Search's box, *local only* and the hits,
- * or Convergence's similarity and findings (FRAME1f), by the mode chosen there.
+ * Knowledge's list pane: the two-way choice at its head, then Search's box, *local only* and the hits,
+ * or Convergence's similarity and findings, by the mode chosen there.
  */
 const knowledgeList = (page: Page) => page.getByRole('complementary', { name: 'Knowledge', exact: true });
 const mode = (page: Page, name: 'Search' | 'Convergence') => knowledgeList(page).getByRole('radio', { name, exact: true });
@@ -49,15 +49,15 @@ const mode = (page: Page, name: 'Search' | 'Convergence') => knowledgeList(page)
 const toKnowledge = (page: Page) =>
   page.getByRole('navigation', { name: 'Views' }).getByRole('button', { name: 'Knowledge', exact: true }).click();
 
-/** Quests' ＋, one control with two kinds, Ask first, then New quest (D118 §2). */
+/** Quests' ＋, one control with two kinds, Ask first, then New quest. */
 async function make(page: Page, kind: 'Ask' | 'New quest') {
   await questList(page).getByRole('button', { name: 'New ask or quest' }).click();
   await page.getByRole('menuitem', { name: kind, exact: true }).click();
 }
 
 /**
- * *Mark done…* on a quest nobody has taken: its head keeps it in its ⋯ (UX7c, D152 §7), since taking is the open quest's
- * next step; a taken quest's *Mark done…* is its loud button. Either asks once under the header (QUESTCLOSE1), and the
+ * *Mark done…* on a quest nobody has taken: its head keeps it in its ⋯, since taking is the open quest's
+ * next step; a taken quest's *Mark done…* is its loud button. Either asks once under the header, and the
  * ask's *Mark done* sends the person's done.
  */
 async function markDoneOpen(page: Page) {
@@ -66,12 +66,12 @@ async function markDoneOpen(page: Page) {
   await confirmDone(page);
 }
 
-/** The person's done asked under the header (QUESTCLOSE1), sent with no note. */
+/** The person's done asked under the header, sent with no note. */
 async function confirmDone(page: Page) {
   await record(page).getByRole('group', { name: 'mark this quest done' }).getByRole('button', { name: 'Mark done', exact: true }).click();
 }
 
-/** Quests' ⋯ holds its filters: *Include closed* is a toggle there (D118 §2). */
+/** Quests' ⋯ holds its filters: *Include closed* is a toggle there. */
 async function includeClosed(page: Page) {
   await questList(page).getByRole('button', { name: 'Filter the list' }).click();
   await page.getByRole('menuitemcheckbox', { name: 'Include closed' }).click();
@@ -86,13 +86,13 @@ test('the overview shows the example family', async ({ page }) => {
 });
 
 /**
- * Repositories on the frame (FRAME1e, D118 §2): both members in the list, each opening its page with its declaration,
- * the chosen one remembered across a reload, and the page's door to its code map, one level into the Map (MAP3a).
+ * Repositories on the frame: both members in the list, each opening its page with its declaration,
+ * the chosen one remembered across a reload, and the page's door to its code map, one level into the Map.
  */
 test('repositories lists both members, and each opens its page with its declaration', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Repositories').click();
-  // A group per workspace (UX6g, D150 §4.1): the family's one, headed by its row.
+  // A group per workspace: the family's one, headed by its row.
   await expect(repositoryList(page).getByRole('heading', { level: 3, name: 'default 2 repositories' })).toBeVisible();
 
   await chooseRepository(page, 'engine');
@@ -100,7 +100,7 @@ test('repositories lists both members, and each opens its page with its declarat
   await chooseRepository(page, 'game');
   await expect(record(page).getByText('a playtest finding, with the reproduction')).toBeVisible();
 
-  // The list remembers the repository chosen (D118 §3f): after a reload, which lands on Overview (D40), its page is
+  // The list remembers the repository chosen (D118 §3f): after a reload, which lands on Overview, its page is
   // the one the view reopens on.
   await page.reload();
   await nav(page, 'Repositories').click();
@@ -112,7 +112,7 @@ test('repositories lists both members, and each opens its page with its declarat
 });
 
 /**
- * **A quest carries a link and files, and the files stay on this machine** (D65 §2). Composed through
+ * **A quest carries a link and files, and the files stay on this machine**. Composed through
  * the real composer's drawer, kept by the real host under its home, opened through the host's own route
  * on the quest's page — and an attached PAGE comes back as a sandboxed download: served from the
  * platform's origin, anything else would be a script with every route this host answers.
@@ -175,7 +175,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
 });
 
 /**
- * **A chain moves on when its quest closes done** (D65 §4) — over the real host, whose close publishes
+ * **A chain moves on when its quest closes done** — over the real host, whose close publishes
  * the next step in the same transaction. The quest's page shows what is coming before it comes, the
  * close's toast names the step it published, and the step says which quest it follows.
  */
@@ -201,7 +201,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await expect(step).toBeVisible();
   await expect(questList(page).getByText(`follows #${parent}`)).toBeVisible();
 
-  // MAP1: the step's page carries the chain — the quest it follows, done, and a door back to it;
+  // The step's page carries the chain — the quest it follows, done, and a door back to it;
   // and from there, a door forward again. Real records, the real host's parent link.
   await step.click();
   const chain = () => record(page).getByRole('region', { name: 'How this work ran' });
@@ -217,7 +217,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
 });
 
 /**
- * **The workspace map** (MAP2, D67 §3) — a view of its own, over the real host: the family's two
+ * **The workspace map** — a view of its own, over the real host: the family's two
  * repositories as nodes, and the quests the tests above sent from the game to the engine as one line.
  */
 test('the map draws the family and the quests that moved between them', async ({ page }) => {
@@ -234,7 +234,7 @@ test('the map draws the family and the quests that moved between them', async ({
 });
 
 /**
- * **One level in: a repository's own code map** (MAP3a) — over the real host, read from the example
+ * **One level in: a repository's own code map** — over the real host, read from the example
  * engine's committed `docs/code-map.json`. The game keeps none, and says so.
  */
 test('a repository opens its own code map, and one without says where it would go', async ({ page }) => {
@@ -267,7 +267,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await page.getByLabel('To', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
   await page.getByLabel('what is wanted, in one line').fill('Expose a streaming budget on the chunk API');
-  // Its short title (SESSUX1j): the few words a list and its head name it by, kept by the real host.
+  // Its short title: the few words a list and its head name it by, kept by the real host.
   await page.getByLabel('Short title').fill('Streaming budget');
   await page.getByLabel('why, and the evidence').fill(
     'World streaming needs a per-frame cap; today hydration is unbounded. Evidence: seams whenever more than three chunks hydrate in one frame.',
@@ -280,7 +280,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
 
   // It sits in Open, and the quest just published opens on its page in the main area, where the acting
   // happens; its row in the list is a door to the same page (D118 §3d). No drawer is left over it.
-  // Its head and its row say its short title; the whole title is said once, opening its body (UX7c, D152 §7).
+  // Its head and its row say its short title; the whole title is said once, opening its body.
   const title = 'Streaming budget';
   await expect(record(page).getByRole('heading', { level: 1, name: title })).toBeVisible();
   await expect(record(page).getByText(/^Expose a streaming budget on the chunk API/)).toHaveCount(1);
@@ -289,7 +289,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await record(page).getByRole('button', { name: 'Take', exact: true }).click();
   await expect(page.getByText(/is now Taken/).first()).toBeVisible();
 
-  // The page stays on the quest as it now stands: taken, so *Mark done…* is its next step, asking once (QUESTCLOSE1).
+  // The page stays on the quest as it now stands: taken, so *Mark done…* is its next step, asking once.
   await expect(record(page).getByRole('button', { name: 'Take', exact: true })).toHaveCount(0);
   await record(page).getByRole('button', { name: 'Mark done…', exact: true }).click();
   await confirmDone(page);
@@ -302,7 +302,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await expect(questList(page).getByText(title)).toBeVisible();
 
   // The filter is the list's own, remembered for the next visit (D118 §3f). The quest it chose has closed, so the view
-  // opens with nothing chosen rather than on yesterday's done quest (UX6b, D150 §8).
+  // opens with nothing chosen rather than on yesterday's done quest.
   await page.reload();
   await nav(page, 'Quests').click();
   await expect(questList(page).getByText(title)).toBeVisible();
@@ -328,11 +328,11 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
 });
 
 /**
- * **An ask, from the screen** (INT4c) — the twin of `daoris ask` (D50), over the real host.
+ * **An ask, from the screen** — the twin of `daoris ask`, over the real host.
  * Opened from the palette, made in the family's one workspace without being asked which, answered by the
  * declarations tier in the service's own words; a proposal accepted is a quest asked BY the ask,
  * carrying its link and its file; and the person closes it with the reason. The kept file is named
- * and never located (D47 §4, D65 §2).
+ * and never located.
  */
 test('an ask is proposed by declarations, published by a person, and closed with its reason (INT4c)', async ({ page }) => {
   const sentence = 'the rendering of the asset pipeline stalls whenever the simulation runs';
@@ -340,7 +340,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await page.goto('/');
   // A browser on this machine has this door: an ask is this host's HTTP, not the shell's bridge.
   await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
-  // Workspace › New ask… since UX7a (D152), the palette's row for it.
+  // Workspace › New ask… since UX7a, the palette's row for it.
   await page.getByRole('dialog').getByRole('option', { name: /^New ask/ }).click();
 
   // The composer is a form, so a drawer still (D118 §3d), addressed by its title.
@@ -368,7 +368,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await expect(ask.getByText('by declarations only; no intake agent ran')).toBeVisible();
   await expect(ask.getByText('trace.log')).toBeVisible();
   await expect(ask).not.toContainText('_fixtures');
-  // It is in the list too, at the head, above the quests (D118 §2).
+  // It is in the list too, at the head, above the quests.
   await expect(questList(page).getByText(/^Asks \(/)).toBeVisible();
 
   await ask.getByRole('button', { name: 'publish to engine' }).click();
@@ -376,7 +376,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
 
   // The quest it became is a door into the quest's own page — once the page holds it — asked BY the
   // ask, carrying its link and its file.
-  // Named as every list names it (SESSUX1j): the service read a name from its words, whole words, since nobody gave one.
+  // Named as every list names it: the service read a name from its words, whole words, since nobody gave one.
   await ask.getByRole('region', { name: 'Became' }).getByRole('button', { name: /^#[0-9a-f]{6} the rendering of the asset pipeline…$/ }).click();
   const quest = record(page);
   await expect(quest.getByRole('region', { name: 'Where it belongs' })).toHaveCount(0);
@@ -386,14 +386,14 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await expect(quest.getByRole('link', { name: /tickets\.example\/T-8/ })).toBeVisible();
   await expect(quest.getByRole('link', { name: /trace\.log/ })).toBeVisible();
 
-  // Its only quest done, the ask's work is finished (USE1c): it is DONE, and leaves the list by itself,
+  // Its only quest done, the ask's work is finished: it is DONE, and leaves the list by itself,
   // as a closed ask and a closed quest do. Nobody has to close it, and the family is left as found.
   await markDoneOpen(page);
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
   await expect(questList(page).getByText(/^Asks \(/)).toHaveCount(0);
 
   // With closed ones included, from the list's ⋯, it comes back as one row: an ask that became one quest is that quest's row,
-  // its ask on the route line (QUESTLISTS1), wearing its done pill; no asks group holds it twice.
+  // its ask on the route line, wearing its done pill; no asks group holds it twice.
   await includeClosed(page);
   await expect(questList(page).getByText(/^ask #[0-9a-f]{6} → engine$/)).toBeVisible();
   await expect(questList(page).getByText(/ask #[0-9a-f]{6}/)).toHaveCount(1);
@@ -403,7 +403,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
 
 /**
  * **A plain browser's *What needs you* says it is the app's, and an ask's record says who answered** (INT4d, PUSH1d4), over
- * the real host. Who needs the person is judged by the app (D182 point 6), so a browser lists no row, even with an ask proposed
+ * the real host. Who needs the person is judged by the app, so a browser lists no row, even with an ask proposed
  * and its intake parked asking: the band says the app judges it, never *Nothing needs you*. The ask's record, opened from
  * Quests' list, names the intake session there without a door, because a browser has no Sessions. The intake is opened and
  * parked through the doors the driver uses. The driver is not running here, and the record is what a page reads.
@@ -421,7 +421,7 @@ test('a browser’s What needs you is the app’s, and an ask’s record names i
   await expect(band.getByRole('listitem')).toHaveCount(0);
   await expect(band.getByText('Nothing needs you')).toHaveCount(0);
 
-  // Its page, in Quests' main area (FRAME1d), from the list where the ask sits at the head.
+  // Its page, in Quests' main area, from the list where the ask sits at the head.
   await nav(page, 'Quests').click();
   await questList(page).getByRole('button', { name: new RegExp(sentence) }).click();
   await expect(record(page).getByRole('heading', { level: 1, name: sentence })).toBeVisible();
@@ -464,7 +464,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   // member in the UI, quest-addressable at once. The host roots at a scratch family, so nothing
   // tracked is touched.
   //
-  // `connect` is what JOINS (D48 §3): the registry is an explicit list now, so being in the folder is
+  // `connect` is what JOINS: the registry is an explicit list now, so being in the folder is
   // not being a member. Before that it was the scan that admitted this newcomer — which is exactly the
   // silence the managed registry removed, and this test was reading it as a pass.
   const newcomer = join(repoRoot, '_fixtures', 'web-e2e', 'family', 'newcomer');
@@ -491,7 +491,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
 
   await page.goto('/');
   await nav(page, 'Repositories').click();
-  // Its summary is its row's one line (FRAME1e).
+  // Its summary is its row's one line.
   await expect(repositoryRow(page, 'newcomer').getByText('Born during the test run.')).toBeVisible();
 
   await nav(page, 'Quests').click();
@@ -507,7 +507,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
 });
 
 /**
- * The workspace scope (WSP5; D48 §4), over the real host and the real bundle.
+ * The workspace scope, over the real host and the real bundle.
  *
  * The family so far is ONE circle, so the switcher has been absent from every test above — that
  * absence is a claim too, and it is asserted first. Then the newcomer is re-wired into a second
@@ -552,7 +552,7 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
 
 test("a driven session's record reaches the quest's page (D46)", async ({ page, request }) => {
   // The driver is not running here: the RECORD is service state, seeded through the driver's own doors, as the platform
-  // sees it; a note draws from its parts only (D142), so the agent's words are one.
+  // sees it; a note draws from its parts only, so the agent's words are one.
   const published = await request.post('/api/quests', {
     data: {
       from: 'game', to: 'engine',
@@ -586,14 +586,14 @@ test("a driven session's record reaches the quest's page (D46)", async ({ page, 
   await expect(ran.getByText('the process is alive')).toBeVisible();
 
   // Read-only is the arc's central claim: the record renders, the control does not — stop reaches a
-  // PROCESS, and a browser has none to reach (D46 §6). Since SESSUX1d no quest page carries a stop at all:
-  // its one owner is the session's page header in Sessions, which a browser has not got (D126 §3.3).
+  // PROCESS, and a browser has none to reach. Since SESSUX1d no quest page carries a stop at all:
+  // its one owner is the session's page header in Sessions, which a browser has not got.
   await expect(shown.getByRole('button', { name: 'Stop session' })).toHaveCount(0);
   await expect(shown.getByRole('button', { name: 'Stop…' })).toHaveCount(0);
 });
 
 /**
- * Which tool, and which account, did the work (D49 §4).
+ * Which tool, and which account, did the work.
  *
  * The inner loop holds the formatter with a mocked record; this holds the whole chain over the real
  * artefact — the request contract, the ledger, the two store columns, the response shape, and the
@@ -613,7 +613,7 @@ test('a session record names the tool version and the account it ran as (D49 §4
   const quest = (await published.json() as { quest: { id: string } }).quest;
 
   // Through the same door the driver uses: it observes both before it spawns, because the service has
-  // no binaries to look at (D46 §7) and records what it is told.
+  // no binaries to look at and records what it is told.
   const opened = await request.post('/api/sessions', {
     data: {
       quest: quest.id, door: 'stub',
@@ -630,7 +630,7 @@ test('a session record names the tool version and the account it ran as (D49 §4
   await nav(page, 'Quests').click();
   await questList(page).getByText('Prove the record names its tool').click();
 
-  // The quest's page, in the main area (FRAME1d), carries the session's line.
+  // The quest's page, in the main area, carries the session's line.
   const shown = record(page);
   await expect(shown.getByRole('heading', { level: 1, name: 'Prove the record names its tool' })).toBeVisible();
   await expect(shown.getByText(new RegExp(`${session.id} · stub · stub-harness 9\\.9\\.9 · as work`))).toBeVisible();
@@ -640,7 +640,7 @@ test('a session record names the tool version and the account it ran as (D49 §4
  * **A browser must never learn what is installed on somebody's machine, or which accounts it holds.**
  *
  * The roster and the per-conversation profile picker ride the shell's bridge and have no HTTP route
- * at all (D47 §4) — a profile home is a filesystem path. In a browser the bridge is absent, so the
+ * at all — a profile home is a filesystem path. In a browser the bridge is absent, so the
  * queries never fire and the surfaces never render; asserting that here, over the real bundle, is the
  * only place the guarantee is checked against a real browser rather than against a mock that was told
  * to be absent.
@@ -648,7 +648,7 @@ test('a session record names the tool version and the account it ran as (D49 §4
 test('a browser learns nothing about this machine’s harnesses (D49 §4)', async ({ page }) => {
   await page.goto('/');
 
-  // Settings is here (D66) — a browser has appearance to set — and it holds NOTHING of a machine:
+  // Settings is here — a browser has appearance to set — and it holds NOTHING of a machine:
   // the machine's half is absent, not disabled. Asserted on the page itself, after checking the page
   // really is Settings, because an absence asserted on the wrong page is a check that cannot fail.
   await nav(page, 'Settings').click();
@@ -662,7 +662,7 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // browser only the registry's step.
   await expect(domains).toHaveText([/Get started/, /Appearance/, /AI features/]);
 
-  // A workspace's page (UX6g, D150 §4.3) has a machine half, its branches, setup and accounts, so it is opened and that
+  // A workspace's page has a machine half, its branches, setup and accounts, so it is opened and that
   // half's absence asserted where it would render, after its browser half is seen.
   await nav(page, 'Repositories').click();
   // However many it holds by now: a newcomer joins the family earlier in this file.
@@ -672,26 +672,26 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   await expect(record(page).getByRole('tablist')).toHaveCount(0);
   await expect(page.getByText(/remotes\.json|harnesses\.json|driver\.json/)).toHaveCount(0);
 
-  // A repository's page, where its facts render (FRAME1e): the absence is asserted where a path would be. Repositories is
+  // A repository's page, where its facts render: the absence is asserted where a path would be. Repositories is
   // already the place, and pressing its icon again would fold its list pane away.
   await chooseRepository(page, 'engine');
   await expect(record(page).getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
   // Nothing that would name a configuration home: a registration's root is a machine path, and a
-  // browser on the host's own machine is still not told another's (D47 §4).
+  // browser on the host's own machine is still not told another's.
   await expect(page.getByText(/[\\/]harnesses[\\/]/)).toHaveCount(0);
-  // Nor anything a browser cannot do: adding and importing touch machine paths (D48 §7), and so does Manage.
+  // Nor anything a browser cannot do: adding and importing touch machine paths, and so does Manage.
   await expect(repositoryList(page).getByRole('button', { name: 'Add repository' })).toHaveCount(0);
   await expect(record(page).getByRole('button', { name: 'Manage' })).toHaveCount(0);
-  // A repository's Setup is this machine's (UX6f, D47 §4): a browser's page is Details alone, with no tab row. So are its
+  // A repository's Setup is this machine's: a browser's page is Details alone, with no tab row. So are its
   // branches and its history (UX6h1, D147 §6).
   await expect(record(page).getByRole('tab', { name: 'Setup' })).toHaveCount(0);
   await expect(record(page).getByRole('tab', { name: 'History' })).toHaveCount(0);
 });
 
 /**
- * Daoris's own AI (AGT6): a browser is told which tier answers its search — the service's own words,
+ * Daoris's own AI: a browser is told which tier answers its search — the service's own words,
  * over the real bundle and the real host — and nothing of the intake, which is a machine's
- * `driver.json` (D47 §4). The tier on the status bar leads there.
+ * `driver.json`. The tier on the status bar leads there.
  */
 test('a browser is told which tier answers search, and nothing of the intake (AGT6)', async ({ page, request }) => {
   // Whatever this host answers, asked first: the page must say THAT, verbatim, not a tier of its own.
@@ -699,7 +699,7 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
   await page.goto('/');
 
   await page.getByLabel('state of this machine').getByRole('button', { name: 'recall' }).click();
-  // Settings' main area is named for the domain shown (FRAME1g), and its list has that domain chosen.
+  // Settings' main area is named for the domain shown, and its list has that domain chosen.
   await expect(page.getByRole('heading', { level: 1, name: 'AI features', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button', { name: 'AI features' }))
     .toHaveAttribute('aria-current', 'page');
@@ -714,7 +714,7 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
 });
 
 /**
- * Search on the frame (FRAME1f, D118 §2): the box, *local only* and the hits are its list, and the entry a hit names is
+ * Search on the frame: the box, *local only* and the hits are its list, and the entry a hit names is
  * read in the main area, as it is written, where it was the reader drawer over the side bar and the panel (audit SR4).
  * The game's own knowledge answers a search made from outside it, as the family rehearsal's search does over HTTP. Since
  * UX6i it is Knowledge's Search, which a fresh browser's Knowledge opens on.
@@ -750,7 +750,7 @@ test('search finds what the game knows, and its entry reads whole in the main ar
 });
 
 /**
- * Convergence on the frame (FRAME1f, D118 §2): the similarity and the findings are its list, and a finding is read in
+ * Convergence on the frame: the similarity and the findings are its list, and a finding is read in
  * the main area, the service's sentence and then each entry whole (audit CO4). Whatever this host answers at the list's
  * start is asked first, and the page must say THAT: the example family's own entries may share nothing. Since UX6i it
  * is Knowledge's Convergence, chosen at the list's head and remembered for the place.
@@ -786,16 +786,16 @@ test("convergence keeps its similarity, and a finding reads under the service's 
   await expect.poll(() => page.evaluate(() => window.localStorage.getItem('daoris.list.convergence.filters')))
     .toBe('{"threshold":0.7}');
   await page.reload();
-  // The place opens on the mode it was left in (UX6i).
+  // The place opens on the mode it was left in.
   await toKnowledge(page);
   await expect(mode(page, 'Convergence')).toHaveAttribute('aria-checked', 'true');
   await expect(slider()).toHaveValue('0.7');
 });
 
 /**
- * The Work frame is not rendered in a browser at all (D55), which is the strongest form the
+ * The Work frame is not rendered in a browser at all, which is the strongest form the
  * disclosure rule takes: its centre is a stream, its rows carry tree paths, and its panel is a
- * transcript — none of which may leave the machine that produced them (D47 §4). Playwright holds
+ * transcript — none of which may leave the machine that produced them. Playwright holds
  * the NEGATIVE, over the shipped bundle, because the positive is only reachable from the desktop.
  */
 test('a browser has no Sessions and no Plugins, and no mode to switch (D55, D66, D119)', async ({ page }) => {
@@ -804,7 +804,7 @@ test('a browser has no Sessions and no Plugins, and no mode to switch (D55, D66,
   // One navigation, and Sessions is not on it — absent rather than disabled.
   await expect(page.getByRole('group', { name: /mode/i })).toHaveCount(0);
   await expect(nav(page, 'Sessions')).toHaveCount(0);
-  // Nor Plugins (PLUGUI1b, D119 §3.7): a plugin is this machine's, so its view is shell-only, as Sessions is.
+  // Nor Plugins: a plugin is this machine's, so its view is shell-only, as Sessions is.
   await expect(nav(page, 'Plugins')).toHaveCount(0);
   await expect(nav(page, 'Quests')).toBeVisible();
 
@@ -819,12 +819,12 @@ test('a browser has no Sessions and no Plugins, and no mode to switch (D55, D66,
 
   // The status bar IS here — it belongs to the application — and it says what a browser is.
   await expect(page.getByLabel('state of this machine')).toContainText('none here');
-  // …and whether this circle syncs, which this machine's host answers over HTTP (SYNC6b): the example
+  // …and whether this circle syncs, which this machine's host answers over HTTP: the example
   // family has no remote, so it is local — said, rather than left out for want of a bridge.
   await expect(page.getByLabel('state of this machine')).toContainText('local only');
   await expect(page.getByRole('button', { name: 'sync' })).toHaveCount(0);
 
-  // And no review (SURF6). A diff is read off a checkout on the machine that ran the session, so a
+  // And no review. A diff is read off a checkout on the machine that ran the session, so a
   // browser has no door onto one — the dock that would hold it is part of Sessions, and Sessions is
   // not rendered here at all.
   await expect(page.getByRole('tab', { name: 'Review' })).toHaveCount(0);
@@ -832,10 +832,10 @@ test('a browser has no Sessions and no Plugins, and no mode to switch (D55, D66,
 });
 
 /**
- * A secondary window's ROUTE is in the same bundle a browser is served (SURF8) — that is what makes
+ * A secondary window's ROUTE is in the same bundle a browser is served — that is what makes
  * the monitor cost the components the Work frame already has. So the URL is reachable here, and the
  * window must not be: both of them are a rail and a live stream, and a stream has no HTTP route at
- * all (D47 §4). A pasted link lands on the platform rather than on an empty imitation of a desktop.
+ * all. A pasted link lands on the platform rather than on an empty imitation of a desktop.
  */
 test('a browser that asks for a secondary window gets the platform (SURF8)', async ({ page }) => {
   await page.goto('/?window=monitor');
@@ -850,7 +850,7 @@ test('a browser that asks for a secondary window gets the platform (SURF8)', asy
 });
 
 /**
- * The command palette lists nothing a browser cannot do (SURF9). A palette is a PROMISE that what it
+ * The command palette lists nothing a browser cannot do. A palette is a PROMISE that what it
  * lists can be done, so the disclosure boundary is enforced by omission rather than by a disabled
  * row — and this is the assertion that the omission actually reaches the page, not just the registry.
  */
@@ -862,10 +862,10 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
   await expect(palette).toBeVisible();
 
   // The views a browser has are here — every one but the view already in front of the person
-  // (Overview, on landing) — Settings among them, since a browser has appearance to set (D66).
+  // (Overview, on landing) — Settings among them, since a browser has appearance to set.
   await expect(palette.getByRole('option', { name: /Quests/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /Search/ })).toBeVisible();
-  // Knowledge, and its Convergence by the door it had as a place (UX6i); its Search is *Search knowledge*, above.
+  // Knowledge, and its Convergence by the door it had as a place; its Search is *Search knowledge*, above.
   await expect(palette.getByRole('option', { name: /Go to: Knowledge/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /Go to: Convergence/ })).toBeVisible();
   // Settings itself, not a domain's row (*Settings: Appearance*), which the palette lists too since UX7a.
@@ -874,7 +874,7 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
 
   // Nothing that needs a shell is — not disabled, ABSENT.
   await expect(palette.getByRole('option', { name: /Sessions/ })).toHaveCount(0);
-  // Plugins is this machine's (D119 §3.7), so its palette row is not offered here.
+  // Plugins is this machine's, so its palette row is not offered here.
   await expect(palette.getByRole('option', { name: /Plugins/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /New conversation/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Review what/ })).toHaveCount(0);
@@ -890,10 +890,10 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
 });
 
 /**
- * The chrome holds its shape on a narrow window (SURF10/SURF7).
+ * The chrome holds its shape on a narrow window.
  *
  * This is here because it was BROKEN and nothing noticed. The 15rem sidebar the activity bar
- * replaced turned into a top bar under 768px (D41 §2), and the rule that stacked it outlived it:
+ * replaced turned into a top bar under 768px, and the rule that stacked it outlived it:
  * at 686px the 48px icon rail became a 276px-tall column ABOVE the content, leaving the page 105px.
  * Neither suite could see it — vitest has no layout and every other case here runs at one width —
  * so the viewport is the assertion.
@@ -960,7 +960,7 @@ test("a browser's main area lays its columns out by its own width, beside no sid
 
 test('the console speaks 中文', async ({ page }) => {
   await page.goto('/');
-  // The activity bar's foot holds Settings alone (UX6j, D150 §2.1): the language is the palette's, View's and Appearance's.
+  // The activity bar's foot holds Settings alone: the language is the palette's, View's and Appearance's.
   await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
   await page.getByRole('dialog').getByRole('option', { name: /Switch language/ }).click();
   await expect(page.getByRole('heading', { name: '总览' })).toBeVisible();

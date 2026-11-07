@@ -16,14 +16,14 @@ export function useHelpHistory({ here, registered, helper, chosen, setChosen, sh
   live: boolean;
   picked: Session | null;
 }) {
-  // The history (ASKHIST1): open or not, its search, and each conversation's row, which says whether one that ended goes on
+  // The history: open or not, its search, and each conversation's row, which says whether one that ended goes on
   // in itself. The panel's own rows are asked whenever an agent is named, so the conversation shown knows its own.
   const [historyOpen, setHistoryOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [historyRefusal, setHistoryRefusal] = useState<string | null>(null);
   const words = search.trim();
   const searching = searchable(words);
-  // Whose conversations the history lists (ASKSCOPE1d, point 6): the window's workspace's, unless the person chose every
+  // Whose conversations the history lists: the window's workspace's, unless the person chose every
   // workspace's; a window on every workspace lists every one's. Its search runs over that scope alone. The choice is offered
   // where there is another workspace to see; a machine whose one workspace is `default` lists every one's, unlabelled, as before,
   // so a conversation of a workspace since gone is still reached, and named once it is opened.
@@ -57,8 +57,8 @@ export function useHelpHistory({ here, registered, helper, chosen, setChosen, sh
   const listed = (id: string) => rows.data?.conversations.find((row) => row.session === id)
     ?? found.data?.conversations.find((row) => row.session === id) ?? null;
   const rowOf = (id: string) => listed(id) ?? (openedRow?.session === id ? openedRow : null);
-  // Whether an ended one shown can go on in itself is the history's answer, so until it answers it is being checked
-  // (ASKHIST1c): read as "cannot", words typed under one that could would have started a fresh conversation without its own.
+  // Whether an ended one shown can go on in itself is the history's answer, so until it answers it is being checked:
+  // read as "cannot", words typed under one that could would have started a fresh conversation without its own.
   const checking = shown !== null && listed(shown.id) === null && (rows.isPending || rows.isFetching);
   const known = shown ? rowOf(shown.id) : null;
   const shownRow = checking ? null : known;

@@ -22,24 +22,24 @@ const GO_AHEAD_TONE: Record<GoAhead['state'], 'open' | 'done' | 'declined'> = {
 const KINDS = new Set(['write', 'release', 'push', 'sign-in', 'run']);
 
 /**
- * **The go-aheads an ask holds** (KNOWUSE1a, D135 §2): what its sessions asked the person for, each once, by its number —
+ * **The go-aheads an ask holds**: what its sessions asked the person for, each once, by its number —
  * the act by its kind, where it lands and what it touches; what became of it, with the person's words on an answer
  * verbatim; why the first session needed it, in its words; and how many more asked again. One waiting is answered here,
  * yes or no with words if any; one answered is answered again only once asked to, since the first answer was meant.
  *
  * @remarks
  * Where it lands and what it touches are the session's words, shown as written; the kind is the service's word, in the
- * page's language. `daoris ask go-ahead` is the terminal's twin (D50). **Props only, no hook** (components §2):
+ * page's language. `daoris ask go-ahead` is the terminal's twin. **Props only, no hook** (components §2):
  * without `onAnswer` there is no door, and nothing offers one.
  *
  * The same list stands on a parked session's page (KNOWUSE1a2), the go-aheads that session asked, where answering the
- * last one open sends the session on (GOAHEAD2b): its lead says so there, handed in as `lead`.
+ * last one open sends the session on: its lead says so there, handed in as `lead`.
  */
 export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversation, marked, stale }: {
   goAheads: GoAhead[];
   busy?: boolean;
   /**
-   * The go-aheads nothing on the ask could still use, by number, as What needs you's rows say (GOAHEADSTALE1): each marked stale with
+   * The go-aheads nothing on the ask could still use, by number, as What needs you's rows say: each marked stale with
    * how long, its refusal the one answer offered. Absent, none is (a browser, which judges none).
    */
   stale?: Readonly<Record<number, StaleSince>>;
@@ -48,7 +48,7 @@ export function GoAheadList({ goAheads, busy = false, onAnswer, lead, inConversa
    * D168 point 4): *In the conversation* on its item. Absent, none.
    */
   inConversation?: Readonly<Record<number, () => void>>;
-  /** The go-ahead a raising block's *To the wait* led to (WAITFOOT1c): outlined. */
+  /** The go-ahead a raising block's *To the wait* led to: outlined. */
   marked?: number;
   /**
    * The person's yes or no to go-ahead `number`, with their words where they gave any, and how to tell the item how it ended
@@ -88,7 +88,7 @@ function GoAheadItem({ goAhead, kindWord, busy, onAnswer, onConversation, marked
   onAnswer?: GoAheadAnswer;
   onConversation?: () => void;
   marked?: boolean;
-  /** Nothing on the ask could still use it (GOAHEADSTALE1): marked so with how long, and only its refusal offered. */
+  /** Nothing on the ask could still use it: marked so with how long, and only its refusal offered. */
   stale?: StaleSince;
 }) {
   const { t } = useTranslation();

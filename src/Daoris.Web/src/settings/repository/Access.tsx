@@ -7,7 +7,7 @@ import { Inheritable } from '../../projects/setup/SetupParts';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 
 /**
- * Where a pause's value was set (AUTONOMY1a, D184 point 1): for the repository, its workspace, this machine, or nowhere, which is
+ * Where a pause's value was set: for the repository, its workspace, this machine, or nowhere, which is
  * today's behaviour (`AccessRules`' sources).
  */
 export type AccessSource = 'repository' | 'workspace' | 'machine' | 'default';
@@ -37,8 +37,8 @@ export type AccessEdit = { access: 'full' | Record<string, string | null> | null
 export type AccessChange = ({ repository: string } | { workspace: string } | { machine: true }) & AccessEdit;
 
 /**
- * The pauses, each with its values, today's and the open one, in the order every door says them: the twins' `AccessRules.Pauses`
- * (D184 point 3). *Questions* has one value, every setup's since AUTONOMY1e, so it is shown and never chosen.
+ * The pauses, each with its values, today's and the open one, in the order every door says them: the twins' `AccessRules.Pauses`.
+ * *Questions* has one value, every setup's since AUTONOMY1e, so it is shown and never chosen.
  */
 const PAUSES: Record<string, { values: readonly string[]; today: string; open: string }> = {
   permissions: { values: ['asking', 'auto', 'unrestricted'], today: 'auto', open: 'unrestricted' },
@@ -179,7 +179,7 @@ const WARN_LINE = 'm-0 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-sma
  *
  * **Each pause is an `Inheritable`**: one from above says where it came from and offers *Set for this …*, which opens its choice
  * in place; one set here carries its choice and *Clear*, which takes it back to the level above. *Questions* is shown with no
- * choice, since every setup asks as Claude Code does (AUTONOMY1e). Each row's hint is its terminal twin, `daoris place access`.
+ * choice, since every setup asks as Claude Code does. Each row's hint is its terminal twin, `daoris place access`.
  *
  * **A refusal is said where it was pressed** (ACCESSASK1, the UI/UX design R3, §3.3): every change carries how to answer it, and
  * one the driver refused is said under its own row, the pause's editor or the full-access switch, in the driver's sentence and

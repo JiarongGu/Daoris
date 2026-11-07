@@ -18,10 +18,10 @@ import { AccountsFold } from './page/AccountsFold';
 /** The sections that fold (D150 §1 rule 4): the accounts never do. */
 export type AgentSection = 'use' | 'doors' | 'rules' | 'settings' | 'usage' | 'used';
 
-/** A door's acts that run its own mechanism (D49 §4): its installer, its updater, its pin. */
+/** A door's acts that run its own mechanism: its installer, its updater, its pin. */
 export type DoorAction = 'install' | 'update' | 'unpin';
 
-/** What the rules section presses, the screen's half of `daoris agent rules` (PERM1, D50). */
+/** What the rules section presses, the screen's half of `daoris agent rules`. */
 export type RuleActs = {
   onSwitchDefault: (id: string, on: boolean) => void;
   onRemove: (target: { scope: RuleScopeName; name: string | undefined; rule: string }) => void;
@@ -33,7 +33,7 @@ export type RuleActs = {
 export type AddedAnswer = { name: string };
 
 /**
- * How a question asked in the page hears how its act ended (ACCTEDIT1): `done` once it landed, and `refused` with the
+ * How a question asked in the page hears how its act ended: `done` once it landed, and `refused` with the
  * sentence the person reads, said in the question with what they entered kept. One type, the inline confirmation's, since
  * UXFIX2 made it every inline ask's contract.
  */
@@ -41,29 +41,29 @@ export type { Answered };
 
 /**
  * The questions that wait on their act's answer: a row's rename, the add flow's last step, the key's field and an account's
- * model and effort (ACCTUX3).
+ * model and effort.
  */
 export type Question = 'rename' | 'added' | 'key' | 'settings';
 
-/** Every press on an agent's page, each the terminal's twin (D50). */
+/** Every press on an agent's page, each the terminal's twin. */
 export type AgentActs = {
-  /** *Read again*: this agent's accounts, one at a time; never the tool's own sign-in (D197 point 3). */
+  /** *Read again*: this agent's accounts, one at a time; never the tool's own sign-in. */
   onReadAgain: () => void;
-  /** An account's own *Read*, from its row or its ⋯: that account alone (ROSTER1). */
+  /** An account's own *Read*, from its row or its ⋯: that account alone. */
   onReadOne: (account: string) => void;
-  /** *Read now*: each account's use read again where its reading is older than a minute, no sign-in asked (SWITCH1d). */
+  /** *Read now*: each account's use read again where its reading is older than a minute, no sign-in asked. */
   onReadNow: () => void;
-  /** A sign-in that makes a new account (D66 §3), step 2 of *Add an account…*. */
+  /** A sign-in that makes a new account, step 2 of *Add an account…*. */
   onSignInNew: () => void;
-  /** A key added as a new account (AGT3), told back to its field (ACCTUX3): it closes once the key is kept. */
+  /** A key added as a new account, told back to its field: it closes once the key is kept. */
   onAddKey: (key: string, answered: Answered) => void;
-  /** A new key put into the account a refused key's row names, keeping its name and lists (KEYREPLACE1b), told back to its field. */
+  /** A new key put into the account a refused key's row names, keeping its name and lists, told back to its field. */
   onReplaceKey: (account: string, key: string, answered: Answered) => void;
-  /** A sign-in to the account a row names, by its id (ACCT1). */
+  /** A sign-in to the account a row names, by its id. */
   onSignIn: (account: string) => void;
   /** *Try now*: an account's cool-off ended early. */
   onTryNow: (account: string, label: string) => void;
-  /** An account removed, from its *Remove…*'s ask, told back to it (UXFIX2). */
+  /** An account removed, from its *Remove…*'s ask, told back to it. */
   onRemove: (account: string, answered: Answered) => void;
   /** An account named by the person, or its name taken back with null (ACCT2, `daoris agent profile rename`). */
   onRename: (account: string, name: string | null, answered: Answered) => void;
@@ -74,7 +74,7 @@ export type AgentActs = {
    * marked said (`ACCOUNT_USE` `said`); one written after the page drew is not among them, and stays.
    */
   onPooledSaid: (ids: string[]) => void;
-  /** An account's own model and effort saved (AGT6), told back to its editor (ACCTUX3): it closes once the save lands. */
+  /** An account's own model and effort saved, told back to its editor: it closes once the save lands. */
   onSaveSettings: (account: string, label: string, change: AccountSettingsChange, answered: Answered) => void;
   onDoor: (door: string, action: DoorAction) => void;
   onPin: (door: string, version: string) => void;
@@ -93,7 +93,7 @@ export type AgentActs = {
  * @remarks
  * **A molecule**: every state arrives as props, the panels a press opens arrive as nodes (a sign-in's, a door's console),
  * and every press goes out. It holds only what the person has open: a section, *Add an account…*'s first step, a row's
- * question, *Remove…*'s ask, a form, and why a question's act was refused (ACCTEDIT1).
+ * question, *Remove…*'s ask, a form, and why a question's act was refused.
  *
  * - **A section appears only where the agent has that concept** (§5.1): what it may do only where Daoris hands its agent
  *   the rules file, model and effort only where Daoris knows the tool's settings, how accounts are used only where it has
@@ -103,7 +103,7 @@ export type AgentActs = {
  * - **No sign-in is asked when it opens** (§5.3): each account says its last known state and when it was read, and *Read* or
  *   *Read again* asks on the press. Its use is read at *Read now* alone, by
  *   the organism (SWITCH1d; D165 point 1, which spends nothing), and each window is drawn against its scope's curve.
- * - **Explanation folds** (D152 §4.4): your own sign-in's paragraph is its row's ⓘ, the plans and terms one line that opens.
+ * - **Explanation folds**: your own sign-in's paragraph is its row's ⓘ, the plans and terms one line that opens.
  */
 export function AgentPage({
   tool, use, rules, usage, adapter, part, reading = false, readingNow = false, busy = false, settingsBusy = false, signingIn = null,
@@ -115,11 +115,11 @@ export function AgentPage({
    * section is then absent. A read that failed is said, never an empty list.
    */
   usedBy?: { read: 'ok' | 'loading' | 'failed'; rows: UsedBy[] } | null;
-  /** How its accounts are used (TOOL4g): null where the snapshot holds none, and the sections it feeds are absent. */
+  /** How its accounts are used: null where the snapshot holds none, and the sections it feeds are absent. */
   use: AgentAccounts | null;
-  /** The rules file's answer (PERM1): null where it is not read, and *What it may do* is absent. */
+  /** The rules file's answer: null where it is not read, and *What it may do* is absent. */
   rules: AgentRulesState | null;
-  /** What each of its accounts has carried (TOOL3), by its doors; null while it is not answered yet, never nothing measured (PUSHUX1). */
+  /** What each of its accounts has carried, by its doors; null while it is not answered yet, never nothing measured. */
   usage: AgentUsage[] | null;
   /** The adapter driven work starts on (`driver.json`'s). */
   adapter?: string;
@@ -127,7 +127,7 @@ export function AgentPage({
   part?: AgentPart | null;
   /** *Read again* is on its way. */
   reading?: boolean;
-  /** *Read now* is on its way (SWITCH1d). */
+  /** *Read now* is on its way. */
   readingNow?: boolean;
   /** An act on the agent is on its way: one at a time, by construction. */
   busy?: boolean;
@@ -139,7 +139,7 @@ export function AgentPage({
   signInNewPanel?: ReactNode;
   /**
    * The new account a sign-in or a key added kept, by its id, who signed in and, for a key, its handle, waiting on the add
-   * flow's step 3, its name: a key added asks the same question (the UX7 design §4.5, ACCTUX3).
+   * flow's step 3, its name: a key added asks the same question.
    */
   added?: { account: string; who: string | null; key?: string | null; offered?: string | null } | null;
   /** The door whose action runs, whose block holds `doorConsole`. */
@@ -154,7 +154,7 @@ export function AgentPage({
   now?: Date;
 }) {
   const { t } = useTranslation();
-  // The agent's account acts and the door they run through come from the roster's sheet (COAGENT1e), never from a door of the list.
+  // The agent's account acts and the door they run through come from the roster's sheet, never from a door of the list.
   const lead = tool.lead ?? tool.name;
   const signsIn = tool.acts?.signsIn === true;
   const takesKey = tool.acts?.takesKey === true;
@@ -164,11 +164,11 @@ export function AgentPage({
   const machine: AccountScope | null = use ? machineScope(use) : null;
   const states = accountStates(tool, use);
   // When any of its accounts was last read, said once at the head of the list beside *Read again*; your own sign-in is never
-  // read (D197 point 3), so a reading of it kept from before is not among them.
+  // read, so a reading of it kept from before is not among them.
   const latest = latestRead([...states.values()]);
   const ownLabel = t('agents.account.own');
   const accountOf = (name: string) => tool.accounts.find((each) => each.name === name);
-  // An account on one line, told apart from another sign-in of its email (ACCOUNTID1b).
+  // An account on one line, told apart from another sign-in of its email.
   const labelOf = (name: string) => {
     const account = accountOf(name);
     return account ? accountLabel(account, tool) : name;
@@ -176,7 +176,7 @@ export function AgentPage({
   const choices: AccountChoice[] = tool.accounts.map((account) => ({
     name: account.name, label: labelOf(account.name), login: account.login, keyed: Boolean(account.key),
   }));
-  // Where an account stands in the set's order (D197 point 2), for the lists the page draws in it; one the order does not
+  // Where an account stands in the set's order, for the lists the page draws in it; one the order does not
   // name yet goes after, as `Change` would place it.
   const order = machine?.list ?? [];
   const place = (name: string) => (order.includes(name) ? order.indexOf(name) : order.length);
@@ -212,13 +212,13 @@ export function AgentPage({
   const [removing, setRemoving] = useState<string | null>(null);
   const [tuning, setTuning] = useState<string | null>(null);
   const [keying, setKeying] = useState(false);
-  // KEYREPLACE1b: the account whose refused key a new one is being typed for; the one key draft serves it and the header's field.
+  // The account whose refused key a new one is being typed for; the one key draft serves it and the header's field.
   const [replacing, setReplacing] = useState<string | null>(null);
   const [keyDraft, setKeyDraft] = useState('');
   const [pinning, setPinning] = useState<Record<string, string>>({});
   const [pinOpen, setPinOpen] = useState<string | null>(null);
   const [termsOpen, setTermsOpen] = useState(false);
-  // ACCTEDIT1: a question closes once its act lands, never on the press, so a refused one keeps what the person entered and
+  // A question closes once its act lands, never on the press, so a refused one keeps what the person entered and
   // says why in it; the refusal is the question's, by its kind and its account, and goes when it is asked again or closed.
   const [refused, setRefused] = useState<{ question: Question; account: string; sentence: string } | null>(null);
   const answered = (question: Question, account: string, close: () => void = () => {}): Answered => {
@@ -231,7 +231,7 @@ export function AgentPage({
     setRefused(null);
     setRenaming(account);
   };
-  // The key's field and the model and effort editor ask so too (ACCTUX3): opened or put down, the last refusal goes.
+  // The key's field and the model and effort editor ask so too: opened or put down, the last refusal goes.
   const askKey = (open: boolean) => {
     setRefused(null);
     setKeying(open);
@@ -275,7 +275,7 @@ export function AgentPage({
     return () => watch.disconnect();
   }, [part]);
 
-  // ACCTUX3: the field closes and forgets the key once it is kept, never on the press, so a refused key stays to be corrected
+  // The field closes and forgets the key once it is kept, never on the press, so a refused key stays to be corrected
   // with why said under it (ACCTEDIT1's contract); kept, the add flow's last step asks its name.
   const addKey = () => {
     const key = keyDraft.trim();
@@ -286,7 +286,7 @@ export function AgentPage({
     }));
   };
 
-  // KEYREPLACE1b: the same discipline for a replacement: closed and forgotten once kept, a refusal said in the row's field.
+  // The same discipline for a replacement: closed and forgotten once kept, a refusal said in the row's field.
   const replaceKey = (account: string) => {
     const key = keyDraft.trim();
     if (!key) return;
@@ -307,7 +307,7 @@ export function AgentPage({
     else acts.onSignInNew();
   };
 
-  // The header's ⋯ (D152 §4.1): a door's own acts, which *Ways in* keeps too, and the agent's id, which left the head.
+  // The header's ⋯: a door's own acts, which *Ways in* keeps too, and the agent's id, which left the head.
   const owning = tool.doors.find((each) => each.present);
   const pinnable = tool.doors.find((each) => each.pinnable);
   const headMenu: MenuAct[] = [
@@ -415,7 +415,7 @@ export function AgentPage({
           label: t('harness.cooling.tryNow'), ariaLabel: t('harness.cooling.tryNowFor', { account: label }),
           onPress: () => acts.onTryNow(id, label), disabled: busy,
         };
-      // A key its provider refused (ACCTUX1): a key field on its own row, which puts the new key into the same account
+      // A key its provider refused: a key field on its own row, which puts the new key into the same account
       // (`key-replace`, KEYREPLACE1b), keeping its name and its place in the order.
       case 'newKey':
         return {
@@ -427,17 +427,17 @@ export function AgentPage({
 
   const accountRow = (account: Account) => {
     const name = accountName(account);
-    // Where a name reads as another sign-in's, the line its acts and asks name it by (ACCOUNTID1b).
+    // Where a name reads as another sign-in's, the line its acts and asks name it by.
     const label = accountLabel(account, tool);
     const state = states.get(account.name)!;
     const facts = use?.accounts.find((each) => each.name === account.name);
     const offered = accountAct(state, { signsIn: signsIn && !account.key, present: tool.present, takesKey });
     // What its agent last said, and since when it is offered again, under that row alone; a cool-off's column says its hold's
     // end, so each reset the agent reported is said in its window's cell, and one Daoris chose the length of says the reset is
-    // unknown (ACCTUX1). The session's and the week's cells are on every sign-in whose agent speaks, unknown until read
-    // (ACCTUX4); a key's are drawn only where it said something, since a key has no window its agent was heard to keep.
-    // Each window against the curve of the list it is measured by, as .NET judged it beside the reading (PUSH1e), and where its
-    // reading came from (SWITCH1d).
+    // unknown. The session's and the week's cells are on every sign-in whose agent speaks, unknown until read;
+    // a key's are drawn only where it said something, since a key has no window its agent was heard to keep.
+    // Each window against the curve of the list it is measured by, as.NET judged it beside the reading, and where its
+    // reading came from.
     const usage = usageCells(facts, state, { fixed: Boolean(use?.speaks) && !account.key, now, product });
     return (
       <AccountRow
@@ -506,7 +506,7 @@ export function AgentPage({
   // The add flow's step 3 offers the name the person gave at the sign-in, else the name the sign-in's end offered (ACCOUNTID1b:
   // who signed in, or with the organisation beside it where another account has the email, by the driver's one rule), else
   // none, so who signed in. It says what it is called left empty, which is the row's own namer's
-  // answer with no name given (ACCTUX1), and who signed in told apart from another sign-in of the email.
+  // answer with no name given, and who signed in told apart from another sign-in of the email.
   const addedAccount = added ? accountOf(added.account) : undefined;
   const offeredName = addedAccount?.displayName?.trim()
     || (added && added.offered !== undefined ? added.offered : added?.who) || '';
@@ -514,7 +514,7 @@ export function AgentPage({
   const addedFallback = added
     ? accountName({ name: added.account, key: added.key ?? addedAccount?.key, account: added.who ?? addedAccount?.account })
     : '';
-  // A key added names no one signed in (AGT3): its step says the key was added, under the header's own *Add an API key*.
+  // A key added names no one signed in: its step says the key was added, under the header's own *Add an API key*.
   const addedKey = added?.key ?? null;
   const adding = (goingBack && !signInNewPanel && !added) || Boolean(signInNewPanel) || Boolean(added);
 

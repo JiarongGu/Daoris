@@ -30,26 +30,26 @@ import { useZoomKeys, useZoomWheel } from './windowZoom';
  * tick-driven refetch second.
  */
 export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow }) {
-  // Absent in a browser, like every other shell-only surface (D47 §4). Both of these windows are a
+  // Absent in a browser, like every other shell-only surface. Both of these windows are a
   // rail and a live stream, and the stream has no HTTP route at all — so over a keyed remote this
   // would be a window with nothing honest in it. A URL somebody pasted therefore lands on the
   // platform rather than on an empty imitation of the desktop, which is the same fallback the Work
   // frame already makes for a remembered mode it cannot honour.
   const { isAvailable } = useShenora();
   const { toasts, notify, dismiss } = useToasts();
-  // Its own frame's caption follows the theme this page is in (WINDOW2), not the OS's.
+  // Its own frame's caption follows the theme this page is in, not the OS's.
   useSecondaryWindowTheme(which.kind === 'monitor' ? MONITOR_WINDOW : sessionWindowName(which.id));
-  // A detached conversation's links go where the application's do (BRW7).
+  // A detached conversation's links go where the application's do.
   const linkOpener = useLinkOpener(notify);
   const { t } = useTranslation();
   const openBrowser = useOpenBrowser();
-  // NOTIFY2g (§5): an urgent message to everyone, said here while this window is the one in front, once per message, with no door,
+  // An urgent message to everyone, said here while this window is the one in front, once per message, with no door,
   // since this window holds no view.
   const messages = useMessageAnnouncements({
     words: (arrived) => t('notifications.messages.toast', { who: whoWords(arrived.newest, t), line: arrived.newest.line }),
     openLabel: t('notifications.toast.open'),
   });
-  // The machine's one zoom (ZOOM1), here too: its native frame is the OS's, so all of this page is content, and the wheel and
+  // The machine's one zoom, here too: its native frame is the OS's, so all of this page is content, and the wheel and
   // the keys step the same level the main window's do, the engine's own zoom never beside it.
   const zoom = useZoom();
   useZoomWheel(isAvailable);
@@ -63,7 +63,7 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
           never pulled beside it. It renders nothing. */}
       <ShellSignals
         notify={notify}
-        // NOTIFY2b (the notification design §3.3): this window holds no *Notifications*, so a terminal's press heard while it is the
+        // This window holds no *Notifications*, so a terminal's press heard while it is the
         // one in front is said here by where it waits, with no door; the main window's taskbar button is lit meanwhile.
         onConfirming={() => {
           if (document.visibilityState === 'visible' && document.hasFocus()) notify(t('notifications.toast.inMain'), 'error');

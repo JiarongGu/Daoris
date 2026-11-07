@@ -4,7 +4,7 @@ import { Inline, Pill, Prose } from '../design/ui';
 import type { ContextOffer } from '../menus/press';
 import { type MainNotice, PageHead, ViewMain } from '../work/frame/ViewMain';
 
-/** A document's right-click (CTX1, D138 §4): its path, copied, since the page is read and nothing is done to it here. */
+/** A document's right-click: its path, copied, since the page is read and nothing is done to it here. */
 export function documentMenu(t: (key: string) => string, entry: { title: string; path: string }): ContextOffer {
   return { label: entry.title, acts: [{ id: 'copy', label: t('contextMenu.act.copyPath'), icon: 'copy', copy: entry.path }] };
 }
@@ -41,13 +41,13 @@ export const entryPlace = (entry: Pick<Entry, 'repository' | 'path' | 'firstLine
 };
 
 /**
- * **An entry's page** (FRAME1f, D118 §2): Search's main area, the entry a result names read whole. Its header is its
+ * **An entry's page**: Search's main area, the entry a result names read whole. Its header is its
  * title, its kind and provenance, and where it lives; then its text as it is written. It was the reader, a wide drawer
  * over the side bar and the panel (audit SR4).
  *
  * @remarks
  * **A molecule**: the entry arrives read, and the page holds nothing. It adds no acts: doctrine is changed where its
- * repository keeps it (D31), never from here. A right-click copies its path (CTX1).
+ * repository keeps it, never from here. A right-click copies its path.
  */
 export function EntryPage({ entry }: { entry: Entry }) {
   const { t } = useTranslation();

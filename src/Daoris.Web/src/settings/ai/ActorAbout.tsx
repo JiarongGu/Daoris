@@ -53,7 +53,7 @@ export function IntakeAbout({ agent, starts, nameOf }: {
 
 /**
  * What Ask Daoris's row says under its order (HELP1, D89; MODELROLE1d: its card folded into its actor row): on an agent it reads
- * and proposes, or with full access acts itself; off, it offers its starters, the no-agent tier (D24).
+ * and proposes, or with full access acts itself; off, it offers its starters, the no-agent tier.
  */
 export function AskDaorisAbout({ agent, full = false }: { agent: string | null; full?: boolean }) {
   const { t } = useTranslation();

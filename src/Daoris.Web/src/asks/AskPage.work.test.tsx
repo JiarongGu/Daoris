@@ -13,7 +13,7 @@ import { ABANDON_ANSWER, ABANDONED_ASK, MIXED_ASK, PAUSABLE_ASK, PAUSED_ASK } fr
 import { AskPage } from './AskPage';
 import { BY_INTAKE, CLOSED, INTAKE_SESSION, PUBLISHED } from './fixtures';
 
-// An ask's page with this machine's driver (PAUSE1e, D132 §7.1): *Pause…*, *Resume* and *Abandon…* in its header, each where
+// An ask's page with this machine's driver: *Pause…*, *Resume* and *Abandon…* in its header, each where
 // it applies and absent where it does not; the pause's ask and the abandon's list under it; *What went* and *What stayed*
 // after. Props in and presses out, so every plan the driver could answer is an assertion (components §2).
 
@@ -175,7 +175,7 @@ describe('pausing and abandoning an ask', () => {
   });
 });
 
-/** CTX1 (D138, design §4): a right-click on an ask's page offers its header's acts, then its id, each pressed as its button is. */
+/** A right-click on an ask's page offers its header's acts, then its id, each pressed as its button is. */
 describe("an ask's page on a right-click", () => {
   const copy = vi.fn();
   const withMenus = (work?: WorkDoor) => {
@@ -227,7 +227,7 @@ describe("an ask's page on a right-click", () => {
 });
 
 /**
- * LANG1b (D142 points 1, 4, 5): the intake that answered says how it ended in the reader's language, its quests joined the
+ * The intake that answered says how it ended in the reader's language, its quests joined the
  * reader's way, and a record from before parts as it was kept, marked *shown as recorded*.
  */
 describe("an ask's intake note", () => {

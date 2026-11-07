@@ -4,7 +4,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
 import { PluginKitCard, TrialReport, type KitPoint, type PluginTrialResult } from './PluginKit';
 
-// PLUG8 (D101): the kit a plugin is made with, on the screen — New writes a plugin's folder where the
+// The kit a plugin is made with, on the screen — New writes a plugin's folder where the
 // person names, Try starts one as the driver would. `daoris plugin new|try` is the other door.
 
 const POINTS: KitPoint[] = [
@@ -65,7 +65,7 @@ describe('the plugin kit card', () => {
     expect(screen.getByText(/An act, once a landing has made its branch/)).toBeInTheDocument();
   });
 
-  // STATEHUB1g: a gloss says when a point speaks, so the second observation says its own, not a session's end.
+  // A gloss says when a point speaks, so the second observation says its own, not a session's end.
   it('says when the state point speaks, apart from the other observation', () => {
     draw({ points: [...POINTS, { name: 'state/changed', kind: 'observation' }] });
 
@@ -73,14 +73,14 @@ describe('the plugin kit card', () => {
     expect(screen.getByRole('checkbox', { name: /^session\/ended — An observation, after a session ends$/ })).toBeInTheDocument();
   });
 
-  // KITGLOSS1 (D148 point 1): the fourth kind says when it speaks as the other three do, never the driver's raw word.
+  // The fourth kind says when it speaks as the other three do, never the driver's raw word.
   it('says when the query point speaks, in words rather than its kind', () => {
     draw({ points: [...POINTS, { name: 'work/state', kind: 'query' }] });
 
     expect(screen.getByRole('checkbox', { name: /^work\/state — A query, when git cannot tell whether a landed branch merged$/ })).toBeInTheDocument();
   });
 
-  // FABRIC-PERFORM1e: the work wire's three speak at times of their own, so each says its own when, not its kind's.
+  // The work wire's three speak at times of their own, so each says its own when, not its kind's.
   it('says when each work point speaks, apart from the points of its kind', () => {
     draw({
       points: [...POINTS, { name: 'work/watch', kind: 'observation' }, { name: 'work/step', kind: 'event' }, { name: 'work/perform', kind: 'act' }],

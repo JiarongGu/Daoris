@@ -82,7 +82,7 @@ export function PLACES(ask: PlacesAsk): PlacesRead {
 const at = (workspace?: string, repository?: string) => STRUCTURE.places.find((place) => place.workspace === workspace && place.repository === repository)
   ?? { ...STRUCTURE.places.find((place) => place.workspace === workspace && place.repository === 'site')!, repository };
 
-/** The roles' structure for a chosen place's chain, nearest first, as `ROLE_STRUCTURE` answers it (AGENTSPLACE1a): the place, its workspace, this machine. */
+/** The roles' structure for a chosen place's chain, nearest first, as `ROLE_STRUCTURE` answers it: the place, its workspace, this machine. */
 export function CHAIN(ask: StructurePlaceAsk): RoleStructure {
   const chain = [...(ask.repository ? [at(ask.workspace, ask.repository)] : []), ...(ask.workspace ? [at(ask.workspace)] : []), at()];
   return { ...STRUCTURE, places: chain };

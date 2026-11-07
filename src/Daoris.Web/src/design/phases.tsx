@@ -39,7 +39,7 @@ const STATE_WORD: Record<PhaseState, string> = {
 
 /**
  * Now, read again at each step of a time that runs from `from`: each second in its first minute and each minute after, at
- * the step's own boundary. Nothing at rest moves (§3, FREEZE1): a stopped time keeps no timer.
+ * the step's own boundary. Nothing at rest moves: a stopped time keeps no timer.
  */
 function useStep(from: number, running: boolean): number {
   return useClock(running ? from : null, (gone) => {

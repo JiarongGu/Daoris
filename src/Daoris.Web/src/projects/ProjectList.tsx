@@ -11,7 +11,7 @@ import { ListRowDoor } from '../work/frame/ListPane';
 /**
  * A repository's standing on this machine, as the session list's group header says it (`RepositoryGroup`): *held*
  * outranks *drives here*, which it suspends; *not adopted* and *not on this machine* are facts, and an absent fact
- * asserts nothing, since only a shell's driver answers (D46 §6) and only a local host names a checkout (D47 §4).
+ * asserts nothing, since only a shell's driver answers and only a local host names a checkout.
  */
 export type RepositoryStanding = {
   /** The machine's standing choice: the driver may start work here. */
@@ -45,15 +45,15 @@ export type RepositoryRowFacts = RepositoryStanding & {
   branches?: number;
 };
 
-/** One workspace's group: its adopted repositories, then those registered and not adopted (D118 §2). */
+/** One workspace's group: its adopted repositories, then those registered and not adopted. */
 export type WorkspaceGroup = { workspace: string; adopted: RepositoryRowFacts[]; outside: RepositoryRowFacts[] };
 
-/** How many repositories a list holds before it offers a filter (§4.1), as the map offers a search past twelve (MAP4a). */
+/** How many repositories a list holds before it offers a filter (§4.1), as the map offers a search past twelve. */
 export const FILTER_PAST = 12;
 
 /**
- * **Repositories' list** (FRAME1e, D118 §2; UX6g, D150 §4.1): a group per workspace, always, since a workspace is always
- * named (D75 §4). A workspace's row heads its group and opens the workspace's page; under it, its adopted repositories,
+ * **Repositories' list**: a group per workspace, always, since a workspace is always
+ * named. A workspace's row heads its group and opens the workspace's page; under it, its adopted repositories,
  * then *Registered, not adopted*. A row is for reading and choosing; its page opens in the main area, where the acting is.
  *
  * @remarks
@@ -62,7 +62,7 @@ export const FILTER_PAST = 12;
  *
  * - **The name leads, its standing at the right** (platform language §4): *held*, *drives here*, *not on this machine*.
  * - **Its one line is content**: an adopter's summary as it wrote it, cut to one line with the whole in its tip; one
- *   that declared nothing says so, since an asker would be guessing (D34). One not adopted says what the index reads
+ *   that declared nothing says so, since an asker would be guessing. One not adopted says what the index reads
  *   of it, its only fact the list has room for. One that holds Daoris's branches says how many.
  * - **A group folds** by its chevron, and its head stays a door. Past twelve repositories the list offers a filter, by
  *   name, and *Registered, not adopted* starts folded unless it holds the chosen repository: on a machine of 29, twenty
@@ -110,7 +110,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
 
   const row = (facts: RepositoryRowFacts, line: string | null, faint: boolean) => {
     const { repository } = facts.registration;
-    // A row offers what it does on a right-click (CTX1, D138 §4): opening it, and its name.
+    // A row offers what it does on a right-click: opening it, and its name.
     const menu = {
       label: repository,
       acts: [
@@ -156,7 +156,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
               aria-label={t('projects.list.filter')}
               placeholder={t('projects.list.filter')}
               onChange={(event) => setQuery(event.target.value)}
-              // Escape clears a filter, and one with nothing in it is left to the list laid over (D118 §3a).
+              // Escape clears a filter, and one with nothing in it is left to the list laid over.
               onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
               className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
             />

@@ -1,7 +1,7 @@
 import type { MilestoneEntry, MilestoneUnit } from '../../work/head/milestone';
 import type { TraceAnswer, TraceBranch } from '../../work/head/trace';
 
-// A landed branch's landing as the trace and the work's milestones answer it (FLOWCHART1c): the fixtures `landingLife.test.ts`, the
+// A landed branch's landing as the trace and the work's milestones answer it: the fixtures `landingLife.test.ts`, the
 // branch page's tests and its stories draw. Neutral names only: a repository `engine`, sessions `s2`..`s4`, a placeholder address.
 
 const at = (minute: number) => new Date(Date.UTC(2026, 9, 3, 10, minute)).toISOString();

@@ -3,7 +3,7 @@ import {
   clampView, fitView, keepAnchor, panBy, reveal, toScreen, toWorld, translation, wheelPan, wheelTravel, zoomAbout, zoomByWheel,
 } from './viewMath';
 
-// CANVAS1a (D224; the canvas design §2.4): the viewport's arithmetic, pure. The view is the world point at the viewport's top left and
+// The viewport's arithmetic, pure. The view is the world point at the viewport's top left and
 // the scale (the map's convention), so `screen = origin + k × (world − view)` and the transform's translation is −k × the view's point.
 
 const VIEWPORT = { w: 800, h: 400 };

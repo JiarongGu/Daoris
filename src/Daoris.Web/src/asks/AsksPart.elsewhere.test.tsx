@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
 
-// SESSONE2h (D167): the Asks list gains the asks the mirrored messages name and this machine does not hold, and choosing one opens a
+// The Asks list gains the asks the mirrored messages name and this machine does not hold, and choosing one opens a
 // page with no ask record: its channel, read-only. Over a mocked bridge, as the shell-attached half is held.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
@@ -52,12 +52,12 @@ describe('a teammate’s ask in the shell', () => {
     const page = questMain();
     await screen.findByRole('heading', { level: 1, name: /teammate’s ask #7e6f51/ });
     await waitFor(() => expect(within(page).getByText('Which column?')).toBeInTheDocument());
-    // The channel's composer is the one thing the person can do on it: their post is carried to the holder (COMMS1k), and the page
+    // The channel's composer is the one thing the person can do on it: their post is carried to the holder, and the page
     // draws no other field.
     expect(within(page).getAllByRole('textbox').map((box) => box.getAttribute('aria-label'))).toEqual(['Write to the channel']);
     expect(within(page).queryByRole('region', { name: 'Proposal' })).toBeNull();
     expect(within(page).getByText(/This ask belongs to a teammate, so only the channel their machine shared is here/)).toBeInTheDocument();
-    // NOTIFY2g: the service keeps the person's mark on a teammate's ask its mirror holds, so reading its page moves it through the
+    // The service keeps the person's mark on a teammate's ask its mirror holds, so reading its page moves it through the
     // newest, and its item leaves Messages (it moved no mark before, the host holding no record to mark it on).
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CHANNEL_MARK', {
       payload: { ask: '7e6f51', through: '2026-10-15T09:05:00Z' },

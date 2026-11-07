@@ -18,7 +18,7 @@ const WHAT_WORD: Record<string, string> = { 'set-aside': 'setAside', downloads: 
 
 /**
  * The kinds whose rule is one of Daoris's runs, which keep a *last* in `keeping.json` (KEEP1a, KEEP1b; the logs' daily prune, KEEP1d);
- * history's only once the person set an age (KEEP1g).
+ * history's only once the person set an age.
  */
 const RUNS = new Set(['set-aside', 'downloads', 'logs']);
 
@@ -30,7 +30,7 @@ export type KeepAnswered = { done: () => void; refused: (words: string) => void 
 
 type T = (key: string, options?: Record<string, unknown>) => string;
 
-/** A kind's rule in words: the one that runs, or whose it is; and sooner when space is low, where the floor frees it early (KEEP1f). */
+/** A kind's rule in words: the one that runs, or whose it is; and sooner when space is low, where the floor frees it early. */
 function ruleWords(t: T, kind: SpaceKind): string {
   const words = ruleOwnWords(t, kind);
   return kind.rule.low ? t('settings.daoris.space.rule.joined', { days: words, then: t('settings.daoris.space.rule.low') }) : words;
@@ -40,7 +40,7 @@ function ruleOwnWords(t: T, kind: SpaceKind): string {
   const { rule } = kind;
   if (rule.kind === 'days' && kind.id === 'downloads') return t('settings.daoris.space.rule.downloads', { count: rule.days });
   if (rule.kind === 'days' && kind.id === 'history') return t('settings.daoris.space.rule.history', { count: rule.days });
-  // KEEPSIZE1b: a finished session's tree goes an hour after its record is kept; `whole` keeps it its days, its record kept all the same.
+  // A finished session's tree goes an hour after its record is kept; `whole` keeps it its days, its record kept all the same.
   if (rule.kind === 'days' && kind.id === 'set-aside') {
     return t(rule.whole ? 'settings.daoris.space.rule.finishedWhole' : 'settings.daoris.space.rule.finished', { count: rule.days });
   }
@@ -86,7 +86,7 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
   const [days, setDays] = useState(kind.rule.days === null ? '' : String(kind.rule.days));
   const [whole, setWhole] = useState(kind.rule.whole === true);
   const [gb, setGb] = useState(kind.rule.gb == null ? '' : String(kind.rule.gb));
-  // History's press alone is its `never` (KEEP1g).
+  // History's press alone is its `never`.
   const [never, setNever] = useState(kind.rule.kind === 'never' || kind.rule.kind === 'press');
   const [saving, setSaving] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
@@ -99,14 +99,14 @@ function KeepEditor({ kind, onKeep, onClose }: { kind: SpaceKind; onKeep: (set: 
     });
   };
   const save = () => {
-    // KEEPSIZE1d: the size limit goes only where it changed, so a save of the days alone leaves it as it stands.
+    // The size limit goes only where it changed, so a save of the days alone leaves it as it stands.
     const limit = bounds.gb && gb.trim() !== '' ? Number(gb) : undefined;
     if (limit !== undefined && !Number.isInteger(limit)) {
       setSaid(t('settings.daoris.space.edit.notAGb'));
       return;
     }
     const sized = limit !== undefined && limit !== kind.rule.gb ? { gb: limit } : {};
-    // KEEPSIZE1e: the browser's caches keep no days, only a size.
+    // The browser's caches keep no days, only a size.
     if (bounds.sizeOnly) {
       if (limit === undefined) {
         setSaid(t('settings.daoris.space.edit.notAGb'));
@@ -274,7 +274,7 @@ function FloorEditor({ volume, onKeep, onClose }: { volume: SpaceVolume; onKeep:
 const ALLOWANCE = 'allowance';
 
 /**
- * The allowance's *Change…* editor (KEEPSIZE1): the most Daoris may use in all, in whole GB from 8 to half the volume; *Save*, *The
+ * The allowance's *Change…* editor: the most Daoris may use in all, in whole GB from 8 to half the volume; *Save*, *The
  * default* and *Never mind*. A value out of its bounds is the driver's refusal, said under the editor, which stays open.
  */
 function AllowanceEditor({ allowance, volume, onKeep, onClose }: {
@@ -329,7 +329,7 @@ function AllowanceEditor({ allowance, volume, onKeep, onClose }: {
 }
 
 /**
- * A volume's free space as the card says it (KEEP1f): its free space of its size and the floor it keeps, or that no floor is set, in
+ * A volume's free space as the card says it: its free space of its size and the floor it keeps, or that no floor is set, in
  * the warn ink while it is below; `path` said where it is a kind's own volume, not the Daoris folder's.
  */
 function VolumeWords({ volume, path = false }: { volume: SpaceVolume; path?: boolean }) {
@@ -347,7 +347,7 @@ function VolumeWords({ volume, path = false }: { volume: SpaceVolume; path?: boo
   );
 }
 
-/** What the floor freed early in this stretch below (KEEP1f), while the volume is below it. */
+/** What the floor freed early in this stretch below, while the volume is below it. */
 function FreedEarly({ volume }: { volume: SpaceVolume }) {
   const { t } = useTranslation();
   if (!volume.below) return null;
@@ -371,7 +371,7 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
   } else if (kind.nextWhy) {
     parts.push(t('settings.daoris.space.nextUnread'));
   }
-  // KEEPSIZE1b (the keep-size design §4.5): what waits with no rule's date, said so a folder kept past its days is never silent.
+  // What waits with no rule's date, said so a folder kept past its days is never silent.
   if (kind.waiting?.awaiting) parts.push(t('settings.daoris.space.waiting.awaiting', { count: kind.waiting.awaiting }));
   if (kind.waiting?.unread) parts.push(t('settings.daoris.space.waiting.unread', { count: kind.waiting.unread }));
   // The last fixes' check, finding 7: a recorded folder whose repository the registry no longer names waits, said, and is never next.
@@ -391,8 +391,8 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
  * Disk space (KEEP1c, D195 point 5; the cleanup design §4.1, §4.2): the free space of the Daoris folder's volume, then each kind Daoris
  * keeps with its size and when it was counted, its rule in words, and its *next* and *last* clean. Every rule it shows already runs; a
  * kind whose rule is not Daoris's says whose it is. A size is counted only when asked (*Count*, *Measure again*) or by the look once a
- * day, never by the page's open. The Downloads row opens the list the Folders card draws (CACHECLEAR1), under its own row here. The
- * rules the person sets carry *Change…* (KEEP1d), the editor under the row. KEEP1e: *Free up space…* in the head lists first, under the
+ * day, never by the page's open. The Downloads row opens the list the Folders card draws, under its own row here. The
+ * rules the person sets carry *Change…*, the editor under the row. KEEP1e: *Free up space…* in the head lists first, under the
  * head, then presses; a run's line (R2) says the kind it is on, then what went and what was kept by reason. A run under way elsewhere
  * disables it. KEEP1f: the free space with the floor it keeps, in the warn ink below it with what Daoris freed early, the floor's own
  * *Change…*; a kind whose entry lies on another volume says that volume on its row, and a kind the floor frees early says so.
@@ -405,14 +405,14 @@ export function WiringSpace({ space, busy = false, onCount, downloads, onDownloa
   busy?: boolean;
   /** Count the kinds named, or every kind. */
   onCount: (kinds?: string[]) => void;
-  /** The Downloads row's clearing, open (CACHECLEAR1), drawn under that row in place of its press. */
+  /** The Downloads row's clearing, open, drawn under that row in place of its press. */
   downloads?: ReactNode;
   onDownloads?: () => void;
-  /** Set one kind's rule (KEEP1d); absent, no row offers *Change…*. */
+  /** Set one kind's rule; absent, no row offers *Change…*. */
   onKeep?: (set: KeepSet, answered: KeepAnswered) => void;
   /** The kind whose editor is open at first: a story's, so the editor is drawn without a press. */
   editing?: string;
-  /** *Free up space…*'s first press, which lists (KEEP1e); absent draws no press. */
+  /** *Free up space…*'s first press, which lists; absent draws no press. */
   onFreeUp?: () => void;
   /** The list, open, drawn under the card's head. */
   freeing?: ReactNode;
@@ -428,7 +428,7 @@ export function WiringSpace({ space, busy = false, onCount, downloads, onDownloa
     );
   }
   const counting = space.kinds.some((kind) => kind.counting);
-  // KEEP1f: the floor is set here where the shell says it (one before KEEP1f answers none).
+  // The floor is set here where the shell says it (one before KEEP1f answers none).
   const floorSettable = onKeep !== undefined && space.volume?.floor != null;
   const allowanceOver = space.allowance?.gb != null && space.allowance.bytes != null && space.allowance.bytes > space.allowance.gb * GB;
   const door = (named: string) => t(`settings.daoris.space.door.${named}`, { defaultValue: named });

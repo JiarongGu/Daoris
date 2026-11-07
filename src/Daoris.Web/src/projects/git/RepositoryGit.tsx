@@ -34,7 +34,7 @@ export type HistoryRead =
 
 /**
  * What a Git tab has nothing to show for: its fact as a headline and why beneath it. A block of the page, so it wraps at the
- * pane's edge as every block of a record page does (D141), where the main area's own empty state keeps a narrow body. A
+ * pane's edge as every block of a record page does, where the main area's own empty state keeps a narrow body. A
  * workspace's Branches says its own the same way (UX6h2b2).
  */
 export function Nothing({ headline, body }: { headline: string; body: string }) {
@@ -70,11 +70,11 @@ export function Waiting({ sentence, reading }: { sentence: string; reading: bool
 export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, acts, deleted, unrecorded }: {
   repository: string;
   read: GitRead<BranchListValue>;
-  /** The deletes the journal holds (ONEWAY1r), listed under the branches with each one's Undo; absent, the tab lists none. */
+  /** The deletes the journal holds, listed under the branches with each one's Undo; absent, the tab lists none. */
   deleted?: readonly GitDeletedRef[];
   /** The commits kept for recovery that no journal record names, said under the deletes. */
   unrecorded?: number;
-  /** *New branch or tag* (GITAPP2c), made at the line's commit; absent, the tab offers none. */
+  /** *New branch or tag*, made at the line's commit; absent, the tab offers none. */
   acts?: RefActs;
   /** Each session branch's session's title, by the branch's name. */
   titles?: Readonly<Record<string, string>>;
@@ -118,7 +118,7 @@ export function HistoryTab({ repository, read, onMore, all }: {
   onMore?: () => void;
   /**
    * *All branches* (UX6h3c): the ⋯'s one checked item, page state its holder keeps. `limit` says the graph drew only the
-   * first `shown` of `total` branches, the read's own limit (D147). Absent, History has no ⋯.
+   * first `shown` of `total` branches, the read's own limit. Absent, History has no ⋯.
    */
   all?: { on: boolean; onToggle: () => void; limit?: { shown: number; total: number } };
 }) {
@@ -222,7 +222,7 @@ export type ChangesLast = {
 };
 
 /**
- * The presses of the Changes tab (GITAPP2h): stage and unstage a file whole or by hunk and line, and *Undo*. Absent, the tab only reads
+ * The presses of the Changes tab: stage and unstage a file whole or by hunk and line, and *Undo*. Absent, the tab only reads
  * (the switch is off, or the shell is not there).
  */
 export type ChangesActs = {
@@ -234,15 +234,15 @@ export type ChangesActs = {
   undo: (act: string) => void;
   /** A file's hunks on a side, read by its holder. */
   Hunks: ComponentType<{ path: string; side: ChangeSide; busy: boolean; onPress: (press: HunkPress) => void }>;
-  /** The commit box (GITAPP2i), read and pressed by its holder; absent, the tab draws none. */
+  /** The commit box, read and pressed by its holder; absent, the tab draws none. */
   Commit?: ComponentType<{ busy: boolean }>;
-  /** A conflicted file's conflicts (GITAPP2j), read by its holder; with `resolve` and `mark`, the row draws *Resolve* and *Mark resolved*. */
+  /** A conflicted file's conflicts, read by its holder; with `resolve` and `mark`, the row draws *Resolve* and *Mark resolved*. */
   Conflict?: ComponentType<{ path: string; busy: boolean; onPress: (press: ConflictPress) => void }>;
   /** The choices made for a file's conflicts, with the faces they were read against. */
   resolve?: (press: { path: string } & ConflictPress) => void;
   /** *Mark resolved*: the file added, its stages gone from the index. */
   mark?: (path: string) => void;
-  /** The switch box (GITAPP2k) and the stash box, each read and pressed by its holder; absent, the tab draws none. */
+  /** The switch box and the stash box, each read and pressed by its holder; absent, the tab draws none. */
   Switch?: ComponentType<{ busy: boolean }>;
   Stash?: ComponentType<{ busy: boolean }>;
 };
@@ -250,7 +250,7 @@ export type ChangesActs = {
 /**
  * **A repository's Changes tab** (GITAPP2b, D204, the git-writes design §1 and §4): where the person lets Daoris change the
  * checkout's files, what is staged against the last commit, what the files hold beyond it, what is untracked and what a merge
- * left in conflict. It is read when the tab opens, on focus and on *Refresh*, never watched, and says when. With `acts` (GITAPP2h)
+ * left in conflict. It is read when the tab opens, on focus and on *Refresh*, never watched, and says when. With `acts`
  * a file can be staged or unstaged whole, or by the hunks and lines of its changes, and the last act can be undone.
  *
  * @remarks

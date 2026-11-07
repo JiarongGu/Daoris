@@ -48,7 +48,7 @@ export function useRoleEditing(notify: Notify) {
   // list, which holds no `max`.
   const offers = Object.fromEntries(harnesses.map((door) => [door.door, door.sessionChoices ?? null]));
 
-  // Each order as the driver reads it; every change of it is a role's, over SET_ROLE (ONEWAY1a).
+  // Each order as the driver reads it; every change of it is a role's, over SET_ROLE.
   const actors = useActors();
   const staffing = actors.data ?? [];
 
@@ -99,14 +99,14 @@ export function useRoleEditing(notify: Notify) {
  * it. Today only Working roles is built, the catalogue and its staffing of COMPANYVIEW1a moved here from AI features.
  *
  * @remarks
- * **The mode's one owner** (D168 point 3): this hook holds the open editor and every pending press, and hands the molecule its
+ * **The mode's one owner**: this hook holds the open editor and every pending press, and hands the molecule its
  * answers, so `RolesCard` imports nothing of the bridge. Each press goes out as its route takes it (`SET_ROLE`, `SET_ROLES`)
  * and the driver judges; a refusal is its sentence under the press. It is mounted only while the mode is in
- * front, so opening the place asks the driver nothing of roles (D150 point 5).
+ * front, so opening the place asks the driver nothing of roles.
  */
 export function useRolesMode({ notify, doors = {}, page: given, placed = false }: {
   notify: Notify; doors?: RoleOpeners; page?: RolesPage;
-  /** Drawn in a section of This machine's page (SETUPUX1m), which names it: the catalogue's card has no title of its own. */
+  /** Drawn in a section of This machine's page, which names it: the catalogue's card has no title of its own. */
   placed?: boolean;
 }) {
   const { t } = useTranslation();
@@ -134,7 +134,7 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
     },
   };
 
-  // The diagram (COMPANYVIEW1f): one read of the driver's structure, the shared
+  // The diagram: one read of the driver's structure, the shared
   // filters, the rows open, the chosen node and each opened repository's workflow, all held by the page; the sections draw and press.
   const asked = page.view === 'diagram';
   const { answer, read: structureRead } = useStructureRead(asked);
@@ -154,7 +154,7 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
   const plugins = usePlugins({ enabled: asked });
   const lines = useLines();
   const registryRows = registry.data ?? [];
-  // The supervisor and the steward are catalogue roles (D233 point 2): the diagram's appointed half is drawn from their rows.
+  // The supervisor and the steward are catalogue roles: the diagram's appointed half is drawn from their rows.
   const structure = answer
     ? buildStructure({
       structure: answer, registry: registryRows, tools: byTool(harnesses), accounts: accounts.data, plugins: plugins.data?.plugins, lines: lines.data,

@@ -6,9 +6,9 @@ import { code } from '../test/code';
 import { chooseRow, knowledgeList, mainArea, modeChoice, pageTitled, showConvergence, switchTo } from '../test/knowledgeViews';
 
 // The view over a stubbed service, like SearchView's: the shapes the endpoint returns, no host. Since FRAME1f the view
-// is a list pane and a page (D118 §2): the similarity and the findings are the list, and the finding chosen is read in
+// is a list pane and a page: the similarity and the findings are the list, and the finding chosen is read in
 // the main area, the service's sentence and then each entry whole, where each entry was the reader drawer. Since UX6i
-// (D150 §2.2) it is Knowledge's Convergence, held through the place.
+//  it is Knowledge's Convergence, held through the place.
 
 const GROUP = {
   method: 'Restatement', similarity: 0.91, repositories: ['engine', 'game'],
@@ -53,7 +53,7 @@ describe('Convergence', () => {
 
   /**
    * On the first real index the comparison took seconds, behind one bare "comparing…" line on an
-   * otherwise empty page (POLISH3). A first load shows static skeleton rows (D41 §4), with the
+   * otherwise empty page. A first load shows static skeleton rows, with the
    * words in the line the count will take, so nothing moves when the answer lands.
    */
   it('holds the list with skeleton rows while it compares, and the count takes the line after', async () => {
@@ -132,7 +132,7 @@ describe('Convergence', () => {
     expect(within(mainArea()).getByText(/no longer converge at 0.75 or above/)).toBeInTheDocument();
   });
 
-  // UX6b (design §1 rule 6): Convergence opened on *this finding is no longer in the list* on the owner's install. A
+  // Convergence opened on *this finding is no longer in the list* on the owner's install. A
   // remembered finding the index no longer holds opens nothing chosen; one still listed reopens.
   it('opens with nothing chosen on a remembered finding that has gone, never on its gone state', async () => {
     vi.stubGlobal('fetch', service([]));
@@ -151,7 +151,7 @@ describe('Convergence', () => {
   });
 
   /**
-   * UX6i (D150 §2.2): Convergence is Knowledge's other mode, its list the place's while Convergence is chosen at its head.
+   * Convergence is Knowledge's other mode, its list the place's while Convergence is chosen at its head.
    * The similarity and the finding chosen are Convergence's still when the person comes back from Search.
    */
   it('keeps its similarity and the finding chosen while Search is in front, and gives them back', async () => {

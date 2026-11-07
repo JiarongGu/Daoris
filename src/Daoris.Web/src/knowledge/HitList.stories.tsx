@@ -5,7 +5,7 @@ import { CJK_HIT, HITS } from './fixtures';
 import { HitList, type HitsAnswer } from './HitList';
 import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 
-// Search's list (FRAME1f, D118 §2) on Knowledge's pane (UX6i, D150 §2.2), under the place's two-way choice, in every state
+// Search's list on Knowledge's pane, under the place's two-way choice, in every state
 // the design names: nothing typed, the hits with one chosen, capped, found by words alone on a deployment that matches
 // meaning, the first search on its way, a newer one on its way with the last hits held, no matches by each tier,
 // nothing answering, an error with no answer ever, a 中文 hit, everything rather than local only, the strip, and laid
@@ -113,7 +113,7 @@ export const ChineseHit: Story = { args: { query: '场景加载', answer: answer
 /** Everything rather than each repository's own: the box unticked, and canonical copies among the hits. */
 export const Everything: Story = { args: { localOnly: false } };
 
-/** Closed by the person: its strip holds its controls alone (D118 §2). */
+/** Closed by the person: its strip holds its controls alone. */
 export const Strip: Story = { args: { layout: CLOSED } };
 
 /** A strip the window drew, opened: the list over the main area, beside its strip. */

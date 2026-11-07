@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// SETUP1b (D97 §2), the way the application holds it: the whole window over a mocked shell, so the
+// SETUP1b, the way the application holds it: the whole window over a mocked shell, so the
 // opening at start, the status bar's count and the hand-off to Ask Daoris are what a person meets.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({

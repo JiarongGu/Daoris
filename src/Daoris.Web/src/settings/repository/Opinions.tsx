@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, CheckField } from '../../design/ui';
 
 /**
- * A second-opinion rule as the driver answers it (XAGENT1a, D155 point 3): none here, or its occasions (`landing`, `steps`),
+ * A second-opinion rule as the driver answers it: none here, or its occasions (`landing`, `steps`),
  * its reviewers in the order they are tried, its switches, the bound of one pass, and the reviewers of the working agent's own
  * family, which the driver judges and the page only says.
  */
@@ -125,7 +125,7 @@ export function opinionSummary(t: TFunction, rule: OpinionRule | null | undefine
 const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
 
 /**
- * **One second-opinion rule's control** (XAGENT1a, design §2.3, §2.5): its reviewers in the order they are tried, when they
+ * **One second-opinion rule's control**: its reviewers in the order they are tried, when they
  * read by themselves, whether work waits when none can, whether a reviewer may run what is declared safe, the bound of a pass,
  * and whether the answers are read again — the rule set here, or a fresh one; and *None here* for a repository. Every press
  * goes out as the twins' edit, judged by the driver, whose refusal is said in its words. Props only (components §2).

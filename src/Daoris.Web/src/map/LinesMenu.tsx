@@ -24,7 +24,7 @@ function keptHidden(): LineKind[] {
 }
 
 /**
- * Which kinds of line the map draws, as this viewer last chose (MAP4b). Every kind until they hide
+ * Which kinds of line the map draws, as this viewer last chose. Every kind until they hide
  * one. Storage can be absent or refuse (a private window), and then the choice lasts the visit.
  */
 export function useShownLines(): [ReadonlySet<LineKind>, (kind: LineKind) => void] {
@@ -38,7 +38,7 @@ export function useShownLines(): [ReadonlySet<LineKind>, (kind: LineKind) => voi
 }
 
 /**
- * Which quests the map draws, as this viewer last chose (MAP4c): the last 30 days until they choose (MAPUX1f), since the Map's first
+ * Which quests the map draws, as this viewer last chose: the last 30 days until they choose, since the Map's first
  * question is what moves now and *All of them* grows with every closed quest. A choice already kept stays.
  */
 export function useMapWhen(): [When, (when: When) => void] {
@@ -81,7 +81,7 @@ function Sample({ kind }: { kind: LineKind }) {
 }
 
 /**
- * The switches for the map's lines (MAP4b) and which quests they draw (MAP4c): an options menu, as the
+ * The switches for the map's lines and which quests they draw: an options menu, as the
  * owner asked of every control that is not a direction. Each kind is ticked while it is drawn,
  * pictured by its line, and counted; below, one choice of which quests, all of them until chosen.
  */

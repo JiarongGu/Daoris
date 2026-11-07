@@ -7,7 +7,7 @@ export type Pressed = Pick<KeyboardEvent, 'key' | 'code' | 'ctrlKey' | 'shiftKey
 const PLACE: Record<string, string> = { '`': 'Backquote', ',': 'Comma' };
 
 /**
- * Whether a press is the key a menu prints (UX7a, D152 §3.4): every modifier it names held and no other, Ctrl standing
+ * Whether a press is the key a menu prints: every modifier it names held and no other, Ctrl standing
  * for ⌘ too, and the key by what it says or by its place, since under Shift and Alt what `key` says differs by layout
  * (Quick Ask's L, DOCK1d) and Shift turns ` into ~ and 1 into !.
  *
@@ -36,7 +36,7 @@ export function isPress(event: Pressed, combo: string): boolean {
  * the console, Ask Daoris and Quick Ask, D152 §3.4).
  *
  * @remarks
- * Read by the terminal's renderer (CONSOLE4b), which leaves these to the frame as VS Code's terminal leaves its commands
+ * Read by the terminal's renderer, which leaves these to the frame as VS Code's terminal leaves its commands
  * to the workbench: a renderer that took them would send the shell a ^B and the view's list would never close. And by
  * the detached and monitor windows, which answer one each.
  */
@@ -52,8 +52,8 @@ export function frameShortcut(event: Pressed): string | null {
 }
 
 /**
- * The command a press runs, from the table as this window reads it, or null to leave the press where it was going
- * (D152 §3.4). A field keeps what a field means, the terminal that and a shell's next line, and a command that does not
+ * The command a press runs, from the table as this window reads it, or null to leave the press where it was going.
+ * A field keeps what a field means, the terminal that and a shell's next line, and a command that does not
  * apply takes no key, so Ctrl+B on a view with no list, or Ctrl+F with no box to find in, does what it did before.
  */
 export function commandForKey(

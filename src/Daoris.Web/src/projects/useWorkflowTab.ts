@@ -11,7 +11,7 @@ import type { WorkflowTabProps } from '../workflow/WorkflowTab';
  * **A repository's Workflow as its molecules take it** (WORKFLOW1b; moved out of the Repositories view by AGENTSPLACE1h so the Agents
  * place's Workflow section and the dark Workflow tab hold the one reading): its Current as the driver answers it, read only while
  * `enabled`, a refusal said in its place, the person's *Accept the gates* and *Verify…*, the verifications on its line with their verdicts,
- * and the step editor's bridge (WORKFLOWEDIT1b).
+ * and the step editor's bridge.
  * Returns the props for a registration, or null while the driver has not answered (`ready` false).
  *
  * @remarks
@@ -25,16 +25,16 @@ export function useWorkflowTab({ repository, enabled, ready = true, notify, rout
   /** The driver has answered. */
   ready?: boolean;
   notify: Notify;
-  /** The route whose effective graph the answer also carries (SETUPUX1o): `default`, `kind:<name>` or `landed`; none, and the answer is as before. */
+  /** The route whose effective graph the answer also carries: `default`, `kind:<name>` or `landed`; none, and the answer is as before. */
   route?: string | null;
 }): (registration: Registration, doors?: (workspace: string) => WorkflowDoors) => WorkflowTabProps | null {
   const { t } = useTranslation();
   const current = useWorkflowCurrent(repository === null ? null : { repository }, { enabled, route });
-  // Its step editor (WORKFLOWEDIT1b), asked only once it opens.
+  // Its step editor, asked only once it opens.
   const editor = useWorkflowEditor({ repository: repository ?? '', workspace: current.data?.workspace ?? null }, { enabled });
   const setLanded = useSetLanded();
   const verify = useVerify();
-  // FABRIC-PIPELINE1d: the repository's verifications and their verdicts, read only where its landed route names a verification pipeline.
+  // The repository's verifications and their verdicts, read only where its landed route names a verification pipeline.
   const verifying = !!current.data?.start?.landed && current.data.start.landed.workflow !== 'current';
   const line = useWorkflowRun(repository === null ? null : { line: repository }, { enabled: enabled && verifying });
   const resolveHeld = useResolveHeld();
@@ -47,7 +47,7 @@ export function useWorkflowTab({ repository, enabled, ready = true, notify, rout
       reading: current.isPending,
       refusal: current.error ? sentence(current.error) : null,
       doors: doors?.(current.data?.workspace ?? workspaceOf(registration)),
-      // FABRIC-PIPELINE1a: the person's *Accept the gates*, the route's own pipeline again, which accepts the tip's declaration by its blob.
+      // The person's *Accept the gates*, the route's own pipeline again, which accepts the tip's declaration by its blob.
       onAcceptGates: landed && landed.workflow !== 'current' ? (answered) => setLanded.mutate(acceptGatesPress(registration.repository, landed), {
         onSuccess: () => {
           notify(t('projects.landed.accepted', { repository: registration.repository }));
@@ -56,7 +56,7 @@ export function useWorkflowTab({ repository, enabled, ready = true, notify, rout
         onError: (error) => answered.refused(sentence(error)),
       }) : undefined,
       accepting: setLanded.isPending,
-      // FABRIC-PIPELINE1d: *Verify…* of a branch or a commit under the accepted gates, `daoris gate verify`'s twin; a refusal is an answer.
+      // *Verify…* of a branch or a commit under the accepted gates, `daoris gate verify`'s twin; a refusal is an answer.
       onVerify: (ask, answered) => verify.mutate({ repository: registration.repository, ...ask }, {
         onSuccess: (answer) => {
           if (answer.done) {

@@ -6,7 +6,7 @@
  * @remarks
  * Pure: it asks nothing, resolves nothing (the driver's `RoleFor` answered every place already, so a second resolution here would be a
  * second truth) and words nothing; a row carries codes and names, and the molecule says them. A failed part is its row's own field,
- * never an empty list. The diagram's nodes and edges (COMPANYVIEW1f, §4) are built here too, over the same answer and filters, a node
+ * never an empty list. The diagram's nodes and edges are built here too, over the same answer and filters, a node
  * with the id its row has (`place:`, `role:`, `agent:`), so the two views are one selection.
  */
 import type { RoleStructure, StructureChoice, StructureWork } from '../../data/wiring';
@@ -32,7 +32,7 @@ export const workId = (work: string): string => `work:${work}`;
 
 /**
  * The places to ask: this machine, each workspace and each *driven* repository (with its workspace), once each. A repository the
- * machine does not drive is left out (AGENTSPLACE1a): it takes no work, and the driver counts it for its workspace's fold.
+ * machine does not drive is left out: it takes no work, and the driver counts it for its workspace's fold.
  */
 export function placesToAsk(
   registry: readonly { repository: string; workspace?: string | null }[], drivable: readonly string[],

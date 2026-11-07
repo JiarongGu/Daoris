@@ -32,7 +32,7 @@ const SHOWN = 3;
  * went: its path drawn heavier and, inside each status, what happened there, oldest first, three before a fold.
  *
  * @remarks
- * - **Its moves are read only when it opens**, as the trace is (D143): the page's organism holds the fold and the read
+ * - **Its moves are read only when it opens**, as the trace is: the page's organism holds the fold and the read
  *   (`moves`), from the service's door, in a browser as in the window. Without a door it holds its own fold and draws the
  *   statuses alone, as FLOWCHART1a1 did.
  * - **A host that keeps no moves** (trap 18) draws the statuses and says the way it went is not kept there.

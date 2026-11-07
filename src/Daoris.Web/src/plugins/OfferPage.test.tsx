@@ -9,7 +9,7 @@ import { cappedBlocks } from '../test/measure';
 import type { OfferShown } from './catalog';
 import { OfferPage } from './OfferPage';
 
-// One of Daoris's own plugins, not installed here (PLUGUI1b, D119 §3.2): a molecule, every state by its props.
+// One of Daoris's own plugins, not installed here: a molecule, every state by its props.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
@@ -62,8 +62,8 @@ describe("an offer's page", () => {
     ]);
   });
 
-  /** Installing runs nothing, and a landing plugin runs only where a landing rule names it (D103). */
-  /** HELPPLUG1a (D170 point 3): what it would hand Ask Daoris is said before Install; one that hands it nothing says nothing. */
+  /** Installing runs nothing, and a landing plugin runs only where a landing rule names it. */
+  /** What it would hand Ask Daoris is said before Install; one that hands it nothing says nothing. */
   it('says what it would hand Ask Daoris before Install', () => {
     const { unmount } = render(
       <OfferPage offer={{ ...OFFER, helpServers: [{ name: 'wiki', allow: ['search'] }] }} kitPoints={KIT} onInstall={vi.fn()} />,

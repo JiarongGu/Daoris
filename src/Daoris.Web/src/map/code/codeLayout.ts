@@ -1,5 +1,5 @@
 /**
- * A repository's modules in layers by dependency (MAP3a): what uses a module sits above it, what it
+ * A repository's modules in layers by dependency: what uses a module sits above it, what it
  * depends on below. Rows are in name order, so the picture does not move between two looks at the
  * same file.
  *

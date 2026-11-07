@@ -54,14 +54,14 @@ export function draftToTell(draft: OpenDraft | null, told: string | undefined): 
 /** How many drafts told are kept: a proposal against one older is refused as made against a draft this window no longer holds. */
 const TOLD_MOST = 40;
 
-/** Each draft a conversation of this window was told (FLOWCHART2f), its graph by its fingerprint, the newest last. */
+/** Each draft a conversation of this window was told, its graph by its fingerprint, the newest last. */
 const toldDrafts = new Map<string, OpenDraft['graph']>();
 let toldTo: readonly string[] = [];
 const hearing = new Set<() => void>();
 
 /**
  * A draft told to a conversation, as `SESSION_INPUT` carried it: a proposal names the draft it was made against by its fingerprint, and the
- * editor takes its changes against that graph (D223 §8.6).
+ * editor takes its changes against that graph.
  */
 export function noteTold(session: string, sent: DraftSent): void {
   toldDrafts.delete(sent.fingerprint);

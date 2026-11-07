@@ -8,7 +8,7 @@ import { GIT_BRANCHES_ENGINE, GIT_CHANGES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTOR
 import { BranchesTab, ChangesTab, HistoryTab, type HistoryRead } from './RepositoryGit';
 
 // A repository's Branches and History tabs (UX6h1, D150 §4.2, §4.4): molecules, each state reached by its props. The reads
-// are this machine's (D147 §6): a tab says its answer is on its way, that this machine has no checkout, or why Git did not
+// are this machine's: a tab says its answer is on its way, that this machine has no checkout, or why Git did not
 // answer, in its place, so it never goes blank. History draws its line's commits with their lanes (graphLanes).
 
 // The page's tooltips live under the app's provider; the list's ⋯ (UX6h2b1) carries one, so a case renders under its own.
@@ -89,7 +89,7 @@ describe("a repository's Branches tab", () => {
     expect(named).toHaveTextContent('Fix the slow frame');
     expect(within(named).getByText('working')).toBeInTheDocument();
     expect(named).toHaveTextContent('2 commits ahead of main, and 2 behind.');
-    // One no record names says so, and is still a session's by its namespace (D88).
+    // One no record names says so, and is still a session's by its namespace.
     expect(row("Sessions' (2)", 'daoris/engine-audio-mix')).toHaveTextContent('No session record names it. 3 commits ahead of main.');
 
     // Where the records could not be read, the list says so once, beside the sessions'.

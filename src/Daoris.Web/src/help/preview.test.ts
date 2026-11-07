@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { previewText, ROW_BEFORE, ROW_LINE, rowLine } from './preview';
 
-// ASKHIST1c: a row of Ask Daoris's history read an answer's raw Markdown (`**#d208d4**`, backticks). Its line is plain text:
+// A row of Ask Daoris's history read an answer's raw Markdown (`**#d208d4**`, backticks). Its line is plain text:
 // the delimiters go, the words and the code's own contents stay, and nothing in it is a link or a button.
 
 describe('a conversation’s line as plain text', () => {

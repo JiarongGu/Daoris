@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// UX7a (D152): the menu bar a person reaches for, on the whole window over a mocked shell — the seven menus, the keys
+// The menu bar a person reaches for, on the whole window over a mocked shell — the seven menus, the keys
 // the table gives them, the record in front acted on through its own owner, and the bar reached from the keyboard.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -104,7 +104,7 @@ describe('the menu bar on the desktop (D152 §1)', () => {
   it('prints every place\'s key under Go, and the key goes there', async () => {
     start();
     await openMenu('Go');
-    // Each place is one choice among Go's places, said as a radio (UXFIX1).
+    // Each place is one choice among Go's places, said as a radio.
     expect(await screen.findByRole('menuitemradio', { name: /^Sessions/ })).toHaveTextContent('Ctrl+2');
     expect(screen.getByRole('menuitemradio', { name: /^Plugins/ })).toHaveTextContent('Ctrl+8');
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
@@ -217,7 +217,7 @@ describe('the keys (D152 §3.4)', () => {
     expect(await screen.findByRole('navigation', { name: 'Settings domains' })).toBeInTheDocument();
   });
 
-  /** NEW1b (D162 point 1): Ctrl+N is *New conversation*, in Sessions with the focus in its prompt; a new ask is Ctrl+Shift+N. */
+  /** Ctrl+N is *New conversation*, in Sessions with the focus in its prompt; a new ask is Ctrl+Shift+N. */
   it('leaves Ctrl+K and Ctrl+F to a field, and takes Ctrl+N and Ctrl+Shift+N in one', async () => {
     start();
     await menuBar();

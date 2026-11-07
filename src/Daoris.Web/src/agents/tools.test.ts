@@ -72,7 +72,7 @@ describe('byTool', () => {
   });
 
   /**
-   * TOOL6g: the protocol door asks no sign-in question of its own, so it reports every account unknown. One list per tool
+   * The protocol door asks no sign-in question of its own, so it reports every account unknown. One list per tool
    * takes the account's state from the tool that owns it, wherever the roster put the door, never the door's unknown.
    */
   it('takes an account\'s sign-in from the tool that owns it, never a door\'s unknown', () => {
@@ -115,7 +115,7 @@ describe('byTool', () => {
    * 🔴 The account a person actually has is the tool's own configuration home, and the roster
    * called a machine with no named profile "No accounts" while its owner was logged in. The
    * account-owning door answers for the tool's own home. No default and no workspace's choice of
-   * account is carried: one set of Daoris's accounts serves every workspace (D197).
+   * account is carried: one set of Daoris's accounts serves every workspace.
    */
   it('carries the tool’s own login, and no default or workspace’s choice of account', () => {
     const tools = byTool([
@@ -129,7 +129,7 @@ describe('byTool', () => {
   });
 
   /**
-   * Who is signed in (D66 §3) is the account-owning door's answer — the protocol door asks nobody —
+   * Who is signed in is the account-owning door's answer — the protocol door asks nobody —
    * so the account keeps that door's name for it, and the tool's own home is named the same way.
    */
   it('carries who is signed in, from the door that can ask', () => {
@@ -154,7 +154,7 @@ describe('byTool', () => {
     expect(byTool([door({ door: 'dsh' })])[0]!.ownAccount).toBeNull();
   });
 
-  /** AGT1: what a person calls the tool and whose it is — the first door that says, or nothing. */
+  /** What a person calls the tool and whose it is — the first door that says, or nothing. */
   it('names the tool and its maker from the doors, and leaves both empty when none says', () => {
     const tools = byTool([
       door({ door: 'codex-acp', accountOf: 'codex', product: 'Codex', maker: 'OpenAI' }),
@@ -176,13 +176,13 @@ describe('byTool', () => {
 });
 
 /**
- * Which door this machine's starts ride (INT3c): the configured adapter's own `wire`, as the roster
- * reports it. An unadopted repository is carried by the protocol door only (D70), so a surface that
+ * Which door this machine's starts ride: the configured adapter's own `wire`, as the roster
+ * reports it. An unadopted repository is carried by the protocol door only, so a surface that
  * offers to drive one says so on a machine whose door is direct — and says nothing when it cannot
  * tell, rather than guess.
  */
 /**
- * AGT6: an account's own settings are one file whichever door reads it, so the tool offers the choices
+ * An account's own settings are one file whichever door reads it, so the tool offers the choices
  * the first door says — the protocol door answers for Claude Code as its pipe does — and a tool no door
  * offers them for offers none.
  */

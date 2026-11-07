@@ -122,7 +122,7 @@ export const LandedNarrow: Story = { args: Landed.args, decorators: [narrow] };
 /** Landed, at a 680 px window: the list a strip beside the main area. */
 export const LandedHalf: Story = { args: Landed.args, decorators: [storyWidths.half] };
 
-/** How it landed (FLOWCHART1c), folded to its line above the commits until it is opened. */
+/** How it landed, folded to its line above the commits until it is opened. */
 export const LandedHowItLandedFolded: Story = {
   args: { ...Landed.args, landing: { open: false, onToggle: nothing } },
 };

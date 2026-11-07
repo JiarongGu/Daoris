@@ -8,7 +8,7 @@ type Watched = {
 };
 
 /**
- * What is on screen in a scroll box, for jsdom, which lays nothing out and has no `IntersectionObserver` (WAITFOOT2a).
+ * What is on screen in a scroll box, for jsdom, which lays nothing out and has no `IntersectionObserver`.
  *
  * @remarks
  * The frame asks whether the head's waits are on screen; with no observer it answers *not*, so the strip at the foot stands as

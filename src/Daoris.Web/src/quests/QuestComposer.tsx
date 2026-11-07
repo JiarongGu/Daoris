@@ -5,22 +5,22 @@ import { Button, Drawer, EmptyState, Icon, Inline, SelectField } from '../design
 
 /**
  * A quest being written. `links` is the text as typed — read into addresses at publish — and `files` are the
- * browser's own handles, read whole only when the quest is sent (D65 §2).
+ * browser's own handles, read whole only when the quest is sent.
  */
 export type QuestDraft = Carry & {
   from: string; to: string; title: string; body: string;
   /**
-   * Its short title (SESSUX1j), optional: the person's few words that tell it apart in a list. Empty sends none, and the
+   * Its short title, optional: the person's few words that tell it apart in a list. Empty sends none, and the
    * service names the quest from its words.
    */
   short?: string;
-  /** One next step (D65 §4), or none. The service takes a longer chain; the composer offers one. */
+  /** One next step, or none. The service takes a longer chain; the composer offers one. */
   step: QuestStep | null;
 };
 
 export const EMPTY_QUEST: QuestDraft = { from: '', to: '', title: '', body: '', short: '', step: null, ...NO_CARRY };
 
-/** How long a short title may be (SESSUX1j), as the service judges it: characters, a Chinese one counted once. */
+/** How long a short title may be, as the service judges it: characters, a Chinese one counted once. */
 export const SHORT_TITLE_MAX = 40;
 
 /** A short title's length as the service counts it: by character, never by UTF-16 unit. */
@@ -37,7 +37,7 @@ export function draftReady(draft: QuestDraft): boolean {
 }
 
 /**
- * **The quest composer** (D41 §4): a form, so a drawer still (D118 §3d) — the screen twin of `quest_publish`.
+ * **The quest composer**: a form, so a drawer still (D118 §3d) — the screen twin of `quest_publish`.
  *
  * @remarks
  * **A molecule**: the draft is the caller's, and the press goes out; the carry's drop, paste and chooser are shared
@@ -46,15 +46,15 @@ export function draftReady(draft: QuestDraft): boolean {
  *
  * - 🔴 **Nobody to ask is said, not offered**: with nothing registered, `from` and `to` offered nobody and a quest
  *   written in full could never be published (seen on the installed window, 2026-09-24).
- * - **Only what the host says can be asked is offered** (D70): the service still holds the judgement, and this only
+ * - **Only what the host says can be asked is offered**: the service still holds the judgement, and this only
  *   keeps the form from lying. A receiver that declared nothing earns the service's own caution, before the person
  *   relies on it.
- * - **A chain is behind a press** (D65 §4): most asks are one quest, and the form should not say otherwise.
+ * - **A chain is behind a press**: most asks are one quest, and the form should not say otherwise.
  */
 export function QuestComposer({ draft, onChange, receivers, nobody = false, caution = null, busy = false, onPublish, onCancel }: {
   draft: QuestDraft;
   onChange: (draft: QuestDraft) => void;
-  /** Who can be named, on either side: the repositories the host says can be asked (D70). */
+  /** Who can be named, on either side: the repositories the host says can be asked. */
   receivers: string[];
   /** Known to be nobody, not merely not loaded yet: a composer that flashed "nobody" would be a lie. */
   nobody?: boolean;
@@ -101,7 +101,7 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
         // below 28rem of the form, which is the drawer at its full width on a narrow window.
         className="@container grid gap-3"
         onSubmit={(e) => { e.preventDefault(); if (ready) onPublish(); }}
-        // The whole composer takes a drop and a paste (D65 §2) — aiming at a box inside a drawer is a chore, and
+        // The whole composer takes a drop and a paste — aiming at a box inside a drawer is a chore, and
         // the box below lights up to say where the file went.
         {...carry.handlers}
       >

@@ -69,13 +69,13 @@ describe('a story in another language (STORY2)', () => {
     expect(localStorage.getItem(KEY)).toBe('en');
   });
 
-  // ACCTUX4j: pure helpers call the page's global `i18n.t`, so a 中文 story points the global at 中文 for its life.
+  // Pure helpers call the page's global `i18n.t`, so a 中文 story points the global at 中文 for its life.
   it('draws a 中文 story’s helpers in 中文 and gives the page’s language and choice back as found', async () => {
     localStorage.setItem(KEY, 'en');
     await i18n.changeLanguage('en');
     const agents = composed(await import('../agents/AgentPage.stories'));
     const { container, unmount } = render(<agents.CodexWindowsChinese />);
-    // The set's summary (POOL1c), a pure helper's words, where the *Runs for* mark was before it went.
+    // The set's summary, a pure helper's words, where the *Runs for* mark was before it went.
     expect(container.textContent).toContain('全部 3 个账户，用于所有工作区');
     expect(container.textContent).toContain('下一次启动使用');
     expect(i18n.language).toBe('zh');

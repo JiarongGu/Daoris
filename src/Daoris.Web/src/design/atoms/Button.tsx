@@ -10,7 +10,7 @@ const BUTTON: Record<string, string> = {
     'border border-accent bg-accent text-accent-ink hover:enabled:brightness-108',
   ghost:
     'border border-transparent bg-transparent text-ink-soft px-2 py-1 hover:enabled:text-ink hover:enabled:border-line',
-  // Its label in the danger ink, its line and its hover field in declined's hue (UXFIX5): the hue as text was 3.95:1 in dark.
+  // Its label in the danger ink, its line and its hover field in declined's hue: the hue as text was 3.95:1 in dark.
   danger:
     'border border-st-declined bg-transparent text-ink-danger hover:enabled:bg-st-declined/10',
 };

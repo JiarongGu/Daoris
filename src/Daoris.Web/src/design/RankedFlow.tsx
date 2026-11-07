@@ -36,21 +36,21 @@ const LIST_KEY = 'daoris.flow.list';
  *   → along the first edge out, ← back along the edge it came by else its first edge in; Enter opens its door; a key
  *   aimed at a control inside a node is the control's, and Escape gives the focus back to its node. The focus is kept by
  *   node id across a change of placement and a new layout. A key an input method is composing with is the method's.
- * - **Too large to show whole** (FLOWCHART1d, §3.6): past 24 nodes, after the stacks, settled stretches fold and the flow is focused
+ * - **Too large to show whole**: past 24 nodes, after the stacks, settled stretches fold and the flow is focused
  *   on the ranks around every current node, or with none current where it starts, ends or got to (`largeFolds`). A fold is a node
  *   with a press, every edge across its boundary drawn to it, merged by cause and by the node outside and counted; *Show whole*
  *   opens every fold and *Fold again* folds them back. What is open is page state, never remembered, and a fold the person opened
  *   stays open while the state moves; a node folded away gives its focus to its fold, and an opened fold gives it back.
- * - **Sections** (FLOWCHART1d): a caller's titles, each from a node's rank, the first heading the flow and each later one a divider
+ * - **Sections**: a caller's titles, each from a node's rank, the first heading the flow and each later one a divider
  *   before its rank; a flow in sections is never left to right.
  *
- * - **Ports and data** (FLOWCHART2a): the canvas draws the layout, the ink and the keys and a caller draws the nodes (`renderNode`) and
+ * - **Ports and data**: the canvas draws the layout, the ink and the keys and a caller draws the nodes (`renderNode`) and
  *   the chips (`renderLabel`). A `when` edge with a `port` leaves the box of that port, which the caller's node draws; a `data` edge
  *   is read by neither the layout nor the folds, and is drawn only while a flow given `selected` has an end selected.
- * - **Editing** (FLOWCHART2b): an editor's ＋ on a way (`renderInsert`), placed as a label is and under its source in the rail, and pick
+ * - **Editing**: an editor's ＋ on a way (`renderInsert`), placed as a label is and under its source in the rail, and pick
  *   mode (`pick`), in which the keys walk only the nodes that can take the way being chosen. What a press does is the caller's.
  *
- * - **The viewport** (CANVAS1a; D224): a caller that opts in (`viewport`) has its drawing stand in the canvas (`canvas/Canvas.tsx`) from
+ * - **The viewport**: a caller that opts in (`viewport`) has its drawing stand in the canvas (`canvas/Canvas.tsx`) from
  *   36rem of the pane, where a zoom and a pan transform it and lay nothing out again: its boxes are read in world units
  *   (`canvas/worldBoxes.ts`), its track is sized from the pane at 100%, and a focus walked takes `preventScroll`, the canvas revealing it.
  *   A rem is the root's as measured, so the window's zoom places a flow by what it needs.
@@ -62,7 +62,7 @@ export function RankedFlow({
   renderInsert, pick = null, viewport = 'none', selection = null, connect = null, onEdge,
 }: FlowCanvasProps) {
   const { t } = useTranslation();
-  // A data wire is no way on: the layout, the stacks and the folds never read it (FLOWCHART2a).
+  // A data wire is no way on: the layout, the stacks and the folds never read it.
   const givenEdges = useMemo(() => allEdges.filter((edge) => edge.style !== 'data'), [allEdges]);
   const dataEdges = useMemo(() => allEdges.filter((edge) => edge.style === 'data'), [allEdges]);
   const showsData = selected !== undefined;
@@ -160,7 +160,7 @@ export function RankedFlow({
     return new Set(layout.paths.filter((path) => path.edges.some((id) => kept.has(id))).map((path) => path.id));
   }, [layout, edges]);
 
-  // Sections (FLOWCHART1d): the first heads the flow; each later one divides the drawing before the rank its node is drawn in, and a
+  // Sections: the first heads the flow; each later one divides the drawing before the rank its node is drawn in, and a
   // reader hears its title at that node.
   const [head, ...later] = sections ?? [];
   const divided = new Map<string, string[]>();
@@ -175,7 +175,7 @@ export function RankedFlow({
   }
 
   // The roving stop: the node the person was last on, else the current one, else the first in reading order; in pick mode, a node that
-  // can take the way (FLOWCHART2b).
+  // can take the way.
   const roving = stop !== null && byId.has(drawnOf(stop))
     ? drawnOf(stop)
     : layout.order.find((id) => byId.get(id)?.current) ?? layout.order[0] ?? null;
@@ -225,7 +225,7 @@ export function RankedFlow({
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (isComposing(event)) return;
-    // A key with Ctrl, Alt or the system key is the page's around the flow, such as an editor's move or undo (FLOWCHART2b).
+    // A key with Ctrl, Alt or the system key is the page's around the flow, such as an editor's move or undo.
     if (event.ctrlKey || event.altKey || event.metaKey) return;
     const target = event.target as HTMLElement;
     const holder = target.closest<HTMLElement>('[data-flow-node]');
@@ -299,7 +299,7 @@ export function RankedFlow({
 
   // The edges, drawn from the measured boxes, again on each resize of the drawing or of a node; nothing drawn moves a box.
   // The resizes of one frame are drawn once, on the next (trap 14), and a geometry that came out the same is not drawn.
-  // The ＋ an editor offers on each way: none on a way back, and on the drawing none on a path that merges several edges (FLOWCHART2b).
+  // The ＋ an editor offers on each way: none on a way back, and on the drawing none on a path that merges several edges.
   const inserts = new Map<string, ReactNode>();
   if (renderInsert) {
     for (const edge of edges) {
@@ -361,7 +361,7 @@ export function RankedFlow({
     ...(pick ? { picking: pick.can(id) } : {}),
   });
 
-  // In pick mode a press on a node that cannot take the way leaves the focus where it is (FLOWCHART2b).
+  // In pick mode a press on a node that cannot take the way leaves the focus where it is.
   const onMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     const holder = (event.target as HTMLElement).closest<HTMLElement>('[data-flow-node]');
     if (pick && holder && !pick.can(holder.dataset.flowNode!)) event.preventDefault();

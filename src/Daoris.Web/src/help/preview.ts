@@ -1,5 +1,5 @@
 /**
- * An answer's Markdown as a line of plain words (ASKHIST1c): what a row of Ask Daoris's history shows of a conversation, and
+ * An answer's Markdown as a line of plain words: what a row of Ask Daoris's history shows of a conversation, and
  * of where a search found its words. The row read the agent's raw Markdown (`**#d208d4**`, backticks); a row is a button,
  * so its line holds words only, never a link, a code span or a button of its own.
  *

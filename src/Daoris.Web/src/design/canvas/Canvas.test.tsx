@@ -13,7 +13,7 @@ import { memoryKey } from './viewMemory';
 import type { Connect } from './useConnection';
 import type { WorldRead } from './worldBoxes';
 
-// CANVAS1a (D224; the canvas design §2.4, §5, traps 2-5 and 13): the viewport a placed world stands in. jsdom lays nothing out, so the
+// The viewport a placed world stands in. jsdom lays nothing out, so the
 // world is handed to the canvas as its ink would measure it, and each element's rect is stood in for as the transform would place it.
 
 const OPTIONS: CanvasOptions = { mode: 'display', zoom: { min: 0.5, max: 2 }, fit: 'Show the whole workflow', moves: 'a workflow: drag to move' };
@@ -357,7 +357,7 @@ describe('the sizing menu', () => {
   });
 });
 
-// CANVAS1b (D224; the canvas design §2.4, §2.5): the ground, the box, and the connection line.
+// The ground, the box, and the connection line.
 
 const selectionOf = (over: Partial<CanvasSelection> = {}): CanvasSelection => ({ many: true, onGround: vi.fn(), onBox: vi.fn(), ...over });
 
@@ -556,7 +556,7 @@ describe('the connection line', () => {
   });
 });
 
-// CANVAS1d (D224; the canvas design §4, trap 18): the minimap, switched in the sizing menu and remembered, and the viewer's place.
+// The minimap, switched in the sizing menu and remembered, and the viewer's place.
 
 describe('the minimap', () => {
   const boxes = [...WORLD.nodes.values()];
@@ -634,7 +634,7 @@ describe('the viewer\'s place', () => {
   });
 });
 
-// CANVAS1e (the canvas design §3.3): a world drawn fitted with zoom off (the ring), one opened fitted and never below a floor (the layered
+// A world drawn fitted with zoom off (the ring), one opened fitted and never below a floor (the layered
 // map), and a region that is a Tab stop where the bare keys act as the map's always did.
 describe('a world fitted, with zoom off', () => {
   it('is drawn at the scale that fits its width, offers no sizing, and ignores Ctrl+wheel', () => {

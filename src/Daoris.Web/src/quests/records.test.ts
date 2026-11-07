@@ -84,7 +84,7 @@ describe("Quests' groups", () => {
   });
 
   /**
-   * DRIFT1d2 (D133 §4): a done a departure holds is outstanding, and the service lists it without closed ones, so the list
+   * DRIFT1d2: a done a departure holds is outstanding, and the service lists it without closed ones, so the list
    * shows it first, awaiting the person's yes, whether closed quests are shown or not, and never twice.
    */
   it('puts a quest a departure holds first, awaiting the person, with closed quests shown or not', () => {
@@ -153,7 +153,7 @@ describe('the question a quest waits on (D79)', () => {
   });
 });
 
-// UX6b (design §1 rule 6): Quests reopens its chosen record only while it still waits on something. The install reopened
+// Quests reopens its chosen record only while it still waits on something. The install reopened
 // yesterday's done quest while two asks waited to be published.
 describe('whether a chosen record still waits', () => {
   const ask = (over: Partial<Ask>): Ask => ({

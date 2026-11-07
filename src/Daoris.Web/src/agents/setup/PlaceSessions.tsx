@@ -118,7 +118,7 @@ function RepositoryWorkflow({ place, notify, onConvert, landingAsked }: {
 }
 
 /**
- * A workspace's Landing row (WORKFLOWCLEAN1h-c, D228): the same row a repository has, under the folds of its Workflow, the saved version's
+ * A workspace's Landing row: the same row a repository has, under the folds of its Workflow, the saved version's
  * `land` options; a workspace on Current has none.
  */
 export function WorkspaceLandingFolds({ workspace, hand }: { workspace: string; hand: LandingHand }) {
@@ -182,7 +182,7 @@ function WorkspaceWorkflow({ place, notify, onConvert }: { place: PlaceHold; not
 }
 
 /**
- * **A place's Sessions section** (AGENTSPLACE1f): how its sessions run. *This machine* holds none.
+ * **A place's Sessions section**: how its sessions run. *This machine* holds none.
  *
  * An organism: it holds the bridge's hooks, so the molecules above hold none. It mounts only while its section is open.
  */
@@ -190,7 +190,7 @@ export function PlaceSessions({ place, notify, onOpenGit }: {
   place: Pick<PlaceHold, 'kind' | 'row' | 'asked'>;
   notify: Notify;
   onOpenPlugin?: (plugin: string) => void;
-  /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e). */
+  /** Open Settings → Git, where a remote nothing serves is given an identity. */
   onOpenGit?: (host: string) => void;
 }) {
   if (place.kind === 'repository') {

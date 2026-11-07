@@ -7,7 +7,7 @@ import '../../locales/i18n';
 import type { StartWiring } from '../../map/wiring';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
 
-// A workspace's page as a molecule (UX6g, D150 §4.3): its header, its tabs, and its Details, each from props.
+// A workspace's page as a molecule: its header, its tabs, and its Details, each from props.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
@@ -37,7 +37,7 @@ describe("a workspace's page", () => {
     expect(onWire).toHaveBeenCalled();
   });
 
-  /** §4.3: Details, Branches, Workflow (WORKFLOW1b) and Setup, in that order, the chosen one its holder's to remember. */
+  /** §4.3: Details, Branches, Workflow and Setup, in that order, the chosen one its holder's to remember. */
   it('holds four tabs, Details, Branches, Workflow and Setup, and asks for another by its press', async () => {
     const onTab = vi.fn();
     render(<WorkspacePage workspace="aurora" repositories={2} tab="branches" onTab={onTab}>the clean-up</WorkspacePage>);
@@ -89,7 +89,7 @@ describe("a workspace's Details", () => {
 
     const start = screen.getByRole('listitem', { name: 'a start in aurora' });
     expect(within(start).getByText('personal')).toBeInTheDocument();
-    // POOL1c (D197): Daoris's accounts, one set for every workspace, in its order; never *its own* nor *this machine's*.
+    // Daoris's accounts, one set for every workspace, in its order; never *its own* nor *this machine's*.
     expect(within(screen.getByRole('listitem', { name: 'Claude Code' }))
       .getByText("Daoris's accounts, in order: work@example.invalid, home@example.invalid")).toBeInTheDocument();
     expect(within(screen.getByRole('listitem', { name: 'Codex' }))
@@ -99,7 +99,7 @@ describe("a workspace's Details", () => {
     expect(onOpenAgent).toHaveBeenCalledWith('codex');
   });
 
-  // SETUPUX1v: the remote's wiring is a row of the workspace's Details, where the Setup tab's Remote row went.
+  // The remote's wiring is a row of the workspace's Details, where the Setup tab's Remote row went.
   describe('its Remote row', () => {
     const wiring = (over: Partial<NonNullable<NonNullable<Parameters<typeof WorkspaceDetails>[0]['remote']>['wiring']>> = {}) => ({
       remote: null, fromEnvironment: false, onWire: vi.fn(), onUnwire: vi.fn(), ...over,

@@ -7,16 +7,16 @@ import { WorkspaceScopeProvider } from '../data/scope';
 import type { SecondaryWindow } from '../work/window';
 
 /**
- * The page as `main.tsx` mounts it, in both roots: the application's main window, or a secondary window (SURF8), which is a ROUTE
+ * The page as `main.tsx` mounts it, in both roots: the application's main window, or a secondary window, which is a ROUTE
  * into the same bundle — the same bytes, the same components, a different root — so a monitor on a second screen costs the
  * components it already has instead of a second frontend to keep in step.
  *
- * The error screen is outermost (PAGELOOP1), outside the query client and every provider, so a failure in any of them is caught as
+ * The error screen is outermost, outside the query client and every provider, so a failure in any of them is caught as
  * one in a view is; a render that threw anywhere left the window blank.
  */
 export function PageRoot({ client, window: which }: { client: QueryClient; window: SecondaryWindow | null }) {
   return (
-    // A secondary window shows no view of the frame's, so its failure's line names the window (D217); the main window's frame
+    // A secondary window shows no view of the frame's, so its failure's line names the window; the main window's frame
     // says its view as it shows it.
     <PageBoundary view={which ? `window:${which.kind}` : undefined}>
       <QueryClientProvider client={client}>

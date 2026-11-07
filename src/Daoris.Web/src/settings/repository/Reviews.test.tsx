@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { ReviewField, type ReviewRule, reviewRowSays, reviewSays, reviewSummary, reviewToast } from './Reviews';
 
-// REVIEWENV1a (D154 point 2, the review-environment design §1.7–§1.8): where a repository's work is shown to the person before
-// it lands, set on a repository's Setup and a workspace's Defaults as `daoris place review` sets it from a terminal (D50).
+// Where a repository's work is shown to the person before
+// it lands, set on a repository's Setup and a workspace's Defaults as `daoris place review` sets it from a terminal.
 // The words each door says are the twins' (`reviews.ts`, `ReviewRules.cs`), held here in English to rows of their one table
 // (the driver suite's `fixtures/review-rules.json`, `says`), copied, and the field sends the twins' edit, which the driver judges.
 
@@ -56,7 +56,7 @@ const SAYS: SaysRow[] = [
 
 /**
  * The twins' `gate` rows, copied (REVIEWENV1c2): what each door says after the rule's sentences, now that the landing's gate
- * reads it (REVIEWENV1c). None here says nothing after.
+ * reads it. None here says nothing after.
  */
 const WAITING = 'Where work here waits for your review, it lands only once you say it is reviewed, '
   + '`daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. '
@@ -125,7 +125,7 @@ describe('what a review rule says', () => {
   });
 
   /**
-   * REVIEWENV1g: the Setup row's terminal twin joins its alternatives with `|` inside its one command, as its neighbours'
+   * The Setup row's terminal twin joins its alternatives with `|` inside its one command, as its neighbours'
    * twins do (`daoris place line … <branch>|--clear`), in both languages; a command is code, never translated, so 中文 says
    * it as English does, never with 、 between spans.
    */

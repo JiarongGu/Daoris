@@ -11,7 +11,7 @@ import { useDebounced } from '../lib/useDebounced';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 
 /**
- * **The Convergence view** (D30; FRAME1f, D118 §2): what it hands the frame (D118 §5), its list pane and its main area.
+ * **The Convergence view**: what it hands the frame, its list pane and its main area.
  * The list is the similarity, then the findings; the main area is the finding chosen, the service's sentence and then
  * its entries read whole, where each entry was the reader drawer over the side bar and the panel (audit CO4). The
  * knowledge half's lead view: where two repositories reached the same conclusion independently, to read and decide.
@@ -23,7 +23,7 @@ import type { ViewLayout } from '../work/frame/ViewFrame';
  *
  * **What it remembers is its list's** (`listPanes.ts`, §3f): the finding chosen, by its entries (`findingId`), and the
  * similarity, once it has held still. The suggestion is the SERVICE's sentence, verbatim: a command to run where the
- * file lives, never a button that applies it (D21, D31).
+ * file lives, never a button that applies it.
  */
 export function useConvergenceView({ active, chosen, onChoose, filters: kept, onFilters, notify, semantic }: {
   /** The view is in front: only then does it ask, and say its errors. */
@@ -35,7 +35,7 @@ export function useConvergenceView({ active, chosen, onChoose, filters: kept, on
   filters: Record<string, unknown>;
   onFilters: (filters: Record<string, unknown> | null) => void;
   notify: Notify;
-  /** Whether this deployment matches meaning too (D24), which the note under the similarity says. */
+  /** Whether this deployment matches meaning too, which the note under the similarity says. */
   semantic: boolean;
 }): ViewLayout {
   const { t } = useTranslation();
@@ -80,9 +80,9 @@ export function useConvergenceView({ active, chosen, onChoose, filters: kept, on
       name: t('nav.convergence'),
       labels: { open: t('convergence.list.open'), close: t('convergence.list.close'), resize: t('convergence.list.resize') },
       // Convergence makes nothing, so its list has no ＋; its similarity heads the list, where it changes what the list
-      // holds (D118 §2), and its strip holds its controls alone.
+      // holds, and its strip holds its controls alone.
       chosen,
-      // A remembered finding reopens only while the findings still hold it (UX6b): one gone opens nothing chosen.
+      // A remembered finding reopens only while the findings still hold it: one gone opens nothing chosen.
       standing: !chosen ? undefined : finding ? 'live' : groups.data && !groups.isPlaceholderData ? 'gone' : 'unread',
       body: (
         <FindingList

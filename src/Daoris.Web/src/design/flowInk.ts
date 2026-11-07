@@ -32,7 +32,7 @@ export type InkPath = {
   to: string;
   style: EdgeStyle;
   back: boolean;
-  /** The outcome's port it leaves (FLOWCHART2a). */
+  /** The outcome's port it leaves. */
   port: string | null;
   d: string;
   points: Point[];
@@ -50,7 +50,7 @@ type Segment = { kind: 'L'; to: Point } | { kind: 'C'; c1: Point; c2: Point; to:
 const round = (value: number) => Math.round(value * 2) / 2;
 
 /**
- * What a drawing adds to the routing (FLOWCHART2a): the boxes of the ports a decision's outcomes stand in, by `node:outcome`, which a
+ * What a drawing adds to the routing: the boxes of the ports a decision's outcomes stand in, by `node:outcome`, which a
  * `when` path leaves top to bottom instead of a spot spread along its node's edge; and the data wires to draw, each outside the nodes
  * on a lane of its own at the right.
  */
@@ -161,7 +161,7 @@ export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes
     drawn.push(finish(path, corners[0]!, orthogonal(corners), at(lane, (out + into) / 2)));
   }
 
-  // Data wires (FLOWCHART2a), drawn top to bottom only and to a later rank: out of the source's foot at its right end, along the gap
+  // Data wires, drawn top to bottom only and to a later rank: out of the source's foot at its right end, along the gap
   // after its rank to a lane right of every node, down it, and in along the gap before the target's rank, set apart from the returns'
   // runs there. The layout never saw them, so no node, rank or lane moved for them.
   const dataOut = new Map<number, number>();
@@ -268,7 +268,7 @@ export function placeLabels(paths: readonly InkPath[], sizes: ReadonlyMap<string
 const INSERT_AT = [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8] as const;
 
 /**
- * Place an editor's ＋ on each path given one (FLOWCHART2b; D223 §6): at the first point along its length, from the middle outward, whose
+ * Place an editor's ＋ on each path given one: at the first point along its length, from the middle outward, whose
  * box clears every node, every label shown and every ＋ placed before it; one that fits nowhere is not shown, the way keeping its ＋ in the
  * step's inspector. The measured-box check holds that none lies over a node, a label or another ＋.
  */

@@ -7,7 +7,7 @@ import { keyInTree as keyed, type TreeItem, treeItems } from './setupTreeModel';
 const keyInTree = (items: readonly TreeItem[], id: string, key: string, composing = false) =>
   keyed(items, id, { key, keyCode: composing ? 229 : 0, isComposing: composing });
 
-// SETUPUX1i: the places tree's rows in reading order, its WAI-pattern keys, and a row's second line.
+// The places tree's rows in reading order, its WAI-pattern keys, and a row's second line.
 
 const place = (patch: Partial<PlaceRow> = {}): PlaceRow => ({
   workspace: 'aurora', repository: 'engine', driven: true, held: false, trees: false, checkout: true, adopted: true, works: [], needs: [], ...patch,

@@ -1,7 +1,7 @@
 import i18n from '../../locales/i18n';
 import type { RuleProposal } from './AgentRules';
 
-// An agent's proposal to change the rules (PERM2, D74), said in the person's language. Pure, so the
+// An agent's proposal to change the rules, said in the person's language. Pure, so the
 // rules card and *What needs you* cannot disagree about what a proposal would do or who made it —
 // and structured on the wire rather than a sentence, because a sentence would arrive in English.
 
@@ -12,7 +12,7 @@ export const OPEN_STATES: ReadonlySet<RuleProposal['state']> = new Set(['propose
 export function proposalChange(proposal: RuleProposal): string {
   const where = proposal.scope === 'machine'
     ? i18n.t('settings.rules.proposals.everywhere')
-    // NAME1b: a scope's section title is sentence case; inside a sentence it is a fragment of its own.
+    // A scope's section title is sentence case; inside a sentence it is a fragment of its own.
     : i18n.t(proposal.scope === 'workspace' ? 'settings.rules.where.workspace' : 'settings.rules.where.repository', {
       name: proposal.name ?? '',
     });

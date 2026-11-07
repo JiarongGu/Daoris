@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { starters } from './starters';
 import type { Tool } from '../agents/tools';
 
-// HELP1d (D89): Ask Daoris's no-agent tier — what this machine lacks, each with the screen that fixes
+// Ask Daoris's no-agent tier — what this machine lacks, each with the screen that fixes
 // it and the terminal command that does the same. Pure: every machine is an argument.
 
 const tool = (over: Partial<Tool> = {}): Tool => ({
@@ -32,7 +32,7 @@ describe('starters', () => {
     });
 
     expect(all.map((starter) => starter.id)).toEqual(['waiting', 'nothing-registered', 'agent-signed-out', 'helper-off']);
-    // ENTRY1b: the sessions waiting on the person are Sessions' *Waiting on you*, which its door brings into view.
+    // The sessions waiting on the person are Sessions' *Waiting on you*, which its door brings into view.
     expect(all[0]).toMatchObject({ values: { count: 2 } });
     expect(all[0]!.door).toEqual({ view: 'sessions', group: 'you' });
     expect(all[1]).toMatchObject({ door: { view: 'projects' }, command: 'daoris repository connect' });
@@ -61,7 +61,7 @@ describe('starters', () => {
 
   it('names the repositories with no line git can name, and where to set one', () => {
     expect(starters({ ...READY, unnamedLines: ['engine', 'game', 'tools'] })).toEqual([expect.objectContaining({
-      // The first one's Setup, where its line is set (UX6f, UX6g).
+      // The first one's Setup, where its line is set.
       id: 'no-line', values: { count: 3, first: 'engine' }, door: { view: 'agents', placeOf: 'engine' },
       command: 'daoris place line engine <branch>',
     })]);

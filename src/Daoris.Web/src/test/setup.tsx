@@ -41,7 +41,7 @@ class ResizeObserverStub {
 
 // Radix Select opens on pointer events and asks the target about pointer capture, then scrolls the
 // chosen item into view — three DOM methods jsdom does not implement. No test opened a select until
-// the workspace switcher (WSP5); the shims are inert no-ops, exactly as the ResizeObserver above.
+// the workspace switcher; the shims are inert no-ops, exactly as the ResizeObserver above.
 if (typeof Element !== 'undefined') {
   const proto = Element.prototype as unknown as Record<string, unknown>;
   proto.hasPointerCapture ??= () => false;

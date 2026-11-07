@@ -11,7 +11,7 @@ import { ProjectPage, ProjectsMainNotice } from './ProjectPage';
 import { BranchesTab, type GitRead, HistoryTab, type HistoryRead } from './git/RepositoryGit';
 import type { ProjectTab } from './tabs';
 
-// A repository's page (FRAME1e, D118 §2) in Repositories' main area: its Details tab (adopted, driven here, held, with its
+// A repository's page in Repositories' main area: its Details tab (adopted, driven here, held, with its
 // line, with unlanded branches, a teammate's with no checkout here, one that declared nothing, one not adopted with a root
 // here, one not adopted with none, a browser's, a 中文 name);
 // since UX6h1 (§4.4) its Branches and History tabs, each reading, with no checkout here, refused, with nothing yet and read,
@@ -130,10 +130,10 @@ export const Adopted: Story = {};
 /** Held by the person: *held* outranks *drives here*, which it suspends; the hold is lifted on Setup. */
 export const Held: Story = { args: { held: true } };
 
-/** Its own line (WSR2): the branch its work grows from and lands on, and that it was set for this repository. */
+/** Its own line: the branch its work grows from and lands on, and that it was set for this repository. */
 export const WithALine: Story = { args: { line: LINE } };
 
-/** Session branches holding work no branch of the person's holds (WSR3): named here, listed in Settings. */
+/** Session branches holding work no branch of the person's holds: named here, listed in Settings. */
 export const UnlandedBranches: Story = { args: { line: LINE, unlanded: 2 } };
 
 /** A teammate's registration with no checkout here: *not on this machine*, and nothing printed of anyone's path. */
@@ -141,14 +141,14 @@ export const NoRootHere: Story = {
   args: { registration: MIRRORED, counts: COUNTS['studio-tools'], here: false, drivable: false, line: null },
 };
 
-/** Adopted, and declared nothing: the warning that an asker would be guessing (D34). */
+/** Adopted, and declared nothing: the warning that an asker would be guessing. */
 export const Undeclared: Story = { args: { registration: UNDECLARED, counts: undefined } };
 
 /** The game: drivable, with no feed, since this deployment reads its own checkouts. */
 export const AnotherAdopter: Story = { args: { registration: GAME, counts: COUNTS.game } };
 
 /**
- * Not adopted, with a root here (INT3c): *not adopted* in its head, no *Manage*, and the steps to adopt as text with the
+ * Not adopted, with a root here: *not adopted* in its head, no *Manage*, and the steps to adopt as text with the
  * reasoning on the info glyph; Setup holds its driving.
  */
 export const NotAdopted: Story = { args: { registration: NEWBIE, counts: COUNTS.newbie, drivable: false, onManage: undefined } };
@@ -158,7 +158,7 @@ export const NotAdoptedNoRoot: Story = {
   args: { registration: ELSEWHERE, counts: undefined, here: false, drivable: false, onManage: undefined, line: null },
 };
 
-/** A browser's page: Details alone, no tab row, no *Manage* and no setting, which only a shell's driver says (D47 §4). */
+/** A browser's page: Details alone, no tab row, no *Manage* and no setting, which only a shell's driver says. */
 export const InABrowser: Story = {
   args: {
     here: undefined, drivable: undefined, line: undefined, branches: undefined, history: undefined,

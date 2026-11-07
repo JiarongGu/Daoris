@@ -15,14 +15,14 @@ import { rooted } from '../test/sources';
 
 /** Modules that reach the service or the shell — every other presentational file must not. */
 const FORBIDDEN: { what: string; pattern: RegExp }[] = [
-  // `data/queries` since STRUCT5c (D166) moved it from the sources' top.
+  // `data/queries` since STRUCT5c moved it from the sources' top.
   { what: "the query layer ('./queries')", pattern: /\bfrom\s+'(?:\.\.?\/)+(?:data\/)?queries'/ },
   { what: "the shell bridge ('./shell')", pattern: /\bfrom\s+'(?:\.\.?\/)+shell'/ },
   // Its domains, which `./shell` only re-exports since MOD3: without this row the rule is side-stepped
   // by importing the file the barrel names.
   { what: "a bridge domain ('./bridge/…')", pattern: /\bfrom\s+'(?:\.\.?\/)+bridge\// },
   { what: 'react-query directly', pattern: /\bfrom\s+'@tanstack\/react-query'/ },
-  // The bridge ITSELF, not just this repository's wrapper around it (SURF7). Without this row the
+  // The bridge ITSELF, not just this repository's wrapper around it. Without this row the
   // rule is trivially side-stepped by importing the library `./shell` is built on.
   { what: "the bridge library ('@shenora/react')", pattern: /\bfrom\s+'@shenora\/react'/ },
   // The window's chrome hook — the other shell-layer module, and the one that caught this gap out.
@@ -39,38 +39,38 @@ const FORBIDDEN: { what: string; pattern: RegExp }[] = [
  */
 const ORGANISMS = new Set<string>([
   './work/console/SessionConsole.tsx',
-  // The asks' organism (INT4c; FRAME1d): it holds the queries so the row, the page and the composer do not.
+  // The asks' organism: it holds the queries so the row, the page and the composer do not.
   './asks/AsksPart.tsx',
   './work/attention/AttentionBand.tsx',
-  // The conversation's organism (D76, CONV2): it holds the record and the scroll, so the view,
+  // The conversation's organism: it holds the record and the scroll, so the view,
   // the tool card and the Markdown below it hold neither.
   './work/conversation/SessionConversation.tsx',
-  // The earlier parts of a line (SWITCHCTX1c-i): each is the conversation's organism in its earlier mode, so this holds none of its own.
+  // The earlier parts of a line: each is the conversation's organism in its earlier mode, so this holds none of its own.
   './work/conversation/EarlierParts.tsx',
   './work/console/DetachedSession.tsx',
   './work/review/DiffPane.tsx',
   './work/console/MonitorWindow.tsx',
   './work/rail/SessionRail.tsx',
-  // The one owner of each act on a session (SESSUX1d, D126 §3.1): it holds the bridge's hooks, so the row, the list and
+  // The one owner of each act on a session: it holds the bridge's hooks, so the row, the list and
   // the page header, which each press it, hold none.
   './work/sessionActs.ts',
-  // The one owner of a pause, a resume and an abandon (PAUSE1e, D132 §7.1): it holds the bridge's hooks, so the ask's page,
+  // The one owner of a pause, a resume and an abandon: it holds the bridge's hooks, so the ask's page,
   // the quest's page and a session's header, which each press them, hold none.
   './work/pausing/workActs.ts',
-  // The one owner of a clear (HIST1e, D153 §6.1): it holds the bridge's hook, so the quest's page, the ask's page and a
+  // The one owner of a clear: it holds the bridge's hook, so the quest's page, the ask's page and a
   // workspace's Details, which each press it, hold none.
   './work/history/historyActs.ts',
-  // The one owner of a review's presses (REVIEWENV1g, D154 point 8): it holds the service's and the bridge's hooks, so the
+  // The one owner of a review's presses: it holds the service's and the bridge's hooks, so the
   // gate, the quest's page and What needs you, which each press them, hold none.
   './work/gates/reviewActs.ts',
-  // The one owner of the second opinion's presses (XAGENT1g, D155 point 10): it holds the bridge's hooks, so the gate and What
+  // The one owner of the second opinion's presses: it holds the bridge's hooks, so the gate and What
   // needs you, which each press them, hold none.
   './work/gates/opinionActs.ts',
   // The one owner of the answer to an agent's rule proposal (PROPOSEHERE1b, D74's note): it holds the bridge's hook, so the
   // Agents page's card, What needs you and a session's conversation, which each press it, hold none.
   './work/waits/ruleAnswer.ts',
   './work/WorkFrame.tsx',
-  // The Work frame's hooks (CODESHAPE1, D231): each holds one part of what the frame reads and presses, so the frame composes.
+  // The Work frame's hooks: each holds one part of what the frame reads and presses, so the frame composes.
   './work/frame/useDockViews.ts',
   './work/head/useAttendedSession.ts',
   './work/head/useAttendedRecord.ts',
@@ -79,13 +79,13 @@ const ORGANISMS = new Set<string>([
   './work/conversation/useBoxWords.ts',
   './work/start/useNewStart.ts',
   './work/start/StartPane.tsx',
-  // The head's team facts (COWORKUX1): the helpers' hooks held once, so Co-workers, Bring in another agent and a member's thread hold none.
+  // The head's team facts: the helpers' hooks held once, so Co-workers, Bring in another agent and a member's thread hold none.
   './work/team/useTeam.ts',
   './work/head/useHeadAsks.ts',
   './work/review/useSessionLanding.ts',
   './work/waits/useAttendedWaits.ts',
   './work/head/useAttendedHead.tsx',
-  // What the Work frame draws from those hooks (CODESHAPE1, D231): the regions' surfaces, the sessions list, the roster, the record,
+  // What the Work frame draws from those hooks: the regions' surfaces, the sessions list, the roster, the record,
   // the conversation and the boxes, each composed of the hooks' results.
   './work/frame/regionSurface.tsx',
   './work/rail/useSessionsList.tsx',
@@ -93,12 +93,12 @@ const ORGANISMS = new Set<string>([
   './work/head/AttendedPane.tsx',
   // The terminal hold's container (RPC1g1): it holds the bridge's hold and its let-go, so `TerminalHold` is handed them and holds neither.
   './work/head/SessionTerminalHold.tsx',
-  // The supervisor's decision's container (CONTEXTDRIVE1j): it holds the bridge's overrule, so `SupervisorCourseCard` is handed the press and holds none.
+  // The supervisor's decision's container: it holds the bridge's overrule, so `SupervisorCourseCard` is handed the press and holds none.
   './work/head/SessionSupervisorCourse.tsx',
   './work/head/partRows.ts',
   './work/conversation/AttendedConversation.tsx',
   './work/conversation/AttendedBoxes.tsx',
-  // The application's hooks (CODESHAPE1, D231): each holds one part of what the window reads and presses, so the shell composes.
+  // The application's hooks: each holds one part of what the window reads and presses, so the shell composes.
   './app/shell/useShellState.ts',
   './app/shell/useFrameDoors.ts',
   './app/shell/useShellFeeds.ts',
@@ -113,90 +113,90 @@ const ORGANISMS = new Set<string>([
   './app/shell/useContextDoors.ts',
   './app/shell/useViewLayouts.tsx',
   './app/shell/useScopeAndRefresh.ts',
-  // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
+  // Ask Daoris's organism: it reads the machine, so the panel and the starters do not.
   './help/AskDaoris.tsx',
-  // Ask Daoris's conversation (HELP1a): the newest help session's record and its composer.
+  // Ask Daoris's conversation: the newest help session's record and its composer.
   './help/AskConversation.tsx',
-  // Its parts (CODESHAPE1, D231): the place, the history, the sends, the mode, the proposals and the slot's words, each one hook.
+  // Its parts: the place, the history, the sends, the mode, the proposals and the slot's words, each one hook.
   './help/ask/useHelpPlace.ts',
   './help/ask/useHelpHistory.ts',
   './help/ask/useHelpSend.ts',
   './help/ask/useHelpMode.tsx',
   './help/ask/useHelpFollow.tsx',
   './help/ask/useHelpSlotParts.tsx',
-  // The machine as the queries answer it (SETUP1a, D97): one reading for the starters and the setup
+  // The machine as the queries answer it: one reading for the starters and the setup
   // guide, so the panel, the guide and the steps below them hold no query.
   './help/useMachine.ts',
-  // The Plugins view's organism (PLUGUI1b, D119): it holds the catalogue and the plugin's acts, so the list, the
+  // The Plugins view's organism: it holds the catalogue and the plugin's acts, so the list, the
   // strip, the page and the offer's page below it hold none.
   './plugins/PluginsView.tsx',
-  // The Agents place's organism (UX6e, D150 §5): it holds the roster, the accounts and every act on an agent, so the
+  // The Agents place's organism: it holds the roster, the accounts and every act on an agent, so the
   // list, the strip, the page and an account's row below it hold none.
   './agents/AgentsView.tsx',
-  // The Agents place's Roles mode (COMPANYVIEW1b): the role catalogue, the staffing and every press on them, so the card, the
+  // The Agents place's Roles mode: the role catalogue, the staffing and every press on them, so the card, the
   // section list and the strip below it hold none.
   './agents/roles/RolesView.tsx',
-  // The Appointed roles section (COMPANYVIEW1e): the standing confirmation and every appointment press, so its list below holds none.
+  // The Appointed roles section: the standing confirmation and every appointment press, so its list below holds none.
   './agents/roles/AppointedRoles.tsx',
-  // And the one read behind Work, Accounts, By repository and an agent's *Used by* (COMPANYVIEW1d): a hook, held by the organisms.
+  // And the one read behind Work, Accounts, By repository and an agent's *Used by*: a hook, held by the organisms.
   './agents/roles/structureRead.ts',
-  // The Setup mode's list of places and its page (AGENTSPLACE1e): `PLACES` read once, so the list, the fold and the head below hold none.
+  // The Setup mode's list of places and its page: `PLACES` read once, so the list, the fold and the head below hold none.
   './agents/setup/SetupPlaces.tsx',
   // A place's Roles section (AGENTSPLACE1g1): its chain's read and the role editor's presses, so its rows below hold none.
   './agents/setup/PlaceRoles.tsx',
-  // A workspace's supervisor line among its place's Roles (SETUPUX1v): the standing confirmation's read, so its door below holds none.
+  // A workspace's supervisor line among its place's Roles: the standing confirmation's read, so its door below holds none.
   './agents/setup/PlaceSupervisor.tsx',
-  // A place's Sessions (AGENTSPLACE1f): the registry's row and the one reading of a repository's setup behind it, so the molecules below hold none.
+  // A place's Sessions: the registry's row and the one reading of a repository's setup behind it, so the molecules below hold none.
   './agents/setup/PlaceSessions.tsx',
-  // A place's Set up… (AGENTSPLACE1j): the plan's read and the person's Apply, so the page below it holds neither.
+  // A place's Set up…: the plan's read and the person's Apply, so the page below it holds neither.
   './agents/setup/PlaceSetUpPanel.tsx',
-  // A repository's driving for its page head (SETUPUX1h): the hold and the ⋯'s drive and trees, so the page's molecule holds none.
+  // A repository's driving for its page head: the hold and the ⋯'s drive and trees, so the page's molecule holds none.
   './agents/setup/PlaceDriving.tsx',
-  // This machine's All roles and its notes (SETUPUX1m): the Roles mode's read, so the cards below hold none.
+  // This machine's All roles and its notes: the Roles mode's read, so the cards below hold none.
   './agents/roles/AllRoles.tsx',
   './agents/setup/MachineNotes.tsx',
-  // An adopted repository's note of the shared doctrine (D230 point 2): the reconcile's plan and its press, so the note's molecule holds neither.
+  // An adopted repository's note of the shared doctrine: the reconcile's plan and its press, so the note's molecule holds neither.
   './agents/setup/ReconcileNote.tsx',
   './projects/setup/useRepositorySetup.ts',
-  // A repository's Workflow as its molecules take it (AGENTSPLACE1h): its Current, the acceptance and the step editor's bridge, held by the
+  // A repository's Workflow as its molecules take it: its Current, the acceptance and the step editor's bridge, held by the
   // Repositories view and a place's Sessions, so the Workflow tab and the place's Workflow below hold none.
   './projects/useWorkflowTab.ts',
-  // A workspace's page's organism (UX6g, D150 §4.3): it holds the driver's answers and every act on a workspace, so the
+  // A workspace's page's organism: it holds the driver's answers and every act on a workspace, so the
   // page, its Details and its Setup below it hold none.
   './projects/workspace/WorkspaceView.tsx',
   // A repository's Branches and History parts (UX6h1, D150 §4.4), and a workspace's branch groups (UX6h2b2): they hold Git's
   // reads, each drawn only while its tab shows, so the page, the tabs, the groups and the graph below them hold none.
   './projects/git/RepositoryGitView.tsx',
-  // A repository's Integration tab (INTEGRATE1h): its look and acts, so the tab below it holds none.
+  // A repository's Integration tab: its look and acts, so the tab below it holds none.
   './projects/integration/RepositoryIntegration.tsx',
   // The views a place's activity opens, organisms since FRAME1f by standing at the sources' top above their folder's
-  // molecules, named here since STRUCT5c (D166) moved each into its folder: Search's and Convergence's queries, and
+  // molecules, named here since STRUCT5c moved each into its folder: Search's and Convergence's queries, and
   // Knowledge's view over the two.
   './knowledge/SearchView.tsx',
   './knowledge/ConvergenceView.tsx',
   './knowledge/KnowledgeView.tsx',
-  // The map's view (MAP2): the workspace's wiring, so the drawing and the detail below it hold none.
+  // The map's view: the workspace's wiring, so the drawing and the detail below it hold none.
   './map/MapView.tsx',
-  // Quests' view (FRAME1d): the queries, so the list, a quest's page and its composer hold none.
+  // Quests' view: the queries, so the list, a quest's page and its composer hold none.
   './quests/QuestsView.tsx',
-  // Repositories' view (INT3c, FRAME1e): the registry and the driver, so the list, a repository's page and its rows hold
+  // Repositories' view: the registry and the driver, so the list, a repository's page and its rows hold
   // none; and its drawers, which add, import and manage a repository with the service's and the shell's hooks.
   './projects/ProjectsView.tsx',
   './projects/ProjectManage.tsx',
-  // Settings' frame (AGT6, MOD4): the driver's state and the harness runs, around whichever domain is chosen.
+  // Settings' frame: the driver's state and the harness runs, around whichever domain is chosen.
   './settings/SettingsView.tsx',
-  // A tool's runs, an install, an update or a sign-in (UX7b), and the sign-in on the row that asked for it: the shell's
+  // A tool's runs, an install, an update or a sign-in, and the sign-in on the row that asked for it: the shell's
   // hooks, so the Agents place's rows and What needs you, which draw them, hold none.
   './agents/harnessRuns.tsx',
   './agents/SignIn.tsx',
-  // Settings → Get started (SETUP1a, D97): the organism over the guide, which reads the machine through `useMachine`.
+  // Settings → Get started: the organism over the guide, which reads the machine through `useMachine`.
   './help/setupGuide.tsx',
-  // Settings → Git (GITAUTH1e): the organism over the identities, its own folder's, which holds the presses the cards and rows beside it do not.
+  // Settings → Git: the organism over the identities, its own folder's, which holds the presses the cards and rows beside it do not.
   './settings/git/GitDomain.tsx',
 ]);
 
 /**
- * An organism, imported by a molecule, is the data reached one step removed (REV3): the output panel
+ * An organism, imported by a molecule, is the data reached one step removed: the output panel
  * rendered the console organism itself, and every check above stayed green. A TYPE from an organism
  * is only a shape, and is allowed.
  */
@@ -213,7 +213,7 @@ const organismRules = [...ORGANISMS].map((path) => {
 ]);
 
 /**
- * **A Settings domain is an organism by its name** (MOD4): `settings/<Name>Domain.tsx` holds its
+ * **A Settings domain is an organism by its name**: `settings/<Name>Domain.tsx` holds its
  * domain's queries, as SettingsView did before each domain had a file, so the molecules beside it hold
  * none; and `settings/domains.ts`, the list, imports every one. By name rather than listed here, so a new
  * domain is added in the list alone — and `settings/domains.test.ts` holds that every file so named IS a
@@ -291,13 +291,13 @@ describe('the presentational boundary', () => {
     expect(presentational.length).toBeGreaterThan(0);
   });
 
-  // WORKFLOW1b: the Workflow tab and its chart are molecules, so every state is a story's props (the workflow design §6.4).
+  // The Workflow tab and its chart are molecules, so every state is a story's props (the workflow design §6.4).
   it('holds the Workflow tab and its chart to it', () => {
     const paths = presentational.map(([path]) => path);
     expect(paths).toEqual(expect.arrayContaining(['./workflow/WorkflowTab.tsx', './workflow/WorkflowChart.tsx', './workflow/said.ts']));
   });
 
-  // WORKFLOW1c: the run's view and its one line are molecules too, so every stage of a run is a story's props (design §7).
+  // The run's view and its one line are molecules too, so every stage of a run is a story's props (design §7).
   it("holds a run's view and its one line to it", () => {
     const paths = presentational.map(([path]) => path);
     expect(paths).toEqual(expect.arrayContaining([

@@ -8,7 +8,7 @@ import { DONE, OPEN, TAKEN, WORKING } from '../quests/fixtures';
 import { type HelpPublishedEntry, publishedCounts, publishedItems, type PublishedLists } from './published';
 import { PublishedList } from './PublishedList';
 
-// ASKQUESTS1 (the Ask Daoris design §9 item 12): what a conversation published, in a strip of its own, folded to one line of what
+// What a conversation published, in a strip of its own, folded to one line of what
 // stands, opened in place, each row one press that opens its record on Quests.
 
 const ASK: Ask = { ...PUBLISHED, id: 'a1b2c3d4', sentence: 'cap the chunk streamer’s hydration', short: null, quests: [OPEN.id, TAKEN.id] };

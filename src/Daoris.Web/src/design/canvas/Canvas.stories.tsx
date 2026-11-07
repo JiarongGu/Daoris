@@ -66,7 +66,7 @@ export const LifecycleChineseDarkNarrow: Story = { decorators: [storyWidths.narr
 /** Edited: zoom floored at 80%, so the ＋ and the ports stay usable. */
 export const LifecycleEdit: Story = { args: { mode: 'edit' } };
 
-/** Twelve steps plain, then with a mark of each kind on four of them (CANVAS1b): a chip beside each where it clears every box, no node moved. */
+/** Twelve steps plain, then with a mark of each kind on four of them: a chip beside each where it clears every box, no node moved. */
 export const Plain12: Story = { args: { fixture: 12 } };
 export const Marked: Story = { args: { fixture: 12, marked: true } };
 export const MarkedHalf: Story = { args: { fixture: 12, marked: true }, decorators: [storyWidths.half] };

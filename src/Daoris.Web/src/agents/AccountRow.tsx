@@ -4,10 +4,10 @@ import { Button, Icon, Menu, type MenuAct, Pill, Tip, WhyGlyph } from '../design
 import { type AccountState, type AccountUsage, readLine, stateWhen, stateWord, type WindowCell } from './agents';
 
 /**
- * A window's share of its own allowance, drawn (ACCTUX4): thin and square-ended on a track that shows the whole allowance, as
+ * A window's share of its own allowance, drawn: thin and square-ended on a track that shows the whole allowance, as
  * wide as the share and never wider, with no minimum, so 1% stays 1% and is not a blob (the second opinion's mock-ups); a
  * share past the allowance fills the track, and the words beside it say the share as it was said. The warning hue only where
- * its agent said the window is reached or ahead of its pace, a warning still though never near (USAGEREAD3b). For the eye
+ * its agent said the window is reached or ahead of its pace, a warning still though never near. For the eye
  * alone: a reader hears the share in words.
  */
 function Allowance({ used, warned }: { used: number; warned: boolean }) {
@@ -19,8 +19,8 @@ function Allowance({ used, warned }: { used: number; warned: boolean }) {
 }
 
 /**
- * One window's cell (ACCTUX4): its name, its bar and what a person acts on in the ink (ACCTUX1: at 11 px in the faint ink
- * the line read 3.38:1 in light, as metadata, which it is not), its share against its curve after it (SWITCH1d); then its
+ * One window's cell: its name, its bar and what a person acts on in the ink (ACCTUX1: at 11 px in the faint ink
+ * the line read 3.38:1 in light, as metadata, which it is not), its share against its curve after it; then its
  * reset and its reading's age and source together in the soft ink, on the same line where the cell is wide enough and whole
  * on the next where it is not, the mock-ups' two lines, never a time stranded on a line of its own. An unknown window says so
  * in the soft ink, with no bar.
@@ -60,7 +60,7 @@ function WindowCellView({ cell }: { cell: WindowCell }) {
 // since the stylesheet is built from the class names the sources spell out.
 
 /**
- * The accounts' columns (UX7b, D152 §4.2): *Account*, *State*, *Now*, the act and the ⋯, on the list itself so every row's
+ * The accounts' columns: *Account*, *State*, *Now*, the act and the ⋯, on the list itself so every row's
  * cells line up, each row a subgrid of it. Below 40rem of main area the list is no grid and each row stacks. *Runs for* went
  * with POOL1c (the account-pool design §4.2): every account of Daoris's runs for every workspace.
  */
@@ -68,7 +68,7 @@ export const ACCOUNT_COLUMNS = 'm-0 list-none p-0 @min-[40rem]/main:grid @min-[4
 
 /**
  * The columns' names over the rows, drawn only where the row is one line: at 680 px a header would name columns that are not
- * there, and the stacked row names each fact by its place (the UX7 design §7). Hidden from a reader, whose row names each
+ * there, and the stacked row names each fact by its place. Hidden from a reader, whose row names each
  * fact itself (`Fact`, ACCTUX2).
  */
 export function AccountColumnsHead() {
@@ -83,13 +83,13 @@ export function AccountColumnsHead() {
   );
 }
 
-/** A fact's name for a reader, before its value on the row (ACCTUX2): the columns' names are drawn for the eye alone. */
+/** A fact's name for a reader, before its value on the row: the columns' names are drawn for the eye alone. */
 function Fact({ label }: { label: string }) {
   return <span className="sr-only">{label}</span>;
 }
 
 /**
- * Why a state reads as it does, where that is more than its word (ACCTUX2): a cool-off's end, how long and whose time it is,
+ * Why a state reads as it does, where that is more than its word: a cool-off's end, how long and whose time it is,
  * the agent's reset or Daoris's default; a key the tool says yes to whatever it is; a key its provider refused and what
  * repairs it. Null where the word says it all.
  */
@@ -103,16 +103,16 @@ function stateWhy(t: (key: string) => string, state: AccountState, now?: Date): 
 }
 
 /**
- * **One account on its agent's page** (UX7b, D152 §4.2): one line at 1546 px, in the list's columns, and three short lines at
+ * **One account on its agent's page**: one line at 1546 px, in the list's columns, and three short lines at
  * 680. Its name leads, the account's, with who signed in beside it where the two differ, in the same place on every row and
  * never one as title and the other faint; then its state as last known and when (none for your own sign-in, which Daoris never
  * asks, POOL1c), what runs on it now, its one act by state and its ⋯ with the rest. What its agent last said is under that row alone,
- * a cell a window (ACCTUX4), the session's and the week's on every row whose agent can say them, each unknown in words until
+ * a cell a window, the session's and the week's on every row whose agent can say them, each unknown in words until
  * it does; *nothing said yet* and *0 sessions* are not said.
  *
  * @remarks
  * **A molecule**: every state arrives as props, and every press goes out. Nothing here asks the agent anything: a state is
- * what was last read, and reading again is the person's press (§5.3, ROSTER1). The panels a press opens on the row (a
+ * what was last read, and reading again is the person's press. The panels a press opens on the row (a
  * sign-in, *Remove…*'s ask, a rename, a new key) arrive as children, so they sit under the row that
  * asked, across every column. It holds one thing of its own: whether its state's explanation is open.
  *
@@ -129,11 +129,11 @@ export function AccountRow({ name, label = name, who, id, home, why, state, curr
    * (ACCOUNTID1b, `accountLabel`), so no two rows are one name to a screen reader. Absent, the name.
    */
   label?: string;
-  /** Who signed in, beside the name where the two differ, and the organisation where it tells two apart (ACCOUNTID1b). */
+  /** Who signed in, beside the name where the two differ, and the organisation where it tells two apart. */
   who?: string | null;
   /** Its id, which a terminal types, on the name's tip with its directory; absent for your own sign-in. */
   id?: string;
-  /** Where its directory is: the bridge is the one surface that carries a path (D47 §4). */
+  /** Where its directory is: the bridge is the one surface that carries a path. */
   home?: string;
   /** What the row is, on its name's ⓘ: your own sign-in's explanation, one press away rather than a paragraph (§4.3). */
   why?: string;

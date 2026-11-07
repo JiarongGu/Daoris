@@ -11,11 +11,11 @@ import {
   chooseRow, makeFromList, moreAct, openFilters, QuestsView, questList, questMain, questPage,
 } from '../test/questsView';
 
-// The view over a stubbed service, on the frame (FRAME1d, D118): its list pane holds the asks and the quests, its
+// The view over a stubbed service, on the frame: its list pane holds the asks and the quests, its
 // main area the chosen record, and the composers are drawers. The shapes are what the real endpoints return, without
 // a host. The Playwright loop owns the real end-to-end; this owns the view's own logic at millisecond speed.
 
-// What a quest carries (D65 §2): a link, a file kept on this machine (it has a path — which the
+// What a quest carries: a link, a file kept on this machine (it has a path — which the
 // page must never SHOW), and a file named on the record whose bytes stayed where it was published.
 const KEPT_PATH = 'C:/somewhere/data/quests/abc123/attachments/ab12cd34ef56-before.png';
 const QUESTS = [{
@@ -27,7 +27,7 @@ const QUESTS = [{
     { name: 'before.png', sha256: `ab12cd34ef56${'0'.repeat(52)}`, bytes: 2048, path: KEPT_PATH },
     { name: 'trace.log', sha256: `cd34${'1'.repeat(60)}`, bytes: 300 },
   ],
-  // A step of a chain (D65 §4): it follows one quest, and its close publishes the next.
+  // A step of a chain: it follows one quest, and its close publishes the next.
   parent: 'f0f0f0',
   then: [{ to: 'game', title: 'Report on {parent}', body: 'Say what was done.' }],
 }];
@@ -37,7 +37,7 @@ const REGISTRY = [
   { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1 },
 ];
 
-// A driven session's record, attached to the quest above (D46): active, so the row wears its state.
+// A driven session's record, attached to the quest above: active, so the row wears its state.
 // TWO records for the one quest, deliberately — a retry is its own record, and the view must show
 // where things stand now (the later one), not the failed first attempt.
 const SESSIONS = [{
@@ -49,7 +49,7 @@ const SESSIONS = [{
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
 }];
 
-/** The asks the service holds (INT4c) — none, unless a test puts some there. */
+/** The asks the service holds — none, unless a test puts some there. */
 let ASKS: unknown[] = [];
 
 function respond(url: string): Response {
@@ -126,7 +126,7 @@ describe('QuestsView', () => {
     expect(within(dialog).getByRole('button', { name: 'Publish quest' })).toBeEnabled();
   });
 
-  // ——— The frame (FRAME1d, D118 §2): a list pane and a main area; a record is the main area, a form a drawer.
+  // ——— The frame: a list pane and a main area; a record is the main area, a form a drawer.
 
   it('says how to choose with nothing chosen, and offers the ＋\'s two kinds, Ask first', async () => {
     view();
@@ -169,7 +169,7 @@ describe('QuestsView', () => {
     expect(await within(questMain()).findByText('This quest is no longer here')).toBeInTheDocument();
   });
 
-  // UX6b (design §1 rule 6): a remembered choice ends with what it chose. The install reopened yesterday's done quest.
+  // A remembered choice ends with what it chose. The install reopened yesterday's done quest.
   it('opens with nothing chosen on a remembered quest that has gone, never on its gone state, and forgets it', async () => {
     window.localStorage.setItem('daoris.list.quests.chosen', 'f1f1f1');
     view();
@@ -255,7 +255,7 @@ describe('QuestsView', () => {
     await user.keyboard('{Escape}');
   });
 
-  // ——— A quest's lanes (D115 §2.2, DEV4): `to` stays the repository, and its lanes are shown beside it.
+  // ——— A quest's lanes: `to` stays the repository, and its lanes are shown beside it.
 
   const LANED = [{ ...QUESTS[0], lanes: ['assets', 'core'] }];
   const LANED_REGISTRY = [{
@@ -281,7 +281,7 @@ describe('QuestsView', () => {
 
     expect(await within(questList()).findByText('lanes assets + core')).toBeInTheDocument();
     const page = await chooseRow('Expose a streaming budget');
-    // In its Details (UX7c, D152 §7). A field's name is sentence case (the glossary's `field` kind, NAME1a).
+    // In its Details. A field's name is sentence case (the glossary's `field` kind, NAME1a).
     await userEvent.click(within(page).getByRole('button', { name: /^Details/ }));
     expect(within(page).getByText('Lanes')).toBeInTheDocument();
     // Named as the repository declares them, where its registration says.
@@ -311,7 +311,7 @@ describe('QuestsView', () => {
     }
   });
 
-  // ——— A conflict (D68 §5, SYNC6b): kept on the quest for a person, and reachable from the status bar.
+  // ——— A conflict: kept on the quest for a person, and reachable from the status bar.
 
   it('the page shows each move that lost the race, in its own words', async () => {
     const conflicted = [{
@@ -329,7 +329,7 @@ describe('QuestsView', () => {
   });
 
   /**
-   * SYNC6c: a person dismisses a conflict by name — the machine and sequence of the move that lost —
+   * A person dismisses a conflict by name — the machine and sequence of the move that lost —
    * and the service's sentence is what they are told. The dismissal travels with the next pass.
    */
   it('dismisses a conflict by name and says what the service answered', async () => {
@@ -361,7 +361,7 @@ describe('QuestsView', () => {
     await waitFor(() => expect(within(questMain()).queryByRole('region', { name: 'Conflicts' })).toBeNull());
   });
 
-  // ——— SYNCMERGE1c2 (D178 points 3 and 7): this machine's lost take brought forward from its page, by the conflict's name.
+  // ——— SYNCMERGE1c2: this machine's lost take brought forward from its page, by the conflict's name.
 
   /** This machine's take lost on a step open again, as a local host answers it to its own machine's page. */
   const lostHere = (conflicts: Record<string, unknown>[]) => [{
@@ -448,7 +448,7 @@ describe('QuestsView', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Dismissed conflict 9.'));
   });
 
-  // ——— Deleting a quest made by mistake (QUEST1, D95): offered only where the service says it may go,
+  // ——— Deleting a quest made by mistake: offered only where the service says it may go,
   // asked once, and answered in the service's own words.
 
   describe('deleting a quest', () => {
@@ -496,7 +496,7 @@ describe('QuestsView', () => {
       // Gone, so the list chooses nothing, and the main area says how to choose.
       expect(await within(questMain()).findByText('Choose a quest or an ask')).toBeInTheDocument();
       expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
-      // UXFIX2c: the ⋯ it was asked from went with the quest, so the focus goes to the main area that held it, never the
+      // The ⋯ it was asked from went with the quest, so the focus goes to the main area that held it, never the
       // page's body.
       expect(questMain()).toHaveFocus();
     });
@@ -526,7 +526,7 @@ describe('QuestsView', () => {
       const page = await chooseRow('Expose a streaming budget');
 
       await moreAct(page, 'Delete…');
-      // UXFIX2: what goes takes the focus, and describes *Delete quest*.
+      // What goes takes the focus, and describes *Delete quest*.
       const says = await within(page).findByText(/cannot be undone/);
       await waitFor(() => expect(says).toHaveFocus());
       expect(within(page).getByRole('button', { name: 'Delete quest' })).toHaveAccessibleDescription(says.textContent!);
@@ -618,7 +618,7 @@ describe('QuestsView', () => {
     expect(within(questList()).queryByText('An old one')).toBeNull();
   });
 
-  // ——— Asks (INT4c): the screen twin of `daoris ask`, at the head of the list that holds what
+  // ——— Asks: the screen twin of `daoris ask`, at the head of the list that holds what
   // they become. The family here is one circle (no row names a workspace), so an ask is made there.
 
   describe('asks', () => {
@@ -680,7 +680,7 @@ describe('QuestsView', () => {
       ASKS = [PROPOSED];
       view();
 
-      // Counted as the quest groups beside it are, in one form on one list (POLISH4).
+      // Counted as the quest groups beside it are, in one form on one list.
       expect(await within(questList()).findByText('Asks (1)')).toBeInTheDocument();
       const page = await chooseRow('Cap the hydration per frame.');
       await userEvent.click(within(page).getByRole('button', { name: 'Publish to engine' }));
@@ -693,7 +693,7 @@ describe('QuestsView', () => {
     });
 
     /**
-     * UXFIX2 (the second-opinion review, `AskPage.tsx:260`): an ask's delete refused is said inside its ask, in the service's
+     * An ask's delete refused is said inside its ask, in the service's
      * words, which stays open; it was a toast after the ask had closed on the press. Landed, it closes with the page.
      */
     it('says a refused delete of an ask inside its ask, and closes the page once a delete lands', async () => {
@@ -726,7 +726,7 @@ describe('QuestsView', () => {
       expect(await within(questMain()).findByText('Choose a quest or an ask')).toBeInTheDocument();
     });
 
-    /** An ask may be published to any repository its circle can ask — adopted or not (D70). */
+    /** An ask may be published to any repository its circle can ask — adopted or not. */
     it('offers a registered repository that has not adopted as a receiver of the ask', async () => {
       ASKS = [PROPOSED];
       const before = globalThis.fetch;
@@ -762,7 +762,7 @@ describe('QuestsView', () => {
       expect(onAsked).toHaveBeenCalledTimes(1);
     });
 
-    /** Overview's band names an ask waiting on a person (INT4d) through the opener; Quests opens its page. */
+    /** Overview's band names an ask waiting on a person through the opener; Quests opens its page. */
     it('an ask a door names opens its page', async () => {
       ASKS = [PROPOSED];
       openedOn('ask:7c1e9a04b2d5');
@@ -778,7 +778,7 @@ describe('QuestsView', () => {
       expect(await within(questMain()).findByText('This ask is no longer here')).toBeInTheDocument();
     });
 
-    // UX6b (design §1 rule 6): an ask waiting to be published reopens; one closed or gone opens nothing chosen.
+    // An ask waiting to be published reopens; one closed or gone opens nothing chosen.
     it('reopens a remembered ask that still waits to be published', async () => {
       ASKS = [PROPOSED];
       window.localStorage.setItem('daoris.list.quests.chosen', 'ask:7c1e9a04b2d5');
@@ -802,7 +802,7 @@ describe('QuestsView', () => {
       expect(within(questMain()).queryByText('This ask is no longer here')).toBeNull();
     });
 
-    /** The page's intake line is a door into Sessions only where the view is handed one (INT4d). */
+    /** The page's intake line is a door into Sessions only where the view is handed one. */
     it('an ask\'s intake session opens where Sessions exists', async () => {
       const INTAKE = {
         id: 'i9n8t7k6a5b4', quest: null, repository: 'ask #7c1e9a04b2d5', door: 'stub', kind: 'chat',
@@ -830,24 +830,24 @@ describe('QuestsView', () => {
     });
   });
 
-  // ——— A chain (D65 §4).
+  // ——— A chain.
 
   it('the page says what a quest follows and what its close will publish next', async () => {
     view();
     const chain = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'How this work ran' });
 
-    // The parent is closed and out of this page's list: named, not dropped (MAP1).
+    // The parent is closed and out of this page's list: named, not dropped.
     expect(within(chain).getByText('#f0f0f0')).toBeInTheDocument();
     expect(within(chain).getByText(/Report on \{parent\}/)).toBeInTheDocument();
     expect(within(chain).getByText(/published when the one before it closes done/i)).toBeInTheDocument();
   });
 
-  /** MAP1: every attempt at a step, on what it ran — the page's session section keeps only the latest. */
+  /** Every attempt at a step, on what it ran — the page's session section keeps only the latest. */
   it('the chain lists every session that ran the quest', async () => {
     view();
     const chain = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'How this work ran' });
 
-    // UX7c (D152 §7): every attempt ran on the one agent, said once above its rows, each row its attempt.
+    // Every attempt ran on the one agent, said once above its rows, each row its attempt.
     expect(within(chain).getAllByText('stub')).toHaveLength(1);
     expect(within(chain).getByText('attempt 1')).toBeInTheDocument();
     expect(within(chain).getByText('attempt 2')).toBeInTheDocument();
@@ -859,7 +859,7 @@ describe('QuestsView', () => {
     expect(await within(questList()).findByText(/follows #f0f0f0/)).toBeInTheDocument();
   });
 
-  // ——— Ask and wait (D79): a taken quest waiting on another repository's answer says so — it is
+  // ——— Ask and wait: a taken quest waiting on another repository's answer says so — it is
   // not stuck, and there is nothing for the person to do.
 
   const WAITING = [
@@ -915,7 +915,7 @@ describe('QuestsView', () => {
   });
 
   /**
-   * SESSUX1j (the session management design §6.1): the composer offers an optional short title, the person's own few
+   * The composer offers an optional short title, the person's own few
    * words, sent with the publish; one past 40 characters holds the publish back, as the service would refuse it, and an
    * empty one is not sent at all.
    */
@@ -961,7 +961,7 @@ describe('QuestsView', () => {
   });
 
   /**
-   * Registered is addressable; adopted is disciplined (D70). The host answers which repositories can
+   * Registered is addressable; adopted is disciplined. The host answers which repositories can
    * be asked — its exchange's own judgement — so the form offers exactly those: one registered here
    * without a manifest, and never one nothing could answer.
    */
@@ -998,7 +998,7 @@ describe('QuestsView', () => {
     expect(within(dialog).getByRole('button', { name: 'Publish quest' })).toBeEnabled();
   });
 
-  // ——— What a quest carries (D65 §2).
+  // ——— What a quest carries.
 
   it('the page shows the links as links and opens a kept file — and never shows where it lies', async () => {
     view();
@@ -1105,7 +1105,7 @@ describe('QuestsView', () => {
     const header = within(page).getByRole('heading', { level: 1 }).closest('header')!;
 
     expect(within(header).getByRole('button', { name: 'Take' }).className).toContain('bg-accent');
-    // UX7c (D152 §7): marking done a quest nobody has taken is rarely the next step, so it is in the head's ⋯.
+    // Marking done a quest nobody has taken is rarely the next step, so it is in the head's ⋯.
     expect(within(header).queryByRole('button', { name: 'Mark done…' })).toBeNull();
     expect(within(header).getAllByRole('button').map((button) => button.textContent || button.getAttribute('aria-label')))
       .toEqual(['Take', 'Decline…', 'More actions']);
@@ -1144,7 +1144,7 @@ describe('QuestsView', () => {
   });
 
   /**
-   * USE1c: closing the last quest an ask became makes the ask done, which the service derives on each
+   * Closing the last quest an ask became makes the ask done, which the service derives on each
    * read — so a quest's move asks the asks again, or the list would say "published" until something
    * else refreshed it.
    */
@@ -1170,7 +1170,7 @@ describe('QuestsView', () => {
   });
 
   /**
-   * QUESTCLOSE1 (D126's note): the person's done goes to the service's own door for it with their words, never to respond's,
+   * The person's done goes to the service's own door for it with their words, never to respond's,
    * which is an agent's done and would ask the person's requirements answered one by one. The page stays on the quest as the
    * answer left it, the ask closed, and the service's sentence is the notice.
    */
@@ -1285,14 +1285,14 @@ describe('QuestsView', () => {
   it('a browser offers no stop — the control reaches a process, and only the desktop has one', async () => {
     view();
     const section = await sessionSection();
-    // The record renders (above); the control must not — a browser could only wish (D46 §6).
+    // The record renders (above); the control must not — a browser could only wish.
     expect(within(section).getByText('working')).toBeInTheDocument();
     expect(within(questMain()).queryByRole('button', { name: 'Stop session' })).not.toBeInTheDocument();
   });
 });
 
 /**
- * ENTRY1b (D161's ENTRY1 note): a go to what waits on the person names a group of the list, the asks above it or the
+ * A go to what waits on the person names a group of the list, the asks above it or the
  * quests held for the person's yes, which the view brings into view once the quests and the asks have answered: its heading
  * scrolled to and focused, then the door told. A list that draws no such group lets the door go.
  */
@@ -1353,7 +1353,7 @@ describe('a group a door brings into view', () => {
     expect(heading).toHaveFocus();
   });
 
-  /** ENTRY1g (D161's ENTRY1b note): where the list is a strip, the go lays it over the main area and brings the group there. */
+  /** Where the list is a strip, the go lays it over the main area and brings the group there. */
   it('lays the list over the main area where it is a strip, and brings the held quests into view there', async () => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 600 });
     try {

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Segmented } from '../../design/ui';
 
 /**
- * A helpers rule as the driver answers it (MIXAGENT2a-i, D163 point 3): what a helper a session's agent asks for does, `ask`
+ * A helpers rule as the driver answers it: what a helper a session's agent asks for does, `ask`
  * (it waits for the person's yes), `on` (it starts at once within the limits; the default, for Daoris's own agents, HELPERDEFAULT1)
  * or `off` (none is offered), and the agents that may be asked, in the order they are tried.
  */
@@ -37,7 +37,7 @@ const MODES = ['ask', 'on', 'off'] as const;
 const modeKey = (mode: string) => ((MODES as readonly string[]).includes(mode) ? mode : 'ask');
 
 /**
- * What each door says of a rule (DOORS1b), in the page's language: its mode in the terminal's sentence (`driver helpers`), then
+ * What each door says of a rule, in the page's language: its mode in the terminal's sentence (`driver helpers`), then
  * who may be asked as the driver's choice walks them (D163's MIXAGENT2a-ii note): the agents named, in order, else the one the
  * session names or another maker's. Off offers none, so it names no one.
  */
@@ -55,7 +55,7 @@ export function helperSays(t: TFunction, rule: HelperRule): string[] {
 
 /**
  * What a Setup row says of the rule standing: the door's sentences, then where it was set, the default included. The default
- * asks only the agents Daoris set up and signed in on this machine (HELPERDEFAULT1), which it says in place of a list.
+ * asks only the agents Daoris set up and signed in on this machine, which it says in place of a list.
  */
 export function helperRowSays(t: TFunction, rule: HelperRule, from: { source?: HelperSource | null; workspace?: string }): string {
   const own = from.source === 'repository' || from.source === 'workspace';
@@ -84,7 +84,7 @@ const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raise
 const agentsOf = (typed: string) => (typed.trim() === '' ? [] : typed.split(',').map((each) => each.trim()));
 
 /**
- * **One helpers rule's control** (DOORS1b, D163 point 3): its mode, and the agents that may be asked in the order they are
+ * **One helpers rule's control**: its mode, and the agents that may be asked in the order they are
  * tried, starting from the rule set here, else from what stands above it, so *Set for this …* saves it as it stands. Every
  * press goes out as the twins' edit, mode and agents whole, judged by the driver, whose refusal is said in its words. The
  * agents are not checked against this machine's, as the terminal's and Ask Daoris's are not. Props only (components §2).

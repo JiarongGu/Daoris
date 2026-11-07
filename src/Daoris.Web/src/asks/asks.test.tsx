@@ -14,7 +14,7 @@ import {
   REFUSED, SHORT_TITLED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
-// An ask's three molecules (INT4c; FRAME1d): its row in Quests' list, its page in the main area, and the composer's
+// An ask's three molecules: its row in Quests' list, its page in the main area, and the composer's
 // drawer — props in and states out: no service and no shell, so every state the record can be in is an ordinary
 // assertion (components §2).
 
@@ -58,7 +58,7 @@ describe('AskRow', () => {
     expect(screen.getByText(/proposed engine, game/)).toBeInTheDocument();
   });
 
-  // HEAD2e: a row names an ask as a quest's row names it: its short title where it has one, else its first line.
+  // A row names an ask as a quest's row names it: its short title where it has one, else its first line.
   it('shows its short title where it has one, the whole of it in its tip', () => {
     rtlRender(row(<AskRow ask={SHORT_TITLED} onOpen={() => {}} />));
 
@@ -68,8 +68,8 @@ describe('AskRow', () => {
   });
 
   /**
-   * 🔴 Seen on the window (POLISH4): a bare `default` beside `game → engine` reads as one more
-   * repository — the band's own rule (INT4d), which the card had not followed.
+   * 🔴 Seen on the window: a bare `default` beside `game → engine` reads as one more
+   * repository — the band's own rule, which the card had not followed.
    */
   it('names its place as a workspace, never as a bare name', () => {
     rtlRender(row(<AskRow ask={PROPOSED} onOpen={() => {}} />));
@@ -77,7 +77,7 @@ describe('AskRow', () => {
   });
 
   /**
-   * 🔴 Seen on the window (POLISH4): five cards read "proposed" alike while one had an intake reading
+   * 🔴 Seen on the window: five cards read "proposed" alike while one had an intake reading
    * it and one had its intake waiting on the person — which the band above said and the card did not.
    */
   it('says when an intake is reading it, and when its intake asked the person', () => {
@@ -104,7 +104,7 @@ describe('AskRow', () => {
     expect(onOpen).toHaveBeenCalledWith(PUBLISHED);
   });
 
-  /** FRAME1d: a row of its list, so the list's arrows move to it, wearing the list's choice. */
+  /** A row of its list, so the list's arrows move to it, wearing the list's choice. */
   it('is a row of its list, and says when the list has it chosen', () => {
     rtlRender(row(<AskRow ask={PROPOSED} chosen onOpen={() => {}} />));
     expect(screen.getByRole('listitem')).toHaveAttribute('data-list-row');
@@ -117,19 +117,19 @@ describe('AskPage', () => {
   it('says which tier answered, in the words for it, beside the ask\'s own words whole', () => {
     const { page } = record(PROPOSED);
     expect(within(page).getByText('by declarations only; no intake agent ran')).toBeInTheDocument();
-    // The first line is the title, and the rest follows it — each once (POLISH4).
+    // The first line is the title, and the rest follows it — each once.
     expect(within(page).getAllByText(/The chunk streamer stalls on a cold cache/)).toHaveLength(1);
     expect(within(page).getByText(/Seen on the test rig after a fresh install/)).toBeInTheDocument();
   });
 
-  /** 🔴 Seen on the window (POLISH4): "answered by" above "by declarations…" read "answered by by". */
+  /** 🔴 Seen on the window: "answered by" above "by declarations…" read "answered by by". */
   it('labels the tier so that no tier\'s words repeat the label', () => {
     const { page } = record(PROPOSED);
     expect(within(page).queryByText('answered by')).toBeNull();
     expect(within(page).getByText('Answered')).toBeInTheDocument();
   });
 
-  /** 🔴 Seen on the window (POLISH4): a one-line ask was its page's title and then its body. */
+  /** 🔴 Seen on the window: a one-line ask was its page's title and then its body. */
   it('does not repeat a one-line ask as its own body', () => {
     const { page } = record(UNMATCHED);
     expect(within(page).getAllByText('Tidy the release notes.')).toHaveLength(1);
@@ -137,7 +137,7 @@ describe('AskPage', () => {
 
   it('names the workspace a receiver is chosen from as a workspace', () => {
     const { page } = record(UNMATCHED);
-    // NAME2: the list offers only those that can be asked, so the hint no longer says it.
+    // The list offers only those that can be asked, so the hint no longer says it.
     expect(within(page).getByText('any repository in workspace aurora')).toBeInTheDocument();
   });
 
@@ -229,7 +229,7 @@ describe('AskPage', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  /** A closed ask becomes nothing more (INT4a): its reason stays, and no verb is offered. */
+  /** A closed ask becomes nothing more: its reason stays, and no verb is offered. */
   it('offers nothing to do on a closed ask, and says why it closed', async () => {
     const { page } = record(CLOSED);
 
@@ -253,7 +253,7 @@ describe('AskPage', () => {
     expect(within(page).getByRole('combobox', { name: 'publish to another' })).toBeInTheDocument();
   });
 
-  // ——— Who answered (INT4d): the tier INT4b added, and the intake session that served it.
+  // ——— Who answered: the tier INT4b added, and the intake session that served it.
 
   it('says an intake session answered, in the words for it', () => {
     const { page } = record(BY_INTAKE, { intake: INTAKE_SESSION });
@@ -387,7 +387,7 @@ describe('AskComposer', () => {
     expect(within(drawer).queryByRole('button', { name: 'Ask' })).toBeNull();
   });
 
-  // HEAD2e: an optional short title, counted as the person types, held back past the service's 40 characters.
+  // An optional short title, counted as the person types, held back past the service's 40 characters.
   it('offers an optional short title, counts it as it is typed, and holds the ask back past forty characters', async () => {
     const onSubmit = vi.fn();
     render(<Holder fixed="aurora" circles={['aurora']} onSubmit={onSubmit} />);
@@ -441,7 +441,7 @@ describe('the asks, in the order they are read', () => {
     expect(asksInOrder([newer, closedEarliest, older]).map((ask) => ask.id)).toEqual(['a1', 'b2', 'c3']);
   });
 
-  /** USE1c: an ask whose work is finished is read with the closed ones — it is not waiting on anyone. */
+  /** An ask whose work is finished is read with the closed ones — it is not waiting on anyone. */
   it('puts a done ask with the closed ones, after every live one', () => {
     const live = { ...PUBLISHED, id: 'b2', asked: '2026-09-24T09:00:00Z' };
     const doneEarliest = { ...DONE, id: 'd4', asked: '2026-09-01T09:00:00Z' };
@@ -452,7 +452,7 @@ describe('the asks, in the order they are read', () => {
 });
 
 /**
- * QUEST1 (D95): an ask made by mistake is deleted with every quest asked by it — offered only where the
+ * An ask made by mistake is deleted with every quest asked by it — offered only where the
  * service says the ask may go, and asked once, because it cannot be undone.
  */
 describe('deleting an ask', () => {
@@ -484,7 +484,7 @@ describe('deleting an ask', () => {
   });
 
   /**
-   * UXFIX2 (the second-opinion review, `AskPage.tsx:260`): the delete's ask is the one inline confirmation. What goes takes
+   * The delete's ask is the one inline confirmation. What goes takes
    * the focus and describes *Delete ask*; the press keeps it open and waiting, where it closed at once and refused in a
    * toast; a refusal is said inside it, word for word; it closes once the delete lands; Escape gives the focus back to
    * *Delete…*, drawn again.
@@ -524,7 +524,7 @@ describe('deleting an ask', () => {
 });
 
 /**
- * ASKNAME1b: a repository the ask's sentence names is proposed first, with its name alone as the evidence (ASKNAME1). It
+ * A repository the ask's sentence names is proposed first, with its name alone as the evidence. It
  * was proposed for being named, so it reads *named in the ask* rather than *shares* its own name; a word match beside it
  * still says the words it shares. The name is read without case, as the service finds it.
  */
@@ -569,7 +569,7 @@ describe('a proposal the ask names', () => {
 });
 
 /**
- * USE1c: an ask the service reports DONE — it became quests and every one of them closed. It says so in
+ * An ask the service reports DONE — it became quests and every one of them closed. It says so in
  * a pill of its own, reads as finished on its row, and names what it became.
  */
 describe('a done ask', () => {
@@ -589,7 +589,7 @@ describe('a done ask', () => {
 });
 
 /**
- * KNOWUSE1a (D135 §2): the go-aheads its sessions asked the person for, each once, on the ask's page. Each says the act
+ * The go-aheads its sessions asked the person for, each once, on the ask's page. Each says the act
  * by its kind, where it lands and what it touches, what became of it, and the person's words on an answer verbatim; one
  * waiting is answered here, yes or no with words if any, and one answered can be answered again.
  */
@@ -692,7 +692,7 @@ describe('the go-aheads on an ask', () => {
   });
 
   /**
-   * GOAHEADSTALE1: a go-ahead nothing on its ask could still use is marked stale where its ask lists it, with how long, and offers its
+   * A go-ahead nothing on its ask could still use is marked stale where its ask lists it, with how long, and offers its
    * refusal alone, in each language.
    */
   it.each([

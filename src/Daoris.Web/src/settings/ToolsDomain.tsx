@@ -13,9 +13,9 @@ import {
 } from './Tools';
 
 /**
- * Settings → Tools (TOOLS7, D121 §4.1): each program Daoris runs beside its agents — Git, Node.js, PowerShell — as the
+ * Settings → Tools: each program Daoris runs beside its agents — Git, Node.js, PowerShell — as the
  * system's, a managed version, or a file the person names, and the resource locations its
- * versions come from. The screen's half of `daoris tool` (D50), over the same `tools.json`. It holds the list, the
+ * versions come from. The screen's half of `daoris tool`, over the same `tools.json`. It holds the list, the
  * presses, the choice on each card and git's question; the cards and the locations below it hold none.
  *
  * @remarks
@@ -49,7 +49,7 @@ export function ToolsDomain({ notify }: { notify: Notify }) {
   useToolsEnded((ended) => notify(endSaid(t, ended), ended.exitCode === 0 || ended.stopped ? 'ok' : 'error'));
 
   const state = asked.data ?? quick.data;
-  // NOBLOCK1: a list the shell held none of yet is null until its event, and drawn as loading meanwhile.
+  // A list the shell held none of yet is null until its event, and drawn as loading meanwhile.
   if (!state && (quick.isFetching || quick.data === null)) return <DomainLoading rows={5} />;
   if (!state) return null;
 

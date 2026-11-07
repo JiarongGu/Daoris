@@ -10,11 +10,11 @@ import {
 import type { BrowserDriver } from '../work/strip/browserDrivers';
 
 /**
- * Daoris's browser (CHR5, CHR7): its favorites, which it shows in a Daoris folder on its bookmarks
+ * Daoris's browser: its favorites, which it shows in a Daoris folder on its bookmarks
  * bar, and whether other software's Chrome extensions are offered or refused. The same two files
- * `daoris browser` edits (D50), which `daoris-browser` reads each time it starts, so the page says
+ * `daoris browser` edits, which `daoris-browser` reads each time it starts, so the page says
  * that an edit shows at the next start rather than implying it shows now — except where the page's
- * links open (BRW7), which the page itself reads at each click, and says so. Who is driving it (BRW8)
+ * links open, which the page itself reads at each click, and says so. Who is driving it
  * leads the domain, as it does beside the strip's door.
  */
 export function BrowserDomain({ notify, drivers, onAttend }: {

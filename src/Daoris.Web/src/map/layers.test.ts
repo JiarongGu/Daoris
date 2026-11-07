@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ASKS, type MapNode, type Topology } from './topology';
 import { CARD_H, layoutLayers, lineKey, ROUND } from './layers';
 
-// MAP4: a circle too big for a ring, laid out in layers by who asks whom, with what nothing connects
+// A circle too big for a ring, laid out in layers by who asks whom, with what nothing connects
 // set apart below. Pure and deterministic, so two looks at the same data draw the same picture.
 
 const node = (id: string): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false, sessions: 0 });

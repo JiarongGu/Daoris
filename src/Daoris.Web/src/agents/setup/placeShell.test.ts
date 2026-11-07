@@ -4,7 +4,7 @@ import type { PlaceRow, PlaceWork } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { firstSection, foldedLines, headOf, isPlaceSection, needOpening, roleNameOf, sectionsOf, usePlaceShell } from './placeShell';
 
-// SETUPUX1h (the setup-UX design §2.1): a place page's three folds say their values from PLACES alone, each with its source, and the first
+// A place page's three folds say their values from PLACES alone, each with its source, and the first
 // section by kind of place, and a section that needs the person, open themselves.
 
 const value = (text: string, source: 'here' | 'workspace' | 'machine' | 'default') => ({ value: text, source });
@@ -54,7 +54,7 @@ describe('the first section by kind of place', () => {
     expect(sectionsOf('machine')[0]).toBe('roles');
   });
 
-  // SETUPUX1m: this machine alone draws All roles beside its Roles, and its fold says what is behind it from no read.
+  // This machine alone draws All roles beside its Roles, and its fold says what is behind it from no read.
   it('gives this machine All roles after its Roles, and no other place', () => {
     expect(sectionsOf('machine')).toEqual(['roles', 'allRoles']);
     expect(sectionsOf('workspace')).not.toContain('allRoles');
@@ -115,7 +115,7 @@ describe('the need that opens a section', () => {
   });
 });
 
-// SETUPUX1o: the route the person chose to read, and the step whose cell shows, are held above the mounts for each place.
+// The route the person chose to read, and the step whose cell shows, are held above the mounts for each place.
 describe('the route and step a place shows', () => {
   const held = () => renderHook(() => usePlaceShell());
 
@@ -137,7 +137,7 @@ describe('the route and step a place shows', () => {
   });
 });
 
-// FLOWCHART2g: a draft card's door asks a place's Workflow editor to open on a draft, once, for that place alone.
+// A draft card's door asks a place's Workflow editor to open on a draft, once, for that place alone.
 describe('the editor a door asked a place to open', () => {
   const held = () => renderHook(() => usePlaceShell());
   const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', base: 2 };
@@ -162,7 +162,7 @@ describe('the editor a door asked a place to open', () => {
   });
 });
 
-// REVIEW2 P5: the step editor's draft outlives the section that drew it, for its place alone, until the editor is closed.
+// The step editor's draft outlives the section that drew it, for its place alone, until the editor is closed.
 describe('the draft the step editor keeps above the mount', () => {
   const kept = { route: 'default', editor: null };
 

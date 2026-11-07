@@ -20,7 +20,7 @@ import { PluginList, PluginStrip } from './PluginList';
 import { type HelpPress, PluginMainNotice, PluginPage } from './PluginPage';
 import type { ToolRefused } from './PluginTools';
 
-/** The driver's word for a plugin this machine does not hold: read by its code, never by its sentence (D48 §6). */
+/** The driver's word for a plugin this machine does not hold: read by its code, never by its sentence. */
 const UNKNOWN = 'PLUGIN_UNKNOWN';
 const unknown = (error: unknown) => (error as { code?: unknown } | null)?.code === UNKNOWN;
 
@@ -30,7 +30,7 @@ const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] :
  * A catalogue as an older or a stranger shell may answer it, read defensively (SES1's reason): a field it never sent is
  * an empty list, never a blank page.
  */
-/** What a plugin hands Ask Daoris (HELPPLUG1a), each server with what Ask Daoris may call on it; none where the answer has none. */
+/** What a plugin hands Ask Daoris, each server with what Ask Daoris may call on it; none where the answer has none. */
 const STATES = ['approved', 'waits', 'refused'] as const;
 const helpServersOf = (raw: unknown): HelpServerShown[] =>
   list<HelpServerShown>(raw).filter((server) => typeof server?.name === 'string')
@@ -44,7 +44,7 @@ const helpServersOf = (raw: unknown): HelpServerShown[] =>
       refusal: typeof server.refusal === 'string' ? server.refusal : null,
     }));
 
-/** The skills a plugin hands (HELPPLUG1b), each with who it goes to; none where the answer has none. */
+/** The skills a plugin hands, each with who it goes to; none where the answer has none. */
 const skillsOf = (raw: unknown): SkillShown[] =>
   list<SkillShown>(raw).filter((skill) => typeof skill?.name === 'string')
     .map((skill) => ({ name: skill.name, to: list<string>(skill.to), problem: typeof skill.problem === 'string' ? skill.problem : null }));
@@ -54,7 +54,7 @@ const portsOf = (raw: unknown): Record<string, string> =>
     ? Object.fromEntries(Object.entries(raw).filter((port): port is [string, string] => typeof port[1] === 'string'))
     : {};
 
-/** The steps a plugin declares (FABRIC-UNIT1e), each with its reach, version and ports; none where the answer has none. */
+/** The steps a plugin declares, each with its reach, version and ports; none where the answer has none. */
 const stepsOf = (raw: unknown): StepShown[] =>
   list<StepShown>(raw).filter((step) => typeof step?.name === 'string')
     .map((step) => ({
@@ -66,12 +66,12 @@ const stepsOf = (raw: unknown): StepShown[] =>
       evidence: typeof step.evidence === 'string' ? step.evidence : null,
     }));
 
-/** What a plugin's steps create (FABRIC-UNIT1e), each with its role; none where the answer has none. */
+/** What a plugin's steps create, each with its role; none where the answer has none. */
 const resourcesOf = (raw: unknown): ResourceShown[] =>
   list<ResourceShown>(raw).filter((resource) => typeof resource?.schema === 'string')
     .map((resource) => ({ schema: resource.schema, role: typeof resource.role === 'string' ? resource.role : 'temporary' }));
 
-/** The tools a plugin declares (ADOSIGNIN1), each with its checks; none where the answer has none. */
+/** The tools a plugin declares, each with its checks; none where the answer has none. */
 const toolsOf = (raw: unknown): ToolShown[] =>
   list<ToolShown>(raw).filter((tool) => typeof tool?.id === 'string')
     .map((tool) => ({ ...tool, checks: list<ToolCheckShown>(tool.checks) }));
@@ -103,7 +103,7 @@ function offersOf(raw: unknown): OfferShown[] {
 }
 
 /**
- * **The Plugins view** (PLUGUI1b, D119 §3): what it hands the frame (D118 §5), its list pane and its main area, built on
+ * **The Plugins view**: what it hands the frame, its list pane and its main area, built on
  * today's `PLUGINS` answer. The organism: it holds the catalogue and a plugin's acts, so the list, the strip, the page
  * and the offer's page below it hold none.
  *
@@ -116,7 +116,7 @@ function offersOf(raw: unknown): OfferShown[] {
  * trial's report therefore stays on its plugin's page across a change of view, until Daoris closes; PLUGUI1g keeps it
  * on the machine.
  *
- * **Every act has its terminal twin** (D50), named at the page's foot: `daoris plugin enable|disable|update|remove`,
+ * **Every act has its terminal twin**, named at the page's foot: `daoris plugin enable|disable|update|remove`,
  * `daoris plugin add --offer`, and `daoris plugin new|try`.
  */
 export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
@@ -137,7 +137,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   const installing = usePluginInstall();
   const checking = usePluginTools();
   const fixing = usePluginToolFix();
-  // Each plugin's tools as its last Check and last console read them, by plugin id and tool id (ADOSIGNIN1); the press the
+  // Each plugin's tools as its last Check and last console read them, by plugin id and tool id; the press the
   // driver turned down, by plugin id.
   const [standings, setStandings] = useState<Record<string, Record<string, ToolShown>>>({});
   const [toolRefused, setToolRefused] = useState<Record<string, ToolRefused>>({});
@@ -153,7 +153,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   const answered = Array.isArray(catalog.data?.plugins);
   const plugins = answered ? installedOf(catalog.data?.plugins) : [];
   const offers = offersOf(catalog.data?.offers);
-  // An answer that names no kit is offered nothing that needs it (PLUG8).
+  // An answer that names no kit is offered nothing that needs it.
   const kitPoints = Array.isArray(catalog.data?.kit?.points) ? catalog.data.kit.points as KitPoint[] : null;
   const groups = pluginGroups(plugins, offers, i18n.language);
   const loading = active && !answered && catalog.isPending;
@@ -166,7 +166,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   };
 
   const askMessage = t('plugin.list.askMessage');
-  // The ＋'s kinds (D119 §3.1): asking first, since a plugin is made as an ask with its tests (PLUG9); then the kit.
+  // The ＋'s kinds: asking first, since a plugin is made as an ask with its tests; then the kit.
   const kinds = [
     ...(onAsk ? [{ id: 'ask', label: t('plugin.list.ask') }] : []),
     ...(kitPoints ? [{ id: 'make', label: t('plugin.list.make') }] : []),
@@ -231,7 +231,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     return kept;
   });
   // The first press asks what would change; the plan's own press makes it.
-  // LANDPIN3: a copy older than the install's own, with no record to update from, asks for the install's copy.
+  // A copy older than the install's own, with no record to update from, asks for the install's copy.
   const shippedFor = (id: string) => {
     const found = plugins.find((each) => each.id === id);
     return found && takesShipped(found) ? { shipped: true } : {};
@@ -247,7 +247,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     },
     onError: failed,
   });
-  // Once an offer is installed, the list chooses the installed plugin (D119 §3.1).
+  // Once an offer is installed, the list chooses the installed plugin.
   const install = (id: string) => installing.mutate(id, {
     onSuccess: (added) => {
       notify(t('plugin.offers.installed', { id: added.id }));
@@ -306,7 +306,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
       name: t('nav.plugins'),
       labels: { open: t('plugin.list.open'), close: t('plugin.list.close'), resize: t('plugin.list.resize') },
       make: kinds.length > 0 ? { label: t('plugin.list.add'), kinds, onMake: make } : undefined,
-      // The list's ⋯ (D119 §3.1): *Try a folder…* opens the kit's drawer at its trial.
+      // The list's ⋯: *Try a folder…* opens the kit's drawer at its trial.
       more: kitPoints ? <ListMore label={t('plugin.list.more')} items={[{ id: 'try', label: t('plugin.list.tryFolder') }]} onChoose={() => setKit('try')} /> : undefined,
       strip: answered ? <PluginStrip groups={groups} chosen={chosen} onChoose={onChoose} /> : undefined,
       loading,
@@ -314,7 +314,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
         ? { headline: t('plugin.empty.headline'), body: t('plugin.empty.body') }
         : undefined,
       chosen,
-      // A remembered plugin reopens only while this machine still holds it (UX6b): one removed opens nothing chosen.
+      // A remembered plugin reopens only while this machine still holds it: one removed opens nothing chosen.
       standing: !chosen ? undefined : !answered ? 'unread' : shown.kind === 'gone' ? 'gone' : 'live',
       body: <PluginList groups={groups} chosen={chosen} installing={installing.isPending} unanswered={unanswered} onChoose={onChoose} onInstall={install} />,
     },
@@ -328,7 +328,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
 }
 
 /**
- * The kit's drawer (PLUG8, D101; D119 §3.4): *Make a plugin*'s form as it stands, and *Try a folder* under it. The
+ * The kit's drawer: *Make a plugin*'s form as it stands, and *Try a folder* under it. The
  * list's ⋯ opens it at its trial, with the folder's field to type in. It installs nothing, and says so.
  */
 function KitDrawer({ step, points, notify, onClose }: {

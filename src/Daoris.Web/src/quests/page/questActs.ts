@@ -1,7 +1,7 @@
 import { type Quest } from '../../data/api';
 import { type IconName } from '../../design/ui';
 
-/** The acts a quest's page offers: its header's, then its body's (CTX1, D138 §4). */
+/** The acts a quest's page offers: its header's, then its body's. */
 export type QuestAct =
   | 'take' | 'done' | 'pause' | 'decline' | 'abandon' | 'delete' | 'clear' | 'clearFailed' | 'accept' | 'resume' | 'retry'
   | 'trust' | 'session' | 'reopen' | 'goOn';

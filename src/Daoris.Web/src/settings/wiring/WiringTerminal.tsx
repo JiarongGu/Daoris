@@ -5,7 +5,7 @@ import { PathText, Pill, SettingRow } from '../../design/ui';
 import { moment } from '../../locales/format';
 import { Fact, Unread, WiringCard } from './WiringParts';
 
-/** The two variables a terminal reads first (D171 point 1), read again from §3.5's rows. */
+/** The two variables a terminal reads first, read again from §3.5's rows. */
 const ACCOUNT_VARIABLES = ['DAORIS_HOME', 'DAORIS_SERVICE_URL'] as const;
 
 /** Which `PATH` holds the install's launchers, in the words of the design's three answers (§3.7). */
@@ -41,7 +41,7 @@ function Found({ found }: { found: SystemWiring['terminal']['firstDaoris'] }) {
 export function WiringTerminal({ terminal, variables, setup }: {
   terminal: SystemWiring['terminal'];
   variables: SystemWiring['variables'];
-  /** The set-up rows (WIRING1e): *Put on my PATH* and *Copy a terminal line*, drawn by the domain; none where the shell offers none. */
+  /** The set-up rows: *Put on my PATH* and *Copy a terminal line*, drawn by the domain; none where the shell offers none. */
   setup?: ReactNode;
 }) {
   const { t } = useTranslation();

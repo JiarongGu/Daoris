@@ -45,7 +45,7 @@ describe('an ask’s head (HEAD2d)', () => {
     expect(text.indexOf('paused')).toBeLessThan(text.indexOf(title.textContent!.slice(0, 20)));
   });
 
-  // HEAD2e: an ask heads with its short title where it has one, as a quest does, and the body opens on the whole request once.
+  // An ask heads with its short title where it has one, as a quest does, and the body opens on the whole request once.
   it('heads with its short title, and the body is the whole request, said once', () => {
     const head = page(SHORT_TITLED);
     expect(within(head).getByRole('heading', { level: 1 })).toHaveTextContent(/^Cold-cache stall$/);
@@ -81,7 +81,7 @@ describe('an ask’s head (HEAD2d)', () => {
     expect(page(waiting)).toHaveTextContent('waiting on you');
   });
 
-  // REVIEWFLOW1b: now · next on the ask's page, from what the page reads; *next* is a door to the go-aheads.
+  // Now · next on the ask's page, from what the page reads; *next* is a door to the go-aheads.
   for (const [language, now, next] of [['en', 'waiting on you', 'next: Answer'], ['zh', '等你', '下一步：回答']] as const) {
     it(`names the go-ahead to answer as next, and moves the focus to it, in ${language}`, async () => {
       await i18n.changeLanguage(language);

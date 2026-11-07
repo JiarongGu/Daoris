@@ -3,15 +3,15 @@ import { Pill } from '../design/ui';
 import type { ChoiceFrom, StartWiring } from './wiring';
 
 /**
- * What a start in each workspace would run on, and where each part came from (MAP1b, D67 §3) — the
+ * What a start in each workspace would run on, and where each part came from — the
  * wiring half of the workflow map, drawn in the order the driver resolves it. Each job a circle has
- * is a row: the work, and the intake once an agent is named for it (AGT6).
+ * is a row: the work, and the intake once an agent is named for it.
  *
  * @remarks
  * A molecule: the answer arrives as props, and what a person calls an account arrives as a function,
  * because the name (who signed in, a key's handle) is the roster's to know.
  *
- * **The refusal is the driver's sentence, verbatim** (D46 §3). It names what to run, and a
+ * **The refusal is the driver's sentence, verbatim**. It names what to run, and a
  * paraphrase of an instruction is a different instruction.
  */
 export function StartWiringList({ starts, nameOf }: {
@@ -23,7 +23,7 @@ export function StartWiringList({ starts, nameOf }: {
   nameOf: (owner: string, profile?: string | null) => string;
 }) {
   const { t } = useTranslation();
-  // One job is no job to tell apart. Once the intake is one (AGT6), every row says which it is:
+  // One job is no job to tell apart. Once the intake is one, every row says which it is:
   // two rows called "a start in aurora" naming different agents would read as one fact twice, wrong.
   const jobs = starts.some((start) => start.job !== 'work');
 
@@ -64,7 +64,7 @@ export function StartWiringList({ starts, nameOf }: {
             </dd>
           </dl>
           {start.refusal && (
-            // The driver's sentence, whole, at the card's width with every block of the page (D141): it
+            // The driver's sentence, whole, at the card's width with every block of the page: it
             // wore a 65ch measure once, which gave the page two edges.
             <p className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
               {start.refusal}

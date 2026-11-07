@@ -19,34 +19,34 @@ import { useHelpHistory } from './ask/useHelpHistory';
 import { useHelpPlace } from './ask/useHelpPlace';
 
 /**
- * Ask Daoris's conversation (HELP1a, D89): the organism that holds the newest help session's record
+ * Ask Daoris's conversation: the organism that holds the newest help session's record
  * and its composer, so the panel holds neither.
  *
  * @remarks
  * **One conversation per workspace, carried on across opens** (design §2, D158's ASKSCOPE1 note): the panel shows the
  * newest help session of the window's workspace, running or ended. **With none running, one opens as the panel shows**
- * (HELP5) — the driver writes the room from the machine as it stands, spawns the agent and opens its session — so that is done
+ *  — the driver writes the room from the machine as it stands, spawns the agent and opens its session — so that is done
  * before the person types, and there is no start button to press before asking. Nobody has spoken in it
  * yet, so the panel goes on showing what it showed until the first message goes to it. One that could not
  * open says nothing: **a message with none to take it starts one**, and says why when it cannot.
  * *New conversation* finishes the one running and clears the panel; the next opens once it has gone.
  *
- * **Where the person is goes ahead of their words** (HELP1b): the view, the workspace in scope, the
+ * **Where the person is goes ahead of their words**: the view, the workspace in scope, the
  * session they attend and what a parked one asks — said when it changed since the last message to that
  * conversation, so the agent is not handed the same line every turn.
  *
- * Its words reach nothing but the harness, as every conversation's do (D24): the driver makes no model
- * call. Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
+ * Its words reach nothing but the harness, as every conversation's do: the driver makes no model
+ * call. Desktop-only for the console's reason: the record arrives over the bridge.
  *
- * **A question can arrive already asked** (DOCK1d): the palette's *Ask Daoris: "…"* row hands its words
+ * **A question can arrive already asked**: the palette's *Ask Daoris: "…"* row hands its words
  * in as `opening`, sent once per `id` exactly as a typed message is, so Quick Ask opens on the question
  * rather than on a box the person must type it into again.
  *
- * **Its conversations are kept** (ASKHIST1): the history lists them, kept on this machine only, and the one the person
+ * **Its conversations are kept**: the history lists them, kept on this machine only, and the one the person
  * picks is shown in the newest's place. One that ended goes on in itself with the person's next words where its own
- * conversation was kept (D137 §2.2), so its knowledge carries; one that cannot is offered a new conversation from its words.
+ * conversation was kept, so its knowledge carries; one that cannot is offered a new conversation from its words.
  * The newest that ended still starts a new one by default, as it did; *Go on in it* chooses it. A draft handed in
- * (CTX1, the composer's *Make it a task with Daoris…*) shows that new conversation: the panel clears first, ending nothing (NEW1g).
+ * (CTX1, the composer's *Make it a task with Daoris…*) shows that new conversation: the panel clears first, ending nothing.
  */
 export function useAskConversation(
   scroller: RefObject<HTMLElement | null>,
@@ -55,16 +55,16 @@ export function useAskConversation(
   /** The agent Ask Daoris runs on, or null: with none named, nothing is opened ahead of the person. */
   helper: string | null = null,
   /**
-   * Told once an opening has been sent (SETUP1b), so its holder lets it go: this organism is drawn again
+   * Told once an opening has been sent, so its holder lets it go: this organism is drawn again
    * with its tab or its box, and a question still held would be asked again by the next drawing.
    */
   onOpened?: () => void,
-  /** Where a go the person applied takes them (HELP6): the starters' own door, so nothing else changes. */
+  /** Where a go the person applied takes them: the starters' own door, so nothing else changes. */
   onGo?: (door: StarterDoor) => void,
 ) {
   const { here, registered, chosen, setChosen, shown, live, picked, helpSessions, readied, t, setGoingOn, sessions, help, setCleared, hereNow, elsewhere, startIn, mine, newest, shownIn, i18n, setWorkspace } = useHelpPlace();
   const { goesOn, setHistoryOpen, setOpenedRow, shownListing, setHistoryRefusal, rowOf, listing, search, historyScope, historyRefusal, historyOpen, setSearch, known, shownRow, readOnly, checking } = useHelpHistory({ here, registered, helper, chosen, setChosen, shown, live, picked });
-  // Where the person left the list from (ASKHIST1c): the row they opened and the list's scroll, put back as they return; and
+  // Where the person left the list from: the row they opened and the list's scroll, put back as they return; and
   // what is put back the next time the list opens.
   const [left, setLeft] = useState<{ row: string; scroll: number } | null>(null);
   const [restore, setRestore] = useState<{ row: string | null; scroll: number } | null>(null);
@@ -79,7 +79,7 @@ export function useAskConversation(
     if (focusBox) setFocusBox(0);
   }, [focusBox]);
   // A conversation started from an earlier one takes the focus in its box once the list holds it: the driver answers before the
-  // sessions the state hub asks again name it (STATEHUB1h, D169), and a box asked for before then would take nothing. Let go if
+  // sessions the state hub asks again name it, and a box asked for before then would take nothing. Let go if
   // the person chose another meanwhile.
   const [focusWhenListed, setFocusWhenListed] = useState<string | null>(null);
   useEffect(() => {
@@ -91,7 +91,7 @@ export function useAskConversation(
       setFocusBox((was) => was + 1);
     }
   }, [focusWhenListed, chosen, picked?.id]);
-  // Whether the reader left the conversation's tail, and the way back (ASKHIST1c): drawn in a strip above the box.
+  // Whether the reader left the conversation's tail, and the way back: drawn in a strip above the box.
   const [tail, setTail] = useState<TailState | null>(null);
   // A conversation started from an earlier one, which says so until the person has spoken in it.
   const [startedFrom, setStartedFrom] = useState<{ session: string; title: string } | null>(null);
@@ -124,7 +124,7 @@ export function useAskConversation(
     ? roster.data.harnesses.find((row) => row.door === shown?.door)?.structured
     : undefined;
 
-  // What the person is writing, kept per conversation and apart for a new one (ASKHIST1c): its words and its files, held here
+  // What the person is writing, kept per conversation and apart for a new one: its words and its files, held here
   // rather than in the box, so going through the history and back loses neither, and one conversation's draft never follows
   // the person into another. The box writes the conversation it would send to: the one shown where words reach it, else a
   // new one's.
@@ -134,13 +134,13 @@ export function useAskConversation(
   const editDraft = (key: string, change: (was: Draft) => Draft) =>
     setDrafts((all) => ({ ...all, [key]: change(all[key] ?? NO_DRAFT) }));
   const [refusal, setRefusal] = useState<string | null>(null);
-  // The conversation the person's own first words opened, called by them until the history names it (ASKHIST1c).
+  // The conversation the person's own first words opened, called by them until the history names it.
   const [spoken, setSpoken] = useState<{ session: string; title: string } | null>(null);
-  // The words that open a conversation (HELP4): opening one takes seconds — the room written, the
+  // The words that open a conversation: opening one takes seconds — the room written, the
   // agent spawned — and they showed nowhere meanwhile, so they read as lost. Held here until the
   // driver's queue answers for the conversation they opened, which shows them from then on: let go
   // any sooner, they vanished while the session list caught up. One that ended at once has no queue
-  // to answer, and its record says what became of them. `late` where the page stopped waiting on the start (SENDLOST1).
+  // to answer, and its record says what became of them. `late` where the page stopped waiting on the start.
   const [firstWords, setFirstWords] = useState<FirstWords | null>(null);
   const handedOver = firstWords?.session !== undefined && shown?.id === firstWords.session
     && (!live || held[firstWords.session] !== undefined);
@@ -148,11 +148,11 @@ export function useAskConversation(
     if (handedOver) setFirstWords(null);
   }, [handedOver]);
   const waiting = firstWords && !handedOver ? firstWords.words : null;
-  // Words on their way to a conversation (SENDLOST1): shown the moment they are sent, until it holds them.
+  // Words on their way to a conversation: shown the moment they are sent, until it holds them.
   const [sent, setSent] = useState<Sent[]>([]);
   const sends = useRef(0);
   // The box shown now: a message given back after the list moved on goes where the person can see it. Words to a
-  // conversation the list then shows ended were given back to a box no longer drawn, and read as lost (SENDLOST1).
+  // conversation the list then shows ended were given back to a box no longer drawn, and read as lost.
   const box = useRef(draftKey);
   useEffect(() => {
     box.current = draftKey;
@@ -239,9 +239,9 @@ export function useAskConversation(
   const going = sent.filter((each) => each.session === shown?.id || !helpSessions.some((session) => session.id === each.session));
   const unanswered = Boolean(firstWords?.late) || going.some((each) => each.late);
 
-  // No box under one the person chose that cannot go on, or is still being checked (ASKHIST1c): words typed there started a
+  // No box under one the person chose that cannot go on, or is still being checked: words typed there started a
   // fresh conversation without its own, the press offering one from its words below the transcript, perhaps out of view. None
-  // under another workspace's either (ASKSCOPE1d): its words are written once the window has switched to it.
+  // under another workspace's either: its words are written once the window has switched to it.
   const composer = readOnly || elsewhere ? null : (
     <Composer
       key={draftKey}
@@ -258,7 +258,7 @@ export function useAskConversation(
       onCarry={(carry) => editDraft(draftKey, (was) => ({ ...was, carry }))}
       focus={focusBox}
       queued={[...(waiting ? [waiting] : []), ...going.map((each) => each.words), ...turns.queued]}
-      // Words the machine has not answered for are said so (SENDLOST1); words waiting on the conversation opening, rather
+      // Words the machine has not answered for are said so; words waiting on the conversation opening, rather
       // than on a turn, are said as Ask Daoris opening; words on their way to the one running, as sending.
       queuedLabel={unanswered ? t('help.unanswered')
         : waiting ? t('help.opening')
@@ -279,7 +279,7 @@ export function useAskConversation(
 
   // What the next words do, said right above the box (ASKHIST1, as ASKHIST1c placed it): where one started from; whether one
   // that ended goes on in itself; that one the person chose is being checked, or cannot go on, with a new conversation from
-  // its words first and a blank one beside it. A title it names breaks inside a word too wide for the dock (ASKHIST1b).
+  // its words first and a blank one beside it. A title it names breaks inside a word too wide for the dock.
   const line = (key: string, values?: Record<string, string>) => (
     <Prose className="m-0 text-small text-ink-soft wrap-anywhere">{t(key, values)}</Prose>
   );

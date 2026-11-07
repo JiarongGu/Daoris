@@ -6,7 +6,7 @@ import {
 } from './press';
 
 /**
- * **The right-click menu** (CTX1, D138): MENU1's menu, opened at a point rather than under a trigger, its groups between
+ * **The right-click menu**: MENU1's menu, opened at a point rather than under a trigger, its groups between
  * rules. A molecule: every state is reached by its props.
  *
  * @remarks
@@ -92,14 +92,14 @@ type Opened = {
 };
 
 /**
- * **The window's one right-click handler** (CTX1, D138, design §3): mounted once per window, it reads what a press is on
+ * **The window's one right-click handler**: mounted once per window, it reads what a press is on
  * and opens the menu for it, with the doors the frame hands it (copy, search, ask, open in Daoris's browser).
  *
  * @remarks
  * - **A surface offers its acts with `contextOffer`** on its root; it holds no hook, so a molecule offers its own. This
  *   reads the innermost offer from the event once every surface has heard it, since it listens on the document.
  * - **A text field keeps the engine's own menu**, and a surface that answered the press itself (a tab's views menu) is
- *   left to it. Everywhere else the engine's menu is suppressed, menu or none (D138 §4).
+ *   left to it. Everywhere else the engine's menu is suppressed, menu or none.
  * - **The keys** (design §5): the menu key and Shift+F10 ask for the focused element's menu, at its corner, by the same
  *   path a right-click takes, so a surface offers once for both. The engine asks for its own on the menu key's way up on
  *   Windows, so the key is stopped there too, and a second ask while a menu is open asks for nothing.

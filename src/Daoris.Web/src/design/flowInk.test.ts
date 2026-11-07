@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { type Box, type InkLabel, type InkPath, placeInserts, routeInk } from './flowInk';
 import { type FlowShape, layoutFlow } from './flowLayout';
 
-// FLOWCHART2a (D223): a decision's `when` path leaves its own port's box, not a spot spread along the node's edge; a data wire is
+// A decision's `when` path leaves its own port's box, not a spot spread along the node's edge; a data wire is
 // drawn outside the nodes on a lane of its own at the right, only for the ends it is given.
 
 const SHAPE: FlowShape = {
@@ -69,7 +69,7 @@ describe('data wires', () => {
   });
 });
 
-// FLOWCHART2b (D223 §6): an editor's ＋ on a way, placed from its path's middle outward where it clears every node, every label shown and
+// An editor's ＋ on a way, placed from its path's middle outward where it clears every node, every label shown and
 // every ＋ placed before it, and not shown where it clears none.
 describe('an editor’s ＋ on a way', () => {
   const ABOVE: Box = { x: 0, y: 0, w: 200, h: 40 };

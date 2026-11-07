@@ -9,7 +9,7 @@
 export const IDENT_HUES = ['moss', 'teal', 'slate', 'iris', 'plum', 'stone'] as const;
 export type IdentHue = (typeof IDENT_HUES)[number];
 
-/** The 32-bit FNV-1a hash of a text's UTF-16 code units: an id is ASCII (D64 §3), so its bytes. */
+/** The 32-bit FNV-1a hash of a text's UTF-16 code units: an id is ASCII, so its bytes. */
 export function fnv1a(text: string): number {
   let hash = 0x811c9dc5;
   for (let at = 0; at < text.length; at += 1) {
@@ -20,7 +20,7 @@ export function fnv1a(text: string): number {
 }
 
 /**
- * A plugin's monogram (D140 §3.3): its glyph, the first character of its name as declared (its id's where the name is
+ * A plugin's monogram: its glyph, the first character of its name as declared (its id's where the name is
  * blank), in capitals where the script has them; and its hue, by its id's hash. **The hue is the id's**, since an id is
  * the folder's and unique while a name may repeat and may change with an update: a plugin keeps its hue across a rename,
  * and an offer and the plugin it becomes look alike. Locale-free, so every reader sees the same.
@@ -37,7 +37,7 @@ const DRAWN = /^data:image\/(?:svg\+xml|png);base64,[A-Za-z0-9+/]+={0,2}$/;
 
 /**
  * The declared icon the page may draw: **only an SVG's or a PNG's own bytes**, as a data URI the driver built from the
- * file it judged (D140 §3.2). Anything else is no icon, and the monogram is drawn: a path or an address would have the
+ * file it judged. Anything else is no icon, and the monogram is drawn: a path or an address would have the
  * page reach for something, and the page is handed bytes, never a place.
  */
 export function iconSource(icon: unknown): string | null {

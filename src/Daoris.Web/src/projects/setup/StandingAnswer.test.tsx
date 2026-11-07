@@ -6,7 +6,7 @@ import '../../locales/i18n';
 import { code } from '../../test/code';
 import { StandingAnswer } from './StandingAnswer';
 
-// A repository's standing answer on this machine (KNOWUSE1b, D135 §3): the person's words, handed to every session there,
+// A repository's standing answer on this machine: the person's words, handed to every session there,
 // on the repository's page beside the driver's other choices. Props only: the view above holds the state and its mutation.
 
 const hoursAgo = (count: number) => new Date(Date.now() - count * 3_600_000).toISOString();
@@ -57,7 +57,7 @@ describe('a standing answer', () => {
     expect(onSave).toHaveBeenCalledWith(null);
   });
 
-  // UX6f: a row of the repository's Setup, its terminal twin as its hint and why it is safe on its info glyph.
+  // A row of the repository's Setup, its terminal twin as its hint and why it is safe on its info glyph.
   it('says its terminal twin, and on its info glyph that it is handed to every session here and never written into the repository', () => {
     show();
     expect(screen.getByText(code('daoris place standing engine "…"|--clear'))).toBeInTheDocument();

@@ -3,7 +3,7 @@ import { type ReactNode, useLayoutEffect, useState } from 'react';
 import { store } from '../../lib/stored';
 import { memoryKey } from './viewMemory';
 
-// A story's map held at a zoom of its own (MAPUX1a). Stories only: nothing in the product imports this.
+// A story's map held at a zoom of its own. Stories only: nothing in the product imports this.
 
 /**
  * A viewer's place kept under the map at zoom `k`, anchored on `anchor`: written before the map opens, once per mount, and taken away

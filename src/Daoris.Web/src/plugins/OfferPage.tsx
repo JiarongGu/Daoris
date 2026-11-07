@@ -7,7 +7,7 @@ import { PluginIcon } from './PluginIcon';
 import { Body, HelpServers, Lead, NameRows, PageHead, PageSection, PointRows, SkillRows, StepRows } from './PluginPage';
 
 /**
- * **One of Daoris's own plugins, not installed here** (D119 §3.2, D103): a header with its name, its version,
+ * **One of Daoris's own plugins, not installed here**: a header with its name, its version,
  * *not installed* and *Install*; its description; Points, Agents and Servers from its manifest; *What it needs*, its
  * README's bullets verbatim; and a line saying that installing runs nothing.
  *

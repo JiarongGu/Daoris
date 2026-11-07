@@ -9,7 +9,7 @@ import { DECLINED, DONE, OPEN, TAKEN, WORKING } from '../quests/fixtures';
 import { type HelpPublishedEntry, publishedCounts, publishedItems, type PublishedLists } from './published';
 import { PublishedList } from './PublishedList';
 
-// ASKQUESTS1 (the Ask Daoris design §9 item 12): what a conversation published, in its strip under the conversation's head, at the
+// What a conversation published, in its strip under the conversation's head, at the
 // widths the frame gives the panel: the dock's 300 px floor and the 430 px the owner's window gave it, side by side, and 680 px,
 // where the dock is the whole frame. Folded and opened, each state its lists can hold, in English and Chinese, light and dark.
 

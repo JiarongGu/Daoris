@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SupervisorRulesRead } from '../../data/wiring';
 import { blankRule, chainOf, draftOf, inheritedFrom, nextCount, pressOf, readable, reaction, recount, replaced, rulesOfRole, sameAsStored, setOf } from './supervisorRulesDraft';
 
-// CONTEXTDRIVE1g: the supervisor's rules as the editor holds them, and the press that writes a place's set whole.
+// The supervisor's rules as the editor holds them, and the press that writes a place's set whole.
 
 const READ: SupervisorRulesRead = {
   counts: [

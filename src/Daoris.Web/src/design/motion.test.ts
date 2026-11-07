@@ -14,7 +14,7 @@ import { DotMark } from './ui';
  * as any session was live. So the pulse says a turn began and then settles: a few cycles, never `infinite`.
  *
  * Read from the stylesheet the page is built with, compiled as the build compiles it, because the count is a token's
- * (`--animate-pulse` in `tokens.css`) and a class name says nothing of it. Tailwind stays out of the other tests (WEBFAST1);
+ * (`--animate-pulse` in `tokens.css`) and a class name says nothing of it. Tailwind stays out of the other tests;
  * this one compiles only the classes it names.
  */
 

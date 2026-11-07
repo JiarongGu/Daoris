@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { areas } from '../../locales';
 
-// SETUPUX1j (the setup-UX design §5): the set-up's own delivery names and lines are gone. A delivery is worded by its id from the page's
+// The set-up's own delivery names and lines are gone. A delivery is worded by its id from the page's
 // catalogues (`workflow.shipped.delivery.*`) and *Not driven* by a chrome key, so a key census finds the old ones gone from both languages
 // and from every source that read them.
 

@@ -51,7 +51,7 @@ function useFirstScreenAnswered(firstScreen: (key: QueryKey) => boolean): boolea
 /**
  * Lift the window's splash, over the kit's `CLOSE_SPLASH`. Fire-and-forget, as every window command is (`useWindowChrome`): a call
  * that fails is a window that was never ours (a secondary window's, which the kit answers `NO_ROUTE`; a browser's, which has none),
- * and the window's own bound lifts its splash anyway. The page's error screen calls it too (PAGELOOP1): a page that stopped before
+ * and the window's own bound lifts its splash anyway. The page's error screen calls it too: a page that stopped before
  * its first screen had its data is shown at once, rather than behind the splash until the bound.
  */
 export function liftSplash(): void {

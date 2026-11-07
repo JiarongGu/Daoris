@@ -18,8 +18,8 @@ const PAGE = 50;
 export { MACHINE, repositoryId, workspaceId };
 
 /**
- * The Setup mode's places as the view holds them: the search, the filter, the open fold and the page asked, and the driver's answer
- * (AGENTSPLACE1a). The last answer stays while the next is on its way, so a press does not blank the list.
+ * The Setup mode's places as the view holds them: the search, the filter, the open fold and the page asked, and the driver's answer.
+ * The last answer stays while the next is on its way, so a press does not blank the list.
  */
 export function useSetupPlaces(enabled: boolean): SetupState {
   const [search, setSearch] = useState('');
@@ -113,7 +113,7 @@ export function SetupMain({ found, state, id, row, counts, members, shell, bodie
   /** A repository's driving for its head: the organism holds the hooks, and renders the page with what it made. */
   drive?: (row: PlaceRow, render: (driving: PlaceDriving) => ReactNode) => ReactNode;
   /**
-   * The place's *Set up…* (AGENTSPLACE1j), pressed from its head: open, the page replaces the place's sections in the main area, and the
+   * The place's *Set up…*, pressed from its head: open, the page replaces the place's sections in the main area, and the
    * panel is the application's, which reads the plan and presses Apply. None for *This machine*, which has no set-up.
    */
   setUp?: { open: boolean; onOpen: () => void; panel: ReactNode; /** Returns to a place's set-up left through a refusal's door (SETUPUX1j). */ onResume: (place: string) => void };

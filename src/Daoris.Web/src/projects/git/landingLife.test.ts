@@ -9,7 +9,7 @@ import {
   OLDER_BRANCH, SHARED_BRANCH, SHARED_UNITS, traceAnswerOf, WAITING_BRANCH, WAITING_UNITS,
 } from './landingFixtures';
 
-// FLOWCHART1c (D186; the flowchart design §2.7, §7 traps 10, 11 and 19): a landed branch's landing and clean-up drawn from its
+// A landed branch's landing and clean-up drawn from its
 // records. The landing is
 // the branch's, with every later done that moved it on and the session each was made for, never one session's; the push is a fact
 // with no time and the pull request's answer a snapshot, with no edge between them that a date does not order; the end, the clean-up

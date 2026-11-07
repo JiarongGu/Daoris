@@ -5,7 +5,7 @@ import i18n from '../locales/i18n';
 import type { CanvasOptions } from './canvas/Canvas';
 import { type FlowCanvasProps, type FlowEdge, type FlowNode, FlowCanvas } from './FlowCanvas';
 
-// CANVAS1a (D224; the canvas design §2.6, §3.1, §6, trap 12): the ranked flow in the canvas's viewport. A caller opts in; from 36rem of the
+// The ranked flow in the canvas's viewport. A caller opts in; from 36rem of the
 // pane a drawing wider than its pane is drawn top to bottom and pans rather than turning to the rail, below it the placement is today's,
 // and a rem is the root's as measured, never 16 px under the window's zoom. jsdom lays nothing out, so the pane's width is stood in for.
 
@@ -106,7 +106,7 @@ describe('a rem', () => {
   });
 });
 
-// CANVAS1b (D224; the canvas design §2.3): a node's marks are chips the canvas places beside it, in words and never alone, hidden from a
+// A node's marks are chips the canvas places beside it, in words and never alone, hidden from a
 // reader (the caller's description says them), and in the rail a chip standing under its step. jsdom lays nothing out, so where a chip
 // stands is the measured spec's.
 describe('a mark on a node', () => {

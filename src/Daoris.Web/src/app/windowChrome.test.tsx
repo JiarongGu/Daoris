@@ -3,7 +3,7 @@ import { act, cleanup, render, renderHook, screen, waitFor, within } from '@test
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The window's own chrome (SURF7): the page half, which is the half that CAN be tested. `MainForm`
+// The window's own chrome: the page half, which is the half that CAN be tested. `MainForm`
 // is WinForms and has no test project by construction — `npm run desktop -- shot` is its gate — so
 // everything that could live here does, and what is left there is wiring with no branches in it.
 
@@ -25,7 +25,7 @@ const { invoke, commands, window_, scheme } = vi.hoisted(() => {
       showSystemMenu: command('showSystemMenu'),
     },
     window_: { maximized: false },
-    // The kit's colour-scheme client (THEMESCHEME1): what the engine the window renders on was told.
+    // The kit's colour-scheme client: what the engine the window renders on was told.
     scheme: vi.fn((_scheme: string) => Promise.resolve()),
   };
 });
@@ -255,7 +255,7 @@ describe('the app strip as a title bar', () => {
 });
 
 /**
- * FRAME2: the strip wired to its window as the application wires it, over a mocked `WindowCommands`, so
+ * The strip wired to its window as the application wires it, over a mocked `WindowCommands`, so
  * each gesture is read as the commands the window would receive. A title bar's still click does
  * nothing, its drag moves the window (restoring a maximized one first), and its double-click toggles
  * maximize.
@@ -342,7 +342,7 @@ describe('the strip wired to the window, gesture by gesture', () => {
   });
 });
 
-/** THEMESCHEME1: the main window's page tells the engine the viewer's choice, as a secondary window's does. */
+/** The main window's page tells the engine the viewer's choice, as a secondary window's does. */
 describe('the window\'s engine and the viewer\'s theme', () => {
   afterEach(() => {
     setThemeChoice('system');
@@ -362,7 +362,7 @@ describe('the window\'s engine and the viewer\'s theme', () => {
 });
 
 /**
- * ONEINSTANCE1 (D171 point 2): a later launch opens another main window of the instance that runs, the whole platform in a
+ * A later launch opens another main window of the instance that runs, the whole platform in a
  * frameless window of its own. The kit's window commands act on it, but its `SET_THEME` has no route there, so its page tells
  * its own frame the theme by the name it was opened under, as a utility window's page does.
  */
@@ -396,7 +396,7 @@ describe('another main window\'s frame and the viewer\'s theme', () => {
 });
 
 /**
- * MAINWINDOWS3 (D171's note): each main window holds its own workspace, so two of them would read alike on the taskbar
+ * Each main window holds its own workspace, so two of them would read alike on the taskbar
  * and in Alt-Tab. The page's title names the one it holds, as the frame names the application (`WaitingBadge.Name`).
  */
 describe('the window\'s title', () => {
@@ -423,7 +423,7 @@ describe('the window\'s title', () => {
   });
 
   /**
-   * NOTIFY2c: and the workspace the window holds as data beside the title, none for every workspace, from which the shell picks the
+   * And the workspace the window holds as data beside the title, none for every workspace, from which the shell picks the
    * window a notification opens; it never reads the title, which is the person's words.
    */
   it('is told to the frame, which wears the workspace after its own name (MAINWINDOWS3b), with the workspace as data (NOTIFY2c)', async () => {

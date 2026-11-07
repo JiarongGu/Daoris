@@ -42,19 +42,19 @@ const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', review: '', re
 /** What the asks hand Quests' view: their rows, the chosen ask's page, and the composer while it is open. */
 export type AsksPart = {
   rows: AskRowFacts[];
-  /** The asks other machines hold that the sync mirrored the channel of (SESSONE2h), listed after the rows. */
+  /** The asks other machines hold that the sync mirrored the channel of, listed after the rows. */
   teammates: ElsewhereAsk[];
   /** The asks' first load. */
   loading: boolean;
   /** The chosen ask's page, or the main area's notice for one loading or gone; null where no ask is chosen. */
   page: ReactNode | null;
-  /** Whether the chosen ask still waits on something (UX6b), so a remembered one reopens; absent where none is chosen. */
+  /** Whether the chosen ask still waits on something, so a remembered one reopens; absent where none is chosen. */
   standing?: ChoiceStanding;
   composer: ReactNode | null;
 };
 
 /**
- * **The asks' half of Quests** (INT4c; FRAME1d, D118 §2): the screen twin of `daoris ask` (D50) — the
+ * **The asks' half of Quests**: the screen twin of `daoris ask` — the
  * composer that makes one, the rows at the head of the list, and the chosen one's page in the main area with its
  * two acts. A hook, since the rows and the page are drawn where the frame decides (`useQuestsView` holds it).
  *
@@ -68,13 +68,12 @@ export type AsksPart = {
  * list leaves out is still found for its page, among every ask.
  *
  * Every answer is the service's sentence, verbatim (frontend §4a). A refused publish still leaves the
- * ask kept with its proposal (INT4a), which is why the list is asked again whatever the door said.
+ * ask kept with its proposal, which is why the list is asked again whatever the door said.
  *
- * **Its work is paused, resumed and abandoned on its page** (PAUSE1e, D132 §7.1): the chosen ask's plan is asked of this
+ * **Its work is paused, resumed and abandoned on its page**: the chosen ask's plan is asked of this
  * machine's driver while Quests is in front, and each press goes to the one owner (`workActs.ts`). An abandon's answer is
  * kept for the page until the record says the same. A browser has no driver, and its page names the terminal's commands.
- * The page lists that work with the driver's last look at each quest (the tick's `considered`), which says why one sits
- * (PAUSE1h).
+ * The page lists that work with the driver's last look at each quest (the tick's `considered`), which says why one sits.
  *
  * The organism: it holds the hooks so the row, the page and the composer below it hold none (components §2).
  */
@@ -86,7 +85,7 @@ export function useAsksPart({
    * Sessions is not, a browser, which reads no run.
    */
   onOpenRun?: (session: string) => void;
-  /** A line of work folded to a count opens its own *At work* view (COWORKVIEW1d). Absent in a browser. */
+  /** A line of work folded to a count opens its own *At work* view. Absent in a browser. */
   onOpenAtWork?: (session: string) => void;
   /** Quests is in front: only then is an error said. */
   active: boolean;
@@ -118,9 +117,9 @@ export function useAsksPart({
   // unscoped, they are every circle's, which is exactly the list the composer asks the person to pick from.
   const family = useRegistry();
   const sessions = useSessions(null, true);
-  // The driver's entries (SESSONE1c, D167): an ask's page lists its work by them. None before a host answers them.
+  // The driver's entries: an ask's page lists its work by them. None before a host answers them.
   const entries = useSessionEntries().data;
-  // What a person calls an account (ACCTNAME1, D152 §4.2): an intake's line names its account as the agent's page does.
+  // What a person calls an account: an intake's line names its account as the agent's page does.
   const { t } = useTranslation();
   const harnesses = useHarnesses();
   const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
@@ -130,12 +129,12 @@ export function useAsksPart({
   const close = useCloseAsk();
   const remove = useDeleteAsk();
   const answerGoAhead = useAnswerGoAhead();
-  // Who needs the person as .NET judged it (PUSH1d4), read from memory: which of an ask's go-aheads are stale (GOAHEADSTALE1). A
+  // Who needs the person as.NET judged it (PUSH1d4), read from memory: which of an ask's go-aheads are stale. A
   // browser judges none.
   const attention = useAttention();
-  // The person's review choice for an ask's work (REVIEWENV1g, design §1.5): the service's door, the latest standing.
+  // The person's review choice for an ask's work: the service's door, the latest standing.
   const chooseReview = useChooseAskReview();
-  // An intake's kind proposal applied on the person's press (WORKFLOW1i-c, design §4.3).
+  // An intake's kind proposal applied on the person's press.
   const chooseKind = useChooseAskWorkflow();
   useErrorNotify(active ? asks.error : null, notify);
 
@@ -143,9 +142,9 @@ export function useAsksPart({
   const [reading, setReading] = useState(false);
   // The door's last answer about an ask, kept until the list catches up with it.
   const [held, setHeld] = useState<Ask | null>(null);
-  // The chosen ask's work on this machine (PAUSE1e): its plan while Quests is in front, and the three presses.
+  // The chosen ask's work on this machine: its plan while Quests is in front, and the three presses.
   const work = useWorkPlan(chosen ? { scope: 'ask', id: chosen } : null, { enabled: active });
-  // Where the chosen ask's work stands in its workflow (WORKFLOW1c): its runs, one per chain and repository, while Quests is in
+  // Where the chosen ask's work stands in its workflow: its runs, one per chain and repository, while Quests is in
   // front and a door can open one.
   const runs = useWorkflowRun(chosen ? { ask: chosen } : null, { enabled: active && onOpenRun !== undefined });
   const wiring = useRemotes().data;
@@ -153,26 +152,26 @@ export function useAsksPart({
   // The chosen ask's channel (SESSONE2c, D167 points 6 to 8) and what is unread on each live ask's, the same reads under one key.
   // Shell-only: a browser has no driver, so none is asked and no section or count is drawn.
   const channel = useChannel(chosen, { enabled: active });
-  // Who is at work on the chosen ask (COWORKVIEW1d): shell-only like the channel, and asked again at each `atWork` wake.
+  // Who is at work on the chosen ask: shell-only like the channel, and asked again at each `atWork` wake.
   const atWork = useAskAtWork(chosen, { enabled: active && channel.available });
   const unreads = useChannelUnreads((asks.data ?? []).filter((item) => !askEnded(item)).map((item) => item.id), { enabled: active });
   const postChannel = usePostChannel();
   const markChannel = useMarkChannel();
   const forwardChannel = useForwardChannel();
-  // The asks other machines hold, which the sync mirrored the channel of (SESSONE2h): scoped like every cross-repository read, and
+  // The asks other machines hold, which the sync mirrored the channel of: scoped like every cross-repository read, and
   // none where no driver answers one (a browser). The chosen one, when this machine holds no such ask, is shown as its channel.
   const elsewhere = useElsewhereAsks({ enabled: active });
   const teammates = elsewhere.asks.filter((held) => !scope.workspace || held.workspace === scope.workspace)
     .sort((a, b) => b.latest.localeCompare(a.latest));
   const teammate = chosen ? teammates.find((held) => held.id === chosen) : undefined;
-  // The driver's last look at each quest, which says why one of the chosen ask's work sits (PAUSE1h).
+  // The driver's last look at each quest, which says why one of the chosen ask's work sits.
   const considered = useConsidered().data ?? [];
   // The last abandon's answer, for the ask it was of, said on its page before the record catches up.
   const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
   const shown = chosen
     ? freshest(every.data?.find((candidate) => candidate.id === chosen), held?.id === chosen ? held : null)
     : undefined;
-  // Its clear (HIST1e, D153 §6.1): the plan of its work, asked only while Quests is in front and the ask is done or closed,
+  // Its clear: the plan of its work, asked only while Quests is in front and the ask is done or closed,
   // since a clear never takes work in progress; and the second press.
   const historyOf = useHistoryPlan(
     shown ? { scope: 'ask', id: shown.id } : null,
@@ -186,7 +185,7 @@ export function useAsksPart({
     .filter((row) => canBeAsked(row) && workspaceOf(row) === circle)
     .map((row) => row.repository)
     .sort();
-  // The review environments a circle's rules declare (REVIEWENV1a), by name: its own rule's and each of its repositories', as
+  // The review environments a circle's rules declare, by name: its own rule's and each of its repositories', as
   // this machine's driver reads them. A browser has no driver, and offers only `on` and `off`.
   const environmentsIn = (circle: string): string[] => {
     const repositories = new Set((family.data ?? []).filter((row) => workspaceOf(row) === circle).map((row) => row.repository));
@@ -196,7 +195,7 @@ export function useAsksPart({
     ];
     return [...new Set(rules.flatMap((rule) => (rule.none ? [] : rule.environments.map((each) => each.name))))].sort();
   };
-  // Each quest the page holds by its name (SESSUX1j): the short title, else the title.
+  // Each quest the page holds by its name: the short title, else the title.
   const questsById = Object.fromEntries((quests ?? []).map((quest) => [quest.id, quest]));
   const questTitles = Object.fromEntries((quests ?? []).map((quest) => [quest.id, questName(quest)]));
   const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || answerGoAhead.isPending
@@ -220,13 +219,13 @@ export function useAsksPart({
     ask.mutate({
       workspace,
       sentence: draft.sentence.trim(),
-      // The person's short title (HEAD2e): sent only where they gave one, so an ask without it reads as it always did.
+      // The person's short title: sent only where they gave one, so an ask without it reads as it always did.
       ...(draft.short?.trim() ? { short: draft.short.trim() } : {}),
       links: linksOf(draft.links),
       attachments,
       // Unnamed, the declarations propose and nothing is published; named, it is published at once.
       ...(draft.to ? { to: draft.to } : {}),
-      // The person's review choice for its work (REVIEWENV1g, design §1.5), with their words; none leaves each rule to decide.
+      // The person's review choice for its work, with their words; none leaves each rule to decide.
       ...(draft.review ? { review: draft.review, ...(draft.reviewWords?.trim() ? { reviewWords: draft.reviewWords.trim() } : {}) } : {}),
     }, {
       onSuccess: (result) => {
@@ -254,10 +253,10 @@ export function useAsksPart({
     onError: (error) => answered.refused(sentence(error)),
   });
 
-  // The person's yes or no to a go-ahead (KNOWUSE1a): the record as the door answers it, and a nudge, since a session that
+  // The person's yes or no to a go-ahead: the record as the door answers it, and a nudge, since a session that
   // waits on it is the driver's next move once the person answers it too.
   // A refusal is said beside the go-ahead that was answered (UXFIX2b3b), and its presses are pressable again.
-  // GOAHEADSTALE1: a stale one's refusal sends no park on and nudges nothing, since nothing on its ask waits for it.
+  // A stale one's refusal sends no park on and nudges nothing, since nothing on its ask waits for it.
   const onAnswerGoAhead = (
     id: string, number: number, approved: boolean, words: string | undefined, answered: Answered, stale = false,
   ) =>
@@ -265,18 +264,18 @@ export function useAsksPart({
       onSuccess: (result) => { notify(result.message); setHeld(result.ask); if (!stale) nudge(); answered.done(); },
       onError: (error) => answered.refused(sentence(error)),
     });
-  // Which of the shown ask's go-aheads are stale, as What needs you's rows say: the one judgement, .NET's (GOAHEADSTALE1).
+  // Which of the shown ask's go-aheads are stale, as What needs you's rows say: the one judgement,.NET's.
   const staleGoAheads = shown && attention.state === 'known' ? staleOnAsk(attention.rows, shown.id) : undefined;
 
-  // Deleted with every quest asked by it (D95): the record is gone, so the list chooses nothing, on the service's
-  // sentence. A refusal is the service's sentence too, said inside the ask that was pressed (UXFIX2), and the page stays on
+  // Deleted with every quest asked by it: the record is gone, so the list chooses nothing, on the service's
+  // sentence. A refusal is the service's sentence too, said inside the ask that was pressed, and the page stays on
   // the ask as it was.
   const onDelete = (id: string, answered: Answered) => remove.mutate(id, {
     onSuccess: (result) => { notify(result.message); answered.done(); setHeld(null); onChoose(null); },
     onError: (error) => answered.refused(sentence(error)),
   });
 
-  // What the page is handed of its clear: nothing in a browser, which has no driver and no home (D47 §4). The clear takes
+  // What the page is handed of its clear: nothing in a browser, which has no driver and no home. The clear takes
   // the ask's record, so the page closes and the list it came from is shown (§6.1).
   const historyDoor = (item: Ask): HistoryDoor | undefined => (historyOf.available
     ? {
@@ -293,7 +292,7 @@ export function useAsksPart({
       }
     : undefined);
 
-  // What the page is handed of this machine's driver for the ask: nothing in a browser, which has none (D47 §4).
+  // What the page is handed of this machine's driver for the ask: nothing in a browser, which has none.
   const workDoor = (item: Ask): WorkDoor | undefined => {
     if (!work.available) return undefined;
     const target: WorkTarget = { scope: 'ask', id: item.id };
@@ -324,7 +323,7 @@ export function useAsksPart({
           onError: (error) => answered.refused(sentence(error)),
         }),
         onRead: (through: string) => markChannel.mutate({ ask: item.id, through }),
-        // COWORK1d: *Send to its session*, the person's own press; a refusal is the shell's code, said under the receipt.
+        // *Send to its session*, the person's own press; a refusal is the shell's code, said under the receipt.
         onForward: (message: string, repository: string, answered: ChannelAnswered) => forwardChannel.mutate({ ask: item.id, message, repository }, {
           onSuccess: (forwarded) => (forwarded.sent ? answered.done() : answered.refused(forwarded.code ?? 'other')),
           onError: (error) => answered.refused(sentence(error)),
@@ -385,8 +384,8 @@ export function useAsksPart({
         />
       )
       : teammate
-        // A teammate's ask has no record here (SESSONE2h): its page is its channel, posted to as an ask's (SESSONE2i), where reading
-        // moves the person's mark, which the service keeps on an ask its mirror holds (NOTIFY2g).
+        // A teammate's ask has no record here: its page is its channel, posted to as an ask's, where reading
+        // moves the person's mark, which the service keeps on an ask its mirror holds.
         ? (
           <TeammateAskPage
             key={teammate.id}
@@ -402,7 +401,7 @@ export function useAsksPart({
             onRead={(through) => markChannel.mutate({ ask: teammate.id, through })}
           />
         )
-        // A read that failed is not an ask gone (PUSHUX1): said in its words, as a quest's is.
+        // A read that failed is not an ask gone: said in its words, as a quest's is.
         : every.data === undefined && every.error
           ? <QuestsMainNotice state="unanswered" sentence={sentence(every.error)} />
           : (

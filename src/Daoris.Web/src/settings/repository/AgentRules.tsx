@@ -9,7 +9,7 @@ export type RuleListName = 'allow' | 'ask' | 'deny';
 export type RuleScopeName = 'machine' | 'workspace' | 'repository';
 
 /** A rule set Daoris ships, with the reason it exists — switched on or off by id, removable by nothing else. */
-/** A default Daoris ships. `hook`, when present, is the tools a hook default judges (PERM3): it adds no rule. */
+/** A default Daoris ships. `hook`, when present, is the tools a hook default judges: it adds no rule. */
 /** `fixed`: switched by nothing here (`no-push`, which git access's Write opens), so its row has no switch. */
 export type RuleDefault = { id: string; list: RuleListName; rules: string[]; why: string; on: boolean; hook?: string; fixed?: boolean };
 
@@ -20,7 +20,7 @@ export type RuleDefault = { id: string; list: RuleListName; rules: string[]; why
 export type RuleScopeRow = { scope: RuleScopeName; name?: string; allow: string[]; ask: string[]; deny: string[] };
 
 /**
- * An agent's proposal to change these rules (PERM2, D74), as the connector wrote it and the driver or
+ * An agent's proposal to change these rules, as the connector wrote it and the driver or
  * the person settled it. Structured, so the page says it in the person's language. What the wire
  * leaves out is absent: a session the driver did not start carries no `session`.
  */
@@ -46,7 +46,7 @@ export type RuleProposal = {
 };
 
 /**
- * The driver's RULES answer (PERM1, D72): the file, the defaults, and every scope it holds — and since
+ * The driver's RULES answer: the file, the defaults, and every scope it holds — and since
  * PERM2 what agents proposed about them, which an answer may carry none of.
  */
 export type AgentRulesState = {
@@ -55,7 +55,7 @@ export type AgentRulesState = {
 
 export type RuleAddition = { list: RuleListName; rule: string; scope: RuleScopeName; name: string | undefined };
 
-/** The three lists in the order every surface draws them, and each one's word's hue: an outcome's (PERM1). */
+/** The three lists in the order every surface draws them, and each one's word's hue: an outcome's. */
 export const RULE_LISTS: readonly RuleListName[] = ['allow', 'ask', 'deny'];
 const LISTS = RULE_LISTS;
 export const LIST_TONE = { allow: 'done', ask: 'open', deny: 'declined' } as const;
@@ -66,11 +66,11 @@ const SETTLED_TONE: Record<RuleProposal['state'], 'open' | 'done' | 'declined' |
 const MACHINE = 'machine';
 
 /**
- * What an agent Daoris starts may do (PERM1, D72): Claude Code's own permission rules, in Daoris's
+ * What an agent Daoris starts may do: Claude Code's own permission rules, in Daoris's
  * scopes — this machine, a circle, a repository — handed to the harness at spawn.
  *
  * @remarks
- * **The screen's half of `daoris agent rules`** (D50): every change is an edit to the one file under
+ * **The screen's half of `daoris agent rules`**: every change is an edit to the one file under
  * the home that the terminal edits too, and a refusal is the driver's own sentence, raised by whoever
  * holds this card. **Precedence is the harness's, never this page's**: `deny` beats `ask` beats
  * `allow` across every scope, so nothing here ranks one scope over another — each is shown as what
@@ -80,7 +80,7 @@ const MACHINE = 'machine';
  * A rarely-used form is one press away rather than open on every visit (platform-ux §4). Props only,
  * no hook from the query layer or the shell (components §2).
  *
- * **What agents proposed sits first** (PERM2, D74), because a widening waiting there is the one thing on
+ * **What agents proposed sits first**, because a widening waiting there is the one thing on
  * this card that is waiting on the person: a narrowing applied itself at the driver's tick, and 🔴 a
  * widening never applies without them. What was settled is history, one press away.
  */
@@ -89,7 +89,7 @@ export function AgentRules({
 }: {
   rules: AgentRulesState;
   /**
-   * Which of the rules this card holds (UX6e, D150 §3.1): `agent`, what the agent's page says under *What it may do* (the
+   * Which of the rules this card holds: `agent`, what the agent's page says under *What it may do* (the
    * proposals, Daoris's defaults and the rules for every session on this machine); `scoped`, what is left in Settings →
    * Permissions until the workspace's and the repository's pages take it (a workspace's rules and a repository's); `all`
    * both, as the card was.
@@ -106,7 +106,7 @@ export function AgentRules({
   onRemove: (target: { scope: RuleScopeName; name: string | undefined; rule: string }) => void;
   /**
    * Add a rule; call `added` once the driver has taken it. The words stay in the box until then, so
-   * a rule the driver refused can be corrected rather than retyped (REV3).
+   * a rule the driver refused can be corrected rather than retyped.
    */
   onAdd: (addition: RuleAddition, added: () => void) => void;
   /** The person's answer to an agent's proposal, by its id: `true` accepts it. */
@@ -117,7 +117,7 @@ export function AgentRules({
   const [history, setHistory] = useState(false);
   const [list, setList] = useState<RuleListName>('allow');
   const [rule, setRule] = useState('');
-  // The agent's page holds this machine's scope (UX6e); what is left in Permissions holds a workspace's and a repository's.
+  // The agent's page holds this machine's scope; what is left in Permissions holds a workspace's and a repository's.
   const machineHere = part !== 'scoped';
   const scopedHere = part !== 'agent';
 

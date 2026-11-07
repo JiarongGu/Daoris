@@ -105,7 +105,7 @@ describe("Settings' list, on the window", () => {
     expect(screen.getByRole('separator', { name: EDGE })).toHaveAttribute('aria-valuenow', '176');
     await waitFor(() => expect(screen.getByRole('button', { name: TOGGLE })).toHaveAttribute('aria-pressed', 'true'));
     await viewMenu();
-    // A toggle, said as one (UXFIX1).
+    // A toggle, said as one.
     expect(screen.getByRole('menuitemcheckbox', { name: /^Settings list/ })).toHaveAttribute('aria-checked', 'true');
   });
 
@@ -157,7 +157,7 @@ describe("Settings' list, on the window", () => {
   });
 
   /**
-   * UX6j (D150 §2.3): Plugins left Settings for its place, and the one row of it Settings keeps, the plugins folder with
+   * Plugins left Settings for its place, and the one row of it Settings keeps, the plugins folder with
    * its door to the place, is Driver's. Its domain, remembered from before, opens there rather than on a domain it never
    * was; the seven domains hold no Plugins.
    */

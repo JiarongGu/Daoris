@@ -28,7 +28,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
   placeholder?: string;
   ariaLabel?: string;
   required?: boolean;
-  /** Nothing can be chosen while it is set: a change already on its way (AGT6b). */
+  /** Nothing can be chosen while it is set: a change already on its way. */
   disabled?: boolean;
   /**
    * 🔴 The status bar's shape rather than a form's. It was already there and looked wrong: a 30px bordered control
@@ -58,7 +58,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
           position="popper" sideOffset={4} collisionPadding={8}
           className={cn(
             'z-30 overflow-hidden rounded-card border border-line bg-overlay shadow-[0_6px_24px_rgb(15_12_8/0.12)]',
-            // Opened from the frame, it keeps the frame's size (ZOOM1); the room the popper measured is the window's, so it is
+            // Opened from the frame, it keeps the frame's size; the room the popper measured is the window's, so it is
             // read back through the frame's zoom.
             held
               ? cn(FRAME_HELD, 'max-h-[calc(var(--radix-select-content-available-height)/var(--frame-zoom,1))] min-w-[calc(var(--radix-select-trigger-width)/var(--frame-zoom,1))]')
@@ -173,7 +173,7 @@ export function CheckField({ checked, onChange, label, hideLabel, disabled, clas
  * select would hide what a person is choosing between.
  *
  * @remarks
- * **The focus moves with the choice** (UXFIX1), as the WAI-ARIA radio group's does: the chosen option is
+ * **The focus moves with the choice**, as the WAI-ARIA radio group's does: the chosen option is
  * the group's one tab stop, and an arrow chooses the next and focuses it. Left on the option it came from,
  * Space chose that one again and a screen reader stayed on an option no longer chosen (Knowledge's
  * *Search · Convergence*).
@@ -184,7 +184,7 @@ export function Segmented<T extends string>({ label, value, options, onChange, f
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
-  /** Spread over its row, each option an equal share: a list's head, Knowledge's two modes (UX6i). */
+  /** Spread over its row, each option an equal share: a list's head, Knowledge's two modes. */
   fill?: boolean;
 }) {
   const radios = useRef<(HTMLButtonElement | null)[]>([]);

@@ -32,7 +32,7 @@ export function KeptHistory({ workspace, plan, reading = false, refusal = null, 
   busy?: boolean;
   /** Where a kept reason's door leads: its Branches, *Sync now*, a quest's, an ask's or a session's page. */
   doors?: KeptDoors;
-  /** The second press: exactly the units the list held, told back to the list (UXFIX2): done, or refused with why. */
+  /** The second press: exactly the units the list held, told back to the list: done, or refused with why. */
   onClear: (units: readonly HistoryUnitName[], answered: Answered) => void;
 }) {
   const { t } = useTranslation();

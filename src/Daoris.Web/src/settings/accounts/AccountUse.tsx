@@ -17,8 +17,8 @@ import { CURVE_WINDOWS, goneOf, ownPoints, type Switch } from './usageCurves';
 export type AccountChoice = { name: string; label: string; login?: 'in' | 'out' | 'unknown'; keyed?: boolean };
 
 /**
- * One account's facts, on its row (D125 §2.4, D130 §3.2): Daoris's sessions running on it, since when it is offered again
- * where its cool-off ended within the day (TOOL6e), what its agent last said with how long ago (or that it has said nothing
+ * One account's facts, on its row: Daoris's sessions running on it, since when it is offered again
+ * where its cool-off ended within the day, what its agent last said with how long ago (or that it has said nothing
  * yet), the week a limit taught it, and its cool-off with *Try now*. Nothing here counts accounts, and an absent count is
  * unknown, never zero.
  */
@@ -41,7 +41,7 @@ export function AccountFactsLines({ facts, label, busy, onTryNow, now }: {
           typeof facts.running === 'number' ? t('harness.running', { count: facts.running }) : null,
           facts.offered && !facts.cooling ? offeredLine(facts.offered) : null,
           saidLine(facts.said),
-          // The week a limit taught it, where its agent has not said its week itself (TOOL6b).
+          // The week a limit taught it, where its agent has not said its week itself.
           facts.week && !weekly ? t('harness.week', { when: moment(facts.week) }) : null,
         ].filter(Boolean).join(' · ')}
       </span>
@@ -50,7 +50,7 @@ export function AccountFactsLines({ facts, label, busy, onTryNow, now }: {
 }
 
 /**
- * An account cooling: until when, how long, why, and *Try now*, which ends it early (D125 §2.3, §6). The tool's own
+ * An account cooling: until when, how long, why, and *Try now*, which ends it early. The tool's own
  * sign-in's row wears it too, where its cool-off lasts.
  */
 export function CoolingLine({ cooling, label, busy, onTryNow, now }: {
@@ -73,14 +73,14 @@ export function CoolingLine({ cooling, label, busy, onTryNow, now }: {
   );
 }
 
-/** Each account's own plan and terms apply (D130 point 12): said once, under the agent's accounts. */
+/** Each account's own plan and terms apply: said once, under the agent's accounts. */
 export function TermsLine() {
   const { t } = useTranslation();
   return <p className="m-0 mt-2 text-meta text-ink-faint">{t('harness.terms')}</p>;
 }
 
 /**
- * Which account the set's next start takes, in any workspace, and why (TOOL6e; D130 §3–§4, D125 §3.7): the walk's step, since
+ * Which account the set's next start takes, in any workspace, and why: the walk's step, since
  * when that account is offered again where its cool-off just ended, what holds every other account, and that the tool's own
  * sign-in carries none of these starts, which is the switch a person makes at their terminal and expects Daoris to follow.
  * Drawn only where the answer carries it, so an answer without it shows nothing rather than a guess.
@@ -90,7 +90,7 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey }: {
   product: string;
   scope: AccountScope;
   labelOf: (name: string) => string;
-  /** Whether an account is an API key: a key held signed out is refused, repaired by a new key (ACCTUX1b). */
+  /** Whether an account is an API key: a key held signed out is refused, repaired by a new key. */
   isKey?: (name: string) => boolean;
 }) {
   const { t } = useTranslation();
@@ -123,13 +123,13 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey }: {
   );
 }
 
-/** What the set's editor is handed to change it: each press is the terminal's door's twin (D50). */
+/** What the set's editor is handed to change it: each press is the terminal's door's twin. */
 export type ScopeActs = {
   /** The set's order written whole (`daoris agent profile order`): every account, the first where *One by one, in order* begins. */
   onOrder: (list: string[]) => void;
   /**
    * How the set is used: one setting at a time, a field left out unchanged. `refused`, where handed, is told the door's refusal in
-   * the reader's language in place of the toast: the curve's editor says it under the rows it keeps (PUSH1e: the rules are .NET's).
+   * the reader's language in place of the toast: the curve's editor says it under the rows it keeps (PUSH1e: the rules are.NET's).
    */
   onUse: (change: AccountUseChange, refused?: (problem: string) => void) => void;
 };
@@ -137,7 +137,7 @@ export type ScopeActs = {
 /**
  * The set's order and how it is used (D130 §16.6 as D165 §6 amends it; POOL1c, D197 point 2 and the account-pool design §4.2):
  * every account of Daoris's in the order they are used, each with up and down and no *Use* switch, since every account serves
- * every workspace; then *Use accounts*, *Keep for conversations* and *Switch accounts* with each window's curve (SWITCH1d), the
+ * every workspace; then *Use accounts*, *Keep for conversations* and *Switch accounts* with each window's curve, the
  * one entry of settings every workspace's starts read. Any number of accounts: the editor holds as many rows as the agent has.
  */
 export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
@@ -296,7 +296,7 @@ function SwitchRow({ agent, product, scope, labelOf, busy, acts, now = new Date(
   const hinted = { agent: agent.agent };
   const switched = switchOf(scope.use);
   const own = (window: string) => ownPoints(scope.use, window);
-  // Each account of the list on a window now, where .NET measured its agent's share against the scope's curve (PUSH1e): placed by
+  // Each account of the list on a window now, where.NET measured its agent's share against the scope's curve: placed by
   // when the window began and when it resets, as answered, over it as judged.
   const placed = (window: string): CurveAccount[] => (scope.measured ?? []).flatMap((measured) => {
     if (measured.window !== window || !scope.list.includes(measured.account)) return [];
@@ -330,7 +330,7 @@ function SwitchRow({ agent, product, scope, labelOf, busy, acts, now = new Date(
           <div key={window} className="flex min-w-0 flex-col gap-2">
             <CurveChart
               window={window}
-              // The curve in effect, as .NET resolves it (PUSH1e); none drawn where the answer lacks it.
+              // The curve in effect, as.NET resolves it; none drawn where the answer lacks it.
               points={scope.curves?.[window] ?? []}
               own={switched === 'curve' && own(window) !== null}
               accounts={placed(window)}

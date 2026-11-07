@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useSyncExternalStore } from 'react';
 import type { ContextOffer } from './press';
 
-// The record in the main area, as the menu bar reads it (UX7a, D152 §2). A page already offers what is done to its record
-// to a right-click (CTX1, D138 §2), from the owner each page has: a session's acts through `sessionActs.ts`, a quest's
+// The record in the main area, as the menu bar reads it. A page already offers what is done to its record
+// to a right-click, from the owner each page has: a session's acts through `sessionActs.ts`, a quest's
 // through its page's own rule. The menu bar's record group reads the same offer, so a menu row is enabled exactly when the
 // page offers the act and runs it through the same owner, and no page lists its acts a second time.
 

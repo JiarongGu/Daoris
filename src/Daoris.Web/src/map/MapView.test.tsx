@@ -9,7 +9,7 @@ import { buildTopology } from './topology';
 import { WorkspaceScopeProvider } from '../data/scope';
 import { columnsFollow } from '../test/mainSplit';
 
-// MAP2 (D67 §3): the workspace map, over a stubbed service — a view of its own, the owner's choice.
+// The workspace map, over a stubbed service — a view of its own, the owner's choice.
 
 let REGISTRY: unknown[] = [];
 const QUESTS = [
@@ -24,7 +24,7 @@ const SESSIONS = [
   { id: 's1', repository: 'engine', door: 'stub', state: 'working', created: '', updated: '' },
 ];
 
-// MAP3a: what `/api/code-map/{repository}` answers — the engine keeps a map, the game keeps none.
+// What `/api/code-map/{repository}` answers — the engine keeps a map, the game keeps none.
 let CODE_MAPS: Record<string, unknown> = {};
 
 function respond(url: string): Response {
@@ -85,13 +85,13 @@ describe('the workspace map', () => {
     expect(screen.getByRole('button', { name: 'game, 1 open' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '2 quests from game to engine' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'engine and game learned the same thing once' })).toBeTruthy();
-    // The ask is not a repository: it is drawn from the asks, the person's (MAP4b), and not counted off the map.
+    // The ask is not a repository: it is drawn from the asks, the person's, and not counted off the map.
     expect(screen.getByRole('button', { name: '1 quest your asks became on game' })).toBeTruthy();
     expect(screen.getByRole('img', { name: '1 ask' })).toBeTruthy();
     expect(screen.queryByText(/somewhere off this map/)).toBeNull();
-    // The key says each line's meaning in words, not by hue alone (D41).
+    // The key says each line's meaning in words, not by hue alone.
     expect(screen.getByText(/dashed line: the same thing learned in both/)).toBeTruthy();
-    // 🔴 Seen on the window (POLISH4): the number inside a repository was in no key.
+    // 🔴 Seen on the window: the number inside a repository was in no key.
     expect(screen.getByText('the number in a repository: quests to it still open')).toBeTruthy();
   });
 
@@ -103,7 +103,7 @@ describe('the workspace map', () => {
       const word = screen.getByText('waiting on you');
       expect(screen.queryByText('working')).toBeNull();
       // UX5 U1: the hue the rail's dot and the band's card give the same fact, not the notice tone; the word in that
-      // hue's ink and the ring in the hue itself (UXFIX5c).
+      // hue's ink and the ring in the hue itself.
       expect(word.getAttribute('class')).toContain('text-ink-open');
       expect(word.closest('button')!.querySelector('[data-session]')!.getAttribute('class')).toContain('border-st-open');
     } finally {
@@ -132,7 +132,7 @@ describe('the workspace map', () => {
     show();
     await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
     const detail = screen.getByText('quests to it').closest('div')!.parentElement!;
-    // The pill's line in the hue, its word in that hue's ink (UXFIX5c).
+    // The pill's line in the hue, its word in that hue's ink.
     expect(within(detail).getByText('working').getAttribute('class')).toContain('border-st-taken');
     expect(within(detail).getByText('working').getAttribute('class')).toContain('text-ink-taken');
 
@@ -450,7 +450,7 @@ describe('the workspace map', () => {
     expect(rows[2]).toHaveTextContent(/^takenPlain one/);
   });
 
-  // ——— One level in: a repository's own code map (MAP3a).
+  // ——— One level in: a repository's own code map.
 
   const openCode = async (repository: 'engine' | 'game') => {
     await userEvent.click(await screen.findByRole('button', { name: new RegExp(`^${repository}, 1 open`) }));
@@ -491,7 +491,7 @@ describe('the workspace map', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Open code map' })).toHaveFocus());
   });
 
-  // MAPUX1c: the way back chooses and reveals the repository, whichever door opened its code map.
+  // The way back chooses and reveals the repository, whichever door opened its code map.
   it('goes back from the detail\'s door with the repository chosen and its line said', async () => {
     CODE_MAPS = { engine: { repository: 'engine', file: 'docs/code-map.json', problem: null, modules: [], dependencies: [] } };
     show();
@@ -511,7 +511,7 @@ describe('the workspace map', () => {
     await waitFor(() => expect(card).toHaveFocus());
   });
 
-  // MAPUX1b: the choice's line is the one live region; the detail has a door to the repository's page.
+  // The choice's line is the one live region; the detail has a door to the repository's page.
   it('says the choice in one polite line, the hint when nothing is chosen', async () => {
     show();
     await screen.findByRole('button', { name: /^engine, 1 open/ });
@@ -563,7 +563,7 @@ describe('the workspace map', () => {
     expect(screen.getByText(/docs\/code-map\.json/)).toBeTruthy();
   });
 
-  /** MAP3e: a teammate's commit that keeps no map says so by that commit, not with the advice for a checkout here. */
+  /** A teammate's commit that keeps no map says so by that commit, not with the advice for a checkout here. */
   it('says a teammate\'s held commit keeps no code map', async () => {
     CODE_MAPS = {
       game: {

@@ -5,7 +5,7 @@ import { storyWidths } from '../design/storyWidths';
 import { AskWorkflowKind } from './AskWorkflowKind';
 import { CLOSED, PROPOSED } from './fixtures';
 
-// An ask's kind of work (WORKFLOW1i-c, D157), as its page's *kind* section draws it (`AskPage.tsx`), on its own (STORYGAP1, the
+// An ask's kind of work, as its page's *kind* section draws it (`AskPage.tsx`), on its own (STORYGAP1, the
 // UI/UX design §1.2 item 6, where it was drawn only inside `AskPage`'s stories at one width): nothing chosen, a kind with its
 // workflow and a proposal with *Apply*, two proposals, a press on its way, a closed ask; at the main area's three widths, in
 // 中文 and dark.

@@ -6,7 +6,7 @@ import {
 } from './placePlan';
 import { SETUP_PRESETS } from './placeFixtures';
 
-// SETUPUX1j (the setup-UX design §2.2): what the choices page reads of a plan: the suggestion each repository makes, with Keep where its landing
+// What the choices page reads of a plan: the suggestion each repository makes, with Keep where its landing
 // was chosen or a saved workflow is followed; nothing preselected where they differ; the driving caption's sides; and each refusal's part.
 
 const plan = (repositories: string[], preset = 'not-driven', rest: Partial<ReturnType<typeof askOf>> = {}, mix = {}) =>
@@ -81,7 +81,7 @@ describe('a plan\'s refusals', () => {
   });
 });
 
-// SETUPUX1k (the setup-UX design §2.2's review): a tick is bound to the declaration it was made at, and a changed blob clears it with a reason.
+// A tick is bound to the declaration it was made at, and a changed blob clears it with a reason.
 
 const integrated = () => plan(['engine'], 'integrated');
 const moved = (read: PlacePlanned, blob: string): PlacePlanned => ({

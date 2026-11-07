@@ -27,7 +27,7 @@ const ACTS: AgentActs = {
 const CLAUDE = DOORS.find((door) => door.door === 'claude-code')!;
 const HOME = 'C:/somewhere/data/harnesses/claude-code/';
 
-/** Claude Code's page with these accounts, each in the set's order, as every account is (D197); its sessions speak unless told. */
+/** Claude Code's page with these accounts, each in the set's order, as every account is; its sessions speak unless told. */
 function page(profiles: NonNullable<ToolDoor['profiles']>, { speaks = true, said = {} }: {
   speaks?: boolean; said?: Record<string, AccountSaid>;
 } = {}) {
@@ -147,12 +147,12 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
       expect(named, label).toHaveClass('sr-only');
       expect(named.parentElement!.textContent, label).toContain(value);
     }
-    // POOL1c (the account-pool design §4.2): *Runs for* went, since every account runs for every workspace.
+    // *Runs for* went, since every account runs for every workspace.
     expect(within(row).queryByText('Runs for')).toBeNull();
     expect(ACCOUNT_COLUMNS).not.toMatch(/minmax\(0,1fr\)_minmax\(0,0\.6fr\)/);
   });
 
-  /** POOL1c (the account-pool design §3 point 3, §4.2): your own sign-in's row shows its name and ⓘ, and no state. */
+  /** Your own sign-in's row shows its name and ⓘ, and no state. */
   it('draws no state where none is handed: your own sign-in, which Daoris never asks', () => {
     render(<ul><AccountRow name="Your own sign-in" why="Your own sign-in: the account this tool uses at your own terminal." menu={[]} /></ul>);
     const row = screen.getByRole('listitem', { name: 'Your own sign-in' });
@@ -217,7 +217,7 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
 // ACCTUX4, the second opinion's account section as adopted: what an account's agent last said was one sentence of every window,
 // which compared badly across windows and makers. Each window is now a cell of its own in the same place on every row: its
 // exact share, a thin bar of that window's own allowance, its reset and its own reading's age; one its agent did not report
-// is unknown in words, with no bar and never 0% (D130 §5.2).
+// is unknown in words, with no bar and never 0%.
 describe('an account’s windows, a cell each (ACCTUX4)', () => {
   beforeEach(() => i18n.changeLanguage('en'));
   afterEach(cleanup);
@@ -263,7 +263,7 @@ describe('an account’s windows, a cell each (ACCTUX4)', () => {
   });
 
   /**
-   * SWITCH1d (the switch design §5): a window against its curve now, said after its share; one over its curve says so in the ink
+   * A window against its curve now, said after its share; one over its curve says so in the ink
    * and wears the warning hue, one under it says what its curve allows in the soft ink.
    */
   it('says a window against its curve, and wears the warning hue where it is over it', () => {

@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 
-/** The codes a set-up press is refused with (WIRING1e), each worded in `settings.daoris.setup.refused.*`. */
+/** The codes a set-up press is refused with, each worded in `settings.daoris.setup.refused.*`. */
 export const SETUP_REFUSALS = [
   'PATH_NOT_INSTALL', 'PATH_NOT_WINDOWS', 'PATH_UNREADABLE', 'PATH_NOT_WRITTEN',
   'SERVICE_NOT_LOOPBACK', 'SERVICE_MALFORMED', 'SERVICE_NOT_WINDOWS', 'SERVICE_UNREADABLE', 'SERVICE_NOT_WRITTEN',

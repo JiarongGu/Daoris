@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { KNOWLEDGE_MODES, readKnowledgeMode, storeKnowledgeMode } from './modes';
 
-// UX6i (D150 §2.2): Knowledge is one place whose list switches between Search and Convergence, and the choice is
+// Knowledge is one place whose list switches between Search and Convergence, and the choice is
 // remembered for the place, as a repository's page's tab is for Repositories.
 
 const KEY = 'daoris.list.knowledge.mode';

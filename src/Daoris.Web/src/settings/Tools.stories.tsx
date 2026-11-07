@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { choiceOf, GitSwitch, ToolCard, ToolLocations } from './Tools';
 import { BUILT_IN, GIT, MIRROR, NODE, PWSH, PWSH_FILE_GONE } from './toolsFixtures';
 
-// Settings → Tools (TOOLS7, D121 §4.1), in the shape the shell's TOOLS_LIST answers: a tool run as the system's, one
+// Settings → Tools, in the shape the shell's TOOLS_LIST answers: a tool run as the system's, one
 // managed with versions to choose, one about to download, a named file that is gone, one PATH does not find, git's
 // switch asked about before it applies, and the resource locations with and without a look.
 

@@ -28,7 +28,7 @@ export function AgentsModes({ mode, onMode }: { mode: AgentsMode; onMode: (mode:
 }
 
 /**
- * The list closed to its strip (D118 §3a): the two modes, each by its glyph and named, the one in front marked, and under them what
+ * The list closed to its strip: the two modes, each by its glyph and named, the one in front marked, and under them what
  * the mode's own strip holds (the agents' marks, or the five sections'). The strip stands for the head's choice, so a list closed to
  * give a page room still switches between the modes.
  */

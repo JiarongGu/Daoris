@@ -8,7 +8,7 @@ import { code } from '../../test/code';
 import { NO_VERIFICATION, START } from '../../workflow/fixtures';
 import { LandedRoute, landedSummary } from './LandedRoute';
 
-// FABRIC-PIPELINE1a (D192 point 2, the pipeline design §1.3): Setup's route row, the landed route of a repository: the verification
+// Setup's route row, the landed route of a repository: the verification
 // workflow the work that lands follows, what chose it, where its gates stand, and the person's choice among the verification workflows
 // saved here, no verification, or the workspace's again. Choosing one accepts the declaration at the line's tip. A molecule.
 

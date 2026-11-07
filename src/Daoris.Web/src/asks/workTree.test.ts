@@ -4,7 +4,7 @@ import type { WorkPlan, WorkPlanQuest } from '../work/pausing/pausing';
 import { LISTED_ASK, LISTED_CONSIDERED, PAUSABLE_ASK, PAUSED_LISTED_ASK } from '../work/pausing/pausingFixtures';
 import { whyItSits, type WorkItem, workTree } from './workTree';
 
-// An ask's work as its page lists it (PAUSE1h, D132 §7.1): each quest with its sessions and the questions they asked, each
+// An ask's work as its page lists it: each quest with its sessions and the questions they asked, each
 // question listed the same way under the quest whose session asked it, and why each sits.
 
 /** The tree as ids, so a case reads as the shape it asserts. */

@@ -16,8 +16,8 @@ export type WorkItem = {
 };
 
 /**
- * Whether a session's record is the one a quest names as its publisher. A teammate's record is keyed `origin/id` (SYNC4) and
- * the quest it published names `id`, so both are matched, as the driver's reader matches them (PAUSE1a).
+ * Whether a session's record is the one a quest names as its publisher. A teammate's record is keyed `origin/id` and
+ * the quest it published names `id`, so both are matched, as the driver's reader matches them.
  */
 const publishedBy = (session: WorkPlanSession, by: string) => session.session === by || session.session.endsWith(`/${by}`);
 

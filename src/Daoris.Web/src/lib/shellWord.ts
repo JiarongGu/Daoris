@@ -1,6 +1,6 @@
 // An argument as a terminal hint prints it (ACCTQUOTE1, D125's ACCTQUOTE1 note). A twin on the page is a command a person
 // copies into whichever shell they have: PowerShell, Command Prompt or a POSIX shell, and on Windows the install's `daoris`
-// is `daoris.cmd`, which PowerShell finds too (D124 §1.2). An account's name, an id or a workspace's name may hold a
+// is `daoris.cmd`, which PowerShell finds too. An account's name, an id or a workspace's name may hold a
 // character one of them reads, so a value printed bare can change the command it is pasted into: `R&D` pasted into
 // Command Prompt runs `D`. One spelling serves every shell:
 //

@@ -2,8 +2,8 @@ import { howMany } from './MapLines';
 import { type Frame, textWidth } from './measure';
 import { ASKS, type Topology, layoutRing } from './topology';
 
-// The ring (MAP2): a handful of repositories on a circle, the asks inside it, and every line a curve between two. Pure geometry: the
-// map draws it as a fitted world (CANVAS1e), and crossing `RING_MAX` changes this layout for the layers, not the renderer.
+// The ring: a handful of repositories on a circle, the asks inside it, and every line a curve between two. Pure geometry: the
+// map draws it as a fitted world, and crossing `RING_MAX` changes this layout for the layers, not the renderer.
 
 export const SIZE = 600;
 export const RADIUS = 30;
@@ -16,7 +16,7 @@ const SPACING = 2 * RADIUS + 30;
 /** The sizes a name and its second line are drawn at: `text-small` and `text-meta`. */
 const NAME_PX = 12;
 const WORD_PX = 11;
-/** The asks' disc (MAP4b): smaller than a repository's, since it is a source and holds no count of its own. */
+/** The asks' disc: smaller than a repository's, since it is a source and holds no count of its own. */
 export const ASKS_R = 20;
 /** How far a chain's hop bends: past a quest's 36, so the two kinds between one pair stand apart. */
 export const CHAIN_BEND = 72;

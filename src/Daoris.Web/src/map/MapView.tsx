@@ -27,21 +27,21 @@ const SHARED = 0.75;
  * @remarks
  * Read-only, and read from what every other view already reads — the registry, the quests, the
  * convergence findings, the live sessions — so it adds no request shape the service does not serve,
- * and nothing machine-local: the same map in a browser and on the desktop (D47 §4).
+ * and nothing machine-local: the same map in a browser and on the desktop.
  */
 export function MapView({ notify, code: opening = null, onOpenConvergence, onOpenQuest, onOpenRepository, onOpenRepositories }: {
   notify: Notify;
   /**
-   * The repository whose code map it opens on, where a door named one: a repository's page (FRAME1e). The Map then
+   * The repository whose code map it opens on, where a door named one: a repository's page. The Map then
    * holds it as its own, and goes back to the workspace from it as from any code map.
    */
   code?: string | null;
   onOpenConvergence?: () => void;
   /** A quest named in a detail opens on its page, on Quests (UX5 U46; FRAME1d). */
   onOpenQuest?: (id: string) => void;
-  /** A repository named in a detail opens on its page, on Repositories (MAPUX1b). */
+  /** A repository named in a detail opens on its page, on Repositories. */
   onOpenRepository?: (repository: string) => void;
-  /** Where a workspace with no repository goes to add one: Repositories (MAPUX1f). */
+  /** Where a workspace with no repository goes to add one: Repositories. */
   onOpenRepositories?: () => void;
 }) {
   const { t } = useTranslation();
@@ -53,7 +53,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   const [selected, setSelected] = useState<MapSelection | null>(null);
   const [shownLines, toggleShown] = useShownLines();
   const [when, setWhen] = useMapWhen();
-  // One level in (MAP3a): the repository whose own code map is open, and the module chosen on it.
+  // One level in: the repository whose own code map is open, and the module chosen on it.
   const [code, setCode] = useState<string | null>(opening);
   const [module, setModule] = useState<string | null>(null);
   const codeMap = useCodeMap(code);
@@ -63,7 +63,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   const [arriving, setArriving] = useState<{ id: string; focus: boolean } | null>(null);
   const openCode = (repository: string) => { setByDoor(false); setCode(repository); };
   useErrorNotify(registry.error ?? quests.error ?? sessions.error ?? codeMap.error, notify);
-  // Below the canvas floor the list is the reading, and a choice's detail opens in place under its row (MAPUX1e).
+  // Below the canvas floor the list is the reading, and a choice's detail opens in place under its row.
   const holder = useRef<HTMLElement>(null);
   const room = useWidth(holder);
   const rem = useRootRem();
@@ -71,7 +71,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
 
   if (code !== null) {
     const back = () => {
-      // Back chooses and shows the repository (MAPUX1c). The focus goes to the press that opened the code map (UX6h3d), or, where a
+      // Back chooses and shows the repository. The focus goes to the press that opened the code map (UX6h3d), or, where a
       // door opened it and there was no press, to the repository's card, which the canvas focuses once drawn.
       if (!byDoor) {
         const press = t('map.detail.openCode');
@@ -93,7 +93,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
         file={answer.file} fed={answer.fed} onSelect={setModule}
       />
     ) : null;
-    // One module and no dependency: the card alone, said so (MAPUX1f).
+    // One module and no dependency: the card alone, said so.
     const alone = answer?.modules.length === 1 && answer.dependencies.length === 0 ? t('code.said.alone', { id: answer.modules[0]!.id }) : t('code.detail.hint');
     return (
       <section ref={holder}>
@@ -118,7 +118,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
           <EmptyState
             icon="map"
             headline={t('code.none.headline', { repository: code })}
-            // A teammate's held commit that keeps none (MAP3e) says so by that commit: the advice
+            // A teammate's held commit that keeps none says so by that commit: the advice
             // about committing a file is for a repository whose checkout is here.
             body={answer.fed
               ? t('code.none.fedBody', { commit: answer.fed.shortCommit })
@@ -152,9 +152,9 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
     registry.data ?? [], quests.data ?? [],
     // Convergence may fail on its own — a lexical-only machine still has repositories and quests.
     shared.data ?? [], sessions.data ?? [],
-    // Which quests, as the person chose (MAP4c); a window is measured from this render.
+    // Which quests, as the person chose; a window is measured from this render.
     keepQuests(when, Date.now()));
-  // What is drawn is what the person chose to see (MAP4b); the detail still reads everything.
+  // What is drawn is what the person chose to see; the detail still reads everything.
   const topology = showLines(all, shownLines);
   const toggleLine = (kind: LineKind) => {
     // A chosen line of a kind going out of sight is no longer a choice on the map.

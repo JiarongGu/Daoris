@@ -23,7 +23,7 @@ const HELD_WORD: Record<string, string> = { hosted: 'hosted', adopted: 'adopted'
  */
 export function WiringService({ wiring, setup }: {
   wiring: Pick<SystemWiring, 'service' | 'remotes' | 'remotesWhy'>;
-  /** *Change the service's address* (WIRING1e), under the address row, drawn by the domain; none where the shell offers none. */
+  /** *Change the service's address*, under the address row, drawn by the domain; none where the shell offers none. */
   setup?: ReactNode;
 }) {
   const { t } = useTranslation();

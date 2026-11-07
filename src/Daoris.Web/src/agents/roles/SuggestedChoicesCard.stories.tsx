@@ -4,7 +4,7 @@ import { storyWidths } from '../../design/storyWidths';
 import type { ActorRow, RoleCatalogue, RoleRow } from '../../data/wiring';
 import { RolesCard } from './Roles';
 
-// MODELROLE1g: the head of Working roles at first run, with the choices Daoris suggests for the roles and the words that say using them
+// The head of Working roles at first run, with the choices Daoris suggests for the roles and the words that say using them
 // can spend more. Each story is one width and one language; the theme is the toolbar's.
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({

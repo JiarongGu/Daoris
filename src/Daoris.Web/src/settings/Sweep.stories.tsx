@@ -5,7 +5,7 @@ import { chinese } from '../design/storyLanguage';
 import { DiscardBranchAsk, SweepList, type LandedBranch, type SweepBranch } from './Sweep';
 import { SyncSection } from './Sync';
 
-// Session branches (WSR3, D88), in the shape the driver's SWEEP_PLAN answer takes: every kind a
+// Session branches, in the shape the driver's SWEEP_PLAN answer takes: every kind a
 // branch can be, and a machine with none.
 
 const branch = (extra: Partial<SweepBranch> & Pick<SweepBranch, 'branch' | 'kind'>): SweepBranch => ({
@@ -26,7 +26,7 @@ export const EveryKind: Story = {
     branches: [
       branch({ branch: 'daoris/s-1f2e3d4c', kind: 'empty', where: 'main', removable: true }),
       branch({ branch: 'daoris/s-5a6b7c8d', kind: 'landed', where: 'feature/0fda18-fix-the-api-gap', removable: true }),
-      // SWEEPCARRIED1: a squash left its commits on no branch of the person's; the landed branch's pull request carried them.
+      // A squash left its commits on no branch of the person's; the landed branch's pull request carried them.
       branch({ branch: 'daoris/s-2d3e4f5a', kind: 'carried', commits: 2, where: 'feature/0fda16-squashed', removable: true }),
       branch({ branch: 'daoris/s-9e0f1a2b', kind: 'unlanded', commits: 2, detail: 'a1b2c3d the work\ne4f5a6b more work' }),
       branch({ branch: 'daoris/s-3c4d5e6f', kind: 'dirty', detail: '3 path(s) uncommitted' }),
@@ -39,7 +39,7 @@ const landed = (extra: Partial<LandedBranch> & Pick<LandedBranch, 'branch' | 'ki
   repository: 'engine', workspace: 'aurora', files: [], commits: 1, removable: false, ...extra,
 });
 
-/** WSR5: the branches landings made, beside the session branches — every kind one can be. */
+/** The branches landings made, beside the session branches — every kind one can be. */
 export const WithLandedBranches: Story = {
   args: {
     ...EveryKind.args,
@@ -57,7 +57,7 @@ export const WithLandedBranches: Story = {
 };
 
 /**
- * LAND3b: failed or superseded attempts' branches, which no clean-up takes, each offering *Discard branch…* where the
+ * Failed or superseded attempts' branches, which no clean-up takes, each offering *Discard branch…* where the
  * driver says it may: one whose tree is gone, one whose tree is still here. Neither the empty nor the unsure offers it.
  */
 export const FailedAttempts: Story = {
@@ -94,7 +94,7 @@ export const DiscardAsk: Story = {
 };
 
 /**
- * The main area at a width (UXFIX4), as `ViewMain` draws it: its container and a page's gutters, which are 12 px under a
+ * The main area at a width, as `ViewMain` draws it: its container and a page's gutters, which are 12 px under a
  * 768 px window and 24 px over it. 600 px is the main area at a 680 px window, the list a strip beside it; 400 px is the
  * main area's floor in a wider window, beside an open list and side bar, where the gutters are the wider.
  */

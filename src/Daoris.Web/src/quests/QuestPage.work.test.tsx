@@ -11,7 +11,7 @@ import { ABANDONED_ENTRY, PAUSABLE_QUEST, PAUSED_QUEST } from '../work/pausing/p
 import { FAILED, OPEN, PAUSED_ITSELF, PAUSED_WITH_ASK, PAUSED_WITH_QUEST, STOPPED, TAKEN, TAKEN_ELSEWHERE } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// A quest's page with this machine's driver (PAUSE1e, D132 §7.1): *Pause…* and *Abandon…* in its header's ⋯ (UX7c, D152 §7),
+// A quest's page with this machine's driver: *Pause…* and *Abandon…* in its header's ⋯,
 // with *Decline…* beside it;
 // under *Sitting*, *Resume* for its own pause where *Try again* stands, and for another's pause the sentence and a door to
 // whose it is; *What went* and *What stayed* after an abandon.
@@ -35,7 +35,7 @@ const page = (over: Partial<Parameters<typeof QuestPage>[0]> = {}) => {
 const headerActs = () => within(screen.getByRole('main').querySelector('header')!).getAllByRole('button')
   .map((button) => button.textContent || button.getAttribute('aria-label'));
 
-/** The acts the head keeps in its ⋯ (UX7c), opened from the keyboard as every menu is in jsdom. */
+/** The acts the head keeps in its ⋯, opened from the keyboard as every menu is in jsdom. */
 async function foldedActs(): Promise<string[]> {
   const user = userEvent.setup();
   within(screen.getByRole('main').querySelector('header')!).getByRole('button', { name: /More actions|更多操作/ }).focus();
@@ -56,7 +56,7 @@ describe('pausing and abandoning a quest', () => {
   it('offers Pause… and Abandon… in its ⋯ beside Decline…, where the plan says they apply', async () => {
     page({ work: door() });
     expect(headerActs()).toEqual(['Take', 'Decline…', 'More actions']);
-    // Decline… is said again here at the narrow width, which a measureless test area is (HEAD2b).
+    // Decline… is said again here at the narrow width, which a measureless test area is.
     expect(await foldedActs()).toEqual(['Mark done…', 'Pause…', 'Decline…', 'Abandon…', 'Copy quest ID']);
   });
 
@@ -163,7 +163,7 @@ describe('pausing and abandoning a quest', () => {
 });
 
 /**
- * CTX1 (D138, design §4): a right-click on a quest's page offers what is done to it: its header's acts, then its body's,
+ * A right-click on a quest's page offers what is done to it: its header's acts, then its body's,
  * then its id, each pressed as its button is, so an act that asks still asks under the header.
  */
 describe("a quest's page on a right-click", () => {
@@ -247,7 +247,7 @@ describe("a quest's page on a right-click", () => {
 });
 
 /**
- * LANG1b (D142 points 1, 4, 5): its driven session's record words Daoris's lines in the reader's language, keeps the
+ * Its driven session's record words Daoris's lines in the reader's language, keeps the
  * agent's words as written, and shows a record from before parts as it was kept, marked *shown as recorded*.
  */
 describe("a quest's page words its session's note", () => {
@@ -283,7 +283,7 @@ describe("a quest's page words its session's note", () => {
 });
 
 /**
- * CARRY2c (D80's CARRY2b note): a taken quest whose take is another machine's sits, and its page says why under *Sitting*.
+ * A taken quest whose take is another machine's sits, and its page says why under *Sitting*.
  * In 中文 that was the driver's English; the tick now names whose the take is, so the page words it from those facts, and a
  * tick with no facts, still shows the driver's sentence. No Try again: nothing here can carry it on.
  */

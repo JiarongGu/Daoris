@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// SETUPUX1m (the setup-UX design §2.4, This machine's page): lit, the page holds All roles, the diagram and the Suggested line, so lighting
+// Lit, the page holds All roles, the diagram and the Suggested line, so lighting
 // the flag loses none of what the dark Roles mode shows.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({

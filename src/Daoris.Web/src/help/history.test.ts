@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { type HelpConversationRow, historyGroups, joinPages, listingPage } from './history';
 
-// ASKHIST1c: the history grouped as a person reads time, by this machine's calendar days: what is pinned, then today,
+// The history grouped as a person reads time, by this machine's calendar days: what is pinned, then today,
 // yesterday, the rest of this week (from its Monday) and older; each row where its last word was said, in the driver's order.
 
 /** A local time, on this machine's calendar. */

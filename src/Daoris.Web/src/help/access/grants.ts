@@ -38,7 +38,7 @@ export const GRANTS: readonly GrantSpec[] = [
     id: 'housekeeping', operations: ['inspect', 'clean-up', 'discard-branch', 'drop-recovery'],
     byDefault: 'off', needsRules: false, later: false, onPlugin: false, door: 'operations',
   },
-  // D170's server approval takes its reads together and each write on its own, on the plugin's page (HELPPLUG1c): nothing is
+  // D170's server approval takes its reads together and each write on its own, on the plugin's page: nothing is
   // chosen here. No page code, ever.
   { id: 'browser', operations: [], byDefault: 'approval', needsRules: true, later: false, onPlugin: true, door: 'manage' },
   // The workspace's checkouts within D107's readable set, each on until turned off here, read through one tool Daoris judges at each

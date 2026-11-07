@@ -26,7 +26,7 @@ const REGISTRY = [
 let QUESTS: unknown[] = [];
 let SESSIONS: unknown[] = [];
 let ASKS: unknown[] = [];
-/** Where a circle stands with its remote (SYNC6b) — no remote, unless a test wires one. */
+/** Where a circle stands with its remote — no remote, unless a test wires one. */
 let SYNC: unknown = { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] };
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -64,16 +64,16 @@ describe('the shell in a browser, over two workspaces', () => {
   });
   afterEach(async () => {
     vi.unstubAllGlobals();
-    // A menu opens Settings at a domain, and the domain is remembered per viewer (D75); a door chooses Quests' item.
+    // A menu opens Settings at a domain, and the domain is remembered per viewer; a door chooses Quests' item.
     window.localStorage.removeItem('daoris.settings');
     window.localStorage.removeItem('daoris.list.quests.chosen');
-    // The language a menu switched, which i18n remembers as well as shows (UX6j).
+    // The language a menu switched, which i18n remembers as well as shows.
     if (i18n.language !== 'en') await act(async () => { await i18n.changeLanguage('en'); });
     window.localStorage.removeItem('daoris.language');
   });
 
   /**
-   * REV3: a refresh invalidated EVERY query — the tick-written answers too, whose "fetch" is an empty
+   * A refresh invalidated EVERY query — the tick-written answers too, whose "fetch" is an empty
    * list, so each refresh wiped *why a quest is sitting* and the trust holds until the next tick.
    */
   it('a refresh asks again what the index feeds, and leaves what the tick wrote alone', async () => {
@@ -136,7 +136,7 @@ describe('the shell in a browser, over two workspaces', () => {
     expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('aurora');
   });
 
-  /** MAINWINDOWS3: two main windows on two workspaces would otherwise read the same on the taskbar and in Alt-Tab. */
+  /** Two main windows on two workspaces would otherwise read the same on the taskbar and in Alt-Tab. */
   it('the page\'s title names the workspace this window holds, and none for every workspace', async () => {
     const every = shell();
     expect(await screen.findByRole('combobox', { name: 'workspace' })).toHaveTextContent('Every workspace · 2');
@@ -149,7 +149,7 @@ describe('the shell in a browser, over two workspaces', () => {
   });
 
   /**
-   * D75: the Workspace menu is the scope's second door. It lists every workspace with what it holds,
+   * The Workspace menu is the scope's second door. It lists every workspace with what it holds,
    * ticks the scope, and choosing one scopes the window as the switcher does.
    */
   /**
@@ -176,7 +176,7 @@ describe('the shell in a browser, over two workspaces', () => {
   });
 
   /**
-   * 🔴 Seen on the install once retiring emptied the index (POLISH5): the repositories card was its
+   * 🔴 Seen on the install once retiring emptied the index: the repositories card was its
    * heading over a footnote about adopted dots, with nothing for the dots to mark.
    */
   it('says the index holds nothing, rather than a footnote under an empty chart', async () => {
@@ -209,7 +209,7 @@ describe('the shell in a browser, over two workspaces', () => {
     shell();
     await screen.findByRole('combobox', { name: 'workspace' });
     const user = await openMenu('Workspace');
-    // The scope is one choice among the workspaces, said as a radio and not only ticked (UXFIX1).
+    // The scope is one choice among the workspaces, said as a radio and not only ticked.
     const every = await screen.findByRole('menuitemradio', { name: /Every workspace · 2/ });
     expect(every).toHaveAttribute('aria-checked', 'true');
     expect(every.querySelector('svg')).not.toBeNull();
@@ -224,7 +224,7 @@ describe('the shell in a browser, over two workspaces', () => {
 
   /**
    * D152 §1: the bar is VS Code's less *Selection*, with *Workspace* in File's place; a browser has no *Terminal* (§3.6).
-   * Its Settings opens at the domain Settings' list remembers (D75), Appearance on a first look.
+   * Its Settings opens at the domain Settings' list remembers, Appearance on a first look.
    */
   it('holds six menus in a browser, and Workspace › Settings opens Settings', async () => {
     shell();
@@ -239,9 +239,9 @@ describe('the shell in a browser, over two workspaces', () => {
   });
 
   /**
-   * SETUP1a (D97): Help › *Get started* opens the guide — a browser's too, holding the one step a browser can know, and
+   * Help › *Get started* opens the guide — a browser's too, holding the one step a browser can know, and
    * saying the rest is the desktop's. It was the Daoris menu's until D152 (the design §3.7), and named Setup until UX6j
-   * gave that name to a repository's and a workspace's tab (D150 §2.3).
+   * gave that name to a repository's and a workspace's tab.
    */
   it('Help › Get started opens the setup guide', async () => {
     shell();
@@ -271,7 +271,7 @@ describe('the shell in a browser, over two workspaces', () => {
   });
 
   /**
-   * UX6j (D150 §2.1): the language left the activity bar for View's *Language ▸*, the palette and Settings → Appearance,
+   * The language left the activity bar for View's *Language ▸*, the palette and Settings → Appearance,
    * and is remembered under `daoris.language` as the bar's switch remembered it.
    */
   it('switches the language from View › Language, remembered under daoris.language', async () => {
@@ -291,7 +291,7 @@ describe('the shell in a browser, over two workspaces', () => {
   it('Go opens a place, with no key printed in a browser', async () => {
     shell();
     const user = await openMenu('Go');
-    // A place is one choice among Go's places, said as a radio (UXFIX1); the absence below is asked by that role too, so
+    // A place is one choice among Go's places, said as a radio; the absence below is asked by that role too, so
     // it is Sessions' and not a role's.
     const quests = await screen.findByRole('menuitemradio', { name: 'Quests' });
     expect(quests).not.toHaveTextContent('Ctrl+3');
@@ -313,7 +313,7 @@ describe('the shell in a browser, over two workspaces', () => {
   });
 
   /**
-   * SYNC6b: where the chosen circle stands comes from this machine's host, so a browser here reads it
+   * Where the chosen circle stands comes from this machine's host, so a browser here reads it
    * — and a conflict in it opens that quest. What a browser does not get is *Sync now*: the pass is
    * the shell's.
    */
@@ -338,7 +338,7 @@ describe('the shell in a browser, over two workspaces', () => {
       expect(screen.queryByRole('menuitem', { name: /Sync now/ })).toBeNull();
       await user.keyboard('{Enter}');
 
-      // Its page, in Quests' main area (FRAME1d): a record is the main area, never a drawer.
+      // Its page, in Quests' main area: a record is the main area, never a drawer.
       await screen.findByRole('heading', { level: 1, name: 'Lost the race' });
       expect(within(screen.getByRole('main')).getByRole('region', { name: 'Conflicts' })).toBeInTheDocument();
     } finally {
@@ -397,8 +397,8 @@ describe('the shell in a browser, over two workspaces', () => {
 });
 
 /**
- * One navigation (D66), in a browser. Sessions' centre is a stream and its rows carry tree paths,
- * and neither may leave the machine that produced them (D47 §4) — so the view is absent from the bar
+ * One navigation, in a browser. Sessions' centre is a stream and its rows carry tree paths,
+ * and neither may leave the machine that produced them — so the view is absent from the bar
  * rather than disabled, and a remembered `sessions` cannot resurrect it. Settings is there: a browser
  * has appearance to set.
  */
@@ -422,7 +422,7 @@ describe('the views, in a browser', () => {
   });
 
   /**
-   * UX6j (D150 §2.1): the bar holds places alone, and its foot Settings. Refreshing the index and the language left it for
+   * The bar holds places alone, and its foot Settings. Refreshing the index and the language left it for
    * View, the palette and Settings → Appearance, each a door it already had.
    */
   it('holds its places and, at its foot, Settings alone: no refresh and no language', async () => {
@@ -433,7 +433,7 @@ describe('the views, in a browser', () => {
   });
 
   /**
-   * 🔴 Seen on the window (PERM1): Settings grew a second scrollbar. `sr-only` text is absolutely
+   * 🔴 Seen on the window: Settings grew a second scrollbar. `sr-only` text is absolutely
    * positioned, and with no positioned ancestor inside the scroll column its containing block was
    * the viewport — so a screen-reader label 3,000px down the column stretched the whole document.
    * jsdom lays nothing out, so this holds the one property that prevents it.
@@ -447,7 +447,7 @@ describe('the views, in a browser', () => {
 
   /**
    * UX5 U59: content did not follow the window. The column was capped at 72rem, so a maximized window left every view but Sessions a third
-   * empty. Content follows the window, and since D141 (LAYOUT11) prose wraps at the same edge: a 65ch paragraph beside blocks that ran the
+   * empty. Content follows the window, and since D141 prose wraps at the same edge: a 65ch paragraph beside blocks that ran the
    * pane gave one page two edges.
    */
   it('lets every view follow the window, capping no content column and no paragraph', async () => {
@@ -477,7 +477,7 @@ describe('the views, in a browser', () => {
     expect(document.querySelector('[data-region="list"]')).toBeNull();
   });
 
-  /** FRAME1d (D118 §4): Quests is the first view a browser draws with its list, beside its main area. */
+  /** Quests is the first view a browser draws with its list, beside its main area. */
   it("keeps Quests' list and its main area, with the list's toggle alone on its strip", async () => {
     shell();
     await userEvent.click(within(await screen.findByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Quests' }));
@@ -490,8 +490,8 @@ describe('the views, in a browser', () => {
   });
 
   /**
-   * FRAME1e (D118 §4): Repositories is a browser's list too, and it makes nothing there, since adding is a shell's. Its
-   * groups are the workspaces (UX6g, D150 §4.1), each headed by its row.
+   * Repositories is a browser's list too, and it makes nothing there, since adding is a shell's. Its
+   * groups are the workspaces, each headed by its row.
    */
   it("keeps Repositories' list and its main area, and offers a browser nothing to add or import", async () => {
     shell();
@@ -502,13 +502,13 @@ describe('the views, in a browser', () => {
       .toEqual(['aurora 1 repository', 'default 1 repository']);
     expect(screen.getByRole('button', { name: 'show or hide the repository list (Ctrl+B)' })).toBeInTheDocument();
     expect(within(screen.getByRole('main')).getByText('Choose a repository')).toBeInTheDocument();
-    // Adding and importing touch machine paths (D48 §7): the list's ＋ and its ⋯ are absent, never disabled.
+    // Adding and importing touch machine paths: the list's ＋ and its ⋯ are absent, never disabled.
     expect(within(list).queryByRole('button', { name: 'Add repository' })).toBeNull();
     expect(within(list).queryByRole('button', { name: 'More actions' })).toBeNull();
   });
 
   /**
-   * UX6g (D150 §4.3, D47 §4): a browser is given a workspace's page with what it may know, its repositories and whether it
+   * A browser is given a workspace's page with what it may know, its repositories and whether it
    * syncs, read from this machine's own host; no tab, since branches, setup and accounts are this machine's.
    */
   it("gives a browser a workspace's page read-only: its repositories, and no tab, branch or setting", async () => {
@@ -527,9 +527,9 @@ describe('the views, in a browser', () => {
   });
 
   /**
-   * FRAME1f (D118 §2, §4): Search's list is the box, *local only* and the hits, and Convergence's the similarity and the
+   * Search's list is the box, *local only* and the hits, and Convergence's the similarity and the
    * findings, each beside its main area in a browser too; each makes nothing, so neither list has a ＋. Neither asks the
-   * service anything until it is in front: a comparison over a real index takes seconds. Since UX6i (D150 §2.2) the two
+   * service anything until it is in front: a comparison over a real index takes seconds. Since UX6i the two
    * are one place on the bar, Knowledge, whose list's head switches between them.
    */
   it("holds Search's and Convergence's lists as one place, Knowledge, asking nothing until each is in front", async () => {
@@ -564,7 +564,7 @@ describe('the views, in a browser', () => {
   });
 
   /**
-   * UX6i: every door into either list still reaches it. Ctrl+Shift+F is Knowledge's Search, its box in front, whatever the
+   * Every door into either list still reaches it. Ctrl+Shift+F is Knowledge's Search, its box in front, whatever the
    * place was left on; the palette's *Go to: Convergence* its Convergence; and the place on the bar opens as it was left.
    */
   it("opens Knowledge's Search by Ctrl+Shift+F and its Convergence by the palette, and opens as it was left", async () => {
@@ -605,7 +605,7 @@ describe('the views, in a browser', () => {
     expect(screen.queryByLabelText('sessions')).toBeNull();
   });
 
-  /** In a browser, Settings is appearance and nothing of a machine (D47 §4). */
+  /** In a browser, Settings is appearance and nothing of a machine. */
   it('opens Settings on appearance alone', async () => {
     shell();
     await userEvent.click(await screen.findByRole('button', { name: 'Settings' }));
@@ -656,7 +656,7 @@ describe('every door names its item', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Read the media field names from config' })).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('5e7a11');
-    // Chosen in the list beside it, which a browser keeps (D118 §4).
+    // Chosen in the list beside it, which a browser keeps.
     const list = screen.getByRole('complementary', { name: 'Quests' });
     expect(within(list).getByRole('button', { name: /Read the media field names from config/ })).toHaveAttribute('aria-current', 'true');
   });
@@ -678,7 +678,7 @@ describe('every door names its item', () => {
   });
 
   /**
-   * FRAME1e: a repository's page has a door to its code map, one level into the Map (MAP3a), and the list remembers the
+   * A repository's page has a door to its code map, one level into the Map, and the list remembers the
    * repository. The Map's own place opens the workspace, never a code map a door left there.
    */
   it("a repository's page opens its code map on the Map, which its own place leaves for the workspace", async () => {
@@ -781,14 +781,14 @@ describe('the attention band', () => {
     await userEvent.click(await screen.findByRole('button', { name: /Read the media field names from config/ }));
 
     await screen.findByRole('heading', { level: 1, name: 'Read the media field names from config' });
-    // Its id is its Details' now (UX7c, D152 §7), named on the fold's line.
+    // Its id is its Details' now, named on the fold's line.
     expect(within(screen.getByRole('main')).getByRole('button', { name: /^Details/ })).toHaveTextContent('#5e7a11');
   });
 
 });
 
 /**
- * View › *Refresh the index*: the activity bar's foot holds Settings alone since UX6j (D150 §2.1). The menu is opened from
+ * View › *Refresh the index*: the activity bar's foot holds Settings alone since UX6j. The menu is opened from
  * the keyboard, as the other menus' tests open theirs.
  */
 async function refreshFromView() {
@@ -799,7 +799,7 @@ async function refreshFromView() {
 }
 
 /**
- * REV3: the service names a registered repository whose checkout is not where the registry says — "a
+ * The service names a registered repository whose checkout is not where the registry says — "a
  * repository that quietly stops contributing looks exactly like one with nothing to say" — and the
  * toast read only the count. It says which, as the error it is.
  *
@@ -824,12 +824,12 @@ describe('a refresh, said whole', () => {
 
     expect(await screen.findByText(/Indexed 3 entries/)).toBeTruthy();
     expect(await screen.findByText(/Not found where the registry says: studio/)).toBeTruthy();
-    // Absent is never zero (SEM3b): a refresh the semantic half did not run in says nothing of embedding.
+    // Absent is never zero: a refresh the semantic half did not run in says nothing of embedding.
     expect(screen.queryByText(/Embedded|vectors/)).toBeNull();
   });
 
   /**
-   * SEM3b (D123): the service embeds every part of a long entry, in pieces the deployment's window
+   * The service embeds every part of a long entry, in pieces the deployment's window
    * bounds, and its refresh answer says what that made. The notice says it beside the count, the
    * figures grouped as the reader's language groups them.
    */

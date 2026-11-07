@@ -10,7 +10,7 @@ import { localFrames, MAIN_WIDTHS, NOT_IN_A_MAIN_AREA, sessionWidths, storyWidth
  * are drawn at wide, half and narrow from one helper, and no decorator adds what the page does not have: a gap, a cap, a
  * padding. Every R1 defect passed its stories, which were drawn at 46rem with a gap of their own.
  */
-// Quests' main area is drawn from `asks/` and `quests/` as well (STORYGAP1): an ask's page, its sections, a quest's.
+// Quests' main area is drawn from `asks/` and `quests/` as well: an ask's page, its sections, a quest's.
 const stories = rooted(import.meta.glob('/src/{settings,projects,work,workflow,asks,quests}/**/*.stories.tsx', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>);

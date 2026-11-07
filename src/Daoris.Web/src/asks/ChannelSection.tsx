@@ -19,10 +19,10 @@ const NONE = '*';
 /** The codes the service refuses a post with, which this page has words for; another is said as the service wrote it. */
 const REFUSALS = new Set(['empty', 'too-long', 'bad-to', 'bad-re', 'not-found']);
 
-/** The codes *Send to its session* is refused with, which this page has words for (COWORK1d); another is said as the shell wrote it. */
+/** The codes *Send to its session* is refused with, which this page has words for; another is said as the shell wrote it. */
 const FORWARD_REFUSALS = new Set(['no-part', 'gone', 'held']);
 
-/** The person's *Send to its session* (COWORK1d): a message, the repository whose session it goes to, and how it ended. */
+/** The person's *Send to its session*: a message, the repository whose session it goes to, and how it ended. */
 export type ChannelForward = (message: string, repository: string, answered: ChannelAnswered) => void;
 
 /** A door, in the accent, as the page's other doors are. */
@@ -32,7 +32,7 @@ const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent u
 export const whoOf = (t: TFunction, item: ChannelItem) => {
   if (item.person) return item.origin ? t('asks.channel.who.teammate', { machine: item.origin }) : t('asks.channel.who.you');
   const named = [item.repository, item.agent].filter(Boolean).join(' · ');
-  // An agent outside Daoris is said as itself, that it is outside, and never as a session (CHANNELJOIN1c).
+  // An agent outside Daoris is said as itself, that it is outside, and never as a session.
   if (item.outside) return named ? t('asks.channel.who.outside', { who: named }) : t('asks.channel.who.outsideAgent');
   return named || t('asks.channel.who.session');
 };
@@ -50,15 +50,15 @@ const firstWords = (text: string | null | undefined, limit = 60) => {
  *
  * @remarks
  * **A molecule**: the channel arrives as the shell answered it, and a post leaves as a call with how it ended; nothing is asked
- * here. Daoris's lines are coded and worded in the reader's language (D142); a message is shown as written, and a session's
+ * here. Daoris's lines are coded and worded in the reader's language; a message is shown as written, and a session's
  * is that agent's claim, so it names its repository and agent and never says *You*.
  *
  * **What is unread** is what came after the person's mark when the page was opened: the items are marked *new*, counted in the
  * heading, and the mark moves through the newest once (`onRead`), so the count falls in the rows and the list. The marks stay
  * until the page is left, so what was new is seen. A panel reads a part of the channel and moves no mark.
  *
- * **A teammate's ask's channel** (SESSONE2h, SESSONE2i) is drawn and posted to as an ask's: the post travels to the machine that holds
- * it. The mark moves where `onRead` is handed: the service keeps the person's mark on a teammate's ask its mirror holds (NOTIFY2g).
+ * **A teammate's ask's channel** is drawn and posted to as an ask's: the post travels to the machine that holds
+ * it. The mark moves where `onRead` is handed: the service keeps the person's mark on a teammate's ask its mirror holds.
  * A message a teammate's person wrote names them, never *You*.
  *
  * **A refusal is the service's code** (`empty`, `too-long`, `bad-to`, `bad-re`, `not-found`), said in the composer in the
@@ -75,7 +75,7 @@ export function ChannelSection({
   /** Null while it is being read. */
   channel: Channel | null;
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
-  /** *Send to its session* (COWORK1d). Absent where there is nowhere to send one from, as on a teammate's ask. */
+  /** *Send to its session*. Absent where there is nowhere to send one from, as on a teammate's ask. */
   onForward?: ChannelForward;
   /** The person's mark moved through the newest item shown, once what was unread is on the page. Absent in a panel. */
   onRead?: (through: string) => void;
@@ -252,7 +252,7 @@ function ChannelBody({ channel, onPost, onRead, onOpenQuest, onForward, reposito
   );
 }
 
-/** The receipts a message to one part has words for (COMMS1k); another is said as the shell wrote it. */
+/** The receipts a message to one part has words for; another is said as the shell wrote it. */
 const PART_RECEIPTS = new Set(['waiting', 'held', 'sent', 'taken', 'read']);
 
 /**
@@ -303,9 +303,9 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward 
   anchorOf: (id: string) => string;
   quoted: ChannelItem | null;
   isNew: boolean;
-  /** Absent in a read-only channel (SESSONE2h): there is nothing to answer from here. */
+  /** Absent in a read-only channel: there is nothing to answer from here. */
   onReply?: () => void;
-  /** *Send to its session* for one repository it addresses (COWORK1d); absent where nothing may be sent on from here. */
+  /** *Send to its session* for one repository it addresses; absent where nothing may be sent on from here. */
   onForward?: (repository: string, answered: ChannelAnswered) => void;
 }) {
   const { t } = useTranslation();
@@ -364,7 +364,7 @@ function MessageRow({ item, anchor, anchorOf, quoted, isNew, onReply, onForward 
 }
 
 /**
- * What a message reached in one repository it addresses (COWORK1d, the design §7, §8.4), worded from the shell's state, and *Send to
+ * What a message reached in one repository it addresses, worded from the shell's state, and *Send to
  * its session* where it may be sent on: pressed once, it says it was sent, or why not by the shell's code.
  */
 function ReceiptRow({ receipt, onForward }: { receipt: ChannelReceipt; onForward?: (answered: ChannelAnswered) => void }) {
@@ -418,7 +418,7 @@ export function ChannelPanel({ channel, only, onPost, onForward, onOpenQuest, on
   channel: Channel | null;
   only: { entry: string; repository: string };
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
-  /** *Send to its session* (COWORK1d), as the ask's page offers it. */
+  /** *Send to its session*, as the ask's page offers it. */
   onForward?: ChannelForward;
   onOpenQuest?: (quest: string) => void;
   /** Open the ask's own page, where the whole channel is. Absent where there is nowhere to open it. */

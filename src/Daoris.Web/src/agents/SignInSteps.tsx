@@ -28,7 +28,7 @@ export type SignInActs = {
   onRetry?: () => void;
   onClose?: () => void;
   /**
-   * The other way this sign-in's agent has (CODEXLOGIN1), and the press that stops the one running and starts it; absent where
+   * The other way this sign-in's agent has, and the press that stops the one running and starts it; absent where
    * the agent has one way, or from a surface that holds no running sign-in.
    */
   other?: SignInWay | null;
@@ -54,7 +54,7 @@ export function SignInSteps({
   phases: SignInPhase[];
   /** The tool's own lines, the phases left out. */
   texts: string[];
-  /** The driver's sentence where it refused to start (CODEXSIGNIN2): the first phase failed. */
+  /** The driver's sentence where it refused to start: the first phase failed. */
   refused?: string | null;
   /** The sentence of a sign-in that ended without signing in, and when: the phase it was in failed. */
   failed?: string | null;
@@ -66,7 +66,7 @@ export function SignInSteps({
   const run = latestRun(phases);
   const read = readTool(texts);
   const ended = refused || failed;
-  // The other way (CODEXLOGIN1): offered while one waits, and first, focused, once one failed or was refused; never once the
+  // The other way: offered while one waits, and first, focused, once one failed or was refused; never once the
   // tool has signed someone in and the driver's own phases run.
   const finishing = !ended && ['who', 'lists'].includes(run[run.length - 1]?.phase ?? '');
   const other = acts.other && acts.onSwitch && !finishing ? acts.other : null;
@@ -140,7 +140,7 @@ type ToolRead = {
 };
 
 /**
- * A link on a line, never one to this machine's own address (CODEXLOGIN1): `codex login` says where its local server listens
+ * A link on a line, never one to this machine's own address: `codex login` says where its local server listens
  * (`http://localhost:1455`) before the page to open, and that address is the tool's, never a page for the person.
  */
 function linkOf(text: string): string | null {
@@ -245,7 +245,7 @@ function Browser({ read, since, acts }: { read: ToolRead; since: number | null; 
 }
 
 /**
- * The one-time code a tool shows for the person to enter on its page (CODEXACCT2, CODEXSIGNIN3): read by its own shape, not by
+ * The one-time code a tool shows for the person to enter on its page: read by its own shape, not by
  * a version's words, since the sentence asking for it is the tool's to change. Codex prints a link to its device page and then
  * a code of capital letters and digits in groups joined by a hyphen (`ABCD-12345` in 0.160.0, on the line after
  * `2. Enter this one-time code (expires in 15 minutes)`), so the code is the first such group after the first line with a

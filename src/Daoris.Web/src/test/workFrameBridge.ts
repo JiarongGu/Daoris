@@ -30,7 +30,7 @@ export const eventHandlers = {
 export { moved } from './sliceShell';
 
 export async function shenoraMock() {
-  // What a press moved reaches the frame's state hub as the shell publishes it (STATEHUB1f, D169), never the press's hook.
+  // What a press moved reaches the frame's state hub as the shell publishes it, never the press's hook.
   const { publishing } = await import('./publishing');
   const { mockedShell } = await import('./sliceShell');
   // Every slice's snapshot answered from the same answers the frame's routes are given, and what a press moved pushed.

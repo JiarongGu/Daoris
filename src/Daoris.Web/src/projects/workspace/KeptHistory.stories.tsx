@@ -61,14 +61,14 @@ export const NothingKept: Story = { args: { plan: WORKSPACE_EMPTY } };
 /** Only what records already gone left, and the intake's room: the press takes those. */
 export const LeftOverOnly: Story = { args: { plan: WORKSPACE_LEFT_OVER } };
 
-/** A closed quest whose record holds no file here (HIST1k): the reading says the clear takes it, beside the press. */
+/** A closed quest whose record holds no file here: the reading says the clear takes it, beside the press. */
 export const RecordsOnly: Story = { args: { plan: WORKSPACE_RECORDS_ONLY } };
 
 /** The same in 中文. */
 export const RecordsOnlyChinese: Story = { args: { plan: WORKSPACE_RECORDS_ONLY }, decorators: [chinese] };
 
 /**
- * The same quest beside two left-over files of 0 B (HIST1n): the reading says the records and their size, 0 B, and claims
+ * The same quest beside two left-over files of 0 B: the reading says the records and their size, 0 B, and claims
  * nothing about files, since the next line names the left-over ones.
  */
 export const RecordsBesideEmptyFiles: Story = { args: { plan: WORKSPACE_RECORDS_EMPTY_FILES } };

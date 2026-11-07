@@ -7,7 +7,7 @@ export type MinutesDeclared = { words: string; least: number | null; most: numbe
 
 /**
  * A machine setting held in whole minutes (the cool-off, the quiet bound), drawn in its one key's words (`.label`, `.terminal`,
- * `.body`, `.minutes`) and held to its bounds as the list declares them. Passing through is not a write (REV3), and the driver
+ * `.body`, `.minutes`) and held to its bounds as the list declares them. Passing through is not a write, and the driver
  * refuses a value out of its bounds, so nothing typed, a value out of them, one not whole, or the one held puts the held value back.
  */
 export function MinutesSetting({ setting, held, onSet }: {

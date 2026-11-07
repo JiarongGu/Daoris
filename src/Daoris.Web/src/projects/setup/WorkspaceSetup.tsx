@@ -28,35 +28,35 @@ import type { GitAccessSetup } from './RepositorySetup';
  * save would be refused.
  */
 export type WorkspaceDefaults = {
-  /** Its line (WSR2): `daoris place line --workspace`. */
+  /** Its line: `daoris place line --workspace`. */
   line?: { set?: string; onSet: (branch: string | undefined) => void } | null;
-  /** The language its sessions write in (LANG1c), by the driver's table: `daoris place language --workspace`. */
+  /** The language its sessions write in, by the driver's table: `daoris place language --workspace`. */
   language?: { set?: string; table: LanguageOption[]; onSet: (code: string | undefined) => void } | null;
-  /** Whether agents outside its repositories read their checkouts (READ1, D107): `daoris place across --workspace`. */
+  /** Whether agents outside its repositories read their checkouts: `daoris place across --workspace`. */
   read?: { set?: boolean; onSet: (read: boolean | undefined) => void } | null;
-  /** Where its repositories' work is reviewed before it lands (REVIEWENV1a): `daoris place review --workspace`. */
+  /** Where its repositories' work is reviewed before it lands: `daoris place review --workspace`. */
   review?: { set?: ReviewRule; onChange: (edit: ReviewEdit) => void } | null;
-  /** Which other agent reads its repositories' work before it lands (XAGENT1a): `daoris place opinion --workspace`. */
+  /** Which other agent reads its repositories' work before it lands: `daoris place opinion --workspace`. */
   opinion?: { set?: OpinionRule; onChange: (edit: OpinionEdit) => void } | null;
   /** How its repositories' work is committed (DOORS1b, D164's amendment point 1): `daoris place commits --workspace`. */
   commits?: { set?: CommitRule; onChange: (edit: CommitEdit) => void } | null;
-  /** What a helper its repositories' agents ask for does (DOORS1b, D163 point 3): `daoris place helpers --workspace`. */
+  /** What a helper its repositories' agents ask for does: `daoris place helpers --workspace`. */
   helpers?: { set?: HelperRule; onChange: (edit: HelperEdit) => void } | null;
-  /** What an agent's ask to hand its session over does in its repositories (MIXAGENT1c, D163 point 3): `daoris settings handover --workspace`. */
+  /** What an agent's ask to hand its session over does in its repositories: `daoris settings handover --workspace`. */
   handOver?: { set?: HandOverRule; onChange: (edit: HandOverEdit) => void } | null;
 };
 
-/** This machine's wiring for a workspace, over `remotes.json`: the remote it is wired to, or none (D48 §5). Details draws it. */
+/** This machine's wiring for a workspace, over `remotes.json`: the remote it is wired to, or none. Details draws it. */
 export type WorkspaceWiring = {
   remote: { url: string; key: string } | null;
-  /** The environment names this machine's remote whole, and the file is not read (D48 §5). */
+  /** The environment names this machine's remote whole, and the file is not read. */
   fromEnvironment: boolean;
   /** Wire it; `done` once the key has landed, so the form lets the key go. */
   onWire: (url: string, key: string, done: () => void) => void;
   onUnwire: () => void;
 };
 
-/** Claude Code's rules for the workspace (PERM1) and the machines its remote counts undeclared: its reach, a row of its place's Sessions. */
+/** Claude Code's rules for the workspace and the machines its remote counts undeclared: its reach, a row of its place's Sessions. */
 export type WorkspaceRemote = {
   rules?: {
     lists: RuleLists;
@@ -79,7 +79,7 @@ export type WorkspaceSetupProps = {
   workspace: string;
   defaults: WorkspaceDefaults;
   /**
-   * The access setup its repositories' sessions start under where they set none of their own (AUTONOMY1d, D184 point 1): each
+   * The access setup its repositories' sessions start under where they set none of their own: each
    * pause as it resolves from the workspace, this machine or Daoris's default; absent where the answer lacks it.
    */
   access?: Omit<AccessSetup, 'workspace'> | null;
@@ -87,14 +87,14 @@ export type WorkspaceSetupProps = {
    * The hosts its repositories' git remotes reach and the identity this workspace chooses for each (GITAUTH1e, the git-auth design §7.3);
    * absent where the answer lacks it, and the section is not drawn.
    */
-  /** Its git identities by host (GITAUTH1e) and its git access (GITAUTH1f, §7.3). */
+  /** Its git identities by host and its git access. */
   git?: { hosts: GitHostShown[]; identities: GitIdentityShown[]; acts: GitHostActs; access?: GitAccessSetup | null } | null;
   remote: WorkspaceRemote;
   busy?: boolean;
   /** A section a door asked to see open, beside those that open on their own. */
   open?: WorkspaceSection;
   /**
-   * Which rows are drawn, by the home they have on the workspace place (AGENTSPLACE1f, SETUPUX1v): its Sessions hold the access, the session
+   * Which rows are drawn, by the home they have on the workspace place: its Sessions hold the access, the session
    * language, helpers, hand-over and reading rows, and *Reach* (the rules and the machines its remote counts undeclared); its Workflow the line's
    * defaults (line, landing, commits, review, opinion); the remote's wiring is Repositories' Details and the supervisor the place's Roles.
    * Absent, all.
@@ -108,14 +108,14 @@ const JOIN = ' · ';
 const plain = (text: string) => text.replace(/`/g, '');
 
 /**
- * **A workspace's Setup** (UX6g, D150 §4.3): what it gives each of its repositories that sets none of its own, the access their
- * sessions start under (AUTONOMY1d), and where it syncs with Claude Code's rules for it, in sections that fold to the line naming
+ * **A workspace's Setup**: what it gives each of its repositories that sets none of its own, the access their
+ * sessions start under, and where it syncs with Claude Code's rules for it, in sections that fold to the line naming
  * their values. It is where Settings → Workspace's defaults and wiring and Settings → Permissions' workspace rows went (§3.1).
  *
  * @remarks
  * **What Daoris decides folds; what the person decides shows** (§1 rule 4): a value the workspace does not set reads as
  * Daoris's default, marked, and offers *Set for this workspace*; one it sets carries *Clear*, and opens its section. Each
- * row's hint is its terminal twin (D41 §4, D50), the same file either door edits, so a refusal is the driver's sentence;
+ * row's hint is its terminal twin, the same file either door edits, so a refusal is the driver's sentence;
  * the workspace in it is spelled for whichever shell it is pasted into (`shellWord`, ACCTQUOTE1).
  * **A key goes in and never comes out**: the remote shows the audit prefix the wiring answered, and the form lets the key
  * go once it has landed.
@@ -157,7 +157,7 @@ export function WorkspaceSetup({
   const rules = remote.rules?.lists;
   const ruleCount = rules ? rules.allow.length + rules.ask.length + rules.deny.length : 0;
   const rulesSays = rules ? [ruleCount > 0 ? t('projects.setup.summary.rules', { count: ruleCount }) : t('projects.setup.summary.noRules')] : [];
-  // The place's Sessions hold the rules and the retirement of an undeclared machine under Reach; the wiring is Details' (SETUPUX1v).
+  // The place's Sessions hold the rules and the retirement of an undeclared machine under Reach; the wiring is Details'.
   const undeclared = remote.machines?.undeclared.length ?? 0;
   const reachParts = rows !== 'sessions' ? [] : [
     ...rulesSays,
@@ -178,7 +178,7 @@ export function WorkspaceSetup({
     </SettingRow>
   );
 
-  // Sessions' access (AUTONOMY1d): the same rows as a repository's, one level up.
+  // Sessions' access: the same rows as a repository's, one level up.
   const accessShown = access && access.pauses.length > 0 ? access : null;
 
   const opensItself: Record<WorkspaceSection, boolean> = {
@@ -186,10 +186,10 @@ export function WorkspaceSetup({
       || commits?.set || helpers?.set || handOver?.set),
     access: Boolean(accessShown?.pauses.some((each) => each.source === 'workspace')),
     reach: ruleCount > 0 || undeclared > 0,
-    // A host its repositories reach and no identity serves opens it (GITAUTH1e); so does git access set here (GITAUTH1f).
+    // A host its repositories reach and no identity serves opens it; so does git access set here.
     git: Boolean(gitShown?.hosts.some((each) => !each.chosen && !gitShown.identities.some((identity) => identity.host === each.host && identity.way === each.way))
       || gitShown?.access?.classes.some((each) => each.source === 'workspace')),
-    // The supervisor is a role of the place's Roles (D233 point 2): the Setup draws no section of it.
+    // The supervisor is a role of the place's Roles: the Setup draws no section of it.
     supervisor: false,
     // The remote's wiring is a row of Details, so Setup draws no section of it.
     remote: false,
@@ -417,7 +417,7 @@ export function WorkspaceSetup({
           title={section.id === 'git' ? t('settings.git.workspace.title') : t(`projects.setup.section.${section.id}`)}
           summary={section.summary}
           startsOpen={opensItself[section.id] || open === section.id}
-          // A place's page finds the row a door named by this (SETUPUX1v); Sessions' own Defaults is not Workflow's.
+          // A place's page finds the row a door named by this; Sessions' own Defaults is not Workflow's.
           row={rows === 'defaults' ? section.id : rows === 'sessions' ? (section.id === 'defaults' ? 'sessionDefaults' : section.id) : undefined}
         >
           {section.body}
@@ -428,7 +428,7 @@ export function WorkspaceSetup({
 }
 
 /**
- * Where it syncs (D48 §5): the remote it is wired to, its key's audit prefix and *Unwire*, or *local only* and *Wire…*,
+ * Where it syncs: the remote it is wired to, its key's audit prefix and *Unwire*, or *local only* and *Wire…*,
  * which opens the form one press away, since wiring is done once per machine per deployment. With the environment naming
  * the remote, the file is not read, and the row says which source decided.
  */

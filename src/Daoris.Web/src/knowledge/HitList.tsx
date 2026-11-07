@@ -25,7 +25,7 @@ export type HitsAnswer =
     hits: Hit[];
     /** The service capped them: there are more than these. */
     more: boolean;
-    /** The answer was made by meaning too (TIER1). */
+    /** The answer was made by meaning too. */
     byMeaning: boolean;
     /** Neither half answered, which is not nothing matching. */
     nothing: boolean;
@@ -34,7 +34,7 @@ export type HitsAnswer =
   };
 
 /**
- * **Search's list** (FRAME1f, D118 §2): the box, *each repository's own only*, and the hits. A hit is a row of the list,
+ * **Search's list**: the box, *each repository's own only*, and the hits. A hit is a row of the list,
  * and choosing one reads its entry in the main area, where it was a drawer (audit SR4).
  *
  * @remarks
@@ -62,7 +62,7 @@ export function HitList({
   answer: HitsAnswer;
   /** The query whose terms are marked in each excerpt. */
   marked: string;
-  /** This deployment matches meaning too (D24): a hit found by words alone is then said to be. */
+  /** This deployment matches meaning too: a hit found by words alone is then said to be. */
   semantic: boolean;
   /** The list's chosen item: an entry's id. */
   chosen: string | null;
@@ -87,7 +87,7 @@ export function HitList({
             aria-label={t('search.box')}
             placeholder={t('search.placeholder')}
             onChange={(event) => onQuery(event.target.value)}
-            // Escape clears a search, and one with nothing in it is left to the list laid over (D118 §3a).
+            // Escape clears a search, and one with nothing in it is left to the list laid over.
             onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape' && query) { event.preventDefault(); onQuery(''); } }}
             className="min-h-6 min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
           />
@@ -144,7 +144,7 @@ export function HitList({
                 key={hit.id}
                 aria-label={hit.title}
                 data-list-row=""
-                // A hit is a document's link: a right-click opens it or copies its path (CTX1, D138 §4).
+                // A hit is a document's link: a right-click opens it or copies its path.
                 {...contextOffer({
                   label: hit.title,
                   acts: [

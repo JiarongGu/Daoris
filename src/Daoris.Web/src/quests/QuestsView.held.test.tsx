@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// USE1: why the driver leaves a quest waiting, on its row of the list, with the bridge present — the hold is
+// Why the driver leaves a quest waiting, on its row of the list, with the bridge present — the hold is
 // this machine's driver's, so the row's resume exists only where one is attached.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({

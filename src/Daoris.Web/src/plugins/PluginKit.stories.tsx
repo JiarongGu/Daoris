@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PluginKitCard, type PluginTrialResult } from './PluginKit';
 
-// The kit a plugin is made with (PLUG8, D101), in the shape the driver's PLUGINS and PLUGIN_TRY answers
+// The kit a plugin is made with, in the shape the driver's PLUGINS and PLUGIN_TRY answers
 // take: an empty form, a folder just made, and a trial that failed with what the plugin said.
 
 const POINTS = [

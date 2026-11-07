@@ -8,7 +8,7 @@ import { menuActs, rightClick } from '../test/contextMenu';
 import type { Entry } from '../data/api';
 import { EntryMainNotice, EntryPage } from './EntryPage';
 
-// An entry's page (FRAME1f, D118 §2): what the reader drawer showed, in Search's main area. Moved from the reader's
+// An entry's page: what the reader drawer showed, in Search's main area. Moved from the reader's
 // own suite with it.
 
 const ENTRY = {
@@ -88,7 +88,7 @@ describe("Search's main area with no entry", () => {
   });
 });
 
-/** CTX1 (D138, design §4): an entry's page offers its path on a right-click. */
+/** An entry's page offers its path on a right-click. */
 describe("an entry's page on a right-click", () => {
   it('offers Copy path', async () => {
     const copy = vi.fn();

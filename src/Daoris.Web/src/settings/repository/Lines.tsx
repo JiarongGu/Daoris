@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 import { Button } from '../../design/ui';
 import type { LandingIntegrate } from './IntegratePolicy';
 
-/** Where a repository's line came from (WSR2): set for it, set for its workspace, the checkout's guess, or nothing. */
+/** Where a repository's line came from: set for it, set for its workspace, the checkout's guess, or nothing. */
 export type LineSource = 'repository' | 'workspace' | 'checkout' | 'none';
 
 /** One repository's line on this machine, as the driver resolves it — the answer every door reads. */
@@ -25,7 +25,7 @@ export type LineChange = { repository?: string; workspace?: string; branch?: str
 /**
  * One line's field: what is set, with what would stand without it as the placeholder, and a clear
  * only where something is set — clearing an inherited line would change nothing and say it had.
- * A repository's Setup gives each value its own *Clear* beside the field (UX6f), so there it carries none.
+ * A repository's Setup gives each value its own *Clear* beside the field, so there it carries none.
  */
 export function LineField({ label, set, placeholder, busy, clearable = true, onSave }: {
   label: string;

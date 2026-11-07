@@ -6,7 +6,7 @@ import i18n from '../../locales/i18n';
 import type { UpdateState } from '../../update/UpdateBanner';
 import { UpdateSection } from './Update';
 
-// UPDATE1b (D139 §3, §6): the install's update as Settings' row draws it, from props alone. The Driver domain's suite
+// The install's update as Settings' row draws it, from props alone. The Driver domain's suite
 // holds it over the mocked bridge; this holds the words a state carries and the states the bridge rarely shows.
 
 const STAGED = { id: '20261003T120000Z-ab12cd34', version: '0.0.1', commit: 'abc1234', at: '2026-10-03T12:00:00Z' };
@@ -63,8 +63,8 @@ describe("Settings' update row", () => {
     expect(onSay).not.toHaveBeenCalled();
   });
 
-  // UPDATE1d: the row tells the swap `last` carries, the journal's record told or not, and never the banner's once-said
-  // `outcome`, which a dismissal puts away while the terminal still says the swap (D50).
+  // The row tells the swap `last` carries, the journal's record told or not, and never the banner's once-said
+  // `outcome`, which a dismissal puts away while the terminal still says the swap.
   it('says the last swap from `last`, never from the outcome the banner says once', () => {
     draw(standing({
       outcome: { phase: 'installed', build: 'old', version: '0.0.1', commit: 'aaa1111' },
@@ -86,7 +86,7 @@ describe("Settings' update row", () => {
     expect(screen.queryByText('Last update')).toBeNull();
   });
 
-  // SWAP2c (D139's SWAP2 note): the row words a check's code from the banner's catalogue, so SWAP2's two codes are said
+  // The row words a check's code from the banner's catalogue, so SWAP2's two codes are said
   // in the reader's language here too, never in the journal's English sentence.
   it.each([
     {

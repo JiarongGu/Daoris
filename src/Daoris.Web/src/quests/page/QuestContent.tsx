@@ -31,7 +31,7 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
       )}
 
       {!held && requirements.length > 0 && (
-        /* What the person required (DRIFT1c, D133 §3), in their words: the measure, where the body above is the intake's
+        /* What the person required, in their words: the measure, where the body above is the intake's
            reading of the ask. Then how its done answered each, and when a departure was accepted. */
         <QuestRequirements
           className="mt-4"
@@ -66,7 +66,7 @@ export function QuestContent({ body, request, held, requirements, quest, t }: {
       )}
 
       {(quest.attachments?.length ?? 0) > 0 && (
-        /* The files, by name (D65 §2). One this machine keeps opens through the host's own route — never by its
+        /* The files, by name. One this machine keeps opens through the host's own route — never by its
            path, which a page does not show — and a picture is shown as one. One named on the record and kept
            elsewhere says so, rather than looking like a broken link. Kept here is a path pulled or `kept` pushed (PUSH1d3). */
         <div className="mt-4">

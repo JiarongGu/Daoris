@@ -4,7 +4,7 @@ import i18n from '../../locales/i18n';
 import { code } from '../../test/code';
 import { type HelpProposal, ProposalCard } from '../ProposalCard';
 
-// CONTEXTDRIVE1k: the card of a place's supervisor rules is worded from the catalogue, not carried as the driver's English sentence.
+// The card of a place's supervisor rules is worded from the catalogue, not carried as the driver's English sentence.
 
 const RULES: HelpProposal = {
   id: 'p30', kind: 'role', describe: 'Supervisor, repository:daoris: none here → answers-alone at 3: hold for build.',

@@ -3,7 +3,7 @@ import type { AccountSettings } from '../../agents/tools';
 import { storyWidths } from '../../design/storyWidths';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
 
-// An account's own model and effort (AGT6, D98), in the shapes the driver's roster answers with: the
+// An account's own model and effort, in the shapes the driver's roster answers with: the
 // account's file as read, and the choices the tool itself offers.
 
 const CHOICES = {
@@ -52,7 +52,7 @@ const ROWS: [label: string, settings: AccountSettings][] = [
 
 /**
  * The line each account's row carries on the agent's page: what is set, and a file the driver could not read, its
- * sentence verbatim in the danger ink a red word wears (UXFIX5b), never the declined fill's colour.
+ * sentence verbatim in the danger ink a red word wears, never the declined fill's colour.
  */
 export const TheSummaryLines: Story = {
   render: () => (

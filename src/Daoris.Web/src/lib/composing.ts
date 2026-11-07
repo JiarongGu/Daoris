@@ -5,7 +5,7 @@
 export type KeyPress = { keyCode: number; isComposing?: boolean; nativeEvent?: { isComposing: boolean } };
 
 /**
- * Whether an input method is composing with this press (IME1): the press is the input method's, and a handler that
+ * Whether an input method is composing with this press: the press is the input method's, and a handler that
  * acts on Enter, Escape, Tab or the arrows asks this first and does nothing when it answers yes.
  *
  * @remarks

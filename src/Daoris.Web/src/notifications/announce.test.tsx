@@ -68,7 +68,7 @@ describe('announcing a press', () => {
     expect(result.current.close(12345)).toBe(false);
   });
 
-  // CONFIRMWAIT1a-i (the confirm-wait design §8.2, §10's two-asks row): two presses within a minute are two toasts in the focused main
+  // Two presses within a minute are two toasts in the focused main
   // window, one per press, each by its id; only the balloon behind the window folds them (the modules' `BalloonFold`).
   it('says two presses asked within a minute as two toasts, one per press, each by its id', () => {
     const { result } = announce({ presses: [PIPE, { ...PIPE, id: 'c2', route: 'SET_DRIVABLE' }], viewOpen: false });
@@ -80,7 +80,7 @@ describe('announcing a press', () => {
     expect(result.current.toasts.map((toast) => toast.text)).toEqual(['asks: c1', 'asks: c2']);
   });
 
-  // NOTIFY2j: the shell tells every window one list at once, so the window focused as it is told says it, and no other.
+  // The shell tells every window one list at once, so the window focused as it is told says it, and no other.
   it("says a service's press once across two windows told it, in the one focused as they are", () => {
     focused.mockReturnValue(false);
     const behind = announce({ presses: [], viewOpen: false });
@@ -200,7 +200,7 @@ describe('announcing an urgent message', () => {
   });
 });
 
-// A conversation's answer is read when its conversation is the one attended in a window visible and focused (NOTIFY2g, §2.4).
+// A conversation's answer is read when its conversation is the one attended in a window visible and focused.
 describe('reading an answer where its conversation is on screen', () => {
   let focused: ReturnType<typeof vi.spyOn>;
   beforeEach(() => { focused = vi.spyOn(document, 'hasFocus').mockReturnValue(true); });

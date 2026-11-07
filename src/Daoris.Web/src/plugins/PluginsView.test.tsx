@@ -5,14 +5,14 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The Plugins view on the frame (PLUGUI1b, D119 §3), over a mocked shell: the list, the page, the offer's page and the
+// The Plugins view on the frame, over a mocked shell: the list, the page, the offer's page and the
 // kit's drawer, each act landing on the driver's routes, and what the view remembers. The whole window, at its foot,
 // for the doors into the view: the activity bar's place and the Daoris menu.
 
 const { invoke, notifyReady, hub } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
-  // The state hub's ear (STATEHUB1d, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  // The state hub's ear: what the mocked shell publishes after a press reaches it, as the kit's pump would.
   hub: { heard: undefined as ((change: unknown) => void) | undefined },
 }));
 
@@ -145,14 +145,14 @@ describe('the Plugins view', () => {
     const onAsk = vi.fn();
     show({ onAsk });
 
-    // The catalogue (D140 §2): the installed, the one waiting on you first, then Daoris's own not installed.
+    // The catalogue: the installed, the one waiting on you first, then Daoris's own not installed.
     expect(await within(list()).findByText('Installed (2)')).toBeInTheDocument();
     const rows = within(within(list()).getByText('Installed (2)').closest('section')!).getAllByRole('button');
     expect(rows.map((row) => (row.textContent?.includes('Future') ? 'Future' : 'Acme gate'))).toEqual(['Future', 'Acme gate']);
     expect(within(list()).getByText("Daoris's own plugins (1)")).toBeInTheDocument();
     expect(within(main()).getByText('Choose a plugin')).toBeInTheDocument();
 
-    // Asking comes first: a plugin is made as an ask, with its tests (PLUG9). It opens Ask Daoris on a whole message.
+    // Asking comes first: a plugin is made as an ask, with its tests. It opens Ask Daoris on a whole message.
     await userEvent.click(within(main()).getByRole('button', { name: 'Ask Daoris for a plugin' }));
     expect(onAsk).toHaveBeenCalledWith(
       "I'd like a new plugin for Daoris. Ask me what it should do and where it speaks, then propose it as an ask at the repository that holds plugins.");
@@ -174,7 +174,7 @@ describe('the Plugins view', () => {
   });
 
   /**
-   * HELPPLUG1c: the in-app browser's page approves `browser` for Ask Daoris through `PLUGIN_ACTION`, all its reads and each
+   * The in-app browser's page approves `browser` for Ask Daoris through `PLUGIN_ACTION`, all its reads and each
    * write the person ticked, and asks for the catalogue again; a withdrawal sends no writes.
    */
   it('approves a server for Ask Daoris with the writes ticked, and withdraws it, at the driver', async () => {
@@ -232,7 +232,7 @@ describe('the Plugins view', () => {
     expect(notify).toHaveBeenCalledWith(expect.stringMatching(/^acme\.gate is updated/));
   });
 
-  /** LANDPIN3: a copy with no record of its own, older than the install's, takes the install's copy by the person's press. */
+  /** A copy with no record of its own, older than the install's, takes the install's copy by the person's press. */
   it('updates an older copy of a shipped plugin from the install by two presses, asking for the shipped copy', async () => {
     answer([{ ...GATE, source: { kind: 'none' }, shipped: { state: 'older', installed: '1.2.0', shipped: '1.3.0', changes: 'Pushes the commit judged.' } }]);
     routes.PLUGIN_UPDATE = ({ id, apply }) => (apply
@@ -314,7 +314,7 @@ describe('the Plugins view', () => {
     expect(calls('PLUGIN_ACTION')).toEqual([]);
   });
 
-  /** Gone is read by the code, never by the sentence (D48 §6): `PLUGIN_UNKNOWN` (D119 §3.2). */
+  /** Gone is read by the code, never by the sentence: `PLUGIN_UNKNOWN`. */
   it('says a plugin removed at a terminal is no longer here, by the driver\'s code', async () => {
     routes.PLUGIN_ACTION = () => {
       answer([FUTURE]);
@@ -333,7 +333,7 @@ describe('the Plugins view', () => {
     expect(await within(main()).findByText('This plugin is no longer here')).toBeInTheDocument();
   });
 
-  // UX6b (design §1 rule 6): a remembered choice ends with what it chose, so a removed plugin opens nothing chosen.
+  // A remembered choice ends with what it chose, so a removed plugin opens nothing chosen.
   it('opens with nothing chosen on a remembered plugin that has gone, and forgets it', async () => {
     window.localStorage.setItem('daoris.list.plugins.chosen', 'nobody');
     show();
@@ -361,7 +361,7 @@ describe('the Plugins view', () => {
     expect(await within(main()).findByText('It answered allow in 41 ms.')).toBeInTheDocument();
   });
 
-  // ADOSIGNIN1: the page draws a plugin's declared tools and asks nothing; Check reads them, a press opens the person's console
+  // The page draws a plugin's declared tools and asks nothing; Check reads them, a press opens the person's console
   // for the one check, and the tool is read again from the answer.
   describe("a plugin's tools", () => {
     const SHIP_CHECKS = [
@@ -549,12 +549,12 @@ describe('the doors into the Plugins view', () => {
     // A shell-only place is on the bar once the driver has answered.
     await within(bar()).findByRole('button', { name: 'Plugins' });
     const names = within(bar()).getAllByRole('button').map((place) => place.getAttribute('aria-label') ?? place.textContent);
-    // After Agents, the place UX6e put after Search, which is Knowledge since UX6i (D150 §2.1).
+    // After Agents, the place UX6e put after Search, which is Knowledge since UX6i.
     expect(names.indexOf('Agents')).toBe(names.indexOf('Knowledge') + 1);
     expect(names.indexOf('Plugins')).toBe(names.indexOf('Agents') + 1);
     await userEvent.click(within(bar()).getByRole('button', { name: 'Plugins' }));
     expect(await screen.findByText('Installed (2)')).toBeInTheDocument();
-    // The list's doors are named for it (D118 §3a).
+    // The list's doors are named for it.
     expect(screen.getByRole('button', { name: 'show or hide the plugin list (Ctrl+B)' })).toBeInTheDocument();
     // Fetched only once the view is in front: no other view asks for the catalogue.
     expect(calls('PLUGINS').length).toBeGreaterThan(0);
@@ -566,13 +566,13 @@ describe('the doors into the Plugins view', () => {
     expect(calls('PLUGINS')).toEqual([]);
   });
 
-  /** Go › Plugins, Ctrl+8 (UX7a, D152 §3.7): the Daoris menu's *Plugins* before it. */
+  /** Go › Plugins, Ctrl+8: the Daoris menu's *Plugins* before it. */
   it('opens from the Go menu, and on Ctrl+8', async () => {
     start();
     const user = userEvent.setup();
     (await screen.findByRole('button', { name: 'Go' })).focus();
     await user.keyboard('{Enter}');
-    // A place is one choice among Go's places, said as a radio (UXFIX1).
+    // A place is one choice among Go's places, said as a radio.
     const plugins = await screen.findByRole('menuitemradio', { name: /^Plugins/ });
     expect(plugins).toHaveTextContent('Ctrl+8');
     expect(plugins).toHaveAttribute('aria-checked', 'false');

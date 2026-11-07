@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// SETUPUX1k (the setup-UX design §2.2, §3 flow 1, the reads' B1, B9, Codex 4, N13, N14, N19): *Set up…*'s review, a molecule: what changes, what
+// *Set up…*'s review, a molecule: what changes, what
 // stops it, what it starts and lowers, the work it releases, the acceptances, the terminal line, and one *Apply* that waits while a plan is read.
 
 import i18n from '../../locales/i18n';

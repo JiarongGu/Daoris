@@ -40,7 +40,7 @@ type Story = StoryObj<typeof AskPage>;
 export const Proposed: Story = {};
 
 /**
- * REVIEWENV1g: the review of its work, the person's choice standing with their words, an intake's proposal beside it with
+ * The review of its work, the person's choice standing with their words, an intake's proposal beside it with
  * *Apply*, and the choice to change.
  */
 export const ReviewChosen: Story = {
@@ -58,7 +58,7 @@ export const ReviewChosen: Story = {
 /** The same in 中文. */
 export const ReviewChosenChinese: Story = { ...ReviewChosen, decorators: [chinese] };
 
-/** WORKFLOW1i-c: the kind of its work, the person's choice standing with its workflow, an intake's proposal beside it with *Apply*. */
+/** The kind of its work, the person's choice standing with its workflow, an intake's proposal beside it with *Apply*. */
 export const KindProposed: Story = {
   args: {
     ask: {
@@ -72,7 +72,7 @@ export const KindProposed: Story = {
 
 /** The same in 中文. */
 export const KindProposedChinese: Story = { ...KindProposed, decorators: [chinese] };
-/** Its sentence names a repository (ASKNAME1b): that one first, *named in the ask*, then a word match with its words. */
+/** Its sentence names a repository: that one first, *named in the ask*, then a word match with its words. */
 export const NamesItsRepository: Story = { args: { ask: NAMES_ITS_REPOSITORY } };
 /** Nothing in the circle's declarations shares its words, and the page says so. */
 export const Unmatched: Story = { args: { ask: UNMATCHED } };
@@ -85,7 +85,7 @@ export const RefusedReceiver: Story = { args: { ask: REFUSED } };
 /** Every quest it became has closed: done. */
 export const Done: Story = { args: { ask: DONE } };
 /**
- * Done, and its plan says its work may go (HIST1e, D153 §6.1): *Clear from this machine…* in its header's ⋯, listing under
+ * Done, and its plan says its work may go: *Clear from this machine…* in its header's ⋯, listing under
  * the header on its first press (`Work/Clear`'s ask).
  */
 export const DoneWithItsClear: Story = {
@@ -94,7 +94,7 @@ export const DoneWithItsClear: Story = {
     history: { plan: { ...ASK_PLAN, id: DONE.id, units: [{ ...ASK_PLAN.units[0]!, id: DONE.id, asks: [DONE.id] }] }, busy: false, onClear: nothing },
   },
 };
-/** Nothing stands on its quests, so the service says it may go (D95): *Delete…* beside *Close ask*. */
+/** Nothing stands on its quests, so the service says it may go: *Delete…* beside *Close ask*. */
 export const Deletable: Story = { args: { ask: { ...PUBLISHED, deletable: true } } };
 /** Closed with its reason: nothing more to do. */
 export const Closed: Story = { args: { ask: CLOSED } };
@@ -107,7 +107,7 @@ export const LongCjk: Story = { args: { ask: LONG_CJK } };
 // A flex item of the main area's height frame, with no padding of its own, so the page's scroll box stays bounded.
 const dark: Decorator = (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>;
 /**
- * A request of a thousand characters with no line break, as the install's longest are (HEAD2d, D162 §4): the state leads, the
+ * A request of a thousand characters with no line break, as the install's longest are: the state leads, the
  * title keeps two lines, one line of facts follows, and *View full request* reads it whole in the body. At a 1546 px window.
  */
 export const LongRequest: Story = { args: { ask: LONG_ASK }, decorators: [storyWidths.wide] };
@@ -119,7 +119,7 @@ export const LongRequestAtTheFloor: Story = { args: { ask: LONG_ASK }, decorator
 export const LongRequestDark: Story = { args: { ask: LONG_ASK }, decorators: [storyWidths.wide, dark] };
 /** The same in 中文. */
 export const LongRequestChinese: Story = { args: { ask: LONG_ASK }, decorators: [chinese, storyWidths.wide] };
-/** The same request with its asker's short title (HEAD2e): the head says it, and the body opens on the whole request. */
+/** The same request with its asker's short title: the head says it, and the body opens on the whole request. */
 export const ShortTitled: Story = { args: { ask: SHORT_TITLED }, decorators: [storyWidths.wide] };
 /** The same in 中文. */
 export const ShortTitledChinese: Story = { args: { ask: SHORT_TITLED }, decorators: [chinese, storyWidths.wide] };
@@ -128,7 +128,7 @@ export const ByIntake: Story = { args: { ask: BY_INTAKE, intake: INTAKE_SESSION,
 /** The same page in a browser: the session is named, and is not a door. */
 export const ByIntakeInABrowser: Story = { args: { ask: BY_INTAKE, intake: INTAKE_SESSION } };
 /**
- * Its intake's note by code (LANG1b, D142): the line in the window's language, its quests joined the reader's way. The
+ * Its intake's note by code: the line in the window's language, its quests joined the reader's way. The
  * two above are a record from before parts, shown as kept and marked.
  */
 export const ByIntakeByCode: Story = {
@@ -150,14 +150,14 @@ export const IntakeAsked: Story = { args: { ask: INTAKE_ASKED, intake: INTAKE_PA
 /** An intake the page has not loaded: named by its id, and no door that would open nothing. */
 export const IntakeUnloaded: Story = { args: { ask: BY_INTAKE, intake: null, onAttend: nothing } };
 /**
- * Its sessions asked for go-aheads (KNOWUSE1a): one approved with the person's words, one refused, one waiting that two
+ * Its sessions asked for go-aheads: one approved with the person's words, one refused, one waiting that two
  * sessions asked, the second where its words could not be told from the first's, and a kind this page has no word for.
  */
 export const GoAheads: Story = { args: { ask: WITH_GO_AHEADS, onAnswerGoAhead: nothing } };
 /** The same go-aheads where there is no door to answer them: what became of each, and nothing offered. */
 export const GoAheadsWithNoDoor: Story = { args: { ask: WITH_GO_AHEADS } };
 /**
- * GOAHEADSTALE1: the waiting one stale, nothing on the ask having needed it for six days: marked so with how long, and its refusal
+ * The waiting one stale, nothing on the ask having needed it for six days: marked so with how long, and its refusal
  * the one answer offered.
  */
 export const GoAheadsStale: Story = {
@@ -167,7 +167,7 @@ export const GoAheadsStale: Story = {
   },
 };
 
-// ——— Its work on this machine (PAUSE1e, D132 §7.1): *Pause…*, *Resume* and *Abandon…* where each applies, from the
+// ——— Its work on this machine: *Pause…*, *Resume* and *Abandon…* where each applies, from the
 // driver's plan.
 
 const work = (over: Partial<WorkDoor> = {}): WorkDoor => ({
@@ -179,7 +179,7 @@ const WORKING = { ...PUBLISHED, id: 'a1b2c3', deletable: true };
 export const WorkInFlight: Story = { args: { ask: WORKING, work: work() } };
 /** Paused here: *paused* beside its state, and *Resume* its loud act. */
 export const WorkPaused: Story = { args: { ask: WORKING, work: work({ plan: PAUSED_ASK }) } };
-/** A long request, paused: *Resume* its loud act, the rest in its ⋯ (HEAD2d). */
+/** A long request, paused: *Resume* its loud act, the rest in its ⋯. */
 export const LongRequestPaused: Story = { args: { ask: LONG_ASK, work: work({ plan: PAUSED_ASK }) }, decorators: [storyWidths.wide] };
 /** The plan still on its way: none of the three is offered until it answers. */
 export const WorkReading: Story = { args: { ask: WORKING, work: work({ plan: null }) } };
@@ -194,7 +194,7 @@ export const WorkPartlyElsewhere: Story = { args: { ask: WORKING, work: work({ p
 /** In a browser: none of the three, and the terminal's commands named. */
 export const WorkInABrowser: Story = { args: { ask: WORKING } };
 
-// ——— Its work listed (PAUSE1h, D132 §7.1): each quest of the plan with its state and why it sits, the questions its sessions
+// ——— Its work listed: each quest of the plan with its state and why it sits, the questions its sessions
 // asked under the quest whose session asked them, and those sessions as doors into Sessions.
 
 const LISTED = { ...WORKING, quests: ['9a8b7c', '5e4f3d', '2d3e4f', '3c2b1a'] };
@@ -221,7 +221,7 @@ export const WorkListedWithNoDoors: Story = {
   args: { ask: LISTED, questTitles: { '9a8b7c': LISTED_TITLES['9a8b7c'] }, work: work({ plan: LISTED_ASK }), considered: LISTED_CONSIDERED },
 };
 
-/** REVIEWFLOW1b: a go-ahead unanswered, so the facts lead with *waiting on you* and *next: Answer* moves to it. */
+/** A go-ahead unanswered, so the facts lead with *waiting on you* and *next: Answer* moves to it. */
 const WAITS_ON_YOU = { ...WITH_GO_AHEADS, goAheads: [{ ...WITH_GO_AHEADS.goAheads![0]!, state: 'asked' as const, answer: null }] };
 export const NextAnswerWide: Story = { args: { ask: WAITS_ON_YOU, onAnswerGoAhead: nothing } };
 export const NextAnswerNarrow: Story = { ...NextAnswerWide, decorators: [storyWidths.narrow] };

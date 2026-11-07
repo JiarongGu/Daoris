@@ -9,7 +9,7 @@ export const QUEST_STATUSES = ['Open', 'Taken', 'Done', 'Declined'] as const;
 type Status = (typeof QUEST_STATUSES)[number];
 
 /**
- * The moves `QuestTransitions.Allows` allows (D46 §3): taken only from open; done and declined from open or taken; nothing
+ * The moves `QuestTransitions.Allows` allows: taken only from open; done and declined from open or taken; nothing
  * leaves a close, and nothing returns to open. A page constant, held to the service's source by `questLife.test.ts`.
  */
 export const QUEST_MOVES: readonly (readonly [Status, Status])[] = [

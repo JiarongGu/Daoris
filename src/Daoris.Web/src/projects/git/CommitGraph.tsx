@@ -4,7 +4,7 @@ import { type GraphCommit, graphLanes } from './graphLanes';
 
 /**
  * A commit as the graph draws it: what its row says, beside what its lanes are laid from. The bridge's `GitLogCommit` is
- * one, so `GIT_GRAPH`'s commits are handed as they are answered, and the molecule imports nothing of the bridge (D52).
+ * one, so `GIT_GRAPH`'s commits are handed as they are answered, and the molecule imports nothing of the bridge.
  */
 export type GraphCommitRow = GraphCommit & {
   subject: string;

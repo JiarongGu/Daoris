@@ -4,7 +4,7 @@ import { type HelpServerShown, pluginState, type PluginShown } from '../../plugi
 import { PluginIcon } from '../../plugins/PluginIcon';
 import { STATE_WORD } from '../../plugins/PluginList';
 
-/** A server's approval in a word, as its plugin's page judges it (HELPPLUG1c): changed since approved is a wait that asks again. */
+/** A server's approval in a word, as its plugin's page judges it: changed since approved is a wait that asks again. */
 function approval(server: HelpServerShown): string {
   const state = server.state ?? 'waits';
   return state === 'waits' && server.changed ? 'changed' : state;

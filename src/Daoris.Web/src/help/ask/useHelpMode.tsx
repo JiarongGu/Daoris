@@ -31,8 +31,8 @@ export function useHelpMode({ shown, known, live, picked, setChosen, readied, re
   const offered = driver.data !== undefined && 'helpMode' in driver.data;
   const selectedMode = helpModeOf(driver.data?.helpMode);
   const runningMode = shown && known?.mode !== undefined ? helpModeOf(known.mode) : null;
-  // ACCESSSWAP1 (D183 point 2): the driver ends a conversation whose access changed at its turn's end, and the person's next words
-  // resume it under the access chosen (D131). Seen running under another access, it is kept in view as chosen once it ends, so those
+  // The driver ends a conversation whose access changed at its turn's end, and the person's next words
+  // resume it under the access chosen. Seen running under another access, it is kept in view as chosen once it ends, so those
   // words go on in it rather than start another beside it. The ending and the driver's word that it no longer runs may come in either
   // order, so having been seen pending is enough.
   const swapping = Array.isArray(driver.data?.helpSwapping) ? driver.data.helpSwapping : [];
@@ -58,7 +58,7 @@ export function useHelpMode({ shown, known, live, picked, setChosen, readied, re
   const choice = useModeChoice(selectedMode, (mode, answered) => setMode.mutate({ mode }, {
     onSuccess: () => {
       answered.done();
-      // The conversation opened ahead (HELP5) was started under the mode before: nobody has spoken in it, so it is ended and the
+      // The conversation opened ahead was started under the mode before: nobody has spoken in it, so it is ended and the
       // next opens under the mode chosen, rather than the person's first words reaching one the chip no longer names.
       if (readied === null || !readiedLive) return;
       retire.mutate(readied, { onSuccess: () => setRound((was) => was + 1) });

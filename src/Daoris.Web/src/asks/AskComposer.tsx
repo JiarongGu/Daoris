@@ -11,14 +11,14 @@ export type AskDraft = Carry & {
   /** The receiver the person named, or empty: the declarations propose, and nothing is published. */
   to: string;
   /**
-   * The person's review choice for the ask's work (REVIEWENV1g, design §1.5): `off`, `on` or an environment's name; empty
+   * The person's review choice for the ask's work: `off`, `on` or an environment's name; empty
    * leaves each repository's rule to decide, which is what an ask carried before.
    */
   review?: string;
   /** Their words with the choice, kept with it. */
   reviewWords?: string;
   /**
-   * Its short title (HEAD2e), optional: the person's few words that tell it apart in a list, at most 40 characters. Empty sends
+   * Its short title, optional: the person's few words that tell it apart in a list, at most 40 characters. Empty sends
    * none, and the ask is named by its first line.
    */
   short?: string;
@@ -37,18 +37,18 @@ const NOBODY = '*';
 const BY_RULE = '*';
 
 /**
- * The ask composer (INT4c) — the screen twin of `daoris ask --workspace … [--to …] [--file …]
- * [--url …] "…"` (D50, D65 §1a).
+ * The ask composer — the screen twin of `daoris ask --workspace … [--to …] [--file …]
+ * [--url …] "…"`.
  *
  * @remarks
- * **An ask is made in ONE circle**, because its circle is whom it can reach (D48 §4). That is the
+ * **An ask is made in ONE circle**, because its circle is whom it can reach. That is the
  * circle the page is scoped to, or the only one the machine holds — `fixed` — and then no choice is
  * offered. Scoped to none of several, the person says which: "every circle" has no single circle, and
  * assuming `default` would ask somewhere nobody chose.
  *
  * **Naming a receiver is optional.** Named, the ask is published to it at once, as `--to` does.
- * Left unnamed, the declarations tier proposes and publishes nothing (INT4a), unless the machine sets
- * an intake agent, which reads the ask and publishes on its own (INT4b). 🔴 So what the composer
+ * Left unnamed, the declarations tier proposes and publishes nothing, unless the machine sets
+ * an intake agent, which reads the ask and publishes on its own. 🔴 So what the composer
  * promises follows `intake` (UX5 U34): it said *nothing is published until you name a receiver*,
  * which an intake breaks, and a door that cannot know, a browser, promises neither.
  *
@@ -63,7 +63,7 @@ const BY_RULE = '*';
 export function AskComposer({
   draft, onChange, fixed, circles, receivers, busy = false, onSubmit, onCancel, intake, environments = [],
 }: {
-  /** The review environments the circle's rules declare, by name (REVIEWENV1a); none where no shell says. */
+  /** The review environments the circle's rules declare, by name; none where no shell says. */
   environments?: string[];
   draft: AskDraft;
   onChange: (draft: AskDraft) => void;
@@ -71,7 +71,7 @@ export function AskComposer({
   fixed: string | null;
   /** Every circle this machine holds — what the person chooses among when nothing is fixed. */
   circles: string[];
-  /** Who can be named: the repositories the host says can be asked, in the ask's circle (D70). */
+  /** Who can be named: the repositories the host says can be asked, in the ask's circle. */
   receivers: string[];
   /** Whether this machine sets an intake agent: true, false, or absent where the door cannot know. */
   intake?: boolean | null;

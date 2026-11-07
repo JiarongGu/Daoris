@@ -8,11 +8,11 @@ import { DOT_TONE } from './Marks';
 
 const PILL_TONE: Record<string, string> = {
   neutral: 'border-line text-ink-soft bg-raised',
-  // Each word is its hue's ink on its own soft field (UXFIX5c): open's and done's hues read 2.8 to 3.4:1 there in light.
+  // Each word is its hue's ink on its own soft field: open's and done's hues read 2.8 to 3.4:1 there in light.
   open: 'border-st-open text-ink-open bg-st-open/10',
   taken: 'border-st-taken text-ink-taken bg-st-taken/10',
   done: 'border-st-done text-ink-done bg-st-done/10',
-  // Declined's word is the danger ink on its own soft field (UXFIX5), which the hue itself read at 3.2:1 in dark.
+  // Declined's word is the danger ink on its own soft field, which the hue itself read at 3.2:1 in dark.
   declined: 'border-st-declined text-ink-danger bg-st-declined/10',
 };
 
@@ -53,15 +53,15 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'idle': 'neutral',
   'parked': 'open',
   'awaiting-reply': 'neutral',
-  // Answered, it waits on the driver's next look, as a queued session does, and no longer on the person (ANSWER1c).
+  // Answered, it waits on the driver's next look, as a queued session does, and no longer on the person.
   'answered': 'neutral',
-  // Going on, its run is opening with the person's words, and nothing waits on the person (MSG1f): answered's twin.
+  // Going on, its run is opening with the person's words, and nothing waits on the person: answered's twin.
   'going-on': 'neutral',
-  // Waiting on its own helper, nothing runs and nothing waits on the person (HELPERWAIT1): awaiting reply's twin.
+  // Waiting on its own helper, nothing runs and nothing waits on the person: awaiting reply's twin.
   'awaiting-helper': 'neutral',
-  // Ended by an account's limit, its line going on by itself (LIMITRESUME1a): quiet, never the failure's red.
+  // Ended by an account's limit, its line going on by itself: quiet, never the failure's red.
   'limited': 'neutral',
-  // An ended record held for an account's reset, going on by itself (LIMITSWITCH3b): quiet, as *limited* is.
+  // An ended record held for an account's reset, going on by itself: quiet, as *limited* is.
   'limit-waits': 'neutral',
   // Ended before anything ran, its agent refusing the choice (MODELROLE1c3, D205 §3.5(c)): quiet, never the failure's red.
   'not-started': 'neutral',
@@ -70,16 +70,16 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
 /**
  * What the page shows a session as: the nine states the record carries; **idle** — a live chat
  * whose turn has ended, waiting for the person's next message (UX5 U17); the two words the session
- * list's reader derives from the session's quest (D126 §2.2): **parked**, the last session here of a quest
+ * list's reader derives from the session's quest: **parked**, the last session here of a quest
  * parked on its failed sessions, and **awaiting-reply**, the last session here of a quest waiting on a
  * question asked of another repository; **answered**, a park the person answered, which the same session
- * goes on from at the driver's next look (ANSWER1c, D131); **going-on**, a record going on with the person's
- * words, its run opening (MSG1f, D137 §3.2); and **awaiting-helper**, a session that ended its turn on its own helper's
- * ask and goes on with its answer (HELPERWAIT1); and **limited**, a `failed` record whose failure an account's limit made, its
- * `limit` flag (LIMITRESUME1a, D206 point 1); and **limit-waits**, an ended record held for an account's reset, which the list's reader
- * derives from the hold (LIMITSWITCH3b), so it never reads *completed* where Daoris waits to go on; and **not-started**, a `failed` record its agent's refusal of the choice ended before
+ * goes on from at the driver's next look; **going-on**, a record going on with the person's
+ * words, its run opening; and **awaiting-helper**, a session that ended its turn on its own helper's
+ * ask and goes on with its answer; and **limited**, a `failed` record whose failure an account's limit made, its
+ * `limit` flag; and **limit-waits**, an ended record held for an account's reset, which the list's reader
+ * derives from the hold, so it never reads *completed* where Daoris waits to go on; and **not-started**, a `failed` record its agent's refusal of the choice ended before
  * anything ran, its note's code `ended.choice-not-offered` (MODELROLE1c3, D205 §3.5(c)). None is a record state: no new session
- * state (D126 §2).
+ * state.
  *
  * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
  * is the driver's to say.
@@ -89,7 +89,7 @@ export type ShownState =
 
 /**
  * The catalogue key naming a shown state: the record's states and idle in `sessionState`, the reader's derived
- * words in `work.shown` (D126 §8). One place, so a row, a strip mark and a page header say one word.
+ * words in `work.shown`. One place, so a row, a strip mark and a page header say one word.
  */
 export function shownKey(shown: ShownState): string {
   if (shown === 'parked') return 'work.shown.parked';
@@ -107,7 +107,7 @@ export function shownKey(shown: ShownState): string {
 export const CHOICE_NOT_OFFERED = 'ended.choice-not-offered';
 
 /**
- * A record's state with the one word its `limit` flag makes (LIMITRESUME1a, D206 point 1): a `failed` record an account's limit
+ * A record's state with the one word its `limit` flag makes: a `failed` record an account's limit
  * ended is **limited**; a `failed` one ended `choice-not-offered` is **not-started** (MODELROLE1c3); every other is its own state. For a
  * surface that shows the record's state and no other reading of it.
  */
@@ -118,7 +118,7 @@ export function limitedOr(session: { state: SessionState; limit?: boolean; noteP
 }
 
 /**
- * The person's words waiting on a record, joined by a blank line, or null where none wait (ONEWAY1m): read from its keyed `said`
+ * The person's words waiting on a record, joined by a blank line, or null where none wait: read from its keyed `said`
  * words by the one sender rule, so Daoris's, a helper's, a partner's and a second opinion's words are never theirs.
  */
 export function personsSaid(session: { said?: readonly SaidWord[] | null }): string | null {
@@ -127,8 +127,8 @@ export function personsSaid(session: { said?: readonly SaidWord[] | null }): str
 }
 
 /**
- * A park the person answered (ANSWER1c, D131): the service keeps the record `awaiting-person` with the answer kept until
- * the driver's next look takes it up (ANSWER1b), and the same session goes on then, so nothing about it waits on the
+ * A park the person answered: the service keeps the record `awaiting-person` with the answer kept until
+ * the driver's next look takes it up, and the same session goes on then, so nothing about it waits on the
  * person. The words are answered to this machine only, so a teammate's park, or one read over a keyed remote, is never
  * one: it stays as its record says.
  */
@@ -141,13 +141,13 @@ export function answeredPark(session: { state: SessionState; said?: readonly Sai
  * turn as live and a session between turns with no live mark at all). A live chat is idle when the
  * driver says no turn is in flight, and working while one is; a turn the driver has not answered for
  * is the record's own word, never a guess. Driven work is one long turn, so it is never idle. A park the
- * person answered is **answered** (ANSWER1c), read from its own record, as the list's reader reads it.
+ * person answered is **answered**, read from its own record, as the list's reader reads it.
  *
- * A live record that still keeps the person's words is **going on** (MSG1f, D137 §3.2): it went on with them, and
+ * A live record that still keeps the person's words is **going on**: it went on with them, and
  * its run's first prompt has not taken them yet. An ended record with words waiting is the list's reader's to say,
  * since words it cannot take stay waiting there too, and only the reader knows which.
  *
- * A `failed` record an account's limit ended is **limited** (LIMITRESUME1a, D206 point 1): no failure, and quiet.
+ * A `failed` record an account's limit ended is **limited**: no failure, and quiet.
  */
 export function shownState(
   session: {
@@ -175,7 +175,7 @@ export { SESSION_ACTIVE };
  * spends a rule on it — a session needing its person wears the attention mark even while its process
  * is busy — and Daoris needs no rule, because `awaiting-person` IS a state and nothing is layered
  * over it. There is deliberately no "is a process alive" input here: the driver's running list is
- * this machine's, and a mirrored session working on another machine is working (D47 §6). The record
+ * this machine's, and a mirrored session working on another machine is working. The record
  * is what the mark reads — with one exception the driver answers for: a live chat between turns is
  * `idle`, quiet rather than live (`shownState`, UX5 U17).
  */
@@ -190,18 +190,18 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'failed': 'ended',
   'stopped': 'ended',
   'idle': 'idle',
-  // A parked quest's last session waits on the person, whatever its record's ending (D126 §2.3).
+  // A parked quest's last session waits on the person, whatever its record's ending.
   'parked': 'parked',
   'awaiting-reply': 'idle',
-  // Answered, nothing runs yet and nothing waits on the person: quiet until the driver's next look (ANSWER1c).
+  // Answered, nothing runs yet and nothing waits on the person: quiet until the driver's next look.
   'answered': 'idle',
-  // Going on, its run is opening and no turn runs yet (MSG1f): quiet until its first prompt goes.
+  // Going on, its run is opening and no turn runs yet: quiet until its first prompt goes.
   'going-on': 'idle',
-  // Waiting on its own helper, its own turn has ended and nothing waits on the person (HELPERWAIT1): quiet, as awaiting reply is.
+  // Waiting on its own helper, its own turn has ended and nothing waits on the person: quiet, as awaiting reply is.
   'awaiting-helper': 'idle',
-  // Ended by an account's limit (LIMITRESUME1a): an ended record, as failed is.
+  // Ended by an account's limit: an ended record, as failed is.
   'limited': 'ended',
-  // Held for an account's reset (LIMITSWITCH3b): its words go on by itself, so nothing is over, as answered's and going on's are.
+  // Held for an account's reset: its words go on by itself, so nothing is over, as answered's and going on's are.
   'limit-waits': 'idle',
   // Ended choice-not-offered (MODELROLE1c3): an ended record, as failed is.
   'not-started': 'ended',

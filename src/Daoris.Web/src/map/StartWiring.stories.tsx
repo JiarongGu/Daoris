@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { StartWiringList } from './StartWiring';
 import type { StartWiring } from './wiring';
 
-// What a start in each workspace would run on (MAP1b), in the shapes the driver answers with.
+// What a start in each workspace would run on, in the shapes the driver answers with.
 
 const start = (extra: Partial<StartWiring>): StartWiring => ({
   job: 'work', workspace: 'default', adapter: 'claude-code', owner: 'claude-code', product: 'Claude Code',
@@ -46,7 +46,7 @@ export const Held: Story = {
   },
 };
 
-/** An agent named for the intake (AGT6): the circle has two jobs, and each row says which it is. */
+/** An agent named for the intake: the circle has two jobs, and each row says which it is. */
 export const WithAnIntake: Story = {
   args: {
     starts: [
@@ -56,7 +56,7 @@ export const WithAnIntake: Story = {
   },
 };
 
-/** A door onto the tool (AGT7): the account is the tool's, the adapter is the door. */
+/** A door onto the tool: the account is the tool's, the adapter is the door. */
 export const ThroughTheProtocolDoor: Story = {
   args: { starts: [start({ adapter: 'claude-code-acp', version: '0.9.1' })] },
 };

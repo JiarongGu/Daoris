@@ -9,7 +9,7 @@ import { menuActs, rightClick } from '../test/contextMenu';
 import { CJK_HIT, HITS } from './fixtures';
 import { HitList, type HitsAnswer } from './HitList';
 
-// Search's list as a molecule (FRAME1f, D118 §2): what was typed and answered arrives, and every press goes out.
+// Search's list as a molecule: what was typed and answered arrives, and every press goes out.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
@@ -100,7 +100,7 @@ describe("Search's list", () => {
   });
 });
 
-/** CTX1 (D138, design §4): a hit is a document's link; its row offers opening it and its path on a right-click. */
+/** A hit is a document's link; its row offers opening it and its path on a right-click. */
 describe("a hit's row on a right-click", () => {
   it('offers Open and Copy path', async () => {
     const copy = vi.fn();

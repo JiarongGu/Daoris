@@ -19,15 +19,15 @@ import { WiringDomain } from './WiringDomain';
 export type SettingsDomainProps = {
   notify: Notify;
   attached: boolean;
-  /** Where a Get started step's door leads (SETUP1a): another domain, Projects, or one of its drawers. */
+  /** Where a Get started step's door leads: another domain, Projects, or one of its drawers. */
   onGo: (door: StarterDoor) => void;
-  /** Open Ask Daoris on a first message asking to be walked through the setup (SETUP1b). */
+  /** Open Ask Daoris on a first message asking to be walked through the setup. */
   onAsk?: (message: string) => void;
-  /** Who is driving Daoris's browser (BRW8), named by the application, which holds the caches that name them. */
+  /** Who is driving Daoris's browser, named by the application, which holds the caches that name them. */
   drivers: readonly BrowserDriver[];
   /** Open a session in Sessions — only a shell has it. */
   onAttend?: (session: string) => void;
-  /** The host a door named (GITAUTH1e): Settings → Git opens its add form filled with it, and is told when that form closes. */
+  /** The host a door named: Settings → Git opens its add form filled with it, and is told when that form closes. */
   host?: string;
   onClosed?: () => void;
 };
@@ -36,42 +36,42 @@ type SettingsDomain = {
   id: string;
   /** The catalogue key the domain list names it by. */
   label: string;
-  /** A machine's domain, which a browser is never offered (D47 §4): not a disabled one, none. */
+  /** A machine's domain, which a browser is never offered: not a disabled one, none. */
   machine: boolean;
   component: ComponentType<SettingsDomainProps>;
 };
 
 /**
- * Settings' domains, in the order its list shows them (D75 §2) — **the one place a domain is added**
- * (MOD4). A domain is a `settings/<Name>Domain.tsx` and a row here; the frame renders whichever row is
+ * Settings' domains, in the order its list shows them — **the one place a domain is added**.
+ * A domain is a `settings/<Name>Domain.tsx` and a row here; the frame renders whichever row is
  * chosen and names none itself, and `domains.test.ts` holds both.
  *
  * Nine since WIRING1c (seven since UX6j, D150 §2.3): what is the machine's or the person's. Every other setting lives on its thing.
  */
 export const SETTINGS_DOMAINS = [
-  // The setup guide leads (SETUP1a, D97), named Get started again since Setup names a repository's and a workspace's tab
-  // (UX6j). A browser's holds the one step it can know, the registry.
+  // The setup guide leads, named Get started again since Setup names a repository's and a workspace's tab.
+  // A browser's holds the one step it can know, the registry.
   { id: 'start', label: 'settings.domain.start', machine: false, component: GetStartedDomain },
   { id: 'appearance', label: 'settings.domain.appearance', machine: false, component: AppearanceDomain },
   { id: 'ai', label: 'settings.domain.ai', machine: false, component: AiDomain },
   // How this install is set up here (WIRING1c, the this-Daoris design §2): the first of the machine domains. It shows what is
   // true about this machine's paths, service and loop; the domain that sets a thing keeps its control. A browser is offered none.
   { id: 'wiring', label: 'settings.domain.wiring', machine: true, component: WiringDomain },
-  // Workspace left for a workspace's page and each repository's (UX6g, D150 §3.1): its list is Repositories' list, its
+  // Workspace left for a workspace's page and each repository's: its list is Repositories' list, its
   // wiring, defaults and clean-up the workspace's page, its rows per repository the repository's Setup.
   { id: 'driver', label: 'settings.domain.driver', machine: true, component: DriverDomain },
-  // Agents left for a place of its own (UX6e, D150 §5): an agent is a product with accounts, and its page holds them.
-  // The programs Daoris runs beside its agents (TOOLS7, D121 §4.1): each a file of this machine's, so a browser is
+  // Agents left for a place of its own: an agent is a product with accounts, and its page holds them.
+  // The programs Daoris runs beside its agents: each a file of this machine's, so a browser is
   // offered no such domain.
   { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain },
   // Who Daoris's git acts as on a code host (GITAUTH1e, the git-auth design §7.1): identities, a host's default and the person's own
   // sign-ins; the machine's alone, so a browser is offered none.
   { id: 'git', label: 'settings.domain.git', machine: true, component: GitDomain },
-  // Permissions left as Workspace did (UX6g): reading across and a workspace's rules are its page's, a repository's its
-  // Setup's, and the rules for every session and the proposals the agent's page's (UX6e). Plugins left for its place
-  // (UX6j, D119 §5): nothing about a plugin is set here, and where plugins are looked for is Driver's row.
+  // Permissions left as Workspace did: reading across and a workspace's rules are its page's, a repository's its
+  // Setup's, and the rules for every session and the proposals the agent's page's. Plugins left for its place:
+  // nothing about a plugin is set here, and where plugins are looked for is Driver's row.
   { id: 'browser', label: 'settings.domain.browser', machine: true, component: BrowserDomain },
-  // The machine log (LOG1c, D94): the machine's alone, so a browser is offered no such domain.
+  // The machine log: the machine's alone, so a browser is offered no such domain.
   { id: 'logs', label: 'settings.domain.logs', machine: true, component: LogsDomain },
 ] as const satisfies readonly SettingsDomain[];
 
@@ -85,7 +85,7 @@ export type SettingsSection = (typeof SETTINGS_DOMAINS)[number]['id'];
 const KEPT_IN: Readonly<Record<string, SettingsSection>> = { plugins: 'driver' };
 
 /**
- * Where a domain remembered under `daoris.settings` opens now (UX6j): itself while Settings has it; one that left, at
+ * Where a domain remembered under `daoris.settings` opens now: itself while Settings has it; one that left, at
  * the domain holding what stayed of it; and one that left for a page Settings holds no row of (Agents, UX6e; Workspace
  * and Permissions, UX6g), on Appearance, as any domain this window lacks does. A remembered id never opens nothing.
  */

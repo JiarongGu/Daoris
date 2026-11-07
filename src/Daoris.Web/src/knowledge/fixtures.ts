@@ -1,6 +1,6 @@
 import type { Convergence, Entry, Hit } from '../data/api';
 
-// Search's and Convergence's fixtures (FRAME1f): hits, entries and findings shaped as the service answers them, for the
+// Search's and Convergence's fixtures: hits, entries and findings shaped as the service answers them, for the
 // stories and the molecules' suites. Every name is the example family's or invented; none is a person's repository.
 
 export const HITS: Hit[] = [
@@ -65,7 +65,7 @@ export const CJK_ENTRY: Entry = {
   body: '## 场景加载的顺序\n\n场景加载先读邻近区块，再读远处区块，玩家转动视角时不会看到空缺。',
 };
 
-/** A generated index row with the source span the service answers (ORIENT2i). */
+/** A generated index row with the source span the service answers. */
 export const INDEX_ENTRY: Entry = {
   ...ENTRY, id: 'engine:docs/index/routes.md#HELP_CONVERSATIONS', repository: 'engine', kind: 'Index',
   title: 'HELP_CONVERSATIONS', path: 'docs/index/routes.md', firstLine: 7, lastLine: 7,

@@ -1,7 +1,7 @@
 import type { Quest, QuestStep, Session } from '../data/api';
 
 /**
- * One step of how a piece of work was carried (MAP1): the ask it began as, a quest and every
+ * One step of how a piece of work was carried: the ask it began as, a quest and every
  * session that ran it, a parent this page cannot see, or a step its close will still publish.
  */
 export type ChainStep =
@@ -17,7 +17,7 @@ const ASK = /^ask #(\S+)$/;
  * The chain one quest belongs to, in order (MAP1, `docs/2026-09-23-map-design.md` §2).
  *
  * @remarks
- * A chain is linear by construction (D65 §4): closing a quest done publishes its first step with
+ * A chain is linear by construction: closing a quest done publishes its first step with
  * `parent` set to it and the rest of the list carried on. So the walk is up through `parent`, down
  * through the one quest that names the last as its parent, and then whatever the last published
  * quest will still publish — taken from IT, because the quest before it still lists the step that

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// COMPANYVIEW1b (the company-view design §1, §3, §3.1): the Agents place's Roles mode, beside Agents, switched by the list's head. Its
+// The Agents place's Roles mode, beside Agents, switched by the list's head. Its
 // five sections, Working roles the one built, and the working roles' presses reaching their one door (`SET_ROLE`, ONEWAY1a) from here.
 // The roles' tests moved from AI features' suite with the card they test (`settings/AiDomain.test.tsx` until COMPANYVIEW1b).
 
@@ -201,7 +201,7 @@ describe('The Agents place, Roles mode', () => {
     expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('saved'));
   });
 
-  /** The editor is the mode's, held above the card (D168 point 3): a refresh of the roles read does not close it. */
+  /** The editor is the mode's, held above the card: a refresh of the roles read does not close it. */
   it('keeps an open editor while the roles are read again', async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     catalogue = 'seeded';
@@ -323,7 +323,7 @@ describe('The Agents place, Roles mode', () => {
   });
 });
 
-/** Intake's row (MODELROLE1d, D205 §7): its order set in its editor over SET_ROLE (ONEWAY1a), off in its own words, with what an intake runs as. */
+/** Intake's row: its order set in its editor over SET_ROLE, off in its own words, with what an intake runs as. */
 describe('Intake in the Roles mode', () => {
   const start = (job: 'work' | 'intake', adapter: string) => ({
     job, workspace: 'default', adapter, owner: 'claude-code', product: 'Claude Code',

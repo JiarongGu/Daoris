@@ -38,9 +38,9 @@ export function WiringFolders({ wiring, busy = false, onMeasure, downloads, onDo
   wiring: Pick<SystemWiring, 'folder' | 'folders' | 'leftOver' | 'measuring'>;
   busy?: boolean;
   onMeasure: () => void;
-  /** *Open* on the Daoris folder (`home`) or a top folder, by the id the read gave (WIRING1e); absent where the shell offers none. */
+  /** *Open* on the Daoris folder (`home`) or a top folder, by the id the read gave; absent where the shell offers none. */
   onOpen?: (id: string) => void;
-  /** The Downloads row's clearing, open (CACHECLEAR1): drawn under that row in place of its press. */
+  /** The Downloads row's clearing, open: drawn under that row in place of its press. */
   downloads?: ReactNode;
   /** Opens the clearing's list; absent where the shell offers none. */
   onDownloads?: () => void;

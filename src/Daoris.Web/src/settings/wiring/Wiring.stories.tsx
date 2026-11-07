@@ -75,7 +75,7 @@ export const FoldersUnreadable: Story = {
 /** A narrow main area: the row stacks its value under its label, and a path breaks at its separators. */
 export const FoldersNarrow: Story = { render: () => <WiringFolders wiring={WIRED} onMeasure={() => {}} />, decorators: narrow };
 
-// CACHECLEAR1: the Downloads row's clearing, open under its row: the list with what keeps each version, and the press's answer.
+// The Downloads row's clearing, open under its row: the list with what keeps each version, and the press's answer.
 const clearing = (props: Partial<Parameters<typeof WiringDownloads>[0]> = {}) => (
   <WiringFolders
     wiring={WIRED}
@@ -246,7 +246,7 @@ export const LogsUnmeasured: Story = { render: () => <WiringLogs logs={DEVELOPME
 /** A narrow main area. */
 export const LogsNarrow: Story = { render: () => <WiringLogs logs={WIRED.logs} onOpenFolder={none} onLog={none} />, decorators: narrow };
 
-/** What Daoris's sessions left in the person's own tool home (OWNSPACE2): a read-only list, the records that name each, what keeps it. */
+/** What Daoris's sessions left in the person's own tool home: a read-only list, the records that name each, what keeps it. */
 export const ToolHomeListed: Story = {
   render: () => <WiringToolHome toolHome={WIRED.toolHome!} />, decorators: inTheme('light'),
 };
@@ -270,8 +270,8 @@ export const ToolHomeRecordsUnread: Story = {
 /** A narrow main area: a long folder name breaks anywhere. */
 export const ToolHomeNarrow: Story = { render: () => <WiringToolHome toolHome={WIRED.toolHome!} />, decorators: narrow };
 
-// KEEP1c (the cleanup design §4.1, §4.2): the Disk space card, each kind with its size, rule, next and last clean, in every state
-// but the editors and the floor's (KEEP1d, KEEP1f), at the three widths in English and 中文.
+// The Disk space card, each kind with its size, rule, next and last clean, in every state
+// but the editors and the floor's, at the three widths in English and 中文.
 const space = (props: Partial<Parameters<typeof WiringSpace>[0]> = {}) => (
   <WiringSpace space={SPACE} onCount={() => {}} onDownloads={() => {}} {...props} />
 );
@@ -314,7 +314,7 @@ export const SpaceDownloads: Story = {
   render: () => space({ downloads: <WiringDownloads listing={DOWNLOADS} onClear={() => {}} onClose={() => {}} /> }),
 };
 
-// KEEP1d (the cleanup design §4.1, §4.2): the rules the person set, and a rule's editor open under its row, at the three widths in
+// The rules the person set, and a rule's editor open under its row, at the three widths in
 // English and 中文.
 const keep = () => {};
 
@@ -343,7 +343,7 @@ export const SpaceEditingChineseNarrow: Story = {
   render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'logs' }), decorators: [...narrow, chinese],
 };
 
-/** History's editor with an age set (KEEP1g), saying what the age clears. */
+/** History's editor with an age set, saying what the age clears. */
 export const SpaceEditingHistory: Story = { render: () => space({ space: SPACE_SET, onKeep: keep, editing: 'history' }) };
 
 /** The same at the half width. */
@@ -364,7 +364,7 @@ export const SpaceEditingHistoryChineseNarrow: Story = {
 /** The first load: skeleton rows in the card's place. */
 export const SpaceLoading: Story = { render: () => space({ space: undefined }) };
 
-// KEEP1f (the cleanup design §3.2, §4.2): below the floor, the free-space line in the warn ink with what Daoris freed early and *Free up
+// Below the floor, the free-space line in the warn ink with what Daoris freed early and *Free up
 // space…* as the primary press; a kind on another volume says it on its row; the floor's own editor; the floor turned off.
 const low = (props: Partial<Parameters<typeof WiringSpace>[0]> = {}) => space({ space: SPACE_LOW, onKeep: keep, onFreeUp: () => {}, ...props });
 
@@ -392,7 +392,7 @@ export const SpaceEditingFloor: Story = { render: () => low({ editing: 'floor' }
 /** The floor's editor in 中文 at the 400 px floor. */
 export const SpaceEditingFloorChineseNarrow: Story = { render: () => low({ editing: 'floor' }), decorators: [...narrow, chinese] };
 
-/** The allowance over the whole (KEEPSIZE1): its use of the bound, its rule, and its editor open. */
+/** The allowance over the whole: its use of the bound, its rule, and its editor open. */
 export const SpaceAllowance: Story = { render: () => space({ space: SPACE_ALLOWANCE, onKeep: keep }) };
 export const SpaceAllowanceEditing: Story = { render: () => space({ space: SPACE_ALLOWANCE_OVER, onKeep: keep, editing: 'allowance' }) };
 export const SpaceAllowanceOverChineseNarrow: Story = {
@@ -402,7 +402,7 @@ export const SpaceAllowanceOverChineseNarrow: Story = {
 /** The floor turned off: Daoris frees nothing early, and says so. */
 export const SpaceFloorOff: Story = { render: () => space({ space: SPACE_FLOOR_OFF, onKeep: keep }) };
 
-// KEEP1e (the cleanup design §3.3, §4.1, §4.2): Free up space…, listed under the card's head, then pressed; a run's line under way and
+// Free up space…, listed under the card's head, then pressed; a run's line under way and
 // ended; a refusal said beside the press. At the three widths in English and 中文, light and dark.
 const freeing = (props: Partial<Parameters<typeof WiringSpaceFree>[0]> = {}) => (
   <WiringSpaceFree plan={SPACE_PLAN} onFree={() => {}} onClose={() => {}} {...props} />

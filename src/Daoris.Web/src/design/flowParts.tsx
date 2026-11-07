@@ -9,7 +9,7 @@ import { type FlowMark, type FlowNode, type FlowEdge, type Ink } from './flowTyp
 
 export const rem = (value: number) => `${value}rem`;
 
-/** How each kind of mark's chip is drawn: the border's style as well as its word, so no kind is told by hue alone (D223 §4.3). */
+/** How each kind of mark's chip is drawn: the border's style as well as its word, so no kind is told by hue alone. */
 export const CHIP: Record<FlowMark['kind'], string> = {
   refused: 'border-st-declined text-ink-danger',
   new: 'border-accent text-ink',
@@ -251,7 +251,7 @@ export function foldRanges(t: Translate, flow: Folded, folds: Fold[], open: (fol
 /** The room a drawn placement keeps outside its nodes for the returns: their lanes, and their runs past the end ranks. */
 export function padding(layout: FlowLayout, placement: Placement, dataLanes: number): CSSProperties {
   const run = `${RUN.pad}px`;
-  // The data wires' lanes stand right of the nodes, kept free whether or not one is drawn (FLOWCHART2a).
+  // The data wires' lanes stand right of the nodes, kept free whether or not one is drawn.
   const right = dataLanes > 0 && placement === 'down' ? { paddingRight: rem(dataLanes * (FLOW_REM.lane + FLOW_REM.laneGap) + 1) } : {};
   if (layout.lanes === 0) return dataLanes > 0 && placement === 'down' ? { paddingTop: run, paddingBottom: run, ...right } : {};
   const lanes = rem(layout.lanes * (FLOW_REM.lane + FLOW_REM.laneGap));
@@ -265,7 +265,7 @@ export const DASHES: Record<EdgeStyle, string | undefined> = {
   next: undefined, when: undefined, data: '1.5 3', failed: '4 3', rejected: '4 3', refused: '4 3', conditional: '4 3', back: '4 3',
 };
 
-/** A node track's most, in rem (§3.2): a caller's node that holds more may take more (FLOWCHART1d). */
+/** A node track's most, in rem (§3.2): a caller's node that holds more may take more. */
 export const TRACK_MOST = 16;
 
 /** One node track's width for the drawn placements: as wide as the binding rank leaves each node, 10rem to 16rem, or the caller's. */
@@ -304,17 +304,17 @@ export function measure(
   element.querySelectorAll<HTMLElement>('[data-flow-label]').forEach((label) => {
     sizes.set(label.dataset.flowLabel!, { w: label.offsetWidth, h: label.offsetHeight });
   });
-  // A label clears every node and every section's divider (FLOWCHART1d), which stands in a rank gap as a label does.
+  // A label clears every node and every section's divider, which stands in a rank gap as a label does.
   const nodes = [...layout.order.map((id) => boxes.get(id)!), ...world.sections];
   const labels = placeLabels(paths, sizes, nodes);
-  // An editor's ＋ on a way clears every node, every label shown and every ＋ placed before it (FLOWCHART2b).
+  // An editor's ＋ on a way clears every node, every label shown and every ＋ placed before it.
   const insertSizes = new Map<string, { w: number; h: number }>();
   element.querySelectorAll<HTMLElement>('[data-flow-insert]').forEach((insert) => {
     const path = onPaths.get(insert.dataset.flowInsert!);
     if (path) insertSizes.set(path, { w: insert.offsetWidth, h: insert.offsetHeight });
   });
   const inserts = placeInserts(paths, insertSizes, nodes, labels);
-  // A mark's chip clears every node, divider, label and ＋ shown, and every point of ink (CANVAS1b).
+  // A mark's chip clears every node, divider, label and ＋ shown, and every point of ink.
   const asks = [...element.querySelectorAll<HTMLElement>('[data-flow-chip]')].flatMap((chip) => {
     const node = boxes.get(chip.dataset.chipNode!);
     return node ? [{ id: chip.dataset.flowChip!, node, w: chip.offsetWidth, h: chip.offsetHeight }] : [];

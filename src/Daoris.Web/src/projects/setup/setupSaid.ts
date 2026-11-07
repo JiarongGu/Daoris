@@ -34,18 +34,18 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
   // Work: its line, then how its work lands, each with where it came from.
   const line = work?.line;
   const lineOwn = line?.source === 'repository';
-  // Where its work is reviewed before it lands (REVIEWENV1a): its own, its workspace's, or none set, which is Daoris's.
+  // Where its work is reviewed before it lands: its own, its workspace's, or none set, which is Daoris's.
   const review = work?.onReview ? work.review : undefined;
   const reviewOwn = review?.source === 'repository';
-  // Which other agent reads its work before it lands (XAGENT1a): its own, its workspace's, or none set, which is Daoris's.
+  // Which other agent reads its work before it lands: its own, its workspace's, or none set, which is Daoris's.
   const opinion = work?.onOpinion ? work.opinion : undefined;
   const opinionOwn = opinion?.source === 'repository';
-  // How its work is committed (DOORS1b): its own, its workspace's, or Daoris's default, which the driver answers as a rule.
+  // How its work is committed: its own, its workspace's, or Daoris's default, which the driver answers as a rule.
   const commits = work?.onCommits ? work.commits : undefined;
   const commitRule = commits?.rule ?? COMMIT_DEFAULT;
   const commitsOwn = commits?.source === 'repository';
   const landedOwn = landed?.start.landed.level === 'repository-landed';
-  // The integration declaration at the line's tip waits for the person's acceptance (D215): never accepted, or changed since.
+  // The integration declaration at the line's tip waits for the person's acceptance: never accepted, or changed since.
   const integrationOwed = !gatesApart && Boolean(landed?.onAcceptIntegration) && (landed?.start.integration?.state === 'unaccepted' || landed?.start.integration?.state === 'changed');
   const lineSaid = line
     ? marked(
@@ -58,11 +58,11 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
   const commitsSaid = commits ? marked(commitSummary(t, commitRule), commits.source === 'repository' || commits.source === 'workspace' ? commits.source : 'daoris') : null;
   const reviewSaid = review ? marked(reviewSummary(t, review.rule), review.rule && review.source ? review.source : 'daoris') : null;
   const opinionSaid = opinion ? marked(opinionSummary(t, opinion.rule), opinion.rule && opinion.source ? opinion.source : 'daoris') : null;
-  // FABRIC-PIPELINE1a: what verifies the work that lands, marked where its workspace chose it.
+  // What verifies the work that lands, marked where its workspace chose it.
   const landedSaid = landed ? marked(landedSummary(t, landed.start), landedOwn ? 'repository' : landed.start.landed.level === 'workspace-landed' ? 'workspace' : 'daoris') : null;
   const workParts = work && [lineSaid, landingSaid, commitsSaid, reviewSaid, opinionSaid, landedSaid].filter((each): each is string => each !== null);
 
-  // Sessions: the language they write in, what a helper their agent asks for does (DOORS1b), then the standing answer.
+  // Sessions: the language they write in, what a helper their agent asks for does, then the standing answer.
   const language = sessions?.language;
   const languageOwn = language?.resolved?.source === 'repository';
   const helpers = sessions?.onHelpers ? sessions.helpers : undefined;
@@ -109,23 +109,23 @@ export function setupSaid({ t, driving, work, landed, gatesApart, lands, session
     ...(reach.checkout?.on ? [t('projects.setup.summary.checkout')] : []),
   ];
 
-  // Sessions' access (AUTONOMY1d): full access, or each pause's value, marked where it came from above.
+  // Sessions' access: full access, or each pause's value, marked where it came from above.
   const accessShown = access && access.pauses.length > 0 ? access : null;
   const accessOwn = Boolean(accessShown?.pauses.some((each) => each.source === 'repository'));
 
   // What opens on its own: a section holding a value set for this repository.
   const opensItself: Record<SetupSectionId, boolean> = {
     driving: false,
-    // A declaration owed acceptance opens it too (INTEGRATE1h): *What needs you*'s door brings the person here to read it and accept.
+    // A declaration owed acceptance opens it too: *What needs you*'s door brings the person here to read it and accept.
     work: lineOwn || commitsOwn || reviewOwn || opinionOwn || landedOwn || integrationOwed,
-    // A remote nothing serves opens it: the person has something to do there (GITAUTH1e); so does git access set here (GITAUTH1f).
+    // A remote nothing serves opens it: the person has something to do there; so does git access set here.
     git: Boolean(git?.remotes.some((remote) => remote.serves === 'none') || git?.access?.classes.some((each) => each.source === 'repository')),
     access: accessOwn,
     // This machine's heavy gates are set for this repository alone, so a list set is its own; and so are its sessions' checks.
     heavy: (heavy?.gates.length ?? 0) > 0 || Boolean(heavy?.checks?.set),
     sessions: languageOwn || helpersOwn || handOverOwn || standing !== null,
     reach: readOwn || writesTo.length > 0 || ruleCount > 0 || Boolean(reach?.checkout?.on),
-    // The Workflow folds open for a need alone (SETUPUX1o): a door that asked for one.
+    // The Workflow folds open for a need alone: a door that asked for one.
     landing: false,
     opinion: false,
     look: false,

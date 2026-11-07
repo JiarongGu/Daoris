@@ -11,11 +11,11 @@ import { EFFECTIVE_CURRENT, EFFECTIVE_RELEASE } from '../../workflow/place/effec
 import { PlaceWorkflowView, type PlaceWorkflowProps } from '../../workflow/place/PlaceWorkflowView';
 import { PlaceSessionsBodyView, PlaceWorkflowBodyView, WorkspaceLandingFolds } from './PlaceSessions';
 
-// AGENTSPLACE1f (the Agents-place design §3): a repository place's Sessions hold today's rows moved whole from Repositories' Setup tab, each
+// A repository place's Sessions hold today's rows moved whole from Repositories' Setup tab, each
 // with *Set for this repository* or *Clear*, drawn from the one molecule. SETUPUX1h: its Driving is the page head's, and each section's body
 // is drawn apart, inside the fold that names it.
 
-// AGENTSPLACE1h: its Workflow, handed in as the application hands it, holds the route, Gates and the line's landing rows.
+// Its Workflow, handed in as the application hands it, holds the route, Gates and the line's landing rows.
 const WORKFLOW: PlaceWorkflowProps = { name: 'engine', current: { ...FULL, start: { ...GATES_CHANGED, integration: INTEGRATION_CHANGED } } };
 
 const drawSessions = (setup: RepositorySetupProps | null) =>
@@ -102,7 +102,7 @@ describe("a repository place's Workflow", () => {
   });
 });
 
-// WORKFLOWCLEAN1h-c (D228): a workspace's Landing row is a repository's row: the followed version's land options, or the rule read under Current.
+// A workspace's Landing row is a repository's row: the followed version's land options, or the rule read under Current.
 describe("a workspace place's Landing row", () => {
   const editor = {
     list: LIST, palette: PALETTE, error: null, roles: [], shown: null, onShow: vi.fn(), judged: null, judging: false, onJudge: vi.fn(),

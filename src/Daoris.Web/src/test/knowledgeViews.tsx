@@ -10,7 +10,7 @@ import { useListPanes } from '../work/frame/listPanes';
 import { ViewFrame } from '../work/frame/ViewFrame';
 import { useDoor } from './door';
 
-// Search and Convergence as their suites hold them (FRAME1f), through the place they are since UX6i (D150 §2.2): Knowledge
+// Search and Convergence as their suites hold them, through the place they are since UX6i: Knowledge
 // on a browser's frame, its list the mode's and its main area the mode's page, with the application's list memory, so
 // what a test chooses, filters and switches to is what a relaunch would remember.
 

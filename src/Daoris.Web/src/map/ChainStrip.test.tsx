@@ -101,7 +101,7 @@ describe('the chain strip', () => {
   });
 
   /**
-   * UX7c (D152 §7): a quest whose sessions all ran on one agent says it once, above its rows; each row says its attempt,
+   * A quest whose sessions all ran on one agent says it once, above its rows; each row says its attempt,
    * its account and how long, so *three failed before this one* reads at a glance.
    */
   it('says the agent once where every attempt ran on it, and each row its attempt and account', () => {
@@ -117,7 +117,7 @@ describe('the chain strip', () => {
     expect(screen.getByText('account-2')).toBeInTheDocument();
   });
 
-  /** ACCTNAME1 (D152 §4.2): each attempt's account by the person's name, where the surface hands the roster's namer. */
+  /** Each attempt's account by the person's name, where the surface hands the roster's namer. */
   it('names each attempt’s account by the person’s name where a namer is handed', () => {
     const nameOf = (_owner: string, profile?: string | null) => (profile === 'acct-3f9c1a2b' ? 'work' : profile ?? '');
     const { unmount } = render(<ChainStrip nameOf={nameOf} chain={buildChain('a', QUESTS, [

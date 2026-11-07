@@ -3,10 +3,10 @@ import { type AccountSaid, type AgentAccounts, type PoolReceipt, USE_DEFAULTS } 
 import type { AgentRulesState } from '../settings/repository/AgentRules';
 import { scopeOf } from '../settings/accounts/accountsFixtures';
 
-// The Agents place as its stories and molecules' tests hand it (UX6e, D150 §5): the design's machine, three Claude Code
+// The Agents place as its stories and molecules' tests hand it: the design's machine, three Claude Code
 // accounts of which two read signed out, one cooling, the tool's own sign-in never read; Codex with one account; DeepSeek
 // Harness (`dsh`) not installed; and an agent a plugin declares. Each agent's accounts are one set in one order, every
-// workspace's (POOL1c, D197). Names are neutral, as every fixture's are.
+// workspace's. Names are neutral, as every fixture's are.
 
 const minutesFrom = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
 
@@ -113,7 +113,7 @@ export const CODEX_TOOL = TOOLS.find((tool) => tool.name === 'codex')!;
 export const DSH_TOOL = TOOLS.find((tool) => tool.name === 'dsh')!;
 
 /**
- * One email signed in to Claude Code in three organisations (ACCOUNTID1b): the tool's own sign-in in `Org A`, a fresh account
+ * One email signed in to Claude Code in three organisations: the tool's own sign-in in `Org A`, a fresh account
  * nobody named in `Org B`, one named as the sign-in's end offered it in `Org C`, and one the person named `work` whose answer
  * named no organisation, only its plan. Each row says what tells it apart, once.
  */
@@ -129,8 +129,8 @@ export const ORGS_TOOL: Tool = toolsOf([{
 }])[0]!;
 
 /**
- * How Claude Code's accounts are used: the set's order of three, every workspace's (D197), account-2 cooling. No account is
- * ready, so the next start waits for account-2's reset, sooner for a sign-in (TOOL6e).
+ * How Claude Code's accounts are used: the set's order of three, every workspace's, account-2 cooling. No account is
+ * ready, so the next start waits for account-2's reset, sooner for a sign-in.
  */
 export const CLAUDE_USE: AgentAccounts = {
   agent: 'claude-code',
@@ -198,8 +198,8 @@ export const CODEX_USE: AgentAccounts = {
 };
 
 /**
- * Codex with no account of Daoris's, and your own sign-in's windows read at a press before POOL1c (CODEXUSE3): a reading kept
- * that the page no longer shows, since Daoris never asks your own sign-in (D197 point 3).
+ * Codex with no account of Daoris's, and your own sign-in's windows read at a press before POOL1c: a reading kept
+ * that the page no longer shows, since Daoris never asks your own sign-in.
  */
 export const CODEX_OWN_TOOL: Tool = toolsOf([{ ...CODEX, profiles: [] }])[0]!;
 
@@ -216,11 +216,11 @@ const OWN_READ: AgentAccounts['own'] & { said: AccountSaid } = {
 export const CODEX_OWN_USE: AgentAccounts = { agent: 'codex', speaks: true, own: OWN_READ, accounts: [], scopes: [scopeOf()] };
 
 /**
- * Codex's accounts read as Claude Code's are (ACCTUX4, CODEXUSE1), so the two makers' rows show the same cells: *team* with
- * both windows read, a minute apart, its week nearly gone and ahead of its pace by its agent's own word (USAGEREAD3b); *reserve*
+ * Codex's accounts read as Claude Code's are, so the two makers' rows show the same cells: *team* with
+ * both windows read, a minute apart, its week nearly gone and ahead of its pace by its agent's own word; *reserve*
  * with its week alone read, its five hours unknown, and a window of another length the app server named; *spare* never read,
  * each window unknown; and your own sign-in, read at a press. The next start passes *team*, the list's first, as near its limit
- * by its number, never by the warning, and takes *reserve*, its row marked first (ACCTUX4b).
+ * by its number, never by the warning, and takes *reserve*, its row marked first.
  */
 const CODEX_READ_DOOR: ToolDoor = {
   ...CODEX,
@@ -267,8 +267,8 @@ export const CODEX_READ_USE: AgentAccounts = {
 };
 
 /**
- * The install's shape, as the UX7 design §4.7 draws it (UX7b), on one set (D197): account-1 signed in with a session on it,
- * first in the order; account-2 unknown and never read; *personal*, named by the person (ACCT2), cooling; a new account
+ * The install's shape, as the UX7 design §4.7 draws it, on one set: account-1 signed in with a session on it,
+ * first in the order; account-2 unknown and never read; *personal*, named by the person, cooling; a new account
  * (`acct-…`, ACCT2's fresh id) signed in, last in the order as every new account is; your own sign-in, outside them.
  */
 const INSTALL_DOOR: ToolDoor = {
@@ -306,10 +306,10 @@ export const INSTALL_USE: AgentAccounts = {
 };
 
 /**
- * What an account's row knows (ACCTUX1), each in the set's order, as every account is: a key its provider refused; *reserve*
+ * What an account's row knows, each in the set's order, as every account is: a key its provider refused; *reserve*
  * cooling for Daoris's default hour, since its agent named no reset; *team* cooling until the reset its agent named, its two
  * windows read; and an account the owner named for the email it signs in as, its windows read, said once. The next start
- * takes that one, the list's first and the only one ready (ACCTUX4b).
+ * takes that one, the list's first and the only one ready.
  */
 const READINGS_DOOR: ToolDoor = {
   ...CLAUDE, version: '2.1.288 (Claude Code)',
@@ -371,7 +371,7 @@ export const READINGS_USE: AgentAccounts = {
 };
 
 /**
- * The same, with Claude Code's pace warning on the account the next start takes (USAGEREAD3b, D165 point 2), as the install
+ * The same, with Claude Code's pace warning on the account the next start takes, as the install
  * read it: 60% of a week not a quarter gone, ahead of its pace by the agent's own thresholds. Its bar keeps the warning's hue,
  * its words are the agent's, and it is not near, so the next start still takes it.
  */
@@ -390,7 +390,7 @@ export const AHEAD_USE: AgentAccounts = {
 };
 
 /**
- * SWITCH1d (the switch design §5): each window against the smart curve now, read from Claude Code, which *Read now* asks again:
+ * Each window against the smart curve now, read from Claude Code, which *Read now* asks again:
  * `Gmail`'s week at 62% with two-sevenths of it gone, over its curve's 49%; `account-2`'s five-hour window said by a session at
  * 40%, its curve allowing 90%.
  */
@@ -441,7 +441,7 @@ export const RULES: AgentRulesState = {
   }],
 };
 
-/** What each Claude Code account has carried (TOOL3), counted by agent whichever of its doors ran (AGENTPROVIDER1 s-vii). */
+/** What each Claude Code account has carried, counted by agent whichever of its doors ran (AGENTPROVIDER1 s-vii). */
 export const USAGE = [
   { agent: 'claude-code', profile: 'account-2', sessions: 4, used: 412_000 },
   { agent: 'claude-code', profile: 'account-1', sessions: 2, used: 96_000 },

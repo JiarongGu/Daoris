@@ -4,7 +4,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import type { UpdateOutcome, UpdateState } from '../../update/UpdateBanner';
 import { UpdateSection } from './Update';
 
-// The install's update in Settings (UPDATE1b, D139 §3, §6), in the shape `DAORIS.UPDATE` · `STATE` answers: nothing
+// The install's update in Settings, in the shape `DAORIS.UPDATE` · `STATE` answers: nothing
 // staged, the drain and what it waits on, waiting after Not now, installing, a refusal, and how the last swap ended,
 // light and dark.
 
@@ -14,7 +14,7 @@ const standing = (extra: Partial<UpdateState>): UpdateState => ({
   state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null, ...extra,
 });
 
-/** The start after a swap: the banner's once-said `outcome`, and `last`, the journal's record the row reads (UPDATE1d). */
+/** The start after a swap: the banner's once-said `outcome`, and `last`, the journal's record the row reads. */
 const after = (swap: UpdateOutcome) => ({ outcome: swap, last: swap });
 
 const DRAINING = standing({ state: 'draining', staged: STAGED, mode: 'when-idle', driven: 2, turns: 1 });

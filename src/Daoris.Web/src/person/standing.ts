@@ -6,13 +6,13 @@
  * the holders living, the steward's acts and its desk.
  */
 export type StandingConfirmationNow = {
-  /** The roles a terminal holds this run (D233 point 2): a role the catalogue staffs with the terminal and not here is not started. */
+  /** The roles a terminal holds this run: a role the catalogue staffs with the terminal and not here is not started. */
   holds: RoleHoldNow[];
-  /** The holders living this run, each a terminal Daoris started, which a later start may add a role to (D209 §2.2). */
+  /** The holders living this run, each a terminal Daoris started, which a later start may add a role to. */
   holders: HolderNow[];
-  /** This run's steward acts, newest first, from Daoris's memory (D209 §5.1): what *Notifications*' line lists. */
+  /** This run's steward acts, newest first, from Daoris's memory: what *Notifications*' line lists. */
   stewardActs: StewardActNow[];
-  /** The steward's desk this run, newest first, from Daoris's memory (STEWARDROLE1c, D209 §6.2): what the line shows under its acts. */
+  /** The steward's desk this run, newest first, from Daoris's memory: what the line shows under its acts. */
   stewardDesk: DeskRequestNow[];
 };
 

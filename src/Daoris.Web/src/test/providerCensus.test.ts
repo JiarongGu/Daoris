@@ -124,7 +124,7 @@ function count(sources: Iterable<[file: string, source: string]>): Map<string, M
 
 /** The problems a census holds against the fixture, in order; none is a passing census. */
 function problems(found: Map<string, Map<string, number>>, rows: Row[], exact = true): string[] {
-  // How often a listed file names a token is not the rule's (CENSUSRULES1): a listed file and token pass at any count.
+  // How often a listed file names a token is not the rule's: a listed file and token pass at any count.
   const named = new Set(rows.map((row) => `${row[0]}\n${row[1]}`));
   const out: string[] = [];
   for (const file of [...found.keys()].sort()) {

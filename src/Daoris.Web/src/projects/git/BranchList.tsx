@@ -17,7 +17,7 @@ import { FetchOrigin } from './FetchOrigin';
 /** Yours are folded after five (the built-in Git design §2.2): the rest are one press away. */
 export const YOURS_SHOWN = 5;
 
-/** A landed branch as the list says it (D102): how it stands to its own name on origin, and its pull request. */
+/** A landed branch as the list says it: how it stands to its own name on origin, and its pull request. */
 export type ListedLanded = {
   /** One of the driver's `GitOrigin`: `in-step` · `ahead` · `behind` · `diverged` · `gone` · `not-pushed` · `unknown`. */
   origin: string;
@@ -39,7 +39,7 @@ export type ListedBranch = {
   name: string;
   /** `line` · `session` · `landed` · `yours` · `origin`; any other reads as yours. */
   kind: string;
-  /** Its last commit's whole id, a graph's tip (D147 §4.2); empty where git named none, and the row opens nothing. */
+  /** Its last commit's whole id, a graph's tip; empty where git named none, and the row opens nothing. */
   commit: string;
   at: string | null;
   subject: string;
@@ -49,7 +49,7 @@ export type ListedBranch = {
   landed: ListedLanded | null;
 };
 
-/** One repository's list (D147 §2.2): its line and how it stands to origin, its last fetch, and its branches in the driver's order. */
+/** One repository's list: its line and how it stands to origin, its last fetch, and its branches in the driver's order. */
 export type BranchListValue = {
   workspace: string;
   line: { branch: string | null; source: string; commit: string | null; origin: string | null; ahead: number | null; behind: number | null };
@@ -59,7 +59,7 @@ export type BranchListValue = {
   sessionsUnread?: boolean;
 };
 
-/** What set the line, as Setup says it (D86); a source the page has no word for is the checkout's own guess. */
+/** What set the line, as Setup says it; a source the page has no word for is the checkout's own guess. */
 const SOURCES = new Set(['repository', 'workspace', 'checkout']);
 
 /**
@@ -81,7 +81,7 @@ const SOURCES = new Set(['repository', 'workspace', 'checkout']);
 export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpenHistory, acts }: {
   repository: string;
   list: BranchListValue;
-  /** New branch or tag (GITAPP2c), made at the line's commit; absent, the list offers none. */
+  /** New branch or tag, made at the line's commit; absent, the list offers none. */
   acts?: RefActs;
   /** Each session branch's session's title, by the branch's name. */
   titles?: Readonly<Record<string, string>>;
@@ -99,9 +99,9 @@ export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpe
   const origins = of('origin');
   // Hidden each time the tab opens: page state, not remembered (UX6h2b1).
   const [showOrigin, setShowOrigin] = useState(false);
-  // The branch just deleted, kept here because its row is gone once the list is read again (GITAPP2d).
+  // The branch just deleted, kept here because its row is gone once the list is read again.
   const [gone, setGone] = useState<{ act: string; name: string } | null>(null);
-  // The branch just renamed, for the same reason, with its Finish and Undo (GITAPP2e).
+  // The branch just renamed, for the same reason, with its Finish and Undo.
   const [moved, setMoved] = useState<RenamedRef | null>(null);
   const line = list.line.branch;
   // A branch is drawn beside its line from both commits (`sinceParted`'s two tips): with either missing, it opens nothing.

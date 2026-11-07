@@ -1,10 +1,10 @@
 import { type AccountsAnswer, agentOf, machineScope } from '../../settings/accounts/accounts';
 import type { Tool } from '../../agents/tools';
 
-// What a workspace's page reads (UX6g, D150 §4.3), worked out from answers the page already holds. Pure, so every
+// What a workspace's page reads, worked out from answers the page already holds. Pure, so every
 // machine is an argument.
 
-/** The accounts one agent's work in a workspace may run on: Daoris's accounts, one set for every workspace (D197). */
+/** The accounts one agent's work in a workspace may run on: Daoris's accounts, one set for every workspace. */
 export type AccountsHere = {
   agent: string;
   product: string;

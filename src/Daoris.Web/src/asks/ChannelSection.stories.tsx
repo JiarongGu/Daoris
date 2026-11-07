@@ -54,7 +54,7 @@ export const ExchangeNarrow: Story = { ...Exchange, decorators: [storyWidths.nar
 export const ExchangeDark: Story = { ...Exchange, decorators: [dark] };
 
 /**
- * COMMS1k: two alongside parts of the app's line of work heard each other, and the person told one part alone: each message to one
+ * Two alongside parts of the app's line of work heard each other, and the person told one part alone: each message to one
  * part kept apart from the channel, read-only, with what it reached in that part's line.
  */
 const ADDRESSED: ChannelItem[] = [
@@ -87,7 +87,7 @@ export const EmptyChinese: Story = { ...Empty, decorators: [chinese] };
 export const Reading: Story = { args: { channel: null } };
 
 /**
- * COWORK1d: an urgent claim named so, and what each message reached in the repositories it addresses, with *Send to its session* where
+ * An urgent claim named so, and what each message reached in the repositories it addresses, with *Send to its session* where
  * it waits or never reached one; an ordinary message says no level.
  */
 export const Receipts: Story = {

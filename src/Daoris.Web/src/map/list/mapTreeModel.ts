@@ -64,7 +64,7 @@ export type TreeMove = { focus?: string; toggle?: string; choose?: string; relea
 /**
  * ↓ and ↑ walk the rows in view, Home and End go to either end, → opens a closed group and then enters it, ← closes an open group and
  * then leaves for the group above, Enter or Space chooses an item (a group opens or closes instead), and Escape releases the choice.
- * Null where the key is not the tree's, or is an input method's (IME1).
+ * Null where the key is not the tree's, or is an input method's.
  */
 export function keyInTree(rows: readonly TreeRow[], current: string, press: KeyPress & { key: string }, chosen: string | null): TreeMove | null {
   if (isComposing(press)) return null;

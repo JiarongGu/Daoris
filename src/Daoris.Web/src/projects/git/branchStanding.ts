@@ -6,7 +6,7 @@ import type { ListedBranch, ListedLanded } from './BranchList';
 
 const KINDS = new Set(['line', 'session', 'landed', 'origin']);
 
-/** A branch's kind: a kind the page has no word for is the person's, as a branch the record no longer matches is (D113). */
+/** A branch's kind: a kind the page has no word for is the person's, as a branch the record no longer matches is. */
 export const kindOf = (branch: Pick<ListedBranch, 'kind'>) => (KINDS.has(branch.kind) ? branch.kind : 'yours');
 
 /** How a branch stands to `than` by the commits each holds that the other lacks; null where git did not count. */

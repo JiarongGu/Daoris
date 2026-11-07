@@ -15,27 +15,27 @@ import { UpdateSection } from './machine/Update';
 export type DriverFacts = {
   /** Where this machine's Daoris lives; none while the shell has not answered. */
   home?: string | null;
-  /** Where plugins are looked for (UX6j); none where the answer has none, and the row is absent. */
+  /** Where plugins are looked for; none where the answer has none, and the row is absent. */
   pluginsFolder: string | null;
-  /** The installed plugins, for the Plugins section (PLUGSET1); none where the answer has none or before it answers, and the section is absent. */
+  /** The installed plugins, for the Plugins section; none where the answer has none or before it answers, and the section is absent. */
   plugins?: readonly PluginShown[] | null;
   notify: boolean;
-  /** Minutes an account cools when its agent names no reset (TOOL4g); absent where the answer lacks it. */
+  /** Minutes an account cools when its agent names no reset; absent where the answer lacks it. */
   coolOff?: number | null;
   /** Minutes a session may be quiet before Daoris looks in; absent where the answer lacks it. */
   quiet?: number | null;
-  /** How many sessions Daoris starts at once here (CAPSET1); absent where the answer lacks it. */
+  /** How many sessions Daoris starts at once here; absent where the answer lacks it. */
   cap?: number | null;
-  /** This machine's sessions' access (AUTONOMY1d); absent where the answer lacks it. */
+  /** This machine's sessions' access; absent where the answer lacks it. */
   machineAccess?: AccessLevel | null;
-  /** This machine's git access as set (GITAUTH1f); absent where the answer lacks it. */
+  /** This machine's git access as set; absent where the answer lacks it. */
   machineGitAccess?: GitAccessLevel | null;
-  /** The install's update (UPDATE1b). */
+  /** The install's update. */
   update?: UpdateState;
 };
 
 /**
- * The Driver domain's cards (D75), drawn from the shell's facts: where this machine's Daoris lives, the driver's dials
+ * The Driver domain's cards, drawn from the shell's facts: where this machine's Daoris lives, the driver's dials
  * over `driver.json`, this machine's sessions' access and the install's update. `DriverDomain` holds the hooks and hands
  * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1).
  * A molecule: every state by props, every press out.
@@ -51,15 +51,15 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
   onCoolOff: (minutes: number) => void;
   /** A quiet bound in minutes the person typed and left: whole, in its bounds, and not the one held. */
   onQuiet?: (minutes: number) => void;
-  /** A cap the person typed and left: whole, one or more, and not the one held (CAPSET1). */
+  /** A cap the person typed and left: whole, one or more, and not the one held. */
   onCap: (cap: number) => void;
   onAccess: (edit: AccessEdit, answered?: Answered) => void;
-  /** A change to this machine's git access (GITAUTH1f), a loosening confirmed in its row first. */
+  /** A change to this machine's git access, a loosening confirmed in its row first. */
   onGitAccess?: (edit: GitAccessEdit, answered?: Answered) => void;
   onSayUpdate: ComponentProps<typeof UpdateSection>['onSay'];
 }) {
   const { t } = useTranslation();
-  // The cap as typed (CAPSET1), held as text while it is being typed: a number input mid-edit passes through the empty string,
+  // The cap as typed, held as text while it is being typed: a number input mid-edit passes through the empty string,
   // and writing it straight to the config would be refused while the person was still reaching for a digit.
   const [cap, setCap] = useState<string | null>(null);
 

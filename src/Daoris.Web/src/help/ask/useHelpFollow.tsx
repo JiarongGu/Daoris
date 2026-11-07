@@ -19,25 +19,25 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
   onGo: ((door: StarterDoor) => void) | undefined;
   t: TFunction<"translation", undefined>;
 }) {
-  // What the conversation proposes (HELP1c): each card is judged by the route before it arrives, and
+  // What the conversation proposes: each card is judged by the route before it arrives, and
   // Apply or Not now goes back into the conversation as the person's next message.
   const proposals = useHelpProposals(shown?.id ?? null, live);
   const settle = useSettleHelp();
-  // The Agents screen's running action, where the application holds one (HELP6).
+  // The Agents screen's running action, where the application holds one.
   const runs = useHeldHarnessRun();
   const cards = proposals.data ?? [];
-  // What an Apply did beyond the driver's sentence (HELP6): a go opens its place through the starters'
+  // What an Apply did beyond the driver's sentence: a go opens its place through the starters'
   // door, and an update or a pin is followed by the Agents screen, its console and its end said there.
   const applied = (answer: HelpSettled, proposal?: HelpProposal) => {
-    // The plan moved since the card was drawn (HELPAPPLY1): nothing was applied, and the card is drawn again with the new plan.
+    // The plan moved since the card was drawn: nothing was applied, and the card is drawn again with the new plan.
     if (answer.changed) setRefusal(answer.message);
-    // A draft card's go is the place's Workflow, which the page opens with its editor on the draft the card is against (FLOWCHART2g).
+    // A draft card's go is the place's Workflow, which the page opens with its editor on the draft the card is against.
     const draft = proposal?.kind === 'workflow' && proposal.workflow && answer.go ? draftDoor(proposal.workflow, answer.go) : null;
     const door = draft ?? (answer.go ? placeDoor(answer.go) : null);
     if (door) onGo?.(door);
     if (answer.harnessAction) runs?.follow(answer.harnessAction.harness, answer.harnessAction.action);
   };
-  // ASKQUESTS1: a go card's sentence says where its quest, ask or session stands (since ASKDISMISS1), so the plan its Apply judges
+  // A go card's sentence says where its quest, ask or session stands (since ASKDISMISS1), so the plan its Apply judges
   // moves with them. While one is shown it is drawn again at each push that moves a standing, never on a clock, so its Apply finds
   // the plan it shows rather than answering that the plan changed.
   const goShown = cards.some((card) => card.kind === 'go');

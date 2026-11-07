@@ -10,7 +10,7 @@ import type { ChoiceStanding } from '../work/frame/listPanes';
 import type { ViewId } from '../work/frame/placements';
 
 /**
- * What is on the screen, as Ask Daoris is told it (HELP1b, D89): the view, the workspace in scope, the
+ * What is on the screen, as Ask Daoris is told it: the view, the workspace in scope, the
  * settings domain on Settings, and the session attended on Sessions with what a parked one asks.
  */
 export type HelpWhere = {
@@ -18,24 +18,24 @@ export type HelpWhere = {
   /** The workspace in scope, or null for every workspace. */
   workspace: string | null;
   settings?: SettingsSection | null;
-  /** Knowledge's mode on Knowledge (UX6i): which of its two lists the person is looking at. */
+  /** Knowledge's mode on Knowledge: which of its two lists the person is looking at. */
   knowledge?: KnowledgeMode | null;
-  /** The Agents place's mode (COMPANYVIEW1b): the agents, or the roles they fill. */
+  /** The Agents place's mode: the agents, or the roles they fill. */
   agents?: AgentsMode | null;
   /**
-   * `answered` is a park the person answered (ANSWER1f), read by `answeredPark`: the same session goes on with the answer
+   * `answered` is a park the person answered, read by `answeredPark`: the same session goes on with the answer
    * at the driver's next look, so nothing about it waits on the person.
    */
   session?: { id: string; repository: string; state: string; note?: string | null; answered?: boolean } | null;
-  /** Where Sessions' views stand and which region is showing (HELP2): the helper cannot see the window. */
+  /** Where Sessions' views stand and which region is showing: the helper cannot see the window. */
   layout?: { right: readonly ViewId[]; panel: readonly ViewId[]; rightShown: boolean; panelShown: boolean } | null;
   /**
-   * The item the view has chosen, by the id a go names (FRAME1i-a, D118): a quest's bare id, an ask as `ask:<id>`, a
+   * The item the view has chosen, by the id a go names: a quest's bare id, an ask as `ask:<id>`, a
    * repository's or a workspace's or an agent's name, a plugin's id. `closed` is a choice that is done, still shown.
    */
   item?: { kind: ItemKind; id: string; closed?: boolean } | null;
   /**
-   * A workflow draft open in the editor (FLOWCHART2d), as `draftWhere` names it: its workflow (none for a new one), its place, the version
+   * A workflow draft open in the editor, as `draftWhere` names it: its workflow (none for a new one), its place, the version
    * it was opened from, how many steps, how many problems, the step selected. The draft itself goes beside the words.
    */
   draft?: { workflow: string | null; place: string; base: number | null; steps: number; problems: number; selected: string | null } | null;
@@ -48,7 +48,7 @@ export type ItemKind = (typeof ITEM_KINDS)[number];
 /**
  * The item a view has chosen, as the preface names it: only while the screen shows it — a choice `live` is said, one
  * `closed` is said as closed, and a `gone`, `unread` or missing standing, or no choice, is unsaid. Knowledge and Settings
- * keep what they say today, and a plugin's offer is unsaid (PLUGUI1h).
+ * keep what they say today, and a plugin's offer is unsaid.
  */
 export function itemOf(view: View, chosen: string | null | undefined, standing: ChoiceStanding | undefined): HelpWhere['item'] {
   if (!chosen || (standing !== 'live' && standing !== 'closed')) return null;
@@ -80,13 +80,13 @@ function listed(views: readonly ViewId[]): string {
   return names.length === 1 ? names[0]! : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
-// The window's own names (NAME1b), so the agent names a place the person can find.
+// The window's own names, so the agent names a place the person can find.
 const VIEWS: Record<View, string> = {
   overview: 'Overview', sessions: 'Sessions', quests: 'Quests', projects: 'Repositories',
   map: 'Map', knowledge: 'Knowledge', agents: 'Agents', plugins: 'Plugins', settings: 'Settings',
 };
 
-// Knowledge's two modes, as its list's choice names them (UX6i).
+// Knowledge's two modes, as its list's choice names them.
 const MODES: Record<KnowledgeMode, string> = { search: 'Search', convergence: 'Convergence' };
 
 // Eight since WIRING1c (seven since UX6j, D150 §2.3): the guide is Get started again, and Plugins is a place, named among the views.
@@ -111,7 +111,7 @@ const SAYS = 280;
  *
  * @remarks
  * **Agent-facing, so it is not translated**: the person never reads it as chrome, and one spelling is
- * what the agent learns to read. **Only what the screen already shows** (D47 §4): chrome the page
+ * what the agent learns to read. **Only what the screen already shows**: chrome the page
  * renders, never a machine path. Pure, so every screen is an argument.
  */
 export function prefaceOf(where: HelpWhere): string {
@@ -138,7 +138,7 @@ export function prefaceOf(where: HelpWhere): string {
 
   const session = where.view === 'sessions' ? where.session : null;
   if (session) {
-    // An answered park still reads `awaiting-person` for up to one look (ANSWER1f): named as the list's *answered*.
+    // An answered park still reads `awaiting-person` for up to one look: named as the list's *answered*.
     const state = session.answered
       ? "answered: the same session goes on with the person's answer at the driver's next look"
       : session.state === 'awaiting-person' ? 'waiting on the person' : session.state;
@@ -149,7 +149,7 @@ export function prefaceOf(where: HelpWhere): string {
   const note = session?.note?.replace(/\s+/g, ' ').trim();
   if (note) said += ` It says: "${note.length > SAYS ? `${note.slice(0, SAYS).trimEnd()}…` : note}".`;
 
-  // Where the views stand (HELP2), on every view since the frame is on every view (DOCK1a). Absent where
+  // Where the views stand, on every view since the frame is on every view. Absent where
   // there is no frame at all — a browser — which is the caller's to say by leaving it out.
   const layout = where.layout;
   if (layout) {

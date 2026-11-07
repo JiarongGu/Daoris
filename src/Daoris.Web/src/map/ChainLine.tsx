@@ -22,7 +22,7 @@ const WORD: Record<Quest['status'], string> = {
  * again, and to every session of a quest its tool and version again. The head already says this
  * quest's title and state, so here it is *this quest*; a quest's sessions are the strip's, a press away.
  *
- * **One line, whatever the width** (HEADFIT1b, D185): the stops truncate with an ellipsis, whole in their tip, and *Show how it
+ * **One line, whatever the width**: the stops truncate with an ellipsis, whole in their tip, and *Show how it
  * ran* keeps its place at the line's end. Wrapped, the press took a row of its own at the main area's floor, 22 px of a record
  * head's 200.
  *

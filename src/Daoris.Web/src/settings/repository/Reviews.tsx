@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, CheckField, Chip, Icon, Segmented } from '../../design/ui';
 
 /**
- * One review environment (REVIEWENV1a, D154 point 1): where a repository's work runs for the person to look at before it
+ * One review environment: where a repository's work runs for the person to look at before it
  * lands. Its name, its kind (`local` or `deployed`), the repository's own procedure for reaching it, the address where the
  * app is used, and a local one's command for work needing a process of its own.
  */
@@ -105,7 +105,7 @@ export function reviewSummary(t: TFunction, rule: ReviewRule | null | undefined)
 }
 
 /**
- * **One review rule's control** (REVIEWENV1a, design §1.7): the environments set here, each with its drop; whether work waits
+ * **One review rule's control**: the environments set here, each with its drop; whether work waits
  * for the person's look; *None here* for a repository; and an environment's form, open where nothing of its own is set yet.
  * Every press goes out as the twins' edit, judged by the driver, whose refusal is said in its words. Props only (components §2).
  */

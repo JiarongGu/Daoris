@@ -259,7 +259,7 @@ export function SuppliedCanvas({
     </>
   );
 
-  // Below the floor the list is the reading (MAPUX1e): no viewport is offered there, so no way back to the graph either.
+  // Below the floor the list is the reading: no viewport is offered there, so no way back to the graph either.
   const narrow = list !== undefined && width !== undefined && !wide;
   if ((listed || narrow) && list !== undefined) {
     return (

@@ -31,7 +31,7 @@ export function QuestRecord({ chain, onOpenQuest, onAttend, nameOf, quest, moves
   return (
     <>
 {chain.length > 1 && (
-        /* The chain this quest belongs to (MAP1): the ask, the steps before and after it, what its close will
+        /* The chain this quest belongs to: the ask, the steps before and after it, what its close will
            still publish (D65 §4, `{parent}` as the asker wrote it), and on what each step ran. */
         <div className="mt-4">
           <ChainStrip
@@ -53,7 +53,7 @@ export function QuestRecord({ chain, onOpenQuest, onAttend, nameOf, quest, moves
         : <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{quest.note}</p>)}
 
       {session && (
-        /* The driven session's RECORD (D46 §4) — read-only here: a quest is decided on its page, and its sessions
+        /* The driven session's RECORD — read-only here: a quest is decided on its page, and its sessions
            are managed on theirs (D126 §3.6), so the stop is the session's page header's, behind the door below. Its
            note's Daoris lines are worded in the reader's language and the agent's words shown as written (LANG1b);
            the evidence is the driver's observation and renders verbatim. */
@@ -88,7 +88,7 @@ export function QuestRecord({ chain, onOpenQuest, onAttend, nameOf, quest, moves
       )}
 
       {trace && (
-        /* How it came to be (TRACE1b): folded, so nothing is read until the person opens it. Its sessions open in
+        /* How it came to be: folded, so nothing is read until the person opens it. Its sessions open in
            Sessions, its other quests here and its ask on its page, each where this page already has the door. */
         <HowItCameToBe
           className="mt-5"

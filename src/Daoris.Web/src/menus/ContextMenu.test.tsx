@@ -10,7 +10,7 @@ import { PathText } from '../design/ui';
 import { type ContextDoors, type ContextOffer, contextOffer } from './press';
 import { ContextMenus } from './ContextMenu';
 
-// CTX1 (D138): the one right-click handler, as a window holds it — what it opens on a surface, on selected words, on a
+// The one right-click handler, as a window holds it — what it opens on a surface, on selected words, on a
 // link and on a code span; where it leaves the engine's menu and where it suppresses it; the keys; the menu's role,
 // focus and Esc; and both languages.
 

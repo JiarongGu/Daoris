@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// COMPANYVIEW1d (the company-view design §3.4): an agent's page's *Used by*, over the driver's one read of the structure.
+// An agent's page's *Used by*, over the driver's one read of the structure.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),

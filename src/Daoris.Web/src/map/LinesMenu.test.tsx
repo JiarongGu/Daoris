@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useMapWhen, useShownLines } from './LinesMenu';
 
-// What the map's menu remembers (MAP4b, MAP4c), through the page's one storage guard since FRAME1c
+// What the map's menu remembers, through the page's one storage guard since FRAME1c
 // (audit A10): kept for this viewer, and for the visit alone where the browser refuses to keep it.
 
 afterEach(() => {

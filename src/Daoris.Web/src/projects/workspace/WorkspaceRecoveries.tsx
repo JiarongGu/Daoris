@@ -12,7 +12,7 @@ const DELETE = 'git update-ref -d';
 /** A recovery ref nothing of the person's holds: kept at any age, until they delete it. */
 const unheld = (entry: MilestoneEntry) => entry.kind === 'recovery-ref' && !entry.until && entry.detail.includes(DELETE);
 
-/** A folder's own name, never its path: the folder is the machine's (D47 §4). */
+/** A folder's own name, never its path: the folder is the machine's. */
 const folderName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
 /** What keeps it, in the reader's language where the page has the words, and the driver's own clause where it does not. */
@@ -102,7 +102,7 @@ function DropAsk({ groups, onDrop, onClose, onDone }: {
 }
 
 /**
- * **What is kept for recovery** (RECOVERYVIEW1, CLEANUP1): Daoris's own recoveries no unit of work names, on the workspace's
+ * **What is kept for recovery**: Daoris's own recoveries no unit of work names, on the workspace's
  * Branches: a folder set aside, kept until its date, and a recovery ref, kept by what holds its commit or, where nothing of the
  * person's does, until they delete it, with the command to do that, copyable. Nothing is drawn where there are none.
  *
@@ -116,7 +116,7 @@ export function WorkspaceRecoveries({ recoveries, repositories, onDrop }: {
   /** The workspace's repositories, by name: another's recoveries are not this page's. */
   repositories: readonly string[];
   /**
-   * The person's press to delete the refs nothing holds (RECOVERYDROP1): sent each repository's refs with the commits shown, it
+   * The person's press to delete the refs nothing holds: sent each repository's refs with the commits shown, it
    * answers what went and what was kept. None, or an answer without the commit, offers the copyable commands alone.
    */
   onDrop?: (groups: RecoveryDropGroup[]) => Promise<RecoveryDropResult>;

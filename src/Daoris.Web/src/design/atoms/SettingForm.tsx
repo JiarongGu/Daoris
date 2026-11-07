@@ -87,7 +87,7 @@ export function SettingRow({ label, hint, why, control, children }: {
     );
   }
   return (
-    // A row alone is its own container (WSR4): below 32rem the value goes under the label at the row's full width.
+    // A row alone is its own container: below 32rem the value goes under the label at the row's full width.
     // Beside a 155px label floor a 309px row left the control 130px, and a branch pattern showed eleven characters.
     <div data-setting-row="" className={cn('@container', rule)}>
       <div className={cn('grid items-start gap-x-6 gap-y-1.5 @max-[32rem]:grid-cols-1', TRACK_COLUMNS)}>

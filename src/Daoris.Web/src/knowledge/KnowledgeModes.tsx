@@ -6,7 +6,7 @@ import { KNOWLEDGE_MODES, type KnowledgeMode } from './modes';
 const GLYPH = { search: 'search', convergence: 'convergence' } as const;
 
 /**
- * **Knowledge's list head** (UX6i, D150 §2.2): a two-way choice, *Search · Convergence*, over the mode's own list. Each
+ * **Knowledge's list head**: a two-way choice, *Search · Convergence*, over the mode's own list. Each
  * mode keeps the list it had as a place, so the choice is the one thing the place adds; it stays in reach above the list's
  * rows, outside their scroll (`ListPane`'s `head`).
  *
@@ -30,7 +30,7 @@ export function KnowledgeModes({ mode, onMode }: { mode: KnowledgeMode; onMode: 
 }
 
 /**
- * Knowledge's list closed to its strip (D118 §3a): the two modes, each by its glyph and named, the one in front marked as
+ * Knowledge's list closed to its strip: the two modes, each by its glyph and named, the one in front marked as
  * the activity bar marks its place. The strip stands for the head's choice, so a list closed to give a page room still
  * switches between Search and Convergence.
  */

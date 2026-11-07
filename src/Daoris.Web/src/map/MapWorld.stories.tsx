@@ -119,7 +119,7 @@ export const ALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-
 export const ALineChosenRing: Story = { args: { topology: RING, line: { kind: 'quests', from: 'game', to: 'engine' } }, decorators: [storyWidths.half] };
 
 /**
- * Each zoom says less about the same cards (MAPUX1a): at 100% a name, its count and the session in words; at 50% the name and count; at
+ * Each zoom says less about the same cards: at 100% a name, its count and the session in words; at 50% the name and count; at
  * 25% a dot, the ring kept, and the chosen card's name beside it. The anchor keeps the view on the first repository.
  */
 const atZoom = (k: number) => keptAtZoom('map', 'story', k, 'repo-00');
@@ -148,7 +148,7 @@ export const AsListChineseDark: Story = { play: asList, decorators: [storyWidths
 export const AsListALineChosen: Story = { args: { line: { kind: 'quests', from: 'repo-03', to: 'repo-09' } }, play: asList };
 
 /**
- * Below the 36rem floor the list is the reading (MAPUX1e): one tree, one row in the tab order, each row's count and state in words, and
+ * Below the 36rem floor the list is the reading: one tree, one row in the tab order, each row's count and state in words, and
  * the chosen row's detail opening under it.
  */
 export const ListNarrowDetailInPlace: Story = { args: { line: { kind: 'node', id: 'repo-09' }, inPlace: true }, decorators: [storyWidths.narrow] };

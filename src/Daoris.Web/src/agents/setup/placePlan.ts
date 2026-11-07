@@ -122,7 +122,7 @@ export const freshDraft = (repositories: string[]): SetUpDraft => ({
   repositories, preset: null, opinion: false, look: false, adoption: null, builds: '', drive: false, accept: [], cleared: [], result: null, ended: null, review: false,
 });
 
-/** The draft an ask makes (AGENTSPLACE1k, SETUPUX1k): what Ask Daoris's place card seeds a place's *Set up…* with, which opens on the review. */
+/** The draft an ask makes: what Ask Daoris's place card seeds a place's *Set up…* with, which opens on the review. */
 export const draftOfAsk = (ask: PlaceAsk): Partial<SetUpDraft> => ({
   repositories: ask.repositories, preset: ask.preset, opinion: ask.opinion, look: ask.look, adoption: ask.adoption, builds: ask.builds ?? '', drive: ask.drive, review: true,
 });
@@ -272,7 +272,7 @@ export type SetUpDoor = (refusal: PlaceRefusal) => (() => void) | null;
 export type SetUpPage = {
   /** The draft of an open place; none where its set-up is closed. */
   draftOf: (place: string) => SetUpDraft | null;
-  /** Whether the set-up is in front: a draft left through a door is kept but not shown (SETUPUX1j). */
+  /** Whether the set-up is in front: a draft left through a door is kept but not shown. */
   shown: (place: string) => boolean;
   /** Opens a place's set-up; a seed (an ask Ask Daoris proposed) replaces the draft the place held, since the person came for it. */
   open: (place: string, repositories: string[], seed?: Partial<SetUpDraft>) => void;

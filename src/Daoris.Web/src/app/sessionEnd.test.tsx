@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
 import { Profiler } from 'react';
 
-// PAGELOOP1: on the install the page threw React's update-depth error (#185) four seconds into a driven session's last message,
+// On the install the page threw React's update-depth error (#185) four seconds into a driven session's last message,
 // streamed as hundreds of one-line `message` events of one id, twice, and with no boundary the window went blank. The whole
 // window, as `main.tsx` mounts it, over a mocked shell that delivers each event to every handler the page holds, through what such
 // an end changes: the turn ends, the quest is done, the work lands, the session ends and says so, and the next look reads it all
@@ -85,7 +85,7 @@ function respond(url: string): Response {
 
 const event = (seq: number, extra: Record<string, unknown>) => ({ seq, at: STARTED, ...extra });
 
-/** Each pushed slice's partitions as the shell's owner holds them now, by slice, then partition (PUSH1a, D182). */
+/** Each pushed slice's partitions as the shell's owner holds them now, by slice, then partition. */
 const partitionsOf = (): Record<string, Record<string, unknown>> => ({
   driver: {
     shell: { ready: true },
@@ -227,7 +227,7 @@ describe("the window through a driven session's end (PAGELOOP1)", () => {
         const side = await screen.findByRole('complementary', { name: 'right side bar' });
         expect(await within(side).findByText(/^Attending/)).toBeInTheDocument();
       },
-      // Off Sessions an ended session is followed no more, and the side bar opens on Ask Daoris (UX6b).
+      // Off Sessions an ended session is followed no more, and the side bar opens on Ask Daoris.
       after: async () => {
         const side = await screen.findByRole('complementary', { name: 'right side bar' });
         expect(await within(side).findByRole('tab', { name: 'Ask Daoris', selected: true })).toBeInTheDocument();

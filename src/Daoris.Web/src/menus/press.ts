@@ -2,7 +2,7 @@ import type { MouseEvent as ReactMouseEvent } from 'react';
 import { webAddress } from '../design/links';
 import type { MenuAct } from '../design/ui';
 
-// The right-click menu's rules (CTX1, D138, design §3): what a press is on, what a surface offers, and the groups the
+// The right-click menu's rules: what a press is on, what a surface offers, and the groups the
 // menu draws, most specific first. Pure, so `ContextMenus` only listens and draws, and each case is an assertion.
 
 /** What a surface offers a right-click: its acts, as its ⋯ or its page lists them, and what it is called. */
@@ -65,7 +65,7 @@ export function contextOffer(offer: ContextOffer | null | undefined): { onContex
 const NOT_TYPED = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'image', 'range', 'color', 'file', 'hidden']);
 
 /**
- * Whether a press is in a field that takes words, where the engine's own menu stays (D138 §4): cut, copy and paste, which
+ * Whether a press is in a field that takes words, where the engine's own menu stays: cut, copy and paste, which
  * the page could not offer without a clipboard permission. The terminal is one: its menu pastes into the shell.
  */
 export function isTextField(element: Element | null): boolean {
@@ -124,7 +124,7 @@ export function pressedOn(target: Element, selection: Selection | null): Pressed
     ? {
       href: anchor.getAttribute('href') ?? '',
       web: webAddress(anchor.getAttribute('href')),
-      // A sign-in's link is always the system's browser (D78 §3.4), and says so on itself.
+      // A sign-in's link is always the system's browser, and says so on itself.
       system: anchor.dataset.link === 'system',
       element: anchor,
     }
@@ -164,7 +164,7 @@ export function contextSections({ pressed, offer, doors, t }: {
     const { openInBrowser } = doors;
     const web = link.system ? null : link.web;
     sections.push([
-      // The link's own click, so it opens where the person chose (BRW7), as a press on it would.
+      // The link's own click, so it opens where the person chose, as a press on it would.
       { id: 'open', label: t('contextMenu.act.open'), icon: 'external', onSelect: () => link.element.click() },
       ...(openInBrowser && web
         ? [{ id: 'openInBrowser', label: t('contextMenu.act.openInBrowser'), icon: 'browser' as const, onSelect: () => openInBrowser(web) }]

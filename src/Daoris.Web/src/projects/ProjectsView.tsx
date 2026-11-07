@@ -23,9 +23,9 @@ import { workspaceOf, workspacesOf } from '../data/workspaces';
 import { buttonNamed, returnFocus } from '../lib/returnFocus';
 
 /**
- * **The Repositories view** (D38; FRAME1e, D118 §2): what it hands the frame (D118 §5), its list pane and its main
+ * **The Repositories view**: what it hands the frame, its list pane and its main
  * area. The list holds a group per workspace, its row a door to the workspace's page, then its adopted repositories and
- * *Registered, not adopted* (UX6g, D150 §4.1); its `＋` adds a repository and its ⋯ imports a folder. The main area holds
+ * *Registered, not adopted*; its `＋` adds a repository and its ⋯ imports a folder. The main area holds
  * the chosen workspace's page (`WorkspaceView`, §4.3), or the chosen repository's, with *Manage* and the door to its code
  * map in its header. A record is the main area and a form a drawer (§3d): adding, importing and managing stay drawers.
  *
@@ -43,14 +43,14 @@ import { buttonNamed, returnFocus } from '../lib/returnFocus';
  * branch's name in a repository's Branches, or a workspace's, opens the branch's page in the main area in its repository's
  * place (UX6h3b); it is page state of the view's, not remembered, and its way back is the repository's Branches.
  *
- * **A repository's Setup is every setting it holds on this machine** (UX6f), each the screen's half of `daoris place
- * <verb> <repository>` or `daoris agent rules … --repository` (D50), from the answers the driver gives every door: the
+ * **A repository's Setup is every setting it holds on this machine**, each the screen's half of `daoris place
+ * <verb> <repository>` or `daoris agent rules … --repository`, from the answers the driver gives every door: the
  * driver's state, the lines, reading across, the rules, and the plugins that land work. What only Setup reads (reading
  * across, the plugins) is asked only while Setup shows, so holding the view on every view still asks nothing more.
  *
- * **Membership is a repository's own act** (D32): Daoris never writes into a sibling, so nothing joins by being seen,
+ * **Membership is a repository's own act**: Daoris never writes into a sibling, so nothing joins by being seen,
  * and the join steps are proposed as text, never a button (D31's shape). The management surfaces exist where a shell
- * does (D48 §7): managing repositories means touching machine paths, and a browser has none.
+ * does: managing repositories means touching machine paths, and a browser has none.
  */
 export function useProjectsView({
   active, chosen, onChoose, tab = 'details', onTab, workspaceTab = 'details', onWorkspaceTab, workspaceSection = null, notify,
@@ -72,31 +72,31 @@ export function useProjectsView({
   /** A workspace's page's tab, remembered apart (`daoris.list.projects.workspaceTab`, UX6g). */
   workspaceTab?: WorkspaceTab;
   onWorkspaceTab?: (tab: WorkspaceTab) => void;
-  /** The section of a workspace's Setup a door asked to see open (UX6g). */
+  /** The section of a workspace's Setup a door asked to see open. */
   workspaceSection?: WorkspaceSection | null;
   notify: Notify;
-  /** Open an agent's page, where a workspace's accounts are set (UX6e): a workspace's Details names each agent's. */
+  /** Open an agent's page, where a workspace's accounts are set: a workspace's Details names each agent's. */
   onOpenAgent?: (agent: string) => void;
   /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
   onOpenPlugin?: (plugin: string) => void;
-  /** Open Settings → Git, where a remote nothing serves is given an identity (GITAUTH1e). */
+  /** Open Settings → Git, where a remote nothing serves is given an identity. */
   onOpenGit?: (host: string) => void;
-  /** Open a repository's Setup, which is the Agents place's page once its Setup mode is lit (AGENTSPLACE1f): the door its page offers in place of the tab. */
+  /** Open a repository's Setup, which is the Agents place's page once its Setup mode is lit: the door its page offers in place of the tab. */
   onOpenSetup?: (repository: string) => void;
-  /** Open a section of a workspace's Setup, which is the workspace place's once the Setup mode is lit (SETUPUX1v): the door its Workflow tab's steps offer. */
+  /** Open a section of a workspace's Setup, which is the workspace place's once the Setup mode is lit: the door its Workflow tab's steps offer. */
   onOpenWorkspaceSetup?: (workspace: string, section: WorkspaceSection) => void;
-  /** Sync a workspace with its remote, the status bar's pass (SYNC6b), which the application says. */
+  /** Sync a workspace with its remote, the status bar's pass, which the application says. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
-  /** Its code map, one level into the Map (MAP3a): the door a repository's page offers. */
+  /** Its code map, one level into the Map: the door a repository's page offers. */
   onOpenCode?: (repository: string) => void;
   /**
-   * The Workspace menu's *Add repository…* (D75), an EVENT like Quests' opening draft: consumed once,
+   * The Workspace menu's *Add repository…*, an EVENT like Quests' opening draft: consumed once,
    * and cleared by its holder through `onAddOpened`, or the drawer would reopen on every render.
    */
   addRequested?: boolean;
   onAddOpened?: () => void;
-  /** And its *Import a folder…* (D77): the same kind of event, for the import drawer. */
+  /** And its *Import a folder…*: the same kind of event, for the import drawer. */
   importRequested?: boolean;
   onImportOpened?: () => void;
   /**
@@ -106,7 +106,7 @@ export function useProjectsView({
   drawerWorkspace?: string | null;
   /**
    * A quest's page, an ask's, or a session in Sessions: the doors a workspace's clear offers beside a unit it keeps, where
-   * the page that frees it is (HIST1e, D153 §5). Absent where there is no such page to open.
+   * the page that frees it is. Absent where there is no such page to open.
    */
   onOpenQuest?: (id: string) => void;
   onOpenAsk?: (id: string) => void;
@@ -120,7 +120,7 @@ export function useProjectsView({
   onBranchOpened?: () => void;
 }): ViewLayout {
   const { t } = useTranslation();
-  // A chosen item names a workspace or a repository (UX6g, §4.1).
+  // A chosen item names a workspace or a repository.
   const item = chosen ? projectsItem(chosen) : null;
   const chosenWorkspace = item && 'workspace' in item ? item.workspace : null;
   const chosenRepository = item && 'repository' in item ? item.repository : null;
@@ -128,13 +128,13 @@ export function useProjectsView({
   const { workspace } = useScope();
   const repositories = useRepositories();
   const driver = useDriver();
-  // Each repository's line as the driver resolves it (WSR2) — shell-only, and absent in a browser.
+  // Each repository's line as the driver resolves it — shell-only, and absent in a browser.
   const lines = useLines();
   const lineOf = (repository: string) => {
     const line = (Array.isArray(lines.data?.lines) ? lines.data.lines : []).find((one) => one.repository === repository);
     return line?.branch ? line : undefined;
   };
-  // Who holds its heavy-run slot and who waits (HEAVYSLOT1), for its Details' row, asked while its Details shows; the sessions and
+  // Who holds its heavy-run slot and who waits, for its Details' row, asked while its Details shows; the sessions and
   // quests that name them are the rail's own reads, asked only while someone holds or waits.
   const detailsShown = active && driver.data !== undefined && tab === 'details' && chosenRepository !== null;
   const heavySlot = useHeavySlot(chosenRepository ?? '', { enabled: detailsShown });
@@ -145,8 +145,8 @@ export function useProjectsView({
     const session = (heavySessions.data ?? []).find((row) => row.id === id);
     return session ? sessionTitle(session, session.quest ? (heavyQuests.data ?? []).find((row) => row.id === session.quest) : null) : id;
   };
-  // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
-  // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one (UX6g).
+  // Session branches holding work no branch of the person's holds — named on the repository,
+  // so work is not lost in a pile nobody reads. A workspace's Branches lists them one by one.
   const sweep = useSweepPlan();
   const unlandedIn = (repository: string) => (Array.isArray(sweep.data?.branches) ? sweep.data.branches : [])
     .filter((branch) => branch.repository === repository && branch.kind === 'unlanded').length;
@@ -177,7 +177,7 @@ export function useProjectsView({
   const [managing, setManaging] = useState<Registration | null>(null);
   // The branch open on a repository's page (UX6h3b): page state, as the Map holds its code map, never remembered across a
   // restart. It shows while its repository is chosen at Branches, whose page it is, and its way back clears it.
-  // A door into how it landed opens it with that section open (FLOWCHART1c); the list's presses open the page alone.
+  // A door into how it landed opens it with that section open; the list's presses open the page alone.
   const [branchOpen, setBranchOpen] = useState<{ repository: string; branch: string; landing?: boolean } | null>(null);
   useEffect(() => {
     if (!branchAsked) return;
@@ -198,7 +198,7 @@ export function useProjectsView({
   const standing = (registration: Registration) => driver.data && {
     drivable: named(driver.data.drivable, registration.repository),
     held: named(driver.data.holds, registration.repository),
-    // Only a local host names a checkout, and only to its own page (D47 §4).
+    // Only a local host names a checkout, and only to its own page.
     here: Boolean(registration.root),
   };
   const facts = (registration: Registration): RepositoryRowFacts => ({
@@ -207,7 +207,7 @@ export function useProjectsView({
     entries: indexed(registration.repository)?.total ?? null,
     branches: branchesIn(registration.repository),
   });
-  /** The list's groups (UX6g, §4.1): a workspace each, by name, its adopted repositories then those not adopted. */
+  /** The list's groups: a workspace each, by name, its adopted repositories then those not adopted. */
   const groups: WorkspaceGroup[] = workspacesOf(rows).map((name) => {
     const held = rows.filter((row) => workspaceOf(row) === name);
     return { workspace: name, adopted: held.filter((row) => row.adopted).map(facts), outside: held.filter((row) => !row.adopted).map(facts) };
@@ -233,8 +233,8 @@ export function useProjectsView({
           asked={workspaceSection}
           notify={notify}
           onOpenRepository={onChoose}
-          // A repository that sets rules of its own opens at its own workflow (WORKFLOW1b).
-          // That is the repository's place (AGENTSPLACE1h): the application opens it, as it does for a Setup door.
+          // A repository that sets rules of its own opens at its own workflow.
+          // That is the repository's place: the application opens it, as it does for a Setup door.
           onOpenRepositoryWorkflow={(repository) => onOpenSetup?.(repository)}
           // A branch in its Branches opens on its repository's page, so its way back is that repository's Branches (UX6h3b).
           onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
@@ -287,7 +287,7 @@ export function useProjectsView({
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
-          // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows (D147 §6).
+          // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows.
           branches={attached
             ? (
               <RepositoryBranches
@@ -303,15 +303,15 @@ export function useProjectsView({
           history={attached
             ? <RepositoryHistory repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
-          // GITAPP2b: its checkout's changes, where the person let Daoris change its files (Setup's Reach), read while its tab shows.
+          // Its checkout's changes, where the person let Daoris change its files (Setup's Reach), read while its tab shows.
           changes={attached && named(driver.data?.checkoutWrites, shown.repository)
             ? <RepositoryChanges repository={shown.repository} workspace={workspaceOf(shown)} here={Boolean(shown.root)} />
             : undefined}
-          // INTEGRATE1h: its queue, candidates and history, read while its tab shows.
+          // Its queue, candidates and history, read while its tab shows.
           integration={attached ? <RepositoryIntegration repository={shown.repository} notify={notify} /> : undefined}
           tab={tab}
           onTab={onTab}
-          // Adoption's own acts are an adopter's (INT3c): managing writes its declaration into it.
+          // Adoption's own acts are an adopter's: managing writes its declaration into it.
           onManage={attached && shown.adopted ? () => setManaging(shown) : undefined}
           onOpenCode={onOpenCode ? () => onOpenCode(shown.repository) : undefined}
         />
@@ -324,7 +324,7 @@ export function useProjectsView({
       view: 'projects',
       name: t('nav.projects'),
       labels: { open: t('projects.list.open'), close: t('projects.list.close'), resize: t('projects.list.resize') },
-      // Adding and importing touch machine paths, so they are a shell's (D48 §7): a browser's list makes nothing.
+      // Adding and importing touch machine paths, so they are a shell's: a browser's list makes nothing.
       make: attached ? { label: add.label, onMake: add.onAct } : undefined,
       more: attached
         ? <ListMore label={t('projects.list.more')} items={[{ id: 'import', label: t('projects.list.import') }]} onChoose={() => setImporting({})} />
@@ -340,8 +340,8 @@ export function useProjectsView({
           }
         : undefined,
       chosen,
-      // A remembered repository reopens only while the registry still holds it (UX6b): one retired opens nothing chosen. A
-      // workspace, while a repository registered here is still in it (UX6g).
+      // A remembered repository reopens only while the registry still holds it: one retired opens nothing chosen. A
+      // workspace, while a repository registered here is still in it.
       standing: !chosen ? undefined : shown || workspaceHeld ? 'live' : registry.data !== undefined ? 'gone' : 'unread',
       body: (
         <ProjectList
@@ -358,7 +358,7 @@ export function useProjectsView({
       <>
         {main}
         {adding && (
-          // Once registered, the list has it chosen, as an installed plugin is (D119 §3.1).
+          // Once registered, the list has it chosen, as an installed plugin is.
           <AddProjectDrawer onClose={() => setAdding(null)} onAdded={onChoose} notify={notify} initialWorkspace={adding.workspace} />
         )}
         {importing && (

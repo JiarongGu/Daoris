@@ -4,7 +4,7 @@ import { aQuest } from '../quests/aQuest';
 import { ChainStrip } from './ChainStrip';
 import { buildChain } from './chain';
 
-// Chains as the service makes them (D65 §4): an ask becomes a quest, closing it publishes the next
+// Chains as the service makes them: an ask becomes a quest, closing it publishes the next
 // step with `parent` set, and what is still to come rides on the newest step. Built through
 // `buildChain` rather than by hand, so a story cannot show a shape the model would never produce.
 

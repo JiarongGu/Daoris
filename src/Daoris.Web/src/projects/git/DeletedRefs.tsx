@@ -6,7 +6,7 @@ import { ago, stamp } from '../../locales/format';
 import type { RefActs } from './NewRef';
 
 /**
- * One delete the journal holds (ONEWAY1r): the act `GIT_REF_UNDO` takes, what went and at which commit, who pressed it, and `closed`, why
+ * One delete the journal holds: the act `GIT_REF_UNDO` takes, what went and at which commit, who pressed it, and `closed`, why
  * its Undo is shut (`undone` · `name-taken` · `commit-gone`), null where it is open.
  */
 export type GitDeletedRef = {
@@ -31,7 +31,7 @@ const shut = (t: TFunction, row: GitDeletedRef): string =>
       : t('projects.git.deleted.closed.commitGone');
 
 /**
- * **A repository's deletes, as the journal holds them** (ONEWAY1r, D204, D228): each branch or tag deleted, by the person or by a door of
+ * **A repository's deletes, as the journal holds them**: each branch or tag deleted, by the person or by a door of
  * Daoris's, with the *Undo* its act carries. A row whose Undo is shut says why, in words; a refusal an Undo met is the driver's sentence,
  * shown as written.
  *

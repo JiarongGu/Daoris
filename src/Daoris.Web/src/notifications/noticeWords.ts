@@ -43,7 +43,7 @@ export type AttentionTold = {
 };
 
 /**
- * The toast a window says for an attention, in the reader's language (NOTIFY2d): its kind's headline, as the shell's balloon says
+ * The toast a window says for an attention, in the reader's language: its kind's headline, as the shell's balloon says
  * it, and what a session wrote beside it as written (a park's question, an ending's conclusion, a held call's title). A wait for an
  * account says its headline alone, its detail being the driver's English. A kind this build does not word says the driver's own
  * headline, as before. Null where nothing is to be said.

@@ -36,7 +36,7 @@ describe('the domain list, in a shell', () => {
   });
 
   /**
-   * D75: one page, its domains in a list, one shown at a time. Every way in names its domain, so the
+   * One page, its domains in a list, one shown at a time. Every way in names its domain, so the
    * page is the caller's to open at one; the list is how the person moves between them.
    */
   it('lists its domains, shows only the one chosen, and asks for another by name', async () => {
@@ -48,21 +48,21 @@ describe('the domain list, in a shell', () => {
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
     await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(9));
     expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
-    // The programs Daoris runs beside its agents follow the driver, git's identities follow them, and Agents is a place of its own (UX6e, D150 §5).
+    // The programs Daoris runs beside its agents follow the driver, git's identities follow them, and Agents is a place of its own.
     const names = within(domains).getAllByRole('button').map((button) => button.textContent);
     expect(names.slice(names.indexOf('Driver'), names.indexOf('Driver') + 3)).toEqual(['Driver', 'Tools', 'Git']);
     expect(names).not.toContain('Agents');
-    // Workspace and Permissions left for a workspace's page and a repository's (UX6g, D150 §3.1), and Plugins for its
-    // place (UX6j, §2.3).
+    // Workspace and Permissions left for a workspace's page and a repository's, and Plugins for its
+    // place.
     expect(names).not.toContain('Workspace');
     expect(names).not.toContain('Permissions');
     expect(names).not.toContain('Plugins');
-    // The setup guide leads (SETUP1a, D97), named Get started again since Setup names a repository's tab (UX6j).
+    // The setup guide leads, named Get started again since Setup names a repository's tab.
     expect(within(domains).getAllByRole('button')[0]?.textContent).toBe('Get started');
-    // Daoris's browser (CHR5, CHR7) and the machine log (LOG1c) are a machine's domains, last in the list.
+    // Daoris's browser and the machine log are a machine's domains, last in the list.
     expect(within(domains).getAllByRole('button').slice(-2).map((button) => button.textContent)).toEqual(['Browser', 'Machine log']);
     expect(await screen.findByRole('checkbox', { name: 'Announce what needs you or ended' })).toBeTruthy();
-    // The main area's header names the domain (FRAME1g), and a card alone in it does not say it again.
+    // The main area's header names the domain, and a card alone in it does not say it again.
     const main = screen.getByRole('main');
     expect(within(main).getByRole('heading', { level: 1, name: 'Driver' })).toBeTruthy();
     expect(within(main).getAllByText('Driver')).toHaveLength(1);
@@ -107,7 +107,7 @@ describe("Settings' list in a shell's frame", () => {
   it('at 680 px stays beside the domain with the side bar closed, and gives way to a strip with it open', () => {
     expect(at(680, true)).toMatchObject({ mode: 'open', width: 176 });
     expect(at(680, false)).toMatchObject({ mode: 'strip', width: 56, auto: true });
-    // The side bar counts at its floor whenever it is open, full below 768 px included (FRAME1b).
+    // The side bar counts at its floor whenever it is open, full below 768 px included.
     expect(680 - 48 - 176 - DOCK.floor).toBeLessThan(400);
   });
 });

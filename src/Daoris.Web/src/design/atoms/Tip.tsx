@@ -101,7 +101,7 @@ export function Tip({ content, children, side = 'bottom' }: {
   // Typed as the button Radix's trigger renders; with `asChild` the ref lands on whatever the child
   // is, and only `contains` is asked of it.
   const trigger = useRef<HTMLButtonElement>(null);
-  // A tip on the frame keeps the frame's size while the content zooms (ZOOM1).
+  // A tip on the frame keeps the frame's size while the content zooms.
   const held = useContext(FrameHeld);
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export function Tip({ content, children, side = 'bottom' }: {
     // `disableHoverableContent` is what makes the tooltip untouchable: with hoverable content on,
     // Radix gives the popper WRAPPER pointer events so you can move into the tooltip, and the
     // wrapper then sits over whatever the trigger opened. That is how the workspace scope's tooltip
-    // came to swallow clicks on its own options list once it moved into the app strip (D56).
+    // came to swallow clicks on its own options list once it moved into the app strip.
     // Nothing here is meant to be hovered INTO — every Tip carries one sentence.
     <Tooltip.Root open={open} onOpenChange={setOpen} disableHoverableContent>
       <Tooltip.Trigger asChild ref={trigger}>{children}</Tooltip.Trigger>
@@ -143,7 +143,7 @@ export function Tip({ content, children, side = 'bottom' }: {
           collisionPadding={8}
           // A tooltip explains; it is never a pointer target. Without this it can sit over the very
           // control it describes and swallow the click — which is exactly what happened when the
-          // workspace scope moved into the app strip (D56) and its tooltip landed on top of its own
+          // workspace scope moved into the app strip and its tooltip landed on top of its own
           // options list. The rule belongs here rather than at that one call site.
           className={cn(
             'pointer-events-none z-30 max-w-[22rem] rounded-card border border-line bg-overlay px-3 py-2 text-small text-ink-soft shadow-[0_6px_24px_rgb(15_12_8/0.12)]',

@@ -44,7 +44,7 @@ export const SigningBackInNarrowChinese: StoryObj<typeof ReSignIn> = {
 
 /**
  * Step 3: who signed in, that it joined Daoris's accounts and every workspace's work may run on it, its name with the email
- * offered, and one press, *Done*. Nothing asks where it runs (D197 point 4).
+ * offered, and one press, *Done*. Nothing asks where it runs.
  */
 export const NameStep: StoryObj<typeof NameAccount> = {
   render: () => (
@@ -72,7 +72,7 @@ export const NameStepChinese: StoryObj<typeof NameAccount> = { ...NameStep, deco
 /** The same in 中文 at the 400 px floor, in dark. */
 export const NameStepNarrowChineseDark: StoryObj<typeof NameAccount> = { ...NameStep, decorators: [storyWidths.narrow, chinese, dark] };
 
-/** A key added (ACCTUX3): *Added the API key …*, the same sentence, and its name left empty to be called by its handle. */
+/** A key added: *Added the API key …*, the same sentence, and its name left empty to be called by its handle. */
 export const NameStepKey: StoryObj<typeof NameAccount> = {
   render: () => (
     <NameAccount
@@ -87,7 +87,7 @@ export const NameStepKey: StoryObj<typeof NameAccount> = {
   ),
 };
 
-/** The name refused (ACCTEDIT1): the step stays open with the name typed, the driver's sentence under it, whole. */
+/** The name refused: the step stays open with the name typed, the driver's sentence under it, whole. */
 export const NameStepRefused: StoryObj<typeof NameAccount> = {
   render: () => (
     <NameAccount
@@ -104,20 +104,20 @@ export const NameStepRefused: StoryObj<typeof NameAccount> = {
   ),
 };
 
-/** A rename under its row (ACCT2): the name in its field, and the terminal's twin. */
+/** A rename under its row: the name in its field, and the terminal's twin. */
 export const Rename: StoryObj<typeof RenameAccount> = {
   render: () => <RenameAccount agent="claude-code" account="acct-5e1f0a2b" current={null} onSave={nothing} onCancel={nothing} />,
 };
 
 /**
- * A name no one spelling holds in every shell (ACCTQUOTE1): `R&D` is a name, and its twin names `<name>` rather than a
+ * A name no one spelling holds in every shell: `R&D` is a name, and its twin names `<name>` rather than a
  * command that runs `D` in Command Prompt.
  */
 export const RenameUnspellable: StoryObj<typeof RenameAccount> = {
   render: () => <RenameAccount agent="claude-code" account="acct-5e1f0a2b" current="R&D" onSave={nothing} onCancel={nothing} />,
 };
 
-/** A rename refused (ACCTEDIT1): the name typed kept in its field, and the driver's sentence under it, whole. */
+/** A rename refused: the name typed kept in its field, and the driver's sentence under it, whole. */
 export const RenameRefused: StoryObj<typeof RenameAccount> = {
   render: () => (
     <RenameAccount

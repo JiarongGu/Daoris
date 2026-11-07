@@ -5,7 +5,7 @@ import type { LandsHere, ReachSetup } from './RepositorySetup';
 export const JOIN = ' · ';
 
 /**
- * The switch *Daoris may change this checkout's files* (GITAPP2b, D204 §2): off by default; on, it says whether sessions already run in
+ * The switch *Daoris may change this checkout's files*: off by default; on, it says whether sessions already run in
  * this checkout, which a later act of Daoris's here would meet. It writes nothing to the repository.
  */
 export function CheckoutSwitch({ checkout, busy }: { checkout: NonNullable<ReachSetup['checkout']>; busy: boolean }) {
@@ -27,7 +27,7 @@ export function CheckoutSwitch({ checkout, busy }: { checkout: NonNullable<Reach
   );
 }
 
-/** How its work lands (WORKFLOWCLEAN1h-b, D228): the saved version's own `land` options, edited here. */
+/** How its work lands: the saved version's own `land` options, edited here. */
 export function LandingSetting({ twin, lands }: {
   /** The terminal twin of the row: a repository's, or a workspace's. */
   twin: string;
@@ -43,7 +43,7 @@ export function LandingSetting({ twin, lands }: {
 }
 
 /**
- * What its sessions may also write into (D107): each declared relationship with its take-back, and a choice of the other
+ * What its sessions may also write into: each declared relationship with its take-back, and a choice of the other
  * repositories of its workspace. A declaration is the person's standing say-so, in one direction.
  */
 export function WritesInto({ repository, writesTo, candidates, busy, onWrite }: {

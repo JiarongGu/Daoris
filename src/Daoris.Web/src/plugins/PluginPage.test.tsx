@@ -12,7 +12,7 @@ import type { Answered } from '../work/InlineConfirm';
 import type { PluginShown } from './catalog';
 import { PluginMainNotice, PluginPage } from './PluginPage';
 
-// A plugin's page (PLUGUI1b, D119 §3.2) on today's answers: a molecule, every state reached by its props.
+// A plugin's page on today's answers: a molecule, every state reached by its props.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
@@ -49,12 +49,12 @@ describe("a plugin's page", () => {
     expect(within(header()).getByText('1.2.0')).toBeInTheDocument();
     expect(within(header()).getByText('acme.gate')).toBeInTheDocument();
     const line = within(header()).getByText('Holds quests overnight.');
-    // NAME2: its description is content, read whole; the install showed it cut to one line with an ellipsis. D140 §2:
-    // it takes the pane's width, as every block of every page does (D141).
+    // Its description is content, read whole; the install showed it cut to one line with an ellipsis. D140 §2:
+    // it takes the pane's width, as every block of every page does.
     expect(line).not.toHaveClass('truncate');
     expect(line.className).not.toMatch(/\bmax-w-/);
     expect(line).not.toHaveAttribute('title');
-    // PLUG10 (P9), as D119 §2 gives it: running is the quiet neutral, never done's green.
+    // PLUG10, as D119 §2 gives it: running is the quiet neutral, never done's green.
     expect(within(header()).getByText('running').className).toMatch(/\bborder-line\b/);
   });
 
@@ -75,7 +75,7 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * D140 §2, from the install (LAYOUT11, D141): the detail's blocks share one width, the pane's. A paragraph capped at
+   * D140 §2, from the install: the detail's blocks share one width, the pane's. A paragraph capped at
    * 65ch beside a line that ran the pane's width wrapped the page at two edges, and in 中文 held about 32 glyphs. An
    * update's refused plan, drawn by `PluginUpdatePlan`, kept the cap after the page's own went.
    */
@@ -88,7 +88,7 @@ describe("a plugin's page", () => {
     expect(cappedBlocks(container)).toEqual([]);
   });
 
-  /** An update waits on nobody, so it is a neutral pill beside the state's, never a state (D119 §2, D140 §2). */
+  /** An update waits on nobody, so it is a neutral pill beside the state's, never a state. */
   it('says update available beside its state where its source declares something different', () => {
     const { unmount } = page({ plugin: { ...PLUGIN, update: 'waits' } });
     expect(within(header()).getByText('update available').className).toMatch(/\bborder-line\b/);
@@ -99,7 +99,7 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * LANDPIN3: a copy of the install's own plugin older than the shipped one says both versions and what the newer brings, and
+   * A copy of the install's own plugin older than the shipped one says both versions and what the newer brings, and
    * its Update… is there though it has no record of its own to update from.
    */
   it('says a copy older than the one the install ships with both versions and what it brings, and offers Update…', () => {
@@ -123,7 +123,7 @@ describe("a plugin's page", () => {
     expect(acts()).not.toContain('Update…');
   });
 
-  /** LANDPIN3b: an older copy edited since its install from the offer is said with both versions, and is never replaced. */
+  /** An older copy edited since its install from the offer is said with both versions, and is never replaced. */
   it('says an older copy edited since it was installed as changed, with both versions, and offers no Update…', () => {
     const shipped = { state: 'changed', installed: '1.2.0', shipped: '1.3.0', unjudged: false } as const;
     page({ plugin: { ...PLUGIN, source: { kind: 'offer', offer: 'acme.gate' }, shipped } });
@@ -135,7 +135,7 @@ describe("a plugin's page", () => {
     expect(acts()).not.toContain('Update…');
   });
 
-  /** LANDPIN3b: an older copy from before Daoris recorded what an install copies is said as unjudged, its update still offered. */
+  /** An older copy from before Daoris recorded what an install copies is said as unjudged, its update still offered. */
   it('says of an older copy with no record of its files that whether it was changed cannot be told, and offers Update…', () => {
     const shipped = { state: 'older', installed: '1.2.0', shipped: '1.3.0', unjudged: true } as const;
     page({ plugin: { ...PLUGIN, source: { kind: 'none' }, shipped } });
@@ -191,7 +191,7 @@ describe("a plugin's page", () => {
     expect(onAskRemove).toHaveBeenCalledWith('acme.gate');
   });
 
-  /** An absent act is absent, never disabled (D119 §3.2). */
+  /** An absent act is absent, never disabled. */
   it('offers Try only to a plugin that speaks, and Update… only to one with a source record', () => {
     page({ plugin: { ...PLUGIN, points: [], source: { kind: 'none' } } });
     expect(acts()).toEqual(['Turn off', 'Remove…']);
@@ -230,7 +230,7 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * HELPPLUG1a (D170 point 3): the page says what the plugin hands Ask Daoris, each server with what Ask Daoris may call on it,
+   * The page says what the plugin hands Ask Daoris, each server with what Ask Daoris may call on it,
    * and that nothing called there changes Daoris itself; one that hands it nothing says nothing of it.
    */
   it('says what it offers Ask Daoris and what Ask Daoris may call there, in English and in 中文', async () => {
@@ -305,7 +305,7 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * HELPPLUG1c: never taken away in silence. A server not approved, or one an update changed since its approval, is said at the
+   * Never taken away in silence. A server not approved, or one an update changed since its approval, is said at the
    * head of the page, and its state says which, in English and in 中文.
    */
   it('says at its head what Ask Daoris is not handed yet, and an approval an update changed, in English and in 中文', async () => {
@@ -337,7 +337,7 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * HELPPLUG1b (D170 point 4): the page lists the skills a plugin hands, who each is handed to, and the driver's sentence for one
+   * The page lists the skills a plugin hands, who each is handed to, and the driver's sentence for one
    * it does not hand; one with no skills says nothing of them.
    */
   it('lists the skills it hands, who each goes to, and why one is not handed, in English and in 中文', async () => {
@@ -374,7 +374,7 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * FABRIC-UNIT1e (§D9): the page lists each step a plugin declares with its reach, version and ports, and what its steps create
+   * The page lists each step a plugin declares with its reach, version and ports, and what its steps create
    * with each role; one that declares none says nothing of them.
    */
   it('lists each declared step and what its steps create, in English and in 中文', async () => {
@@ -420,7 +420,7 @@ describe("a plugin's page", () => {
     expect(screen.queryByRole('region', { name: 'What its steps create' })).toBeNull();
   });
 
-  /** A refused plugin's page: the driver's sentence leads, verbatim, and it has nothing to try (D119 §3.2). */
+  /** A refused plugin's page: the driver's sentence leads, verbatim, and it has nothing to try. */
   it('leads with the driver\'s sentence for a refused plugin, on a warn rail', () => {
     page({ plugin: { ...PLUGIN, problem: 'needs plugin API 99, and this build speaks 1.', points: [], harnesses: [] } });
 
@@ -527,7 +527,7 @@ describe("a plugin's page", () => {
     expect(screen.getByRole('region', { name: 'Agents' })).toHaveTextContent('acme-agent');
   });
 
-  /** Points and Agents appear only where the plugin declares that thing (D119 §3.2). */
+  /** Points and Agents appear only where the plugin declares that thing. */
   it('leaves out a section the plugin declares nothing for', () => {
     page({ plugin: { ...PLUGIN, harnesses: [] } });
     expect(screen.queryByRole('region', { name: 'Agents' })).toBeNull();
@@ -578,7 +578,7 @@ describe("a plugin's page", () => {
     expect(screen.getByRole('region', { name: 'Source' })).toHaveTextContent('No record of where it came from');
   });
 
-  /** The two doors stay in sight (D50): only the terminal's verbs that exist today. */
+  /** The two doors stay in sight: only the terminal's verbs that exist today. */
   it('ends with its terminal twins, naming it', () => {
     page();
     expect(screen.getByText(code(/daoris plugin enable\|disable\|update\|remove acme\.gate/))).toBeInTheDocument();
@@ -613,7 +613,7 @@ describe("the plugins' main area without a page", () => {
   });
 });
 
-/** CTX1 (D138, design §4): a plugin's page on a right-click offers its header's acts, as its buttons press them, then its id. */
+/** A plugin's page on a right-click offers its header's acts, as its buttons press them, then its id. */
 describe("a plugin's page on a right-click", () => {
   it('offers its switch, Try, Update… and Remove…, then its id, each pressed as its button is', async () => {
     const copy = vi.fn();

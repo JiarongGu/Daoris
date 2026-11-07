@@ -9,21 +9,21 @@ import type { SettingsAnchor, SettingsSection } from '../settings/SettingsView';
 import type { StarterDoor } from './starters';
 
 /**
- * A place on the window a go names (HELP6), as the driver judged it: a view, a Settings domain, a part — or, since
+ * A place on the window a go names, as the driver judged it: a view, a Settings domain, a part — or, since
  * ENTRY1f1, the one record of the view's list it opens, a quest's id or an ask's `ask:<id>`, or since ENTRY1f2 a session's
  * id, as the machine's record spells it. Since ENTRY1d2b a go to Add repository or Import a folder may carry the workspace
  * the drawer opens filled with, as the driver normalized it; it names no folder (D161's ENTRY1d note).
  */
 export type HelpPlace = {
   view: string; domain?: string | null; part?: string | null; item?: string | null; workspace?: string | null;
-  /** NEW1d-a: on a go to Sessions → New conversation, the repository the composer chooses and the words it opens with. */
+  /** On a go to Sessions → New conversation, the repository the composer chooses and the words it opens with. */
   repository?: string | null; sentence?: string | null;
-  /** AGENTSPLACE1k: on a go to an Agents place's Setup, the quick set-up its *Set up…* opens on; `workspace` and `repository` name the place. */
+  /** On a go to an Agents place's Setup, the quick set-up its *Set up…* opens on; `workspace` and `repository` name the place. */
   setup?: PlaceAsk | null;
 };
 
 /**
- * The places Ask Daoris's go may name (HELP6): the views, Settings' domains, and the parts of them a door
+ * The places Ask Daoris's go may name: the views, Settings' domains, and the parts of them a door
  * already opens — the groups of Sessions' and Quests' lists that wait on the person, the setup guide's steps, a domain's
  * cards, Repositories' drawers, a repository's Setup, Branches and History and a workspace's page's tabs and sections, Knowledge's two modes, an
  * agent's page's sections — and the places a go named before they moved.
@@ -33,7 +33,7 @@ export type HelpPlace = {
  * sees its card and lists these places in Ask Daoris's room. They share no code; each side's test holds
  * the same table, and they change together.
  *
- * UX6i2a (D150 §2): the bar's eight places and Settings, in the bar's order. The table holds the window's views only (its
+ * UX6i2a: the bar's eight places and Settings, in the bar's order. The table holds the window's views only (its
  * test holds it to the bar); Knowledge's modes are parts within it (`PLACE_PARTS`), and a go kept from before UX6i that
  * named a mode as a view lands through `PLACE_KEPT`.
  */
@@ -55,7 +55,7 @@ export const PLACE_ITEM_VIEWS: readonly View[] = ['sessions', 'quests', 'plugins
 /**
  * The places a go named before they moved, each with the place it is now (UX6i2a, D150 §2): Search and Convergence
  * became Knowledge's modes with UX6i, and Settings → Plugins the Plugins place with UX6j. UX6g2b: Settings → Workspace and
- * Permissions retired into a workspace's page with UX6g (D150 §3.1), each old spelling with its part a row of its own, and
+ * Permissions retired into a workspace's page with UX6g, each old spelling with its part a row of its own, and
  * Permissions alone what agents may do; a part no row names opens nothing. The twins list none of them, and a go still
  * spelled so, kept in an earlier conversation, opens where the place went rather than nowhere.
  */
@@ -96,7 +96,7 @@ const GROUP_PARTS: Readonly<Record<string, OpenGroup>> = {
 };
 
 /**
- * The door of a conversation's draft card (FLOWCHART2g; D223 §4.4): the place's Workflow, its editor opened on the draft the card is against.
+ * The door of a conversation's draft card: the place's Workflow, its editor opened on the draft the card is against.
  * The driver's go for such a card names the workspace's part, or for a repository no part and no repository, so the place is named from
  * the card's own scope. None for a card that is no draft or names no place.
  */
@@ -118,44 +118,44 @@ const same = (one: HelpPlace, other: HelpPlace) =>
 
 /** The parts, each within a view (Sessions, Quests, Repositories, Knowledge, Agents) or a Settings domain. */
 export const PLACE_PARTS: readonly { within: string; part: string }[] = [
-  // ENTRY1b (D161's ENTRY1 note): what waits on the person below Sessions and Quests, a group of the list (`GROUP_PARTS`).
+  // What waits on the person below Sessions and Quests, a group of the list (`GROUP_PARTS`).
   // Overview has no part, since what waits on the person leads it.
-  // NEW1d-a (D162's note): New conversation, the composer; `placeDoor` opens it from NEW1d-b, until when it is no group's
+  // New conversation, the composer; `placeDoor` opens it from NEW1d-b, until when it is no group's
   // part and a go to it is not opened.
   { within: 'sessions', part: 'waiting' }, { within: 'sessions', part: 'review' }, { within: 'sessions', part: 'new' },
   { within: 'quests', part: 'asks' }, { within: 'quests', part: 'held' },
-  // HELPSETUP1: a repository's Setup (UX6f, D150 §4.2), where its own values are set; a go names no repository.
+  // A repository's Setup, where its own values are set; a go names no repository.
   { within: 'projects', part: 'add' }, { within: 'projects', part: 'import' }, { within: 'projects', part: 'setup' },
   // UX6h4: a repository's Branches and History tabs (UX6h1), likewise on the repository Repositories has chosen.
   { within: 'projects', part: 'branches' }, { within: 'projects', part: 'history' },
-  // UX6g2b (D161 §3, D150 §4.3): a workspace's page's tabs and its two sections (`WORKSPACE_PARTS`).
+  // UX6g2b: a workspace's page's tabs and its two sections (`WORKSPACE_PARTS`).
   { within: 'projects', part: 'workspace-details' }, { within: 'projects', part: 'workspace-branches' },
   { within: 'projects', part: 'workspace-workflow' },
   { within: 'projects', part: 'workspace-defaults' }, { within: 'projects', part: 'workspace-remote' },
-  // UX6i2a: Knowledge's two modes (UX6i), by the names its list's choice shows.
+  // UX6i2a: Knowledge's two modes, by the names its list's choice shows.
   { within: 'knowledge', part: 'search' }, { within: 'knowledge', part: 'convergence' },
   { within: 'start', part: 'agent' }, { within: 'start', part: 'helper' }, { within: 'start', part: 'repositories' },
   { within: 'start', part: 'setUp' }, { within: 'start', part: 'rules' },
-  // UX6e2: the agent's page's sections a door opens (D150 §5.2); Permissions' Proposals are its What it may do.
+  // UX6e2: the agent's page's sections a door opens; Permissions' Proposals are its What it may do.
   { within: 'agents', part: 'accounts' }, { within: 'agents', part: 'rules' }, { within: 'agents', part: 'usage' },
-  // COMPANYVIEW1b: the Agents place's Roles mode (the company-view design §1), where the working roles are set.
+  // The Agents place's Roles mode (the company-view design §1), where the working roles are set.
   { within: 'agents', part: 'roles' },
 ];
 
 /**
- * Where a go takes the person, as a starter's door (HELP6): a domain of Settings at the card or the setup
+ * Where a go takes the person, as a starter's door: a domain of Settings at the card or the setup
  * step it names, a view, Sessions or Quests with a group of its list brought into view, one of Repositories' drawers, a
  * repository's Setup, Branches or History tab or a workspace's page at a tab or a section, Knowledge in a mode, or a section of an agent's page — or
  * null for a place this window does not have, which is never guessed at. Pure, so every place is an argument.
  *
  * @remarks
  * A go opens no repository's, agent's or workspace's page by name: Repositories' Setup, Branches and History open on the repository its list
- * has chosen, an agent's part on the agent that has it (UX6e), a workspace's part on the workspace in view's page (UX6g2b),
- * and a group of Sessions or Quests with no session or quest in it chosen (ENTRY1b), as the room tells the helper. On
+ * has chosen, an agent's part on the agent that has it, a workspace's part on the workspace in view's page (UX6g2b),
+ * and a group of Sessions or Quests with no session or quest in it chosen, as the room tells the helper. On
  * Quests it may name the one quest or ask instead of a part (ENTRY1f1), and on Sessions the one session (ENTRY1f2), which
  * the list chooses as any door's item. A go to Add or Import may name a workspace since ENTRY1d2b, the one the drawer
  * opens filled with; on any other place a workspace is ignored.
- * Knowledge with no part opens in the mode it was left in (UX6i). A go spelled as a place was before it moved opens where
+ * Knowledge with no part opens in the mode it was left in. A go spelled as a place was before it moved opens where
  * it went (`PLACE_KEPT`).
  */
 export function placeDoor(asked: HelpPlace): StarterDoor | null {
@@ -172,7 +172,7 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     if (!PLACE_ITEM_VIEWS.includes(view) || domain !== null || part !== null) return null;
     // ENTRY1f2: the one session, by the id Sessions' list names it by; Quests' prefixes name no session.
     if (view === 'sessions') return item.includes(':') ? null : { view, item };
-    // PLUGUI1h: an installed plugin by its id, or an offer as the catalogue names one; no other prefix names a plugin.
+    // An installed plugin by its id, or an offer as the catalogue names one; no other prefix names a plugin.
     if (view === 'plugins') {
       const offered = item.startsWith(offerItem(''));
       const id = (offered ? item.slice(offerItem('').length) : item).trim();
@@ -189,7 +189,7 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     if (!section) return null;
     if (part === null) return { view, section };
     if (!PLACE_PARTS.some((known) => known.within === section && known.part === part)) return null;
-    // A setup step is found by its own id in the guide (SETUP1a), a card by its domain's.
+    // A setup step is found by its own id in the guide, a card by its domain's.
     const anchor = (section === 'start' ? `step-${part}` : part) as SettingsAnchor;
     return { view, section, anchor };
   }
@@ -203,12 +203,12 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
     // A repository's own values are its place's, which names no repository here: the Setup mode's list is where one is chosen.
     if (part === 'setup') return { view: 'agents', agentsMode: 'setup' };
     if (part === 'branches' || part === 'history') return { view, tab: part };
-    // ENTRY1d2b: Add or Import opens with the go's workspace filled; the folder stays the person's pick (D48 §3/§7).
+    // ENTRY1d2b: Add or Import opens with the go's workspace filled; the folder stays the person's pick.
     const filled = asked.workspace?.trim();
     return { view, drawer: part as 'add' | 'import', ...(filled ? { drawerWorkspace: filled } : {}) };
   }
   if (view === 'agents' && part === 'roles' && asked.setup) {
-    // AGENTSPLACE1k: the place's Set up…, as today's set-up is reached: a repository's Details, or the workspace's page for several. The
+    // The place's Set up…, as today's set-up is reached: a repository's Details, or the workspace's page for several. The
     // application sends it to the place's page once that is lit (`placeOpening`), the ask along.
     const { workspace, repository, setup } = asked;
     if (repository) return { view: 'projects', item: repository, tab: 'details', setUp: setup };
@@ -217,13 +217,13 @@ export function placeDoor(asked: HelpPlace): StarterDoor | null {
   }
   if (view === 'agents') return part === 'roles' ? { view, agentsMode: 'setup' } : { view, agentPart: part as AgentPart };
   if (view === 'knowledge') return { view, knowledge: part as KnowledgeMode };
-  // NEW1d-b: the composer opens, with the repository chosen and the words in where the go named them; neither is sent.
+  // The composer opens, with the repository chosen and the words in where the go named them; neither is sent.
   if (view === 'sessions' && part === 'new') {
     const repository = asked.repository?.trim();
     const sentence = asked.sentence?.trim();
     return { view, compose: { ...(repository ? { repository } : {}), ...(sentence ? { sentence } : {}) } };
   }
-  // The list brings the group into view (ENTRY1b); the person opens the session or quest in it they mean.
+  // The list brings the group into view; the person opens the session or quest in it they mean.
   const group = GROUP_PARTS[`${view}/${part}`];
   return group ? { view, group } : null;
 }

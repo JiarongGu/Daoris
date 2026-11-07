@@ -23,7 +23,7 @@ const TONE: Record<HelpGrantState, 'neutral' | 'open' | 'done'> = {
  * the browser's, is drawn read only from that record and its *Manage* leads to the tab, never a second set of boxes (HELPMODE1c3).
  * A grant this agent cannot be held to says *unavailable on this agent* and why, its boxes disabled, whatever is chosen; the
  * browser says signed-in pages may be affected; and a choice a conversation running did not start with is marked as taking its
- * next turn (ACCESSSWAP1), since *What it has* keeps what the start was handed (§4.1's traps).
+ * next turn, since *What it has* keeps what the start was handed (§4.1's traps).
  */
 export function ConfiguredAccess({ agent, grants, opened = [], busy = false, built, onChoose, onManage }: {
   /** The agent Ask Daoris runs on: whether it takes permission rules decides what it can be held to. */

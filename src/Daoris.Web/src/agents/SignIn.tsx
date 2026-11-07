@@ -26,8 +26,8 @@ import { type SignInPhase, SignInSteps, type SignInWay } from './SignInSteps';
  * it, from one subscription rather than two — and the two mutations, and renders only where a shell
  * is attached, because only a driver has a process to answer.
  *
- * `login-new` is signing in to ANOTHER account (D66 §3): the same steps, with no account to name yet — who it is, is what
- * the sign-in finds out. A device code (CODEXACCT2) is Codex's: it opens no page and asks nothing on its input, and prints a
+ * `login-new` is signing in to ANOTHER account: the same steps, with no account to name yet — who it is, is what
+ * the sign-in finds out. A device code is Codex's: it opens no page and asks nothing on its input, and prints a
  * link and a one-time code the person enters on that page, with the code's own bound.
  */
 export function SignIn({
@@ -38,14 +38,14 @@ export function SignIn({
   harness: string;
   profile?: string;
   action?: 'login' | 'login-new';
-  /** What a person calls the tool (AGT1) — the id when it does not say. */
+  /** What a person calls the tool — the id when it does not say. */
   tool?: string;
   /**
-   * The driver's sentence where it refused to start this sign-in (CODEXSIGNIN2): said here, whole, where the press was, with
+   * The driver's sentence where it refused to start this sign-in: said here, whole, where the press was, with
    * *Try again* and *Close*, rather than as a toast with the panel gone. Nothing runs then, so no cancel.
    */
   refused?: string | null;
-  /** The sentence of a sign-in that ended without signing in, and when (SIGNIN1): the phase it was in failed. */
+  /** The sentence of a sign-in that ended without signing in, and when: the phase it was in failed. */
   failed?: string | null;
   failedAt?: number | null;
   /** The list standing open, its own surface; or the line alone, under a row of *What needs you* (§3.2). */
@@ -53,7 +53,7 @@ export function SignIn({
   onRetry?: () => void;
   onClose?: () => void;
   /**
-   * The way this sign-in's agent has beside the one running, and the press that switches to it (CODEXLOGIN1): the running
+   * The way this sign-in's agent has beside the one running, and the press that switches to it: the running
    * one is stopped and the other starts in this panel. Absent where the agent has one way.
    */
   other?: SignInWay | null;
@@ -67,7 +67,7 @@ export function SignIn({
   const [copied, setCopied] = useState<'link' | 'code' | null>(null);
 
   // The driver's phases and the tool's own lines, apart: a phase line is never the tool's words. The steps read the latest
-  // run's lines, those after its own start, since a panel that stayed up through *Try again* or a switch of ways (CODEXLOGIN1)
+  // run's lines, those after its own start, since a panel that stayed up through *Try again* or a switch of ways
   // holds both runs, and the first run's link is not the second's; the disclosure keeps them all.
   const phases: SignInPhase[] = [];
   const texts: string[] = [];

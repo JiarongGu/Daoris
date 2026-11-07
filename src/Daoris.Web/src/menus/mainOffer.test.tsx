@@ -9,7 +9,7 @@ import { OPEN, TAKEN } from '../quests/fixtures';
 import { MainOffer, offerStore, useMainOffer } from './mainOffer';
 import type { ContextOffer } from './press';
 
-// The record in the main area, as the menu bar reads it (UX7a, D152 §2): what its page offers a right-click is what the
+// The record in the main area, as the menu bar reads it: what its page offers a right-click is what the
 // Run menu's record group runs, by the page's own owner, so a menu row is enabled exactly when the header offers it.
 
 const offer = (ids: string[], label = 'A quest'): ContextOffer => ({ label, acts: ids.map((id) => ({ id, label: id, onSelect: vi.fn() })) });
@@ -84,7 +84,7 @@ describe('the main area\'s offer', () => {
 
 /**
  * D152 §2: a record's act in the menu is enabled exactly when the record's header offers it. The quest page's header is
- * its loud buttons and what its ⋯ holds (UX7c); its offer is what the Run menu's *This quest* reads.
+ * its loud buttons and what its ⋯ holds; its offer is what the Run menu's *This quest* reads.
  */
 describe('a quest\'s header and its offer', () => {
   const nothing = () => {};
@@ -109,7 +109,7 @@ describe('a quest\'s header and its offer', () => {
     await screen.findByRole('menuitem', { name: 'Copy quest ID' });
     const held = screen.getAllByRole('menuitem').map((item) => item.textContent!).filter((label) => label !== 'Copy quest ID');
     const offered = store.get()!.acts.filter((act) => act.id !== 'copy').map((act) => act.label);
-    // Decline… is the fold's button and said again in the ⋯ at the narrow width (HEAD2b): one act, two places.
+    // Decline… is the fold's button and said again in the ⋯ at the narrow width: one act, two places.
     expect([...offered].sort()).toEqual([...new Set([...loud, ...held])].sort());
   });
 });

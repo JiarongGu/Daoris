@@ -3,12 +3,12 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, CheckField, Inline, MonoWell, Pill, Prose } from '../design/ui';
 
-/** A point a new plugin may speak on (PLUG8): the driver's, with what kind of question it is. */
+/** A point a new plugin may speak on: the driver's, with what kind of question it is. */
 export type KitPoint = { name: string; kind: string };
 
 /**
- * The points whose gloss is their own, not their kind's (STATEHUB1g): a gloss says when a point speaks, and `state/changed` is an
- * observation that speaks at another time than `session/ended`. The work wire's three speak at times of their own too (FABRIC-PERFORM1e).
+ * The points whose gloss is their own, not their kind's: a gloss says when a point speaks, and `state/changed` is an
+ * observation that speaks at another time than `session/ended`. The work wire's three speak at times of their own too.
  */
 const OWN_GLOSS: Record<string, string> = {
   'state/changed': 'plugin.kit.kind.stateChanged',
@@ -30,7 +30,7 @@ export type NewPlugin = { id: string; points: string[]; folder: string };
 /** One thing a trial checked, in the driver's own sentence. */
 export type TrialStep = { name: string; ok: boolean; sentence: string };
 
-/** What `plugins try` found (D101). */
+/** What `plugins try` found. */
 export type PluginTrialResult = {
   plugin: string;
   folder: string;
@@ -48,9 +48,9 @@ const FIELD =
   'min-w-[min(14rem,100%)] flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
 
 /**
- * The kit a plugin is made with (PLUG8, D101), on the screen: New writes a plugin's folder where the
+ * The kit a plugin is made with, on the screen: New writes a plugin's folder where the
  * person names, and Try starts a folder's plugin as the driver would. The screen's half of
- * `daoris plugin new|try` (D50).
+ * `daoris plugin new|try`.
  *
  * @remarks
  * **Making a plugin is work.** A plugin is code that runs on this machine as the person, so New writes a

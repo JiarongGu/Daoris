@@ -3,7 +3,7 @@ import { aQuest } from './aQuest';
 import type { Consideration, TrustHold } from '../data/signals';
 import type { GraphEnd } from '../work/head/milestone';
 
-// Quests in each state a real machine reaches (FRAME1d), for the stories and the molecule tests alike — one set, so
+// Quests in each state a real machine reaches, for the stories and the molecule tests alike — one set, so
 // what a reviewer designs against is what the tests assert against.
 
 const daysAgo = (count: number) => new Date(Date.now() - count * 86_400_000).toISOString();
@@ -29,7 +29,7 @@ export const TAKEN: Quest = { ...OPEN, id: 'def456', status: 'Taken', title: 'Re
 /** Open for nine days: a week of silence wears its mark. */
 export const SITTING: Quest = { ...OPEN, id: 'aa11bb', title: 'Document the save format', filed: daysAgo(9), updated: daysAgo(9), links: [], attachments: [] };
 
-/** Taken, its taker waiting on another repository's answer (D79). */
+/** Taken, its taker waiting on another repository's answer. */
 export const QUESTION: Quest = {
   ...aQuest(),
   id: 'q2q2q2', from: 'engine', to: 'backend', status: 'Open', title: 'What does the notes endpoint take?',
@@ -37,19 +37,19 @@ export const QUESTION: Quest = {
 };
 export const WAITING: Quest = { ...TAKEN, id: 'w4w4w4', title: 'Sync the notes to the server', awaits: QUESTION.id };
 
-/** A step of a chain (D65 §4): it follows one quest, and its close publishes the next. */
+/** A step of a chain: it follows one quest, and its close publishes the next. */
 export const CHAINED: Quest = {
   ...OPEN, id: 'c7c7c7', title: 'Verify the streaming cap in a playtest', parent: 'f0f0f0', links: [], attachments: [],
   then: [{ to: 'game', title: 'Report on {parent}', body: 'Say what was done.' }],
 };
 
-/** A move that reached the remote second (D68 §5), kept for a person. */
+/** A move that reached the remote second, kept for a person. */
 export const CONFLICTED: Quest = {
   ...TAKEN, id: 'cf0cf0',
   conflicts: [{ machine: 'b7f2c9d1', sequence: 12, attempted: 'Taken', note: 'machine b, offline', at: hoursAgo(2) }],
 };
 
-/** Addressed to two of the engine's lanes (D115 §2.2). */
+/** Addressed to two of the engine's lanes. */
 export const LANED: Quest = { ...OPEN, id: 'la1la1', title: 'Cap the asset pipeline\'s memory', lanes: ['assets', 'core'], links: [], attachments: [] };
 
 export const DONE: Quest = { ...OPEN, id: 'd0d0d0', status: 'Done', title: 'Bump the engine to the new allocator', updated: hoursAgo(20), links: [], attachments: [] };
@@ -58,10 +58,10 @@ export const DECLINED: Quest = {
   note: 'Not ours: the renderer is the platform team\'s, and they have a plan of their own.', links: [], attachments: [],
 };
 
-/** Nobody has started on it, so the service says it may go (D95). */
+/** Nobody has started on it, so the service says it may go. */
 export const DELETABLE: Quest = { ...OPEN, deletable: true };
 
-/** What the person required (DRIFT1c, D133 §3): their words, each with the check that proves them. */
+/** What the person required: their words, each with the check that proves them. */
 const REQUIRED: NonNullable<Quest['requirements']> = [
   { quote: 'use the v3 bridge', check: 'the tiles arrive through the v3 bridge, as its trace shows', evidence: [] },
   { quote: 'keep the budget under the ceiling the engine sets', check: 'no frame hydrates more than the ceiling in a playtest', evidence: [] },
@@ -70,7 +70,7 @@ const REQUIRED: NonNullable<Quest['requirements']> = [
 /** Taken, with what the person required and no answer yet: its done answers each. */
 export const REQUIRING: Quest = { ...TAKEN, id: 'rq0rq0', requirements: REQUIRED };
 
-/** Done, each requirement met (DRIFT1d, D133 §4), with how its check was met in the done's words. */
+/** Done, each requirement met, with how its check was met in the done's words. */
 export const MET: Quest = {
   ...DONE, id: 'me0me0', title: 'Stream the tiles over the v3 bridge', requirements: REQUIRED,
   answers: [
@@ -117,8 +117,8 @@ export const CJK: Quest = {
 };
 
 /**
- * The install's re-filed quest (UX7c, D152 §0): its title is the note its ask put on its first line, and its body opens on
- * the same line. Nobody gave it a short title, so the service named it from its words (SESSUX1j).
+ * The install's re-filed quest: its title is the note its ask put on its first line, and its body opens on
+ * the same line. Nobody gave it a short title, so the service named it from its words.
  */
 export const REFILED: Quest = {
   ...OPEN, id: 'e67690366b56', from: 'ask #f6d947', links: [], attachments: [],
@@ -127,7 +127,7 @@ export const REFILED: Quest = {
     + 'continue the prod half of the ticket (the owner, 2026-10-04: the dev half is done, carry on in production)\n'
     + 'Where it stands: the dev half is done and landed on feature/report-dev.\n\n— asked at workspace `work` (ask `#f6d947`).',
   filed: hoursAgo(4), updated: hoursAgo(4),
-  // The service's own name for it, read from its words past the note line (SESSUX1j).
+  // The service's own name for it, read from its words past the note line.
   short: 'continue the prod half of the ticket…',
 };
 
@@ -162,15 +162,15 @@ export const FINISHED_HERE: Session = {
   created: hoursAgo(3), updated: hoursAgo(1),
 };
 
-/** Why the driver leaves a quest waiting, as its last tick said (D46 §3). */
+/** Why the driver leaves a quest waiting, as its last tick said. */
 export const HELD_BY_PERSON: Consideration = { quest: OPEN.id, repository: 'engine', verdict: 'Held', reason: '`engine` is held by the person.' };
 export const EXHAUSTED: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Exhausted',
   reason: '3 sessions failed on this quest, so it is parked. `daoris quest retry abc123` starts it again.',
 };
 /**
- * Taken on another machine after this machine's session on it was cut off (CARRY2b), naming whose take it is as the tick's
- * facts (CARRY2c): the machine and its session, and the session here that is not carried on.
+ * Taken on another machine after this machine's session on it was cut off, naming whose take it is as the tick's
+ * facts: the machine and its session, and the session here that is not carried on.
  */
 export const TAKEN_ELSEWHERE: Consideration = {
   quest: TAKEN.id, repository: 'engine', verdict: 'TakenElsewhere',
@@ -178,14 +178,14 @@ export const TAKEN_ELSEWHERE: Consideration = {
   reason: 'Quest `#def456` is taken on `alice-laptop`, by session `alice-laptop/ab12cd34`: the take is theirs, so session `s0f1r2s3` is not carried on over it.',
 };
 
-/** Held by the person's stop (SESSUX1b), naming the session the tick says holds it (SESSUX1d). */
+/** Held by the person's stop, naming the session the tick says holds it. */
 export const STOPPED: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Stopped', heldBy: 's1a2b3c4',
   reason: 'you stopped session `s1a2b3c4`; Try again starts it again — `daoris quest retry abc123 --session s1a2b3c4`.',
 };
 
 /**
- * Waits for an account (TOOL4g, D125 §4): held at spawn because the only account its start may use is cooling until the
+ * Waits for an account: held at spawn because the only account its start may use is cooling until the
  * reset the agent named. Not parked, so no *Try again*; it starts by itself then.
  */
 export const WAITS_FOR_ACCOUNT: Consideration = {
@@ -194,7 +194,7 @@ export const WAITS_FOR_ACCOUNT: Consideration = {
   waitsFor: { agent: 'claude-code', account: 'account-1', until: '2026-10-03T16:02:00Z', stated: true },
 };
 
-/** Paused with its ask (PAUSE1b, D132 §2.3): the tick names the ask whose pause holds it, and *Resume* is on the ask. */
+/** Paused with its ask: the tick names the ask whose pause holds it, and *Resume* is on the ask. */
 export const PAUSED_WITH_ASK: Consideration = {
   quest: OPEN.id, repository: 'engine', verdict: 'Paused', pausedBy: { scope: 'ask', id: 'a1b2c3' },
   reason: 'paused with ask `#a1b2c3`; Resume starts it — `daoris ask resume a1b2c3`.',
@@ -212,7 +212,7 @@ export const PAUSED_WITH_QUEST: Consideration = {
   reason: 'you paused `#def456`; Resume starts it — `daoris quest resume def456`.',
 };
 
-/** The submission a closure graph's quest stands at (FABRIC-CLOSE1a): its agent's `ready`, two hours ago. */
+/** The submission a closure graph's quest stands at: its agent's `ready`, two hours ago. */
 export const SUBMISSION = { machine: 'desk', sequence: 41, at: hoursAgo(2), note: 'ready' };
 
 /**
@@ -221,7 +221,7 @@ export const SUBMISSION = { machine: 'desk', sequence: 41, at: hoursAgo(2), note
  */
 export const SUBMITTED: Quest = { ...HELD, id: 'su0su0', status: 'Taken', closure: 'gph-1', submission: SUBMISSION, hold: 'departed' };
 
-/** Submitted and unheld: its chain's next step was published from that submission, which it seals (FABRIC-CLOSE1c). */
+/** Submitted and unheld: its chain's next step was published from that submission, which it seals. */
 export const SEALED: Quest = {
   ...TAKEN, id: 'se0se0', title: 'Stream the tiles over the v3 bridge', closure: 'gph-1', submission: SUBMISSION, held: false,
 };
@@ -269,7 +269,7 @@ export const PART_CLOSED_ENDS: GraphEnd[] = [{
   words: ['stop'],
 }];
 
-// SYNCMERGE1c2 (D178 points 2, 7 and 8): two machines' work on one step, read from where this machine (`desk`) stands. The quest
+// SYNCMERGE1c2: two machines' work on one step, read from where this machine (`desk`) stands. The quest
 // answer names this machine (`here`), the machine holding the step while it is taken (`holder`), and how each settled conflict ended.
 
 /** This machine's id, as a local host answers it to its own page. */
@@ -340,7 +340,7 @@ export const DROPPED_FIRST: Quest = {
 /** A step its source's reopen held after this machine's take landed: its go-on and abandon are this machine's two choices. */
 export const REOPENED_HERE: Quest = { ...REOPENED, id: 'rh0rh0', here: HERE, holder: HERE };
 
-/** A start the driver holds for the agent's trust (D73). */
+/** A start the driver holds for the agent's trust. */
 export const TRUST: TrustHold = {
   folder: 'C:/somewhere/engine', trustFile: 'C:/somewhere/data/harnesses/claude-code/work/.claude.json', quest: OPEN.id,
 };

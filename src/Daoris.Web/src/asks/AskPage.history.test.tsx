@@ -75,7 +75,7 @@ describe('an ask’s clear (design §6.1)', () => {
   });
 
   /**
-   * UXFIX2: *Never mind* gives the focus back to the ⋯. What goes takes the focus on opening; the ask stays open until the
+   * *Never mind* gives the focus back to the ⋯. What goes takes the focus on opening; the ask stays open until the
    * clear answers, a refusal said in it.
    */
   it('gives the focus back to the ⋯ drawn again, and says a refused clear inside its ask', async () => {

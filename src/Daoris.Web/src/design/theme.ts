@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { store, stored } from '../lib/stored';
 
-// The theme is the viewer's choice (D66): the system, or light, or dark. It is a per-window-profile
+// The theme is the viewer's choice: the system, or light, or dark. It is a per-window-profile
 // preference like the language and the scope — never machine wiring and never a tracked file — and
 // it is applied as `data-theme` on <html>, which `tokens.css` keys its forced blocks on. `system` is
 // the ABSENCE of that attribute, so the OS's media query decides exactly as it did before there was
@@ -48,7 +48,7 @@ export function setThemeChoice(choice: ThemeChoice): void {
 }
 
 /**
- * 🔴 A choice another window made (WINDOW1). A detached session is a second document on the same
+ * 🔴 A choice another window made. A detached session is a second document on the same
  * origin, and it read the choice once, at open, so the main window's change never reached it. The
  * browser tells every OTHER document of a storage write, and this is the half that hears it: applied
  * and told as if chosen here, but not written back, because it is already stored. A null key is the

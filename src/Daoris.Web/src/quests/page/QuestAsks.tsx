@@ -66,7 +66,7 @@ export function QuestAsks({ asking, work, pauseLines, target, t, waiting, setAsk
       )}
 
       {history && (asking === 'clear' || asking === 'clearFailed') && (asking === 'clear' ? history.plan : history.failed) && (
-        /* 🔴 A clear removes what this machine kept, which nothing gives back (D153): the first press lists what goes and
+        /* 🔴 A clear removes what this machine kept, which nothing gives back: the first press lists what goes and
            what stays, held from here, and the second sends exactly that (§5). */
         <ClearAsk
           key={asking}
@@ -83,7 +83,7 @@ export function QuestAsks({ asking, work, pauseLines, target, t, waiting, setAsk
       )}
 
       {deleting && deletable && (
-        /* 🔴 A delete removes the record, which nothing gives back (D95) — so the first press only asks, the
+        /* 🔴 A delete removes the record, which nothing gives back — so the first press only asks, the
            way removing an account does, and the second is the one that deletes. It stays open until the service
            answers, and says a refusal inside itself (UXFIX2). */
         <InlineConfirm
@@ -98,7 +98,7 @@ export function QuestAsks({ asking, work, pauseLines, target, t, waiting, setAsk
       )}
 
       {asking === 'done' && moving && (
-        /* The person's done (QUESTCLOSE1): it asks once, since a done does not move again, with their note, which the
+        /* The person's done: it asks once, since a done does not move again, with their note, which the
            record keeps after the sentence saying the done was theirs. Open until the service answers, a refusal said inside
            it (UXFIX2). */
         <InlineConfirm

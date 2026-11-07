@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import type { StartWiring } from '../../map/wiring';
 import { AskDaorisAbout, IntakeAbout } from './ActorAbout';
 
-// MODELROLE1d (D205 §7): what Intake's and Ask Daoris's rows say under their order, their cards folded into the rows. Moved from
-// the AI features card's tests (AGT6, INT4b, HELP1): tests follow their code.
+// What Intake's and Ask Daoris's rows say under their order, their cards folded into the rows. Moved from
+// the AI features card's tests: tests follow their code.
 
 const intakeStart = (extra: Partial<StartWiring> = {}): StartWiring => ({
   job: 'intake', workspace: 'default', adapter: 'claude-code-acp', owner: 'claude-code', product: 'Claude Code',

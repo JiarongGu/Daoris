@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient } from '@tanstack/react-query';
 
-// The page's root as `main.tsx` mounts it (PAGELOOP1): its error screen outside every provider, and a reload that is a page
+// The page's root as `main.tsx` mounts it: its error screen outside every provider, and a reload that is a page
 // starting again, which hands the window its ready handshake and lifts its splash a second time. jsdom cannot reload a page, so a
 // second load is the modules read afresh and the root mounted again with a client of its own, as a reloaded page's are.
 
@@ -91,7 +91,7 @@ describe("the page's root", () => {
     expect(screen.getByText('the query client broke')).toBeInTheDocument();
   });
 
-  /** PAGELOOP1 (D217): the view a failure's line names is the window's, a secondary window's from before anything is drawn. */
+  /** The view a failure's line names is the window's, a secondary window's from before anything is drawn. */
   it("names a secondary window's view in its failure's line", async () => {
     const PageRoot = await freshRoot();
     const client = new QueryClient();

@@ -2,7 +2,7 @@ import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { PluginIcon } from './PluginIcon';
 
-// A plugin's icon (PLUGUI2, D140 §3): its own, drawn as an image from the bytes it was handed, or its monogram.
+// A plugin's icon: its own, drawn as an image from the bytes it was handed, or its monogram.
 
 const SVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg"/>')}`;
 

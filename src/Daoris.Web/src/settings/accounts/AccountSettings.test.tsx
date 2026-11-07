@@ -6,7 +6,7 @@ import { code } from '../../test/code';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
 import type { AccountSettings, SettingsChoices } from '../../agents/tools';
 
-// AGT6 (D98): an account's own model and effort, as molecules — props in, states out. The values are the
+// An account's own model and effort, as molecules — props in, states out. The values are the
 // tool's own file's and the choices the tool's own words; the form sends only what the person changed.
 
 const CHOICES: SettingsChoices = {
@@ -132,8 +132,8 @@ describe("an account's own settings", () => {
   });
 
   /**
-   * D50: whatever the screen sets, a terminal can — and the form says the command, for this account. It is the console's
-   * one code span, so a line breaks only between its words and never inside `--account` (LOOK5).
+   * Whatever the screen sets, a terminal can — and the form says the command, for this account. It is the console's
+   * one code span, so a line breaks only between its words and never inside `--account`.
    */
   it('names the terminal command that does the same, for this account', () => {
     form();
@@ -145,7 +145,7 @@ describe("an account's own settings", () => {
   });
 
   /**
-   * ACCTQUOTE1c (D125's ACCTQUOTE1 note): the command is pasted into whichever shell a person has, so an account a shell
+   * The command is pasted into whichever shell a person has, so an account a shell
    * would split is in double quotes, and one no spelling holds in every shell (`R&D`) is the placeholder `<account>`.
    */
   it('spells the account in the terminal command for a shell', () => {
@@ -171,7 +171,7 @@ describe("an account's own settings", () => {
       </Tooltip.Provider>,
     );
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
-    // SETTINGSWAIT1: Never mind waits with Save, so a press is not ignored by the page.
+    // Never mind waits with Save, so a press is not ignored by the page.
     expect(screen.getByRole('button', { name: 'Never mind' })).toBeDisabled();
   });
 });

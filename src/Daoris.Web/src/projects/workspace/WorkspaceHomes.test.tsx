@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// SETUPUX1v (the setup-UX design §4, §5 row v): the census of the workspace Setup tab's controls before the tab goes. Wire and Unwire are
+// The census of the workspace Setup tab's controls before the tab goes. Wire and Unwire are
 // rows of Repositories' workspace Details; the rules, the retirement of an undeclared machine and the line's defaults are rows of the
 // workspace place's Sessions and Workflow; each is reached by the door that opened its section of the tab, planned by `placeOpening`, and
 // pressed here over a mocked bridge as the application holds it.

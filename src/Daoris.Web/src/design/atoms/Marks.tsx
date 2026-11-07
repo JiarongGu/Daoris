@@ -27,7 +27,7 @@ export const DOT_TONE: Record<string, { mark: string; word: string }> = {
 };
 
 /**
- * A liveness mark and the word for it — one component, because the label is not optional (D41 §6).
+ * A liveness mark and the word for it — one component, because the label is not optional.
  *
  * @remarks
  * The mark is `aria-hidden`: the label already IS the accessible name, and a screen reader that
@@ -50,8 +50,8 @@ export function Dot({ tone = 'idle', label, className }: {
 }
 
 /**
- * The mark alone, for a surface too narrow for the word — the rail's strip (FRAME6). The word goes
- * where the mark's control names itself, so it is never hue alone (D41 §6); anywhere with room for the
+ * The mark alone, for a surface too narrow for the word — the rail's strip. The word goes
+ * where the mark's control names itself, so it is never hue alone; anywhere with room for the
  * word, `Dot` is the component.
  */
 export function DotMark({ tone = 'idle', className, ...data }: {
@@ -65,7 +65,7 @@ export function DotMark({ tone = 'idle', className, ...data }: {
 /**
  * One item on a list closed to its strip (FRAME6's session strip row, made general by D118 §5): the first
  * character of its name, or the letters it is given, and its mark, one press away. What it is and how it stands are its accessible
- * name and its tip, since the strip has no room for the words and a mark is never hue alone (D41 §6).
+ * name and its tip, since the strip has no room for the words and a mark is never hue alone.
  *
  * @remarks
  * A row of its list (`data-list-row`), so the list's arrows move along the strip too (`work/frame/listKeys`).
@@ -79,17 +79,17 @@ export function StripMark({ label, initialOf, letters, face, tone, dimmed = fals
   initialOf: string;
   /**
    * A short mark drawn as written in place of that character, its case kept, where neighbours' first characters would be
-   * one: an agent's *CC* beside *Cx* (ACCTUX2, the UX7 design §4.6).
+   * one: an agent's *CC* beside *Cx*.
    */
   letters?: string;
   /**
-   * What it is drawn as instead of its initial, decoration its label names: a plugin's icon (PLUGUI2, D140 §2). The
+   * What it is drawn as instead of its initial, decoration its label names: a plugin's icon. The
    * face is drawn faint itself where it is dimmed.
    */
   face?: ReactNode;
-  /** Its mark; absent, it wears none, as a plugin that is simply on does (D119). */
+  /** Its mark; absent, it wears none, as a plugin that is simply on does. */
   tone?: keyof typeof DOT_TONE;
-  /** Its initial drawn faint: a plugin switched off (D119). */
+  /** Its initial drawn faint: a plugin switched off. */
   dimmed?: boolean;
   /** The one chosen in the list, marked as the activity bar marks its current place. */
   current?: boolean;
@@ -139,8 +139,8 @@ export function StripMark({ label, initialOf, letters, face, tone, dimmed = fals
 export function MonoWell({ text, label, live = false, dropped = 0, tall = false, fill = false }: {
   text: string; label?: ReactNode; live?: boolean; dropped?: number; tall?: boolean;
   /**
-   * Fill the height the caller gives instead of capping at one. What a growable output panel needs
-   * (D55): a well with a maximum of its own can be put in a taller box and simply not use it.
+   * Fill the height the caller gives instead of capping at one. What a growable output panel needs:
+   * a well with a maximum of its own can be put in a taller box and simply not use it.
    */
   fill?: boolean;
 }) {
@@ -213,7 +213,7 @@ export function MetaLine({ items, className }: {
 export function PathText({ path, className }: { path: string; className?: string }) {
   const parts = path.split(/(?<=[\\/])/);
   return (
-    // A right-click copies the path whole (CTX1, D138).
+    // A right-click copies the path whole.
     <span data-copy={path} className={cn('font-mono wrap-anywhere', className)}>
       {parts.map((part, index) => (
         <Fragment key={index}>{part}{index < parts.length - 1 && <wbr />}</Fragment>

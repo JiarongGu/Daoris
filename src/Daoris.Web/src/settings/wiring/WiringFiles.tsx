@@ -61,7 +61,7 @@ function FileRow({ file, onDoor, onOpen }: { file: WiringFile; onDoor: (door: st
  * parses a file to say whether it reads, and the page carries the verdict.
  *
  * @remarks
- * A molecule: drawn from props. A door is a press that goes where the file is edited; this page edits nothing. *Open folder* (WIRING1e)
+ * A molecule: drawn from props. A door is a press that goes where the file is edited; this page edits nothing. *Open folder*
  * sends the file's id, never its path, and the shell opens the folder it is in.
  */
 export function WiringFiles({ files, onDoor, onOpen }: { files: SystemWiring['files']; onDoor: (door: string) => void; onOpen?: (id: string) => void }) {

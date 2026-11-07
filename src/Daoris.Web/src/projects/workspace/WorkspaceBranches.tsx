@@ -23,7 +23,7 @@ export function useInclusion(): Inclusion {
 }
 
 /**
- * A workspace's repositories as its Branches tab reads them (D112): those holding a branch of Daoris's, in the driver's order,
+ * A workspace's repositories as its Branches tab reads them: those holding a branch of Daoris's, in the driver's order,
  * and every other one with a checkout here, listed apart.
  */
 export type WorkspaceGroups = { held: readonly string[]; apart: readonly string[] };
@@ -124,7 +124,7 @@ function Group({ repository, onOpen, children }: { repository: string; onOpen: (
 }
 
 /**
- * The repositories with a checkout here that hold no branch of Daoris's (D112): listed apart, folded, and drawn only once the
+ * The repositories with a checkout here that hold no branch of Daoris's: listed apart, folded, and drawn only once the
  * person ticks them, each or all, and includes them. On a workspace's tab it is the only list apart (UX6h2b3): *Updates*
  * draws none of its own there, and its look takes what is included here.
  */

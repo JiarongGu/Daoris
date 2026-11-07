@@ -4,7 +4,7 @@ import {
   searchWords,
 } from './press';
 
-// CTX1 (D138, design §3): what a right-click is on, read from the element pressed and the selection, and the groups the
+// What a right-click is on, read from the element pressed and the selection, and the groups the
 // menu draws for it, most specific first. Pure, so every case is an assertion without a window.
 
 const t = (key: string, values?: Record<string, unknown>) => (values ? `${key} ${JSON.stringify(values)}` : key);

@@ -15,7 +15,7 @@ const firstReason = (needs: readonly PlaceNeed[], t: TFunction): string | null =
 };
 
 /**
- * A driven repository's second line (SETUPUX1i): that its start is held, that its adoption runs, or how it lands with *n of its own*.
+ * A driven repository's second line: that its start is held, that its adoption runs, or how it lands with *n of its own*.
  * A need comes first as ⚠ and its first reason.
  */
 export function placeLine(row: PlaceRow, t: TFunction): { text: string | null; need: boolean } {

@@ -94,7 +94,7 @@ describe("the list's doors, on the window", () => {
     await waitFor(() => expect(toggle).toHaveAttribute('aria-pressed', 'true'));
 
     await viewMenu();
-    // A toggle, said as one (UXFIX1): a screen reader hears that the list is shown, as the tick draws it.
+    // A toggle, said as one: a screen reader hears that the list is shown, as the tick draws it.
     const item = screen.getByRole('menuitemcheckbox', { name: /^Session list/ });
     expect(item).toHaveAttribute('aria-checked', 'true');
     expect(item.querySelector('svg')).not.toBeNull();
@@ -182,7 +182,7 @@ describe("the list's doors, on the window", () => {
     expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
 
     await viewMenu();
-    // By the role the list's row has where it is present, so this absence is the row's and not a role's (UXFIX1).
+    // By the role the list's row has where it is present, so this absence is the row's and not a role's.
     expect(screen.queryByRole('menuitemcheckbox', { name: /^Session list/ })).toBeNull();
     expect(screen.getByRole('menuitemcheckbox', { name: /^Panel/ })).toBeInTheDocument();
   });

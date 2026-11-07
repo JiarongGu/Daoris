@@ -18,8 +18,8 @@ import { STATE_WORD } from './PluginList';
 export { PageHead, PageSection };
 
 /**
- * A warn-railed sentence a plugin's page leads with: the driver's own, verbatim, since it is content (D119 §3.2). Like
- * every block of a page it takes the column's width (D140 §2, D141).
+ * A warn-railed sentence a plugin's page leads with: the driver's own, verbatim, since it is content. Like
+ * every block of a page it takes the column's width.
  */
 export function Lead({ text }: { text: string }) {
   return (
@@ -37,7 +37,7 @@ export function Body({ className, children }: { className?: string; children: Re
   return <p className={cn('m-0 text-small text-ink-soft', className)}>{children}</p>;
 }
 
-/** Each declared point, in the mono face, with what kind of question it is in the kit's words (D119 §3.2). */
+/** Each declared point, in the mono face, with what kind of question it is in the kit's words. */
 export function PointRows({ points, kitPoints }: { points: string[]; kitPoints?: KitPoint[] | null }) {
   const { t } = useTranslation();
   return (
@@ -63,7 +63,7 @@ export type HelpPress = 'help-approve' | 'help-reads' | 'help-withdraw';
  * runs as the person, then each server in the mono face with the person's approval as it stands (approved, not approved, or
  * changed since its approval and asking again, HELPPLUG1c), what it reads with, what it writes outside Daoris with and which
  * of those writes they accepted, the driver's sentence for one refused, and the presses: while it waits, a box for each write
- * and *Approve*, which approves all its reads and each write ticked (HELPPLUG1c); *Withdraw* once approved. None for a refused
+ * and *Approve*, which approves all its reads and each write ticked; *Withdraw* once approved. None for a refused
  * one, and none on an offer's page, which nothing here has installed. Nothing where it offers nothing.
  */
 export function HelpServers({ plugin, servers, onHelp }: {
@@ -86,7 +86,7 @@ export function HelpServers({ plugin, servers, onHelp }: {
   );
 }
 
-/** One server a plugin offers Ask Daoris, with the writes the person has ticked so far for its approval (HELPPLUG1c). */
+/** One server a plugin offers Ask Daoris, with the writes the person has ticked so far for its approval. */
 function HelpServerRow({ plugin, server, onHelp }: {
   plugin?: string;
   server: HelpServerShown;
@@ -145,7 +145,7 @@ function HelpServerRow({ plugin, server, onHelp }: {
 }
 
 /**
- * HELPPLUG1c: never taken away in silence. Each server a plugin offers Ask Daoris that is not approved, or changed since its
+ * Never taken away in silence. Each server a plugin offers Ask Daoris that is not approved, or changed since its
  * approval, said at the head of the page, so nobody has to find the section to learn what Ask Daoris lacks.
  */
 function HelpWaitsLead({ servers }: { servers?: HelpServerShown[] }) {
@@ -154,7 +154,7 @@ function HelpWaitsLead({ servers }: { servers?: HelpServerShown[] }) {
   return waiting.length > 0 ? <Lead text={t('plugin.help.lead', { servers: waiting.join(', ') })} /> : null;
 }
 
-/** Who a skill is handed to, by the words the page says it in (HELPPLUG1b). */
+/** Who a skill is handed to, by the words the page says it in. */
 function skillTo(to: string[]): string {
   const sessions = to.includes('sessions');
   const help = to.includes('help');
@@ -162,7 +162,7 @@ function skillTo(to: string[]): string {
 }
 
 /**
- * **The skills a plugin hands** (HELPPLUG1b, D170 point 4): each in the mono face with who it is handed to, the driver's own
+ * **The skills a plugin hands**: each in the mono face with who it is handed to, the driver's own
  * sentence under one it does not hand, and a line saying each is copied into a session as it starts and never into a
  * repository. None where it hands no skill.
  */
@@ -246,9 +246,9 @@ export function NameRows({ names }: { names: string[] }) {
 }
 
 /**
- * **A plugin's page** (D119 §3.2) on today's answers (PLUGUI1b): a header with its switch, *Try*, *Update…* and
- * *Remove…*, then Points, Agents, Ask Daoris and Skills (D170), Steps and what they create
- * (FABRIC-UNIT1e), Tests, Data folder and Source, and its terminal twins at its foot.
+ * **A plugin's page** on today's answers: a header with its switch, *Try*, *Update…* and
+ * *Remove…*, then Points, Agents, Ask Daoris and Skills, Steps and what they create,
+ * Tests, Data folder and Source, and its terminal twins at its foot.
  *
  * @remarks
  * **A molecule**: every state is reached by its props, the ask and the plan included, and every press goes out.
@@ -256,11 +256,11 @@ export function NameRows({ names }: { names: string[] }) {
  * - **An absent act is absent, never disabled.** *Try* only for a plugin that speaks at a point, *Update…* only for one
  *   with a source record. None is loud: the plan's *Update now* is the page's one primary control (PLUGUI1c makes the
  *   plan, which moves here then, wear it).
- * - ***Remove…* asks once** (PLUG10 P8, D41 §4): its first press opens a sentence under the header saying what the
+ * - ***Remove…* asks once**: its first press opens a sentence under the header saying what the
  *   second does and where what the plugin kept stays, beside *Remove plugin* and *Never mind*.
  * - **A refused plugin's page leads with the driver's sentence**, verbatim; it is taken nowhere, so it has nothing to try.
  * - **Health's lines, Servers and Activity wait on the host's answers** (PLUGUI1d–f): today's `PLUGINS` says none of them.
- * - **Its icon leads the header** (D140 §2), its own or its monogram, *update available* sits beside its state where an
+ * - **Its icon leads the header**, its own or its monogram, *update available* sits beside its state where an
  *   update waits, and its Source says why a declared icon is not drawn.
  */
 export function PluginPage({
@@ -284,7 +284,7 @@ export function PluginPage({
   acting?: boolean;
   /** *Remove…*'s first press was made, and the page asks. */
   asking?: boolean;
-  /** Its tools as the person's last Check and console read them, by tool id; absent until they have asked (ADOSIGNIN1). */
+  /** Its tools as the person's last Check and console read them, by tool id; absent until they have asked. */
   toolStanding?: Record<string, ToolShown>;
   /** A Check of its tools is on its way. */
   checkingTools?: boolean;
@@ -298,7 +298,7 @@ export function PluginPage({
   onFixTool?: (id: string, tool: string, check: number) => void;
   onSwitch: (id: string, action: 'enable' | 'disable') => void;
   /**
-   * The person's approval of what a server offers Ask Daoris, with the writes they ticked (HELPPLUG1c), or its withdrawal
+   * The person's approval of what a server offers Ask Daoris, with the writes they ticked, or its withdrawal
    * (D170's note); none offers no press.
    */
   onHelp?: (id: string, server: string, action: HelpPress, writes: string[]) => void;
@@ -314,7 +314,7 @@ export function PluginPage({
   const { t } = useTranslation();
   const word = STATE_WORD[pluginState(plugin)];
   const tryable = canTry && speaks(plugin);
-  // LANDPIN3: its own record's update, or the install's copy where it has none; never for a copy whose files the person changed,
+  // Its own record's update, or the install's copy where it has none; never for a copy whose files the person changed,
   // which an update from the install's offer would replace whole.
   const canUpdate = (updatable(plugin.source) && !(shippedChanged(plugin) && plugin.source?.kind === 'offer')) || takesShipped(plugin);
 
@@ -337,7 +337,7 @@ export function PluginPage({
       {!asking && <Button variant="danger" disabled={acting} onClick={() => onAskRemove(plugin.id)}>{t('plugin.forget')}</Button>}
     </>
   );
-  // A right-click on the page offers its header's acts, as its buttons press them, then its id (CTX1, D138 §4).
+  // A right-click on the page offers its header's acts, as its buttons press them, then its id.
   const menu = {
     label: plugin.name || plugin.id,
     acts: [

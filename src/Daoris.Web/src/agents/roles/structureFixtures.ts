@@ -3,7 +3,7 @@ import type { RepositoryLine } from '../../settings/repository/Lines';
 import { TOOLS } from '../agentsFixtures';
 import type { PluginRef } from './roleStructure';
 
-// The roles' structure as the stories and tests hand it (COMPANYVIEW1d): this machine with its nine works, a workspace taking them, a
+// The roles' structure as the stories and tests hand it: this machine with its nine works, a workspace taking them, a
 // repository with a role of its own whose first choice is signed out, one taking this machine's, and a repository in no workspace whose
 // build has no role and whose helping rule does not read. Neutral names, as every fixture's are.
 
@@ -105,7 +105,7 @@ export const LINES: { lines: RepositoryLine[] } = {
 export const DRIVER = { drivable: ['engine', 'site'], holds: [] as string[] };
 
 /**
- * A structure past 24 nodes (COMPANYVIEW1f): aurora's eight repositories and borealis's six each with a building role of its own, two
+ * A structure past 24 nodes: aurora's eight repositories and borealis's six each with a building role of its own, two
  * more of aurora's taking this machine's, so each workspace folds to one node. `sizes` is how many repositories each of the two has of its own
  * (CANVAS1c's hundred-node fixture is thirty each).
  */

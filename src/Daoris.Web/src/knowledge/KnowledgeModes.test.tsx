@@ -7,7 +7,7 @@ import '../locales/i18n';
 import { KnowledgeModes, KnowledgeStrip } from './KnowledgeModes';
 import type { KnowledgeMode } from './modes';
 
-// Knowledge's list head (UX6i, D150 §2.2): a two-way choice, Search · Convergence, and the strip's stand-in for it. A
+// Knowledge's list head: a two-way choice, Search · Convergence, and the strip's stand-in for it. A
 // molecule: the mode in front arrives, and every press goes out.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -36,7 +36,7 @@ describe("Knowledge's list head", () => {
   });
 
   /**
-   * UXFIX1: switching from Search to Convergence by the arrows takes the focus along, so Space keeps Convergence and a
+   * Switching from Search to Convergence by the arrows takes the focus along, so Space keeps Convergence and a
    * screen reader is on the mode now chosen, not on Search.
    */
   it('takes the focus to the mode the arrows chose, so Space keeps it', async () => {

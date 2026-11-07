@@ -32,7 +32,7 @@ const CLASSES = ['read', 'write', 'dangerous'] as const;
 /** The classes *Use one value for both…* sets. */
 const PAIRED = ['read', 'write'] as const;
 const VALUES = ['allow', 'ask', 'deny'] as const;
-/** Dangerous is decided at the door and waits on no one (D241 point 3): it is allowed or refused, never asked. */
+/** Dangerous is decided at the door and waits on no one: it is allowed or refused, never asked. */
 const DANGEROUS_VALUES = ['allow', 'deny'] as const;
 export const valuesOf = (cls: string) => (cls === 'dangerous' ? DANGEROUS_VALUES : VALUES);
 

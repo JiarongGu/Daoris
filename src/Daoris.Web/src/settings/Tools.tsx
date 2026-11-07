@@ -7,11 +7,11 @@ import {
   Button, Card, CardHeader, Inline, PathText, Pill, Prose, Segmented, SelectField, SettingList, SettingRow,
 } from '../design/ui';
 
-/** How a tool is run (D121 §2.2): the system's, from PATH; a version Daoris keeps; or a file the person names. */
+/** How a tool is run: the system's, from PATH; a version Daoris keeps; or a file the person names. */
 export type ToolWay = 'system' | 'managed' | 'file';
 
 /**
- * One tool as the shell's `TOOLS_LIST` answers it (TOOLS7, D121 §4.1): the fields its card draws. The bridge reads the
+ * One tool as the shell's `TOOLS_LIST` answers it: the fields its card draws. The bridge reads the
  * same shape; a molecule names its props here rather than reach the bridge. The bridge leaves a null out, so every
  * field that may be null may also be absent.
  */
@@ -71,7 +71,7 @@ export type ToolsShown = {
   /** Why the file does not read; every tool is then refused. */
   problem?: string | null;
   tools: ToolShown[];
-  /** Settings → Git's identities (GITAUTH1e), from the files alone. */
+  /** Settings → Git's identities, from the files alone. */
   identities?: GitPageShown;
   locations: ToolListShown[];
   builtIn: ToolListShown;
@@ -137,7 +137,7 @@ export function changes(tool: ToolShown, choice: ToolChoice): boolean {
 }
 
 /**
- * One tool's card in Settings → Tools (TOOLS7, D121 §4.1): what Daoris needs it for, how it is run as one choice of
+ * One tool's card in Settings → Tools: what Daoris needs it for, how it is run as one choice of
  * three, the file it runs or why none, and its version. *Managed* adds the versions downloaded and those the lists name
  * for this machine, with *Download*, *Use this version* and *Delete*; *Custom* adds the file with *Browse…*. Props in,
  * presses out: the domain holds the list, the presses and the choice, and the running action's console comes in as
@@ -149,7 +149,7 @@ export function changes(tool: ToolShown, choice: ToolChoice): boolean {
  * switch confirmed beside *Never mind*. A version of git not yet downloaded is downloaded first, since what it changes
  * is asked of it.
  *
- * *Delete* asks once (D41 §4): its first press opens a sentence saying what the second does.
+ * *Delete* asks once: its first press opens a sentence saying what the second does.
  */
 export function ToolCard({
   tool, choice, busy = false, asking, console, onChoice, onUse, onAsk, onDownload, onStop, onDelete, onBrowse,

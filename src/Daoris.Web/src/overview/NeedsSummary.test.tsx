@@ -25,7 +25,7 @@ const ROWS: PushedAttention[] = [
 ];
 const KNOWN: AttentionRead = { state: 'known', rows: ROWS, working: 2, running: 2, resyncing: false };
 const PRESS: Confirmation = { source: 'pipe', id: 'c1', route: 'STOP_SESSION', fields: [], shown: true };
-// A request at the service's door, which waits as a terminal's does (ONEWAY1n).
+// A request at the service's door, which waits as a terminal's does.
 const SERVICE: Confirmation = { source: 'service', id: 'h1', route: 'POST /x', act: 'a verdict', fields: [] };
 
 describe("Overview's summary of what needs you", () => {
@@ -38,7 +38,7 @@ describe("Overview's summary of what needs you", () => {
     await i18n.changeLanguage('en');
   });
 
-  // ONEWAY1n-ii: no request ends by a time, the service's no more than a terminal's, so the line says they wait.
+  // No request ends by a time, the service's no more than a terminal's, so the line says they wait.
   it("says the requests wait, the service's and a terminal's alike, with no time", () => {
     render(<NeedsSummary attention={{ ...KNOWN, rows: [] }} presses={[PRESS, SERVICE]} onNotifications={() => {}} />);
 
@@ -58,11 +58,11 @@ describe("Overview's summary of what needs you", () => {
       'Ready for you1',
     ]);
     expect(within(summary).queryByRole('listitem')).toBeNull();
-    // What waits wears open's ink, as the bell's number does (BADGEUX1).
+    // What waits wears open's ink, as the bell's number does.
     for (const line of lines.slice(1)) expect(line.querySelector('.text-ink-open')).not.toBeNull();
   });
 
-  /** GOAHEADSTALE1: a stale go-ahead holds no session's act, so it is counted with what waits for the person's word, where it is listed. */
+  /** A stale go-ahead holds no session's act, so it is counted with what waits for the person's word, where it is listed. */
   it('counts a stale go-ahead with what waits for your word, as Notifications lists it', () => {
     const stale: PushedAttention = { kind: 'go-ahead', id: 'g2', since: ago(3 * 24 * 60), where: 'game', stale: { since: ago(2 * 24 * 60) } };
     render(<NeedsSummary attention={{ ...KNOWN, rows: [...ROWS, stale] }} presses={[PRESS]} onNotifications={() => {}} />);
@@ -138,7 +138,7 @@ describe("Overview's summary of what needs you", () => {
 
     const lines = () => within(screen.getByRole('region', { name: /What needs you|等你处理/ })).getAllByRole('button');
     expect(lines().map((line) => line.textContent)).toEqual(['Messages35 unread', 'Done and failed11 unread']);
-    // BADGEUX1: their figures count items and notices, which wait on nobody, so they wear a neutral ink, never open's, a wait's.
+    // Their figures count items and notices, which wait on nobody, so they wear a neutral ink, never open's, a wait's.
     for (const line of lines()) expect(line.querySelector('.text-ink-open')).toBeNull();
     vi.useRealTimers();
     await userEvent.click(lines()[0]!);

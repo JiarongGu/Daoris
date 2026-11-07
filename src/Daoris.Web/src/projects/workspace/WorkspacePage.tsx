@@ -9,7 +9,7 @@ import type { WorkspaceTab } from '../tabs';
 import type { AccountsHere } from './workspace';
 
 /**
- * **A workspace's page** (UX6g, D150 §4.3): in Repositories' main area, opened from its row at the head of its group. Its
+ * **A workspace's page**: in Repositories' main area, opened from its row at the head of its group. Its
  * header names it, how many repositories it holds and where it syncs, with *Sync now* where it is wired or *Wire to a
  * remote…* where it is not. Beneath, four tabs, the chosen one remembered for the view: **Details** (its repositories,
  * what a start runs on, the accounts its work may run on), **Branches** (each repository's branches by kind, UX6h2b2, then
@@ -18,9 +18,9 @@ import type { AccountsHere } from './workspace';
  *
  * @remarks
  * **A molecule**: the chosen tab's content arrives as `children`, drawn by whoever holds the data, and every press goes
- * out. **A browser gets the page with what it may know** (D47 §4): its repositories and whether it syncs, with no tab row,
+ * out. **A browser gets the page with what it may know**: its repositories and whether it syncs, with no tab row,
  * since branches, setup and accounts are this machine's. Where it syncs is a host only where this machine's wiring says
- * so: a browser is never told where a machine syncs (D48 §5).
+ * so: a browser is never told where a machine syncs.
  */
 export function WorkspacePage({ workspace, repositories, remote, tab = 'details', onTab, syncing = false, onSync, onWire, children }: {
   workspace: string;
@@ -33,7 +33,7 @@ export function WorkspacePage({ workspace, repositories, remote, tab = 'details'
   /** Choose a tab; absent, the page is Details alone, with no tab row (a browser). */
   onTab?: (tab: WorkspaceTab) => void;
   syncing?: boolean;
-  /** Sync it with its remote now, the status bar's pass (SYNC6b): a shell's, where it is wired. */
+  /** Sync it with its remote now, the status bar's pass: a shell's, where it is wired. */
   onSync?: () => void;
   /** Open its Setup at its remote, the wiring form open: a shell's, where it is not wired. */
   onWire?: () => void;
@@ -103,7 +103,7 @@ function RemoteRow({ workspace, wiring, busy = false, startOpen = false, focus =
 /**
  * **A workspace's Details** (§4.3): its repositories, each a door to its page; what a start in it runs on, a row per job
  * with the setting that chose each part and a held start's sentence whole (MAP1b, moved from Settings → Workspace); where
- * it syncs, wired or not (SETUPUX1v); and the accounts each agent's work may run on here, read-only, each with a door to its
+ * it syncs, wired or not; and the accounts each agent's work may run on here, read-only, each with a door to its
  * agent (D130 §3.2, set on the agent's page since UX6e). A browser is handed the repositories alone.
  */
 export function WorkspaceDetails({ repositories, onOpen, starts, accounts, onOpenAgent, remote }: {

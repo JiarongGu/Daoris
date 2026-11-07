@@ -6,7 +6,7 @@ import { textWidth } from './measure';
 import { said } from '../test/said';
 import { ASKS, buildTopology, keepQuests, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';
 
-// MAP2 (D67 §3, `docs/2026-09-23-map-design.md` §1): the workspace's repositories and what actually
+// The workspace's repositories and what actually
 // moved between them, read from data the service already serves — no model, no machine path.
 
 const repo = (repository: string, extra: Partial<Registration> = {}): Registration => ({
@@ -46,7 +46,7 @@ describe('the workspace topology', () => {
     ]);
   });
 
-  /** A repository outside this circle is not a node, and it is still counted. An ask is its own line (MAP4b). */
+  /** A repository outside this circle is not a node, and it is still counted. An ask is its own line. */
   it('counts quests with an end off the map rather than inventing a node for it', () => {
     const map = buildTopology([repo('engine')], [
       quest('q1', 'ask #abc', 'engine'),
@@ -167,7 +167,7 @@ describe('the workspace topology', () => {
   });
 
   /**
-   * 🔴 Seen on the window (POLISH4): a repository whose one session was parked, waiting on the
+   * 🔴 Seen on the window: a repository whose one session was parked, waiting on the
    * person, was ringed "working now". Parked is its own fact, and the one the person acts on.
    */
   it('marks a session parked on the person apart from one working', () => {
@@ -181,7 +181,7 @@ describe('the workspace topology', () => {
   });
 
   /**
-   * ANSWER1e (D131's ANSWER1c note, answer-continues design §5): a park the person answered stays parked until the
+   * A park the person answered stays parked until the
    * driver's next look, and the same session goes on then, so nothing there waits on the person. Until that look it is
    * marked as a queued session is: neither parked nor working, on a node or on a line.
    */
@@ -216,7 +216,7 @@ describe('the workspace topology', () => {
     ]);
   });
 
-  /** Two repositories that learned the same thing (D17): undirected, once per pair, counted. */
+  /** Two repositories that learned the same thing: undirected, once per pair, counted. */
   it('draws a knowledge edge per pair that converged, once however the group lists them', () => {
     const map = buildTopology([repo('a'), repo('b'), repo('c')], [], [
       group(['b', 'a']), group(['a', 'b', 'c']), group(['a', 'elsewhere']),
@@ -318,7 +318,7 @@ describe('the drawing\'s frame (UX5 U44)', () => {
 });
 
 describe('the ring layout', () => {
-  /** Seen on the window (MAP4b): at the centre of two repositories asked both ways, the asks hid both counts. */
+  /** Seen on the window: at the centre of two repositories asked both ways, the asks hid both counts. */
   it('stands the asks clear of every line between repositories, not on the centre they cross', () => {
     for (const count of [2, 3, 4]) {
       const ids = ['a', 'b', 'c', 'd'].slice(0, count);

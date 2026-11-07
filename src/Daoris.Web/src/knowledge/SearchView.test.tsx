@@ -6,8 +6,8 @@ import {
 } from '../test/knowledgeViews';
 
 // The view over a stubbed service, like QuestsView's: the shapes the endpoint returns, no host. Since FRAME1f the view
-// is a list pane and a page (D118 §2): the box, *local only* and the hits are the list, and the entry a hit names is
-// read in the main area, where it was the reader drawer. Since UX6i (D150 §2.2) it is Knowledge's Search, held through
+// is a list pane and a page: the box, *local only* and the hits are the list, and the entry a hit names is
+// read in the main area, where it was the reader drawer. Since UX6i it is Knowledge's Search, held through
 // the place: Knowledge's list is Search's while Search is chosen at its head.
 
 const HITS = [{
@@ -77,7 +77,7 @@ describe('Search', () => {
 
     expect(await within(knowledgeList()).findByText('An encoding trap')).toBeInTheDocument();
     expect(screen.getByText('encoding', { selector: 'mark' })).toBeInTheDocument();
-    // Its tint adds no space beside the word (UX5 U61): *syllables .* read as a gap before the stop.
+    // Its tint adds no space beside the word (UX5 U61): *syllables.* read as a gap before the stop.
     expect(screen.getByText('encoding', { selector: 'mark' })).toHaveClass('-mx-0.5');
   });
 
@@ -142,7 +142,7 @@ describe('Search', () => {
     expect(within(mainArea()).getByText('This entry is no longer in the index')).toBeInTheDocument();
   });
 
-  // UX6b (design §1 rule 6): a remembered entry the index let go opens nothing chosen, never on its gone state.
+  // A remembered entry the index let go opens nothing chosen, never on its gone state.
   it('opens with nothing chosen on a remembered entry that has gone, and forgets it', async () => {
     window.localStorage.setItem(CHOSEN, 'game:.claude/knowledge/retired.md');
     showSearch();
@@ -214,7 +214,7 @@ describe('Search', () => {
   });
 
   /**
-   * TIER1: the tier is the one that ANSWERED, per answer (D24), from the service's `x-daoris-tier`.
+   * The tier is the one that ANSWERED, per answer, from the service's `x-daoris-tier`.
    * A deployment configured for meaning whose embedder was down said *matches meaning as well as
    * words* over an answer only words had made.
    */
@@ -244,7 +244,7 @@ describe('Search', () => {
 });
 
 /**
- * UX6i (D150 §2.2): Search and Convergence are one place, Knowledge, whose list's head switches between them, remembered.
+ * Search and Convergence are one place, Knowledge, whose list's head switches between them, remembered.
  * Each mode keeps its list, its main area and its memory, so what was typed, the entry chosen and *local only* are
  * Search's still when the person comes back from Convergence.
  */

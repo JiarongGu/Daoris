@@ -11,7 +11,7 @@ import { useDebounced } from '../lib/useDebounced';
 import type { ViewLayout } from '../work/frame/ViewFrame';
 
 /**
- * **The Search view** (FRAME1f, D118 §2): what it hands the frame (D118 §5), its list pane and its main area. The list
+ * **The Search view**: what it hands the frame, its list pane and its main area. The list
  * is the box, *each repository's own only*, and the hits; the main area is the entry a hit names, read as it is
  * written, where it was the reader drawer over the side bar and the panel (audit SR4). Useful once you know what you
  * are looking for, which is exactly the case Convergence cannot help with, and the other way round.
@@ -34,12 +34,12 @@ export function useSearchView({ active, chosen, onChoose, filters: kept, onFilte
   filters: Record<string, unknown>;
   onFilters: (filters: Record<string, unknown> | null) => void;
   notify: Notify;
-  /** Whether this deployment's recall matches meaning too (D24): the empty answer says which. */
+  /** Whether this deployment's recall matches meaning too: the empty answer says which. */
   semantic: boolean;
   /** Where an empty answer points: the view that finds a conclusion reached in other words. */
   onConverge: () => void;
   /**
-   * Words another door asked Search for, once per `id`: a right-click's *Search Daoris for it* (CTX1). They replace what
+   * Words another door asked Search for, once per `id`: a right-click's *Search Daoris for it*. They replace what
    * the box held, and the holder lets them go once in the box.
    */
   handed?: { text: string; id: number } | null;
@@ -64,7 +64,7 @@ export function useSearchView({ active, chosen, onChoose, filters: kept, onFilte
 
   // The service caps; the client asks for one more than it shows, so "there are more" is a fact.
   const { shown, more } = page(hits.data?.hits ?? []);
-  // 🔴 The tier that ANSWERED this search (TIER1, D24), not the one configured: with the embedder down, a deployment
+  // 🔴 The tier that ANSWERED this search, not the one configured: with the embedder down, a deployment
   // that matches meaning answered by words and said it had matched meaning.
   const { byMeaning, nothing } = answeredBy(hits.data?.tier ?? null, semantic);
   const answer: HitsAnswer = !asked
@@ -90,9 +90,9 @@ export function useSearchView({ active, chosen, onChoose, filters: kept, onFilte
       name: t('nav.search'),
       labels: { open: t('search.list.open'), close: t('search.list.close'), resize: t('search.list.resize') },
       // Search makes nothing, so its list has no ＋, and its one filter is beside its box, where it changes what the
-      // box finds (D118 §2); its strip holds its controls alone.
+      // box finds; its strip holds its controls alone.
       chosen,
-      // A remembered entry reopens only while the index still holds it (UX6b); a refusal is not a gone entry.
+      // A remembered entry reopens only while the index still holds it; a refusal is not a gone entry.
       standing: !reading ? undefined : reading.state === 'read' ? 'live' : reading.state === 'gone' ? 'gone' : 'unread',
       body: (
         <HitList

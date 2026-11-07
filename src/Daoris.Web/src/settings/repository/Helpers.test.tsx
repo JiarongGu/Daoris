@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { HELPER_DEFAULT, HelperField, type HelperRule, helperRowSays, helperSays, helperSummary, helperToast } from './Helpers';
 
-// DOORS1b (D163 point 3, D164's amendment point 3): what a helper a repository's agent asks for does, set on its Setup's
-// *Sessions* and on a workspace's Defaults as `daoris place helpers` sets it from a terminal (D50). Each mode's sentence is the
+// What a helper a repository's agent asks for does, set on its Setup's
+// *Sessions* and on a workspace's Defaults as `daoris place helpers` sets it from a terminal. Each mode's sentence is the
 // terminal's (`driver helpers`' words in the CLI's `driverconfig.ts`), the agents are named in the order they are tried as the
 // driver's choice walks them (D163's MIXAGENT2a-ii note), and the field sends the twins' edit, which the driver judges.
 
@@ -40,7 +40,7 @@ describe('what a helpers rule says', () => {
   });
 
   it('says where it was set, the default included, and folds to its mode', () => {
-    // HELPERDEFAULT1: the default starts Daoris's own agents at once, those set up and signed in here.
+    // The default starts Daoris's own agents at once, those set up and signed in here.
     expect(helperRowSays(t, HELPER_DEFAULT, { source: 'default' })).toBe(
       'A helper an agent asks for starts at once, within the limits: two at once for a session, one turn each. Only Daoris\'s own '
       + "agents are asked, those it has set up and signed in on this machine: the one the session names, else another maker's; one "
@@ -78,7 +78,7 @@ describe('what a helpers rule says', () => {
     expect(helperToast(t, 'web-app', { clear: true })).toBe('web-app 重新沿用上一级的助手规则。');
   });
 
-  /** Its terminal twin is one command with its alternatives joined by `|`, never translated, as its neighbours' (OPINIONTWIN1). */
+  /** Its terminal twin is one command with its alternatives joined by `|`, never translated, as its neighbours'. */
   it('says its terminal twin as its neighbours do, one command with its alternatives joined by |, in both languages', () => {
     for (const key of ['settings.helpers.twin.repository', 'settings.helpers.twin.workspace']) {
       const english = i18n.getFixedT('en')(key, { repository: 'engine', workspace: 'aurora' });

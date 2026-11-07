@@ -33,7 +33,7 @@ export function CardStack({ className, children }: { className?: string; childre
 /**
  * Something waiting on the person — a parked session, a parked intake, a folder to trust. The one
  * frame each such card wears: the waiting tone on its left edge and on its heading. Four cards
- * wrote it out (REV3 CLEAN1), so a change of that tone is now one change.
+ * wrote it out, so a change of that tone is now one change.
  */
 export function WaitingCard({ title, children }: { title: ReactNode; children?: ReactNode }) {
   return (
@@ -55,7 +55,7 @@ export function CardHeader({ title, aside }: { title: ReactNode; aside?: ReactNo
 
 /**
  * The stat-tile contract: label · value · context. Values wear proportional figures, deliberately. A value not known yet is null:
- * static placeholders on the value's and the context's lines, never a zero (PUSHUX1).
+ * static placeholders on the value's and the context's lines, never a zero.
  */
 export function Tile({ label, value, note, warn }: {
   label: string; value: ReactNode | null; note: string; warn?: boolean;
@@ -99,7 +99,7 @@ export function PageHeader({ title, description, action }: {
  * Explanatory text: the console explaining itself, in the secondary ink.
  *
  * @remarks
- * **It wraps at the column's edge, as every block of a page does** (D141, LAYOUT11). It carried
+ * **It wraps at the column's edge, as every block of a page does**. It carried
  * Tailwind's prose width, 65ch, from UX5's first pass, when a paragraph in a column nothing stood
  * beside ran to about 190 characters a line. A measure per paragraph gave every page two edges: on
  * the install a quest's title ran the pane while its body stopped at 456 px, and in 中文 the 65
@@ -126,7 +126,7 @@ export function Prose({ className, children }: { className?: string; children: R
  * a toast take this on their own, because each is always a sentence. Anywhere else a caller asks for
  * it, since content is shown as it is.
  *
- * **The marks a sentence goes on with right after a span are drawn by the span** (UXFIX4b), kept on its last word's line.
+ * **The marks a sentence goes on with right after a span are drawn by the span**, kept on its last word's line.
  */
 export function Inline({ text }: { text: string }) {
   const parts = text.split(/`([^`\n]+)`/);
@@ -144,7 +144,7 @@ export function Inline({ text }: { text: string }) {
 
 /**
  * The marks that close what comes before them, which a line never begins with: a closing bracket or quote, and a stop, in
- * either language (UXFIX4b).
+ * either language.
  */
 const CLOSING = /^[\p{Pe}\p{Pf},.;:!?，。、；：！？]+/u;
 
@@ -160,7 +160,7 @@ const HELD = 'whitespace-nowrap';
  *
  * @remarks
  * **A browser may break a line after any hyphen**, so on the installed window a setting's terminal twin read
- * `--no-` over `keep`, and `--` over `workspace` (LOOK5): in 中文, where a sentence fills its line to the edge, the
+ * `--no-` over `keep`, and `--` over `workspace`: in 中文, where a sentence fills its line to the edge, the
  * break fell inside a flag. Each word is a box of its own, as wide as the word and never wider than the line, so it
  * moves to the next line whole, and breaks inside only when that one word is wider than the line (U8). The spaces
  * between the words stay where a line may break. The text is unchanged, so a copy is still the command.
@@ -170,7 +170,7 @@ const HELD = 'whitespace-nowrap';
  *
  * A span of one word is that word's box itself, and a span of several holds one box per word.
  *
- * **The marks after a span stay on its last word's line** (UXFIX4b): at the branch list's 400 px floor a long name filled
+ * **The marks after a span stay on its last word's line**: at the branch list's 400 px floor a long name filled
  * its line and the comma after it opened the next, `, whose work…`, since Chromium may break after any inline box, even
  * before a comma. A span of one word followed by marks is a box holding the code and the marks, and inside it the text's
  * own rules hold, which never break before a closing mark in either language. A span of several cannot hold them, since

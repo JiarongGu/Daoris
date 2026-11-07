@@ -1,5 +1,5 @@
 /**
- * One of Ask Daoris's conversations as its history lists it (ASKHIST1): the driver's `HELP_CONVERSATIONS` row, field for
+ * One of Ask Daoris's conversations as its history lists it: the driver's `HELP_CONVERSATIONS` row, field for
  * field what `daoris ask-daoris list --json` prints. Kept on this machine only: its words are this machine's record, and its
  * name and pin a file beside them.
  */
@@ -45,7 +45,7 @@ export type HelpConversationRow = {
   foundLine?: string | null;
 };
 
-/** Whether two workspace names name one workspace, whatever their letters' case, as the driver matches them (D48). */
+/** Whether two workspace names name one workspace, whatever their letters' case, as the driver matches them. */
 export const sameWorkspace = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
 
 /** A name's longest: a title, as the driver keeps it (`HelpConversations.NameLimit`). */
@@ -86,7 +86,7 @@ export function joinPages(pages: readonly HelpListing[]): HelpListing {
   return { conversations, total: last?.total ?? 0, next: last?.next ?? null };
 }
 
-/** The history's groups, in the order a person reads them (ASKHIST1c). */
+/** The history's groups, in the order a person reads them. */
 export const HISTORY_GROUPS = ['pinned', 'today', 'yesterday', 'week', 'older'] as const;
 export type HistoryGroup = (typeof HISTORY_GROUPS)[number];
 
@@ -94,7 +94,7 @@ const DAY = 86_400_000;
 const midnight = (at: Date) => new Date(at.getFullYear(), at.getMonth(), at.getDate());
 
 /**
- * The history grouped as a person reads time (ASKHIST1c): the pinned first, then by the local calendar day each was last
+ * The history grouped as a person reads time: the pinned first, then by the local calendar day each was last
  * spoken in, today, yesterday, the rest of this week from its Monday, and older. Each group keeps the driver's order (pinned
  * first, then the newest), and a group with nothing in it is left out.
  *

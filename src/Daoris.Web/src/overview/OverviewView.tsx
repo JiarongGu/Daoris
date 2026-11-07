@@ -16,7 +16,7 @@ import { questName } from '../work/identity';
 import { NeedsSummary } from './NeedsSummary';
 
 /**
- * The management landing (D40). A person overseeing several projects' agents opens this window to
+ * The management landing. A person overseeing several projects' agents opens this window to
  * answer one question first — what needs me, and is anything sitting — so that is what leads: a summary of *What needs you*
  * (NOTIFY2b, the notification design §4: a line per group, each a door into *Notifications*, where every row is), then family
  * health as stat tiles, the outstanding quests oldest-first, and the repositories by what the index holds. Every row is a door.
@@ -25,18 +25,18 @@ import { NeedsSummary } from './NeedsSummary';
  * Values sit beside the marks in ink, never in the mark's color.
  */
 export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], onNotifications, onRefresh, refreshing }: {
-  /** The shell's refresh of the index, its notices its own: offered by the empty repositories card (OVERVIEWNOISE1d). */
+  /** The shell's refresh of the index, its notices its own: offered by the empty repositories card. */
   onRefresh?: () => void;
   /** Whether that refresh is running, so the card's button waits for it. */
   refreshing?: boolean;
   onNavigate: (tab: 'quests' | 'projects') => void;
   /**
-   * Where an outstanding row goes: that quest's page on Quests (§5; FRAME1d). The row went to Quests and opened
+   * Where an outstanding row goes: that quest's page on Quests. The row went to Quests and opened
    * nothing, so the person pressed a quest and had to find it again (UX5 U26).
    */
   onOpenQuest: (id: string) => void;
   notify: Notify;
-  /** The presses waiting for the person's confirmation, of either source, which the summary's first line counts (NOTIFY2b). */
+  /** The presses waiting for the person's confirmation, of either source, which the summary's first line counts. */
   presses?: Confirmation[];
   /** *Notifications* shown at a group, each summary line's door: the app's alone, since a browser has no side bar. */
   onNotifications?: (group: NotificationsGroup) => void;
@@ -44,9 +44,9 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
   const { t } = useTranslation();
   // Who needs the person, as the shell pushes it (PUSH1d4), which the summary counts by group.
   const attention = useAttention();
-  // Done and failed (NOTIFY2f): its line follows what waits.
+  // Done and failed: its line follows what waits.
   const notices = useNotices();
-  // Messages (NOTIFY2g): its line, before what ended, while anything is unread.
+  // Messages: its line, before what ended, while anything is unread.
   const messages = useMessages();
   const repositories = useRepositories();
   const registry = useRegistry();
@@ -57,7 +57,7 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
 
   const repos = repositories.data ?? [];
   const adopted = (registry.data ?? []).filter((r) => r.adopted);
-  // The quests not answered yet are not none (PUSHUX1): their tiles hold placeholders, and the card its skeleton, until they are.
+  // The quests not answered yet are not none: their tiles hold placeholders, and the card its skeleton, until they are.
   const questsKnown = quests.data !== undefined;
   const open = (quests.data ?? []).filter((q) => q.status === 'Open');
   const taken = (quests.data ?? []).filter((q) => q.status === 'Taken');
@@ -195,7 +195,7 @@ export function OverviewView({ onNavigate, onOpenQuest, notify, presses = [], on
               icon="projects"
               headline={t('overview.repositories.emptyHeadline')}
               body={t('overview.repositories.emptyBody')}
-              // The refresh the body names, started here (OVERVIEWNOISE1d): the state promised one and offered no way to it.
+              // The refresh the body names, started here: the state promised one and offered no way to it.
               action={onRefresh && (
                 <Button onClick={onRefresh} disabled={refreshing}>
                   <Icon name="refresh" size={14} />

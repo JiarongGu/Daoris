@@ -107,7 +107,7 @@ describe('Notifications', () => {
 
     const groups = screen.getAllByRole('region');
     expect(groups.map((group) => group.getAttribute('aria-label'))).toEqual(['Waiting for your confirmation', 'What needs you', 'Done and failed']);
-    // Its unread said with its word, in a neutral ink: news waits on nobody, and open's ink is a wait's (BADGEUX1).
+    // Its unread said with its word, in a neutral ink: news waits on nobody, and open's ink is a wait's.
     const head = within(groups[2]!).getByRole('button', { name: /Done and failed/ });
     expect(head).toHaveTextContent('Done and failed1 unread');
     expect(head.querySelector('.text-ink-open')).toBeNull();
@@ -132,7 +132,7 @@ describe('Notifications', () => {
     expect(screen.getAllByRole('region').map((group) => group.getAttribute('aria-label'))).toEqual(['Done and failed']);
   });
 
-  /** NOTIFY2g (§2.2's third group, §2.3): one item per ask with anything unread, a teammate's among them, and each unread answer. */
+  /** One item per ask with anything unread, a teammate's among them, and each unread answer. */
   describe('Messages', () => {
     const NEWEST = { id: 'm2', at: '2026-10-21T09:20:00.000Z', who: 'agent' as const, repository: 'db', line: 'Which column holds the totals?', level: 'urgent' as const, toEveryone: true };
     const ASKS: AskMessages[] = [
@@ -158,7 +158,7 @@ describe('Notifications', () => {
 
       expect(screen.getAllByRole('region').map((each) => each.getAttribute('aria-label')))
         .toEqual(['Waiting for your confirmation', 'What needs you', 'Messages', 'Done and failed']);
-      // Headed by its unread in words, in a neutral ink (BADGEUX1), as each item says its own.
+      // Headed by its unread in words, in a neutral ink, as each item says its own.
       expect(within(group()).getByRole('button', { name: /^Messages/ })).toHaveTextContent('Messages4 unread');
       expect(within(group()).getByRole('button', { name: /^Messages/ }).querySelector('.text-ink-open')).toBeNull();
       expect(within(group()).getByText('2 unread').className).not.toContain('text-ink-open');

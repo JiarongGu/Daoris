@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { rooted } from '../test/sources';
 
 /**
- * **The atoms own the primitives** (MENU1). Radix supplies the behaviour and `ui.tsx` every pixel (D42), so a
+ * **The atoms own the primitives**. Radix supplies the behaviour and `ui.tsx` every pixel, so a
  * screen reaches a headless primitive only through an atom. A screen that imports one styles it on its own, and
  * its copy keeps whatever that screen knew when it was written: eight dropdown menus did, and none capped its
  * height, so a long one ran off the window as SELECT1's select had, and was fixed in one place only.

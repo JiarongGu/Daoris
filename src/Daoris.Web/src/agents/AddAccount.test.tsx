@@ -34,7 +34,7 @@ function asking(profile: NonNullable<ToolDoor['profiles']>[number], who: string 
 }
 
 /**
- * POOL1c (D197 point 4; the account-pool design §4.1): the step says the account joined Daoris's accounts, asks its name, and
+ * The step says the account joined Daoris's accounts, asks its name, and
  * offers one press, *Done*; nothing about where it runs, so nothing *Not now* could lose, and no *This machine's list*.
  */
 describe('a new account’s last step', () => {

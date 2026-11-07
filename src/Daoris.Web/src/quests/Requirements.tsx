@@ -3,20 +3,20 @@ import type { QuestAnswer, QuestRequirement, QuestStep } from '../data/api';
 import { ago } from '../locales/format';
 import { Button, Pill, SectionTitle } from '../design/ui';
 
-/** The person's words, quoted: set apart by a rule, never slanted, kept as they were said (D133 §1). */
+/** The person's words, quoted: set apart by a rule, never slanted, kept as they were said. */
 export function Quoted({ words }: { words: string }) {
   return <p className="m-0 border-l-2 border-line-strong pl-2.5 text-body text-ink whitespace-pre-wrap wrap-anywhere">{words}</p>;
 }
 
 /**
- * **One requirement** (DRIFT1c, D133 §3): its number, the person's words it quotes, the check that proves them, and how the
- * done answered it (DRIFT1d, §4): *met*, with how its check was met, or *departed*, with the reason and the person's words
+ * **One requirement**: its number, the person's words it quotes, the check that proves them, and how the
+ * done answered it: *met*, with how its check was met, or *departed*, with the reason and the person's words
  * the reason relied on. A quest's page lists every one; Ask Daoris's accept card lists the departures (DRIFT1d2).
  *
  * @remarks
  * **A molecule**: every state is its props. **The words are content** (`translation-parity`): the person's quoted as they
  * said them, the check and the done's words shown as written; only the labels translate. A departure that holds its quest
- * for the person's yes wears open's hue, the person's (D126 §2.3); one accepted is neutral, and *met* wears done's.
+ * for the person's yes wears open's hue, the person's; one accepted is neutral, and *met* wears done's.
  */
 export function RequirementItem({ number, requirement, answer, waiting = false }: {
   number: number;

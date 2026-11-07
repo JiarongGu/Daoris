@@ -7,8 +7,8 @@ import type { MapSelection } from './MapLines';
 import type { Topology } from './topology';
 
 /**
- * A list of quests, each with its state in words as well as in hue (D41), and each a door to its
- * page on Quests, where acting on it lives (design §1; FRAME1d). They were text, so a person read a quest here and had
+ * A list of quests, each with its state in words as well as in hue, and each a door to its
+ * page on Quests, where acting on it lives. They were text, so a person read a quest here and had
  * to find it again on Quests (UX5 U46, U26's rule). Status leads, as on every quest row (§4).
  */
 function QuestList({ quests, onOpenQuest }: { quests: Quest[]; onOpenQuest?: (id: string) => void }) {
@@ -51,7 +51,7 @@ function SessionMark({ parked }: { parked: boolean }) {
 }
 
 /**
- * What the chosen part of the map holds (MAP2). It adds no action of its own: acting on a quest or a
+ * What the chosen part of the map holds. It adds no action of its own: acting on a quest or a
  * session stays where it already lives, and this only says what is there.
  */
 export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, onOpenQuest, onOpenRepository }: {
@@ -60,9 +60,9 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   onOpenConvergence?: () => void;
   /** Open a quest named here on its page (U46; FRAME1d). */
   onOpenQuest?: (id: string) => void;
-  /** Open this repository's own code map (MAP3a) — the same map, one level in. */
+  /** Open this repository's own code map — the same map, one level in. */
   onOpenCode?: (repository: string) => void;
-  /** Open this repository's page on Repositories, where acting on it lives (MAPUX1b). */
+  /** Open this repository's page on Repositories, where acting on it lives. */
   onOpenRepository?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
@@ -75,7 +75,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   if (selected.kind === 'node') {
     const node = topology.nodes.find((n) => n.id === selected.id);
     if (!node) return hint;
-    // What the asks put on it is a quest to it as well (MAP4b), whether or not its line is shown.
+    // What the asks put on it is a quest to it as well, whether or not its line is shown.
     const into = [
       ...topology.quests.filter((e) => e.to === node.id).flatMap((e) => e.quests),
       ...topology.asks.filter((e) => e.to === node.id).flatMap((e) => e.quests),

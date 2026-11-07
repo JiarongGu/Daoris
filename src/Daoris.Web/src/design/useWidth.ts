@@ -8,7 +8,7 @@ export function rootRem(): number {
   return Number.isFinite(size) && size > 0 ? size : 16;
 }
 
-/** A rem in px, read again when the window's zoom changes: what a drawing places by, never 16 under a zoom (CANVAS1a, D224). */
+/** A rem in px, read again when the window's zoom changes: what a drawing places by, never 16 under a zoom. */
 export function useRootRem(): number {
   // The level is what moves the root's size, so it is what the size is read again by.
   const level = useZoom();

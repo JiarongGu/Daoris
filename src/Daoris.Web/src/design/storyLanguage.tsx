@@ -4,7 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../locales/i18n';
 
-// A story in a language of its own (STORY2). Stories only: nothing in the product imports this.
+// A story in a language of its own. Stories only: nothing in the product imports this.
 
 /**
  * A reader in one language, on the page's catalogues, that leaves the page's remembered language alone.
@@ -25,7 +25,7 @@ const ZH = readerIn('zh');
 
 /**
  * Points the page's own `i18n` at a language and hands back what puts it as it was. The page's switch remembers through
- * its detector (STORY2), so the detector is set aside for the change and put back after: nothing is cached under
+ * its detector, so the detector is set aside for the change and put back after: nothing is cached under
  * `daoris.language`. The catalogues are loaded, so the change is made before this returns.
  */
 function pointPageAt(language: 'en' | 'zh'): () => void {
@@ -41,7 +41,7 @@ function pointPageAt(language: 'en' | 'zh'): () => void {
   };
 }
 
-/** The wrapper a 中文 story draws in: the page's language is 中文 from its first render until it unmounts (ACCTUX4j). */
+/** The wrapper a 中文 story draws in: the page's language is 中文 from its first render until it unmounts. */
 function InChinese({ children }: { children: ReactNode }) {
   // Set during render, not in an effect: a helper that calls the page's `i18n.t` runs while the children render.
   const restore = useRef<(() => void) | null>(null);

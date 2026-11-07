@@ -17,7 +17,7 @@ export const LONG_TITLE = 90;
 export function askFacts(t: TFunction, ask: Ask, flow?: { working: boolean }): string[] {
   const waiting = askWaits(ask);
   const became = ask.quests.length;
-  // REVIEWFLOW1b: with the page's flow, *now* follows the workspace, from what the page reads: a go-ahead unanswered, or a line working.
+  // With the page's flow, *now* follows the workspace, from what the page reads: a go-ahead unanswered, or a line working.
   const now = flow ? (waiting ? t('asks.goAhead.state.asked') : flow.working ? t('work.facts.now.working') : null) : null;
   return [
     t('asks.card.workspace', { workspace: ask.workspace }),

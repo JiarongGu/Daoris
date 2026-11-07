@@ -9,7 +9,7 @@ import {
   type AccessOwner, AccessRows, accessSummary, accessToast, isFull, type ResolvedPause, resolveAccess, TODAY,
 } from './Access';
 
-// AUTONOMY1d (D184 points 1-3, 5): the access setup a repository's sessions start under, shown and set where it is set up, the same
+// The access setup a repository's sessions start under, shown and set where it is set up, the same
 // rows a level up for a workspace and this machine. Full access is one switch, confirmed once; each pause shows what it means, its
 // value and where that was set, and changes at this level or goes back to the level above. The words are the person's: a pause is
 // never named by its file key.
@@ -210,7 +210,7 @@ describe("a level's access rows", () => {
     expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'auto', routing: 'person', landing: 'person', goAheads: 'named' } }, expect.anything());
   });
 
-  // ACCESSASK1 (the UI/UX design R3, §3.3): a refused change is said under the row it was pressed in, at every level, the editor
+  // A refused change is said under the row it was pressed in, at every level, the editor
   // still open to press again; no other row speaks for it, and the next press there takes it away.
   it.each(['repository', 'workspace', 'machine'] as const)(
     'says a pause’s change refused under its row, the editor open, on the %s’s rows',

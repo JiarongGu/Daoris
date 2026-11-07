@@ -76,8 +76,8 @@ export const LifecycleChineseDark: Story = lifecycle.chineseDark;
 
 /**
  * A dense graph at the bounds (§E7): 24 authored steps, `allOf` and `anyOf` groups with their joins, failure sinks and
- * tasks, 96 wires. Past 24 nodes and nothing started, it is focused after its entries and the rest folded into *later steps*
- * (FLOWCHART1d), each edge into the fold drawn to it and counted. *Show whole* draws it whole, which needs 1432 px top to bottom:
+ * tasks, 96 wires. Past 24 nodes and nothing started, it is focused after its entries and the rest folded into *later steps*,
+ * each edge into the fold drawn to it and counted. *Show whole* draws it whole, which needs 1432 px top to bottom:
  * the 1440 px frame holds it, and the 1200 px one, past the canvas's floor, draws the same and pans. The measured-box check
  * presses it in each.
  */

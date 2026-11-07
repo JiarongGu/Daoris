@@ -7,7 +7,7 @@ import i18n from '../../locales/i18n';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 import { FullAccessAsk, HelpModeChip, useModeChoice } from './HelpModePicker';
 
-// HELPMODE1b (D183 point 2; the modes design §1, §5): Ask Daoris's access, chosen from its chip. The chip shows the mode the
+// Ask Daoris's access, chosen from its chip. The chip shows the mode the
 // conversation in view runs under, a switch that waits for its next start, and full access in the warning colour; restricted is
 // set at once, and full access asks once, inline, naming the servers it would add and when it takes effect. ACCESSASK1 (the UI/UX
 // design §3.4): the ask is the one `InlineConfirm`, open until the driver answers, and a refusal is said where it was pressed.

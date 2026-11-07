@@ -39,7 +39,7 @@ describe('the chain line', () => {
     expect(onExpand).toHaveBeenCalled();
   });
 
-  // HEADFIT1b (D185): one line at every width, the stops cut with an ellipsis and whole in their tip, the press at the line's end.
+  // One line at every width, the stops cut with an ellipsis and whole in their tip, the press at the line's end.
   it('keeps its press at the line\'s end, never wrapped, and says the stops whole in their tip', () => {
     render(<ChainLine chain={buildChain('b', QUESTS, [])} onExpand={() => {}} />);
 

@@ -5,7 +5,7 @@ import { Button, Icon, Inline, Prose } from '../design/ui';
 import { errorMessage, reportPageStopped } from '../bridge/log';
 import { liftSplash } from './splash';
 
-// The page's last stand (PAGELOOP1). With no boundary, a render that threw anywhere unmounted the whole tree, and the window was
+// The page's last stand. With no boundary, a render that threw anywhere unmounted the whole tree, and the window was
 // blank: on the install React's update-depth guard (#185) did it twice, seconds before a session ended. The window has no reload of
 // its own and a restart of Daoris ends every running session, so the page catches it here, says so in the window's words, and
 // offers a reload of the page alone. Outside every provider: a failure inside the query client, the scope or the tooltips is caught

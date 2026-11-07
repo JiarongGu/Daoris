@@ -2,7 +2,7 @@ import type {
   DownloadedVersion, DownloadsListing, SpaceKind, SpacePlan, SystemSpace, SystemWiring, WiringFile, WiringFolder, WiringVariable,
 } from '../../data/wiring';
 
-// What the wiring reads back, for the stories and the tests of This Daoris (WIRING1c): neutral paths by convention, like the
+// What the wiring reads back, for the stories and the tests of This Daoris: neutral paths by convention, like the
 // driver's fixtures, so a tracked file carries no machine path.
 
 const HOME = 'D:/somewhere/Daoris';
@@ -178,7 +178,7 @@ export const DEVELOPMENT: SystemWiring = {
   },
 };
 
-/** One downloaded version (CACHECLEAR1), nothing keeping it by default. */
+/** One downloaded version, nothing keeping it by default. */
 export const downloaded = (kind: DownloadedVersion['kind'], name: string, version: string, extra: Partial<DownloadedVersion> = {}): DownloadedVersion => ({
   kind, name, version, path: `${HOME}/cache/${kind === 'agent' ? 'toolchain' : 'tools'}/${name}/${version}`, bytes: 120_000_000,
   partial: false, keeps: null, by: [], unfinished: false, ...extra,
@@ -187,7 +187,7 @@ export const downloaded = (kind: DownloadedVersion['kind'], name: string, versio
 /** The Downloads row's list: two versions nothing uses, and one each that a pin, Tools, a workspace, a moment and a running session keep. */
 export const DOWNLOADS: DownloadsListing = {
   why: null,
-  // KEEP1b: the rule's days; claude-code 2.0.1 found unused a week before it goes, git 2.61.0 not yet found by a pass.
+  // The rule's days; claude-code 2.0.1 found unused a week before it goes, git 2.61.0 not yet found by a pass.
   days: 7,
   versions: [
     downloaded('agent', 'claude-code', '2.0.1', { unusedSince: '2026-10-15T09:00:00.000+00:00', goes: '2026-10-22T09:00:00.000+00:00' }),
@@ -202,7 +202,7 @@ export const DOWNLOADS: DownloadsListing = {
 
 const GB = 1024 ** 3;
 
-/** One kind of the Disk space card (KEEP1c), counted at the fixtures' moment, its rule another's unless said. */
+/** One kind of the Disk space card, counted at the fixtures' moment, its rule another's unless said. */
 export const spaceKind = (id: string, extra: Partial<SpaceKind> = {}): SpaceKind => ({
   id, entries: [], bytes: 0.2 * GB, files: 1_200, measured: MEASURED, partial: false, partialWhy: null, counting: false, volume: null,
   rule: { kind: 'own', days: null, whole: null, default: true, whose: 'each' }, settable: false, next: null, nextWhy: null, last: null, lastWhy: null,
@@ -221,7 +221,7 @@ export const SPACE: SystemSpace = {
       settable: true, bounds: { min: 1, max: 90, whole: true, never: false, gb: { min: 1, max: 1_048_576 } },
       next: { at: '2026-10-29T09:00:00.000+00:00', count: 3, bytes: 0.6 * GB },
       last: { at: '2026-10-16T08:10:00.000+00:00', door: 'look', removed: { count: 2, bytes: 1.1 * GB }, kept: {} },
-      // KEEPSIZE1b: what waits with no rule's date.
+      // What waits with no rule's date.
       waiting: { awaiting: 2, unread: 0, unnamed: 1 },
     }),
     spaceKind('downloads', {
@@ -268,14 +268,14 @@ export const SPACE_COUNTING: SystemSpace = {
   held: { pid: 4242, since: '2026-10-16T10:40:00.000+00:00', door: 'terminal', gone: false },
 };
 
-/** KEEP1d: the rules as the person set them, each kind's own choice and none the default. */
+/** The rules as the person set them, each kind's own choice and none the default. */
 export const SPACE_SET: SystemSpace = {
   ...SPACE,
   kinds: SPACE.kinds.map((kind) => (
     kind.id === 'set-aside' ? { ...kind, rule: { ...kind.rule, days: 30, whole: true, default: false } }
       : kind.id === 'downloads' ? { ...kind, rule: { ...kind.rule, kind: 'never', days: null, default: false } }
         : kind.id === 'logs' ? { ...kind, rule: { ...kind.rule, days: 14, default: false } }
-          // KEEP1g: an age set for finished history, its last clear the look's.
+          // An age set for finished history, its last clear the look's.
           : kind.id === 'history' ? {
             ...kind, rule: { ...kind.rule, kind: 'days', days: 365, default: false },
             last: { at: '2026-10-16T08:12:00.000+00:00', door: 'look', removed: { count: 4, bytes: 12 * 1024 ** 2 }, kept: { 'needs-you': 1 } },
@@ -304,16 +304,16 @@ export const SPACE_LOW: SystemSpace = {
     : kind)),
 };
 
-/** The allowance over the whole (KEEPSIZE1): 11.2 GB of the default 48, within it. */
+/** The allowance over the whole: 11.2 GB of the default 48, within it. */
 export const SPACE_ALLOWANCE: SystemSpace = { ...SPACE, allowance: { gb: 48, default: true, bytes: 11.2 * GB, partial: false } };
 
 /** The allowance set to 10 GB and held over: what Daoris may let go would not bring it within. */
 export const SPACE_ALLOWANCE_OVER: SystemSpace = { ...SPACE, allowance: { gb: 10, default: false, bytes: 11.2 * GB, partial: false } };
 
-/** The floor turned off (KEEP1f): Daoris frees nothing early, and says so. */
+/** The floor turned off: Daoris frees nothing early, and says so. */
 export const SPACE_FLOOR_OFF: SystemSpace = { ...SPACE, volume: { ...SPACE.volume!, floor: { bytes: null, from: 'off' }, below: false } };
 
-/** Free up space's list (KEEP1e): two folders and a day of the log the rules take now; three groups that could go early. */
+/** Free up space's list: two folders and a day of the log the rules take now; three groups that could go early. */
 export const SPACE_PLAN: SpacePlan = {
   schema: 1,
   at: '2026-10-16T10:42:00.000+00:00',

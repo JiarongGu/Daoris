@@ -31,23 +31,23 @@ export type WiringDoors = {
 export function WiringCards({
   wiring, update, busy = false, onMeasure, onOpenLogFolder, doors, downloads, onDownloads, space, onOpen, terminalSetup, addressSetup,
 }: {
-  /** *Open* on a folder or file row, by the id the read gave (WIRING1e). */
+  /** *Open* on a folder or file row, by the id the read gave. */
   onOpen?: (id: string) => void;
-  /** The Terminal card's set-up rows (WIRING1e): *Put on my PATH* and *Copy a terminal line*. */
+  /** The Terminal card's set-up rows: *Put on my PATH* and *Copy a terminal line*. */
   terminalSetup?: ReactNode;
-  /** The Service card's *Change the service's address* (WIRING1e). */
+  /** The Service card's *Change the service's address*. */
   addressSetup?: ReactNode;
   wiring: SystemWiring;
-  /** The install's update, the shell's own state (UPDATE1b): the Versions card's line. */
+  /** The install's update, the shell's own state: the Versions card's line. */
   update?: UpdateState;
   busy?: boolean;
   onMeasure: () => void;
   onOpenLogFolder: () => void;
   doors: WiringDoors;
-  /** The Downloads row's clearing, open (CACHECLEAR1), and the press that opens it. */
+  /** The Downloads row's clearing, open, and the press that opens it. */
   downloads?: ReactNode;
   onDownloads?: () => void;
-  /** The Disk space card (KEEP1c), after Folders: the domain draws it from its own read (`WiringSpace`). */
+  /** The Disk space card, after Folders: the domain draws it from its own read (`WiringSpace`). */
   space?: ReactNode;
 }) {
   return (

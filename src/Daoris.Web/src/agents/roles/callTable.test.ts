@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { callsOf, REGISTERED_TOOLS, WORK_COLUMNS } from './callTable';
 
-// COMPANYVIEW1i (the company-view design §2 row 9): what the page shows a work may call is held, cell for cell, to the service's call
+// What the page shows a work may call is held, cell for cell, to the service's call
 // table fixture, which McpRoleFilterTests holds to `CallTable` over the host's registration.
 
 type Column = { only?: string[]; allBut?: string[] };

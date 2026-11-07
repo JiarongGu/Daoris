@@ -9,7 +9,7 @@ import { LANGUAGES } from '../fixtures';
 import { WorkspaceSetup, type WorkspaceSetupProps } from './WorkspaceSetup';
 import type { Answered } from '../../work/InlineConfirm';
 
-// A workspace's Setup as a molecule (UX6g, D150 §4.3): its defaults, its remote and its rules, each from props, and every
+// A workspace's Setup as a molecule: its defaults, its remote and its rules, each from props, and every
 // press going out. Where Settings → Workspace's defaults and wiring, and Permissions' workspace rows, went (§3.1).
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -50,7 +50,7 @@ describe("a workspace's Setup", () => {
     expect(screen.queryByRole('button', { name: 'Remote and reach' })).toBeNull();
   });
 
-  // AGENTSPLACE1f: the workspace place's Sessions hold its session rows; the tab keeps the rest, so no row is on both and none is lost.
+  // The workspace place's Sessions hold its session rows; the tab keeps the rest, so no row is on both and none is lost.
   it("splits its rows between the place's Sessions and the tab that keeps the rest", () => {
     const { acts } = at({ rows: 'sessions' });
     expect(section('Defaults')).toHaveAccessibleDescription("no session language (Daoris's default) · read by agents outside it (Daoris's default)");
@@ -58,7 +58,7 @@ describe("a workspace's Setup", () => {
     expect(acts.line).not.toHaveBeenCalled();
   });
 
-  // SETUPUX1v: the workspace place's Workflow takes the line's defaults, its Sessions the rules and the machines its remote counts undeclared,
+  // The workspace place's Workflow takes the line's defaults, its Sessions the rules and the machines its remote counts undeclared,
   // so each row has one home among them and the tab's, and a section a door names is found by its row.
   it("draws the line's defaults alone for the place's Workflow", () => {
     const { acts } = at({ rows: 'defaults' });
@@ -110,7 +110,7 @@ describe("a workspace's Setup", () => {
     }
   });
 
-  // GITAUTH1f (the git-auth design §7.3): its Git section carries its git access, a value set here opening it; a loosening is asked
+  // Its Git section carries its git access, a value set here opening it; a loosening is asked
   // first, and only its press sends it.
   it('carries its git access in its Git section, a loosening confirmed before it is sent', async () => {
     const onChange = vi.fn();
@@ -162,7 +162,7 @@ describe("a workspace's Setup", () => {
     expect(acts.read).toHaveBeenLastCalledWith(undefined);
   });
 
-  /** Each row's hint is its terminal twin (D41 §4, D50): `daoris place <verb> --workspace <name>`. */
+  /** Each row's hint is its terminal twin: `daoris place <verb> --workspace <name>`. */
   it('names each row\'s terminal twin', async () => {
     at();
     await userEvent.click(section('Defaults'));
@@ -173,7 +173,7 @@ describe("a workspace's Setup", () => {
   });
 
   /**
-   * ACCTQUOTE1 (D125's ACCTQUOTE1 note): a workspace is a person's name, and a twin is pasted into a shell, so a name with a
+   * A workspace is a person's name, and a twin is pasted into a shell, so a name with a
    * space is in double quotes and one no spelling holds in every shell is a placeholder.
    */
   it('spells the workspace in each twin for a shell', async () => {
@@ -216,7 +216,7 @@ describe("a workspace's Setup", () => {
     expect(section('Defaults')).toHaveAccessibleDescription("each checkout's own line (Daoris's default)");
   });
 
-  /** PERM1 (D72): Claude Code's rules for the workspace, the same file `daoris agent rules … --workspace` edits, under Reach. */
+  /** Claude Code's rules for the workspace, the same file `daoris agent rules … --workspace` edits, under Reach. */
   it("says the rules' terminal twin under Reach, and removes a rule from it", async () => {
     const { acts } = at({
       rows: 'sessions',
@@ -262,7 +262,7 @@ describe("a workspace's machines its remote counts undeclared", () => {
 });
 
 /**
- * REVIEWENV1a (D154 point 2, design §1.7–§1.8): a workspace's *Review before landing*, among its Defaults, for every repository
+ * A workspace's *Review before landing*, among its Defaults, for every repository
  * there that sets none of its own. Nothing set says today's behaviour; one set carries Clear and says it is declared only.
  */
 describe("a workspace's review before landing", () => {
@@ -306,7 +306,7 @@ describe("a workspace's review before landing", () => {
 });
 
 /**
- * XAGENT1a (D155 point 3, design §2.5–§2.6): a workspace's *Second opinion before landing*, among its Defaults, for every
+ * A workspace's *Second opinion before landing*, among its Defaults, for every
  * repository there that sets none of its own. Nothing set says today's behaviour; one set carries Clear and says what the gate
  * does with it (XAGENT1f4).
  */
@@ -352,7 +352,7 @@ describe("a workspace's second opinion before landing", () => {
 });
 
 /**
- * DOORS1b (D164's amendment points 1 and 3, D163 point 3): a workspace's *Commits* and *Helpers* among its Defaults, for every
+ * A workspace's *Commits* and *Helpers* among its Defaults, for every
  * repository there that sets none of its own, as Ask Daoris's room names them. Nothing set says Daoris's default; one set
  * carries Clear.
  */
@@ -414,7 +414,7 @@ describe("a workspace's commits and helpers", () => {
 });
 
 /**
- * AUTONOMY1d (D184 point 1): the access setup a workspace gives each of its repositories that sets none of its own, the same rows
+ * The access setup a workspace gives each of its repositories that sets none of its own, the same rows
  * one level up, each pause from the workspace, this machine or Daoris's default.
  */
 describe("a workspace's sessions' access", () => {
@@ -455,7 +455,7 @@ describe("a workspace's sessions' access", () => {
     expect(onChange).toHaveBeenLastCalledWith({ access: { routing: null } }, expect.anything());
   });
 
-  // ACCESSASK1 (the UI/UX design R3, §3.3): a change the driver refused is said under the row it was pressed in, its editor open.
+  // A change the driver refused is said under the row it was pressed in, its editor open.
   it('says a refused change under its row, the editor still open', async () => {
     const onChange = vi.fn((_edit: unknown, answered?: Answered) => answered?.refused('The driver could not write aurora’s access.'));
     at({ access: { pauses: pauses({ value: 'person', source: 'default' }), aboveFull: false, onChange } });

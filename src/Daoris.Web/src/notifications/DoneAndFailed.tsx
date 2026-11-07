@@ -9,7 +9,7 @@ import { useShownOnce } from '../person/Confirmations';
 
 /**
  * A notice's one line in the reader's language (§2.2): what ended and how, which press went unanswered, or what a look found that is
- * news (NOTIFY2h). Never a raw state or code.
+ * news. Never a raw state or code.
  */
 export function noticeWords(notice: Notice, t: TFunction): string {
   if (notice.kind === 'ended') {
@@ -23,7 +23,7 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     return act ? t(`notifications.done.${notice.kind}`, { act }) : t('notifications.done.other');
   }
   if (notice.kind === 'lost') {
-    // CONFIRMWAIT1a-ii (§7.2, §8.3): one carrying a key a close ended, by its act; else the presses a restart could not bring back, one
+    // One carrying a key a close ended, by its act; else the presses a restart could not bring back, one
     // by its own key, since Chinese has no plural `_one` to pick it.
     const act = notice.route ? t(`person.route.${notice.route}`, { defaultValue: '' }) : '';
     if (act) return t('notifications.done.lostKeyed', { act });
@@ -32,7 +32,7 @@ export function noticeWords(notice: Notice, t: TFunction): string {
   }
   if (notice.kind === 'newer') return t('notifications.done.newer');
   if (notice.kind === 'look') {
-    // A look's news by its code (NOTIFY2h): never the driver's English line. A code a later build says reads as something ended.
+    // A look's news by its code: never the driver's English line. A code a later build says reads as something ended.
     return notice.code ? t(`notifications.done.look.${notice.code}`, { defaultValue: t('notifications.done.other') }) : t('notifications.done.other');
   }
   return t('notifications.done.other');

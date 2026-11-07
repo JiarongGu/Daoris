@@ -3,7 +3,7 @@ import { mark, termsOf } from './highlight';
 
 /**
  * Marking the matched terms in a search excerpt, after the deployed application showed twenty-six
- * excerpts for one word with the word marked in none of them (D62).
+ * excerpts for one word with the word marked in none of them.
  */
 describe('termsOf', () => {
   it('tokenises the way the service does — lower-cased, nothing of two characters or fewer', () => {

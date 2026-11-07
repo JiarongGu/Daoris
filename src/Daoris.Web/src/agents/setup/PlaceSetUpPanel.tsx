@@ -17,7 +17,7 @@ import type { HoldOutcome } from './PlaceReview';
  * @remarks
  * The plan is first read as *Not driven*, which changes nothing, to learn what the driver suggests; the suggestion is then preselected where
  * every repository suggests the same, so the person reads a plan of a choice made for them and not of none, and where they differ nothing is
- * preselected (SETUPUX1j). The deliveries come from the data (`WORKFLOW_LIST`), a workspace's repositories from its whole list (`PLACES`
+ * preselected. The deliveries come from the data (`WORKFLOW_LIST`), a workspace's repositories from its whole list (`PLACES`
  * `members`). *Hold it after driving* sets the repository's hold before the apply (`SET_HOLD`), after which the plan reads no queued work as
  * released.
  */

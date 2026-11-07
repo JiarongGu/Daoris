@@ -28,7 +28,7 @@ export type Notify = (text: string, kind?: 'ok' | 'error') => void;
 /**
  * A window's notices: the list its corner shows, and the two ways to change it. Capped by
  * `withNotice`, so a burst cannot climb the window — the newest are what a corner can promise to
- * show. Both windows hold one; each had written it out (REV3 CLEAN1).
+ * show. Both windows hold one; each had written it out.
  */
 export function useToasts(): { toasts: ToastItem[]; notify: Notify; dismiss: (id: number) => void } {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -60,7 +60,7 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
       {items.map((toast) => (
         <Toast.Root
           key={toast.id}
-          // One that stays is closed by its owner or the person, never by its seven seconds (NOTIFY2b, §3.3).
+          // One that stays is closed by its owner or the person, never by its seven seconds.
           duration={toast.stays ? Number.POSITIVE_INFINITY : undefined}
           onOpenChange={(open) => { if (!open) onClose(toast.id); }}
           className={cn(

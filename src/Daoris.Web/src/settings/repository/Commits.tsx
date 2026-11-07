@@ -38,7 +38,7 @@ const MODE_KEY: Record<string, string> = { 'as-you-go': 'asYouGo', ask: 'ask', '
 const modeKey = (mode: string) => MODE_KEY[mode] ?? 'asYouGo';
 
 /**
- * What each door says of a rule (DOORS1b), in the page's language: its mode in the terminal's sentence (`driver commits`), then
+ * What each door says of a rule, in the page's language: its mode in the terminal's sentence (`driver commits`), then
  * the person's convention, quoted as written.
  */
 export function commitSays(t: TFunction, rule: CommitRule): string[] {

@@ -9,8 +9,8 @@ import { WorkspaceScopeProvider } from '../data/scope';
 import { columnsFollow } from '../test/mainSplit';
 import type { Notify } from '../design/ui';
 
-// Overview (D40), over a stubbed service, in a browser. Its page takes its final shape with FRAME1c: no
-// list (D118 §4), and its two cards laid out by the main area's own width (§3b). Since UX6c *What needs you* leads it,
+// Overview, over a stubbed service, in a browser. Its page takes its final shape with FRAME1c: no
+// list, and its two cards laid out by the main area's own width (§3b). Since UX6c *What needs you* leads it,
 // and settles from its rows what one press can.
 
 const REPOSITORIES = [{ name: 'engine', total: 3, local: 3, canonical: 0, workspace: 'default' }];
@@ -20,7 +20,7 @@ let QUESTS: unknown[] = [];
 let SESSIONS: unknown[] = [];
 let ASKS: unknown[] = [];
 
-/** An ask the declarations proposed and nobody has published (INT4a). */
+/** An ask the declarations proposed and nobody has published. */
 const PROPOSED = {
   id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.', state: 'Proposed',
   tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
@@ -96,7 +96,7 @@ describe('Overview', () => {
 });
 
 /**
- * OVERVIEWNOISE1d: an empty index's card promised the next refresh and offered no way to start one, while the workspace's
+ * An empty index's card promised the next refresh and offered no way to start one, while the workspace's
  * repositories held thousands of entries stamped with the workspace they had moved from. It now offers the shell's refresh.
  */
 describe("Overview's empty index", () => {
@@ -153,7 +153,7 @@ describe("Overview's empty index", () => {
 });
 
 /**
- * UX6c (design §6): *What needs you* is Overview's lead. Who needs the person is judged by the app (PUSH1d4, D182 point 6), so a
+ * *What needs you* is Overview's lead. Who needs the person is judged by the app (PUSH1d4, D182 point 6), so a
  * plain browser has no rows to show: its band says it is the app's. `AttentionBand.test.tsx` holds its rows and their acts, in a
  * shell.
  */

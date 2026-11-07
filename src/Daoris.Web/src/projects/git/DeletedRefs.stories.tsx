@@ -5,7 +5,7 @@ import { storyWidths } from '../../design/storyWidths';
 import type { GitDeletedRef } from './DeletedRefs';
 import { DeletedRefs } from './DeletedRefs';
 
-// A repository's deletes as the journal holds them (ONEWAY1r, D204): who pressed each, its kept commits, and its Undo open, shut or refused,
+// A repository's deletes as the journal holds them: who pressed each, its kept commits, and its Undo open, shut or refused,
 // at the main area's three widths (80, 39 and 25rem) in English and 中文, in both themes.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;

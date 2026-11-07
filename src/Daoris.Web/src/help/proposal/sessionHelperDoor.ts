@@ -1,4 +1,4 @@
-/** What a `session` proposal's helper or pass door asks, read from the terminal command the driver wrote for it (COWORKUX1). */
+/** What a `session` proposal's helper or pass door asks, read from the terminal command the driver wrote for it. */
 export type SessionHelperDoor =
   | { door: 'helper'; session: string; question: string; agent: string | null; after: string | null; toMe: boolean }
   | { door: 'pass'; ask: string };

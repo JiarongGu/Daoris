@@ -15,7 +15,7 @@ import { NO_FILTERS, nodeOfRow, placeId } from './roleStructure';
 export type StructureRead = 'ok' | 'loading' | 'failed';
 
 /**
- * Where a row's door leads, handed in by the application (D168 point 3): the molecules press these and know no route. A door the
+ * Where a row's door leads, handed in by the application: the molecules press these and know no route. A door the
  * place was not handed is not drawn.
  */
 export type RoleDoors = {
@@ -27,7 +27,7 @@ export type RoleDoors = {
   plugin?: (plugin: string) => void;
   /** Working roles' editor for a new role in this workspace or repository (*Add a role here*). */
   addRole?: (place: { kind: 'workspace' | 'repository'; id: string }) => void;
-  /** The diagram, its row's node chosen (COMPANYVIEW1f): a row's ⋯ *On the diagram*, offered where the row is drawn. */
+  /** The diagram, its row's node chosen: a row's ⋯ *On the diagram*, offered where the row is drawn. */
   diagram?: (row: string) => void;
 };
 

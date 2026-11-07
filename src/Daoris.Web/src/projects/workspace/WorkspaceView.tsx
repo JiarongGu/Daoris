@@ -45,23 +45,23 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 const mine = <R extends { workspace: string }>(rows: readonly R[], workspace: string) => rows.filter((row) => same(row.workspace, workspace));
 
 /**
- * **A workspace's page, with its data** (UX6g, D150 §4.3): the organism that holds what the page reads and every press it
+ * **A workspace's page, with its data**: the organism that holds what the page reads and every press it
  * makes, so the page, its Details and its Setup below it hold none (components §2). Each tab is a part of its own, drawn
  * only while it shows, so a tab asks the driver nothing until it is open: the starts and the accounts on Details, the
- * clean-up's list and the look's scope on Branches, its Current workflow on Workflow (WORKFLOW1b), reading across, the rules
+ * clean-up's list and the look's scope on Branches, its Current workflow on Workflow, reading across, the rules
  * and the plugins on Setup.
  *
  * @remarks
- * **Every control is the screen's half of a terminal verb** (D50): `daoris place line|landing|language|across --workspace`,
+ * **Every control is the screen's half of a terminal verb**: `daoris place line|landing|language|across --workspace`,
  * `daoris remote add|remove`, `daoris agent rules … --workspace`, `daoris tree clean|sync`, and a failed attempt's
- * branch discarded as `daoris tree remove <branch> --repository <name> --force` (LAND3b). A refusal is the driver's
+ * branch discarded as `daoris tree remove <branch> --repository <name> --force`. A refusal is the driver's
  * sentence, in a toast. They are where Settings → Workspace and Settings → Permissions held them (§3.1).
  *
- * **A browser is handed what it may know** (D47 §4): its repositories, and whether it syncs, read from this machine's own
- * host without a host's name (D48 §5). No tab, no branch, no setting and no account.
+ * **A browser is handed what it may know**: its repositories, and whether it syncs, read from this machine's own
+ * host without a host's name. No tab, no branch, no setting and no account.
  *
- * **Its Details reads what this machine keeps of its finished work, and clears it** (HIST1e, D153 §6.1): the reading, and
- * *Clear history…* while anything may go, `daoris history clear --workspace`'s screen twin (D50). A kept unit's door
+ * **Its Details reads what this machine keeps of its finished work, and clears it**: the reading, and
+ * *Clear history…* while anything may go, `daoris history clear --workspace`'s screen twin. A kept unit's door
  * opens its Branches, *Sync now*, or the quest's, the ask's or the session's page where the application hands those doors.
  */
 export function WorkspaceView({
@@ -80,26 +80,26 @@ export function WorkspaceView({
   asked?: WorkspaceSection | null;
   notify: Notify;
   onOpenRepository: (repository: string) => void;
-  /** Open a repository's page at its Workflow tab: the door from a repository that sets rules of its own (WORKFLOW1b). */
+  /** Open a repository's page at its Workflow tab: the door from a repository that sets rules of its own. */
   onOpenRepositoryWorkflow?: (repository: string) => void;
   /** Open a branch's page on its repository's, whose way back is its Branches (UX6h3b): a branch's name in Branches. */
   onOpenBranch?: (repository: string, branch: string) => void;
   /** Open a repository's page at its History: its line's row in Branches. */
   onOpenRepositoryHistory?: (repository: string) => void;
-  /** Open an agent's page, where a workspace's accounts are set (D130 §3.2, UX6e). */
+  /** Open an agent's page, where a workspace's accounts are set. */
   onOpenAgent?: (agent: string) => void;
-  /** The status bar's *Sync now* (SYNC6b), the application's, which says the pass's own words. */
+  /** The status bar's *Sync now*, the application's, which says the pass's own words. */
   onSyncNow?: (workspace: string) => void;
   syncing?: boolean;
-  /** Open a quest's page, an ask's, or a session in Sessions: the doors that free a unit its clear keeps (HIST1e). */
+  /** Open a quest's page, an ask's, or a session in Sessions: the doors that free a unit its clear keeps. */
   onOpenQuest?: (id: string) => void;
   onOpenAsk?: (id: string) => void;
   onAttend?: (session: string) => void;
-  /** Open a section of the workspace's Setup, which the application sends to its new home once the Setup mode is lit (SETUPUX1v). */
+  /** Open a section of the workspace's Setup, which the application sends to its new home once the Setup mode is lit. */
   onOpenSetupSection?: (workspace: string, section: WorkspaceSection) => void;
 }) {
   const remotes = useRemotes();
-  // Where it syncs, for a browser, from this machine's own host: wired or not, never where (D48 §5).
+  // Where it syncs, for a browser, from this machine's own host: wired or not, never where.
   const standing = useSyncStanding(attached ? null : workspace);
   // The header's *Wire to a remote…*: the Remote row of Details with its form open: a count, so each press opens it afresh.
   const [wireAsk, setWireAsk] = useState(0);
@@ -132,7 +132,7 @@ export function WorkspaceView({
         ? (
           <WorkflowPart
             workspace={workspace}
-            // The defaults are the workspace place's Workflow (SETUPUX1v): the application opens it.
+            // The defaults are the workspace place's Workflow: the application opens it.
             onSetup={() => onOpenSetupSection?.(workspace, 'defaults')}
             onOpenRepository={onOpenRepositoryWorkflow}
           />
@@ -144,7 +144,7 @@ export function WorkspaceView({
             notify={notify}
             onOpenRepository={onOpenRepository}
             onOpenAgent={onOpenAgent}
-            // The remote's wiring is a row of Details (SETUPUX1v).
+            // The remote's wiring is a row of Details.
             remote={{ startOpen: wireAsk > 0, focus: wireAsk > 0 || asked === 'remote', ask: wireAsk }}
             doors={{ branches: () => chooseTab('branches'), sync: onSync, quest: onOpenQuest, ask: onOpenAsk, session: onAttend }}
           />
@@ -170,8 +170,8 @@ export function WorkspaceView({
 }
 
 /**
- * Details: its repositories, what a start in it runs on (MAP1b), the accounts its work may run on (D130 §3.2), and what this
- * machine keeps of its finished work with its clear (HIST1e, D153 §6.1), read only while Details shows, since the reading
+ * Details: its repositories, what a start in it runs on, the accounts its work may run on, and what this
+ * machine keeps of its finished work with its clear, read only while Details shows, since the reading
  * walks the home's files.
  */
 function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpenAgent, remote, doors }: {
@@ -180,7 +180,7 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
   notify: Notify;
   onOpenRepository: (repository: string) => void;
   onOpenAgent?: (agent: string) => void;
-  /** Draws the Remote row (SETUPUX1v), with its form open or the focus on it where a press or a door asked. */
+  /** Draws the Remote row, with its form open or the focus on it where a press or a door asked. */
   remote?: { startOpen: boolean; focus: boolean; ask: number };
   /** The doors that free a unit the clear keeps. */
   doors: KeptDoors;
@@ -224,7 +224,7 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
 
 /**
  * Branches: each repository's branches by kind, a group per repository (UX6h2b2, the built-in Git design §2.2), then the
- * clean-up (WSR3, D88) and bringing up to date (WSR6), moved from Settings → Workspace. The clean-up lists this workspace's
+ * clean-up and bringing up to date, moved from Settings → Workspace. The clean-up lists this workspace's
  * session branches, and its press removes only what it listed. A look reaches the network as the person, so it is asked by
  * its own press.
  *
@@ -235,7 +235,7 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
  * **The repositories apart are said once** (UX6h2b3): the groups' fold is the one include, held here and handed to the groups
  * and to *Updates*, which draws no list apart of its own; its look takes what holds Daoris's branches and what the fold included.
  *
- * **Everything here is this workspace's** (BRSCOPE1, WSP5). The clean-up's list and the machine's reading of which
+ * **Everything here is this workspace's**. The clean-up's list and the machine's reading of which
  * checkouts hold Daoris's branches are the machine's answers, read once for every page, and filtered to it. The look and
  * the press are asked for it, so the driver fetches and judges its checkouts alone, and what the look leaves apart is
  * its own. The rows are filtered again, so a host before BRSCOPE1, whose look is the machine's, still shows only its own.
@@ -251,30 +251,30 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
 }) {
   const { t } = useTranslation();
   const plan = useSweepPlan();
-  // The person's *Look* (PUSH1c4b): one press of `SWEEP_PLAN`, the occasion its pull-request asks are made at (D148 point 2); what it
+  // The person's *Look* (PUSH1c4b): one press of `SWEEP_PLAN`, the occasion its pull-request asks are made at; what it
   // heard reaches the list as the shell's push where it pushes one, and as its answer where the list is pulled.
   const look = useSweepLook();
   const sweep = useSweep();
-  // A failed or superseded attempt's branch, discarded by its own press (LAND3b): `daoris tree remove … --force`.
+  // A failed or superseded attempt's branch, discarded by its own press: `daoris tree remove … --force`.
   const discard = useDiscardSessionBranch();
-  // A landing's branch the line will never hold, withdrawn by its own press (LANDRETIRE1): `daoris tree remove … --why`.
+  // A landing's branch the line will never hold, withdrawn by its own press: `daoris tree remove … --why`.
   const withdraw = useWithdrawLandingBranch();
-  // The person's delete of the recovery refs nothing holds (RECOVERYDROP1): `daoris work recovery drop`'s twin.
+  // The person's delete of the recovery refs nothing holds: `daoris work recovery drop`'s twin.
   const dropRecoveries = useDropRecoveries();
   const syncScope = useTreesSyncScope();
   const syncPlan = useTreesSyncPlan(workspace);
   const sync = useTreesSync(workspace);
-  // What the look cleaned up on its own (AUTOTIDY1a): the machine log's, so a browser has none; a failed read draws nothing.
+  // What the look cleaned up on its own: the machine log's, so a browser has none; a failed read draws nothing.
   const tidied = useTidiedBranches(workspace);
-  // Where each unit's work stands (FABRIC-MILESTONE1b): a tidied or kept branch says it beneath itself; the band's answer, shared.
+  // Where each unit's work stands: a tidied or kept branch says it beneath itself; the band's answer, shared.
   const workState = useWorkState();
-  // A landing's branch tidied names its session by id (TIDIEDLANDING1): the sessions are asked only while a line does, so the
+  // A landing's branch tidied names its session by id: the sessions are asked only while a line does, so the
   // row says it by name where the list holds the session.
   const tidiedLines = Array.isArray(tidied.data?.lines) ? tidied.data.lines : null;
   const landings = useSessions(null, true, Boolean(tidiedLines?.some((line) => line.event === 'branch.tidied' && !line.data.branch && line.data.session)));
   const titles = Object.fromEntries((landings.data ?? []).map((session) => [session.id, sessionTitle(session)]));
   useErrorNotify(plan.error, notify);
-  // A look the page stopped waiting for is said in the section, where it was asked (WSR7); every other failure is the
+  // A look the page stopped waiting for is said in the section, where it was asked; every other failure is the
   // driver's own sentence, in a toast.
   useErrorNotify(stoppedWaiting(syncPlan.error) ? null : syncPlan.error, notify);
   const looked = syncPlan.data;
@@ -305,13 +305,13 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
           onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
           onError: failure(notify),
         })}
-        // Told back to its ask (UXFIX2): a branch kept, or a refusal, is said inside it.
+        // Told back to its ask: a branch kept, or a refusal, is said inside it.
         onDiscard={(branch, answered) => discard.mutate(branch, {
           onSuccess: sayDiscard(notify, t, answered),
           onError: (error) => answered.refused(sentence(error)),
         })}
         discarding={discard.isPending && discard.variables ? sweepKey(discard.variables) : null}
-        // Told back to its ask like the discard (UXFIX2): the reason typed is sent, a refusal is said inside it.
+        // Told back to its ask like the discard: the reason typed is sent, a refusal is said inside it.
         onWithdraw={(branch, why, answered) => withdraw.mutate({ repository: branch.repository, branch: branch.branch, why }, {
           onSuccess: sayWithdraw(notify, t, answered),
           onError: (error) => answered.refused(sentence(error)),
@@ -410,7 +410,7 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
 }
 
 /**
- * Setup: its defaults (WSR1, WSR2, LANG1c, READ1) and its remote and rules (D48 §5, PERM1), each from the answer the driver
+ * Setup: its defaults and its remote and rules, each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
  *
  * The Agents place's: a workspace's page there draws `rows="sessions"` under its Sessions (AGENTSPLACE1f, with its rules and the machines
@@ -418,7 +418,7 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
  */
 export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }: {
   workspace: string;
-  /** Open Settings → Git, where a host nothing serves is given an identity (GITAUTH1e). */
+  /** Open Settings → Git, where a host nothing serves is given an identity. */
   onOpenGit?: (host: string) => void;
   notify: Notify;
   open?: WorkspaceSection;
@@ -443,7 +443,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
   const setAccess = useSetAccess();
   const setRead = useSetReadAcross();
   const act = useRuleAction();
-  // GITAUTH1e: the hosts its repositories' git remotes reach and the identity this workspace chooses for each.
+  // The hosts its repositories' git remotes reach and the identity this workspace chooses for each.
   const gitIdentities = useTools().data?.identities;
   const gitRemotes = useGitRemotes({ workspace });
   const setGitUse = useSetGitUse();
@@ -485,7 +485,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             use: (host, value) => setGitUse.mutateAsync({ scope: 'workspace', workspace, host, ...(value ? { value } : {}) }),
             ...(onOpenGit ? { onSetUp: onOpenGit } : {}),
           },
-          // GITAUTH1f (§7.3): its git access as STATE sets it, over this machine's; absent where the answer lacks it.
+          // Its git access as STATE sets it, over this machine's; absent where the answer lacks it.
           access: state?.workspaceGitAccess ? {
             classes: resolveGitAccess([
               { classes: ofWorkspace(state.workspaceGitAccess)?.classes, source: 'workspace' },
@@ -503,7 +503,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
       || setCommits.isPending || setHelpers.isPending || setHandOver.isPending || setAccess.isPending || setRead.isPending || act.isPending
       || setGitAccess.isPending
       || retire.isPending,
-    // The access its repositories' sessions start under (AUTONOMY1d): the workspace's over this machine's, resolved on the page from
+    // The access its repositories' sessions start under: the workspace's over this machine's, resolved on the page from
     // the levels as set, since the driver resolves only a repository's; the answer is none, and nothing is drawn.
     access: state && Array.isArray(state.workspaceAccess)
       ? {
@@ -559,7 +559,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // Where its repositories' work is reviewed before it lands (REVIEWENV1a); the answer has no reviews.
+      // Where its repositories' work is reviewed before it lands; the answer has no reviews.
       review: state && Array.isArray(state.workspaceReviews)
         ? {
             set: ofWorkspace(state.workspaceReviews)?.rule,
@@ -569,7 +569,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // Which other agent reads its repositories' work before it lands (XAGENT1a); the answer has no opinions.
+      // Which other agent reads its repositories' work before it lands; the answer has no opinions.
       opinion: state && Array.isArray(state.workspaceOpinions)
         ? {
             set: ofWorkspace(state.workspaceOpinions)?.rule,
@@ -579,7 +579,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // How its repositories' work is committed, and what a helper their agents ask for does (DOORS1b); an answer without
+      // How its repositories' work is committed, and what a helper their agents ask for does; an answer without
       // it carries neither, and neither is offered.
       commits: state && Array.isArray(state.workspaceCommits)
         ? {
@@ -599,7 +599,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // What an agent's ask to hand its session over does in its repositories (MIXAGENT1c); none where the answer lacks it.
+      // What an agent's ask to hand its session over does in its repositories; none where the answer lacks it.
       handOver: state && Array.isArray(state.workspaceHandOver)
         ? {
             set: ofWorkspace(state.workspaceHandOver)?.rule,

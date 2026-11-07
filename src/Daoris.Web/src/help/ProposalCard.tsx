@@ -8,7 +8,7 @@ import { type HelpRulesShown, RulesChange } from './proposal/RulesChange';
 import type { StarterDoor } from './starters';
 
 /**
- * What a plugin proposal's plugin runs (PLUG9), each command as its manifest writes it, `${plugin}`
+ * What a plugin proposal's plugin runs, each command as its manifest writes it, `${plugin}`
  * included: the bridge leaves a null out, so a plugin that speaks on no point arrives with no `command`,
  * and a switch with no `copied`.
  */
@@ -31,7 +31,7 @@ export type HelpPluginShown = {
 };
 
 /**
- * A proposal of Ask Daoris's the route takes (HELP1c): what it changes, and the command that does the same.
+ * A proposal of Ask Daoris's the route takes: what it changes, and the command that does the same.
  * Since HELP6 a kind for each door built since: an agent's update or pin, an account's model and effort, a
  * delete of a record made by mistake, and a go to a screen, which has no command since it changes nothing.
  * Since PLUG9 a plugin that has landed, added from its folder, or one switched on or off, with what it runs.
@@ -41,7 +41,7 @@ export type HelpPluginShown = {
  */
 export type HelpProposal = {
   id: string;
-  /** A digest of the plan the card shows (HELPAPPLY1): the Apply sends it back, and the host applies only a plan still that one. */
+  /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
   /** A move to a workspace (`repository`, ENTRY1d1) has no card of its own: its sentence, Apply and Not now. */
   /** Archiving or unarchiving sessions (`session`, SESSUX1h2a) is the generic card too, with its command. */
@@ -55,16 +55,16 @@ export type HelpProposal = {
   grant?: HelpGrantShown | null;
   /** A place's supervisor rules, before and after (`role`); the card words them from the catalogue. */
   rules?: HelpRulesShown | null;
-  /** Bringing up to date (HELP10): whether the person has looked, and every row the look listed. */
+  /** Bringing up to date: whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
-  /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card (WORKFLOW1h-d). */
+  /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card. */
   workflow?: HelpWorkflowShown | null;
   /** A place's quick set-up (`setup`'s `place` door, AGENTSPLACE1k): the ask and the plan's changes; Apply opens *Set up…* on the ask. */
   place?: HelpPlaceShown | null;
 };
 
 /**
- * What a place's set-up card shows (AGENTSPLACE1k): the ask, the workspace it is of, and each change the plan makes once with the repositories
+ * What a place's set-up card shows: the ask, the workspace it is of, and each change the plan makes once with the repositories
  * it reaches. The page *Set up…* opens plans again; the digest only moves the card's revision when the plan moves.
  */
 export type HelpPlaceShown = {
@@ -111,7 +111,7 @@ export type HelpWorkflowShown = {
   needs: string[];
   appliesTo: string;
   choose: boolean;
-  /** FABRIC-PIPELINE1i: the route it is chosen for, `default`, `landed` or `kind:<id>`; absent where none, or from an older driver. */
+  /** The route it is chosen for, `default`, `landed` or `kind:<id>`; absent where none, or from an older driver. */
   route?: string | null;
   /** Whether Apply saves a version; false for a route with no version. Absent from an older driver, which always saves. */
   saves?: boolean;
@@ -120,20 +120,20 @@ export type HelpWorkflowShown = {
   /** What the change asks less of the person, in the driver's words; only their Apply makes it. */
   lowers?: string[];
   /**
-   * INTEGRATE1r part r3 (F42): the repositories a chosen graph integrates in with no gates, by name; the page words the line. Absent from
+   * INTEGRATE1r part r3: the repositories a chosen graph integrates in with no gates, by name; the page words the line. Absent from
    * an older driver, which said it in the plan's text alone. What a repository cannot carry stays in `needs`, as the driver sent it.
    */
   noGates?: string[];
   /**
-   * FLOWCHART2e: on a change to the draft open in the editor (the `draft` door), the fingerprint of the draft it is against; null on every
+   * On a change to the draft open in the editor (the `draft` door), the fingerprint of the draft it is against; null on every
    * other card, which saves or chooses, and absent from an older driver. A draft card saves nothing: its `version` is 0.
    */
   draft?: string | null;
-  /** FLOWCHART2e: a draft card's changes against its draft, in the driver's order, each with the changes it needs taken with it. */
+  /** A draft card's changes against its draft, in the driver's order, each with the changes it needs taken with it. */
   changes?: WorkflowGraphChange[];
-  /** FLOWCHART2e: what a save of a draft card's graph would refuse, each at its step or way, for the person to put right. */
+  /** What a save of a draft card's graph would refuse, each at its step or way, for the person to put right. */
   problems?: { code: string; node?: string | null; wire?: string | null; words: string }[];
-  /** FLOWCHART2e: a draft card's candidate graph, whole, which the editor takes changes from and nothing saves. */
+  /** A draft card's candidate graph, whole, which the editor takes changes from and nothing saves. */
   proposed?: Record<string, unknown> | null;
 };
 
@@ -158,9 +158,9 @@ export type WorkflowGraphChange = {
 };
 
 /**
- * What a bring-up-to-date card shows (HELP10, WSR6): whether the person has looked — the press that fetches (D109) —
+ * What a bring-up-to-date card shows: whether the person has looked — the press that fetches —
  * and each row the look listed, in the terminal's words, and whether the press moves it. Since LEFT3, what the rows do
- * not say, kept by the look (WSR7, D112): each repository whose line was not fetched, and those left apart. A host
+ * not say, kept by the look: each repository whose line was not fetched, and those left apart. A host
  * older than LEFT3 answers neither.
  */
 export type HelpSyncShown = {
@@ -188,7 +188,7 @@ export type HelpGrantShown = {
 };
 
 /**
- * Every tool an approval hands Ask Daoris, or a withdrawal takes back (HELPPLUG1c): its reads, the writes accepted and those
+ * Every tool an approval hands Ask Daoris, or a withdrawal takes back: its reads, the writes accepted and those
  * not, each named as the plugin declares it, so the person sees exactly what their press widens or narrows.
  */
 function GrantTools({ grant }: { grant: HelpGrantShown }) {
@@ -214,7 +214,7 @@ function GrantTools({ grant }: { grant: HelpGrantShown }) {
 const line = (command: string[]) => command.map((word) => (word.includes(' ') ? `"${word}"` : word)).join(' ');
 
 /**
- * What a plugin runs, before Apply (PLUG9): its id, the process it starts and the points it speaks on, the
+ * What a plugin runs, before Apply: its id, the process it starts and the points it speaks on, the
  * harnesses it declares and the servers it hands every session. Chrome translates; every name and command
  * is the manifest's, as it writes it.
  */
@@ -249,7 +249,7 @@ function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
 }
 
 /**
- * What a workflow proposal changes, in the design's order (WORKFLOW1h-d, §8.2): the version it makes, *Your part* first, the
+ * What a workflow proposal changes, in the design's order: the version it makes, *Your part* first, the
  * steps' diff, the acts that become standing, what is needed first, and who it applies to. Headings are the page's words;
  * every line is the driver's English sentence, shown as it came.
  */
@@ -263,7 +263,7 @@ function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
       </ul>
     </section>
   );
-  // FABRIC-PIPELINE1i: a route with no version saves nothing, a verification pipeline's lines are its graph's nodes, and what the
+  // A route with no version saves nothing, a verification pipeline's lines are its graph's nodes, and what the
   // change asks less of the person leads, since only their Apply makes it.
   const kind = workflow.route?.startsWith('kind:') ? workflow.route.slice('kind:'.length) : null;
   const lowers = workflow.lowers ?? [];
@@ -305,7 +305,7 @@ function WorkflowChange({ workflow }: { workflow: HelpWorkflowShown }) {
 }
 
 /**
- * A change to the draft open in the editor (FLOWCHART2f; D223 §4.4): the place whose draft it is, its changes in the driver's lines as sent,
+ * A change to the draft open in the editor: the place whose draft it is, its changes in the driver's lines as sent,
  * what a save of it would refuse (in the catalogue's words where the page has the code), and that nothing is saved or chosen: its one press
  * opens the editor, where the person takes its changes, and only their Save there saves.
  */
@@ -342,7 +342,7 @@ function SyncNotFetched({ failed, lines, onGo }: {
   onGo?: (door: StarterDoor) => void;
 }) {
   const { t } = useTranslation();
-  // The screen door (GITAUTH1e): each host a fetch over SSH or HTTPS did not reach, once, opening Add a git identity with the host filled.
+  // The screen door: each host a fetch over SSH or HTTPS did not reach, once, opening Add a git identity with the host filled.
   const hosts = [...new Set(failed.filter((line) => line.reach === 'ssh' || line.reach === 'https').map((line) => line.host).filter((host): host is string => !!host))];
   const reasons = [...new Set(failed.map((line) => line.fetch))];
   const when = (line: (typeof failed)[number]) => (line.lastFetch
@@ -395,27 +395,27 @@ function SyncApart({ apart }: { apart: string[] }) {
 }
 
 /**
- * One change Ask Daoris proposes (HELP1c, D89): what it changes, the terminal command that does the same
- * (D50), and why — with **apply** and **not now**, since every change is the person's press.
+ * One change Ask Daoris proposes: what it changes, the terminal command that does the same,
+ * and why — with **apply** and **not now**, since every change is the person's press.
  *
  * @remarks
  * The description is the driver's sentence and renders verbatim, as every driver sentence does; only the
  * chrome around it translates. A molecule: the proposal arrives judged, a press goes out.
  *
- * **Each kind says what its press does** (HELP6): a delete is titled as one, says it cannot be undone as
+ * **Each kind says what its press does**: a delete is titled as one, says it cannot be undone as
  * the drawer's own confirmation does, and its press is *delete*; a go is a suggestion, not a change, so
- * it carries no command and its press is *go there*, and its second press *dismiss* only takes the card away, told to nobody
- * (ASKDISMISS1); a go to a quest says, in the driver's sentence, whether it is taken. A plugin (PLUG9) shows what will run before Apply,
+ * it carries no command and its press is *go there*, and its second press *dismiss* only takes the card away, told to nobody;
+ * a go to a quest says, in the driver's sentence, whether it is taken. A plugin shows what will run before Apply,
  * and an add says its folder is copied in and that nothing starts at the press.
  *
- * **Bringing up to date has the screen's two presses** (HELP10, D109): looking fetches as the person, so the
+ * **Bringing up to date has the screen's two presses**: looking fetches as the person, so the
  * card's first press is *look for updates*, and only once the driver has listed what the press would do does it
  * show those rows, each as the terminal says it, with Apply, which does only the rows that move. Beside them it says
- * what they do not (LEFT3): the lines the look could not fetch, and the repositories it left apart (D112).
+ * what they do not: the lines the look could not fetch, and the repositories it left apart.
  *
- * **A workflow version reads in the design's order** (WORKFLOW1h-d, §8.2): *Your part* first, then the steps' diff, the acts that
+ * **A workflow version reads in the design's order**: *Your part* first, then the steps' diff, the acts that
  * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*. A change to the draft open in
- * the editor (FLOWCHART2f) lists its changes and what to put right, and its press, *Open in the editor*, saves and settles nothing.
+ * the editor lists its changes and what to put right, and its press, *Open in the editor*, saves and settles nothing.
  *
  * **A set-up is a place's** (WORKFLOWCLEAN1 1f): its card lists the plan's changes and Apply opens the page's *Set up…* on the ask.
  */
@@ -424,7 +424,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
   pending?: boolean;
   onApply: (id: string) => void;
   onDismiss: (id: string) => void;
-  /** Where a sync card's screen door leads (GITAUTH1e): the window opens the door, as it does a published item's. */
+  /** Where a sync card's screen door leads: the window opens the door, as it does a published item's. */
   onGo?: (door: StarterDoor) => void;
 }) {
   const { t } = useTranslation();
@@ -437,9 +437,9 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
   const workflow = proposal.kind === 'workflow' ? proposal.workflow ?? null : null;
   const place = proposal.kind === 'setup' ? proposal.place ?? null : null;
   const helper = proposal.kind === 'session' ? sessionHelperDoor(proposal.terminal) : null;
-  // A draft (WORKFLOW1h-b): what is still needed leaves no Apply, only Not now.
+  // A draft: what is still needed leaves no Apply, only Not now.
   const draft = workflow !== null && workflow.needs.length > 0;
-  // A change to the draft open in the editor (FLOWCHART2f): its press opens the editor, and settles nothing.
+  // A change to the draft open in the editor: its press opens the editor, and settles nothing.
   const composing = workflow !== null && typeof workflow.draft === 'string';
 
   return (

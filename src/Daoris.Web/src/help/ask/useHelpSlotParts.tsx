@@ -51,7 +51,7 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
   here: string | null | undefined;
   setWorkspace: (workspace: string | null) => void;
 }) {
-  // LIMITRESUME1d2 (D206 §3.7): the conversation shown waits for its account's limit, as its events say, above the box. Its way out
+  // LIMITRESUME1d2: the conversation shown waits for its account's limit, as its events say, above the box. Its way out
   // now is Ask Daoris's own door (`ResumeWords.HelpDoor`): a new conversation from this one, never D163's hand-over, which refuses
   // Ask Daoris; *Stop…* while it runs, *Stop waiting* once it ended, and the account's *Try now*.
   const heldShown = shown && limitHeld?.session === shown.id ? limitHeld.held : null;
@@ -112,7 +112,7 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
                 </>
               )
         )
-          // The newest that ended, shown by default: a message starts a new one (HELP5), and it may be gone on in instead.
+          // The newest that ended, shown by default: a message starts a new one, and it may be gone on in instead.
           : shownRow ? (
             <>
               {line('help.ended')}

@@ -5,11 +5,11 @@ import { ConfiguredAccess } from '../help/access/ConfiguredAccess';
 import { FullAccessAsk, HelpModeChip } from '../help/access/HelpModePicker';
 import { type Answered, Refused } from '../work/InlineConfirm';
 
-/** What the service says answers search and convergence (D24) — its own words, verbatim. */
+/** What the service says answers search and convergence — its own words, verbatim. */
 export type SearchTier = { tier: string; note?: string | null; semantic: boolean };
 
 /**
- * Ask Daoris's access on THIS machine (HELPMODE1b, D183 point 2): the mode each conversation's next turn takes (ACCESSSWAP1), chosen
+ * Ask Daoris's access on THIS machine: the mode each conversation's next turn takes, chosen
  * by the panel's chip's rule, which the domain holds: restricted at once, full access only on its confirmation.
  */
 export type HelpAccessJob = {
@@ -44,21 +44,21 @@ export type HelpGrantsJob = {
 };
 
 /**
- * Daoris's own AI (AGT6): each job Daoris may use a model for, the tier that answers it now, and how
+ * Daoris's own AI: each job Daoris may use a model for, the tier that answers it now, and how
  * to change it.
  *
  * @remarks
  * What Daoris itself uses a model for. The answer is two jobs, and each is stated the way `model-decoupling`
  * asks: what it does with no model, which tier is answering, and where the choice is made.
  *
- * **The search tier is the service's sentence, never a claim of this page's** (D24): the pill and the
+ * **The search tier is the service's sentence, never a claim of this page's**: the pill and the
  * note are what `/api/status` said, verbatim, and before it has said anything the page claims nothing.
  * How to change it is a sentence and not a control, because the model is read from the service's
  * environment when it starts — a control here would be a second source for a choice the deployment
  * makes, and on a browser a promise it could not keep.
  *
- * **Intake and Ask Daoris are actors** (MODELROLE1d, D205 §7): their cards folded into their rows on *Actors*, which is this
- * machine's (`driver.json`), so a browser is given neither (D47 §4). Ask Daoris's access stays here, this machine's too.
+ * **Intake and Ask Daoris are actors**: their cards folded into their rows on *Actors*, which is this
+ * machine's (`driver.json`), so a browser is given neither. Ask Daoris's access stays here, this machine's too.
  */
 export function AiJobs({ search, access, grants }: {
   search?: SearchTier; access?: HelpAccessJob;
@@ -68,7 +68,7 @@ export function AiJobs({ search, access, grants }: {
   const { t } = useTranslation();
 
   return (
-    // No title of its own: the main area's header names the domain (FRAME1g), and a lone card would say it twice.
+    // No title of its own: the main area's header names the domain, and a lone card would say it twice.
     <Card>
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.body')}</Prose>
 

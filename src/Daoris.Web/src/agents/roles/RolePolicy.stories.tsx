@@ -4,7 +4,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { InTheme } from '../../plugins/storyIcons';
 import { type Editing, RoleEditor } from './RoleEditor';
 
-// STAFFPOLICY1f (the staff policy design §6.1): the role editor with a staffing policy, in each rule, stale, with no store and refused,
+// The role editor with a staffing policy, in each rule, stale, with no store and refused,
 // at the wide, half and narrow widths, in English, 中文 and dark. The molecule reads no bridge, so each state is its props.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;

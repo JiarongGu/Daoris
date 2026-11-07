@@ -161,7 +161,7 @@ describe("a repository's heavy gates on its Setup", () => {
   });
 
   /**
-   * HEAVYRUN1b2c (D180): the section says whether this repository's own file wins, as the driver read it (`HEAVY_MARKS`). The page judges
+   * HEAVYRUN1b2c: the section says whether this repository's own file wins, as the driver read it (`HEAVY_MARKS`). The page judges
    * nothing: a file that does not read is "cannot tell" in the driver's words, never "marks none".
    */
   it("says whether the repository's own file wins, and cues the folded line where it does", async () => {

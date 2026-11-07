@@ -4,7 +4,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { Deleted } from './Deleted';
 
-// What a delete left, with its Undo (GITAPP2d, D204): kept by the list beyond the deleted row. Deleted, undone, refused in the driver's
+// What a delete left, with its Undo: kept by the list beyond the deleted row. Deleted, undone, refused in the driver's
 // sentence and not known, at the main area's three widths (80, 39 and 25rem) in English and 中文, in both themes.
 
 const nothing = async () => ({ refused: false, said: '' });

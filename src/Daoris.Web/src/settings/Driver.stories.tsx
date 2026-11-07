@@ -6,7 +6,7 @@ import type { UpdateState } from '../update/UpdateBanner';
 import { SETTINGS } from '../bridge/generated/routes';
 import { DriverCards, type DriverFacts } from './DriverCards';
 
-// Settings → Driver (D75), drawn from the shell's facts as `DriverDomain` hands them: the home with its door to This
+// Settings → Driver, drawn from the shell's facts as `DriverDomain` hands them: the home with its door to This
 // Daoris, where plugins are looked for, the two dials, the cool-off, this machine's sessions' access and the install's
 // update; at the frame's three widths, in English and 中文, light and dark (the UI/UX design R1, R6; UIFIT1). The rows
 // are the ones UIFIT1a's shots showed with their values at the far edge; here each sits on the card's track.

@@ -12,7 +12,7 @@ import { LISTED_ASK, LISTED_CONSIDERED, PAUSED_LISTED_ASK, PAUSED_LISTED_CONSIDE
 import { AskPage } from './AskPage';
 import { PUBLISHED } from './fixtures';
 
-// An ask's page shows its work (PAUSE1h, D132 §7.1): each quest of `WORK_PLAN` with its state and why it sits, the questions
+// An ask's page shows its work: each quest of `WORK_PLAN` with its state and why it sits, the questions
 // its sessions asked of other repositories under the quest whose session asked them, and those sessions as doors into
 // Sessions, so the person sees what a pause or an abandon reaches before pressing. Props in, presses out (components §2).
 

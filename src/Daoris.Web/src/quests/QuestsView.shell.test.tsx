@@ -45,7 +45,7 @@ describe('a driven quest in the shell', () => {
   });
 
   /**
-   * SESSUX1d (D126 §3.3, §3.6): the stop has one owner, the session's page header in Sessions. The quest's page keeps
+   * The stop has one owner, the session's page header in Sessions. The quest's page keeps
    * the session's record and its door into Sessions, and offers no stop of its own.
    */
   it('a running session is stopped in Sessions: its quest’s page keeps the record and the door, and no stop', async () => {
@@ -63,7 +63,7 @@ describe('a driven quest in the shell', () => {
 });
 
 /**
- * Trusting a folder the driver is holding (D73). The agent ignores a folder's own permissions until a
+ * Trusting a folder the driver is holding. The agent ignores a folder's own permissions until a
  * person trusts it there, so the driver holds rather than spend a session that could not take its
  * quest — and says so as a FACT beside its sentence: the folder, the agent's own file, what it held.
  * The screen offers exactly that grant, where the hold is shown, and writes it only on the press.
@@ -144,7 +144,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
   });
 
   /**
-   * RETRY1 (D50): a quest parked by its strikes was retried only from a terminal (`daoris quest
+   * A quest parked by its strikes was retried only from a terminal (`daoris quest
    * retry`). The page had the other half ready, and nothing rendered it. The retry is offered where
    * the parked quest's sentence is read, and nowhere a quest is not parked.
    */
@@ -166,7 +166,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
   });
 
   /**
-   * SESSUX1b, SESSUX1d (D126 §3.4): a quest the person's stop holds offers *Try again* on its page too, one act on both
+   * A quest the person's stop holds offers *Try again* on its page too, one act on both
    * pages; the driver answers that it released the stop, and the toast says so rather than counting strikes.
    */
   it('a quest the person’s stop holds offers Try again on its page, and says the stop was released', async () => {
@@ -209,7 +209,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
   });
 
   /**
-   * UX6c (design §6.2): a held folder waits in *What needs you*, which asks the agent's trust question under its row and
+   * A held folder waits in *What needs you*, which asks the agent's trust question under its row and
    * grants on the second press; the row's door opens the quest it holds.
    */
   it('a held folder waits in *What needs you*, asks the grant under its row, and its door opens what it holds', async () => {
@@ -219,7 +219,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
       kind: 'trust', id: `${HOLD.trustFile}\n${HOLD.folder}`, since: null, where: null,
       trust: { folder: HOLD.folder, trustFile: HOLD.trustFile }, quest: HOLD.quest,
     }]);
-    // NOTIFY2b: its row is *Notifications*' What needs you, which Overview's summary counts.
+    // Its row is *Notifications*' What needs you, which Overview's summary counts.
     show(<AttentionBand inView notify={() => {}} doors={{ trust }} />, client);
 
     const row = await screen.findByRole('listitem', { name: HOLD.folder });
@@ -235,7 +235,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
       'DAORIS.DRIVER', 'TRUST_FOLDER', { payload: { folder: HOLD.folder, trustFile: HOLD.trustFile } }));
   });
 
-  /** PERM2 (D74): a widening an agent proposed waits on the person, judged from the machine's rules and pushed (PUSH1d4). */
+  /** A widening an agent proposed waits on the person, judged from the machine's rules and pushed (PUSH1d4). */
   it('a widening the driver is holding waits in *What needs you*, and its row has a door', async () => {
     const proposal = {
       id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
@@ -254,7 +254,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
 });
 
 /**
- * TRACE1b (D143, D50): how a quest came to be, the screen's door to `daoris trace`. Its section opens folded and asks
+ * How a quest came to be, the screen's door to `daoris trace`. Its section opens folded and asks
  * the driver nothing; the press reads this quest's chain through `TRACE`, and the page draws what the route answered.
  */
 describe('how a quest came to be', () => {

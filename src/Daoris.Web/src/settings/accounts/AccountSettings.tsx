@@ -14,7 +14,7 @@ const offered = (values: readonly string[], held: string | null) =>
   [...values, ...(held && !values.includes(held) ? [held] : [])].map((value) => ({ value, label: value }));
 
 /**
- * What an account's own settings say (AGT6, D98), as a line on its row: the model and the effort in the
+ * What an account's own settings say, as a line on its row: the model and the effort in the
  * tool's own words, the tool's default where nothing is set, and how many models have an effort of their
  * own. A file the driver could not read is its sentence, verbatim.
  */
@@ -22,7 +22,7 @@ export function AccountSettingsSummary({ settings }: { settings: AccountSettings
   const { t } = useTranslation();
   if (settings.problem) return <span className="text-meta text-ink-danger">{settings.problem}</span>;
 
-  // NAME1b: the choice's name is sentence case; inside this line the value is a fragment of its own.
+  // The choice's name is sentence case; inside this line the value is a fragment of its own.
   const unset = t('harness.settings.summary.default');
   const said = settings.model === null && settings.effort === null && settings.perModel.length === 0
     ? t('harness.settings.summary.own')
@@ -35,15 +35,15 @@ export function AccountSettingsSummary({ settings }: { settings: AccountSettings
 }
 
 /**
- * An account's own model and effort, to change (AGT6, D98): the tool's aliases with a field for a full
+ * An account's own model and effort, to change: the tool's aliases with a field for a full
  * id, the efforts its settings keep, and each model's own effort where the file sets one.
  *
  * @remarks
  * **It sends only what the person changed**, as a key set or cleared — the tool's default is a clearing,
  * never a value Daoris invents — so a save never rewrites a key the person did not touch. The choices are
- * the tool's own, handed in: Daoris names no model of its own (D24).
+ * the tool's own, handed in: Daoris names no model of its own.
  *
- * **The terminal door is named on the form** (D50): the same file, `daoris agent settings`, its account spelled for
+ * **The terminal door is named on the form**: the same file, `daoris agent settings`, its account spelled for
  * whichever shell it is pasted into (`shellWord`, ACCTQUOTE1c).
  */
 export function AccountSettingsForm({

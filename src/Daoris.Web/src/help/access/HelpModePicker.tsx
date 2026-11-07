@@ -51,7 +51,7 @@ export function useModeChoice(selected: HelpMode, onChoose: (mode: HelpMode, ans
 
 /**
  * Ask Daoris's access chip (design §1): the mode the conversation in view runs under, its record's, or the mode chosen before any
- * start; a switch waiting for the conversation's next turn reads *Restricted · full access next turn* (ACCESSSWAP1), until its next
+ * start; a switch waiting for the conversation's next turn reads *Restricted · full access next turn*, until its next
  * words resume it under the mode chosen and its record says that mode. Full access, now or next, wears the
  * warning colour. Its menu offers the two modes, the chosen one ticked; Radix gives it the keyboard. Given a door to restricted
  * mode's configured access, it offers *Configure restricted access…* under them (HELPMODE1c1, design §5).

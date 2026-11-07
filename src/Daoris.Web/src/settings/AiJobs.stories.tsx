@@ -3,7 +3,7 @@ import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
 import { AiJobs } from './AiJobs';
 
-// Daoris's own AI (AGT6): each job it may use a model for, the tier that answers it now, and how to
+// Daoris's own AI: each job it may use a model for, the tier that answers it now, and how to
 // change it — in the shapes the service's status answers with. Intake and Ask Daoris are rows of *Actors* since MODELROLE1d
 // (`ai/Actors.stories.tsx`).
 

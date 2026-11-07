@@ -1,34 +1,34 @@
 import type { Machine } from './machine';
 import type { StarterDoor } from './starters';
 
-/** The setup guide's steps (D97), in the order a setup goes. */
+/** The setup guide's steps, in the order a setup goes. */
 export type SetupStepId = 'agent' | 'helper' | 'repositories' | 'setUp' | 'rules';
 
 /**
  * Where a step stands: done, to do, optional (it never blocks and has no done), or the desktop's — a
- * fact of this machine, which a browser may not learn (D47 §4).
+ * fact of this machine, which a browser may not learn.
  */
 export type SetupState = 'done' | 'todo' | 'optional' | 'desktop';
 
-/** One step: where it stands, the screens that do it, and the commands that do the same (D50). */
+/** One step: where it stands, the screens that do it, and the commands that do the same. */
 export type SetupStep = { id: SetupStepId; state: SetupState; doors: StarterDoor[]; commands: string[] };
 
 /** How many steps are required: all but the last, which is optional. */
 const REQUIRED = 4;
 
-/** The steps a machine missing any of opens on the guide at start (D97 §2): an agent, Daoris's own, a repository. */
+/** The steps a machine missing any of opens on the guide at start: an agent, Daoris's own, a repository. */
 const FIRST: readonly SetupStepId[] = ['agent', 'helper', 'repositories'];
 
 /**
  * An agent this machine can run a session on: installed, with some account of Daoris's not definitely signed
- * out. The roster's rule (SES3), which the starters use too: an `unknown` sign-in is not a lack anyone can act
+ * out. The roster's rule, which the starters use too: an `unknown` sign-in is not a lack anyone can act
  * on. The tool's own sign-in is no account of Daoris's and counts for nothing (D175, OWNSPACE1b-C).
  */
 const signedIn = (machine: Machine) => machine.tools.some((tool) =>
   tool.present && tool.accounts.some((account) => account.login !== 'out'));
 
 /**
- * The setup guide's steps (SETUP1a, D97): each with its state read off the machine, the screens that
+ * The setup guide's steps: each with its state read off the machine, the screens that
  * do it and the terminal commands that do the same. Pure, so every machine is an argument.
  *
  * @remarks
@@ -42,7 +42,7 @@ const signedIn = (machine: Machine) => machine.tools.some((tool) =>
  * looked at, and the step never blocks.
  *
  * **In a browser** only what is registered is known; every other step is the desktop's, with no door,
- * since none of their screens is a browser's (D47 §4). The commands still stand: they are the same
+ * since none of their screens is a browser's. The commands still stand: they are the same
  * everywhere.
  */
 export function setupSteps(machine: Machine): SetupStep[] {
@@ -54,14 +54,14 @@ export function setupSteps(machine: Machine): SetupStep[] {
     {
       id: 'agent',
       state: machineState(signedIn(machine)),
-      // The Agents place (UX6e, D150 §5): an agent's install and its accounts are on its page.
+      // The Agents place: an agent's install and its accounts are on its page.
       doors: doors({ view: 'agents', agentPart: 'accounts' }),
       commands: ['daoris agent install <agent>', 'daoris agent login <agent>'],
     },
     {
       id: 'helper',
       state: machineState(machine.helper !== null),
-      // Ask Daoris and the intake are roles: Agents → Roles, where each work's role and its choices are set (COMPANYVIEW1g).
+      // Ask Daoris and the intake are roles: Agents → Roles, where each work's role and its choices are set.
       doors: doors({ view: 'agents', agentsMode: 'setup', roleSection: 'allRoles' }),
       commands: ['daoris role'],
     },
@@ -83,7 +83,7 @@ export function setupSteps(machine: Machine): SetupStep[] {
     {
       id: 'rules',
       state: known ? 'optional' : 'desktop',
-      // What it may do is on the page of the agent Daoris hands the rules file (UX6e, D150 §3.1).
+      // What it may do is on the page of the agent Daoris hands the rules file.
       doors: doors({ view: 'agents', agentPart: 'rules' }),
       commands: ['daoris agent rules'],
     },
@@ -99,7 +99,7 @@ export function setupProgress(steps: readonly SetupStep[]): { done: number; of: 
   return { done: steps.filter((step) => step.state === 'done').length, of: REQUIRED };
 }
 
-/** Whether the guide opens at start (D97 §2): one of the first three steps is to do on this machine. */
+/** Whether the guide opens at start: one of the first three steps is to do on this machine. */
 export function opensAtStart(steps: readonly SetupStep[]): boolean {
   return steps.some((step) => FIRST.includes(step.id) && step.state === 'todo')
     && !steps.some((step) => step.state === 'desktop');

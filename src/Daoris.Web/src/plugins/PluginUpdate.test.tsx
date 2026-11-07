@@ -8,7 +8,7 @@ import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown } from '
 // PLUG9 (c), D103: where an installed plugin came from and what an update changes (`PluginUpdate`), as a plugin's page
 // draws them. Molecules: props in, presses out. Every sentence the driver wrote — a refusal, a command — renders as it
 // said it; the chrome translates. The install's own plugins were offered here too, in Settings → Plugins' card, until that
-// domain retired into the Plugins place (UX6j, D150 §2.3), whose list and offer page hold them.
+// domain retired into the Plugins place, whose list and offer page hold them.
 
 describe('where an installed plugin came from', () => {
   it('names the folder, the install\'s offer, no record, or a record that does not read', () => {

@@ -7,7 +7,7 @@ import {
   Button, Card, CardHeader, Dot, EmptyState, Inline, MonoWell, Pill, Prose, SelectField, SettingList, SettingRow,
 } from '../../design/ui';
 
-/** The way an identity signs in: an SSH key of Daoris's own, or an HTTPS token kept beside the keys (D198, D241). */
+/** The way an identity signs in: an SSH key of Daoris's own, or an HTTPS token kept beside the keys. */
 export type GitWay = 'ssh' | 'https';
 
 /** An identity's last test as `TOOLS_LIST`'s `identities` answers it (GITAUTH1e, the git-auth design §3.1). */

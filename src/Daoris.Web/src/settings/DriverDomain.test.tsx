@@ -44,7 +44,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * Where this machine's Daoris lives (D63), and what the start did about it. The notice rides the
+   * Where this machine's Daoris lives, and what the start did about it. The notice rides the
    * STATE rather than only the one-time event, because the page subscribes after the host answers
    * and a toast raised before that reached nobody — measured on the first migrated start.
    */
@@ -61,7 +61,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * AUTONOMY1d (D184 point 1): this machine's sessions' access, the default for every workspace and repository that sets none of
+   * This machine's sessions' access, the default for every workspace and repository that sets none of
    * its own, the same rows as a repository's Setup, each set as `daoris place access` with no repository or workspace sets it.
    */
   it("sets this machine's sessions' access, full access only through its ask", async () => {
@@ -95,7 +95,7 @@ describe('the driver domain', () => {
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Sessions on this machine now start with full access.'));
   });
 
-  // ACCESSASK1 (the UI/UX design R3, §3.3): a pause's change the driver refused is said under its row, the editor open, no toast.
+  // A pause's change the driver refused is said under its row, the editor open, no toast.
   it("says a refused change to this machine's access under its row, never a toast", async () => {
     invoke.mockImplementation(async (module: string, type: string) => {
       if (module !== 'DAORIS.DRIVER') return WIRING;
@@ -115,7 +115,7 @@ describe('the driver domain', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  // GITAUTH1f (the git-auth design §7.3): the access card carries this machine's git access beside its pauses, each class's change this
+  // The access card carries this machine's git access beside its pauses, each class's change this
   // machine's, as `daoris git access --machine` sets it.
   it("sets this machine's git access in its access card", async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER'
@@ -137,7 +137,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * UX6j (D150 §2.3; the plugins design §5): Settings holds no Plugins domain, and where plugins are looked for is a fact
+   * Settings holds no Plugins domain, and where plugins are looked for is a fact
    * of the Daoris home, so it is a row under the home, read-only, with the door to the Plugins place beside its path.
    */
   it('names the plugins folder under the home, with its door to the Plugins place', async () => {
@@ -158,7 +158,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * PLUGSET1 (the modes design §4.1): the Plugins section lists each installed plugin from the catalogue the Plugins place
+   * The Plugins section lists each installed plugin from the catalogue the Plugins place
    * reads, with what it holds set, and its door opens that plugin's page, where its settings are changed.
    */
   it('lists each installed plugin with what it holds set, its door opening its page', async () => {
@@ -185,7 +185,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * WIRING1c (the this-Daoris design §2): where the home lives moved to Settings → This Daoris, and Driver keeps a row whose
+   * Where the home lives moved to Settings → This Daoris, and Driver keeps a row whose
    * control is the door to it.
    */
   it('keeps the Daoris home as a door to This Daoris', async () => {
@@ -230,7 +230,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * CAPSET1 (D130's CAPCOUNT1 note): how many sessions Daoris starts at once, the `cap` `daoris settings cap` edits. Written
+   * How many sessions Daoris starts at once, the `cap` `daoris settings cap` edits. Written
    * only when changed to a whole number of at least one; an answer with no such field is offered no row.
    */
   it('sets the cap of sessions Daoris starts, and offers nothing where the answer lacks it', async () => {
@@ -263,7 +263,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * TOOL4g (D125 §2.2, §6): how long an account cools when its agent names no reset, the `cooloff` `daoris settings cooloff`
+   * How long an account cools when its agent names no reset, the `cooloff` `daoris settings cooloff`
    * edits. Written only when changed to a whole number of at least one; an answer with no such field is offered no
    * row.
    */
@@ -332,7 +332,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * Notifications (SURF5b): the desktop's door onto the same `driver.json` field
+   * Notifications: the desktop's door onto the same `driver.json` field
    * `daoris settings notify on|off` edits. It is ON until somebody says otherwise — a driver nobody
    * has to watch is the point of one — and the surface names the other door so a person on a
    * machine they reach over ssh does not go looking for a second setting.
@@ -362,7 +362,7 @@ describe('the driver domain', () => {
   });
 
   /**
-   * NOTIFY2d (the notification design §3.3, §5): the switch says what it governs, beside its value. It said *when a session parks*
+   * The switch says what it governs, beside its value. It said *when a session parks*
    * while it also governed an ending and an answer, and a held tool call joins them; a terminal's press is announced either way,
    * since its terminal waits on the person's answer, and Notifications lists everything whatever it says.
    */
@@ -392,7 +392,7 @@ describe('the driver domain', () => {
 });
 
 /**
- * UPDATE1b (D139 §3, §6): the install's update in the application's own domain, read from `DAORIS.UPDATE` · `STATE` and
+ * The install's update in the application's own domain, read from `DAORIS.UPDATE` · `STATE` and
  * said with `SET`. The banner is the screen's other door and is gone once dismissed; this row stands: what is staged, the
  * drain and what it waits on, how the last swap ended, and the three words the terminal's `daoris update` takes.
  */

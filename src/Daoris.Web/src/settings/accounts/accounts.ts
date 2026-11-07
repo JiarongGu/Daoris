@@ -2,11 +2,11 @@ import i18n from '../../locales/i18n';
 import { ago, elapsed, moment } from '../../locales/format';
 import type { CURVE_WINDOWS, CurvePoint, CurveScope, Switch } from './usageCurves';
 
-// How each agent's accounts are used, as the page reads it (TOOL4g; D125 §2.4, §3.7, §6; D130 §3.2, §9, §16.6): the shape
+// How each agent's accounts are used, as the page reads it: the shape
 // `bridge/agents/accounts.ts` answers, and the words each account's row and each scope say, in the reader's language. Pure: the
 // molecules read these, and so do the tests, with no bridge.
 
-/** An account's cool-off, as `cooling.json` keeps it (D125 §2.3): until when, and why it lasts until then. */
+/** An account's cool-off, as `cooling.json` keeps it: until when, and why it lasts until then. */
 export type AccountCooling = {
   until: string;
   /** Whether the agent named that time; false is Daoris's default standing in. */
@@ -24,7 +24,7 @@ export type AccountCooling = {
   model?: string | null;
 };
 
-/** One window as an account's agent last said it (TOOL6c, D130 §5.2): a floor, as of when it was seen. */
+/** One window as an account's agent last said it: a floor, as of when it was seen. */
 export type WindowSaid = {
   /** Daoris's name for it: `session` (the five-hour window) or `weekly`. */
   window: string;
@@ -33,31 +33,31 @@ export type WindowSaid = {
   reset: string;
   /**
    * `clear`, `warned` or `refused`, by the agent's own word, on the window its frame named; else null. `warned` is Claude Code's
-   * pace warning, said as *ahead of its pace* and never as near (USAGEREAD3b, D165 point 2).
+   * pace warning, said as *ahead of its pace* and never as near.
    */
   standing?: string | null;
   /** Whether it said the request drew on usage credits. */
   credits: boolean;
   seen: string;
   /**
-   * Where its reading came from (USAGEREAD2a, SWITCH1d): `read` from its agent's own answer, asked with no prompt, or `said` by
+   * Where its reading came from: `read` from its agent's own answer, asked with no prompt, or `said` by
    * a session's frame. Left out where none is known, read as `said`.
    */
   source?: 'read' | 'said' | null;
   /**
-   * Its use projected to now, from 0 to 1 (USAGEPROBE1b): its reading plus Daoris's own turns since, by the account's measured
+   * Its use projected to now, from 0 to 1: its reading plus Daoris's own turns since, by the account's measured
    * ratio, the same projection a start reads. Left out where none is judged.
    */
   projected?: number | null;
   /** How it was made: `reading` (nothing spent since), `measured`, or `unweighed` (turns since that nothing weighs). */
   projectedBy?: 'reading' | 'measured' | 'unweighed' | (string & {}) | null;
   /**
-   * When the window began, its reset less its length, as .NET knows the length (PUSH1e): what a chart places it by. Null for a window
+   * When the window began, its reset less its length, as.NET knows the length: what a chart places it by. Null for a window
    * this build has no length for.
    */
   from?: string | null;
   /**
-   * Its row's scope's curve on it now, a whole percent, and whether its share is over it, as .NET judges them (PUSH1e, D182 point 6;
+   * Its row's scope's curve on it now, a whole percent, and whether its share is over it, as.NET judges them (PUSH1e, D182 point 6;
    * the driver's `UsageCurves`): the page words them and measures nothing. Null where it is not measured (no share, a window with no
    * curve, the tool's own sign-in, which no list holds).
    */
@@ -74,32 +74,32 @@ export type AccountFacts = {
   name: string;
   cooling?: AccountCooling | null;
   said?: AccountSaid | null;
-  /** The weekly reset known for it, told by a limit or by the agent's word (TOOL6b, TOOL6c); null where none is known. */
+  /** The weekly reset known for it, told by a limit or by the agent's word; null where none is known. */
   week?: string | null;
   /** Daoris's sessions running on it now; null where they could not be counted — unknown, never zero. */
   running?: number | null;
-  /** When its cool-off ended, within the last day, while `cooling.json` still holds it (TOOL6e); null otherwise. */
+  /** When its cool-off ended, within the last day, while `cooling.json` still holds it; null otherwise. */
   offered?: string | null;
 };
 
 /**
  * Why the next start takes its account (TOOL6e, D130 §3–§4 as §16.3 amends them): the driver's `NextReason`, a closed set.
  * `own` and `named` are a scope's one account, chosen by no step; `waits` is no account ready; `noAccount` is no Daoris account
- * signed in at all (D175 point 2, OWNSPACE1b): said apart from `waits`, which is an account that comes ready by itself. The
+ * signed in at all: said apart from `waits`, which is an account that comes ready by itself. The
  * driver answers it from OWNSPACE1b-B; until then the line is drawn only when the reason arrives.
  */
 export type NextReason =
   | 'own' | 'named' | 'onlyReady' | 'kept' | 'near' | 'fewest' | 'lapsing' | 'pace' | 'leastRecent' | 'notStarted' | 'list'
   | 'waits' | 'noAccount';
 
-/** What keeps the next start off an account (TOOL6e), or `ready` where nothing does and it is merely ranked after. */
+/** What keeps the next start off an account, or `ready` where nothing does and it is merely ranked after. */
 export type NextHold = 'ready' | 'near' | 'cooling' | 'refused' | 'signedOut' | 'kept' | 'missing' | 'outside';
 
 /** One account the next start does not take: null is the tool's own sign-in. */
 export type AccountHeld = { account?: string | null; hold: NextHold; until?: string | null };
 
 /**
- * Which account a scope's next start would take, why, and what holds the others (TOOL6e): the driver's own walk, asked
+ * Which account a scope's next start would take, why, and what holds the others: the driver's own walk, asked
  * without starting, counting or probing anything.
  */
 export type NextStart = {
@@ -111,7 +111,7 @@ export type NextStart = {
   /** Its week's reset (`lapsing`), or when the first account is offered again (`waits`). */
   when?: string | null;
   /**
-   * Where it is `lapsing`, what would lapse as the start's line says it (NEXTLAPSE1): the window that won, the whole percent of it
+   * Where it is `lapsing`, what would lapse as the start's line says it: the window that won, the whole percent of it
    * unused, and when that reading was made.
    */
   window?: string | null;
@@ -128,15 +128,14 @@ export type NextStart = {
 };
 
 /**
- * How one scope's list is used (D130 §16.6, D165 §6): `switch` and `curve` (SWITCH1d), which read as the smart switch with
+ * How one scope's list is used: `switch` and `curve`, which read as the smart switch with
  * no curve where neither is answered; `early` and `near`, the old names, derived from them for a page that still reads them.
  */
 export type ScopeUse = { use: 'goal' | 'order'; keep?: string | null; early: boolean; near: number } & CurveScope;
 
 /**
  * Why an account of a list is passed at a start (D130 §6 as D165 point 2 amends it): a limit reached, usage credits, or its
- * number over the scope's curve on the window named (`number`, SWITCH1b-ii). The agent's pace warning is none of them
- * (USAGEREAD3a).
+ * number over the scope's curve on the window named (`number`, SWITCH1b-ii). The agent's pace warning is none of them.
  */
 export type NearBy = 'refused' | 'credits' | 'number';
 
@@ -148,7 +147,7 @@ export type NearBy = 'refused' | 'credits' | 'number';
 export type AccountScope = {
   /** Null: the set serves every workspace. */
   workspace?: string | null;
-  /** None since the fold: the order's first is where starts begin (D197 point 2). */
+  /** None since the fold: the order's first is where starts begin. */
   default?: string | null;
   /** The order: every account of Daoris's, in the person's order. */
   list: string[];
@@ -157,14 +156,14 @@ export type AccountScope = {
   use: ScopeUse;
   /** Settings it holds that this build does not know, by name. */
   unknown: string[];
-  /** A file edited by hand that breaks the rule, read with the list winning (D130 §3.1); null where none. */
+  /** A file edited by hand that breaks the rule, read with the list winning; null where none. */
   problem?: { kind: 'default' | 'keep' | 'alone'; account: string } | null;
-  /** The accounts of its list a start passes (D130 §6, D165 point 2): a limit reached, credits, or a number over its curve. */
+  /** The accounts of its list a start passes: a limit reached, credits, or a number over its curve. */
   near: { account: string; window: string; by: NearBy }[];
-  /** Which account its next start would take, and why (TOOL6e); left out where none is judged. */
+  /** Which account its next start would take, and why; left out where none is judged. */
   next?: NextStart | null;
   /**
-   * The verdicts .NET judges for the switch's charts and the said line (PUSH1e, D182 point 6):
+   * The verdicts.NET judges for the switch's charts and the said line:
    * the curve in effect on each window it names (the person's points under `curve` where set, else Daoris's); each of its list's
    * accounts on each window its agent gave a share of, the curve's value now in whole points and whether the share is over it; and
    * each of its list's accounts whose tightest window is over its curve, with the curve's value there.
@@ -173,16 +172,16 @@ export type AccountScope = {
   measured?: CurveMeasured[];
   overCurve?: CurveOver[];
   /**
-   * The accounts of its list a running session could move to at its turn's end (SWITCH1e, D165 point 4), as .NET judges them:
+   * The accounts of its list a running session could move to at its turn's end, as.NET judges them:
    * ready, and at least the switch's margin under the curve on every window each said. Judged under every switch.
    */
   room?: string[];
 };
 
-/** One account of a scope's list on one window, against the scope's curve now, as .NET judges it (PUSH1e). */
+/** One account of a scope's list on one window, against the scope's curve now, as.NET judges it. */
 export type CurveMeasured = { account: string; window: string; curve: number; over: boolean };
 
-/** An account's tightest window over its scope's curve, and the curve's value there now in whole points (PUSH1e). */
+/** An account's tightest window over its scope's curve, and the curve's value there now in whole points. */
 export type CurveOver = { account: string; window: string; curve: number };
 
 /**
@@ -205,25 +204,25 @@ export type PoolReceipt = {
   gone: string[];
 };
 
-/** One agent's accounts, by the accounts' owner (AGT7): a door's accounts are its owner's. */
+/** One agent's accounts, by the accounts' owner: a door's accounts are its owner's. */
 export type AgentAccounts = {
   agent: string;
-  /** Whether its sessions say how near their limits are (TOOL6c): what switching before the limit waits for. */
+  /** Whether its sessions say how near their limits are: what switching before the limit waits for. */
   speaks: boolean;
   /**
-   * Whether its accounts' use is read by asking its agent, with no prompt (USAGEREAD2a, CODEXUSE1): what *Read now*
-   * asks (SWITCH1d). Left out where it is not, and neither is offered.
+   * Whether its accounts' use is read by asking its agent, with no prompt: what *Read now*
+   * asks. Left out where it is not, and neither is offered.
    */
   reads?: boolean;
   /**
-   * The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. What
-   * its agent last said of its windows where a press read them (CODEXUSE3).
+   * The tool's own sign-in's cool-off, or when it ended: never one of the accounts, never in a list. What
+   * its agent last said of its windows where a press read them.
    */
   own: { cooling?: AccountCooling | null; offered?: string | null; said?: AccountSaid | null };
   accounts: AccountFacts[];
   /** The set's one scope, every workspace's (POOL1a2, D197): the order, how it is used and its next start. */
   scopes: AccountScope[];
-  /** What the fold into one set changed, each receipt still unsaid (POOL1a); absent or empty where nothing waits to be said. */
+  /** What the fold into one set changed, each receipt still unsaid; absent or empty where nothing waits to be said. */
   pooled?: PoolReceipt[];
 };
 
@@ -234,7 +233,7 @@ export type AccountUseChange = {
   use?: 'goal' | 'order';
   keep?: string;
   noKeep?: boolean;
-  /** The old names (D165 §6), which the modules still take, and which this page no longer sends. */
+  /** The old names, which the modules still take, and which this page no longer sends. */
   early?: boolean;
   near?: number;
   /** When to switch (SWITCH1d, `--switch`): Daoris's curve, the person's own, or no switch while a session runs. */
@@ -246,11 +245,11 @@ export type AccountUseChange = {
   clear?: boolean;
 };
 
-/** Today's defaults (D130 §16.6), the CLI's `USE_DEFAULTS` and the driver's `RotationUse.Default`, for a scope with no list. */
+/** Today's defaults, the CLI's `USE_DEFAULTS` and the driver's `RotationUse.Default`, for a scope with no list. */
 export const USE_DEFAULTS: ScopeUse = { use: 'goal', keep: null, early: true, near: 90 };
 
 /**
- * When a scope switches (SWITCH1d, D165 §6): its `switch`; where none is answered, the old names:
+ * When a scope switches: its `switch`; where none is answered, the old names:
  * `off` where `early` is false and else the smart switch, its `near` alone naming no curve the page could draw.
  */
 export function switchOf(use: ScopeUse): Switch {
@@ -273,7 +272,7 @@ export function machineScope(agent: AgentAccounts): AccountScope {
 }
 
 /**
- * A workspace's own scope, or null: since the fold into one set (D197) the answer names none, so every reader falls back to the
+ * A workspace's own scope, or null: since the fold into one set the answer names none, so every reader falls back to the
  * set's (`machineScope`).
  */
 export function workspaceScope(agent: AgentAccounts, workspace: string): AccountScope | null {
@@ -290,12 +289,12 @@ export function moved(list: readonly string[], account: string, by: -1 | 1): str
   return next;
 }
 
-/** Whether no account of a list has said what it has left (D130 §16.4): the walk then needs none of their word. */
+/** Whether no account of a list has said what it has left: the walk then needs none of their word. */
 export function nothingSaid(agent: AgentAccounts, scope: AccountScope): boolean {
   return scope.list.every((name) => !agent.accounts.find((account) => account.name === name)?.said);
 }
 
-/** Why a cool-off lasts until then, in the reader's language (D125 §2.4): the agent said so, or Daoris's default stood in. */
+/** Why a cool-off lasts until then, in the reader's language: the agent said so, or Daoris's default stood in. */
 export function coolingWhy(cooling: AccountCooling): string {
   if (cooling.stated) return i18n.t(cooling.assumedZone ? 'harness.cooling.why.assumed' : 'harness.cooling.why.stated');
   return i18n.t(cooling.notBelieved ? 'harness.cooling.why.notBelieved' : 'harness.cooling.why.default');
@@ -314,7 +313,7 @@ export function coolingLine(cooling: AccountCooling, now: Date = new Date()): st
 
 /**
  * A window by its name, in the reader's language; a name this build does not know is said as it is. The driver names a Codex
- * window of any other length `<n>-minute` (D125's CODEXUSE1 note), worded here with its digits (WINDOWNAME1). The cooling note's
+ * window of any other length `<n>-minute` (D125's CODEXUSE1 note), worded here with its digits. The cooling note's
  * lines hand in their own `t`.
  */
 export function windowName(
@@ -331,18 +330,18 @@ export function percent(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
 
-/** The session window, then the week, then any other, as a person reads them; an account's row reads them so too (ACCTUX1). */
+/** The session window, then the week, then any other, as a person reads them; an account's row reads them so too. */
 export function orderedWindows(windows: readonly WindowSaid[]): WindowSaid[] {
   const rank = (window: string) => ({ session: 0, weekly: 1 } as Record<string, number>)[window.toLowerCase()] ?? 2;
   return [...windows].sort((a, b) => rank(a.window) - rank(b.window));
 }
 
 /**
- * What an account's agent last said, as its row says it (TOOL6c, D130 §5.2): how long ago, its own word where it gave one,
+ * What an account's agent last said, as its row says it: how long ago, its own word where it gave one,
  * credits, and each window's use and reset. The CLI's `saidLine` says the same in the terminal's words. Nothing said is
- * said so, and is neither spent nor fresh (D57). Its pace warning is *ahead of its pace*, as the start's note says it, and
- * never near its limit (USAGEREAD3b). Where a scope's verdict is handed, its tightest window over the scope's curve is said with
- * the curve's value now, as .NET judged it (PUSH1e), and the line is led by its newest reading's source, *read* or *said* (SWITCH1d).
+ * said so, and is neither spent nor fresh. Its pace warning is *ahead of its pace*, as the start's note says it, and
+ * never near its limit. Where a scope's verdict is handed, its tightest window over the scope's curve is said with
+ * the curve's value now, as.NET judged it, and the line is led by its newest reading's source, *read* or *said*.
  */
 export function saidLine(
   said: AccountSaid | null | undefined,
@@ -364,7 +363,7 @@ export function saidLine(
     }
   }
   // Over its curve on its tightest window, as the terminal's said line and the start's line add it (SWITCH1d, the shared table's
-  // `tightest` rows), judged in .NET (PUSH1e): on its curve is not over it, and is handed no verdict.
+  // `tightest` rows), judged in.NET: on its curve is not over it, and is handed no verdict.
   if (over) parts.push(i18n.t('harness.said.over', { window: windowName(over.window), curve: `${over.curve}%` }));
   if (parts.length === 0) parts.push(i18n.t('harness.said.clear'));
   // Led by where its newest reading came from (USAGEREAD2b's lead, the terminal's): read from its agent, or said by a session.
@@ -388,7 +387,7 @@ function passedBy(near: AccountScope['near'], account: string | null | undefined
 }
 
 /**
- * Why the next start takes its account, as a clause (TOOL6e): the walk's step, naming the account it weighed it against as a
+ * Why the next start takes its account, as a clause: the walk's step, naming the account it weighed it against as a
  * person calls it. The order says its first or the account it comes before (the set's, D197 §4; an older answer's default
  * is said as one). An account passed
  * says what passed it (SWITCH1b-iii); step 5 is the most room under the curve, and the week's pace only with the switch off
@@ -410,7 +409,7 @@ export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: st
     case 'kept':
       return next.over ? i18n.t('harness.next.why.keptOver', { over }) : i18n.t('harness.next.why.kept');
     case 'lapsing':
-      // NEXTLAPSE1: what would lapse, as the start's line says it; where the window is not named, its reset alone.
+      // What would lapse, as the start's line says it; where the window is not named, its reset alone.
       if (next.when && next.window && next.seen && typeof next.unused === 'number') {
         return i18n.t('harness.next.why.lapses', {
           window: windowName(next.window), when: moment(next.when), unused: `${next.unused}%`, seen: moment(next.seen),
@@ -423,8 +422,8 @@ export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: st
 }
 
 /**
- * The next start, as a sentence (TOOL6e, D130 §3–§4): which account it takes and the walk's step that chose it; the tool's
- * own sign-in where nothing names an account (D125 §3.7); or that it waits, until when where an account is cooling.
+ * The next start, as a sentence: which account it takes and the walk's step that chose it; the tool's
+ * own sign-in where nothing names an account; or that it waits, until when where an account is cooling.
  */
 export function nextLine(
   next: NextStart, scope: AccountScope, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false,
@@ -433,8 +432,8 @@ export function nextLine(
   if (next.reason === 'noAccount') return i18n.t('harness.next.noAccount');
   if (next.reason === 'waits' || !next.account) {
     const waits = next.when ? i18n.t('harness.next.waitsUntil', { when: moment(next.when) }) : i18n.t('harness.next.waits');
-    // TOOL6g: an account not signed in waits for a person, never for the reset, so a wait says a sign-in frees it.
-    // ACCTUX1b: a key read signed out is a key refused; only a new key repairs it, so it is never said as a sign-in.
+    // An account not signed in waits for a person, never for the reset, so a wait says a sign-in frees it.
+    // A key read signed out is a key refused; only a new key repairs it, so it is never said as a sign-in.
     const out = next.others.filter((held) => (held.hold === 'signedOut' || held.hold === 'refused') && held.account);
     const join = (names: string[]) => names.join(i18n.t('harness.next.comma'));
     const signIn = out.filter((held) => !isKey(held.account!) && held.hold === 'signedOut').map((held) => labelOf(held.account!));
@@ -450,7 +449,7 @@ export function nextLine(
 }
 
 /**
- * What holds the accounts the next start does not take, as one or two sentences (TOOL6e): each held account and why, then
+ * What holds the accounts the next start does not take, as one or two sentences: each held account and why, then
  * the accounts the scope does not use together; an account merely ranked after is not said. Null where nothing holds any.
  * An account passed says what passed it by the scope's `near` entry for it (SWITCH1b-iii).
  */
@@ -461,7 +460,7 @@ export function heldLine(
   const name = (held: AccountHeld) => (held.account ? labelOf(held.account) : i18n.t('harness.use.emptyOwn'));
   const clauses = next.others.flatMap((held) => {
     if (held.hold === 'ready' || held.hold === 'outside') return [];
-    // ACCTUX1b: a key held signed out or refused is one refused key, repaired by a new key (the walk says `signedOut` after a restart).
+    // A key held signed out or refused is one refused key, repaired by a new key (the walk says `signedOut` after a restart).
     if (held.account && isKey(held.account) && (held.hold === 'signedOut' || held.hold === 'refused')) {
       return [i18n.t('harness.next.held.keyRefused', { account: name(held) })];
     }
@@ -480,7 +479,7 @@ export function heldLine(
   return sentences.length > 0 ? sentences.join(i18n.t('harness.said.sentences')) : null;
 }
 
-/** Since when an account is offered again, its cool-off having ended (TOOL6e), as its row says it. */
+/** Since when an account is offered again, its cool-off having ended, as its row says it. */
 export function offeredLine(offered: string): string {
   return i18n.t('harness.next.offered', { when: moment(offered) });
 }

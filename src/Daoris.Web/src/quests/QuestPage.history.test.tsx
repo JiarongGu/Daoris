@@ -98,7 +98,7 @@ describe('a closed quest’s clears (design §6.1)', () => {
   });
 
   /**
-   * UXFIX2 (the second-opinion review, `ClearAsk.tsx:101`): opened from the ⋯, what the clear takes takes the focus and
+   * Opened from the ⋯, what the clear takes takes the focus and
    * describes the move, so a keyboard reaches *Clear quest* having heard what goes; *Never mind* gives the focus back to the
    * ⋯; the press keeps it open until the clear answers, a refusal said inside it, and it closes once the clear lands.
    */

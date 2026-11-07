@@ -127,7 +127,7 @@ export function PlaceSetUp(props: PlaceSetUpProps) {
 }
 
 /**
- * **Set up…**'s choices (AGENTSPLACE1j, SETUPUX1j): three parts kept apart, *How it lands* (*Keep how it lands*, the deliveries the data offers,
+ * **Set up…**'s choices: three parts kept apart, *How it lands* (*Keep how it lands*, the deliveries the data offers,
  * *Not driven*, and the second opinion and your look), *Adoption* with *What it builds*, and *Driving*, each with the refusals about it, whole, and
  * the door that repairs their cause and returns. Below, the plan's line (what it changes and what stops it, with a jump to each) and
  * *Review the plan*. The suggestion is the plan's own and comes preselected where every repository suggests the same, and nothing is preselected

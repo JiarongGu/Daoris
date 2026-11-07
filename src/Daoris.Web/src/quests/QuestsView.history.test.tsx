@@ -106,7 +106,7 @@ describe('clearing finished history in the shell', () => {
   });
 
   /**
-   * A unit that changed since the list is said in its code's sentence (D153 §5), and since UXFIX2 inside the ask where it was
+   * A unit that changed since the list is said in its code's sentence, and since UXFIX2 inside the ask where it was
    * pressed, which stays open, rather than in a toast.
    */
   it('says a unit that changed since the list in its code’s sentence inside the ask, and leaves the page where it was', async () => {

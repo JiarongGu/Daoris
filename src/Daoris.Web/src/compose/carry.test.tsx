@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import '../locales/i18n';
 import { CarryFields, NO_CARRY, useCarry, type Carry } from './carry';
 
-// What a composer carries beside its words (D65 §2), shared by the quest composer and the ask
+// What a composer carries beside its words, shared by the quest composer and the ask
 // composer so the two cannot drift on how a file arrives: dropped anywhere on the form, pasted as a
 // screenshot, or chosen.
 

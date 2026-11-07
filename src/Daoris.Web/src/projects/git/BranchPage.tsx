@@ -51,7 +51,7 @@ export type BranchRead =
  * @remarks
  * **A molecule**: the read arrives as a prop, and its holder (`RepositoryBranch`) reads the list and the graph. The header and
  * its way back are there in every state, so a branch the list no longer holds says so beside the press that leaves. Commit
- * rows keep no press (GIT1f's); a branch of the person's own carries *Edit history* (GITAPP2m) where its holder hands the
+ * rows keep no press; a branch of the person's own carries *Edit history* where its holder hands the
  * presses, and no other act of git's; the walk's sides are not marked.
  */
 export function BranchPage({ repository, name, read, onBack, onMore, landing, edits }: {
@@ -64,11 +64,11 @@ export function BranchPage({ repository, name, read, onBack, onMore, landing, ed
   /** The next page, asked: the holder reads it and hands the commits back accumulated. */
   onMore?: () => void;
   /**
-   * How a landed branch landed (FLOWCHART1c): its fold and its reads, which the holder keeps. Absent for any other kind of branch,
+   * How a landed branch landed: its fold and its reads, which the holder keeps. Absent for any other kind of branch,
    * and where nothing can read the trace (a browser).
    */
   landing?: LandingDoor;
-  /** *Edit history*'s presses (GITAPP2m), drawn only on a branch of the person's own; absent, the page offers none. */
+  /** *Edit history*'s presses, drawn only on a branch of the person's own; absent, the page offers none. */
   edits?: HistoryEdits;
 }) {
   const { t } = useTranslation();
@@ -128,8 +128,8 @@ export function BranchPage({ repository, name, read, onBack, onMore, landing, ed
     );
   })();
 
-  // How a landed branch landed stands above its commits, once the list has read it (FLOWCHART1c); so does a branch of the person's own
-  // *Edit history* (GITAPP2m).
+  // How a landed branch landed stands above its commits, once the list has read it; so does a branch of the person's own
+  // *Edit history*.
   const editing = edits && facts && kindOf(facts.branch) === 'yours' ? <HistoryEdit branch={name} line={facts.line} edits={edits} /> : null;
   return (
     <ViewMain header={head}>

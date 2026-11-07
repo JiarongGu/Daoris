@@ -3,7 +3,7 @@ import {
   applyZoom, readZoom, setZoom, subscribeZoom, ZOOM_KEY, ZOOM_LEVELS, zoomBy, zoomLevel, zoomStep, zoomWheel,
 } from './zoom';
 
-// The window's zoom (ZOOM1): an editor's steps, kept for the machine as the theme is, and applied to the page's root size so
+// The window's zoom: an editor's steps, kept for the machine as the theme is, and applied to the page's root size so
 // everything drawn in rem grows with it, while the frame wears the inverse (`--frame-zoom`) and so keeps its own size.
 
 const root = () => document.documentElement;
@@ -86,7 +86,7 @@ describe('the window zoom', () => {
     expect(heard).toHaveBeenCalledTimes(1);
   });
 
-  /** Another main window on the same machine (ONEINSTANCE1) follows, as the theme does (WINDOW1). */
+  /** Another main window on the same machine follows, as the theme does. */
   it('follows a level another window chose', () => {
     const heard = vi.fn();
     const stop = subscribeZoom(heard);

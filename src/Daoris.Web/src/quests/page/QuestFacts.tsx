@@ -54,18 +54,18 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           { label: t('work.head.id'), value: `#${quest.id}`, mono: true, copy: quest.id },
           { label: t('quests.detail.from'), value: quest.from },
           { label: t('quests.detail.to'), value: quest.to },
-          // Each lane as the repository declares it, named where its registration says (D115 §2.2).
+          // Each lane as the repository declares it, named where its registration says.
           { label: t('quests.detail.lanes'), value: lanes || null },
           { label: t('quests.detail.filed'), value: `${stamp(quest.filed)} · ${ago(quest.filed)}` },
           { label: t('quests.detail.moved'), value: quest.updated !== quest.filed ? `${stamp(quest.updated)} · ${ago(quest.updated)}` : null },
-          // The short title its publisher gave (SESSUX1j), where the head says it and the whole title stands below.
+          // The short title its publisher gave, where the head says it and the whole title stands below.
           { label: t('quests.field.short'), value: quest.short && quest.short !== quest.title ? quest.short : null },
         ]}
       />
 
       <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-body empty:hidden">
         {question && (
-          // What its taker asked and waits on (D79), opened in place: the answer is read there.
+          // What its taker asked and waits on, opened in place: the answer is read there.
           <Fact name={t(answered ? 'quests.detail.asked' : 'quests.detail.waitsOn')}>
             <span className="inline-flex flex-wrap items-baseline gap-1.5">
               {question.quest ? (
@@ -92,7 +92,7 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           </Fact>
         )}
         {(because || hold || pausedUnseen) && (
-          // Why this machine's driver is not starting it, in its own words (D46 §3) — the whole sentence here,
+          // Why this machine's driver is not starting it, in its own words — the whole sentence here,
           // where there is room. The trust hold stands on its own: it arrives in the same tick as the sentence,
           // and the grant must not wait on a second list having arrived too.
           <Fact name={t('quests.detail.sitting')}>
@@ -135,7 +135,7 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           </Fact>
         )}
         {endedHere && (
-          /* QUESTCLOSE1: no verdict says why it sits, since nothing here carries a finished session's quest on, so the page
+          /* No verdict says why it sits, since nothing here carries a finished session's quest on, so the page
              says it, with the person's done where it is read, as Try again stands under a stop's sentence. */
           <Fact name={t('quests.detail.sitting')}>
             <Inline text={t('quests.detail.endedTaken', { session: session!.id })} />
@@ -147,7 +147,7 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           </Fact>
         )}
         {reads === 'Submitted' && quest.submission && (
-          /* When its agent made it ready (FABRIC-CLOSE1d), and the person's reopen of it where a step stands on it (CLOSE1c3). */
+          /* When its agent made it ready, and the person's reopen of it where a step stands on it (CLOSE1c3). */
           <Fact name={t('quests.detail.submitted')}>
             {stamp(quest.submission.at)} · {ago(quest.submission.at)}
             {quest.submission.session && <> · {t('quests.detail.submittedBy', { session: quest.submission.session })}</>}

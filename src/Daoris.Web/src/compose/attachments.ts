@@ -1,4 +1,4 @@
-// What a quest carries beside its words (D65 §2), as the composer handles it BEFORE the service
+// What a quest carries beside its words, as the composer handles it BEFORE the service
 // judges it. The service is the authority on every limit here — `QuestExchange` refuses whatever these
 // miss, in its own sentence — and these exist only so the form does not offer an ask it would refuse,
 // and can say why while the person is still choosing files.

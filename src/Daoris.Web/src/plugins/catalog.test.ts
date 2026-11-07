@@ -4,7 +4,7 @@ import {
   takesShipped, updateWaits,
 } from './catalog';
 
-// The Plugins view's list and page on today's answers (PLUGUI1b, D119 §3.1): what state a plugin is in, which
+// The Plugins view's list and page on today's answers: what state a plugin is in, which
 // group it sits in and in what order, and what the chosen item names. Pure, so every machine is an argument.
 
 const plugin = (over: Partial<PluginShown> = {}): PluginShown => ({
@@ -23,7 +23,7 @@ const offer = (over: Partial<OfferShown> = {}): OfferShown => ({
 describe("a plugin's state, on today's answers", () => {
   it('is off when the person switched it off, whatever else is true', () => {
     expect(pluginState(plugin({ enabled: false }))).toBe('off');
-    // A refused one that is off is off too; its sentence stays on its page (D119 §2).
+    // A refused one that is off is off too; its sentence stays on its page.
     expect(pluginState(plugin({ enabled: false, problem: 'needs plugin API 99' }))).toBe('off');
   });
 
@@ -46,8 +46,8 @@ describe("a plugin's state, on today's answers", () => {
 
 describe('the catalogue', () => {
   /**
-   * Its sections (D140 §2): the installed, then Daoris's own not installed. Within the installed the order is still what
-   * the person acts on (D119 §3.1): what needs them, what is working, what they turned off.
+   * Its sections: the installed, then Daoris's own not installed. Within the installed the order is still what
+   * the person acts on: what needs them, what is working, what they turned off.
    */
   it('is the installed, waiting on you first, then on, then off; then the offers not installed', () => {
     const groups = pluginGroups([
@@ -80,7 +80,7 @@ describe('the catalogue', () => {
 });
 
 describe('where a plugin came from, on its row', () => {
-  /** The meta line's word (D140 §2): never a guess where the shell sent no record, and nothing for a kind it does not know. */
+  /** The meta line's word: never a guess where the shell sent no record, and nothing for a kind it does not know. */
   it('is said in a word for each source the driver answers', () => {
     expect(sourceWord({ kind: 'offer', offer: 'in-app-browser' })).toBe('plugin.from.offer');
     expect(sourceWord({ kind: 'folder', folder: 'C:/somewhere/checkout/gate' })).toBe('plugin.from.folder');
@@ -97,7 +97,7 @@ describe('where a plugin came from, on its row', () => {
     expect(updateWaits(plugin())).toBe(false);
   });
 
-  /** LANDPIN3: a copy older than the one this install ships waits for a press, whatever record it has; a changed one never does. */
+  /** A copy older than the one this install ships waits for a press, whatever record it has; a changed one never does. */
   it('says an update waits for a copy older than the one the install ships, and never for a changed one', () => {
     const older = { state: 'older', installed: '1.2.0', shipped: '1.3.0', changes: 'Pushes the commit judged.' } as const;
     const changed = { state: 'changed', installed: '1.3.0', shipped: '1.3.0' } as const;
@@ -130,13 +130,13 @@ describe('the chosen item', () => {
     expect(chosenOf('offer:in-app-browser', [plugin()], [offer()])).toMatchObject({ kind: 'offer', offer: { id: 'in-app-browser' } });
   });
 
-  /** Once an offer is installed, the list chooses the installed plugin (D119 §3.1). */
+  /** Once an offer is installed, the list chooses the installed plugin. */
   it('reads an offer that is installed now as the plugin it became', () => {
     expect(chosenOf('offer:in-app-browser', plugins, [offer({ installed: true })]))
       .toMatchObject({ kind: 'plugin', plugin: { id: 'in-app-browser' } });
   });
 
-  /** Removed at a terminal or by hand: the page says so rather than going blank (D119 §3.2). */
+  /** Removed at a terminal or by hand: the page says so rather than going blank. */
   it('is gone when what it names is no longer on this machine', () => {
     expect(chosenOf('nobody', plugins, [])).toEqual({ kind: 'gone' });
     expect(chosenOf('offer:nobody', plugins, [])).toEqual({ kind: 'gone' });

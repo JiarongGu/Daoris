@@ -30,7 +30,7 @@ export const PressUnshownDark: Story = { args: { needs: 5, presses: 2, warn: tru
 export const PressUnshownChinese: Story = { args: { needs: 5, presses: 2, warn: true }, decorators: [chinese] };
 export const Nothing: Story = { args: { needs: 0, presses: 0 } };
 
-/** Something unread in *Done and failed* (NOTIFY2f): a dot, never a second count. */
+/** Something unread in *Done and failed*: a dot, never a second count. */
 export const Unread: Story = { args: { unread: true } };
 export const UnreadDark: Story = { args: { unread: true }, decorators: [dark] };
 export const UnreadAlone: Story = { args: { needs: 0, presses: 0, unread: true } };

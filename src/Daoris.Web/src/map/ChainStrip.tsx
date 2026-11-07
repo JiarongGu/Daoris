@@ -8,7 +8,7 @@ import { cn } from '../lib/cn';
 import { questName } from '../work/identity';
 import type { ChainStep } from './chain';
 
-/** The mark per step — an arrangement of existing tokens (D41), and never the only signal. */
+/** The mark per step — an arrangement of existing tokens, and never the only signal. */
 const MARK: Record<ChainStep['kind'], string> = {
   ask: 'border-line-strong bg-raised',
   unseen: 'border-line bg-page',
@@ -18,22 +18,22 @@ const MARK: Record<ChainStep['kind'], string> = {
 };
 
 /**
- * How one piece of work was carried (MAP1, D67 §3): the ask, the quests before and after this one,
+ * How one piece of work was carried: the ask, the quests before and after this one,
  * the steps still to come, and on what each quest ran — every session's agent, version and account,
- * read from its record (D49 §4).
+ * read from its record.
  *
  * @remarks
  * A molecule: the chain arrives built (`buildChain`), so every shape is reachable in a story. The
  * same strip renders on a quest's page and beside an attended session. Each surface decides what
  * pressing a quest or a session does, so the strip adds no act of its own.
  *
- * **Every state is said in words** (D41): a quest's status and a session's state are pills, the
+ * **Every state is said in words**: a quest's status and a session's state are pills, the
  * quest being read is named as such, and a step not yet published says so. A mark's hue only
  * repeats what the words already say.
  */
 export function ChainStrip({ chain, level = 2, attended, onQuest, onSession, nameOf }: {
   chain: ChainStep[];
-  /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, each record's id is said. */
+  /** What a person calls an account, from the roster; absent, each record's id is said. */
   nameOf?: AccountNamer;
   /** The session being read, where the strip sits beside one: marked, and no door to itself (SESS1 S7). */
   attended?: string;
@@ -129,7 +129,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
         {questName(quest)}
       </button>
     )
-    // Each step by its name (SESSUX1j), as every list names a quest, whole on its tip.
+    // Each step by its name, as every list names a quest, whole on its tip.
     : <span title={quest.title} className={cn('min-w-0 truncate text-small text-ink', current && 'font-semibold')}>{questName(quest)}</span>;
 
   return (
@@ -162,7 +162,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
                 const name = agentOnce && sessions.length > 1
                   ? t('chain.attempt', { n: index + 1 })
                   : sessionTool(session, false, nameOf);
-                // By the person's name for it (ACCTNAME1): a name, not an id, so it is set in the row's words, not as code.
+                // By the person's name for it: a name, not an id, so it is set in the row's words, not as code.
                 const account = agentOnce && sessions.length > 1 && session.profile
                   ? nameOf ? nameOf(session.door, session.profile) : session.profile
                   : null;

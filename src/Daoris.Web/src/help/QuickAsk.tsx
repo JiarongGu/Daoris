@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Icon, QuickPanel, Tip } from '../design/ui';
 
 /**
- * Quick Ask (DOCK1d): Ask Daoris's conversation in a box at the palette's place, for one question
+ * Quick Ask: Ask Daoris's conversation in a box at the palette's place, for one question
  * without opening a region — VS Code's Quick Chat.
  *
  * @remarks

@@ -6,7 +6,7 @@ import {
 } from './codeClusters';
 import { type CodeFixture, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
 
-// CANVAS1f (D224; the canvas design §3.4, §9 row f): the code map's pure layout — folders from each module's path, packed nested boxes,
+// The code map's pure layout — folders from each module's path, packed nested boxes,
 // aggregated folder-pair edges with exact counts, a cycle condensed, folders closed past 60 and the path find opens.
 
 const repository = (): CodeFixture => JSON.parse(readFileSync('../../docs/code-map.json', 'utf8')) as CodeFixture;

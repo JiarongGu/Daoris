@@ -11,7 +11,7 @@ const handWritten =(files: [path: string, source: string][]): string[] =>
   files.filter(([path, source]) => path !== './design/links.tsx' && /<a[\s>]/.test(source)).map(([path]) => path);
 
 /**
- * 🔴 One place, held (BRW7): a link written by hand is a link the person's choice never reaches, and it
+ * 🔴 One place, held: a link written by hand is a link the person's choice never reaches, and it
  * would look exactly like one that honours it.
  */
 describe('the one place a link opens', () => {
@@ -33,7 +33,7 @@ describe('the one place a link opens', () => {
 });
 
 /**
- * BRW7: the one place a link on the page opens. Where the person chose Daoris's browser, a click on a
+ * The one place a link on the page opens. Where the person chose Daoris's browser, a click on a
  * web page's link goes there through the opener the application provides; everywhere else — a browser
  * with no bridge, the system's choice, an address that is no web page — the link opens as a link
  * always has, outside the window.
@@ -96,7 +96,7 @@ describe('ExternalLink', () => {
     expect(open).not.toHaveBeenCalled();
   });
 
-  /** A sign-in belongs in the person's own browser: never one any process on the machine can drive (D78 §3.4). */
+  /** A sign-in belongs in the person's own browser: never one any process on the machine can drive. */
   it("keeps a link that says so on the system's browser, whatever the opener", () => {
     const open = vi.fn();
     render(

@@ -19,7 +19,7 @@ const yOf = (used: number) => BOX.top + (1 - Math.min(Math.max(used, 0), 100) / 
 
 /**
  * A curve across the whole window: its points, flat from the window's start to the first and from the last to its end. None where
- * no curve was answered , which draws no line.
+ * no curve was answered, which draws no line.
  */
 function across(points: readonly CurvePoint[]): CurvePoint[] {
   const first = points[0];
@@ -119,7 +119,7 @@ const numberOf = (text: string) => (text.trim() === '' ? Number.NaN : Number(tex
  * **A window's own points, edited** (the switch design §2, §5): *My own curve*'s points for one window, `[time gone, used]`, a
  * row each, added after the last and taken out, and saved whole as `--curve <window>=…` saves them. A window the person set no
  * points for takes Daoris's curve, and its own begin from Daoris's points, as the accounts' answer carries them. Points that break a
- * rule are refused by the door (`ACCOUNT_USE_CURVE`; the rules are .NET's alone, PUSH1e), and its sentence is said under the rows,
+ * rule are refused by the door (`ACCOUNT_USE_CURVE`; the rules are.NET's alone, PUSH1e), and its sentence is said under the rows,
  * which stay as typed. It holds only the points being typed; keyed by the saved points, so a save that lands starts it afresh.
  */
 export function CurvePoints({ window, points, start, hint, busy, onSave }: {

@@ -25,8 +25,8 @@ export function keptFilters(filters: QuestFilters): Record<string, unknown> | nu
 }
 
 /**
- * A group of the list's quests: where each is in its life (D41 §5), and what a hold keeps waiting on the person, their yes to a
- * departure (DRIFT1d2) or their review of a set-up step (REVIEWENV1g).
+ * A group of the list's quests: where each is in its life, and what a hold keeps waiting on the person, their yes to a
+ * departure (DRIFT1d2) or their review of a set-up step.
  */
 export type QuestGroup = { group: 'held' | 'open' | 'progress' | 'closed'; quests: Quest[] };
 
@@ -35,7 +35,7 @@ export type QuestGroup = { group: 'held' | 'open' | 'progress' | 'closed'; quest
  * closed where closed ones are shown. An empty group is kept, and the list leaves it out, so the groups' order is one place.
  *
  * @remarks
- * **A held quest is outstanding** (DRIFT1d, D133 §4): closed done, and listed by the service without closed ones, since
+ * **A held quest is outstanding**: closed done, and listed by the service without closed ones, since
  * what follows it waits on the person. Grouped by its status it fell in *Closed*, which the default list does not show, so
  * the person never found it; it is first, as the asks are, since it waits on them, and never in *Closed* too.
  */
@@ -57,7 +57,7 @@ export function questGroups(quests: readonly Quest[], closed: boolean): QuestGro
 
 /**
  * The freshest attempt per quest: a retry is its own record, and the page shows where things stand now, not the
- * history (the service keeps that). A chat may serve no quest (D49 §3), so only a session that names one marks it.
+ * history (the service keeps that). A chat may serve no quest, so only a session that names one marks it.
  */
 export function latestSessions(sessions: readonly Session[]): Map<string, Session> {
   const latest = new Map<string, Session>();
@@ -82,8 +82,8 @@ export function freshest<T extends { id: string; updated: string }>(listed: T | 
 
 /**
  * Whether the chosen quest still waits on something (UX6b, design §1 rule 6), so Quests reopens on it: open or taken, or
- * closed while a departure holds it for the person's yes (DRIFT1d) or a move another machine made waits on their dismissal
- * (SYNC6c). `read` is whether every quest has answered, since a quest missing from a list still on its way has not gone.
+ * closed while a departure holds it for the person's yes or a move another machine made waits on their dismissal.
+ * `read` is whether every quest has answered, since a quest missing from a list still on its way has not gone.
  */
 export function questStanding(quest: Quest | undefined, read: boolean): ChoiceStanding {
   if (!quest) return read ? 'gone' : 'unread';
@@ -126,8 +126,8 @@ export function sourceReady(step: Quest, every: readonly Quest[]): boolean {
 }
 
 /**
- * Whether the chosen ask still waits on something (UX6b): proposed, open or published, or done with a go-ahead the person
- * has not answered (KNOWUSE1a). A closed ask, and a done one whose quests have all closed, wait on nothing.
+ * Whether the chosen ask still waits on something: proposed, open or published, or done with a go-ahead the person
+ * has not answered. A closed ask, and a done one whose quests have all closed, wait on nothing.
  */
 export function askStanding(ask: Ask | undefined, read: boolean): ChoiceStanding {
   if (!ask) return read ? 'gone' : 'unread';
@@ -136,7 +136,7 @@ export function askStanding(ask: Ask | undefined, read: boolean): ChoiceStanding
 }
 
 /**
- * The question a taken quest's taker asked another repository and waits on (D79), found among every quest, closed
+ * The question a taken quest's taker asked another repository and waits on, found among every quest, closed
  * ones too: once it closes the quest resumes, and the wait is no longer the news.
  */
 export function questionOf(quest: Quest, every: readonly Quest[]): { id: string; quest?: Quest } | null {

@@ -34,8 +34,8 @@ import { QuestRecord } from './page/QuestRecord';
 
 
 /**
- * A quest's body as its page shows it under the head (UX7c, D152 §7): its first line left out where it is the title the
- * head said, as the ask page leaves its first line out (POLISH4); where the head said a short title instead, the body as
+ * A quest's body as its page shows it under the head: its first line left out where it is the title the
+ * head said, as the ask page leaves its first line out; where the head said a short title instead, the body as
  * written, opening on the whole title, which is prepended where the body does not already open on it. Content is never
  * rewritten otherwise. Empty where nothing is left to say.
  */
@@ -54,22 +54,22 @@ const LONG_TITLE = 80;
  * over the side bar and the panel. Its acts are in its header and the loud one is its next step (UX5 U31):
  * *Take* while it is open, *Mark done* once it is taken. Then what it is waiting on, the holds only the person lifts
  * (a folder to trust, D73; a quest parked by its strikes, RETRY1; one their stop holds, D126 §3.4), a conflict a person
- * must see (D68 §5), the ask itself, what it carries (D65 §2), its chain (MAP1) and its driven session's record (D46 §4).
+ * must see, the ask itself, what it carries, its chain and its driven session's record.
  *
  * @remarks
  * **A molecule**: every state is reached by its props, and every press goes out. What asks under the header —
  * *Decline…*'s reason, *Delete…*'s sentence — is its own, so it resets with the quest it was asked of.
  *
- * - **A delete asks once** (D95): its first press opens a sentence saying the second removes the record, which
- *   nothing gives back; offered only where the service says it may go (`deletable`). It is the one inline confirmation
- *   (UXFIX2): open until the service answers, a refusal said inside it.
+ * - **A delete asks once**: its first press opens a sentence saying the second removes the record, which
+ *   nothing gives back; offered only where the service says it may go (`deletable`). It is the one inline confirmation:
+ * open until the service answers, a refusal said inside it.
  * - **A decline needs its reason**, which the service refuses without; the form does not offer the mistake.
  * - **What the service and the driver say is said verbatim**: the session's evidence, a conflict's note, the driver's
- *   sentence about why it sits (translated by its verdict, never by its words, U27). The session's note is `Note`'s
- *   (LANG1b): Daoris's lines by their codes in the reader's language, someone's words as written.
- * - **A page never prints a machine path it was answered** (D47 §4): a kept file opens through the host's own
+ *   sentence about why it sits (translated by its verdict, never by its words, U27). The session's note is `Note`'s:
+ * Daoris's lines by their codes in the reader's language, someone's words as written.
+ * - **A page never prints a machine path it was answered**: a kept file opens through the host's own
  *   route, and one kept elsewhere says so.
- * - **Its work is paused and abandoned here** (PAUSE1e, D132 §7.1), from this machine's driver's plan: *Pause…* while open
+ * - **Its work is paused and abandoned here**, from this machine's driver's plan: *Pause…* while open
  *   or taken and not paused on its own, asking once where it ends work in flight (§2.6); *Abandon…* beside *Decline…*,
  *   listing first and abandoning on its second press with the person's reason (§3.1). *Resume* stands under *Sitting* for
  *   its own pause, where *Try again* stands for a stop; for another's pause the sentence names whose, and a door opens it.
@@ -134,12 +134,12 @@ export function QuestPage({
    */
   workflow?: RunLineDoor;
   /**
-   * A set-up step's review (REVIEWENV1g): its presses, whether one is on its way, and whether Daoris still serves its newest
+   * A set-up step's review: its presses, whether one is on its way, and whether Daoris still serves its newest
    * set-up's tab here (null where no shell says). Absent, its review is shown with no press.
    */
   review?: { acts: ReviewGateActs; busy?: boolean; served?: boolean | null };
   /**
-   * What a person calls an account (ACCTNAME1, D152 §4.2), from the roster its organism holds: its session line, its chain
+   * What a person calls an account, from the roster its organism holds: its session line, its chain
    * and its trace say each account by it. Absent, as in a browser, each record's id is said.
    */
   nameOf?: AccountNamer;
@@ -149,35 +149,35 @@ export function QuestPage({
    */
   limitWait?: readonly string[] | null;
   /**
-   * How it came to be (TRACE1b, D143, D50), folded at the foot of its page: the page's organism holds the fold and the read.
-   * Absent in a browser, which has no driver to read this machine's records (D47 §4).
+   * How it came to be, folded at the foot of its page: the page's organism holds the fold and the read.
+   * Absent in a browser, which has no driver to read this machine's records.
    */
   trace?: TraceDoor;
   quest: Quest;
-  /** Its lanes as its repository declares them (D115 §2.2), each named where its registration says. */
+  /** Its lanes as its repository declares them, each named where its registration says. */
   lanes?: string;
-  /** What its taker asked another repository and waits on (D79), with the quest where the page holds it. */
+  /** What its taker asked another repository and waits on, with the quest where the page holds it. */
   question?: { id: string; quest?: Quest } | null;
-  /** Why this machine's driver leaves it waiting, in the driver's words (D46 §3). */
+  /** Why this machine's driver leaves it waiting, in the driver's words. */
   sitting?: Consideration | null;
-  /** A start the driver holds for the agent's trust where it would run (D73). */
+  /** A start the driver holds for the agent's trust where it would run. */
   hold?: TrustHold | null;
-  /** The chain it belongs to (MAP1); drawn only where there is more than this quest. */
+  /** The chain it belongs to; drawn only where there is more than this quest. */
   chain?: ChainStep[];
   /**
    * Its driven session's freshest record: a retry is its own record, and the page says where things stand now. Read
-   * here and managed in Sessions (D126 §3.6): its stop is its page header's there, behind the door below.
+   * here and managed in Sessions: its stop is its page header's there, behind the door below.
    */
   session?: Session | null;
   /**
-   * Where the session list's reader placed that session (D126 §2.4), which says the words the record cannot: *awaiting reply*
-   * for the last session of a quest that waits on another repository's answer (WAITSHOWN1). Absent where no driver answers,
+   * Where the session list's reader placed that session, which says the words the record cannot: *awaiting reply*
+   * for the last session of a quest that waits on another repository's answer. Absent where no driver answers,
    * and the record's own state shows.
    */
   grouping?: SessionGrouping | null;
   busy?: boolean;
   retrying?: boolean;
-  /** The agent's trust question is open for the hold (D73), asked only on the press. */
+  /** The agent's trust question is open for the hold, asked only on the press. */
   trusting?: boolean;
   granting?: boolean;
   dismissing?: boolean;
@@ -186,14 +186,14 @@ export function QuestPage({
   /** The person's yes to a departure is on its way (DRIFT1d2). */
   accepting?: boolean;
   /**
-   * Take, decline with its reason, or the person's done (QUESTCLOSE1) with their note, or null for none, told back to its
-   * ask (UXFIX2) so a refusal is said inside it.
+   * Take, decline with its reason, or the person's done with their note, or null for none, told back to its
+   * ask so a refusal is said inside it.
    */
   onRespond: (action: 'take' | 'done' | 'decline', reason?: string | null, answered?: Answered) => void;
-  /** Delete the quest (D95), told back to its ask (UXFIX2) — absent where there is no door to do it. */
+  /** Delete the quest, told back to its ask — absent where there is no door to do it. */
   onDelete?: (answered: Answered) => void;
   /**
-   * Dismiss a conflict by its name (SYNC6c): this machine's lost take's *Drop mine*, then the fresh takes' conflicts its lost
+   * Dismiss a conflict by its name: this machine's lost take's *Drop mine*, then the fresh takes' conflicts its lost
    * bring-forwards left, which its row reads as its own (SYNCMERGE1c2).
    */
   onDismiss: (machine: string, sequence: number, also?: SubmissionRef[]) => void;
@@ -203,28 +203,28 @@ export function QuestPage({
    */
   onForward?: (machine: string, sequence: number) => void;
   /**
-   * *Try again* (RETRY1; D126 §3.4): start a quest parked by its strikes again, or release one the person's stop holds
+   * *Try again*: start a quest parked by its strikes again, or release one the person's stop holds
    * — the shell's, which the driver judges by its verdict.
    */
   onRetry?: () => void;
-  /** Open or put down the trust question (D73) — the shell's, which closes it once the grant is written. */
+  /** Open or put down the trust question — the shell's, which closes it once the grant is written. */
   onTrusting?: (open: boolean) => void;
-  /** Grant the agent's trust for the folder held (D73) — the shell's; a refusal is said in the question (UXFIX2b3b). */
+  /** Grant the agent's trust for the folder held — the shell's; a refusal is said in the question (UXFIX2b3b). */
   onGrant?: (hold: TrustHold, answered: Answered) => void;
   onOpenQuest: (id: string) => void;
   /** The door into Sessions: absent where there are none, a browser, or no driver is attached. */
   onAttend?: (session: string) => void;
-  /** Open an ask's page: where the pause that holds this quest is resumed (PAUSE1e). */
+  /** Open an ask's page: where the pause that holds this quest is resumed. */
   onOpenAsk?: (id: string) => void;
   /**
    * The person's yes to a done's departure from what they required (DRIFT1d2, D133 §4): the service's accept door, which
    * lets what the departure held go on. Absent where there is no door to say it through.
    */
   onAccept?: () => void;
-  /** This machine's driver's half (PAUSE1e): the plan and the three presses. Absent in a browser, which has no driver. */
+  /** This machine's driver's half: the plan and the three presses. Absent in a browser, which has no driver. */
   work?: WorkDoor;
   /**
-   * Clearing its finished work from this machine (HIST1e, D153 §6.1): the plans of its work and of its failed sessions, and
+   * Clearing its finished work from this machine: the plans of its work and of its failed sessions, and
    * the second press. Absent in a browser, which has no driver and no home.
    */
   history?: HistoryDoor;
@@ -238,15 +238,15 @@ export function QuestPage({
   // The plan the abandon's list showed, held from when it opened: the second press sends exactly what it listed (§3.1).
   const [listed, setListed] = useState<WorkPlan | null>(null);
   const [reason, setReason] = useState('');
-  // The person's words on their done (QUESTCLOSE1), kept while its ask is open.
+  // The person's words on their done, kept while its ask is open.
   const [doneNote, setDoneNote] = useState('');
   const declining = asking === 'decline';
-  // A delete asks once (D95): the first press arms it, and only the second removes the record.
+  // A delete asks once: the first press arms it, and only the second removes the record.
   const deleting = asking === 'delete';
   const moving = quest.status === 'Open' || quest.status === 'Taken';
   const deletable = quest.deletable === true && onDelete !== undefined;
   const answered = question?.quest?.status === 'Done' || question?.quest?.status === 'Declined';
-  // A wait (D79) is said by its own row, with the question; the driver's sentence under it would say it again.
+  // A wait is said by its own row, with the question; the driver's sentence under it would say it again.
   const because = sitting?.verdict === 'Waiting' ? null : sitting ?? null;
   const target: WorkTarget = { scope: 'quest', id: quest.id };
   const offers = workOffers(work?.plan);
@@ -263,11 +263,11 @@ export function QuestPage({
   const ownPause = pausedBy?.scope === 'quest' && pausedBy.id === quest.id;
   // Its own pause where the tick has no verdict for it (its session waits on you, D132 §2.1): said from the plan, with Resume.
   const pausedUnseen = offers.paused && !pausedBy;
-  // The session as the list's reader reads it (D126 §2.4, WAITSHOWN1): its derived word where it said one, so the last session
+  // The session as the list's reader reads it: its derived word where it said one, so the last session
   // of a quest that awaits another repository's answer reads as awaiting, not as completed; the record's own otherwise.
   const shown = session ? shownOf(session, grouping, undefined) : null;
   const waitsOn = shown === 'awaiting-reply' ? placedFact(grouping, shown) : null;
-  // Taken, and its last session here ended in a way nothing here carries on (QUESTCLOSE1): finished or declined at a
+  // Taken, and its last session here ended in a way nothing here carries on: finished or declined at a
   // checkpoint, no answer waiting. The planner says nothing of it, so the page does, with the person's done beside it. A
   // failure, a stop and an answered park are the driver's to say (a carry-on, a park, *Try again*), and a teammate's record
   // is not this machine's take.
@@ -282,19 +282,19 @@ export function QuestPage({
   };
 
   // The header's acts, in its order (D118 §3b), each where it applies. While one asks under the header, its first press
-  // is not offered twice. One list for its buttons and the page's right-click (CTX1), so the two never disagree.
+  // is not offered twice. One list for its buttons and the page's right-click, so the two never disagree.
   // A closure graph's quest (FABRIC-CLOSE1d, CLOSE1c3): what its pill says, whether its sealed submission may be reopened here, and
   // whether its source's reopen holds it, which no take, yes or done of the agent's moves.
   const reads = shownStatus(quest);
   const reopenHeld = quest.held === true && quest.hold === 'source-reopened';
   const reopenable = reopen !== undefined && reads === 'Submitted' && quest.held !== true;
   const goesOn = reopenHeld && quest.status === 'Taken' && goOn?.ready === true;
-  // SYNCMERGE1c2 (D178 point 2): a held step this machine's take holds offers its go-on and abandon as a lost take's two choices, by
+  // SYNCMERGE1c2: a held step this machine's take holds offers its go-on and abandon as a lost take's two choices, by
   // their names; held by another machine, or where no host says which, each keeps its own.
   const holdsHere = quest.here != null && quest.holder === quest.here;
   const heldMine = reopenHeld && holdsHere;
   const labelOf = (act: QuestAct) => (act === 'goOn' && heldMine ? 'quests.conflict.forward' : QUEST_ACT[act].label);
-  // This machine's take lost and the step is not its own (D178 point 7): the person's done here is refused as its session's would
+  // This machine's take lost and the step is not its own: the person's done here is refused as its session's would
   // be, so the done's ask names the choices that stand for it.
   const lostHere = !holdsHere && readConflicts(quest).rows.some((row) => row.mine);
   const headActs: QuestAct[] = [
@@ -306,7 +306,7 @@ export function QuestPage({
       ...(offers.abandon && asking !== 'abandon' ? ['abandon' as const] : []),
       ...(deletable && !deleting ? ['delete' as const] : []),
     ]),
-    // A closed quest's two clears (HIST1e), in its ⋯ (§6.1).
+    // A closed quest's two clears, in its ⋯ (§6.1).
     ...(clearable && asking !== 'clear' ? ['clear' as const] : []),
     ...(failedClearable && asking !== 'clearFailed' ? ['clearFailed' as const] : []),
   ];
@@ -316,7 +316,7 @@ export function QuestPage({
   const retryable = (because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry !== undefined;
   const trustable = Boolean(hold && onGrant && onTrusting && !trusting);
   // A departure that holds it for the person's yes (DRIFT1d2): what it waits on, so the yes leads its body's acts. A set-up
-  // step its review holds waits for the review's verdict instead (REVIEWENV1g), which no yes lifts (D154 point 9).
+  // step its review holds waits for the review's verdict instead, which no yes lifts.
   // A step its source's reopen holds waits on the person's go-on or abandon (FABRIC-CLOSE1c3), which the accept door would refuse.
   const unreviewed = quest.held === true && quest.hold === 'unreviewed';
   const held = quest.held === true && !unreviewed && !reopenHeld;
@@ -352,11 +352,11 @@ export function QuestPage({
     }
   };
 
-  // The head's acts as the UX7 design §5.3 draws them (UX7c, D152 §7): its next step loud (*Take* while open, *Mark done*
+  // The head's acts as the UX7 design §5.3 draws them: its next step loud (*Take* while open, *Mark done*
   // once taken) and *Decline…* beside it; the rest of the same list, and its id, in its ⋯. One list still, so the buttons,
-  // the ⋯ and the right-click never disagree (CTX1).
+  // the ⋯ and the right-click never disagree.
   const lead: QuestAct | null = headActs.includes('take') ? 'take' : quest.status === 'Taken' && headActs.includes('done') ? 'done' : null;
-  // HEAD2b (D162 §3): the primary holds still in `acts`; *Decline…* is the fold's, shown above 640 px of the main area, and said
+  // The primary holds still in `acts`; *Decline…* is the fold's, shown above 640 px of the main area, and said
   // again in the ⋯ only below it. The ⋯'s menu is a portal outside the area's container query, so the width is read when it
   // opens (`narrow`), and at that width the ⋯ lists what the fold hides.
   const primary = headActs.filter((act) => act === lead);
@@ -421,7 +421,7 @@ export function QuestPage({
     ],
   };
 
-  // Titles first (UX7c, D152 §7; the UX7 design §5.3): its state leads, its name follows on two lines at most, and one line
+  // Titles first: its state leads, its name follows on two lines at most, and one line
   // of facts says whom it asks, who asked, when, and the one live fact. The state line, the id and the fact rows went: the
   // state's sentence is its pill's tip, and the id, the full times and the lanes are its *Details*.
   const named = questName(quest);
@@ -429,7 +429,7 @@ export function QuestPage({
   // it); where the head said a short title, the body opens on the whole title, once.
   const body = bodyUnderHead(quest.title, quest.body, named !== quest.title);
   const request = useRef<HTMLParagraphElement>(null);
-  // REVIEWFLOW1b: *next* is the first body act that moves it on, or its session where that waits on the person.
+  // *next* is the first body act that moves it on, or its session where that waits on the person.
   const next = questNext(bodyActs, session?.state === 'awaiting-person');
   const head = (
     <PageHead
@@ -472,7 +472,7 @@ export function QuestPage({
       )}
 
       {!work && moving && (
-        /* A browser has no driver (D47 §4): none of the three is offered, and the terminal's commands are named. */
+        /* A browser has no driver: none of the three is offered, and the terminal's commands are named. */
         <Prose className="mb-4 text-small"><Inline text={t('quests.detail.noDriver', { id: quest.id })} /></Prose>
       )}
 
@@ -532,7 +532,7 @@ export function QuestPage({
       )}
 
       {quest.setUpIn && (
-        /* A set-up step's review (REVIEWENV1g): what it waits on, so above the body, as a held departure sits; every set-up
+        /* A set-up step's review: what it waits on, so above the body, as a held departure sits; every set-up
            it said, newest first, and the verdict's presses under the newest. */
         <ReviewGate
           className="mb-4"

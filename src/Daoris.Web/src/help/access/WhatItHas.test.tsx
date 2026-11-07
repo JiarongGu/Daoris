@@ -7,7 +7,7 @@ import { clockOf } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import { WhatItHas } from './WhatItHas';
 
-// HELPMODE1b (D183 point 4; the modes design §6): *What it has*, the newest receipt of what a start of the conversation in view
+// *What it has*, the newest receipt of what a start of the conversation in view
 // handed its agent, each server's state, what restricted mode lacks with the door that grants each, the earlier starts behind a
 // disclosure, and a conversation from before said as not recorded.
 

@@ -9,7 +9,7 @@ export interface IndexedRepository {
  * The repositories worth a bar, and how many were left out.
  *
  * @remarks
- * 🔴 **Written from the deployed application, which is the only place it shows** (D62). The
+ * 🔴 **Written from the deployed application, which is the only place it shows**. The
  * fixture the dev loop runs against holds two repositories, so the card was a chart of two rows and
  * looked finished. A real machine has fourteen: the card ran past the fold, its legend — the
  * paragraph that explains what the dot and "local" mean — was cut off below the window, and the

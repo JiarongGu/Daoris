@@ -45,7 +45,7 @@ const TEXT_CLASS = /(?<![\w-])text-([a-z][a-z0-9]*(?:-[a-z0-9]+)*)/g;
 
 /**
  * Tailwind's colour keywords that need no theme. `tokens.css` clears Tailwind's palette (`--color-*: initial`), so
- * `bg-white` or `border-red-500` draws nothing, while these three are values of their own and still draw (LOOK6).
+ * `bg-white` or `border-red-500` draws nothing, while these three are values of their own and still draw.
  */
 const BUILT_IN_COLOURS = ['transparent', 'current', 'inherit'];
 
@@ -58,7 +58,7 @@ export function undeclaredSteps(files: [path: string, source: string][], css: st
 }
 
 /**
- * 🔴 **A colour no token defines draws nothing, and says nothing** (LOOK6). Thirteen files asked for `bg-sunken` for
+ * 🔴 **A colour no token defines draws nothing, and says nothing**. Thirteen files asked for `bg-sunken` for
  * the box a destructive move asks in, and `tokens.css` declared no such colour: Tailwind emits no rule for a name
  * its theme lacks, so every one of those boxes had no background in either theme, with every check green. The
  * `text-` scan above already held the type steps; a `bg-` or `border-` colour had nothing.
@@ -96,7 +96,7 @@ export function undeclaredColours(files: [path: string, source: string][], css: 
 /**
  * 🔴 **A scrim never covers the app strip**, where the window's three buttons are.
  *
- * The strip reserves three 44px slots that the **window** paints natively (SURF7/D56). A page-level
+ * The strip reserves three 44px slots that the **window** paints natively. A page-level
  * backdrop dims everything the page draws and cannot touch what the window draws — so opening the
  * palette dimmed the whole title bar and left the caption buttons as a **bright white block punched
  * through it**. Seen in a screenshot; invisible in every unit test, because there are no native
@@ -132,8 +132,8 @@ export function panelsOverTheStrip(files: [path: string, source: string][]): str
  * 🔴 **Nor does either reach the status bar.** The frame is three bars, the strip, the activity bar
  * and the status bar, and an overlay belongs to the content between them. The scrim left the first
  * two alone and ran to `bottom-0`, so behind an open drawer the status bar's first 48px stayed
- * bright and the rest went grey, cut at the activity bar's edge. Seen on the installed window
- * (POLISH3). The rule is the position again: an overlay ends at `bottom-6`, the bar's own height.
+ * bright and the rest went grey, cut at the activity bar's edge. Seen on the installed window.
+ * The rule is the position again: an overlay ends at `bottom-6`, the bar's own height.
  */
 const OVER_THE_STATUS_BAR = /fixed[^"'`]*\bbottom-0\b[^"'`]*bg-(?:scrim|overlay)|bg-(?:scrim|overlay)[^"'`]*fixed[^"'`]*\bbottom-0\b/g;
 
@@ -177,12 +177,12 @@ describe('the type scale', () => {
   it('catches a class that names no step — the check itself, in the shape the monitor\'s title took', () => {
     const wears = (source: string) => undeclaredSteps([['./work/MonitorWindow.tsx', source]], tokensCss);
     expect(wears('<h1 className="m-0 text-h3">')).toEqual(['./work/MonitorWindow.tsx wears text-h3, which tokens.css does not declare']);
-    // Tailwind's own scale renders and is not the platform's (D56).
+    // Tailwind's own scale renders and is not the platform's.
     expect(wears('className="text-sm"')).toHaveLength(1);
     expect(wears('className="hover:text-xl"')).toHaveLength(1);
     // And what must keep passing: a step, a colour with and without its opacity, a layout.
     expect(wears('className="text-view text-ink-soft hover:text-st-declined text-ink/70 text-pretty text-left"')).toEqual([]);
-    // Tailwind's colour keywords draw though its palette is cleared (LOOK6).
+    // Tailwind's colour keywords draw though its palette is cleared.
     expect(wears('className="text-current text-inherit text-transparent"')).toEqual([]);
     // A raw size is the other check's, and a word that merely contains the prefix is no class.
     expect(wears('className="text-[0.85rem] context-text-h3"')).toEqual([]);
@@ -270,7 +270,7 @@ describe('the scrim', () => {
 });
 
 /**
- * 🔴 **A chosen theme is the same palette as the system's** (D66). `tokens.css` carries each theme
+ * 🔴 **A chosen theme is the same palette as the system's**. `tokens.css` carries each theme
  * twice — once for the OS's media query, once for `data-theme` — because a chosen theme has to
  * outrank the query and CSS has no way to say "this block, again, under another selector". Two
  * copies are two palettes the first time one is edited alone, and the edit would look right in
@@ -315,11 +315,11 @@ describe('the chosen themes', () => {
 });
 
 /**
- * **Every surface is readable in every ink, and the sunken one lies below the page** (D41 §3; LOOK6). The status and
+ * **Every surface is readable in every ink, and the sunken one lies below the page**. The status and
  * identity hues were computed and the surfaces under the inks were not, until a fourth surface arrived for the box a
  * move asks once in. Body and secondary ink reach 4.5:1 on every surface; the faint ink, which carries meta and a
  * field's placeholder beside a label that says the same, reaches 3:1; each status hue's ink, which a word in that hue
- * wears, reaches 4.5:1 (UXFIX5, UXFIX5c). Computed from `tokens.css`, in both themes.
+ * wears, reaches 4.5:1. Computed from `tokens.css`, in both themes.
  */
 const SURFACES = ['--page', '--sunken', '--raised', '--overlay'];
 const INK_FLOORS: [ink: string, floor: number][] = [
@@ -407,7 +407,7 @@ const STATUS_AS_SVG_TEXT = /<text\b[^>]*?(?<![\w-])(fill-st-(?:open|taken|done|d
  * Where a source may still draw a status hue through its colour, each hit with its reason and each allowed once, so a
  * second hit of the same class in that file still fails. A mark keeps its hue (platform-ux §3), and an icon or a glyph
  * takes its colour as a word does, so the scan is told which they are. A word in a file a branch in flight holds waits
- * for that branch, and its row goes when the swap lands. A red word is allowed nowhere (UXFIX5b).
+ * for that branch, and its row goes when the swap lands. A red word is allowed nowhere.
  */
 const HUE_AS_COLOUR: Record<string, { hits: string[]; reason: string }> = {
   './work/frame/frame.tsx': { hits: ['text-st-open'], reason: "a mark: the status bar's setup icon, beside its words in the ink" },
@@ -649,13 +649,13 @@ describe('dates and counts', () => {
 });
 
 /**
- * 🔴 **A page is one column, and the column is its pane** (D141, LAYOUT11). A quest's body wore `max-w-prose`, 65ch:
+ * 🔴 **A page is one column, and the column is its pane**. A quest's body wore `max-w-prose`, 65ch:
  * on the install at 1600 px its title ran the pane while its body stopped at 456 px, a plugin's detail wrapped at two
  * edges, and in 中文 the 65 Latin digits held about 32 glyphs. Every block of a page now takes the column's width, and
  * the column (`ViewMain`) is the one place a line's length could be set; it sets none.
  *
  * So no source names a line's measure: Tailwind's `max-w-prose`, or a width counted in `ch` or `em`. A cap, if one is
- * ever set, goes on the column once, in `em` (D141 §3), and `work/frame/ViewMain.tsx` is then the one file this check lets
+ * ever set, goes on the column once, in `em`, and `work/frame/ViewMain.tsx` is then the one file this check lets
  * name it. A named width (`max-w-3xl`, 48rem) capped five blocks of a quest's and an ask's pages beside blocks that ran
  * the pane, so no product source names one either; a story's frame stands in for the column a part is drawn in, and
  * is not read. That the column itself sets none is `ViewMain.test.tsx`'s to hold, on what it renders.
@@ -755,7 +755,7 @@ const FORM_CAP = /^(?=.*\bmax-w-\[\d+(?:\.\d+)?rem\])(?=.*(?:\bgrid\b|<form\b)).
 
 /** The one form kept at a measure, by component, with its reason. */
 const CAPPED_BY_DESIGN: Record<string, string> = {
-  // The start prompt is a reading column centred in the main area (D141 §4), not a card's form: its measure is the design's.
+  // The start prompt is a reading column centred in the main area, not a card's form: its measure is the design's.
   './work/start/NewConversation.tsx': 'NewConversation, the prompt centred in the main area',
 };
 
@@ -803,7 +803,7 @@ const WINDOW_PARTS: Record<string, string> = {
   './app/App.tsx': 'the strip (TOGGLES_ROOM)',
   // The status bar's items, placed against the window's bottom edge.
   './work/frame/frame.tsx': 'the status bar (sync, remote, indexed)',
-  // The toast viewport beside an open drawer: the corner is the window's (UXTOAST1).
+  // The toast viewport beside an open drawer: the corner is the window's.
   './design/atoms/Toasts.tsx': 'the toast viewport beside a drawer (Toasts)',
   // The main area is the container named `main` itself, and a container cannot query itself: its gutters follow the
   // window until the padding moves inside it.
@@ -842,7 +842,7 @@ describe('the regions', () => {
 });
 
 /**
- * **An edge is ink and never a status hue** (D186 point 6; FLOWCHART2a). A flowchart's edge is content, its cause said in the source's
+ * **An edge is ink and never a status hue**. A flowchart's edge is content, its cause said in the source's
  * foot or port and to a reader; a hue on it would say a state the record may not hold. A way the driver found a problem in wears a ⚠
  * chip in the danger ink beside its ordinary line, so the line itself is read from what draws it: the canvas's paths and markers and
  * the chip a way wears.

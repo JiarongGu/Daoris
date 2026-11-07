@@ -4,7 +4,7 @@ import { BODIES, CJK_FINDING, CONVERGENT, IDENTICAL, RESTATEMENT } from './fixtu
 import { FindingMainNotice, FindingPage } from './FindingPage';
 import type { EntryReading } from './records';
 
-// A finding's page (FRAME1f, D118 §2) in Convergence's main area, where each of its entries was a drawer of its own: a
+// A finding's page in Convergence's main area, where each of its entries was a drawer of its own: a
 // drifted copy, a lesson learned in different words, a document pasted in three places, an entry still on its way, an
 // entry the index let go, an entry whose read failed, a 中文 entry; and the main area with no finding: nothing chosen,
 // gone, loading, an error with no answer ever.

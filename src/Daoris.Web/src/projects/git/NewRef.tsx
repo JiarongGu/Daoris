@@ -16,7 +16,7 @@ export type RefActs = {
   rename: (ask: { kind: RefKind; name: string; to: string; at: string }) => Promise<RefOutcome>;
   finish: (act: string) => Promise<RefOutcome>;
   undo: (act: string) => Promise<RefOutcome>;
-  /** *Fetch origin* (GITAPP2f); absent, the tab offers none. */
+  /** *Fetch origin*; absent, the tab offers none. */
   fetch?: FetchActs;
   /** *Push* and *Push tag* (GITAPP2g, n); absent, the tab offers neither. */
   push?: PushActs;

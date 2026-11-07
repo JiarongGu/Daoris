@@ -3,7 +3,7 @@ import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The driver's state pushed with its data (PUSH1a, D182): the whole window over a mocked shell and a fake clock, counting every
+// The driver's state pushed with its data: the whole window over a mocked shell and a fake clock, counting every
 // route read as IDLECPU1's `idle.test.tsx` does. A tick reads none of the pushed state again, a push changes it with no read, a
 // focus asks nothing of it, and a second window reads its one snapshot.
 
@@ -63,7 +63,7 @@ const CONSIDERED = { quest: 'q-1', repository: 'engine', verdict: 'Blocked', rea
 const HOLD = { folder: 'X:/engine', trustFile: 'X:/profile/.claude.json', quest: 'q-1' };
 const WAIT = { agent: 'claude-code', account: 'account-2', until: '2026-10-20T12:00:00+00:00', stated: true, quests: ['q-1'], asks: [], signedOut: [] };
 
-/** Why quests sit, the trust holds and the account waits, as the shell's owner holds them (FOUNDATION1s): each pushed whole. */
+/** Why quests sit, the trust holds and the account waits, as the shell's owner holds them: each pushed whole. */
 const CONSIDERATIONS_SNAPSHOT = {
   slice: 'considerations', epoch: 'k1', status: 'ready',
   partitions: [
@@ -221,7 +221,7 @@ const ASKS_SNAPSHOT = {
 const used = (session: string, when: string) =>
   ({ session, repository: 'engine', door: 'claude-code', profile: 'work', used: 12_000, size: 200_000, when });
 
-/** What sessions consumed, as the shell's owner holds it (PUSH1e): each session under its id, each account's share under its key. */
+/** What sessions consumed, as the shell's owner holds it: each session under its id, each account's share under its key. */
 const USAGE_SNAPSHOT = {
   slice: 'usage', epoch: 'u1', status: 'ready',
   partitions: [
@@ -245,7 +245,7 @@ const claude = (used: number, over: boolean) => ({
   scopes: [],
 });
 
-/** How each agent's accounts are used, as the shell's owner holds it (PUSH1e): a partition per agent, its verdicts beside each reading. */
+/** How each agent's accounts are used, as the shell's owner holds it: a partition per agent, its verdicts beside each reading. */
 const ACCOUNTS_SNAPSHOT = {
   slice: 'accounts', epoch: 'a1', status: 'ready',
   partitions: [{ partition: 'claude-code', seq: 1, status: 'ready', data: claude(0.4, false) }],
@@ -481,7 +481,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
     function Second() {
       useDriver();
       useLines();
-      // The hub first, as each root mounts it (PUSHMOUNT1), then what reads the sessions.
+      // The hub first, as each root mounts it, then what reads the sessions.
       return <><ShellSignals notify={() => {}} /><Sessions /></>;
     }
     render(<QueryClientProvider client={second}><WorkspaceScopeProvider initial={null}><Second /></WorkspaceScopeProvider></QueryClientProvider>);
@@ -662,7 +662,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       other = useAsks(false).data;
       return null;
     }
-    // The hub first, as each root mounts it (PUSHMOUNT1), then what reads the asks.
+    // The hub first, as each root mounts it, then what reads the asks.
     render(
       <QueryClientProvider client={second}>
         <WorkspaceScopeProvider initial={null}><ShellSignals notify={() => {}} /><Second /></WorkspaceScopeProvider>
@@ -810,7 +810,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   });
 
   /**
-   * PUSH1d4 (D182 point 6): who needs the person is .NET's judgement, read once as its snapshot, the badge and the taskbar counting
+   * PUSH1d4: who needs the person is.NET's judgement, read once as its snapshot, the badge and the taskbar counting
    * its rows. A tick reads none of what the band was judged from (the rules, the second opinions, the helpers' asks, the held calls,
    * the work, the accounts), and a push moves the count with no read.
    */
@@ -846,7 +846,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   });
 
   /**
-   * PUSHUX1 (the UI/UX design §3.8): every slice answered not judged, and the pulls beneath them not answered yet. Nothing a window
+   * Every slice answered not judged, and the pulls beneath them not answered yet. Nothing a window
    * shows reads as empty: who needs the person draws its skeleton, the quests' tiles and card their placeholders, the status bar
    * no count. Then judged, each says so; and read again whole, the band holds its last rows, dimmed.
    */
@@ -917,7 +917,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
   });
 
   /**
-   * PUSHUX2 (PUSHUX1's hand-back, the UI/UX design §3.8): a shell is known before its driver answers. While the driver's snapshot is
+   * A shell is known before its driver answers. While the driver's snapshot is
    * on its way the window keeps Sessions, the view it remembered, and Settings its machine's domains and the one it remembered, never
    * reading as a browser; then the snapshot lands and nothing moves.
    */
@@ -1163,7 +1163,7 @@ describe("the driver's state, pushed (PUSH1a)", () => {
       other = useSyncStanding('default').data;
       return null;
     }
-    // The hub first, as each root mounts it (PUSHMOUNT1), then what reads where the circle stands.
+    // The hub first, as each root mounts it, then what reads where the circle stands.
     render(
       <QueryClientProvider client={second}>
         <WorkspaceScopeProvider initial={null}><ShellSignals notify={() => {}} /><Second /></WorkspaceScopeProvider>

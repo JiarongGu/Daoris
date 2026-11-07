@@ -7,12 +7,12 @@ import {
 } from './accountsFixtures';
 import { AccountFactsLines, type ScopeActs, ScopeEditor, TermsLine } from './AccountUse';
 
-// How an agent's accounts are used (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; POOL1c, D197), in every state its page shows:
+// How an agent's accounts are used, in every state its page shows:
 // an account cooling until a stated reset, by Daoris's default, or in this machine's zone; what an agent last said; its pace
-// warning, in English and 中文 (USAGEREAD3b); nothing said yet; the terms; the one set of three accounts, every workspace's,
-// one over the person's own curve and one kept, its charts and points (SWITCH1d), in 中文, refused, and the switch off; six
+// warning, in English and 中文; nothing said yet; the terms; the one set of three accounts, every workspace's,
+// one over the person's own curve and one kept, its charts and points, in 中文, refused, and the switch off; six
 // accounts and nothing said; one by one; an agent that says nothing of its limits; a 中文 account; and which account the next
-// start takes and why (TOOL6e): offered again after a cool-off, waiting, and waiting on the tool's own sign-in.
+// start takes and why: offered again after a cool-off, waiting, and waiting on the tool's own sign-in.
 
 const nothing = () => {};
 const ACTS: ScopeActs = { onOrder: nothing, onUse: nothing };
@@ -38,7 +38,7 @@ export const ThreeAccountsHalf: Story = { decorators: [storyWidths.half] };
 export const ThreeAccountsNarrow: Story = { decorators: [storyWidths.narrow] };
 
 /**
- * SWITCH1d: the person's own curve, its five-hour window flat at 85, with one account over it and one kept for conversations;
+ * The person's own curve, its five-hour window flat at 85, with one account over it and one kept for conversations;
  * each window's chart, the five-hour window's points to edit, the week on Daoris's curve, and *Clear my own curve*.
  */
 export const NearAndKept: Story = { args: { scope: MACHINE_NEAR } };
@@ -46,11 +46,11 @@ export const NearAndKept: Story = { args: { scope: MACHINE_NEAR } };
 /** The same in 中文. */
 export const OwnCurveChinese: Story = { args: { scope: MACHINE_NEAR }, decorators: [chinese] };
 
-/** SWITCH1d: *Off*, which still draws Daoris's curve a start passes an account by. */
+/** *Off*, which still draws Daoris's curve a start passes an account by. */
 export const SwitchOff: Story = { args: { scope: { ...THREE.scopes[0]!, use: { ...USE_DEFAULTS, early: false, switch: 'off' } } } };
 
 /**
- * SWITCH1d: a curve's points that break a rule, said in the door's own sentence before anything is saved: the five-hour
+ * A curve's points that break a rule, said in the door's own sentence before anything is saved: the five-hour
  * window's second point uses less than its first.
  */
 export const OwnCurveRefused: Story = {
@@ -130,7 +130,7 @@ export const AccountSaid: Story = {
   render: () => <AccountFactsLines facts={THREE.accounts[1]!} label="home@example.invalid" onTryNow={nothing} />,
 };
 
-/** Its agent's pace warning on its week, in the agent's own words and never as near (USAGEREAD3b, D165 point 2). */
+/** Its agent's pace warning on its week, in the agent's own words and never as near. */
 export const AccountAheadOfPace: Story = {
   render: () => <AccountFactsLines facts={AHEAD} label="home@example.invalid" onTryNow={nothing} />,
 };

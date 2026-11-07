@@ -10,7 +10,7 @@ import { AskPage } from './AskPage';
 import { anAsk } from './anAsk';
 import { CLOSED, PROPOSED } from './fixtures';
 
-// WORKFLOW1i-c (workflow design §4.3, D157): the ask's page shows the person's kind choice and each proposal its intake kept,
+// The ask's page shows the person's kind choice and each proposal its intake kept,
 // and only the person's press applies one.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
@@ -53,7 +53,7 @@ describe("the kind of an ask's work", () => {
     expect(onChooseKind).toHaveBeenCalledWith('docs', 'fix-flow', expect.anything());
   });
 
-  // ACCESSASK1 (the UI/UX design R3): an Apply refused is said under its proposal, in the service's sentence, never a toast.
+  // An Apply refused is said under its proposal, in the service's sentence, never a toast.
   it('says an Apply refused under its proposal, until it is pressed again', async () => {
     const onChooseKind = vi.fn();
     const user = userEvent.setup();

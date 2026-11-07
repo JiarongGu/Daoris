@@ -15,7 +15,7 @@ const short = (id: string) => id.slice(0, 7);
  * written where it waits, and *Accept* and *Withdraw*.
  *
  * @remarks
- * The acceptance is the person's alone, and its own apart from the landed route's gates (D156; D157 point 10). *Accept* sends the blob of
+ * The acceptance is the person's alone, and its own apart from the landed route's gates. *Accept* sends the blob of
  * the declaration shown, never one the person did not read: when the tip moved, the driver refuses `moved` in its sentence, said under
  * the press, and the start node asked again shows the declaration now there. The declaration is authored content and is shown as
  * written. The page judges nothing.

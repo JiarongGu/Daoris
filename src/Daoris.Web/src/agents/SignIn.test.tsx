@@ -49,7 +49,7 @@ async function said(...texts: string[]) {
   });
 }
 
-/** The driver's phase line (SIGNIN1): the relay's record separator, then the phase and its start. */
+/** The driver's phase line: the relay's record separator, then the phase and its start. */
 const phaseLine = (name: string) => `\u001e${JSON.stringify({ phase: name, at: new Date('2026-10-20T09:00:00.000Z').toISOString() })}`;
 
 describe('signing in on the row', () => {
@@ -112,7 +112,7 @@ describe('signing in on the row', () => {
   });
 
   /**
-   * Signing in to ANOTHER account (D66 §3): the same phases, with no account to name yet — and
+   * Signing in to ANOTHER account: the same phases, with no account to name yet — and
    * the stop reaches the sign-in that is actually running, under its own action.
    */
   it('signs in to another account under its own action, naming the tool rather than an account', async () => {
@@ -133,7 +133,7 @@ describe('signing in on the row', () => {
   });
 
   /**
-   * CODEXACCT2: Codex signs in by its device code, since its browser sign-in's callback port is reserved on some machines.
+   * Codex signs in by its device code, since its browser sign-in's callback port is reserved on some machines.
    * It prints a link and a one-time code to enter on that page (the words measured with 0.160.0, the driver's colours
    * stripped; the code invented), opens no browser and asks nothing on its input. The link is offered as Claude Code's
    * is, the code is shown to copy, and there is no box to paste into.
@@ -186,7 +186,7 @@ describe('signing in on the row', () => {
   });
 
   /**
-   * CODEXSIGNIN3: the code is read by its shape, not by one version's words — a link to the device page, then a code of letters
+   * The code is read by its shape, not by one version's words — a link to the device page, then a code of letters
    * and digits in groups joined by a hyphen — so a newer pin that rewords the sentence asking for it still shows it, and until
    * a code is printed the phase offers the link alone.
    */
@@ -218,7 +218,7 @@ describe('signing in on the row', () => {
   });
 
   /**
-   * CODEXSIGNIN2: a start the driver refused is said in this panel, whole, with the ways on: try again or close. The tool's
+   * A start the driver refused is said in this panel, whole, with the ways on: try again or close. The tool's
    * steps and its cancel are not shown, since nothing is running to cancel.
    */
   it('says a refused start in its panel, with Try again and Close', async () => {
@@ -269,7 +269,7 @@ describe('signing in on the row', () => {
 });
 
 /**
- * SIGNIN1 (the UI/UX design §3.2, R2): the sign-in says its phase and how long. The phases are the driver's, each a line of
+ * The sign-in says its phase and how long. The phases are the driver's, each a line of
  * its relay that begins with the record separator and names the phase and its start; the link, the code and the ask stay
  * read from the tool's lines by their shape.
  */

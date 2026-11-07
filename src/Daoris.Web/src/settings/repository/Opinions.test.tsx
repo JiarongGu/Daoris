@@ -5,8 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { OpinionField, type OpinionRule, opinionGate, opinionRowSays, opinionSays, opinionSummary, opinionToast } from './Opinions';
 
-// XAGENT1a (D155 point 3, the second-agent design §2.5–§2.6): which other agent reads a repository's work before it lands,
-// set on a repository's Setup and a workspace's Defaults as `daoris place opinion` sets it from a terminal (D50). The words
+// Which other agent reads a repository's work before it lands,
+// set on a repository's Setup and a workspace's Defaults as `daoris place opinion` sets it from a terminal. The words
 // each door says are the twins' (`opinions.ts`, `OpinionRules.cs`), held here in English to rows of their one table (the
 // driver suite's `fixtures/opinion-rules.json`, `says` and `gate`), copied with the rule as the bridge carries it, and the
 // field sends the twins' edit, which the driver judges.
@@ -67,8 +67,8 @@ const SAYS: SaysRow[] = [
 ];
 
 /**
- * The twins' `gate` rows, copied (XAGENT1f4): what each door says after the rule's sentences, now that the gate reads it
- * (XAGENT1f), at landing, before a chain's next step, and with `verify`. None here says nothing after.
+ * The twins' `gate` rows, copied (XAGENT1f4): what each door says after the rule's sentences, now that the gate reads it,
+ * at landing, before a chain's next step, and with `verify`. None here says nothing after.
  */
 const WAITING = "Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go "
   + 'on without it, `daoris session opinion anyway <session>`, or say you looked yourself, `daoris session opinion myself <session>`.';
@@ -159,8 +159,8 @@ describe('what a second-opinion rule says', () => {
   });
 
   /**
-   * OPINIONTWIN1: the Setup row's terminal twin joins its alternatives with `|` inside its one command, as the review row's
-   * does (REVIEWENV1g) and its neighbours' (`daoris place line … <branch>|--clear`), in both languages; a command is code,
+   * The Setup row's terminal twin joins its alternatives with `|` inside its one command, as the review row's
+   * does and its neighbours' (`daoris place line … <branch>|--clear`), in both languages; a command is code,
    * never translated, so 中文 says it as English does, never with 、 between spans.
    */
   it('says its terminal twin as its neighbours do, one command with its alternatives joined by |, in both languages', () => {

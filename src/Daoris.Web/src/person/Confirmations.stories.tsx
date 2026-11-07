@@ -107,7 +107,7 @@ export const PlanDoor: Story = { args: { waiting: [LAND], onOpenPlan: () => {} }
 export const PlanDoorChinese: Story = { args: { waiting: [LAND], onOpenPlan: () => {} }, decorators: [chinese] };
 
 /**
- * A Confirm held by an update's drain (DRAINHOLD1): the card says what the drain waits on and since when, and offers *Install later*
+ * A Confirm held by an update's drain: the card says what the drain waits on and since when, and offers *Install later*
  * beside Refuse and Confirm. The story presses Confirm, as a person would, so the held answer is drawn.
  */
 const DRAIN: UpdateState = {

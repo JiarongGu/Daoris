@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { shellWord } from '../lib/shellWord';
 import { Button, Inline, Pill } from '../design/ui';
-// Why a question's act was refused, said under it, whole (ACCTEDIT1): the inline confirmation's, so every ask says it alike.
+// Why a question's act was refused, said under it, whole: the inline confirmation's, so every ask says it alike.
 import { Refused } from '../work/InlineConfirm';
 import { type AccountState, stateWhen, stateWord } from './agents';
 
 // *Add an account…* (UX7b, the UX7 design §4.5; ACCT1's screen half; POOL1c, the account-pool design §4.1): three steps under
 // the agent's header, one live control at a time, since a step in a task happens where it was started (the platform language
 // §4). Step 1 steers a person signing an account back in to its own row, step 2 is the tool's own sign-in (`SignIn`, handed in
-// by the organism), and step 3 says the account joined Daoris's accounts and asks only its name (ACCT2): every account serves
-// every workspace (D197), so nothing is asked about where it runs. Molecules: every state arrives as props and every press goes out.
+// by the organism), and step 3 says the account joined Daoris's accounts and asks only its name: every account serves
+// every workspace, so nothing is asked about where it runs. Molecules: every state arrives as props and every press goes out.
 
 const FIELD = 'min-w-0 max-w-full flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink outline-none placeholder:text-ink-faint';
 const PANEL = 'rounded-card border border-line bg-raised p-3';
@@ -22,7 +22,7 @@ export type BackAccount = { id: string; name: string; state: AccountState };
  * Step 1, before anything starts (§4.5, the account-pool design §4.1): *Signing an account back in? Use its row, so it stays the
  * same account*, each account that reads signed out or unknown with its state and *Sign in to account-2*, in the set's order,
  * then *Add a new account* and *Never mind*. On the install the owner pressed *Sign in to another account* to bring one back
- * and made a new account (ACCT1); this is the step that would have stopped them.
+ * and made a new account; this is the step that would have stopped them.
  */
 export function ReSignIn({ accounts, busy = false, now, onSignIn, onNew, onClose }: {
   accounts: readonly BackAccount[];
@@ -64,11 +64,11 @@ export function ReSignIn({ accounts, busy = false, now, onSignIn, onNew, onClose
 
 /**
  * Step 3 (§4.5; POOL1c, the account-pool design §4.1): *Signed in as …*, or a key's *Added the API key …*; then that it joined
- * Daoris's accounts, every workspace's work may run on it; then *Its name*, who signed in offered and the person's to change
- * (ACCT2); then one press, *Done*, which keeps the name in the field (an emptied field gives none). Nothing is asked about where
- * it runs, since every account serves every workspace (D197), so there is nothing *Not now* could lose. The terminal's twin
+ * Daoris's accounts, every workspace's work may run on it; then *Its name*, who signed in offered and the person's to change;
+ * then one press, *Done*, which keeps the name in the field (an emptied field gives none). Nothing is asked about where
+ * it runs, since every account serves every workspace, so there is nothing *Not now* could lose. The terminal's twin
  * is the rename, where a name was typed. It stays open until the organism says the name landed: refused, it keeps the name and
- * says why under it (ACCTEDIT1).
+ * says why under it.
  */
 export function NameAccount({
   agent, account, title, signedIn, lead, offered, fallback = account, busy = false, refusal = null, onDone,
@@ -80,12 +80,12 @@ export function NameAccount({
   title: string;
   /** Who the sign-in reached, for the step's first line; null when the tool did not say; absent draws no line. */
   signedIn?: string | null;
-  /** The step's first line where no sign-in reached the account: a key added (ACCTUX3), *Added the API key …wxyz.* */
+  /** The step's first line where no sign-in reached the account: a key added, *Added the API key …wxyz.* */
   lead?: string;
   /** The name offered in its field. */
   offered: string;
   /**
-   * What it is called with its field left empty (ACCTUX1): the row's namer with no name given, which for a fresh id is who
+   * What it is called with its field left empty: the row's namer with no name given, which for a fresh id is who
    * signed in or a key's handle; its id where nothing else names it, as the hint said of every account before.
    */
   fallback?: string;
@@ -97,7 +97,7 @@ export function NameAccount({
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState(offered);
-  // Each argument spelled for whichever shell the twin is pasted into (ACCTQUOTE1).
+  // Each argument spelled for whichever shell the twin is pasted into.
   const twin = name.trim()
     ? `\`daoris agent profile rename ${agent} ${shellWord(account, '<account>')} ${shellWord(name.trim(), '<name>')}\``
     : null;
@@ -153,7 +153,7 @@ export function NameAccount({
  * A rename, under its row (ACCT2's screen twin of `daoris agent profile rename`): the name in a field, *Save the name* and
  * *Never mind*. Emptying it gives the account no name of its own, and it reads as it would unnamed (`fallback`, ACCTUX1):
  * who signed in or a key's handle for a fresh id, else its id. It stays open until the
- * organism says the name landed: refused, the name typed stays in the field and the refusal is said under it (ACCTEDIT1),
+ * organism says the name landed: refused, the name typed stays in the field and the refusal is said under it,
  * and *Never mind* is the one other way out, held while the answer is on its way so a refusal is never said to nobody.
  */
 export function RenameAccount({ agent, account, current, fallback = account, busy = false, refusal = null, onSave, onCancel }: {
@@ -172,7 +172,7 @@ export function RenameAccount({ agent, account, current, fallback = account, bus
 }) {
   const { t } = useTranslation();
   const [name, setName] = useState(current ?? '');
-  // Spelled for whichever shell the twin is pasted into (ACCTQUOTE1).
+  // Spelled for whichever shell the twin is pasted into.
   const twin = `\`daoris agent profile rename ${agent} ${shellWord(account, '<account>')} `
     + `${shellWord(name.trim() || account, '<name>')}\``;
   return (

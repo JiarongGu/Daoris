@@ -51,7 +51,7 @@ export function keptWords(t: T, kept: Record<string, number>): string {
 
 /**
  * A run's line (R2, the cleanup design §4.2): under way, the kind it is on, how many of the run's kinds, and since when; ended, what it
- * removed and what it kept by reason. The time is the driver's, never a clock of the page's own (FREEZE1).
+ * removed and what it kept by reason. The time is the driver's, never a clock of the page's own.
  */
 export function SpaceRunLine({ run }: { run: SpaceRun }) {
   const { t } = useTranslation();
@@ -94,19 +94,19 @@ function EarlyGroup({ group, busy, onRemove }: { group: SpacePlan['early'][numbe
   const [asking, setAsking] = useState(false);
   const word = FREE_KIND[group.group] ?? 'setAside';
   const details: string[] = [];
-  // KEEPSIZE1b: a folder awaiting its record, or whose manifest does not read, has no date, so it is not counted among those before theirs
+  // A folder awaiting its record, or whose manifest does not read, has no date, so it is not counted among those before theirs
   // (the second maker's read, finding 9; the last fixes' check, finding 9).
   const dated = group.count - (group.classes?.awaiting ?? 0) - (group.classes?.unread ?? 0);
   if (dated > 0) details.push(t(`settings.daoris.space.freeing.early.${word}`, { count: dated }));
   // An earlier build's folders are named by their paths, which are content and stay as written.
   if (group.group === 'left-over') details.push(group.units.map((unit) => unit.id).join(', '));
   if (group.own > 0) details.push(t('settings.daoris.space.freeing.early.own', { count: group.own }));
-  // KEEPSIZE1b: each class the list can say of the set-aside folders, so the person weighs what goes before pressing.
+  // Each class the list can say of the set-aside folders, so the person weighs what goes before pressing.
   for (const each of ['recorded', 'awaiting', 'stands', 'stopped', 'unheld', 'unread', 'unmarked'] as const) {
     const count = group.classes?.[each] ?? 0;
     if (count > 0) details.push(t(`settings.daoris.space.freeing.early.class.${each}`, { count }));
   }
-  // KEEPSIZE1b: and each folder with what the list can say of it, its holder named (Codex's read of the branch, finding 12). The folder's
+  // And each folder with what the list can say of it, its holder named (Codex's read of the branch, finding 12). The folder's
   // name and the ref are content, as written.
   const folders = group.group === 'set-aside' ? group.units.filter((unit) => unit.class) : [];
   return (

@@ -5,7 +5,7 @@ import { SelectField, Tip } from '../design/ui';
 const EVERY = '*';
 
 /**
- * The scope control (WSP5): which circle the console is looking at. Global chrome, in the **app
+ * The scope control: which circle the console is looking at. Global chrome, in the **app
  * strip** with the rest of it since D56 — one scope per query, never five filters that can disagree
  * (workspace design §4). It decides what every number on every screen means, which is why it belongs
  * to the application rather than to either frame.

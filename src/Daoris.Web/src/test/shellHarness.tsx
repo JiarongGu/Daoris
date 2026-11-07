@@ -31,7 +31,7 @@ export const SESSIONS = [{
   created: '2026-09-02T00:00:00Z', updated: '2026-09-02T01:00:00Z',
 }];
 
-/** What a SHARED deployment answers: counts, plus the commit its copy came from (D48 §6). */
+/** What a SHARED deployment answers: counts, plus the commit its copy came from. */
 export const REPOSITORIES = [{
   name: 'engine', total: 1, local: 1, canonical: 0, workspace: 'default',
   fed: {
@@ -41,7 +41,7 @@ export const REPOSITORIES = [{
   },
 }];
 
-/** What the service says answers search (D24) — the same answer every browser is given. */
+/** What the service says answers search — the same answer every browser is given. */
 export const STATUS = {
   semantic: false, tier: 'lexical only',
   note: 'Set DAORIS_EMBED_MODEL to enable semantic recall — it is what finds two repositories that reached the same conclusion in different words.',
@@ -59,7 +59,7 @@ export function respond(url: string): Response {
 /**
  * What went over the SERVICE while a shell-only surface rendered. The registry and the status are
  * the two things these surfaces may read from it — which circles this machine has, for choosing an
- * account per workspace, and which tier answers search, for Daoris's own AI (AGT6) — and both are
+ * account per workspace, and which tier answers search, for Daoris's own AI — and both are
  * public, non-sensitive answers every browser is given. Everything else must be absent.
  */
 export const serviceCalls = () =>

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { rooted } from '../test/sources';
 
 /**
- * **Two children of one parent never share a key** (RELSPAM1). React tells a parent's children apart by their keys across every
+ * **Two children of one parent never share a key**. React tells a parent's children apart by their keys across every
  * slot of that parent, not only within a list. Two slots keyed alike are matched to each other's fibers, and the one left over is
  * never unmounted: it stays in the page, one more at every draw. The record's *Who it worked with* and its milestone were both keyed
  * by the session's id, so a running driven session's relations line stood eleven times over on an installed window, a copy per

@@ -57,7 +57,7 @@ export type LandingLife = {
 };
 
 /**
- * The landing a trace answers for `session`, for the branch named `name` (FLOWCHART1c): the branch of that name its landing made,
+ * The landing a trace answers for `session`, for the branch named `name`: the branch of that name its landing made,
  * a standing one before one gone, else the newest. Null where the trace holds no link for the session.
  * The trace reads every landing that names the session, the one made for it and each it moved on (`LandedBranch.Names`), so a
  * shared branch is read from any session it names.
@@ -187,7 +187,7 @@ export function landingFlow(t: Translate, read: LandingOf, at: (iso: string) => 
       state: { word: t(`landing.cleanup.state.${cleanup}`), tone: runTone(cleanup === 'completed' ? 'done' : cleanup === 'blocked' ? 'waiting-on-you' : 'not-known') },
     });
     lines.cleanup = [
-      // OVERVIEWNOISE1b: a blocked entry by its code in the reader's language, the driver's sentence where the page has no words.
+      // A blocked entry by its code in the reader's language, the driver's sentence where the page has no words.
       ...waits.map((each) => t(each.disposition === 'blocked' ? 'work.milestone.cleanup.blocked' : 'work.milestone.cleanup.waits', { what: entryName(t, each), detail: entryDetail(t, each) })),
       ...gone.map((each) => t('landing.cleanup.gone', { what: entryName(t, each), detail: each.detail })),
       ...(branch?.gone && has(REMOVED_AS, branch.removedAs) ? [t(`landing.removedAs.${branch.removedAs}`, { on: branch.removedOn ?? '' })] : []),

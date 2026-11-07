@@ -1,5 +1,5 @@
 // Find on a large canvas (CANVAS1d; the canvas design §4): every item is searched, folded or culled, by its title; the matches keep the
-// scene's order, and stepping wraps. An item may also be found by what it declares (MAPUX1d): each such text carries the words that say
+// scene's order, and stepping wraps. An item may also be found by what it declares: each such text carries the words that say
 // so in the result.
 
 /** From this many nodes the toolbar offers find. */

@@ -11,7 +11,7 @@ import { Button, CountBadge, Icon, Tip } from '../design/ui';
  * a count looks like any other row's, so this is what says a press waits for as long as it waits to be seen, in the window in front;
  * it goes back to open's hue and the whole count once every press waiting is shown or has ended. Its name for a reader says which.
  *
- * **It stays on a narrow window** (UX7a): the region toggles leave the strip first, and this is how anything is found. Pressed, it
+ * **It stays on a narrow window**: the region toggles leave the strip first, and this is how anything is found. Pressed, it
  * shows the view where it stands, or gives its region back (`WorkFrame`); never the focus moved or the view opened by itself.
  *
  * A molecule: the counts come in and the press goes out.
@@ -23,7 +23,7 @@ export function NotificationsBell({ needs, presses, warn, unread = false, onPres
   presses: number;
   /** Whether any press waits unshown: the warning hue, with the presses' count. */
   warn: boolean;
-  /** Whether anything is unread (NOTIFY2f, §2.1): a dot, never a second count, since news waits on nobody. */
+  /** Whether anything is unread: a dot, never a second count, since news waits on nobody. */
   unread?: boolean;
   onPress: () => void;
 }) {

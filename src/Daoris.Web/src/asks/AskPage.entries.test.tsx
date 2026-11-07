@@ -10,7 +10,7 @@ import { EVIDENCE_ENTRIES } from '../work/entries.fixtures';
 import { AskPage } from './AskPage';
 import { PUBLISHED } from './fixtures';
 
-// SESSONE1c (D167 point 5): an ask's page lists its work by entry, one line per repository's line of work however many records
+// An ask's page lists its work by entry, one line per repository's line of work however many records
 // it holds, each a door to its leading part; the ask's intake keeps its own section. Props in, presses out (components §2).
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);

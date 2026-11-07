@@ -8,7 +8,7 @@ import {
 } from './accountsFixtures';
 import { AccountFactsLines, type ScopeActs, ScopeEditor, TermsLine } from './AccountUse';
 
-// How an agent's accounts are used, as molecules (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; POOL1c, D197): props in,
+// How an agent's accounts are used, as molecules: props in,
 // presses out, each the terminal's door's twin, which names no workspace since one set serves them all. With three accounts
 // and with six: nothing counts accounts.
 
@@ -51,7 +51,7 @@ describe('an account\'s facts', () => {
     expect(screen.queryByRole('button', { name: /now$/ })).toBeNull();
   });
 
-  /** USAGEREAD3b (D165 point 2): the agent's pace warning in its own words, never as near its limit. */
+  /** The agent's pace warning in its own words, never as near its limit. */
   it('says its agent’s pace warning as ahead of its pace, never as near', () => {
     wrap(<AccountFactsLines facts={AHEAD} label="home@example.invalid" onTryNow={() => {}} />);
 
@@ -59,7 +59,7 @@ describe('an account\'s facts', () => {
     expect(line.textContent).not.toContain('near');
   });
 
-  /** Absent is never zero (D57): a count Daoris could not read is said not at all. */
+  /** Absent is never zero: a count Daoris could not read is said not at all. */
   it('says no count where none was read', () => {
     wrap(<AccountFactsLines facts={{ name: 'account-9' }} label="account-9" onTryNow={() => {}} />);
 
@@ -85,7 +85,7 @@ describe('the terms', () => {
 
 describe('the set\'s order', () => {
   /**
-   * POOL1c (D197 point 2; the account-pool design §4.2): every account of Daoris's in the order, each with up and down and no
+   * Every account of Daoris's in the order, each with up and down and no
    * *Use* switch, since every account serves every workspace; a move writes the whole order, one it did not name yet included.
    */
   it('moves each account up and down in the whole order, with no Use switch', async () => {
@@ -113,7 +113,7 @@ describe('the set\'s order', () => {
   });
 
   /**
-   * ACCTUX2: a target of 28 px at least (the platform language §6). Each arrow was its 13 px glyph and `px-1.5`, about 25 px
+   * A target of 28 px at least (the platform language §6). Each arrow was its 13 px glyph and `px-1.5`, about 25 px
    * wide; the button's own floor gives its height.
    */
   it('gives each move up and down a target of 28 px at least', () => {
@@ -129,7 +129,7 @@ describe('the set\'s order', () => {
 
   /**
    * Where starts begin, the kept account, one a start passes, and one cooling, each said on its row; what passes it in the
-   * curve's words (SWITCH1d): over its curve, its limit reached, or on usage credits.
+   * curve's words: over its curve, its limit reached, or on usage credits.
    */
   it('marks where starts begin, the kept account, one over its curve and one cooling', () => {
     const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
@@ -150,7 +150,7 @@ describe('the set\'s order', () => {
     expect(within(screen.getByRole('list')).getAllByRole('listitem')[1]!.textContent).toContain('on usage credits');
   });
 
-  /** USAGEREAD3b: passed is the scope's own (a limit, credits or the number), so a pace warning alone wears no pill. */
+  /** Passed is the scope's own (a limit, credits or the number), so a pace warning alone wears no pill. */
   it('marks no account passed for its agent’s pace warning alone', () => {
     const agent = { ...THREE, accounts: THREE.accounts.map((account) => (account.name === 'account-3' ? { ...AHEAD, name: 'account-3' } : account)) };
     wrap(<ScopeEditor agent={agent} product="Claude Code" scope={MACHINE_NEAR} accounts={CHOICES} acts={acts()} />);
@@ -161,7 +161,7 @@ describe('the set\'s order', () => {
   });
 
   /**
-   * POOL1c: an answer that names no order yet still draws every account of Daoris's, in the agent's order, and the one entry of
+   * An answer that names no order yet still draws every account of Daoris's, in the agent's order, and the one entry of
    * settings, since every account serves every workspace; nothing says *no account is used here*.
    */
   it('draws every account and the settings where the answer names no order yet', () => {
@@ -173,7 +173,7 @@ describe('the set\'s order', () => {
     expect(screen.queryByText(/No account is used here yet/)).toBeNull();
   });
 
-  /** A hand-edited file that breaks the rule is read with the order winning, and said (D130 §3.1); a default is never said. */
+  /** A hand-edited file that breaks the rule is read with the order winning, and said; a default is never said. */
   it('says a kept account the order does not hold, and no default', () => {
     const { unmount } = wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ list: ['account-1', 'account-2'], begins: 'account-1', problem: { kind: 'keep', account: 'account-3' } })} accounts={CHOICES} acts={acts()} />);
     expect(screen.getByText(/^The account kept for conversations, spare@example\.invalid, is not in the order/)).toBeTruthy();
@@ -187,7 +187,7 @@ describe('the set\'s order', () => {
 describe('how a scope\'s list is used', () => {
   /**
    * D130 §16.6 as D165 §6 amends it: *Use accounts*, *Keep for conversations* and *Switch accounts*, each one setting; the switch
-   * *Smart*, *My own curve* or *Off*, as `profile use --switch` writes it (SWITCH1d). *Near at* is gone: the curve is its own.
+   * *Smart*, *My own curve* or *Off*, as `profile use --switch` writes it. *Near at* is gone: the curve is its own.
    */
   it('changes one setting at a time, as the terminal\'s profile use does', async () => {
     const pressed = acts();
@@ -211,7 +211,7 @@ describe('how a scope\'s list is used', () => {
   });
 
   /**
-   * SWITCH1d (the switch design §5): each window's curve in effect, drawn with each account of the list where it stands now, the
+   * Each window's curve in effect, drawn with each account of the list where it stands now, the
    * five-hour window first; under *Smart* no point is anyone's to edit.
    */
   it('draws each window’s curve with each account of the list on it', () => {
@@ -229,10 +229,10 @@ describe('how a scope\'s list is used', () => {
     expect(screen.queryByRole('group', { name: /^Your rows/ })).toBeNull();
   });
 
-  /** SWITCH1d (the switch design §5, §6): *My own curve* edits a window's points, saved as `--curve`, and clears them all. */
+  /** *My own curve* edits a window's points, saved as `--curve`, and clears them all. */
   it('edits a window’s own points under My own curve, and clears them as --no-curve does', async () => {
     const pressed = acts();
-    // The curve in effect as the accounts' answer carries it (PUSH1e): the person's five-hour points, Daoris's week.
+    // The curve in effect as the accounts' answer carries it: the person's five-hour points, Daoris's week.
     const scope = {
       ...MACHINE_NEAR,
       use: { ...MACHINE_NEAR.use, switch: 'curve' as const, curve: { session: [[0, 80]] as [number, number][] } },
@@ -268,7 +268,7 @@ describe('how a scope\'s list is used', () => {
     expect(screen.getByText(/^No account has said what it has left yet\./)).toBeTruthy();
   });
 
-  /** The order's cost is said where it is chosen (D130 §16.6). */
+  /** The order's cost is said where it is chosen. */
   it('says what one by one costs', () => {
     const scope = { ...THREE.scopes[0]!, use: { ...THREE.scopes[0]!.use, use: 'order' as const } };
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scope} accounts={CHOICES} acts={acts()} />);
@@ -366,7 +366,7 @@ describe('the next start', () => {
     expect(screen.getByRole('note', { name: /^Each start walks this list: .+ whose use is over Daoris's curve goes last, the least over first; .+, then the one furthest behind its week's pace, / })).toBeTruthy();
     paced.unmount();
 
-    // POOL1c (D197 point 2): one by one begins at the order's first, since the set has no default beside it.
+    // One by one begins at the order's first, since the set has no default beside it.
     wrap(<ScopeEditor agent={OFFERED_AGAIN} product="Claude Code" scope={{ ...set, use: { ...set.use, use: 'order' } }} accounts={CHOICES} acts={acts()} />);
     expect(screen.getByRole('note', { name: /^Each start runs on the first ready account in the order, begun at its first; an account whose limit is reached, that draws on usage credits or whose use is over its curve goes last\./ })).toBeTruthy();
   });
@@ -397,7 +397,7 @@ describe('the next start', () => {
 });
 
 /**
- * ACCTQUOTE1c (D125's ACCTQUOTE1 note), POOL1c (D197 point 6): each hint is a command a person pastes into whichever shell they
+ * ACCTQUOTE1c (D125's ACCTQUOTE1 note), POOL1c: each hint is a command a person pastes into whichever shell they
  * have, and names no workspace, since one set of Daoris's accounts serves them all and the terminal refuses `--workspace`.
  */
 describe('the set\'s terminal twins', () => {

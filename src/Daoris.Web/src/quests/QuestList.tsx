@@ -19,9 +19,9 @@ export type QuestRowFacts = {
   quest: Quest;
   /** Its driven session's state, where one works it now: a live session marks its quest. */
   session?: Session['state'] | null;
-  /** The question its taker asked and waits on, while it is unanswered (D79). */
+  /** The question its taker asked and waits on, while it is unanswered. */
   waits?: string | null;
-  /** Why this machine's driver leaves it waiting (USE1), in the driver's words. */
+  /** Why this machine's driver leaves it waiting, in the driver's words. */
   sitting?: Consideration | null;
 };
 
@@ -29,13 +29,13 @@ export type QuestRowFacts = {
 export type AskRowFacts = {
   ask: Ask;
   intake?: Session['state'] | null;
-  /** What is unread on its channel (SESSONE2c), where this machine's driver answers one. */
+  /** What is unread on its channel, where this machine's driver answers one. */
   unread?: number;
 };
 
 /**
- * **Quests' list** (FRAME1d, D118 §2): the asks first, since they are where quests come from and a proposal waits on
- * a person (INT4a), then the quests by where they are in their life, each group with its count and absent with none.
+ * **Quests' list**: the asks first, since they are where quests come from and a proposal waits on
+ * a person, then the quests by where they are in their life, each group with its count and absent with none.
  * A row is for reading and choosing; its record opens in the main area, where the acting is.
  *
  * @remarks
@@ -44,7 +44,7 @@ export type AskRowFacts = {
  *
  * - **Status leads** (platform language §4): the pill, then the title, then the route and how long; the secondary
  *   marks sit at the right of the pill's line, as exceptions rather than identity.
- * - **A held repository's quests say why they wait** (USE1), and the hold is lifted from the row, beside its door and
+ * - **A held repository's quests say why they wait**, and the hold is lifted from the row, beside its door and
  *   never inside it, since a button holds no button.
  * - **A receiver filter is said**, since the ⋯ that sets it is a press away and a list that silently holds fewer
  *   quests reads as a family that owes less.
@@ -53,7 +53,7 @@ export function QuestList({
   asks, teammates = [], quests, closed, filteredTo = null, empty, unanswered = null, chosen, resuming = false, onChoose, onResume,
 }: {
   asks: AskRowFacts[];
-  /** The asks the mirrored channel messages name that this machine does not hold (SESSONE2h), a group of their own after the asks. */
+  /** The asks the mirrored channel messages name that this machine does not hold, a group of their own after the asks. */
   teammates?: readonly ElsewhereAsk[];
   quests: QuestRowFacts[];
   /** Closed quests are shown, in their own group. */
@@ -69,7 +69,7 @@ export function QuestList({
   /** A held repository is being resumed. */
   resuming?: boolean;
   onChoose: (item: string) => void;
-  /** Lift a repository's hold, where the driver is (USE1). */
+  /** Lift a repository's hold, where the driver is. */
   onResume?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
@@ -96,7 +96,7 @@ export function QuestList({
         </ListGroup>
       )}
       {teammates.length > 0 && (
-        /* The asks other machines hold, which the sync mirrored the channel of (SESSONE2h): after this machine's own asks. */
+        /* The asks other machines hold, which the sync mirrored the channel of: after this machine's own asks. */
         <ListGroup id={groupHeading('quests', 'teammates')} title={t('asks.elsewhere.group', { count: teammates.length })}>
           {teammates.map((ask) => (
             <TeammateAskRow key={ask.id} ask={ask} chosen={chosen === askItem(ask.id)} onOpen={() => onChoose(askItem(ask.id))} />
@@ -126,7 +126,7 @@ export function QuestList({
 }
 
 /**
- * Which asks keep a row of their own and which are their quest's row (QUESTLISTS1, D185): an ask that became exactly one
+ * Which asks keep a row of their own and which are their quest's row: an ask that became exactly one
  * quest, which this list shows, is that one piece of work, so the quest's row names it and the ask rides its route line.
  * An ask keeps its row while it waits on something of its own: open, proposed, an intake parked asking the person, several
  * quests, or a quest this list does not show (filtered out, or closed and not included), so no work vanishes from the list.
@@ -164,13 +164,13 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
   const ended = (quest.status === 'Done' || quest.status === 'Declined') && quest.held !== true;
   // Only a hold is the person's to lift here; any other reason is said, and offers nothing.
   const resume = sitting?.verdict === 'Held' ? onResume : undefined;
-  // A row offers what it does on a right-click (CTX1, D138 §4): opening it, its hold's resume, and its id; what is done to
+  // A row offers what it does on a right-click: opening it, its hold's resume, and its id; what is done to
   // the quest is its page's.
   const menu = {
     label: name,
     acts: [
       { id: 'open', label: t('contextMenu.act.open'), onSelect: () => onChoose(quest.id) },
-      // The ask has no row of its own now (QUESTLISTS1), so its page, where it is paused or abandoned, opens from here.
+      // The ask has no row of its own now, so its page, where it is paused or abandoned, opens from here.
       ...(ask ? [{ id: 'open-ask', label: t('contextMenu.act.openAsk'), onSelect: () => onChoose(askItem(ask.id)) }] : []),
       ...(resume
         ? [{ id: 'resume', label: t('quests.card.resume', { repository: quest.to }), icon: 'resume' as const, disabled: resuming, onSelect: () => resume(quest.to) }]

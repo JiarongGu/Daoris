@@ -122,7 +122,7 @@ describe("the window's zoom, on the window", () => {
     screen.getByRole('button', { name: 'View' }).focus();
     await user.keyboard('{Enter}');
     const zoomIn = await screen.findByRole('menuitem', { name: /^Zoom in/ });
-    // The menu bar's menu keeps the frame's size (ZOOM1).
+    // The menu bar's menu keeps the frame's size.
     expect(zoomIn.closest(`.${FRAME_HELD}`)).not.toBeNull();
     await user.click(zoomIn);
     await waitFor(() => expect(root().style.fontSize).toBe('110%'));

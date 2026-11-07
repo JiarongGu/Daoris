@@ -4,7 +4,7 @@ import { agentRows } from './agents';
 import { AgentList, AgentStrip } from './AgentList';
 import { CLAUDE_USE, CODEX_USE, TOOLS } from './agentsFixtures';
 
-// The Agents place's list (UX6e, D150 §5.1): each agent this build knows once, installed or not (AGENTS2), its accounts in
+// The Agents place's list: each agent this build knows once, installed or not, its accounts in
 // a phrase, the waiting mark on one with an account the person must act on, one not installed saying so with its Install
 // beside it; and the list closed to its strip.
 
@@ -30,7 +30,7 @@ export const Known: Story = {};
 /** Only installed agents, as a machine that has every agent this build knows. */
 export const AllInstalled: Story = { args: { rows: ROWS.filter((row) => row.installed) } };
 
-/** DeepSeek Harness with no installer of Daoris's (INSTALLDOOR1): *How to install* where its Install was. */
+/** DeepSeek Harness with no installer of Daoris's: *How to install* where its Install was. */
 export const NoInstaller: Story = { args: { rows: ROWS.map((row) => (row.name === 'dsh' ? { ...row, installs: false } : row)) } };
 
 /** Nothing chosen. */

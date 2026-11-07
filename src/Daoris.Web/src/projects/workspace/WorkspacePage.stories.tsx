@@ -21,7 +21,7 @@ import { WorkspaceBranches } from './WorkspaceBranches';
 import { WorkspaceDetails, WorkspacePage } from './WorkspacePage';
 import { WorkspaceTidied } from './WorkspaceTidied';
 
-// A workspace's page (UX6g, D150 §4.3) in Repositories' main area, every tab and the states the design names: Details
+// A workspace's page in Repositories' main area, every tab and the states the design names: Details
 // with its repositories, what a start runs on and its accounts; Branches with each repository's branches (UX6h2b2), the
 // clean-up and bringing up to date; Workflow; a browser's page; and the header wired and local. Drawn as `WorkspaceView` draws
 // them, from props.
@@ -78,11 +78,11 @@ type Args = {
   browser?: boolean;
   /** Wired to a deployment, or local only. */
   wired?: boolean;
-  /** What this machine keeps of its finished work (HIST1e), as `HISTORY_PLAN` answers it. */
+  /** What this machine keeps of its finished work, as `HISTORY_PLAN` answers it. */
   kept?: HistoryPlan;
   /** The repositories holding a branch of Daoris's, each a group on Branches (UX6h2b2); the rest are apart. */
   held?: string[];
-  /** What the look cleaned up on its own, from the machine log (AUTOTIDY1a). */
+  /** What the look cleaned up on its own, from the machine log. */
   tidied?: LogRow[];
 };
 
@@ -136,7 +136,7 @@ function Page({ tab: first, browser = false, wired = true, kept = WORKSPACE_PLAN
             ]}
             landed={[
               landed({ branch: 'feature/report-totals-0fda18', kind: 'on-line', where: 'origin/develop', removable: true }),
-              // A long name, as a branch rule's slug makes one: whole at every width (UXFIX4).
+              // A long name, as a branch rule's slug makes one: whole at every width.
               landed({ branch: 'feature/report-totals-by-region-for-the-quarter-close-0fda19', kind: 'inside', where: 'feature/report-totals-0fda18', removable: true }),
             ]}
             onLook={nothing}
@@ -154,7 +154,7 @@ function Page({ tab: first, browser = false, wired = true, kept = WORKSPACE_PLAN
         </>
       )
       : (
-          // Its Current (WORKFLOW1b), two of its repositories setting rules of their own.
+          // Its Current, two of its repositories setting rules of their own.
           <WorkflowTab
             page="workspace"
             name="work"
@@ -195,7 +195,7 @@ type Story = StoryObj<typeof Page>;
 
 /**
  * Details: its seven repositories as doors, what a start and an intake run on, the accounts each agent may run here, and
- * *Kept on this machine* with *Clear history…* (HIST1e).
+ * *Kept on this machine* with *Clear history…*.
  */
 export const Details: Story = {};
 
@@ -219,7 +219,7 @@ const tidiedLine = (event: 'branch.tidied' | 'branch.kept', hoursAgo: number, da
   data: { workspace: 'work', ...data },
 });
 
-/** What the look cleaned up on its own, newest first (AUTOTIDY1a): seven rows, five shown and *Show 2 more*; one has a tree set aside. */
+/** What the look cleaned up on its own, newest first: seven rows, five shown and *Show 2 more*; one has a tree set aside. */
 const TIDIED: LogRow[] = [
   tidiedLine('branch.tidied', 1, { repository: 'billing', branch: 'daoris/s-1f2e3d4c', tree: true, folder: 'trees/.tidied/work/billing/s-1' }),
   tidiedLine('branch.kept', 2, { repository: 'api', branch: 'daoris/s-9e0f1a2b', why: 'busy' }),
@@ -230,7 +230,7 @@ const TIDIED: LogRow[] = [
   tidiedLine('branch.tidied', 50, { repository: 'billing', branch: 'daoris/s-0a1b2c3d', tree: false, folder: null }),
 ];
 
-/** Branches with what the look cleaned up on its own, and left, after the groups and above the clean-up (AUTOTIDY1a). */
+/** Branches with what the look cleaned up on its own, and left, after the groups and above the clean-up. */
 export const BranchesCleanedUp: Story = { args: { tab: 'branches', tidied: TIDIED } };
 
 /** The installed window's case (AUTOTIDY1a2): one branch kept `unread` and logged at each of seven starts is one row, with its cause and since. */
@@ -249,14 +249,14 @@ export const BranchesChinese: Story = { args: { tab: 'branches' }, decorators: [
 // window with the list a strip beside it, and `storyWidths.narrow` the 400 px floor.
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
-/** Branches at a 680 px window (UXFIX4): each row's three columns, its long name whole over two lines. */
+/** Branches at a 680 px window: each row's three columns, its long name whole over two lines. */
 export const BranchesAt680: Story = { args: { tab: 'branches' }, decorators: [storyWidths.half] };
 
 /** The same, in dark. */
 export const BranchesAt680Dark: Story = { args: { tab: 'branches' }, decorators: [storyWidths.half, dark] };
 
 /**
- * Branches at the main area's 400 px floor (UXFIX4): each row's sentence under its name, every name whole; each group's
+ * Branches at the main area's 400 px floor: each row's sentence under its name, every name whole; each group's
  * branch names and subjects wrap rather than widen the tab, and the fold apart lays its boxes one to a line (UX6h2b2).
  */
 export const BranchesAtTheFloor: Story = { args: { tab: 'branches' }, decorators: [storyWidths.narrow] };
@@ -282,5 +282,5 @@ export const WorkflowAtTheFloor: Story = { args: { tab: 'workflow' }, decorators
 /** Local only: the header offers *Wire to a remote…* where a wired one offers *Sync now*. */
 export const LocalOnly: Story = { args: { wired: false } };
 
-/** A browser's page: its repositories and that it syncs, never where, with no tab row and no act (D47 §4, D48 §5). */
+/** A browser's page: its repositories and that it syncs, never where, with no tab row and no act. */
 export const InABrowser: Story = { args: { browser: true } };

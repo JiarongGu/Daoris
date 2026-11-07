@@ -11,7 +11,7 @@ const FROM_WORD = ['process', 'account', 'default'];
 const NAMED = 2;
 
 /**
- * What Daoris's sessions left in the person's own tool home (OWNSPACE2, D175 point 3, D88): the folders whose names equal a
+ * What Daoris's sessions left in the person's own tool home: the folders whose names equal a
  * working directory in which one of Daoris's own session records shows a session ran, listed with the records that name them,
  * their size, when they were last written, and what would keep each from a removal. **Read-only: Daoris removes nothing here
  * yet** (OWNSPACE2e hardens the press), so the card says they can be removed by hand. The person's own folders are never listed.

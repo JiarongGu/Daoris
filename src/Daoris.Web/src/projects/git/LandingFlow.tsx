@@ -7,7 +7,7 @@ import { moment } from '../../locales/format';
 import { landingFlow, type LandingOf } from './landingLife';
 
 /**
- * What a landed branch's page holds of how it landed (FLOWCHART1c): the fold, which its holder keeps so the reads are asked only
+ * What a landed branch's page holds of how it landed: the fold, which its holder keeps so the reads are asked only
  * once the person opens it, and the reads.
  */
 export type LandingDoor = {
@@ -30,7 +30,7 @@ export type LandingDoor = {
  * carries reached, the clean-up and the recovery kept.
  *
  * @remarks
- * - **Read only when it opens**, as the trace is (D143): the holder reads the trace of the session the branch's record names and
+ * - **Read only when it opens**, as the trace is: the holder reads the trace of the session the branch's record names and
  *   the work's milestones for the branch, and folds it again on a press. The work's milestone and a run's landing step open the
  *   page with it opened.
  * - **The branch's, never one session's**: a landing carrying several sessions' work is read from the one it was made for, which

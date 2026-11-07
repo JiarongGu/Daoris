@@ -34,17 +34,17 @@ export function sameSelection(a: MapSelection | null, b: MapSelection | null): b
 /** What the asks' lines and a chain's hops are drawn with, beside a quest's solid line (D41: never colour alone). */
 export const ASKS_DASH = '10 4';
 export const CHAIN_DASH = '1 5';
-/** What a repository says it uses (MAP4e): dash and dot, in ink rather than the accent, since it is a declaration and not work. */
+/** What a repository says it uses: dash and dot, in ink rather than the accent, since it is a declaration and not work. */
 export const DEPENDS_DASH = '8 3 2 3';
 
 /** Whether a chain's hop still has work in it: a step open now, or one still to be published. */
 export const chainOpen = (edge: ChainEdge) =>
   edge.waiting.length > 0 || edge.steps.some((quest) => quest.status === 'Open' || quest.status === 'Taken');
 
-/** How many sessions a repository's word speaks for, when it is more than one (MAP4d): a number in any language. */
+/** How many sessions a repository's word speaks for, when it is more than one: a number in any language. */
 export const howMany = (sessions: number) => (sessions > 1 ? ` · ${sessions}` : '');
 
-/** A line's name, and whether a session is on one of its quests now, since the ring is not words (MAP4d). */
+/** A line's name, and whether a session is on one of its quests now, since the ring is not words. */
 export const lineLabel = (t: (key: string) => string, label: string, live: Live) =>
   (live ? `${label}${t(`map.lineLive.${live}`)}` : label);
 
@@ -64,7 +64,7 @@ export function lineName(t: TFunction, line: Drawn): string {
 
 /**
  * A line's count, on the line, in the line's own state; ringed as a node is while a session is on one
- * of its quests (MAP4d), in the hue the rail gives that session, and dashed so it is never hue alone.
+ * of its quests, in the hue the rail gives that session, and dashed so it is never hue alone.
  */
 export function Count({ x, y, open, count, live = null }: { x: number; y: number; open: boolean; count: number; live?: Live }) {
   return (

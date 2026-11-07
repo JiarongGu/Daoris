@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { StartWiringList } from './StartWiring';
 import type { StartWiring } from './wiring';
 
-// MAP1b (D67 §3): what a start in each workspace would run on, and which setting chose each part —
+// What a start in each workspace would run on, and which setting chose each part —
 // the driver's answer, drawn. The account's name is the roster's to give, so it arrives as a function.
 
 const start = (extra: Partial<StartWiring> = {}): StartWiring => ({
@@ -69,7 +69,7 @@ describe('what a start runs on', () => {
   });
 
   /**
-   * AGT6: once an agent is named for the intake, a circle has two jobs, and each row says which it
+   * Once an agent is named for the intake, a circle has two jobs, and each row says which it
    * is — two rows reading "a start in aurora" with different agents would be one fact contradicting
    * itself.
    */

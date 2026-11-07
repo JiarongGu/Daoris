@@ -15,7 +15,7 @@ export * from './atoms/Tip';
 export * from './atoms/SettingForm';
 export * from './atoms/Toasts';
 
-// The platform's component language (D41), rebuilt on headless primitives (D42): Radix supplies the
+// The platform's component language, rebuilt on headless primitives: Radix supplies the
 // behaviour — focus traps, dismissal, ARIA, typeahead — and every pixel stays ours, which is how the
 // paper character survives a component library.
 
@@ -60,6 +60,6 @@ export function useErrorNotify(error: unknown, notify: Notify) {
 /**
  * A failed action as the person reads it: its own sentence — the service's or the driver's — as an
  * error toast. Every mutation's `onError` is handed this, so none can forget `sentence` (frontend
- * architecture §4a); it was written out at some thirty doors (REV3 CLEAN1).
+ * architecture §4a); it was written out at some thirty doors.
  */
 export const failure = (notify: Notify) => (error: unknown): void => notify(sentence(error), 'error');

@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
 
-// Quests in SHELL mode, pausing and abandoning (PAUSE1e, D132 §7.1): the ask's page and the quest's page ask this machine's
+// Quests in SHELL mode, pausing and abandoning: the ask's page and the quest's page ask this machine's
 // driver for their work's plan, and each press goes over DAORIS.DRIVER and says how it went. Over a mocked bridge, as the
 // shell-attached half is held (`docs/2026-09-19-frontend-architecture.md` §4).
 
@@ -23,7 +23,7 @@ const ASK = {
   id: 'a1b2c3', workspace: 'aurora', sentence: 'Make chunk streaming smooth', state: 'Published', tier: 'named',
   asked: '2026-10-02T00:00:00Z', updated: '2026-10-02T00:00:00Z', links: [], attachments: [], quests: ['abc123', '9a8b7c'], proposal: [],
 };
-// Two quests, so the ask keeps its row: an ask with one is its quest's row (QUESTLISTS1), whose menu opens the ask.
+// Two quests, so the ask keeps its row: an ask with one is its quest's row, whose menu opens the ask.
 
 /** The quest's own plan: the shell harness's quest, taken here and running. */
 const QUEST_PLAN = { ...PAUSABLE_QUEST, id: 'abc123', quests: [{ ...PAUSABLE_QUEST.quests[0], quest: 'abc123', key: 'quest:abc123' }] };
@@ -90,7 +90,7 @@ describe('pausing and abandoning in the shell', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'WORK_ABANDON', expect.objectContaining({
       payload: { ask: 'a1b2c3', reason: 'Taking another approach.', pieces: PAUSABLE_ASK.abandon.pieces },
     })));
-    // A partial abandon, said in the error's tone (PAUSE1h).
+    // A partial abandon, said in the error's tone.
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Abandoned ask #a1b2c3: 5 of 6 pieces; 1 changed since the list and stayed.', 'error'));
     expect(await within(page).findByRole('region', { name: 'What went' })).toHaveTextContent('#5e4f3d was taken on another machine');
   });

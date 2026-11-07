@@ -28,22 +28,22 @@ export function useHelpPlace() {
   useEffect(() => {
     hereNow.current = here;
   }, [here]);
-  // The conversation the person chose from the history, or went on in (ASKHIST1): shown in the newest's place.
+  // The conversation the person chose from the history, or went on in: shown in the newest's place.
   const [chosen, setChosen] = useState<string | null>(null);
   // Words said to an ended conversation, waiting for its record to go on: the list is asked again until it has.
   const [goingOn, setGoingOn] = useState<string | null>(null);
-  // A desktop window is told `sessions` as the driver takes the words up (FABRIC-EVENT5a), so only a window with no bus reads on a clock.
+  // A desktop window is told `sessions` as the driver takes the words up, so only a window with no bus reads on a clock.
   const goingOnPoll = usePollUnlessTold(GOING_ON_POLL);
   const sessions = useHelpSessions(goingOn ? goingOnPoll : false);
   // The session the person started again from: shown no longer, whatever the list still says.
   const [cleared, setCleared] = useState<string | null>(null);
-  // The conversation opened as the panel showed (HELP5), which nobody has spoken in: not shown, so the
+  // The conversation opened as the panel showed, which nobody has spoken in: not shown, so the
   // starters, or the conversation that ended, stay in front of the person until the first words go to it.
   const help = useHelpReadied();
-  // The one opened ahead in this window's workspace (ASKSCOPE1d): one opened in another never takes this one's words.
+  // The one opened ahead in this window's workspace: one opened in another never takes this one's words.
   const readied = typeof here === 'string' ? help.readiedIn(here) : null;
   const helpSessions = (sessions.data ?? []).filter((session) => session.repository === HELP_REPOSITORY);
-  // The window's workspace's conversations (ASKSCOPE1d): its newest is shown, and its running one carried on. A window on every
+  // The window's workspace's conversations: its newest is shown, and its running one carried on. A window on every
   // workspace shows the newest of any, named; one whose workspaces are still being read shows none yet.
   const mine = here === null ? helpSessions : helpSessions.filter((session) => inHere(session.workspace));
   const newest = mine
@@ -53,7 +53,7 @@ export function useHelpPlace() {
   const shown = picked ?? (newest && newest.id !== cleared ? newest : null);
   const live = shown ? SESSION_ACTIVE.has(shown.state) : false;
   // The workspace the conversation shown started in; another workspace's is read here, named, and gone on in only once the
-  // window has switched to it (ASKSCOPE1d, point 1): words are never taken up in another workspace from this one.
+  // window has switched to it: words are never taken up in another workspace from this one.
   const shownIn = shown ? workspaceOf(shown) : null;
   const elsewhere = shown !== null && typeof here === 'string' && !inHere(shown.workspace);
   useEffect(() => {

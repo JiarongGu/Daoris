@@ -4,13 +4,13 @@ import { type Machine, readMachine } from './machine';
 
 /**
  * The machine as the page's queries answer it, read once for Ask Daoris's starters, the setup guide,
- * the status bar's count and the opening at start (SETUP1a, D97). Every query is one another reader
+ * the status bar's count and the opening at start. Every query is one another reader
  * already makes, so reading it here asks nothing twice.
  *
  * @remarks
  * `settled` is whether every answer the reading needs is in: a guide that opened, or a count that
  * showed, before the roster answered would say *no agent* of a machine that has one. A browser settles
- * on the registry alone, since the rest is never asked there (D47 §4). The sessions only count what
+ * on the registry alone, since the rest is never asked there. The sessions only count what
  * waits on the person, for the starters, so the guide does not wait on them.
  */
 export function useMachine(): { machine: Machine; settled: boolean } {

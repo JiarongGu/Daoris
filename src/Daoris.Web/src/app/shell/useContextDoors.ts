@@ -20,7 +20,7 @@ export function useContextDoors({ notify, t, openings, setSearchAsked, open, att
   openBrowser: UseMutationResult<{ opened: boolean; windows: string[]; }, Error, string | undefined, unknown>;
   copyText: React.RefObject<(text: string) => void>;
 }) {
-  // The right-click menu's doors (CTX1, D138 §3): a copy, said once copied, since nothing on the screen shows it; Search
+  // The right-click menu's doors: a copy, said once copied, since nothing on the screen shows it; Search
   // with the words in its box; and, a shell's, Quick Ask with them quoted and Daoris's browser at the address.
   const contextDoors: ContextDoors = {
     copy: (text) => {
@@ -40,7 +40,7 @@ export function useContextDoors({ notify, t, openings, setSearchAsked, open, att
   const fillAsk = useRef(askQuickly);
   fillAsk.current = askQuickly;
   useEffect(() => (attached ? registerAskFill((text) => fillAsk.current(text, true)) : undefined), [attached]);
-  // Edit › Copy ID copies what a page's own *Copy … ID* would, and says so the same way (UX7a).
+  // Edit › Copy ID copies what a page's own *Copy … ID* would, and says so the same way.
   copyText.current = contextDoors.copy;
   return { contextDoors };
 }

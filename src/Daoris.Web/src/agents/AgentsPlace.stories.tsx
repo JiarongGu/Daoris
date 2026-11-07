@@ -8,7 +8,7 @@ import { AgentList, AgentStrip } from './AgentList';
 import { type AgentActs, AgentPage } from './AgentPage';
 import { CLAUDE_TOOL, CLAUDE_USE, CODEX_USE, RULES, TOOLS, USAGE } from './agentsFixtures';
 
-// The Agents place whole (UX6e, D150 §5): its list pane and the chosen agent's page in the frame, as the window draws it,
+// The Agents place whole: its list pane and the chosen agent's page in the frame, as the window draws it,
 // at whatever width the story is given: the design's 1546 px with the list open, and 680 px, where the list is a strip.
 
 const nothing = () => {};

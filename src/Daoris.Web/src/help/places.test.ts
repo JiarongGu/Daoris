@@ -5,13 +5,13 @@ import { offerItem } from '../plugins/catalog';
 import { SETTINGS_SECTIONS } from '../settings/SettingsView';
 import { draftDoor, PLACE_DOMAINS, PLACE_ITEM_VIEWS, PLACE_KEPT, PLACE_PARTS, PLACE_VIEWS, placeDoor, type HelpPlace } from './places';
 
-// HELP6: the places Ask Daoris's go may name. A twin (`.claude/knowledge/twins.md`) of the driver's
+// The places Ask Daoris's go may name. A twin (`.claude/knowledge/twins.md`) of the driver's
 // `HelpPlaces`, which judges a go before the person sees it: the tables below are the driver test's
 // `The_places_are_the_pages_twin`, line for line.
 
 const spelled = ({ view, domain, part }: HelpPlace) => [view, domain, part].filter((each) => each != null).join('/');
 
-// FLOWCHART2g: the draft card's Apply, which the driver answers with the place's Workflow (a repository's page, or the workspace's part).
+// The draft card's Apply, which the driver answers with the place's Workflow (a repository's page, or the workspace's part).
 // The page opens that place's editor on the draft the card is against, and names the place itself, since a go names no repository.
 describe("a draft card's door", () => {
   const card = { draft: 'g1-0123456789abcdef', scope: 'engine', id: 'release', name: 'Release for engine', base: 2 };
@@ -65,8 +65,8 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * UX6i2a (D150 §2): the views are the bar's, Knowledge and Plugins among them, and Settings at its foot. Settings → Tools
-   * (TOOLS7) is a place a go names once TOOLS8 adds it here and to `HelpPlaces` together (D121 §4.3). Workspace and
+   * UX6i2a: the views are the bar's, Knowledge and Plugins among them, and Settings at its foot. Settings → Tools
+   *  is a place a go names once TOOLS8 adds it here and to `HelpPlaces` together. Workspace and
    * Permissions left Settings with UX6g, and since UX6g2b the twins name neither: a go still spelled so is kept.
    */
   it('are every view the activity bar has and every domain Settings shows, and nothing else', () => {
@@ -74,7 +74,7 @@ describe('the places a go may name', () => {
     expect([...PLACE_DOMAINS].sort()).toEqual([...SETTINGS_SECTIONS].filter((domain) => domain !== 'tools').sort());
   });
 
-  // AGENTSPLACE1k: a go carrying a set-up opens what today's set-up opens (a repository's Details, a workspace's page), with the ask along.
+  // A go carrying a set-up opens what today's set-up opens (a repository's Details, a workspace's page), with the ask along.
   it('open a place\'s Set up… as a repository\'s Details or a workspace\'s page, the ask carried', () => {
     const ask = { repositories: ['engine'], preset: 'pull-request', opinion: true, look: false, adoption: true, builds: 'service', drive: false };
     expect(placeDoor({ view: 'agents', part: 'roles', workspace: 'aurora', repository: 'engine', setup: ask }))
@@ -93,13 +93,13 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'agents', part: 'accounts' })).toEqual({ view: 'agents', agentPart: 'accounts' });
     expect(placeDoor({ view: 'agents', part: 'rules' })).toEqual({ view: 'agents', agentPart: 'rules' });
     expect(placeDoor({ view: 'agents', part: 'usage' })).toEqual({ view: 'agents', agentPart: 'usage' });
-    // COMPANYVIEW1b: the Roles mode is a part of the Agents place, a mode and no part of an agent's page.
+    // The Roles mode is a part of the Agents place, a mode and no part of an agent's page.
     expect(placeDoor({ view: 'agents', part: 'roles' })).toEqual({ view: 'agents', agentsMode: 'setup' });
-    // HELPSETUP1: a repository's own values are its place's, chosen in the Setup mode's list.
+    // A repository's own values are its place's, chosen in the Setup mode's list.
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     expect(placeDoor({ view: 'settings', domain: 'start', part: 'helper' })).toEqual({ view: 'settings', section: 'start', anchor: 'step-helper' });
     expect(placeDoor({ view: 'projects', part: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
-    // UX6i2a: Knowledge alone opens as it was left, a part in that mode (UX6i); Plugins is a place with no parts.
+    // UX6i2a: Knowledge alone opens as it was left, a part in that mode; Plugins is a place with no parts.
     expect(placeDoor({ view: 'knowledge' })).toEqual({ view: 'knowledge' });
     expect(placeDoor({ view: 'knowledge', part: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
     expect(placeDoor({ view: 'knowledge', part: 'search' })).toEqual({ view: 'knowledge', knowledge: 'search' });
@@ -107,7 +107,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * UX6g2b (D161 §3, D150 §4.3): a workspace's page's tabs and its Setup's two sections are Repositories' parts, prefixed
+   * UX6g2b: a workspace's page's tabs and its Setup's two sections are Repositories' parts, prefixed
    * where a repository's page shares their names. A go names no workspace, so each opens the workspace in view's page, as
    * a door naming a tab or a section does; `setup` alone stays a repository's.
    */
@@ -127,7 +127,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * ENTRY1b (D161's ENTRY1 note): a go reaches what waits on the person below Sessions and Quests, a group of the view's
+   * A go reaches what waits on the person below Sessions and Quests, a group of the view's
    * list it brings into view: Sessions' *Waiting on you* and *To review*, by the driver's reader's names, and Quests' asks
    * and the quests held for the person. It names no session or quest, and Overview, which what waits leads, has no part.
    */
@@ -159,7 +159,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * PLUGUI1h (D119's note): a go on Plugins may name one installed plugin by its id, or an offer as `offerItem` names it,
+   * A go on Plugins may name one installed plugin by its id, or an offer as `offerItem` names it,
    * as the driver judged it against the machine's plugins and offers; the one opener chooses it in the catalogue.
    */
   it('open the one plugin or offer a go names on Plugins, as its catalogue names it', () => {
@@ -203,7 +203,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * NEW1d-b (D162's NEW1d-a note): a go to New conversation opens the composer, with the repository and the words the
+   * A go to New conversation opens the composer, with the repository and the words the
    * driver judged; with neither it opens the composer empty, and no other place takes them.
    */
   it('open the composer with the repository and words a go to New conversation names', () => {
@@ -215,7 +215,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * UX6g (D150 §3.1): Settings → Workspace and Permissions retired into a workspace's page, and a go naming one opens the
+   * Settings → Workspace and Permissions retired into a workspace's page, and a go naming one opens the
    * workspace in view's page where its part went: its remote, its defaults (a line, a landing rule, reading across), its
    * Branches; Permissions alone opens what agents may do, on the agent that takes the rules. UX6g2b: each is a kept row of
    * the twin, the old spelling with its part, and one no row names opens nothing.
@@ -232,9 +232,9 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * UX6i2a (D150 §2): a go spelled as a place was before it moved, kept in an earlier conversation, opens where the place
-   * went rather than nowhere: Settings → Plugins the Plugins place (UX6j), Search and Convergence Knowledge in that mode
-   * (UX6i). None had parts, so one spelled with a part opens nothing.
+   * UX6i2a: a go spelled as a place was before it moved, kept in an earlier conversation, opens where the place
+   * went rather than nowhere: Settings → Plugins the Plugins place, Search and Convergence Knowledge in that mode.
+   * None had parts, so one spelled with a part opens nothing.
    */
   it('open a place that moved where it went', () => {
     expect(placeDoor({ view: 'settings', domain: 'plugins' })).toEqual({ view: 'plugins' });

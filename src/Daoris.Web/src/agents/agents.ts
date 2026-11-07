@@ -8,20 +8,20 @@ import {
 import type { AgentRulesState } from '../settings/repository/AgentRules';
 import { OPEN_STATES } from '../settings/repository/proposals';
 
-// The Agents place's facts and words (UX6e, D150 §5), as the list, the page and the activity bar read them. Pure: the
+// The Agents place's facts and words, as the list, the page and the activity bar read them. Pure: the
 // molecules and the tests read these, with no bridge. An account's state is what was last known, with when it was read;
 // nothing here asks anything (§5.3).
 
-/** A part of an agent's page a door names (D150 §2.4): its accounts, what it may do, or its usage. */
+/** A part of an agent's page a door names: its accounts, what it may do, or its usage. */
 export type AgentPart = 'accounts' | 'rules' | 'usage';
 
-/** What one account has carried (TOOL3, D57 §4), as the usage answer counts it per agent (s-vii); null is the tool's own sign-in. */
+/** What one account has carried, as the usage answer counts it per agent (s-vii); null is the tool's own sign-in. */
 export type AgentUsage = { agent: string; profile: string | null; sessions: number; used: number };
 
 /**
- * An account's state as last known (D150 §5.3): signed in, signed out, cooling until a time, or unknown. An API key says
+ * An account's state as last known: signed in, signed out, cooling until a time, or unknown. An API key says
  * its handle and has no sign-in (`keyed`): the tool says signed in for any key, so that word would claim what nobody read.
- * A key read signed out is one its provider refused (`refused`, ACCTUX1): only a refusal reads a key out (AGT3b, ROSTER1b),
+ * A key read signed out is one its provider refused (`refused`, ACCTUX1): only a refusal reads a key out,
  * since a read hands the key and the tool says yes for any.
  */
 export type AccountStateName = 'in' | 'out' | 'cooling' | 'unknown' | 'keyed' | 'refused';
@@ -32,7 +32,7 @@ export type AccountState = {
   read: string | null;
   /** Its cool-off, where it cools. */
   cooling: AccountCooling | null;
-  /** The starts run on it, as on every account of Daoris's (D197): a signed-out one then holds work, and wears open's hue. */
+  /** The starts run on it, as on every account of Daoris's: a signed-out one then holds work, and wears open's hue. */
   holdsWork: boolean;
 };
 
@@ -52,13 +52,13 @@ export function accountState(
   return { state, read, cooling, holdsWork };
 }
 
-/** Whether a state waits on the person as a sign-out does (ACCTUX1): signed out, or a key its provider refused. */
+/** Whether a state waits on the person as a sign-out does: signed out, or a key its provider refused. */
 export function waitsOnPerson(state: Pick<AccountState, 'state'>): boolean {
   return state.state === 'out' || state.state === 'refused';
 }
 
 /**
- * Whether the starts run on the account (POOL1c, D197 point 1): every account of Daoris's does, one set serving every workspace,
+ * Whether the starts run on the account: every account of Daoris's does, one set serving every workspace,
  * whatever its order names, so a signed-out one holds work wherever it is. The tool's own sign-in is none of them (point 3).
  */
 export function heldBy(tool: Tool, name: string): boolean {
@@ -75,7 +75,7 @@ export function accountStates(tool: Tool, use: AgentAccounts | null | undefined)
 
 /**
  * The accounts the person must act on (D150 §2.1, the activity bar's badge): each signed out or with its key refused, since
- * each holds work (D197). The tool's own sign-in is never among them: no start runs on it (D175 point 1).
+ * each holds work. The tool's own sign-in is never among them: no start runs on it.
  */
 export function signedOutHeld(tool: Tool, use: AgentAccounts | null | undefined): number {
   return [...accountStates(tool, use).values()].filter((state) => waitsOnPerson(state) && state.holdsWork).length;
@@ -105,9 +105,9 @@ export function readLine(state: AccountState, now: Date = new Date()): string | 
 }
 
 /**
- * When, beside the state's word in its column (D152 §4.2): *signed in · 01:31*, *unknown · never read*, *cooling · until 6
+ * When, beside the state's word in its column: *signed in · 01:31*, *unknown · never read*, *cooling · until 6
  * Oct 22:02*. The time alone, since the column and the list's head say what it is; its tip says the whole (`readLine`). A
- * cool-off is a hold, said until its end whoever chose the time (ACCTUX1): *resets …* claimed a reset where Daoris chose the
+ * cool-off is a hold, said until its end whoever chose the time: *resets …* claimed a reset where Daoris chose the
  * wait because the agent named none, and a reported reset is said in its window's cell (`usageCells`).
  */
 export function stateWhen(state: AccountState, now: Date = new Date()): string {
@@ -117,7 +117,7 @@ export function stateWhen(state: AccountState, now: Date = new Date()): string {
   return state.state === 'unknown' ? i18n.t('agents.read.failed', { when }) : when;
 }
 
-/** The windows every row draws a cell for, for both makers (ACCTUX4): Claude Code's and Codex's five hours and week. */
+/** The windows every row draws a cell for, for both makers: Claude Code's and Codex's five hours and week. */
 export const FIXED_WINDOWS = ['session', 'weekly'] as const;
 
 /**
@@ -138,19 +138,19 @@ export type WindowCell = {
   used: number | null;
   /**
    * Its agent's own word that it is reached or ahead of its pace: the bar wears the warning hue. A pace warning is still a
-   * warning, and is never said as near (USAGEREAD3b, D165 point 2).
+   * warning, and is never said as near.
    */
   warned: boolean;
   /** What a person acts on, in the ink: its share, its agent's own word, that it draws on credits; or *unknown*. */
   reading: string;
   /**
-   * Its share against its scope's curve now (SWITCH1d; the switch design §5), as .NET judged it (PUSH1e): *its curve allows 45%
+   * Its share against its scope's curve now (SWITCH1d; the switch design §5), as.NET judged it: *its curve allows 45%
    * now*, or *over its curve's 45% now*. Absent where it was not measured (your own sign-in, which no list holds, a window its agent
    * gave no share of, one this build has no curve for).
    */
   curve?: string;
   /**
-   * Its use projected to now, said as projected (USAGEPROBE1b): *about 23% by now, projected from Daoris's own turns since*
+   * Its use projected to now, said as projected: *about 23% by now, projected from Daoris's own turns since*
    * where it differs from the reading by a whole percent, or *not projected* where Daoris spent on the account since and cannot
    * weigh it. Absent where it is the reading itself, or none was sent.
    */
@@ -158,8 +158,8 @@ export type WindowCell = {
   /** Its share is over its curve now: said so, and the bar wears the warning hue. Absent where `curve` is. */
   over?: boolean;
   /**
-   * Its times, in the soft ink: when it resets, and how long ago its reading was, read from its agent or said by a session
-   * (SWITCH1d). None where it is unknown.
+   * Its times, in the soft ink: when it resets, and how long ago its reading was, read from its agent or said by a session.
+   * None where it is unknown.
    */
   times: string[];
 };
@@ -167,10 +167,10 @@ export type WindowCell = {
 /** What an account's agent last said, as its row draws it: a cell a window, and what is the account's and no window's. */
 export type AccountUsage = { cells: WindowCell[]; notes: string[] };
 
-/** A window as its agent last said it, as its cell says it: against its scope's curve where .NET measured it (SWITCH1d, PUSH1e). */
+/** A window as its agent last said it, as its cell says it: against its scope's curve where.NET measured it. */
 function windowCell(said: WindowSaid, now: Date, product?: string): WindowCell {
   const used = typeof said.used === 'number' ? said.used : null;
-  // Claude Code's pace warning (`warned`) in its own words, *ahead of its pace*: near is the scope's, never this (USAGEREAD3b).
+  // Claude Code's pace warning (`warned`) in its own words, *ahead of its pace*: near is the scope's, never this.
   const word = said.standing === 'refused' ? 'agents.window.reached' : said.standing === 'warned' ? 'agents.window.warned' : null;
   const readings = [
     ...(used !== null ? [i18n.t('agents.window.used', { used: percent(used) })] : []),
@@ -179,17 +179,17 @@ function windowCell(said: WindowSaid, now: Date, product?: string): WindowCell {
   ];
   // A window with no share and no word of trouble is one its agent said was clear (the driver keeps none with neither).
   if (readings.length === 0) readings.push(i18n.t('harness.said.clear'));
-  // Its share against the curve now, as .NET judged it beside the reading (PUSH1e): the curve's value a whole percent as the
+  // Its share against the curve now, as.NET judged it beside the reading: the curve's value a whole percent as the
   // terminal says it, and over it where its room is below zero, so a share exactly on its curve is not over it.
   const against = typeof said.curve !== 'number' || used === null ? {} : {
     curve: i18n.t(said.over ? 'agents.window.overCurve' : 'agents.window.curve', { curve: `${said.curve}%` }),
     over: said.over === true,
   };
-  // Where its reading came from (USAGEREAD2a): read from its agent, asked with no prompt, or said by a session's frame.
+  // Where its reading came from: read from its agent, asked with no prompt, or said by a session's frame.
   const age = said.source !== 'read'
     ? i18n.t('agents.said.bySession', { age: ago(said.seen) })
     : product ? i18n.t('agents.said.read', { product, age: ago(said.seen) }) : i18n.t('agents.said.readAt', { age: ago(said.seen) });
-  // The projection to now beside the reading (USAGEPROBE1b): the same one a start reads, said only where it adds something.
+  // The projection to now beside the reading: the same one a start reads, said only where it adds something.
   const projected = said.projectedBy === 'unweighed'
     ? i18n.t('agents.window.unweighed')
     : said.projectedBy === 'measured' && typeof said.projected === 'number' && used !== null && percent(said.projected) !== percent(used)
@@ -205,11 +205,11 @@ function windowCell(said: WindowSaid, now: Date, product?: string): WindowCell {
 }
 
 /**
- * What an account's agent last said, as its row draws it under its line (ACCTUX4; TOOL6c, D130 §5.2; ACCTUX1): a cell for
+ * What an account's agent last said, as its row draws it under its line: a cell for
  * the session and the week, each unknown where its agent did not report it, then a cell for any other window a reading named.
  * The two are drawn where something was said, and where `fixed` asks for them though nothing was: a sign-in whose agent
  * speaks, which a session's frame or a press reads. A key, an agent that does not speak and a sign-in nothing reads say
- * nothing where nothing was said, as *nothing said yet* is not said on a row (D152 §4.2).
+ * nothing where nothing was said, as *nothing said yet* is not said on a row.
  *
  * Its notes are the account's and no window's: since when it is offered again, and for a cool-off whose length Daoris chose
  * because the agent named no reset, that the reset is unknown, where no window reported one (the state's column says the
@@ -251,18 +251,18 @@ export function latestRead(states: readonly AccountState[]): string | null {
   return states.map((state) => state.read).filter((read): read is string => Boolean(read)).sort().at(-1) ?? null;
 }
 
-// ---------------------------------------------------------------- an account's row (UX7b, D152 §4)
+// ---------------------------------------------------------------- an account's row
 
-/** A fresh id (ACCT2): `acct-` and eight hex characters, which the person never chose and which says nothing. */
+/** A fresh id: `acct-` and eight hex characters, which the person never chose and which says nothing. */
 const FRESH = /^acct-[0-9a-f]{8}$/i;
 
 type Named = Pick<Account, 'name'> & Partial<Pick<Account, 'displayName' | 'account' | 'key' | 'org' | 'plan'>>;
 
-/** One agent's sign-ins, an account told apart among (ACCOUNTID1b): its accounts, and its own sign-in where it is known. */
+/** One agent's sign-ins, an account told apart among: its accounts, and its own sign-in where it is known. */
 export type Among = { accounts: readonly Named[] } & Partial<Pick<Tool, 'ownAccount' | 'ownOrg' | 'ownPlan'>>;
 
 /**
- * An account's name, as its row leads with it (D152 §4.2): the person's own (ACCT2), else a key's handle, else, for a fresh
+ * An account's name, as its row leads with it: the person's own, else a key's handle, else, for a fresh
  * id the person never chose, who signed in, else its id, an old `account-N` being the word every list and session head says.
  */
 export function accountName(account: Named): string {
@@ -301,9 +301,9 @@ export function accountWho(account: Named, among?: Among | null): string | null 
 }
 
 /**
- * An account's name on one line, where a pill, a chip, a note or a header has room for one (ACCOUNTID1b): its name, and what
+ * An account's name on one line, where a pill, a chip, a note or a header has room for one: its name, and what
  * tells it apart after it where the name is who signed in and another sign-in of its agent is that email too. A name the
- * person chose is one no other account has (ACCT2), so it stands alone.
+ * person chose is one no other account has, so it stands alone.
  */
 export function accountLabel(account: Named, among?: Among | null): string {
   const name = accountName(account);
@@ -313,7 +313,7 @@ export function accountLabel(account: Named, among?: Among | null): string {
 }
 
 /**
- * Who signed in, with what tells the sign-in apart from another of its agent of the same email after it (ACCOUNTID1b), for a
+ * Who signed in, with what tells the sign-in apart from another of its agent of the same email after it, for a
  * line that says who and no name: *Signed in as …*, the agent's own sign-in. Null for a key, or where the agent said nobody.
  */
 export function whoApart(account: Named, among?: Among | null): string | null {
@@ -323,7 +323,7 @@ export function whoApart(account: Named, among?: Among | null): string | null {
   return apart ? `${who} · ${apart}` : who;
 }
 
-/** Who is signed in to the agent's own home, told apart from an account of the same email (ACCOUNTID1b). */
+/** Who is signed in to the agent's own home, told apart from an account of the same email. */
 export function ownWho(tool: Among): string | null {
   return whoApart({ name: '', account: tool.ownAccount, org: tool.ownOrg, plan: tool.ownPlan }, tool);
 }
@@ -362,12 +362,12 @@ function says(name: string, part: string): boolean {
   return folded(name) === folded(part) || name.split('·').some((each) => word(each) === wanted);
 }
 
-/** A version as its number alone (D152 §4.1): the product name a binary prints after it, in brackets, is dropped. */
+/** A version as its number alone: the product name a binary prints after it, in brackets, is dropped. */
 export function versionOnly(version: string): string {
   return version.match(/^(.+?)\s+\([^)]*\)$/)?.[1] ?? version;
 }
 
-/** The set's next start as the page says it above the accounts (ACCTUX4b): the sentence, then what holds the others. */
+/** The set's next start as the page says it above the accounts: the sentence, then what holds the others. */
 export type NextStartSaid = { takes: string; held: string | null; doors: string[] };
 
 /**
@@ -394,14 +394,14 @@ export function nextStartSaid(
   return { takes: nextLine(next, scope, labelOf, isKey), held: passed ? heldLine(head, labelOf, isKey, scope.near) : null, doors };
 }
 
-/** The one act a row's state asks for (D152 §4.2): its name, and whether it is loud, which is where it holds work. */
+/** The one act a row's state asks for: its name, and whether it is loud, which is where it holds work. */
 export type AccountAct = { act: 'signIn' | 'read' | 'tryNow' | 'newKey'; loud: boolean };
 
 /**
- * An account's one act by its state (D152 §4.2): *Sign in* when signed out, *Read* (that account alone) when unknown, *Try
+ * An account's one act by its state: *Sign in* when signed out, *Read* (that account alone) when unknown, *Try
  * now* when cooling; none when signed in, since every account serves every workspace (POOL1c, the account-pool design §4.2:
  * *Use in a workspace…* went). Unknown gets an act: on the install the account a list held read unknown, offered nothing, and
- * the person reached for the header instead. A key its provider refused is repaired by a key (ACCTUX1): *New API key*, where
+ * the person reached for the header instead. A key its provider refused is repaired by a key: *New API key*, where
  * the agent takes one, which puts it into the same account (`key-replace`, KEYREPLACE1b).
  */
 export function accountAct(
@@ -489,10 +489,10 @@ export type AgentRow = {
   phrase: string;
   /** The accounts the person must act on, which wear the waiting mark. */
   waiting: number;
-  /** Its mark on the list's strip, a letter or two no agent above it wears (ACCTUX2): *CC*, *Co*. */
+  /** Its mark on the list's strip, a letter or two no agent above it wears: *CC*, *Co*. */
   mark: string;
   /**
-   * Whether Daoris has an installer for it (INSTALLDOOR1): false offers *How to install*, never Install. Read from the door the
+   * Whether Daoris has an installer for it: false offers *How to install*, never Install. Read from the door the
    * install runs on, and true where the snapshot names none.
    */
   installs: boolean;
@@ -514,7 +514,7 @@ function declaredMark(tool: Tool): string | null {
 }
 
 /**
- * An agent's marks on the strip, each its own (ACCTUX2): the strip drew a first character, so Claude Code and Codex were both
+ * An agent's marks on the strip, each its own: the strip drew a first character, so Claude Code and Codex were both
  * `C`. A declared mark leads; else each word's initial (*CC*, *DH*) or a lone word's first two letters (*Co*), the first a
  * capital; and one a row above already wears gives way to the first letter and a later one of its name (*Cody* beside *Codex*
  * is *Cd*), so no two rows look alike.
@@ -602,14 +602,14 @@ export function rulesSummary(rules: AgentRulesState): string {
   ].join(' · ');
 }
 
-/** The model and effort, folded: the tool's own defaults, or how many accounts set their own (AGT6). */
+/** The model and effort, folded: the tool's own defaults, or how many accounts set their own. */
 export function settingsSummary(tool: Tool): string {
   const set = tool.accounts.filter((account) => account.settings
     && (account.settings.model !== null || account.settings.effort !== null || account.settings.perModel.length > 0)).length;
   return set === 0 ? i18n.t('agents.settings.summary.default') : i18n.t('agents.settings.summary.set', { count: set });
 }
 
-/** Usage, folded: the sessions measured, and nothing measured said so, never zero (D57). */
+/** Usage, folded: the sessions measured, and nothing measured said so, never zero. */
 export function usageSummary(sessions: number): string {
   return sessions > 0 ? i18n.t('agents.usage.summary', { count: sessions }) : i18n.t('agents.usage.none');
 }

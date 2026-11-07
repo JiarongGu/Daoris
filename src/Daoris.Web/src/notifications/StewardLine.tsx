@@ -37,7 +37,7 @@ function ActLine({ act, busy, onReverse }: { act: StewardActNow; busy: boolean; 
 }
 
 /**
- * One request at the steward's desk (STEWARDROLE1c): the act it asks for in words, on what, when, the caller's why as written with the
+ * One request at the steward's desk: the act it asks for in words, on what, when, the caller's why as written with the
  * mark that it is their words and grants nothing, and where it stands: waiting, answered by the steward's act, or declined with the
  * steward's reason, also as written.
  */
@@ -69,7 +69,7 @@ function DeskLine({ request }: { request: DeskRequestNow }) {
  * behalf*, and only while it stands, the owner's own reverse press (§5.4), none for a finish or a Try again. A stop whose quest still
  * waits on a *Try again* is said above them as *Stopped by the steward*, with its press, as *What needs you*'s `steward-stopped` row
  * also says it. **A line, not a row**: no notice per act, so it counts toward no group's count and never the bell's. Who holds the
- * steward is its role's, among the roles (D233 point 2).
+ * steward is its role's, among the roles.
  *
  * Under it, the steward's desk (STEWARDROLE1c, §6.2; kept across a restart since COMMS1l): what any caller asked the steward to do, *n waiting*, folded until
  * opened, each request its caller's words, which grant nothing, and how the steward closed it. It offers no press: the owner's own

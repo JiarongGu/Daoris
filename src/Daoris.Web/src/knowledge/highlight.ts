@@ -66,7 +66,7 @@ function cut(token: string): string[] {
  * An excerpt split into the runs a query matched and the runs it did not.
  *
  * @remarks
- * 🔴 **Found on the deployed application** (D62), on the first real index. The service centres each
+ * 🔴 **Found on the deployed application**, on the first real index. The service centres each
  * excerpt on the first matching term and says why in its own source: *"a result list that cannot
  * show its reasoning gets treated as an oracle."* The view then rendered the excerpt as plain
  * text, so the reasoning was there and invisible — twenty-six results for one word, each a

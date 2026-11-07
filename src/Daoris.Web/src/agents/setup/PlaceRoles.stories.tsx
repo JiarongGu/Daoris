@@ -38,7 +38,7 @@ const OWN: RoleCatalogue = {
 
 type Args = { shared?: boolean; refuse?: string; policy?: 'set' | 'stale' };
 
-/** STAFFPOLICY1f: each role's policy as `ROLES` answers it, a weight rule with a limit move, or one set for other choices. */
+/** Each role's policy as `ROLES` answers it, a weight rule with a limit move, or one set for other choices. */
 const policies = (state: 'set' | 'stale'): RolePolicyRow[] => ['engine-build', 'build'].map((role) => ({
   role, policyState: state, revision: 2, next: null,
   staffPolicy: { rule: 'weight', choices: [{ agent: 'claude-code', model: 'opus', effort: 'high', weight: 3 }, { agent: 'claude-code', model: 'sonnet', effort: 'high', weight: 1 }] },
@@ -139,7 +139,7 @@ const REFUSAL = '`engine-review` already takes `review` in that scope: at most o
 export const TwoRolesOneWork: Story = { args: { refuse: REFUSAL }, play: refused };
 export const TwoRolesOneWorkNarrowDark: Story = { args: { refuse: REFUSAL }, play: refused, decorators: [storyWidths.narrow, dark] };
 
-/** STAFFPOLICY1f: the role set here says its rule on its line. */
+/** The role set here says its rule on its line. */
 export const WithPolicy: Story = { args: { policy: 'set' } };
 export const WithPolicyHalf: Story = { args: { policy: 'set' }, decorators: [storyWidths.half] };
 export const WithPolicyNarrow: Story = { args: { policy: 'set' }, decorators: [storyWidths.narrow] };

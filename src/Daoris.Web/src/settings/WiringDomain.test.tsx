@@ -28,7 +28,7 @@ import {
 const NO_UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null };
 
 /**
- * The shell: the wiring as given for `SYSTEM_WIRING` (a function may ask the payload), the disk space for `SYSTEM_SPACE` (KEEP1c), the
+ * The shell: the wiring as given for `SYSTEM_WIRING` (a function may ask the payload), the disk space for `SYSTEM_SPACE`, the
  * driver's state for the rest.
  */
 const shell = (wiring: SystemWiring | ((payload?: { measure?: boolean }) => SystemWiring), space: SystemSpace = SPACE) =>
@@ -396,7 +396,7 @@ describe('Settings → This Daoris', () => {
     expect(logs.getByText('not there')).toBeTruthy();
   });
 
-  // WIRING1e: the set-up presses are offered, and none is pressed by opening the page (each is tested in WiringDomain.setup.test.tsx).
+  // The set-up presses are offered, and none is pressed by opening the page (each is tested in WiringDomain.setup.test.tsx).
   it('offers the set-up presses and presses none of them by itself', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
@@ -410,7 +410,7 @@ describe('Settings → This Daoris', () => {
     expect(routes.filter((type) => ['SYSTEM_OPEN_FOLDER', 'SYSTEM_PATH', 'SYSTEM_SERVICE_ADDRESS'].includes(type))).toEqual([]);
   });
 
-  // OWNSPACE2 (D175 point 3, D88): what Daoris's sessions left in the person's own tool home, listed and nothing more (the press is OWNSPACE2e).
+  // What Daoris's sessions left in the person's own tool home, listed and nothing more (the press is OWNSPACE2e).
   it('lists the folders Daoris left in the person\'s own tool home, read-only, with the records that name them', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
@@ -458,7 +458,7 @@ describe('Settings → This Daoris', () => {
     expect(card.queryAllByRole('button')).toEqual([]);
   });
 
-  // CACHECLEAR1 (D88's shape): the Downloads row lists the agents' and tools' downloaded versions with what keeps each, then one
+  // The Downloads row lists the agents' and tools' downloaded versions with what keeps each, then one
   // press removes those nothing uses; the driver judges each again, and what it kept at the press is said.
   const withDownloads = (cleared?: (versions: unknown) => unknown) =>
     async (module: string, type: string, request?: { payload?: { measure?: boolean; versions?: unknown } }) => {
@@ -486,7 +486,7 @@ describe('Settings → This Daoris', () => {
     expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_DOWNLOADS_CLEAR')).toBe(false);
   });
 
-  // KEEP1b (D195, the cleanup design §9): the row says each version's date by the rule, and a version a running session was handed is
+  // The row says each version's date by the rule, and a version a running session was handed is
   // kept; one no pass has found unused yet has no date.
   it('says the rule, when each unused version goes by it, and keeps what a running session was handed', async () => {
     invoke.mockImplementation(withDownloads());
@@ -537,7 +537,7 @@ describe('Settings → This Daoris', () => {
     expect(list.getByText('保留：本机固定了这个版本')).toBeTruthy();
     expect(list.getByText('保留：工作区 games 固定了这个版本')).toBeTruthy();
     expect(list.getAllByText('智能体').length).toBeGreaterThan(0);
-    // KEEP1b: the rule, the date it goes and the running session's keep, in 中文.
+    // The rule, the date it goes and the running session's keep, in 中文.
     expect(list.getByText('没有任何地方使用的版本，会在 Daoris 首次发现它未被使用的 7 天后自动移除。')).toBeTruthy();
     expect(list.getByText(`将于 ${clockOf('2026-10-22T09:00:00.000+00:00', new Date(), 'zh')} 自动移除`)).toBeTruthy();
     expect(list.getByText('保留：一个正在运行的会话使用了它')).toBeTruthy();
@@ -553,7 +553,7 @@ describe('Settings → This Daoris', () => {
     expect(screen.queryByRole('region', { name: 'Left in your own tool home' })).toBeNull();
   });
 
-  // KEEP1c (D195 point 5, the cleanup design §4.1, §4.2): the Disk space card, each kind's size, rule, next and last clean.
+  // The Disk space card, each kind's size, rule, next and last clean.
   it('shows the disk space after the folders: each kind with its size, rule, next and last, and counts nothing on the open', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
@@ -565,7 +565,7 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText(`${size(143.5 * 1024 ** 3)} of ${size(1024 ** 4)}`)).toBeTruthy();
     expect(scope.getByText('Set-aside trees')).toBeTruthy();
     expect(scope.getByText("a finished session's tree goes an hour after its record is kept; others after 14 days")).toBeTruthy();
-    // KEEPSIZE1b (the keep-size design §4.5): what waits for its record is said beside *next*, never silent past its days; and a recorded
+    // What waits for its record is said beside *next*, never silent past its days; and a recorded
     // folder whose repository the registry no longer names, with its reason (the last fixes' check, finding 7).
     expect(scope.getByText(
       `next: 3 folders, ${size(0.6 * 1024 ** 3)} on ${dayOf('2026-10-29T09:00:00.000+00:00')} · 2 waiting for their record · `
@@ -577,10 +577,10 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText('kept until you clear it')).toBeTruthy();
     expect(scope.getByText('cleaned up once its work is on the line')).toBeTruthy();
     expect(scope.getByText("the browser's own limit")).toBeTruthy();
-    // What an earlier build left goes only by the person's press, which frees space, listed first (KEEP1e).
+    // What an earlier build left goes only by the person's press, which frees space, listed first.
     expect(scope.getByText('removed only by your press')).toBeTruthy();
     expect(scope.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
-    // KEEP1d: the rules the person sets carry their editor and their terminal twin, history's age among them (KEEP1g).
+    // The rules the person sets carry their editor and their terminal twin, history's age among them.
     expect(scope.getAllByRole('button', { name: 'Change…' })).toHaveLength(5);
     expect(card.textContent).toContain('daoris settings keep history …');
     expect(card.textContent).toContain('daoris settings keep set-aside …');
@@ -621,7 +621,7 @@ describe('Settings → This Daoris', () => {
     expect(card.getByText(`The last run, from the look, stopped before its end; it began ${clockOf('2026-10-16T03:00:00.000+00:00')}.`)).toBeTruthy();
   });
 
-  /** The shell with Free up space's two forms (KEEP1e): its list, and a press answered as `started` says. */
+  /** The shell with Free up space's two forms: its list, and a press answered as `started` says. */
   const freeing = (started: object = { run: 'r1', joined: false }, space: SystemSpace = SPACE) =>
     async (module: string, type: string, request?: { payload?: { measure?: boolean; plan?: boolean } }) => {
       if (module === 'DAORIS.DRIVER' && type === 'SYSTEM_SPACE_FREE') return request?.payload?.plan ? SPACE_PLAN : started;
@@ -641,10 +641,10 @@ describe('Settings → This Daoris', () => {
     expect(await list.findByText('What goes now, by your rules')).toBeTruthy();
     expect(list.getByText(`3 items, ${size(0.6 * 1024 ** 3 + 4 * 1024 ** 2)}`)).toBeTruthy();
     expect(list.getByText(`2 folders past their days, ${size(0.6 * 1024 ** 3)}`)).toBeTruthy();
-    // The log's days by the person's rule (KEEP1d), so the line names no number of days.
+    // The log's days by the person's rule, so the line names no number of days.
     expect(list.getByText(`1 file past its days, ${size(4 * 1024 ** 2)}`)).toBeTruthy();
     expect(list.getByText('What could go early, by your word')).toBeTruthy();
-    // KEEPSIZE1b (the keep-size design §5): each set-aside folder's class, said with what the list can say of it.
+    // Each set-aside folder's class, said with what the list can say of it.
     expect(list.getByText(
       // One awaits its record and one's manifest does not read, neither with a date (the second maker's read, finding 9; the last fixes'
       // check, finding 9).
@@ -686,7 +686,7 @@ describe('Settings → This Daoris', () => {
     await vi.waitFor(() => expect(freeCalls()).toHaveLength(2));
     expect(freeCalls()[1]).toEqual({
       units: [],
-      // KEEPSIZE1b (Codex's read of the branch, finding 4): each set-aside folder's listed class and ref go back, for the run to compare.
+      // Each set-aside folder's listed class and ref go back, for the run to compare.
       early: SPACE_PLAN.early[0]!.units.map((unit) => ({
         kind: unit.kind, id: unit.id, why: unit.why, own: unit.own === true, class: unit.class, ref: unit.ref ?? null,
       })),
@@ -763,7 +763,7 @@ describe('Settings → This Daoris', () => {
     expect(within(screen.getByRole('region', { name: 'Folders' })).queryByRole('region', { name: 'Clear downloads' })).toBeNull();
   });
 
-  // KEEP1d (the cleanup design §4.1, §4.2): each rule the person sets, from its row's Change…, inline under the row.
+  // Each rule the person sets, from its row's Change…, inline under the row.
   /** The shell answering SET_KEEP as `keep` answers it; every other route as before. */
   const keeping = (keep: (payload: Record<string, unknown>) => unknown, space: SystemSpace = SPACE) =>
     async (module: string, type: string, request?: { payload?: Record<string, unknown> }) => (
@@ -794,7 +794,7 @@ describe('Settings → This Daoris', () => {
     expect((aside.getByRole('button', { name: 'The default' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  // KEEPSIZE1d: a size limit per kind beside its days, set from the same editor and said on the row.
+  // A size limit per kind beside its days, set from the same editor and said on the row.
   it("says each kind's size limit and when it is over, and sets the limit beside the days", async () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE));
     open();
@@ -827,7 +827,7 @@ describe('Settings → This Daoris', () => {
     expect(downloads.getByRole('spinbutton', { name: '容量上限' })).toBeTruthy();
   });
 
-  // KEEPSIZE1e: the browser's cache takes a size and no days.
+  // The browser's cache takes a size and no days.
   it("sets the browser's cache by a size alone, in English and in 中文", async () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE));
     open();
@@ -869,7 +869,7 @@ describe('Settings → This Daoris', () => {
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_KEEP', { payload: { kind: 'logs', default: true } }));
   });
 
-  // KEEP1g (D195 point 7, decided by the owner): finished history by an age the person sets, the press alone by default.
+  // Finished history by an age the person sets, the press alone by default.
   it('sets an age for finished history, saying what it clears, and takes it back to the press alone', async () => {
     invoke.mockImplementation(keeping(() => DRIVER_STATE));
     open();
@@ -958,7 +958,7 @@ describe('Settings → This Daoris', () => {
     await vi.waitFor(() => expect(aside.getByRole('alert').textContent).toBe('此规则可保留 1 到 90 天；该值超出范围，未写入任何内容。'));
   });
 
-  // KEEP1f (the cleanup design §3.2, §4.2): the floor on the free-space line, below it in the warn ink with what Daoris freed early and
+  // The floor on the free-space line, below it in the warn ink with what Daoris freed early and
   // the press as primary; a kind on another volume says that volume on its row; the floor set from its own Change…, and refused by its unit.
   const GIB = 1024 ** 3;
 
@@ -970,7 +970,7 @@ describe('Settings → This Daoris', () => {
 
     const line = free.getByText(`${size(8 * GIB)} of ${size(1024 * GIB)} · keep at least ${size(20 * GIB)}`);
     expect(line.className).toContain('text-warn');
-    // KEEPSIZE1f: the floor only warns; it frees nothing.
+    // The floor only warns; it frees nothing.
     expect(free.getByText('Below the floor: Daoris tells you and frees nothing by it; its own use is held to its allowance.')).toBeTruthy();
     expect(card.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     const aside = row(card, 'Set-aside trees');

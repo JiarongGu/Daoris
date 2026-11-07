@@ -13,7 +13,7 @@ export type ToolFixing = { tool: string; check: number };
 const CODED = new Set(['fix_not_declared', 'not_found', 'not_started', 'refused', 'unknown_tool', 'unknown_check', 'no_fix']);
 
 /**
- * **What a plugin needs, and where it stands** (ADOSIGNIN1, D150 point 7): each tool it declares with its range and why, and
+ * **What a plugin needs, and where it stands**: each tool it declares with its range and why, and
  * once the person has pressed *Check*, whether it was found and each readiness check passed. A check that does not pass has
  * one press, *Sign in* or *Set up*, which opens a console the person sees running that check's command and nothing else;
  * the tool is read again when it closes. A tool not found says the plugin's own words for getting it, and presses nothing.

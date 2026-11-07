@@ -28,7 +28,7 @@ describe('stored', () => {
     expect(() => store('daoris.test', 'kept')).not.toThrow();
   });
 
-  // MAINWINDOWS3: a window's own scope is kept where a reload of that window finds it and no other window reads.
+  // A window's own scope is kept where a reload of that window finds it and no other window reads.
   it('remembers for this window alone, apart from what every window shares', () => {
     storeHere('daoris.test', 'mine');
     expect(storedHere('daoris.test')).toBe('mine');
@@ -53,7 +53,7 @@ describe('stored', () => {
 });
 
 /**
- * FRAME1c (audit A10): one guard. The map's lines kept a second one of their own, which REV3 CLEAN1 had
+ * One guard. The map's lines kept a second one of their own, which REV3 CLEAN1 had
  * made this file's job, so a page reading the browser's storage itself is found here rather than by review.
  */
 const sources = import.meta.glob('../**/*.{ts,tsx}', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;

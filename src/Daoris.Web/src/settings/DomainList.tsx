@@ -5,16 +5,16 @@ import { LIST_ROW } from '../work/frame/listKeys';
 export type DomainRow = { id: string; label: string };
 
 /**
- * **Settings' list** (D118 §2, §5; FRAME1g): its domains, one row each, the chosen one marked as the page
+ * **Settings' list**: its domains, one row each, the chosen one marked as the page
  * shown, as Settings' list pane holds them.
  *
  * @remarks
  * **A molecule**: the domains a window is offered, their names and the one chosen arrive as props, and a
  * choice goes out by the domain's id. Which domains a window is offered is the page's answer, since only a
- * shell has a machine's (D47 §4), so nothing here asks whether one is attached.
+ * shell has a machine's, so nothing here asks whether one is attached.
  *
  * Its rows are the frame's list rows (`data-list-row`), so ↑, ↓, Home and End move between them and Enter
- * opens one (D118 §3a), and the chosen row is where F6 lands. They are drawn as the session rail's are,
+ * opens one, and the chosen row is where F6 lands. They are drawn as the session rail's are,
  * flush to the pane with the accent on their edge, where they were rounded rows inside the page.
  */
 export function DomainList({ label, domains, chosen, onChoose, note }: {
@@ -24,7 +24,7 @@ export function DomainList({ label, domains, chosen, onChoose, note }: {
   /** The domain shown in the main area. */
   chosen: string;
   onChoose: (id: string) => void;
-  /** What the window is not offered, said beneath the domains: a browser's (D47 §4). */
+  /** What the window is not offered, said beneath the domains: a browser's. */
   note?: string;
 }) {
   return (

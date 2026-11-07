@@ -249,7 +249,7 @@ export function setupSections({ work, workParts, sections, lineRow, landingRow, 
     });
   }
 
-  // The place's Workflow folds (SETUPUX1o), each a row above drawn apart under its own name, in the order the page draws them.
+  // The place's Workflow folds, each a row above drawn apart under its own name, in the order the page draws them.
   const folds: [SetupSectionId, string | null, ReactNode][] = [
     ['landing', landingSaid, landingRow],
     ['opinion', opinionSaid, opinionRow],

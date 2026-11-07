@@ -20,7 +20,7 @@
  * rather than a badge.
  */
 export function Mark({ size = 20, className }: { size?: number; className?: string }) {
-  // In rem, from the pixels it has at 100% (ZOOM1): the strip wears the window zoom's inverse, so a mark drawn in pixels
+  // In rem, from the pixels it has at 100%: the strip wears the window zoom's inverse, so a mark drawn in pixels
   // shrank there as the content grew.
   const side = `${size / 16}rem`;
   return (

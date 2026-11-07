@@ -7,7 +7,7 @@ import { InTheme } from '../plugins/storyIcons';
 import { StewardLine } from './StewardLine';
 
 // The steward's line in *Notifications* (STEWARDROLE1b, D209; the steward design §5.3, §5.4): appointed with its run's acts, a stop
-// still waiting on a Try again said as *Stopped by the steward*, and dormant; with the steward's desk under it (STEWARDROLE1c), and the
+// still waiting on a Try again said as *Stopped by the steward*, and dormant; with the steward's desk under it, and the
 // desk alone; light and dark, and in 中文. The key is never drawn.
 
 const inTheme = (theme: 'light' | 'dark') => [(Story: () => ReactElement) => <InTheme theme={theme}><Story /></InTheme>];

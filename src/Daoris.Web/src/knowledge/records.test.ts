@@ -51,7 +51,7 @@ describe('a finding', () => {
 });
 
 describe('an answer', () => {
-  /** TIER1 (D24): the tier that answered, never the one configured, and none answering is not nothing matching. */
+  /** The tier that answered, never the one configured, and none answering is not nothing matching. */
   it('is worded by the tier that made it', () => {
     expect(answeredBy('lexical', true)).toEqual({ byMeaning: false, nothing: false });
     expect(answeredBy('lexical+semantic', false)).toEqual({ byMeaning: true, nothing: false });

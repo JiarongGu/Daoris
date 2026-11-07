@@ -15,7 +15,7 @@ import { previewText, rowLine } from './preview';
 
 /** What a row of the history may do, each pressed through the organism that holds the bridge. */
 export type AskHistoryActs = {
-  /** Show it in the panel, telling where the list was scrolled so going back puts it there again (ASKHIST1c). */
+  /** Show it in the panel, telling where the list was scrolled so going back puts it there again. */
   onOpen: (id: string, scroll: number) => void;
   /** Name it, or give it its first question back with null; told how it ended. */
   onRename: (id: string, name: string | null, answered: Answered) => void;
@@ -64,7 +64,7 @@ export function AskHistory({
 }: {
   rows: HelpConversationRow[];
   /**
-   * Whose conversations the list holds (ASKSCOPE1d): `workspace`'s, or every workspace's for null, each row then labelled with
+   * Whose conversations the list holds: `workspace`'s, or every workspace's for null, each row then labelled with
    * its own; `here` is the window's workspace, which `onEvery` offers beside every workspace's. Absent, the list says nothing of
    * workspaces, as before them.
    */
@@ -155,7 +155,7 @@ export function AskHistory({
   }, []);
 
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    // A key an input method is composing with is the method's, the search's arrow into the rows among them (IME1).
+    // A key an input method is composing with is the method's, the search's arrow into the rows among them.
     if (isComposing(event)) return;
     keys(event);
     if (event.key !== 'Escape' || event.defaultPrevented || !onClose) return;
@@ -171,7 +171,7 @@ export function AskHistory({
   };
 
   return (
-    // `minmax(0,1fr)` on every grid between a row's words and the panel (ASKHIST1b): a grid's implicit column is `auto`, which
+    // `minmax(0,1fr)` on every grid between a row's words and the panel: a grid's implicit column is `auto`, which
     // grows to its widest child's min-content, and a pasted URL ran the search and every row past the dock.
     <section aria-labelledby={headingId} className="flex min-h-0 flex-1 flex-col" onKeyDown={onKeyDown}>
       <header className="grid grid-cols-[minmax(0,1fr)] gap-2 border-b border-line px-4 pb-2.5 pt-2.5">
@@ -231,7 +231,7 @@ export function AskHistory({
         ) : searching ? (
           !refreshing && (
             // Every conversation was searched (ASKHIST1d1), and the hint says so: none is left out of a search. Within one
-            // workspace, every one of its conversations (ASKSCOPE1d).
+            // workspace, every one of its conversations.
             <Notice
               icon="search"
               headline={t('help.history.none', { words })}
@@ -325,7 +325,7 @@ function Marked({ text, words }: { text: string; words: string }) {
 }
 
 /**
- * Whose conversations the list holds (ASKSCOPE1d): the window's workspace, or every one's, two presses that say which is chosen.
+ * Whose conversations the list holds: the window's workspace, or every one's, two presses that say which is chosen.
  * The window's own is named, as the switcher names it.
  */
 function WorkspaceChoice({ here, every, onEvery }: { here: string; every: boolean; onEvery: (every: boolean) => void }) {
@@ -353,7 +353,7 @@ function WorkspaceChoice({ here, every, onEvery }: { here: string; every: boolea
 
 function HistoryRow({ row, labelled, current, busy, words, asking, onAsk, onOpen, onRename, onPin, onStartFrom, onDelete }: {
   row: HelpConversationRow;
-  /** Every workspace's list (ASKSCOPE1d): the row says its workspace, a row from before as `default`'s. */
+  /** Every workspace's list: the row says its workspace, a row from before as `default`'s. */
   labelled: boolean;
   current: boolean;
   busy: boolean;
@@ -490,7 +490,7 @@ const FIELD_KEYS = new Set(['ArrowDown', 'ArrowUp', 'Home', 'End']);
  * A conversation's name, set where its row is (ASKHIST1, as ASKHIST1c made it): it starts from the title shown, selected, so
  * typing replaces it; the field the row's whole width above presses that wrap; *Use the original question* for a named one,
  * since a name cleared to nothing was a press nobody could read; its wait said aloud, and no Escape while it waits; and the
- * terminal's twin under it (D50).
+ * terminal's twin under it.
  */
 function RenameHelp({ row, onSave, onClose }: {
   row: HelpConversationRow;

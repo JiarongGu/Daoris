@@ -20,7 +20,7 @@ export type Draft = { key: number; agent: string; model: string; effort: string 
 
 /**
  * A role in the catalogue's one editor, over `SET_ROLE` (ONEWAY1a: its record and its choices together). `policy` is the role's staffing
- * policy (STAFFPOLICY1f), absent where the role keeps none: a new role, a brainstorm or a driver before policies.
+ * policy, absent where the role keeps none: a new role, a brainstorm or a driver before policies.
  */
 export type Editing = {
   id: string; isNew: boolean; revision: number | null; name: string; nameIn: [string, string][]; takes: string[]; work: string;

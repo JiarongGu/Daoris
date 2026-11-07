@@ -3,7 +3,7 @@ import { Inline } from '../../design/ui';
 import { type SessionHelperDoor } from './sessionHelperDoor';
 
 /**
- * What a helper or pass proposal asks, line by line (COWORKUX1): the question, the agent, the ask it asks again after and whose answer
+ * What a helper or pass proposal asks, line by line: the question, the agent, the ask it asks again after and whose answer
  * it is. The question and names are the person's content, shown as written; the labels are chrome.
  */
 export function SessionHelperFacts({ door }: { door: SessionHelperDoor }) {

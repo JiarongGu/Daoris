@@ -28,7 +28,7 @@ export type ConflictRow = {
 const sameName = (a: SubmissionRef, b: SubmissionRef) => a.machine === b.machine && a.sequence === b.sequence;
 const isMine = (conflict: QuestConflict, here: string | null) =>
   here !== null && conflict.machine === here && conflict.attempted === 'Taken';
-/** Brought forward offline: the remote has not answered, so it is said as it stands and never as settled (D178 point 8). */
+/** Brought forward offline: the remote has not answered, so it is said as it stands and never as settled. */
 const unconfirmed = (conflict: QuestConflict) => conflict.ended === 'brought-forward' && conflict.forward?.standing === 'unconfirmed';
 
 /** Whether this machine's lost take can be brought forward as the quest stands, or why not, in the service's refusal order. */
@@ -74,7 +74,7 @@ function lineOf(t: TFunction, conflict: QuestConflict, here: string | null): str
   return t('quests.detail.conflictLine', { machine: conflict.machine, attempted: t(`status.${conflict.attempted}`) });
 }
 
-/** How a settled conflict ended (D178 point 7): dropped, or brought forward and confirmed or lost again. */
+/** How a settled conflict ended: dropped, or brought forward and confirmed or lost again. */
 function endedOf(t: TFunction, conflict: QuestConflict): string {
   if (conflict.ended === 'dropped') {
     return conflict.forward?.standing === 'lost' ? t('quests.conflict.ended.droppedFirst') : t('quests.conflict.ended.dropped');
@@ -108,7 +108,7 @@ function Line({ conflict, here, settled = false }: { conflict: QuestConflict; he
  * - **Another machine's conflict offers what it did before**, its dismissal, as does every conflict where the host names no machine.
  * - **A second loss is the bring-forward lost again**, said on the conflict it was to settle; its fresh take's own conflict is read as
  *   part of that row, and dropped with it.
- * - **A bring-forward the remote has not answered is unconfirmed**, said here as it stands and never as settled (D178 point 8).
+ * - **A bring-forward the remote has not answered is unconfirmed**, said here as it stands and never as settled.
  */
 export function QuestConflicts({
   quest, busy = false, onDismiss, onForward, className,

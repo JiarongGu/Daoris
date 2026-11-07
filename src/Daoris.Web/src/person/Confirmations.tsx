@@ -7,7 +7,7 @@ import { useNow } from '../work/useNow';
 import { standingSaid } from './standingSaid';
 
 /**
- * One value a press carries, as the card shows it (RPC1c, PERSONDOOR1b): its JSON pointer, its JSON type, and a string as it is
+ * One value a press carries, as the card shows it: its JSON pointer, its JSON type, and a string as it is
  * and anything else as its JSON, so a string "3" and a number 3 read apart.
  */
 export type ConfirmationField = { name: string; type: string; value: string };
@@ -19,7 +19,7 @@ export type ConfirmationField = { name: string; type: string; value: string };
 export type ConfirmationNamed = { role: string; name: string; value: string };
 
 /**
- * A press that waits for the person's confirmation in this window (PERSONDOOR1f, RPC1c; D156 §4.2): one a terminal sent over the
+ * A press that waits for the person's confirmation in this window: one a terminal sent over the
  * pipe (`pipe`), named by its route, or one asked at the service's own confirmations (`service`), named by its door and the act the
  * host's table gives it. Never a sentence the asker wrote.
  */
@@ -33,15 +33,15 @@ export type Confirmation = {
   /** The act the service's table names (its own words, shown as they are); none for a terminal's press, which the page words. */
   act?: string | null;
   fields: ConfirmationField[];
-  /** The values a terminal's press's sentence names by role (NOTIFY2b); absent from a shell before them, which names none. */
+  /** The values a terminal's press's sentence names by role; absent from a shell before them, which names none. */
   named?: ConfirmationNamed[];
   /** What sent it, as the system names the pipe's client; null where nothing can say (the service's). */
   asker?: { process?: string | null; pid?: number | null } | null;
-  /** When it was asked. It waits, whichever its source, until the person answers or its asker takes it back (ONEWAY1n). */
+  /** When it was asked. It waits, whichever its source, until the person answers or its asker takes it back. */
   asked?: string | null;
   /**
    * Whether it was shown: a terminal's press by any window's word, which moves no clock; the service's by this window's own judgement,
-   * since its door hears none (NOTIFY2b).
+   * since its door hears none.
    */
   shown?: boolean;
   /** Whether a terminal still waits on its line for a terminal's press (§8.1); null where the shell does not say. */
@@ -56,7 +56,7 @@ export type Confirmation = {
   restored?: boolean;
   /** That its Confirm also lets its terminal speak for the person in the conversation until it lets go (RPC1g1, D238). */
   hold?: boolean;
-  /** The pipe's code for where its terminal stands where that is to be said, as `untold` (CHANNELJOIN1c); null or absent otherwise. */
+  /** The pipe's code for where its terminal stands where that is to be said, as `untold`; null or absent otherwise. */
   standing?: string | null;
 };
 
@@ -68,7 +68,7 @@ export type ConfirmationAnswer =
   | { answered: true }
   | { answered: false; why: string | null; message: string; reason?: string; values?: Record<string, string> };
 
-/** A session a press names, as the page names it (NOTIFY2b, §3.2); its workspace only where its repository's name is in two. */
+/** A session a press names, as the page names it; its workspace only where its repository's name is in two. */
 export type PressSession = { title: string; repository: string; workspace?: string | null };
 
 /** What the page names a press's references by: a session, a quest and an ask from the records it holds; none named by its id. */
@@ -79,7 +79,7 @@ export type PressNames = {
 };
 
 /**
- * The catalogue key of a terminal's press's act (NOTIFY2b): `person.route.ROUTE` for the driver's, `person.route.MODULE.ROUTE` for
+ * The catalogue key of a terminal's press's act: `person.route.ROUTE` for the driver's, `person.route.MODULE.ROUTE` for
  * another module's. The modules' twin is `PipeWording.Key`, whose census test holds every person's route worded in both catalogues.
  */
 export function routeKey(module: string | undefined, route: string): string {
@@ -99,7 +99,7 @@ export type PlanDoor =
   | { plan: 'clear'; scope: 'workspace' | 'quest' | 'ask'; id: string };
 
 /**
- * The door to a press's plan (CONFIRMWAIT1c): the driver's routes whose grounds read a plan the person looks at on a page (a land,
+ * The door to a press's plan: the driver's routes whose grounds read a plan the person looks at on a page (a land,
  * a set-up, a sweep, a sync, a clear; `PipeTargetRows`), scoped by the press's own fields. None for any other press, a service's, or
  * one whose plan names nothing to open.
  */
@@ -137,12 +137,12 @@ export const shortId = (id: string) => (id.slice(id.lastIndexOf('/') + 1) || id)
 export const confirmationAnchor = (id: string) => `confirmation-${id}`;
 
 /**
- * The scroll area a card is drawn in (NOTIFY2b): the view's, which says it. A card in none is judged against the window's own.
+ * The scroll area a card is drawn in: the view's, which says it. A card in none is judged against the window's own.
  */
 export const PressArea = createContext<RefObject<HTMLElement | null> | null>(null);
 
 /**
- * The adoption notice (D156 §2.3): one line under the strip, about the window's own host, said once until dismissed. It stays
+ * The adoption notice: one line under the strip, about the window's own host, said once until dismissed. It stays
  * under the strip when the presses left it for *Notifications* (NOTIFY2b, the notification design §3.1).
  */
 export function AdoptionNotice({ onDismiss }: { onDismiss?: () => void }) {
@@ -161,29 +161,29 @@ export function AdoptionNotice({ onDismiss }: { onDismiss?: () => void }) {
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell. **Its default is no** (design §4.2): nothing is
- * focused or pressed for the person, and *Refuse* comes first. Every request waits until the person answers (ONEWAY1n-ii), a
- * terminal's press's card saying whether a terminal still waits on it (CONFIRMWAIT1a-i). A refusal of the answer
+ * focused or pressed for the person, and *Refuse* comes first. Every request waits until the person answers, a
+ * terminal's press's card saying whether a terminal still waits on it. A refusal of the answer
  * itself is said under its card (the UI/UX design's R3), and by a toast only where the card has gone with its press by the time the
  * answer returns (NOTIFY2a, the notification design §3.4).
  */
 export function Confirmations({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, onSayUpdate }: {
   waiting: Confirmation[];
   onAnswer: (waiting: Confirmation, confirm: boolean) => Promise<ConfirmationAnswer>;
-  /** The window's toasts: where a refusal is said once its card has gone with its press (NOTIFY2a). Absent, it is said nowhere. */
+  /** The window's toasts: where a refusal is said once its card has gone with its press. Absent, it is said nowhere. */
   notify?: Notify;
   /**
-   * Said once of each press not yet shown, when its decision region is in view in a window in front of the person (NOTIFY2b, §3.4):
+   * Said once of each press not yet shown, when its decision region is in view in a window in front of the person:
    * kept by the shell, which moves no clock by it. Absent, nothing is said.
    */
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
   /**
-   * The door to a press's plan (CONFIRMWAIT1c, §8.1): its page opened on the plan as it stands now, so a press hours old is
+   * The door to a press's plan: its page opened on the plan as it stands now, so a press hours old is
    * confirmed against the world it would act on. Absent, no card offers it.
    */
   onOpenPlan?: (door: PlanDoor) => void;
   /**
-   * The install's update (DRAINHOLD1): a Confirm held by its drain says what the drain waits on and since when, and offers
+   * The install's update: a Confirm held by its drain says what the drain waits on and since when, and offers
    * *Install later* in place, which says the update's *not now* through `onSayUpdate`. Absent, the card says only its sentence.
    */
   update?: UpdateState;
@@ -204,7 +204,7 @@ export function Confirmations({ waiting, onAnswer, notify, onShown, names, onOpe
 }
 
 /**
- * Whether this window is in front of the person: on screen and focused (CONFIRMSEEN1). A window behind another, or minimized,
+ * Whether this window is in front of the person: on screen and focused. A window behind another, or minimized,
  * draws its card where nobody looks, which is how five presses once expired unseen.
  */
 function looking(): boolean {
@@ -235,10 +235,10 @@ const windowBox = (): Box => ({ top: 0, bottom: window.innerHeight, height: wind
 const STEPS = Array.from({ length: 101 }, (_, index) => index / 100);
 
 /**
- * Says once that a card's decision region is shown (NOTIFY2b, §3.4): one judgement over its intersection with its area, the
+ * Says once that a card's decision region is shown: one judgement over its intersection with its area, the
  * window's size and focus, and a drawer's scrim, judged again at each change of any; its group's fold, its tab and where the view is
  * docked mount or unmount the card, which judges again as it mounts. The scroll stays the person's: nothing here moves it. A notice of
- * *Done and failed* is read by the same judgement (NOTIFY2f, §2.4), with no buttons' row.
+ * *Done and failed* is read by the same judgement, with no buttons' row.
  */
 export function useShownOnce(enabled: boolean, region: RefObject<HTMLElement | null>, buttons: RefObject<HTMLElement | null>, said: () => void) {
   const area = useContext(PressArea);
@@ -297,7 +297,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
-  // DRAINHOLD1: that the last Confirm was held by an update's drain, so the card says what the drain waits on while it lasts.
+  // That the last Confirm was held by an update's drain, so the card says what the drain waits on while it lasts.
   const [held, setHeld] = useState(false);
   const [details, setDetails] = useState(false);
   const region = useRef<HTMLDivElement>(null);
@@ -306,8 +306,8 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
   useEffect(() => {
     latest.current = { waiting, onShown, notify };
   });
-  // NOTIFY2a: whether the card is still drawn when its answer returns. A press answered in another window, or one whose Confirm found a
-  // ground moved (CONFIRMWAIT1a-i), has gone by then where another window's view closed, and its refusal is a toast (R3 where the place
+  // Whether the card is still drawn when its answer returns. A press answered in another window, or one whose Confirm found a
+  // ground moved, has gone by then where another window's view closed, and its refusal is a toast (R3 where the place
   // has gone).
   const drawn = useRef(true);
   useEffect(() => {
@@ -317,7 +317,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
   useShownOnce(waiting.shown !== true && onShown !== undefined, region, buttons,
     () => latest.current.onShown?.(latest.current.waiting));
 
-  // No request has a clock (CONFIRMWAIT1a-i, ONEWAY1n-i): its age is said instead, which grows in weight once it has waited over an hour.
+  // No request has a clock: its age is said instead, which grows in weight once it has waited over an hour.
   const now = useNow(60_000);
 
   // Said under the card while it is drawn, or toasted once it has gone with its press.
@@ -431,7 +431,7 @@ function Card({ waiting, onAnswer, notify, onShown, names, onOpenPlan, update, o
         <p className="m-0 text-small">{t('person.cannotTell')}</p>
         <div ref={buttons} data-press-buttons="" className="flex flex-wrap items-center gap-2">
           {checking ? (
-            // CONFIRMWAIT1a-i (§5.2): while its Confirm is judged, its buttons are replaced by what is under way.
+            // While its Confirm is judged, its buttons are replaced by what is under way.
             <p role="status" className="m-0 text-small text-ink-soft">{t('person.checking')}</p>
           ) : (
             <>
@@ -510,9 +510,9 @@ function refusalOf(t: T, waiting: Confirmation, answer: Extract<ConfirmationAnsw
     return t('person.gone');
   }
   if (answer.why === 'unread') return t('person.unread');
-  // CONFIRMWAIT1a-ii (§7.2): Daoris closing or an update draining took no Confirm, and the press waits on across the restart.
+  // Daoris closing or an update draining took no Confirm, and the press waits on across the restart.
   if (answer.why === 'draining') return t('person.draining');
-  // CONFIRMWAIT1 (§15.2 item 8): its record could not say the answer, so nothing was taken, and it waits on.
+  // Its record could not say the answer, so nothing was taken, and it waits on.
   if (answer.why === 'unrecorded') return t('person.unrecorded');
   if (answer.why === 'changed' && answer.reason) {
     const values = answer.values ?? {};

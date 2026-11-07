@@ -8,7 +8,7 @@ import { CJK_FINDING, CONVERGENT, FINDINGS, IDENTICAL } from './fixtures';
 import { FindingList, type FindingsAnswer } from './FindingList';
 import { findingId } from './records';
 
-// Convergence's list as a molecule (FRAME1f, D118 §2): the similarity and the answer arrive, and every move goes out.
+// Convergence's list as a molecule: the similarity and the answer arrive, and every move goes out.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 

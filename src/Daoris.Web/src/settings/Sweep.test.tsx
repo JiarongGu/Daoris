@@ -7,7 +7,7 @@ import { driverSource } from '../test/driverSource';
 import type { Answered } from '../work/InlineConfirm';
 import { SweepList, type LandedBranch, type SweepBranch, type SweepKind } from './Sweep';
 
-// WSR3 (D88): every session branch with what it holds, listed first — then one press removes those
+// Every session branch with what it holds, listed first — then one press removes those
 // whose work is on a branch of the person's, or that hold nothing, and only those it listed to go.
 
 const branch = (extra: Partial<SweepBranch> & Pick<SweepBranch, 'branch' | 'kind'>): SweepBranch => ({
@@ -65,7 +65,7 @@ describe('the session branches card', () => {
   });
 });
 
-// SWEEPCARRIED1 (D148 point 4, PLUGHOOK1a): a squash left a session branch's commits on no branch of the person's, and a
+// A squash left a session branch's commits on no branch of the person's, and a
 // landed branch's completed pull request carried them, as its plugin answered and git confirmed. The row goes, and says
 // which pull request carried its work; it fell through to the in-use sentence, which is false of it.
 
@@ -99,7 +99,7 @@ describe('a session branch a completed pull request carried', () => {
 });
 
 /**
- * Every kind the clean-up's list can send (SWEEPCARRIED1). The modules' `SweepRow` sends the driver's `SweepItem.Kind` as it
+ * Every kind the clean-up's list can send. The modules' `SweepRow` sends the driver's `SweepItem.Kind` as it
  * is, one of the `SweepKind` constants in the driver's `SweepKind.cs`; this side parses that class, so a kind the driver adds fails here until the page words it. Each is drawn and must say a
  * sentence of its own: never another kind's, and never the words for a kind this window does not know.
  */
@@ -141,7 +141,7 @@ describe('every kind the driver sends a session branch as', () => {
   });
 });
 
-// LAND3b (D102's LAND3 note): a failed or superseded attempt's commits are on no branch of the person's, so no clean-up
+// A failed or superseded attempt's commits are on no branch of the person's, so no clean-up
 // takes its branch. Beside each row the driver says `discardable`, the discard is offered, as the terminal's list prints
 // `trees remove … --force` beside it; it asks once, naming the branch and that its commits go, and only then presses.
 
@@ -187,7 +187,7 @@ describe('discarding a failed attempt\'s branch from the session branches card',
   });
 
   /**
-   * UXFIX2 (the second-opinion review, `Sweep.tsx:218`): the press keeps the ask open and waiting until the driver answers,
+   * The press keeps the ask open and waiting until the driver answers,
    * where it closed at once and refused in a toast. Its sentence takes the focus and describes the move; a branch the driver
    * kept is said inside it, in the driver's words; it closes once the discard lands.
    */
@@ -268,7 +268,7 @@ describe('discarding a failed attempt\'s branch from the session branches card',
   });
 });
 
-// LAND4 (D102's LAND4 note): a kept branch whose tree is still here and holds commits no branch of the person's holds says
+// A kept branch whose tree is still here and holds commits no branch of the person's holds says
 // which session it is and how it ended, and how to land it: its page's Accept, or `daoris tree land` from a terminal,
 // the line the terminal's list prints beside the same row. A row the driver offers no landing beside says none.
 
@@ -301,7 +301,7 @@ describe('the landing a kept branch offers', () => {
   });
 });
 
-// WSR5a: the branches landings made, in a group of their own — each goes once every file it changed reads
+// The branches landings made, in a group of their own — each goes once every file it changed reads
 // on the line as it left it, or it is inside another that does — and by the same press.
 
 const landed = (extra: Partial<LandedBranch> & Pick<LandedBranch, 'branch' | 'kind'>): LandedBranch => ({
@@ -437,7 +437,7 @@ describe('a landed branch the line will never hold', () => {
   });
 });
 
-// UXFIX4 (the second-opinion review, `Sweep.tsx:188,244`): a branch's row kept its three columns down to the main area's
+// A branch's row kept its three columns down to the main area's
 // 400 px floor, and cut its name to one line, so a long name could not be read whole by anyone. jsdom lays nothing out, so
 // what the rows rest on is held: the name a reader hears is the name the row shows, whole, and the columns follow the
 // list's own width.

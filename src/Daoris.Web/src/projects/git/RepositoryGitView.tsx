@@ -31,11 +31,11 @@ const NO_TIPS: string[] = [];
 /**
  * **A repository's Branches tab, with its data** (UX6h1, D150 §4.4): the part that reads the list, drawn only while the tab
  * shows, so the page asks Git nothing until it is open. A repository with no checkout here (the registry names no root) is
- * said so at once, with no read: there is no git to ask (D147 §6).
+ * said so at once, with no read: there is no git to ask.
  */
 export function RepositoryBranches({ repository, workspace, here, onOpenBranch, onOpenHistory }: {
   repository: string;
-  /** Its workspace, which with its name scopes the list to it (D112, BRSCOPE1). */
+  /** Its workspace, which with its name scopes the list to it. */
   workspace: string;
   /** It has a checkout on this machine. */
   here: boolean;
@@ -107,7 +107,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     : { state: 'read', value };
   const refreshing = query.isFetching || (value !== null && new Date(value.readAt).getTime() < askedAt);
 
-  // GITAPP2h: the presses of the tab. The hunks a row opens are read by `Hunks`, under the tab's own key.
+  // The presses of the tab. The hunks a row opens are read by `Hunks`, under the tab's own key.
   const { press, undo, resolve } = useGitActs(repository, workspace);
   const [last, setLast] = useState<ChangesLast | null>(null);
   const say = (verb: ChangesLast['verb'], path: string | null) => (answer: GitActAnswer & { stale?: boolean }) =>
@@ -124,7 +124,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     return <ChangeHunks read={hunksRead} verb={side === 'unstaged' ? 'stage' : 'unstage'} busy={busy} onPress={onPress} />;
   }, [repository, workspace]);
 
-  // GITAPP2j: a conflicted file's conflicts, read by the row that opens them under the tab's own key.
+  // A conflicted file's conflicts, read by the row that opens them under the tab's own key.
   const Conflict = useMemo(() => function Conflict({ path, busy, onPress }: { path: string; busy: boolean; onPress: (press: ConflictPress) => void }) {
     const conflict = useGitConflict(repository, workspace, path);
     const answered = conflict.data;
@@ -137,7 +137,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
     return <ConflictHunks read={conflictRead} busy={busy} onPress={onPress} />;
   }, [repository, workspace]);
 
-  // GITAPP2i: the commit box. It reads the plan for its verb itself (an amend's git runs one more hook) and presses through the tab's one
+  // The commit box. It reads the plan for its verb itself (an amend's git runs one more hook) and presses through the tab's one
   // busy; it is a component of its own so the message typed stays while the tab reads again.
   const commit = useGitCommitAct(repository, workspace);
   const pressCommit = useRef<(press: CommitBoxPress, done: () => void) => void>(() => {});
@@ -161,7 +161,7 @@ function ChangesRead({ repository, workspace }: { repository: string; workspace:
       : { state: 'read', value: answered.value };
     return <CommitBox read={planRead} amend={amend} onAmend={setAmend} busy={busy} onPress={(box, done) => pressCommit.current(box, done)} />;
   }, [repository, workspace]);
-  // GITAPP2k: the switch box and the stash box, each a component of its own so what was chosen or typed stays while the tab reads again.
+  // The switch box and the stash box, each a component of its own so what was chosen or typed stays while the tab reads again.
   const switching = useGitSwitchAct(repository, workspace);
   const pressSwitch = useRef<(press: SwitchBoxPress, done: () => void) => void>(() => {});
   pressSwitch.current = (box, done) => switching.mutate(box, {
@@ -350,7 +350,7 @@ type PageOutcome = { page: GitGraphPage } | { code: string | null; sentence: str
 function pageOutcome(query: { error: unknown; data?: GitAnswer<GitGraphPage> }): PageOutcome {
   if (query.error) return { code: null, sentence: sentence(query.error) };
   if (!query.data) return null;
-  // A refusal is a code the page words (`errors.{code}`), never git's own sentence (GIT1d).
+  // A refusal is a code the page words (`errors.{code}`), never git's own sentence.
   const refusal = gitRefusal(query.data);
   if (refusal) return { code: refusal.code, sentence: sentence(refusal) };
   const page = query.data.value;
@@ -417,7 +417,7 @@ function HistoryRead({ repository, workspace }: { repository: string; workspace:
   const [allBranches, setAllBranches] = useState(false);
   const commit = list.state === 'read' ? list.value.line.commit : null;
   const branches = list.state === 'read' ? list.value.branches : NO_BRANCHES;
-  // The graph's tips are whole ids the list resolved (D147 §4.2): with none, the graph asks nothing.
+  // The graph's tips are whole ids the list resolved: with none, the graph asks nothing.
   const { tips, limit } = useMemo(() => {
     if (!commit) return { tips: NO_TIPS, limit: undefined };
     if (!allBranches) return { tips: [commit], limit: undefined };

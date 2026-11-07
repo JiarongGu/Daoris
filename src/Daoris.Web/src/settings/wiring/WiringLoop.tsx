@@ -12,7 +12,7 @@ const HOLDERS = new Set(['desktop', 'headless', 'verb', 'migration', 'swap']);
  * often it looks, each with the door to Driver, where `driver.json`'s dials are set. Shows; the dials stay in Driver.
  *
  * @remarks
- * A molecule: drawn from props. The holder is the lease's (HOMELEASE1): this window, another window, a terminal's drive, or an
+ * A molecule: drawn from props. The holder is the lease's: this window, another window, a terminal's drive, or an
  * act holding the home for its length (a command, a move of its files, an update's swap), with its process and since when.
  */
 export function WiringLoop({ loop, onDriver }: { loop: SystemWiring['loop']; onDriver: () => void }) {
