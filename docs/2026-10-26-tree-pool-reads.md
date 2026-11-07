@@ -2368,3 +2368,85 @@ F4, F8, F9 and F11 land with row 3, and F5 before row g; F6, F7 and F10 before r
 - yarn's PnP paths, relative to a cache every tree of one repository reaches from the same depth.
 
 Nothing I found loses committed work, and none of the three reopens the owner's choices.
+
+
+## Codex, rounds 9 and 10
+
+Codex's read of rows 6a, 3, 4 and 6b as rounds 9 and 10 left them, at `9f2a228a48`, run by the steward from outside the install, read-only, without seeing the independent Opus reader's read of the same rounds; verbatim but for its headings set down.
+
+| Row | Verdict | Why |
+|---|---|---|
+| **6a — rules and analysis** | **Another round** | A script merely naming a folder can make its contents disposable; the repository floor misses bare repositories. |
+| **3 — dependency store** | **Another round** | Dirty resumes lack a lossless rollback contract; secret values can change without changing the key; cross-install effects lack complete invalidation. |
+| **4 — kept slots** | **Another round** | It inherits those classification and dependency problems. I found no additional running-slot gap in the revised census. |
+| **6b — page** | **Ready to build**, after its prerequisites | I found no independent blocking issue in showing rules, setting restrictions, or recording allows. |
+
+Read at **`9f2a228a48`**, including the specified rounds, their revised sections, D214’s owner notes, and the independent round-5 read. No files changed; no `local/` folder read; no builds or tests run.
+
+Below, **Design** means `docs/2026-10-26-tree-pool-design.md`. **Driver/** means `src/Daoris.Desktop/Daoris.Desktop.Driver/`. The proposed types are unbuilt; code references identify the existing behavior or integration seam being revised.
+
+1. **Blocking — merely naming an ignored folder does not establish that its contents are reproducible.**
+
+   **Where:** Design §28.4:2866–2872; §29.4:3209–3224; §5.3:1291–1295; §30.1:3359–3361. Code: `Driver/Workplace/ContentHolds.cs:439–456`, `Driver/Workplace/SetAsideEligibility.cs:64–82`, `Driver/Workplace/TreeSetAside.cs:418–427`.
+
+   **Sequence:** A tracked script reads an ignored `experiments/` folder containing manually prepared inputs and unfinished results. Source 5 treats a script naming an ignored path as its producer and assigns `output`. Nothing identifies these files as a local signature or establishes a competing scratch classification.
+
+   A conversation ends, remains unfinished, and eventually has no holder. Its guessed output does not hold its slot. The next take moves the folder aside. Floor 4 then subjects that folder to D195 and the size limit. Today, an ordinary set-aside folder without a finished manifest becomes `unmarked` and expires by days; that route does not require the originating line to have finished.
+
+   Moving the files delays their loss. It does not establish the claimed “wrong guess loses nothing.” The existing content reader explicitly distinguishes unique session files from declared reproducible output; the automatic analysis would erase that distinction on weaker evidence.
+
+   **Smallest change:** A script’s mention supplies evidence of a reader, not automatically a producer. Write `output` only where a signature or an identified generation step establishes recreation; otherwise retain `scratch` or `unknown`. Also define the lifetime of files moved aside from an unfinished line: they must not become ordinary expiring leftovers merely because an automatic classification released the slot. This requires no acceptance prompt and keeps established runnable outputs cleared at every take.
+
+2. **Blocking — the repository floor recognizes working repositories, but misses bare repositories.**
+
+   **Where:** Design §28.4:2827–2828; §29.2:3130–3132; §30.1:3354–3356; §5.2:1234–1246. Code: `Driver/Workplace/SetAsideReads.cs:29–56`, `Driver/Workplace/TreeSetAside.cs:118–126`. An existing bare-repository recognition precedent is `tools/rehearsal-kit.mjs:383–390`.
+
+   **Sequence:** A repository’s tool maintains an ignored, versioned cache containing a bare Git repository. The analysis finds the cache from its script, and a session creates an unpushed ref in that bare repository.
+
+   A bare repository has its Git directory contents directly under its root; it need not contain a child named `.git`. It is also absent from the enclosing repository’s worktree list. Both specified detection methods therefore miss it, as does the cited existing nested-repository walker.
+
+   The folder remains classified as cache. Another line can inherit it, or a toolchain change can move it aside during a take. Its private ref and objects then follow ordinary cache retention instead of holding the slot under floor 2.
+
+   **Smallest change:** Extend the floor’s repository recognition to bare Git directories. Use structural candidates followed by a read-only Git validation, with unreadable candidates retaining the slot. Apply that check before copying, carrying, renewing, or removing a containing unit. Add a bare-repository fixture alongside the `.git`-directory and gitfile fixtures.
+
+3. **Blocking — the new files stage can apply a fresh-tree rollback to a dirty resume.**
+
+   **Where:** Design R5.6:555–568; §29.7:3286–3301; §5.3:1334–1336. Code: `Driver/Workplace/TreeReturns.cs:59–65`, `Driver/Loop/Run/Tree/GrowTree.cs:58–64`, `Driver/Loop/Chat/ChatStarts.cs:215–219`.
+
+   **Sequence:** A session leaves an uncommitted edit in a tracked source file and ends with a dependency folder absent. Its carry-on uses the same tree. Existing return handling accepts a standing tree without restoring its tracked files; conversations expressly permit a dirty tree.
+
+   Round 9 now runs the files stage on every resume and carry-on. The missing dependency triggers an install. Its lifecycle script modifies that already-edited tracked source. The retained R5.6 failure rule restores a tracked file the install changed **from the commit** before clearing the install.
+
+   That restores neither the session’s working version nor its staged version. The uncommitted edit is lost. Refusing to seal the install does not preserve the pre-install work.
+
+   **Smallest change:** Give installs in existing trees a separate rollback contract. Preserve the exact pre-install working and index states of affected tracked paths, and restore those states on rejection. A dirty/session-used tree must remain ineligible to seal. Alternatively, leave an absent dependency for the session where Daoris cannot execute and roll back its install losslessly. Test a carry-on whose lifecycle script rewrites an already-dirty tracked file.
+
+4. **Blocking — marking an environment variable secret removes its value from cache identity.**
+
+   **Where:** Design R5.6:529–530; §29.6:3264; §30.3:3398–3404. Code: `Driver/Review/Heavy/HeavyStep.cs:126–145` establishes that selected values reach the child unchanged; `Driver/Review/Integration/DirectGateRuns.cs:74–80` is the execution seam the design adopts.
+
+   **Sequence:** A dependency’s install receives a variable marked `secret`. Its value selects a licensed feature set or account-specific package variant. The install writes the selected files without writing the literal secret anywhere, so the value scan passes.
+
+   The secret changes while its name, tracked inputs, toolchain and other environment values remain unchanged. The proposed key remains unchanged because this variable contributes only its name. A store hit places the old variant without running the new install. The same failure affects a path-bound install retained in place.
+
+   A manifest proves that the old files remain intact; it cannot prove they are the files the new secret would produce.
+
+   **Smallest change:** Include a non-plaintext digest of every passed value in cache identity, including values marked secret. Keep secret marking’s separate effect on sealing and disclosure. Test two secret values that produce different folders while neither literal value appears in either folder. The second must miss.
+
+5. **Blocking — keys of earlier dependencies do not capture a later install’s effects on them.**
+
+   **Where:** Design R5.6:528–539; §29.6:3253; §29.7:3289–3296; §29.3:3191–3193. Code: `Driver/Workplace/ContentHolds.cs:421–438` confirms why Git’s ignored-folder listing cannot describe these internal changes; the replacement is inserted at the current dependency-copy seam, `Driver/Workplace/TreeOpening.cs:172`.
+
+   **Sequence:** Install A creates a dependency folder. Install B modifies a file inside A and creates its own folder. Round 9 detects B’s write, seals nothing for B, and rewrites A’s record as the tree’s own.
+
+   The slot now contains A-with-B’s-modification. Later, the effective rules remove B. A’s declared inputs, key and rewritten namespace record still hold. Nothing in A’s key names B, so the next session can inherit B’s modification even though a fresh execution of the remaining rules would produce pristine A.
+
+   There is a complementary hole if the rewritten A is instead treated as line-owned and set aside: placing pristine A again at the **same key** does not invalidate a retained B. The assertion that including earlier keys necessarily reruns B after replacing A is false when replacement preserves A’s key.
+
+   **Smallest change:** Record cross-install writes as a dependency between the affected placements. Invalidate the affected group when a participating rule changes or disappears, or when an earlier placement is rebuilt—even at the same key. Restore the earlier folders and execute the affected installs in order. A simpler first implementation can make such a group non-carriable between lines and reinstall it together.
+
+   Add both proofs: removing B removes its effect on A; rebuilding A at the same key repeats B’s required effect.
+
+I found nothing further in the stated layer precedence, empty default permission lists, or `deny → allow → ask` order. The tracked-path guard has a concrete existing basis in `TreeClassesReader.cs:60–63`. Round 9’s record-before-install correction matches `OpenRecord.cs:119–120`; its landing census addition covers the actual set and comparison at `ReviewLandingWorld.cs:43–46` and `TreeLandSyncs.cs:206`. I found no additional case requiring a running slot to be deleted or rebased once those specified census changes are implemented.
+
+I also found no additional blocker in copy-based sealing, writable placements, link-safe removal, or eviction leaving already-placed copies intact. The page’s proposed responsibilities introduce no separate file-handling mechanism.
