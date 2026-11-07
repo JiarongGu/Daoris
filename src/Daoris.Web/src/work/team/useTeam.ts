@@ -86,8 +86,8 @@ export function useTeam({ attended, here, nameOf, attend, open }: {
       leadsPieces(attended) ? { door: 'piece', onChoose: () => open('askPiece') } : { door: 'piece', off: t('work.team.off.noTree') },
       leadsPieces(attended) ? { door: 'opinion', onChoose: () => open('review') } : { door: 'opinion', off: t('work.team.off.noTree') },
       { door: 'goOn', onChoose: () => open('handOver') },
-      // A second request on the ask runs alongside by itself: there is no press to make it, so the dialog says so.
-      { door: 'alongside', off: t('work.team.off.alongside') },
+      // A second request on the ask runs alongside by itself: there is no press to make it, so the dialog says so in a sentence.
+      { door: 'alongside', note: t('work.team.note.alongside') },
     ] : [],
     thread,
     outside: outside.data ?? [],

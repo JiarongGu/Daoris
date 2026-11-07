@@ -22,7 +22,7 @@
   "work.team.door.goOn": "换一个智能体继续",
   "work.team.door.alongside": "并行工作",
   "work.team.off.noTree": "这个会话没有自己的工作树，所以它写下或读到的内容无法分开保存。",
-  "work.team.off.alongside": "同一请求上的第二个请求会自行并行运行，在自己的工作树中，并加入这条线的分项。",
+  "work.team.note.alongside": "无需按键：同一请求上的第二个请求已会自行并行运行，在自己的工作树中，并加入这条线的分项。",
   "work.team.thread.for": "为「{{title}}」工作",
   "work.team.thread.back": "返回主导",
   "work.team.thread.confined": "只读副本；不做任何改动",
