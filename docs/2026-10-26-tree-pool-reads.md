@@ -2746,3 +2746,41 @@ read's. A bare path is under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Desig
 
 Nothing I found loses committed work. F1 and F2 lose a line's uncommitted work through Daoris's own install, each where the unworked test
 misreads a worked tree; the other four are sentences. None reopens an owner's choice.
+
+
+## Codex, round 11
+
+Codex's narrow read of rows 3 and 4 as round 11 left them, at `107063dfa2`, run by the steward from outside the install, read-only, without seeing the independent Opus reader's; verbatim but for its headings set down.
+
+**Rows 3 and 4: another round, narrowly.** Round 11 answers my five round-10 blockers. One remaining case in F2 can still retain an incomplete install: an install-generated companion is excluded from dependency validation because another rule classifies it as output, then that output is cleared.
+
+Read at `107063dfa2`. This was read-only; no files changed, no `local/` folder read, and no builds or tests run.
+
+1. **Round-10 finding 1 — answered.** C1 distinguishes a script’s reader from its producer. More decisively, floor 4 and §10’s round-11 note preserve a returning line’s set-aside files until its finish, including against size limits. This closes the expiry route visible in `SetAsideEligibility.cs:69–71`.
+
+2. **Round-10 finding 2 — answered.** Floor 2 and C2 add bare-repository recognition, retain unreadable candidates, and require the check before handling a containing unit. That addresses the existing walker’s reliance on `.git` in `SetAsideReads.cs:32–36`.
+
+3. **Round-10 finding 3 — answered.** C3/F1 prohibit installs and their write-back in a worked tree. `handed` is written before agent use, terminal access marks it too, and a returning line’s standing slot explicitly remains worked. This respects existing return handling, which accepts a standing tree without restoring its tracked files (`TreeReturns.cs:59–65`), and dirty conversations (`ChatStarts.cs:215–219`).
+
+4. **Round-10 finding 4 — answered.** Every passed `env` value, including a marked secret, contributes a home-keyed digest. Changing the value changes identity without retaining the plaintext. Secret marking separately controls the sealing scan.
+
+5. **Round-10 finding 5 — answered.** C5’s group binds the affected placements, companions, participating rules and ordered keys. Removing B, changing either member, or rebuilding A at the same key invalidates the group and repeats the installs in order. Keeping groups out of the store avoids independently placing an incomplete member.
+
+**Remaining finding — blocking, rows 3 and 4: a named output can still disappear from a retained install.**
+
+**Where:** R5.6’s round-11 companion bullet, especially its exclusion of paths named by another effective rule; §29.7’s take step 3 and files-stage steps 2–4; §31 F2.
+
+**Concrete sequence:**
+
+- Dependency A’s lifecycle script installs its dependency folder and generates an ignored `generated/client/` folder outside A’s `paths`.
+- An effective rule classifies `generated/client/` as `output`. This satisfies C1’s producer test: the lifecycle script actually generates it.
+- A’s install is unsealed because it writes outside its namespace. However, `generated/client/` is excluded from its companions because another rule names it.
+- The line finishes, or another line takes the slot. The output goes aside; A’s dependency folder stays.
+- At the same commit, A’s key, namespace record and recorded companions all hold. The files stage keeps A. It neither repeats A’s lifecycle script nor necessarily runs another producer: step 4 runs only `post-checkout`.
+- The next session receives the retained install without its generated client. Its normal compiler command fails against an incomplete installation.
+
+The cited `tools/index-hook.mjs:84–88` explains why this repository’s index can be recreated. It does not establish recreation for an output whose sole producer is the skipped install.
+
+**Smallest change:** Separate output handling from dependency validity. Record install-written paths needed by that install even when another rule controls their kind. Clearing such an output must invalidate the retained install, causing its producer to run before handoff in an unworked tree. Keep the owner’s requirement that outputs are cleared at every take. Prove this with a lifecycle-generated, separately classified output and a same-key take.
+
+I found nothing further blocking in the specified set-aside lifetime, worked-tree preservation, copy hash gates, secret-value identity, group invalidation, or F5’s cleanup before handoff. I found no additional case of a session receiving another line’s files within this narrow scope.
