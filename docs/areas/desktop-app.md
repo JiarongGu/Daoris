@@ -93,7 +93,7 @@ web paths are under `src/Daoris.Web/src/`.
 14. A terminal's press of a `Person` route and a request the host holds for the person are one request row in
     *Notifications*, waiting with no clock for the person's Confirm, default no, until the person answers or the asker
     takes it back. The route's name and raw values sit under *Details*. A start sent with
-    `hold: true`, or the pipe's `HOLD { session }`, is carded saying so and never rides the standing confirmation; confirmed, it
+    `hold: true`, or the pipe's `HOLD { session }`, is carded saying so; confirmed, it
     binds that one connection to that one conversation, in memory alone. The connection's words in the verb's form, turn stops
     and finish for it then run with no card, and the pipe forwards it the conversation's lines, events and end, bounded, with a
     `GAP`. `LET_GO`, the head's *Let go of the terminal* (`SESSION_LET_GO`), the conversation's end and the connection closing
@@ -101,11 +101,11 @@ web paths are under `src/Daoris.Web/src/`.
     session, one more for the terminal's, two to an asker; an ask naming no session is bound by its process, read from the loopback
     connection (`AskerProcess`, Windows), one place each, so an agent leaving its session off cannot hold both of the terminal's.
     (from D156, D196, D238)
-15. The steward's acts are the standing confirmation: the person appoints the steward to the terminal and grants its acts in
-    the window, and its terminal's press proved by the role's key stops or finishes a session, holds or resumes a repository
-    and makes its other acts with no card, outside Daoris's agents. Each use is logged and said on the steward's line in
-    *Notifications*, and taking an act back holds from the next press, which asks as the person's own. D201's grant of its own
-    is not offered. (from D201, D209)
+15. A terminal's stop, finish, hold and resume with no card are the steward's acts alone: the person appoints the steward to the
+    terminal and grants its acts in the window, and its terminal's press proved by the role's key makes them, and its other
+    acts, outside Daoris's agents. Each use is logged and said on the steward's line in *Notifications*, and taking an act back
+    holds from the next press, which asks as the person's own. There is no grant of the terminal's own beside the role door, and
+    a stored one an older build left is removed at the start. (from D201, D209)
 
 **The windows**
 

@@ -101,11 +101,6 @@ export type Driving = {
   /** What driving here does that the choice alone does not say: a direct door leaves a quest here sitting (INT3c). */
   note?: string;
   /**
-   * That its hold was made from a terminal under the person's standing confirmation (TERMTRUST1a, the terminal-trust design §6.2),
-   * for as long as this run remembers it: said beside the hold.
-   */
-  heldStanding?: boolean;
-  /**
    * When the steward last set this repository's driving (STEWARDROLE1b, D209 §5.1), from this run's memory: the newest of its drive,
    * undrive, trees, hold and resume here that still stands. Null or absent where none does.
    */
