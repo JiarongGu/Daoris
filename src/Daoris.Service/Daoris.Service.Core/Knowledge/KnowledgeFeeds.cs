@@ -34,12 +34,11 @@ internal sealed class KnowledgeFeeds(
     {
         var held = registrations
             ?? throw new InvalidOperationException("a fed registration is held in the registration store, and this service was composed without one");
-        var existing = (await registered(ct).ConfigureAwait(false))
-            .Named(registration.Repository);
-
         await _feedGate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            var existing = (await registered(ct).ConfigureAwait(false))
+                .Named(registration.Repository);
             var standing = await held.RegistrationProvenanceAsync(registration.Repository, ct).ConfigureAwait(false);
 
             if (provenance is null)
@@ -135,27 +134,28 @@ internal sealed class KnowledgeFeeds(
         string repository, IReadOnlyList<KnowledgeEntry> entries, FeedProvenance? provenance, CancellationToken ct)
     {
         refuseNewerIndex();
-        var (registration, refused) = await AdmitAsync(repository, provenance, "knowledge", ct).ConfigureAwait(false);
-        if (refused is not null) return refused;
 
-        var normalized = entries
-            .Select(entry => entry with
-            {
-                Repository = registration!.Repository,
-                Provenance = Provenance.Local,
-                // The RECEIVING deployment's wiring decides the circle, never the feed's claim about it:
-                // a feed that could name its own workspace could write itself into someone
-                // else's, which is the scoping bug that becomes a disclosure.
-                Workspace = registration.InWorkspace,
-            })
-            .ToList();
-        var arriving = provenance! with { Digest = FeedDigest.Of(normalized) };
-
-        // The judgement and the write are one step, so two feeds arriving together cannot both find
-        // the same commit held and both take: that is what makes the base a compare-and-swap.
+        // Admission, judgement and write are one step: two feeds cannot both take the same held commit, and one queued behind a
+        // declaration that stopped sharing finds it standing.
         await _feedGate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            var (registration, refused) = await AdmitAsync(repository, provenance, "knowledge", ct).ConfigureAwait(false);
+            if (refused is not null) return refused;
+
+            var normalized = entries
+                .Select(entry => entry with
+                {
+                    Repository = registration!.Repository,
+                    Provenance = Provenance.Local,
+                    // The RECEIVING deployment's wiring decides the circle, never the feed's claim about it:
+                    // a feed that could name its own workspace could write itself into someone
+                    // else's, which is the scoping bug that becomes a disclosure.
+                    Workspace = registration.InWorkspace,
+                })
+                .ToList();
+            var arriving = provenance! with { Digest = FeedDigest.Of(normalized) };
+
             // Read before the held commit is judged, so another connector's write between the judgement and this one refuses it.
             var generations = await store.GenerationsAsync(ct).ConfigureAwait(false);
             var held = registrations is null
@@ -190,16 +190,16 @@ internal sealed class KnowledgeFeeds(
                     + "taken. The next pass judges it again.",
                     Entries: 0);
             }
+
+            return new(
+                FeedRefusal.None,
+                $"Indexed {normalized.Count} entries from `{registration.Repository}` at `{arriving.ShortCommit}`.",
+                normalized.Count);
         }
         finally
         {
             _feedGate.Release();
         }
-
-        return new(
-            FeedRefusal.None,
-            $"Indexed {normalized.Count} entries from `{registration.Repository}` at `{arriving.ShortCommit}`.",
-            normalized.Count);
     }
 
     /// <summary>
@@ -219,49 +219,48 @@ internal sealed class KnowledgeFeeds(
     public async Task<FeedOutcome> FeedCodeMapAsync(
         string repository, string? file, string? map, FeedProvenance? provenance, CancellationToken ct)
     {
-        var (registration, refused) = await AdmitAsync(repository, provenance, "a code map", ct).ConfigureAwait(false);
-        if (refused is not null) return refused;
-
-        // A composition without the store has nowhere to hold what is fed. Every real one has it
-        // (ServiceFactory), so this is a wiring mistake, said as one.
-        var held = registrations
-            ?? throw new InvalidOperationException("a fed code map is held in the registration store, and this service was composed without one");
-
-        string? body = null;
-        string? name = null;
-        var modules = 0;
-        if (map is not null)
-        {
-            if (file is null || !CodeMapReader.Candidates.Contains(file, StringComparer.Ordinal))
-            {
-                return new(
-                    FeedRefusal.Malformed,
-                    $"`{registration!.Repository}` fed a code map from `{file}`, and a code map is read from "
-                    + $"{string.Join(" or ", CodeMapReader.Candidates.Select(c => $"`{c}`"))} — nowhere else.",
-                    Entries: 0);
-            }
-
-            if (System.Text.Encoding.UTF8.GetByteCount(map) > CodeMapReader.MaxBytes)
-            {
-                return new(
-                    FeedRefusal.Malformed,
-                    $"`{file}` is over {CodeMapReader.MaxBytes / 1024 / 1024} MB — a code map is a small file.",
-                    Entries: 0);
-            }
-
-            var (parsed, problem) = CodeMapReader.Parse(map, file);
-            if (problem is not null) return new(FeedRefusal.Malformed, problem, Entries: 0);
-
-            body = CodeMapReader.Write(parsed!);
-            name = file;
-            modules = parsed!.Modules.Count;
-        }
-
-        var arriving = provenance! with { Digest = FeedDigest.Of($"{name}\n{body}") };
-
         await _feedGate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            var (registration, refused) = await AdmitAsync(repository, provenance, "a code map", ct).ConfigureAwait(false);
+            if (refused is not null) return refused;
+
+            // A composition without the store has nowhere to hold what is fed. Every real one has it
+            // (ServiceFactory), so this is a wiring mistake, said as one.
+            var held = registrations
+                ?? throw new InvalidOperationException("a fed code map is held in the registration store, and this service was composed without one");
+
+            string? body = null;
+            string? name = null;
+            var modules = 0;
+            if (map is not null)
+            {
+                if (file is null || !CodeMapReader.Candidates.Contains(file, StringComparer.Ordinal))
+                {
+                    return new(
+                        FeedRefusal.Malformed,
+                        $"`{registration!.Repository}` fed a code map from `{file}`, and a code map is read from "
+                        + $"{string.Join(" or ", CodeMapReader.Candidates.Select(c => $"`{c}`"))} — nowhere else.",
+                        Entries: 0);
+                }
+
+                if (System.Text.Encoding.UTF8.GetByteCount(map) > CodeMapReader.MaxBytes)
+                {
+                    return new(
+                        FeedRefusal.Malformed,
+                        $"`{file}` is over {CodeMapReader.MaxBytes / 1024 / 1024} MB — a code map is a small file.",
+                        Entries: 0);
+                }
+
+                var (parsed, problem) = CodeMapReader.Parse(map, file);
+                if (problem is not null) return new(FeedRefusal.Malformed, problem, Entries: 0);
+
+                body = CodeMapReader.Write(parsed!);
+                name = file;
+                modules = parsed!.Modules.Count;
+            }
+
+            var arriving = provenance! with { Digest = FeedDigest.Of($"{name}\n{body}") };
             var standing = await held.CodeMapProvenanceAsync(registration!.Repository, ct).ConfigureAwait(false);
             var verdict = FeedOrder.Judge(standing, arriving);
             if (verdict == FeedVerdict.AlreadyHeld)
@@ -275,18 +274,17 @@ internal sealed class KnowledgeFeeds(
             if (verdict != FeedVerdict.Take) return NotTaken(verdict, registration.Repository, "code map", standing!, arriving);
 
             await held.RecordCodeMapAsync(registration.Repository, name, body, arriving, ct).ConfigureAwait(false);
+            return new(
+                FeedRefusal.None,
+                body is null
+                    ? $"`{registration.Repository}` keeps no code map at `{arriving.ShortCommit}`; none is held here now."
+                    : $"Held `{registration.Repository}`'s code map ({modules} modules) at `{arriving.ShortCommit}`.",
+                modules);
         }
         finally
         {
             _feedGate.Release();
         }
-
-        return new(
-            FeedRefusal.None,
-            body is null
-                ? $"`{registration.Repository}` keeps no code map at `{arriving.ShortCommit}`; none is held here now."
-                : $"Held `{registration.Repository}`'s code map ({modules} modules) at `{arriving.ShortCommit}`.",
-            modules);
     }
 
     /// <summary>
