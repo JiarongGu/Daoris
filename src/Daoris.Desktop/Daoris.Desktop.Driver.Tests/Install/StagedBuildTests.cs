@@ -742,10 +742,7 @@ public sealed class StagedBuildTests : IDisposable
         Assert.Equal("interrupted", StagedBuild.ReadJournal(_install)!.Reason);
     }
 
-    /// <summary>
-    /// A move is journalled before it is made: a launcher that dies in the moment after a move has no record of it, and
-    /// the undo would delete <c>update/previous/</c>, the only copy of the build before it, with no <c>app/</c> in the install.
-    /// </summary>
+    // A move made just before a launcher died is journalled, or the undo deletes update/previous/, the only copy.
     [Theory]
     [InlineData("app", "update/previous/app")]
     [InlineData("update/staged/app", "app")]
