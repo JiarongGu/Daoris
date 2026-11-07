@@ -13,7 +13,7 @@ no model loop of its own.
 
 ## Its parts
 
-Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they start with `Loop/` or `Roles/`.
+Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they start with `Knowledge/`, `Loop/`, `Plugins/` or `Roles/`, which sit beside it.
 
 | Unit | File | Its job |
 |---|---|---|
@@ -38,7 +38,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `IResumeState` | `Contract/` | A native resume's state, which Course's `ResumeAsk` implements: the run marks it opened when its harness names the conversation, and its end tries a structured resume once more where the harness exited nonzero before naming it, never after a clean exit, a refusal, a stop asked or on the plain capture |
 | `WireReading`, `IReadingSink`, `ReadingSinks`, `DoorFailure`, `ChildSignal` | `Events/Readings/` | The closed set of readings a run writes (an event, a console line, a stream beside, the conversation named, the account's windows, a child seen or ended, a failure), the one port it writes them to and its composition; each carries its run, the generation of the process that said it, that process's lineage token and its place in the run's order (`StampedSink`), the protocol door's windows and a conversation's failed turns among them; `Failed` carries the `DoorFailure` every failure is on either door, which `DoorFailures` in Agents builds from each wire. An executor composes its run's sink of its owners' parts: Context's `RecordReadings` (the event file and the console), the binding's conversation, Participants' `LineageReadings` (the lineage), the windows |
 | `ChatAgent`, `SpawnEquipment` | same names | What a conversation reads of its agent (its door's facts, its process prepared and equipped, its carriers, framing, failure reads, trailers) and the run it makes; the toolchain's environment and the tools-at-the-start switch every session's process is equipped with |
-| `AcpSession` | `Acp.cs` (38 KB) | The protocol door's root: the session's state and its public doors, each a line into the units below; builds the turn's stages in their order and implements the wiring interfaces every unit reaches it through |
+| `AcpSession` | `Acp.cs` (37 KB) | The protocol door's root: the session's state and its public doors, each a line into the units below; builds the turn's stages in their order and implements the wiring interfaces every unit reaches it through |
 | `OpenPrompts`, `OpenPrompt`, `PromptPassage` | `Turn/` | The prompts on the wire and the run's door they pass, under one gate whose header names what it guards, the order of the locks and what a race would break: a prompt opens as it is admitted under the write lock, the door shuts between two writes, a word is taken once |
 | `AcpPrompting` | same name | A prompt written (through the door, its words marked first, in the order asked) and its answer read on the reader's thread: the turn's event, the hand-off to the words behind it, the receipts, the calls a steer cut; reaches the session through `ITurnPromptWiring` |
 | `AcpSteering` | same name | The person's *Send now* steered into the running turn, and its outcome said on the words it cost |
@@ -83,7 +83,7 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 | `DeclaredDoor`, `DeclaredDoors`, `DeclaredSpawn` | `Contract/DeclaredDoor.cs`, `DeclaredDoors.cs`, `DeclaredSpawn.cs` | A plugin's door: Plugins (`PluginDoors`) converts a manifest's named fields into the `DeclaredDoor`, which has no field for steering, resume, rules, words, lineage or confinement (a manifest naming one reaches nothing); the factory (`DeclaredDoors.Door`) makes it a protocol-transport contract door with its own `Identity` (plugin, product, maker), own `Home` (variable, own home) and own program, interactive and no settings file stated here and its resume the transport's (eligibility to negotiate at the open), a door that reads none of its provider's identity, home, program, rule language or skill layout (`Declared`: no rules, Claude Code's skill layout); its provider is the registry's, placed by the door's `accountOf` when it joins (`JoinedProviders`) |
 | `ClaudeRules`, `ClaudeSkills`, `ClaudeServers`, `ClaudeLineageHook`, `LineageHook`, `ClaudeConversationHome` | `Providers/ClaudeCode/` | Claude Code's: its settings file with its hooks and hard denials; its per-session plugin copies; the servers file its native door names; the lineage hook's script (`hooks/lineage-hook.mjs`), installed for the lineage file Loop hands; its conversation home, whose project-folder layout (the home variable, its default place, the `projects` folder, a directory's flat name) is what the tool-home leftovers list reads, so Codex, which files by date, is unlisted |
 | `SpawnSkills`, `SpawnFiles`, `DshProfile` | same names; the last in `Providers/Dsh/` | A session's skills laid out by its door's provider (`ProviderRegistry.SkillLayout`) and handed by its spawn; what a spawn wrote, removed with the session; the dsh home Daoris made |
-| `SessionEquipment.Prepare`, `HandRules` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment` |
+| `SessionEquipment.Prepare`, `SessionRules.Hand` | `Loop/Session/SessionEquipment.cs`, `Loop/Session/SessionRules.cs` | The spawn's assembly, shared by every kind of start, equipped through `SpawnEquipment`, and the rules it is handed; the driver's `Prepare` and `HandRules` are one-line doors to them |
 | `daoris agent …` verbs | `AgentsCommand.cs` (with `AgentRulesVerb`, `AgentTrustVerb`, `AgentRoutes`, `AgentsWorld`), `AgentListCommand.cs`, `AgentAccountsCommand.cs`, `AgentLoginCommand.cs`, `AgentPinCommand.cs`, `AgentLongCommand.cs` | The terminal's doors: list, accounts, sign-in, key, install, pin, update, rules, trust, settings. `list` says each account's last reading, as the page does, and `list --again` asks each binary and account |
 | `SessionProcesses`, `LineageTokens` | same names | The live process per session (never sent to the service), and the token each process runs under |
 
@@ -304,7 +304,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
   `Domain/`. Settings shape goes in `HarnessSettings` or `AccountSet`.
 - Which choice or model a start takes: Roles (`Roles/`), not Agents.
 - A failure's kind: `AgentErrors` and the door's `ErrorWords`. What happens after the kind (park, hold, resume): Loop and Course.
-- What a session is handed at spawn: `Driver.Prepare`, `Equip` and `HandRules` in Loop; a door's arguments, own variables and
+- What a session is handed at spawn: `Driver.Prepare` and `HandRules` in Loop (over `SessionEquipment` and `SessionRules`), `SpawnEquipment.Equip`; a door's arguments, own variables and
   carriers on its spawn in its provider's folder; Daoris's own variables in `Shell`, never in a door's recipe.
 - A branch on what a door can do: ask its ability (`door.Can`, `DoorAbilities`), never its wire; whether it may drive an
   unadopted repository is `Adoption`'s. A door's transport is the contract's `Transport` (`Native` or `Protocol`), read where a
@@ -332,15 +332,15 @@ Agents page, and `orient-index` and `code-map` once files move.
 
 ## Contradictions
 
-1. D23 (one harness supported; a second written only when a repository adopts one) vs `Providers.cs` (four real doors,
+1. D23 (one harness supported; a second written only when a repository adopts one) vs `Registry/Providers.cs` (four real doors,
    stand-ins and plugin harnesses). D53, D57 and D213 read right; only D23's "unknown name is an error" lives.
-2. D24 and D98 (Daoris names no model and chooses none) vs D205 and `Roles/ActorSuggestion.cs:23`, `Roles/RoleSuggestion.cs:23`
+2. D24 and D98 (Daoris names no model and chooses none) vs D205 and `Roles/ActorSuggestion.cs:23-27`
    (the suggestions name `sonnet` and `opus`; starts carry the role's model). D205 reads right.
 3. D205 point 7 (the suggestion leads Build with `opus` · high) vs its note of 2026-10-25 and `Roles/ActorSuggestion.cs:23`
    (`sonnet` · high, then `opus` · high). The note and the code read right.
 4. D81 (a driven session is never `bypassPermissions`) vs D184 and `ClaudeCodeSpawn.cs:137` (bypass by a repository's unrestricted
    setup). D184 reads right; D81 holds only for the auto setup.
-5. D184 point 5 (the person's deny rules hold in every setup) vs `CodexAcpAdapter.cs:46-47` (Codex takes no rules file, so no deny
+5. D184 point 5 (the person's deny rules hold in every setup) vs `CodexProvider.cs:63` (Codex states no rule language, so no deny
    reaches it in any mode). The code reads right, and is said (D233 choice 3).
 6. D125 point 4 (per-workspace rotation) and D130 points 3-4 (machine and workspace lists) vs D197 and `RosterWalk.cs:34`
    (one set per agent, whatever the workspace). D197 reads right.
@@ -350,18 +350,12 @@ Agents page, and `orient-index` and `code-map` once files move.
    the set, never the own home). D197 reads right.
 9. D57 (toolchain, accounts and usage under `~/.daoris/`) vs `HarnessAccountFolders.ManagedHome` and `ProfileHome` (entries of Daoris's home). The
    code and D63/D172 read right.
-10. D213 point 2 (each fact in one place; no reader asks "own, else owner") vs `AgentErrors.cs:143-185` (own table, then
+10. D213 point 2 (each fact in one place; no reader asks "own, else owner") vs `AgentErrors.cs:108-154` (own table, then
     owner's), as D210 point 2 prescribes. The code and D210 read right today; D213 is the target.
-11. D213's note of 2026-11-04 (row m-i complete) vs `TASKS.md:29` (m-i still open). The note reads right; the row belongs in
-    the archive.
-12. `HarnessAccountFolders.ManagedBinary` (a pin with nothing installed falls back to `PATH` and says so) vs `RosterWalk.cs:91`
+11. `HarnessAccountFolders.cs:26-27` (a pin with nothing installed falls back to `PATH` and says so) vs `RosterWalk.cs:91`
     (refused). The refusal reads right (D57, D121).
-13. `Registry/ProviderRegistry.cs:12-13` (nothing reads the registry but its tests) vs `RosterReport.cs:376` and
-    `AgentsCommand.cs:282`. The callers read right.
-14. `ClaudeCodeSpawn.cs:89` (the repository's `.mcp.json` wires the connector; the driver may not write it) vs
-    `Loop/Driver.cs:3323` and `:5209` (Daoris offers its connector at every spawn). The spawn reads right.
-15. `CodexAcpAdapter.cs:10-15` (codex-acp offers three modes, "no third reading") vs `CodexAcpAdapter.cs:57` (`workspace-write` read in
-    codex-acp 2.1.1). The property reads right.
+12. `ClaudeCodeSpawn.cs:89` (the repository's `.mcp.json` wires the connector; the driver may not write it) vs
+    `Loop/DriverContinuations.cs:375` and `Loop/Chat/ChatRun.cs:173` (Daoris offers its connector at every spawn, through `ConnectorPlans.For`). The spawn reads right.
 
 ## Open
 
