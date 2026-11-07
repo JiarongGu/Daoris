@@ -95,7 +95,7 @@ internal sealed class EndedLimitMove(IExecutorWiring wiring, LimitMove move)
             // asking the roster again, so a second walk neither names another account nor counts a start never made.
             // Ask Daoris's room places itself through its own walk, which counts, so this one judges only there.
             selection = await context.Harnesses
-                .SelectAsync(agent.Id.Value, config, workspace, onPick ? prior.Profile : null, StartKind.Conversation, ct, counts: !isHelp)
+                .SelectAsync(agent.Id.Value, config, workspace, onPick ? prior.Profile : null, StartKind.Conversation, ct, prior.ModelOn(ranOn), counts: !isHelp)
                 .ConfigureAwait(false);
             var same = string.Equals(selection.Profile ?? "", prior.Profile ?? "", StringComparison.OrdinalIgnoreCase);
             if (!selection.Allowed || (lost is null && same))
