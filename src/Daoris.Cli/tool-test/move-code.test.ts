@@ -154,24 +154,27 @@ test('a statement that reads one left behind, reads import.meta, or is named twi
 test('a name one target reads of another is imported from it and exported there; a move into a module that exists appends', async () => {
   const fx = scratch('targets');
   try {
-    fx.write('a/w.mjs', "import { join } from 'node:path';\n\nexport const SEP = join('x');\n");
+    fx.write('a/b.mjs', "import { join } from 'node:path';\n\nexport const SEP = join('x');\n");
     mover.applyMoves(fx.root, mover.planMoves(fx.root, {
       from: 'a.mjs',
       moves: [{ to: 'a/w.mjs', names: ['WIDTH', 'local'], expect: 2 }, { to: 'a/b.mjs', names: ['double'], expect: 1 }],
     }));
-    assert.equal(fx.read('a/w.mjs'), [
+    assert.equal(fx.read('a/w.mjs'), '/** The width. */\nexport const WIDTH = 3;\n\n// Kept here.\nexport const local = () => 1;\n');
+    assert.equal(fx.read('a/b.mjs'), [
       "import { join } from 'node:path';",
+      "import { helper } from '../lib/helper.mjs';",
+      "import { WIDTH } from './w.mjs';",
       '',
       "export const SEP = join('x');",
       '',
-      '/** The width. */',
-      'export const WIDTH = 3;',
-      '',
-      '// Kept here.',
-      'export const local = () => 1;',
+      '/**',
+      ' * Doubles.',
+      ' */',
+      'export function double(x) {',
+      '  return helper(x) * WIDTH;',
+      '}',
       '',
     ].join('\n'));
-    assert.match(fx.read('a/b.mjs'), /^import \{ helper \} from '\.\.\/lib\/helper\.mjs';\nimport \{ WIDTH \} from '\.\/w\.mjs';\n\n\/\*\*\n \* Doubles\./);
     assert.match(fx.read('a.mjs'), /import \{ double \} from '\.\/a\/b\.mjs';\nimport \{ local \} from '\.\/a\/w\.mjs';\nexport \{ WIDTH \} from '\.\/a\/w\.mjs';\nexport \{ double \} from '\.\/a\/b\.mjs';\n/);
     const after = await import(pathToFileURL(join(fx.root, 'a.mjs')).href) as { user: () => number };
     assert.equal(after.user(), 9);
@@ -189,8 +192,9 @@ test("a test is named by its title, and a type it reads is imported as a type, s
     fx.write('t.test.ts', [
       "import { test } from 'node:test';",
       '',
-      'interface Shape { n: number }',
+      '// The file is held to a census.',
       '',
+      'interface Shape { n: number }',
       'const make = (): Shape => ({ n: 1 });',
       '',
       "test('makes one', () => {",
@@ -205,7 +209,7 @@ test("a test is named by its title, and a type it reads is imported as a type, s
       from: 't.test.ts',
       moves: [{ to: 'support.ts', span: ['Shape', 'make'], expect: 2 }, { to: 'moved/one.test.ts', names: ['makes one'], expect: 1 }],
     }));
-    assert.equal(fx.read('support.ts'), 'export interface Shape { n: number }\n\nexport const make = (): Shape => ({ n: 1 });\n');
+    assert.equal(fx.read('support.ts'), 'export interface Shape { n: number }\nexport const make = (): Shape => ({ n: 1 });\n');
     assert.equal(fx.read('moved/one.test.ts'), [
       "import { test } from 'node:test';",
       "import { type Shape, make } from '../support.ts';",
@@ -216,7 +220,7 @@ test("a test is named by its title, and a type it reads is imported as a type, s
       '});',
       '',
     ].join('\n'));
-    assert.equal(fx.read('t.test.ts'), "import { test } from 'node:test';\n\ntest('stays', () => {});\n");
+    assert.equal(fx.read('t.test.ts'), "import { test } from 'node:test';\n\n// The file is held to a census.\n\ntest('stays', () => {});\n");
     const ran = spawnSync(process.execPath, ['--test', join(fx.root, 'moved', 'one.test.ts')], { encoding: 'utf8' });
     assert.equal(ran.status, 0, ran.stdout + ran.stderr);
   } finally {

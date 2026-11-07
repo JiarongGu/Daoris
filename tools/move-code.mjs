@@ -11,8 +11,8 @@
  * "expect": 3, "header": "What b does." }] }`, its paths from the root (default: the current folder). A statement is named
  * by what it declares (a function, class, variable, interface, type or enum) or, for a call such as `test('title', …)`, by
  * its first argument's text. `names` takes each named statement, `span` every statement from the first through the last,
- * and `expect` is how many statements the move takes. A statement moves with the comments above it, byte for byte, in
- * the order it had; `header` opens a module the move creates.
+ * and `expect` is how many statements the move takes. A statement moves with the comments directly above it, byte for
+ * byte, in the order it had; a comment a blank line sets apart stays. `header` opens a module the move creates.
  *
  * Each side is read with the TypeScript compiler, so a name is followed to its binding rather than matched as text. A
  * target gets the imports its statements read, respelled from where it stands, and `export` on what the others read of
@@ -116,8 +116,11 @@ export function analyse(path, text) {
   if (syntax.length) throw new MoveRefused(`${path} does not parse: ${ts.flattenDiagnosticMessageText(syntax[0].messageText, ' ')}`);
   const line = (at) => file.getLineAndCharacterOfPosition(at).line + 1;
   const statements = file.statements.map((node, index) => {
+    // A comment is the statement's when no blank line parts them: one set apart is the file's or a section's, and stays.
     const comments = ts.getLeadingCommentRanges(text, node.pos) ?? [];
-    const start = lineStart(text, comments.length ? comments[0].pos : node.getStart(file));
+    let first = node.getStart(file);
+    for (let i = comments.length - 1; i >= 0 && (text.slice(comments[i].end, first).match(/\n/g) ?? []).length <= 1; i -= 1) first = comments[i].pos;
+    const start = lineStart(text, first);
     const trailing = ts.getTrailingCommentRanges(text, node.end) ?? [];
     const last = trailing.length ? trailing.at(-1).end : node.end;
     const end = lineEnd(text, last);
@@ -470,20 +473,22 @@ export function planMoves(root, planned) {
       }
       return applyEdits(source.text.slice(statement.start, statement.end), edits);
     });
-    const body = texts.join(eol);
+    // Statements that were adjacent stay adjacent; any others are parted by one blank line.
+    const body = texts.map((text, i) => (i && target.statements[i - 1].end !== target.statements[i].start ? `${eol}${text}` : text)).join('');
     let text;
     if (existing) {
       const { edits, fresh: lines } = importEdits(existing, target.to, target.gains, 'import');
       if (lines.length) {
         const lastImport = existing.statements.filter((statement) => statement.isImport).at(-1);
         const after = lastImport ? lastImport.end : 0;
-        edits.push({ start: after, end: after, text: lastImport ? `${eol}${lines.join(eol)}` : `${lines.join(eol)}${eol}${eol}` });
+        edits.push({ start: after, end: after, text: `${lines.map((line) => `${line}${eol}`).join('')}${lastImport ? '' : eol}` });
       }
       const kept = applyEdits(existing.text, edits).replace(/(\r?\n)*$/, eol);
       text = `${kept}${eol}${body}`;
     } else {
       const header = target.header ? `/**${eol}${target.header.split('\n').map((line) => ` *${line ? ` ${line}` : ''}`).join(eol)}${eol} */${eol}` : '';
-      const order = [...target.gains.keys()];
+      // The platform's and the packages' modules first, then the repository's, each in the order first read.
+      const order = [...target.gains.keys()].sort((a, b) => Number(/^\.\.?\//.test(a)) - Number(/^\.\.?\//.test(b)));
       const lines = order.map((specifier) => importStatement('import', specifier, target.gains.get(specifier), eol));
       text = `${header}${lines.length ? `${lines.join(eol)}${eol}${eol}` : ''}${body}`;
     }
