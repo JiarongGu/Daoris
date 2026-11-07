@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import type { MapNode, Topology } from './topology';
 import { MapWorld } from './MapWorld';
 
-// MAP2, MAP4 and CANVAS1e: the workspace map as one canvas — the ring fitted and the layers that pan and zoom, a find with its list, and
+// The workspace map as one canvas — the ring fitted and the layers that pan and zoom, a find with its list, and
 // every card and line a stop the arrows walk. jsdom lays nothing out, so a width is stood in for where the viewport is the point.
 
 const measured = vi.hoisted(() => ({ width: undefined as number | undefined }));

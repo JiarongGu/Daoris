@@ -23,7 +23,7 @@ import { useHelpPlace } from './ask/useHelpPlace';
  * and its composer, so the panel holds neither.
  *
  * @remarks
- * **One conversation per workspace, carried on across opens** (design §2, D158's ASKSCOPE1 note): the panel shows the
+ * **One conversation per workspace, carried on across opens**: the panel shows the
  * newest help session of the window's workspace, running or ended. **With none running, one opens as the panel shows**
  *  — the driver writes the room from the machine as it stands, spawns the agent and opens its session — so that is done
  * before the person types, and there is no start button to press before asking. Nobody has spoken in it
@@ -44,9 +44,9 @@ import { useHelpPlace } from './ask/useHelpPlace';
  *
  * **Its conversations are kept**: the history lists them, kept on this machine only, and the one the person
  * picks is shown in the newest's place. One that ended goes on in itself with the person's next words where its own
- * conversation was kept, so its knowledge carries; one that cannot is offered a new conversation from its words.
- * The newest that ended still starts a new one by default, as it did; *Go on in it* chooses it. A draft handed in
- * (CTX1, the composer's *Make it a task with Daoris…*) shows that new conversation: the panel clears first, ending nothing.
+ * conversation is kept, so its knowledge carries; one that cannot is offered a new conversation from its words.
+ * The newest that ended still starts a new one by default; *Go on in it* chooses it. A draft handed in
+ * (the composer's *Make it a task with Daoris…*) shows that new conversation: the panel clears first, ending nothing.
  */
 export function useAskConversation(
   scroller: RefObject<HTMLElement | null>,
@@ -112,7 +112,7 @@ export function useAskConversation(
   const cancelTurn = useCancelTurn();
   const editQueued = useEditQueued(shown?.id ?? null);
   const roster = useHarnesses();
-  // LIMITRESUME1d2: the accounts the limit's line words its wait from, its presses, and the wait its events hold.
+  // The accounts the limit's line words its wait from, its presses, and the wait its events hold.
   const accounts = useAccounts();
   const accountUse = useAccountUse();
   const stopWaiting = useStopWaiting();
@@ -176,7 +176,7 @@ export function useAskConversation(
       refreshing={listing.isFetching && listing.data === undefined && shownListing !== undefined}
       error={listing.isError && !listing.isFetching && !listing.isFetchNextPageError ? sentence(listing.error) : null}
       onRetry={() => void listing.refetch()}
-      // The next page at the driver's `next` (ASKHIST1d2), offered only under the rows it follows; a page that could not be
+      // The next page at the driver's `next`, offered only under the rows it follows; a page that could not be
       // read is said beside its press, which asks for it again.
       onMore={listing.data && listing.hasNextPage ? () => void listing.fetchNextPage() : undefined}
       loadingMore={listing.isFetchingNextPage}
@@ -277,7 +277,7 @@ export function useAskConversation(
   );
   const { proposed, published } = useHelpFollow({ shown, live, setRefusal, onGo, t });
 
-  // What the next words do, said right above the box (ASKHIST1, as ASKHIST1c placed it): where one started from; whether one
+  // What the next words do, said right above the box: where one started from; whether one
   // that ended goes on in itself; that one the person chose is being checked, or cannot go on, with a new conversation from
   // its words first and a blank one beside it. A title it names breaks inside a word too wide for the dock.
   const line = (key: string, values?: Record<string, string>) => (
@@ -302,7 +302,7 @@ export function useAskConversation(
     tail: tail && !tail.atTail ? <BackToBottom onPress={tail.toTail} /> : undefined,
     title,
     focusHead,
-    // Escape goes back to the list where the conversation shown was opened from it.
+    // Escape goes back to the list where the conversation shown is opened from it.
     escapeToList: shown !== null && left?.row === shown.id,
     history, historyOpen,
     onHistory: end.isPending ? undefined : openHistory,

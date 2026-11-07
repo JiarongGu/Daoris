@@ -35,14 +35,14 @@ import type { StaleSince } from '../work/attention/attention';
 type AskAct = 'resume' | 'pause' | 'close' | 'abandon' | 'delete';
 
 /**
- * Whether a proposal was made because the ask's sentence names its repository: its evidence is that name alone,
+ * Whether a proposal exists because the ask's sentence names its repository: its evidence is that name alone,
  * which is what the declarations tier writes for one, so it reads as named rather than as sharing its own name.
  * Without case, as the tier finds the name; the driver tells the intake by the same rule (`Asks.IsNamed`).
  */
 const namedInAsk = ({ repository, matched }: DeclarationMatch) =>
   matched.length === 1 && matched[0]?.toLowerCase() === repository.toLowerCase();
 
-/** Each act's name, its button's look (the loud act is *Resume*, §7.1) and its glyph in a menu. */
+/** Each act's name, its button's look (the loud act is *Resume*) and its glyph in a menu. */
 const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 'ghost'; icon?: IconName }> = {
   resume: { label: 'asks.record.resume', variant: 'primary', icon: 'resume' },
   pause: { label: 'asks.record.pause', variant: 'default', icon: 'pause' },
@@ -52,14 +52,14 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
 };
 
 /**
- * An ask's page (INT4c; FRAME1d, D118 §3d): the record in Quests' main area, the screen twin of
- * `daoris ask`'s answer — what was asked and with what, which tier answered, what it proposed, the
+ * An ask's page: the record in Quests' main area, the screen twin of
+ * `daoris ask`'s answer — what is asked and with what, which tier answered, what it proposed, the
  * quests it became — with *Close ask* and *Delete…* in its header and *publish to…* where the proposal is
- * read (D50: `ask --publish <id> --to` and `ask --close <id> --reason` are the terminal's).
+ * read (`ask --publish <id> --to` and `ask --close <id> --reason` are the terminal's).
  *
  * @remarks
- * **A record is the main area** (D118 §3d): it was a drawer, which since DOCK1a lay over the side bar and
- * the panel that hold Ask Daoris and the attended session. The composer stays a drawer, since it is a form.
+ * **A record is the main area**, not a drawer, which would lie over the side bar and
+ * the panel that hold Ask Daoris and the attended session. The composer is a drawer, since it is a form.
  *
  * **A proposal is a person's to accept**: the declarations tier publishes nothing, so each
  * repository it proposed is offered as a publish, and any other adopter in the ask's circle can be
@@ -85,9 +85,9 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  *
  * **Its work is paused, resumed and abandoned here**, from this machine's driver's plan of it, each
  * act where it applies and absent where it does not: *Pause…* while a pause would hold something, asking once where it
- * ends work in flight (§2.6); *Resume*, the loud act, while it is paused, with *paused* beside its state; *Abandon…*,
- * quiet, while the abandon would take anything, listing first and abandoning on its second press with the person's reason
- * (§3.1). After an abandon it says when, *What went* and *What stayed* (§4.2). Closing says it leaves the quests (§6.5). A
+ * ends work in flight; *Resume*, the loud act, while it is paused, with *paused* beside its state; *Abandon…*,
+ * quiet, while the abandon would take anything, listing first and abandoning on its second press with the person's reason.
+ * After an abandon it says when, *What went* and *What stayed*. Closing says it leaves the quests. A
  * browser has no driver, so it offers none of the three and names the terminal's commands.
  *
  * **It shows its work**: once the plan answers, the quests section lists each quest of the work with its
@@ -95,18 +95,18 @@ const ASK_ACT: Record<AskAct, { label: string; variant: 'primary' | 'default' | 
  * doors into Sessions (`AskWork`), so what a pause or an abandon reaches is seen before either is pressed. While the plan is
  * on its way, and in a browser, it lists the quests the ask became, as the service names them.
  *
- * **Its finished work is cleared from this machine here** (HIST1e, D153; the history-clearing design §6.1): *Clear from this
+ * **Its finished work is cleared from this machine here**: *Clear from this
  * machine…* in its header's ⋯ once it is done or closed and its plan says its work may go, whole or not at all, listing under
- * the header first and clearing on the second press exactly what it listed (§5). A browser has no driver, and offers none.
+ * the header first and clearing on the second press exactly what it listed. A browser has no driver, and offers none.
  *
- * Props only, no hook from the query layer or the shell (components §2).
+ * Props only, no hook from the query layer or the shell.
  */
 export function AskPage({
   ask, receivers, questTitles, quests, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onAnswerGoAhead,
   work, history, considered = [], nameOf, environments, onChooseReview, onChooseKind, workflow, lines = [], channel, staleGoAheads, atWork,
 }: {
   /**
-   * Who is at work on the ask (COWORKVIEW1d, the cowork view design §3.5): its read as the query holds it, and the doors the section
+   * Who is at work on the ask: its read as the query holds it, and the doors the section
    * presses. Drawn above the ask's quests and replacing nothing. `words` is the channel's newest three messages, the page's own read
    * under the channel section, whose *All messages* brings that section into view. Absent in a browser, which has no driver.
    */
@@ -117,7 +117,7 @@ export function AskPage({
    */
   staleGoAheads?: Readonly<Record<number, StaleSince>>;
   /**
-   * Its channel (SESSONE2c, D167 points 6 to 8): as the shell answers it (null while it is read), the person's post and the
+   * Its channel: as the shell answers it (null while it is read), the person's post and the
    * move of their mark. Absent where no driver answers one, a browser, and then no section is drawn.
    */
   channel?: {
@@ -138,7 +138,7 @@ export function AskPage({
    */
   onChooseKind?: (kind: string, workflow: string | null | undefined, answered: Answered) => void;
   /**
-   * Where its work stands in its workflow (WORKFLOW1c, the workflow design §3.8, §7): each run, one per chain and repository, said
+   * Where its work stands in its workflow: each run, one per chain and repository, said
    * in one line among the head's facts whose door opens it. Absent in a browser, which has no driver to read one.
    */
   workflow?: RunLineDoor;
@@ -146,7 +146,7 @@ export function AskPage({
   environments?: string[];
   /**
    * The person's review choice for the ask's work, or its intake's proposal applied, with their words.
-   * Absent where there is no door to set it through. Answered where it was pressed: a refusal is said under that press (R3).
+   * Absent where there is no door to set it through. Answered where it is pressed: a refusal is said under that press.
    */
   onChooseReview?: (choice: string, words: string | undefined, answered: Answered) => void;
   /** What a person calls an account, from the roster; absent, the intake's record's id is said. */
@@ -156,7 +156,7 @@ export function AskPage({
   receivers: string[];
   /** Titles of the quests this page holds, by id — one it has not loaded is named by its id, and not opened. */
   questTitles: Record<string, string>;
-  /** The quests this page holds, by id: what its work reads a quest's submission and hold from (FABRIC-CLOSE1d2). */
+  /** The quests this page holds, by id: what its work reads a quest's submission and hold from. */
   quests?: Readonly<Record<string, Quest>>;
   /** The record of the intake session that served it, when the page holds it. */
   intake?: Session | null;
@@ -164,7 +164,7 @@ export function AskPage({
   onAttend?: (session: string) => void;
   busy?: boolean;
   onPublish: (to: string) => void;
-  /** Close the ask with the person's reason, told back to its ask (UXFIX2b2b): open until it answers. */
+  /** Close the ask with the person's reason, told back to its ask: open until it answers. */
   onClose: (reason: string, answered: Answered) => void;
   /**
    * Delete the ask with every quest asked by it, told back to its ask — absent where there is no door to do
@@ -212,8 +212,8 @@ export function AskPage({
     else setAsking('pause');
   };
 
-  // The acts in the header (D118 §3b); while one asks under it, its first press is not offered twice. The loud act is the
-  // next step: *Resume* while paused (§7.1). One list for its buttons and the page's right-click.
+  // The acts in the header; while one asks under it, its first press is not offered twice. The loud act is the
+  // next step: *Resume* while paused. One list for its buttons and the page's right-click.
   const headActs: AskAct[] = [
     ...(offers.resume ? ['resume' as const] : []),
     ...(offers.pause && asking !== 'pause' ? ['pause' as const] : []),
@@ -233,8 +233,8 @@ export function AskPage({
   // The clear, in the header's ⋯ (§6.1): drawn only where it is offered, so a page with nothing to clear keeps its header.
   const clearAct = { id: 'clear', label: t('asks.record.clear'), disabled: waiting, onSelect: () => setAsking('clear') };
   const copyId = { id: 'copy', label: t('contextMenu.act.copyAsk'), icon: 'copy' as const, copy: ask.id };
-  // The head draws the ask's next step, *Resume* while it is paused, and the rest are its ⋯'s with its id (HEAD2d, D162 §4;
-  // the quest's head folds its own the same way): one list still, so the buttons, the ⋯ and the right-click never disagree.
+  // The head draws the ask's next step, *Resume* while it is paused, and the rest are its ⋯'s with its id
+  // (the quest's head folds its own the same way): one list, so the buttons, the ⋯ and the right-click never disagree.
   const drawn: AskAct[] = headActs.filter((act) => act === 'resume');
   const folded = headActs.filter((act) => !drawn.includes(act));
   const acts = (
@@ -362,7 +362,7 @@ export function AskPage({
       {deleting && deletable && (
         /* 🔴 Nothing gives a deleted record back: the first press only asks, and says the quests
            go too, the way removing an account says what it deletes. It stays open until the service answers, and
-           says a refusal inside itself (UXFIX2). */
+           says a refusal inside itself. */
         <InlineConfirm
           className="mb-4"
           label={t('asks.record.deleteTitle')}
@@ -376,7 +376,7 @@ export function AskPage({
 
       {live && closing && (
         /* A close is the person's word that the ask is answered, and leaves its quests as they are (§6.5). It stays open
-           until the service answers, and says a refusal inside itself (UXFIX2b2b). */
+           until the service answers, and says a refusal inside itself. */
         <InlineConfirm
           className="mb-4"
           label={t('asks.record.closeTitle')}
@@ -397,8 +397,8 @@ export function AskPage({
         </InlineConfirm>
       )}
 
-      {/* The first line is the page's title, so the body is what follows it — a one-line ask was its title
-          and then its body, word for word (POLISH4). The title wraps, so nothing is lost. */}
+      {/* The first line is the page's title, so the body is what follows it — a one-line ask would be its title
+          and then its body, word for word. The title wraps, so nothing is lost. */}
       {(titled || long || rest) && (
         <p
           ref={request}
@@ -432,7 +432,7 @@ export function AskPage({
           </>
         )}
         {abandoned && (
-          /* When it was abandoned on this machine (§4.2); the reason is the close's note above, verbatim. */
+          /* When it is abandoned on this machine; the reason is the close's note above, verbatim. */
           <>
             <dt className="text-ink-faint">{t('asks.record.abandonedAt')}</dt>
             <dd className="m-0">{stamp(abandoned.at)} · {ago(abandoned.at)}</dd>
@@ -479,7 +479,7 @@ export function AskPage({
 
       {ask.intake && (
         /* Who answered: the session the intake ran as — its state, then its tool, and its note,
-           Daoris's lines in the reader's language and someone's words as written (LANG1b). A door into
+           Daoris's lines in the reader's language and someone's words as written. A door into
            Sessions only where Sessions exists, and only onto a record the page holds; one it does not is
            named by its id. */
         <PageSection title={t('asks.record.intake')}>
@@ -564,14 +564,14 @@ export function AskPage({
         </PageSection>
       )}
 
-      {/* Its sessions by entry (SESSONE1c, D167): the lines of work it began, one per repository, however many records. */}
+      {/* Its sessions by entry: the lines of work it began, one per repository, however many records. */}
       {lines.length > 0 && (
         <PageSection title={t('asks.record.sessions')}>
           <AskLines lines={lines} onAttend={onAttend} />
         </PageSection>
       )}
 
-      {/* Where its sessions and the person talk (SESSONE2c, D167 points 6 to 8): shell-only, so a browser draws none. */}
+      {/* Where its sessions and the person talk: shell-only, so a browser draws none. */}
       {channel && (
         <PageSection title={t('asks.channel.title')}>
           <div ref={channelSection} tabIndex={-1} className="outline-none" />
@@ -630,7 +630,7 @@ export function AskPage({
           <ul className="m-0 grid list-none gap-1 p-0">
             {ask.links.map((link) => (
               <li key={link} className="min-w-0">
-                {/* Where the person chose, their browser or Daoris's (BRW7). */}
+                {/* Where the person chose, their browser or Daoris's. */}
                 <ExternalLink
                   href={link}
                   className="inline-flex max-w-full items-center gap-1.5 text-body text-accent underline-offset-2 hover:underline"

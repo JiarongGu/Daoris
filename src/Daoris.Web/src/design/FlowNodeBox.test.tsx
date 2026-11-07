@@ -6,7 +6,7 @@ import { FlowCanvas, type FlowEdge, type FlowNode, type FlowProps } from './Flow
 import { FlowNodeBox } from './FlowNodeBox';
 import { DENSE, type Fixture, LARGE_ONE, LARGE_THREE } from './flowFixtures';
 
-// FLOWCHART1a1 (D186 points 3 and 8; the flowchart design §3.2, §3.3, §3.7 and §7 traps 4-7, 9, 14, 15, 21): one list in
+// The flowchart: one list in
 // reading order whatever the placement, each node named by its title and state and described by every edge in and out;
 // one Tab stop and its keys; *Show as list* remembered; the drawing hidden from a reader. jsdom lays nothing out, so the
 // pane's width is stood in for here, and the edges' geometry is the measured-box check's, in a rendered browser.
@@ -205,7 +205,7 @@ describe('the keys (§3.7, trap 7)', () => {
     expect(node('Done')).toHaveFocus();
     await user.keyboard('{ArrowLeft}');
     expect(node('Taken')).toHaveFocus();
-    // Declined was reached by no →: ← takes its first edge in, from Open.
+    // Declined is reached by no →: ← takes its first edge in, from Open.
     node('Declined').focus();
     await user.keyboard('{ArrowLeft}');
     expect(node('Open')).toHaveFocus();

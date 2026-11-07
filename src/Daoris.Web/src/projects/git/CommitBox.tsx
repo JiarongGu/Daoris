@@ -18,9 +18,9 @@ export type CommitPlanValue = {
 export type CommitBoxPress = { verb: 'commit' | 'amend'; message: string; head: string | null; tree: string };
 
 /**
- * **The commit box of the Changes tab** (GITAPP2i, D204, the git-writes design §8): the message, *Amend the last commit*, the hooks the
+ * **The commit box of the Changes tab**: the message, *Amend the last commit*, the hooks the
  * repository's git runs (never skipped) and who commits. *Commit* is held where nothing is staged; an amend starts from HEAD's message.
- * What it sends back is the tip and tree it was read with, so a press is refused where either moved since.
+ * What it sends back is the tip and tree it read, so a press is refused where either has moved.
  *
  * @remarks **A molecule**: the plan arrives as a prop, and `amend` is its holder's, since the plan differs by verb (an amend's git runs
  * one more hook). `busy` holds the press while an act runs.

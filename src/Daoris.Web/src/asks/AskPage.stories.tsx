@@ -14,7 +14,7 @@ import {
   PUBLISHED, REFUSED, SHORT_TITLED, UNKNOWN_TIER, UNMATCHED, WITH_GO_AHEADS,
 } from './fixtures';
 
-// An ask's page (INT4c; FRAME1d, D118 §3d): its record in Quests' main area, where it was a drawer, with *Close ask*
+// An ask's page: its record in Quests' main area, with *Close ask*
 // and *Delete…* in its header. Every state a real machine reaches, and a sentence long enough and CJK enough to try
 // the layout.
 
@@ -28,7 +28,7 @@ const meta: Meta<typeof AskPage> = {
     ask: PROPOSED, receivers: ['engine', 'game', 'lantern'], questTitles: TITLES,
     onPublish: nothing, onClose: nothing, onDelete: nothing, onOpenQuest: nothing,
   },
-  // The main area's height, inside the main area at its half width (the UI/UX design R6, STORYGAP1); a story's own width
+  // The main area's height, inside the main area at its half width; a story's own width
   // is drawn instead of it.
   decorators: [(Story) => <div className="flex h-[40rem] border border-line bg-page"><Story /></div>, storyWidths.half],
 };
@@ -102,7 +102,7 @@ export const Closed: Story = { args: { ask: CLOSED } };
 export const UnknownTier: Story = { args: { ask: UNKNOWN_TIER } };
 /** A long CJK sentence, which the title wraps. */
 export const LongCjk: Story = { args: { ask: LONG_CJK } };
-// The main area at the frame's widths (HEAD2d; the UI/UX design R6): wide beside a 1546 px window's side bar and list,
+// The main area at the frame's widths: wide beside a 1546 px window's side bar and list,
 // half at a 680 px window, and narrow the main area's 400 px floor.
 // A flex item of the main area's height frame, with no padding of its own, so the page's scroll box stays bounded.
 const dark: Decorator = (Story) => <InTheme theme="dark" className="flex min-h-0 min-w-0 flex-1 p-0"><Story /></InTheme>;

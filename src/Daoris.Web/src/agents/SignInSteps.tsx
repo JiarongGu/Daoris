@@ -4,16 +4,16 @@ import { ExternalLink } from '../design/links';
 import { PhaseList, type PhaseRow, Remaining } from '../design/phases';
 import { Button, Icon } from '../design/ui';
 
-/** A phase the driver wrote with its start (the relay's phase lines, SIGNIN1). */
+/** A phase the driver wrote with its start (the relay's phase lines). */
 export type SignInPhase = { phase: string; at: number };
 
 /**
- * A sign-in's way (CODEXLOGIN1, D125's note): the tool's own, which for Codex opens the system's browser, offered first; or
+ * A sign-in's way: the tool's own, which for Codex opens the system's browser, offered first; or
  * its device code. `HARNESS_ACTION`'s `way`; the terminal's `--device-code`.
  */
 export type SignInWay = 'browser' | 'device-code';
 
-/** The driver's phases of a sign-in, in the order it runs them (the UI/UX design §3.2). */
+/** The driver's phases of a sign-in, in the order it runs them. */
 const ORDER = ['start', 'browser', 'who', 'lists'] as const;
 
 /** What the person can do with what the tool printed, held by the organism above. */
@@ -36,7 +36,7 @@ export type SignInActs = {
 };
 
 /**
- * A sign-in's steps (SIGNIN1, the UI/UX design §3.2): from the driver's phases, `PhaseList` standing open, or as the line
+ * A sign-in's steps: from the driver's phases, `PhaseList` standing open, or as the line
  * alone under a row of *What needs you*. The link, the code and the ask are read from the tool's lines by their shape and
  * never make a phase.
  *
@@ -56,7 +56,7 @@ export function SignInSteps({
   texts: string[];
   /** The driver's sentence where it refused to start: the first phase failed. */
   refused?: string | null;
-  /** The sentence of a sign-in that ended without signing in, and when: the phase it was in failed. */
+  /** The sentence of a sign-in that ended without signing in, and when: the phase that failed. */
   failed?: string | null;
   failedAt?: number | null;
   shown?: 'list' | 'line';
@@ -66,7 +66,7 @@ export function SignInSteps({
   const run = latestRun(phases);
   const read = readTool(texts);
   const ended = refused || failed;
-  // The other way: offered while one waits, and first, focused, once one failed or was refused; never once the
+  // The other way: offered while one waits, and first, focused, once one has failed or been refused; never once the
   // tool has signed someone in and the driver's own phases run.
   const finishing = !ended && ['who', 'lists'].includes(run[run.length - 1]?.phase ?? '');
   const other = acts.other && acts.onSwitch && !finishing ? acts.other : null;
@@ -151,7 +151,7 @@ function linkOf(text: string): string | null {
  * What the tool's lines tell the steps: where to sign in, whether it opened a browser or asks for a code, a device code with
  * its bound, and its own line saying why it did not sign in. The tool's own words, matched loosely, since the exact sentence is
  * somebody else's to change: Codex 0.160.0 says *If your browser did not open* once it opened one, and ends a refused sign-in
- * with *Error logging in: …* or *Error logging in with device code: …* (D125's CODEXLOGIN1 note).
+ * with *Error logging in: …* or *Error logging in with device code: …*.
  */
 function readTool(texts: readonly string[]): ToolRead {
   const url = texts.map(linkOf).find(Boolean) ?? null;
@@ -170,7 +170,7 @@ function readTool(texts: readonly string[]): ToolRead {
   };
 }
 
-/** The link, offered to open in the system's browser and to copy (BRW7: a sign-in never opens in Daoris's own). */
+/** The link, offered to open in the system's browser and to copy (a sign-in never opens in Daoris's own). */
 function Link({ url, acts, hint = true }: { url: string; acts: SignInActs; hint?: boolean }) {
   const { t } = useTranslation();
   return (
@@ -192,7 +192,7 @@ function Link({ url, acts, hint = true }: { url: string; acts: SignInActs; hint?
   );
 }
 
-/** The box a tool's ask for a code is answered in, focused; then that it was sent. */
+/** The box a tool's ask for a code is answered in, focused; then that it is sent. */
 function CodeBox({ acts }: { acts: SignInActs }) {
   const { t } = useTranslation();
   if (acts.sent) return <p className="m-0 mt-0.5 text-small text-ink-soft">{t('signin.sent')}</p>;

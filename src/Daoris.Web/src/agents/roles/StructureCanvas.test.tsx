@@ -7,7 +7,7 @@ import { StructureCanvas } from './StructureCanvas';
 import { buildStructure, NO_FILTERS } from './roleStructure';
 import { DRIVER, largeStructure, LINES, PLUGINS, REGISTRY, STRUCTURE, TOOLS } from './structureFixtures';
 
-// COMPANYVIEW1f (the company-view design §4; the flowchart design §3.7's reader and keys), kept by CANVAS1c: the structure is one list
+// The structure's reader and keys: the structure is one list
 // in reading order with one tab stop; ↓ ↑ Home End move in reading order (each band's label, then its roles, then the agents), → along the
 // first edge out and ← back, Enter chooses; past 24 nodes a workspace's fold opens by its press. A unit test's DOM measures nothing, so the
 // structure is its list here; the bands' geometry is the measured spec's.

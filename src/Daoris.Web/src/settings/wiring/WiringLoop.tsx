@@ -8,7 +8,7 @@ import { Fact, WiringCard } from './WiringParts';
 const HOLDERS = new Set(['desktop', 'headless', 'verb', 'migration', 'swap']);
 
 /**
- * Driver loop (the this-Daoris design §3.3): who holds the home, when the loop last looked, what holds its starts, and how
+ * Driver loop: who holds the home, when the loop last looked, what holds its starts, and how
  * often it looks, each with the door to Driver, where `driver.json`'s dials are set. Shows; the dials stay in Driver.
  *
  * @remarks

@@ -138,18 +138,18 @@ const LONG_NAMES = {
   ],
 } satisfies Story['args'];
 
-/** Opens the first row's *Discard branch…*, so its ask shows under the row, across it (UXFIX2's one confirmation). */
+/** Opens the first row's *Discard branch…*, so its ask shows under the row, across it. */
 const askToDiscard: Story['play'] = async ({ canvasElement }) => {
   [...canvasElement.querySelectorAll('button')].find((button) => button.textContent === 'Discard branch…')?.click();
 };
 
-/** UXFIX4, at a 680 px window: three columns still, each long name whole over two lines in its own. */
+/** At a 680 px window: three columns still, each long name whole over two lines in its own. */
 export const At680: Story = { args: LONG_NAMES, decorators: [at680] };
 
 /** The same, in dark. */
 export const At680Dark: Story = { args: LONG_NAMES, decorators: [at680, dark] };
 
-/** UXFIX4, at the main area's 400 px floor: each row's sentence under its name, and every name whole. */
+/** At the main area's 400 px floor: each row's sentence under its name, and every name whole. */
 export const AtTheFloor: Story = { args: LONG_NAMES, decorators: [atFloor] };
 
 /** The same, in dark. */

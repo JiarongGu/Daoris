@@ -4,7 +4,7 @@ import type { Notice } from '../bridge/notices';
 import type { Confirmation } from '../person/Confirmations';
 import { useAnsweredRead, useMessageAnnouncements, usePressAnnouncements } from './announce';
 
-// A press announced in the window in front (NOTIFY2b, the notification design §3.3, §5, Fable's F1.1): a toast with *Open*, said
+// A press announced in the window in front: a toast with *Open*, said
 // once in the focused main window on the press's own event by its id (a service's on its told list's first sight), and staying until
 // the view opens or the press ends; never in a window not focused, and never while the view is open.
 
@@ -132,7 +132,7 @@ describe('announcing a press', () => {
   });
 });
 
-// An agent's or a teammate's urgent message to everyone (NOTIFY2g, the notification design §5): the shell's `MESSAGE`, said by a toast
+// An agent's or a teammate's urgent message to everyone: the shell's `MESSAGE`, said by a toast
 // with *Open* in the focused window alone, once per message, an event heard twice said once; a secondary window's with no door.
 describe('announcing an urgent message', () => {
   let focused: ReturnType<typeof vi.spyOn>;

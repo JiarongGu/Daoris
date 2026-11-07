@@ -21,7 +21,7 @@ const meta: Meta<typeof ScopeEditor> = {
   title: 'Settings/AccountUse',
   component: ScopeEditor,
   args: { agent: THREE, product: 'Claude Code', scope: THREE.scopes[0]!, accounts: CHOICES, acts: ACTS },
-  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  // The main area at its wide width, as the frame gives it.
   decorators: [storyWidths.wide],
 };
 export default meta;
@@ -147,7 +147,7 @@ export const AccountNothingSaid: Story = {
 export const Terms: Story = { render: () => <TermsLine /> };
 
 /**
- * TOOL6e, the owner's case: the order's first came out of its cool-off and nothing runs, so the next start takes it; another
+ * The order's first came out of its cool-off and nothing runs, so the next start takes it; another
  * account cools; the tool's own sign-in carries none of these starts.
  */
 export const NextStartOfferedAgain: Story = {

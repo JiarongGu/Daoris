@@ -79,7 +79,7 @@ const menuBar = async () => {
 };
 const places = () => screen.getByRole('navigation', { name: 'Views' });
 
-/** A menu opens from the keyboard in jsdom, the path D41 §6 requires anyway (see `AppMenu.test`). */
+/** A menu opens from the keyboard in jsdom, the path the menu contract requires anyway (see `AppMenu.test`). */
 async function openMenu(name: string) {
   const user = userEvent.setup();
   within(await menuBar()).getByRole('button', { name }).focus();
@@ -109,7 +109,7 @@ describe('the menu bar on the desktop (D152 §1)', () => {
     expect(screen.getByRole('menuitemradio', { name: /^Plugins/ })).toHaveTextContent('Ctrl+8');
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
 
-    // The bar's place says its key too, in its tip (the design §7: a position is shown in the menu and the bar's tip).
+    // The bar's place says its key too, in its tip: a position is shown in the menu and the bar's tip.
     expect(within(places()).getByRole('button', { name: /^Quests/ })).toHaveAttribute('aria-keyshortcuts', 'Ctrl+3');
     expect(within(places()).getByRole('button', { name: 'Settings' })).toHaveAttribute('aria-keyshortcuts', 'Ctrl+,');
     expect(fireEvent.keyDown(window, { key: '3', code: 'Digit3', ctrlKey: true })).toBe(false);
@@ -157,7 +157,7 @@ describe('the bar from the keyboard (the design §3.3)', () => {
 });
 
 /**
- * UX7a2 (D152's UX7a note, the design §3.3): the seven names need about 590 CSS px of strip beside the command center's glyph
+ * The seven names need about 590 CSS px of strip beside the command center's glyph
  * and the window's buttons, so below that they fold into one menu, and the keys reach it as they reach the bar.
  */
 describe('a narrow window\'s menu bar', () => {

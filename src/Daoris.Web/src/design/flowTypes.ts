@@ -10,13 +10,13 @@ import { type IconName, Pill } from './ui';
 export type PillTone = NonNullable<ComponentProps<typeof Pill>['tone']>;
 
 /**
- * A mark on a node (CANVAS1b; the canvas design §2.3): a short word the caller says about it, such as a refusal's *To put right* or a
+ * A mark on a node: a short word the caller says about it, such as a refusal's *To put right* or a
  * proposal's *New*. It is drawn as an outline on the node (the caller's, which takes no room) and a chip beside it where one clears
  * every box; the caller keeps the words in the node's description. A mark never adds a line or a border's width to a node.
  */
 export type FlowMark = { word: string; kind: 'refused' | 'new' | 'remove' | 'changed' };
 
-/** One place in the flow, worded by its caller (the flowchart design §4.1). */
+/** One place in the flow, worded by its caller. */
 export type FlowNode = {
   id: string;
   title: string;
@@ -44,7 +44,7 @@ export type FlowNode = {
   /** False: not reached, drawn dashed with its words at the soft ink. Absent: the record does not say. */
   reached?: boolean;
   /**
-   * Drawn as a node not reached is, dashed with its words at the soft ink, without saying it was not reached: a node outside the
+   * Drawn as a node not reached is, dashed with its words at the soft ink, without saying it has not been reached: a node outside the
    * record's own, such as the repository that asked a part.
    */
   faint?: boolean;
@@ -57,7 +57,7 @@ export type FlowNode = {
   /** Its record's door: Enter on the node opens it. */
   open?: () => void;
   /**
-   * What makes it like the nodes beside it (FLOWCHART1c; the flowchart design §3.6 step 1): three or more with one `key`, each
+   * What makes it like the nodes beside it: three or more with one `key`, each
    * following the one before in a chain, are drawn as one fold, titled by their shared `word` and counted, with the first and the
    * last `at` (worded by the caller, where its record keeps a time). A try's code is one key; an advance is another.
    */
@@ -75,7 +75,7 @@ export type FlowEdge = {
   label?: string;
   style?: EdgeStyle;
   /**
-   * On the path its record kept (FLOWCHART1a2): drawn heavier, in ink and never a status hue. Its cause says so in
+   * On the path its record kept: drawn heavier, in ink and never a status hue. Its cause says so in
    * words, for the rail and a reader. What is lit lays nothing out again: the layout never reads it.
    */
   taken?: boolean;
@@ -112,7 +112,7 @@ export type FlowProps = {
   rail?: ReactNode;
   /**
    * Its sections, read rank by rank under their titles: a workflow's *Before it lands* and *After it lands*, the
-   * landing's divider (the flowchart design §2.4). A flow in sections is never placed left to right.
+   * landing's divider. A flow in sections is never placed left to right.
    */
   sections?: FlowSection[];
   /**
@@ -168,7 +168,7 @@ export type FlowCanvasProps = FlowProps & {
   /**
    * The canvas's viewport, which a caller opts into: from 36rem of the pane the drawing stands in a region that pans and
    * zooms, and a drawing wider than the pane is drawn top to bottom and pans rather than turning to the rail. Below the floor, and where
-   * none is given (`'none'`, an inline flow in a scrolling page), the flow is placed as it always was.
+   * none is given (`'none'`, an inline flow in a scrolling page), the flow is placed as it is without a canvas.
    */
   viewport?: 'none' | CanvasOptions;
   /** What a press on the ground and a Shift+drag box do; the node's own press is the caller's. */
@@ -189,5 +189,5 @@ export type FlowCanvasProps = FlowProps & {
  */
 export type FlowSection = { title: string; from: string; note?: ReactNode };
 
-/** The drawn geometry: its paths, labels and ＋s, the drawing's size, and how many times it was drawn (trap 14). */
+/** The drawn geometry: its paths, labels and ＋s, the drawing's size, and how many times it has been drawn. */
 export type Ink = { paths: InkPath[]; labels: InkLabel[]; inserts: InkLabel[]; chips: ChipPlaced[]; width: number; height: number; drawn: number };

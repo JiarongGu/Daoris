@@ -14,12 +14,12 @@ import type { Answered } from '../work/InlineConfirm';
 export type HarnessRunAction = 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin' | 'profile-remove';
 
 /**
- * A new account a sign-in kept: which tool, its id and who signed in. It joined Daoris's accounts as it was
+ * A new account a sign-in kept: which tool, its id and who signed in. It joins Daoris's accounts as it is
  * made, and is held until the person answers the add flow's last step, its name.
  */
 export type AccountAdded = {
   harness: string; profile: string; account: string | null;
-  /** The name the sign-in's end offered it (ACCOUNTID1b, `HARNESS_ENDED.offered`); undefined where the end offered none. */
+  /** The name the sign-in's end offered it (`HARNESS_ENDED.offered`); undefined where the end offered none. */
   offered?: string | null;
 };
 
@@ -40,35 +40,35 @@ export type HarnessRun = {
   /** Whether anything is on its way or running: one at a time, by construction. */
   busy: boolean;
   /**
-   * Start one. An ask that pressed it (*Remove…*'s, UXFIX2) is told how it ended: `done` once it ended well or started a
+   * Start one. An ask that pressed it (*Remove…*'s) is told how it ended: `done` once it ended well or started a
    * process whose end is news, `refused` with the sentence that would have been its toast.
    */
   run: (harness: string, action: HarnessRunAction, profile?: string, version?: string, answered?: Answered) => void;
   /**
-   * Follow an action the machine already started for the person (HELP6: Ask Daoris's Apply of an update
+   * Follow an action the machine already started for the person (Ask Daoris's Apply of an update
    * or a pin): its console shows under the tool doing it, and its end is said, as for one started here.
    */
   follow: (harness: string, action: 'update' | 'pin') => void;
   /**
-   * The driver's sentence where a sign-in's start was refused, or null. The sign-in's panel stays up and says it,
-   * since a refusal is said where its action was started; `retry` starts the same sign-in again, `dismiss` closes the panel.
+   * The driver's sentence where a sign-in's start is refused, or null. The sign-in's panel stays up and says it,
+   * since a refusal is said where its action is started; `retry` starts the same sign-in again, `dismiss` closes the panel.
    */
   refusal: string | null;
   retry: () => void;
   dismiss: () => void;
   /**
-   * A sign-in that ended without signing in (SIGNIN1, the UI/UX design §3.2's *Failed at a phase*): its sentence and when it
+   * A sign-in that ended without signing in (*Failed at a phase*): its sentence and when it
    * ended. Its panel stays up and says it, with *Try again* and *Close*, as a refused start's does; null otherwise.
    */
   failure: { sentence: string; at: number } | null;
   /**
    * The way the last sign-in's agent has beside the one it ran: the device code where it ran the browser, the
-   * browser where it ran the device code; null where the agent has one way (the roster's `deviceCode`) or no sign-in was pressed.
+   * browser where it ran the device code; null where the agent has one way (the roster's `deviceCode`) or no sign-in is pressed.
    */
   otherWay: SignInWay | null;
   /**
    * The same sign-in the other way: while one runs, the driver stops it and starts this one in its place (`switch`), and the
-   * stopped one's end says nothing; after one failed or was refused, it starts as a press would.
+   * stopped one's end says nothing; after one failed or is refused, it starts as a press would.
    */
   switchWay: () => void;
 };
@@ -83,7 +83,7 @@ function useRunState(notify: Notify): HarnessRun {
   const [running, setRunning] = useState<string | null>(null);
   // 🔴 "Running" lasts until the END, not the request. A process action answers `started` at
   // once, so gating on the request re-enabled every button while a login still waited on a browser; a
-  // second press overwrote which action was being followed, and the first's end closed the second's
+  // second press would overwrite which action is being followed, and the first's end would close the second's
   // panel. The host refuses a second one too.
   const [inFlight, setInFlight] = useState<string | null>(null);
   const [runningProfile, setRunningProfile] = useState<string | null>(null);
@@ -95,7 +95,7 @@ function useRunState(notify: Notify): HarnessRun {
   const [failure, setFailure] = useState<{ sentence: string; at: number } | null>(null);
   const lastSignIn = useRef<{ harness: string; action: HarnessRunAction; profile?: string; way: SignInWay } | null>(null);
   // The last sign-in's way and whether its agent has the other, as state, so its panel draws the switch; and
-  // whether the one a switch replaces was heard stopped.
+  // whether the one a switch replaces is heard stopped.
   const [signedWay, setSignedWay] = useState<{ way: SignInWay; deviceCode: boolean } | null>(null);
   const stopped = useRef(false);
 
@@ -116,7 +116,7 @@ function useRunState(notify: Notify): HarnessRun {
 
   /**
    * What an action's end means to the person — said once, whether it ended inside the request (a file
-   * edit) or later as news (a process). The harness's own exit code decides which it was: Daoris ran
+   * edit) or later as news (a process). The harness's own exit code decides which it is: Daoris ran
    * somebody else's tool and reports what it did. A sign-in's sentence names the account, because
    * that is what the person came for.
    */
@@ -142,8 +142,8 @@ function useRunState(notify: Notify): HarnessRun {
       notify(problem, 'error');
       return;
     }
-    // Another account: kept only when the sign-in finished, and named by who signed in. It joined Daoris's accounts
-    // as it was made, every workspace's work may run on it (D197; the account-pool design §4.1), which the agent's page says
+    // Another account: kept only when the sign-in finished, and named by who signed in. It joins Daoris's accounts
+    // as it is made, every workspace's work may run on it, which the agent's page says
     // where it asks its name; no account is ever nowhere.
     if (action === 'login-new') {
       if (exitCode !== 0) notify(t('harness.loginNew.failed', { code: exitCode }), 'error');
@@ -204,7 +204,7 @@ function useRunState(notify: Notify): HarnessRun {
     runningRef.current = `${harness}:${action}`;
     setRunningProfile(action === 'login' ? profile ?? null : null);
     setSigningInNew(action === 'login-new' ? harness : null);
-    // Another new account starts over: the last one's question was set aside.
+    // Another new account starts over: the last one's question is set aside.
     if (action === 'login-new') setAdded(null);
     // The way only where it is not the first or it switches, so a press says what it always said.
     const how = signIn && (way !== 'browser' || switching) ? { way, ...(switching ? { switch: true } : {}) } : {};
@@ -290,10 +290,10 @@ function useRunState(notify: Notify): HarnessRun {
 }
 
 /**
- * A tool's running action, held above every view. It was the Agents domain's own state, and
- * its end was heard only while that domain was on screen: leaving mid-sign-in lost the code panel and
+ * A tool's running action, held above every view rather than in the Agents domain, whose state would
+ * hear its end only while that domain is on screen: leaving mid-sign-in would lose the code panel and
  * the sentence saying how it ended. Held here, the sign-in outlives the page it started on — coming
- * back finds its panel where it was, and its end is said wherever the person is.
+ * back finds its panel in place, and its end is said wherever the person is.
  */
 export function HarnessRuns({ notify, children }: { notify: Notify; children: ReactNode }) {
   const state = useRunState(notify);

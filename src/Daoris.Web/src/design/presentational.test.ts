@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { rooted } from '../test/sources';
 
 /**
- * **A molecule imports no hook** (D52 as amended) — the rule that makes every state of the working
+ * **A molecule imports no hook** — the rule that makes every state of the working
  * surface reachable by passing props, and therefore designable in Storybook and testable without a
  * bridge. A component that fetches its own data has states only a running system can produce, and
  * those are exactly the states nobody reviews.
@@ -15,10 +15,9 @@ import { rooted } from '../test/sources';
 
 /** Modules that reach the service or the shell — every other presentational file must not. */
 const FORBIDDEN: { what: string; pattern: RegExp }[] = [
-  // `data/queries` since STRUCT5c moved it from the sources' top.
   { what: "the query layer ('./queries')", pattern: /\bfrom\s+'(?:\.\.?\/)+(?:data\/)?queries'/ },
   { what: "the shell bridge ('./shell')", pattern: /\bfrom\s+'(?:\.\.?\/)+shell'/ },
-  // Its domains, which `./shell` only re-exports since MOD3: without this row the rule is side-stepped
+  // Its domains, which `./shell` only re-exports: without this row the rule is side-stepped
   // by importing the file the barrel names.
   { what: "a bridge domain ('./bridge/…')", pattern: /\bfrom\s+'(?:\.\.?\/)+bridge\// },
   { what: 'react-query directly', pattern: /\bfrom\s+'@tanstack\/react-query'/ },
@@ -66,7 +65,7 @@ const ORGANISMS = new Set<string>([
   // The one owner of the second opinion's presses: it holds the bridge's hooks, so the gate and What
   // needs you, which each press them, hold none.
   './work/gates/opinionActs.ts',
-  // The one owner of the answer to an agent's rule proposal (PROPOSEHERE1b, D74's note): it holds the bridge's hook, so the
+  // The one owner of the answer to an agent's rule proposal: it holds the bridge's hook, so the
   // Agents page's card, What needs you and a session's conversation, which each press it, hold none.
   './work/waits/ruleAnswer.ts',
   './work/WorkFrame.tsx',
@@ -91,7 +90,7 @@ const ORGANISMS = new Set<string>([
   './work/rail/useSessionsList.tsx',
   './work/start/agentRoster.ts',
   './work/head/AttendedPane.tsx',
-  // The terminal hold's container (RPC1g1): it holds the bridge's hold and its let-go, so `TerminalHold` is handed them and holds neither.
+  // The terminal hold's container: it holds the bridge's hold and its let-go, so `TerminalHold` is handed them and holds neither.
   './work/head/SessionTerminalHold.tsx',
   // The supervisor's decision's container: it holds the bridge's overrule, so `SupervisorCourseCard` is handed the press and holds none.
   './work/head/SessionSupervisorCourse.tsx',
@@ -142,7 +141,7 @@ const ORGANISMS = new Set<string>([
   './agents/roles/structureRead.ts',
   // The Setup mode's list of places and its page: `PLACES` read once, so the list, the fold and the head below hold none.
   './agents/setup/SetupPlaces.tsx',
-  // A place's Roles section (AGENTSPLACE1g1): its chain's read and the role editor's presses, so its rows below hold none.
+  // A place's Roles section: its chain's read and the role editor's presses, so its rows below hold none.
   './agents/setup/PlaceRoles.tsx',
   // A workspace's supervisor line among its place's Roles: the standing confirmation's read, so its door below holds none.
   './agents/setup/PlaceSupervisor.tsx',
@@ -164,13 +163,13 @@ const ORGANISMS = new Set<string>([
   // A workspace's page's organism: it holds the driver's answers and every act on a workspace, so the
   // page, its Details and its Setup below it hold none.
   './projects/workspace/WorkspaceView.tsx',
-  // A repository's Branches and History parts (UX6h1, D150 §4.4), and a workspace's branch groups (UX6h2b2): they hold Git's
+  // A repository's Branches and History parts, and a workspace's branch groups: they hold Git's
   // reads, each drawn only while its tab shows, so the page, the tabs, the groups and the graph below them hold none.
   './projects/git/RepositoryGitView.tsx',
   // A repository's Integration tab: its look and acts, so the tab below it holds none.
   './projects/integration/RepositoryIntegration.tsx',
-  // The views a place's activity opens, organisms since FRAME1f by standing at the sources' top above their folder's
-  // molecules, named here since STRUCT5c moved each into its folder: Search's and Convergence's queries, and
+  // The views a place's activity opens, organisms by standing at the sources' top above their folder's
+  // molecules, named here by their folder: Search's and Convergence's queries, and
   // Knowledge's view over the two.
   './knowledge/SearchView.tsx',
   './knowledge/ConvergenceView.tsx',
@@ -228,23 +227,23 @@ export function offenders(files: [path: string, source: string][]): string[] {
       .map((rule) => `${path} imports ${rule.what}`));
 }
 
-// `map/` since MAP2: the map's drawing and detail are molecules, and MapView above them is the view.
-// `asks/` and `compose/` since INT4c: the ask's molecules, and the carry fields both composers share.
-// `settings/` since AGT6: Daoris's own AI, drawn from props — SettingsView above it holds the queries,
-// and since MOD4 each domain's own `<Name>Domain.tsx` does.
-// `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver; since FRAME1e
-// the list and a repository's page too.
-// `help/` since HELP1: Ask Daoris's panel and its starters, drawn from props — AskDaoris holds the machine.
-// `links.tsx` since BRW7: the one place a link opens, told where by a context the application provides.
-// `plugins/` since PLUGUI1b: the Plugins view's list, strip and pages, drawn from props — PluginsView holds the catalogue.
-// `quests/` since FRAME1d: Quests' list, a quest's page and its composer, drawn from props — QuestsView holds the queries.
-// `knowledge/` since FRAME1f: Search's and Convergence's lists and pages, drawn from props — SearchView and
-// ConvergenceView hold the queries; since UX6i Knowledge's head and strip too, and KnowledgeView holds the two.
-// `update/` since UPDATE1: the update's banner, drawn from props — the application holds the update's hooks.
-// `menus/` since CTX1: the right-click menu and its one handler, handed the frame's doors — App and the secondary
+// `map/`: the map's drawing and detail are molecules, and MapView above them is the view.
+// `asks/` and `compose/`: the ask's molecules, and the carry fields both composers share.
+// `settings/`: Daoris's own AI, drawn from props — SettingsView above it holds the queries,
+// and each domain's own `<Name>Domain.tsx` does.
+// `projects/`: the driver's row, drawn from props — ProjectsView above it holds the driver; the list and a
+// repository's page too.
+// `help/`: Ask Daoris's panel and its starters, drawn from props — AskDaoris holds the machine.
+// `links.tsx`: the one place a link opens, told where by a context the application provides.
+// `plugins/`: the Plugins view's list, strip and pages, drawn from props — PluginsView holds the catalogue.
+// `quests/`: Quests' list, a quest's page and its composer, drawn from props — QuestsView holds the queries.
+// `knowledge/`: Search's and Convergence's lists and pages, drawn from props — SearchView and
+// ConvergenceView hold the queries; Knowledge's head and strip too, and KnowledgeView holds the two.
+// `update/`: the update's banner, drawn from props — the application holds the update's hooks.
+// `menus/`: the right-click menu and its one handler, handed the frame's doors — App and the secondary
 // window's root hold the bridge, so a surface that offers its acts reaches no data through it.
-// `agents/` since UX6e: the Agents place's list, strip, page and account rows, drawn from props — AgentsView holds the data.
-// `workflow/` since WORKFLOW1b: the Workflow tab and its chart, drawn from props — the Repositories view and a workspace's
+// `agents/`: the Agents place's list, strip, page and account rows, drawn from props — AgentsView holds the data.
+// `workflow/`: the Workflow tab and its chart, drawn from props — the Repositories view and a workspace's
 // page hold the answer.
 const sources = rooted(import.meta.glob('/src/{design/ui.tsx,design/links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx},quests/**/*.{ts,tsx},knowledge/**/*.{ts,tsx},update/**/*.{ts,tsx},menus/**/*.{ts,tsx},agents/**/*.{ts,tsx},workflow/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
@@ -291,13 +290,13 @@ describe('the presentational boundary', () => {
     expect(presentational.length).toBeGreaterThan(0);
   });
 
-  // The Workflow tab and its chart are molecules, so every state is a story's props (the workflow design §6.4).
+  // The Workflow tab and its chart are molecules, so every state is a story's props.
   it('holds the Workflow tab and its chart to it', () => {
     const paths = presentational.map(([path]) => path);
     expect(paths).toEqual(expect.arrayContaining(['./workflow/WorkflowTab.tsx', './workflow/WorkflowChart.tsx', './workflow/said.ts']));
   });
 
-  // The run's view and its one line are molecules too, so every stage of a run is a story's props (design §7).
+  // The run's view and its one line are molecules too, so every stage of a run is a story's props.
   it("holds a run's view and its one line to it", () => {
     const paths = presentational.map(([path]) => path);
     expect(paths).toEqual(expect.arrayContaining([

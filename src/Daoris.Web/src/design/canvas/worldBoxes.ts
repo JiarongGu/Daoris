@@ -1,6 +1,6 @@
 import type { Box } from './viewMath';
 
-// The boxes a placed world is drawn from (CANVAS1a, D224; the canvas design §2.1, trap 1): every node, waypoint, port and section divider
+// The boxes a placed world is drawn from: every node, waypoint, port and section divider
 // in world units, the element's rect less the drawing's origin and divided by the scale the world is drawn at, to half a pixel. The ink,
 // the reveal and the anchor read these, so a zoom or a pan changes none of them and nothing measured is k times wrong.
 
@@ -33,7 +33,7 @@ export type WorldRead = {
   sections: Box[];
 };
 
-/** The world drawn in `frame`, or null where nothing was laid out (a unit test's DOM). */
+/** The world drawn in `frame`, or null where nothing is laid out (a unit test's DOM). */
 export function readWorld(frame: HTMLElement): WorldRead | null {
   const rect = frame.getBoundingClientRect();
   if (rect.width === 0) return null;

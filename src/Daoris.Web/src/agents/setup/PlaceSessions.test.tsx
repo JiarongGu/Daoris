@@ -11,8 +11,8 @@ import { EFFECTIVE_CURRENT, EFFECTIVE_RELEASE } from '../../workflow/place/effec
 import { PlaceWorkflowView, type PlaceWorkflowProps } from '../../workflow/place/PlaceWorkflowView';
 import { PlaceSessionsBodyView, PlaceWorkflowBodyView, WorkspaceLandingFolds } from './PlaceSessions';
 
-// A repository place's Sessions hold today's rows moved whole from Repositories' Setup tab, each
-// with *Set for this repository* or *Clear*, drawn from the one molecule. SETUPUX1h: its Driving is the page head's, and each section's body
+// A repository place's Sessions hold today's rows, each
+// with *Set for this repository* or *Clear*, drawn from the one molecule. Its Driving is the page head's, and each section's body
 // is drawn apart, inside the fold that names it.
 
 // Its Workflow, handed in as the application hands it, holds the route, Gates and the line's landing rows.

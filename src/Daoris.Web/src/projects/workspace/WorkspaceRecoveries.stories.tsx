@@ -6,7 +6,7 @@ import type { MilestoneEntry, RecoveryDropResult } from '../../work/head/milesto
 import { WorkspaceRecoveries } from './WorkspaceRecoveries';
 
 // What Daoris keeps for recovery that no unit names, at the foot of a workspace's
-// Branches tab (`WorkspaceBranches.tsx`), on its own (STORYGAP1, the UI/UX design §1.2 item 6): a folder set aside until its date,
+// Branches tab (`WorkspaceBranches.tsx`), on its own: a folder set aside until its date,
 // a ref a branch of the person's holds, a ref nothing holds with its copyable command, the delete of those asked once, and what a
 // press answered; at the main area's three widths, in 中文 and dark.
 

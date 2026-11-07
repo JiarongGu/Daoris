@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chinese } from '../design/storyLanguage';
 import { type SignInActs, SignInSteps } from './SignInSteps';
 
-// A sign-in's steps (SIGNIN1, the UI/UX design §3.2): a story per state of its table, from the driver's phases and the tool's
-// lines as they arrive. The times run from when the story was opened.
+// A sign-in's steps: a story per state of its table, from the driver's phases and the tool's
+// lines as they arrive. The times run from when the story is opened.
 
 const AT = Date.now();
 const nothing = () => {};
@@ -72,9 +72,9 @@ export const FailedAtAPhase: Story = {
 /** The line alone, as a row of *What needs you* says it: the phase now and what it says. */
 export const Line: Story = { args: { shown: 'line', title: 'Signing in to another Codex account', tool: 'Codex', texts: CODEX } };
 
-// ——— CODEXLOGIN1: Codex's browser first, its device code beside it, either way switched to at any time.
+// ——— Codex's browser first, its device code beside it, either way switched to at any time.
 
-/** What `codex login` 0.160.0 printed (D125's CODEXLOGIN1 note), the page's query values replaced. */
+/** What `codex login` 0.160.0 prints, the page's query values replaced. */
 const CODEX_BROWSER = [
   '$ codex login', 'Starting local login server on http://localhost:1455.',
   'If your browser did not open, navigate to this URL to authenticate:', '',

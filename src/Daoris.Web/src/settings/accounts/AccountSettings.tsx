@@ -44,7 +44,7 @@ export function AccountSettingsSummary({ settings }: { settings: AccountSettings
  * the tool's own, handed in: Daoris names no model of its own.
  *
  * **The terminal door is named on the form**: the same file, `daoris agent settings`, its account spelled for
- * whichever shell it is pasted into (`shellWord`, ACCTQUOTE1c).
+ * whichever shell it is pasted into (`shellWord`).
  */
 export function AccountSettingsForm({
   harness, account, accountLabel, settings, choices, busy = false, onSave, onCancel,

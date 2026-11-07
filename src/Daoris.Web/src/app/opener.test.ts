@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { askItem, doorOpening, opening, placeOpening, planOpening, projectsItem, questsItem, workspaceItem } from './opener';
 
-// One opener (D118 §3i): every door into a view says what it opens, and the view's chosen item takes it.
+// One opener: every door into a view says what it opens, and the view's chosen item takes it.
 // Pure, so what each door does is an assertion, and `App` only applies it.
 
 describe('the opener', () => {
@@ -60,7 +60,7 @@ describe('the opener', () => {
       view: 'settings', chosen: { view: 'settings', item: 'git' }, anchor: 'git-add', gitHost: 'github.com',
     });
     expect(opening('settings', 'git')).toEqual({ view: 'settings', chosen: { view: 'settings', item: 'git' }, anchor: null, gitHost: null });
-    // The gear names no domain: Settings opens on the one it had, at its top as it was.
+    // The gear names no domain: Settings opens on the one it has, at its top as it is.
     expect(opening('settings')).toEqual({ view: 'settings' });
   });
 
@@ -70,7 +70,7 @@ describe('the opener', () => {
     expect(opening('projects', null, { drawer: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
   });
 
-  /** ENTRY1d2b (D161's ENTRY1d note): Ask Daoris's go opens Add or Import with its workspace filled, and only a form takes it. */
+  /** Ask Daoris's go opens Add or Import with its workspace filled, and only a form takes it. */
   it('opens one of Repositories\' forms with the workspace a door fills it with, and nothing else with it', () => {
     expect(opening('projects', null, { drawer: 'add', drawerWorkspace: 'work' })).toEqual({ view: 'projects', drawer: 'add', drawerWorkspace: 'work' });
     expect(opening('projects', null, { drawer: 'import', drawerWorkspace: 'work' }))
@@ -158,8 +158,8 @@ describe('the opener', () => {
   });
 
   /**
-   * An entry by its id in Search's list, and a finding by its entries in Convergence's. Since UX6i
-   * both are Knowledge's, and a door names the mode with the item: each mode's list keeps its own chosen item.
+   * An entry by its id in Search's list, and a finding by its entries in Convergence's.
+   * Both are Knowledge's, and a door names the mode with the item: each mode's list keeps its own chosen item.
    */
   it('chooses the entry or the finding a door names, on Knowledge in its mode', () => {
     expect(opening('knowledge', 'game:.claude/knowledge/world-streaming.md', { knowledge: 'search' })).toEqual({
@@ -170,7 +170,7 @@ describe('the opener', () => {
     });
   });
 
-  /** A door into Search or Convergence names the mode; one into the place names none, and it opens as it was left. */
+  /** A door into Search or Convergence names the mode; one into the place names none, and it opens as it is left. */
   it('opens Knowledge in the mode a door names, or as it was left where it names none', () => {
     expect(opening('knowledge', null, { knowledge: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
     expect(opening('knowledge')).toEqual({ view: 'knowledge' });
@@ -247,7 +247,7 @@ describe("a press's plan door", () => {
   });
 });
 
-/** AGENTSPLACE1f and 1h: every door naming a repository's place ends in `apply`, so one resolution there is the door census. */
+/** Every door naming a repository's place ends in `apply`, so one resolution there is the door census. */
 describe('a door naming a repository\'s place, in the Setup mode', () => {
   const where = () => 'studio';
 
@@ -274,7 +274,7 @@ describe('a door naming a repository\'s place, in the Setup mode', () => {
     });
   });
 
-  // A conversation's draft card opens the place's Workflow with its editor on the draft the conversation was told.
+  // A conversation's draft card opens the place's Workflow with its editor on the draft the conversation names.
   it("opens the place's Workflow with the editor asked on a draft, for a repository and for a workspace, lit only", () => {
     const edit = { draft: 'g1-0123456789abcdef', workflow: 'release', name: 'Release for engine', base: 2 };
     const repository = doorOpening({ view: 'agents', placeOf: 'engine', placeEdit: edit });

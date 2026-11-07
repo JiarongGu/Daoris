@@ -12,8 +12,8 @@ import type { AccountsHere } from './workspace';
  * **A workspace's page**: in Repositories' main area, opened from its row at the head of its group. Its
  * header names it, how many repositories it holds and where it syncs, with *Sync now* where it is wired or *Wire to a
  * remote…* where it is not. Beneath, four tabs, the chosen one remembered for the view: **Details** (its repositories,
- * what a start runs on, the accounts its work may run on), **Branches** (each repository's branches by kind, UX6h2b2, then
- * the clean-up and bringing up to date across its repositories), **Workflow** (how work moves in its repositories, drawn from its rules, WORKFLOW1b) and **Setup** (its
+ * what a start runs on, the accounts its work may run on), **Branches** (each repository's branches by kind, then
+ * the clean-up and bringing up to date across its repositories), **Workflow** (how work moves in its repositories, drawn from its rules) and **Setup** (its
  * defaults, its remote and its rules).
  *
  * @remarks
@@ -101,16 +101,16 @@ function RemoteRow({ workspace, wiring, busy = false, startOpen = false, focus =
 }
 
 /**
- * **A workspace's Details** (§4.3): its repositories, each a door to its page; what a start in it runs on, a row per job
- * with the setting that chose each part and a held start's sentence whole (MAP1b, moved from Settings → Workspace); where
+ * **A workspace's Details**: its repositories, each a door to its page; what a start in it runs on, a row per job
+ * with the setting that chose each part and a held start's sentence whole; where
  * it syncs, wired or not; and the accounts each agent's work may run on here, read-only, each with a door to its
- * agent (D130 §3.2, set on the agent's page since UX6e). A browser is handed the repositories alone.
+ * agent (set on the agent's page). A browser is handed the repositories alone.
  */
 export function WorkspaceDetails({ repositories, onOpen, starts, accounts, onOpenAgent, remote }: {
   repositories: string[];
   onOpen: (repository: string) => void;
   /**
-   * Where it syncs, wired or not, with *Wire to a remote…* and *Unwire* (SETUPUX1v, moved from the Setup tab's Remote row): a shell's.
+   * Where it syncs, wired or not, with *Wire to a remote…* and *Unwire*: a shell's.
    * `startOpen` opens the form (the header's press, counted by `ask` so each press opens it afresh); `focus` takes the focus to the row (a door's).
    */
   remote?: {
@@ -159,7 +159,7 @@ export function WorkspaceDetails({ repositories, onOpen, starts, accounts, onOpe
               <li key={each.agent} aria-label={each.product} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                 <span className="text-body font-medium text-ink">{each.product}</span>
                 <span className="min-w-0 flex-1 text-small text-ink-soft">
-                  {/* Daoris's accounts, one set serving every workspace, in its order (POOL1c, D197). */}
+                  {/* Daoris's accounts, one set serving every workspace, in its order. */}
                   {each.accounts.length > 0
                     ? t('projects.workspace.accounts.set', { accounts: each.accounts.join(t('projects.setup.summary.listJoin')) })
                     : t('harness.next.noAccount')}

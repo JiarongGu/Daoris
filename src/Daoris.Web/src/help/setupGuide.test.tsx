@@ -187,7 +187,7 @@ describe('opening at start', () => {
     expect(open).not.toHaveBeenCalled();
   });
 
-  /** Storage is a convenience: refused, the guide still opens as though nothing was chosen. */
+  /** Storage is a convenience: refused, the guide still opens as though nothing had been chosen. */
   it('opens where storage is refused, as though nothing was chosen', () => {
     const refuse = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('refused'); });
     try {

@@ -51,7 +51,7 @@ describe("a workspace's page", () => {
     expect(within(tabs).queryByRole('tab', { name: 'Setup' })).toBeNull();
   });
 
-  /** D47 §4, D48 §5: a browser is told the workspace syncs, never where, and has no tab row: one tab is no tabs. */
+  /** A browser is told the workspace syncs, never where, and has no tab row: one tab is no tabs. */
   it("gives a browser the page with what it may know: no tab row, no act, and no deployment's host", () => {
     render(<WorkspacePage workspace="aurora" repositories={2} remote={{}}>its repositories</WorkspacePage>);
 
@@ -71,7 +71,7 @@ describe("a workspace's Details", () => {
     expect(onOpen).toHaveBeenCalledWith('game');
   });
 
-  /** MAP1b, moved from Settings → Workspace: a row per job, each part with the setting that chose it. */
+  /** A row per job, each part with the setting that chose it. */
   it('says what a start in it runs on, and what accounts each agent may run here, each with a door to its agent', async () => {
     const onOpenAgent = vi.fn();
     render(

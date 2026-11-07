@@ -13,12 +13,12 @@ const MARK: Record<ChainStep['kind'], string> = {
   ask: 'border-line-strong bg-raised',
   unseen: 'border-line bg-page',
   quest: 'border-accent bg-accent-soft',
-  // Hollow and solid: a dashed ring at seven pixels was a smudge in dark (seen on the window).
+  // Hollow and solid: a dashed ring at seven pixels is a smudge in dark.
   pending: 'border-ink-faint bg-page',
 };
 
 /**
- * How one piece of work was carried: the ask, the quests before and after this one,
+ * How one piece of work is carried: the ask, the quests before and after this one,
  * the steps still to come, and on what each quest ran — every session's agent, version and account,
  * read from its record.
  *
@@ -35,7 +35,7 @@ export function ChainStrip({ chain, level = 2, attended, onQuest, onSession, nam
   chain: ChainStep[];
   /** What a person calls an account, from the roster; absent, each record's id is said. */
   nameOf?: AccountNamer;
-  /** The session being read, where the strip sits beside one: marked, and no door to itself (SESS1 S7). */
+  /** The session being read, where the strip sits beside one: marked, and no door to itself. */
   attended?: string;
   /** The heading level where it sits: its own section on a quest's page, under a session's head in Work. */
   level?: 2 | 3;
@@ -122,7 +122,7 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
       <button
         type="button"
         onClick={() => onQuest(quest)}
-        // Underlined at rest, faintly: an ink title among ink titles gave no sign it was a door.
+        // Underlined at rest, faintly: an ink title among ink titles gives no sign it is a door.
         title={quest.title}
         className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left text-small text-ink underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
       >
@@ -145,19 +145,19 @@ function Step({ step, attended, onQuest, onSession, nameOf }: {
       {sessions.length === 0
         ? (
           <p className="m-0 text-meta text-ink-faint">
-            {/* A closed quest nobody drove was closed by a person; "yet" would promise a session. */}
+            {/* A closed quest nobody drove is closed by a person; "yet" would promise a session. */}
             {t(quest.status === 'Done' || quest.status === 'Declined' ? 'chain.closedUnrun' : 'chain.noSession')}
           </p>
         )
         : (
           <>
-            {/* The agent said once where every session of the quest ran on the same one (UX7c, D152 §7): the install's
-                four rows each repeated it, and the fact that mattered, three failed before this one, was lost among them. */}
+            {/* The agent is said once where every session of the quest ran on the same one: repeated on each row, it
+                would bury the fact that matters, three failed before this one. */}
             {agentOnce && sessions.length > 1 && <p className="m-0 font-mono text-meta text-ink-faint">{agentOnce}</p>}
             <ul className="m-0 grid list-none gap-1 p-0">
               {sessions.map((session, index) => {
-                // A quest carried on several times drew identical rows: which attempt, its account and how long tell them
-                // apart, and the one being read says so and is no door to itself (SESS1 S7).
+                // A quest carried on several times would draw identical rows: which attempt, its account and how long tell
+                // them apart, and the one being read says so and is no door to itself.
                 const here = session.id === attended;
                 const name = agentOnce && sessions.length > 1
                   ? t('chain.attempt', { n: index + 1 })

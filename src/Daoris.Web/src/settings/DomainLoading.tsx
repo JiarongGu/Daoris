@@ -1,7 +1,7 @@
 import { Card, SkeletonRows } from '../design/ui';
 
 /**
- * **A machine domain's card on its first load** (D118 §3h; FRAME1g, audit ST11 and PL11): skeleton rows in
+ * **A machine domain's card on its first load**: skeleton rows in
  * the card's place until the shell's first answer, where the domain drew nothing and a first open read as a
  * blank page under its name. Busy for whoever reads the page, as the main area is while its item loads.
  *

@@ -14,7 +14,7 @@ import { attentionGroup, type AttentionGroup, GROUP_ORDER, needsListed } from '.
 type Line = { id: 'presses' | AttentionGroup | 'messages' | 'done'; label: string; count: number; detail: string | null; opens: NotificationsGroup };
 
 /**
- * Overview's summary of what needs the person (NOTIFY2b, D196 point 5, the notification design §4): a line per group with its count
+ * Overview's summary of what needs the person: a line per group with its count
  * and its oldest wait (the presses waiting for confirmation, *Holding work*, *Waiting for your word*, *Ready for you*), each a door
  * that shows *Notifications* at its group. Overview lists no row: every one, with its words and acts, is in *Notifications*.
  *
@@ -98,7 +98,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
   if (done) lines.push(done);
 
   return region(
-    // R1 (the UI/UX design §2): one label track at 32rem and wider, each line's count and wait beside its words; stacked below.
+    // One label track at 32rem and wider, each line's count and wait beside its words; stacked below.
     // Lines, not a list of rows: every row is *Notifications*' (§4), so nothing here reads as one.
     <div className="@container grid grid-cols-[fit-content(min(22rem,50%))_auto_minmax(0,1fr)_auto] gap-x-4 @max-[32rem]:grid-cols-[minmax(0,1fr)_auto]">
       {lines.map((line) => {
@@ -106,7 +106,7 @@ export function NeedsSummary({ attention, presses, notices = [], messages = [], 
           <>
             <span className="min-w-0 text-body text-ink">{line.label}</span>
             {/* A wait's figure wears open's ink, the bell's, a press's the warning hue; Messages' and Done and failed's count items and
-                notices, which wait on nobody, so theirs is neutral (BADGEUX1, the UI/UX design §3.10). */}
+                notices, which wait on nobody, so theirs is neutral. */}
             <span className={cn('font-mono text-meta tabular-nums', line.id === 'presses' ? 'text-warn'
               : line.id === 'messages' || line.id === 'done' ? 'text-ink-soft' : 'text-ink-open')}
             >

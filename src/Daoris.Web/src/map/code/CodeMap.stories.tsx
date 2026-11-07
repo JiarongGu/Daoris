@@ -8,7 +8,7 @@ import { storyWidths } from '../../design/storyWidths';
 import { type CodeFixture, CYCLE_ACROSS_FOLDERS, LONG_IDS, REPOSITORY, SKIPPING_LAYERS, syntheticMap, WITH_A_CYCLE } from './codeFixtures';
 import { CodeMapDetail, CodeMapWorld } from './CodeMap';
 
-// A repository's own code map on the canvas (MAP3a; CANVAS1f; D224, the canvas design §3.4), in the shapes a producer writes: this
+// A repository's own code map on the canvas, in the shapes a producer writes: this
 // repository's twenty modules, a map with a cycle, a cycle across folders, lines routed around the cards they would cross, one folder
 // folded alone, ids too long for their cards, a teammate's, and synthetic ones of 500 and 5,000 that open on their closed folders. At the main area's 80, 39 and 25rem (below the 36rem floor the world is drawn where it fits and
 // pans in its pane), in English and 中文, light and dark. Frames and cards are measured on these (`measured/code.spec.ts`).
@@ -23,7 +23,7 @@ function Both({ map, fed, initial = null, inPlace = false }: { map: CodeFixture;
   // Below the 36rem floor the detail opens in place under its row in the list, as MapView gives it.
   const here = inPlace && selected !== null;
   return (
-    // As MapView lays them out: beside each other by the main area's own width (D118 §3b), so the story
+    // As MapView lays them out: beside each other by the main area's own width, so the story
     // stands in for the main area as their container.
     <div className="@container/main">
       <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">

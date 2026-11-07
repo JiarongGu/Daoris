@@ -17,7 +17,7 @@ import { rem, MarkChip, RailMark, describe, foldStacks, foldRanges, padding, DAS
 const LIST_KEY = 'daoris.flow.list';
 
 /**
- * **A flowchart** (FLOWCHART1a1; D186, the flowchart design §3 and §4): one process drawn from its record, laid out in
+ * **A flowchart**: one process drawn from its record, laid out in
  * layers by `layoutFlow` and placed by the pane's own width, left to right, top to bottom, or as the rail, a list whose
  * edges are words. The same nodes are one list in reading order in every placement, so a reader and a keyboard follow
  * the list and never the drawing.
@@ -84,7 +84,7 @@ export function RankedFlow({
   // *Show whole* (§3.6): every fold opened, stacks among them, until *Fold again*. Page state, never remembered.
   const [whole, setWhole] = useState(false);
 
-  // Stacks (FLOWCHART1c; §3.6 step 1): three or more like nodes in a chain drawn as one fold, opened by its press. Which are open is
+  // Stacks: three or more like nodes in a chain drawn as one fold, opened by its press. Which are open is
   // page state, never remembered. The stacks are found from the shape alone, as the layout is; the focus follows a fold that opens
   // to its first member, and one that closes to the fold.
   const stackKey = JSON.stringify([given.map((node) => [node.id, node.stack?.key ?? null]), givenEdges.map((edge) => [edge.id, edge.from, edge.to]), givenEntries]);
@@ -104,7 +104,7 @@ export function RankedFlow({
   }, []);
   const stacked = foldStacks(t, given, givenEdges, givenEntries, whole ? [] : stacks, opened, toggle);
 
-  // Past 24 nodes (FLOWCHART1d; §3.6 steps 2-3): settled stretches, then the focus, which follow what is current and settled, so
+  // Past 24 nodes: settled stretches, then the focus, which follow what is current and settled, so
   // they are kept by that and by the folds the person opened. A fold opens to the node that had the focus where it holds it.
   const [openedLarge, setOpenedLarge] = useState<ReadonlySet<string>>(() => new Set());
   const large = stacked.nodes.length > WHOLE_MOST;
@@ -154,7 +154,7 @@ export function RankedFlow({
 
   const byId = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
   const backs = useMemo(() => new Set(layout.paths.filter((path) => path.back).flatMap((path) => path.edges)), [layout]);
-  // The paths that carry an edge the record kept as taken (FLOWCHART1a2), drawn heavier; the layout never reads it.
+  // The paths that carry an edge the record kept as taken, drawn heavier; the layout never reads it.
   const taken = useMemo(() => {
     const kept = new Set(edges.filter((edge) => edge.taken).map((edge) => edge.id));
     return new Set(layout.paths.filter((path) => path.edges.some((id) => kept.has(id))).map((path) => path.id));
@@ -174,7 +174,7 @@ export function RankedFlow({
     if (rank !== undefined) dividedAt.set(rank, [...(dividedAt.get(rank) ?? []), ...titles]);
   }
 
-  // The roving stop: the node the person was last on, else the current one, else the first in reading order; in pick mode, a node that
+  // The roving stop: the node the person last stood on, else the current one, else the first in reading order; in pick mode, a node that
   // can take the way.
   const roving = stop !== null && byId.has(drawnOf(stop))
     ? drawnOf(stop)
@@ -333,7 +333,7 @@ export function RankedFlow({
     return observeWorld(element, () => {
       const read = readWorld(element);
       const next = read && measure(element, read, layout, placement, shownData, onPaths);
-      // The canvas follows the world the ink was drawn from: its size, its opening and the anchor across a relayout.
+      // The canvas follows the world the ink is drawn from: its size, its opening and the anchor across a relayout.
       if (read) canvas.current?.measured(read);
       setInk((was) => {
         if (!next) return was === null ? was : null;
@@ -367,7 +367,7 @@ export function RankedFlow({
     if (pick && holder && !pick.can(holder.dataset.flowNode!)) event.preventDefault();
   };
 
-  // *Show whole* where a flow past 24 nodes draws a fold, *Fold again* once one was opened (§3.6).
+  // *Show whole* where a flow past 24 nodes draws a fold, *Fold again* once one is opened.
   const anyFold = folds.length > 0 || (!whole && stacks.some((stack) => !opened.has(stack.id)));
   const showWhole = large && !whole && anyFold;
   const foldAgain = large && (whole || openedLarge.size > 0);

@@ -34,8 +34,8 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
   const driver = useDriver();
   const roster = useHarnesses();
   // Ask Daoris's access, by the panel chip's rule: restricted at once, full access on its confirmation,
-  // which names the servers the plugins offer it and wait for an approval, read only while it asks. A refusal is said where it was
-  // pressed (ACCESSASK1, the UI/UX design R3): inside the ask, or under the chip, never a toast.
+  // which names the servers the plugins offer it and wait for an approval, read only while it asks. A refusal is said where it is
+  // pressed: inside the ask, or under the chip, never a toast.
   const setHelpMode = useSetHelpMode();
   const helpMode = helpModeOf(driver.data?.helpMode);
   const choice = useModeChoice(helpMode, (mode, answered) => setHelpMode.mutate({ mode }, {
@@ -49,10 +49,10 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
   const setHelpGrant = useSetHelpGrant();
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  // Restricted mode's configured access (HELPMODE1c2b): the grants the driver serves, as it holds them, each press one operation
-  // over SET_HELP_GRANT; one it does not act on is never sent. Housekeeping, the chosen settings (HELPMODE1c3) and the checkouts
-  // (HELPMODE1c4, each readable checkout the driver serves turned off or on by its repository's name) are chosen here; and the
-  // browser's is its plugin's approval, drawn read only, its door that plugin's tab (the modes design §4.1's decided note).
+  // Restricted mode's configured access: the grants the driver serves, as it holds them, each press one operation
+  // over SET_HELP_GRANT; one it does not act on is never sent. Housekeeping, the chosen settings and the checkouts
+  // (each readable checkout the driver serves turned off or on by its repository's name) are chosen here; and the
+  // browser's is its plugin's approval, drawn read only, its door that plugin's tab.
   const served = Array.isArray(driver.data?.helpGrants) ? driver.data.helpGrants : null;
   const helperDoor = harnesses.find((door) => door.door === driver.data?.helperAgent);
   const built: Partial<Record<HelpGrantId, readonly string[]>> = Object.fromEntries(
@@ -94,7 +94,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
             name: helperDoor ? doorLabel(t, helperDoor) : driver.data?.helperAgent ?? '',
             rules: helperDoor ? helperDoor.takesRules === true : true,
           },
-          // Pending while a conversation running here was handed another choice, which its next turn takes; the
+          // Pending while a conversation running here has been handed another choice, which its next turn takes; the
           // browser's changed since approval, and the plugin whose tab holds it.
           grants: served.map((grant): HelpGrantChoice => ({
             id: grant.id as HelpGrantId, chosen: grant.chosen, pending: grant.pending === true, changed: grant.changed === true,
@@ -108,7 +108,7 @@ function MachineAi({ search, notify, onGo }: { search?: SearchTier; notify: Noti
         }
         : undefined}
     />
-    {/* The roles live in the Agents place (COMPANYVIEW1b): one line here, with the door. */}
+    {/* The roles live in the Agents place: one line here, with the door. */}
     <Card>
       <CardHeader title={t('settings.ai.roles.title')} />
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.roles.moved')}</Prose>

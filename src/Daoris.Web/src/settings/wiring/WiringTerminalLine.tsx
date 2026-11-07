@@ -4,7 +4,7 @@ import { Button, Segmented, SettingRow } from '../../design/ui';
 import { TERMINAL_SHELLS, type TerminalFacts, type TerminalShell, terminalLine } from './terminalLine';
 
 /**
- * *Copy a terminal line* (WIRING1e, the this-Daoris design §4), in the Terminal card: the line for PowerShell, Command Prompt or Git
+ * *Copy a terminal line*, in the Terminal card: the line for PowerShell, Command Prompt or Git
  * Bash, setting `DAORIS_HOME` and `DAORIS_SERVICE_URL` for that terminal only and putting the install's launchers first on its `PATH`.
  * It is shown, so the person reads what they paste; it names this machine's paths and goes nowhere but the clipboard, and changes
  * nothing on the account, so it asks nothing first.

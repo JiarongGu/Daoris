@@ -155,7 +155,7 @@ describe('the plugin list', () => {
     expect(within(screen.getByRole('button', { name: /Quiet hours/ })).getByText('off')).toBeInTheDocument();
   });
 
-  /** PLUG10 carried over: running is a state, so its word is the quiet neutral, never done's green. */
+  /** Running is a state, so its word is the quiet neutral, never done's green. */
   it('says running in the neutral tone', () => {
     render(<PluginList groups={GROUPS} chosen={null} onChoose={vi.fn()} onInstall={vi.fn()} />);
 

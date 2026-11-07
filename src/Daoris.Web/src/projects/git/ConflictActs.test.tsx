@@ -6,7 +6,7 @@ import { GIT_CHANGES_ENGINE, GIT_CONFLICT_CACHE } from '../fixtures';
 import { ConflictHunks } from './ConflictHunks';
 import { ChangesTab, type ChangesActs } from './RepositoryGit';
 
-// Resolve a conflicted file in the Changes tab (GITAPP2j, D204, the git-writes design §8): the conflicts of a file with ours and theirs
+// Resolve a conflicted file in the Changes tab: the conflicts of a file with ours and theirs
 // side by side, a take for each, the file written once all are chosen, Mark resolved beside it, and the answer said with Undo.
 // A molecule: its acts arrive as a prop, so each state is reached by it.
 

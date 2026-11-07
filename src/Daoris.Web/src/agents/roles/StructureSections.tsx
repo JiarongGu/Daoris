@@ -16,7 +16,7 @@ export type StructureRead = 'ok' | 'loading' | 'failed';
 
 /**
  * Where a row's door leads, handed in by the application: the molecules press these and know no route. A door the
- * place was not handed is not drawn.
+ * place is not handed is not drawn.
  */
 export type RoleDoors = {
   /** The Agents mode at this agent's accounts. */
@@ -65,7 +65,7 @@ export function stateText(t: TFunction, state: StructureChoice['state']): string
   return when && state.code !== 'not-read' ? `${word} · ${t('agents.roles.state.read', { when })}` : word;
 }
 
-/** A work's rule as one line: on, ask or off; the agents it permits; its bound; and where it was set. */
+/** A work's rule as one line: on, ask or off; the agents it permits; its bound; and where it is set. */
 export function ruleText(t: TFunction, rule: RuleRead): string {
   if (rule.kind === 'not-a-rule') return t('agents.roles.rule.notARule');
   if (rule.kind === 'failed') return t('agents.roles.rule.failed', { why: rule.why });
@@ -79,7 +79,7 @@ export function ruleText(t: TFunction, rule: RuleRead): string {
 }
 
 /**
- * **The shared filters** (COMPANYVIEW1d, the company-view design §3): the workspace whose scope Work and Accounts say, one work, one
+ * **The shared filters**: the workspace whose scope Work and Accounts say, one work, one
  * agent, a name, and *Needs a look*. The mode's hook owns them; this draws them and says each change.
  */
 export function StructureFilterBar({ filters, options, onFilters }: {
@@ -179,7 +179,7 @@ export type SectionProps = {
   doors: RoleDoors;
 };
 
-/** A row's *On the diagram*, where its door was handed in and the row is drawn there. */
+/** A row's *On the diagram*, where its door is handed in and the row is drawn there. */
 const toDiagram = (structure: Structure, doors: RoleDoors, row: string) =>
   (doors.diagram && nodeOfRow(structure, row) !== null ? () => doors.diagram!(row) : undefined);
 

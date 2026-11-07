@@ -33,7 +33,7 @@ describe('the chain strip', () => {
     ]);
   });
 
-  /** D49 §4: which agent, version and account each attempt ran on — read from its record. */
+  /** Which agent, version and account each attempt ran on — read from its record. */
   it('says on what each quest ran, attempt by attempt', () => {
     render(<ChainStrip chain={buildChain('a', QUESTS, [
       run('s1', 'a', { state: 'failed', doorVersion: '2.1.270', profile: 'work' }),
@@ -74,8 +74,8 @@ describe('the chain strip', () => {
   });
 
   /**
-   * SESS1 S7, from the first real workspace: under a quest carried on three times the strip drew three
-   * identical rows, and nothing said which was the one being read.
+   * Under a quest carried on three times the strip would draw three
+   * identical rows, and nothing would say which is the one being read.
    */
   it('marks the session being read, and tells a quest\'s sessions apart by when and how long', () => {
     const onSession = vi.fn();
@@ -141,7 +141,7 @@ describe('the chain strip', () => {
     expect(screen.queryAllByRole('button')).toEqual([]);
   });
 
-  // FABRIC-CLOSE1d2: a submission is not a status (§E5), but what is drawn says it, as the quest's page does.
+  // A submission is not a status, but what is drawn says it, as the quest's page does.
   it('says submitted for a closure graph\'s submitted quest, and source reopened for a step held so', () => {
     const quests = [
       quest('a', { status: 'Taken', closure: 'gph-1', submission: { machine: 'desk', sequence: 1, at: '2026-09-23T02:00:00Z' } }),

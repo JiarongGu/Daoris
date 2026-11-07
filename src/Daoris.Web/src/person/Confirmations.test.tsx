@@ -11,8 +11,8 @@ import {
   regionShown, routeKey,
 } from './Confirmations';
 
-// The window's confirmation of a terminal's press (PERSONDOOR1f, RPC1c; D156 point 4, the person-door design §4.2), as NOTIFY2b
-// (D196 point 4, the notification design §3) draws it in *Notifications*: in plain words that keep what tells one session and one
+// The window's confirmation of a terminal's press, as *Notifications*
+// draws it: in plain words that keep what tells one session and one
 // file from another, every value in the card's view, the route's name under *Details*; its decision region bounded, and *shown*
 // once that region is in view in a window in front of the person. A terminal's press waits until the person answers:
 // its card says so and whether a terminal still waits on it; its Confirm is judged before it runs.
@@ -329,7 +329,7 @@ describe("the window's confirmation of a terminal's press", () => {
     expect(screen.getByRole('button', { name: confirm })).toBeEnabled();
   });
 
-  // DRAINHOLD1 part 2: a Confirm held by a drain says what the drain waits on and since when, and offers the update's *not now* in place.
+  // A Confirm held by a drain says what the drain waits on and since when, and offers the update's *not now* in place.
   const HELD = async (): Promise<ConfirmationAnswer> => ({ answered: false, why: 'draining', message: 'Daoris is about to restart; this still waits.' });
   // 14:05 of the day the test runs: the card says a moment of today by its time alone, and a fixed date read as another day's after it.
   const today = new Date();
@@ -482,7 +482,7 @@ describe('the adoption notice', () => {
 });
 
 /**
- * *Shown* (NOTIFY2b, the notification design §3.4): the region in view, by one judgement over its intersection with its area, the
+ * *Shown*: the region in view, by one judgement over its intersection with its area, the
  * window's focus and size, and a drawer's scrim. jsdom lays nothing out, so each box is the test's, and an `IntersectionObserver`
  * stand-in (`watchScreen`) wakes the judgement as the window would.
  */

@@ -35,9 +35,8 @@ describe('where the person is', () => {
       expect(prefaceOf({ view, workspace: null }), view)
         .toBe(`Where the person is now: the ${en[`nav.${view}`]} view, every workspace.`);
     }
-    // Agents left Settings for a place of its own, which the views above name since the twins moved it (UX6e2);
-    // Workspace and Permissions left for a workspace's page, and Plugins for its place, and since UX6g2b the
-    // twins name only the domains Settings shows.
+    // Agents have a place of its own, which the views above name; Workspace and Permissions are on a workspace's
+    // page, and Plugins have their place, so the twins name only the domains Settings shows.
     for (const domain of PLACE_DOMAINS) {
       expect(prefaceOf({ view: 'settings', workspace: null, settings: domain }), domain)
         .toBe(`Where the person is now: Settings → ${en[`settings.domain.${domain}`]}, every workspace.`);
@@ -50,7 +49,7 @@ describe('where the person is', () => {
       .toBe(`Where the person is now: the ${en['nav.knowledge']} view, showing ${en['nav.convergence']}, every workspace.`);
     expect(prefaceOf({ view: 'knowledge', workspace: 'aurora', knowledge: 'search' }))
       .toBe('Where the person is now: the Knowledge view, showing Search, workspace `aurora`.');
-    // Each mode a go may name is one the preface names: since UX6i2a a mode is a part within Knowledge, not a view, and the
+    // Each mode a go may name is one the preface names: a mode is a part within Knowledge, not a view, and the
     // two are held here so the loop can never run over nothing again.
     const modes = PLACE_PARTS.filter(({ within }) => within === 'knowledge').map(({ part }) => part as KnowledgeMode);
     expect(modes).toEqual(['search', 'convergence']);
@@ -110,7 +109,7 @@ describe('where the person is', () => {
   });
 
   /**
-   * The helper cannot see the window, and asked what the panel held it guessed (DOCK1d's look).
+   * The helper cannot see the window, and asked what the panel held it guessed.
    * On Sessions it is told where the views stand and which region is showing.
    */
   it('says which views each region holds, and whether it is showing', () => {
@@ -183,7 +182,7 @@ describe('where the person is', () => {
     expect(itemOf('plugins', 'acme.gate', 'live')).toEqual({ kind: 'plugin', id: 'acme.gate' });
     for (const standing of ['gone', 'unread', undefined] as const) expect(itemOf('quests', 'abc123', standing)).toBeNull();
     expect(itemOf('quests', null, 'live')).toBeNull();
-    // An offer is not an installed plugin (left to PLUGUI1h); Knowledge and Settings keep what they say today.
+    // An offer is not an installed plugin; Knowledge and Settings keep what they say today.
     expect(itemOf('plugins', 'offer:acme.gate', 'live')).toBeNull();
     expect(itemOf('knowledge', 'x', 'live')).toBeNull();
     expect(itemOf('settings', 'x', 'live')).toBeNull();

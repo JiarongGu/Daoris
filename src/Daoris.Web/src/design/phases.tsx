@@ -5,7 +5,7 @@ import { phaseTime } from '../locales/format';
 import { DotMark, Icon, Inline } from './ui';
 
 /**
- * A step that waits says its phase and how long (R2, the UI/UX design §2; SIGNIN1 built it for the sign-in, §3.2). A process
+ * A step that waits says its phase and how long. A process
  * whose answer is a start and whose end comes later is drawn as its phases: the done ones with the time each took, the one
  * now with its time running, the ones to come by name. A process that looks the same at five seconds and at five minutes
  * cannot be told from a hung one.

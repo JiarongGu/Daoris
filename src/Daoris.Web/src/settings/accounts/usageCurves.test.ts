@@ -7,8 +7,7 @@ import { saidLine } from './accounts';
 import { type CurvePoint, type CurveScope, ownPoints } from './usageCurves';
 
 /**
- * The usage curve on the page (SWITCH1d; D165 point 2; the switch design §2 and §5), since PUSH1e judged in.NET alone (D182 point
- * 6): the driver's `UsageCurves` measures each window and the accounts' answer carries the verdicts, a window's curve now in whole
+ * The usage curve on the page, judged in.NET alone: the driver's `UsageCurves` measures each window and the accounts' answer carries the verdicts, a window's curve now in whole
  * points and whether it is over it, and each scope's accounts whose tightest window is over its curve. The page words them. 🔴 The
  * driver's `fixtures/usage-curves.json` holds the words: every `tightest` row's clause is the page's, given the verdict .NET
  * pushes for that row (`DriverModuleAccountsTests.The_scopes_verdicts_are_the_shared_tables_rows` holds the verdicts to the rows).
@@ -63,7 +62,7 @@ describe('the usage curve, as .NET judges it and the page words it (PUSH1e)', ()
 });
 
 /**
- * A curve's rules, said by the door (SWITCH1d; the switch design §2; PUSH1e): the point editor saves, and a curve that breaks a rule
+ * A curve's rules, said by the door: the point editor saves, and a curve that breaks a rule
  * is refused by the modules' `ACCOUNT_USE_CURVE`, its rule the catalogue's form and its values the window, the point and the numbers.
  * 🔴 The page's half of the refusal's words: each rule's values as the door sends them (the same rows as the modules'
  * `A_curve_that_breaks_a_rule_is_refused_in_its_code_naming_the_rule`) say, in English, the sentence of the driver's `rotation-use.json`

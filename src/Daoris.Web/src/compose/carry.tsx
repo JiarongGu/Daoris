@@ -115,8 +115,8 @@ export function useCarry(carry: Carry, onChange: (next: Carry) => void, active: 
         setDragging(false);
         attach(Array.from(event.dataTransfer.files));
       },
-      // A screenshot on the clipboard is a file, not text: attached, and kept out of the field it was
-      // pasted into. A paste of text goes where it was pasted, as ever.
+      // A screenshot on the clipboard is a file, not text: attached, and kept out of the field it is
+      // pasted into. A paste of text goes where it is pasted.
       onPaste: (event: ClipboardEvent) => {
         const pasted = Array.from(event.clipboardData?.files ?? []);
         if (pasted.length === 0) return;

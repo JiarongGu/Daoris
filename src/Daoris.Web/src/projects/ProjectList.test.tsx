@@ -192,7 +192,7 @@ describe("Repositories' list", () => {
     expect(copy).toHaveBeenCalledWith('engine');
   });
 
-  /** D118 §3h: a list that never had an answer says the sentence in place, and is never blank. */
+  /** A list that never had an answer says the sentence in place, and is never blank. */
   it('says the sentence of a registry that never answered, in place', () => {
     list({ groups: [], unanswered: 'Daoris could not reach this machine\'s host.' });
 

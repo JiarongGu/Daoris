@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, SectionTitle, SettingList } from '../../design/ui';
 
 // The pieces This Daoris's cards share: a fact not read says why in its own words, and a card is one titled section
-// with a press at its right. Molecules: drawn from props, so every state is reachable without a shell (D52 as amended).
+// with a press at its right. Molecules: drawn from props, so every state is reachable without a shell.
 
 /**
- * A fact the reader could not give, in the words of its `…Why` code (the this-Daoris design §6: a fact not read is `null` beside
+ * A fact the reader could not give, in the words of its `…Why` code (a fact not read is `null` beside
  * a code). A code the catalogue has no word for says it could not be read, so a code the driver adds later shows a sentence
  * and not its own spelling.
  */
@@ -43,9 +43,9 @@ export function Door({ label, onPress }: { label: string; onPress: () => void })
 /** One card of the page: its title as a heading, a press at its right where it has one, and its rows under. */
 export function WiringCard({ id, title, aside, press, head, children }: {
   id: string; title: string; aside?: { label: string; busy?: boolean; onPress: () => void };
-  /** The card's own press in its head, before `aside` (KEEP1e's *Free up space…*), disabled with its reason where `why` is said. */
+  /** The card's own press in its head, before `aside` (*Free up space…*), disabled with its reason where `why` is said. */
   press?: { label: string; disabled?: boolean; why?: string; primary?: boolean; onPress: () => void };
-  /** What a press of the head draws under it, above the rows (KEEP1e's list). */
+  /** What a press of the head draws under it, above the rows. */
   head?: ReactNode;
   children: ReactNode;
 }) {

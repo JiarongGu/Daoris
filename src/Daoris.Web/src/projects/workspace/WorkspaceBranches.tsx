@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { Button, CheckField, Prose } from '../../design/ui';
 import { type GitRead, Nothing, Waiting } from '../git/RepositoryGit';
 
-/** Groups drawn before the rest are one press away, as a list's *Yours* are (the built-in Git design §2.2). */
+/** Groups drawn before the rest are one press away, as a list's *Yours* are. */
 export const GROUPS_SHOWN = 5;
 
-/** The repositories apart that the person included, held by the page that draws the fold and the look (UX6h2b3). */
+/** The repositories apart that the person included, held by the page that draws the fold and the look. */
 export type Inclusion = { included: readonly string[]; include: (more: readonly string[]) => void };
 
 /**
- * **The fold's include, held by the Branches part** (UX6h2b3, D150): the one place a workspace's repositories apart are
+ * **The fold's include, held by the Branches part**: the one place a workspace's repositories apart are
  * included, so the same set draws their groups here and is taken by *Updates*' next look. A context, since the groups'
  * holder sits between the part and the fold. Drawn with none, the fold keeps its own set.
  */
@@ -29,7 +29,7 @@ export function useInclusion(): Inclusion {
 export type WorkspaceGroups = { held: readonly string[]; apart: readonly string[] };
 
 /**
- * **The branch list in a workspace's Branches tab** (UX6h2b2, the built-in Git design §2.2, D112): each repository holding a
+ * **The branch list in a workspace's Branches tab**: each repository holding a
  * branch of Daoris's is a group, headed by its name, which is the door to its page, as the workspace's Details names each
  * one; its list is the repository's own (`BranchList`). Groups fold after five, with the rail's *Show N more*. Every other
  * repository with a checkout here is listed apart and folded, and each one the person includes is a group after the rest.
@@ -37,7 +37,7 @@ export type WorkspaceGroups = { held: readonly string[]; apart: readonly string[
  * @remarks
  * **A molecule**: the read arrives as a prop, and each group's list is drawn by its holder (`group`), called only for a group
  * that shows, so a hidden or apart repository asks nothing: not its branches, not its sessions' titles. What is included is
- * the page's state and not remembered. **It is the one include** (UX6h2b3): the Branches part holds it (`InclusionContext`),
+ * the page's state and not remembered. **It is the one include**: the Branches part holds it (`InclusionContext`),
  * and *Updates*' next look takes the same repositories, so the page says its repositories apart once, not twice.
  */
 export function WorkspaceBranches({ workspace, read, group, onOpen }: {
@@ -50,7 +50,7 @@ export function WorkspaceBranches({ workspace, read, group, onOpen }: {
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  // The page's set where it holds one (UX6h2b3); its own where it does not, as a molecule drawn alone.
+  // The page's set where it holds one; its own where it does not, as a molecule drawn alone.
   const own = useState<readonly string[]>([]);
   const shared = useContext(InclusionContext);
   const included = shared ? shared.included : own[0];
@@ -125,7 +125,7 @@ function Group({ repository, onOpen, children }: { repository: string; onOpen: (
 
 /**
  * The repositories with a checkout here that hold no branch of Daoris's: listed apart, folded, and drawn only once the
- * person ticks them, each or all, and includes them. On a workspace's tab it is the only list apart (UX6h2b3): *Updates*
+ * person ticks them, each or all, and includes them. On a workspace's tab it is the only list apart: *Updates*
  * draws none of its own there, and its look takes what is included here.
  */
 function ApartFold({ apart, onInclude }: { apart: readonly string[]; onInclude: (repositories: readonly string[]) => void }) {

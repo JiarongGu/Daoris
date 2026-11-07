@@ -71,7 +71,7 @@ function TreeRow({ item, chosen, focused, onPress, onToggle, children }: RowProp
 }
 
 /**
- * **The places tree** (AGENTSPLACE1e, SETUPUX1i; the setup-UX design §2.1): *This machine*, then each workspace with its driven
+ * **The places tree**: *This machine*, then each workspace with its driven
  * repositories, and the rest of a workspace's imported ones folded into one row that opens a paged read. Each row has a second line, and
  * a need adds ⚠ and its first reason. The keys are the WAI tree pattern's (`keyInTree`); one row is in the tab order and the arrows move
  * it. Choosing a row and opening a workspace are separate acts.
@@ -192,7 +192,7 @@ function PlacesTree({ state, chosen, onChoose }: { state: SetupState; chosen: st
 }
 
 /**
- * **The Setup mode's list** (AGENTSPLACE1e, the Agents-place design §3): a search, the *Needs attention* chip with its count, and the
+ * **The Setup mode's list**: a search, the *Needs attention* chip with its count, and the
  * places tree. A search and the chip narrow the driven ones; the driver judges the reasons from its configuration alone.
  *
  * A molecule: the driver's answer arrives, and each press goes out.

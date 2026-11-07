@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
 
 // Quests in SHELL mode: a driven quest's stop, and the grant and retry the driver's holds offer on a
-// quest's page (FRAME1d; a drawer until then). Moved from `shell.test.tsx` with MOD3: tests follow their code.
+// quest's page.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -27,7 +27,7 @@ import { keys } from '../data/queries';
 import { composeAttention } from '../bridge/shell';
 import { DRIVER_STATE, respond, show } from '../test/shellHarness';
 
-/** *What needs you*'s rows as the shell pushes them (PUSH1d4: judged in .NET), composed into the client as the slice composes them. */
+/** *What needs you*'s rows as the shell pushes them (judged in .NET), composed into the client as the slice composes them. */
 const pushAttention = (client: QueryClient, rows: Record<string, unknown>[]) => client.setQueryData(keys.attention, composeAttention(
   new Map<string, unknown>([['rows', Object.fromEntries(rows.map((row) => [`${row.kind}:${row.id}`, row]))], ['sessions', {}]]), true));
 
@@ -144,8 +144,8 @@ describe('trusting a folder the driver is holding (D73)', () => {
   });
 
   /**
-   * A quest parked by its strikes was retried only from a terminal (`daoris quest
-   * retry`). The page had the other half ready, and nothing rendered it. The retry is offered where
+   * A quest parked by its strikes is retried from a terminal (`daoris quest
+   * retry`) and from its page. The retry is offered where
    * the parked quest's sentence is read, and nowhere a quest is not parked.
    */
   it('a quest parked by its strikes offers the retry on its page, and retries on the press', async () => {
@@ -235,7 +235,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
       'DAORIS.DRIVER', 'TRUST_FOLDER', { payload: { folder: HOLD.folder, trustFile: HOLD.trustFile } }));
   });
 
-  /** A widening an agent proposed waits on the person, judged from the machine's rules and pushed (PUSH1d4). */
+  /** A widening an agent proposed waits on the person, judged from the machine's rules and pushed. */
   it('a widening the driver is holding waits in *What needs you*, and its row has a door', async () => {
     const proposal = {
       id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',

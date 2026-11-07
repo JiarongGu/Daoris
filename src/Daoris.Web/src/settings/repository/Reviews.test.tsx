@@ -55,7 +55,7 @@ const SAYS: SaysRow[] = [
 ];
 
 /**
- * The twins' `gate` rows, copied (REVIEWENV1c2): what each door says after the rule's sentences, now that the landing's gate
+ * The twins' `gate` rows, copied: what each door says after the rule's sentences, now that the landing's gate
  * reads it. None here says nothing after.
  */
 const WAITING = 'Where work here waits for your review, it lands only once you say it is reviewed, '
@@ -112,7 +112,7 @@ describe('what a review rule says', () => {
     expect(reviewSummary(t, { environments: [LOCAL.environments[0]!, { name: 'test', kind: 'deployed', procedure: 'README.md' }] }))
       .toBe('要求时在 `dev` 或 `test` 中展示');
 
-    // The Setup row's sentence after the rule's (REVIEWENV1c2): what the gate does, its doors as written, nothing after none.
+    // The Setup row's sentence after the rule's: what the gate does, its doors as written, nothing after none.
     expect(reviewRowSays(t, LOCAL, { source: 'repository' })).toBe([
       '这里的工作落地之前，会在 `dev` 中展示给你，并等你确认无误。',
       '这里的搭建步骤在它自己的工作树中构建工作，并在 Daoris 的浏览器中于 `http://localhost:4200` 展示；你自己的服务器和进程不会被动到。',

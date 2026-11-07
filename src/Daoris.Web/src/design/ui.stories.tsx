@@ -102,7 +102,7 @@ export const StatusInks: StoryObj = { render: () => <StatusWords /> };
 export const StatusInksDark: StoryObj = { render: () => <InTheme theme="dark"><StatusWords /></InTheme> };
 
 /**
- * A setting is a row (2026-09-23), and a card's rows share one label track (the UI/UX design R1, UIFIT1): a switch, a
+ * A setting is a row, and a card's rows share one label track: a switch, a
  * number with the notice its zero earned under it, a path with the row's own act after it, a long label that wraps at the
  * track's cap, a short value, and a row with no control. Each value starts at the track's edge; in a main area under
  * 32rem the track goes and each value sits under its words. In English and 中文, at the frame's three widths.
@@ -181,7 +181,7 @@ export const SettingRowsChineseHalf: StoryObj = { render: () => <SettingRowsCard
 export const SettingRowsChineseNarrow: StoryObj = { render: () => <SettingRowsCards zh />, decorators: [storyWidths.narrow] };
 
 /**
- * A form laid by its own width (the UI/UX design R1, §4.2; UIFIT1d): one field, three fields, and a list of rows with its
+ * A form laid by its own width: one field, three fields, and a list of rows with its
  * head row, each field by what it holds and nothing capped below the pane. Below the form's floor each row stacks, the
  * head row goes and each field shows its own name. At the frame's three widths; `measured/settings.spec.ts` reads them.
  */

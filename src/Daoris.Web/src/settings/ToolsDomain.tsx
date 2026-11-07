@@ -19,7 +19,7 @@ import {
  * presses, the choice on each card and git's question; the cards and the locations below it hold none.
  *
  * @remarks
- * **A download is followed** (§3.6): the press answers once it has started, the card shows its console and its stop
+ * **A download is followed**: the press answers once it has started, the card shows its console and its stop
  * while the shell says it runs, and its end is said wherever Settings is. **A switch of git is said before it applies**:
  * its press asks the two gits first (`TOOLS_GIT`), and the switch is the second press.
  */
@@ -105,7 +105,7 @@ export function ToolsDomain({ notify }: { notify: Notify }) {
           use: asking,
           reading: git.isFetching,
           answer: git.data,
-          // A refusal is said on the card, where the question was asked, rather than in a toast.
+          // A refusal is said on the card, where the question is asked, rather than in a toast.
           problem: git.error ? sentence(git.error) : undefined,
         } : null;
         return (
@@ -126,7 +126,7 @@ export function ToolsDomain({ notify }: { notify: Notify }) {
               onError: failed,
             })}
             onStop={() => stop.mutate(tool.tool, { onError: failed })}
-            // A refusal is said inside the delete's ask, where it was pressed (UXFIX2b1), not in a toast.
+            // A refusal is said inside the delete's ask, where it is pressed, not in a toast.
             onDelete={(version, answered) => remove.mutate({ tool: tool.tool, version }, {
               onSuccess: () => {
                 settled(tool);

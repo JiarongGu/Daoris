@@ -31,7 +31,7 @@ const page = (work?: WorkDoor, ask: Ask = { ...PUBLISHED, id: 'a1b2c3', deletabl
   return { ...props, view, main: screen.getByRole('main') };
 };
 
-/** The acts the head draws as buttons: since HEAD2d only the loud one, *Resume*, and the ⋯, which is named by its label. */
+/** The acts the head draws as buttons: only the loud one, *Resume*, and the ⋯, which is named by its label. */
 const headerActs = () => within(screen.getByRole('main').querySelector('header')!).getAllByRole('button')
   .map((button) => button.textContent || button.getAttribute('aria-label'));
 
@@ -91,7 +91,7 @@ describe('pausing and abandoning an ask', () => {
 
     await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
     expect(screen.queryByRole('group', { name: 'pause this work' })).toBeNull();
-    // The ⋯ that held *Pause…* is always drawn since HEAD2d, so the focus goes back to it.
+    // The ⋯ that holds *Pause…* is always drawn, so the focus goes back to it.
     expect(screen.getByRole('button', { name: 'More actions' })).toHaveFocus();
   });
 
@@ -228,7 +228,7 @@ describe("an ask's page on a right-click", () => {
 
 /**
  * The intake that answered says how it ended in the reader's language, its quests joined the
- * reader's way, and a record from before parts as it was kept, marked *shown as recorded*.
+ * reader's way, and a record from before parts as it is kept, marked *shown as recorded*.
  */
 describe("an ask's intake note", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

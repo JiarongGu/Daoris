@@ -33,7 +33,7 @@ export function ProjectsView({
   onAddOpened?: () => void;
   importRequested?: boolean;
   onImportOpened?: () => void;
-  /** The workspace a go's Add or Import opens filled with (ENTRY1d2b). */
+  /** The workspace a go's Add or Import opens filled with. */
   drawerWorkspace?: string | null;
   /** The item a door names as it opens the view (`useDoor`): a repository, or a workspace's item. */
   door?: string;
@@ -42,7 +42,7 @@ export function ProjectsView({
   /** A door into how a landed branch landed: its opening chose the repository (`door`) and Branches, as `App`'s does. */
   branchAsked?: { repository: string; branch: string } | null;
   onBranchOpened?: () => void;
-  /** A door into a repository's place in the Agents place, once its Setup mode is lit (AGENTSPLACE1f, 1h). */
+  /** A door into a repository's place in the Agents place, once its Setup mode is lit. */
   onOpenSetup?: (repository: string) => void;
 }) {
   const lists = useListPanes();

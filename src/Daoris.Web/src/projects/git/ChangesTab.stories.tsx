@@ -11,9 +11,9 @@ import { ConflictHunks } from './ConflictHunks';
 import { CommitBox, type CommitPlanValue } from './CommitBox';
 import { type ChangesActs, ChangesTab } from './RepositoryGit';
 
-// A repository's Changes tab (GITAPP2b, D204, the git-writes design §1, §4, §11), drawn where the person let Daoris change the
+// A repository's Changes tab, drawn where the person let Daoris change the
 // checkout's files: what is staged against the last commit, what the files hold beyond it (a file staged and then removed is in
-// both), what is untracked and what a merge left in conflict, each with its mode and blob, and when it was read. At the main
+// both), what is untracked and what a merge left in conflict, each with its mode and blob, and when it is read. At the main
 // area's three widths (80, 39 and 25rem) in English and 中文, in both themes; and its states: on its way, no checkout here,
 // refused, none, and read again.
 

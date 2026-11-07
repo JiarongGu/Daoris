@@ -8,7 +8,7 @@ import { PressArea } from '../person/Confirmations';
 import { watchScreen } from '../test/onScreen';
 import { DoneAndFailed, noticeWords } from './DoneAndFailed';
 
-// *Done and failed* (NOTIFY2f, D196 point 6, the notification design §2.2's fourth group, §2.3, §2.4): what the person need not answer,
+// *Done and failed*: what the person need not answer,
 // newest first, each one line in the reader's language with its age, the unread marked; read once it is shown in a window in front;
 // *Open*, *Dismiss* and *Mark all read*. jsdom lays nothing out, so each box is the test's, and an `IntersectionObserver` stand-in wakes
 // the judgement as the window would.
@@ -184,7 +184,7 @@ describe('Done and failed', () => {
   });
 
   /**
-   * NOTIFY2h2 (D196's NOTIFY2h note): the news its deeper producers class, each said by its code in the reader's language; a reopen whose
+   * The news its deeper producers class, each said by its code in the reader's language; a reopen whose
    * tree is gone names its session and opens it, a plugin stopped as unsound names none.
    */
   it.each([

@@ -11,7 +11,7 @@ import { PluginIcon } from './PluginIcon';
 /**
  * A state's word and its pill's tone. **Running is the quiet neutral**: a hook process is up
  * between calls as a chat is between turns, so it borrows no outcome's hue. **Refused waits on the person**, and wears
- * the waiting hue. Simply on says no word until PLUGUI1f's health gives it one.
+ * the waiting hue. Simply on says no word until the loop's health gives it one.
  */
 export const STATE_WORD: Record<PluginState, { key: string; tone: 'neutral' | 'open' } | null> = {
   running: { key: 'plugin.running', tone: 'neutral' },
@@ -49,7 +49,7 @@ export function PluginList({ groups, chosen, installing = false, unanswered, onC
   chosen: string | null;
   /** An offer's install is on its way. */
   installing?: boolean;
-  /** The sentence for a list that has never had an answer, said in place rather than left blank (D118 §3h). */
+  /** The sentence for a list that has never had an answer, said in place rather than left blank. */
   unanswered?: string | null;
   onChoose: (item: string) => void;
   onInstall: (id: string) => void;
@@ -196,7 +196,7 @@ function OfferRow({ offer, chosen, installing, adds, onChoose, onInstall }: {
     <li data-list-row="" className="flex items-center" {...contextOffer(rowMenu(t, offer.name || offer.id, offer.id, () => onChoose(item), install))}>
       <div className="min-w-0 flex-1">
         <RowDoor chosen={chosen === item} onPress={() => onChoose(item)}>
-          {/* No state and no source: its section says both (D140 §2). */}
+          {/* No state and no source: its section says both. */}
           <CatalogueRow
             icon={<PluginIcon id={offer.id} name={offer.name} icon={offer.icon} />}
             name={offer.name}
@@ -224,7 +224,7 @@ function OfferRow({ offer, chosen, installing, adds, onChoose, onInstall }: {
 }
 
 /**
- * The list closed to its strip: each installed plugin's icon and its mark, in the list's order (D140 §2: its
+ * The list closed to its strip: each installed plugin's icon and its mark, in the list's order (its
  * icon in its initial's place). Waiting on you wears the waiting mark, off a faint icon, on no mark. Offers are not on
  * the strip, which holds what this machine has; a strip longer than the window scrolls, since the list pane's strip does.
  */

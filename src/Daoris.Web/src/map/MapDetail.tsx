@@ -8,8 +8,8 @@ import type { Topology } from './topology';
 
 /**
  * A list of quests, each with its state in words as well as in hue, and each a door to its
- * page on Quests, where acting on it lives. They were text, so a person read a quest here and had
- * to find it again on Quests (UX5 U46, U26's rule). Status leads, as on every quest row (§4).
+ * page on Quests, where acting on it lives. As text, a person would read a quest here and have
+ * to find it again on Quests. Status leads, as on every quest row.
  */
 function QuestList({ quests, onOpenQuest }: { quests: Quest[]; onOpenQuest?: (id: string) => void }) {
   const { t } = useTranslation();
@@ -42,8 +42,8 @@ function QuestList({ quests, onOpenQuest }: { quests: Quest[]; onOpenQuest?: (id
 }
 
 /**
- * A session there, in the hue the canvas and the rail give the same fact (UX5 U1, U45): waiting on
- * the person is open's, working is taken's. They were accent chips, and the accent is never a status.
+ * A session there, in the hue the canvas and the rail give the same fact: waiting on
+ * the person is open's, working is taken's. The accent is never a status.
  */
 function SessionMark({ parked }: { parked: boolean }) {
   const { t } = useTranslation();
@@ -58,7 +58,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   topology: Topology;
   selected: MapSelection | null;
   onOpenConvergence?: () => void;
-  /** Open a quest named here on its page (U46; FRAME1d). */
+  /** Open a quest named here on its page. */
   onOpenQuest?: (id: string) => void;
   /** Open this repository's own code map — the same map, one level in. */
   onOpenCode?: (repository: string) => void;
@@ -66,8 +66,8 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   onOpenRepository?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
-  // A choice the map no longer holds (the scope moved, or the data did) is no choice: it left an
-  // empty card (UX5 U47).
+  // A choice the map no longer holds (the scope moved, or the data did) is no choice: it would leave an
+  // empty card.
   const hint = <p className="m-0 text-body text-ink-soft">{t('map.detail.hint')}</p>;
 
   if (!selected) return hint;
@@ -113,7 +113,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
             <div className="flex flex-wrap gap-1">{node.accepts.map((a) => <Chip key={a}>{a}</Chip>)}</div>
           </section>
         )}
-        {/* What it says it uses, and who says they use it (D91): declarations, beside the others. */}
+        {/* What it says it uses, and who says they use it: declarations, beside the others. */}
         {uses.length > 0 && (
           <section>
             <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.uses')}</p>

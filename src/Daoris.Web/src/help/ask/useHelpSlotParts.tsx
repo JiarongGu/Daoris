@@ -51,8 +51,8 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
   here: string | null | undefined;
   setWorkspace: (workspace: string | null) => void;
 }) {
-  // LIMITRESUME1d2: the conversation shown waits for its account's limit, as its events say, above the box. Its way out
-  // now is Ask Daoris's own door (`ResumeWords.HelpDoor`): a new conversation from this one, never D163's hand-over, which refuses
+  // The conversation shown waits for its account's limit, as its events say, above the box. Its way out
+  // is Ask Daoris's own door (`ResumeWords.HelpDoor`): a new conversation from this one, never the generic hand-over, which refuses
   // Ask Daoris; *Stop…* while it runs, *Stop waiting* once it ended, and the account's *Try now*.
   const heldShown = shown && limitHeld?.session === shown.id ? limitHeld.held : null;
   const harnessRows = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
@@ -121,7 +121,7 @@ export function useHelpSlotParts({ shown, limitHeld, roster, t, shownIn, account
             </>
           ) : undefined;
 
-  // ASKSCOPE1d (D158's ASKSCOPE1 note, points 1 and 6), ahead of what the next words do: which workspace a start on a window
+  // Ahead of what the next words do: which workspace a start on a window
   // that shows several is in, asked with a press per workspace; another workspace's conversation named, with the switch that
   // goes on in it, where this window can show that workspace; and on a window that shows every workspace, whose each is.
   const switchable = shownIn !== null && registered?.find((name) => sameWorkspace(name, shownIn));

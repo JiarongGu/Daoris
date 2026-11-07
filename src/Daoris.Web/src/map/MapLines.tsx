@@ -31,7 +31,7 @@ export function sameSelection(a: MapSelection | null, b: MapSelection | null): b
   return false;
 }
 
-/** What the asks' lines and a chain's hops are drawn with, beside a quest's solid line (D41: never colour alone). */
+/** What the asks' lines and a chain's hops are drawn with, beside a quest's solid line (never colour alone). */
 export const ASKS_DASH = '10 4';
 export const CHAIN_DASH = '1 5';
 /** What a repository says it uses: dash and dot, in ink rather than the accent, since it is a declaration and not work. */
@@ -87,9 +87,9 @@ export function Count({ x, y, open, count, live = null }: { x: number; y: number
 const PAINT = ['depends', 'knowledge', 'asks', 'chains', 'quests'] as const;
 
 /**
- * Every line of the map, drawn in the map's units: a wide invisible stroke to press (🔴 a two-pixel curve was a line nobody could
+ * Every line of the map, drawn in the map's units: a wide invisible stroke to press (🔴 a two-pixel curve is a line nobody can
  * press, measured by the browser gate), the line itself, and its count. Each is a stop the canvas walks, named for what it holds.
- * What is in focus stands forward and the rest steps back (UX5 U47); a choice is a toggle (a second press releases it).
+ * What is in focus stands forward and the rest steps back; a choice is a toggle (a second press releases it).
  */
 export function MapEdges({ lines, context }: { lines: readonly MapLine[]; context: EdgeContext }) {
   const { t } = useTranslation();
@@ -98,7 +98,7 @@ export function MapEdges({ lines, context }: { lines: readonly MapLine[]; contex
   const litNode = hovered ?? (selected !== null && !chosenLine ? selected : null);
   const forward = (line: MapLine) => (hovered === null && chosenLine ? selected === line.id : litNode === null || line.from === litNode || line.to === litNode);
   const dotted = context.tier === 'dot';
-  // A line at the dot tier is 1 px of ink; at the chip tier its count is said only where the eye is (§3 of the map UX design).
+  // A line at the dot tier is 1 px of ink; at the chip tier its count is said only where the eye is.
   const thin = dotted ? { strokeWidth: 1 } : undefined;
   const counted = (line: MapLine) => !dotted && (context.tier === 'full' || line.id === selected || (hovered !== null && (line.from === hovered || line.to === hovered)));
 

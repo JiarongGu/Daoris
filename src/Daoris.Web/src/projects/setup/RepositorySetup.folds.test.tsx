@@ -8,7 +8,7 @@ import { SETUP_DEFAULTS } from '../fixtures';
 import { FOLD_SECTIONS, RepositorySetup, type RepositorySetupProps } from './RepositorySetup';
 
 // The place's Workflow draws the rows a repository's Setup holds as one row of folds, each with its
-// owner: Landing, Second opinion, Your look, Landed route, The line and More (commits, and the heavy gates moved from Sessions). The names
+// owner: Landing, Second opinion, Your look, Landed route, The line and More (commits, and the heavy gates). The names
 // are one wrapped row so the head and the three section lines keep the first screen; each says its values to a reader. Props only.
 
 const element = (props: RepositorySetupProps) => (

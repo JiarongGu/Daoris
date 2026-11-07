@@ -7,7 +7,7 @@ import { SelectField } from '../../design/ui';
  */
 export type LanguageOption = { code: string; name: string };
 
-/** Where a repository's session language was set: for it, or for its workspace. */
+/** Where a repository's session language is set: for it, or for its workspace. */
 export type LanguageSource = 'repository' | 'workspace';
 
 /** One repository's session language as the driver resolves it; `language`, `name` and `source` absent where none is set. */

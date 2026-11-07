@@ -1,4 +1,4 @@
-// A plugin's icon on the page (PLUGUI2, D140; the catalogue design §3.2 and §3.3): which declared icon the page may
+// A plugin's icon on the page: which declared icon the page may
 // draw, and the monogram it draws instead. Pure, so every plugin a machine could hold is an argument.
 
 /**

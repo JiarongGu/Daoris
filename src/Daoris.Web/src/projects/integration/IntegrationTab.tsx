@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, Prose, SkeletonRows } from '../../design/ui';
 import { PageSection } from '../../work/frame/ViewMain';
-// The look as the tab draws it; the bridge's `IntegrationLook` is one (D52: the molecule imports nothing of the bridge).
+// The look as the tab draws it; the bridge's `IntegrationLook` is one (the molecule imports nothing of the bridge).
 type IntegrationRequestRow = {
   request: string;
   line: string;
@@ -39,7 +39,7 @@ type IntegrationLook = {
   waiting?: IntegrationWaitingRow[];
 };
 
-/** What a page hands its Integration tab: the look, or that it is on its way or was refused, and the owner's acts. */
+/** What a page hands its Integration tab: the look, or that it is on its way or refused, and the owner's acts. */
 export type IntegrationTabProps = {
   look?: IntegrationLook | null;
   reading?: boolean;
@@ -65,8 +65,8 @@ const short = (tip: string) => tip.slice(0, 7);
 const PRESS = 'border border-line px-2 py-0 text-meta';
 
 /**
- * **A repository's Integration tab** (INTEGRATE1h; the integration design §5.8): the queue in its order, each line's standing candidate with
- * its members and a fixed strip of steps, what holds it and the act that releases it, what was handed back, the superseded commits awaiting
+ * **A repository's Integration tab**: the queue in its order, each line's standing candidate with
+ * its members and a fixed strip of steps, what holds it and the act that releases it, what is handed back, the superseded commits awaiting
  * a disposition with their answers, the landings waiting for the owner's request, and the promoted history. Read from the integration
  * record, never copied; a terminal's twin is `daoris integrate`.
  */

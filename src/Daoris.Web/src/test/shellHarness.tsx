@@ -5,7 +5,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 
 // The views in SHELL mode share these: what the service and the driver answer, and a render with the
 // providers every view expects. The bridge mock itself stays in each test file, because `vi.mock` is
-// hoisted per file (MOD3, from `shell.test.tsx`).
+// hoisted per file.
 
 export const DRIVER_STATE = { drivable: [], holds: [], running: ['s1a2b3c4'] };
 

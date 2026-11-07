@@ -8,7 +8,7 @@ export const SETUP_REFUSALS = [
 ] as const;
 
 /**
- * A set-up press's refusal in the catalogue's words, one per code; a code the catalogue has no word for says the press was refused and
+ * A set-up press's refusal in the catalogue's words, one per code; a code the catalogue has no word for says the press is refused and
  * passes the host's own sentence along, so a code the host adds later shows a sentence, never its spelling.
  */
 export function setupSaid(t: TFunction, why: string | null | undefined, message: string | null | undefined): string {

@@ -1,10 +1,10 @@
 import type { Ask, Quest, Session, SubmissionRef } from '../data/api';
 import type { ChoiceStanding } from '../work/frame/listPanes';
 
-// Quests' list and its memory as values (FRAME1d, D118 §2, §3f): its filters as kept, its groups, the record a
+// Quests' list and its memory as values: its filters as kept, its groups, the record a
 // page shows, and the session that marks a quest. Pure, so every list a person could have is an argument.
 
-/** Quests' list's filters (D118 §3f): the receiver its quests were asked of, or every one; and closed shown. */
+/** Quests' list's filters: the receiver its quests were asked of, or every one; and closed shown. */
 export type QuestFilters = { to: string | null; closed: boolean };
 
 /**
@@ -26,7 +26,7 @@ export function keptFilters(filters: QuestFilters): Record<string, unknown> | nu
 
 /**
  * A group of the list's quests: where each is in its life, and what a hold keeps waiting on the person, their yes to a
- * departure (DRIFT1d2) or their review of a set-up step.
+ * departure or their review of a set-up step.
  */
 export type QuestGroup = { group: 'held' | 'open' | 'progress' | 'closed'; quests: Quest[] };
 
@@ -42,7 +42,7 @@ export type QuestGroup = { group: 'held' | 'open' | 'progress' | 'closed'; quest
 export function questGroups(quests: readonly Quest[], closed: boolean): QuestGroup[] {
   return [
     { group: 'held' as const, quests: quests.filter((quest) => quest.held === true) },
-    // A live quest is held too since FABRIC-CLOSE1a and CLOSE1c (a held submission, a step its source's reopen holds): it is listed
+    // A live quest can be held too (a held submission, a step its source's reopen holds): it is listed
     // once, where it waits on the person, never in its status's group as well.
     { group: 'open' as const, quests: quests.filter((quest) => quest.status === 'Open' && quest.held !== true) },
     { group: 'progress' as const, quests: quests.filter((quest) => quest.status === 'Taken' && quest.held !== true) },
@@ -71,7 +71,7 @@ export function latestSessions(sessions: readonly Session[]): Map<string, Sessio
 
 /**
  * The record a page shows: the list's copy, or the door's last answer about it where the list has not caught up
- * with the door yet (INT4c's reason) — so a move made elsewhere shows, and a list behind the person's own press
+ * with the door yet — so a move made elsewhere shows, and a list behind the person's own press
  * does not undo it. On a tie the answer stands: a dismissal moves no time.
  */
 export function freshest<T extends { id: string; updated: string }>(listed: T | undefined, held: T | null): T | undefined {
@@ -81,7 +81,7 @@ export function freshest<T extends { id: string; updated: string }>(listed: T | 
 }
 
 /**
- * Whether the chosen quest still waits on something (UX6b, design §1 rule 6), so Quests reopens on it: open or taken, or
+ * Whether the chosen quest still waits on something, so Quests reopens on it: open or taken, or
  * closed while a departure holds it for the person's yes or a move another machine made waits on their dismissal.
  * `read` is whether every quest has answered, since a quest missing from a list still on its way has not gone.
  */
@@ -91,11 +91,11 @@ export function questStanding(quest: Quest | undefined, read: boolean): ChoiceSt
   return closed && quest.held !== true && !quest.conflicts?.length ? 'closed' : 'live';
 }
 
-/** What a quest's pill says (FABRIC-CLOSE1d, §E5): its status, or `Submitted` for a taken quest with a current submission. */
+/** What a quest's pill says: its status, or `Submitted` for a taken quest with a current submission. */
 export type QuestShown = Quest['status'] | 'Submitted';
 
 export function shownStatus(quest: Pick<Quest, 'status' | 'submission'>): QuestShown {
-  // A submission is not a status (§E5): the quest stays taken, and only what it reads says where its work stands.
+  // A submission is not a status: the quest stays taken, and only what it reads says where its work stands.
   return quest.status === 'Taken' && quest.submission ? 'Submitted' : quest.status;
 }
 
@@ -103,10 +103,10 @@ export function shownStatus(quest: Pick<Quest, 'status' | 'submission'>): QuestS
 const same = (a: SubmissionRef, b: SubmissionRef) => a.machine === b.machine && a.sequence === b.sequence;
 
 /**
- * The live step of its chain that stands on a quest's current submission (FABRIC-CLOSE1c3), or null: nothing to reopen. The seal the
- * service reads (`SealingAsync`, D173's CLOSE1c note): an unheld submission, and its next step open or taken, grown from that one or
+ * The live step of its chain that stands on a quest's current submission, or null: nothing to reopen. The seal the
+ * service reads (`SealingAsync`): an unheld submission, and its next step open or taken, grown from that one or
  * from none (a step from before), with no reopen standing on it. The reopen door judges it again inside its write, so this only
- * chooses where the door is offered; a closed step refuses the reopen (choice 4), and an abandoned one seals nothing (choice 5).
+ * chooses where the door is offered; a closed step refuses the reopen, and an abandoned one seals nothing.
  */
 export function standingStep(quest: Quest, every: readonly Quest[]): Quest | null {
   const submission = quest.status === 'Taken' ? quest.submission : null;
@@ -116,8 +116,8 @@ export function standingStep(quest: Quest, every: readonly Quest[]): Quest | nul
 }
 
 /**
- * Whether a step's source has an unheld submission again (FABRIC-CLOSE1c3), so the person's go-on can take: the service's `continue`
- * refuses before (CLOSE1c's choice 2). Read from the list the page holds, so a source it does not hold reads not ready, and the step
+ * Whether a step's source has an unheld submission again, so the person's go-on can take: the service's `continue`
+ * refuses before. Read from the list the page holds, so a source it does not hold reads not ready, and the step
  * says it waits; the door judges it again either way.
  */
 export function sourceReady(step: Quest, every: readonly Quest[]): boolean {

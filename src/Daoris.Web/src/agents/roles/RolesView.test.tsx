@@ -4,8 +4,7 @@ import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // The Agents place's Roles mode, beside Agents, switched by the list's head. Its
-// five sections, Working roles the one built, and the working roles' presses reaching their one door (`SET_ROLE`, ONEWAY1a) from here.
-// The roles' tests moved from AI features' suite with the card they test (`settings/AiDomain.test.tsx` until COMPANYVIEW1b).
+// five sections, Working roles the one built, and the working roles' presses reaching their one door (`SET_ROLE`) from here.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -120,7 +119,7 @@ describe('The Agents place, Roles mode', () => {
     show(<Place />);
     const user = userEvent.setup();
     expect(await screen.findByRole('radio', { name: 'Agents' })).toBeChecked();
-    // The Agents mode is as it was: the list of agents.
+    // The Agents mode stays: the list of agents.
     expect(await screen.findByRole('list', { name: 'Agents' })).toBeTruthy();
 
     await openRoles();
@@ -232,7 +231,7 @@ describe('The Agents place, Roles mode', () => {
     await i18n.changeLanguage('en');
   });
 
-  // AGENTSPLACE1g2: *Use these choices* is one press over SET_ROLES, said once; a refusal is the driver's sentence and every role is refused.
+  // *Use these choices* is one press over SET_ROLES, said once; a refusal is the driver's sentence and every role is refused.
   describe.each([[false], [true]])('the suggested choices pressed, refused %s', (refused) => {
     it('goes out as one SET_ROLES and says so, or says the driver\'s sentence', async () => {
       window.localStorage.setItem('daoris.list.agents.mode', 'setup');
@@ -298,7 +297,7 @@ describe('The Agents place, Roles mode', () => {
     expect(await screen.findByText(/a role must take it on the machine/)).toBeTruthy();
   });
 
-  /** Ask Daoris's row says what it runs on and how, under its order (it said so beside its access on AI features before COMPANYVIEW1b). */
+  /** Ask Daoris's row says what it runs on and how, under its order. */
   it("says under Ask Daoris's row what it runs on, and with full access where the driver says so", async () => {
     window.localStorage.setItem('daoris.list.agents.mode', 'setup');
     const answer = invoke.getMockImplementation()!;

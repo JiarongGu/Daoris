@@ -107,9 +107,9 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
   modules: CodeModule[];
   dependencies: CodeDependency[];
   selected: string | null;
-  /** A module chosen, or `null` when the choice is released (a second press, or Escape: UX5 U47). */
+  /** A module chosen, or `null` when the choice is released (a second press, or Escape). */
   onSelect: (id: string | null) => void;
-  /** What the map was read at: the commit it was fed, else any. The viewer's place is kept per version. */
+  /** What the map is read at: the commit it is fed, else any. The viewer's place is kept per version. */
   version?: string;
   /** The chosen module's detail, where it opens in place under its row in the list (below the 36rem floor). */
   detail?: ReactNode;
@@ -142,7 +142,7 @@ export function CodeMapWorld({ repository, modules, dependencies, selected, onSe
     return near;
   }, [chosenCard, scene]);
 
-  // A folder opened by a press hands the focus to its first card, since the card that was pressed is now a frame.
+  // A folder opened by a press hands the focus to its first card, since the card that is pressed is now a frame.
   const wrapper = useRef<HTMLDivElement>(null);
   const focusing = useRef<string | null>(null);
   useEffect(() => {
@@ -282,7 +282,7 @@ export function CodeMapDetail({ modules, dependencies, selected, file, fed, onSe
   modules: CodeModule[];
   dependencies: CodeDependency[];
   selected: string | null;
-  /** Which committed file the map was read from — said, so a person knows where to change it. */
+  /** Which committed file the map is read from — said, so a person knows where to change it. */
   file: string;
   /**
    * Where the map came from when this machine has no checkout of the repository: a teammate's,

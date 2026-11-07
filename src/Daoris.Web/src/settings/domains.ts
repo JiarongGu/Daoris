@@ -46,7 +46,7 @@ type SettingsDomain = {
  * A domain is a `settings/<Name>Domain.tsx` and a row here; the frame renders whichever row is
  * chosen and names none itself, and `domains.test.ts` holds both.
  *
- * Nine since WIRING1c (seven since UX6j, D150 §2.3): what is the machine's or the person's. Every other setting lives on its thing.
+ * Nine in all: what is the machine's or the person's. Every other setting lives on its thing.
  */
 export const SETTINGS_DOMAINS = [
   // The setup guide leads, named Get started again since Setup names a repository's and a workspace's tab.
@@ -54,7 +54,7 @@ export const SETTINGS_DOMAINS = [
   { id: 'start', label: 'settings.domain.start', machine: false, component: GetStartedDomain },
   { id: 'appearance', label: 'settings.domain.appearance', machine: false, component: AppearanceDomain },
   { id: 'ai', label: 'settings.domain.ai', machine: false, component: AiDomain },
-  // How this install is set up here (WIRING1c, the this-Daoris design §2): the first of the machine domains. It shows what is
+  // How this install is set up here: the first of the machine domains. It shows what is
   // true about this machine's paths, service and loop; the domain that sets a thing keeps its control. A browser is offered none.
   { id: 'wiring', label: 'settings.domain.wiring', machine: true, component: WiringDomain },
   // Workspace left for a workspace's page and each repository's: its list is Repositories' list, its
@@ -64,7 +64,7 @@ export const SETTINGS_DOMAINS = [
   // The programs Daoris runs beside its agents: each a file of this machine's, so a browser is
   // offered no such domain.
   { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain },
-  // Who Daoris's git acts as on a code host (GITAUTH1e, the git-auth design §7.1): identities, a host's default and the person's own
+  // Who Daoris's git acts as on a code host: identities, a host's default and the person's own
   // sign-ins; the machine's alone, so a browser is offered none.
   { id: 'git', label: 'settings.domain.git', machine: true, component: GitDomain },
   // Permissions left as Workspace did: reading across and a workspace's rules are its page's, a repository's its
@@ -79,15 +79,15 @@ export const SETTINGS_DOMAINS = [
 export type SettingsSection = (typeof SETTINGS_DOMAINS)[number]['id'];
 
 /**
- * A domain that left Settings and kept a row in it, by the domain that holds the row: Plugins' folder is Driver's (UX6j,
- * the plugins design §5), with its door to the Plugins place.
+ * A domain that left Settings and kept a row in it, by the domain that holds the row: Plugins' folder is Driver's,
+ * with its door to the Plugins place.
  */
 const KEPT_IN: Readonly<Record<string, SettingsSection>> = { plugins: 'driver' };
 
 /**
  * Where a domain remembered under `daoris.settings` opens now: itself while Settings has it; one that left, at
- * the domain holding what stayed of it; and one that left for a page Settings holds no row of (Agents, UX6e; Workspace
- * and Permissions, UX6g), on Appearance, as any domain this window lacks does. A remembered id never opens nothing.
+ * the domain holding what stayed of it; and one that left for a page Settings holds no row of (Agents, Workspace
+ * and Permissions), on Appearance, as any domain this window lacks does. A remembered id never opens nothing.
  */
 export function rememberedDomain(id: string | null): SettingsSection {
   const kept = id !== null && Object.hasOwn(KEPT_IN, id) ? KEPT_IN[id] : undefined;

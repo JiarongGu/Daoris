@@ -80,7 +80,7 @@ describe('What agents may do', () => {
   // Three defects the installed window showed on this card, 2026-09-24, none of which a story could.
 
   /**
-   * No title of its own (UX5 U57): the card is alone in its domain, and the settings list already
+   * No title of its own: the card is alone in its domain, and the settings list already
    * names it, as every card alone in its domain leaves it. Its first row is the file.
    */
   it('carries no title of its own, and opens on the file', () => {
@@ -90,8 +90,8 @@ describe('What agents may do', () => {
   });
 
   /**
-   * Each default's row was the only child of its own item, so the setting row's `first:` and `last:`
-   * both held and took its rule and its padding away: four defaults ran together as one block.
+   * Each default's row is the only child of its own item, so the setting row's `first:` and `last:`
+   * both hold and would take its rule and its padding away: four defaults would run together as one block.
    */
   it('divides one default from the next, as every other list of settings is', () => {
     show();
@@ -163,8 +163,8 @@ describe('What agents may do', () => {
   });
 
   /**
-   * REV3 web-rest F12: the words were cleared the moment they were handed up, so a rule the driver
-   * refused was gone from the box as well. They stay until the organism says the rule was added.
+   * The words stay until the organism says the rule is added: cleared the moment they are handed up, a rule the driver
+   * refused would be gone from the box as well.
    */
   it('keeps the rule it was given until the rule is added, so a refused one can be corrected', async () => {
     let added: (() => void) | undefined;

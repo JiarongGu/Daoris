@@ -14,7 +14,7 @@ type Watched = {
  * The frame asks whether the head's waits are on screen; with no observer it answers *not*, so the strip at the foot stands as
  * it always did, and every test that does not install this one reads the frame as before. Installed, the observers are ones the
  * test fires with `show`, as the window would when the person scrolls: `true` puts every observed element wholly on screen,
- * `false` takes every one off it, and a function says how much of each is on screen (0 to 1). `observers` is what each was
+ * `false` takes every one off it, and a function says how much of each is on screen (0 to 1). `observers` is what each is
  * asked to watch, and how; `restore` puts jsdom's absence back.
  */
 export function watchScreen() {

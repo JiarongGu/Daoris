@@ -61,7 +61,7 @@ export function RingNode({ node, x, y, state, words, back = false }: {
 }
 
 /**
- * A repository in the layers, each tier its own (MAPUX1a; the map UX design §3): at the full tier its name, the session said in
+ * A repository in the layers, each tier its own: at the full tier its name, the session said in
  * words under it and its count at the end; at the chip tier its name on one line and its count, the words dropped; at the dot tier
  * nothing inside. The session's ring is kept at every tier, and the chosen and the focused keep their name beside the card.
  */

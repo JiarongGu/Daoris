@@ -57,10 +57,10 @@ export const CLOSED: Ask = {
   ...PROPOSED, id: '2a3b4c5d6e7f', state: 'Closed', note: 'Answered in the design review instead.', updated: hoursAgo(1),
 };
 
-/** A tier this page has no word for (anything after INT4b's) — shown as the service wrote it. */
+/** A tier this page has no word for (any later one) — shown as the service writes it. */
 export const UNKNOWN_TIER: Ask = { ...PUBLISHED, id: 'f0e1d2c3b4a5', tier: 'intake-session' };
 
-/** The session an intake opened for an ask (D65 §1b): a chat in the ask's name, in its circle. */
+/** The session an intake opened for an ask: a chat in the ask's name, in its circle. */
 export const INTAKE_SESSION: Session = {
   id: 'i9n8t7k6a5b4', repository: 'ask #3e4f5a6b7c8d', door: 'claude-code', kind: 'chat',
   state: 'completed', ask: '3e4f5a6b7c8d', doorVersion: '2.1.4', workspace: 'aurora',
@@ -73,7 +73,7 @@ export const BY_INTAKE: Ask = {
   ...PUBLISHED, id: '3e4f5a6b7c8d', tier: 'intake', intake: INTAKE_SESSION.id, quests: ['9a8b7c6d5e4f'],
 };
 
-/** Its intake could not settle whose it is, and parked asking the person (D65 §1b). */
+/** Its intake could not settle whose it is, and parked asking the person. */
 export const INTAKE_ASKED: Ask = { ...PROPOSED, id: '3e4f5a6b7c8d', intake: INTAKE_SESSION.id };
 export const INTAKE_PARKED: Session = {
   ...INTAKE_SESSION, state: 'awaiting-person',

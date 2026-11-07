@@ -1,7 +1,7 @@
 import type { EdgeStyle, FlowLayout } from './flowLayout';
 
 /**
- * **A flowchart's edges, drawn from the boxes the page measured** (FLOWCHART1a1; the flowchart design §3.4, §3.5 and §4.2):
+ * **A flowchart's edges, drawn from the boxes the page measured**:
  * the nodes and waypoint slots are placed by CSS, and this routes each path through them and places each label, from their
  * boxes alone. Nothing here changes a box, so nothing measured can loop back into the layout.
  *
@@ -9,8 +9,8 @@ import type { EdgeStyle, FlowLayout } from './flowLayout';
  * Written along the flow's own axes, so one routing serves both drawn placements: the **main** axis runs from rank to rank
  * (down the page top to bottom, across it left to right), the **cross** axis along a rank.
  * - **A forward path** leaves its source's far side, crosses each rank gap as a curve that leaves and arrives along the
- *   main axis (the Map's `link`), and runs straight through each waypoint slot it was given, so it never enters a node.
- * - **A return** (§3.5) leaves its source's far side into the gap after its rank, runs along that gap to a lane of its own
+ *   main axis (the Map's `link`), and runs straight through each waypoint slot it is given, so it never enters a node.
+ * - **A return** leaves its source's far side into the gap after its rank, runs along that gap to a lane of its own
  *   outside every node (left of the drawing top to bottom, below it left to right), along the lane, and back along the
  *   gap before its target's rank into its near side. Each run in a gap is set apart from the others by its lane, so two
  *   returns never share a line, and the lanes nest by span (`layoutFlow`).
@@ -83,7 +83,7 @@ export function routeInk(layout: FlowLayout, placement: 'across' | 'down', boxes
   const forward = layout.paths.filter((path) => !path.back);
   const back = layout.paths.filter((path) => path.back).sort((a, b) => a.lane! - b.lane!);
 
-  // A decision's route leaves its outcome's port where one was measured; only top to bottom, where the ports stand on the lower edge.
+  // A decision's route leaves its outcome's port where one is measured; only top to bottom, where the ports stand on the lower edge.
   const anchorOf = (path: FlowLayout['paths'][number]): Box | undefined =>
     down && path.port !== null ? extras.ports?.get(`${path.from}:${path.port}`) : undefined;
 

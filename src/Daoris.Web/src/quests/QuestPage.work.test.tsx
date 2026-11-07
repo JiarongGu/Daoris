@@ -248,7 +248,7 @@ describe("a quest's page on a right-click", () => {
 
 /**
  * Its driven session's record words Daoris's lines in the reader's language, keeps the
- * agent's words as written, and shows a record from before parts as it was kept, marked *shown as recorded*.
+ * agent's words as written, and shows a record from before parts as it is kept, marked *shown as recorded*.
  */
 describe("a quest's page words its session's note", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -284,8 +284,8 @@ describe("a quest's page words its session's note", () => {
 
 /**
  * A taken quest whose take is another machine's sits, and its page says why under *Sitting*.
- * In 中文 that was the driver's English; the tick now names whose the take is, so the page words it from those facts, and a
- * tick with no facts, still shows the driver's sentence. No Try again: nothing here can carry it on.
+ * In 中文 the tick names whose the take is, so the page words it from those facts, and a
+ * tick with no facts still shows the driver's English sentence. No Try again: nothing here can carry it on.
  */
 describe("a quest's page says a take elsewhere", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

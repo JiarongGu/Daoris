@@ -45,6 +45,6 @@ export const NEW_DRAFT = 'new';
 
 /**
  * Words handed to Ask Daoris from another door, once per `id`: a question, sent as a typed one is (the palette's, the
- * setup guide's), or a draft, put in the box for the person to finish (CTX1's *Ask Daoris about it*).
+ * setup guide's), or a draft, put in the box for the person to finish (*Ask Daoris about it*).
  */
 export type AskOpening = { text: string; id: number; draft?: boolean };

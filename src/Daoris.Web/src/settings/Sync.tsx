@@ -27,9 +27,9 @@ export type LinePull = {
   commits: number;
   /** Why the fetch did not happen, in git's words. Content, never translated. */
   fetch?: string | null;
-  /** Where it was not fetched: when this checkout last heard from origin, an ISO moment, or none — never. */
+  /** Where it is not fetched: when this checkout last heard from origin, an ISO moment, or none — never. */
   lastFetch?: string | null;
-  /** Where it was not fetched: how origin is reached — `ssh`, `https`, `http`, `git` or `file`. */
+  /** Where it is not fetched: how origin is reached — `ssh`, `https`, `http`, `git` or `file`. */
   reach?: string | null;
   /** Git's own words where it could not tell. Content. */
   detail?: string | null;
@@ -51,7 +51,7 @@ export type RebaseBranch = {
   onto?: string | null;
   /** The commit its own commits start after, short. */
   cut?: string | null;
-  /** How that commit was found: it grew from the line, its record, or its content. */
+  /** How that commit is found: it grew from the line, its record, or its content. */
   cutBy?: 'line' | 'record' | 'content' | null;
   /** The step before's branch it grew from, where its record knows one. */
   grewFrom?: string | null;
@@ -65,7 +65,7 @@ export type RebaseBranch = {
   replays: boolean;
 };
 
-/** A repository with a checkout here, and whether it holds a branch of Daoris's (TREES_SYNC_SCOPE, D112). */
+/** A repository with a checkout here, and whether it holds a branch of Daoris's (TREES_SYNC_SCOPE). */
 export type SyncRepository = { repository: string; workspace: string; holds: boolean };
 
 /** What a look takes beside the repositories holding Daoris's branches: every one, or those named. */
@@ -73,8 +73,8 @@ export type SyncInclude = 'all' | string[];
 
 /**
  * The driver's TREES_SYNC_PLAN answer: each line, each branch, and the landed branches whose work reached the line;
- * then what the look took, and every other repository with a checkout, listed apart. An answer without WSR7
- * carries neither of the last two.
+ * then what the look took, and every other repository with a checkout, listed apart. An older
+ * answer carries neither of the last two.
  */
 export type SyncPlan = {
   lines: LinePull[];
@@ -88,14 +88,14 @@ export type SyncPlan = {
 const includes = (include: SyncInclude | undefined, repository: string) =>
   include === 'all' || (include ?? []).includes(repository);
 
-/** `was` and `more` together: every one stays every one. */
+/** The earlier include and `more` together: every one stays every one. */
 const together = (was: SyncInclude | undefined, more: SyncInclude): SyncInclude =>
   was === 'all' || more === 'all' ? 'all' : [...new Set([...(was ?? []), ...more])];
 
 /**
- * What was not fetched, said once, before the rows: how many, grouped by git's reason, when each last heard from
+ * What is not fetched, said once, before the rows: how many, grouped by git's reason, when each last heard from
  * origin — which is what its row is judged against — and what the git Daoris runs needs to reach an origin over SSH or
- * HTTPS. Every fetch failed on the owner's workspace, and the look said so only at the end of each of 29 rows.
+ * HTTPS. A failed fetch repeats on every row of a workspace, so the reason is not said at the end of each.
  *
  * @remarks
  * The person's own Git client may reach origin where this cannot: one carries its own git and ssh, and the driver runs
@@ -198,22 +198,22 @@ export const syncKeys = (plan: SyncPlan) => [
  *
  * **It takes the repositories that hold Daoris's branches**. Every other one with a checkout is listed apart,
  * collapsed, and looked at only once the person ticks it — or all of them — and asks; looking again keeps it. A workspace's
- * Branches tab lists them once, in its groups' fold, and passes `apartFolded` (UX6h2b3): the section then draws no list, and
+ * Branches tab lists them once, in its groups' fold, and passes `apartFolded`: the section then draws no list, and
  * its look takes what that fold included.
  *
  * **A look takes a while, and says so**: a sentence naming how many repositories it is fetching, and a button
  * that reads as busy, since a dimmed one read as nothing happening. A look or a press the page stopped waiting for is
- * said here, where it was asked, not only in a toast that goes.
+ * said here, where it is asked, not only in a toast that goes.
  */
 export function SyncSection({ plan, scope, included, apartFolded, looking, lookingAt, bringing, stopped, onLook, onSync }: {
   /** Undefined until the person looks. */
   plan?: SyncPlan;
   /** Every repository with a checkout here, and whether each holds a branch of Daoris's; undefined until known. */
   scope?: SyncRepository[];
-  /** What the last look was asked to take beside the default. */
+  /** What the last look is asked to take beside the default. */
   included?: SyncInclude;
   /**
-   * The page lists what is apart in a fold of its own, whose include is `included` (UX6h2b3): the section draws no list
+   * The page lists what is apart in a fold of its own, whose include is `included`: the section draws no list
    * apart, and its look takes what the fold included.
    */
   apartFolded?: boolean;
@@ -237,7 +237,7 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
   // What the look left apart; before one, what it would, from the machine's own reading.
   const apart = plan?.apart ?? (scope ?? []).filter((each) => !each.holds && !includes(included, each.repository));
   const holding = (scope ?? []).filter((each) => each.holds).length;
-  // With the page's fold, what it included is taken beside them, and said (UX6h2b3).
+  // With the page's fold, what it included is taken beside them, and said.
   const taken = apartFolded ? (scope ?? []).filter((each) => each.holds || includes(included, each.repository)).length : holding;
   const lookedAtNone = plan !== undefined && Array.isArray(plan.looked) && plan.looked.length === 0;
 
@@ -307,7 +307,7 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
         </Prose>
       )}
 
-      {/* What is under way, where the person asked: a look fetches for minutes on a large workspace (WSR7). */}
+      {/* What is under way, where the person asked: a look fetches for minutes on a large workspace. */}
       {looking && (
         <p role="status" className="mt-2 text-small text-ink">
           {lookingAt ? t('settings.sync.looking', { count: lookingAt }) : t('settings.sync.lookingSome')}
@@ -325,17 +325,17 @@ export function SyncSection({ plan, scope, included, apartFolded, looking, looki
       {plan && !lookedAtNone && acting.length === 0 && <Prose className="mt-2">{t('settings.sync.nothing')}</Prose>}
 
       {/* A group, not a region, per repository: the session branches below draw a region of the same name. A look
-          again holds the last answer, dimmed, until the new one comes (D41's loading rule). */}
+          again holds the last answer, dimmed, until the new one comes. */}
       {plan && repositories.map((repository) => (
         <div key={repository} role="group" aria-label={repository} className={cn('mt-2', looking && 'opacity-60')}>
           <div className="text-small font-medium text-ink-soft">{repository}</div>
-          {/* The session branches card's own rows (UXFIX4): a line's and a branch's name whole, stacked by the list's width. */}
+          {/* The session branches card's own rows: a line's and a branch's name whole, stacked by the list's width. */}
           <ul className={cn(BRANCH_ROWS, 'mt-1')}>
             {plan.lines.filter((pull) => pull.repository === repository).map((pull) => (
               <BranchRow key={`line:${pull.line ?? ''}`} name={pull.line ?? t('settings.sync.line.none')} moving={pull.moves}
                 word={t(pull.moves ? 'settings.sync.moves' : 'settings.sync.stays')}>
                 <Inline text={pulls(pull)} />
-                {/* A short mark: the reason is said once, above the rows (WSR7). */}
+                {/* A short mark: the reason is said once, above the rows. */}
                 {pull.fetch && <span className="mt-0.5 block text-meta text-ink-faint">{t('settings.sync.line.notFetched')}</span>}
                 {pull.kind === 'unknown' && pull.detail && (
                   <span className="mt-0.5 block break-words font-mono text-meta text-ink-faint">{pull.detail}</span>

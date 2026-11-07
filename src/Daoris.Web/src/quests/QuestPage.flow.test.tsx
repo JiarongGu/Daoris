@@ -5,7 +5,7 @@ import i18n from '../locales/i18n';
 import { HELD, OPEN, WORKING } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// REVIEWFLOW1b (the review-flow design §1) on the quest's page: the head's facts lead with what the page reads, and *next* is the
+// The quest's page: the head's facts lead with what the page reads, and *next* is the
 // press that moves it on, a door to its step. Nothing is said that the page cannot read.
 
 const nothing = () => {};

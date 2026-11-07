@@ -89,7 +89,7 @@ const SECTION_TITLE: Record<PlaceSection, string> = {
 };
 
 /**
- * **A place's page** (SETUPUX1h, the setup-UX design §2.1): its head and three sections folded to the line that names their values, from
+ * **A place's page**: its head and three sections folded to the line that names their values, from
  * the place's `PLACES` row alone. The page's state (the sections open, the row a door asked for, the way back) is the application's
  * (`PlaceShell`); the sections' bodies are handed in, and a folded section mounts none, so it reads nothing.
  *
@@ -116,7 +116,7 @@ export function SetupMain({ found, state, id, row, counts, members, shell, bodie
    * The place's *Set up…*, pressed from its head: open, the page replaces the place's sections in the main area, and the
    * panel is the application's, which reads the plan and presses Apply. None for *This machine*, which has no set-up.
    */
-  setUp?: { open: boolean; onOpen: () => void; panel: ReactNode; /** Returns to a place's set-up left through a refusal's door (SETUPUX1j). */ onResume: (place: string) => void };
+  setUp?: { open: boolean; onOpen: () => void; panel: ReactNode; /** Returns to a place's set-up left through a refusal's door. */ onResume: (place: string) => void };
   /** A door to another place at a section and row; the page names itself as the way back. */
   onGo: (target: string, at: PlaceAt) => void;
 }) {

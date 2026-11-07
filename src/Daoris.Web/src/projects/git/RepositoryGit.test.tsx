@@ -7,11 +7,11 @@ import i18n from '../../locales/i18n';
 import { GIT_BRANCHES_ENGINE, GIT_CHANGES_ENGINE, GIT_HISTORY_ENGINE, GIT_HISTORY_PAGES } from '../fixtures';
 import { BranchesTab, ChangesTab, HistoryTab, type HistoryRead } from './RepositoryGit';
 
-// A repository's Branches and History tabs (UX6h1, D150 §4.2, §4.4): molecules, each state reached by its props. The reads
+// A repository's Branches and History tabs: molecules, each state reached by its props. The reads
 // are this machine's: a tab says its answer is on its way, that this machine has no checkout, or why Git did not
 // answer, in its place, so it never goes blank. History draws its line's commits with their lanes (graphLanes).
 
-// The page's tooltips live under the app's provider; the list's ⋯ (UX6h2b1) carries one, so a case renders under its own.
+// The page's tooltips live under the app's provider; the list's ⋯ carries one, so a case renders under its own.
 const render = (ui: ReactElement, options?: RenderOptions) =>
   renderPlain(ui, { wrapper: ({ children }: { children: ReactNode }) => <Tooltip.Provider>{children}</Tooltip.Provider>, ...options });
 
@@ -50,7 +50,7 @@ describe("a repository's Branches tab", () => {
     // Each row is its name, its last commit and when, whole.
     expect(row("Sessions' (2)", 'daoris/engine-physics-step')).toHaveTextContent('Fix the physics step on a slow frame');
     expect(row("Sessions' (2)", 'daoris/engine-physics-step')).toHaveTextContent('1h ago');
-    // Origin's are on the wire, and shown from the list's ⋯ (UX6h2b): not here.
+    // Origin's are on the wire, and shown from the list's ⋯: not here.
     expect(list).not.toHaveTextContent('origin/release');
   });
 
@@ -75,7 +75,7 @@ describe("a repository's Branches tab", () => {
     expect(head()).toHaveTextContent('No origin/main here.');
     line({ commit: null, ahead: null, behind: null });
     expect(head()).toHaveTextContent('This checkout holds no main.');
-    // Git's own FETCH_HEAD time, or never fetched here, never a guess (the built-in Git design §2.2).
+    // Git's own FETCH_HEAD time, or never fetched here, never a guess.
     line({}, null);
     expect(head()).toHaveTextContent('Never fetched here.');
     line({}, { at: new Date(Date.now() - 3 * 3_600_000).toISOString(), heard: false });
@@ -170,7 +170,7 @@ describe("a repository's Branches tab", () => {
     expect(screen.queryByRole('button', { name: "Show origin's branches" })).toBeNull();
   });
 
-  // UX6h3b (the built-in Git design §2.3): a branch's name opens its page; the line's page is the repository's history.
+  // A branch's name opens its page; the line's page is the repository's history.
   it("opens a branch's page from its name, origin's once shown, and History from the line's own row", async () => {
     const onOpen = vi.fn();
     const onOpenHistory = vi.fn();
@@ -315,7 +315,7 @@ describe("a repository's History tab", () => {
   });
 });
 
-// The graph's pages (UX6h3a, the built-in Git design §2.3; UXLOADMORE1): the count of what is listed and *Show more* while the
+// The graph's pages: the count of what is listed and *Show more* while the
 // graph answers `more`, with no total, as Ask Daoris's history foots its own.
 describe("a repository's History tab, a page at a time", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -393,7 +393,7 @@ describe("a repository's History tab, a page at a time", () => {
   });
 });
 
-// *All branches* (UX6h3c, the built-in Git design §2.3): the ⋯ in History's head, one checked item, the page's state; ticked,
+// *All branches*: the ⋯ in History's head, one checked item, the page's state; ticked,
 // the head says the graph is the repository's over its branches, and past the read's limit how many it drew.
 describe("a repository's History tab, over all its branches", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -445,7 +445,7 @@ describe("a repository's History tab, over all its branches", () => {
   });
 });
 
-// The Changes tab (GITAPP2b, the git-writes design §1 and §4, §11): three observations of the checkout, each a list, read when it
+// The Changes tab: three observations of the checkout, each a list, read when it
 // opens, on focus and on *Refresh*, and saying when. A molecule: its read arrives as a prop.
 describe("a repository's Changes tab", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

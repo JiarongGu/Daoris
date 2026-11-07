@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// SETUP1b, the way the application holds it: the whole window over a mocked shell, so the
+// The setup start, the way the application holds it: the whole window over a mocked shell, so the
 // opening at start, the status bar's count and the hand-off to Ask Daoris are what a person meets.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -59,7 +59,7 @@ const DONE: World = {
 
 let world: World = FRESH;
 /**
- * Ask Daoris's conversation open before the window is, what it proposes, and what an Apply settles (ENTRY1d2b): none of
+ * Ask Daoris's conversation open before the window is, what it proposes, and what an Apply settles: none of
  * them, unless a test hands it one.
  */
 let conversing = false;
@@ -180,7 +180,7 @@ describe('the setup guide, at start', () => {
   });
 
   /**
-   * ENTRY1d2b (D161's ENTRY1d note): the setup's repositories through Ask Daoris. Its go to Add repository carries the
+   * The setup's repositories through Ask Daoris. Its go to Add repository carries the
    * workspace the driver judged, and the window opens the drawer with it filled, before the folder, which stays the
    * person's to pick.
    */

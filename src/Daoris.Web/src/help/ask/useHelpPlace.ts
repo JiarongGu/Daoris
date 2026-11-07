@@ -11,7 +11,7 @@ import { GOING_ON_POLL } from './askTypes';
 
 export function useHelpPlace() {
   const { t, i18n } = useTranslation();
-  // The workspace the panel's conversations are in (ASKSCOPE1d, D158's ASKSCOPE1 note, points 1 and 6): the window's; where it
+  // The workspace the panel's conversations are in: the window's; where it
   // shows every workspace, the one there is, or `default` where none is registered. Null where it shows several, so a start
   // asks which; undefined while this machine's workspaces are still being read. One unreadable is none registered.
   const { workspace: scoped, setWorkspace } = useScope();
@@ -21,7 +21,7 @@ export function useHelpPlace() {
     ?? (registered === undefined ? undefined : registered.length > 1 ? null : registered[0] ?? DEFAULT_WORKSPACE);
   const inHere = (workspace?: string) => typeof here === 'string' && sameWorkspace(workspace ?? DEFAULT_WORKSPACE, here);
   // What a start names, read at its press: the workspace it is in, or none where the window chose none and none is registered,
-  // which is `default`'s, as every start before ASKSCOPE1d was. Never `default` read for a window that shows several.
+  // which is `default`'s. Never `default` read for a window that shows several.
   const startIn = (workspace: string) => (scoped === null && registered?.length === 0 ? undefined : workspace);
   // The window's workspace now, for an answer that arrives after it moved.
   const hereNow = useRef(here);

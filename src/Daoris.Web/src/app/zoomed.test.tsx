@@ -4,10 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// ZOOM1 (the UI/UX design §3.11), the way the window holds it: the whole window over a mocked shell. Ctrl+wheel was the engine's
-// own zoom, which scaled the title strip, its menus and the window controls with the content and said no level (the owner's
-// report, 2026-10-22). Now the keys, the wheel and View's rows step the content as an editor's do, the level is said as it
-// changes and kept on the status bar while it is not 100%, pressed back to 100%, and kept for the machine.
+// Zoom, the way the window holds it: the whole window over a mocked shell. The engine's own zoom would scale the title
+// strip, its menus and the window controls with the content and say no level. So the keys, the wheel and View's rows
+// step the content as an editor's do, the level is said as it changes and kept on the status bar while it is not 100%,
+// pressed back to 100%, and kept for the machine.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),

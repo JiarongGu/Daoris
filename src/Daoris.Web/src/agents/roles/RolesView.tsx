@@ -33,7 +33,7 @@ export type RoleOpeners = {
 type Answered = { done: () => void; refused: (sentence: string) => void };
 
 /**
- * **The role editor's reads and presses** (COMPANYVIEW1a, AGENTSPLACE1g1): the catalogue and each order over `ROLES`, the agents
+ * **The role editor's reads and presses**: the catalogue and each order over `ROLES`, the agents
  * this machine has and what each offers, and the presses `SET_ROLE` and `SET_ROLES` with their toasts. Held once, so the Roles mode's
  * card and a place's rows press the same acts.
  */
@@ -95,8 +95,8 @@ export function useRoleEditing(notify: Notify) {
 }
 
 /**
- * **The Roles mode of the Agents place** (COMPANYVIEW1b, the company-view design §1, §3.1): its chosen section's page and every press on
- * it. Today only Working roles is built, the catalogue and its staffing of COMPANYVIEW1a moved here from AI features.
+ * **The Roles mode of the Agents place**: its chosen section's page and every press on
+ * it. Today only Working roles is built, the catalogue and its staffing.
  *
  * @remarks
  * **The mode's one owner**: this hook holds the open editor and every pending press, and hands the molecule its
@@ -163,7 +163,7 @@ export function useRolesMode({ notify, doors = {}, page: given, placed = false }
     })
     : null;
 
-  // Choosing a node (COMPANYVIEW1f, §4 *Moving between them*): it is the one chosen, and its row is opened so *Show as list* lands on it.
+  // Choosing a node: it is the one chosen, and its row is opened so *Show as list* lands on it.
   const choose = (id: string) => {
     page.onSelected(id);
     const rows = id.startsWith('place:') && id.includes('/') ? [`place:${id.slice('place:'.length, id.indexOf('/'))}`, id] : [id];

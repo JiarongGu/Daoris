@@ -34,14 +34,14 @@ import { buttonNamed, returnFocus } from '../lib/returnFocus';
  * area are drawn in two places the frame decides. The application holds it on every view, and says its errors only
  * while it is in front. Every query it holds the frame already holds, so holding it everywhere asks nothing more.
  *
- * **What it remembers is its list's** (`listPanes.ts`, §3f): the chosen repository, by name, which a door into the view
- * names through the opener (§3i); and its page's tab, Details, Branches, History, Workflow or Setup, one for the view (UX6f,
- * UX6h1, D150 §4.2), which its holder keeps so a door can open a repository at Setup.
+ * **What it remembers is its list's** (`listPanes.ts`): the chosen repository, by name, which a door into the view
+ * names through the opener; and its page's tab, Details, Branches, History, Workflow or Setup, one for the view,
+ * which its holder keeps so a door can open a repository at Setup.
  *
- * **Git is inside Repositories** (UX6h1, D150 §4.4): a repository's Branches and History are parts of their own
+ * **Git is inside Repositories**: a repository's Branches and History are parts of their own
  * (`RepositoryGitView`), handed to its page and drawn only while their tab shows, so Git's reads are asked only then. A
  * branch's name in a repository's Branches, or a workspace's, opens the branch's page in the main area in its repository's
- * place (UX6h3b); it is page state of the view's, not remembered, and its way back is the repository's Branches.
+ * place; it is page state of the view's, not remembered, and its way back is the repository's Branches.
  *
  * **A repository's Setup is every setting it holds on this machine**, each the screen's half of `daoris place
  * <verb> <repository>` or `daoris agent rules … --repository`, from the answers the driver gives every door: the
@@ -49,7 +49,7 @@ import { buttonNamed, returnFocus } from '../lib/returnFocus';
  * across, the plugins) is asked only while Setup shows, so holding the view on every view still asks nothing more.
  *
  * **Membership is a repository's own act**: Daoris never writes into a sibling, so nothing joins by being seen,
- * and the join steps are proposed as text, never a button (D31's shape). The management surfaces exist where a shell
+ * and the join steps are proposed as text, never a button. The management surfaces exist where a shell
  * does: managing repositories means touching machine paths, and a browser has none.
  */
 export function useProjectsView({
@@ -61,7 +61,7 @@ export function useProjectsView({
   active: boolean;
   /**
    * The list's chosen item, which the application remembers (`daoris.list.projects.chosen`): a repository's name, or a
-   * workspace's item (`workspaceItem`, UX6g).
+   * workspace's item (`workspaceItem`).
    */
   chosen: string | null;
   onChoose: (item: string | null) => void;
@@ -69,7 +69,7 @@ export function useProjectsView({
   tab?: ProjectTab;
   /** Choose a tab; absent, the page is Details alone. */
   onTab?: (tab: ProjectTab) => void;
-  /** A workspace's page's tab, remembered apart (`daoris.list.projects.workspaceTab`, UX6g). */
+  /** A workspace's page's tab, remembered apart (`daoris.list.projects.workspaceTab`). */
   workspaceTab?: WorkspaceTab;
   onWorkspaceTab?: (tab: WorkspaceTab) => void;
   /** The section of a workspace's Setup a door asked to see open. */
@@ -77,7 +77,7 @@ export function useProjectsView({
   notify: Notify;
   /** Open an agent's page, where a workspace's accounts are set: a workspace's Details names each agent's. */
   onOpenAgent?: (agent: string) => void;
-  /** Open a plugin's page, from the plugin a landing rule names in a Setup (PLUGUI1c2c). */
+  /** Open a plugin's page, from the plugin a landing rule names in a Setup. */
   onOpenPlugin?: (plugin: string) => void;
   /** Open Settings → Git, where a remote nothing serves is given an identity. */
   onOpenGit?: (host: string) => void;
@@ -100,8 +100,8 @@ export function useProjectsView({
   importRequested?: boolean;
   onImportOpened?: () => void;
   /**
-   * The workspace the drawer an event asks for opens filled with (ENTRY1d2b): Ask Daoris's go's, cleared with the event.
-   * The folder is never asked for; it stays the person's pick (D161's ENTRY1d note).
+   * The workspace the drawer an event asks for opens filled with: Ask Daoris's go's, cleared with the event.
+   * The folder is never asked for; it stays the person's pick.
    */
   drawerWorkspace?: string | null;
   /**
@@ -112,7 +112,7 @@ export function useProjectsView({
   onOpenAsk?: (id: string) => void;
   onAttend?: (session: string) => void;
   /**
-   * A door into how a landed branch landed (FLOWCHART1c: the work's milestone, a run's landing step), an EVENT like the drawers':
+   * A door into how a landed branch landed (the work's milestone, a run's landing step), an EVENT like the drawers':
    * the branch's page opens on its repository's Branches with that section open, and its holder lets the word go through
    * `onBranchOpened`. The door's opening chose the repository and the tab already.
    */
@@ -157,11 +157,11 @@ export function useProjectsView({
       .filter((branch) => branch.repository === repository).length
     : undefined);
   // The driver bridge included: a STATE that fails silently reads as a machine with no driver. Said once, while the
-  // view is in front (D118 §3h).
+  // view is in front.
   useErrorNotify(active ? registry.error ?? repositories.error ?? driver.error : null, notify);
 
   const attached = driver.data !== undefined;
-  // An open drawer, and the workspace a go filled it with (ENTRY1d2b); the list's own doors fill none.
+  // An open drawer, and the workspace a go filled it with; the list's own doors fill none.
   const [adding, setAdding] = useState<{ workspace?: string } | null>(null);
   useEffect(() => {
     if (!addRequested || !attached) return;
@@ -175,7 +175,7 @@ export function useProjectsView({
     onImportOpened?.();
   }, [importRequested, attached, onImportOpened, drawerWorkspace]);
   const [managing, setManaging] = useState<Registration | null>(null);
-  // The branch open on a repository's page (UX6h3b): page state, as the Map holds its code map, never remembered across a
+  // The branch open on a repository's page: page state, as the Map holds its code map, never remembered across a
   // restart. It shows while its repository is chosen at Branches, whose page it is, and its way back clears it.
   // A door into how it landed opens it with that section open; the list's presses open the page alone.
   const [branchOpen, setBranchOpen] = useState<{ repository: string; branch: string; landing?: boolean } | null>(null);
@@ -236,7 +236,7 @@ export function useProjectsView({
           // A repository that sets rules of its own opens at its own workflow.
           // That is the repository's place: the application opens it, as it does for a Setup door.
           onOpenRepositoryWorkflow={(repository) => onOpenSetup?.(repository)}
-          // A branch in its Branches opens on its repository's page, so its way back is that repository's Branches (UX6h3b).
+          // A branch in its Branches opens on its repository's page, so its way back is that repository's Branches.
           onOpenBranch={(repository, branch) => { setBranchOpen({ repository, branch }); onChoose(repository); onTab?.('branches'); }}
           onOpenRepositoryHistory={(repository) => { onChoose(repository); onTab?.('history'); }}
           onOpenAgent={onOpenAgent}
@@ -260,7 +260,7 @@ export function useProjectsView({
           branch={branchShown}
           landingOpen={branchOpen?.landing === true}
           onBack={() => {
-            // The focus goes back to the branch's name button (UX6h3d); a branch no longer listed leaves it on the page's heading.
+            // The focus goes back to the branch's name button; a branch no longer listed leaves it on the page's heading.
             const label = t('projects.git.branches.open', { branch: branchShown });
             returnFocus({
               find: () => buttonNamed(label),
@@ -287,14 +287,14 @@ export function useProjectsView({
           drivable={driver.data ? named(driver.data.drivable, shown.repository) : undefined}
           held={driver.data ? named(driver.data.holds, shown.repository) : undefined}
           onOpenSetup={onOpenSetup ? () => onOpenSetup(shown.repository) : undefined}
-          // Its branches and its line's history (UX6h1): a shell's, each read only while its tab shows.
+          // Its branches and its line's history: a shell's, each read only while its tab shows.
           branches={attached
             ? (
               <RepositoryBranches
                 repository={shown.repository}
                 workspace={workspaceOf(shown)}
                 here={Boolean(shown.root)}
-                // A branch's name opens its page over Branches; the line's opens History, the line's own page (UX6h3b).
+                // A branch's name opens its page over Branches; the line's opens History, the line's own page.
                 onOpenBranch={(branch) => setBranchOpen({ repository: shown.repository, branch })}
                 onOpenHistory={onTab && (() => onTab('history'))}
               />
@@ -330,8 +330,8 @@ export function useProjectsView({
         ? <ListMore label={t('projects.list.more')} items={[{ id: 'import', label: t('projects.list.import') }]} onChoose={() => setImporting({})} />
         : undefined,
       loading: registry.isPending,
-      // 🔴 The first thing a new installation shows, and it was a header over a blank page: the fixture always holds
-      // a repository, so nothing had ever rendered this. It names the workspace when the scope is one, because the
+      // 🔴 The first thing a new installation shows, and it must not be a header over a blank page: the fixture always holds
+      // a repository, so no test renders this by default. It names the workspace when the scope is one, because the
       // machine may hold repositories in another.
       empty: registry.data?.length === 0
         ? {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// Quests in SHELL mode, clearing finished history (HIST1e, D153; the history-clearing design §5, §6.1): a closed quest's page
+// Quests in SHELL mode, clearing finished history: a closed quest's page
 // and a done ask's page ask this machine's driver for their plans, offer each clear the plan says may go, and the second
 // press goes over DAORIS.DRIVER with exactly the units the first listed. Over a mocked bridge, as the shell-attached half is
 // held (`docs/2026-09-19-frontend-architecture.md` §4).
@@ -25,7 +25,7 @@ const ASK = {
   asked: '2026-10-02T00:00:00Z', updated: '2026-10-02T00:00:00Z', links: [], attachments: [], quests: ['abc123'], proposal: [],
 };
 
-/** The plans the driver answers, by what the route was asked: the quest's work, its failed sessions, or the ask's work. */
+/** The plans the driver answers, by what the route asks: the quest's work, its failed sessions, or the ask's work. */
 const plans = (payload: Record<string, unknown>) => {
   if (payload.ask === 'a1b2c3') return ASK_PLAN;
   const of = payload.failed ? FAILED_PLAN : QUEST_PLAN;
@@ -106,7 +106,7 @@ describe('clearing finished history in the shell', () => {
   });
 
   /**
-   * A unit that changed since the list is said in its code's sentence, and since UXFIX2 inside the ask where it was
+   * A unit that changed since the list is said in its code's sentence, inside the ask where it is
    * pressed, which stays open, rather than in a toast.
    */
   it('says a unit that changed since the list in its code’s sentence inside the ask, and leaves the page where it was', async () => {

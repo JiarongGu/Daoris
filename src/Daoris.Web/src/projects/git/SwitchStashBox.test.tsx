@@ -7,8 +7,8 @@ import { type ChangesActs, ChangesTab } from './RepositoryGit';
 import { StashBox, type StashPlanValue } from './StashBox';
 import { SwitchBox, type SwitchPlanValue } from './SwitchBox';
 
-// Switch and stash Save in the Changes tab (GITAPP2k, D204, the git-writes design §8): the plan's words (the hooks, why a press is refused,
-// the stash shared with every linked tree), a press that sends back the HEAD and stash it was read with, and the last act said. Molecules: the
+// Switch and stash Save in the Changes tab: the plan's words (the hooks, why a press is refused,
+// the stash shared with every linked tree), a press that sends back the HEAD and stash it read, and the last act said. Molecules: the
 // plans arrive as props.
 
 const switchPlan = (over: Partial<SwitchPlanValue> = {}): SwitchPlanValue => ({ ...GIT_SWITCH_PLAN_ENGINE, ...over });

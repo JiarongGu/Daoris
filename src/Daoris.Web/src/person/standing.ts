@@ -1,4 +1,4 @@
-// The roles' judge as the page shows it (D209, D233; the supervisor and steward designs): its shape as the page reads it, the
+// The roles' judge as the page shows it: its shape as the page reads it, the
 // steward's acts and desk, and the roles a terminal holds. The reader is the bridge's (`standingOf`, `bridge/person.ts`).
 
 /**
@@ -17,10 +17,10 @@ export type StandingConfirmationNow = {
 };
 
 /**
- * One request at the steward's desk, as `STATE`'s `standingConfirmation.stewardDesk` says it (STEWARDROLE1c; the steward design §6.2):
- * the act any caller asked the steward to make, on what, and why, all three the caller's own words, which grant nothing; when it was
- * filed; whether it still waits, was answered by the steward's act, was declined by the steward with a reason, or was left open when
- * Daoris stopped (COMMS1l: the desk is kept across a restart, and nothing answers a request from before it). Never the caller.
+ * One request at the steward's desk, as `STATE`'s `standingConfirmation.stewardDesk` says it:
+ * the act any caller asked the steward to make, on what, and why, all three the caller's own words, which grant nothing; when it is
+ * filed; whether it still waits, is answered by the steward's act, is declined by the steward with a reason, or is left open when
+ * Daoris stops (the desk is kept across a restart, and nothing answers a request from before it). Never the caller.
  */
 export type DeskRequestNow = {
   id: string;
@@ -35,8 +35,7 @@ export type DeskRequestNow = {
 };
 
 /**
- * One act the steward made this run, as `STATE`'s `standingConfirmation.stewardActs` says it (STEWARDROLE1b; the steward design
- * §5.1, §5.4): its id, the act, its target (a repository, or a quest and its session), when, whether it still stands (the owner has
+ * One act the steward made this run, as `STATE`'s `standingConfirmation.stewardActs` says it: its id, the act, its target (a repository, or a quest and its session), when, whether it still stands (the owner has
  * not acted on that target since, so the owner's reverse press is offered), and, for a stop, whether its quest still waits on a
  * *Try again*.
  */
@@ -51,7 +50,7 @@ export type StewardActNow = {
   waiting: boolean;
 };
 
-/** The acts a steward's line and ask have words for (the steward design §3.1 rows 1 to 8, and a repository's workflow); a later build's is said by its name. */
+/** The acts a steward's line and ask have words for (and a repository's workflow); a later build's is said by its name. */
 export const STEWARD_ACTS = ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'pause', 'unpause', 'done', 'delete', 'updatenow', 'updatecancel', 'land', 'clean'] as const;
 
 /** Whether the page has words for this act. */
@@ -71,7 +70,7 @@ export function stewardSetAt(acts: readonly StewardActNow[], repository: string)
   return set.reduce((newest, each) => (Date.parse(each.at) > Date.parse(newest.at) ? each : newest)).at;
 }
 
-/** The owner's own press that reverses a steward's act (the steward design §5.4), each a press the window already sends. */
+/** The owner's own press that reverses a steward's act, each a press the window already sends. */
 export type StewardReverse = 'stopDriving' | 'drive' | 'treesOff' | 'resume' | 'hold' | 'retry';
 
 const REVERSES: Readonly<Record<string, StewardReverse>> = {
@@ -89,16 +88,16 @@ export function stewardReverse(act: StewardActNow): StewardReverse | null {
   return act.repository ? press : null;
 }
 
-/** A living holder as the shell says it (the modules' `HolderNow`): its id, when its tab was opened, its roles. Never a key. */
+/** A living holder as the shell says it (the modules' `HolderNow`): its id, when its tab is opened, its roles. Never a key. */
 export type HolderNow = { id: string; since: string | null; roles: string[] };
 
 /**
- * A role a terminal holds this run, as `STATE`'s `standingConfirmation.holds` says it (D233 point 2; the modules' `RoleHoldNow`): the
+ * A role a terminal holds this run, as `STATE`'s `standingConfirmation.holds` says it (the modules' `RoleHoldNow`): the
  * role's catalogue id, its kind (`supervisor` or `steward`), the living holder, since when, and how many acts it made. Never a key.
  */
 export type RoleHoldNow = { role: string; kind: string; holder: string; since: string | null; answers: number };
 
-/** The supervisor's overrule window, in minutes (the supervisor design §6.3): 1 to 60, five where its role keeps none. */
+/** The supervisor's overrule window, in minutes: 1 to 60, five where its role keeps none. */
 export const WINDOW = { shortest: 1, longest: 60, standing: 5 } as const;
 
 /** Whether `minutes` is a window the supervisor's role may keep: a whole number from 1 to 60. */

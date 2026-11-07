@@ -6,7 +6,7 @@ import { APPLIED, MOVED, planOf } from './placeFixtures';
 import { askOf, freshDraft, type PlaceRepositoryPlan, type SetUpDraft } from './placePlan';
 import { PlaceReview } from './PlaceReview';
 
-// A place's Set up…, the review (SETUPUX1k; the setup-UX design §2.2): what changes, what stops it, what it starts, your part, the work it releases
+// A place's Set up…, the review: what changes, what stops it, what it starts, your part, the work it releases
 // with what holding did per repository, the acceptances, the terminal line and one Apply, at the main area's 80, 39 and 25 rem, in 中文 and in
 // dark. Two columns at 80 rem and one, in the same order, below it. The measured-box check (`measured/review.spec.ts`) reads where Apply sits.
 
@@ -78,7 +78,7 @@ export const PartialHold: Story = {
 export const PartialHoldNarrow: Story = { ...PartialHold, decorators: [storyWidths.narrow] };
 export const PartialHoldChinese: Story = { ...PartialHold, decorators: [chinese] };
 
-/** A tick the page cleared because the declaration changed since it was ticked. */
+/** A tick the page clears because the declaration changes after it is ticked. */
 export const ClearedTick: Story = {
   args: plannedFor(draftOf({
     repositories: ['engine'],
@@ -97,7 +97,7 @@ export const Ticked: Story = {
   })),
 };
 
-/** The plan moved since it was read: the driver's sentence, and nothing written. */
+/** The plan moves after it is read: the driver's sentence, and nothing written. */
 export const Moved: Story = { args: plannedFor(draftOf({ result: MOVED })) };
 export const MovedNarrow: Story = { ...Moved, decorators: [storyWidths.narrow] };
 

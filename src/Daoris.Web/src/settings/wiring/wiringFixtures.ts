@@ -170,7 +170,7 @@ export const DEVELOPMENT: SystemWiring = {
     familyRoot: null, familyRootWhy: 'adopted',
   },
   logs: { ...WIRED.logs, bytes: null, bytesWhy: 'not-measured', newest: null, newestWhy: 'absent', engineLog: false },
-  // The person's own tool home, with nothing of Daoris's in it (D175: new sessions run in Daoris's own space).
+  // The person's own tool home, with nothing of Daoris's in it (new sessions run in Daoris's own space).
   toolHome: { ...WIRED.toolHome!, from: 'process', folders: [] },
   loop: {
     ...WIRED.loop, holder: { kind: 'headless', pid: 777, since: '2026-10-16T08:00:00Z', thisWindow: false },
@@ -287,7 +287,7 @@ export const SPACE_SET: SystemSpace = {
 export const SPACE_STOPPED: SystemSpace = { ...SPACE, held: { pid: 4242, since: '2026-10-16T03:00:00.000+00:00', door: 'look', gone: true } };
 
 /**
- * Below the floor (KEEP1f, the cleanup design §3.2, §4.2): 8 GB free of 1,024 GB, below the default floor of 20 GB, 2 GB freed early;
+ * Below the floor: 8 GB free of 1,024 GB, below the default floor of 20 GB, 2 GB freed early;
  * the set-aside trees on another volume, above its own floor, and the kinds the floor frees early saying so.
  */
 export const SPACE_LOW: SystemSpace = {

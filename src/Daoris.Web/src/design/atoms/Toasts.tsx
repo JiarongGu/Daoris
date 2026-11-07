@@ -12,8 +12,7 @@ import { Tip } from './Tip';
 /* ---------------------------------------------------------------- toasts */
 
 /**
- * A toast: its sentence and its kind; and, for an arrival worth interrupting for (NOTIFY2b, the notification design §3.3, the
- * platform language §4's *Toast*), a door into where it is answered, and whether it stays past its seven seconds until its owner
+ * A toast: its sentence and its kind; and, for an arrival worth interrupting for, a door into where it is answered, and whether it stays past its seven seconds until its owner
  * takes it away (a terminal's press's, until the view opens or the press ends).
  */
 export type ToastItem = {
@@ -69,16 +68,16 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
             toast.kind === 'error' ? 'border-l-st-declined' : 'border-l-accent',
           )}
         >
-          {/* 🔴 Clamped, with the whole of it one hover away. Seen on the deployed application
-              (D62): the driver's hold on an untrusted repository is six lines naming a path, a
+          {/* 🔴 Clamped, with the whole of it one hover away. The driver's hold on an untrusted
+              repository is six lines naming a path, a
               consequence and the command that fixes it — every word of it worth keeping, and as a
-              corner toast it covered the card it was about. The first two lines carry the verdict
-              and the subject, which is what a glance is for; the rest is there when the glance was
+              corner toast it covers the card it is about. The first two lines carry the verdict
+              and the subject, which is what a glance is for; the rest is there when the glance is
               not enough. Never truncated in the DOM, so a screen reader still hears all of it. */}
           <Tip content={toast.text}>
             <Toast.Description className="line-clamp-2 flex-1"><Inline text={toast.text} /></Toast.Description>
           </Tip>
-          {/* Its door (NOTIFY2b): where the arrival is answered, opened on the person's press alone; it confirms nothing. */}
+          {/* Its door: where the arrival is answered, opened on the person's press alone; it confirms nothing. */}
           {toast.door && (
             <Toast.Action asChild altText={toast.door.label}>
               <Button onClick={toast.door.onOpen}>{toast.door.label}</Button>
@@ -89,7 +88,7 @@ export function Toasts({ items, onClose }: { items: ToastItem[]; onClose: (id: n
           </Toast.Close>
         </Toast.Root>
       ))}
-      {/* 🔴 Beside an open drawer, never over it (UXTOAST1, D41): the drawer holds this corner whole, its foot's presses
+      {/* 🔴 Beside an open drawer, never over it: the drawer holds this corner whole, its foot's presses
           with it. `right` is the drawer's width (`Drawer`) and the corner's gap; under 56rem none fits beside it, and they
           keep the corner. A modal drawer turns the page's pointer off, so a press on a toast went through it, to the scrim
           (closing the drawer) or to the press it covered: the toasts take their own presses while they show. */}

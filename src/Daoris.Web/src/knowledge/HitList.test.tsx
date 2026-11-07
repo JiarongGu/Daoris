@@ -9,7 +9,7 @@ import { menuActs, rightClick } from '../test/contextMenu';
 import { CJK_HIT, HITS } from './fixtures';
 import { HitList, type HitsAnswer } from './HitList';
 
-// Search's list as a molecule: what was typed and answered arrives, and every press goes out.
+// Search's list as a molecule: what is typed and answered arrives, and every press goes out.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
@@ -83,7 +83,7 @@ describe("Search's list", () => {
     expect(screen.queryByText(/result/)).toBeNull();
   });
 
-  /** D118 §3h: a search that never answered says the sentence in place, and is never blank. */
+  /** A search that never answered says the sentence in place, and is never blank. */
   it('says the sentence of a search that never answered, in place', () => {
     list({ answer: { state: 'unanswered', sentence: 'the service is not answering' } });
 

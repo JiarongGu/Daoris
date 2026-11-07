@@ -6,7 +6,7 @@ import type { AskMessages, Notice } from '../bridge/notices';
 import type { Confirmation } from '../person/Confirmations';
 import { NotificationsView } from './NotificationsView';
 
-// *Notifications* (NOTIFY2b, D196 point 3, the notification design §2): a view of the regions, the presses waiting for the person's
+// *Notifications*: a view of the regions, the presses waiting for the person's
 // confirmation first, each as its whole card, then *What needs you*; each group headed by its name and its count, foldable, its fold
 // this window's own; a group holding nothing not drawn, and with nothing in any, *Nothing needs you* and the sessions working.
 

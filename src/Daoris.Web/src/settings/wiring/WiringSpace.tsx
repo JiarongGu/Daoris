@@ -17,7 +17,7 @@ const KIND_WORD: Record<string, string> = {
 const WHAT_WORD: Record<string, string> = { 'set-aside': 'setAside', downloads: 'downloads', logs: 'logs' };
 
 /**
- * The kinds whose rule is one of Daoris's runs, which keep a *last* in `keeping.json` (KEEP1a, KEEP1b; the logs' daily prune, KEEP1d);
+ * The kinds whose rule is one of Daoris's runs, which keep a *last* in `keeping.json` (and the logs' daily prune);
  * history's only once the person set an age.
  */
 const RUNS = new Set(['set-aside', 'downloads', 'logs']);
@@ -49,7 +49,7 @@ function ruleOwnWords(t: T, kind: SpaceKind): string {
   return t(`settings.daoris.space.rule.${rule.kind}`);
 }
 
-/** A kind's size, with when it was counted; or that it is counting, or not counted yet with the press that counts it. */
+/** A kind's size, with the time of its count; or that it is counting, or not counted yet with the press that counts it. */
 function Sized({ kind, onCount }: { kind: SpaceKind; onCount: () => void }) {
   const { t } = useTranslation();
   if (kind.bytes === null) {
@@ -75,7 +75,7 @@ function Sized({ kind, onCount }: { kind: SpaceKind; onCount: () => void }) {
 }
 
 /**
- * A kind's *Change…* editor, inline under its row (KEEP1d, the cleanup design §4.1): its days within the bounds the driver answers, and
+ * A kind's *Change…* editor, inline under its row: its days within the bounds the driver answers, and
  * the choices the kind has, *keep each folder whole* or *until I remove it*; *Save*, *The default* and *Never mind*. A value that is no
  * whole number is said here; one out of its bounds is the driver's refusal, said under the editor, which stays open.
  */
@@ -189,9 +189,9 @@ const FLOOR = 'floor';
 const halfGb = (total: number) => Math.max(1, Math.floor(total / 2 / GB));
 
 /**
- * The free-space floor's *Change…* editor, under the *Free space* row (KEEP1f, the cleanup design §3.2): a size in GB up to half the
+ * The free-space floor's *Change…* editor, under the *Free space* row: a size in GB up to half the
  * volume, a share from 1% to 50%, or no floor; *Save*, *The default* and *Never mind*. A value that is no whole number is said here; one
- * out of its bounds is the driver's refusal, said under the editor, which stays open (R3).
+ * out of its bounds is the driver's refusal, said under the editor, which stays open.
  */
 function FloorEditor({ volume, onKeep, onClose }: { volume: SpaceVolume; onKeep: (set: KeepSet, answered: KeepAnswered) => void; onClose: () => void }) {
   const { t } = useTranslation();
@@ -388,13 +388,13 @@ function NextAndLast({ kind }: { kind: SpaceKind }) {
 }
 
 /**
- * Disk space (KEEP1c, D195 point 5; the cleanup design §4.1, §4.2): the free space of the Daoris folder's volume, then each kind Daoris
- * keeps with its size and when it was counted, its rule in words, and its *next* and *last* clean. Every rule it shows already runs; a
+ * Disk space: the free space of the Daoris folder's volume, then each kind Daoris
+ * keeps with its size and the time of its count, its rule in words, and its *next* and *last* clean. Every rule it shows already runs; a
  * kind whose rule is not Daoris's says whose it is. A size is counted only when asked (*Count*, *Measure again*) or by the look once a
  * day, never by the page's open. The Downloads row opens the list the Folders card draws, under its own row here. The
- * rules the person sets carry *Change…*, the editor under the row. KEEP1e: *Free up space…* in the head lists first, under the
- * head, then presses; a run's line (R2) says the kind it is on, then what went and what was kept by reason. A run under way elsewhere
- * disables it. KEEP1f: the free space with the floor it keeps, in the warn ink below it with what Daoris freed early, the floor's own
+ * rules the person sets carry *Change…*, the editor under the row. *Free up space…* in the head lists first, under the
+ * head, then presses; a run's line says the kind it is on, then what went and what is kept by reason. A run under way elsewhere
+ * disables it. The free space shows with the floor it keeps, in the warn ink below it with what Daoris freed early, the floor's own
  * *Change…*; a kind whose entry lies on another volume says that volume on its row, and a kind the floor frees early says so.
  *
  * @remarks
@@ -428,7 +428,7 @@ export function WiringSpace({ space, busy = false, onCount, downloads, onDownloa
     );
   }
   const counting = space.kinds.some((kind) => kind.counting);
-  // The floor is set here where the shell says it (one before KEEP1f answers none).
+  // The floor is set here where the shell says it.
   const floorSettable = onKeep !== undefined && space.volume?.floor != null;
   const allowanceOver = space.allowance?.gb != null && space.allowance.bytes != null && space.allowance.bytes > space.allowance.gb * GB;
   const door = (named: string) => t(`settings.daoris.space.door.${named}`, { defaultValue: named });

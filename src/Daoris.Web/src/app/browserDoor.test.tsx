@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// BRW7, the way the application holds it: the whole window over a mocked shell, so the browser's door
+// The browser's door, the way the application holds it: the whole window over a mocked shell, so the browser's door
 // and where a link goes are what a person meets on the window.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
@@ -95,7 +95,7 @@ function start() {
 
 const opened = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.WINDOWS' && type === 'OPEN_BROWSER');
 
-/** Open the quest's page from Overview's band — in Quests' main area since FRAME1d — and the ticket link on it. */
+/** Open the quest's page from Overview's band — in Quests' main area — and the ticket link on it. */
 async function ticketLink() {
   // The band's row and the outstanding row both open it.
   await userEvent.click((await screen.findAllByRole('button', { name: /Expose a streaming budget/ }))[0]!);

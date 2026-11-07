@@ -42,11 +42,11 @@ import type { ListPanes } from '../work/frame/listPanes';
 const DOOR_ACTIONS = ['install', 'update', 'pin', 'unpin'] as const;
 
 /**
- * The Agents place's mode as the application holds it: the one it was left in, remembered for the place, and a change of
+ * The Agents place's mode as the application holds it: the one last chosen, remembered for the place, and a change of
  * it; and the place Setup last chose (`daoris.list.roles.chosen`).
  *
  * @remarks
- * **A switch to Agents is a door that names no item** (UX6b, D150 §1 rule 6): the agent chosen is read again before it is shown.
+ * **A switch to Agents is a door that names no item**: the agent chosen is read again before it is shown.
  */
 export function useAgentsMode(lists: ListPanes) {
   const [mode, setMode] = useState<AgentsMode>(readAgentsMode);
@@ -102,11 +102,11 @@ export type PlaceHold = {
  * @remarks
  * **A hook, because a view hands the frame a value**, as the Plugins view does. The application holds it on every view.
  *
- * 🔴 **Opening it asks no sign-in** (§5.3). It reads the roster the frame already holds (asked once, and kept:
+ * 🔴 **Opening it asks no sign-in**. It reads the roster the frame already holds (asked once, and kept:
  * `staleTime: Infinity`) and the accounts' files (`ACCOUNTS`, a file read the tick refreshes); each account says its last
- * known state with when it was read. Only *Read again* asks, on the press, one agent's accounts one at a time. An agent's page
+ * known state with when it is read. Only *Read again* asks, on the press, one agent's accounts one at a time. An agent's page
  * reads its accounts' use at *Read now* alone, never as it opens: the agent answers
- * it with no prompt and no model request (D165 point 1, amending §5.3 for that read alone).
+ * it with no prompt and no model request, for that read alone.
  *
  * **Every act has its terminal twin**: `daoris agent …`, named at the page's foot.
  */
@@ -117,7 +117,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
    */
   setUp?: (place: SetUpPlace, page: SetUpPage, doorFor: SetUpDoor) => ReactNode;
   /**
-   * A place's Workflow and Sessions sections' bodies (AGENTSPLACE1f, 1h), handed in by the application, which holds the presses the rows
+   * A place's Workflow and Sessions sections' bodies, handed in by the application, which holds the presses the rows
    * make: this place imports none of them, so Ask Daoris's census of what the place presses does not take them for its own. A section
    * mounts its body only while it is open, so a folded one reads nothing.
    */
@@ -127,7 +127,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   /** The view is in front. */
   active: boolean;
   /**
-   * The Roles mode beside Agents (COMPANYVIEW1b, the company-view design §1), on a desktop only: the mode in front and a change of it,
+   * The Roles mode beside Agents, on a desktop only: the mode in front and a change of it,
    * and the section chosen in the Roles mode and a change of it. Absent, the place is the Agents list alone, as a browser's is.
    */
   modes?: {
@@ -148,7 +148,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
   part?: AgentPart | null;
   /** Told once the part is open, so a later visit opens at the page's top again. */
   onAnchored?: () => void;
-  /** A door's *declared by plugin* opens that plugin in the Plugins place (PLUGUI1c2b). */
+  /** A door's *declared by plugin* opens that plugin in the Plugins place. */
   onOpenPlugin?: (plugin: string) => void;
   /**
    * The words to a session, handed in by the application: an *Accept* on a proposal tells the session that
@@ -305,7 +305,7 @@ export function useAgentsView({ active, chosen, onChoose, notify, part = null, o
             : {}}
           notes={placed?.kind === 'machine'
             ? <MachineNotes onShow={() => { rolesPage.onView('list'); shell.arrive(MACHINE, { section: 'allRoles' }); }} />
-            // D230 point 2: an adopted repository's page offers its reconcile where the doctrine tool's status says the canon moved.
+            // An adopted repository's page offers its reconcile where the doctrine tool's status says the canon moved.
             : placed?.kind === 'repository' && row?.adopted && row.repository
               ? <ReconcileNote key={row.repository} repository={row.repository} />
               : undefined}
@@ -379,7 +379,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   part?: AgentPart | null;
   onAnchored?: () => void;
   onOpenPlugin?: (plugin: string) => void;
-  /** The list's Install was pressed on this agent: its installer runs here, once. */
+  /** The list's Install is pressed on this agent: its installer runs here, once. */
   install?: boolean;
   /** Told as the install is taken, so the request is spent. */
   onInstallTaken?: () => void;
@@ -395,7 +395,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   const ruleAct = useRuleAction();
   // A proposal's answer, its one owner: *What needs you* and the session's conversation press the same.
   const ruleAnswer = useRuleAnswer({ notify });
-  // The session that proposed a rule is found in the list while a proposal names one and a door to it was handed.
+  // The session that proposed a rule is found in the list while a proposal names one and a door to it is handed.
   const proposalSessions = useSessions(null, true, Boolean(say) && Array.isArray(rules.data?.proposals) && rules.data.proposals.some((one) => one.session));
   const {
     running, runningProfile, signingInNew, busy: acting, run, added, settleAdded, refusal, retry, dismiss,
@@ -412,7 +412,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     ? null
     : { read: structure.read === 'ok' ? 'ok' as const : structure.read === 'failed' ? 'failed' as const : 'loading' as const, rows: structure.answer ? usedByAgent(structure.answer, tool) : [] };
 
-  // Each account's use is read at *Read now* alone (SWITCH1d; the switch design §1.2), never as the page opens: the page answers
+  // Each account's use is read at *Read now* alone, never as the page opens: the page answers
   // from the kept readings, and a start's walk and the driver's own pace keep them. A read asks no sign-in and spends nothing,
   // and the driver skips an account cooling, refused, signed out, busy or a key, and floors each at its question's.
   const readAccounts = useReadAccounts();
@@ -449,7 +449,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     return account ? accountLabel(account, tool) : name;
   };
 
-  // ACCT2's rename, the terminal's `daoris agent profile rename`, said as it lands.
+  // The rename, the terminal's `daoris agent profile rename`, said as it lands.
   const rename = async (account: string, name: string | null) => {
     // Naming an account its own id gives it no name of its own: the one way to clear it at the door.
     const answer = await act.mutateAsync({ door: door, action: 'profile-rename', profile: account, name: name ?? account });
@@ -469,7 +469,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
   // The set's order and its one entry of settings: no workspace is named, since one set serves them all.
   const scope: ScopeActs = {
     onOrder: (list) => accountUse.mutate({ door: door, action: 'order', accounts: list }, { onError }),
-    // A refusal the press's own place says (the curve's editor, PUSH1e) is told there, in the reader's language, and toasted nowhere.
+    // A refusal the press's own place says (the curve's editor) is told there, in the reader's language, and toasted nowhere.
     onUse: (change, refused) => accountUse.mutate(
       { door: door, action: 'use', ...change },
       { onError: refused ? (error: unknown) => refused(sentence(error)) : onError },
@@ -485,7 +485,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     onReadNow: () => readAccounts.mutate({ door: door }, { onError }),
     onSignInNew: () => run(door, 'login-new'),
     // Told back to the key's field, which closes once the key is kept and says a refusal in it; kept, the account
-    // goes to the add flow's last step for its name, where a toast said it was added.
+    // goes to the add flow's last step for its name, not to a toast saying it is added.
     onAddKey: (key, answered) => told((async () => {
       const result = await act.mutateAsync({ door: door, action: 'key-add', key });
       if (result.profile) setKeyAdded({ profile: result.profile, key: result.key ?? null });
@@ -501,7 +501,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
     ),
     onRemove: (account, answered) => run(door, 'profile-remove', account, undefined, answered),
     onRename: (account, name, answered) => told(rename(account, name), answered),
-    // The add flow's end (D152 §4.5; POOL1c, the account-pool design §4.1): its name kept where the field holds one other than
+    // The add flow's end: its name kept where the field holds one other than
     // the one it has; refused, the question stays up, so nothing the person typed is lost, and says why in it.
     onAddedAnswer: ({ name }, answered) => {
       if (!answering) return;
@@ -513,7 +513,7 @@ function AgentsMain({ tool, adapter, notify, part, onAnchored, onOpenPlugin, say
         answering.settle();
       })(), answered);
     },
-    // *Got it* (POOL1a; the account-pool design §6.3): the receipts the page showed, by id, marked said; a failure is a toast,
+    // *Got it*: the receipts the page showed, by id, marked said; a failure is a toast,
     // since the block stays and the press is offered again.
     onPooledSaid: (ids) => accountUse.mutate({ door: door, action: 'said', ids }, { onError }),
     // Told back to its editor, which closes once the save lands and says a refusal under it, the choice kept.

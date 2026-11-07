@@ -2,7 +2,7 @@ import { type Grid, queryGrid } from './spatialGrid';
 import { budgeted, CULL_PAST, mountedIds, type Tier, tierAt, viewRect } from './tiers';
 import type { Size, View } from './viewMath';
 
-// How much of a supplied world is mounted (CANVAS1e; the canvas design §2.6, §4): the maps' cards by the same rules as a positioned
+// How much of a supplied world is mounted: the maps' cards by the same rules as a positioned
 // world's nodes. Pure. Past 400 cards only those near the view and the pinned are mounted; at the dot tier only the pinned are, and the
 // dot layer draws the rest. A feature draws its own lines, so it is told which cards a line must reach to be drawn.
 

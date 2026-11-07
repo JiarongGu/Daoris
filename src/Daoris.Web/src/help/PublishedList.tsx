@@ -11,7 +11,7 @@ import type { PublishedCounts, PublishedItem, PublishedQuest } from './published
 export type PublishedDoor = { view: 'quests'; item: string };
 
 /**
- * What an Ask Daoris conversation published (ASKQUESTS1, the Ask Daoris design §9 item 12), in a strip of its own under the
+ * What an Ask Daoris conversation published, in a strip of its own under the
  * conversation's head, outside its scroll. Folded, one line: what it is, and what stands, each count with its noun, in the soft ink
  * but for what waits on the person. Opened in place: each ask with the quests it became under it, and each quest
  * published on its own, the newest first, each as its own list says it, and each a press that opens its record on Quests.

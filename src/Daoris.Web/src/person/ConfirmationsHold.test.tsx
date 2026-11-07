@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../locales/i18n';
 import { type Confirmation, Confirmations } from './Confirmations';
 
-// A terminal's hold of a conversation (RPC1g1, D238 point 2): the one Confirm that lets a terminal speak for the person in a
+// A terminal's hold of a conversation: the one Confirm that lets a terminal speak for the person in a
 // conversation says so plainly on its card, in each shipped language, for a start that holds and for the pipe's HOLD alike.
 const START: Confirmation = {
   source: 'pipe', id: 'h1', module: 'DAORIS.DRIVER', route: 'START_CHAT',

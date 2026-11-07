@@ -13,7 +13,7 @@ export function useShellFeeds({ notify }: {
   // the frames already fill, so neither is a second fetch — and both are absent in a browser, which is what the bar then says.
   const running = useSessions(null, false);
   const remotes = useRemotes();
-  // Who needs the person, as the shell pushes it (PUSH1d4): the bell counts the band's rows and each place of the activity bar the rows
+  // Who needs the person, as the shell pushes it: the bell counts the band's rows and each place of the activity bar the rows
   // its door opens, the status bar the sessions the driver runs, all judged in.NET once for every window, so
   // the numbers and the band are one judgement. A browser has none.
   const attention = useAttention();
@@ -22,7 +22,7 @@ export function useShellFeeds({ notify }: {
   const notices = useNotices();
   const markNoticesRead = useMarkNoticesRead();
   const dismissNotice = useDismissNotice();
-  // Messages (NOTIFY2g, the notification design §2.2's third group): each ask's entry of this window's scope and the conversations'
+  // Messages: each ask's entry of this window's scope and the conversations'
   // answers, as the shell pushes them; an ask's *Mark read* is its channel's mark moved through its newest message (`CHANNEL_MARK`),
   // and an ask is named by its own sentence where this machine holds it, asked only while one is listed.
   const messages = useMessages();

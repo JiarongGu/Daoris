@@ -12,7 +12,7 @@ export type ContextOffer = {
   acts: readonly MenuAct[];
 };
 
-/** What the frame can do with a press's words or link; each absent where this window cannot (design §6). */
+/** What the frame can do with a press's words or link; each absent where this window cannot. */
 export type ContextDoors = {
   /** Copy the words and say so. */
   copy: (text: string) => void;
@@ -53,7 +53,7 @@ export function offeredContext(event: Event): ContextOffer | null {
 }
 
 /**
- * What a surface spreads on its root to offer its acts to a right-click (design §6). It holds no hook, so a molecule may
+ * What a surface spreads on its root to offer its acts to a right-click. It holds no hook, so a molecule may
  * offer; with nothing to offer it adds nothing.
  */
 export function contextOffer(offer: ContextOffer | null | undefined): { onContextMenu?: (event: ReactMouseEvent) => void } {
@@ -80,7 +80,7 @@ export function insideMenu(element: Element | null): boolean {
   return element?.closest('[role="menu"]') != null;
 }
 
-/** The keys that ask for a menu (design §5): the menu key alone, and Shift+F10. */
+/** The keys that ask for a menu: the menu key alone, and Shift+F10. */
 export function isMenuKey(event: KeyboardEvent): boolean {
   const others = event.ctrlKey || event.altKey || event.metaKey;
   if (event.key === 'ContextMenu') return !others && !event.shiftKey;
@@ -104,7 +104,7 @@ export function keyPoint(rect: DOMRect, viewport: { width: number; height: numbe
   };
 }
 
-/** The selected words, where the press is on them, or null: a selection left elsewhere is not what was pressed. */
+/** The selected words, where the press is on them, or null: a selection left elsewhere is not what is pressed. */
 function selectedAt(target: Element, selection: Selection | null): string | null {
   if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
   const words = selection.toString();
@@ -138,7 +138,7 @@ export function pressedOn(target: Element, selection: Selection | null): Pressed
 type Translate = (key: string, values?: Record<string, unknown>) => string;
 
 /**
- * The groups the menu draws for a press (design §3), most specific first, each a list of acts: the selection's, the
+ * The groups the menu draws for a press, most specific first, each a list of acts: the selection's, the
  * link's, the code's where nothing is selected, then the surface's. Its name is the surface's where one offered. No
  * group is no menu, and the engine's is suppressed.
  */

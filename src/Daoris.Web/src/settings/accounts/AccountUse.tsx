@@ -8,8 +8,7 @@ import {
 import { type CurveAccount, CurveChart, CurvePoints } from './UsageCurve';
 import { CURVE_WINDOWS, goneOf, ownPoints, type Switch } from './usageCurves';
 
-// How each agent's accounts are used, as its page shows it (TOOL4g; D125 §2.4, §3.7, §6; D130 §9, §16.6; POOL1c, D197 and the
-// account-pool design §4.2): the one set's order and its one entry of settings, every workspace's. Molecules: every state
+// How each agent's accounts are used, as its page shows it: the one set's order and its one entry of settings, every workspace's. Molecules: every state
 // arrives as props, so a cooling account, a set of six accounts and an agent whose sessions say nothing are each a story. The
 // Agents place holds the hooks.
 
@@ -95,14 +94,14 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey }: {
 }) {
   const { t } = useTranslation();
   const next = scope.next;
-  // The tool's own sign-in is said already, by the list's empty line and D125 §3.7's line beneath the accounts; a third
+  // The tool's own sign-in is said already, by the list's empty line and the line beneath the accounts; a third
   // sentence would say it again. Its wait is not said there, so `waits` is drawn.
   if (!next || next.reason === 'own') return null;
   const listed = scope.list.length > 0;
   const facts = next.account ? agent.accounts.find((account) => account.name === next.account) : null;
   const offered = facts?.offered && !facts.cooling ? t('harness.next.offeredSentence', { when: moment(facts.offered) }) : null;
   const held = heldLine(next, labelOf, isKey, scope.near);
-  // The goal's step 5 is the most room under the curve, and the week's pace with the switch off (SWITCH1b-iii).
+  // The goal's step 5 is the most room under the curve, and the week's pace with the switch off.
   const walk = scope.use.use === 'order'
     ? 'harness.next.whyOrder'
     : switchOf(scope.use) !== 'off' ? 'harness.next.whyGoal' : 'harness.next.whyGoalOff';
@@ -117,7 +116,7 @@ export function NextStartRow({ agent, product, scope, labelOf, isKey }: {
       </p>
       {held && <p className="m-0 mt-0.5 text-small text-ink-soft">{held}</p>}
       {/* Wherever the scope names an account, waiting included: a person who switched the tool's own sign-in expects the
-          starts to follow it, and none of these does (D130 §3.1). */}
+          starts to follow it, and none of these does. */}
       {scope.begins && <p className="m-0 mt-0.5 text-meta text-ink-faint">{t('harness.next.ownSignIn', { product })}</p>}
     </SettingRow>
   );
@@ -129,13 +128,13 @@ export type ScopeActs = {
   onOrder: (list: string[]) => void;
   /**
    * How the set is used: one setting at a time, a field left out unchanged. `refused`, where handed, is told the door's refusal in
-   * the reader's language in place of the toast: the curve's editor says it under the rows it keeps (PUSH1e: the rules are.NET's).
+   * the reader's language in place of the toast: the curve's editor says it under the rows it keeps (the rules are.NET's).
    */
   onUse: (change: AccountUseChange, refused?: (problem: string) => void) => void;
 };
 
 /**
- * The set's order and how it is used (D130 §16.6 as D165 §6 amends it; POOL1c, D197 point 2 and the account-pool design §4.2):
+ * The set's order and how it is used:
  * every account of Daoris's in the order they are used, each with up and down and no *Use* switch, since every account serves
  * every workspace; then *Use accounts*, *Keep for conversations* and *Switch accounts* with each window's curve, the
  * one entry of settings every workspace's starts read. Any number of accounts: the editor holds as many rows as the agent has.
@@ -163,7 +162,7 @@ export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
 
   return (
     <SettingList className="min-w-0">
-      {/* First: the question a person comes with is where the next start goes, and why (TOOL6e). */}
+      {/* First: the question a person comes with is where the next start goes, and why. */}
       <NextStartRow agent={agent} product={product} scope={scope} labelOf={labelOf} isKey={isKey} />
       <SettingRow
         label={t('harness.use.list')}
@@ -179,7 +178,7 @@ export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
                 <span className="text-body text-ink [overflow-wrap:anywhere]">{labelOf(name)}</span>
                 {scope.begins === name && <Pill tone="neutral">{t('harness.use.begins')}</Pill>}
                 {scope.use.keep === name && <Pill tone="neutral">{t('harness.use.kept')}</Pill>}
-                {/* What passes it at a start, in the curve's words (SWITCH1d): over its curve, its limit reached, or credits. */}
+                {/* What passes it at a start, in the curve's words: over its curve, its limit reached, or credits. */}
                 {near && (
                   <Tip
                     content={saidLine(agent.accounts.find((each) => each.name === name)?.said, {
@@ -191,7 +190,7 @@ export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
                 )}
                 {coolingOf(name) && <Pill tone="neutral">{t('harness.cooling.pill')}</Pill>}
                 {account?.login === 'out' && !account.keyed && <Pill tone="neutral">{t('harness.login.out')}</Pill>}
-                {/* Each arrow a target of 28 px at least (the platform language §6, ACCTUX2): its glyph and padding were 25. */}
+                {/* Each arrow a target of 28 px at least: its glyph and padding alone make 25. */}
                 <span className="ml-auto flex gap-0.5">
                   <Button
                     variant="ghost"
@@ -216,7 +215,7 @@ export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
             );
           })}
         </ol>
-        {/* A hand-edited file read with the order winning (D130 §3.1): a kept account the order does not hold, or held alone. */}
+        {/* A hand-edited file read with the order winning: a kept account the order does not hold, or held alone. */}
         {scope.problem && scope.problem.kind !== 'default' && (
           <p className="m-0 mt-1.5 border-l-[3px] border-warn bg-page/60 px-3 py-1.5 text-small text-ink-soft">
             {t(`harness.use.problem.${scope.problem.kind}`, { account: labelOf(scope.problem.account) })}
@@ -276,7 +275,7 @@ export function ScopeEditor({ agent, product, scope, accounts, busy, acts }: {
 }
 
 /**
- * *Switch accounts* (SWITCH1d; D165 point 2; the switch design §5, §6), the scope's `switch` as `profile use --switch` writes
+ * *Switch accounts*, the scope's `switch` as `profile use --switch` writes
  * it: *Smart*, Daoris's curve; *My own curve*, the person's points; *Off*, no switch while a session runs. Under it each window's
  * curve in effect, drawn with each account of the list where it stands now; under *My own curve*, each window's points to edit,
  * saved as `--curve` saves them, and *Clear my own curve* as `--no-curve`. The person's curve is kept whatever the switch says,

@@ -4,7 +4,7 @@ import { InTheme } from '../plugins/storyIcons';
 import type { UpdateState } from '../update/UpdateBanner';
 import { AdoptionNotice as Notice, Confirmations, type Confirmation, type ConfirmationAnswer, type PressNames } from './Confirmations';
 
-// What waits for the person's Confirm (PERSONDOOR1f, RPC1c, NOTIFY2b; D156 §4.2, the notification design §3), as *Notifications*
+// What waits for the person's Confirm, as *Notifications*
 // draws it in the side bar: a terminal's `sessions say` in plain words, a press naming its session, one no catalogue words, the
 // service's by its door's act, a press of many values and one of long words in their bounded region, a refusal said under its
 // card. At the side bar's 300 px floor and at 45% of the install's window (R6), in English and 中文, light and dark.
@@ -95,7 +95,7 @@ export const NoLongerWaiting: Story = {
   args: { waiting: [STOP], onAnswer: async () => ({ answered: false, why: 'gone', message: '' }) },
 };
 
-/** A land asked hours ago, its card's door to the session's review beside its buttons (CONFIRMWAIT1c, the confirm-wait design §8.1). */
+/** A land asked hours ago, its card's door to the session's review beside its buttons. */
 const LAND: Confirmation = {
   source: 'pipe', id: 'c6', module: 'DAORIS.DRIVER', route: 'LAND_SESSION_TREE',
   fields: [{ name: '/id', type: 'string', value: '3f2a91c4' }, { name: '/branch', type: 'string', value: 'main' }],

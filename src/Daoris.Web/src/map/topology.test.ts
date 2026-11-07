@@ -167,8 +167,8 @@ describe('the workspace topology', () => {
   });
 
   /**
-   * 🔴 Seen on the window: a repository whose one session was parked, waiting on the
-   * person, was ringed "working now". Parked is its own fact, and the one the person acts on.
+   * 🔴 Seen on the window: a repository whose one session is parked, waiting on the
+   * person, must not be ringed "working now". Parked is its own fact, and the one the person acts on.
    */
   it('marks a session parked on the person apart from one working', () => {
     const map = buildTopology([repo('game'), repo('engine')], [], [], [
@@ -199,8 +199,8 @@ describe('the workspace topology', () => {
   });
 
   /**
-   * UX5 U49: scoped to every workspace, a circle's repositories sit together on the ring, so its
-   * quests stay within its arc, where by name alone the circles interleaved with nothing saying which.
+   * Scoped to every workspace, a circle's repositories sit together on the ring, so its
+   * quests stay within its arc, where by name alone the circles interleave with nothing saying which.
    */
   it('keeps each circle together when it spans more than one, and counts them', () => {
     const one = buildTopology([repo('game', { workspace: 'default' }), repo('engine', { workspace: 'default' })], [], [], []);
@@ -267,7 +267,7 @@ describe('the drawing\'s frame (UX5 U44)', () => {
     expect(frame.y).toBeLessThan(placeLabel(at['engine']!.x, at['engine']!.y).y - 10);
   });
 
-  /** 🔴 Seen on the window: *engine-asset-pipeline* on a side node was drawn *engine-asset-p*. */
+  /** 🔴 Seen on the window: *engine-asset-pipeline* on a side node must not be cut to *engine-asset-p*. */
   it('holds a long name on a side node whole', () => {
     const long = buildTopology([repo('a'), repo('engine-asset-pipeline'), repo('z')], [], [], []);
     const at = layoutRing(long.nodes.map((n) => n.id), 600);
@@ -292,9 +292,9 @@ describe('the drawing\'s frame (UX5 U44)', () => {
   });
 
   /**
-   * UX5 U59: content follows the window. A wide, tall card draws a larger ring, up to
-   * what the window's height leaves it, with names still at their size. It stayed at the old
-   * square's ring, 531px in a card three times as wide.
+   * Content follows the window. A wide, tall card draws a larger ring, up to
+   * what the window's height leaves it, with names still at their size, rather than the
+   * square's ring of 531px in a card three times as wide.
    */
   it('grows the ring with a wide card, as far as the height the window leaves it', () => {
     const radius = fitRadius(three, 1500, words, 870);
@@ -303,7 +303,7 @@ describe('the drawing\'s frame (UX5 U44)', () => {
     expect(radius).toBeGreaterThan(300);
     expect(frame.height).toBeLessThanOrEqual(870);
     expect(frame.width).toBeLessThanOrEqual(1500);
-    // Where nothing measures the height, the ring grows no further than it always was.
+    // Where nothing measures the height, the ring grows no further than the square's.
     expect(fitRadius(three, 1500, words)).toBeCloseTo(204);
   });
 

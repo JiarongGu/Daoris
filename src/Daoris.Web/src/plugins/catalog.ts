@@ -2,8 +2,8 @@ import type { PluginSourceShown } from './PluginUpdate';
 
 /**
  * A server a plugin offers Ask Daoris, as the driver's `PLUGINS` answers it: its name, the tools
- * that read and those that write outside Daoris, as the plugin declares them, and the person's approval as it stands (D170's
- * note): `approved` (with the writes they `accepted`), `waits`, or `refused` with the driver's sentence.
+ * that read and those that write outside Daoris, as the plugin declares them, and the person's approval as it stands:
+ * `approved` (with the writes they `accepted`), `waits`, or `refused` with the driver's sentence.
  */
 export type HelpServerShown = {
   name: string;
@@ -23,7 +23,7 @@ export type HelpServerShown = {
 export type SkillShown = { name: string; to: string[]; problem?: string | null };
 
 /**
- * A step a plugin declares (FABRIC-UNIT1e, the fabric events design §D9), as the driver's `PLUGINS` answers it: its name as the
+ * A step a plugin declares, as the driver's `PLUGINS` answers it: its name as the
  * manifest writes it (its kind is `<plugin>/<name>`), its reach (`observed`, which the plugin reports, or `performed`, which
  * Daoris asks it to do), its version, and its ports by name with each one's schema.
  */
@@ -36,7 +36,7 @@ export type StepShown = {
   evidence?: string | null;
 };
 
-/** What a plugin's steps create (FABRIC-UNIT1e, §D3): its schema, and its role, `temporary` or `result`. */
+/** What a plugin's steps create: its schema, and its role, `temporary` or `result`. */
 export type ResourceShown = { schema: string; role: string };
 
 /**
@@ -79,10 +79,10 @@ export type ToolShown = {
 // read one answer.
 
 /**
- * One of Daoris's own plugins the install carries (PLUG9 d, D103), as the driver's `PLUGINS` answers it:
+ * One of Daoris's own plugins the install carries, as the driver's `PLUGINS` answers it:
  * what it declares, what its README says it needs, and whether this machine has installed it. The
  * bridge leaves a null out, so an offer may carry no `problem`. The page draws an offer as
- * `OfferShown` below; this is the bridge's wire shape (PLUGUI1c2a moved it here from Settings).
+ * `OfferShown` below; this is the bridge's wire shape.
  */
 export type PluginOfferShown = {
   id: string;
@@ -192,8 +192,8 @@ export type OfferShown = {
 };
 
 /**
- * A plugin's state on today's answers. D119 §2 names five; `ready` and `failing` need the loop's own record
- * (`PluginHealth`, PLUGUI1d) and arrive with PLUGUI1f, so until then a sound plugin whose process is not up is
+ * A plugin's state on today's answers. Five are named; `ready` and `failing` need the loop's own record
+ * (`PluginHealth`), which today's answers do not carry, so a sound plugin whose process is not up is
  * simply `on`, and says no word.
  */
 export type PluginState = 'running' | 'on' | 'refused' | 'off';
@@ -210,18 +210,18 @@ export const speaks = (plugin: Pick<PluginShown, 'problem' | 'points'>): boolean
 
 /**
  * The catalogue's sections, each in the person's reading order. *Available*, what a package source offers,
- * joins them with PLUGDIST1e.
+ * would join them.
  */
 export type PluginGroups = {
-  /** Every plugin on this machine: waiting on you (refused while on; failing with PLUGUI1f), then on, then off. */
+  /** Every plugin on this machine: waiting on you (refused while on; failing once health is told), then on, then off. */
   installed: PluginShown[];
   /** Daoris's own plugins this machine has not installed. */
   offers: OfferShown[];
 };
 
 /**
- * The installed plugins, then the offers not installed. **Within the installed, the order is what the person acts on**
- * (D119 §3.1, kept by D140 §2): what needs them, what is working, what they turned off. The state is the row's word, not
+ * The installed plugins, then the offers not installed. **Within the installed, the order is what the person acts on**:
+ * what needs them, what is working, what they turned off. The state is the row's word, not
  * a heading.
  *
  * Within a standing, by name as the person reads it (case and accents aside, in their language), then by id, since two

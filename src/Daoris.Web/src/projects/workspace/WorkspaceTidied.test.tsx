@@ -112,7 +112,7 @@ describe('what was cleaned up on its own', () => {
     expect(unknown).not.toHaveTextContent('some-new-code');
   });
 
-  // The driver logs a kept branch once at each start of the window, so one branch kept for a week is a line a start (AUTOTIDY1a2).
+  // The driver logs a kept branch once at each start of the window, so one branch kept for a week is a line a start.
   it('draws the lines of one branch kept for the same reason as one row: the newest time, and since the oldest', () => {
     const lines = Array.from({ length: 7 }, (_, index) => kept('unread', 2 + index * 24, { cause: 'folder' }));
     render(<WorkspaceTidied lines={lines} />);

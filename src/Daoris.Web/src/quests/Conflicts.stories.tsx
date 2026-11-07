@@ -9,8 +9,8 @@ import {
   MINE_LOST, SETTLED_DROPPED, THEIRS_LOST,
 } from './fixtures';
 
-// A quest's conflicts (SYNCMERGE1c2, D178 points 2, 7 and 8) as its page draws them (`QuestPage.tsx`: the open ones above the
-// body, how they ended under it), on their own (STORYGAP1, the UI/UX design §1.2 item 6): this machine's lost take with its two
+// A quest's conflicts as its page draws them (`QuestPage.tsx`: the open ones above the
+// body, how they ended under it), on their own: this machine's lost take with its two
 // choices, another machine's with its dismissal, why a bring-forward is not offered, a second loss, an unconfirmed bring-forward,
 // and the settled ones; at the main area's three widths, in 中文 and dark.
 
@@ -55,7 +55,7 @@ export const HeldElsewhere: Story = { args: { quest: HELD_ELSEWHERE } };
 /** The bring-forward not offered, and why: the step closed. */
 export const StepClosed: Story = { args: { quest: LOST_CLOSED } };
 
-/** A second loss: the bring-forward lost again, said on the conflict it was to settle. */
+/** A second loss: the bring-forward lost again, said on the conflict it is to settle. */
 export const LostAgain: Story = { args: { quest: LOST_AGAIN } };
 
 /** A bring-forward the remote has not answered: unconfirmed, never settled. */

@@ -236,7 +236,7 @@ describe('Set up…, on a place\'s page', () => {
     await review();
     await userEvent.click(await screen.findByRole('checkbox', { name: /Accept for integration/ }));
     expect(screen.getByRole('checkbox', { name: /Accept for integration/ })).toBeChecked();
-    // The blob moves while the person reads; the next plan read is of another ask, and the tick it was made at no longer holds.
+    // The blob moves while the person reads; the next plan read is of another ask, and the tick made against the earlier blob does not hold.
     blob = 'ffffffffffffffffffffffffffffffffffffffff';
     await userEvent.click(screen.getByRole('button', { name: '← Back to the choices' }));
     await userEvent.click(screen.getByRole('checkbox', { name: 'Your look before it lands' }));
@@ -372,7 +372,7 @@ describe('Set up…, on a place\'s page', () => {
     expect(await screen.findByRole('heading', { name: 'Review: set up engine' })).toBeTruthy();
     expect(screen.queryByRole('radiogroup', { name: 'How it lands' })).toBeNull();
     await waitFor(() => expect(sent('PLACE_PLAN').at(-1)).toEqual(ask));
-    // Nothing was pressed: the seed plans only, and Apply stays the person's.
+    // Nothing is pressed: the seed plans only, and Apply stays the person's.
     expect(sent('PLACE_APPLY')).toEqual([]);
     // Back to the choices finds the ask as seeded.
     await userEvent.click(screen.getByRole('button', { name: '← Back to the choices' }));

@@ -10,7 +10,7 @@ export type IntegrationRequest = { gates: string } | { clear: true };
 const short = (id: string) => id.slice(0, 7);
 
 /**
- * **A repository's integration declaration** (INTEGRATE1d part 3; the integration design §11 row d, §17.7), on its Setup beside the landed
+ * **A repository's integration declaration**, on its Setup beside the landed
  * route: where the person's acceptance of the `daoris.gates.json` `integration` object stands against the line's tip, the declaration as
  * written where it waits, and *Accept* and *Withdraw*.
  *

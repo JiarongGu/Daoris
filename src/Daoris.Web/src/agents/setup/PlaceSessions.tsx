@@ -17,7 +17,7 @@ import type { PlaceHold } from '../AgentsView';
 import { repositoryId } from '../modes';
 
 /**
- * **A repository place's Workflow section** (AGENTSPLACE1h; the section's body on the place page, SETUPUX1h, SETUPUX1o): its routes and the
+ * **A repository place's Workflow section** (the section's body on the place page): its routes and the
  * chosen route's chart, Gates, the folds of the line and its landing from the one molecule Setup draws them with, and Change… and Edit steps….
  * A molecule: the setup and the workflow arrive as props, and every press goes out.
  */
@@ -142,7 +142,7 @@ export function WorkspaceLandingFolds({ workspace, hand }: { workspace: string; 
 
 /**
  * A workspace's own Workflow: its routes and chart, and the repositories that follow it or set their own, its Landing row, then the line's
- * defaults it gives each repository that sets none (SETUPUX1v, moved from the Setup tab): its line, commits, review and second opinion.
+ * defaults it gives each repository that sets none: its line, commits, review and second opinion.
  */
 function WorkspaceWorkflow({ place, notify, onConvert }: { place: PlaceHold; notify: Notify; onConvert?: () => void }) {
   const workspace = place.row.workspace ?? '';
@@ -196,7 +196,7 @@ export function PlaceSessions({ place, notify, onOpenGit }: {
   if (place.kind === 'repository') {
     return <RepositorySessions place={place.row} notify={notify} onOpenGit={onOpenGit} />;
   }
-  // A workspace's Sessions hold its access and session rows and, since SETUPUX1v, Reach: its rules and the machines its remote counts undeclared.
+  // A workspace's Sessions hold its access and session rows and Reach: its rules and the machines its remote counts undeclared.
   return (
     <WorkspaceSetupPart
       workspace={place.row.workspace ?? ''}

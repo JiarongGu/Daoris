@@ -23,7 +23,7 @@ const WORD_VARIANT = { 'when-idle': 'default', now: 'primary', 'not-now': 'ghost
  * door, is gone once dismissed. `daoris update` is the terminal's door to the same request.
  *
  * @remarks
- * A molecule: drawn from props, so every state is reachable without a shell (D52 as amended); the Driver domain holds
+ * A molecule: drawn from props, so every state is reachable without a shell; the Driver domain holds
  * the hooks. It says the banner's sentences where they are the same fact — a swap's ending and each check's reason — so
  * the two doors never word one thing twice. Nothing until the shell answers.
  *

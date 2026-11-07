@@ -1,4 +1,4 @@
-/** The terminals a line is offered for (the this-Daoris design §4). */
+/** The terminals a line is offered for. */
 export type TerminalShell = 'powershell' | 'cmd' | 'bash';
 
 export const TERMINAL_SHELLS: readonly TerminalShell[] = ['powershell', 'cmd', 'bash'];

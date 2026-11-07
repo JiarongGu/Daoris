@@ -19,8 +19,8 @@ export function namer(t: ReturnType<typeof useTranslation>['t'], harnesses: Tool
     tools.find((tool) => tool.name === owner) ?? tools.find((tool) => tool.doors.some((door) => door.door === owner));
   return (owner: string, profile?: string | null) => {
     const tool = toolFor(owner);
-    // The tool's own home is named as its row names it: who signed in, else this machine's own. It
-    // was "the agent's own sign-in" in one card and "its own home" in another (UX5 U53).
+    // The tool's own home is named as its row names it: who signed in, else this machine's own, so every
+    // card says the same name for it.
     if (!profile) return (tool ? ownWho(tool) : null) ?? t('harness.own');
     const row = tool?.accounts.find((account) => account.name === profile);
     // Told apart from another sign-in of its email by its organisation, else its plan.

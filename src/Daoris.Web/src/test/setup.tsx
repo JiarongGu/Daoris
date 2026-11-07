@@ -10,7 +10,7 @@ import preview from '../../.storybook/preview';
 // run on 2026-09-28 and passed every time alone. What never appears still fails, five seconds later.
 configure({ asyncUtilTimeout: 5_000 });
 
-// 🔴 WEBWAIT1: `vi.waitFor` is vitest's own and does not read testing-library's setting; its patience is one
+// 🔴 `vi.waitFor` is vitest's own and does not read testing-library's setting; its patience is one
 // second. On 2026-10-16 a WorkFrame case waiting on a mocked call gave up at 2993 ms under four workers' load
 // and passed alone. Every `vi.waitFor` without its own patience now waits as long as a `findBy` does (the same
 // 5 s, well under `testTimeout`); a call that names a timeout keeps it. The assertion inside is untouched.
@@ -70,8 +70,8 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
  *
  * Without this, `stories.test.tsx` applies each story's OWN decorators and none of the project's —
  * so the tooltip provider `.storybook/preview.tsx` mounts for every story is absent here, and any
- * component carrying a `Tip` throws. That was diagnosed twice in one session as "this story needs
- * wrapping", which is the wrong fix twice: the suite is meant to render what a reviewer sees, and
- * it was rendering something slightly different.
+ * component carrying a `Tip` throws. That reads as "this story needs
+ * wrapping", which is the wrong fix: the suite is meant to render what a reviewer sees, and
+ * without this it renders something slightly different.
  */
 setProjectAnnotations(preview);

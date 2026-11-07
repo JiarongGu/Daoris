@@ -24,10 +24,10 @@ import {
   SPACE_STOPPED, SPACE_UNCOUNTED, WIRED,
 } from './wiringFixtures';
 
-// Settings → This Daoris's cards (WIRING1c, the this-Daoris design §3.1-3.3, §7), in the shape `SYSTEM_WIRING` answers: an
+// Settings → This Daoris's cards, in the shape `SYSTEM_WIRING` answers: an
 // install with every size counted, a walk under way, a development run with the account naming another home and a service
 // that does not answer; light and dark, and a narrow main area where the rows stack. The
-// whole domain at the frame's three widths, in English and 中文 (the UI/UX design R6, UIFIT1): every row's value on the
+// whole domain at the frame's three widths, in English and 中文: every row's value on the
 // card's track, the cards 16 px apart by the domain's own container.
 
 const meta = {
@@ -145,7 +145,7 @@ export const LoopNarrow: Story = { render: () => <WiringLoop loop={WIRED.loop} o
 
 const none = () => {};
 
-// The six cards after the loop (WIRING1c-ii, §3.4-3.9): each from the installed read and from a development run, in the other
+// The six cards after the loop: each from the installed read and from a development run, in the other
 // theme where it has a pair, and narrow.
 
 const UPDATE = { state: 'none', staged: null, mode: null, driven: 0, turns: 0, problem: null, outcome: null, last: null } as const;
@@ -431,7 +431,7 @@ export const SpaceFreeListedChineseNarrow: Story = { render: () => listed(), dec
 /** The list on its way. */
 export const SpaceFreeListing: Story = { render: () => listed({ plan: undefined }) };
 
-/** A press refused while a terminal's run holds Daoris's keeping, said where it was pressed. */
+/** A press refused while a terminal's run holds Daoris's keeping, said where it is pressed. */
 export const SpaceFreeRefused: Story = {
   render: () => listed({
     refused: { run: null, joined: false, why: 'held', held: { pid: 4242, since: '2026-10-16T10:40:00.000+00:00', door: 'terminal', gone: false } },
@@ -444,7 +444,7 @@ export const SpaceFreeRunning: Story = { render: () => space({ space: SPACE_RUNN
 /** The same in 中文 at the floor. */
 export const SpaceFreeRunningChineseNarrow: Story = { render: () => space({ space: SPACE_RUNNING, onFreeUp: () => {} }), decorators: [...narrow, chinese] };
 
-/** The run ended: what went, and what was kept by reason. */
+/** The run ended: what went, and what is kept by reason. */
 export const SpaceFreeEnded: Story = { render: () => space({ space: SPACE_FREED, onFreeUp: () => {} }), decorators: inTheme('light') };
 
 /** The same, in dark and in 中文 at the half width. */

@@ -74,8 +74,8 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   // wait in the box meanwhile, and a new conversation from an earlier one's words waits by that one's id.
   const [choosing, setChoosing] = useState<{ from?: string; unknown?: boolean } | null>(null);
 
-  // The last preface each conversation was handed, so an unchanged screen is not said again; and the fingerprint of the last workflow
-  // draft it was told, so an unchanged draft is not sent again.
+  // The last preface each conversation is handed, so an unchanged screen is not said again; and the fingerprint of the last workflow
+  // draft it is told, so an unchanged draft is not sent again.
   const told = useRef(new Map<string, string>());
   const toldDraft = useRef(new Map<string, string>());
   /**
@@ -147,7 +147,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     // Asked again as the record, the queue or the list moves; the words themselves are read from this render.
   }, [record.events, record.loaded, turns.queued, live, lateShown.length]);
 
-  // The opening ahead still on its way: what it answers, the conversation it opened or null; and the workspace it was
+  // The opening ahead still on its way: what it answers, the conversation it opened or null; and the workspace it is
   // opened in, whose words alone it takes.
   const ahead = useRef<Promise<string | null> | null>(null);
   const aheadIn = useRef<string | null>(null);
@@ -172,7 +172,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
   const handFirst = (id: string, words: ChatMessage, files: File[], circle?: string) => {
     help.spoke(id);
     setCleared(null);
-    // A window moved to another workspace while the start was under way: the conversation stays in the
+    // A window moved to another workspace while the start is under way: the conversation stays in the
     // workspace of its press, so it is shown by its id, named as that workspace's, rather than as this one's newest.
     const moved = circle !== undefined && typeof hereNow.current === 'string' && !sameWorkspace(circle, hereNow.current);
     setChosen(moved ? id : null);
@@ -190,7 +190,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     const words = firstWords;
     if (!words?.late || words.session !== undefined || sessions.dataUpdatedAt <= words.late.at) return;
     const late = words.late;
-    // Of the workspace the start was in alone: one opened meanwhile in another is not theirs.
+    // Of the workspace the start is in alone: one opened meanwhile in another is not theirs.
     const opened = helpSessions.find((session) => SESSION_ACTIVE.has(session.state) && !late.before.includes(session.id)
       && (words.circle === undefined || sameWorkspace(workspaceOf(session), words.circle)));
     if (opened) {
@@ -342,8 +342,8 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     // Only a new round, a workspace newly shown, or the panel coming idle, opens one; the mutation is not a reason to open again.
   }, [idle, round, here]);
 
-  // Each opening once: a re-render, or React mounting an effect twice in development, must not ask twice. A draft (CTX1's
-  // *Ask Daoris about it*) goes into the box for the person's question instead, and sends nothing.
+  // Each opening once: a re-render, or React mounting an effect twice in development, must not ask twice. A draft (*Ask Daoris
+  // about it*) goes into the box for the person's question instead, and sends nothing.
   const opened = useRef<number | null>(null);
   // Until the list has answered, which conversation is shown is not known, and a draft put in the wrong box stays there.
   const listed0 = !sessions.isPending;
@@ -359,12 +359,12 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
       // blank one first, ending nothing, and the draft goes in the new conversation's box.
       const key = shown && live ? shown.id : NEW_DRAFT;
       if (key === NEW_DRAFT && shown) clear();
-      // Above the words already there: CTX1's quote ends on a blank line for the person's question; a draft that ends on
-      // its own words (the composer's hand-over, NEW1d-b) is kept apart from them by one.
+      // Above the words already there: the quote ends on a blank line for the person's question; a draft that ends on
+      // its own words (the composer's hand-over) is kept apart from them by one.
       const apart = /\n\s*$/.test(opening.text) ? '' : '\n\n';
       editDraft(key, (was) => ({ ...was, text: [opening.text, was.text.trim()].filter(Boolean).join(apart) }));
     } else onSend(opening.text, []);
-    // From the effect, never the render (frontend-architecture §4b): the holder clears what was sent.
+    // From the effect, never the render: the holder clears what is sent.
     onOpened?.();
     // Only a new opening asks; `onSend` reads this render's session and is not a reason to ask again.
   }, [opening?.id, listed0, placed]);
@@ -414,7 +414,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     setHistoryOpen(false);
     setRefusal(null);
   };
-  // A row opened from the history: its heading takes the focus, and the list remembers where it was left.
+  // A row opened from the history: its heading takes the focus, and the list remembers where it is left.
   const openRow = (id: string, scroll: number) => {
     if (end.isPending) return;
     setLeft({ row: id, scroll });
@@ -422,18 +422,18 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
     choose(id);
     setFocusHead((was) => was + 1);
   };
-  // The history opened over the conversation: it opens on the row it was left from, else the conversation shown.
+  // The history opened over the conversation: it opens on the row it is left from, else the conversation shown.
   const openHistory = () => {
     setHistoryRefusal(null);
     setRestore({ row: left?.row ?? shown?.id ?? null, scroll: left?.scroll ?? 0 });
     setHistoryOpen(true);
   };
-  // Back to the conversation the history was opened over, its heading taking the focus.
+  // Back to the conversation the history is opened over, its heading taking the focus.
   const closeHistory = () => {
     setHistoryOpen(false);
     setFocusHead((was) => was + 1);
   };
-  // In the window's workspace, read at the press, whatever the earlier one's was; a window that shows several asks
+  // In the window's workspace, read at the press, whatever the earlier one's workspace; a window that shows several asks
   // which first, the history closed so the question is seen.
   const beginFrom = (id: string, chosenIn?: string) => {
     setHistoryRefusal(null);
@@ -463,7 +463,7 @@ export function useHelpSend({ where, sends, setSent, send, giveBack, t, setGoing
       },
     });
   };
-  // SESSCTX1c part B (the steward's choice: Ask Daoris follows the same rule in its own room): words that wait for the person on a
+  // Words that wait for the person on a
   // conversation in view go on in a new conversation of its room, handed Daoris's brief and the words, shown once it opens; a refusal is
   // said by its code in the composer's line.
   const goOnBrief = useHandOver();

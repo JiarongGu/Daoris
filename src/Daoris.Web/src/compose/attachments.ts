@@ -14,7 +14,7 @@ export type Upload = { name: string; content: string };
 
 /**
  * Add what fits, in the order it came, and say what did not. A file past the count or past the total
- * is left out rather than failing the whole drop — the ones that fit are still what was meant.
+ * is left out rather than failing the whole drop — the ones that fit are still what is meant.
  */
 export function admit(current: File[], incoming: File[]): { files: File[]; refused: 'tooMany' | 'tooLarge' | null } {
   const files = [...current];

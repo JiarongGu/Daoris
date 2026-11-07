@@ -48,7 +48,7 @@ function asked(): Map<string, number> {
   return counts;
 }
 
-/** What was asked between two counts, by name. */
+/** What is asked between two counts, by name. */
 const since = (before: Map<string, number>, after: Map<string, number>) => Object.fromEntries(
   [...after].map(([name, n]) => [name, n - (before.get(name) ?? 0)] as const).filter(([, n]) => n > 0),
 );

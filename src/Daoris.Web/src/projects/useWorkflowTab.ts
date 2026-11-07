@@ -8,8 +8,8 @@ import type { WorkflowDoors } from '../workflow/WorkflowChart';
 import type { WorkflowTabProps } from '../workflow/WorkflowTab';
 
 /**
- * **A repository's Workflow as its molecules take it** (WORKFLOW1b; moved out of the Repositories view by AGENTSPLACE1h so the Agents
- * place's Workflow section and the dark Workflow tab hold the one reading): its Current as the driver answers it, read only while
+ * **A repository's Workflow as its molecules take it**: the Agents
+ * place's Workflow section and the dark Workflow tab hold the one reading of its Current as the driver answers it, read only while
  * `enabled`, a refusal said in its place, the person's *Accept the gates* and *Verify…*, the verifications on its line with their verdicts,
  * and the step editor's bridge.
  * Returns the props for a registration, or null while the driver has not answered (`ready` false).

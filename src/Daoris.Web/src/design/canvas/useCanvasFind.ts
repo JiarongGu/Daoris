@@ -4,7 +4,7 @@ import { type Findable, findMatches, foundBy, stepMatch } from './findNodes';
 import type { View } from './viewMath';
 
 /**
- * The state of find on a canvas (the canvas design §4): the query, the match shown, the matches by name and what dims. Stepping reveals
+ * The state of find on a canvas: the query, the match shown, the matches by name and what dims. Stepping reveals
  * each match through the feature's `reveal`; clearing puts the view back where stepping began (Escape).
  */
 export function useCanvasFind({ nodes, handle, reveal }: {

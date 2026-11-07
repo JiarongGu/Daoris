@@ -29,8 +29,8 @@ describe('byTool', () => {
   /**
    * 🔴 The case that makes naming-by-account right rather than merely tidy. `codex-acp` runs as
    * `codex`'s account and the driver has no native `codex` adapter at all — so the tool exists with
-   * one door whose name is not its own. Grouping by any door's name would have produced a tool
-   * called `codex-acp`, which is the confusion this was written to remove.
+   * one door whose name is not its own. Grouping by any door's name would produce a tool
+   * called `codex-acp`, which is the confusion this guards against.
    */
   it('names a tool after its account even when no door carries that name', () => {
     const tools = byTool([door({ door: 'codex-acp', accountOf: 'codex', transport: 'protocol' })]);
@@ -113,7 +113,7 @@ describe('byTool', () => {
 
   /**
    * 🔴 The account a person actually has is the tool's own configuration home, and the roster
-   * called a machine with no named profile "No accounts" while its owner was logged in. The
+   * must not call a machine with no named profile "No accounts" while its owner is logged in. The
    * account-owning door answers for the tool's own home. No default and no workspace's choice of
    * account is carried: one set of Daoris's accounts serves every workspace.
    */

@@ -8,9 +8,9 @@ import type { Confirmation } from '../person/Confirmations';
 import type { PushedAttention } from '../work/attention/attention';
 import { NeedsSummary } from './NeedsSummary';
 
-// Overview's summary of what needs the person (NOTIFY2b, the notification design §4): a line per group with its count and its oldest
-// wait, each a door into *Notifications*; on one label track at 32rem and wider, stacked below it (R1). At the main area's wide,
-// half and narrow widths (R6), in English and 中文, light and dark; and with nothing waiting.
+// Overview's summary of what needs the person: a line per group with its count and its oldest
+// wait, each a door into *Notifications*; on one label track at 32rem and wider, stacked below it. At the main area's wide,
+// half and narrow widths, in English and 中文, light and dark; and with nothing waiting.
 
 const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 const ROWS: PushedAttention[] = [

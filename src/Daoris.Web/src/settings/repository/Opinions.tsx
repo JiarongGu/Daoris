@@ -19,13 +19,13 @@ export type OpinionRule = {
   sameAgent?: string[];
 };
 
-/** Where a repository's rule was set: for it, or for its workspace. */
+/** Where a repository's rule is set: for it, or for its workspace. */
 export type OpinionSource = 'repository' | 'workspace';
 
 /** One repository's rule as the driver resolves it (`LINES`' `opinions`); `rule` and `source` absent where nothing is set. */
 export type RepositoryOpinion = { repository: string; workspace: string; rule?: OpinionRule | null; source?: OpinionSource | null };
 
-/** What a set changes, each part only where it is said: the twins' edit in the shared table's shape (design §2.5). */
+/** What a set changes, each part only where it is said: the twins' edit in the shared table's shape. */
 export type OpinionSet = { reviewers?: string[]; on?: string[]; required?: boolean; verify?: boolean; minutes?: number | string; recheck?: boolean };
 
 /** One change to a second-opinion rule: set what it names over the rule set there, say a repository has none, or clear. */
@@ -51,7 +51,7 @@ function and(t: TFunction, names: readonly string[]): string {
 }
 
 /**
- * What each door says as a rule is set (design §2.5), in the page's language: when its reviewers read and where their
+ * What each door says as a rule is set, in the page's language: when its reviewers read and where their
  * findings go, what they may run, what happens when none can read, the bound of a pass, a recheck turned off, and which of
  * them are the working agent's own family — the twins' sentences (`opinionSays`, `OpinionRules.Says`), a catalogue key each.
  */
@@ -80,7 +80,7 @@ export function opinionSays(t: TFunction, rule: OpinionRule | null | undefined):
 }
 
 /**
- * What each door says after the rule's own sentences (XAGENT1f4), in the page's language: what the gate does with work that waits
+ * What each door says after the rule's own sentences, in the page's language: what the gate does with work that waits
  * for another agent's reading, at landing and before a chain's next step, as the rule's occasions name them, then that what is
  * declared safe is not handed to a reviewer yet where the rule lets one run it; nothing after none here, where nothing waits —
  * the twins' `opinionGate` and `OpinionRules.Gate`, by their table's `gate` rows.
@@ -95,8 +95,8 @@ export function opinionGate(t: TFunction, rule: OpinionRule | null | undefined):
 }
 
 /**
- * What a Setup row says of the rule standing (design §2.5–§2.6): the door's sentences, what the gate does with it (XAGENT1f4),
- * and where it was set; nothing set says today's behaviour and nothing more.
+ * What a Setup row says of the rule standing: the door's sentences, what the gate does with it,
+ * and where it is set; nothing set says today's behaviour and nothing more.
  */
 export function opinionRowSays(t: TFunction, rule: OpinionRule | null | undefined, from?: { source?: OpinionSource | null; workspace?: string }): string {
   if (!rule) return t('settings.opinion.says.noneSet');
@@ -167,7 +167,7 @@ export function OpinionField({ name, owner, set, busy = false, onChange }: {
   return (
     <div className="grid gap-2">
       <form
-        // Sized to its content up to the pane (R1, UIFIT1d): the reviewers are a list, the minutes a number of their own width.
+        // Sized to its content up to the pane: the reviewers are a list, the minutes a number of their own width.
         className="grid gap-2"
         onSubmit={(event) => {
           event.preventDefault();

@@ -17,8 +17,7 @@ export function noticeWords(notice: Notice, t: TFunction): string {
     return t('notifications.done.ended', { repository: notice.repository ?? '', state: state || t('notifications.done.other') });
   }
   if (notice.kind === 'expired' || notice.kind === 'withdrawn' || notice.kind === 'closed') {
-    // A terminal's press: one ended by its time, one its terminal took back once shown, or one Daoris's close ended
-    // (CONFIRMWAIT1a-i, the confirm-wait design §6, §8.3).
+    // A terminal's press: one ended by its time, one its terminal took back once shown, or one Daoris's close ended.
     const act = notice.route ? t(`person.route.${notice.route}`, { defaultValue: '' }) : '';
     return act ? t(`notifications.done.${notice.kind}`, { act }) : t('notifications.done.other');
   }
@@ -39,7 +38,7 @@ export function noticeWords(notice: Notice, t: TFunction): string {
 }
 
 /**
- * *Done and failed* (NOTIFY2f, D196 point 6, the notification design §2.2's fourth group, §2.3, §2.4): what the person need not answer,
+ * *Done and failed*: what the person need not answer,
  * newest first, each one line with its age, the unread marked; *Open* goes to its session's page where it names one, *Dismiss* removes
  * it, and the group's *Mark all read* reads every one it shows.
  *

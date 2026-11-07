@@ -10,8 +10,8 @@ export function Quoted({ words }: { words: string }) {
 
 /**
  * **One requirement**: its number, the person's words it quotes, the check that proves them, and how the
- * done answered it: *met*, with how its check was met, or *departed*, with the reason and the person's words
- * the reason relied on. A quest's page lists every one; Ask Daoris's accept card lists the departures (DRIFT1d2).
+ * done answered it: *met*, with how its check is met, or *departed*, with the reason and the person's words
+ * the reason relies on. A quest's page lists every one; Ask Daoris's accept card lists the departures.
  *
  * @remarks
  * **A molecule**: every state is its props. **The words are content** (`translation-parity`): the person's quoted as they
@@ -62,13 +62,13 @@ export function RequirementItem({ number, requirement, answer, waiting = false }
 }
 
 /**
- * **What the person required of a quest, and how its done answered** (DRIFT1d2; D133 §3–§4): every requirement, numbered
+ * **What the person required of a quest, and how its done answered**: every requirement, numbered
  * as the service orders them, which is how its done answers them.
  *
  * @remarks
  * - **A held departure is what the quest waits on**: the section says so, with what the yes lets go on, and carries
- *   *Accept the departure*, one press, where the departure is read (as the trust grant is offered where its hold is read,
- *   D73). The quest's page places it above the body then, as it places a conflict.
+ *   *Accept the departure*, one press, where the departure is read (as the trust grant is offered where its hold is read).
+ *   The quest's page places it above the body then, as it places a conflict.
  * - **An accepted one says when**, and offers no second yes; a done that answered none says so, and a quest still to
  *   close says how its done will answer.
  */

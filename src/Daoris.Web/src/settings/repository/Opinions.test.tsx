@@ -67,7 +67,7 @@ const SAYS: SaysRow[] = [
 ];
 
 /**
- * The twins' `gate` rows, copied (XAGENT1f4): what each door says after the rule's sentences, now that the gate reads it,
+ * The twins' `gate` rows, copied: what each door says after the rule's sentences, now that the gate reads it,
  * at landing, before a chain's next step, and with `verify`. None here says nothing after.
  */
 const WAITING = "Where work here waits for another agent's reading, it lands only once that reading is settled, or once you go "
@@ -140,7 +140,7 @@ describe('what a second-opinion rule says', () => {
     expect(said).toContain('一次阅读最多 30 分钟。');
     expect(opinionSummary(t, SET)).toBe('来自 `codex-acp` 的第二意见，必需');
 
-    // The Setup row's sentences after the rule's (XAGENT1f4): what the gate does, its doors as written, nothing after none.
+    // The Setup row's sentences after the rule's: what the gate does, its doors as written, nothing after none.
     const gate = opinionGate(t, SET);
     expect(gate).toHaveLength(3);
     expect(gate[0]).toContain('`daoris session opinion anyway <session>`');

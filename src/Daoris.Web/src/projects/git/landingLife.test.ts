@@ -11,13 +11,13 @@ import {
 
 // A landed branch's landing and clean-up drawn from its
 // records. The landing is
-// the branch's, with every later done that moved it on and the session each was made for, never one session's; the push is a fact
+// the branch's, with every later done that moved it on and the session each is made for, never one session's; the push is a fact
 // with no time and the pull request's answer a snapshot, with no edge between them that a date does not order; the end, the clean-up
 // and the recovery are the units' the branch carries. The codes are page constants, held to the driver's source here.
 
 const t = i18n.t.bind(i18n);
-// Each driver source is read by its name through `driverSource`, so the merge tool's page-reads scan sees the files and MOD9e's
-// row sends a change to them to this gate.
+// Each driver source is read by its name through `driverSource`, so the merge tool's page-reads scan sees the files and sends a change to them
+// to this gate.
 
 /** A static class's body, from its declaration to the next type's. */
 const classBody = (text: string, name: string) => {

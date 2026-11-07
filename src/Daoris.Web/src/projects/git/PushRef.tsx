@@ -8,7 +8,7 @@ const short = (commit: string) => commit.slice(0, 7);
 type Step = { is: 'idle' } | { is: 'confirm' } | { is: 'working' } | { is: 'said'; sentence: string; pushed?: boolean };
 
 /**
- * **Push a branch or a tag** (GITAPP2g, n; D204, D241 point 2): a press on one of *Yours*' rows, or on a tag just made, that says what
+ * **Push a branch or a tag**: a press on one of *Yours*' rows, or on a tag just made, that says what
  * will move on origin and sends nothing until it is confirmed. The press carries the commit the page showed, so the driver refuses a ref
  * that has moved. A branch moves only to its own commit, never forced; a tag is a Dangerous push, which the place's Dangerous value
  * decides at the door, and the confirmation says which. A push has no *Undo*: Daoris never deletes a ref on origin.

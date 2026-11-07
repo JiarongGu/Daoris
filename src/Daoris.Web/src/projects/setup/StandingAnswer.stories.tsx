@@ -11,7 +11,7 @@ const meta = {
   title: 'Projects/StandingAnswer',
   component: StandingAnswer,
   args: { repository: 'engine', says: null, onSave: () => {} },
-  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  // The main area at its wide width, as the frame gives it.
   decorators: [storyWidths.wide],
 } satisfies Meta<typeof StandingAnswer>;
 export default meta;

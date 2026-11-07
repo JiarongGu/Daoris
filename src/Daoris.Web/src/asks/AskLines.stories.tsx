@@ -6,7 +6,7 @@ import type { AskLine } from '../work/entries';
 import { AskLines } from './AskLines';
 
 // An ask's lines of work, as its page's *sessions* section draws them (`AskPage.tsx`), on their own
-// (STORYGAP1, the UI/UX design §1.2 item 6: no `AskPage` story hands it lines): one line per repository's line of work, its
+// (no `AskPage` story hands it lines): one line per repository's line of work, its
 // parts counted and its leading part's word, each a door into Sessions where Sessions is here; a word the page has none for,
 // as the driver wrote it; at the main area's three widths, in 中文 and dark.
 

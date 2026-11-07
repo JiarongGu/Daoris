@@ -7,7 +7,7 @@ import { chinese } from '../design/storyLanguage';
 import { storyWidths } from '../design/storyWidths';
 import { MapView } from './MapView';
 
-// The Map's empty and failing cases (MAPUX1f; the map UX design §8, §9), each in English and 中文: the service not answering, a
+// The Map's empty and failing cases, each in English and 中文: the service not answering, a
 // workspace with no repository, repositories with no connection, *Which quests* leaving none, every kind hidden, a map drawn that could
 // not be read again, and a code map of one module. The service is a stand-in `fetch` set for the story's lifetime, and what the viewer
 // kept is set the same way.
@@ -69,7 +69,7 @@ type Story = StoryObj<typeof MapView>;
 
 const PAIR = [repository('engine'), repository('game')];
 
-/** The service does not answer, and nothing was read before: the map says it could not be read, and the notice stands. */
+/** The service does not answer, and nothing has been read before: the map says it could not be read, and the notice stands. */
 export const NotRead: Story = { decorators: [served({ registry: [], quests: [], down: ['/api/registry'] }), storyWidths.wide] };
 export const NotReadChinese: Story = { decorators: [served({ registry: [], quests: [], down: ['/api/registry'] }), storyWidths.wide, chinese] };
 

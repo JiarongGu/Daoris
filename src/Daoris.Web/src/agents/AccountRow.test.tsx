@@ -11,7 +11,7 @@ import type { AccountSaid } from '../settings/accounts/accounts';
 import { accountState, type WindowCell } from './agents';
 import { CLAUDE_USE, DOORS, READ, toolsOf } from './agentsFixtures';
 
-// An account's row as a person reads it (ACCTUX1, the 2026-10-07 second opinion's account section): what its agent last said
+// An account's row as a person reads it: what its agent last said
 // is a reading, not metadata, so it is set at the row's own size, its shares in the ink and its times in the soft ink; a key
 // its provider refused says so, with the act that repairs it; and a name that is its identity is said once.
 
@@ -88,7 +88,7 @@ describe('an account’s row (ACCTUX1)', () => {
     expect(screen.queryByLabelText('API key for Claude Code')).toBeNull();
   });
 
-  /** ACCTNAME1's page half: the owner named each account by its email, so the row says that email once. */
+  /** The page half: the owner names each account by its email, so the row says that email once. */
   it('says a name that is its identity once', () => {
     page([{
       name: 'Gmail', displayName: 'You@Example.invalid', home: `${HOME}Gmail`, login: 'in', account: 'you@example.invalid', read: READ,
@@ -105,9 +105,9 @@ const px = (className: string, prefix: string) => {
   return step === undefined ? undefined : Number(step) * 4;
 };
 
-// ACCTUX2, the second opinion's account section: the account view without a pointer. Who signed in sat truncated in a tip on
-// a span no key reaches; why a row cools, or why its key is unchecked or refused, was a tip on hover alone; the columns'
-// names were hidden from a reader with nothing on the rows in their place; and two presses were under the 28 px floor.
+// The account view without a pointer: who signed in is not truncated in a tip on a span no key reaches; why a row
+// cools, or why its key is unchecked or refused, is not a tip on hover alone; the columns' names are not hidden from
+// a reader with nothing on the rows in their place; and no press is under the 28 px floor.
 describe('an account’s row without a pointer (ACCTUX2)', () => {
   beforeEach(() => i18n.changeLanguage('en'));
   afterEach(cleanup);
@@ -161,7 +161,7 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     expect(within(row).queryByRole('button', { name: /More for/ })).toBeNull();
   });
 
-  /** Whether the hold is the agent's reset or Daoris's default was the time's tip alone. */
+  /** Whether the hold is the agent's reset or Daoris's default is said in words, not in the time's tip alone. */
   it('says why an account cools behind a press a keyboard reaches, in words', async () => {
     const until = new Date(Date.now() + 48 * 60_000).toISOString();
     const cooling = { until, stated: false, window: null, seen: READ, assumedZone: false, notBelieved: false };
@@ -206,7 +206,7 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
     expect(screen.queryByRole('button', { name: /state$/ })).toBeNull();
   });
 
-  /** The platform language §6: a target of 28 px at least. The terms' line was its text's height, about 16 px. */
+  /** The platform language §6: a target of 28 px at least. The terms' line's text alone is about 16 px high. */
   it('gives the terms’ line a target of 28 px at least', () => {
     page([{ name: 'account-1', home: `${HOME}account-1`, login: 'in', account: 'you@example.invalid', read: READ }]);
     const terms = screen.getByRole('button', { name: "Each account's own plan and terms" });
@@ -214,8 +214,8 @@ describe('an account’s row without a pointer (ACCTUX2)', () => {
   });
 });
 
-// ACCTUX4, the second opinion's account section as adopted: what an account's agent last said was one sentence of every window,
-// which compared badly across windows and makers. Each window is now a cell of its own in the same place on every row: its
+// What an account's agent last said is not one sentence of every window, which compares badly across windows and
+// makers. Each window is a cell of its own in the same place on every row: its
 // exact share, a thin bar of that window's own allowance, its reset and its own reading's age; one its agent did not report
 // is unknown in words, with no bar and never 0%.
 describe('an account’s windows, a cell each (ACCTUX4)', () => {

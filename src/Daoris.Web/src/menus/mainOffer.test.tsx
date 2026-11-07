@@ -83,7 +83,7 @@ describe('the main area\'s offer', () => {
 });
 
 /**
- * D152 §2: a record's act in the menu is enabled exactly when the record's header offers it. The quest page's header is
+ * A record's act in the menu is enabled exactly when the record's header offers it. The quest page's header is
  * its loud buttons and what its ⋯ holds; its offer is what the Run menu's *This quest* reads.
  */
 describe('a quest\'s header and its offer', () => {

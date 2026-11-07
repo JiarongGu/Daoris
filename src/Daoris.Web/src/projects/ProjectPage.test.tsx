@@ -80,7 +80,7 @@ describe("a repository's tabs", () => {
   });
 });
 
-// UX6h1: Git is inside Repositories, as a repository's Branches and History tabs after Details, a shell's
+// Git is inside Repositories, as a repository's Branches and History tabs after Details, a shell's
 // like Setup. Each tab's body is its holder's, which reads only while the tab shows.
 describe("a repository's Branches and History tabs", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

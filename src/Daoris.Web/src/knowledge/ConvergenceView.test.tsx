@@ -5,10 +5,10 @@ import { findingId } from './records';
 import { code } from '../test/code';
 import { chooseRow, knowledgeList, mainArea, modeChoice, pageTitled, showConvergence, switchTo } from '../test/knowledgeViews';
 
-// The view over a stubbed service, like SearchView's: the shapes the endpoint returns, no host. Since FRAME1f the view
+// The view over a stubbed service, like SearchView's: the shapes the endpoint returns, no host. The view
 // is a list pane and a page: the similarity and the findings are the list, and the finding chosen is read in
-// the main area, the service's sentence and then each entry whole, where each entry was the reader drawer. Since UX6i
-//  it is Knowledge's Convergence, held through the place.
+// the main area, the service's sentence and then each entry whole. It is Knowledge's Convergence,
+// held through the place.
 
 const GROUP = {
   method: 'Restatement', similarity: 0.91, repositories: ['engine', 'game'],
@@ -71,8 +71,8 @@ describe('Convergence', () => {
   });
 
   /**
-   * D118 §3d (audit CO4, A2): a finding opens in the main area, where its entries were each a drawer over the side
-   * bar and the panel: the service's sentence first, verbatim, then each entry read whole, as it is written.
+   * A finding opens in the main area, not in a drawer over the side bar and the panel: the service's sentence
+   * first, verbatim, then each entry read whole, as it is written.
    */
   it("reads a finding in the main area: the service's sentence, then each entry whole", async () => {
     vi.stubGlobal('fetch', service());
@@ -89,7 +89,7 @@ describe('Convergence', () => {
     expect(within(page).getByText('Substantially the same words')).toBeInTheDocument();
   });
 
-  /** An entry the index let go since the finding was made says so in its place, and the others still read. */
+  /** An entry the index let go since the finding is made says so in its place, and the others still read. */
   it("says an entry the index no longer holds in its place, and reads the others", async () => {
     delete BODIES['game:.claude/rules/a.md'];
     try {
@@ -104,7 +104,7 @@ describe('Convergence', () => {
     }
   });
 
-  /** D118 §3f (audit CO9): the similarity and the finding chosen are the list's memory, and a relaunch reopens both. */
+  /** The similarity and the finding chosen are the list's memory, and a relaunch reopens both. */
   it('remembers the similarity and the finding chosen, and reopens them', async () => {
     const fetch = service();
     vi.stubGlobal('fetch', fetch);
@@ -122,7 +122,7 @@ describe('Convergence', () => {
     expect(await pageTitled('a')).toBeInTheDocument();
   });
 
-  /** D118 §3b: a finding chosen that the answer no longer holds has gone, at the similarity it was asked at. */
+  /** A finding chosen that the answer no longer holds has gone, at the similarity it is asked at. */
   it('says a finding chosen now has gone once the findings no longer hold it', async () => {
     vi.stubGlobal('fetch', service([]));
     showConvergence({ door: findingId(GROUP) });
@@ -185,7 +185,7 @@ describe('Convergence, looked at on the window (POLISH4)', () => {
     expect(within(knowledgeList()).getByText(/Without an embedding endpoint/)).toBeInTheDocument();
   });
 
-  /** An empty answer was a bare line; an empty state names the fact and offers what changes it. */
+  /** An empty answer is an empty state, not a bare line: it names the fact and offers what changes it. */
   it('says nothing converges as an empty state, and lowers the similarity on a press', async () => {
     vi.stubGlobal('fetch', service([]));
     showConvergence();
@@ -196,8 +196,8 @@ describe('Convergence, looked at on the window (POLISH4)', () => {
   });
 
   /**
-   * 🔴 UX5 U42: at the floor the empty state still said *a lower similarity finds weaker likenesses*
-   * and offered nothing to lower, because nothing lower is offered. At the floor it says so.
+   * 🔴 At the floor the empty state must not say *a lower similarity finds weaker likenesses*
+   * and offer nothing to lower, because nothing lower is offered. At the floor it says so.
    */
   it('says the floor is the floor, rather than inviting a lower similarity it cannot give', async () => {
     vi.stubGlobal('fetch', service([]));

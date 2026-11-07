@@ -2,7 +2,7 @@ import type { TFunction } from 'i18next';
 import type { Ask } from '../data/api';
 import { ago } from '../locales/format';
 
-// The facts line under an ask's title (HEAD2d, D162 §4, the entry-and-heads design §2): where it goes, its age, and the one
+// The facts line under an ask's title: where it goes, its age, and the one
 // live fact. Built here, not in `work/head/headFacts.ts`, which the quest's and the session's heads edit. Pure, so a head is
 // handed its line and every state is a story.
 
@@ -10,8 +10,8 @@ import { ago } from '../locales/format';
 export const LONG_TITLE = 90;
 
 /**
- * An ask's facts, in order: the workspace it goes to, when it was asked, and the live fact: it waits on the person where a
- * go-ahead its sessions asked is unanswered, else the quests it became. Nothing it has nothing to say: an absent fact is
+ * An ask's facts, in order: the workspace it goes to, its age, and the live fact: it waits on the person where a
+ * go-ahead its sessions ask is unanswered, else the quests it became. Nothing it has nothing to say: an absent fact is
  * left out, never a dash.
  */
 export function askFacts(t: TFunction, ask: Ask, flow?: { working: boolean }): string[] {

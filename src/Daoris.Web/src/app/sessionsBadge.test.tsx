@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// The activity bar's places and the bell (BADGEUX1; SESSUX1c, D126 §2.5 before it), the way the application holds them: the whole window over a
-// mocked shell that pushes who needs the person (PUSH1d4: judged in .NET, `AttentionStateSliceTests` holds what is counted),
+// The activity bar's places and the bell, the way the application holds them: the whole window over a
+// mocked shell that pushes who needs the person (judged in .NET, `AttentionStateSliceTests` holds what is counted),
 // since the badge is only drawn where Sessions is, and Sessions is the shell's alone. `App.test.tsx` holds the window
 // in a browser, where there is no Sessions to badge. And Overview's *What needs you* with the quest the driver parked, and its
 // badge, which only a driver says.
@@ -57,7 +57,7 @@ const PARKED: Consideration = {
 };
 
 /**
- * What the shell pushes of the sessions above (PUSH1d4), as .NET judges them: each parked session a row, the teammate's among
+ * What the shell pushes of the sessions above, as .NET judges them: each parked session a row, the teammate's among
  * them; what the Sessions badge counts, this machine's park alone.
  */
 const PARKS: PushedAttention[] = SESSIONS.filter((one) => one.state === 'awaiting-person').map((one) => ({
@@ -80,7 +80,7 @@ const INTEGRATION_WAITS: PushedAttention[] = [
     integration: { wait: 'card', repository: 'engine', branch: 'feature/c', unit: 'u1', tip: 'def5678' },
   },
 ];
-/** INTEGRATE1o part o3: a run held at a quest the receiver declined, as.NET pushes it; its work is the quest below. */
+/** A run held at a quest the receiver declined, as.NET pushes it; its work is the quest below. */
 const DECLINED: PushedAttention = {
   kind: 'request-declined', id: 'r7', since: '2026-10-01T10:00:00Z', workspace: 'default', where: 'engine',
   declined: { node: 'requests', quest: 'q9', to: 'web', work: 'q1' },
@@ -113,7 +113,7 @@ function respond(url: string): Response {
 const WORKING = { 'session:w0rk1ng0': { workspace: 'default' } };
 
 /**
- * The window over a shell that pushes who needs the person (PUSH1d4): its snapshot answers `STATE_SLICE` for the attention slice,
+ * The window over a shell that pushes who needs the person: its snapshot answers `STATE_SLICE` for the attention slice,
  * every other slice keeping its pull. `rows` are the band's, `counted` what waits on the person in Sessions, `working` the sessions
  * the driver runs, each as.NET judged them; `scope` the workspace the window holds, null for every one.
  */
@@ -160,12 +160,12 @@ const figure = (name: string) => within(placeButton(name)).queryByText(/^\d+$/)?
 const runs = (name: string) => placeButton(name).querySelector('[data-running]') !== null;
 const statusBar = () => screen.getByLabelText('state of this machine');
 
-/** The title bar's bell (NOTIFY2b, the notification design §2.1), which counts what Overview's badge counted. */
+/** The title bar's bell, which counts what Overview's badge counts. */
 const bell = () => screen.getByRole('button', { name: /^Notifications/ });
 
 /**
  * The owner, using Daoris, found numbers on the activity bar that counted work no one waited on
- * (Sessions' the sessions the driver runs, SESSBADGE1; Quests' every outstanding quest) drawn like the bell's. A number on a place now
+ * (Sessions' the sessions the driver runs; Quests' every outstanding quest) drawn like the bell's. A number on a place
  * counts only what waits on the person there, the bell's rows whose door opens it, in the window's workspace, so each place's number
  * is the bell's for the same rows; running work is a mark, never a number, said in words in the place's tip.
  */
@@ -287,8 +287,8 @@ const openNotifications = async () => {
 
 /**
  * On 1 October the owner's work stood parked on its failed sessions, and *What needs you* said
- * nothing. It holds the quest the driver's last look parked, after the parked sessions; the bell counts the rows, as Overview's
- * badge did until NOTIFY2b moved the count to the title bar and the rows to *Notifications*; and the row's door opens the quest's
+ * nothing. It holds the quest the driver's last look parked, after the parked sessions; the bell counts the rows, which
+ * live in *Notifications* with the count in the title bar; and the row's door opens the quest's
  * page, where *Try again* is.
  */
 describe("What needs you, on a machine", () => {
@@ -324,7 +324,7 @@ describe("What needs you, on a machine", () => {
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('q1');
   });
 
-  /** The badge counts every row the band lists: an agent's proposal to widen the rules was listed and not counted. */
+  /** The badge counts every row the band lists: an agent's proposal to widen the rules is listed and must be counted. */
   it('counts an agent’s proposal waiting on the person, as the band lists it', async () => {
     const proposal: RuleProposal = {
       id: 'p0000002', state: 'waiting', action: 'add', scope: 'machine', list: 'allow', rule: 'WebFetch',
@@ -454,10 +454,10 @@ describe("The taskbar's count", () => {
   });
 
   /**
-   * AUTONOMY1b3c: a tool call a session holds for the person's answer stands its turn still until they answer, or
+   * A tool call a session holds for the person's answer stands its turn still until they answer, or
    * the bound refuses it, so the badge counts it as the band lists it: the window behind others still says a turn waits on them.
    */
-  /** INTEGRATE1o part o3: a run held at a declined request is one wait, in the bell, the taskbar and the band, with its *Pass over…*. */
+  /** A run held at a declined request is one wait, in the bell, the taskbar and the band, with its *Pass over…*. */
   it('counts a run held at a declined request, lists it with Pass over…, and counts none for a run without one', async () => {
     start([DECLINED], {}, {});
 
@@ -520,7 +520,7 @@ describe("The taskbar's count", () => {
   });
 
   /**
-   * An agent's ask to hand its session over was drawn only on its session's page, and counted nowhere; the
+   * An agent's ask to hand its session over must not be drawn only on its session's page and counted nowhere; the
    * bell and the taskbar count it as the band lists it, in each language.
    */
   it('counts an agent’s ask to hand its session over, as the band lists it', async () => {

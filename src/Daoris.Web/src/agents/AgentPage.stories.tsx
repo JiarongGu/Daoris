@@ -8,7 +8,7 @@ import {
   CODEX_USE, DSH_TOOL, INSTALL_TOOL, INSTALL_USE, ORGS_TOOL, READ, READINGS_TOOL, READINGS_USE, RULES, USAGE,
 } from './agentsFixtures';
 
-// An agent's page (UX7b, D152 §4; first UX6e, D150 §5.2; POOL1c, the account-pool design §4.2) in the main area: the design's
+// An agent's page in the main area: the design's
 // Claude Code, three accounts of Daoris's, one set for every workspace, of which two read signed out and one cools, your own
 // sign-in last with its ⓘ alone, each section folded to its line; what the fold into one set changed, above the rows until
 // *Got it*, at each width, in 中文 and in dark; the install's shape, a row per state with its one act; the add flow's last
@@ -67,7 +67,7 @@ export const ThreeAccountsNarrow: Story = {
 };
 
 /**
- * What the fold into one set changed (POOL1a, D197 point 7; the account-pool design §4.2): one block above the rows while any
+ * What the fold into one set changed: one block above the rows while any
  * of it is unsaid, a line per change of two receipts, and *Got it*, which marks them said by id.
  */
 export const FoldSaid: Story = { args: { use: CLAUDE_POOLED_USE } };
@@ -102,7 +102,7 @@ export const TheInstallNarrow: Story = {
 };
 
 /**
- * The add flow's last step, under the header (the account-pool design §4.1): it joined Daoris's accounts, the email offered
+ * The add flow's last step, under the header: it joined Daoris's accounts, the email offered
  * as its name, and *Done*.
  */
 export const AddedAskingName: Story = {
@@ -114,7 +114,7 @@ export const AddedAskingNameChinese: Story = { args: AddedAskingName.args, decor
 
 /**
  * One email in three organisations and the tool's own sign-in in a fourth: each row says what tells it apart,
- * after the email and once; a name that says both repeats neither, and a plan stands where no organisation was named.
+ * after the email and once; a name that says both repeats neither, and a plan stands where no organisation is named.
  */
 export const OneEmailManyOrganisations: Story = { args: { tool: ORGS_TOOL, use: null, usage: [] } };
 
@@ -142,8 +142,8 @@ export const AtUsage: Story = { args: { part: 'usage' } };
 export const OneAccount: Story = { args: { tool: CODEX_TOOL, use: CODEX_USE, rules: QUIET_RULES, usage: [] } };
 
 /**
- * Codex with no account of Daoris's (D197 point 3; the account-pool design §3, §4.2): your own sign-in's row is its name and its
- * ⓘ alone, no state, no reading, no *Read again* and no ⋯, though a reading of it was kept from before: Daoris never asks it.
+ * Codex with no account of Daoris's: your own sign-in's row is its name and its
+ * ⓘ alone, no state, no reading, no *Read again* and no ⋯, though an earlier reading of it is kept: Daoris never asks it.
  */
 export const OwnSignInNeverAsked: Story = { args: { tool: CODEX_OWN_TOOL, use: CODEX_OWN_USE, rules: QUIET_RULES, usage: [] } };
 
@@ -175,8 +175,7 @@ export const NotInstalledNoInstaller: Story = {
 export const TheSheet: Story = { args: NotInstalled.args };
 
 /**
- * The card speaks for the account's own door, and says one line for each other door whose own-home answer differs (AGENTPROVIDER1 row
- * s-ix o1 to o3): here a plugin's door beside Claude Code that starts in its own home where Claude Code's start is owed an account.
+ * The card speaks for the account's own door, and says one line for each other door whose own-home answer differs: here a plugin's door beside Claude Code that starts in its own home where Claude Code's start is owed an account.
  */
 export const CardDoors: Story = {
   args: {
@@ -203,7 +202,7 @@ export const ApiKey: Story = {
   },
 };
 
-/** A way in a plugin declared (PLUGUI1c2b), *Ways in* opened: *declared by plugin …* is a button, a door to that plugin. */
+/** A way in a plugin declared, *Ways in* opened: *declared by plugin …* is a button, a door to that plugin. */
 export const DeclaredByPlugin: Story = {
   args: {
     tool: { ...CLAUDE_TOOL, doors: CLAUDE_TOOL.doors.map((door) => ({ ...door, plugin: 'acme.gate' })) },
@@ -224,7 +223,7 @@ const dark: Decorator =(Story) => <InTheme theme="dark"><Story /></InTheme>;
  */
 export const Readings: Story = { args: { tool: READINGS_TOOL, use: READINGS_USE, usage: [] } };
 
-/** The same in dark, where the faint ink the readings wore was the hardest to read. */
+/** The same in dark, where the faint ink of the readings is the hardest to read. */
 export const ReadingsDark: Story = { args: Readings.args, decorators: [dark] };
 
 /** The same at the 680 px window's main area, each row stacked, in dark. */
@@ -284,7 +283,7 @@ const explainEach: Story['play'] = async ({ canvasElement }) => {
 
 /**
  * Read without a pointer, at the 680 px window's main area: who signed in said whole beside each name, and each
- * row's explanation opened from its press, where it was a tip on hover alone.
+ * row's explanation opened from its press, not a tip on hover alone.
  */
 export const ReadingsExplainedNarrow: Story = { args: Readings.args, decorators: [narrow], play: explainEach };
 
@@ -301,7 +300,7 @@ export const ReadingsExplainedFloorDark: Story = { args: Readings.args, decorato
 export const TheInstallFloorDark: Story = { args: TheInstall.args, decorators: [atFloor, dark] };
 
 /**
- * A key added asks its name (ACCTUX3, the UX7 design §4.5; the account-pool design §4.1), where it ended in a toast: *Added the
+ * A key added asks its name, not only a toast: *Added the
  * API key …*, that it joined Daoris's accounts, and its name left empty to be called by its handle.
  */
 export const KeyAddedAskingWhere: Story = {

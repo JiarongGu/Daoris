@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { zoomBy, zoomWheel } from '../design/zoom';
 import { frameShortcut } from '../menus/shortcuts';
 
-// The window's zoom, as the window hears it (ZOOM1, the UI/UX design §3.11): the wheel with Ctrl on every Daoris window, and
+// The window's zoom, as the window hears it: the wheel with Ctrl on every Daoris window, and
 // the keys on a window without the menu bar's table. The main window's keys are the table's (View's zoom rows), read by its
 // one key handler; the level itself is `design/zoom.ts`'s.
 

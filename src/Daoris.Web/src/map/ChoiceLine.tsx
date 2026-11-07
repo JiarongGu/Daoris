@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Choice } from './choiceWords';
 
 /**
- * **The choice's line** (MAPUX1b; the map UX design §4): under the drawing, one line names the choice and its first fact, and is the
+ * **The choice's line**: under the drawing, one line names the choice and its first fact, and is the
  * Map's one polite live region. It is said once per choice: the words are taken when the choice changes and held while it stands, so a
  * count or a session changing under it is repainted by the detail and never read out again. With nothing chosen it reads the hint.
  */

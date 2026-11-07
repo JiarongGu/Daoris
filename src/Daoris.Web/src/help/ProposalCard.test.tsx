@@ -227,7 +227,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Go there', 'Dismiss']);
   });
 
-  // ENTRY1d1: no command edits only the registry's row, so a move carries none, and its card is the plain one.
+  // No command edits only the registry's row, so a move carries none, and its card is the plain one.
   it('a move to a workspace says what moves and where, carries no command, with Apply and Not now', async () => {
     const move: HelpProposal = {
       id: 'p13', kind: 'repository', terminal: '', why: 'the person asked to keep engine beside the studio\'s work',
@@ -243,7 +243,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.queryByText(/the same at a terminal/)).not.toBeInTheDocument();
   });
 
-  // SESSUX1h2a: archiving sessions is the generic card, with its command; a session delete is the delete kind's.
+  // Archiving sessions is the generic card, with its command; a session delete is the delete kind's.
   it('a session archive card is the generic one, with the terminal command beside Apply and Not now', async () => {
     const archive: HelpProposal = {
       id: 'p14', kind: 'session', terminal: 'daoris session archive s1 s2', why: 'the person is done with them',
@@ -370,7 +370,7 @@ describe('the kinds that reach every door', () => {
     }
   });
 
-  // INTEGRATE1r part r3 (the integration design §17.7, F42): a graph chosen for a repository whose landing rule declares no gates says so,
+  // A graph chosen for a repository whose landing rule declares no gates says so,
   // each repository by its name as code, the sentence the page's own words (it is no refusal); a cannot is a need, the driver's sentence
   // as sent, since it names the Setup row to run.
   it('says, per repository it reaches, that the version integrates with no gates, in English and in 中文', async () => {
@@ -571,7 +571,7 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(code(LOOKED.terminal))).toBeInTheDocument();
   });
 
-  // LEFT3 b: what the rows do not say, said on the card itself and not only in the look's message.
+  // What the rows do not say, said on the card itself and not only in the look's message.
   const unreadable = 'fatal: Could not read from remote repository.';
   const yesterday = new Date(Date.now() - 26 * 3_600_000).toISOString();
   const OFFLINE: HelpProposal = {
@@ -687,7 +687,7 @@ describe('the kinds that reach every door', () => {
       const runs = within(screen.getByRole('list', { name: '插件会运行什么' }));
       expect(runs.getByText(code('node ${plugin}/hooks.mjs'))).toBeInTheDocument();
       cleanup();
-      // PLUG9 (c) and (d): what an offer needs and what an update changes, the chrome in 中文.
+      // What an offer needs and what an update changes, the chrome in 中文.
       render(<ul><ProposalCard proposal={PLUGIN_OFFER} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText(/^需要：/)).toBeInTheDocument();
       expect(screen.getByText(/^版本：/)).toBeInTheDocument();
@@ -698,7 +698,7 @@ describe('the kinds that reach every door', () => {
       expect(screen.getByText('问道衍提议更新到最新')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '检查更新' })).toBeInTheDocument();
       cleanup();
-      // LEFT3 b: what the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
+      // What the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
       render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(within(screen.getByRole('note', { name: '未获取' })).getByText(unreadable)).toBeInTheDocument();
       expect(within(screen.getByRole('group', { name: '未检查的仓库' })).getByText(/点名其中一个的提议会查看它/)).toBeInTheDocument();

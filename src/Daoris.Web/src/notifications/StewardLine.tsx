@@ -63,15 +63,15 @@ function DeskLine({ request }: { request: DeskRequestNow }) {
 }
 
 /**
- * The steward's line in *Notifications* (STEWARDROLE1b, D209; the steward design §5.3, §5.4, §8): at the head of the presses' group
+ * The steward's line in *Notifications*: at the head of the presses' group
  * beside the standing confirmation's, where a terminal holds the steward or it acted this run. *Steward's terminal · n acts since Daoris
  * started*, opening to the run's acts newest first: each its act in words, its target, its time and the mark *By the steward, on your
- * behalf*, and only while it stands, the owner's own reverse press (§5.4), none for a finish or a Try again. A stop whose quest still
+ * behalf*, and only while it stands, the owner's own reverse press, none for a finish or a Try again. A stop whose quest still
  * waits on a *Try again* is said above them as *Stopped by the steward*, with its press, as *What needs you*'s `steward-stopped` row
  * also says it. **A line, not a row**: no notice per act, so it counts toward no group's count and never the bell's. Who holds the
  * steward is its role's, among the roles.
  *
- * Under it, the steward's desk (STEWARDROLE1c, §6.2; kept across a restart since COMMS1l): what any caller asked the steward to do, *n waiting*, folded until
+ * Under it, the steward's desk (kept across a restart): what any caller asked the steward to do, *n waiting*, folded until
  * opened, each request its caller's words, which grant nothing, and how the steward closed it. It offers no press: the owner's own
  * presses are elsewhere, and a request is the steward's to answer.
  *
@@ -81,7 +81,7 @@ export function StewardLine({ standing, busy = false, refused = null, onReverse 
   standing: StandingConfirmationNow | null;
   /** A press of the line on its way. */
   busy?: boolean;
-  /** What a press was refused with, in words, said under the line. */
+  /** What a press is refused with, in words, said under the line. */
   refused?: string | null;
   /** The owner's reverse press for this act, the route `stewardReverse` names. */
   onReverse: (act: StewardActNow) => void;

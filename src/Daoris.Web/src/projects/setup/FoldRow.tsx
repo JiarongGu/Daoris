@@ -17,7 +17,7 @@ export type FoldSpec = {
 const plain = (text: string) => text.replace(/`/g, '');
 
 /**
- * **The folds of a place's Workflow** (SETUPUX1o; the Setup design's §2.1 and §2.3): *Gates*, *Landing*, *Second opinion*, *Your look*,
+ * **The folds of a place's Workflow**: *Gates*, *Landing*, *Second opinion*, *Your look*,
  * *Landed route*, *The line* and *More* as one wrapped row of names, so the head and the three section lines keep the first screen. Each
  * name opens its rows below the row, and says its values to a reader and in its tip. One opens itself for a need, and again each time a
  * door asks for it.

@@ -1,5 +1,5 @@
 /**
- * **The roles' structure as rows** (COMPANYVIEW1d, the company-view design §3.3 to §3.5, §4's *One read, one function, one owner*):
+ * **The roles' structure as rows**:
  * `ROLE_STRUCTURE`'s answer, the roster, the accounts, the plugins, the lines and each opened repository's workflow, made into the
  * rows of Work, Accounts and By repository, one id each as `map/topology.ts` gives its nodes.
  *
@@ -55,7 +55,7 @@ export type Reason =
 
 export type RoleRef = { id: string; name: Authored; scope: { kind: string; id?: string }; revision: number };
 
-/** A work's rule, as the driver resolved it for the place with where it was set. */
+/** A work's rule, as the driver resolves it for the place with where it is set. */
 export type RuleRead =
   | { kind: 'rule'; consent: string; agents: string[]; concurrency?: number; minutes?: number; source: string }
   | { kind: 'not-a-rule' }
@@ -97,12 +97,12 @@ export type AccountRow = {
   /** The roster's tool this agent is, where the roster has it. */
   tool: string | null;
   known: boolean;
-  /** Whether its binary is there by the last answer; null where it was not asked yet. */
+  /** Whether its binary is there by the last answer; null where it is not asked yet. */
   installed: boolean | null;
   version?: string;
   /** The accounts in the Agents list's phrase; null where the roster does not have the agent. */
   phrase: string | null;
-  /** When any of its accounts was last read. */
+  /** The latest time any of its accounts is read. */
   read: string | null;
   usedBy: UsedBy[];
   /** The plugin that declared it. */

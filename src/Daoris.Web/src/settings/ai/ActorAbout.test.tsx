@@ -40,14 +40,14 @@ describe("Intake's row", () => {
     expect(within(circle).getByText("this machine's default")).toBeInTheDocument();
   });
 
-  /** UX5 U53: the tool's own account by the roster's name for it, as every card on the page says it. */
+  /** The tool's own account by the roster's name for it, as every card on the page says it. */
   it("names the tool's own account as the roster does when no account is set anywhere", () => {
     render(<IntakeAbout agent="claude-code-acp" starts={[intakeStart({ profile: null, profileFrom: 'unset' })]} nameOf={nameOf} />);
 
     expect(screen.getByText('the own account of claude-code')).toBeInTheDocument();
   });
 
-  /** D46 §3: a held intake says why in the driver's sentence, whole: it names what to run. */
+  /** A held intake says why in the driver's sentence, whole: it names what to run. */
   it('shows an intake the driver would hold, in its own words', () => {
     const refusal = "unknown adapter 'gone' — one of: claude-code, stub. An adapter is added deliberately, never guessed.";
     render(<IntakeAbout agent="gone" starts={[intakeStart({ adapter: 'gone', refusal })]} nameOf={nameOf} />);

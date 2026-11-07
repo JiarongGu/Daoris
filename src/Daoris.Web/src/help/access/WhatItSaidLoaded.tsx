@@ -2,12 +2,12 @@ import { useTranslation } from 'react-i18next';
 import type { HelpReceipt } from './wired';
 
 /**
- * What the agent's door said it loaded, beside what the start handed (HELPWIRED1b; the modes design §6): the servers it listed with the
+ * What the agent's door said it loaded, beside what the start handed : the servers it listed with the
  * status it gave each, then where the two disagree, a server handed and not listed, a server listed and not handed by Daoris; and the
  * count of its tools and skills. Read from the init frame the start recorded, never worked out again.
  *
  * @remarks
- * A molecule: the receipt arrives read. A door that sends no init frame (the protocol door) or a start before the frame was kept says
+ * A molecule: the receipt arrives read. A door that sends no init frame (the protocol door) or a start that kept none says
  * so, rather than reading as nothing loaded.
  */
 export function WhatItSaidLoaded({ receipt }: { receipt: HelpReceipt }) {

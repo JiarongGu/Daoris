@@ -2,7 +2,7 @@ import { type GroupFold, groupFolds } from '../../design/groupFolds';
 import { type Diagram, type DiagramNode, placeId } from './roleStructure';
 
 /**
- * **The agents' structure as bands** (CANVAS1c; D224, the canvas design §3.2): one band per place in tree order, this machine, each
+ * **The agents' structure as bands**: one band per place in tree order, this machine, each
  * workspace and its repositories that set something of their own; in each, the roles placed or appointed there, stacked; beside them, once
  * each, the agents their choices name, ordered by where the roles leaning on them stand. Only the *staffed* edges are drawn, role to agent
  * across a gutter; *placed* and *appointed* are what the band says, and stay in each node's description and the list. Pure.

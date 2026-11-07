@@ -6,7 +6,7 @@ import type { PlaceRoleEditor } from './PlaceRoles';
 
 /**
  * **A place's supervisor rules**: the fold under the place's Roles, over the supervisor's rules `ROLES` answers and the
- * one press of the role door. It is drawn once the driver answers the rules; a driver before them shows none. Keyed by the revision it was
+ * one press of the role door. It is drawn once the driver answers the rules; a driver before them shows none. Keyed by the revision it is
  * read at, so a saved or moved set opens as stored.
  */
 export function PlaceSupervisorRules({ place, placeName, editor }: { place: string; placeName: string; editor: PlaceRoleEditor }) {

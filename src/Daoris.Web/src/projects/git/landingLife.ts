@@ -72,16 +72,16 @@ export function landingOf(answer: TraceAnswer | null | undefined, session: strin
 }
 
 /**
- * **A landed branch's landing and clean-up as a flow** (FLOWCHART1c; D186, the flowchart design §2.7): the landing, who accepted it
+ * **A landed branch's landing and clean-up as a flow**: the landing, who accepted it
  * and what let it go, with each later done that moved it on; its push and its pull request; the end each unit it carries reached;
  * the clean-up; the recovery kept.
  *
  * @remarks
  * **Drawn as its records keep it** (trap 19):
- * - *The landing is the branch's*: it names the session it was made for and the units it carries, and each advance is a node of its
+ * - *The landing is the branch's*: it names the session it is made for and the units it carries, and each advance is a node of its
  *   own naming its session, like the others of that session. A driver from before them answers no advances, and the landing says so.
- * - *The push is a fact with no time*: the record keeps that it was pushed, not when, so it hangs from the landing and never after an
- *   advance. *The pull request* is one node, its latest answer and when it was asked, or the ask that failed: a snapshot, never a
+ * - *The push is a fact with no time*: the record keeps that it is pushed, not when, so it hangs from the landing and never after an
+ *   advance. *The pull request* is one node, its latest answer and when it is asked, or the ask that failed: a snapshot, never a
  *   sequence of states, and no edge joins it to the push, since no date orders them.
  * - *The end, the clean-up and the recovery* are the units' (`WORK_STATE` for the branch), one line per unit where it carries several.
  *   An end its pull request proved comes from the pull request; one not reached is a guard from the branch's tip.
@@ -220,7 +220,7 @@ function accepted(t: Translate, by: string | null | undefined, access: string | 
   return t('landing.edge.unknown');
 }
 
-/** The rule it was made under, then what let it go: the review, the second opinion and the named workflow. */
+/** The rule it is made under, then what let it go: the review, the second opinion and the named workflow. */
 function ruleLines(t: Translate, branch: TraceBranch): string[] {
   const rule = branch.rule;
   return [
@@ -243,7 +243,7 @@ function reviewLines(t: Translate, landed: Pick<TraceBranch, 'review' | 'opinion
   ];
 }
 
-/** A unit's end in the milestone's own words: reached and by what proof, or why not, with when where it was reached. */
+/** A unit's end in the milestone's own words: reached and by what proof, or why not, with when, where reached. */
 function endSentence(t: Translate, unit: MilestoneUnit, at: (iso: string) => string): string {
   const { end } = unit;
   switch (end.state) {

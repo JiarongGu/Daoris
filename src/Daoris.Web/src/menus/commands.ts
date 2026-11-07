@@ -5,10 +5,9 @@ import { languages } from '../locales/index';
 import { languageName } from '../locales/languages';
 import { ZOOM_DEFAULT, ZOOM_LEVELS } from '../design/zoom';
 
-// The one table of verbs (UX7a, D152 §2; SURF9 before it). The menus, the palette, the key handler and the *Keyboard
-// shortcuts* drawer read it, so the four never disagree: before it the menus were two lists, the palette a third and the
-// keys three more, which agreed by care. Pure, so "what can I do right now" is a value a test asserts rather than a screen
-// somebody has to arrange.
+// The one table of verbs. The menus, the palette, the key handler and the *Keyboard
+// shortcuts* drawer read it, so the four never disagree. Pure, so "what can I do right now" is a value a test asserts
+// rather than a screen somebody has to arrange.
 
 /** The application's views: one list, the activity bar's. */
 export type View =
@@ -30,20 +29,20 @@ export const VIEWS: readonly { view: View; icon: IconName; keywords?: string; sh
   // A stream never leaves the machine that produced it, so a browser is shown no Sessions.
   { view: 'sessions', icon: 'frameWork', keywords: 'work watch console conversation', shellOnly: true },
   { view: 'quests', icon: 'quests' },
-  // Named Repositories since NAME1b; the view's old name still finds it.
+  // Named Repositories; the view's other name still finds it.
   { view: 'projects', icon: 'projects', keywords: 'projects 项目' },
   // The workspace map: how the repositories are wired, read at a glance.
   { view: 'map', icon: 'map', keywords: 'map topology graph wiring repositories' },
-  // Search and Convergence as one place since UX6i: two views of one index, neither with an act. Each old
+  // Search and Convergence as one place: two views of one index, neither with an act. Each
   // name still finds it.
   { view: 'knowledge', icon: 'knowledge', keywords: 'knowledge search convergence entries findings 知识 搜索 同归' },
-  // A place of its own since UX6e, before Plugins: an agent is a product with accounts, and its accounts are this
+  // A place of its own, before Plugins: an agent is a product with accounts, and its accounts are this
   // machine's, so a browser is shown no Agents, as it is shown no Sessions.
   { view: 'agents', icon: 'account', keywords: 'agents agent account accounts sign in claude codex harness 智能体 账户', shellOnly: true },
-  // A view of its own since PLUGUI1b, after Search: a plugin is this machine's, so a browser
+  // A view of its own, after Search: a plugin is this machine's, so a browser
   // is shown no Plugins, as it is shown no Sessions.
   { view: 'plugins', icon: 'plug', keywords: 'plugins plugin extension kit hook server 插件', shellOnly: true },
-  // Everywhere since D66: a browser has appearance to set, if nothing of a machine.
+  // Everywhere: a browser has appearance to set, if nothing of a machine.
   { view: 'settings', icon: 'settings', keywords: 'settings theme dark light appearance language machine remote harness account' },
 ];
 
@@ -51,7 +50,7 @@ export const VIEWS: readonly { view: View; icon: IconName; keywords?: string; sh
 export type MenuId = 'workspace' | 'edit' | 'view' | 'go' | 'run' | 'terminal' | 'help';
 
 /**
- * The menus in the bar's order, each with its name's key and the letter Alt opens it by (the design §3.3): VS Code's bar
+ * The menus in the bar's order, each with its name's key and the letter Alt opens it by: VS Code's bar
  * on Windows less *Selection*, since Daoris has no editor, with *Workspace* in File's place and job.
  */
 export const MENUS: readonly { id: MenuId; label: string; letter: string; shell?: true }[] = [
@@ -69,7 +68,7 @@ export const MENUS: readonly { id: MenuId; label: string; letter: string; shell?
 export type EditAct = 'undo' | 'redo' | 'cut' | 'copy' | 'paste' | 'selectAll';
 
 /**
- * Who takes a key while the focus is in a field or the terminal (the design §3.4): `everywhere` is the frame's in both,
+ * Who takes a key while the focus is in a field or the terminal: `everywhere` is the frame's in both,
  * as Ctrl+B and Ctrl+J were; `fields` the frame's in a field and the shell's in the terminal (Ctrl+N, a shell's next
  * line); `outside` the field's and the shell's in them (Ctrl+K, Ctrl+F); `native` a field's own, never the frame's.
  */
@@ -115,7 +114,7 @@ export type CommandState = {
    * card takes an answer. Null anywhere else.
    */
   session: { acts: readonly string[]; answer: boolean } | null;
-  /** The quest open on Quests, while it is in front: the acts its page header and body offer (D118 §3b). */
+  /** The quest open on Quests, while it is in front: the acts its page header and body offer. */
   quest: { acts: readonly string[] } | null;
   /** Whether a record is in the main area, whose id *Copy ID* copies. */
   record: boolean;
@@ -130,7 +129,7 @@ export type CommandState = {
   history?: boolean;
   /**
    * Whether a refresh of the index is running: View's *Refresh the index* says so and takes no second press, as the
-   * activity bar's button did before UX6j moved it here.
+   * activity bar's button does.
    */
   refreshing: boolean;
   /** The window's zoom, in percent: what View's zoom may step to, and whether there is a level to go back from. */
@@ -261,14 +260,14 @@ type FamilyRow = {
   run: (doors: CommandDoors) => void;
 };
 
-/** A group's name over it in its menu, and the tip that says what to open while its acts are off (the design §3.3). */
+/** A group's name over it in its menu, and the tip that says what to open while its acts are off. */
 export const GROUP_HEADINGS: Readonly<Record<string, { label: string; tip: string }>> = {
   'run.session': { label: 'menu.run.session', tip: 'menu.run.sessionTip' },
   'run.quest': { label: 'menu.run.quest', tip: 'menu.run.questTip' },
 };
 
 /**
- * The bar's places in order, each with its key: Settings is Workspace's. Knowledge opens in the mode it was left in; its
+ * The bar's places in order, each with its key: Settings is Workspace's. Knowledge opens in the mode it is left in; its
  * Search is Edit's *Search knowledge* too, and its Convergence the palette's *Go to: Convergence*.
  */
 const GO_PLACES: readonly View[] = ['overview', 'sessions', 'quests', 'projects', 'map', 'knowledge', 'agents', 'plugins'];
@@ -318,13 +317,13 @@ export const COMMANDS: readonly CommandSpec[] = [
   {
     // A conversation from its first words: Sessions' composer, with the focus in its prompt. VS Code's
     // *New Text File*: the new thing, so Ctrl+N; the terminal keeps it for a shell's next line. A shell's alone: a
-    // conversation is a process on this machine. It was Run's *Start a session…*, which opened the drawer it replaced.
+    // conversation is a process on this machine.
     id: 'workspace.newConversation', menu: 'workspace', group: 'new', label: 'menu.workspace.newConversation', icon: 'plus',
     keys: [{ combo: 'Ctrl+N', browserKeeps: true }], reach: 'fields', shell: true,
     keywords: 'new conversation chat session start prompt repository 对话 会话', run: (doors) => doors.frame('start'),
   },
   {
-    // Ctrl+N's until NEW1b, which gave it to a new conversation; a browser keeps Ctrl+Shift+N for its own window.
+    // A browser keeps Ctrl+Shift+N for its own window; Ctrl+N is a new conversation's.
     id: 'workspace.newAsk', menu: 'workspace', group: 'new', label: 'menu.workspace.newAsk', icon: 'plus',
     keys: [{ combo: 'Ctrl+Shift+N', browserKeeps: true }], reach: 'fields',
     keywords: 'ask request ticket intake workspace new quest 需求 请求', run: (doors) => doors.ask(),
@@ -343,7 +342,7 @@ export const COMMANDS: readonly CommandSpec[] = [
     keywords: 'workspace setup defaults remote rules 配置', run: (doors) => doors.workspaceSetup(),
   },
   {
-    // One place, two names by what is true (the design §3.2): the pass where the workspace in view is wired, its wiring
+    // One place, two names by what is true: the pass where the workspace in view is wired, its wiring
     // where it is not. With every workspace in scope there is none in view to sync.
     id: 'workspace.sync', menu: 'workspace', group: 'setup', label: (state) => (state.wired ? 'work.sync.now' : 'menu.workspace.wire'),
     icon: 'cloud', shell: true, keywords: 'sync remote wire push pull 同步 远端 接线',
@@ -380,7 +379,7 @@ export const COMMANDS: readonly CommandSpec[] = [
   // View: the palette, the regions, the views, the windows, the look (two families), the index.
   {
     id: 'view.commands', menu: 'view', group: 'commands', label: 'menu.view.commands', icon: 'search',
-    // Ctrl+K is the class's, kept as it was: a field's own inside one. Ctrl+Shift+P is VS Code's; Firefox keeps it.
+    // Ctrl+K is the class's: a field's own inside one. Ctrl+Shift+P is VS Code's; Firefox keeps it.
     keys: [{ combo: 'Ctrl+K', reach: 'outside' }, { combo: 'Ctrl+Shift+P', browserKeeps: true }],
     palette: false, run: (doors) => doors.palette(),
   },
@@ -402,7 +401,7 @@ export const COMMANDS: readonly CommandSpec[] = [
     applies: (state) => state.moved, run: (doors) => doors.reset(),
   },
   {
-    // Everything that comes to the person (NOTIFY2b, the notification design §2.1): shown where it stands, as the bell shows it.
+    // Everything that comes to the person: shown where it stands, as the bell shows it.
     id: 'view.notifications', menu: 'view', group: 'views', label: 'notifications.open', icon: 'bell', shell: true,
     keywords: 'notifications notify bell what needs you confirm press waiting 通知 等你处理 确认', run: (doors) => doors.notifications(),
   },
@@ -411,7 +410,7 @@ export const COMMANDS: readonly CommandSpec[] = [
     keywords: 'timeline history chain 时间线', run: (doors) => doors.frame('timeline'),
   },
   {
-    // Where the attended session's work stands in its workflow (WORKFLOW1c, the workflow design §7).
+    // Where the attended session's work stands in its workflow.
     id: 'view.workflow', menu: 'view', group: 'views', label: 'work.views.workflow', icon: 'workflow', shell: true,
     keywords: 'workflow run steps where stands pull request 工作流 进展', run: (doors) => doors.frame('workflow'),
   },
@@ -427,7 +426,7 @@ export const COMMANDS: readonly CommandSpec[] = [
     id: 'view.browser', menu: 'view', group: 'windows', label: 'work.menu.browser', icon: 'browser', shell: true,
     keywords: 'browser web page sign in login ticket chrome jira', run: (doors) => doors.browser(),
   },
-  // The window's zoom (ZOOM1, the UI/UX design §3.11): VS Code's View › Appearance rows and keys, after the look. The content
+  // The window's zoom: VS Code's View › Appearance rows and keys, after the look. The content
   // scales and the frame keeps its size; each key is the window's wherever the focus is, a field and the terminal included,
   // since neither means anything by it. A shell's alone: a browser zooms its page itself, and keeps the keys.
   {
@@ -447,8 +446,8 @@ export const COMMANDS: readonly CommandSpec[] = [
     applies: (state) => state.zoom !== ZOOM_DEFAULT, run: (doors) => doors.zoom('reset'),
   },
   {
-    // The index's refresh, with the language above it, left the activity bar's foot for here and the palette (UX6j, D150
-    // §2.1): rarely pressed, and each already had two other doors. A browser has it too.
+    // The index's refresh, with the language above it, lives here and in the palette: rarely pressed, and each has two
+    // other doors. A browser has it too.
     id: 'view.refresh', menu: 'view', group: 'index', label: (state) => (state.refreshing ? 'menu.refreshing' : 'menu.refresh'),
     icon: 'refresh', keywords: 'reindex rescan refresh index 刷新 索引', applies: (state) => !state.refreshing,
     run: (doors) => doors.refresh(),
@@ -466,7 +465,7 @@ export const COMMANDS: readonly CommandSpec[] = [
   }),
   {
     // Knowledge's Convergence, the palette's alone: Go's row is the place, and the palette's row is the
-    // door Convergence had while it was a place, under the id it had then, so the machine log still names it.
+    // door to Convergence, so the machine log still names it.
     id: 'go.convergence', menu: 'go', group: 'places', label: 'nav.convergence', title: (label, t) => t('command.goTo', { place: label }),
     icon: 'convergence', paletteOnly: true, keywords: 'convergence converge findings same lesson 同归 知识',
     radio: true, checked: (state) => state.view === 'knowledge' && state.knowledge === 'convergence',
@@ -482,7 +481,7 @@ export const COMMANDS: readonly CommandSpec[] = [
   },
 
   // Run: this session's acts and this quest's, by their owners; then archiving what ended. A new conversation is Workspace's
-  // new thing since NEW1b.
+  // new thing.
   {
     // Answer… is its card's under the header, so it applies where its row's ⋯ offers it.
     id: 'run.session.answer', menu: 'run', group: 'run.session', label: 'work.act.answer', icon: 'answer', shell: true,
@@ -580,7 +579,7 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
     },
   },
   {
-    // Each Settings domain, the palette's alone (the design §3.2); the machine log is Help's, so it is not here twice.
+    // Each Settings domain, the palette's alone; the machine log is Help's, so it is not here twice.
     family: 'workspace.domain', menu: 'workspace', group: 'settings', after: 'workspace.settings',
     rows: (state, t) => state.domains.filter((domain) => domain.id !== 'logs').map((domain) => ({
       id: `workspace.domain:${domain.id}`, label: t(domain.label), title: t('command.settingsAt', { domain: t(domain.label) }),
@@ -598,8 +597,8 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
     })),
   },
   {
-    // View's *Language ▸*. With two languages the palette's row is the switch it always was. The activity bar's own switch
-    // left for these and Settings → Appearance; each remembers the choice as i18n's `daoris.language`.
+    // View's *Language ▸*. With two languages the palette's row is the switch. The activity bar has no switch of its
+    // own: these and Settings → Appearance are the doors; each remembers the choice as i18n's `daoris.language`.
     family: 'view.language', menu: 'view', group: 'look', after: 'view.browser',
     rows: (state, t) => languages.map((language) => ({
       id: `view.language:${language}`, label: languageName(language), title: t('command.language'), submenu: 'menu.language',
@@ -616,8 +615,8 @@ const FAMILIES: readonly (CommandFamily & { after: string })[] = [
     })),
   },
   {
-    // What the Agents menu held besides its agents (the design §3.7), the palette's alone: each is a part of the Agents
-    // place or Overview's, one press under Go there, and a menu named after one place is what D152 retired.
+    // The parts of the Agents place and Overview's, the palette's alone: each is one press under Go there, and a menu
+    // named after one place would repeat it.
     family: 'go.part', menu: 'go', group: 'places', after: 'go.plugins',
     rows: (_, t) => ([
       { id: 'signIn', label: 'command.signIn', icon: 'login', keywords: 'sign in account login add 登录 账户', run: (doors: CommandDoors) => doors.agentPart('accounts') },

@@ -119,7 +119,7 @@ describe("the page's root", () => {
     await waitFor(() => expect(closeSplash).toHaveBeenCalledTimes(1));
     expect(notifyReady).toHaveBeenCalledTimes(1);
 
-    // The reload: the old page gone, and a new one read and mounted from the start.
+    // The reload: the page unmounted, and a fresh one read and mounted from the start.
     cleanup();
     const Second = await freshRoot();
     render(<Second client={new QueryClient({ defaultOptions: { queries: { retry: false } } })} window={null} />);

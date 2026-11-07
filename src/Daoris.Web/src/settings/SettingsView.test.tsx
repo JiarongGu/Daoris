@@ -68,7 +68,7 @@ describe('SettingsView in a browser', () => {
 
   /**
    * A browser is never offered a machine's domain: not a disabled one, none. A domain it
-   * was asked for that it cannot show, one a shell remembered, opens on Appearance.
+   * is asked for that it cannot show, one a shell remembered, opens on Appearance.
    */
   it('offers only what a browser may know, and opens a machine domain on Appearance', async () => {
     view('driver');
@@ -144,7 +144,7 @@ describe("Settings' list pane and main area", () => {
     expect(edge).toHaveAttribute('aria-valuemax', '320');
   });
 
-  /** D47 §4: absent, never disabled, and said where the absence is — beneath the domains a browser is offered. */
+  /** Absent, never disabled, and said where the absence is — beneath the domains a browser is offered. */
   it('says beneath its domains that a machine\'s own settings are on the desktop', () => {
     view('appearance');
 
@@ -164,7 +164,7 @@ describe("Settings' list pane and main area", () => {
   });
 
   /**
-   * D118 §3a: where the domain would fall below its 400 px floor beside it, the list is a strip by itself,
+   * Where the domain would fall below its 400 px floor beside it, the list is a strip by itself,
    * and its open lays the list over the main area — Settings' list is its only way in, so a strip that
    * offered no open would leave the view out of reach. A choice closes it.
    */
@@ -199,7 +199,7 @@ describe("Settings' list pane and main area", () => {
 
   /**
    * A domain chosen opens at its top: the main area is drawn anew for it, so the next domain does not open
-   * at the scroll the last one was left at.
+   * at the scroll the last one is left at.
    */
   it('opens a domain chosen at its top, in a main area drawn anew', async () => {
     view('appearance', <Held />);

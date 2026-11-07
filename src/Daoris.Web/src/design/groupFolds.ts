@@ -2,12 +2,12 @@ import type { EdgeStyle } from './flowLayout';
 import { WHOLE_MOST } from './flowFolds';
 
 /**
- * **A drawing of places too large to show whole** (COMPANYVIEW1f; the company-view design §4, *Legible at size*): past 24 nodes, each
+ * **A drawing of places too large to show whole**: past 24 nodes, each
  * group of nodes (a workspace and its repositories) folds to one node, as a pure function of the nodes' groups, the edges and which
  * folds the person opened. `flowFolds.ts` folds a process by its stacks, settled stretches and focus; places have none of those.
  *
  * @remarks
- * A fold keeps its boundary, as a flow's does (the flowchart design §3.6): every edge across it is drawn to the fold under its own
+ * A fold keeps its boundary, as a flow's does: every edge across it is drawn to the fold under its own
  * id, so a layout merges those of one style and one other end into one path and counts them; an edge between two members is said in
  * the fold's description. Nothing is drawn smaller to fit.
  */

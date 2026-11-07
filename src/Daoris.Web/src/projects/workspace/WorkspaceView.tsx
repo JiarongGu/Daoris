@@ -82,7 +82,7 @@ export function WorkspaceView({
   onOpenRepository: (repository: string) => void;
   /** Open a repository's page at its Workflow tab: the door from a repository that sets rules of its own. */
   onOpenRepositoryWorkflow?: (repository: string) => void;
-  /** Open a branch's page on its repository's, whose way back is its Branches (UX6h3b): a branch's name in Branches. */
+  /** Open a branch's page on its repository's, whose way back is its Branches: a branch's name in Branches. */
   onOpenBranch?: (repository: string, branch: string) => void;
   /** Open a repository's page at its History: its line's row in Branches. */
   onOpenRepositoryHistory?: (repository: string) => void;
@@ -223,8 +223,8 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
 }
 
 /**
- * Branches: each repository's branches by kind, a group per repository (UX6h2b2, the built-in Git design §2.2), then the
- * clean-up and bringing up to date, moved from Settings → Workspace. The clean-up lists this workspace's
+ * Branches: each repository's branches by kind, a group per repository, then the
+ * clean-up and bringing up to date. The clean-up lists this workspace's
  * session branches, and its press removes only what it listed. A look reaches the network as the person, so it is asked by
  * its own press.
  *
@@ -232,17 +232,17 @@ function DetailsPart({ workspace, repositories, notify, onOpenRepository, onOpen
  * **The groups are Git's reads** (`WorkspaceBranchGroups`): read while the tab shows, each heading the door to its
  * repository's page, as Details' names are.
  *
- * **The repositories apart are said once** (UX6h2b3): the groups' fold is the one include, held here and handed to the groups
+ * **The repositories apart are said once**: the groups' fold is the one include, held here and handed to the groups
  * and to *Updates*, which draws no list apart of its own; its look takes what holds Daoris's branches and what the fold included.
  *
  * **Everything here is this workspace's**. The clean-up's list and the machine's reading of which
  * checkouts hold Daoris's branches are the machine's answers, read once for every page, and filtered to it. The look and
  * the press are asked for it, so the driver fetches and judges its checkouts alone, and what the look leaves apart is
- * its own. The rows are filtered again, so a host before BRSCOPE1, whose look is the machine's, still shows only its own.
+ * its own. The rows are filtered again, so a host whose look is the machine's still shows only its own.
  */
 function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpenBranch, onOpenHistory }: {
   workspace: string;
-  /** The workspace's repositories, by name: the recoveries kept for them are listed beneath what was cleaned up. */
+  /** The workspace's repositories, by name: the recoveries kept for them are listed beneath what is cleaned up. */
   repositories: string[];
   notify: Notify;
   onOpenRepository: (repository: string) => void;
@@ -251,7 +251,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
 }) {
   const { t } = useTranslation();
   const plan = useSweepPlan();
-  // The person's *Look* (PUSH1c4b): one press of `SWEEP_PLAN`, the occasion its pull-request asks are made at; what it
+  // The person's *Look*: one press of `SWEEP_PLAN`, the occasion its pull-request asks are made at; what it
   // heard reaches the list as the shell's push where it pushes one, and as its answer where the list is pulled.
   const look = useSweepLook();
   const sweep = useSweep();
@@ -274,7 +274,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
   const landings = useSessions(null, true, Boolean(tidiedLines?.some((line) => line.event === 'branch.tidied' && !line.data.branch && line.data.session)));
   const titles = Object.fromEntries((landings.data ?? []).map((session) => [session.id, sessionTitle(session)]));
   useErrorNotify(plan.error, notify);
-  // A look the page stopped waiting for is said in the section, where it was asked; every other failure is the
+  // A look the page stopped waiting for is said in the section, where it is asked; every other failure is the
   // driver's own sentence, in a toast.
   useErrorNotify(stoppedWaiting(syncPlan.error) ? null : syncPlan.error, notify);
   const looked = syncPlan.data;
@@ -284,7 +284,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
     : undefined;
   const answered = looked && Array.isArray(looked.lines) && Array.isArray(looked.rebases) && Array.isArray(looked.deletes);
 
-  // The groups' fold is the one include (UX6h2b3): what it included is drawn there and taken by the next look below.
+  // The groups' fold is the one include: what it included is drawn there and taken by the next look below.
   const inclusion = useInclusion();
   const included = [...inclusion.included];
 
@@ -292,7 +292,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
     <InclusionContext.Provider value={inclusion}>
       <WorkspaceBranchGroups workspace={workspace} onOpenRepository={onOpenRepository} onOpenBranch={onOpenBranch} onOpenHistory={onOpenHistory} />
       <WorkspaceTidied lines={tidiedLines} titles={titles} units={workState.data?.units} />
-      {/* What Daoris keeps for recovery that no unit names (RECOVERYVIEW1): the answer is none. */}
+      {/* What Daoris keeps for recovery that no unit names: the answer is none. */}
       <WorkspaceRecoveries recoveries={workState.data?.recovery} repositories={repositories} onDrop={(groups) => dropRecoveries.mutateAsync(groups)} />
       {/* The card's spacing is this container's, as the sections above space themselves (R1): a card has no margin of its own. */}
       <div className="pt-4">
@@ -353,7 +353,7 @@ function BranchesPart({ workspace, repositories, notify, onOpenRepository, onOpe
 }
 
 /**
- * Workflow (WORKFLOW1b, the workflow design §6.1): the workspace's Current, read only while the tab shows, as
+ * Workflow: the workspace's Current, read only while the tab shows, as
  * `daoris workflow show --workspace` reads it. A refusal is said in its place, since the tab is the answer's whole
  * page; each step's door opens Setup at its defaults, and a repository that sets rules of its own opens at its own.
  */
@@ -378,8 +378,8 @@ function WorkflowPart({ workspace, onSetup, onOpenRepository }: {
 }
 
 /**
- * This machine's wiring of a workspace to a remote and the presses that change it (D48 §5, `daoris remote add|remove`): *Wire* and *Unwire*,
- * each said as the toast Settings' cards said it. Null until `remotes.json` is answered. Held once, for Details' Remote row and the old tab's.
+ * This machine's wiring of a workspace to a remote and the presses that change it (`daoris remote add|remove`): *Wire* and *Unwire*,
+ * each said as the toast Settings' cards say it. Null until `remotes.json` is answered. Held once, for Details' Remote row.
  */
 function useWorkspaceWiring(workspace: string, notify: Notify) {
   const { t } = useTranslation();
@@ -393,8 +393,8 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
     fromEnvironment: map.fromEnvironment,
     onWire: (url, key, done) => wire.mutate({ workspace, url, key }, {
       onSuccess: (wiringState) => {
-        // "Wired" and "in effect" come apart only here: with the environment pair set no loader reads the file (D48
-        // §5), so the sentence says what happened, by the answer's own flag.
+        // "Wired" and "in effect" come apart only here: with the environment pair set no loader reads the file,
+        // so the sentence says what happened, by the answer's own flag.
         notify(t(wiringState.fromEnvironment ? 'settings.wiring.wiredButOverridden' : 'settings.wiring.wired', { workspace }));
         // The key never lingers in the form once it has landed in the file.
         done();
@@ -413,8 +413,8 @@ function useWorkspaceWiring(workspace: string, notify: Notify) {
  * Setup: its defaults and its remote and rules, each from the answer the driver
  * gives every door and each change said as the toast Settings' cards said it.
  *
- * The Agents place's: a workspace's page there draws `rows="sessions"` under its Sessions (AGENTSPLACE1f, with its rules and the machines
- * its remote counts undeclared, SETUPUX1v) and `rows="defaults"` under its Workflow. The remote's wiring is a row of Details.
+ * The Agents place's: a workspace's page there draws `rows="sessions"` under its Sessions (with its rules and the machines
+ * its remote counts undeclared) and `rows="defaults"` under its Workflow. The remote's wiring is a row of Details.
  */
 export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }: {
   workspace: string;
@@ -428,7 +428,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
   const driver = useDriver();
   const across = useAcross();
   const rules = useRules();
-  // FABRIC-CLOSE1i2: the machines its remote counts undeclared, as the last pass heard them, and the person's retirement of one. The pass
+  // The machines its remote counts undeclared, as the last pass heard them, and the person's retirement of one. The pass
   // after it hears the remote for itself, and its end pushes where the circle stands to every window.
   const standing = useSyncStanding(workspace);
   const retire = useRetireMachine();
@@ -531,7 +531,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
           onError,
         }),
       },
-      // An answer without LANG1c carries no table, and nothing is offered rather than a field whose save is refused.
+      // An answer without a language table carries none, and nothing is offered rather than a field whose save is refused.
       language: state && Array.isArray(table)
         ? {
             set: ofWorkspace(state.workspaceLanguages)?.language,
@@ -547,7 +547,7 @@ export function WorkspaceSetupPart({ workspace, notify, open, rows, onOpenGit }:
             }),
           }
         : null,
-      // An answer without READ1 carries no reading across, and nothing is offered.
+      // An answer without a reading across carries none, and nothing is offered.
       read: state && Array.isArray(across.data?.repositories)
         ? {
             set: ofWorkspace(state.workspaceReadAcross)?.read,

@@ -8,7 +8,7 @@ import { Tip } from './Tip';
 export const DOT_TONE: Record<string, { mark: string; word: string }> = {
   live: { mark: 'bg-accent motion-safe:animate-pulse', word: 'text-accent' },
   // Waiting on a person is the status palette's waiting hue, the one `WaitingCard` and the map wear.
-  // It wore declined's red, and a session waiting on its person read as one that had failed (UX5 U1).
+  // Declined's red would read a session waiting on its person as one that had failed.
   parked: { mark: 'bg-st-open', word: 'text-ink-open' },
   // A failure is an outcome, and red is its hue: a tool call that failed, never a session's liveness.
   failed: { mark: 'bg-st-declined', word: 'text-ink-danger' },
@@ -16,13 +16,13 @@ export const DOT_TONE: Record<string, { mark: string; word: string }> = {
   // green put a success mark beside a failed session in the rail. The pill beside it names the outcome.
   ended: { mark: 'bg-ink-faint', word: 'text-ink-soft' },
   idle: { mark: 'bg-line', word: 'text-ink-faint' },
-  // A fact's mark (the UI/UX design §4, MILESTONEUX1): what is reached or kept wears done's hue, the one the status palette's
+  // A fact's mark: what is reached or kept wears done's hue, the one the status palette's
   // done already is; what waits on another is a neutral, neither the person's open hue nor an outcome's.
   done: { mark: 'bg-st-done', word: 'text-ink-done' },
   waits: { mark: 'bg-ink-soft', word: 'text-ink-soft' },
-  // Work under way at a place of the activity bar (BADGEUX1, the UI/UX design §3.10): taken's hue, the status palette's *in progress*,
+  // Work under way at a place of the activity bar: taken's hue, the status palette's *in progress*,
   // which a working session's pill and a taken quest's wear. Not done's green, an outcome's, and not the accent, which reads as open's
-  // amber at badge size beside a wait's number (UX5 U24); still, since it stands for as long as the work runs.
+  // amber at badge size beside a wait's number; still, since it stands for as long as the work runs.
   running: { mark: 'bg-st-taken', word: 'text-ink-taken' },
 };
 
@@ -56,14 +56,14 @@ export function Dot({ tone = 'idle', label, className }: {
  */
 export function DotMark({ tone = 'idle', className, ...data }: {
   tone?: keyof typeof DOT_TONE; className?: string;
-  /** A mark a test or a measure finds it by (`data-running`, BADGEUX1). */
+  /** A mark a test or a measure finds it by (`data-running`). */
   [attribute: `data-${string}`]: string | undefined;
 }) {
   return <span aria-hidden {...data} className={cn('inline-block size-1.5 shrink-0 rounded-full', DOT_TONE[tone].mark, className)} />;
 }
 
 /**
- * One item on a list closed to its strip (FRAME6's session strip row, made general by D118 §5): the first
+ * One item on a list closed to its strip: the first
  * character of its name, or the letters it is given, and its mark, one press away. What it is and how it stands are its accessible
  * name and its tip, since the strip has no room for the words and a mark is never hue alone.
  *
@@ -183,7 +183,7 @@ export function MonoWell({ text, label, live = false, dropped = 0, tall = false,
  * **A pair with no value is absent, never blank.** On a session record every absence means something
  * real — no profile means the harness's own configuration home, no version means the record predates
  * the toolchain, no tree means a browser is reading over a remote — and a dash in the value slot
- * reads as a bug in all three. The caller says what it knows; this renders what it was given.
+ * reads as a bug in all three. The caller says what it knows; this renders what it is given.
  */
 export function MetaLine({ items, className }: {
   items: { label: string; value: ReactNode; mono?: boolean }[]; className?: string;
@@ -206,8 +206,8 @@ export function MetaLine({ items, className }: {
 
 /**
  * A path or a URL that may have to wrap: it breaks after a separator, and inside a name only when
- * that one name is wider than the line. `break-all` broke anywhere, so a session's tree read
- * `family\g` over `ame` (UX5 U8). The text is unchanged: a `<wbr>` adds a place to break and no
+ * that one name is wider than the line. `break-all` breaks anywhere, so a session's tree would read
+ * `family\g` over `ame`. The text is unchanged: a `<wbr>` adds a place to break and no
  * character, so a copy is still the path.
  */
 export function PathText({ path, className }: { path: string; className?: string }) {

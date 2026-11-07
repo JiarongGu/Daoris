@@ -32,10 +32,10 @@ export function roleIdFor(name: string, work: string, taken: readonly string[]):
   return id;
 }
 
-/** The roles whose running conversation goes on with the next choice at its agent's limit (D205 §3.5(e)). */
+/** The roles whose running conversation goes on with the next choice at its agent's limit. */
 const CONVERSING = new Set(['ask-daoris', 'chat']);
 
-/** The work a role may be off for, and an actor's own words for off (D205 §2.1: they keep their cards' words on the folded rows). */
+/** The work a role may be off for, and an actor's own words for off (they keep their cards' words on the folded rows). */
 const OFF_WORKS = new Set(['intake', 'ask-daoris']);
 const OFF_WORDS: Record<string, string> = { intake: 'settings.ai.intake.off', 'ask-daoris': 'settings.ai.helper.off' };
 

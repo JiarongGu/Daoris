@@ -3,7 +3,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // The Driver domain in SHELL mode: where this machine's Daoris lives and the driver's dials over
-// `driver.json`. Moved from `shell.test.tsx` with MOD4: tests follow their code.
+// `driver.json`.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -73,7 +73,7 @@ describe('the driver domain', () => {
     const access = within(await screen.findByRole('region', { name: "Sessions' access" }));
     const row = (label: string) => access.getAllByText(label, { selector: 'span' })[0]!.closest('[data-setting-row]') as HTMLElement;
 
-    // Its lead paragraph is its title's ⓘ (ACCESSASK1, the UI/UX design §3.3): the reason one press away, the rows first.
+    // Its lead paragraph is its title's ⓘ: the reason one press away, the rows first.
     expect(access.getByRole('heading', { name: /Sessions' access/ })).toContainElement(
       access.getByRole('note', { name: /This machine's default, for every workspace and repository that sets none of its own/ }));
     expect(access.queryByText(/This machine's default/, { selector: 'p' })).toBeNull();

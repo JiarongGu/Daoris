@@ -11,7 +11,7 @@ const render = (node: ReactElement) => {
   return { ...drawn, rerender: (next: ReactElement) => drawn.rerender(<Tooltip.Provider>{next}</Tooltip.Provider>) };
 };
 
-// The title bar's *Notifications* (NOTIFY2b, the notification design §2.1, §3.3, Fable's F1.1): a bell counting what needs the person
+// The title bar's *Notifications*: a bell counting what needs the person
 // in open's hue, and, while any press waits unshown, the presses' own count in the warning hue; its name says which.
 
 describe("the title bar's bell", () => {

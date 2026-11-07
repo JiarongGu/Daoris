@@ -27,7 +27,7 @@ const unknown = (error: unknown) => (error as { code?: unknown } | null)?.code =
 const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
 
 /**
- * A catalogue as an older or a stranger shell may answer it, read defensively (SES1's reason): a field it never sent is
+ * A catalogue as an older or a stranger shell may answer it, read defensively: a field it never sent is
  * an empty list, never a blank page.
  */
 /** What a plugin hands Ask Daoris, each server with what Ask Daoris may call on it; none where the answer has none. */
@@ -113,8 +113,7 @@ function offersOf(raw: unknown): OfferShown[] {
  * the driver for nothing until the view is in front (`active`).
  *
  * **What the page holds lives as long as the application**: a trial's report, an update's plan, *Remove…*'s ask. A
- * trial's report therefore stays on its plugin's page across a change of view, until Daoris closes; PLUGUI1g keeps it
- * on the machine.
+ * trial's report therefore stays on its plugin's page across a change of view, until Daoris closes.
  *
  * **Every act has its terminal twin**, named at the page's foot: `daoris plugin enable|disable|update|remove`,
  * `daoris plugin add --offer`, and `daoris plugin new|try`.
@@ -126,7 +125,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   chosen: string | null;
   onChoose: (item: string | null) => void;
   notify: Notify;
-  /** Ask Daoris, opened on a first message (SETUP1b's `askSetup`); absent where there is no Ask Daoris. */
+  /** Ask Daoris, opened on a first message (`askSetup`); absent where there is no Ask Daoris. */
   onAsk?: (message: string) => void;
 }): ViewLayout {
   const { t, i18n } = useTranslation();
@@ -147,7 +146,7 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
   const [asking, setAsking] = useState<string | null>(null);
   const [kit, setKit] = useState<'make' | 'try' | null>(null);
 
-  // An error keeps the last answer and is said once, while the view is in front (D118 §3h).
+  // An error keeps the last answer and is said once, while the view is in front.
   useErrorNotify(active ? catalog.error : null, notify);
 
   const answered = Array.isArray(catalog.data?.plugins);
@@ -180,12 +179,12 @@ export function usePluginsView({ active, chosen, onChoose, notify, onAsk }: {
     onSuccess: () => notify(t(action === 'enable' ? 'plugin.enabled' : 'plugin.disabled', { id })),
     onError: failed,
   });
-  // HELPPLUG1a's tightening (D170's note): the person's approval of what a server offers Ask Daoris; the list is asked again
-  // by the route's STATE_CHANGED, as a switch is. HELPPLUG1c: an approval carries the writes the person ticked.
+  // The person's approval of what a server offers Ask Daoris; the list is asked again
+  // by the route's STATE_CHANGED, as a switch is. An approval carries the writes the person ticked.
   const helpOne = (id: string, server: string, action: HelpPress, writes: string[]) =>
     act.mutate(action === 'help-approve' ? { id, action, server, writes } : { id, action, server }, { onError: failed });
-  // A refusal is said inside the ask, where *Remove plugin* was pressed (UXFIX2b1), not in a toast; a plugin the driver no
-  // longer holds is the exception, since the page itself then says it has gone.
+  // A refusal is said inside the ask, where *Remove plugin* is pressed, not in a toast; a plugin the driver does not
+  // hold any more is the exception, since the page itself then says it has gone.
   const remove = (id: string, answered: Answered) => act.mutate({ id, action: 'remove' }, {
     onSuccess: (result) => {
       notify(t(result.data ? 'plugin.removedKept' : 'plugin.removed', { id, data: result.data ?? '' }));

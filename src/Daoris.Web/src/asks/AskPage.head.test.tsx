@@ -10,7 +10,7 @@ import { PAUSABLE_ASK, PAUSED_ASK } from '../work/pausing/pausingFixtures';
 import { AskPage } from './AskPage';
 import { LONG_ASK, PUBLISHED, SHORT_TITLED, WITH_GO_AHEADS } from './fixtures';
 
-// An ask's head as a quest's (HEAD2d, D162 §4, the entry-and-heads design §0 and §2): its state leads, its title is
+// An ask's head as a quest's: its state leads, its title is
 // the request's first line on two lines at most, one line of facts says where it goes, its age and the live fact, its
 // primary act is drawn and the rest are in its ⋯ with its id, and *View full request* reads what the title cut.
 

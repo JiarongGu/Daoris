@@ -64,7 +64,7 @@ export const FirstNarrow: Story = { ...First, decorators: [storyWidths.narrow] }
 export const FirstChinese: Story = { ...First, decorators: [chinese] };
 export const FirstDark: Story = { ...First, decorators: [dark] };
 
-/** Its policy was set for other choices: its fields kept, the role running in order until saved again. */
+/** Its policy is set for other choices: its fields kept, the role running in order until saved again. */
 const STALE: Editing = { ...BASE, policy: { ...BASE.policy!, state: 'stale', why: 'its choices changed' } };
 export const Stale: Story = { args: { editing: STALE } };
 export const StaleHalf: Story = { args: { editing: STALE }, decorators: [storyWidths.half] };
@@ -72,7 +72,7 @@ export const StaleNarrow: Story = { args: { editing: STALE }, decorators: [story
 export const StaleChinese: Story = { args: { editing: STALE }, decorators: [chinese] };
 export const StaleDark: Story = { args: { editing: STALE }, decorators: [dark] };
 
-/** The policy changed since it was read: the driver's sentence under Save, the draft kept. */
+/** The policy changes after the page reads it: the driver's sentence under Save, the draft kept. */
 const REFUSED = { refused: 'the policy changed since you read it' };
 export const Refused: Story = { args: REFUSED };
 export const RefusedHalf: Story = { args: REFUSED, decorators: [storyWidths.half] };

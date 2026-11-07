@@ -6,7 +6,7 @@ import '../../locales/i18n';
 import { GitHosts, GitRemotes, type GitRemoteShown } from './GitRemotes';
 import { DEPLOY, PERSONAL, WORK } from './gitFixtures';
 
-// A repository's *Git remote* and a workspace's *Git* on their Setup (GITAUTH1e, the git-auth design §7.3), drawn from props.
+// A repository's *Git remote* and a workspace's *Git* on their Setup, drawn from props.
 
 const ORIGIN: GitRemoteShown = {
   name: 'origin', address: 'github.com:org-a/engine', host: 'github.com', way: 'ssh', serves: 'identity', identity: WORK.id, label: 'Work',
@@ -84,7 +84,7 @@ describe('a repository\'s git remotes', () => {
     await userEvent.click(await screen.findByRole('option', { name: 'Own sign-ins' }));
     await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
 
-    // The choice is as it was, so there is nothing to send.
+    // The choice is unchanged, so there is nothing to send.
     expect(screen.getByRole('button', { name: 'Use this' })).toBeDisabled();
     expect(use).not.toHaveBeenCalled();
   });

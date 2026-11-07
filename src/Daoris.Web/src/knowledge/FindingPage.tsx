@@ -10,7 +10,7 @@ import { type EntryReading, findingTitle } from './records';
  * **A finding's page**: Convergence's main area, the finding chosen in its list. Its header is its
  * entries' titles, how alike they are, what kind of likeness, and the repositories that reached it; then **the
  * service's sentence**, verbatim; then **each entry read whole**, as it is written, so the two are read side by side
- * on one page where each was a drawer of its own (audit CO4).
+ * on one page.
  *
  * @remarks
  * **A molecule**: the finding and each entry's reading arrive, and the page holds nothing.
@@ -61,7 +61,7 @@ export function FindingPage({ finding, readings }: {
 }
 
 /**
- * Convergence's main area with no finding to read (D118 §3b): **nothing chosen** says how to choose; **gone** says the
+ * Convergence's main area with no finding to read: **nothing chosen** says how to choose; **gone** says the
  * finding chosen is not among the findings at this similarity; **loading** is skeleton rows, never the empty state; and
  * a comparison that never answered says its sentence in place.
  */

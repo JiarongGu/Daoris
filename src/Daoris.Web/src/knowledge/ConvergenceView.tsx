@@ -13,7 +13,7 @@ import type { ViewLayout } from '../work/frame/ViewFrame';
 /**
  * **The Convergence view**: what it hands the frame, its list pane and its main area.
  * The list is the similarity, then the findings; the main area is the finding chosen, the service's sentence and then
- * its entries read whole, where each entry was the reader drawer over the side bar and the panel (audit CO4). The
+ * its entries read whole. The
  * knowledge half's lead view: where two repositories reached the same conclusion independently, to read and decide.
  *
  * @remarks
@@ -21,7 +21,7 @@ import type { ViewLayout } from '../work/frame/ViewFrame';
  * holds it on every view, and it asks the service nothing until it is in front: a comparison over a real index takes
  * seconds, and nobody on another view asked for one.
  *
- * **What it remembers is its list's** (`listPanes.ts`, §3f): the finding chosen, by its entries (`findingId`), and the
+ * **What it remembers is its list's** (`listPanes.ts`): the finding chosen, by its entries (`findingId`), and the
  * similarity, once it has held still. The suggestion is the SERVICE's sentence, verbatim: a command to run where the
  * file lives, never a button that applies it.
  */
@@ -47,7 +47,7 @@ export function useConvergenceView({ active, chosen, onChoose, filters: kept, on
     if (debounced !== remembered) onFilters(debounced === convergenceFilters({}).threshold ? null : { threshold: debounced });
   }, [debounced, remembered, onFilters]);
 
-  // The last findings are held while a moved similarity's are on their way (platform language §4).
+  // The last findings are held while a moved similarity's are on their way.
   const groups = useConvergence(debounced, { enabled: active, holding: true });
   // The service caps; the client asks for one more than it shows, so "there are more" is a fact.
   const { shown, more } = page(groups.data ?? []);

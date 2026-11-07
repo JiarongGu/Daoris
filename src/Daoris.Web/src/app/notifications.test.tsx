@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// NOTIFY2b (D196 points 3 to 5, the notification design §2.1, §3, §4), the way the application holds it: the whole window over a
+// A terminal's press, the way the application holds it: the whole window over a
 // mocked shell that tells a terminal's press over the confirmation channel and its own event, and a service whose door holds a
 // press of its own. No band under the title bar for a press of either source; the bell counting each press once, in the warning hue
 // with the presses' own count while one waits unshown; the press's toast in the focused window, said once, its *Open* showing the

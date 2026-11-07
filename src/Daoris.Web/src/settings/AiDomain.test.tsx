@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// Daoris's own AI in SHELL mode. Moved from `shell.test.tsx` with MOD4: tests follow their code.
+// Daoris's own AI in SHELL mode.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -25,7 +25,7 @@ import { DRIVER_STATE, respond, show, STATUS, WIRING } from '../test/shellHarnes
 /**
  * Daoris's own AI: the jobs it may use a model for, the tier answering each, and how to change
  * it. The search tier is the service's answer, over HTTP like every browser's; Intake is this machine's `driver.json`, an actor's
- * row since MODELROLE1d, its editor the screen's half of `daoris role set intake`.
+ * row, its editor the screen's half of `daoris role set intake`.
  */
 describe('AI features on Settings', () => {
   const ROSTER = {
@@ -69,7 +69,7 @@ describe('AI features on Settings', () => {
 
     expect(await screen.findByText('lexical only')).toBeTruthy();
     expect(screen.getByText(STATUS.note)).toBeTruthy();
-    // The variable is code, as every row's terminal door is (UX5 U55).
+    // The variable is code, as every row's terminal door is.
     expect(screen.getByText('DAORIS_EMBED_MODEL').tagName).toBe('CODE');
   });
 
@@ -199,10 +199,10 @@ describe('Ask Daoris’s access on Settings', () => {
 });
 
 /**
- * HELPMODE1c2b (D183's note; the modes design §4.1): restricted mode's configured access under Ask Daoris's access, its
+ * Restricted mode's configured access under Ask Daoris's access, its
  * housekeeping row live: what the driver's state says is chosen, each operation pressed over `SET_HELP_GRANT` one at a time, and
- * one the driver does not act on yet never sent. HELPMODE1c3: the chosen settings live the same way, and the browser's row read
- * only from its plugin's approval, its door leading to the plugin's tab. HELPMODE1c4: the checkouts live too, each readable checkout
+ * one the driver does not act on yet never sent. The chosen settings live the same way, and the browser's row read
+ * only from its plugin's approval, its door leading to the plugin's tab. The checkouts live too, each readable checkout
  * the driver serves a box by its repository's name, on until the person turns it off.
  */
 describe('Ask Daoris’s configured access on Settings', () => {
@@ -305,7 +305,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HELP_GRANT', expect.anything());
   });
 
-  // HELPMODE1c4: the checkouts the driver serves, each on until turned off, a press naming its repository as written.
+  // The checkouts the driver serves, each on until turned off, a press naming its repository as written.
   it.each(['en', 'zh'])('draws the checkouts the driver serves, and a press turns one off by its name, in %s', async (language) => {
     await i18n.changeLanguage(language);
     const notify = vi.fn();
@@ -324,7 +324,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(i18n.t('settings.ai.grants.revoked', { operation: 'engine' })));
   });
 
-  // HELPMODE1c3: the chosen settings, the five ordinary ones, each granted one at a time as housekeeping's operations are.
+  // The chosen settings, the five ordinary ones, each granted one at a time as housekeeping's operations are.
   it.each(['en', 'zh'])('draws the chosen settings as the driver holds them, and a press grants one setting, in %s', async (language) => {
     await i18n.changeLanguage(language);
     const notify = vi.fn();
@@ -343,7 +343,7 @@ describe('Ask Daoris’s configured access on Settings', () => {
       i18n.t('settings.ai.grants.granted', { operation: i18n.t('help.grants.op.settings.cooloff') })));
   });
 
-  // HELPMODE1c3 (the modes design §4.1's decided note): the browser's row is its plugin's approval, read only, and its door the
+  // The browser's row is its plugin's approval, read only, and its door the
   // plugin's own tab, the one place it is changed; nothing is chosen for it here.
   it('draws the browser from its plugin’s approval, and its door opens the plugin’s tab', async () => {
     const onGo = vi.fn();

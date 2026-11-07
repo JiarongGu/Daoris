@@ -10,8 +10,8 @@ import { Button } from './Button';
 
 /**
  * A dialog's Escape, kept while an input method composes. Radix closes a dialog on any Escape, heard on the
- * document before the field it was pressed in, so dropping a composition in Quick Ask's box or the palette's field
- * closed the box with it. Prevented, Radix leaves the dialog open; it prevented the same press itself when it closed.
+ * document before the field it is pressed in, so dropping a composition in Quick Ask's box or the palette's field
+ * would close the box with it. Prevented, Radix leaves the dialog open; the dialog prevents the same press itself when it closes.
  */
 const composingEscape = (event: KeyboardEvent) => {
   if (isComposing(event)) event.preventDefault();
@@ -26,7 +26,7 @@ let drawersOpen = 0;
 const drawerWatchers = new Set<() => void>();
 /**
  * Told at each drawer opened or closed; and whether one is open. A drawer's scrim lies over the whole window, so what is under it
- * is not shown (NOTIFY2b, the notification design §3.4: a press's card under a scrim does not start its two minutes).
+ * is not shown (a press's card under a scrim does not start its two minutes).
  */
 export const watchDrawers = (watch: () => void) => {
   drawerWatchers.add(watch);
@@ -58,17 +58,17 @@ export function Drawer({ title, meta, onClose, footer, children }: {
     <Dialog.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
       <Dialog.Portal>
         {/* 🔴 Below the app strip, never over it. The strip reserves slots the WINDOW paints its
-            caption buttons into (SURF7), and a page scrim cannot dim what the page does not draw —
+            caption buttons into, and a page scrim cannot dim what the page does not draw —
             so a full-bleed one dimmed the title bar and left three bright buttons punched through
             it. Held by `tokens.test.ts`, because it is a rule about every overlay. And above the
             status bar, for the same reason the activity bar is left alone: the frame is three bars,
-            and an overlay belongs to the content between them (POLISH3). */}
+            and an overlay belongs to the content between them. */}
         <Dialog.Overlay className="fixed bottom-6 left-12 right-0 top-9 z-10 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
-          // D41 §6 says a drawer is `role="dialog"` WITH `aria-modal`, and Radix sets the role and
-          // traps focus but never writes that attribute — so the sentence was true about the design
-          // and false about the page for as long as it had existed. Stated here, and asserted by
+          // A drawer is `role="dialog"` WITH `aria-modal`, and Radix sets the role and
+          // traps focus but never writes that attribute — so the claim would be true about the design
+          // and false about the page. Stated here, and asserted by
           // `ui.test.tsx`, because a claim nothing checks is one nobody notices going wrong.
           aria-modal="true"
           onEscapeKeyDown={composingEscape}
@@ -80,8 +80,8 @@ export function Drawer({ title, meta, onClose, footer, children }: {
           className={cn(
             'fixed bottom-6 right-0 top-9 z-10 flex flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
             // Never over the activity bar (3rem): the frame is three bars, and an overlay sits between
-            // them. A wide one read a source file until FRAME1f gave an entry the main area (U43). The toasts
-            // stand this width in from the right while it is open (`Toasts`, UXTOAST1), and `ui.test.tsx` holds the two
+            // them. The toasts
+            // stand this width in from the right while it is open (`Toasts`), and `ui.test.tsx` holds the two
             // together.
             'w-[min(32rem,calc(100%-3rem))]',
           )}

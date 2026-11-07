@@ -4,7 +4,7 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { NewRef } from './NewRef';
 
-// New branch or tag (GITAPP2c, D204, the git-writes design §6) on a repository's Branches: closed, the name asked, what will be made
+// New branch or tag on a repository's Branches: closed, the name asked, what will be made
 // confirmed, made with its Undo, refused in the driver's sentence, and not known. At the main area's three widths (80, 39 and 25rem)
 // in English and 中文, in both themes.
 
@@ -48,7 +48,7 @@ export const ConfirmBranch: Story = { args: { initial: { stage: 'confirm', name:
 export const ConfirmTag: Story = { args: { initial: { stage: 'confirm', kind: 'tag', name: 'v1' } } };
 export const ConfirmNarrowChinese: Story = { args: { initial: { stage: 'confirm', kind: 'tag', name: 'v1' } }, decorators: [storyWidths.narrow, chinese] };
 
-/** Made, with the Undo that deletes the ref only at the id it was made at. */
+/** Made, with the Undo that deletes the ref only at the id it made. */
 export const Made: Story = { args: { initial: { stage: 'made', name: 'topic' } } };
 export const MadeNarrowDark: Story = { args: { initial: { stage: 'made', kind: 'tag', name: 'v1' } }, decorators: [storyWidths.narrow, dark] };
 

@@ -50,7 +50,7 @@ function ChoiceLine({ work, policy, role }: { work: StructureWork; policy?: Role
 }
 
 /**
- * **A place's Roles section** (AGENTSPLACE1g1, the Agents-place design §3): one row per work, read from `ROLE_STRUCTURE` for the place's
+ * **A place's Roles section**: one row per work, read from `ROLE_STRUCTURE` for the place's
  * chain alone: the role taking it, where that role is placed, its first choice and that choice's last reading, with the appointed roles
  * of the place under them.
  *

@@ -56,7 +56,7 @@ describe("Convergence's list", () => {
       .toHaveAttribute('aria-current', 'true');
   });
 
-  /** UX5 U42: an empty answer lowers by a tenth, named for the value it is for. */
+  /** An empty answer lowers by a tenth, named for the value it is for. */
   it('offers a lower similarity on an empty answer, by a tenth', async () => {
     const props = list({ answer: answered({ findings: [], at: 0.72 }) });
 

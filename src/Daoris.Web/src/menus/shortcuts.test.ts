@@ -14,7 +14,7 @@ describe('a key, read as its menu prints it', () => {
     expect(isPress(press('b', { ctrl: true }), 'Ctrl+B')).toBe(true);
     expect(isPress(press('B', { ctrl: true, alt: true }), 'Ctrl+Alt+B')).toBe(true);
     expect(isPress(press('¬', { ctrl: true, shift: true, alt: true }, 'KeyL'), 'Ctrl+Shift+Alt+L')).toBe(true);
-    // Shift turns ` into ~ and 1 into !: the place is what was meant.
+    // Shift turns ` into ~ and 1 into !: the place is what is meant.
     expect(isPress(press('~', { ctrl: true, shift: true }, 'Backquote'), 'Ctrl+Shift+`')).toBe(true);
     expect(isPress(press('`', { ctrl: true }, 'Backquote'), 'Ctrl+`')).toBe(true);
     expect(isPress(press('1', { ctrl: true }, 'Digit1'), 'Ctrl+1')).toBe(true);

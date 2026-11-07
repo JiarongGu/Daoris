@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { AiJobs, type HelpAccessJob, type HelpGrantsJob, type SearchTier } from './AiJobs';
 
 // Daoris's own AI on the Settings page — each job it may use a model for, the tier that answers
-// it now, and how to change it (D24, `model-decoupling`). The tier is the service's own words; Intake and Ask Daoris are rows of
-// *Actors* since MODELROLE1d (`ai/ActorAbout.test.tsx`, `AiDomain.test.tsx`).
+// it now, and how to change it (`model-decoupling`). The tier is the service's own words; Intake and Ask Daoris are rows of
+// *Actors* (`ai/ActorAbout.test.tsx`, `AiDomain.test.tsx`).
 
 const LEXICAL: SearchTier = {
   tier: 'lexical only', semantic: false,
@@ -24,7 +24,7 @@ describe('AI features', () => {
     expect(screen.getByText(LEXICAL.note!)).toBeInTheDocument();
     // How to change it: the service's environment, read when it starts — never a control that
     // pretends to set it.
-    // Each variable is code, as every other row's terminal door is (UX5 U55: they were body text).
+    // Each variable is code, as every other row's terminal door is.
     expect(screen.getByText('DAORIS_EMBED_MODEL').tagName).toBe('CODE');
     expect(screen.getByText('DAORIS_EMBED_URL').tagName).toBe('CODE');
     // The window a long entry is embedded in pieces by is the deployment's too.
@@ -39,7 +39,7 @@ describe('AI features', () => {
     expect(screen.getByText('not yet known')).toBeInTheDocument();
   });
 
-  /** HELPMODE1c1 (D183 point 1; the modes design §5): restricted mode's configured access, under Ask Daoris's access. */
+  /** Restricted mode's configured access, under Ask Daoris's access. */
   it('draws configured access under Ask Daoris’s access while restricted, and none under full access or where it is given none', () => {
     const access: HelpAccessJob = {
       mode: 'restricted', confirming: false, adds: [], onPick: vi.fn(), onEnable: vi.fn(), onCancel: vi.fn(),

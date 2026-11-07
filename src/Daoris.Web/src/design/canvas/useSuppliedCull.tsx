@@ -9,12 +9,12 @@ import type { Box, Size, View } from './viewMath';
 type Frame = { view: View; viewport: Size; key: string };
 
 /**
- * The cull a supplied world is drawn by (CANVAS1e; the canvas design §4), followed as the view moves: what `cullSupplied` decides at the
+ * The cull a supplied world is drawn by, followed as the view moves: what `cullSupplied` decides at the
  * snapped view, the canvas's `onView` that moves it, and the dot layer as the canvas's overlay while the tier is the dot's.
  */
 export function useSuppliedCull(boxes: ReadonlyMap<string, Box>, rem: number, pinned: readonly (string | null)[]): {
   cull: SuppliedCull;
-  /** The zoom the cull was decided at, so a label can be drawn at the type scale whatever the zoom. */
+  /** The zoom the cull is decided at, so a label can be drawn at the type scale whatever the zoom. */
   scale: number;
   onView: (view: View, viewport: Size) => void;
   overlay: ((view: View, viewport: Size) => ReactNode) | undefined;

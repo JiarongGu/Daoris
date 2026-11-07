@@ -18,13 +18,13 @@ export type AccountCooling = {
   assumedZone: boolean;
   /** Whether the agent named a date more than 8 days off, so the default stood in. */
   notBelieved: boolean;
-  /** Held in memory only, the file not having taken it (LIMITRESUME1d2, D206 §3.1); absent where it was kept. */
+  /** Held in memory only, the file not having taken it; absent where it is kept. */
   unwritten?: boolean;
   /** The model family whose limit this is (`opus`, `sonnet`), so a start asking another still runs; absent for the whole account's. */
   model?: string | null;
 };
 
-/** One window as an account's agent last said it: a floor, as of when it was seen. */
+/** One window as an account's agent last said it: a floor, as of when it is seen. */
 export type WindowSaid = {
   /** Daoris's name for it: `session` (the five-hour window) or `weekly`. */
   window: string;
@@ -49,7 +49,7 @@ export type WindowSaid = {
    * ratio, the same projection a start reads. Left out where none is judged.
    */
   projected?: number | null;
-  /** How it was made: `reading` (nothing spent since), `measured`, or `unweighed` (turns since that nothing weighs). */
+  /** How it is made: `reading` (nothing spent since), `measured`, or `unweighed` (turns since that nothing weighs). */
   projectedBy?: 'reading' | 'measured' | 'unweighed' | (string & {}) | null;
   /**
    * When the window began, its reset less its length, as.NET knows the length: what a chart places it by. Null for a window
@@ -57,8 +57,8 @@ export type WindowSaid = {
    */
   from?: string | null;
   /**
-   * Its row's scope's curve on it now, a whole percent, and whether its share is over it, as.NET judges them (PUSH1e, D182 point 6;
-   * the driver's `UsageCurves`): the page words them and measures nothing. Null where it is not measured (no share, a window with no
+   * Its row's scope's curve on it now, a whole percent, and whether its share is over it, as.NET judges them
+   * (the driver's `UsageCurves`): the page words them and measures nothing. Null where it is not measured (no share, a window with no
    * curve, the tool's own sign-in, which no list holds).
    */
   curve?: number | null;
@@ -83,10 +83,10 @@ export type AccountFacts = {
 };
 
 /**
- * Why the next start takes its account (TOOL6e, D130 §3–§4 as §16.3 amends them): the driver's `NextReason`, a closed set.
+ * Why the next start takes its account: the driver's `NextReason`, a closed set.
  * `own` and `named` are a scope's one account, chosen by no step; `waits` is no account ready; `noAccount` is no Daoris account
  * signed in at all: said apart from `waits`, which is an account that comes ready by itself. The
- * driver answers it from OWNSPACE1b-B; until then the line is drawn only when the reason arrives.
+ * driver answers it where it can; an answer without it draws the line only when the reason arrives.
  */
 export type NextReason =
   | 'own' | 'named' | 'onlyReady' | 'kept' | 'near' | 'fewest' | 'lapsing' | 'pace' | 'leastRecent' | 'notStarted' | 'list'
@@ -112,7 +112,7 @@ export type NextStart = {
   when?: string | null;
   /**
    * Where it is `lapsing`, what would lapse as the start's line says it: the window that won, the whole percent of it
-   * unused, and when that reading was made.
+   * unused, and when that reading is made.
    */
   window?: string | null;
   unused?: number | null;
@@ -121,7 +121,7 @@ export type NextStart = {
   others: AccountHeld[];
   /**
    * The doors onto the agent's accounts whose answer to *does a start run in its own home* differs from the one this answer speaks
-   * for, the account's own door (AGENTPROVIDER1 row s-ix o1 to o3): each is said as its own line, never as the agent's. Absent from an
+   * for, the account's own door: each is said as its own line, never as the agent's. Absent from an
    * absent answer.
    */
   doors?: { door: string; startsInOwnHome: boolean }[] | null;
@@ -129,20 +129,19 @@ export type NextStart = {
 
 /**
  * How one scope's list is used: `switch` and `curve`, which read as the smart switch with
- * no curve where neither is answered; `early` and `near`, the old names, derived from them for a page that still reads them.
+ * no curve where neither is answered; `early` and `near`, derived from them for a page that still reads them.
  */
 export type ScopeUse = { use: 'goal' | 'order'; keep?: string | null; early: boolean; near: number } & CurveScope;
 
 /**
- * Why an account of a list is passed at a start (D130 §6 as D165 point 2 amends it): a limit reached, usage credits, or its
- * number over the scope's curve on the window named (`number`, SWITCH1b-ii). The agent's pace warning is none of them.
+ * Why an account of a list is passed at a start: a limit reached, usage credits, or its
+ * number over the scope's curve on the window named (`number`). The agent's pace warning is none of them.
  */
 export type NearBy = 'refused' | 'credits' | 'number';
 
 /**
- * The set's one scope (POOL1a2, D197; the account-pool design §2.4), every workspace's: its order and its one entry of settings.
- * It was a scope per workspace or the machine (D130 §2 rule 1) before the fold into one set; the answer keeps that shape, its
- * workspace null.
+ * The set's one scope, every workspace's: its order and its one entry of settings.
+ * The answer keeps the shape of a scope per workspace or the machine, its workspace null.
  */
 export type AccountScope = {
   /** Null: the set serves every workspace. */
@@ -185,20 +184,20 @@ export type CurveMeasured = { account: string; window: string; curve: number; ov
 export type CurveOver = { account: string; window: string; curve: number };
 
 /**
- * One receipt of the fold into one set (POOL1a, D197 point 7; the account-pool design §6.3), as `ACCOUNTS`' `pooled` answers it
+ * One receipt of the fold into one set, as `ACCOUNTS`' `pooled` answers it
  * while it is unsaid: its id, which *Got it* marks said, and each line's kind and values, never words, which the page words
  * (`pooledLines`). A setting not kept carries its value's JSON as written.
  */
 export type PoolReceipt = {
   id: string;
   at: string;
-  /** Each scope as it was before the fold: a workspace's, or null for the machine's, which the workspaces naming none read. */
+  /** Each scope as it stood before the fold: a workspace's, or null for the machine's, which the workspaces naming none read. */
   scopes: { workspace?: string | null; default?: string | null; list: string[]; begins?: string | null }[];
   /** The set's order the fold wrote: its count is the line's *all {{count}}*. */
   order: string[];
   moved: { workspace?: string | null; account: string; place: number }[];
   joined: { account: string; place: number }[];
-  /** Where the fold set `use: order` so the machine scope's starts keep beginning at its one account (§6.1 rule 3). */
+  /** Where the fold set `use: order` so the machine scope's starts keep beginning at its one account. */
   inOrder?: string | null;
   notKept: { workspace?: string | null; setting: string; value: string }[];
   gone: string[];
@@ -220,7 +219,7 @@ export type AgentAccounts = {
    */
   own: { cooling?: AccountCooling | null; offered?: string | null; said?: AccountSaid | null };
   accounts: AccountFacts[];
-  /** The set's one scope, every workspace's (POOL1a2, D197): the order, how it is used and its next start. */
+  /** The set's one scope, every workspace's: the order, how it is used and its next start. */
   scopes: AccountScope[];
   /** What the fold into one set changed, each receipt still unsaid; absent or empty where nothing waits to be said. */
   pooled?: PoolReceipt[];
@@ -236,7 +235,7 @@ export type AccountUseChange = {
   /** The old names, which the modules still take, and which this page no longer sends. */
   early?: boolean;
   near?: number;
-  /** When to switch (SWITCH1d, `--switch`): Daoris's curve, the person's own, or no switch while a session runs. */
+  /** When to switch (`--switch`): Daoris's curve, the person's own, or no switch while a session runs. */
   switch?: Switch;
   /** Each window of the person's curve set, the others kept (`--curve`); one that breaks a rule is `ACCOUNT_USE_CURVE`. */
   curve?: Partial<Record<(typeof CURVE_WINDOWS)[number], CurvePoint[]>>;
@@ -249,7 +248,7 @@ export type AccountUseChange = {
 export const USE_DEFAULTS: ScopeUse = { use: 'goal', keep: null, early: true, near: 90 };
 
 /**
- * When a scope switches: its `switch`; where none is answered, the old names:
+ * When a scope switches: its `switch`; where none is answered, `early` and `near`:
  * `off` where `early` is false and else the smart switch, its `near` alone naming no curve the page could draw.
  */
 export function switchOf(use: ScopeUse): Switch {
@@ -264,7 +263,7 @@ export function agentOf(answer: AccountsAnswer | undefined | null, agent: string
   return agents.find((each) => each.agent === agent) ?? null;
 }
 
-/** The set's one scope, every workspace's (POOL1a2, D197), which every agent answers with no workspace. */
+/** The set's one scope, every workspace's, which every agent answers with no workspace. */
 export function machineScope(agent: AgentAccounts): AccountScope {
   return agent.scopes.find((scope) => !scope.workspace) ?? {
     workspace: null, default: null, list: [], begins: null, use: USE_DEFAULTS, unknown: [], problem: null, near: [],
@@ -279,7 +278,7 @@ export function workspaceScope(agent: AgentAccounts, workspace: string): Account
   return agent.scopes.find((scope) => scope.workspace === workspace) ?? null;
 }
 
-/** A list with an account moved one place, up (-1) or down (+1); the list as it was at either end. */
+/** A list with an account moved one place, up (-1) or down (+1); the list unchanged at either end. */
 export function moved(list: readonly string[], account: string, by: -1 | 1): string[] {
   const at = list.indexOf(account);
   const to = at + by;
@@ -313,7 +312,7 @@ export function coolingLine(cooling: AccountCooling, now: Date = new Date()): st
 
 /**
  * A window by its name, in the reader's language; a name this build does not know is said as it is. The driver names a Codex
- * window of any other length `<n>-minute` (D125's CODEXUSE1 note), worded here with its digits. The cooling note's
+ * window of any other length `<n>-minute`, worded here with its digits. The cooling note's
  * lines hand in their own `t`.
  */
 export function windowName(
@@ -362,11 +361,11 @@ export function saidLine(
       parts.push(i18n.t('harness.said.window', { used: percent(each.used), window: windowName(each.window), when: moment(each.reset) }));
     }
   }
-  // Over its curve on its tightest window, as the terminal's said line and the start's line add it (SWITCH1d, the shared table's
+  // Over its curve on its tightest window, as the terminal's said line and the start's line add it (the shared table's
   // `tightest` rows), judged in.NET: on its curve is not over it, and is handed no verdict.
   if (over) parts.push(i18n.t('harness.said.over', { window: windowName(over.window), curve: `${over.curve}%` }));
   if (parts.length === 0) parts.push(i18n.t('harness.said.clear'));
-  // Led by where its newest reading came from (USAGEREAD2b's lead, the terminal's): read from its agent, or said by a session.
+  // Led by where its newest reading came from (as the terminal leads): read from its agent, or said by a session.
   const newest = said.windows.reduce((best, each) => (
     each.seen > best.seen || (each.seen === best.seen && each.source === 'read') ? each : best));
   return i18n.t(newest.source === 'read' ? 'harness.said.lineRead' : 'harness.said.line', {
@@ -375,7 +374,7 @@ export function saidLine(
 }
 
 /**
- * Why an account passed is passed, as the key's last word (SWITCH1b-iii, D165 point 2): its limit reached, usage credits, or
+ * Why an account passed is passed, as the key's last word: its limit reached, usage credits, or
  * its use over its curve, by the scope's own `near` entry for it, with the window; the three named together where the scope
  * names no entry for it.
  */
@@ -388,10 +387,10 @@ function passedBy(near: AccountScope['near'], account: string | null | undefined
 
 /**
  * Why the next start takes its account, as a clause: the walk's step, naming the account it weighed it against as a
- * person calls it. The order says its first or the account it comes before (the set's, D197 §4; an older answer's default
+ * person calls it. The order says its first or the account it comes before (the set's; an older answer's default
  * is said as one). An account passed
- * says what passed it (SWITCH1b-iii); step 5 is the most room under the curve, and the week's pace only with the switch off
- * (the switch design §3), where the page's `early` is false.
+ * says what passed it; step 5 is the most room under the curve, and the week's pace only with the switch off,
+ * where the page's `early` is false.
  */
 export function nextWhy(next: NextStart, scope: AccountScope, labelOf: (name: string) => string): string {
   const over = next.over ? labelOf(next.over) : '';
@@ -451,7 +450,7 @@ export function nextLine(
 /**
  * What holds the accounts the next start does not take, as one or two sentences: each held account and why, then
  * the accounts the scope does not use together; an account merely ranked after is not said. Null where nothing holds any.
- * An account passed says what passed it by the scope's `near` entry for it (SWITCH1b-iii).
+ * An account passed says what passed it by the scope's `near` entry for it.
  */
 export function heldLine(
   next: NextStart, labelOf: (name: string) => string, isKey: (name: string) => boolean = () => false,
@@ -485,8 +484,7 @@ export function offeredLine(offered: string): string {
 }
 
 /**
- * The tool's own sign-in's line, its row's ⓘ (D175 point 1; POOL1c, D197 point 3, the account-pool design §3 and §4.2's
- * `harness.own.shared`): the account the tool uses at the person's own terminal, outside Daoris's accounts, which Daoris never
+ * The tool's own sign-in's line, its row's ⓘ (`harness.own.shared`): the account the tool uses at the person's own terminal, outside Daoris's accounts, which Daoris never
  * signs in or out, never asks, starts no session in and never changes by adding an account; a conversation begun there goes on
  * there. No who and no cool-off: nothing of it is read, and a reading kept from before would only age.
  */

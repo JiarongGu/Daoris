@@ -92,7 +92,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
   const copyText = useRef<(text: string) => void>(() => {});
   const offers = useMemo(() => offerStore((text) => copyText.current(text)), []);
   const offered = useMainOffer(offers);
-  // The field the person was last in, which Edit's acts go back to once a menu has taken the focus.
+  // The field the person last had focus in, which Edit's acts go back to once a menu has taken the focus.
   const fields = useRef<ReturnType<typeof fieldTracker> | null>(null);
   useEffect(() => {
     const tracker = fieldTracker(document);
@@ -174,7 +174,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
     },
     find: () => findTarget(document, view)?.focus(),
     searchKnowledge: () => {
-      // Knowledge's Search, whatever mode the place was left in.
+      // Knowledge's Search, whatever mode the place is left in.
       open('knowledge', null, { knowledge: 'search' });
       // A beat after the view is drawn, as Quick Ask's box is opened: its box is in its list.
       window.setTimeout(() => findTarget(document, 'knowledge')?.focus(), 0);
@@ -211,7 +211,7 @@ export function useCommands({ tab, openSettings, running, attending, lists, atta
   };
   const translate = (key: string, values?: Record<string, unknown>) => (values ? t(key, values) : t(key));
   const entries = commandTable(commandState(), commandDoors, translate);
-  // The menus as the bar draws them; a browser has no Terminal, and claims no Alt (§3.4), so shows no letter.
+  // The menus as the bar draws them; a browser has no Terminal, and claims no Alt, so shows no letter.
   const barMenus: BarMenu[] = MENUS.filter((menu) => !menu.shell || attached).map((menu) => ({
     id: menu.id,
     label: t(menu.label),

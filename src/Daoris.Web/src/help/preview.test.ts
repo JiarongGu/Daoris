@@ -35,8 +35,8 @@ describe('a conversation’s line as plain text', () => {
   });
 });
 
-// ASKHIST1d2: the driver hands a line whole up to 1000 characters, an answer's first and the one a search found its words on
-// (D158's ASKHIST1d1 note). The page parses it, then cuts it to what a row holds: from a little before the words found, so a
+// The driver hands a line whole up to 1000 characters, an answer's first and the one a search found its words on.
+// The page parses it, then cuts it to what a row holds: from a little before the words found, so a
 // clamp to two lines never hides them.
 
 /** Whether a cut left half of a character outside the basic plane. */

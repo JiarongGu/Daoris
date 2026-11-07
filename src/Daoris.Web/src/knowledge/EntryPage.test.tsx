@@ -46,9 +46,9 @@ describe("an entry's page", () => {
   });
 
   /**
-   * 🔴 UX5 U43: a source is wrapped near a hundred characters, and the 32rem drawer held about sixty of its monospace,
-   * so every line broke once more and the entry read as a zigzag. A wide drawer gave it room; since FRAME1f it is the
-   * main area's, beside the list and the side bar rather than under a scrim (D118 §3d), and nothing narrower holds it.
+   * 🔴 A source is wrapped near a hundred characters, and a 32rem drawer holds about sixty of its monospace,
+   * so every line would break once more and the entry read as a zigzag. The entry is read in the
+   * main area's width, beside the list and the side bar rather than under a scrim, and nothing narrower holds it.
    */
   it("is read in the main area at the area's own width, never in a drawer or at a prose measure", () => {
     show();
@@ -80,7 +80,7 @@ describe("Search's main area with no entry", () => {
     expect(screen.getByText('This entry is no longer in the index')).toBeInTheDocument();
   });
 
-  /** D118 §3b (audit SE11): a chosen entry on its way is skeleton rows, never the empty state. */
+  /** A chosen entry on its way is skeleton rows, never the empty state. */
   it('holds the place with skeleton rows while the entry is on its way', () => {
     render(<EntryMainNotice state="loading" />);
     expect(screen.getByRole('main')).toHaveAttribute('aria-busy', 'true');

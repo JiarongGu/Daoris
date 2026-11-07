@@ -82,7 +82,7 @@ export const ComparingAgain: Story = { args: { threshold: 0.68, answer: answered
 /** Nothing converges: the empty state, whose act lowers the similarity by a tenth. */
 export const NothingConverges: Story = { args: { answer: answered({ findings: [] }), chosen: null } };
 
-/** At the floor: nothing lower is offered, and the empty state says it is the floor (UX5 U42). */
+/** At the floor: nothing lower is offered, and the empty state says it is the floor. */
 export const AtTheFloor: Story = { args: { threshold: 0.5, answer: answered({ findings: [], at: 0.5 }), chosen: null } };
 
 /** A comparison that failed with no answer ever: its sentence in place, never blank. */

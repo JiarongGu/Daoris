@@ -30,14 +30,14 @@ export const Known: Story = {};
 /** Only installed agents, as a machine that has every agent this build knows. */
 export const AllInstalled: Story = { args: { rows: ROWS.filter((row) => row.installed) } };
 
-/** DeepSeek Harness with no installer of Daoris's: *How to install* where its Install was. */
+/** DeepSeek Harness with no installer of Daoris's: *How to install* in place of its Install. */
 export const NoInstaller: Story = { args: { rows: ROWS.map((row) => (row.name === 'dsh' ? { ...row, installs: false } : row)) } };
 
 /** Nothing chosen. */
 export const NothingChosen: Story = { args: { chosen: null } };
 
 /**
- * Closed to its strip, as at 680 px: each agent's mark of its own (ACCTUX2: *CC* and *Co*, where the first letter drew both
+ * Closed to its strip, as at 680 px: each agent's mark of its own (*CC* and *Co*, since the first letter alone draws both
  * `C`), the waiting mark, one not installed faint.
  */
 export const Strip: StoryObj<typeof AgentStrip> = {

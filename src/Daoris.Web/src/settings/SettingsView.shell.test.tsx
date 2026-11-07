@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // Settings' frame in SHELL mode, where every domain is offered. `SettingsView.test.tsx` holds the browser;
-// each domain's own tests are beside it in `settings/`. Moved from `shell.test.tsx` with MOD4.
+// each domain's own tests are beside it in `settings/`.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -87,9 +87,9 @@ describe('the domain list, in a shell', () => {
 });
 
 /**
- * FRAME1g, by D118 §3a's room rule and §8's reason for it: Settings' list is a strip only where the domain
- * would fall below its 400 px floor beside it, with the side bar as it stands. A fixed 1024 px threshold,
- * Sessions' under FRAME6, would have stripped its 176 px list where it fits.
+ * The room rule: Settings' list is a strip only where the domain
+ * would fall below its 400 px floor beside it, with the side bar as it stands. A fixed 1024 px threshold
+ * would strip its 176 px list where it fits.
  */
 describe("Settings' list in a shell's frame", () => {
   const settings = (closed = false): ListChoice => ({ bounds: LIST_BOUNDS.settings, width: null, closed, over: false });

@@ -35,8 +35,8 @@ const shut = (t: TFunction, row: GitDeletedRef): string =>
  * Daoris's, with the *Undo* its act carries. A row whose Undo is shut says why, in words; a refusal an Undo met is the driver's sentence,
  * shown as written.
  *
- * `unrecorded` counts the commits kept for recovery that no journal record names, kept before every keep was journaled: said under the
- * list, since the old recovery list stays for them alone.
+ * `unrecorded` counts the commits kept for recovery that no journal record names, kept from before keeps were journaled: said under the
+ * list, since the recovery list by commit stays for them alone.
  *
  * @remarks
  * **A molecule**: the rows and the acts arrive as props; a repository with no delete draws nothing.

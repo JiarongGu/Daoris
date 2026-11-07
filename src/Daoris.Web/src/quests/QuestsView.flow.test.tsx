@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../locales/i18n';
 import { chooseRow, QuestsView } from '../test/questsView';
 
-// FLOWCHART1a2 (D186; the flowchart design §2.1, §7 trap 18): the quest's page reads its moves from the service's own door, in
+// The quest's page reads its moves from the service's own door, in
 // a browser as in the window, and only once its flowchart is opened, as the trace reads only when opened.
 
 const QUESTS = [{

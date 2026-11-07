@@ -43,7 +43,7 @@ export type PluginTrialResult = {
 };
 
 // A floor, not a zero basis: with the side bar open a zero-basis field shrank to two characters beside
-// its buttons, where a floor wraps the row (PLUG8, seen on the window).
+// its buttons, where a floor wraps the row.
 const FIELD =
   'min-w-[min(14rem,100%)] flex-1 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
 

@@ -6,13 +6,13 @@ import { shellWord } from '../../lib/shellWord';
 import { Inheritable } from '../../projects/setup/SetupParts';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 
-/** Where a class's value was set (GITAUTH1f, the git-auth design §6.2): the same sources as an access pause. */
+/** Where a class's value is set: the same sources as an access pause. */
 export type GitAccessSource = 'repository' | 'workspace' | 'machine' | 'default';
 
 /** Whose git access a page shows and sets: a repository's, a workspace's or this machine's. */
 export type GitAccessOwner = Exclude<GitAccessSource, 'default'>;
 
-/** One class as it resolves (`LINES`' `gitAccess`): its value, `as-today` for a Write nothing set, and where it was set. */
+/** One class as it resolves (`LINES`' `gitAccess`): its value, `as-today` for a Write nothing set, and where it is set. */
 export type ResolvedGitClass = { class: string; value: string; source: GitAccessSource | (string & {}) };
 
 /** One repository's git access as the driver resolves it; absent where the answer lacks it. */
@@ -73,13 +73,13 @@ export function gitAccessSummary(t: TFunction, classes: readonly ResolvedGitClas
 }
 
 /**
- * **A level's git access rows** (GITAUTH1f, the git-auth design §7.3): Read, Write and Dangerous (allow or deny, D241 point 3), each its
+ * **A level's git access rows**: Read, Write and Dangerous (allow or deny), each its
  * value and where it came from, and *Use one value for both…* for Read and Write. The same rows on a repository's Setup, a workspace's and Settings → Git for this machine.
  *
  * @remarks
- * **A loosening is confirmed here** (§8): a choice looser than what stands opens an `InlineConfirm` in the warning tone naming what it
+ * **A loosening is confirmed here**: a choice looser than what stands opens an `InlineConfirm` in the warning tone naming what it
  * lets happen, and only its press sends it; a tightening and a clear send at once. The route carries no flag for it. A refusal is
- * said under the row that was pressed, in the driver's sentence. A molecule: every state is reached by its props.
+ * said under the row that is pressed, in the driver's sentence. A molecule: every state is reached by its props.
  */
 export function GitAccessRows({ owner, name, workspace, classes, above, busy = false, onChange }: {
   owner: GitAccessOwner;
@@ -87,12 +87,12 @@ export function GitAccessRows({ owner, name, workspace, classes, above, busy = f
   name?: string;
   /** A repository's workspace, which a value from it names. */
   workspace?: string;
-  /** Each class as it resolves at this level, with where it was set. */
+  /** Each class as it resolves at this level, with where it is set. */
   classes: readonly ResolvedGitClass[];
   /** Each class as the level above resolves it (this machine's: Daoris's defaults), which a *Clear* gives the class back to. */
   above: readonly ResolvedGitClass[];
   busy?: boolean;
-  /** A change at this level, and how to answer the row it was pressed in. */
+  /** A change at this level, and how to answer the row it is pressed in. */
   onChange: (edit: GitAccessEdit, answered?: Answered) => void;
 }) {
   const { t } = useTranslation();

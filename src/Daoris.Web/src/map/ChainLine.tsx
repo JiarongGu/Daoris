@@ -8,13 +8,13 @@ import { shownStatus } from '../quests/records';
 import { questName } from '../work/identity';
 import type { ChainStep } from './chain';
 
-/** A quest's status, in the words and the ink its pill's word wears (D41: never hue alone; UXFIX5c). */
+/** A quest's status, in the words and the ink its pill's word wears (never hue alone). */
 const WORD: Record<Quest['status'], string> = {
   Open: 'text-ink-open', Taken: 'text-ink-taken', Done: 'text-ink-done', Declined: 'text-ink-danger',
 };
 
 /**
- * How the work ran, as one line of stops (SESS2 H7): the ask, each quest with how it stands, the
+ * How the work ran, as one line of stops: the ask, each quest with how it stands, the
  * attended one as *this quest*, and what is still to come — with the whole strip on a press.
  *
  * @remarks
@@ -73,7 +73,7 @@ function Stop({ step, onQuest }: { step: ChainStep; onQuest?: (quest: Quest) => 
   }
 
   const { quest, current } = step;
-  // The words the quest's page reads (FABRIC-CLOSE1d2), in the same plain ink: submitted is a taken quest's, and a step held for
+  // The words the quest's page reads, in the same plain ink: submitted is a taken quest's, and a step held for
   // its source reopened says so after its status.
   const status = (
     <>

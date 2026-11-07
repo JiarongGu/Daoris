@@ -6,7 +6,7 @@ import { PageHead, PageSection, ViewMain } from '../work/frame/ViewMain';
 import { type ChannelAnswered, ChannelSection } from './ChannelSection';
 
 /**
- * **A teammate's ask's page** (SESSONE2h; the co-working design §2.4, D167's SESSONE2g note): an ask held on another machine, of
+ * **A teammate's ask's page**: an ask held on another machine, of
  * which this one has only the channel messages the sync mirrored. There is no ask record here, so the page has no request, no
  * proposal, no quests and no work, and offers none of an ask's acts (publish, close, delete, pause): it names the ask by its id,
  * says it is a teammate's and held on their machine, gives the circle, the machines its messages came from and the latest, and
@@ -23,7 +23,7 @@ export function TeammateAskPage({ ask, channel, onPost, onRead }: {
   channel: Channel | null;
   /** The person's post (`CHANNEL_POST`), as on an ask of theirs. */
   onPost: (post: ChannelPost, answered: ChannelAnswered) => void;
-  /** The person's mark moved through the newest item shown (`CHANNEL_MARK`), once what was unread is on the page. */
+  /** The person's mark moves through the newest item shown (`CHANNEL_MARK`), once what is unread is on the page. */
   onRead?: (through: string) => void;
 }) {
   const { t } = useTranslation();

@@ -96,14 +96,14 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           // where there is room. The trust hold stands on its own: it arrives in the same tick as the sentence,
           // and the grant must not wait on a second list having arrived too.
           <Fact name={t('quests.detail.sitting')}>
-            {/* A wait for an account (TOOL4g, D125 §4): not parked, so no Retry; it starts by itself at the reset. */}
+            {/* A wait for an account: not parked, so no Retry; it starts by itself at the reset. */}
             {waitsForAccount(because) && (
               <span className="mb-1 block"><Pill tone="neutral">{t('work.waitsForAccount')}</Pill></span>
             )}
             <Inline
               text={because ? sittingSentence(because) : pausedUnseen ? t('quests.detail.pausedOwn') : t('work.attention.trustWhy')}
             />
-            {/* A pause comes before every other reason (D132 §2.3): its own is resumed here, where Try again stands for a
+            {/* A pause comes before every other reason: its own is resumed here, where Try again stands for a
                 stop; an ask's, or the quest's whose question this is, is resumed on that page, a door away. */}
             {(ownPause || pausedUnseen) && work && (
               <span className="mt-1.5 block">
@@ -120,13 +120,13 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
                 <Button variant="ghost" onClick={() => onOpenQuest(pausedBy.id)}>{t('quests.detail.openPausing', { id: pausedBy.id })}</Button>
               </span>
             )}
-            {/* The one hold only the person can lift, offered where it is read (D73). */}
+            {/* The one hold only the person can lift, offered where it is read. */}
             {hold && onGrant && onTrusting && !trusting && (
               <span className="mt-1.5 block"><Button onClick={() => press('trust')}>{t('trust.open')}</Button></span>
             )}
-            {/* And the other two: a quest parked by its strikes, started again on the press (RETRY1), counted from
+            {/* And the other two: a quest parked by its strikes, started again on the press, counted from
                 where it stands so the next failures park it again; and one the person's stop holds, released from that
-                stop (SESSUX1b, D126 §3.4). One act and one word, on this page and on the session that holds it. */}
+                stop. One act and one word, on this page and on the session that holds it. */}
             {(because?.verdict === 'Exhausted' || because?.verdict === 'Stopped') && onRetry && (
               <span className="mt-1.5 block">
                 <Button disabled={retrying} onClick={() => press('retry')}>{t('quests.detail.retry')}</Button>
@@ -147,7 +147,7 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           </Fact>
         )}
         {reads === 'Submitted' && quest.submission && (
-          /* When its agent made it ready, and the person's reopen of it where a step stands on it (CLOSE1c3). */
+          /* When its agent made it ready, and the person's reopen of it where a step stands on it. */
           <Fact name={t('quests.detail.submitted')}>
             {stamp(quest.submission.at)} · {ago(quest.submission.at)}
             {quest.submission.session && <> · {t('quests.detail.submittedBy', { session: quest.submission.session })}</>}
@@ -159,7 +159,7 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           </Fact>
         )}
         {quest.status === 'Taken' && !quest.submission && quest.reopened && (
-          /* A source the person reopened (FABRIC-CLOSE1d3, after CLOSE1c4 and CLOSE1c8): taken with no submission, which would
+          /* A source the person reopened: taken with no submission, which would
              otherwise read as one whose taker has not said ready yet; when, their words as they wrote them, and the session told. */
           <Fact name={t('quests.detail.reopened')}>
             {stamp(quest.reopened.at)} · {ago(quest.reopened.at)}
@@ -173,8 +173,8 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           </Fact>
         )}
         {ends.length > 0 && (
-          /* Its closure graph's end (FABRIC-CLOSE1j2): no milestone carries a quest's unit, so its page says what the work's foot says
-             of one, in the same words; a stop offered wears the danger ink, and its press is What needs you's (CLOSE1j's choice 5). */
+          /* Its closure graph's end: no milestone carries a quest's unit, so its page says what the work's foot says
+             of one, in the same words; a stop offered wears the danger ink, and its press is What needs you's. */
           <Fact name={t('work.milestone.closed.label')}>
             {ends.flatMap((end, index) => endSentences(t, end).map((said, part) => (
               <span key={`${end.kind}-${end.at}-${index}-${part}`} className={endOffersStop(end) ? 'block text-ink-danger' : 'block'}>{said}</span>
@@ -182,7 +182,7 @@ export function QuestFacts({ quest, t, lanes, question, answered, onOpenQuest, b
           </Fact>
         )}
         {abandoned && (
-          /* When its work was abandoned on this machine (§4.2); the reason is the decline's note, on the record below. */
+          /* When its work is abandoned on this machine; the reason is the decline's note, on the record below. */
           <Fact name={t('quests.detail.abandonedAt')}>{stamp(abandoned.at)} · {ago(abandoned.at)}</Fact>
         )}
       </dl>

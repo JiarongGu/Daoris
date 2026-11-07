@@ -21,7 +21,7 @@ import {
 const SHARED = 0.75;
 
 /**
- * The workspace map (MAP2, D67 §3; `docs/2026-09-23-map-design.md` §1): the circle's repositories and
+ * The workspace map: the circle's repositories and
  * what actually moved between them. A view of its own, the owner's choice.
  *
  * @remarks
@@ -37,7 +37,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
    */
   code?: string | null;
   onOpenConvergence?: () => void;
-  /** A quest named in a detail opens on its page, on Quests (UX5 U46; FRAME1d). */
+  /** A quest named in a detail opens on its page, on Quests. */
   onOpenQuest?: (id: string) => void;
   /** A repository named in a detail opens on its page, on Repositories. */
   onOpenRepository?: (repository: string) => void;
@@ -71,8 +71,8 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
 
   if (code !== null) {
     const back = () => {
-      // Back chooses and shows the repository. The focus goes to the press that opened the code map (UX6h3d), or, where a
-      // door opened it and there was no press, to the repository's card, which the canvas focuses once drawn.
+      // Back chooses and shows the repository. The focus goes to the press that opened the code map, or, where a
+      // door opened it and there is no press, to the repository's card, which the canvas focuses once drawn.
       if (!byDoor) {
         const press = t('map.detail.openCode');
         returnFocus({
@@ -104,7 +104,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
         />
         {codeMap.isPending && <SkeletonRows rows={4} />}
         {answer?.problem && (
-          /* The service's own sentence, whole: it names the first rule the file broke (§3). */
+          /* The service's own sentence, whole: it names the first rule the file broke. */
           <Card>
             <p className="m-0 mb-2 text-body font-semibold text-ink">{t('code.refused')}</p>
             <p className="m-0 whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-body text-ink-soft">
@@ -126,7 +126,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
           />
         )}
         {answer?.file && !answer.problem && (
-          // Beside the code map by the main area's own width, as the workspace map's detail is (D118 §3b).
+          // Beside the code map by the main area's own width, as the workspace map's detail is.
           <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
             <Card>
               <CodeMapWorld
@@ -164,7 +164,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   const lines = (
     <LinesMenu shown={shownLines} counts={lineCounts(all)} onToggle={toggleLine} when={when} onWhen={setWhen} />
   );
-  // Scoped to every workspace of several, it says so, as its empty state does (UX5 U49).
+  // Scoped to every workspace of several, it says so, as its empty state does.
   const header = (
     <PageHeader
       title={t('map.title')}
@@ -176,7 +176,7 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
     return <section ref={holder}>{header}<SkeletonRows rows={4} /></section>;
   }
 
-  // The service did not answer and nothing was read before: the error notice stands, and the map says it could not be drawn rather
+  // The service does not answer and nothing has been read before: the error notice stands, and the map says it could not be drawn rather
   // than that no repository is in scope.
   const unread = registry.error ?? quests.error;
   if (unread && registry.data === undefined) {
@@ -223,13 +223,13 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
   return (
     <section ref={holder}>
       {header}
-      {/* The detail beside the canvas by the main area's own width, never the viewport's (D118 §3b, audit
-          MA3), and under it in a narrow one, where the drawing shrinks only as a last resort (U44); below 36rem
+      {/* The detail beside the canvas by the main area's own width, never the viewport's,
+          and under it in a narrow one, where the drawing shrinks only as a last resort; below 36rem
           it opens in place under its row in the list. It stays in the main area: a view's own detail never
-          goes to the side bar (§3c, §4). */}
+          goes to the side bar. */}
       <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
-          {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom (MAP4): one canvas either way. */}
+          {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom: one canvas either way. */}
           <MapWorld
             topology={topology} selected={selected} onSelect={setSelected} tools={lines} storeKey={workspace ?? 'all'} reveal={arriving}
             detail={inRow ? detail : undefined}
@@ -240,8 +240,8 @@ export function MapView({ notify, code: opening = null, onOpenConvergence, onOpe
             hint={mapHint(t, { topology: all, shown: shownLines, when, everything, hint: t('map.detail.hint') })}
           />
           {unread && <p className="m-0 mt-2 text-small text-warn">{t('map.stale')}</p>}
-          {/* The key, in words: each line's meaning is its shape as well as its hue (D41) — and the
-              number in a node, which no key named until the window showed it (POLISH4). A kind out of
+          {/* The key, in words: each line's meaning is its shape as well as its hue — and the
+              number in a node, which the key names too. A kind out of
               sight leaves the key with its lines. */}
           <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-meta text-ink-faint">
             <li>{t('map.legend.open')}</li>

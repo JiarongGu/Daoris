@@ -163,7 +163,7 @@ export const ProposingEveryKind: Story = {
                 ],
               },
             },
-            // LEFT3 b: a look where a line could not be fetched and other repositories were left apart, said on the card.
+            // A look where a line could not be fetched and other repositories are left apart, said on the card.
             {
               id: 'y3', kind: 'sync' as const,
               describe: 'Bring every repository with a checkout here up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
@@ -226,7 +226,7 @@ export const ProposingAGoToATakenQuest: Story = {
 
 export const ProposingAGoToATakenQuestChinese: Story = { args: ProposingAGoToATakenQuest.args, decorators: [chinese] };
 
-// A workflow version's card (design §8.2): a new one, an edit, and a draft that offers only Not now.
+// A workflow version's card: a new one, an edit, and a draft that offers only Not now.
 const WORKFLOW_SHOWN = {
   id: 'docs-to-pr', name: 'Documentation to a pull request', base: 1, version: 2, scope: 'web-app',
   diff: ['− Your look in local', '~ Landing on a branch: accept=automatic'],

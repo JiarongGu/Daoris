@@ -25,15 +25,15 @@ export function useDoors({ lists, open, setWorkIntent, t, messages, view, attend
   circle: string | null;
 }) {
   // The attended session is remembered alongside the view, so a relaunch into Sessions reopens
-  // what the person was watching rather than an empty column.
+  // what the person watched rather than an empty column.
   const { choose } = lists;
   const setAttending = useCallback((next: string | null) => choose('sessions', next), [choose]);
 
   // A door from a record into the session itself. The selection lives here rather than inside the
-  // view precisely so a door can name which session it is opening (D55: one selection, every
+  // view precisely so a door can name which session it is opening (one selection, every
   // region) — the view change alone would land the person on whatever they last attended.
   const openInWork = (session: string) => open('sessions', session);
-  // A door into a run (WORKFLOW1c, the workflow design §7): its session attended in Sessions, the Workflow view opened on it.
+  // A door into a run: its session attended in Sessions, the Workflow view opened on it.
   const openRun = (session: string) => { open('sessions', session); setWorkIntent('workflow'); };
   // A line of work of an ask folded to a count: its own view, the session attended with *At work* open on it.
   const openAtWork = (session: string) => { open('sessions', session); setWorkIntent('atWork'); };

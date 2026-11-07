@@ -28,10 +28,10 @@ const short = (commit: string) => commit.slice(0, 7);
 const KINDS: HistoryEditKind[] = ['rebase', 'pick', 'revert'];
 
 /**
- * **Edit history** (GITAPP2m, D204; the git-writes design §7): a disclosure on a branch's page, for a branch of the person's own. They
+ * **Edit history**: a disclosure on a branch's page, for a branch of the person's own. They
  * choose to rebase it onto a commit (its line, at first), or to pick or revert a commit or an `A..B` range onto it; the driver's plan is
  * asked and shown, its commits in the order they are made; only *Confirm* sends the edit, carrying the ids the plan pinned. The driver
- * answers as data: done (the branch's new tip and where its old one is kept), refused in its own words with what was typed kept, or not
+ * answers as data: done (the branch's new tip and where its old one is kept), refused in its own words with what is typed kept, or not
  * known, which is said and never retried.
  *
  * @remarks

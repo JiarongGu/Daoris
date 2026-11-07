@@ -50,7 +50,7 @@ export function keptWords(t: T, kept: Record<string, number>): string {
 }
 
 /**
- * A run's line (R2, the cleanup design §4.2): under way, the kind it is on, how many of the run's kinds, and since when; ended, what it
+ * A run's line: under way, the kind it is on, how many of the run's kinds, and since when; ended, what it
  * removed and what it kept by reason. The time is the driver's, never a clock of the page's own.
  */
 export function SpaceRunLine({ run }: { run: SpaceRun }) {
@@ -145,10 +145,10 @@ function EarlyGroup({ group, busy, onRemove }: { group: SpacePlan['early'][numbe
 }
 
 /**
- * *Free up space…*, listed (KEEP1e, the cleanup design §3.3, §4.1): drawn under the card's head as the Downloads row's list is drawn
+ * *Free up space…*, listed: drawn under the card's head as the Downloads row's list is drawn
  * under its row. What each rule takes now, with one press for all of it; what could go early by the person's word, each group with its
  * own press said first in its own words; and the kinds with a press of their own. Each press sends exactly the units shown; the driver
- * judges each again, so the run's line may say one was kept since. A refusal is said here, where the press was made (R3).
+ * judges each again, so the run's line may say one is kept. A refusal is said here, where the press is made.
  *
  * @remarks A molecule: drawn from props, so every state is reachable without a shell. `plan` absent is the list on its way.
  */

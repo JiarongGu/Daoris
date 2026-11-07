@@ -33,7 +33,7 @@ export const Updated: Story = {
   args: { update: state({ outcome: { phase: 'installed', build: STAGED.id, version: '0.0.1', commit: 'abc1234' } }) },
 };
 
-// The two codes SWAP2 added, said in the banner's words; `detail` is the journal's English, which they replace.
+// The swap's two newest codes, said in the banner's words; `detail` is the journal's English, which they replace.
 export const RolledBackByAFailedMove: Story = {
   args: {
     update: state({

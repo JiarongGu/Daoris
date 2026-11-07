@@ -31,8 +31,8 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
   /** Nothing can be chosen while it is set: a change already on its way. */
   disabled?: boolean;
   /**
-   * 🔴 The status bar's shape rather than a form's. It was already there and looked wrong: a 30px bordered control
-   * parked in a 24px bar, which reads as a form that fell out of a dialog. A bar item is
+   * 🔴 The status bar's shape rather than a form's: a 30px bordered control
+   * parked in a 24px bar reads as a form that fell out of a dialog. A bar item is
    * borderless, full-height, and lights on hover like every other item beside it — the chooser is
    * the same chooser, and only its trigger belongs to the bar.
    */
@@ -52,7 +52,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
         <ChevronDown size={glyphSize(bar ? 12 : 14)} aria-hidden className="text-ink-faint" />
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
-        {/* SELECT1: a long list is capped at the room the popper measured on its side, and scrolls inside it.
+        {/* A long list is capped at the room the popper measured on its side, and scrolls inside it.
             The viewport hides its own scrollbar, so the arrows at each end are what says there is more. */}
         <RadixSelect.Content
           position="popper" sideOffset={4} collisionPadding={8}
@@ -101,9 +101,9 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
 }
 
 /**
- * One choice of a single-select group, drawn as a row that reads whole (QUESTIONUI1a; D208, the supervisor design §8.1-§8.2): a real
+ * One choice of a single-select group, drawn as a row that reads whole: a real
  * radio inside the row's label, so the group's Tab, arrows and Space are the browser's own and no roving focus is built, drawn in the
- * platform's palette rather than the OS's (UX5 U5). The rows sharing a `name` are one group; a caller wraps them in its
+ * platform's palette rather than the OS's. The rows sharing a `name` are one group; a caller wraps them in its
  * `role="radiogroup"` with the group's name. The row's name is what `labelledBy` names, so the whole row is the press without its
  * every line being the name; `describedBy` adds the rest. Selected, the row wears the accent's border and wash, apart from any mark
  * drawn inside it.
@@ -168,7 +168,7 @@ export function CheckField({ checked, onChange, label, hideLabel, disabled, clas
 }
 
 /**
- * A choice of a few, all in view (D66: the theme, the language) — a radiogroup of buttons, the arrow
+ * A choice of a few, all in view (the theme, the language) — a radiogroup of buttons, the arrow
  * keys moving the choice the way every radiogroup's do. For two to four options that fit a line: a
  * select would hide what a person is choosing between.
  *

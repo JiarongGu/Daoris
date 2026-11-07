@@ -80,7 +80,7 @@ describe("the window's zoom, by the wheel and the keys", () => {
     expect(zoomLevel()).toBe(110);
     key({ key: '0', code: 'Digit0' });
     expect(zoomLevel()).toBe(100);
-    // Any other key is left where it was going.
+    // Any other key is left to go where it is going.
     expect(key({ key: 'b', code: 'KeyB' })).toBe(true);
   });
 });

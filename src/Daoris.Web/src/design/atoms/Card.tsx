@@ -4,7 +4,7 @@ import { cn } from '../../lib/cn';
 /* ---------------------------------------------------------------- cards, tiles, headers */
 
 export function Card({ id, warn, accent, className, children }: {
-  /** What a link or a menu item brings into view (UX5 U72). */
+  /** What a link or a menu item brings into view. */
   id?: string;
   warn?: boolean; accent?: boolean; className?: string; children: ReactNode;
 }) {
@@ -22,9 +22,9 @@ export function Card({ id, warn, accent, className, children }: {
 }
 
 /**
- * A domain's cards, 16 px apart (the UI/UX design R1, UIFIT1): the spacing is the container's, set once, and a card
- * sets no outer margin of its own (`tokens.test.ts`). The `mt-3.5` each card wore was 14 px, off the scale's step, and
- * two cards that forgot it touched.
+ * A domain's cards, 16 px apart: the spacing is the container's, set once, and a card
+ * sets no outer margin of its own (`tokens.test.ts`). A per-card `mt-3.5` would be 14 px, off the scale's step, and
+ * two cards that forgot it would touch.
  */
 export function CardStack({ className, children }: { className?: string; children: ReactNode }) {
   return <div data-card-stack="" className={cn('grid min-w-0 gap-4', className)}>{children}</div>;
@@ -99,10 +99,10 @@ export function PageHeader({ title, description, action }: {
  * Explanatory text: the console explaining itself, in the secondary ink.
  *
  * @remarks
- * **It wraps at the column's edge, as every block of a page does**. It carried
- * Tailwind's prose width, 65ch, from UX5's first pass, when a paragraph in a column nothing stood
- * beside ran to about 190 characters a line. A measure per paragraph gave every page two edges: on
- * the install a quest's title ran the pane while its body stopped at 456 px, and in 中文 the 65
+ * **It wraps at the column's edge, as every block of a page does**. Tailwind's prose
+ * width, 65ch, is not applied, though a paragraph in a column nothing stands
+ * beside runs to about 190 characters a line. A measure per paragraph gives every page two edges: on
+ * the install a quest's title runs the pane while its body stops at 456 px, and in 中文 the 65
  * Latin digits held about 32 glyphs. The page's column (`ViewMain`) is the one place a line's length
  * is set, and it sets none; the person sizes the pane with the list's edge and the side bar.
  *
@@ -162,10 +162,10 @@ const HELD = 'whitespace-nowrap';
  * **A browser may break a line after any hyphen**, so on the installed window a setting's terminal twin read
  * `--no-` over `keep`, and `--` over `workspace`: in 中文, where a sentence fills its line to the edge, the
  * break fell inside a flag. Each word is a box of its own, as wide as the word and never wider than the line, so it
- * moves to the next line whole, and breaks inside only when that one word is wider than the line (U8). The spaces
+ * moves to the next line whole, and breaks inside only when that one word is wider than the line. The spaces
  * between the words stay where a line may break. The text is unchanged, so a copy is still the command.
  *
- * `break-word`, not the `anywhere` a path wears: it leaves a sentence's narrowest width what it was, so a flex row
+ * `break-word`, not the `anywhere` a path wears: it leaves a sentence's narrowest width unchanged, so a flex row
  * cannot squeeze a command to a character a line, where `anywhere` would let it.
  *
  * A span of one word is that word's box itself, and a span of several holds one box per word.
@@ -177,7 +177,7 @@ const HELD = 'whitespace-nowrap';
  * its last box is inside the code and the marks are not code: that box is alone in a group that does not wrap, which
  * leaves the break after it to the same rules, and it breaks inside at its line less an em a mark, so a word filling its
  * line leaves them room rather than pushing them past the edge. A box whose word breaks inside is as wide as its line,
- * so there the marks stand at its edge. A span no mark follows is drawn as it was.
+ * so there the marks stand at its edge. A span no mark follows is drawn as it is.
  */
 export function CodeText({ text, className, trail }: {
   text: string;
@@ -217,7 +217,7 @@ export function CodeText({ text, className, trail }: {
 export function SectionTitle({ level = 2, children }: { level?: 2 | 3; children: ReactNode }) {
   const Heading = level === 3 ? 'h3' : 'h2';
   // `mt-6` separates a section from the one above it — and is dead space when the title IS the first
-  // thing in its card, which it usually is. Every card in the console was carrying 24px of it above
+  // thing in its card, which it usually is: every card would carry 24px of it above
   // its own heading, on top of the card's own padding.
   return (
     <Heading className="mb-2 mt-6 text-small font-semibold text-ink-faint first:mt-0">

@@ -7,7 +7,7 @@ import type { ActorRow, RoleCatalogue, RoleRow } from '../../data/wiring';
 import i18n from '../../locales/i18n';
 import { RolesCard, roleIdFor, roleName } from './Roles';
 
-// FOUNDATION1y-i (the foundation design §2.7), COMPANYVIEW1a (the company-view design §3.1): the roles on AI features, one row each. The
+// The roles on AI features, one row each. The
 // person adds, changes and removes a working role (its names, work, place and choices), turns it off, gives a seeded one back its seed,
 // and takes the Designer Daoris suggests. Every press goes by the one door, `SET_ROLE`: Save, Off and Use the default; the
 // page judges nothing, and a refusal is the driver's sentence under its press.

@@ -8,7 +8,7 @@ import { HELPER_DEFAULT, HelperField, type HelperRule, helperRowSays, helperSays
 // What a helper a repository's agent asks for does, set on its Setup's
 // *Sessions* and on a workspace's Defaults as `daoris place helpers` sets it from a terminal. Each mode's sentence is the
 // terminal's (`driver helpers`' words in the CLI's `driverconfig.ts`), the agents are named in the order they are tried as the
-// driver's choice walks them (D163's MIXAGENT2a-ii note), and the field sends the twins' edit, which the driver judges.
+// driver's choice walks them, and the field sends the twins' edit, which the driver judges.
 
 const t = i18n.t.bind(i18n);
 

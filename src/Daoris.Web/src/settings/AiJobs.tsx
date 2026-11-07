@@ -27,7 +27,7 @@ export type HelpAccessJob = {
 };
 
 /**
- * Restricted mode's configured access on THIS machine (HELPMODE1c1, D183 point 1; the modes design §4.1, §5): the agent the
+ * Restricted mode's configured access on THIS machine: the agent the
  * grants are held on, what is chosen, and each choice handed up.
  */
 export type HelpGrantsJob = {
@@ -36,10 +36,10 @@ export type HelpGrantsJob = {
   /** The grants whose operations show from the start. */
   opened?: readonly HelpGrantId[];
   busy?: boolean;
-  /** The operations the driver acts on, for each grant it serves (HELPMODE1c2b); a grant not named is drawn as the mock. */
+  /** The operations the driver acts on, for each grant it serves; a grant not named is drawn as the mock. */
   built?: Partial<Record<HelpGrantId, readonly string[]>>;
   onChoose: (grant: HelpGrantId, operation: string, chosen: boolean) => void;
-  /** A grant set on a plugin's own tab (the browser's, HELPMODE1c3): its door, leading to that tab. */
+  /** A grant set on a plugin's own tab (the browser's): its door, leading to that tab. */
   onManage?: (grant: HelpGrantId, plugin: string | null) => void;
 };
 
@@ -62,7 +62,7 @@ export type HelpGrantsJob = {
  */
 export function AiJobs({ search, access, grants }: {
   search?: SearchTier; access?: HelpAccessJob;
-  /** Restricted mode's configured access, drawn under the access row while restricted (HELPMODE1c1). */
+  /** Restricted mode's configured access, drawn under the access row while restricted. */
   grants?: HelpGrantsJob;
 }) {
   const { t } = useTranslation();
@@ -72,7 +72,7 @@ export function AiJobs({ search, access, grants }: {
     <Card>
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('settings.ai.body')}</Prose>
 
-      {/* The card's rows on one label track (R1, UIFIT1): each job's value beside its words. */}
+      {/* The card's rows on one label track: each job's value beside its words. */}
       <SettingList>
       <SettingRow
         label={t('settings.ai.search.label')}
@@ -92,9 +92,9 @@ export function AiJobs({ search, access, grants }: {
 }
 
 /**
- * Ask Daoris's access (HELPMODE1b, D183 point 2; the modes design §5): the panel's own chip, beside its agent, this machine's choice
+ * Ask Daoris's access: the panel's own chip, beside its agent, this machine's choice
  * for every workspace. Full access's confirmation opens under the row, where it has the row's width, and so does restricted mode's
- * configured access while restricted (HELPMODE1c1, design §5's sketch): full access hands everything, so it has nothing to grant.
+ * configured access while restricted: full access hands everything, so it has nothing to grant.
  */
 function HelpAccess({ access, grants }: { access: HelpAccessJob; grants?: HelpGrantsJob }) {
   const { t } = useTranslation();

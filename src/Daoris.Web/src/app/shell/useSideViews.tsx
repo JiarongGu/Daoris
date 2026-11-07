@@ -52,7 +52,7 @@ export function useSideViews({ view, lists, notify, attached, askSetup, agentsMo
     part: agentPart,
     onAnchored: () => setAgentPart(null),
     onOpenPlugin: (plugin) => open('plugins', plugin),
-    // A place's Workflow and Sessions (AGENTSPLACE1f, 1h; SETUPUX1h): their rows press the driver's hooks, which the application hands in so
+    // A place's Workflow and Sessions: their rows press the driver's hooks, which the application hands in so
     // the place imports none. Each is an element, mounted only while its section is open.
     bodies: (place) => ({
       workflow: (

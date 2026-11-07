@@ -67,7 +67,7 @@ export function useQuestsView({
   /** A line of work of an ask folded to a count opens its own *At work* view. Absent where Sessions is not, a browser. */
   onOpenAtWork?: (session: string) => void;
   /**
-   * The door into a run (WORKFLOW1c, the workflow design §7): its session attended, the side bar on its *Workflow*. Absent where
+   * The door into a run: its session attended, the side bar on its *Workflow*. Absent where
    * Sessions is not, a browser, which reads no run.
    */
   onOpenRun?: (session: string) => void;
@@ -82,12 +82,12 @@ export function useQuestsView({
   onFilters: (filters: Record<string, unknown> | null) => void;
   notify: Notify;
   /**
-   * The door into Sessions (design §3): this view keeps the record summary and hands the session over rather than
+   * The door into Sessions: this view keeps the record summary and hands the session over rather than
    * growing a second console. Absent where Sessions is not — a browser has no frame to open.
    */
   onAttend?: (session: string) => void;
   /**
-   * A draft handed in by a door — SURF6b's "send it back as a quest" arrives with the repository the work came from
+   * A draft handed in by a door — "send it back as a quest" arrives with the repository the work came from
    * already named. The composer opens on it; the person writes the rest, because the ask and its reason are the
    * part that has to travel (`repository-owns-its-work`). An event, consumed by identity.
    */
@@ -113,7 +113,7 @@ export function useQuestsView({
   const [askComposing, setAskComposing] = useState(false);
   // The door's last answer about a quest, kept until the list catches up with it.
   const [held, setHeld] = useState<Quest | null>(null);
-  // The quest whose trust question is open: only on the press, for the quest it was asked about.
+  // The quest whose trust question is open: only on the press, for the quest it is asked about.
   const [trustingFor, setTrustingFor] = useState<string | null>(null);
 
   // A door asked for the composer, pre-filled. Consumed on arrival: this is an event, not a state.
@@ -139,7 +139,7 @@ export function useQuestsView({
   if (!asking && askSeen) setAskSeen(false);
   useEffect(() => { if (asking) onAsked?.(); }, [asking, onAsked]);
 
-  // ENTRY1g2 (D161's ENTRY1g2 note): a go to the held group past a receiver filter, which would drop the quests held for
+  // A go to the held group past a receiver filter, which would drop the quests held for
   // the person that are addressed elsewhere. Everyone's are asked for the go alone, never remembered: it lasts until the
   // person chooses a receiver in the ⋯, which says what is shown, or leaves Quests. Set as the go arrives, not after.
   // One go sets it aside once (`goSeen`), so a choice in the ⋯ while the door still holds the group is not undone.
@@ -166,7 +166,7 @@ export function useQuestsView({
   // its trace. In a browser there is no roster, and each record's id is said.
   const harnesses = useHarnesses();
   const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
-  // LIMITRESUME1d2: the accounts its session's limit's wait is worded from, as its head words it; none in a browser.
+  // The accounts its session's limit's wait is worded from, as its head words it; none in a browser.
   const accounts = useAccounts();
   // A quest just published is looked at now, not at the driver's next poll.
   const nudge = useNudge();
@@ -180,12 +180,12 @@ export function useQuestsView({
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
-  // This machine's lost take brought forward (SYNCMERGE1c2, D178 point 3): the service's own door, `daoris remote sync forward`'s twin.
+  // This machine's lost take brought forward: the service's own door, `daoris remote sync forward`'s twin.
   const forward = useForwardConflict();
   const remove = useDeleteQuest();
-  // The person's yes to a done's departure (DRIFT1d2): the service's accept door, `daoris quest accept`'s twin.
+  // The person's yes to a done's departure: the service's accept door, `daoris quest accept`'s twin.
   const accept = useAcceptQuest();
-  // The person's reopen of a sealed submission and their go-on with a step it held (FABRIC-CLOSE1c3, D156): the service's own doors,
+  // The person's reopen of a sealed submission and their go-on with a step it held: the service's own doors,
   // `daoris quest reopen` and `quest go-on`'s twins. Abandoning such a step is the decline's.
   const reopen = useReopenQuest();
   const goOn = useContinueQuest();
@@ -195,15 +195,15 @@ export function useQuestsView({
   const work = useWorkPlan(item && 'quest' in item ? { scope: 'quest', id: item.quest } : null, { enabled: active });
   const wiring = useRemotes().data;
   const workActs = useWorkActs({ notify });
-  // How a quest came to be: read only while its section is open, for the quest it was opened on, since the read
+  // How a quest came to be: read only while its section is open, for the quest it is opened on, since the read
   // takes every session record and quest. Another quest's page opens folded.
   const [tracing, setTracing] = useState<string | null>(null);
   const trace = useTrace('quest', tracing);
-  // A quest's moves (FLOWCHART1a2): read only while its flowchart is open, for the quest it was opened on, from the service's door
+  // A quest's moves: read only while its flowchart is open, for the quest it is opened on, from the service's door
   // in a browser as in the window. Another quest's page opens folded.
   const [flowing, setFlowing] = useState<string | null>(null);
   const moves = useQuestMoves(flowing);
-  // The last abandon's answer, for the quest it was of, said on its page before the record catches up.
+  // The last abandon's answer, for the quest it answers, said on its page before the record catches up.
   const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
   // The chosen quest as its page shows it: the list's copy, or the door's last answer while the list catches up.
   const shownQuest = item && 'quest' in item
@@ -218,14 +218,14 @@ export function useQuestsView({
   const historyOf = useHistoryPlan(shownQuest ? { scope: 'quest', id: shownQuest.id } : null, { enabled: active && closedQuest });
   const failedOf = useHistoryPlan(shownQuest ? { scope: 'failed', id: shownQuest.id } : null, { enabled: active && closedQuest });
   const historyActs = useHistoryActs({ notify });
-  // Its closure graph's ends (FABRIC-CLOSE1j2): its unit's, `quest:<id>`, which no milestone carries, read from this machine's driver
+  // Its closure graph's ends: its unit's, `quest:<id>`, which no milestone carries, read from this machine's driver
   // while Quests is in front (from memory where the work is pushed). A browser has no driver, and its page says none.
   const closure = useWorkState(shownQuest ? questUnit(shownQuest.id) : null, active && shownQuest !== undefined);
   // A set-up step's review: the presses' one owner, and whether Daoris still serves each waiting set-up's tab here.
   const reviewActs = useReviewActs({ notify });
   const inReview = driver.data?.inReview;
   // Every query this view renders from — a session surface or driver bridge that fails silently is
-  // indistinguishable from a family with no driver attached. Said once, while the view is in front (D118 §3h).
+  // indistinguishable from a family with no driver attached. Said once, while the view is in front.
   useErrorNotify(active ? quests.error ?? registry.error ?? sessions.error ?? driver.error : null, notify);
 
   const asks = useAsksPart({
@@ -254,7 +254,7 @@ export function useQuestsView({
   // Where the session list's reader placed each session, the one cache the app's other views read: a quest's
   // session whose quest awaits another repository's answer reads as awaiting there.
   const groups = useSessionGroups();
-  // Only what the host says can be asked is offered (D70: an adopter, or a repository registered with a root) —
+  // Only what the host says can be asked is offered (an adopter, or a repository registered with a root) —
   // anything else would invite an ask the service refuses. The service still holds the judgement.
   const adopters = (registry.data ?? []).filter(canBeAsked).map((row) => row.repository);
   // Known to be nobody, not merely not loaded yet: a composer that flashed "nobody" would be a lie.
@@ -273,7 +273,7 @@ export function useQuestsView({
   };
 
   const onPublish = async () => {
-    // Read whole only now — a file chosen and then removed was never read at all.
+    // Read whole only now — a file chosen and then removed is never read at all.
     setReading(true);
     let attachments;
     try {
@@ -328,8 +328,8 @@ export function useQuestsView({
     });
   };
 
-  // A person's dismissal: the quest itself did not move — only what it was waiting on. *Drop mine* on a bring-forward that lost
-  // again dismisses the fresh take's conflict after it (SYNCMERGE1c2), one answer after the other, each said.
+  // A person's dismissal: the quest itself does not move — only what it waits on. *Drop mine* on a bring-forward that lost
+  // again dismisses the fresh take's conflict after it, one answer after the other, each said.
   const onDismiss = (quest: Quest, machine: string, sequence: number, also: SubmissionRef[] = []): void =>
     dismiss.mutate({ id: quest.id, machine, sequence }, {
       onSuccess: (result) => {
@@ -341,7 +341,7 @@ export function useQuestsView({
       onError: failure(notify),
     });
 
-  // This machine's lost take brought forward (SYNCMERGE1c2): the page shows the quest as the answer left it, and a refusal or a loss
+  // This machine's lost take brought forward: the page shows the quest as the answer left it, and a refusal or a loss
   // again is the service's sentence, the quest read again by the hook.
   const onForward = (quest: Quest, machine: string, sequence: number) =>
     forward.mutate({ id: quest.id, machine, sequence }, {
@@ -353,7 +353,7 @@ export function useQuestsView({
     });
 
   // A quest made by mistake, deleted: the list chooses nothing, on the service's sentence. A refusal is its
-  // sentence too, said inside the ask that was pressed, and the page stays on the quest, because nothing happened
+  // sentence too, said inside the ask that is pressed, and the page stays on the quest, because nothing happens
   // to it.
   const onDelete = (quest: Quest, answered: Answered) =>
     remove.mutate(quest.id, {
@@ -366,7 +366,7 @@ export function useQuestsView({
       onError: (error) => answered.refused(sentence(error)),
     });
 
-  // The person's yes to a departure (DRIFT1d2, D133 §4): the page stays on the quest as the answer left it, released, and
+  // The person's yes to a departure: the page stays on the quest as the answer left it, released, and
   // a refusal (nothing waits for a yes) is the service's sentence, the quest unmoved.
   const onAccept = (quest: Quest) =>
     accept.mutate(quest.id, {
@@ -461,7 +461,7 @@ export function useQuestsView({
         onRespond={(action, reason, answered) => onRespond(quest, action, reason ?? null, answered)}
         // The service's own door, so a browser on this machine says yes as the desktop does.
         onAccept={() => onAccept(quest)}
-        // FABRIC-CLOSE1c3: the reopen is offered where a live step stands on its submission, which the door judges again; the
+        // The reopen is offered where a live step stands on its submission, which the door judges again; the
         // submission sent is the one the page showed. A refusal is said inside its ask, the quest unmoved.
         reopen={(() => {
           const step = standingStep(quest, everything.data ?? quests.data ?? []);
@@ -494,7 +494,7 @@ export function useQuestsView({
           onError: failure(notify),
         })}
         onTrusting={(open) => setTrustingFor(open ? quest.id : null)}
-        // A refusal is said in the question, which stays open to press again (UXFIX2b3b).
+        // A refusal is said in the question, which stays open to press again.
         onGrant={(granted, answered) => trust.mutate(granted, {
           onSuccess: (answer) => {
             notify(answer.message, answer.verified ? 'ok' : 'error');
@@ -540,7 +540,7 @@ export function useQuestsView({
     };
   };
 
-  // What the page is handed of its moves (FLOWCHART1a2): the fold, and the read once it is open, on either host.
+  // What the page is handed of its moves: the fold, and the read once it is open, on either host.
   const movesDoor = (quest: Quest): QuestMovesDoor => {
     const open = flowing === quest.id;
     return {

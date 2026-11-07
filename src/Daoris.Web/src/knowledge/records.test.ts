@@ -4,7 +4,7 @@ import {
   answeredBy, atFloor, convergenceFilters, findingId, findingTitle, lower, readingOf, SIMILARITY, searchFilters,
 } from './records';
 
-// What Search's and Convergence's lists keep and read (FRAME1f, D118 §3f), as values.
+// What Search's and Convergence's lists keep and read, as values.
 
 const entry = (id: string, title = id) => ({ id, repository: id.split(':')[0]!, kind: 'Rule', path: 'a.md', title });
 
@@ -26,7 +26,7 @@ describe("Search's and Convergence's memory", () => {
     expect(convergenceFilters({ threshold: 1.4 })).toEqual({ threshold: SIMILARITY.max });
   });
 
-  /** UX5 U42: a step down is a tenth, never below the floor, and the floor offers nothing lower. */
+  /** A step down is a tenth, never below the floor, and the floor offers nothing lower. */
   it('lowers by a tenth to the floor, and knows the floor', () => {
     expect(lower(0.75)).toBe(0.65);
     expect(lower(0.55)).toBe(0.5);

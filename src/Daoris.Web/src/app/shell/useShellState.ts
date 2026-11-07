@@ -13,7 +13,7 @@ import { type Tab, rememberedView } from '../shellHelpers';
 
 export function useShellState() {
   const [tab, setTab] = useState<Tab>(rememberedView);
-  // What each view's list remembers (D118 §3f): its closing, its width, its chosen item, its filters.
+  // What each view's list remembers: its closing, its width, its chosen item, its filters.
   const lists = useListPanes();
   const attending = lists.pane('sessions').chosen;
   // Knowledge's mode: Search or Convergence, remembered for the place. Held here, where every door is
@@ -24,7 +24,7 @@ export function useShellState() {
   // A domain remembered from before it left Settings reads as the one Settings opens on, so Ask Daoris is told the domain
   // shown: Plugins as Driver, which keeps its folder's row; Agents, Workspace and Permissions as Appearance.
   const settingsSection: SettingsSection = rememberedDomain(lists.pane('settings').chosen);
-  // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
+  // The part of a Settings domain a menu item named, brought into view once it is drawn.
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
   // And the host a door into Settings → Git named, whose add form it opens filled, until that form closes.
   const [settingsGitHost, setSettingsGitHost] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function useShellState() {
   const [addRequested, setAddRequested] = useState(false);
   // And its *Import a folder…*: the import drawer, which names the workspace it lands in.
   const [importRequested, setImportRequested] = useState(false);
-  // And the workspace either opens filled with, where Ask Daoris's go named one (ENTRY1d2b): consumed with the event.
+  // And the workspace either opens filled with, where Ask Daoris's go named one: consumed with the event.
   const [drawerWorkspace, setDrawerWorkspace] = useState<string | null>(null);
   // The composer a go to New conversation opens filled: an event the frame consumes once by its id, as it does `workIntent`.
   const [compose, setCompose] = useState<(Compose & { id: number }) | null>(null);
@@ -66,7 +66,7 @@ export function useShellState() {
   // goes one level in on it, and back to the workspace from there by its own door.
   const [mapCode, setMapCode] = useState<string | null>(null);
   // The palette asked for the ask composer — an event Quests consumes, like the two above. A quest or an
-  // ask a door names is Quests' chosen item since FRAME1d, and its page is the main area's.
+  // ask a door names is Quests' chosen item, and its page is the main area's.
   const [asking, setAsking] = useState(false);
   // The palette, and what it asks the Work frame to do. Both are events consumed on arrival
   // rather than state, for the reason the quest composer's opening draft is.
@@ -79,7 +79,7 @@ export function useShellState() {
   // shows each menu's letter.
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [mnemonics, setMnemonics] = useState(false);
-  // Whether the window is narrower than the seven names need, so they fold into one menu (UX7a2).
+  // Whether the window is narrower than the seven names need, so they fold into one menu.
   const foldMenus = useMenuFold();
   // What a menu, the palette or a key asked the Work frame to do with the session attended there: an event.
   const [workIntent, setWorkIntent] = useState<FrameIntent | null>(null);

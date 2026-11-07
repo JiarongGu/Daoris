@@ -49,16 +49,16 @@ describe("a plugin's page", () => {
     expect(within(header()).getByText('1.2.0')).toBeInTheDocument();
     expect(within(header()).getByText('acme.gate')).toBeInTheDocument();
     const line = within(header()).getByText('Holds quests overnight.');
-    // Its description is content, read whole; the install showed it cut to one line with an ellipsis. D140 §2:
+    // Its description is content, read whole, never cut to one line with an ellipsis:
     // it takes the pane's width, as every block of every page does.
     expect(line).not.toHaveClass('truncate');
     expect(line.className).not.toMatch(/\bmax-w-/);
     expect(line).not.toHaveAttribute('title');
-    // PLUG10, as D119 §2 gives it: running is the quiet neutral, never done's green.
+    // Running is the quiet neutral, never done's green.
     expect(within(header()).getByText('running').className).toMatch(/\bborder-line\b/);
   });
 
-  /** D140 §2: the header leads with the plugin's icon at 48 px, its own or its monogram, beside the title. */
+  /** The header leads with the plugin's icon at 48 px, its own or its monogram, beside the title. */
   it('leads its header with its icon: its own where handed, its monogram otherwise', () => {
     const svg = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg"/>')}`;
     const { unmount } = page({ plugin: { ...PLUGIN, icon: svg } });
@@ -75,9 +75,9 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * D140 §2, from the install: the detail's blocks share one width, the pane's. A paragraph capped at
-   * 65ch beside a line that ran the pane's width wrapped the page at two edges, and in 中文 held about 32 glyphs. An
-   * update's refused plan, drawn by `PluginUpdatePlan`, kept the cap after the page's own went.
+   * The detail's blocks share one width, the pane's. A paragraph capped at
+   * 65ch beside a line that runs the pane's width wraps the page at two edges, and in 中文 holds about 32 glyphs. An
+   * update's refused plan, drawn by `PluginUpdatePlan`, keeps no cap of its own either.
    */
   it('lets every block of its detail take the pane\'s width: no paragraph keeps a measure of its own', () => {
     const { container } = page({
@@ -154,7 +154,7 @@ describe("a plugin's page", () => {
     expect(within(header()).queryByText('changed here')).toBeNull();
   });
 
-  /** D140 §3.1: an icon's problem never refuses the plugin; its Source says why, in the reader's sentence, verbatim. */
+  /** An icon's problem never refuses the plugin; its Source says why, in the reader's sentence, verbatim. */
   it('says in its Source why its declared icon is not drawn, and nothing where it draws', () => {
     const problem = "`icon` `icon.svg` is not a file in the plugin's folder.";
     const { unmount } = page({ plugin: { ...PLUGIN, iconProblem: problem } });
@@ -210,7 +210,7 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * NAME2, seen on the install in 中文: the switch read 关闭, which says *close* as much as *turn off*. Its
+   * In 中文 the switch never reads 关闭, which says *close* as much as *turn off*. Its
    * acts are 停用 and 启用, and its off state 已停用; the English pair stays *Turn off* and *Turn on*.
    */
   it('names its switch in 中文 by what it does to the plugin, never by close', async () => {
@@ -248,7 +248,7 @@ describe("a plugin's page", () => {
     expect(within(section).getByText('Writes outside Daoris with create_issue, not accepted: Ask Daoris is refused it')).toBeInTheDocument();
     expect(within(section).getByText('Ask Daoris may call none of what it serves')).toBeInTheDocument();
     expect(section).toHaveTextContent('a change to Daoris is still a proposal you apply');
-    // D170's note: a native plugin is trusted code, said plainly.
+    // A native plugin is trusted code, said plainly.
     expect(section).toHaveTextContent('A plugin is code that runs as you');
     unmount();
 
@@ -268,7 +268,7 @@ describe("a plugin's page", () => {
   });
 
   /**
-   * HELPPLUG1a's tightening (D170's note), and HELPPLUG1c: a server's tools reach Ask Daoris only once the person approves them
+   * A server's tools reach Ask Daoris only once the person approves them
    * here, all its reads and each write they tick, one by one; an approved one can be withdrawn; a refused one says why and
    * offers no approval.
    */
@@ -447,7 +447,7 @@ describe("a plugin's page", () => {
       expect(onRemove).toHaveBeenCalledWith('acme.gate', expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) }));
     });
 
-    /** UXFIX2b1: the ask takes the focus on opening, waits for its answer, and says a refusal inside, staying open. */
+    /** The ask takes the focus on opening, waits for its answer, and says a refusal inside, staying open. */
     it('focuses its sentence, waits saying so, and says a refusal inside while it stays open', async () => {
       let answer: Answered | undefined;
       const { onCancelRemove } = page({ asking: true, onRemove: (_id, answered) => { answer = answered; } });

@@ -26,7 +26,7 @@ import { setupRows } from './setupRows';
 import { setupSaid } from './setupSaid';
 
 /**
- * The sections of a repository's Setup (UX6f, D150 §4.2; *Sessions' access* since AUTONOMY1d, *Heavy gates* since HEAVYRUN1b2b), in
+ * The sections of a repository's Setup, in
  * the order the page draws them. The last six are the place's Workflow folds, each a row `work` and `heavy` hold, drawn only where
  * `only` names them.
  */
@@ -35,7 +35,7 @@ export type SetupSectionId =
   | 'landing' | 'opinion' | 'look' | 'landedRoute' | 'line' | 'more';
 
 /**
- * A repository's git remotes with the identity each resolves to (GITAUTH1e, the git-auth design §7.3), and the presses that choose one
+ * A repository's git remotes with the identity each resolves to, and the presses that choose one
  * for a remote; left out where none is set or where the remotes are not read, and the section is not drawn.
  */
 export type GitSetup = {
@@ -56,13 +56,13 @@ export type GitAccessSetup = {
 };
 
 /**
- * This machine's heavy gates for it (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note), used where its own `daoris.gates.json` marks none, and
+ * This machine's heavy gates for it, used where its own `daoris.gates.json` marks none, and
  * the press that sets the whole list or clears it; left out where none is set, and the section is not drawn.
  */
 export type HeavySetup = {
   /** In the order they run; none where none is set here. */
   gates: HeavyGate[];
-  /** Whether its own file wins, as the driver read it (HEAVYRUN1b2c); none until it has answered. */
+  /** Whether its own file wins, as the driver read it; none until it has answered. */
   marks?: HeavyMarks | null;
   onSave: (gates: HeavyGate[] | null, answered: Answered) => void;
   /**
@@ -77,13 +77,13 @@ export type HeavySetup = {
 };
 
 /**
- * The access setup its sessions start under (AUTONOMY1d, D184 points 1-3), as the driver resolves it, and the press that changes it
+ * The access setup its sessions start under, as the driver resolves it, and the press that changes it
  * here; left out where none is set, and the section is not drawn.
  */
 export type AccessSetup = {
   /** Its workspace, which a value from it names. */
   workspace?: string;
-  /** Each pause as it resolves, with where it was set (`LINES`' `access`). */
+  /** Each pause as it resolves, with where it is set (`LINES`' `access`). */
   pauses: ResolvedPause[];
   /** Whether what stands above it, its workspace's over this machine's, is full access. */
   aboveFull: boolean;
@@ -127,7 +127,7 @@ export type WorkSetup = {
   opinion?: RepositoryOpinion | null;
   onOpinion?: (edit: OpinionEdit) => void;
   /**
-   * How its work is committed (DOORS1b, D164's amendment points 1 and 3), as the driver resolves it: its own, its workspace's,
+   * How its work is committed, as the driver resolves it: its own, its workspace's,
    * or Daoris's default; left out where none is set, and no row is offered.
    */
   commits?: RepositoryCommits | null;
@@ -171,7 +171,7 @@ export type ReachSetup = {
   onAddRule?: (list: RuleListName, rule: string, added: () => void) => void;
   onRemoveRule?: (rule: string) => void;
   /**
-   * The switch *Daoris may change this checkout's files* (GITAPP2b, the git-writes design §2): off by default, and on it says how many
+   * The switch *Daoris may change this checkout's files*: off by default, and on it says how many
    * sessions already run in the checkout (`running`: null where the sessions could not be read, absent while they are on their way).
    * Left out where none is set, and no row is drawn.
    */
@@ -180,7 +180,7 @@ export type ReachSetup = {
 
 /**
  * How the route the place page shows lands: under a saved version, the summary the fold folds to and the editor of the
- * version's own `land` options; under Current, the conversion's door, since the old rule has no editor any more.
+ * version's own `land` options; under Current, the conversion's door, since a rule not saved as a version has no editor.
  */
 export type LandsHere =
   | { is: 'version'; summary: string; editor: ReactNode }
@@ -227,7 +227,7 @@ export type RepositorySetupProps = {
 export const SESSIONS_SECTIONS: readonly SetupSectionId[] = ['git', 'access', 'sessions', 'reach'];
 
 /**
- * The folds the place's page draws under its Workflow beside Gates (SETUPUX1o, the Setup design's §2.3), each with its owner: *Landing*
+ * The folds the place's page draws under its Workflow beside Gates, each with its owner: *Landing*
  * (its `land`), *Second opinion*, *Your look*, *Landed route* (`WORKFLOW_LANDED`), *The line*, and *More* (commits and the heavy gates).
  */
 export const FOLD_SECTIONS: readonly SetupSectionId[] = ['landing', 'opinion', 'look', 'landedRoute', 'line', 'more'];
@@ -235,14 +235,13 @@ export const FOLD_SECTIONS: readonly SetupSectionId[] = ['landing', 'opinion', '
 /**
  * **A repository's Setup**: every setting the repository holds on this machine, in five sections, each
  * folding to a line that names its values. *Driving* (drive, hold, a tree per session), *Line and landing* (its line, how
- * its work lands, how it is committed, DOORS1b; the design's *Work*, which the catalogue keeps for no name since the view
- * it named was retired), *Sessions' access* (full access or each pause, AUTONOMY1d, D184), *Heavy gates* (this machine's builds
- * and suites for it where its own `daoris.gates.json` marks none, edited whole, HEAVYRUN1b2b), *Sessions* (the language they
+ * its work lands, how it is committed), *Sessions' access* (full access or each pause), *Heavy gates* (this machine's builds
+ * and suites for it where its own `daoris.gates.json` marks none, edited whole), *Sessions* (the language they
  * write in, what a helper their agent asks for does, the standing answer) and *Reach* (read by agents outside it, what its
  * sessions also write into, Claude Code's rules here).
  *
  * @remarks
- * **What Daoris decides folds; what the person decides shows** (§1 rule 4). A folded section's line names each value, one
+ * **What Daoris decides folds; what the person decides shows**. A folded section's line names each value, one
  * at its workspace's or Daoris's default marked as such. A section opens on its own where it holds a value set for this
  * repository, which carries its *Clear*: a line, a landing rule, a session language or a reading of its own, a standing
  * answer, a relationship or a rule. *Driving* opens only on a press: its three are yes or no for this repository alone,

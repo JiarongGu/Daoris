@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// A workspace's *Kept on this machine* in SHELL mode (HIST1e, D153; the history-clearing design §2.4, §5, §6.1): its Details
+// A workspace's *Kept on this machine* in SHELL mode: its Details
 // asks this machine's driver what the home keeps of its finished work, and *Clear history…* sends over DAORIS.DRIVER
 // exactly the units its first press listed. Over a mocked bridge, as the shell-attached half is held
 // (`docs/2026-09-19-frontend-architecture.md` §4).
@@ -70,7 +70,7 @@ describe("a workspace's history on its Details", () => {
         units: [{ kind: 'ask', id: 'a1b2c3' }, { kind: 'quest', id: '0c1d2e' }, { kind: 'quest', id: '3f4a5b' }],
       },
     })));
-    // Two of three went: the list closes, and says what went and what was kept in no plain success's tone.
+    // Two of three went: the list closes, and says what went and what stayed, in no plain success's tone.
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Cleared 2 of 3 from aurora, 14.6 MB. 1 changed since the list and was kept.', 'error'));
     // The reading is asked again, so the page says what is kept now.
     await waitFor(() => expect(invoke.mock.calls.filter(([, type]) => type === 'HISTORY_PLAN').length).toBeGreaterThan(1));

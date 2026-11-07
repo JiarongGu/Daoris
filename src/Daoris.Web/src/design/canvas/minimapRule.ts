@@ -1,7 +1,7 @@
 import { stored, store } from '../../lib/stored';
 import type { Box, Size, View } from './viewMath';
 
-// The minimap's rule and its geometry (CANVAS1d; the canvas design §4): offered where the world is past twice the viewport either way,
+// The minimap's rule and its geometry: offered where the world is past twice the viewport either way,
 // at the world's own size (so a zoom does not make it come and go), from the 36rem floor the canvas already holds; switched in the sizing
 // menu and remembered by the viewer.
 

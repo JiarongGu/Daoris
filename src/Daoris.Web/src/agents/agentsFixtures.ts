@@ -163,7 +163,7 @@ export const CLAUDE_USE: AgentAccounts = {
 };
 
 /**
- * What the fold into one set changed, unsaid (POOL1a, D197 point 7; the account-pool design §4.2): `work` had its own two accounts
+ * What the fold into one set changed, unsaid: `work` had its own two accounts
  * and `forge` ran on account-1 alone; the machine's scope named account-1 and no list, so the set is used *One by one, in order*
  * and its starts still begin there; `work`'s first moved; account-3 no order held is placed; `work`'s kept account is not kept;
  * a name the file held is no account here. Two receipts, the second a file folded again.
@@ -198,8 +198,8 @@ export const CODEX_USE: AgentAccounts = {
 };
 
 /**
- * Codex with no account of Daoris's, and your own sign-in's windows read at a press before POOL1c: a reading kept
- * that the page no longer shows, since Daoris never asks your own sign-in.
+ * Codex with no account of Daoris's, and a reading kept for your own sign-in's windows:
+ * the page does not show it, since Daoris never asks your own sign-in.
  */
 export const CODEX_OWN_TOOL: Tool = toolsOf([{ ...CODEX, profiles: [] }])[0]!;
 
@@ -267,9 +267,9 @@ export const CODEX_READ_USE: AgentAccounts = {
 };
 
 /**
- * The install's shape, as the UX7 design §4.7 draws it, on one set: account-1 signed in with a session on it,
+ * The install's shape on one set: account-1 signed in with a session on it,
  * first in the order; account-2 unknown and never read; *personal*, named by the person, cooling; a new account
- * (`acct-…`, ACCT2's fresh id) signed in, last in the order as every new account is; your own sign-in, outside them.
+ * (`acct-…`, a fresh id) signed in, last in the order as every new account is; your own sign-in, outside them.
  */
 const INSTALL_DOOR: ToolDoor = {
   ...CLAUDE, version: '2.1.288 (Claude Code)',
@@ -441,7 +441,7 @@ export const RULES: AgentRulesState = {
   }],
 };
 
-/** What each Claude Code account has carried, counted by agent whichever of its doors ran (AGENTPROVIDER1 s-vii). */
+/** What each Claude Code account has carried, counted by agent whichever of its doors ran. */
 export const USAGE = [
   { agent: 'claude-code', profile: 'account-2', sessions: 4, used: 412_000 },
   { agent: 'claude-code', profile: 'account-1', sessions: 2, used: 96_000 },

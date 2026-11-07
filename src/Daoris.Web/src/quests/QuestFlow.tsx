@@ -8,7 +8,7 @@ import { type QuestMoveLine, type QuestOfLife, questFlow } from './questLife';
 import { shownStatus } from './records';
 
 /**
- * What the page holds of a quest's moves (FLOWCHART1a2): the fold, which is the organism's so it reads the moves only once the
+ * What the page holds of a quest's moves: the fold, which is the organism's so it reads the moves only once the
  * person opens it, and the read.
  */
 export type QuestMovesDoor = {
@@ -22,11 +22,11 @@ export type QuestMovesDoor = {
   refusal?: string | null;
 };
 
-/** At most this many of a status's lines show before its fold (the flowchart design §2.1). */
+/** At most this many of a status's lines show before its fold. */
 const SHOWN = 3;
 
 /**
- * **A quest's life drawn as a flowchart** (FLOWCHART1a1-a2; D186, the flowchart design §2.1): a section of its page after the
+ * **A quest's life drawn as a flowchart**: a section of its page after the
  * chain strip and before *How this came to be*, folded to its line (its name and the status it stands at) until it is opened,
  * then the four statuses with the one it stands at lit and the moves out of each said, and, once its moves are read, the way it
  * went: its path drawn heavier and, inside each status, what happened there, oldest first, three before a fold.
@@ -34,8 +34,8 @@ const SHOWN = 3;
  * @remarks
  * - **Its moves are read only when it opens**, as the trace is: the page's organism holds the fold and the read
  *   (`moves`), from the service's door, in a browser as in the window. Without a door it holds its own fold and draws the
- *   statuses alone, as FLOWCHART1a1 did.
- * - **A host that keeps no moves** (trap 18) draws the statuses and says the way it went is not kept there.
+ *   statuses alone.
+ * - **A host that keeps no moves** draws the statuses and says the way it went is not kept there.
  */
 export function QuestFlow({ quest, moves, className }: { quest: QuestOfLife; moves?: QuestMovesDoor; className?: string }) {
   const { t } = useTranslation();

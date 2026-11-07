@@ -162,7 +162,7 @@ describe("Setup's Driving", () => {
 });
 
 describe("Setup's Work", () => {
-  /** PUSH1b2: the shell pushes a repository whose line is not judged yet with `notReadYet`, read before the source. */
+  /** The shell pushes a repository whose line is not judged yet with `notReadYet`, read before the source. */
   it('says a line not read yet as that, not as no line', async () => {
     const line = { repository: 'engine', workspace: 'default', source: 'none' as const, notReadYet: true };
     draw({ ...SETUP_DEFAULTS, work: { ...SETUP_DEFAULTS.work, line } });
@@ -453,7 +453,7 @@ describe("a repository's review before landing", () => {
     const review = row(section('Line and landing'), 'Review before landing');
 
     expect(review).toHaveTextContent('Before work here lands, it is shown to you in dev and waits for you to say it is right.');
-    // What the landing's gate does with it since REVIEWENV1c (REVIEWENV1c2), never that nothing reads it.
+    // What the landing's gate does with it, never that nothing reads it.
     expect(review).toHaveTextContent('Where work here waits for your review, it lands only once you say it is reviewed');
     expect(review).not.toHaveTextContent('Declared only');
     expect(review).toHaveTextContent('From the workspace work.');
@@ -486,7 +486,7 @@ describe("a repository's review before landing", () => {
 /**
  * *Second opinion before landing*, beside *Review before landing*, as the driver
  * resolves it. Nothing set says today's behaviour; a workspace's rule says so and offers *Set for this repository*; its own
- * carries Clear, which hands it back to its workspace's. Each says what the gate does with it (XAGENT1f4).
+ * carries Clear, which hands it back to its workspace's. Each says what the gate does with it.
  */
 describe("a repository's second opinion before landing", () => {
   const withOpinion = (opinion: NonNullable<RepositorySetupProps['work']>['opinion'], onOpinion = vi.fn()) => ({
@@ -517,7 +517,7 @@ describe("a repository's second opinion before landing", () => {
     expect(opinion).toHaveTextContent('Before work here lands, codex-acp, else claude-code-acp, reads it, in a copy of its own');
     expect(opinion).toHaveTextContent('If no reviewer can read it, the work waits for you.');
     expect(opinion).toHaveTextContent('claude-code-acp is the same agent as the one that does the work here');
-    // XAGENT1f4: the twins' gate sentence, its terminal doors drawn as code.
+    // The twins' gate sentence, its terminal doors drawn as code.
     expect(opinion).toHaveTextContent("Where work here waits for another agent's reading, it lands only once that reading is settled");
     expect(within(opinion).getByText(code('daoris session opinion anyway <session>'))).toBeInTheDocument();
     expect(opinion).not.toHaveTextContent('Declared only');
@@ -640,7 +640,7 @@ describe("a repository's helpers rule", () => {
 
 /**
  * *Sessions' access*, beside its line and landing: full access confirmed once, then each pause with
- * its value and where it was set, as the driver resolves them (`LINES`' `access`).
+ * its value and where it is set, as the driver resolves them (`LINES`' `access`).
  */
 describe("a repository's sessions' access", () => {
   const pauses = (overrides: Record<string, { value: string; source: string }> = {}) => [
@@ -769,7 +769,7 @@ describe("a repository's landed route", () => {
 });
 
 /**
- * HEAVYRUN1b2b (D180's HEAVYRUN1b2a note): *Heavy gates*, after its sessions' access: this machine's list for a repository whose own
+ * *Heavy gates*, after its sessions' access: this machine's list for a repository whose own
  * daoris.gates.json marks none, folded to its gates by name in their order, open where a list is set, edited and saved whole.
  */
 describe("a repository's heavy gates", () => {
@@ -785,7 +785,7 @@ describe("a repository's heavy gates", () => {
     expect(heavy).toHaveAttribute('aria-expanded', 'false');
   });
 
-  /** HEAVYRUN1b2c: where the repository's own file marks heavy gates, its section says this list is not run, and its folded line cues it. */
+  /** Where the repository's own file marks heavy gates, its section says this list is not run, and its folded line cues it. */
   it("says why this list is not run where the repository's own file wins (the folded line's cue is heavySummary's)", () => {
     draw(withHeavy({ gates: [{ name: 'build', run: 'dotnet build' }], marks: { marks: true, names: ['web'] }, onSave: vi.fn() }));
 

@@ -11,7 +11,7 @@ import { PlaceSetUp } from './PlaceSetUp';
 import type { HoldOutcome } from './PlaceReview';
 
 /**
- * **A place's *Set up…*** (AGENTSPLACE1j, the Agents-place design §4), the organism over `PlaceSetUp`: it reads the plan for the draft the
+ * **A place's *Set up…***, the organism over `PlaceSetUp`: it reads the plan for the draft the
  * application holds and presses *Apply* as the person's own (`PLACE_APPLY`), straight to the route.
  *
  * @remarks
@@ -51,7 +51,7 @@ export function PlaceSetUpPanel({ place, page, doorFor, onOpenQuest }: {
     if (next !== null) change(id, { preset: next, adoption });
   }, [next, adoption, id, change]);
 
-  // A tick is bound to the declaration it was made at: once the plan for the draft is read, one whose line or blob moved is cleared, with its reason.
+  // A tick is bound to the declaration it is made at: once the plan for the draft is read, one whose line or blob moved is cleared, with its reason.
   const fresh = plan !== null && !planned.stale && !planned.reading;
   const ticked = draft?.accept;
   const cleared = draft?.cleared;

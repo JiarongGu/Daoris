@@ -6,8 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 // The Agents place in SHELL mode: the list of agents and an agent's page, its accounts with their last known
-// state and when each was read, and every act on it, over the mocked bridge. Moved from Settings → Agents' suite with the
-// cards it tested (`settings/AgentsDomain.test.tsx` until UX6e).
+// state and when each is read, and every act on it, over the mocked bridge.
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
@@ -52,7 +51,7 @@ function Place({ notify, first = 'claude-code', part = null, onAnchored, onOpenP
 const place = (notify: (message: string, tone?: 'ok' | 'error') => void = () => {}, options: Partial<Parameters<typeof Place>[0]> = {}) =>
   show(<Place notify={notify} {...options} />);
 
-/** Open a folded section by its name (D150 §1 rule 4). */
+/** Open a folded section by its name. */
 const unfold = async (section: string) => userEvent.click(await screen.findByRole('button', { name: `Show ${section}` }));
 
 /** An account's ⋯, opened from the keyboard: in this suite a pointer click leaves a Radix trigger closed. */
@@ -117,7 +116,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * 🔴 D150 §5.3: opening the place starts no process and asks no account. It reads the roster as the frame holds it and
+   * 🔴 Opening the place starts no process and asks no account. It reads the roster as the frame holds it and
    * the accounts' files; only *Read again* asks, on the press, one agent's accounts.
    */
   it('asks no account when it opens, and reads this agent’s accounts again only on Read again', async () => {
@@ -146,7 +145,7 @@ describe('the Agents place', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
-  /** Each account says its last known state with when it was read, and one nothing answered was never read (§5.3). */
+  /** Each account says its last known state with when it is read, and one nothing answered has never been read. */
   it('says each account’s state as last known and when it was read', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? {
@@ -173,7 +172,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * D152 §4.2: an account reads unknown on the install while a list held it, offered nothing on its row, and the owner pressed
+   * An account reads unknown on the install while a list held it, offered nothing on its row, and the owner pressed
    * the header's sign-in and made a new account. Unknown gets *Read*, that account alone; signed out gets *Sign in*,
    * to that account; each is loud where a list holds it.
    */
@@ -274,7 +273,7 @@ describe('the Agents place', () => {
     expect(screen.getByRole('button', { name: 'Hide Ways in' })).toBeTruthy();
     expect(screen.getByText(/is not on this machine's PATH/)).toBeTruthy();
 
-    // D152 §4.6: its page heads with its own installer, the one *Ways in* runs too.
+    // Its page heads with its own installer, the one *Ways in* runs too.
     const head = screen.getByRole('heading', { level: 1, name: 'codex' }).closest('header')!;
     await userEvent.click(within(head).getByRole('button', { name: 'Install' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
@@ -382,7 +381,7 @@ describe('the Agents place', () => {
 
   /**
    * 🔴 The account a person actually has — the tool's own configuration home — is the last row, named *Your own
-   * sign-in*, its explanation on its ⓘ. POOL1c (D197 point 3; the account-pool design §4.2): it is outside Daoris's accounts and
+   * sign-in*, its explanation on its ⓘ. It is outside Daoris's accounts and
    * never asked, so its row shows no state, no who, no reading and no press, and has no ⋯: no default, no read, no sign-in.
    */
   it('your own sign-in is the last row, outside Daoris’s accounts, with its ⓘ alone and nothing to press', async () => {
@@ -458,7 +457,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * OWNSPACE1b-B: while the agent has no Daoris account, the header's add press is *Sign in for Daoris*, a label
+   * While the agent has no Daoris account, the header's add press is *Sign in for Daoris*, a label
    * that names no account, and runs the same `login-new` flow, its panel under the header as *Add an account…*'s is.
    */
   it('heads with Sign in for Daoris while the agent has no Daoris account, and runs login-new', async () => {
@@ -479,7 +478,7 @@ describe('the Agents place', () => {
 
   /**
    * A sign-in the driver refuses to start keeps its panel and says the driver's sentence in it, with *Try again*
-   * and *Close*, where it was a toast and the panel closed with it (platform-ux §4).
+   * and *Close*, not as a toast with the panel closed.
    */
   it('keeps the sign-in panel when its start is refused, says the sentence in it, and starts again from it', async () => {
     let refuse = true;
@@ -541,7 +540,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * D152 §4.5's last step (POOL1c, the account-pool design §4.1): the name in its field is kept (ACCT2's `profile-rename`), the
+   * The add flow's last step: the name in its field is kept (`profile-rename`), the
    * terminal's twin under it, and the question goes. Nothing joins a list: the account serves every workspace as it is made.
    */
   it('keeps the new account’s name at the add flow’s end, and joins it to no list', async () => {
@@ -584,7 +583,7 @@ describe('the Agents place', () => {
     }));
   });
 
-  /** The add flow's last step, refused, stays up with the name as it was and says why in it. */
+  /** The add flow's last step, refused, stays up with the name as typed and says why in it. */
   it('keeps the add flow’s last step up with its name when its rename is refused, and says why in it', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
@@ -688,8 +687,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * A sign-in that kept nothing says so in its own panel (SIGNIN1, the UI/UX design §3.2's *Failed at a phase*), with *Try
-   * again* and *Close*, where it was a toast and the panel closed.
+   * A sign-in that kept nothing says so in its own panel (*Failed at a phase*), with *Try
+   * again* and *Close*, not as a toast with the panel closed.
    */
   it('a sign-in that kept nothing says so in its panel, which stays until it is closed', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -750,7 +749,7 @@ describe('the Agents place', () => {
 
   /**
    * Codex's one door is `codex-acp`, which signs its accounts in with `codex login` (the roster's `signsIn`, its
-   * agent's flow, AGT7), so Agents → Codex offers *Add an account…* as the terminal's `daoris agent login codex --new` does:
+   * agent's flow), so Agents → Codex offers *Add an account…* as the terminal's `daoris agent login codex --new` does:
    * a signed-out account's own sign-in first, then a new account on the door, whose end asks its name, since Codex names
    * nobody. Its own sign-in says no state, since Daoris never asks it.
    */
@@ -883,7 +882,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * D152 §4.2 and ACCT2: one name leads, the account's, the person's where they gave one, with who signed in beside it where
+   * One name leads, the account's, the person's where they gave one, with who signed in beside it where
    * the two differ, never one as title and the other faint; a fresh id the person never chose never leads.
    */
   it('leads each row with the account’s name, who signed in beside it, and never a fresh id', async () => {
@@ -966,7 +965,7 @@ describe('the Agents place', () => {
     expect(await signIn(null)).toHaveValue('');
   });
 
-  /** ACCT2's rename, from an account's ⋯: the person's name, sent as `daoris agent profile rename` sends it, and said once. */
+  /** The rename, from an account's ⋯: the person's name, sent as `daoris agent profile rename` sends it, and said once. */
   it('renames an account from its ⋯, and an emptied name gives it none', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
       if (type === 'HARNESS_ACTION') {
@@ -990,7 +989,7 @@ describe('the Agents place', () => {
 
   /**
    * A rename stays open until its act lands. Refused, it keeps the name the person typed and says why under it,
-   * whole, as a refused start is said in its form (UX5 U68); a retry that lands closes it, and *Never mind* is the one other
+   * whole, as a refused start is said in its form; a retry that lands closes it, and *Never mind* is the one other
    * way out.
    */
   it('keeps a refused rename open with the name typed, says why in it, and closes once a retry lands', async () => {
@@ -1020,7 +1019,7 @@ describe('the Agents place', () => {
     expect(await within(form).findByRole('alert')).toHaveProperty(
       'textContent', 'office already names personal — each claude-code account has a name of its own, and an id is one.');
     expect(within(form).getByRole('textbox', { name: 'Its name' })).toHaveProperty('value', 'office');
-    // Said where it was asked, not as a corner toast as well.
+    // Said where it is asked, not as a corner toast as well.
     expect(notify).not.toHaveBeenCalledWith(expect.anything(), 'error');
 
     await userEvent.click(within(form).getByRole('button', { name: 'Save the name' }));
@@ -1136,7 +1135,7 @@ describe('the Agents place', () => {
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull();
   });
 
-  /** 🔴 USE1a: a door the roster gives no Update offers none. */
+  /** 🔴 A door the roster gives no Update offers none. */
   it('offers no update on a door the roster gives none', async () => {
     place();
 
@@ -1269,7 +1268,7 @@ describe('the Agents place', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { door: 'claude-code', action: 'key-add', key },
     });
-    // Said where it was added, in the step that asks its name, rather than in a toast.
+    // Said where it is added, in the step that asks its name, rather than in a toast.
     const asking = await screen.findByRole('region', { name: 'Add an API key' });
     expect(within(asking).getByText('Added the API key …wxyz.')).toBeTruthy();
     expect(notify).not.toHaveBeenCalled();
@@ -1278,8 +1277,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * The key's field emptied and closed on the press, so a key the driver refused was gone with the place to say why,
-   * the failure ACCTEDIT1 fixed for a rename. Refused, the field stays with the key in it and says why; a retry that lands
+   * The key's field does not empty and close on the press, which would lose a key the driver refused along with the
+   * place to say why, as a rename's field would. Refused, the field stays with the key in it and says why; a retry that lands
    * closes it.
    */
   it('keeps a refused key in its field, says why in it, and closes once a retry lands', async () => {
@@ -1317,8 +1316,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * ACCTUX3, the UX7 design §4.5: *a key added asks the same question* as a sign-in's last step, its name and the lists it
-   * joins; it ended in a toast, and the account in no list. Left empty, it is called by its key's handle.
+   * *A key added asks the same question* as a sign-in's last step, its name, not a toast alone. Left empty, it is called by its key's handle.
    */
   it('asks a key added its name, and keeps it, as a sign-in’s last step does', async () => {
     invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
@@ -1356,7 +1354,7 @@ describe('the Agents place', () => {
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Add an API key' })).toBeNull());
   });
 
-  /** 🔴 Cancel is no: an untyped button inside the key's form was a SUBMIT, and saved what it closed. */
+  /** 🔴 Cancel is no: an untyped button inside the key's form is a SUBMIT, and would save what it closes. */
   it('saves nothing when the person cancels a typed key', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], takesKey: true }, ROSTER.harnesses[1]] }
@@ -1445,7 +1443,7 @@ describe('the Agents place', () => {
     place(notify);
 
     await unfold('Model and effort');
-    // What an account's own model means now roles choose models (D205 §6.4, MODELROLE1c2): their account default.
+    // What an account's own model means when roles choose models: their account default.
     expect(screen.getByText('Used where a role runs this agent on its account default; a model a role names outranks it.')).toBeInTheDocument();
     const row = screen.getByText('model opus · effort high').closest('li')!;
     await userEvent.click(within(row).getByRole('button', { name: 'Model & effort' }));
@@ -1464,8 +1462,8 @@ describe('the Agents place', () => {
   });
 
   /**
-   * The editor closed on the press, so a save the driver refused lost the choice with the place to say why, the
-   * failure ACCTEDIT1 fixed for a rename. Refused, it stays open with the choice made and says why under it.
+   * The editor does not close on the press, which would lose the choice of a save the driver refused along with the
+   * place to say why. Refused, it stays open with the choice made and says why under it.
    */
   it("keeps a refused model save open with the choice made, and says why under it", async () => {
     const CHOICES = { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high', 'xhigh'] };
@@ -1540,7 +1538,7 @@ describe('the Agents place', () => {
 
     const row = await screen.findByRole('listitem', { name: 'API key …wxyz' });
     expect(within(row).queryByRole('button', { name: 'Sign in' })).toBeNull();
-    // 🔴 Never signed in: the tool says so for any key, a wrong one included (measured, AGT3).
+    // 🔴 Never signed in: the tool says so for any key, a wrong one included (measured).
     expect(within(row).getByText('unchecked')).toBeTruthy();
     expect(within(row).queryByText('signed in')).toBeNull();
     const menu = await more('API key …wxyz');
@@ -1567,7 +1565,7 @@ describe('the Agents place', () => {
 
     await unfold('Ways in');
     expect(screen.getAllByText(/declared by plugin/)).toHaveLength(1);
-    // PLUGUI1c2b: the name is a door to the plugin's page, not text.
+    // The name is a door to the plugin's page, not text.
     await userEvent.click(screen.getByRole('button', { name: 'declared by plugin acme.gate' }));
     expect(onOpenPlugin).toHaveBeenCalledWith('acme.gate');
   });
@@ -1605,7 +1603,7 @@ describe('the Agents place', () => {
   });
 
   /**
-   * UX5 U72 and D150 §2.4: the Agents menu's *Usage* opens the agent's page at its usage, open and in view once it is
+   * The Agents menu's *Usage* opens the agent's page at its usage, open and in view once it is
    * drawn, and says it has, so a later visit opens at the top again.
    */
   it('opens at the part a door names, once that part is drawn', async () => {
@@ -1686,7 +1684,7 @@ describe('the Agents place', () => {
     expect(screen.queryByText(/^pinned /)).toBeNull();
   });
 
-  /** UX5 U56: a way in that is not there does not run from PATH yet. */
+  /** A way in that is not there does not run from PATH yet. */
   it('says a missing way in will run from PATH once it is there', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
       ? { ...ROSTER, harnesses: ROSTER.harnesses.map((door) => (door.door === 'codex' ? { ...door, pinnable: true } : door)) }
@@ -1759,8 +1757,7 @@ describe('the Agents place', () => {
 
 /**
  * What it may do: Daoris's defaults, the rules for every session on this machine and the
- * proposals, on the page of the agent Daoris hands the rules file, each press the terminal's `daoris agent rules`. Moved
- * here from Settings → Permissions' suite with UX6e.
+ * proposals, on the page of the agent Daoris hands the rules file, each press the terminal's `daoris agent rules`.
  */
 describe('what it may do', () => {
   const ROSTER = {
@@ -1892,7 +1889,7 @@ describe('how accounts are used', () => {
       ],
     }],
   };
-  /** The set's one scope (POOL1a2): every account in its order, no default, every workspace's. */
+  /** The set's one scope: every account in its order, no default, every workspace's. */
   const MACHINE = {
     workspace: null, default: null as string | null, list: ['personal', 'work'], begins: 'personal' as string | null,
     use: { use: 'goal', keep: null, early: true, near: 90 }, unknown: [], problem: null, near: [],
@@ -1930,10 +1927,10 @@ describe('how accounts are used', () => {
 
     const personal = await screen.findByRole('listitem', { name: 'personal' });
     expect(await within(personal).findByText('cooling')).toBeTruthy();
-    // The hold's end, never a reset the column cannot know was reported.
+    // The hold's end, never a reset the column cannot know is reported.
     expect(within(personal).getByText(/^until /)).toBeTruthy();
     expect(within(personal).queryByText(/^resets /)).toBeNull();
-    // *Now* says what runs on it; *nothing said yet* and *0 sessions* are not said (D152 §2 rule 4).
+    // *Now* says what runs on it; *nothing said yet* and *0 sessions* are not said.
     expect(within(personal).getByText('1 session')).toBeTruthy();
     expect(within(screen.getByRole('main')).queryByText(/nothing said yet|0 sessions|sessions running/)).toBeNull();
     await userEvent.click(within(personal).getByRole('button', { name: 'try personal now' }));
@@ -2002,7 +1999,7 @@ describe('how accounts are used', () => {
   });
 
   /**
-   * OWNSPACE1b-A, POOL1c: never asked, so an old cool-off and who it is are not said and no *Try
+   * Never asked, so an old cool-off and who it is are not said and no *Try
    * now* is offered; its ⓘ says it is outside Daoris's accounts.
    */
   it('says the own sign-in is outside Daoris’s accounts, with no old cool-off, no who and no Try now', async () => {
@@ -2062,7 +2059,7 @@ describe('how accounts are used', () => {
 
   /**
    * An agent whose accounts' use is read by asking it reads them at *Read now* and
-   * never as its page opens, whatever the age of what was kept; each window says its share against its curve now and where its
+   * never as its page opens, whatever the age of what is kept; each window says its share against its curve now and where its
    * reading came from.
    */
   it('reads each account’s use at Read now and not as its page opens, and says each window against its curve', async () => {
@@ -2146,7 +2143,7 @@ describe('how accounts are used', () => {
 
   /**
    * The set's next start, in any workspace, is said above the accounts, in
-   * the fold's words and with no fold opened; no row says where it runs or that it comes first (POOL1c: *Runs for* went).
+   * the fold's words and with no fold opened; no row says where it runs or that it comes first.
    */
   it('says above the accounts which account the next start takes and why, and marks no row', async () => {
     const next = {

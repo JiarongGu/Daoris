@@ -15,7 +15,7 @@ export type LandedChoice = string | null;
 export type LandedSetup = {
   start: WorkflowStart;
   onChoose: (workflow: LandedChoice, answered: Answered) => void;
-  /** The person's Accept or Withdraw of the integration declaration the start node carries (INTEGRATE1d part 3). */
+  /** The person's Accept or Withdraw of the integration declaration the start node carries. */
   onAcceptIntegration?: (request: IntegrationRequest, answered: Answered) => void;
 };
 
@@ -43,7 +43,7 @@ function gatesSaid(t: TFunction, landed: WorkflowLanded): string {
 }
 
 /**
- * **The landed route** of a repository (FABRIC-PIPELINE1a; D192 point 2, the pipeline design §1.3): Setup's route row, the verification
+ * **The landed route** of a repository: Setup's route row, the verification
  * workflow the work that lands follows, what chose it, where its gates stand, and the person's choice among the verification workflows
  * saved here, no verification, or its workspace's again where it names one of its own. The same `landed` route `daoris workflow
  * use … --landed` sets, kept on this machine.

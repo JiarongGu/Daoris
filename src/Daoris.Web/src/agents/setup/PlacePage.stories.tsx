@@ -15,9 +15,9 @@ import { PlaceWorkflowBodyView } from './PlaceSessions';
 import { foldedLines, headOf, type PlaceKind, type PlaceSection, type PlaceView, sectionsOf } from './placeShell';
 import { AGENTS, CATALOGUE, CHAIN, PLACES } from './setupFixtures';
 
-// A place's page (SETUPUX1h, the setup-UX design §2.1): the head and three sections folded to the line that names their values, at the
+// A place's page: the head and three sections folded to the line that names their values, at the
 // main area's three widths (80, 39 and 25 rem), in both languages and both themes. The first section's open body is the Workflow section's
-// own (SETUPUX1o: its routes, the chart in its column or one press away, and its folds): the measured spec (`measured/place.spec.ts`)
+// own (its routes, the chart in its column or one press away, and its folds): the measured spec (`measured/place.spec.ts`)
 // holds the head and the three lines within the first 400 px with it.
 
 const nothing = () => {};

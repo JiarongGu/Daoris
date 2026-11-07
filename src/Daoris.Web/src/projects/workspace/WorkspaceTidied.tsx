@@ -6,16 +6,16 @@ import { Button } from '../../design/ui';
 import { unitOfBranch, type MilestoneUnit } from '../../work/head/milestone';
 import { MilestoneLine } from '../../work/head/WorkMilestone';
 
-/** Rows drawn before the rest are one press away, as the groups above are (UX6h2b2). */
+/** Rows drawn before the rest are one press away, as the groups above are. */
 export const TIDIED_SHOWN = 5;
 
 /** The events the look writes for a branch it cleaned up, and for one it could not. */
 export const TIDIED_EVENTS = ['branch.tidied', 'branch.kept'] as const;
 
-/** The reasons a branch was left, as the machine log's design §4 names them; any other code is said with no reason. */
+/** The reasons a branch is left, as the machine log names them; any other code is said with no reason. */
 const WHY = ['unread', 'refused', 'busy', 'hidden', 'nested', 'linked', 'starting', 'sessions'] as const;
 
-/** Which `unread` it was (AUTOTIDY1a2): a code from the driver, never the sentence with its path; any other is left unworded. */
+/** Which `unread` it is: a code from the driver, never the sentence with its path; any other is left unworded. */
 const CAUSE = ['toplevel', 'refs', 'list', 'folder', 'index', 'folders', 'pass', 'judged'] as const;
 
 const text = (value: unknown) => (typeof value === 'string' && value ? value : null);
@@ -25,7 +25,7 @@ type Group = { line: LogRow; oldest: string | null };
 
 /**
  * The driver says a reason once while it lasts, which is once at each start of the window, so one branch kept for a week is a
- * line a start. Lines of one branch, repository, reason and cause are one row (AUTOTIDY1a2); a cleaned-up branch goes once, so
+ * line a start. Lines of one branch, repository, reason and cause are one row; a cleaned-up branch goes once, so
  * is a row by its own nature. Order is the lines' own, newest first.
  */
 function group(rows: readonly LogRow[]): Group[] {
@@ -58,7 +58,7 @@ function group(rows: readonly LogRow[]): Group[] {
 export function WorkspaceTidied({ lines, titles = {}, units = [] }: {
   lines: readonly LogRow[] | null | undefined;
   /**
-   * Each unit's milestone (FABRIC-MILESTONE1b, the fabric events design §D0): a row whose branch one names says, under it, where
+   * Each unit's milestone: a row whose branch one names says, under it, where
    * that work stands: the end, the clean-up and the recovery kept. Absent in a browser, which has no driver to read it from.
    */
   units?: readonly MilestoneUnit[];
@@ -105,7 +105,7 @@ function Tidied({ line, oldest, titles, units }: {
     repository,
     t(done ? 'projects.tidied.done' : 'projects.tidied.kept', { when: ago(line.time) }),
     oldest ? t('projects.tidied.since', { when: ago(oldest) }) : null,
-    // A folder git lists no tree in, or a tree whose opening was cut off: said by its kind.
+    // A folder git lists no tree in, or a tree whose opening is cut off: said by its kind.
     done && line.data.tree === true
       ? t(line.data.kind === 'stray' ? 'projects.tidied.stray' : line.data.kind === 'opening' ? 'projects.tidied.opening' : 'projects.tidied.aside')
       : null,

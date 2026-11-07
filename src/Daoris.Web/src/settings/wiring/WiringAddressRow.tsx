@@ -4,8 +4,8 @@ import { Button, Prose, SettingRow } from '../../design/ui';
 import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 
 /**
- * *Change the service's address* (WIRING1e, the this-Daoris design §4), in the Service card: the account's `DAORIS_SERVICE_URL`, set
- * to an address of this machine or cleared for the default. The ask says first the old value and the new, that it takes effect when
+ * *Change the service's address*, in the Service card: the account's `DAORIS_SERVICE_URL`, set
+ * to an address of this machine or cleared for the default. The ask says first the current value and the new one, that it takes effect when
  * Daoris starts again, and that a terminal reads it too; a malformed address or one that is not this machine's is refused inside it.
  *
  * @remarks

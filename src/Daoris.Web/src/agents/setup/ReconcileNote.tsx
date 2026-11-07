@@ -6,8 +6,8 @@ import { type Answered, InlineConfirm } from '../../work/InlineConfirm';
 import type { ReconcilePlanned } from './reconcilePlan';
 
 /**
- * **What the shared doctrine asks of an adopted repository** (D230 point 2, the context-one design §3 B): where the doctrine tool's status says
- * the canon moved, or a file the repository keeps as its own was passed by the canon's, a note between the place's head and its sections says
+ * **What the shared doctrine asks of an adopted repository**: where the doctrine tool's status says
+ * the canon moved, or a file the repository keeps as its own is passed by the canon's, a note between the place's head and its sections says
  * how, with the counts a sync would move, and offers *Reconcile…*, which asks the repository's own session to decide each difference. The
  * press is the person's, confirmed in the page; a refusal is the driver's sentence. Nothing is drawn where nothing is offered.
  *

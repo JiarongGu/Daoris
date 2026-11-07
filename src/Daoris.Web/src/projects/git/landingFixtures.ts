@@ -71,7 +71,7 @@ export const WAITING_UNITS: MilestoneUnit[] = [{
   entries: [],
 }];
 
-/** A landing as a driver from before FLOWCHART1c answers it: no session, no advances and no units, so the drawing says none were read. */
+/** A landing as an older driver answers it: no session, no advances and no units, so the drawing says none are read. */
 export const OLDER_BRANCH: TraceBranch = {
   branch: 'review/q2-shader-cache', tip: '0e4b9c0000000000000000000000000000000000', at: at(10), line: 'main', plugin: 'github', pushed: false,
 };

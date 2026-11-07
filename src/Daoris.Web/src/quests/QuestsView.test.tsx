@@ -16,7 +16,7 @@ import {
 // a host. The Playwright loop owns the real end-to-end; this owns the view's own logic at millisecond speed.
 
 // What a quest carries: a link, a file kept on this machine (it has a path — which the
-// page must never SHOW), and a file named on the record whose bytes stayed where it was published.
+// page must never SHOW), and a file named on the record whose bytes stay where it is published.
 const KEPT_PATH = 'C:/somewhere/data/quests/abc123/attachments/ab12cd34ef56-before.png';
 const QUESTS = [{
   id: 'abc123', from: 'game', to: 'engine',
@@ -81,7 +81,7 @@ function view(opening: { from?: string; to?: string } | null = null, notify = vi
   return notify;
 }
 
-/** Quests opened by a door that names `item` (D118 §3i), which the list chooses now. */
+/** Quests opened by a door that names `item`, which the list chooses. */
 const openedOn = (item: string) => view(null, vi.fn(), item);
 
 /** The main area with nothing chosen, found afresh as it settles: it is a new element from loading to its notice. */
@@ -107,12 +107,12 @@ describe('QuestsView', () => {
   });
   afterEach(() => {
     vi.unstubAllGlobals();
-    // What the list chose and how it was filtered is remembered per viewer (D118 §3f), so each test starts afresh.
+    // What the list chooses and how it is filtered is remembered per viewer, so each test starts afresh.
     window.localStorage.clear();
   });
 
   /**
-   * 🔴 SURF6b's door — "send it back as a quest" — hands the composer a draft, and consuming it by
+   * 🔴 The door "send it back as a quest" hands the composer a draft, and consuming it by
    * setting state during render looped until React gave up: the door crashed the view it opened.
    */
   it('a draft handed in by a door opens the composer on it, once', async () => {
@@ -203,7 +203,7 @@ describe('QuestsView', () => {
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('abc123');
   });
 
-  // ——— The list's filters (D118 §2, §3f): in its ⋯, and remembered.
+  // ——— The list's filters: in its ⋯, and remembered.
 
   it('filters the quests to one receiver from the ⋯, says so at the list\'s head, and remembers it', async () => {
     const asked: string[] = [];
@@ -281,7 +281,7 @@ describe('QuestsView', () => {
 
     expect(await within(questList()).findByText('lanes assets + core')).toBeInTheDocument();
     const page = await chooseRow('Expose a streaming budget');
-    // In its Details. A field's name is sentence case (the glossary's `field` kind, NAME1a).
+    // In its Details. A field's name is sentence case (the glossary's `field` kind).
     await userEvent.click(within(page).getByRole('button', { name: /^Details/ }));
     expect(within(page).getByText('Lanes')).toBeInTheDocument();
     // Named as the repository declares them, where its registration says.
@@ -361,7 +361,7 @@ describe('QuestsView', () => {
     await waitFor(() => expect(within(questMain()).queryByRole('region', { name: 'Conflicts' })).toBeNull());
   });
 
-  // ——— SYNCMERGE1c2: this machine's lost take brought forward from its page, by the conflict's name.
+  // ——— This machine's lost take brought forward from its page, by the conflict's name.
 
   /** This machine's take lost on a step open again, as a local host answers it to its own machine's page. */
   const lostHere = (conflicts: Record<string, unknown>[]) => [{
@@ -496,13 +496,13 @@ describe('QuestsView', () => {
       // Gone, so the list chooses nothing, and the main area says how to choose.
       expect(await within(questMain()).findByText('Choose a quest or an ask')).toBeInTheDocument();
       expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
-      // The ⋯ it was asked from went with the quest, so the focus goes to the main area that held it, never the
+      // The ⋯ it is asked from goes with the quest, so the focus goes to the main area that held it, never the
       // page's body.
       expect(questMain()).toHaveFocus();
     });
 
     /**
-     * A refusal reaches the person in the service's words, and since UXFIX2 inside the ask where they pressed, which stays
+     * A refusal reaches the person in the service's words, inside the ask where they press, which stays
      * open, rather than in a toast after it had closed on the press (the second-opinion review, `QuestPage.tsx:396`).
      */
     it('a refusal reaches the person in the service\'s words inside the ask, and the quest stays on its page', async () => {
@@ -540,7 +540,7 @@ describe('QuestsView', () => {
     });
   });
 
-  // ——— The person's yes to a done's departure (DRIFT1d2, D133 §4): listed first while it waits on them, one press on its
+  // ——— The person's yes to a done's departure: listed first while it waits on them, one press on its
   // page, through the service's accept door, and answered in the service's own words.
 
   describe('accepting a departure', () => {
@@ -694,7 +694,7 @@ describe('QuestsView', () => {
 
     /**
      * An ask's delete refused is said inside its ask, in the service's
-     * words, which stays open; it was a toast after the ask had closed on the press. Landed, it closes with the page.
+     * words, which stays open, never a toast after the ask has closed on the press. Landed, it closes with the page.
      */
     it('says a refused delete of an ask inside its ask, and closes the page once a delete lands', async () => {
       ASKS = [{ ...PROPOSED, deletable: true }];
@@ -1010,7 +1010,7 @@ describe('QuestsView', () => {
       'href', `/api/quests/abc123/attachments/ab12cd34ef56${'0'.repeat(52)}`);
     // A picture is shown as one — from the host's own route, never from the path.
     expect(within(page).getByRole('img', { name: 'before.png' })).toBeInTheDocument();
-    // 🔴 A page does not name a machine path, even one it was answered.
+    // 🔴 A page does not name a machine path, even one it is answered.
     expect(page.textContent).not.toContain('C:/somewhere');
   });
 
@@ -1095,7 +1095,7 @@ describe('QuestsView', () => {
   });
 
   /**
-   * 🔴 UX5 U31: the drawer made *done* its one loud control whatever the quest's state, so an Open
+   * 🔴 The drawer made *done* its one loud control whatever the quest's state, so an Open
    * quest led with closing it and offered taking it as the quiet choice. The loud control is the
    * quest's next step: take while it is open, done once it is taken.
    */
@@ -1201,7 +1201,7 @@ describe('QuestsView', () => {
     expect(await within(questMain()).findByText('The person marked this done: It is in the shared folder.')).toBeInTheDocument();
   });
 
-  /** A refusal of the person's done is the service's sentence, said inside its ask, and the quest stays as it was. */
+  /** A refusal of the person's done is the service's sentence, said inside its ask, and the quest stays as it is. */
   it("says the service's refusal of the person's done inside its ask", async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
@@ -1380,8 +1380,8 @@ describe('a group a door brings into view', () => {
   });
 
   /**
-   * ENTRY1g2 (D161's ENTRY1g2 note): a person's receiver filter drops a held quest addressed elsewhere from the query, so
-   * the go found no group. The go shows everyone's for itself alone; the stored filter is never written by it.
+   * A person's receiver filter drops a held quest addressed elsewhere from the query, so
+   * the go would find no group. The go shows everyone's for itself alone; the stored filter is never written by it.
    */
   describe('past a receiver filter', () => {
     const FILTERS = 'daoris.list.quests.filters';

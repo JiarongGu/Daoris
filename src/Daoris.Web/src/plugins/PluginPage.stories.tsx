@@ -162,7 +162,7 @@ export const NothingChosen: StoryObj<typeof PluginMainNotice> = {
   ),
 };
 
-/** Gone: the chosen plugin was removed at a terminal or by hand. */
+/** Gone: the chosen plugin is removed at a terminal or by hand. */
 export const Gone: StoryObj<typeof PluginMainNotice> = { render: () => <PluginMainNotice state="gone" /> };
 
 /** Loading: skeleton rows, never the empty state. */

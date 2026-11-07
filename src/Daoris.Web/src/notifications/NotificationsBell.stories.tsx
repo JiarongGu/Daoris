@@ -3,8 +3,8 @@ import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
 import { NotificationsBell } from './NotificationsBell';
 
-// The title bar's bell (NOTIFY2b, the notification design §2.1, §3.3): what needs the person in open's hue; the presses' own count
-// in the warning hue while one waits unshown, which must be seen at a glance beside the strip's other controls in both themes (§10).
+// The title bar's bell: what needs the person in open's hue; the presses' own count
+// in the warning hue while one waits unshown, which must be seen at a glance beside the strip's other controls in both themes.
 
 /** The strip's trailing group, beside a stand-in for the browser's door, at the strip's height. */
 const strip: Decorator = (Story) => (

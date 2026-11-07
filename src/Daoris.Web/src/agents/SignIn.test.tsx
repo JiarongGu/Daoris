@@ -324,7 +324,7 @@ describe('signing in, phase by phase', () => {
     expect(stateOf(/^Waiting on your browser/)).toMatch(/waits on you.*47s so far/);
     expect(screen.getByText('Open the page and enter this code:')).toBeTruthy();
     expect(screen.getByText('ABCD-12345')).toBeTruthy();
-    // The tool's own bound, from when it was printed: fifteen minutes, forty-seven seconds gone.
+    // The tool's own bound, from when it is printed: fifteen minutes, forty-seven seconds gone.
     expect(screen.getByText('Expires in 14m')).toBeTruthy();
     expect(screen.getByRole('link', { name: /auth\.openai\.com/ }).getAttribute('href')).toBe('https://auth.openai.com/codex/device');
     expect(screen.getByRole('status').textContent).toBe('Waiting on your browser, waits on you');
@@ -382,8 +382,8 @@ describe('signing in, phase by phase', () => {
   });
 
   /**
-   * CODEXLOGIN1, the browser with its port free: `codex login` 0.160.0 prints where it listens, then the page to open, then the
-   * other way (D125's note; the page's query values replaced). The link offered is the maker's page, never the local server's
+   * The browser with its port free: `codex login` 0.160.0 prints where it listens, then the page to open, then the
+   * other way (the page's query values replaced). The link offered is the maker's page, never the local server's
    * address, and the panel says the tool opened the browser; once the tool exits signed in, the driver's own phases follow.
    */
   it('offers the browser sign-in\'s page, never its local server, and says the tool opened the browser', async () => {
@@ -406,7 +406,7 @@ describe('signing in, phase by phase', () => {
   });
 
   /**
-   * CODEXLOGIN1, the other way beside the one running: a device code while the browser waits, the browser while a device code
+   * The other way beside the one running: a device code while the browser waits, the browser while a device code
    * waits, with a word on why, since a workspace that turns device codes off says so only on the maker's page while the tool
    * waits out its fifteen minutes. The press is the organism's, which stops the one running and starts the other.
    */
@@ -430,7 +430,7 @@ describe('signing in, phase by phase', () => {
   });
 
   /**
-   * CODEXLOGIN1, the port held: the driver refused the browser sign-in before it started, its sentence naming each holder; the
+   * The port held: the driver refuses the browser sign-in before it started, its sentence naming each holder; the
    * panel says it whole and offers the device code first, focused, with *Try again* and *Close* beside it.
    */
   it('says a held port whole and offers the device code first', async () => {
@@ -450,7 +450,7 @@ describe('signing in, phase by phase', () => {
   });
 
   /**
-   * CODEXLOGIN1, a sign-in the account refused: where the tool says why on a line of its own (`Error logging in…:`, as 0.160.0
+   * A sign-in the account refused: where the tool says why on a line of its own (`Error logging in…:`, as 0.160.0
    * ends a refused one), the panel says that line beside its own sentence, and offers the other way.
    */
   it('says the tool\'s own refusal line and offers the other way', async () => {
@@ -467,7 +467,7 @@ describe('signing in, phase by phase', () => {
   });
 
   /**
-   * CODEXLOGIN1, the switch mid-sign-in: the panel stays up through both runs, and reads the latest one after its own start,
+   * The switch mid-sign-in: the panel stays up through both runs, and reads the latest one after its own start,
    * so the browser's page from the first run is never offered beside the device code of the second.
    */
   it('reads the latest run\'s lines after a switch, never the first run\'s page', async () => {

@@ -5,7 +5,7 @@ import { sessionWidths, storyWidths } from '../design/storyWidths';
 import type { Channel, ChannelItem } from '../work/channel';
 import { ChannelPanel, ChannelSection } from './ChannelSection';
 
-// An ask's channel (SESSONE2c, D167 points 6 to 8): the owner's ask over an app and its database repository, where the two sessions
+// An ask's channel: the owner's ask over an app and its database repository, where the two sessions
 // and the person talk. Molecules, so each state is reached by passing a channel: no driver, no service. English and 中文, since
 // the section's, the composer's and Daoris's lines' words are chrome, while the messages are shown as written.
 
@@ -36,7 +36,7 @@ const meta: Meta<typeof ChannelSection> = {
   title: 'Asks/ChannelSection',
   component: ChannelSection,
   args: { onPost: () => {}, repositories: ['app', 'db'] },
-  // An ask's page at the frame's widths (the UI/UX design R6, STORYGAP1): half by default, a story's own width instead.
+  // An ask's page at the frame's widths: half by default, a story's own width instead.
   decorators: [storyWidths.half],
 };
 export default meta;

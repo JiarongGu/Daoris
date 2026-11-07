@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { type HelpConversationRow, historyGroups, joinPages, listingPage } from './history';
 
 // The history grouped as a person reads time, by this machine's calendar days: what is pinned, then today,
-// yesterday, the rest of this week (from its Monday) and older; each row where its last word was said, in the driver's order.
+// yesterday, the rest of this week (from its Monday) and older; each row where its last word is said, in the driver's order.
 
 /** A local time, on this machine's calendar. */
 const local = (year: number, month: number, day: number, hour = 12) => new Date(year, month - 1, day, hour).toISOString();
@@ -51,8 +51,8 @@ describe('the history’s groups', () => {
   });
 });
 
-// ASKHIST1d2: the driver orders and searches every conversation and answers a page of them, with how many there are and
-// where the next page starts (D158's ASKHIST1d1 note); the page reads each answer, joins its pages, and searches by the
+// The driver orders and searches every conversation and answers a page of them, with how many there are and
+// where the next page starts; the page reads each answer, joins its pages, and searches by the
 // driver's own rule.
 
 describe('the history’s pages', () => {
@@ -71,7 +71,7 @@ describe('the history’s pages', () => {
 
   it('joins its pages in order, each conversation once by its session, with the last page’s count and next', () => {
     const [a, b, c] = ['a', 'b', 'c'].map((session) => row(session, local(2026, 10, 8)));
-    // Spoken in between two asks, b moved down a page: it shows once, where it was first listed.
+    // Spoken in between two asks, b moved down a page: it shows once, where it is first listed.
     const joined = joinPages([
       { conversations: [a!, b!], total: 4, next: 2 },
       { conversations: [{ ...b!, title: 'moved' }, c!], total: 3, next: null },

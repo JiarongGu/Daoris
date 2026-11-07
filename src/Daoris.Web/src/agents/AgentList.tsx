@@ -129,7 +129,7 @@ function RowDoor({ chosen, onPress, children }: { chosen: boolean; onPress: () =
 }
 
 /**
- * The list closed to its strip: each agent's mark, a letter or two no neighbour wears (*CC*, *Co*; ACCTUX2), the waiting mark
+ * The list closed to its strip: each agent's mark, a letter or two no neighbour wears (*CC*, *Co*), the waiting mark
  * on one with an account the person must act on, and one not installed drawn faint.
  */
 export function AgentStrip({ rows, chosen, onChoose }: {

@@ -7,7 +7,7 @@ import {
 import { SETUP_PRESETS } from './placeFixtures';
 
 // What the choices page reads of a plan: the suggestion each repository makes, with Keep where its landing
-// was chosen or a saved workflow is followed; nothing preselected where they differ; the driving caption's sides; and each refusal's part.
+// is chosen or a saved workflow is followed; nothing preselected where they differ; the driving caption's sides; and each refusal's part.
 
 const plan = (repositories: string[], preset = 'not-driven', rest: Partial<ReturnType<typeof askOf>> = {}, mix = {}) =>
   planOf({ repositories, preset, opinion: false, look: false, adoption: false, drive: false, ...rest }, mix);
@@ -81,7 +81,7 @@ describe('a plan\'s refusals', () => {
   });
 });
 
-// A tick is bound to the declaration it was made at, and a changed blob clears it with a reason.
+// A tick is bound to the declaration it is made at, and a changed blob clears it with a reason.
 
 const integrated = () => plan(['engine'], 'integrated');
 const moved = (read: PlacePlanned, blob: string): PlacePlanned => ({

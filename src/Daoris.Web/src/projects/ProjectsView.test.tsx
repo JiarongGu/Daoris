@@ -6,8 +6,8 @@ import { focusManager } from '@tanstack/react-query';
 // Repositories in SHELL mode — the bridge mocked as present, so the controls that only a desktop with a
 // driver may render actually render, and land on the DAORIS.DRIVER and DAORIS.REGISTRY modules. Browser
 // mode needs no twin suite: the absence of these controls there is asserted by their queries never
-// firing (an unstubbed fetch throws). Moved from `shell.test.tsx` with MOD3: tests follow their code.
-// Since FRAME1e the view is a list pane and a page: the repositories are the list, and what a
+// firing (an unstubbed fetch throws).
+// The view is a list pane and a page: the repositories are the list, and what a
 // card held is the chosen repository's page, so each test chooses the repository it reads.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
@@ -54,7 +54,7 @@ function Hub() {
 
 const SWEEP_PUSHED = [sweepSlice];
 
-/** The clean-up's list read pushed where the host pushes it, as `ShellSignals` mounts its slices (PUSH1c4b). */
+/** The clean-up's list read pushed where the host pushes it, as `ShellSignals` mounts its slices. */
 function Pushes() {
   useStateSlices(SWEEP_PUSHED);
   return null;
@@ -76,8 +76,8 @@ describe('the shell-attached platform', () => {
 
   /**
    * Seen on the installed window, 2026-09-24, on a machine whose registrations had all been retired:
-   * Projects was its header over a blank page. The fixture always has a repository, so no story or
-   * test had ever rendered this, and it is the first thing a new installation shows. Since FRAME1e the
+   * Projects showed its header over a blank page. The fixture always has a repository, so no story or
+   * test had ever rendered this, and it is the first thing a new installation shows. The
    * list says it, and offers its ＋'s act where the eye already is.
    */
   it('a machine with no repository says so, and offers the one act that changes it', async () => {
@@ -95,7 +95,7 @@ describe('the shell-attached platform', () => {
   });
 
   /**
-   * D118 §2 (audit PR1): the repositories are a list, the adopted first and then *Registered, not adopted*,
+   * The repositories are a list, the adopted first and then *Registered, not adopted*,
    * each a row a person chooses; the cards that opened nothing but *Manage* are gone, and what a card said
    * is the chosen repository's page.
    */
@@ -119,7 +119,7 @@ describe('the shell-attached platform', () => {
     expect(within(repositoryMain()).getByRole('button', { name: 'Add repository' })).toBeInTheDocument();
   });
 
-  /** D118 §3f (audit PR9): the chosen repository is the list's memory, so a relaunch reopens it. */
+  /** The chosen repository is the list's memory, so a relaunch reopens it. */
   it('remembers the repository chosen, and reopens it', async () => {
     show(<ProjectsView notify={() => {}} />);
     const row = await repositoryRow('engine');
@@ -150,7 +150,7 @@ describe('the shell-attached platform', () => {
     expect(window.localStorage.getItem(CHOSEN)).toBeNull();
   });
 
-  /** The page's header holds its acts (D118 §3b): *Manage* on a shell, and the door to its code map. */
+  /** The page's header holds its acts: *Manage* on a shell, and the door to its code map. */
   it("heads a repository's page with Manage and a door to its code map", async () => {
     const onOpenCode = vi.fn();
     show(<ProjectsView notify={() => {}} onOpenCode={onOpenCode} />);
@@ -322,7 +322,7 @@ describe("a workspace's page (UX6g)", () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'aurora' })).toBeInTheDocument();
   });
 
-  /** MAP1b, moved here from Settings → Workspace: the driver's answer for this workspace's starts, its intake's among them. */
+  /** The driver's answer for this workspace's starts, its intake's among them. */
   it('says on Details what a start in it runs on, its intake included, asking the driver for this workspace alone', async () => {
     machine();
     const onOpenAgent = vi.fn();
@@ -433,7 +433,7 @@ describe("a workspace's page (UX6g)", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'REMOVE', { payload: { workspace: 'aurora' } });
     await vi.waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing at the deployment changed')));
     // Only what every browser is given goes over the service: the registry and the index's counts the list reads, and where the
-    // shell pushes no standing, the circle's sync standing the machines' list reads (FABRIC-CLOSE1i2), which a browser on this
+    // shell pushes no standing, the circle's sync standing the machines' list reads, which a browser on this
     // machine reads too (`useSyncStanding`). The remote's address and key never do.
     expect(serviceCalls().filter((url) => !url.startsWith('/api/repositories') && !url.startsWith('/api/sync?'))).toEqual([]);
   });
@@ -540,7 +540,7 @@ describe("a workspace's page (UX6g)", () => {
 
   /**
    * A branch the driver kept is said inside the ask, in the driver's
-   * own sentence, word for word, and the ask stays open; it was a toast after the ask had closed on the press.
+   * own sentence, word for word, and the ask stays open rather than a toast after the ask has closed on the press.
    */
   it('says a branch the driver kept inside the discard’s ask, and keeps the ask open', async () => {
     const failed = {
@@ -567,7 +567,7 @@ describe("a workspace's page (UX6g)", () => {
   });
 
   /**
-   * LANDRETIRE1 part 2 (D102's note): a landing's branch the line took another way is withdrawn from Branches as
+   * A landing's branch the line took another way is withdrawn from Branches as
    * `daoris tree remove <branch> --repository <name> --why "…"` withdraws it: offered beside the row whose files still differ, with
    * its age and closed quest said, asked once with the person's reason, and the list read again once it landed.
    */
@@ -609,7 +609,7 @@ describe("a workspace's page (UX6g)", () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SWEEP', expect.anything());
   });
 
-  /** The clean-up's list as the shell pushes it (PUSH1c4a): a partition per repository with a checkout here. */
+  /** The clean-up's list as the shell pushes it: a partition per repository with a checkout here. */
   const SWEEP_SNAPSHOT = {
     slice: 'sweep', epoch: 'p1', status: 'ready',
     partitions: [
@@ -620,7 +620,7 @@ describe("a workspace's page (UX6g)", () => {
   const plans = () => invoke.mock.calls.filter(([, type]) => type === 'SWEEP_PLAN').length;
 
   /**
-   * PUSH1c4b (D182's PUSH1c4a note, D148 point 2): where the shell pushes the clean-up's list, Branches reads it from memory, so
+   * Where the shell pushes the clean-up's list, Branches reads it from memory, so
    * opening the tab, a change declared to move it and a focus read no `SWEEP_PLAN`, whose every read asks the pull-request plugin,
    * and a push moves its rows. *Look again* is the person's press of it, asked once: what its asks heard reaches the rows as a push.
    */
@@ -691,8 +691,8 @@ describe("a workspace's page (UX6g)", () => {
   /**
    * A workspace's Branches tab holds its own repositories alone. The machine's reading
    * of which checkouts hold Daoris's branches is filtered to it, the look is asked for it and kept under its name, and
-   * what the look leaves apart is its own. The driver answers here as the machine's, as a host before BRSCOPE1 does, so
-   * the page's own filter is what is held; the install's work workspace counted every checkout on the machine as its own.
+   * what the look leaves apart is its own. The driver answers here as the machine's, as a host does, so
+   * the page's own filter is what is held; a workspace must not count every checkout on the machine as its own.
    */
   it("counts, looks at and leaves apart only this workspace's checkouts, each workspace's tab its own", async () => {
     let answer!: (plan: unknown) => void;
@@ -709,7 +709,7 @@ describe("a workspace's page (UX6g)", () => {
       },
       TREES_SYNC_PLAN: looking,
       TREES_SYNC: { lines: [], rebases: [], deletes: [], changed: 1 },
-      // UX6h2b3: what is apart is the tab's one fold's, read by the groups, the machine's whole with each row's workspace.
+      // What is apart is the tab's one fold's, read by the groups, the machine's whole with each row's workspace.
       GIT_BRANCHES: {
         repositories: [],
         apart: [none('game', 'aurora'), none('Daoris.Plugins', 'forge'), none('Daoris', 'default')],
@@ -721,7 +721,7 @@ describe("a workspace's page (UX6g)", () => {
     await userEvent.click(within(repositoryMain()).getByRole('tab', { name: 'Branches' }));
 
     // Before a look, the machine's reading counted as this workspace's own: one holds Daoris's branches, one other does not.
-    // The one other is the fold's alone: Updates says how many it fetches and no longer lists the rest (moved from Updates).
+    // The one other is the fold's alone: Updates says how many it fetches and no longer lists the rest.
     const updates = within(await screen.findByRole('region', { name: 'Updates' }));
     expect(await updates.findByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeInTheDocument();
     expect(await within(repositoryMain()).findByText("1 repository with a checkout here holds no branch of Daoris's, and is not listed")).toBeInTheDocument();
@@ -780,7 +780,7 @@ describe("a workspace's page (UX6g)", () => {
     expect(forge.queryByRole('group', { name: 'engine' })).toBeNull();
   });
 
-  /** A look the page stopped waiting for is said in the section, where it was asked, not only in a toast. */
+  /** A look the page stopped waiting for is said in the section, where it is asked, not only in a toast. */
   it('says on Branches that it stopped waiting for a look', async () => {
     machine({ TREES_SYNC_PLAN: Object.assign(new Error('DAORIS.DRIVER.TREES_SYNC_PLAN timed out'), { code: 'TIMEOUT' }) });
     const notify = vi.fn();
@@ -794,7 +794,7 @@ describe("a workspace's page (UX6g)", () => {
     expect(notify).not.toHaveBeenCalledWith(expect.stringMatching(/did not answer in time/), 'error');
   });
 
-  /** §3b, UX6b: a workspace no repository here is in now says so, and a remembered one opens nothing chosen. */
+  /** A workspace no repository here is in now says so, and a remembered one opens nothing chosen. */
   it('says a workspace chosen now has gone, and opens with nothing chosen on a remembered one that went', async () => {
     machine();
     show(<ProjectsView notify={() => {}} door="workspace:retired" />);
@@ -860,7 +860,7 @@ describe('the shell-attached registry management', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', { timeoutMs: Infinity });
     expect(await screen.findByText('D:/repos/borealis')).toBeInTheDocument();
 
-    // UX5 U38: the move leads and *never mind* follows, as in every other drawer; this one was reversed.
+    // The move leads and *never mind* follows, as in every other drawer.
     const register = screen.getByRole('button', { name: 'Register' });
     expect(register.compareDocumentPosition(screen.getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
@@ -879,7 +879,7 @@ describe('the shell-attached registry management', () => {
 
   /**
    * Registered is addressable; adopted is disciplined — so a folder with no manifest is added as
-   * what it is. The register door used to store every row adopted, which would have driven one over
+   * what it is. The register door must not store every row adopted, which would drive one over
    * the pipe door with no connector and no sentence saying why.
    */
   it('adding a folder that has not adopted registers it as not adopted, and declares nothing', async () => {
@@ -902,8 +902,8 @@ describe('the shell-attached registry management', () => {
 
   /**
    * Setting a folder up as a workspace: `daoris repository import <folder> --workspace <name>`'s
-   * screen twin. The Workspace menu's import used to state no workspace at all, so a folder set up from
-   * the window landed in `default`. The folder's name is offered, since that is what setting a folder up
+   * screen twin. The Workspace menu's import must state a workspace, or a folder set up from
+   * the window lands in `default`. The folder's name is offered, since that is what setting a folder up
    * as a workspace means; the service's sentence comes back verbatim.
    */
   it("importing a folder names the workspace its repositories land in, offering the folder's name", async () => {
@@ -915,7 +915,7 @@ describe('the shell-attached registry management', () => {
     expect(await within(drawer).findByText('D:/repos/borealis')).toBeInTheDocument();
     expect(within(drawer).getByLabelText('Workspace')).toHaveValue('borealis');
 
-    // The move leads and *never mind* follows, as in every drawer (UX5 U38).
+    // The move leads and *never mind* follows, as in every drawer.
     const importIt = within(drawer).getByRole('button', { name: 'Import' });
     expect(importIt.compareDocumentPosition(within(drawer).getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
@@ -927,12 +927,12 @@ describe('the shell-attached registry management', () => {
     expect(notify).toHaveBeenCalledWith('Registered 2 from D:/repos/borealis into workspace `borealis`: aurora, dusk.');
   });
 
-  /** D118 §2: *Import a folder* is the list's ⋯, beside the ＋ that adds one. */
+  /** *Import a folder* is the list's ⋯, beside the ＋ that adds one. */
   it("opens the import from the list's ⋯", async () => {
     const user = userEvent.setup();
     show(<ProjectsView notify={() => {}} />);
 
-    // A menu opens from the keyboard in jsdom, the path D41 §6 requires anyway.
+    // A menu opens from the keyboard in jsdom, the path keyboard access requires anyway.
     (await within(repositoryList()).findByRole('button', { name: 'More actions' })).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('menuitem', { name: 'Import a folder…' }));
@@ -954,7 +954,7 @@ describe('the shell-attached registry management', () => {
     expect(JSON.parse(String(posted![1]!.body))).toEqual({ folder: 'D:/repos/borealis' });
   });
 
-  /** With no go, neither drawer asks a workspace before its folder is chosen, as before ENTRY1d2b. */
+  /** With no go, neither drawer asks a workspace before its folder is chosen. */
   it('a plain Add or Import asks no workspace before the folder', async () => {
     show(<ProjectsView notify={() => {}} addRequested onAddOpened={() => {}} />);
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
@@ -967,7 +967,7 @@ describe('the shell-attached registry management', () => {
   });
 
   /**
-   * ENTRY1d2b (D161's ENTRY1d note): Ask Daoris's go opens Add with the workspace it names filled, shown before the folder
+   * Ask Daoris's go opens Add with the workspace it names filled, shown before the folder
    * is chosen, so the person sees where it lands before they pick. The folder stays theirs.
    */
   it("a go's Add opens with its workspace filled before the folder, and registers into it", async () => {
@@ -986,7 +986,7 @@ describe('the shell-attached registry management', () => {
     expect(JSON.parse(String(posted![1]!.body))).toMatchObject({ repository: 'borealis', root: 'D:/repos/borealis', workspace: 'work' });
   });
 
-  /** ENTRY1d2b: Import opens filled the same way, and the folder chosen keeps the go's workspace over its own name. */
+  /** Import opens filled the same way, and the folder chosen keeps the go's workspace over its own name. */
   it("a go's Import opens with its workspace filled, and the folder chosen keeps it", async () => {
     show(<ProjectsView notify={() => {}} importRequested onImportOpened={() => {}} drawerWorkspace="work" />);
 
@@ -1003,7 +1003,7 @@ describe('the shell-attached registry management', () => {
   });
 
   /**
-   * ENTRY1d2b: the folder's name is offered over an empty field or over the name it offered last, and never over a
+   * The folder's name is offered over an empty field or over the name it offered last, and never over a
    * name the person typed or a go filled.
    */
   it("import offers each folder's name over its own last offer, never over a name typed", async () => {
@@ -1042,7 +1042,7 @@ describe('the shell-attached registry management', () => {
 
     // Two clicks, deliberately: the first is not the destructive one.
     await userEvent.click(within(drawer).getByRole('button', { name: 'Retire' }));
-    // UX5 U38: the move, then *never mind*, as every other drawer puts them; this pair was reversed.
+    // The move, then *never mind*, as every other drawer puts them.
     const confirm = within(drawer).getByRole('button', { name: 'Retire repository' });
     expect(confirm.compareDocumentPosition(within(drawer).getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
@@ -1055,7 +1055,7 @@ describe('the shell-attached registry management', () => {
     expect(window.localStorage.getItem(CHOSEN)).toBeNull();
   });
 
-  /** UXFIX2b1: the retire is the shared inline ask: its sentence focused, a refusal said inside, Never mind returns focus. */
+  /** The retire is the shared inline ask: its sentence focused, a refusal said inside, Never mind returns focus. */
   it('retiring asks inline: focused, a refusal said inside it, and Never mind gives the focus back', async () => {
     const notify = vi.fn();
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -1073,7 +1073,7 @@ describe('the shell-attached registry management', () => {
     await userEvent.click(within(drawer).getByRole('button', { name: 'Retire' }));
     const ask = within(drawer).getByRole('group', { name: 'Retire' });
     expect(ask.querySelector('[tabindex="-1"]')).toHaveFocus();
-    // UXFIX2b1r: the drawer's paragraph is printed once; the ask says what the press does in its own words.
+    // The drawer's paragraph is printed once; the ask says what the press does in its own words.
     expect(within(drawer).getAllByText(/Take it off this machine's registry/)).toHaveLength(1);
     expect(within(ask).getByText('Retire engine from this machine?')).toBeInTheDocument();
 
@@ -1088,7 +1088,7 @@ describe('the shell-attached registry management', () => {
   });
 
   /**
-   * UX5 U37: *owns* and *accepts* were edited in monospace, beside a summary in the body face, and
+   * *owns* and *accepts* are edited in the body face, as the summary beside them is, and
    * they become chips in the body face. They are phrases, not code, so they are written as phrases.
    */
   it('edits a declaration in the face it is read in', async () => {
@@ -1168,7 +1168,7 @@ describe('the shell-attached registry management', () => {
    * One sentence for one fact. On the deployed family, a repository present in the index with a
    * count of zero read "0 entries · 0 local · 0 canonical", one absent from it read "nothing
    * indexed yet", and one outside the family read "—" — three renderings of "the index holds
-   * nothing of this", on one page. Since FRAME1e an adopted repository's count is on its page, and one
+   * nothing of this", on one page. An adopted repository's count is on its page, and one
    * not adopted says its count on its row, where nothing else does.
    */
   it('says "nothing indexed yet" the same way whether a count is zero, missing, or outside', async () => {
@@ -1196,7 +1196,7 @@ describe('the shell-attached registry management', () => {
     }));
     show(<ProjectsView notify={() => {}} />);
 
-    // A count of one is singular — "1 entries" was on the deployed page too — and a count in the
+    // A count of one is singular, never "1 entries", and a count in the
     // thousands keeps its separator, so the plural form and the formatting are two parameters.
     expect(within(await repositoryRow('lone')).getByText('1 entry indexed read-only')).toBeTruthy();
     expect(within(await repositoryRow('many')).getByText('1,234 entries indexed read-only')).toBeTruthy();
@@ -1267,8 +1267,8 @@ describe('the shell-attached registry management', () => {
   });
 });
 
-// CONVERSATIONS moved to `work/WorkFrame.test.tsx` with the surface that starts and holds them
-// (design §3): starting a session belongs where its result appears, not in the registry's view.
+// CONVERSATIONS is tested in `work/WorkFrame.test.tsx`, with the surface that starts and holds them:
+// starting a session belongs where its result appears, not in the registry's view.
 
 /**
  * An unadopted repository with a root here is drivable over the protocol door, so the
@@ -1310,7 +1310,7 @@ describe('an unadopted repository on this machine (INT3c)', () => {
   });
 
   /**
-   * WORKFLOWCLEAN1 1f: one door adopts a repository, the Agents place's *Set up…*; the repository's page keeps no card of its own that
+   * One door adopts a repository, the Agents place's *Set up…*; the repository's page keeps no card of its own that
    * asks its session, and calls neither route that card used.
    */
   it('keeps no Set up for agents card: the place adopts', async () => {
@@ -1328,7 +1328,7 @@ describe('an unadopted repository on this machine (INT3c)', () => {
   });
 
   /**
-   * 🔴 SETUPSTATE1 (the owner's report, 2026-10-23): a set-up's work landed on the line and the driver's follow registered the
+   * 🔴 A set-up's work landed on the line and the driver's follow registered the
    * repository from it, adopted, but the page still read it not adopted until a reload: nothing told the window the registry moved.
    * The shell tells `registry` once a follow sends a registration (`DriverLoop`'s `RegistryFollowed`), and the page reads it again.
    */
@@ -1369,9 +1369,9 @@ describe('an unadopted repository on this machine (INT3c)', () => {
   });
 
   /**
-   * 🔴 UX5 U36: the group opened with an eight-line paragraph above its one row, read once and
-   * scrolled past every visit after, the essay a settings page was before its rows (§4, `SettingRow`).
-   * It leads with one line now, and the reasoning is on the info glyph, where a row keeps its why.
+   * 🔴 The group must not open with an eight-line paragraph above its one row, read once and
+   * scrolled past every visit after (see `SettingRow`).
+   * It leads with one line, and the reasoning is on the info glyph, where a row keeps its why.
    */
   it('leads with one line, and keeps its reasoning on the info glyph', async () => {
     machine('claude-code-acp');

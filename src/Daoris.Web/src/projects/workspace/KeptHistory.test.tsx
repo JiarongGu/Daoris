@@ -9,10 +9,10 @@ import {
 import type { Answered } from '../../work/InlineConfirm';
 import { KeptHistory } from './KeptHistory';
 
-/** How a clear's ask hears its end (UXFIX2, ACCTEDIT1's contract). */
+/** How a clear's ask hears its end. */
 const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) });
 
-// A workspace's *Kept on this machine* (HIST1e, D153; the history-clearing design §2.4, §6.1): always the reading of what the
+// A workspace's *Kept on this machine*: always the reading of what the
 // home keeps of its finished work, then *Clear history…* while anything may go, listing first and sending on its second
 // press exactly the units it listed. A molecule: every state is reached by passing it, and every press goes out.
 
@@ -46,7 +46,7 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
     const ask = screen.getByRole('group', { name: 'clear from this machine' });
     expect(screen.queryByRole('button', { name: 'Clear history…' })).toBeNull();
-    // The reading is asked again while the list is open: the press still sends what was listed.
+    // The reading is asked again while the list is open: the press still sends what it listed.
     rerender(<KeptHistory workspace="aurora" plan={WORKSPACE_KEPT} onClear={clear} />);
     await userEvent.click(within(ask).getByRole('button', { name: 'Clear 3' }));
     expect(clear).toHaveBeenCalledWith(
@@ -129,7 +129,7 @@ describe('a workspace’s Kept on this machine (design §2.4)', () => {
   });
 
   /**
-   * 0 B was said as *no files here* beside left-over files of 0 B, which
+   * 0 B is not said as *no files here* beside left-over files of 0 B, which
    * the next line and *What goes* name. The reading says what it read, the records and their size, and nothing of files.
    */
   it('says the records and 0 B, and no claim about files, beside left-over files that hold nothing', async () => {

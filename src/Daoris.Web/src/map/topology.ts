@@ -1,5 +1,5 @@
 /**
- * The workspace topology (MAP2, D67 §3; `docs/2026-09-23-map-design.md` §1): the circle's
+ * The workspace topology: the circle's
  * repositories, and what actually moved between them.
  *
  * @remarks
@@ -28,7 +28,6 @@ export type MapNode = {
   working: boolean;
   /**
    * Whether a session there is parked on the person — its own fact, and the one the person acts on.
-   * It held the tree and was ringed "working now" until the window showed it.
    */
   parked: boolean;
   /** How many sessions are there now, working or waiting on the person. */
@@ -90,7 +89,7 @@ export type Topology = {
   outside: number;
   /**
    * How many circles the nodes belong to: more than one only when the page is scoped to every
-   * workspace and the deployment holds several (UX5 U49).
+   * workspace and the deployment holds several.
    */
   circles: number;
 };
@@ -134,7 +133,7 @@ export function buildTopology(
   const ids = new Set(registry.map((row) => row.repository));
   const circles = new Set(registry.map((row) => row.workspace ?? '')).size;
   // By name, and by circle first when there are several, so a circle's repositories sit together on
-  // the ring and its quests stay within its arc: by name alone the circles interleaved (UX5 U49).
+  // the ring and its quests stay within its arc: by name alone the circles interleave.
   const circleOf = (row: Registration) => (circles > 1 ? row.workspace ?? '' : '');
   const nodes = [...registry]
     .sort((a, b) => circleOf(a).localeCompare(circleOf(b)) || a.repository.localeCompare(b.repository))
@@ -265,10 +264,10 @@ export function showLines(topology: Topology, shown: ReadonlySet<LineKind>): Top
 /**
  * Positions on a ring about the centre of a `size` square, in the order given, starting at the top.
  * Deterministic, so two looks at the same data draw the same picture. A family is small, which is
- * why a ring is enough and no layout engine is carried (design §1).
+ * why a ring is enough and no layout engine is carried.
  *
  * @param radius - the ring's radius; the square's 0.68 by default. The canvas passes a smaller one
- *   when its card is narrow, so the ring gives way rather than the names (UX5 U44).
+ *   when its card is narrow, so the ring gives way rather than the names.
  */
 export function layoutRing(
   ids: readonly string[], size: number, radius = (size / 2) * 0.68,

@@ -2,7 +2,7 @@ import { fingerprintOf } from '../workflow/draftFingerprint';
 import type { HelpWhere } from './where';
 
 /**
- * The workflow draft open in the editor (FLOWCHART2d, D223; the flowchart design §4, §8.3), as the editor registers it while it is
+ * The workflow draft open in the editor, as the editor registers it while it is
  * mounted: Ask Daoris reads it as the person sends their words, so what it is told is frozen with that message, and an edit alone tells
  * nothing.
  */
@@ -13,11 +13,11 @@ export type OpenDraft = {
   graph: { nodes?: readonly unknown[] } & Record<string, unknown>;
   /** The saved workflow it adds a version to, or the id it would save as new. */
   workflow?: string | null;
-  /** The version it was opened from. */
+  /** The version it is opened from. */
   base?: number | null;
   /** Where it came from: `preset:<id>`, `<workflow>@v<n>` or `new`. */
   source?: string | null;
-  /** The route the place chooses it for, where the editor was opened on one. */
+  /** The route the place chooses it for, where the editor is opened on one. */
   route?: string | null;
   pipeline?: 'development' | 'verification' | null;
   /** The step selected, by its id. */
@@ -44,7 +44,7 @@ export function openDraftNow(): OpenDraft | null {
   return open;
 }
 
-/** The draft to send beside the person's words: none where there is none, or this conversation was told its fingerprint last. */
+/** The draft to send beside the person's words: none where there is none, or this conversation is told its fingerprint last. */
 export function draftToTell(draft: OpenDraft | null, told: string | undefined): DraftSent | undefined {
   if (!draft) return undefined;
   const fingerprint = fingerprintOf(draft.graph);
@@ -54,13 +54,13 @@ export function draftToTell(draft: OpenDraft | null, told: string | undefined): 
 /** How many drafts told are kept: a proposal against one older is refused as made against a draft this window no longer holds. */
 const TOLD_MOST = 40;
 
-/** Each draft a conversation of this window was told, its graph by its fingerprint, the newest last. */
+/** Each draft a conversation of this window is told, its graph by its fingerprint, the newest last. */
 const toldDrafts = new Map<string, OpenDraft['graph']>();
 let toldTo: readonly string[] = [];
 const hearing = new Set<() => void>();
 
 /**
- * A draft told to a conversation, as `SESSION_INPUT` carried it: a proposal names the draft it was made against by its fingerprint, and the
+ * A draft told to a conversation, as `SESSION_INPUT` carries it: a proposal names the draft it is made against by its fingerprint, and the
  * editor takes its changes against that graph.
  */
 export function noteTold(session: string, sent: DraftSent): void {
@@ -71,7 +71,7 @@ export function noteTold(session: string, sent: DraftSent): void {
   hearing.forEach((each) => each());
 }
 
-/** The graph a conversation of this window was told under `fingerprint`, or null where none is kept. */
+/** The graph a conversation of this window is told under `fingerprint`, or null where none is kept. */
 export const toldGraph = (fingerprint: string): OpenDraft['graph'] | null => toldDrafts.get(fingerprint) ?? null;
 
 /** The conversations told a draft, the newest last: the same list until another is told. */

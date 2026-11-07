@@ -133,7 +133,7 @@ describe("Quests' list", () => {
     expect(onChoose.mock.calls).toEqual([[OPEN.id], [`ask:${PROPOSED.id}`]]);
   });
 
-  /** DRIFT1d2: a done a departure holds is listed first, closed quests shown or not, its row saying it awaits the person. */
+  /** A done a departure holds is listed first, closed quests shown or not, its row saying it awaits the person. */
   it('lists a quest a departure holds first, its row saying it awaits the person’s yes', () => {
     list({ quests: [{ quest: OPEN }, { quest: HELD }] });
 
@@ -144,7 +144,7 @@ describe("Quests' list", () => {
       .toBeInTheDocument();
   });
 
-  /** FABRIC-CLOSE1d and CLOSE1c3 (§E5): a submitted quest's row reads submitted with its hold; a step its source's reopen holds has its own pill. */
+  /** A submitted quest's row reads submitted with its hold; a step its source's reopen holds has its own pill. */
   it('reads a submitted quest as submitted, and a step its source’s reopen holds by its own pill, never the yes', () => {
     list({ quests: [{ quest: { ...SUBMITTED, title: 'Ship the cold cache' } }, { quest: REOPENED }, { quest: TAKEN }] });
 

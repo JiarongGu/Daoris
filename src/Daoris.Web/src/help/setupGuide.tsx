@@ -56,7 +56,7 @@ export function GetStartedDomain({ attached, onGo, onAsk }: {
  *
  * @remarks
  * **Decided once, when the machine has been read**: before the roster answers, a machine with an agent
- * reads as one without. Whatever that decision was, nothing reopens it that start — a step coming undone
+ * reads as one without. Whatever that decision is, nothing reopens it that start — a step coming undone
  * later is the status bar's and the starters' to say, not a reason to pull the person away.
  *
  * **Never from where the person went**: a view changed before the reading settled is the person's

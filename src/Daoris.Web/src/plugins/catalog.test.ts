@@ -31,7 +31,7 @@ describe("a plugin's state, on today's answers", () => {
     expect(pluginState(plugin({ problem: 'needs plugin API 99', running: false }))).toBe('refused');
   });
 
-  /** Ready and failing arrive with PLUGUI1f's health, so a sound plugin whose process is not up says no word. */
+  /** Ready and failing wait on the loop's health, so a sound plugin whose process is not up says no word. */
   it('is running while its process is up, and simply on otherwise', () => {
     expect(pluginState(plugin())).toBe('running');
     expect(pluginState(plugin({ running: false }))).toBe('on');

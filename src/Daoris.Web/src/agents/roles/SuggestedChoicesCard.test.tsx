@@ -6,7 +6,7 @@ import { RolesCard } from './Roles';
 import { DECLINED_KEY } from './SuggestedChoicesCard';
 
 // Daoris suggests a role's choices in Working roles' head at first run. One press
-// sets every suggested role as one change over SET_ROLES (AGENTSPLACE1g2), the driver judging them whole; nothing is applied by itself;
+// sets every suggested role as one change over SET_ROLES, the driver judging them whole; nothing is applied by itself;
 // its words say it can spend more; it is gone once the roles hold orders of the person's own, or once declined.
 
 const seed = (id: string, en: string, zh: string, work: string): RoleRow => ({

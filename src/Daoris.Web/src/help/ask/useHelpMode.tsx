@@ -24,9 +24,9 @@ export function useHelpMode({ shown, known, live, picked, setChosen, readied, re
   t: TFunction<"translation", undefined>;
   onGo: ((door: StarterDoor) => void) | undefined;
 }) {
-  // Ask Daoris's access (HELPMODE1b, D183 points 2-4; the modes design §1, §5, §6). The chip shows the mode the conversation in view
+  // Ask Daoris's access. The chip shows the mode the conversation in view
   // runs under, its record's, or the mode chosen before any start; a shell that answers no mode offers no choice, and no *What it
-  // has*, which came after it.
+  // has*.
   const driver = useDriver();
   const offered = driver.data !== undefined && 'helpMode' in driver.data;
   const selectedMode = helpModeOf(driver.data?.helpMode);
@@ -53,12 +53,12 @@ export function useHelpMode({ shown, known, live, picked, setChosen, readied, re
   // Its own mutation, so ending the one opened ahead never reads as the person's New conversation pending.
   const retire = useEndChat();
   const [chipOpen, setChipOpen] = useState(0);
-  // A refusal is said where its press was (ACCESSASK1, the UI/UX design R3): full access's inside its ask, a switch back under the
+  // A refusal is said where its press is: full access's inside its ask, a switch back under the
   // chip, never in the composer's line, which is about the words.
   const choice = useModeChoice(selectedMode, (mode, answered) => setMode.mutate({ mode }, {
     onSuccess: () => {
       answered.done();
-      // The conversation opened ahead was started under the mode before: nobody has spoken in it, so it is ended and the
+      // The conversation opened ahead is started under the mode before: nobody has spoken in it, so it is ended and the
       // next opens under the mode chosen, rather than the person's first words reaching one the chip no longer names.
       if (readied === null || !readiedLive) return;
       retire.mutate(readied, { onSuccess: () => setRound((was) => was + 1) });

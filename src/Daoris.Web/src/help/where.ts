@@ -36,12 +36,12 @@ export type HelpWhere = {
   item?: { kind: ItemKind; id: string; closed?: boolean } | null;
   /**
    * A workflow draft open in the editor, as `draftWhere` names it: its workflow (none for a new one), its place, the version
-   * it was opened from, how many steps, how many problems, the step selected. The draft itself goes beside the words.
+   * it is opened from, how many steps, how many problems, the step selected. The draft itself goes beside the words.
    */
   draft?: { workflow: string | null; place: string; base: number | null; steps: number; problems: number; selected: string | null } | null;
 };
 
-/** The kinds an item may be, one row each; a view that gains items (PLUGUI1h's offers) adds a row, not a shape. */
+/** The kinds an item may be, one row each; a view that gains items (the plugin offers) adds a row, not a shape. */
 const ITEM_KINDS = ['quest', 'ask', 'repository', 'workspace', 'agent', 'plugin'] as const;
 export type ItemKind = (typeof ITEM_KINDS)[number];
 
@@ -89,7 +89,7 @@ const VIEWS: Record<View, string> = {
 // Knowledge's two modes, as its list's choice names them.
 const MODES: Record<KnowledgeMode, string> = { search: 'Search', convergence: 'Convergence' };
 
-// Eight since WIRING1c (seven since UX6j, D150 §2.3): the guide is Get started again, and Plugins is a place, named among the views.
+// The guide is Get started, and Plugins is a place, named among the views.
 const DOMAINS: Record<SettingsSection, string> = {
   start: 'Get started', appearance: 'Appearance', ai: 'AI features', wiring: 'This Daoris', driver: 'Driver', tools: 'Tools', git: 'Git',
   browser: 'Browser', logs: 'Machine log',

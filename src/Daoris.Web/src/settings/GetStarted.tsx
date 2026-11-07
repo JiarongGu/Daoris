@@ -6,14 +6,14 @@ import { Button, Card, CheckField, CodeText, Icon, Pill, Prose } from '../design
 
 const TONE: Record<Exclude<SetupState, 'desktop'>, 'done' | 'open' | 'neutral'> = {
   done: 'done',
-  // Something waits on the person: the waiting hue, never an outcome's (platform-ux §3).
+  // Something waits on the person: the waiting hue, never an outcome's.
   todo: 'open',
   optional: 'neutral',
 };
 
 /**
- * A door's name: the drawer it opens, else the Settings domain, else what agents may do (an agent's page at that part,
- * UX6e), else the view.
+ * A door's name: the drawer it opens, else the Settings domain, else what agents may do (an agent's page at that part),
+ * else the view.
  */
 const doorKey = (door: StarterDoor) => door.drawer ?? door.section ?? (door.agentPart === 'rules' ? 'agentRules'
   : door.agentsMode === 'setup' ? (door.roleSection ? 'agentRoles' : 'setup')
@@ -28,7 +28,7 @@ const doorKey = (door: StarterDoor) => door.drawer ?? door.section ?? (door.agen
  * **Every step already has a screen, so this orders them and says which is done** — it sets nothing
  * itself (the design's rejected wizard). *Set up with Ask Daoris* hands the conversation a first message
  * naming the steps not yet done; with no agent named for it, the head says step 2 comes first, and the
- * guide stands on its own (D24's no-model tier).
+ * guide stands on its own (the no-model tier).
  *
  * **In a browser** only the steps it can know are listed, and a sentence says the rest is the desktop's;
  * neither the hand-off nor opening at start is offered there, since neither exists.
@@ -109,7 +109,7 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
             aria-label={`${number}. ${title}`}
             className="flex scroll-mt-3 flex-wrap items-start justify-between gap-x-6 gap-y-2 border-t border-line py-3 first:border-t-0 first:pt-0 last:pb-0"
           >
-            {/* Wrapping, not a fixed grid (SETUP1, looked at): beside a side bar the card is narrow, and a
+            {/* Wrapping, not a fixed grid: beside a side bar the card is narrow, and a
                 grid squeezed both columns until a command broke mid-word and a door's label took two lines.
                 Here the doors drop under the text when there is no room beside it. */}
             <div className="min-w-[min(18rem,100%)] flex-1">

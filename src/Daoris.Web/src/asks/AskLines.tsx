@@ -6,7 +6,7 @@ import type { AskLine } from '../work/entries';
 const DOOR = 'cursor-pointer border-0 bg-transparent p-0 text-left text-accent underline-offset-2 hover:underline';
 
 /**
- * **An ask's sessions by entry** (SESSONE1c, D167 point 5, the co-working design §1.6): one line per repository's line of work
+ * **An ask's sessions by entry**: one line per repository's line of work
  * that began with the ask, however many records it holds, with its parts counted and its leading part's word. Each is a door
  * into Sessions where Sessions is here (an entry opens at its leading part, whose page lists the rest), and named where it is not.
  *

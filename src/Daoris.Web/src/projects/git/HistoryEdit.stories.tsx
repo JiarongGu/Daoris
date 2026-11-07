@@ -4,8 +4,8 @@ import { chinese } from '../../design/storyLanguage';
 import { storyWidths } from '../../design/storyWidths';
 import { HistoryEdit, type HistoryPlanShown } from './HistoryEdit';
 
-// Edit history (GITAPP2m, D204, the git-writes design §7) on a branch of the person's own: closed, the edit and its target asked, the
-// driver's plan shown before Confirm, done with where the old commit is kept, refused in the driver's sentence, and not known. At the
+// Edit history on a branch of the person's own: closed, the edit and its target asked, the
+// driver's plan shown before Confirm, done with where the original commit is kept, refused in the driver's sentence, and not known. At the
 // main area's three widths (80, 39 and 25rem) in English and 中文, in both themes.
 
 const nothing = async () => ({ refused: false, said: '' });
@@ -68,7 +68,7 @@ export const DoneNarrowDark: Story = {
   decorators: [storyWidths.narrow, dark],
 };
 
-/** Refused in the driver's own sentence, what was typed kept to change. */
+/** Refused in the driver's own sentence, what is typed kept to change. */
 export const Refused: Story = {
   args: {
     initial: {

@@ -34,11 +34,10 @@ export const QUEST_TONE: Record<Quest['status'], keyof typeof PILL_TONE> = {
  *
  * `awaiting-person` wears the waiting tone deliberately: it is the one state nothing but a person
  * can clear, so it should not sit quietly among the running ones, and it is not an outcome, so it
- * does not wear declined's red (UX5 U1).
+ * does not wear declined's red.
  *
- * **Open's hue is the person's alone** (D126 §2.3, audit M6): *waiting on you* and *parked* wear it, and
- * nothing else does. `queued` shared it and left the word to tell the two apart; it is neutral now,
- * keeping its idle mark. *Awaiting reply* is neutral too: nothing runs, and nothing waits on the person.
+ * **Open's hue is the person's alone**: *waiting on you* and *parked* wear it, and
+ * nothing else does. `queued` is neutral, keeping its idle mark, so the word need not tell the two apart. *Awaiting reply* is neutral too: nothing runs, and nothing waits on the person.
  */
 export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'queued': 'neutral',
@@ -63,13 +62,13 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'limited': 'neutral',
   // An ended record held for an account's reset, going on by itself: quiet, as *limited* is.
   'limit-waits': 'neutral',
-  // Ended before anything ran, its agent refusing the choice (MODELROLE1c3, D205 §3.5(c)): quiet, never the failure's red.
+  // Ended before anything ran, its agent refusing the choice: quiet, never the failure's red.
   'not-started': 'neutral',
 };
 
 /**
  * What the page shows a session as: the nine states the record carries; **idle** — a live chat
- * whose turn has ended, waiting for the person's next message (UX5 U17); the two words the session
+ * whose turn has ended, waiting for the person's next message; the two words the session
  * list's reader derives from the session's quest: **parked**, the last session here of a quest
  * parked on its failed sessions, and **awaiting-reply**, the last session here of a quest waiting on a
  * question asked of another repository; **answered**, a park the person answered, which the same session
@@ -78,7 +77,7 @@ export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
  * ask and goes on with its answer; and **limited**, a `failed` record whose failure an account's limit made, its
  * `limit` flag; and **limit-waits**, an ended record held for an account's reset, which the list's reader
  * derives from the hold, so it never reads *completed* where Daoris waits to go on; and **not-started**, a `failed` record its agent's refusal of the choice ended before
- * anything ran, its note's code `ended.choice-not-offered` (MODELROLE1c3, D205 §3.5(c)). None is a record state: no new session
+ * anything ran, its note's code `ended.choice-not-offered`. None is a record state: no new session
  * state.
  *
  * The record says `working` for a chat's whole life, since its process is; whether a turn is in flight
@@ -103,12 +102,12 @@ export function shownKey(shown: ShownState): string {
   return `sessionState.${shown}`;
 }
 
-/** The end code a record its agent's refusal of the choice ended before anything ran carries (D205 §3.5(c), MODELROLE1c3). */
+/** The end code a record its agent's refusal of the choice ended before anything ran carries. */
 export const CHOICE_NOT_OFFERED = 'ended.choice-not-offered';
 
 /**
  * A record's state with the one word its `limit` flag makes: a `failed` record an account's limit
- * ended is **limited**; a `failed` one ended `choice-not-offered` is **not-started** (MODELROLE1c3); every other is its own state. For a
+ * ended is **limited**; a `failed` one ended `choice-not-offered` is **not-started**; every other is its own state. For a
  * surface that shows the record's state and no other reading of it.
  */
 export function limitedOr(session: { state: SessionState; limit?: boolean; noteParts?: readonly { code?: string | null }[] | null }): ShownState {
@@ -137,7 +136,7 @@ export function answeredPark(session: { state: SessionState; said?: readonly Sai
 }
 
 /**
- * A session as the page shows it (UX5 U17, decided by the reference console, which draws a running
+ * A session as the page shows it (the reference console's rule, which draws a running
  * turn as live and a session between turns with no live mark at all). A live chat is idle when the
  * driver says no turn is in flight, and working while one is; a turn the driver has not answered for
  * is the record's own word, never a guess. Driven work is one long turn, so it is never idle. A park the
@@ -177,7 +176,7 @@ export { SESSION_ACTIVE };
  * over it. There is deliberately no "is a process alive" input here: the driver's running list is
  * this machine's, and a mirrored session working on another machine is working. The record
  * is what the mark reads — with one exception the driver answers for: a live chat between turns is
- * `idle`, quiet rather than live (`shownState`, UX5 U17).
+ * `idle`, quiet rather than live (`shownState`).
  */
 export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'queued': 'idle',
@@ -203,7 +202,7 @@ export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'limited': 'ended',
   // Held for an account's reset: its words go on by itself, so nothing is over, as answered's and going on's are.
   'limit-waits': 'idle',
-  // Ended choice-not-offered (MODELROLE1c3): an ended record, as failed is.
+  // Ended choice-not-offered: an ended record, as failed is.
   'not-started': 'ended',
 };
 

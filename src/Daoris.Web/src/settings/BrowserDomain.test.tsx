@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// The Browser domain in SHELL mode. Moved from `shell.test.tsx` with MOD4: tests follow their code.
+// The Browser domain in SHELL mode.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -106,7 +106,7 @@ describe('the browser domain', () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="browser" />);
 
-    // A shell that sends no `links` is the system's, as a link always was.
+    // A shell that sends no `links` is the system's, as a link always is.
     expect(await screen.findByRole('radio', { name: "System browser" })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByText(code(/daoris browser links system\|daoris/))).toBeTruthy();
     await userEvent.click(screen.getByRole('radio', { name: "Daoris's browser" }));

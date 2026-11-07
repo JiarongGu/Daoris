@@ -5,8 +5,8 @@ import { storyWidths } from '../../design/storyWidths';
 import { GIT_BRANCH_PARTED, GIT_HISTORY_ENGINE } from '../fixtures';
 import { CommitGraph, type GraphCommitRow } from './CommitGraph';
 
-// A commit graph (UX6h1, the built-in Git design §2.3) as a repository's History tab and a branch's page draw it
-// (`RepositoryGit.tsx`, `BranchPage.tsx`), on its own (STORYGAP1, the UI/UX design §1.2 item 6): the line with a branch merged
+// A commit graph as a repository's History tab and a branch's page draw it
+// (`RepositoryGit.tsx`, `BranchPage.tsx`), on its own: the line with a branch merged
 // in, a branch beside the line since they parted, three lanes at once, a subject long enough to truncate, a CJK one, and a
 // single commit; at the main area's three widths, where the author's column gives way first by the main area's width, in 中文
 // and dark.

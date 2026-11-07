@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { APPEND_AFTER, APPEND_BEFORE, DENSE, type Fixture, HARDEST, LIFECYCLE, MANY_CURRENT, NONE_CURRENT, UNEQUAL } from './flowFixtures';
 import { type FlowShape, findStacks, layoutFlow, needs, placementFor, slotCrossings } from './flowLayout';
 
-// FLOWCHART1a1 (D186; the flowchart design §3.1, §3.2, §3.5, §7 traps 1, 2, 4 and the first half of 3): the layout is a
+// The layout is a
 // pure function of the graph's shape. It finds the back edges, ranks by the longest path, threads a waypoint through each
 // rank an edge skips, orders each rank by four barycentre sweeps, and says what each placement needs.
 

@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
 /**
- * The type steps `tokens.css` declares (D41 §3 as amended by D56).
+ * The type steps `tokens.css` declares.
  *
  * @remarks
  * 🔴 **tailwind-merge has to be told these are SIZES, or it treats them as colours and deletes

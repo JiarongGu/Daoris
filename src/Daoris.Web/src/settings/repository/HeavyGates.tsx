@@ -6,7 +6,7 @@ import { shellWord } from '../../lib/shellWord';
 import { type Answered, Refused } from '../../work/InlineConfirm';
 
 /**
- * One of this machine's heavy gates for a repository (`STATE`'s `heavyGates`, HEAVYRUN1b2b): its name, the command it runs, and
+ * One of this machine's heavy gates for a repository (`STATE`'s `heavyGates`): its name, the command it runs, and
  * the folder under the checkout it runs in, none for the checkout itself.
  */
 export type HeavyGate = { name: string; run: string; cwd?: string | null };
@@ -35,7 +35,7 @@ const same = (sent: HeavyGate[] | null, set: readonly HeavyGate[]) =>
   && (sent ?? []).every((gate, at) => gate.name === set[at]!.name && gate.run === set[at]!.run && (gate.cwd ?? null) === (set[at]!.cwd ?? null));
 
 /**
- * Whether the repository's own `daoris.gates.json` wins over this machine's list, as the driver read it (`HEAVY_MARKS`, HEAVYRUN1b2c):
+ * Whether the repository's own `daoris.gates.json` wins over this machine's list, as the driver read it (`HEAVY_MARKS`):
  * `marks` true where the file marks heavy gates (their `names`), false where it marks none or there is no file, null with the driver's
  * `refusal` where it cannot be told. The page judges nothing of its own.
  */
@@ -75,19 +75,19 @@ export function heavyToast(t: TFunction, name: string, gates: readonly HeavyGate
 const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
 
 /**
- * **This machine's heavy gates for a repository** (HEAVYRUN1b2b, D180's HEAVYRUN1b2a note): the builds and suites a driven session
+ * **This machine's heavy gates for a repository**: the builds and suites a driven session
  * runs once, at its end, through `daoris gate run`, one run at a time in the repository, used only where the repository's own
  * `daoris.gates.json` marks no heavy gate. A row of its Setup's section of their own, the same `heavyGates` `daoris place heavy`
  * edits, kept on this machine and never written into the repository.
  *
  * @remarks
- * **The list is one sequence, edited whole** (D180: one gate at a time was rejected, since the order is the point). *Edit*, or *Add
+ * **The list is one sequence, edited whole**, since the order is the point. *Edit*, or *Add
  * heavy gates* where none is set, opens every gate in place, each its name, its command and its folder, with *Move up*, *Move down* and
  * *Remove*, and *Add a gate* at the end; *Save* sends the whole list in its order, and *Clear* takes it away. The page judges nothing:
- * a list the driver would not read is its refusal, said under Save in its words, with the list still open as it was.
+ * a list the driver would not read is its refusal, said under Save in its words, with the list still open.
  *
  * It says plainly where it applies and that a command may bound its own workers, which is where an undeclared repository's workers
- * are bounded (HEAVYRUN1a2's case).
+ * are bounded.
  *
  * A molecule: every state is reached by its props, and every press goes out.
  */
@@ -161,7 +161,7 @@ export function HeavyGates({ repository, gates, marks, busy = false, onSave }: {
               if (!busy && !same(sent, gates)) save(sent, () => setDrafts(null));
             }}
           >
-            {/* The list lays out by its own width (R1, UIFIT1d): a name, the command, a folder and the acts in columns
+            {/* The list lays out by its own width: a name, the command, a folder and the acts in columns
                 while the form holds them, each gate stacked under its own field names below 40rem, never by the window. */}
             <FormGrid columns={['short', 'long', 'short', 'acts']} floor="40rem">
               <FormRow head>

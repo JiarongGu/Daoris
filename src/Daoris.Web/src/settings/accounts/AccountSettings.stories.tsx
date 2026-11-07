@@ -23,7 +23,7 @@ const meta: Meta<typeof AccountSettingsForm> = {
     onSave: () => {},
     onCancel: () => {},
   },
-  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  // The main area at its wide width, as the frame gives it.
   decorators: [storyWidths.wide],
 };
 export default meta;

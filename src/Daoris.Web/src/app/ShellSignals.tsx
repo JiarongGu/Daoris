@@ -24,20 +24,20 @@ export const PUSHED = [
 
 /**
  * The shell's push channel into the page: a driver's tick says something moved, and
- * everything a tick can change refetches (its lines are the machine log's, never a toast: NOTIFY2h) — in the desktop the session surface is live, while a plain
+ * everything a tick can change refetches (its lines are the machine log's, never a toast) — in the desktop the session surface is live, while a plain
  * browser keeps its polling and never mounts a transport. Renders nothing; costs nothing where no
  * host answers.
  */
 export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessage }: {
   notify: Notify;
   /**
-   * An agent's or a teammate's urgent message to everyone (NOTIFY2g, the notification design §5), as the shell says it (`MESSAGE`):
+   * An agent's or a teammate's urgent message to everyone, as the shell says it (`MESSAGE`):
    * the window says it in its own words while it is the one focused, once per message (`useMessageAnnouncements`). Absent, it is said
    * by no toast here.
    */
   onMessage?: (arrived: unknown) => void;
   /**
-   * A terminal's press asked, by its id (NOTIFY2b, the notification design §3.3): the press's own event, told once at its ask, which
+   * A terminal's press asked, by its id: the press's own event, told once at its ask, which
    * the window announces in its own words while it is the one focused. Absent, it is said by no toast here.
    */
   onConfirming?: (id: string) => void;
@@ -65,7 +65,7 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
   }, [isAvailable, bridge]);
 
   useShenoraEvent<Tick>('DAORIS', 'DRIVER_TICK', () => {
-    /* 🔴 The tick's lines are toasted no more (NOTIFY2h, D196 point 7; the notification design §5.1). A tick report is a log:
+    /* 🔴 The tick's lines are never toasted. A tick report is a log:
      * English, and mostly a look's passing failure the next look answers. Each line is written to the machine log as `look.said` with
      * its class where the look makes it; what is news is a notice in *Done and failed*, in the reader's language, and what waits on
      * the person is its row. The tick still says that something moved, which the refetches below act on. */
@@ -76,16 +76,16 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
     // 🔴 Refetching is NOT deduplicated. A tick that repeats its report can still have changed the
     // world — the two questions are different, and collapsing them would make a stale window the
     // price of a quiet one. What is read under the sessions' key, but the records and the groups where
-    // the shell pushes them (PUSH1d2, PUSH1c3b): their pushes write them, and a tick reads none of them again.
+    // the shell pushes them: their pushes write them, and a tick reads none of them again.
     void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
-    // The quests, but where the shell pushes them (PUSH1d3): a quest's move is pushed as the change stream tells it. What is read
+    // The quests, but where the shell pushes them: a quest's move is pushed as the change stream tells it. What is read
     // beneath them (each quest's and ask's work) is still asked again.
     void client.invalidateQueries({ queryKey: keys.allQuests, predicate: notPushed(client) });
     // 🔴 And the asks. A tick takes them, and the attention band reads them beside the
     // sessions — so a session list fresher than its asks is worse than both stale: seen on
-    // the window, an ask made by the other door was missing from *What needs you*, and its parked
+    // the window, an ask made by the other door went missing from *What needs you*, and its parked
     // intake read as a bare session, because the band could not see the ask it belonged to. Where the
-    // shell pushes them (PUSH1d3), an ask the other door made is pushed as the change stream tells it,
+    // shell pushes them, an ask the other door made is pushed as the change stream tells it,
     // and a tick asks again only each channel and the asks elsewhere beneath them.
     void client.invalidateQueries({ queryKey: keys.allAsks, predicate: notPushed(client) });
     // What is read under the driver's key, but its state where the shell pushes it: its pushes write it, and a
@@ -94,11 +94,11 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
     // Not the rules, the repositories or the registry: the rules are pushed as they move (part B), and a
     // look that found the registry moved declares that as its scope's own change, which the state hub answers in every window.
     // Every tick runs a pass for each wired circle, so where each stands may have moved; where the shell pushes the
-    // standings, the pass's end pushes what it moved (PUSH1a2), and a tick reads none of them again.
+    // standings, the pass's end pushes what it moved, and a tick reads none of them again.
     void client.invalidateQueries({ queryKey: keys.allSync, predicate: notPushed(client) });
-    // (The registry and the repositories read from it moved by a terminal's import, FG4: the look declares that as the registry's
+    // (The registry and the repositories read from it moved by a terminal's import: the look declares that as the registry's
     // scope. An index still feeding when the page asked (the status bar's size) is told by the look as the repositories' scope while
-    // it feeds, FOUNDATION1s part B.)
+    // it feeds.)
     // And the accounts: a session's end may have cooled one, its door may have said what one has left, and the
     // sessions running on each have moved. A file read, never a probe; where the shell pushes them its owner judges
     // those once for every window, and a tick reads none of them again.
@@ -108,14 +108,14 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
   // The driver's service is up: what it refused while it came up is asked again now, not at the first tick.
   useDriverReady();
 
-  // What a press changed, wherever it was pressed: asked again here at the one place, in every window.
+  // What a press changed, wherever it is pressed: asked again here at the one place, in every window.
   useStateHub();
 
   // What the shell pushes with its data: heard first, then each slice's snapshot asked, in every window.
   useStateSlices(PUSHED);
 
-  // A failure the driver names is worded from the catalogue, in the reader's language (UX5 U30): a
-  // refused connection toasted the .NET socket's own words. Anything else keeps the driver's.
+  // A failure the driver names is worded from the catalogue, in the reader's language: a
+  // refused connection is never toasted in the .NET socket's own words. Anything else keeps the driver's.
   useShenoraEvent<{ message?: string; code?: string }>('DAORIS', 'DRIVER_ERROR', (error) => {
     notify(error?.code ? sentence({ code: error.code }) : error?.message ?? 'driver error', 'error');
   });
@@ -130,10 +130,10 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
    *
    * A held tool call, which its bound refuses by itself, is said as a park is.
    *
-   * Said in the window's words (NOTIFY2d, the notification design §3.3): each kind's headline as the
+   * Said in the window's words: each kind's headline as the
    * shell's balloon says it behind the window, and what a session wrote beside it as written; the
-   * driver's English headline only for a kind this build does not word. A window reading 中文 toasted
-   * the driver's English until then.
+   * driver's English headline only for a kind this build does not word, so a window reading 中文
+   * does not toast the driver's English.
    */
   useShenoraEvent<AttentionTold>(
     'DAORIS', 'SESSION_ATTENTION', (item) => {
@@ -159,7 +159,7 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
     });
 
   /**
-   * A notice another process recorded (NOTIFY2f, the notification design §5): the headless host's session that ended, or a press
+   * A notice another process recorded: the headless host's session that ended, or a press
    * that went unanswered, said by the shell as it reads the record again, once per notice. Said here in the reader's words, in the
    * window in front alone, and once for an event heard twice; a window not focused as it hears it says nothing, and the notice waits
    * in *Done and failed*, counted by the bell's dot.
@@ -184,13 +184,13 @@ export function ShellSignals({ notify, onAttend, attended, onConfirming, onMessa
    */
   useShenoraEvent<{ session?: string; state?: string }>('DAORIS', 'SESSION_ENDED', () => {
     // The record, where the shell pushes the sessions, and what runs, where it pushes the driver's state, are pushed by the end
-    // itself (PUSH1d2, PUSH1a).
+    // itself.
     void client.invalidateQueries({ queryKey: keys.allSessions, predicate: notPushed(client) });
     void client.invalidateQueries({ queryKey: keys.driver, predicate: notPushed(client) });
   });
 
   /**
-   * MODELROLE1d2 (D205 §3.5(b)): a conversation whose agent refused its choice at the open went on in its replacement within the same
+   * A conversation whose agent refuses its choice at the open goes on in its replacement within the same
    * press. A window showing the refused one follows it, as it would follow the person's own press; one showing anything else keeps it.
    */
   useShenoraEvent<{ from?: string; to?: string }>('DAORIS', 'CHAT_REPLACED', (replaced) => {

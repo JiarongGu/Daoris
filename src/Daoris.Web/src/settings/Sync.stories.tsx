@@ -44,7 +44,7 @@ export const AfterASquashMerge: Story = {
 };
 
 /**
- * LANDSYNC3b, the install's case: a session went on in its tree after its first commit was squash-merged, so its replay leaves
+ * A session goes on in its tree after its first commit is squash-merged, so its replay leaves
  * that commit out and carries the two the line lacks; a second branch the line holds entirely moves onto it.
  */
 export const LeavesOutWhatTheLineHolds: Story = {

@@ -41,7 +41,7 @@ describe('pausing and abandoning in the shell', () => {
     window.localStorage.clear();
   });
 
-  /** One act of the ask's ⋯ (HEAD2d moved its acts there), opened from the keyboard as every menu is in jsdom. */
+  /** One act of the ask's ⋯, opened from the keyboard as every menu is in jsdom. */
   const fromMore = async (page: HTMLElement, name: string) => {
     within(page).getByRole('button', { name: 'More actions' }).focus();
     await userEvent.keyboard('{Enter}');

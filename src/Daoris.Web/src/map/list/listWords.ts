@@ -3,7 +3,7 @@ import { lineName } from '../MapLines';
 import type { MapLine } from '../mapLayout';
 import type { MapNode } from '../topology';
 
-// What each row of the Map's list says (MAPUX1e; the map UX design §6): the drawing's own words for a reader, with the counts and the
+// What each row of the Map's list says: the drawing's own words for a reader, with the counts and the
 // states a person scans the list for.
 
 /** A repository's row: its name, its open count, and a session waiting on the person or working there. */

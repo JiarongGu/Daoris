@@ -2,8 +2,7 @@ import { type Frame, textWidth } from './measure';
 import { ASKS, type Topology } from './topology';
 
 /**
- * A circle too big for a ring, in layers by who asks whom (MAP4, the design's deferred *layers by
- * quest flow*): an asker to the left of whom it asks, one column a step, and what nothing connects set
+ * A circle too big for a ring, in layers by who asks whom: an asker to the left of whom it asks, one column a step, and what nothing connects set
  * apart below in a grid read by name.
  *
  * @remarks
@@ -16,7 +15,7 @@ import { ASKS, type Topology } from './topology';
  * what a column step means; a shared finding has none, so a repository known only by one stands in its
  * pair's column, and both kinds of neighbour pull a card toward its neighbours' rows.
  *
- * **Pure, deterministic, and still no graph library** (design §1): longest-path layering with a loop of
+ * **Pure, deterministic, and still no graph library**: longest-path layering with a loop of
  * asks broken where a depth-first walk meets it, then a few barycentre sweeps to uncross the rows.
  *
  * **A line that skips a column takes a slot in every column it crosses** — a waypoint, ordered with the

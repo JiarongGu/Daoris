@@ -12,7 +12,7 @@ import type { HeadFacts, PlaceSection } from './placeShell';
 /** The room, in px, where a place's page sets the open Workflow's chart in a column of its own: 64 rem. */
 const TWO_COLUMNS = 64 * 16;
 
-// A place page's shell (SETUPUX1h, the setup-UX design §2.1): the head, and three sections folded to the line that names their values.
+// A place page's shell: the head, and three sections folded to the line that names their values.
 // Molecules: the page's state and every press arrive as props.
 
 /** A repository's driving as the head presses it: the hold, and the ⋯'s driving and trees. */
@@ -128,7 +128,7 @@ function HeadMenu({ driving, onAsk }: { driving: PlaceDriving; onAsk: (act: 'dri
 }
 
 /**
- * **A place's page** (SETUPUX1h, the setup-UX design §2.1): the head with its pill, facts, parent door and acts, and three sections each
+ * **A place's page**: the head with its pill, facts, parent door and acts, and three sections each
  * folded to the line that names its values. A section's state is its holder's, so a door out and back finds it as left; a folded section
  * mounts nothing, so it reads nothing. A door's row is brought into view and takes the focus once drawn; *Back* returns to the page a
  * door came from; and a choice in the list can ask the head to take the focus.

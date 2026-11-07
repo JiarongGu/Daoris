@@ -11,7 +11,7 @@ const KIND_TONE: Record<string, string> = { install: 'neutral', development: 'ta
 /** The catalogue word for each kind of home, in `settings.daoris.pill.*`. */
 const KIND_WORD: Record<string, string> = { install: 'install', development: 'development', named: 'named' };
 
-/** A size in its unit, with when it was counted; or why there is none yet. */
+/** A size in its unit, with the time of its count; or why there is none yet. */
 function Size({ folder, measuring }: { folder: Pick<WiringFolder, 'present' | 'bytes' | 'bytesWhy' | 'measured'>; measuring: boolean }) {
   const { t } = useTranslation();
   if (!folder.present) return <span className="text-small text-ink-faint">{t('settings.daoris.folder.absent')}</span>;
@@ -25,8 +25,8 @@ function Size({ folder, measuring }: { folder: Pick<WiringFolder, 'present' | 'b
 }
 
 /**
- * Folders (the this-Daoris design §3.1): the Daoris folder with how it stands to the account's `DAORIS_HOME` and the two notices
- * the start carried, then each top folder by its window name with its path, its size and when it was counted, an entry still at
+ * Folders: the Daoris folder with how it stands to the account's `DAORIS_HOME` and the two notices
+ * the start carried, then each top folder by its window name with its path, its size and the time of its count, an entry still at
  * its old place under its folder, and what is not Daoris's. Sizes are measured, never guessed: a row says *Measuring…* until
  * the walk has counted it, and *Measure again* asks anew. Nothing here opens or changes a folder.
  *

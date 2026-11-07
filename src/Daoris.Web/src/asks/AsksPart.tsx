@@ -81,7 +81,7 @@ export function useAsksPart({
   active, closed, chosen, quests, onChoose, notify, onAttend, onOpenRun, onOpenAtWork, composing, onComposingChange,
 }: {
   /**
-   * The door into a run (WORKFLOW1c, the workflow design §7): its session attended, the side bar on its *Workflow*. Absent where
+   * The door into a run: its session attended, the side bar on its *Workflow*. Absent where
    * Sessions is not, a browser, which reads no run.
    */
   onOpenRun?: (session: string) => void;
@@ -108,7 +108,7 @@ export function useAsksPart({
   const asks = useAsks(closed);
   // Every ask, closed and done ones too, for the page of one the list leaves out.
   const every = useAsks(true);
-  // Whether this machine sets an intake agent (UX5 U34): "" is off, and a door with no driver
+  // Whether this machine sets an intake agent: "" is off, and a door with no driver
   // cannot say, so the composer promises neither.
   const driverState = useDriver().data;
   const intakeAgent = driverState?.intakeAgent;
@@ -129,7 +129,7 @@ export function useAsksPart({
   const close = useCloseAsk();
   const remove = useDeleteAsk();
   const answerGoAhead = useAnswerGoAhead();
-  // Who needs the person as.NET judged it (PUSH1d4), read from memory: which of an ask's go-aheads are stale. A
+  // Who needs the person as.NET judged it, read from memory: which of an ask's go-aheads are stale. A
   // browser judges none.
   const attention = useAttention();
   // The person's review choice for an ask's work: the service's door, the latest standing.
@@ -149,7 +149,7 @@ export function useAsksPart({
   const runs = useWorkflowRun(chosen ? { ask: chosen } : null, { enabled: active && onOpenRun !== undefined });
   const wiring = useRemotes().data;
   const workActs = useWorkActs({ notify });
-  // The chosen ask's channel (SESSONE2c, D167 points 6 to 8) and what is unread on each live ask's, the same reads under one key.
+  // The chosen ask's channel and what is unread on each live ask's, the same reads under one key.
   // Shell-only: a browser has no driver, so none is asked and no section or count is drawn.
   const channel = useChannel(chosen, { enabled: active });
   // Who is at work on the chosen ask: shell-only like the channel, and asked again at each `atWork` wake.
@@ -166,7 +166,7 @@ export function useAsksPart({
   const teammate = chosen ? teammates.find((held) => held.id === chosen) : undefined;
   // The driver's last look at each quest, which says why one of the chosen ask's work sits.
   const considered = useConsidered().data ?? [];
-  // The last abandon's answer, for the ask it was of, said on its page before the record catches up.
+  // The last abandon's answer, for the ask it concerns, said on its page before the record catches up.
   const [abandonedNow, setAbandonedNow] = useState<{ id: string; answer: AbandonAnswer; at: string } | null>(null);
   const shown = chosen
     ? freshest(every.data?.find((candidate) => candidate.id === chosen), held?.id === chosen ? held : null)
@@ -203,7 +203,7 @@ export function useAsksPart({
   const intakeOf = (item: Ask) => (item.intake ? sessions.data?.find((session) => session.id === item.intake) ?? null : null);
 
   const onAsk = async () => {
-    // Read whole only now — a file chosen and then removed was never read at all.
+    // Read whole only now — a file chosen and then removed is never read at all.
     setReading(true);
     let attachments;
     try {
@@ -247,7 +247,7 @@ export function useAsksPart({
     onError: failure(notify),
   });
 
-  // A refusal is said inside the ask that was pressed (UXFIX2b2b), and the page stays on the ask as it was.
+  // A refusal is said inside the ask that is pressed, and the page stays on the ask.
   const onClose = (id: string, reason: string, answered: Answered) => close.mutate({ id, reason }, {
     onSuccess: (result) => { notify(result.message); answered.done(); setHeld(result.ask); },
     onError: (error) => answered.refused(sentence(error)),
@@ -255,7 +255,7 @@ export function useAsksPart({
 
   // The person's yes or no to a go-ahead: the record as the door answers it, and a nudge, since a session that
   // waits on it is the driver's next move once the person answers it too.
-  // A refusal is said beside the go-ahead that was answered (UXFIX2b3b), and its presses are pressable again.
+  // A refusal is said beside the go-ahead that is answered, and its presses are pressable again.
   // A stale one's refusal sends no park on and nudges nothing, since nothing on its ask waits for it.
   const onAnswerGoAhead = (
     id: string, number: number, approved: boolean, words: string | undefined, answered: Answered, stale = false,
@@ -268,8 +268,8 @@ export function useAsksPart({
   const staleGoAheads = shown && attention.state === 'known' ? staleOnAsk(attention.rows, shown.id) : undefined;
 
   // Deleted with every quest asked by it: the record is gone, so the list chooses nothing, on the service's
-  // sentence. A refusal is the service's sentence too, said inside the ask that was pressed, and the page stays on
-  // the ask as it was.
+  // sentence. A refusal is the service's sentence too, said inside the ask that is pressed, and the page stays on
+  // the ask.
   const onDelete = (id: string, answered: Answered) => remove.mutate(id, {
     onSuccess: (result) => { notify(result.message); answered.done(); setHeld(null); onChoose(null); },
     onError: (error) => answered.refused(sentence(error)),
@@ -364,7 +364,7 @@ export function useAsksPart({
           staleGoAheads={staleGoAheads}
           environments={environmentsIn(shown.workspace)}
           // The record as the door answers it, so the page shows the choice before the list catches up; a refusal (a
-          // repository that declares no environment) is the service's sentence, said under the press (ACCESSASK1, R3).
+          // repository that declares no environment) is the service's sentence, said under the press.
           onChooseReview={(choice, words, answered) => chooseReview.mutate({ id: shown.id, choice, words }, {
             onSuccess: (result) => { notify(result.message); setHeld(result.ask); answered.done(); },
             onError: (error) => answered.refused(sentence(error)),

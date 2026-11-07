@@ -46,8 +46,8 @@ export type RuleProposal = {
 };
 
 /**
- * The driver's RULES answer: the file, the defaults, and every scope it holds — and since
- * PERM2 what agents proposed about them, which an answer may carry none of.
+ * The driver's RULES answer: the file, the defaults, and every scope it holds — and
+ * what agents proposed about them, which an answer may carry none of.
  */
 export type AgentRulesState = {
   path: string; problem?: string; defaults: RuleDefault[]; scopes: RuleScopeRow[]; proposals?: RuleProposal[];
@@ -82,7 +82,7 @@ const MACHINE = 'machine';
  *
  * **What agents proposed sits first**, because a widening waiting there is the one thing on
  * this card that is waiting on the person: a narrowing applied itself at the driver's tick, and 🔴 a
- * widening never applies without them. What was settled is history, one press away.
+ * widening never applies without them. What is settled is history, one press away.
  */
 export function AgentRules({
   rules, part = 'all', circles, repositories, busy = false, onSwitchDefault, onRemove, onAdd, onAnswer, elsewhere,
@@ -92,7 +92,7 @@ export function AgentRules({
    * Which of the rules this card holds: `agent`, what the agent's page says under *What it may do* (the
    * proposals, Daoris's defaults and the rules for every session on this machine); `scoped`, what is left in Settings →
    * Permissions until the workspace's and the repository's pages take it (a workspace's rules and a repository's); `all`
-   * both, as the card was.
+   * both.
    */
   part?: 'all' | 'agent' | 'scoped';
   /** On a `scoped` card, where the rest is: a line and its door to the agent's page. */
@@ -147,8 +147,8 @@ export function AgentRules({
   };
 
   return (
-    // No title of its own: the card is alone in *Permissions*, and the settings list names it (UX5
-    // U57), as every card alone in its domain leaves it.
+    // No title of its own: the card is alone in *Permissions*, and the settings list names it,
+    // as every card alone in its domain leaves it.
     <Card>
       {/* The row is the FILE, as Wiring's is the remotes map: what the card is, the list already
           says, and saying it again read as a heading and its echo on the window. */}
@@ -312,7 +312,7 @@ export function AgentRules({
       ) : (
         <div className="mt-3 border-t border-line pt-3">
           <SectionTitle>{t('settings.rules.addTitle')}</SectionTitle>
-          {/* Sized to what each field holds, by the form's own width (R1, UIFIT1d): a list is one word, a rule is a line, a
+          {/* Sized to what each field holds, by the form's own width: a list is one word, a rule is a line, a
               scope a name. */}
           <FormGrid columns={['short', 'long', 'name']} className="mt-2">
             <FormRow>

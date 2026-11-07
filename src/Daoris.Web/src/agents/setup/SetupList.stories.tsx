@@ -7,7 +7,7 @@ import { PLACES } from './setupFixtures';
 import { repositoryId } from './SetupPlaces';
 import type { SetupState } from './setupTreeModel';
 
-// The places tree (SETUPUX1i, the setup-UX design §2.1): second lines (how a place lands, held, adoption running, a need with its first
+// The places tree: second lines (how a place lands, held, adoption running, a need with its first
 // reason), the *Needs attention* chip with its count, and a fold open on a page of imported repositories. At the usual frame widths, in
 // English and 中文, light and dark. The keys are the WAI tree pattern's: Tab enters on one row, then ↑ ↓ Home End → ← walk and open.
 

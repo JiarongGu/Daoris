@@ -289,7 +289,7 @@ describe('the Plugins view', () => {
     expect(await within(main()).findByText('Choose a plugin')).toBeInTheDocument();
   });
 
-  /** UXFIX2b1: a refused removal is said inside the ask, which stays open to press again; no toast says it twice. */
+  /** A refused removal is said inside the ask, which stays open to press again; no toast says it twice. */
   it('says a refused removal inside the ask, which stays open', async () => {
     routes.PLUGIN_ACTION = () => { throw new Error('The folder is in use by another program.'); };
     window.localStorage.setItem('daoris.list.plugins.chosen', 'acme.gate');
@@ -549,7 +549,7 @@ describe('the doors into the Plugins view', () => {
     // A shell-only place is on the bar once the driver has answered.
     await within(bar()).findByRole('button', { name: 'Plugins' });
     const names = within(bar()).getAllByRole('button').map((place) => place.getAttribute('aria-label') ?? place.textContent);
-    // After Agents, the place UX6e put after Search, which is Knowledge since UX6i.
+    // Agents sits right after Knowledge.
     expect(names.indexOf('Agents')).toBe(names.indexOf('Knowledge') + 1);
     expect(names.indexOf('Plugins')).toBe(names.indexOf('Agents') + 1);
     await userEvent.click(within(bar()).getByRole('button', { name: 'Plugins' }));

@@ -8,7 +8,7 @@ import { Inline } from './Card';
  * A count on an icon — a CIRCLE for one digit, a pill beyond.
  *
  * @remarks
- * 🔴 Measured before it was fixed: 14px wide and 17.2px tall, because the width came from `min-w-3.5`
+ * 🔴 A badge of two separate numbers measured 14px wide and 17.2px tall, because the width came from `min-w-3.5`
  * and the height from the line-height plus the border — two numbers nothing held equal, so a single
  * digit sat in an upright oval. Here the box is one fixed height, the minimum width is the same
  * number, and the text is centred by flex with no line-height of its own to push it taller.
@@ -17,9 +17,9 @@ import { Inline } from './Card';
 export function CountBadge({ count, tone = 'open' }: {
   count: number;
   /**
-   * A badge counts only what waits on the person (BADGEUX1, the UI/UX design §3.10), so it wears open's hue, the person's; there is
-   * no quantity in the accent. The warning hue is a press that waits unshown with a clock on it (NOTIFY2b, the notification design
-   * §3.3: the bell's count of the presses).
+   * A badge counts only what waits on the person, so it wears open's hue, the person's; there is
+   * no quantity in the accent. The warning hue is a press that waits unshown with a clock on it
+   * (the bell's count of the presses).
    */
   tone?: 'open' | 'warn';
 }) {
@@ -47,10 +47,10 @@ export function CountBadge({ count, tone = 'open' }: {
  * reason it exists one hover away, on the glyph, instead of in a paragraph above it.
  *
  * @remarks
- * 🔴 The machine's settings were a long list, and the screenshot said what "long" meant: five
+ * 🔴 A machine's settings laid out as paragraphs are a long list: five
  * cards, each opening with a four-line paragraph, the first control 580px below the title at the
- * D56 scale and the second a full screen down — a settings page laid out as an essay, with the
- * right 60% of every card empty because the prose measure was 65ch and the column was 72rem. A setting
+ * type scale and the second a full screen down — a settings page laid out as an essay, with the
+ * right 60% of every card empty because the prose measure is 65ch and the column 72rem. A setting
  * is a row, the way every settings surface a person already knows lays one out: the label leads, the
  * hint is one line, the control sits where the eye expects it. The paragraph that motivated the
  * setting is still there, on the info glyph, for the person who asks why.

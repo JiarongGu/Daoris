@@ -38,7 +38,7 @@ export type WorkspaceDefaults = {
   review?: { set?: ReviewRule; onChange: (edit: ReviewEdit) => void } | null;
   /** Which other agent reads its repositories' work before it lands: `daoris place opinion --workspace`. */
   opinion?: { set?: OpinionRule; onChange: (edit: OpinionEdit) => void } | null;
-  /** How its repositories' work is committed (DOORS1b, D164's amendment point 1): `daoris place commits --workspace`. */
+  /** How its repositories' work is committed: `daoris place commits --workspace`. */
   commits?: { set?: CommitRule; onChange: (edit: CommitEdit) => void } | null;
   /** What a helper its repositories' agents ask for does: `daoris place helpers --workspace`. */
   helpers?: { set?: HelperRule; onChange: (edit: HelperEdit) => void } | null;
@@ -64,7 +64,7 @@ export type WorkspaceRemote = {
     onRemove: (rule: string) => void;
   } | null;
   /**
-   * The machines its remote last said had not declared they know a bound quest (FABRIC-CLOSE1i2), as the last pass heard them, each
+   * The machines its remote last said had not declared they know a bound quest, as the last pass heard them, each
    * with *Retire*; absent where no pass heard the handshake, or where it is not wired.
    */
   machines?: {
@@ -84,7 +84,7 @@ export type WorkspaceSetupProps = {
    */
   access?: Omit<AccessSetup, 'workspace'> | null;
   /**
-   * The hosts its repositories' git remotes reach and the identity this workspace chooses for each (GITAUTH1e, the git-auth design §7.3);
+   * The hosts its repositories' git remotes reach and the identity this workspace chooses for each;
    * absent where the answer lacks it, and the section is not drawn.
    */
   /** Its git identities by host and its git access. */
@@ -116,7 +116,7 @@ const plain = (text: string) => text.replace(/`/g, '');
  * **What Daoris decides folds; what the person decides shows** (§1 rule 4): a value the workspace does not set reads as
  * Daoris's default, marked, and offers *Set for this workspace*; one it sets carries *Clear*, and opens its section. Each
  * row's hint is its terminal twin, the same file either door edits, so a refusal is the driver's sentence;
- * the workspace in it is spelled for whichever shell it is pasted into (`shellWord`, ACCTQUOTE1).
+ * the workspace in it is spelled for whichever shell it is pasted into (`shellWord`).
  * **A key goes in and never comes out**: the remote shows the audit prefix the wiring answered, and the form lets the key
  * go once it has landed.
  *
@@ -482,7 +482,7 @@ export function Wiring({ workspace, wiring, busy, startOpen }: {
             if (url.trim() && key.trim()) wiring.onWire(url.trim(), key.trim(), close);
           }}
         >
-          {/* Sized to what each holds, by the form's own width (R1, UIFIT1d): an address is long, a key is shorter. */}
+          {/* Sized to what each holds, by the form's own width: an address is long, a key is shorter. */}
           <FormGrid columns={['long', 'name']}>
             <FormRow>
               <FormField label={t('settings.wiring.url')}>
@@ -516,8 +516,8 @@ export function Wiring({ workspace, wiring, busy, startOpen }: {
 }
 
 /**
- * The machines its remote counts that have not declared they know a bound quest (FABRIC-CLOSE1i2): while one is listed, no quest of the
- * workspace binds through the remote. Each carries *Retire*, for a machine whose store was deleted or that left the workspace; a push
+ * The machines its remote counts that have not declared they know a bound quest: while one is listed, no quest of the
+ * workspace binds through the remote. Each carries *Retire*, for a machine whose store is deleted or that left the workspace; a push
  * from it counts it again, so the press is said as reversible and asks nothing more.
  */
 function Undeclared({ machines, busy }: { machines: NonNullable<WorkspaceRemote['machines']>; busy: boolean }) {

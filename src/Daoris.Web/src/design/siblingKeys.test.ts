@@ -100,7 +100,7 @@ const shipped = Object.entries(sources).filter(([path]) => !HARNESS.test(path));
 
 describe('the children of one parent', () => {
   it('catches two slots keyed alike — the check itself, sabotaged', () => {
-    // The record's shape before RELSPAM1: two folds keyed by the session, each under its own condition.
+    // A shape that keys two folds by the session, each under its own condition.
     expect(sharedKeys([['./work/A.tsx',
       'const a = <article>\n  {relations && <Relations key={session.id} />}\n  {milestone && <Milestone key={session.id} />}\n</article>;\n',
     ]])).toEqual(['./work/A.tsx:3 session.id']);

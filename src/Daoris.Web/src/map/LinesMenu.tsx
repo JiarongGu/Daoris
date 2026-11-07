@@ -8,7 +8,7 @@ import { LINE_KINDS, type LineKind, type Topology, type When, WHENS } from './to
 
 /**
  * Where a viewer's choice of lines is kept: a convenience of theirs, so the browser's own storage,
- * through the page's one guard (`lib/stored.ts`; FRAME1c, audit A10), where it kept a guard of its own.
+ * through the page's one guard (`lib/stored.ts`).
  */
 const KEY = 'daoris.mapLines';
 const WHEN_KEY = 'daoris.mapWhen';

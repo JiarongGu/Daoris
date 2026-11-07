@@ -26,9 +26,8 @@ export function settingOf(key: string): MachineSetting {
  * service has no route onto it at all. For the wiring, the key goes in and never comes out: what is
  * rendered is the audit prefix a deployment's own `keys list` prints (`WiringSettings`).
  *
- * **Where plugins are looked for** is a fact of the home, so it is a row under it since UX6j (D150 §2.3; the plugins
- * design §5), read-only, with the door to the Plugins place: Settings → Plugins retired there, since nothing about a
- * plugin is set here. Its Plugins section lists each installed plugin with what it holds set, each a door to its
+ * **Where plugins are looked for** is a fact of the home, so it is a row under it, read-only, with the
+ * door to the Plugins place: nothing about a plugin is set here. Its Plugins section lists each installed plugin with what it holds set, each a door to its
  * page, where that is changed.
  *
  * The cards are `DriverCards`, a molecule over the shell's facts, so a story draws the domain at the frame's widths (R6);

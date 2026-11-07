@@ -37,7 +37,7 @@ export function draftReady(draft: QuestDraft): boolean {
 }
 
 /**
- * **The quest composer**: a form, so a drawer still (D118 §3d) — the screen twin of `quest_publish`.
+ * **The quest composer**: a form, so a drawer still — the screen twin of `quest_publish`.
  *
  * @remarks
  * **A molecule**: the draft is the caller's, and the press goes out; the carry's drop, paste and chooser are shared
@@ -97,7 +97,7 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
       }
     >
       <form
-        // The composer lays out by its own width, never the window's (R7, UIFIT1): its two columns of choices go to one
+        // The composer lays out by its own width, never the window's: its two columns of choices go to one
         // below 28rem of the form, which is the drawer at its full width on a narrow window.
         className="@container grid gap-3"
         onSubmit={(e) => { e.preventDefault(); if (ready) onPublish(); }}
@@ -136,7 +136,7 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
             className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
         </label>
-        {/* Its short title (SESSUX1j), optional and the person's own: what a list shows for it. Past the service's limit it
+        {/* Its short title, optional and the person's own: what a list shows for it. Past the service's limit it
             says so here and holds the publish back, rather than sending a quest the service would refuse. */}
         <label className="grid gap-1 text-small text-ink-soft">
           {t('quests.field.short')}
@@ -175,7 +175,7 @@ export function QuestComposer({ draft, onChange, receivers, nobody = false, caut
           onAttach={carry.attach}
           onRemove={carry.remove}
         />
-        {/* The chain (D65 §4): one next step, published by the service when this closes done. */}
+        {/* The chain: one next step, published by the service when this closes done. */}
         {step === null ? (
           <div>
             <Button type="button" variant="ghost" disabled={busy} onClick={() => onChange({ ...draft, step: { to: '', title: '', body: '' } })}>

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// Settings → This Daoris (WIRING1c-i, the this-Daoris design §3.1-3.3, §7): the folders, the service and the loop of one
+// Settings → This Daoris: the folders, the service and the loop of one
 // install, read from the shell's `SYSTEM_WIRING`; it shows and sets nothing.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({ invoke: vi.fn(), notifyReady: vi.fn(() => Promise.resolve()) }));
@@ -155,7 +155,7 @@ describe('Settings → This Daoris', () => {
     expect(service.getByText('D:/somewhere/Daoris/app/daoris-http/Daoris.Service.Http')).toBeTruthy();
     expect(service.getAllByText('beside the application')).toHaveLength(2);
     expect(service.getByText('proved')).toBeTruthy();
-    // The workspace's remote: its address, the key's audit prefix and never the key, and where it was read.
+    // The workspace's remote: its address, the key's audit prefix and never the key, and where it is read.
     expect(service.getByText('aurora')).toBeTruthy();
     expect(service.getByText('https://aurora.example.com')).toBeTruthy();
     expect(service.getByText('key dk_abcd1234')).toBeTruthy();
@@ -410,7 +410,7 @@ describe('Settings → This Daoris', () => {
     expect(routes.filter((type) => ['SYSTEM_OPEN_FOLDER', 'SYSTEM_PATH', 'SYSTEM_SERVICE_ADDRESS'].includes(type))).toEqual([]);
   });
 
-  // What Daoris's sessions left in the person's own tool home, listed and nothing more (the press is OWNSPACE2e).
+  // What Daoris's sessions left in the person's own tool home, listed and nothing more.
   it('lists the folders Daoris left in the person\'s own tool home, read-only, with the records that name them', async () => {
     invoke.mockImplementation(shell(WIRED));
     open();
@@ -486,7 +486,7 @@ describe('Settings → This Daoris', () => {
     expect(invoke.mock.calls.some(([, type]) => type === 'SYSTEM_DOWNLOADS_CLEAR')).toBe(false);
   });
 
-  // The row says each version's date by the rule, and a version a running session was handed is
+  // The row says each version's date by the rule, and a version a running session is handed is
   // kept; one no pass has found unused yet has no date.
   it('says the rule, when each unused version goes by it, and keeps what a running session was handed', async () => {
     invoke.mockImplementation(withDownloads());

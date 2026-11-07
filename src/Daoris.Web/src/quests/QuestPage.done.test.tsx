@@ -7,14 +7,13 @@ import i18n from '../locales/i18n';
 import { FINISHED_HERE as FINISHED, REQUIRING, TAKEN } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// The person's done on a quest's page (QUESTCLOSE1, D126's note). On the install (2026-10-08) two driven sessions were finished
-// at a checkpoint and each quest stayed taken, with nothing on its page that said so or closed it as the person's. Its page now
+// The person's done on a quest's page. A driven session finished at a checkpoint leaves its quest taken, so the page
 // says a taken quest whose last session here ended sits with nothing to carry it on, and *Mark done…* asks once, with the
 // person's note, before it sends their done.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
-/** How the ask hears its end (UXFIX2's contract). */
+/** How the ask hears its end. */
 const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) });
 
 const page = (over: Partial<Parameters<typeof QuestPage>[0]> = {}) => {
@@ -156,7 +155,7 @@ describe('the person’s done on a quest’s page (QUESTCLOSE1)', () => {
   });
 });
 
-// QUESTCLOSE1b2: the quest's note is drawn through the note component, so the person's done reads in the window's language
+// The quest's note is drawn through the note component, so the person's done reads in the window's language
 // and their words stay theirs.
 describe('a closed quest’s note (QUESTCLOSE1b2)', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

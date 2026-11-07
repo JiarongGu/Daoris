@@ -7,7 +7,7 @@ import '../locales/i18n';
 import { QuestsView } from '../test/questsView';
 import { REOPENED, SEALED, STANDING } from './fixtures';
 
-// FABRIC-CLOSE1c3 (§E5; D156): Quests hands its page the reopen where a live step stands on the quest's submission, sending the
+// Quests hands its page the reopen where a live step stands on the quest's submission, sending the
 // submission the page showed to the service's own door, and the go-on of a step its source's reopen held, once the source is ready.
 
 const posted: { url: string; body: unknown }[] = [];

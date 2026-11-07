@@ -4,15 +4,15 @@ import { store, stored } from '../lib/stored';
 // The theme is the viewer's choice: the system, or light, or dark. It is a per-window-profile
 // preference like the language and the scope — never machine wiring and never a tracked file — and
 // it is applied as `data-theme` on <html>, which `tokens.css` keys its forced blocks on. `system` is
-// the ABSENCE of that attribute, so the OS's media query decides exactly as it did before there was
-// a choice to make.
+// the ABSENCE of that attribute, so the OS's media query decides exactly as it does without
+// a choice made.
 
 export type ThemeChoice = 'system' | 'light' | 'dark';
 
 /**
  * Where the choice is remembered. Per viewer; a lost or blocked store is simply the system. Spelled
  * again in `tools/desktop.mjs` (`THEME_KEY`), whose `shot --theme` sets it for a capture and puts it
- * back (LOOK1, `twins.md`).
+ * back (`twins.md`).
  */
 export const THEME_KEY = 'daoris.theme';
 

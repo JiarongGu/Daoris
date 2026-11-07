@@ -7,7 +7,7 @@ import type { Answered } from '../../work/InlineConfirm';
 import { PageSection } from '../../work/frame/ViewMain';
 
 /**
- * **A workspace's *Kept on this machine*** (HIST1e, D153; the history-clearing design §2.4, §6.1), the last section of its
+ * **A workspace's *Kept on this machine***, the last section of its
  * Details: always the reading of what the home keeps of its finished work (its closed quests and asks, their sessions and
  * what they take on the disk), what a clear would take now, a count per reason that keeps the rest with its door where this
  * page holds one, the conversations only *Delete…* takes, and the home's own left-over files and log. Then *Clear history…*
@@ -15,10 +15,10 @@ import { PageSection } from '../../work/frame/ViewMain';
  * on its second press sends exactly the units it listed.
  *
  * @remarks
- * **A molecule**: the plan arrives as a prop and every press goes out. The clear asks here, where it was pressed, rather than
- * under the page's header, since the press is in Details and not in the header (the platform language §4: a step in a task
- * happens where it was started). **Nothing clears by itself** (§7): the reading only makes the history's size a fact on the
- * screen. A host that answers no plan (one older than HIST1c) leaves the section out rather than a blank one.
+ * **A molecule**: the plan arrives as a prop and every press goes out. The clear asks here, where it is pressed, rather than
+ * under the page's header, since the press is in Details and not in the header (a step in a task
+ * happens where it starts). **Nothing clears by itself**: the reading only makes the history's size a fact on the
+ * screen. A host that answers no plan leaves the section out rather than a blank one.
  */
 export function KeptHistory({ workspace, plan, reading = false, refusal = null, busy = false, doors, onClear }: {
   workspace: string;
@@ -26,7 +26,7 @@ export function KeptHistory({ workspace, plan, reading = false, refusal = null, 
   plan: HistoryPlan | null;
   /** The plan is on its way. */
   reading?: boolean;
-  /** The read was refused, in the sentence that says why. */
+  /** The read is refused, in the sentence that says why. */
   refusal?: string | null;
   /** A clear on its way: the presses wait for it. */
   busy?: boolean;

@@ -98,7 +98,7 @@ export const AHEAD: AccountFacts = {
 };
 
 /**
- * The set on the person's own curve, its five-hour window flat at 85 (SWITCH1d; the old `near` derived from it): account-2's
+ * The set on the person's own curve, its five-hour window flat at 85: account-2's
  * five-hour window at 88% is over it, as.NET judges it.
  */
 export const MACHINE_NEAR = scopeOf({
@@ -129,7 +129,7 @@ export const SILENT: AgentAccounts = {
 };
 
 /**
- * TOOL6e, the owner's case: the order's first came out of its cool-off 58 minutes ago, nothing runs, and the others started
+ * The owner's case: the order's first came out of its cool-off 58 minutes ago, nothing runs, and the others started
  * since, so the next start takes it; account-3 cools until a stated reset.
  */
 export const OFFERED_AGAIN: AgentAccounts = {

@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 import { PUBLISHES } from '../bridge/generated/routes';
 
 /**
- * The shell's pushed slices, for a mocked shell (ONEWAY1ab-ii, D182 point 3): the page reads every slice from its snapshot alone, so
+ * The shell's pushed slices, for a mocked shell: the page reads every slice from its snapshot alone, so
  * a test that answers the routes a slice is judged from has its shell answer `STATE_SLICE` from those same answers, one way to stand
  * a shell up. A test that answers `STATE_SLICE` itself is answered as it says. The service's lists (the sessions, the quests, the
  * asks) and where each wired circle stands are judged from what the test's `fetch` answers for them; a list nothing answers is judged
@@ -176,7 +176,7 @@ export type SliceShell = Invoke & {
 export function answeringSlices(invoke: Invoke, routes: Invoke = invoke): SliceShell {
   const ask = (module: string): Ask => (route, payload) =>
     settled(() => quietly(routes)(module, route, payload === undefined ? undefined : { payload }));
-  /** What the page was last answered of each judged partition, and at which number, by slice. */
+  /** What the page is last answered of each judged partition, and at which number, by slice. */
   const told = new Map<string, Map<string, { seq: number; data: string }>>();
   let nextSeq = 0;
   /** The windows that hold the slices, as each test's own window is. */
@@ -203,7 +203,7 @@ export function answeringSlices(invoke: Invoke, routes: Invoke = invoke): SliceS
   const judge = async (slice: string): Promise<Partitions> =>
     (SLICES[slice] ? SLICES[slice](ask('DAORIS.DRIVER'), ask('DAORIS.REMOTES')) : null);
 
-  /** The slice's partitions numbered: a partition whose judgement is what the page was told keeps its number. */
+  /** The slice's partitions numbered: a partition whose judgement is what the page is told keeps its number. */
   const numbered = (slice: string, partitions: Partitions) => {
     const held = told.get(slice) ?? new Map<string, { seq: number; data: string }>();
     told.set(slice, held);
@@ -241,7 +241,7 @@ export function answeringSlices(invoke: Invoke, routes: Invoke = invoke): SliceS
       try {
         return await invoke(module, type, ...rest);
       } finally {
-        // What a declared press moved is pushed once it answered, after the state hub was told.
+        // What a declared press moved is pushed once it answered, after the state hub is told.
         if (PUBLISHES[module]?.[type]) setTimeout(() => void moved().catch(() => {}), 0);
       }
     }

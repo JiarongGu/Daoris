@@ -18,7 +18,7 @@ const nav = (page: Page, name: string) =>
 const questList = (page: Page) => page.getByRole('complementary', { name: 'Quests' });
 
 /**
- * The main area, where a quest's record and an ask's open since FRAME1d (D118 §3d): a record is the main area, and
+ * The main area, where a quest's record and an ask's open: a record is the main area, and
  * only a form is a drawer. A locator, so it follows the page as the main area changes what it holds.
  */
 const record = (page: Page) => page.getByRole('main');
@@ -32,7 +32,7 @@ const repositoryList = (page: Page) => page.getByRole('complementary', { name: '
 /** A repository's row in that list, by its name exactly: `engine` is not `newcomer`'s substring, but say so anyway. */
 const repositoryRow = (page: Page, name: string) => repositoryList(page).getByRole('listitem', { name, exact: true });
 
-/** A repository chosen from its row, and its page in the main area, found by its title (D118 §3d). */
+/** A repository chosen from its row, and its page in the main area, found by its title. */
 async function chooseRepository(page: Page, name: string) {
   await repositoryRow(page, name).getByRole('button').first().click();
   await expect(record(page).getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
@@ -45,7 +45,7 @@ async function chooseRepository(page: Page, name: string) {
 const knowledgeList = (page: Page) => page.getByRole('complementary', { name: 'Knowledge', exact: true });
 const mode = (page: Page, name: 'Search' | 'Convergence') => knowledgeList(page).getByRole('radio', { name, exact: true });
 
-/** Knowledge from the bar: on Search in a fresh browser, and on the mode it was left in after. */
+/** Knowledge from the bar: on Search in a fresh browser, and on the mode last chosen after. */
 const toKnowledge = (page: Page) =>
   page.getByRole('navigation', { name: 'Views' }).getByRole('button', { name: 'Knowledge', exact: true }).click();
 
@@ -100,7 +100,7 @@ test('repositories lists both members, and each opens its page with its declarat
   await chooseRepository(page, 'game');
   await expect(record(page).getByText('a playtest finding, with the reproduction')).toBeVisible();
 
-  // The list remembers the repository chosen (D118 §3f): after a reload, which lands on Overview, its page is
+  // The list remembers the repository chosen: after a reload, which lands on Overview, its page is
   // the one the view reopens on.
   await page.reload();
   await nav(page, 'Repositories').click();
@@ -169,7 +169,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
   expect(served.headers()['x-content-type-options']).toBe('nosniff');
   expect(served.headers()['content-disposition']).toContain('attachment');
 
-  // Leave the family as it was found: the suite is serial, and the next test expects nothing open.
+  // Leave the family as found: the suite is serial, and the next test expects nothing open.
   await markDoneOpen(page);
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
@@ -211,7 +211,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await chain().getByRole('button', { name: `Verify #${parent} in a playtest` }).click();
   await expect(record(page).getByRole('heading', { level: 1, name: `Verify #${parent} in a playtest` })).toBeVisible();
 
-  // Leave the family as it was found: the suite is serial, and a later test expects nothing open.
+  // Leave the family as found: the suite is serial, and a later test expects nothing open.
   await markDoneOpen(page);
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
@@ -259,7 +259,7 @@ test('a repository opens its own code map, and one without says where it would g
 test('a quest travels: composed, published, taken, finished', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();
-  // The composer is a form, so a drawer still (D118 §3d), opened from the list's ＋.
+  // The composer is a form, so a drawer, opened from the list's ＋.
   await make(page, 'New quest');
 
   await page.getByLabel('From', { exact: true }).click();
@@ -279,7 +279,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
   // It sits in Open, and the quest just published opens on its page in the main area, where the acting
-  // happens; its row in the list is a door to the same page (D118 §3d). No drawer is left over it.
+  // happens; its row in the list is a door to the same page. No drawer is left over it.
   // Its head and its row say its short title; the whole title is said once, opening its body.
   const title = 'Streaming budget';
   await expect(record(page).getByRole('heading', { level: 1, name: title })).toBeVisible();
@@ -301,7 +301,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await includeClosed(page);
   await expect(questList(page).getByText(title)).toBeVisible();
 
-  // The filter is the list's own, remembered for the next visit (D118 §3f). The quest it chose has closed, so the view
+  // The filter is the list's own, remembered for the next visit. The quest it chose has closed, so the view
   // opens with nothing chosen rather than on yesterday's done quest.
   await page.reload();
   await nav(page, 'Quests').click();
@@ -340,10 +340,10 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await page.goto('/');
   // A browser on this machine has this door: an ask is this host's HTTP, not the shell's bridge.
   await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
-  // Workspace › New ask… since UX7a, the palette's row for it.
+  // Workspace › New ask… is the palette's row for it.
   await page.getByRole('dialog').getByRole('option', { name: /^New ask/ }).click();
 
-  // The composer is a form, so a drawer still (D118 §3d), addressed by its title.
+  // The composer is a form, so a drawer, addressed by its title.
   const composer = page.getByRole('dialog', { name: 'Ask the workspace' });
   await expect(composer).toBeVisible();
   // One workspace held, so it is the workspace — said, and not asked.
@@ -380,7 +380,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await ask.getByRole('region', { name: 'Became' }).getByRole('button', { name: /^#[0-9a-f]{6} the rendering of the asset pipeline…$/ }).click();
   const quest = record(page);
   await expect(quest.getByRole('region', { name: 'Where it belongs' })).toHaveCount(0);
-  // Asked by the ask, in its Details (HEAD2b moved the requester off the head's facts line).
+  // Asked by the ask, in its Details, not on the head's facts line.
   await quest.getByRole('button', { name: /^Details/ }).click();
   await expect(quest.getByText(/ask #[0-9a-f]{6}/).first()).toBeVisible();
   await expect(quest.getByRole('link', { name: /tickets\.example\/T-8/ })).toBeVisible();
@@ -402,7 +402,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
 });
 
 /**
- * **A plain browser's *What needs you* says it is the app's, and an ask's record says who answered** (INT4d, PUSH1d4), over
+ * **A plain browser's *What needs you* says it is the app's, and an ask's record says who answered**, over
  * the real host. Who needs the person is judged by the app, so a browser lists no row, even with an ask proposed
  * and its intake parked asking: the band says the app judges it, never *Nothing needs you*. The ask's record, opened from
  * Quests' list, names the intake session there without a door, because a browser has no Sessions. The intake is opened and
@@ -465,8 +465,8 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   // tracked is touched.
   //
   // `connect` is what JOINS: the registry is an explicit list now, so being in the folder is
-  // not being a member. Before that it was the scan that admitted this newcomer — which is exactly the
-  // silence the managed registry removed, and this test was reading it as a pass.
+  // not being a member: a scan that admitted this newcomer would be exactly the silence the managed
+  // registry rules out, and must not read as a pass.
   const newcomer = join(repoRoot, '_fixtures', 'web-e2e', 'family', 'newcomer');
   const cli = join(repoRoot, 'src', 'Daoris.Cli', 'bin', 'daoris.mjs');
   mkdirSync(newcomer, { recursive: true });
@@ -586,7 +586,7 @@ test("a driven session's record reaches the quest's page (D46)", async ({ page, 
   await expect(ran.getByText('the process is alive')).toBeVisible();
 
   // Read-only is the arc's central claim: the record renders, the control does not — stop reaches a
-  // PROCESS, and a browser has none to reach. Since SESSUX1d no quest page carries a stop at all:
+  // PROCESS, and a browser has none to reach. No quest page carries a stop at all:
   // its one owner is the session's page header in Sessions, which a browser has not got.
   await expect(shown.getByRole('button', { name: 'Stop session' })).toHaveCount(0);
   await expect(shown.getByRole('button', { name: 'Stop…' })).toHaveCount(0);
@@ -642,7 +642,7 @@ test('a session record names the tool version and the account it ran as (D49 §4
  * The roster and the per-conversation profile picker ride the shell's bridge and have no HTTP route
  * at all — a profile home is a filesystem path. In a browser the bridge is absent, so the
  * queries never fire and the surfaces never render; asserting that here, over the real bundle, is the
- * only place the guarantee is checked against a real browser rather than against a mock that was told
+ * only place the guarantee is checked against a real browser rather than against a mock told
  * to be absent.
  */
 test('a browser learns nothing about this machine’s harnesses (D49 §4)', async ({ page }) => {
@@ -653,12 +653,11 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // really is Settings, because an absence asserted on the wrong page is a check that cannot fail.
   await nav(page, 'Settings').click();
   await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
-  // 🔴 REV3: these used to look for a "This machine" heading and a "Harnesses" string that no longer
-  // exist anywhere, on the Appearance page where no machine setting would render anyway — so they
-  // passed whatever a browser was shown. The domain list is what a browser is OFFERED, so it is
+  // A heading or string looked for on the Appearance page would pass whatever a browser is shown, since no
+  // machine setting renders there anyway. The domain list is what a browser is OFFERED, so it is
   // asserted whole: a machine domain appearing here fails this line.
   const domains = page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button');
-  // Get started leads (SETUP1a, D97; Setup from NAME1b until UX6j gave that name to a repository's tab), holding in a
+  // Get started leads, holding in a
   // browser only the registry's step.
   await expect(domains).toHaveText([/Get started/, /Appearance/, /AI features/]);
 
@@ -683,7 +682,7 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   await expect(repositoryList(page).getByRole('button', { name: 'Add repository' })).toHaveCount(0);
   await expect(record(page).getByRole('button', { name: 'Manage' })).toHaveCount(0);
   // A repository's Setup is this machine's: a browser's page is Details alone, with no tab row. So are its
-  // branches and its history (UX6h1, D147 §6).
+  // branches and its history.
   await expect(record(page).getByRole('tab', { name: 'Setup' })).toHaveCount(0);
   await expect(record(page).getByRole('tab', { name: 'History' })).toHaveCount(0);
 });
@@ -715,9 +714,9 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
 
 /**
  * Search on the frame: the box, *local only* and the hits are its list, and the entry a hit names is
- * read in the main area, as it is written, where it was the reader drawer over the side bar and the panel (audit SR4).
- * The game's own knowledge answers a search made from outside it, as the family rehearsal's search does over HTTP. Since
- * UX6i it is Knowledge's Search, which a fresh browser's Knowledge opens on.
+ * read in the main area, as it is written, not in a drawer over the side bar and the panel.
+ * The game's own knowledge answers a search made from outside it, as the family rehearsal's search does over HTTP. It
+ * is Knowledge's Search, which a fresh browser's Knowledge opens on.
  */
 test('search finds what the game knows, and its entry reads whole in the main area (FRAME1f)', async ({ page }) => {
   await page.goto('/');
@@ -730,7 +729,7 @@ test('search finds what the game knows, and its entry reads whole in the main ar
   await expect(hit).toBeVisible();
   await expect(hit.locator('mark').first()).toBeVisible();
 
-  // ↓ goes from the box into the hits, and Enter opens the row (D118 §3e).
+  // ↓ goes from the box into the hits, and Enter opens the row.
   await box.press('ArrowDown');
   await expect(hit.getByRole('button')).toBeFocused();
   await page.keyboard.press('Enter');
@@ -738,7 +737,7 @@ test('search finds what the game knows, and its entry reads whole in the main ar
   await expect(record(page).locator('pre')).toContainText('**chunk hydration** runs neighbours-first');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
-  // The list remembers *local only* and the entry chosen across a reload (§3f), and not what was typed.
+  // The list remembers *local only* and the entry chosen across a reload, and not the text typed.
   const localOnly = () => knowledgeList(page).getByRole('checkbox', { name: "Each repository's own only" });
   await localOnly().click();
   await expect(localOnly()).not.toBeChecked();
@@ -751,8 +750,8 @@ test('search finds what the game knows, and its entry reads whole in the main ar
 
 /**
  * Convergence on the frame: the similarity and the findings are its list, and a finding is read in
- * the main area, the service's sentence and then each entry whole (audit CO4). Whatever this host answers at the list's
- * start is asked first, and the page must say THAT: the example family's own entries may share nothing. Since UX6i it
+ * the main area, the service's sentence and then each entry whole. Whatever this host answers at the list's
+ * start is asked first, and the page must say THAT: the example family's own entries may share nothing. It
  * is Knowledge's Convergence, chosen at the list's head and remembered for the place.
  */
 test("convergence keeps its similarity, and a finding reads under the service's sentence (FRAME1f)", async ({ page, request }) => {
@@ -786,7 +785,7 @@ test("convergence keeps its similarity, and a finding reads under the service's 
   await expect.poll(() => page.evaluate(() => window.localStorage.getItem('daoris.list.convergence.filters')))
     .toBe('{"threshold":0.7}');
   await page.reload();
-  // The place opens on the mode it was left in.
+  // The place opens on the mode last chosen.
   await toKnowledge(page);
   await expect(mode(page, 'Convergence')).toHaveAttribute('aria-checked', 'true');
   await expect(slider()).toHaveValue('0.7');
@@ -868,7 +867,7 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
   // Knowledge, and its Convergence by the door it had as a place; its Search is *Search knowledge*, above.
   await expect(palette.getByRole('option', { name: /Go to: Knowledge/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /Go to: Convergence/ })).toBeVisible();
-  // Settings itself, not a domain's row (*Settings: Appearance*), which the palette lists too since UX7a.
+  // Settings itself, not a domain's row (*Settings: Appearance*), which the palette lists too.
   await expect(palette.getByRole('option', { name: /^Settings(?!:)/ })).toBeVisible();
   await expect(palette.getByRole('option', { name: /^Overview/ })).toHaveCount(0);
 
@@ -878,7 +877,7 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
   await expect(palette.getByRole('option', { name: /Plugins/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /New conversation/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Review what/ })).toHaveCount(0);
-  // A window is the shell's to open, so neither of SURF8's is offered here.
+  // A window is the shell's to open, so neither window command is offered here.
   await expect(palette.getByRole('option', { name: /monitor window/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /its own window/ })).toHaveCount(0);
 
@@ -892,11 +891,9 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
 /**
  * The chrome holds its shape on a narrow window.
  *
- * This is here because it was BROKEN and nothing noticed. The 15rem sidebar the activity bar
- * replaced turned into a top bar under 768px, and the rule that stacked it outlived it:
- * at 686px the 48px icon rail became a 276px-tall column ABOVE the content, leaving the page 105px.
- * Neither suite could see it — vitest has no layout and every other case here runs at one width —
- * so the viewport is the assertion.
+ * A stacking rule once left a 48px icon rail as a 276px-tall column ABOVE the content at 686px, leaving
+ * the page 105px. Neither suite could see it — vitest has no layout and every other case here runs at one
+ * width — so the viewport is the assertion.
  */
 test('the chrome stays beside the content on a narrow window, never above it', async ({ page }) => {
   await page.setViewportSize({ width: 680, height: 800 });
@@ -917,11 +914,11 @@ test('the chrome stays beside the content on a narrow window, never above it', a
 });
 
 /**
- * A view's columns follow its main area, never the window (D118 §3b, FRAME1c): the side bar and a list
+ * A view's columns follow its main area, never the window: the side bar and a list
  * narrow the main area while the window stays as wide, so Overview's two cards and the map's detail beside its
- * canvas are laid out by the main area's own width. The repositories' cards went with FRAME1e, whose list holds
- * them and whose page is one column. A browser has no side bar
- * (§4), so the main area is narrowed here by hand at a window that stays 1280 px wide: a viewport breakpoint
+ * canvas are laid out by the main area's own width. The repositories' list holds
+ * its cards and its page is one column. A browser has no side bar,
+ * so the main area is narrowed here by hand at a window that stays 1280 px wide: a viewport breakpoint
  * would keep two columns, and only a container query stacks them. vitest has no layout to see this with.
  */
 test("a browser's main area lays its columns out by its own width, beside no side bar and no panel (D118)", async ({ page }) => {

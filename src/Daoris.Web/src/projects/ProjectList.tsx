@@ -74,7 +74,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
   chosen: string | null;
   /** The list's chosen item, where it is a workspace: its name. */
   chosenWorkspace?: string | null;
-  /** The sentence for a list that has never had an answer, said in place rather than left blank (D118 §3h). */
+  /** The sentence for a list that has never had an answer, said in place rather than left blank. */
   unanswered?: string | null;
   onChoose: (repository: string) => void;
   /** Open a workspace's page; absent, its head is a heading and no door. */
@@ -146,7 +146,7 @@ export function ProjectList({ groups, chosen, chosenWorkspace = null, unanswered
   return (
     <div>
       {filterable && (
-        // Above the rows, and in reach as they scroll under it; ↓ goes from it into the rows (D118 §3e).
+        // Above the rows, and in reach as they scroll under it; ↓ goes from it into the rows.
         <div className="sticky top-0 z-10 border-b border-line bg-page px-2 pb-1.5 pt-1.5">
           <label className="flex items-center gap-1.5 rounded-control border border-line-strong bg-raised px-2 py-1 text-ink-faint focus-within:border-accent">
             <Icon name="search" size={12} className="shrink-0" />

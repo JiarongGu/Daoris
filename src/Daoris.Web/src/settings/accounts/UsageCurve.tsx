@@ -4,7 +4,7 @@ import { Button, Icon, Inline } from '../../design/ui';
 import { windowName } from './accounts';
 import { type CurvePoint, MOST_POINTS } from './usageCurves';
 
-// The usage curve as the switch's setting shows it (SWITCH1d; D165 point 2; the switch design §5): a small chart a window, the
+// The usage curve as the switch's setting shows it: a small chart a window, the
 // curve in effect with each account of the list where it stands now, and the editor *My own curve* opens on a window's points.
 // Molecules: every state arrives as props and every save goes out, so each is a story.
 
@@ -19,7 +19,7 @@ const yOf = (used: number) => BOX.top + (1 - Math.min(Math.max(used, 0), 100) / 
 
 /**
  * A curve across the whole window: its points, flat from the window's start to the first and from the last to its end. None where
- * no curve was answered, which draws no line.
+ * no curve is answered, which draws no line.
  */
 function across(points: readonly CurvePoint[]): CurvePoint[] {
   const first = points[0];
@@ -33,7 +33,7 @@ function across(points: readonly CurvePoint[]): CurvePoint[] {
 }
 
 /**
- * **A window's curve, drawn** (the switch design §5): across, how much of the window's time has gone; up, how much is used. The
+ * **A window's curve, drawn**: across, how much of the window's time has gone; up, how much is used. The
  * curve in effect is one 2px line with its room under it washed in, the person's own points marked on it, and each account of the
  * list a dot where it stands now, named beside it, over its curve in the warning hue. One series, so no legend: the window's name
  * is the chart's name, and each dot's tooltip says its account's numbers, which its row on the page says too.
@@ -116,10 +116,10 @@ const draftOf = (points: readonly CurvePoint[]): Draft => points.map(([elapsed, 
 const numberOf = (text: string) => (text.trim() === '' ? Number.NaN : Number(text));
 
 /**
- * **A window's own points, edited** (the switch design §2, §5): *My own curve*'s points for one window, `[time gone, used]`, a
+ * **A window's own points, edited**: *My own curve*'s points for one window, `[time gone, used]`, a
  * row each, added after the last and taken out, and saved whole as `--curve <window>=…` saves them. A window the person set no
  * points for takes Daoris's curve, and its own begin from Daoris's points, as the accounts' answer carries them. Points that break a
- * rule are refused by the door (`ACCOUNT_USE_CURVE`; the rules are.NET's alone, PUSH1e), and its sentence is said under the rows,
+ * rule are refused by the door (`ACCOUNT_USE_CURVE`; the rules are.NET's alone), and its sentence is said under the rows,
  * which stay as typed. It holds only the points being typed; keyed by the saved points, so a save that lands starts it afresh.
  */
 export function CurvePoints({ window, points, start, hint, busy, onSave }: {

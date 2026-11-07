@@ -29,10 +29,10 @@ export type FindingsAnswer =
  * - **A row is the finding's entries**, by their titles, then what kind of likeness it is and how alike, then the
  *   repositories that reached it. A likeness in different words, the finding no text comparison can make, wears the
  *   accent, as its card did.
- * - **Loading is §4's**: a first answer is skeleton rows, with the words in the line the count takes; a similarity
+ * - **Loading is skeleton rows**: a first answer is skeleton rows, with the words in the line the count takes; a similarity
  *   moved holds the last findings at reduced opacity until the new ones land, so nothing jumps under the slider.
  * - **An empty answer is an empty state** whose act lowers the similarity, until its floor, where it says it is the
- *   floor (UX5 U42). The headline names the value the answer is for, never one still being moved.
+ *   floor. The headline names the value the answer is for, never one still being moved.
  */
 export function FindingList({ threshold, onThreshold, semantic, answer, chosen, onChoose }: {
   /** The similarity as the slider stands. */
@@ -69,8 +69,8 @@ export function FindingList({ threshold, onThreshold, semantic, answer, chosen, 
         <p className="m-0 text-meta text-ink-faint">{semantic ? t('convergence.hintSemantic') : t('convergence.hintLexical')}</p>
       </div>
 
-      {/* A first load is skeleton rows (D41 §4), with the words in the line the count takes, so nothing moves when the
-          answer lands. On the first real index this was seconds of a bare "comparing…" on an empty page (POLISH3). */}
+      {/* A first load is skeleton rows, with the words in the line the count takes, so nothing moves when the
+          answer lands: on a real index a bare "comparing…" on an empty page lasts seconds. */}
       {answer.state === 'first' && (
         <>
           <p className={line}>{t('convergence.comparing')}</p>

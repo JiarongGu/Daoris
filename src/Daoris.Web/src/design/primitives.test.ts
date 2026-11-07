@@ -4,8 +4,8 @@ import { rooted } from '../test/sources';
 /**
  * **The atoms own the primitives**. Radix supplies the behaviour and `ui.tsx` every pixel, so a
  * screen reaches a headless primitive only through an atom. A screen that imports one styles it on its own, and
- * its copy keeps whatever that screen knew when it was written: eight dropdown menus did, and none capped its
- * height, so a long one ran off the window as SELECT1's select had, and was fixed in one place only.
+ * its copy keeps whatever that screen knew at its writing: eight dropdown menus did, and none capped its
+ * height, so a long one ran off the window while a fix in one menu left the rest as they were.
  *
  * Held here for the reason `presentational.test.ts` holds what a molecule imports: it breaks one import at a
  * time and silently. What may import a primitive is a list by name, which someone must justify appending to.
@@ -19,7 +19,7 @@ const isAtom = (path: string) => path === './design/ui.tsx' || path.startsWith('
 
 /**
  * What else may import one, and which. The application's root mounts the one tooltip provider every `Tip`
- * needs (`PageRoot.tsx`, which `main.tsx` renders inside the error screen since PAGELOOP1); it renders no pixel
+ * needs (`PageRoot.tsx`, which `main.tsx` renders inside the error screen); it renders no pixel
  * of its own.
  */
 const ROOTS: Record<string, readonly string[]> = {

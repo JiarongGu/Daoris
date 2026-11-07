@@ -5,7 +5,7 @@ import type { RepositorySetupProps } from './setup/RepositorySetup';
 
 // Repositories as the registry and the index answer them, for the list's and the page's stories: the
 // example family's two adopters, a teammate's registration with no checkout here, one that declared nothing, two not
-// adopted (one with a root here, one without), and a name in 中文. Since UX6h1, the engine's branches and its line's history
+// adopted (one with a root here, one without), and a name in 中文. The engine's branches and its line's history
 // as Git's reads answer them.
 
 export const ENGINE: Registration = {
@@ -139,7 +139,7 @@ export const SETUP_OWN: RepositorySetupProps = {
 };
 
 /**
- * The engine's Setup with its process as a shell since DOORS1b answers it (D164's amendment point 3): how its work is committed
+ * The engine's Setup with its process as a shell answers it: how its work is committed
  * at Daoris's default, on *Line and landing*, and what a helper its agent asks for does from its workspace, on *Sessions*.
  */
 export const SETUP_PROCESS: RepositorySetupProps = {
@@ -254,9 +254,9 @@ export const GIT_BRANCHES_ENGINE = {
 };
 
 /**
- * The game's branches as `GIT_BRANCHES` answers them for it alone (UX6h2b2): a checkout holding no branch of Daoris's, so a
+ * The game's branches as `GIT_BRANCHES` answers them for it alone: a checkout holding no branch of Daoris's, so a
  * workspace's read lists it apart and its tab draws it once the person includes it. Its line, set for the repository, is
- * behind origin's copy and was last fetched days ago; then two of the person's.
+ * behind origin's copy and last fetched days ago; then two of the person's.
  */
 export const GIT_BRANCHES_GAME = {
   repository: 'game', workspace: 'default',
@@ -282,7 +282,7 @@ export const GIT_HISTORY_ENGINE: LoggedCommit[] = [
   logged('1b07c9', [], 'Begin the engine', 'Mei Lin', 400),
 ];
 
-/** The same history as two pages of `GIT_GRAPH`: the first answers `more`, and its tail's parents are the second's (UX6h3a). */
+/** The same history as two pages of `GIT_GRAPH`: the first answers `more`, and its tail's parents are the second's. */
 export const GIT_HISTORY_PAGES: [LoggedCommit[], LoggedCommit[]] = [GIT_HISTORY_ENGINE.slice(0, 3), GIT_HISTORY_ENGINE.slice(3)];
 
 const ZEROS = '0000000000000000000000000000000000000000';
@@ -290,7 +290,7 @@ const blob = (short: string) => `${short}${'a'.repeat(40 - short.length)}`;
 
 /**
  * The engine's checkout as `GIT_CHANGES` reads it: a modified file staged, `notes.txt` staged as an addition and then
- * removed from disk (in both lists), a file changed since it was staged, one untracked, and one in conflict after a merge.
+ * removed from disk (in both lists), a file changed after staging, one untracked, and one in conflict after a merge.
  */
 export const GIT_CHANGES_ENGINE = {
   head: id('c4f1a2') as string | null,
@@ -409,7 +409,7 @@ export const GIT_STASH_PLAN_ENGINE = {
 
 /**
  * The physics session's branch beside the engine's line since they parted, as `GIT_GRAPH` answers `sinceParted` with the two
- * tips, the branch then the line (UX6h3b): its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),
+ * tips, the branch then the line: its two commits (`left`) and the line's two since it grew from `77a0e1` (`right`),
  * the asset cache's merge among them, in date order.
  */
 export const GIT_BRANCH_PARTED: LoggedCommit[] = [

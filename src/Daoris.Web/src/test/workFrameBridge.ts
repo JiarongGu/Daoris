@@ -1,15 +1,15 @@
 import { vi } from 'vitest';
 
-// The bridge the Work frame's suites mock, once for the files that share it (WEBSPEED1 cut `WorkFrame.test.tsx` into
+// The bridge the Work frame's suites mock, once for the files that share it (the frame's tests are cut into
 // parts that run beside each other). A part mocks the module with
 // `vi.mock('@shenora/react', async () => (await import('./workFrameBridge')).shenoraMock())`: the factory is lazy,
 // so this file is loaded after the mock exists and never imports the frame, which would make the two wait on each other.
 
 // Every hook listening to an event hears it, as in the shell: each hook's latest handler is kept,
 // told apart by its source, since a render hands over a new closure each time. One handler per
-// event name meant a second listener (the console's, CONSOLE3a) silenced the first (the tabs').
+// event name meant a second listener (the console's) silenced the first (the tabs').
 // 🔴 Two mounted instances of one hook share a source, so here only the last rendered hears: the frame's own second
-// reading of a record (SENDLOST1b's `SentSettler`) is mounted only while words wait on it, never beside every conversation.
+// reading of a record (`SentSettler`) is mounted only while words wait on it, never beside every conversation.
 const byName = new Map<string, Map<string, (payload: unknown) => void>>();
 
 export const invoke = vi.fn();

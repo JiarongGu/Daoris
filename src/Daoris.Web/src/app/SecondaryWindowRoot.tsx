@@ -17,11 +17,11 @@ import { ZoomReadout } from '../work/frame/ZoomReadout';
 import { useZoomKeys, useZoomWheel } from './windowZoom';
 
 /**
- * The root of a window that is not the application (D55 §b, SURF8).
+ * The root of a window that is not the application.
  *
  * @remarks
  * **A secondary window carries none of the application's chrome**: it keeps its *native* frame
- * (D55 §b, and `SecondaryForm` has the framework constraint behind it), so there is no app strip,
+ * (`SecondaryForm` has the framework constraint behind it), so there is no app strip,
  * no activity bar, no mode switch and no palette here.
  *
  * **The handshake is not optional.** `ShellSignals` is what tells the host this page is ready to
@@ -59,7 +59,7 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
 
   return (
     <LinkOpener.Provider value={linkOpener}>
-      {/* First (PUSH1a): its effects run before the window's own, so the driver's state is read as the snapshot it asks and
+      {/* First: its effects run before the window's own, so the driver's state is read as the snapshot it asks and
           never pulled beside it. It renders nothing. */}
       <ShellSignals
         notify={notify}
@@ -76,7 +76,7 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
 
       <ZoomReadout level={zoom} />
       <Toasts items={[...messages.toasts, ...toasts]} onClose={(id) => { if (!messages.close(id)) dismiss(id); }} />
-      {/* The right-click menu here too (CTX1, D138 §6): no Search and no Quick Ask in this window, so a selection is
+      {/* The right-click menu here too: no Search and no Quick Ask in this window, so a selection is
           offered its copy alone; a link opens in Daoris's browser as the application's does. */}
       <ContextMenus
         doors={{

@@ -149,7 +149,7 @@ describe("the review choice for an ask's work", () => {
     expect(within(section).queryByRole('button', { name: 'Set' })).toBeNull();
   });
 
-  // REVIEWENV1j2: each screen that sets the choice names its terminal twin, quietly.
+  // Each screen that sets the choice names its terminal twin, quietly.
   it("names the terminal twin under the composer's review field, and on a live ask's page with its id", () => {
     render(<Composer onSubmit={vi.fn()} />);
     expect(document.body).toHaveTextContent('daoris ask --review rule|on|<environment>|off "…"');

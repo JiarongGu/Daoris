@@ -9,7 +9,7 @@ import {
 import { atWidths, FLOW_WIDTHS, inDark, inLight } from '../flowFrames';
 import { chinese } from '../storyLanguage';
 
-// The flowchart's stories (FLOWCHART1a1; the flowchart design §4.4): the hardest graphs, each in both themes, in English
+// The flowchart's stories: the hardest graphs, each in both themes, in English
 // and 中文, at the frame's widths, 300 px (the side bar's floor), 400 (the main area's), 544 (a 680 px window's main area)
 // and 1200, each width a frame of its own so the flow measures its own pane. The measured-box check (`measured/`) draws
 // these same stories in a rendered browser and measures every box. The quest's own are `quests/QuestFlow.stories.tsx`.
@@ -127,7 +127,7 @@ export const NoneCurrentChinese: Story = none.chinese;
 export const NoneCurrentChineseDark: Story = none.chineseDark;
 
 /**
- * A run too large to show whole (FLOWCHART1d; §3.6, trap 16): 96 nodes, three lines of work of 31 steps, folded around its one
+ * A run too large to show whole: 96 nodes, three lines of work of 31 steps, folded around its one
  * current node, the build at its 20th step: what settled two ranks before it as *steps done*, the ranks from two before to three
  * after it drawn, and the rest as *later steps*, every edge across a fold's boundary drawn to it with its cause. *Show whole* opens
  * every fold.

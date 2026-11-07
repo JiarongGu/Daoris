@@ -85,7 +85,7 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
     onOpenAgent: (agent) => open('agents', agent),
     // A remote nothing serves opens Settings → Git, where an identity is set up for it.
     onOpenGit: () => open('settings', 'git'),
-    // A landing rule's plugin opens its page (PLUGUI1c2c).
+    // A landing rule's plugin opens its page.
     onOpenPlugin: (plugin) => open('plugins', plugin),
     // A repository's setup is its place's page in the Agents place's Setup mode.
     onOpenSetup: (repository) => open('agents', null, { placeOf: repository }),
@@ -107,7 +107,7 @@ export function useWorkViews({ lists, view, notify, attached, openInWork, openRu
   });
   // Knowledge: Search and Convergence as one place, held on every view as Quests is
   // and asking the service nothing until in front. Each mode's list memory is its chosen item and its one filter, *local
-  // only* and the similarity (§3f), as it was; a mode chosen at the list's head is a door into the place in that mode.
+  // only* and the similarity; a mode chosen at the list's head is a door into the place in that mode.
   const knowledge = useKnowledgeView({
     active: view === 'knowledge',
     mode: knowledgeMode,

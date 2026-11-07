@@ -2,18 +2,18 @@
  * The agent tools a person has, assembled from the doors Daoris can reach them over.
  *
  * @remarks
- * 🔴 **"Harness account" and `*-acp` hid what the roster was for.** The reference project is a
+ * 🔴 **"Harness account" and `*-acp` hide what the roster is for.** The reference project is a
  * *reference* — its design and its logic are worth taking, its vocabulary is not.
  *
- * The surface had been listing what the driver calls adapters: `claude-code`, `claude-code-acp`,
- * `codex-acp`, `dsh` — four rows, four install buttons, four version pins, and, read by a person,
+ * A surface that lists what the driver calls adapters — `claude-code`, `claude-code-acp`,
+ * `codex-acp`, `dsh` — shows four rows, four install buttons, four version pins, and, read by a person,
  * four tools to have opinions about. **It is not four tools.** It is three, two of which can be
  * reached two ways, and a person has **one** Claude Code with **one** account however Daoris chooses
  * to hold a session on it.
  *
- * Nothing here is invented to make that true: `accountOf` has said *"this entry runs as that one's
- * account"* since ACP2, and `transport` says which door an entry is. The grouping is those two fields
- * read the way they were written — which is why this is a pure function over the payload rather
+ * Nothing here is invented to make that true: `accountOf` says *"this entry runs as that one's
+ * account"*, and `transport` says which door an entry is. The grouping is those two fields
+ * read the way they are written — which is why this is a pure function over the payload rather
  * than a table somebody maintains.
  */
 
@@ -55,7 +55,7 @@ export interface ToolDoor {
    * so no Install is offered, only how to install it. Left out where it has none, read as true: today's Install.
    */
   installs?: boolean;
-  /** Whether this agent takes an API key from Daoris — only where its key variable was measured. */
+  /** Whether this agent takes an API key from Daoris — only where its key variable is measured. */
   takesKey?: boolean;
   /** The version this machine pinned, or null for whatever is on `PATH`. */
   pinned?: string | null;
@@ -84,9 +84,9 @@ export interface ToolDoor {
   /** The organisation and the plan the tool names beside who, as an account's; left out where it has none. */
   ownOrg?: string | null;
   ownPlan?: string | null;
-  /** When that home's state was last read: only at a person's press, so null before one. */
+  /** When that home's state is last read: only at a person's press, so null before one. */
   ownRead?: string | null;
-  /** The plugin this door was declared by, or null for one the build carries. */
+  /** The plugin this door is declared by, or null for one the build carries. */
   plugin?: string | null;
   /**
    * What the tool itself offers for an account's model and effort: its own aliases and the
@@ -121,9 +121,9 @@ export interface AccountSettings {
 }
 
 /**
- * An account's settings as the bridge sent them, read defensively (AGT6, looked at): the bridge leaves a
- * null field out, so an account whose file sets nothing arrived with no `model` at all, and a form that
- * tested for null read the missing value as a model id and crashed the page. Missing and null are one.
+ * An account's settings as the bridge sends them, read defensively: the bridge leaves a
+ * null field out, so an account whose file sets nothing arrives with no `model` at all, and a form that
+ * tests for null would read the missing value as a model id and crash the page. Missing and null are one.
  */
 export function settingsOf(raw: Partial<AccountSettings> | null | undefined): AccountSettings {
   const text = (value: unknown) => (typeof value === 'string' && value !== '' ? value : null);
@@ -162,7 +162,7 @@ export interface Account {
   login: 'in' | 'out' | 'unknown';
   account?: string | null;
   /**
-   * The organisation and the plan the tool names beside who (ACCOUNTID1, D125's note of 2026-10-19), read fresh and kept
+   * The organisation and the plan the tool names beside who, read fresh and kept
    * nowhere: what tells two sign-ins of one email apart. Null where it names none; left out where it has none.
    */
   org?: string | null;
@@ -171,7 +171,7 @@ export interface Account {
   key?: string | null;
   /** Its own model and effort, where the tool's settings are known; absent or null otherwise. */
   settings?: AccountSettings | null;
-  /** When its state was last read; null where it never was, and left out where it has none. */
+  /** When its state is last read; null where it never is, and left out where it has none. */
   read?: string | null;
 }
 
@@ -198,7 +198,7 @@ export type DoorSheet = { door: string; transport: 'protocol' | 'native'; rows: 
 /** What a person can do with an agent's accounts, by its own flows. */
 export type AgentActs = { signsIn: boolean; takesKey: boolean; deviceCode: boolean; installs: boolean };
 
-/** One agent as the roster's sheet half answers it (COAGENT1e, the agent-provider design §6). */
+/** One agent as the roster's sheet half answers it. */
 export type AgentSheet = {
   id: string;
   product: string | null;
@@ -217,7 +217,7 @@ export interface Tool {
   name: string;
   /**
    * What a person calls it and whose it is, from the first door that says — or null, and a
-   * surface shows the id. `dsh` meant nothing to the owner until it said it was DeepSeek's.
+   * surface shows the id. `dsh` means nothing to the owner until it says it is DeepSeek's.
    */
   product: string | null;
   maker: string | null;
@@ -229,7 +229,7 @@ export interface Tool {
   present: boolean;
   /**
    * The tool's own home's login state — `in`, `out` or `unknown`. 🔴 The account a person actually
-   * has: a machine with no named profile read "No accounts" while its owner was logged in.
+   * has: a machine with no named profile would read "No accounts" while its owner is logged in.
    */
   ownLogin: string;
   /** Who is signed in to the tool's own home, where any door says. */
@@ -237,7 +237,7 @@ export interface Tool {
   /** Its organisation and plan, from the door that says who; absent from a surface built before them. */
   ownOrg?: string | null;
   ownPlan?: string | null;
-  /** When the tool's own home was last read, by the door whose word on it stands; null where it never was. */
+  /** When the tool's own home is last read, by the door whose word on it stands; null where it never is. */
   ownRead: string | null;
   /** Whether any door onto it is handed Daoris's rules file. */
   takesRules: boolean;
@@ -281,8 +281,8 @@ export function toolOf(door: ToolDoor): string {
 
 /**
  * What a person calls a way in: the tool, the door, and the id a terminal types — *Claude Code —
- * protocol (claude-code-acp)*. One wording for every place that offers a choice of them (UX5 U67:
- * the start form listed bare ids where Settings named them so). A door with no product is its id.
+ * protocol (claude-code-acp)*. One wording for every place that offers a choice of them, so no form lists
+ * bare ids where Settings names them. A door with no product is its id.
  */
 export function doorLabel(t: (key: string, options?: Record<string, unknown>) => string, door: ToolDoor): string {
   if (!door.product) return door.door;

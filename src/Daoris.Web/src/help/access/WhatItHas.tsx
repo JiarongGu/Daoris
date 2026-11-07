@@ -9,7 +9,7 @@ import { WhatItSaidLoaded } from './WhatItSaidLoaded';
 import type { StarterDoor } from '../starters';
 
 /**
- * *What it has* (HELPMODE1b, D183 point 4; the modes design §6): what the starts of the conversation in view handed its agent, read
+ * *What it has*: what the starts of the conversation in view handed its agent, read
  * from the receipts each start kept (`HELP_WIRED`), never worked out again. The newest is read whole: its mode, its agent and account,
  * its folder, Daoris's tools, the skills, each server with its state, the rules and the checkouts; in restricted mode, what it lacks,
  * each with the door that grants it. The earlier starts sit behind a disclosure, and a conversation from before says not recorded.
@@ -70,7 +70,7 @@ export function WhatItHas({ wired, loading, error, onRetry, onDoor, onMode, onCl
   );
 }
 
-/** One start's receipt, field by field as it was kept. */
+/** One start's receipt, field by field as it is kept. */
 function Receipt({ receipt, onDoor, onMode }: {
   receipt: HelpReceipt; onDoor: (door: StarterDoor) => void; onMode: () => void;
 }) {
@@ -179,7 +179,7 @@ function Receipt({ receipt, onDoor, onMode }: {
   );
 }
 
-/** What restricted mode lacks, said with why and the door that grants it (design §6). */
+/** What restricted mode lacks, said with why and the door that grants it. */
 function Lack({ lack, why, onDoor, onMode }: {
   lack: HelpWiredLack; why: string; onDoor: (door: StarterDoor) => void; onMode: () => void;
 }) {
@@ -203,7 +203,7 @@ function Lack({ lack, why, onDoor, onMode }: {
 }
 
 /**
- * One field of a receipt: its term, and its value. It lays out by its own width, never the window's (R7, UIFIT1): the
+ * One field of a receipt: its term, and its value. It lays out by its own width, never the window's: the
  * value sits beside its term, and under it below 20rem of the field, as the side bar's dock near its 300 px floor gives.
  */
 function Field({ name, children }: { name: string; children: ReactNode }) {

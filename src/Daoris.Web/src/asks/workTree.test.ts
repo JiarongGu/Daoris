@@ -133,7 +133,7 @@ describe('whyItSits', () => {
     expect(whyItSits(unnamed, null, 'a1b2c3')).toEqual({ line: { key: 'asks.work.elsewhereUnnamed' } });
     const outside = { ...item('0c1d2e'), quest: { ...item('0c1d2e').quest, machine: null, kept: 'taken-outside' as const } };
     expect(whyItSits(outside, null, 'a1b2c3')).toEqual({ line: { key: 'asks.work.outside' } });
-    // FABRIC-CLOSE1c20: a take lost to the person's reopen is not another machine's.
+    // A take lost to the person's reopen is not another machine's.
     const reopened = { ...item('0c1d2e'), quest: { ...item('0c1d2e').quest, machine: null, kept: 'source-reopened' as const } };
     expect(whyItSits(reopened, null, 'a1b2c3')).toEqual({ line: { key: 'asks.work.reopenedTake' } });
   });

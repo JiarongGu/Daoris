@@ -25,7 +25,7 @@ export type StashApplyBoxPress = { id: string; head: string | null };
 export type StashBoxPress = { untracked: boolean; message: string; head: string | null; stash: string | null };
 
 /**
- * **The stash box of the Changes tab** (GITAPP2k, D204, the git-writes design §8): *Save to the stash*, tracked files only unless *Include
+ * **The stash box of the Changes tab**: *Save to the stash*, tracked files only unless *Include
  * untracked files* is ticked, and the plan's plain words that the stash is shared by every linked tree, sessions' included, so a Save here is
  * seen there. Beneath it the saved stashes, each with *Apply* by its commit id, which keeps the stash and leaves a conflict to
  * Resolve, and *Drop* by its commit id for a stash a Save of Daoris's made (the answer names the command that stores it again); the others

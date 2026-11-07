@@ -30,8 +30,8 @@ type LinesAnswer = NonNullable<ReturnType<typeof useLines>['data']>;
 type Row<K extends keyof LinesAnswer> = NonNullable<LinesAnswer[K]>[number];
 
 /**
- * **A repository's setup as its molecule takes it** (UX6f, D150 §4.2; moved out of the Repositories view by AGENTSPLACE1f so the Agents
- * place's page and the dark Setup tab hold the one reading): every setting it holds on this machine, each with the press its terminal twin
+ * **A repository's setup as its molecule takes it**: the Agents
+ * place's page and the dark Setup tab hold the one reading of every setting it holds on this machine, each with the press its terminal twin
  * makes, and each change said as the toast Settings' lists said it. A section the driver did not answer is absent, never a control whose
  * save would be refused; Reach waits for reading across, so it opens on what it holds.
  *
@@ -86,7 +86,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   const named = (names: string[] | undefined, name: string) => (names ?? []).some((each) => each.toLowerCase() === name.toLowerCase());
   const checkoutOn = target !== null && named(driver.data?.checkoutWrites, target);
   const checkoutSessions = useSessions(target, false, shown && checkoutOn);
-  // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list (HEAVYRUN1b2c): the driver's reading.
+  // Whether its own daoris.gates.json marks heavy gates, so wins over this machine's list: the driver's reading.
   const heavyMarks = useHeavyMarks(target ?? '', { enabled: shown });
   // The route row reads its Workflow answer's start node.
   const current = useWorkflowCurrent(target === null ? null : { repository: target }, { enabled: shown });
@@ -113,7 +113,7 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
   const same = (name: string) => name.toLowerCase() === registration.repository.toLowerCase();
 
   /**
-   * This machine's driving for one repository — the same wherever it can be driven: every adopter, and since INT3c one not adopted with a
+   * This machine's driving for one repository — the same wherever it can be driven: every adopter, and one not adopted with a
    * root here. One with no root has nowhere to start, and gets none.
    */
   const drivingOf = (): Driving | null => {
@@ -222,8 +222,8 @@ export function useRepositorySetup({ registration, enabled, notify, onOpenGit }:
     }),
   } : null;
 
-  // This machine's heavy gates for it (HEAVYRUN1b2b), where it can be driven, matched without case as the driver keys them; an answer without
-  // them has none, and no section is drawn. The whole list goes out, and a refusal is said where Save was pressed.
+  // This machine's heavy gates for it, where it can be driven, matched without case as the driver keys them; an answer without
+  // them has none, and no section is drawn. The whole list goes out, and a refusal is said where Save is pressed.
   const heavyGates = state.heavyGates;
   const heavy: RepositorySetupProps['heavy'] = driving && Array.isArray(heavyGates) ? {
     gates: heavyGates.find((row) => same(row.repository))?.gates ?? [],

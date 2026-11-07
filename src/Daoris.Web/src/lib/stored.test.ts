@@ -53,8 +53,7 @@ describe('stored', () => {
 });
 
 /**
- * One guard. The map's lines kept a second one of their own, which REV3 CLEAN1 had
- * made this file's job, so a page reading the browser's storage itself is found here rather than by review.
+ * One guard: a page reading the browser's storage itself is found here rather than by review.
  */
 const sources = import.meta.glob('../**/*.{ts,tsx}', { eager: true, query: '?raw', import: 'default' }) as Record<string, string>;
 

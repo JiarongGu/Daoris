@@ -29,7 +29,7 @@ describe('what a start runs on', () => {
 
   /**
    * Nothing set is a real answer: the tool's own account, named as the roster names it on the same
-   * page (UX5 U53, where it read "the agent's own sign-in"), and whatever PATH has.
+   * page, and whatever PATH has.
    */
   it('names the tool\'s own account as the roster does, and PATH, when nothing is set', () => {
     render(<StartWiringList
@@ -49,7 +49,7 @@ describe('what a start runs on', () => {
     expect(screen.getByText('the command driver.json names')).toBeInTheDocument();
   });
 
-  /** D46 §3: the driver's sentence names what to run, so it is shown whole and untranslated. */
+  /** The driver's sentence names what to run, so it is shown whole and untranslated. */
   it('shows a held start with the driver\'s own sentence', () => {
     const refusal = '`claude-code` is pinned to 9.9.9 on this machine, and nothing is installed at that version.';
     render(<StartWiringList starts={[start({ refusal })]} nameOf={nameOf} />);

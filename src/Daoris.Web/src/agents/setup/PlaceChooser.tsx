@@ -9,7 +9,7 @@ export type ChooserRow = { repository: string; driven: boolean };
 const SHOWN = 100;
 
 /**
- * **A workspace's repository chooser** (SETUPUX1j, the setup-UX design §2.2): the workspace's whole list with each repository's driving, the
+ * **A workspace's repository chooser**: the workspace's whole list with each repository's driving, the
  * choice by *All*, *Driven*, *Not driven* or *None* among those the search matches, a count, and a tick for each.
  *
  * A molecule: the choice arrives as a prop, and every change goes out.

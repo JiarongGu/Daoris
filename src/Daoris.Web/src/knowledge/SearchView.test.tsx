@@ -5,9 +5,9 @@ import {
   chooseRow, knowledgeList, mainArea, modeChoice, pageTitled, showKnowledge, showSearch, switchTo,
 } from '../test/knowledgeViews';
 
-// The view over a stubbed service, like QuestsView's: the shapes the endpoint returns, no host. Since FRAME1f the view
+// The view over a stubbed service, like QuestsView's: the shapes the endpoint returns, no host. The view
 // is a list pane and a page: the box, *local only* and the hits are the list, and the entry a hit names is
-// read in the main area, where it was the reader drawer. Since UX6i it is Knowledge's Search, held through
+// read in the main area. It is Knowledge's Search, held through
 // the place: Knowledge's list is Search's while Search is chosen at its head.
 
 const HITS = [{
@@ -64,7 +64,7 @@ describe('Search', () => {
     expect(screen.queryByRole('button', { name: 'Clear search' })).not.toBeInTheDocument();
   });
 
-  /** D118 §3a: a list's search clears on Escape, as the session list's does. */
+  /** A list's search clears on Escape, as the session list's does. */
   it('clears what was typed on Escape', async () => {
     showSearch();
     await userEvent.type(box(), 'encoding{Escape}');
@@ -77,12 +77,12 @@ describe('Search', () => {
 
     expect(await within(knowledgeList()).findByText('An encoding trap')).toBeInTheDocument();
     expect(screen.getByText('encoding', { selector: 'mark' })).toBeInTheDocument();
-    // Its tint adds no space beside the word (UX5 U61): *syllables.* read as a gap before the stop.
+    // Its tint adds no space beside the word: *syllables.* read as a gap before the stop.
     expect(screen.getByText('encoding', { selector: 'mark' })).toHaveClass('-mx-0.5');
   });
 
   /**
-   * D118 §3d (audit SR4, A2): a hit opens its entry in the main area, where the reader drawer lay over the side bar
+   * A hit opens its entry in the main area, not in a drawer over the side bar
    * and the panel; the entry is read as it is written, and the hit wears the list's choice.
    */
   it('reads the entry a hit names in the main area, as it is written, and in no drawer', async () => {
@@ -97,7 +97,7 @@ describe('Search', () => {
     expect(within(row).getByRole('button')).toHaveAttribute('aria-current', 'true');
   });
 
-  /** D118 §3e (audit SR8): ↓ goes from the box into the hits, as VS Code's filter boxes hand it on. */
+  /** ↓ goes from the box into the hits, as VS Code's filter boxes hand it on. */
   it('moves from the box into the hits on ↓', async () => {
     showSearch();
     await userEvent.type(box(), 'encoding');
@@ -107,7 +107,7 @@ describe('Search', () => {
     expect(within(row).getByRole('button')).toHaveFocus();
   });
 
-  /** D118 §3f (audit SR9): *local only* and the entry chosen are the list's memory; what was typed is not. */
+  /** *local only* and the entry chosen are the list's memory; what is typed is not. */
   it('remembers local only and the entry chosen, and reopens them, but not what was typed', async () => {
     const fetch = service();
     vi.stubGlobal('fetch', fetch);
@@ -131,7 +131,7 @@ describe('Search', () => {
     expect(window.localStorage.getItem(FILTERS)).toBeNull();
   });
 
-  /** D118 §3b: with nothing chosen the main area says how to choose; an entry the index let go says it has gone. */
+  /** With nothing chosen the main area says how to choose; an entry the index let go says it has gone. */
   it('says how to choose with nothing chosen, and that an entry chosen now has gone', async () => {
     showSearch();
     expect(within(mainArea()).getByText('Choose a result')).toBeInTheDocument();
@@ -152,12 +152,12 @@ describe('Search', () => {
   });
 
   /**
-   * Audit SR11: a first answer is skeleton rows with its words on the count's line (platform language §4), where it
-   * was a line of words alone; and a newer search holds the last hits at reduced opacity rather than blanking the
+   * A first answer is skeleton rows with its words on the count's line, not a line of words alone;
+   * and a newer search holds the last hits at reduced opacity rather than blanking the
    * list as the person types.
    */
   it('holds a first search with skeleton rows, and a newer one with the last hits, dimmed', async () => {
-    // Each search waits until the test answers it, by what was asked: under load the box's debounce may ask for a
+    // Each search waits until the test answers it, by what is asked: under load the box's debounce may ask for a
     // part of the word first, and only the whole word's answer is the one the list shows.
     const pending = new Map<string, (value: Response) => void>();
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => new Promise<Response>((resolve) => {
@@ -188,9 +188,9 @@ describe('Search', () => {
   });
 
   /**
-   * 🔴 UX5 U41: no match was a bare paragraph, which named the convergence view and offered no way
-   * there, and it said *Lexical search matches words* on a deployment whose recall is semantic too.
-   * An empty answer is an empty state (§4, POLISH4 for Convergence), in the tier's own words, and
+   * 🔴 No match must not be a bare paragraph, which names the convergence view and offers no way
+   * there, saying *Lexical search matches words* on a deployment whose recall is semantic too.
+   * An empty answer is an empty state, in the tier's own words, and
    * its action goes where the sentence points.
    */
   it("answers nothing as an empty state, in its tier's words, with the way to convergence", async () => {
@@ -200,7 +200,7 @@ describe('Search', () => {
     await userEvent.type(box(), 'zebra quartz');
     expect(await screen.findByText('No matches')).toBeInTheDocument();
     expect(screen.getByText(/matches words, so a repository that reached the same conclusion/)).toBeInTheDocument();
-    // Since UX6i the way to Convergence is Knowledge's other mode: the place switches, its head says so.
+    // The way to Convergence is Knowledge's other mode: the place switches, its head says so.
     await userEvent.click(screen.getByRole('button', { name: 'Look in Convergence' }));
     expect(within(modeChoice()).getByRole('radio', { name: 'Convergence' })).toHaveAttribute('aria-checked', 'true');
     expect(within(knowledgeList()).getByRole('slider')).toBeInTheDocument();
@@ -215,8 +215,8 @@ describe('Search', () => {
 
   /**
    * The tier is the one that ANSWERED, per answer, from the service's `x-daoris-tier`.
-   * A deployment configured for meaning whose embedder was down said *matches meaning as well as
-   * words* over an answer only words had made.
+   * A deployment configured for meaning whose embedder is down must not say *matches meaning as well as
+   * words* over an answer only words have made.
    */
   it('words an answer by the tier that answered it, not the one configured', async () => {
     vi.stubGlobal('fetch', service([], 'lexical'));
@@ -245,7 +245,7 @@ describe('Search', () => {
 
 /**
  * Search and Convergence are one place, Knowledge, whose list's head switches between them, remembered.
- * Each mode keeps its list, its main area and its memory, so what was typed, the entry chosen and *local only* are
+ * Each mode keeps its list, its main area and its memory, so what is typed, the entry chosen and *local only* are
  * Search's still when the person comes back from Convergence.
  */
 describe("Search, as Knowledge's mode", () => {

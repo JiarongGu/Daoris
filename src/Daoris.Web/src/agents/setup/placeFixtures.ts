@@ -70,7 +70,7 @@ const REPOSITORIES: Record<string, Omit<PlaceRepositoryPlan, 'changes' | 'after'
   },
 };
 
-/** A repository whose landing was chosen and whose work follows a saved workflow: the driver suggests the preset it matches, for `kept`. */
+/** A repository whose landing is chosen and whose work follows a saved workflow: the driver suggests the preset it matches, for `kept`. */
 export const KEPT_ROW: Partial<PlaceRepositoryPlan> = {
   before: { ...side(true, 'merge-after-accept'), values: { workflow: { value: 'Release for engine v2', source: 'repository' } } },
   suggested: { preset: 'merge-after-accept', adoption: false, why: WHY.kept },

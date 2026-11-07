@@ -22,7 +22,7 @@ const FIRST: readonly SetupStepId[] = ['agent', 'helper', 'repositories'];
 /**
  * An agent this machine can run a session on: installed, with some account of Daoris's not definitely signed
  * out. The roster's rule, which the starters use too: an `unknown` sign-in is not a lack anyone can act
- * on. The tool's own sign-in is no account of Daoris's and counts for nothing (D175, OWNSPACE1b-C).
+ * on. The tool's own sign-in is no account of Daoris's and counts for nothing.
  */
 const signedIn = (machine: Machine) => machine.tools.some((tool) =>
   tool.present && tool.accounts.some((account) => account.login !== 'out'));

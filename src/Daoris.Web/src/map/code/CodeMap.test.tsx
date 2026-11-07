@@ -11,7 +11,7 @@ import { type CodeFixture, CYCLE_ACROSS_FOLDERS, syntheticMap, WITH_A_CYCLE } fr
 import { CodeMapDetail, CodeMapWorld } from './CodeMap';
 import { cutId, FITS } from './CodeCards';
 
-// MAP3a and CANVAS1f: a repository's own code map on the canvas — folders, modules as buttons, only the supplied dependencies as lines.
+// A repository's own code map on the canvas — folders, modules as buttons, only the supplied dependencies as lines.
 // jsdom lays nothing out, so unless a width is stood in for the canvas is below its floor and the world is drawn whole as a pane.
 
 const measured = vi.hoisted(() => ({ width: undefined as number | undefined }));

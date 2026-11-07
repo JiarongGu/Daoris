@@ -5,8 +5,8 @@ import { storyWidths } from '../design/storyWidths';
 import type { Channel, ElsewhereAsk } from '../work/channel';
 import { TeammateAskPage } from './TeammateAskPage';
 
-// A teammate's ask's page in Quests' main area (`AsksPart.tsx`), on its own (STORYGAP1, the UI/UX design §1.2
-// item 6): an ask held on another machine, of which this one has only the channel the sync mirrored, read with no composer.
+// A teammate's ask's page in Quests' main area (`AsksPart.tsx`), on its own:
+// an ask held on another machine, of which this one has only the channel the sync mirrored, read with no composer.
 // Its channel, one being read, an empty one, one with no circle; at the main area's three widths, in 中文 and dark.
 
 // A flex item of the main area's height frame, with no padding of its own, so the page's scroll box stays bounded.

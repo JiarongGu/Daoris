@@ -86,7 +86,7 @@ describe("Settings' update row", () => {
     expect(screen.queryByText('Last update')).toBeNull();
   });
 
-  // The row words a check's code from the banner's catalogue, so SWAP2's two codes are said
+  // The row words a check's code from the banner's catalogue, so the swap's two newest codes are said
   // in the reader's language here too, never in the journal's English sentence.
   it.each([
     {

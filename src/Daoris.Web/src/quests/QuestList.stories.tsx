@@ -131,7 +131,7 @@ export const FilteredToOneReceiver: Story = { args: { filteredTo: 'engine', ques
 export const HeldWithItsResume: Story = { args: { quests: [{ quest: OPEN, sitting: HELD_BY_PERSON }, ...QUESTS.slice(1)], chosen: null } };
 
 /**
- * A done a departure holds for the person's yes (DRIFT1d2): first among the quests, with closed quests not shown, its row
+ * A done a departure holds for the person's yes: first among the quests, with closed quests not shown, its row
  * saying it awaits them and never dimmed as ended.
  */
 export const AwaitingYourYes: Story = { args: { quests: [{ quest: HELD }, ...QUESTS], chosen: HELD.id } };

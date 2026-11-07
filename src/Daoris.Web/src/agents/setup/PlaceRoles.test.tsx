@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// AGENTSPLACE1g1 (the Agents-place design §3, Roles): a place's page lists one row per work for the place's chain, with the role editor's
+// A place's page lists one row per work for the place's chain, with the role editor's
 // *Give … its own…* on a row taken from a parent and *Edit* and *Back to …'s* on a role placed here, all over SET_ROLE.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({

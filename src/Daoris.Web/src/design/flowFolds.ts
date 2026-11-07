@@ -1,19 +1,19 @@
 import { findStacks, type FlowShape, layoutFlow, type FlowLayout } from './flowLayout';
 
 /**
- * **A flow too large to show whole** (FLOWCHART1d; D186 point 7, the flowchart design §3.6 and trap 16): which nodes fold, as a
+ * **A flow too large to show whole**: which nodes fold, as a
  * pure function of the graph's shape, what is current and settled, and which folds the person opened. `RankedFlow` draws each fold as
  * one node with a press, every edge across its boundary drawn to it with its cause, those between its members said in words.
  *
  * @remarks
- * A flow is drawn whole up to 24 nodes, D157's authoring bound; a decoded graph may reach 96 with its synthetic nodes. Past
- * that, after the stacks (`findStacks`, at every size, FLOWCHART1c), in this order:
+ * A flow is drawn whole up to 24 nodes, the authoring bound; a decoded graph may reach 96 with its synthetic nodes. Past
+ * that, after the stacks (`findStacks`, at every size), in this order:
  * 1. **Settled stretches.** Four or more consecutive done nodes (a caller's `settled`; a step passed over is not, so a skip stays
  *    in view), each a link of a chain (one edge in and one out), fold into *n steps done*, as far as they end two ranks or more
  *    before every current node.
  * 2. **Focus.** If it is still past 24, the ranks from two before to three after each current node are drawn, their union where
  *    several are current. With none current: the ranks after the entries where nothing has started, those before the end where
- *    all has settled, and otherwise those around the furthest rank any node was reached at, where the run got to. *Earlier*,
+ *    all has settled, and otherwise those around the furthest rank any node has been reached at, where the run got to. *Earlier*,
  *    *between* and *later* folds hold the rest, each two nodes or more, since a fold of one hides nothing.
  *
  * **The one way a change of state moves anything** (§3.1 step 5, §3.6): the folds follow the state, so a node that becomes current
@@ -102,7 +102,7 @@ export function largeFolds(shape: FoldShape, opened: ReadonlySet<string> = new S
 
 /**
  * The ranks the focus stands on: each current node's; with none current, after the entries where nothing has started, else the
- * furthest rank any node was reached or settled at, no nearer the end than leaves the focus its six ranks: before the end where all
+ * furthest rank any node has been reached or settled at, no nearer the end than leaves the focus its six ranks: before the end where all
  * has settled, or a step passed over beside them (a skip is not done, so it is not settled), and where the run got to otherwise.
  */
 function anchorsOf(nodes: FoldShape['nodes'], layout: FlowLayout): number[] {

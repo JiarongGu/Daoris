@@ -36,7 +36,7 @@ export function useContextDoors({ notify, t, openings, setSearchAsked, open, att
       openInBrowser: (address: string) => openBrowser.mutate(address, { onError: failure(notify) }),
     } : {}),
   };
-  // A page that composes words for Ask Daoris (the workflow editor's *Ask why* and *Fix it*, FLOWCHART2c) fills Quick Ask's box through this door.
+  // A page that composes words for Ask Daoris (the workflow editor's *Ask why* and *Fix it*) fills Quick Ask's box through this door.
   const fillAsk = useRef(askQuickly);
   fillAsk.current = askQuickly;
   useEffect(() => (attached ? registerAskFill((text) => fillAsk.current(text, true)) : undefined), [attached]);

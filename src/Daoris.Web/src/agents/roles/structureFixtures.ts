@@ -107,7 +107,7 @@ export const DRIVER = { drivable: ['engine', 'site'], holds: [] as string[] };
 /**
  * A structure past 24 nodes: aurora's eight repositories and borealis's six each with a building role of its own, two
  * more of aurora's taking this machine's, so each workspace folds to one node. `sizes` is how many repositories each of the two has of its own
- * (CANVAS1c's hundred-node fixture is thirty each).
+ * (the hundred-node fixture is thirty each).
  */
 export function largeStructure(sizes: readonly [number, number] = [8, 6]): { structure: RoleStructure; registry: { repository: string; workspace?: string }[] } {
   const own = [

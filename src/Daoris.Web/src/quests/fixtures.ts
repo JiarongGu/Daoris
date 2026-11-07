@@ -23,7 +23,7 @@ export const OPEN: Quest = {
   ],
 };
 
-/** Taken by the engine's agent, and moved since it was filed. */
+/** Taken by the engine's agent, and updated after filing. */
 export const TAKEN: Quest = { ...OPEN, id: 'def456', status: 'Taken', title: 'Read the media field names from config', updated: hoursAgo(3), links: [], attachments: [] };
 
 /** Open for nine days: a week of silence wears its mark. */
@@ -70,7 +70,7 @@ const REQUIRED: NonNullable<Quest['requirements']> = [
 /** Taken, with what the person required and no answer yet: its done answers each. */
 export const REQUIRING: Quest = { ...TAKEN, id: 'rq0rq0', requirements: REQUIRED };
 
-/** Done, each requirement met, with how its check was met in the done's words. */
+/** Done, each requirement met, with how its check is met in the done's words. */
 export const MET: Quest = {
   ...DONE, id: 'me0me0', title: 'Stream the tiles over the v3 bridge', requirements: REQUIRED,
   answers: [
@@ -152,7 +152,7 @@ export const WORKING: Session = {
 export const FAILED: Session = { ...WORKING, id: 's0f1r2s3', state: 'failed', note: 'the first attempt died', evidence: undefined, created: hoursAgo(4), updated: hoursAgo(3) };
 
 /**
- * The install's case (QUESTCLOSE1, 2026-10-08): a taken quest's driven session the person finished at a checkpoint, its
+ * A taken quest's driven session the person finished at a checkpoint, its
  * record completed by them and the quest still taken, with nothing here to carry it on.
  */
 export const FINISHED_HERE: Session = {
@@ -169,7 +169,7 @@ export const EXHAUSTED: Consideration = {
   reason: '3 sessions failed on this quest, so it is parked. `daoris quest retry abc123` starts it again.',
 };
 /**
- * Taken on another machine after this machine's session on it was cut off, naming whose take it is as the tick's
+ * Taken on another machine after this machine's session on it is cut off, naming whose take it is as the tick's
  * facts: the machine and its session, and the session here that is not carried on.
  */
 export const TAKEN_ELSEWHERE: Consideration = {
@@ -216,23 +216,23 @@ export const PAUSED_WITH_QUEST: Consideration = {
 export const SUBMISSION = { machine: 'desk', sequence: 41, at: hoursAgo(2), note: 'ready' };
 
 /**
- * Taken in a closure graph and submitted (FABRIC-CLOSE1d, §E5): its submission departs from what the person required, so it is
+ * Taken in a closure graph and submitted: its submission departs from what the person required, so it is
  * held for their yes, as a done would be. It reads *Submitted*, then the hold, and is done only at the graph's close.
  */
 export const SUBMITTED: Quest = { ...HELD, id: 'su0su0', status: 'Taken', closure: 'gph-1', submission: SUBMISSION, hold: 'departed' };
 
-/** Submitted and unheld: its chain's next step was published from that submission, which it seals. */
+/** Submitted and unheld: its chain's next step is published from that submission, which it seals. */
 export const SEALED: Quest = {
   ...TAKEN, id: 'se0se0', title: 'Stream the tiles over the v3 bridge', closure: 'gph-1', submission: SUBMISSION, held: false,
 };
 
-/** The step its submission published, standing on it (FABRIC-CLOSE1c's `grewFrom`). */
+/** The step its submission published, standing on it (`grewFrom`). */
 export const STANDING: Quest = {
   ...OPEN, id: 'st0st0', title: 'Verify the tiles in a playtest', parent: SEALED.id, grewFrom: { machine: 'desk', sequence: 41 },
   links: [], attachments: [],
 };
 
-/** That step taken and started, then held because the person reopened its source (FABRIC-CLOSE1c, `source-reopened`). */
+/** That step taken and started, then held because the person reopened its source (`source-reopened`). */
 export const REOPENED: Quest = {
   ...STANDING, id: 'ro0ro0', status: 'Taken', sourceReopened: { machine: 'desk', sequence: 41 }, held: true, hold: 'source-reopened',
 };
@@ -241,8 +241,8 @@ export const REOPENED: Quest = {
 export const WITHDRAWN: Quest = { ...REOPENED, id: 'wd0wd0', status: 'Open' };
 
 /**
- * The source the person reopened (FABRIC-CLOSE1c4): still taken, its submission cleared, and the reopen it answers until its
- * next `ready`, with their words and the session that said the reopened one (FABRIC-CLOSE1d3).
+ * The source the person reopened: still taken, its submission cleared, and the reopen it answers until its
+ * next `ready`, with their words and the session that said the reopened one.
  */
 export const SOURCE_REOPENED: Quest = {
   ...SEALED, id: 'sr0sr0', submission: null,
@@ -253,14 +253,14 @@ export const SOURCE_REOPENED: Quest = {
 };
 
 /**
- * A closure graph's quest the person closed done before its graph's end (FABRIC-CLOSE1j2, §E5's override): its unit's record keeps
+ * A closure graph's quest the person closed done before its graph's end: its unit's record keeps
  * the moment its done stopped the nodes still to run, which `WORK_STATE` answers as an end of `quest:<id>`.
  */
 export const CLOSED_EARLY: Quest = { ...DONE, id: 'ce0ce0', title: 'Cache the tile atlas between runs', closure: 'gph-1' };
 export const CLOSED_EARLY_ENDS: GraphEnd[] = [{ unit: `quest:${CLOSED_EARLY.id}`, kind: 'overridden', at: hoursAgo(2), nodes: ['qa', 'close'] }];
 
 /**
- * A chain closed by its last step's close, one of whose quests the remote refused since its take was lost meanwhile (§E5, D69): the
+ * A chain closed by its last step's close, one of whose quests the remote refused since its take is lost meanwhile: the
  * others stay done, and its close node waits again, which would close the lost quest over the winner's take, so its stop is offered.
  */
 export const PART_CLOSED: Quest = { ...DONE, id: 'pc0pc0', title: 'Verify the tiles in a playtest', closure: 'gph-1' };
@@ -269,7 +269,7 @@ export const PART_CLOSED_ENDS: GraphEnd[] = [{
   words: ['stop'],
 }];
 
-// SYNCMERGE1c2: two machines' work on one step, read from where this machine (`desk`) stands. The quest
+// Two machines' work on one step, read from where this machine (`desk`) stands. The quest
 // answer names this machine (`here`), the machine holding the step while it is taken (`holder`), and how each settled conflict ended.
 
 /** This machine's id, as a local host answers it to its own page. */
@@ -284,7 +284,7 @@ const FRESH = { machine: HERE, sequence: 9, at: hoursAgo(1) };
 /** This machine's take lost, and the step open again: both choices stand. */
 export const MINE_LOST: Quest = { ...STANDING, id: 'ml0ml0', here: HERE, conflicts: [MY_TAKE] };
 
-/** Another machine's take lost on a step open here: only what was true before, its dismissal. */
+/** Another machine's take lost on a step open here: only its dismissal. */
 export const THEIRS_LOST: Quest = {
   ...STANDING, id: 'tl0tl0', here: HERE, conflicts: [{ ...MY_TAKE, machine: THERE, sequence: 12, note: 'machine b, offline' }],
 };

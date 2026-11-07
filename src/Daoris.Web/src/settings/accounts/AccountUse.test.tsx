@@ -31,7 +31,7 @@ const twins = () => [...document.querySelectorAll('code')]
 describe('an account\'s facts', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
-  /** D125 §2.4: its cool-off, how long and why, with *Try now*; the sessions running on it; and its learned week. */
+  /** Its cool-off, how long and why, with *Try now*; the sessions running on it; and its learned week. */
   it('says a cool-off with Try now, the sessions running on it, and its learned week', async () => {
     const onTryNow = vi.fn();
     wrap(<AccountFactsLines facts={THREE.accounts[0]!} label="work@example.invalid" onTryNow={onTryNow} />);
@@ -43,7 +43,7 @@ describe('an account\'s facts', () => {
     expect(onTryNow).toHaveBeenCalledOnce();
   });
 
-  /** D130 §5.2: what its agent last said, each window's use and reset, and how long ago; no cool-off, no Try now. */
+  /** What its agent last said, each window's use and reset, and how long ago; no cool-off, no Try now. */
   it('says what its agent last said, and offers no Try now where nothing cools', () => {
     wrap(<AccountFactsLines facts={THREE.accounts[1]!} label="home@example.invalid" onTryNow={() => {}} />);
 
@@ -113,7 +113,7 @@ describe('the set\'s order', () => {
   });
 
   /**
-   * A target of 28 px at least (the platform language §6). Each arrow was its 13 px glyph and `px-1.5`, about 25 px
+   * A target of 28 px at least. An arrow's 13 px glyph and `px-1.5` alone make it about 25 px
    * wide; the button's own floor gives its height.
    */
   it('gives each move up and down a target of 28 px at least', () => {
@@ -186,8 +186,8 @@ describe('the set\'s order', () => {
 
 describe('how a scope\'s list is used', () => {
   /**
-   * D130 §16.6 as D165 §6 amends it: *Use accounts*, *Keep for conversations* and *Switch accounts*, each one setting; the switch
-   * *Smart*, *My own curve* or *Off*, as `profile use --switch` writes it. *Near at* is gone: the curve is its own.
+   * *Use accounts*, *Keep for conversations* and *Switch accounts*, each one setting; the switch
+   * *Smart*, *My own curve* or *Off*, as `profile use --switch` writes it. The curve is its own setting.
    */
   it('changes one setting at a time, as the terminal\'s profile use does', async () => {
     const pressed = acts();
@@ -260,7 +260,7 @@ describe('how a scope\'s list is used', () => {
     ]));
   });
 
-  /** D130 §16.4: with nothing said by any account of the list, the screen says what the walk does instead. */
+  /** With nothing said by any account of the list, the screen says what the walk does instead. */
   it('says nothing has been said yet, with six accounts', () => {
     wrap(<ScopeEditor agent={SIX_AGENT} product="Claude Code" scope={SIX_AGENT.scopes[0]!} accounts={SIX_CHOICES} acts={acts()} />);
 
@@ -284,7 +284,7 @@ describe('how a scope\'s list is used', () => {
     expect(screen.queryByRole('combobox')).toBeNull();
   });
 
-  /** D130 §6: an agent whose sessions say nothing of their limits keeps the switch, and says it waits for that word. */
+  /** An agent whose sessions say nothing of their limits keeps the switch, and says it waits for that word. */
   it('says the switch waits for an agent that says nothing of its limits', () => {
     wrap(<ScopeEditor agent={SILENT} product="Codex" scope={SILENT.scopes[0]!} accounts={[]} acts={acts()} />);
 
@@ -293,7 +293,7 @@ describe('how a scope\'s list is used', () => {
   });
 
   /**
-   * SWITCH1b-iii (D165 point 2, the switch design §3): the switch says what passes an account at a start, its limit reached,
+   * The switch says what passes an account at a start, its limit reached,
    * usage credits or its use over its curve, never the agent's own word that it is near, nor one fixed percentage.
    */
   it('says what passes an account: its limit reached, usage credits, or its use over its curve', async () => {
@@ -309,7 +309,7 @@ describe('the next start', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
   /**
-   * TOOL6e, the owner's case: the order's first came out of its cool-off and nothing runs, so the next start takes it; another
+   * The order's first came out of its cool-off and nothing runs, so the next start takes it; another
    * account cools; and the tool's own sign-in, which the owner had switched, carries none of these starts.
    */
   it('says which account the next start takes, why, since when it is offered again, and what holds the others', () => {
@@ -337,7 +337,7 @@ describe('the next start', () => {
     expect(screen.queryByText(/carries none of these starts/)).toBeNull();
   });
 
-  /** D175 point 2 and OWNSPACE1b settlement 4: no Daoris account signed in is its own line, apart from a wait. */
+  /** No Daoris account signed in is its own line, apart from a wait. */
   it('says no Daoris account is signed in, when the reason arrives', () => {
     wrap(<ScopeEditor agent={THREE} product="Claude Code" scope={scopeOf({ next: { account: null, reason: 'noAccount', others: [] } })} accounts={CHOICES} acts={acts()} />);
     expect(screen.getByText('No Daoris account is signed in for it; its starts wait until you sign in.')).toBeTruthy();
@@ -353,7 +353,7 @@ describe('the next start', () => {
   });
 
   /**
-   * SWITCH1b-iii (the switch design §3): the walk's steps say what goes last, the least over first, and step 5 by the most
+   * The walk's steps say what goes last, the least over first, and step 5 by the most
    * room under the curve, or by the week's pace with the switch off; one by one says what goes last, with no switch named.
    */
   it('says the walk by the curve, and by the week\'s pace with the switch off', async () => {
@@ -397,7 +397,7 @@ describe('the next start', () => {
 });
 
 /**
- * ACCTQUOTE1c (D125's ACCTQUOTE1 note), POOL1c: each hint is a command a person pastes into whichever shell they
+ * Each hint is a command a person pastes into whichever shell they
  * have, and names no workspace, since one set of Daoris's accounts serves them all and the terminal refuses `--workspace`.
  */
 describe('the set\'s terminal twins', () => {

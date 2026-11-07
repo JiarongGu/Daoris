@@ -7,7 +7,7 @@ import { ASKS, type Topology, layoutRing } from './topology';
 
 export const SIZE = 600;
 export const RADIUS = 30;
-/** The ring's radius where there is room for it: the square's 0.68, which the map was always drawn at. */
+/** The ring's radius where there is room for it: the square's 0.68, which the map is drawn at. */
 const FULL = (SIZE / 2) * 0.68;
 /** The least ring a narrow card gets, below which lines and their counts crowd the nodes. */
 const LEAST = 110;
@@ -142,7 +142,7 @@ export function placeLabel(x: number, y: number): {
 
 /**
  * The part of the map's square that holds what is drawn: every node and its ring, every name and the
- * word under it, every line's count. 🔴 Seen on the window (UX5 U44): framing the whole square left a
+ * word under it, every line's count. 🔴 Seen on the window: framing the whole square left a
  * three-node ring's lower third blank, and cut a side node's long name at the square's edge
  * (*engine-asset-p*).
  */
@@ -193,9 +193,9 @@ const MOST = 1200;
 
 /**
  * The ring's radius for a card this wide and a window this tall. A narrow card gets a smaller ring,
- * so the names stay at their size (UX5 U44: at 500 the whole square shrank, and every name to about
+ * so the names stay at their size (at 500 the whole square would shrink, and every name to about
  * 8px); a wide one gets a larger ring, as far as the height the window leaves it, so the map
- * follows the window (U59: it stayed 531px in a card three times as wide). Never below
+ * follows the window (a fixed ring stays 531px in a card three times as wide). Never below
  * what keeps neighbours apart, so a large family keeps its spacing and the drawing shrinks as the
  * last resort. Where nothing measures the card, the full ring; where nothing measures the height,
  * no larger than that.

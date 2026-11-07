@@ -7,7 +7,7 @@ import { FAILED_NONE, FAILED_PLAN, QUEST_ASKED, QUEST_PLAN, QUEST_TREE_HERE } fr
 import { DECLINED, DONE, TAKEN } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// A quest's two clears (HIST1e, D153; the history-clearing design §6.1), as the page draws them from its props: *Clear from
+// A quest's two clears, as the page draws them from its props: *Clear from
 // this machine…* and *Clear failed sessions…* in its header's ⋯, each offered where its plan says something may go and
 // absent where it does not, each listed under the header first and then pressed.
 
@@ -20,7 +20,7 @@ const of = (plan: HistoryPlan, id: string): HistoryPlan => ({
 
 const door = (over: Partial<HistoryDoor> = {}): HistoryDoor => ({ plan: null, failed: null, busy: false, onClear: vi.fn(), ...over });
 
-/** How a clear's ask hears its end (UXFIX2, ACCTEDIT1's contract). */
+/** How a clear's ask hears its end. */
 const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) });
 
 const page = (props: Partial<Parameters<typeof QuestPage>[0]> = {}) => render(

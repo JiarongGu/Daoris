@@ -8,16 +8,15 @@ import { anotherMainWindow, secondaryWindow } from '../work/window';
 
 export { CAPTION_ATTRIBUTE, CAPTION_SLOTS, type CaptionSlot } from '../work/strip/caption';
 
-// The window's own chrome, page side. The strip that D56 built as a region becomes the
+// The window's own chrome, page side. The strip becomes the
 // title bar: a drag on it moves the window, a still click does nothing, double-click maximizes it,
 // a strip at its very top resizes, and the room reserved at its right is handed to the OS
 // as real caption buttons.
 //
-// **The window paints those buttons; the page only reserves and reports their rectangles** (D56 as
-// amended, which has the reason).
+// **The window paints those buttons; the page only reserves and reports their rectangles**.
 //
 // None of this exists in a browser. Every call goes through the bridge and simply rejects there, which
-// is why each one is fire-and-forget: a window command that fails is a window that was never ours.
+// is why each one is fire-and-forget: a window command that fails is a window that is not ours.
 
 /**
  * Where the page reserved each caption button, in CSS px relative to the viewport — which is exactly
@@ -90,9 +89,8 @@ export function useWindowTitle(workspace: string | null) {
  * `WindowState.Normal` and the OS would drag the maximized-size window with stale restore bounds.
  *
  * **The theme is pushed, not polled.** Without it a runtime light↔dark switch leaves the DWM border
- * and the caption buttons in the old theme, because those are painted natively and never see the
- * page's CSS. The engine is told the viewer's choice too, for Chromium's own UI (`useEngineTheme`,
- * THEMESCHEME1).
+ * and the caption buttons in the stale theme, because those are painted natively and never see the
+ * page's CSS. The engine is told the viewer's choice too, for Chromium's own UI (`useEngineTheme`).
  */
 export function useWindowChrome() {
   const commands = useRef<WindowCommands | undefined>(undefined);
@@ -100,7 +98,7 @@ export function useWindowChrome() {
   const maximized = useWindowMaximized();
   // The bridge, not the driver: the caption room has to be right on the FIRST paint, and the
   // driver's answer arrives a round-trip later. Reserving it late would shift the strip's contents
-  // sideways once, which is the one thing reserving the room early was meant to avoid.
+  // sideways once, which is the one thing reserving the room early avoids.
   const { isAvailable } = useShenora();
   useEngineTheme();
 

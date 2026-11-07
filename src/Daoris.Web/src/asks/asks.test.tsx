@@ -32,7 +32,7 @@ const record = (ask = PROPOSED, over: Partial<Parameters<typeof AskPage>[0]> = {
   return { ...props, page: screen.getByRole('main') };
 };
 
-/** An act of the page's ⋯, pressed (HEAD2d: the head draws only *Resume*): the menu opened from the keyboard, as in jsdom. */
+/** An act of the page's ⋯, pressed (the head draws only *Resume*): the menu opened from the keyboard, as in jsdom. */
 async function pick(page: HTMLElement, name: string) {
   within(page).getByRole('button', { name: 'More actions' }).focus();
   await userEvent.keyboard('{Enter}');
@@ -129,7 +129,7 @@ describe('AskPage', () => {
     expect(within(page).getByText('Answered')).toBeInTheDocument();
   });
 
-  /** 🔴 Seen on the window: a one-line ask was its page's title and then its body. */
+  /** 🔴 Seen on the window: a one-line ask would be its page's title and then its body. */
   it('does not repeat a one-line ask as its own body', () => {
     const { page } = record(UNMATCHED);
     expect(within(page).getAllByText('Tidy the release notes.')).toHaveLength(1);
@@ -253,7 +253,7 @@ describe('AskPage', () => {
     expect(within(page).getByRole('combobox', { name: 'publish to another' })).toBeInTheDocument();
   });
 
-  // ——— Who answered: the tier INT4b added, and the intake session that served it.
+  // ——— Who answered: the tier, and the intake session that served it.
 
   it('says an intake session answered, in the words for it', () => {
     const { page } = record(BY_INTAKE, { intake: INTAKE_SESSION });
@@ -319,9 +319,9 @@ describe('AskComposer', () => {
   }
 
   /**
-   * 🔴 UX5 U34: the composer said *nothing is published until you name a receiver or accept a
-   * proposal*, and on a machine with an intake agent the intake publishes on its own, asking the
-   * person only when it cannot tell (intake design §1). What the composer promises follows the
+   * 🔴 The composer must not say *nothing is published until you name a receiver or accept a
+   * proposal*: on a machine with an intake agent the intake publishes on its own, asking the
+   * person only when it cannot tell. What the composer promises follows the
    * machine: an intake set, none set, or a door that cannot know, which a browser is.
    */
   it('says what will become of an ask on this machine, and never promises what an intake would break', () => {
@@ -428,8 +428,8 @@ describe('AskComposer', () => {
 });
 
 /**
- * 🔴 UX5 U32: the asks group ran newest first, the service's order, while the quests beneath it and
- * *What needs you* run oldest first, so one screen held two orders for one idea. What waits longest
+ * 🔴 The asks group in the service's newest-first order would sit above quests and
+ * *What needs you* that run oldest first, so one screen would hold two orders for one idea. What waits longest
  * leads, and a closed ask comes after every live one, as a closed quest does.
  */
 describe('the asks, in the order they are read', () => {
@@ -525,7 +525,7 @@ describe('deleting an ask', () => {
 
 /**
  * A repository the ask's sentence names is proposed first, with its name alone as the evidence. It
- * was proposed for being named, so it reads *named in the ask* rather than *shares* its own name; a word match beside it
+ * is proposed for being named, so it reads *named in the ask* rather than *shares* its own name; a word match beside it
  * still says the words it shares. The name is read without case, as the service finds it.
  */
 describe('a proposal the ask names', () => {
@@ -631,7 +631,7 @@ describe('the go-aheads on an ask', () => {
     expect(onAnswerGoAhead).toHaveBeenCalledWith(3, true, 'only on the report site', answeredByPress);
   });
 
-  /** UXFIX2b3b: a yes or no is a direct press, and a refused answer is said beside that item, not toasted. */
+  /** A yes or no is a direct press, and a refused answer is said beside that item, not toasted. */
   it('waits saying so, says a refusal beside the item it answered, and can be pressed again with its words kept', async () => {
     let answer: Answered | null = null;
     const onAnswerGoAhead = vi.fn((_n: number, _a: boolean, _w: string | undefined, answered: Answered) => { answer = answered; });

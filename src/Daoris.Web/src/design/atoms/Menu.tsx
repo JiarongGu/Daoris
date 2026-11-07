@@ -60,8 +60,8 @@ const menuCap = (held: boolean) => cn(
  * item's menus are sized to what they hold.
  *
  * @remarks
- * **Capped at the room the popper measured on its side, and scrolled inside it** (MENU1, as SELECT1 for the select):
- * a long menu (a receiver filter, a long workspace list) ran off the window with nothing to scroll it by. The bar is
+ * **Capped at the room the popper measured on its side, and scrolled inside it**, as the select is:
+ * a long menu (a receiver filter, a long workspace list) would run off the window with nothing to scroll it by. The bar is
  * the theme's (`tokens.css`), and the keys still reach every row, since focusing one scrolls it into view.
  *
  * **Opened from the frame, it keeps the frame's size**: the room the popper measured is the window's, so its cap is

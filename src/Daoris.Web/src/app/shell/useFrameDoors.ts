@@ -5,7 +5,7 @@ import { type ListMode } from '../../work/frame/layout';
 import { usePlacements } from '../../work/frame/placements';
 
 export function useFrameDoors() {
-  // Ask Daoris is a view of the frame's regions on every view since DOCK1a: bumped each time the
+  // Ask Daoris is a view of the frame's regions on every view: bumped each time the
   // person asks for it, and the frame opens whichever region holds it, on it.
   const [helpFocus, setHelpFocus] = useState(0);
   // What the person closed in the frame: held here, so the strip's toggles, the View menu and
@@ -36,15 +36,15 @@ export function useFrameDoors() {
     setHelpOpening({ text: message, id: openings.current });
     openHelp();
   };
-  /** Quick Ask, with a question it sends, or with a draft in its box for the person to finish (CTX1's *Ask Daoris about it*). */
+  /** Quick Ask, with a question it sends, or with a draft in its box for the person to finish (*Ask Daoris about it*). */
   const askQuickly = (question?: string, draft = false) => {
     if (question) {
       openings.current += 1;
       setQuickOpening({ text: question, id: openings.current, ...(draft ? { draft } : {}) });
     }
     // 🔴 A beat after the palette closes, never with it: closing, the palette hands focus back to where
-    // it was, which pulled it out of a box opened in the same step, and the box's trap caught it on its
-    // frame instead of its message box (found looking at DOCK1d).
+    // it came from, which would pull it out of a box opened in the same step, and the box's trap would catch it on its
+    // frame instead of its message box.
     window.setTimeout(() => setQuick(true), 0);
   };
   return { onSessions, closings, listMode, askSetup, listShown, placements, openHelp, askQuickly, searchAsked, setSearchAsked, openings, helpOpening, setHelpOpening, helpFocus, setListMode, quick, setQuick, quickOpening, setQuickOpening };

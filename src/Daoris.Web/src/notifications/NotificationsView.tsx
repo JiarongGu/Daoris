@@ -35,7 +35,7 @@ function foldedHere(): Set<NotificationsGroup> {
 }
 
 /**
- * *Notifications* (NOTIFY2b, D196 point 3, the notification design §2): everything that comes to the person, in one view of the
+ * *Notifications*: everything that comes to the person, in one view of the
  * frame's regions, the right side bar by default or the panel where the person moved it.
  *
  * @remarks
@@ -74,7 +74,7 @@ export function NotificationsView({
   notify?: Notify;
   onShown?: (waiting: Confirmation) => void;
   names?: PressNames;
-  /** A press's door to its plan's own page (CONFIRMWAIT1c, the confirm-wait design §8.1). */
+  /** A press's door to its plan's own page. */
   onOpenPlan?: (door: PlanDoor) => void;
   /** What a door asked to show: its group unfolded and brought into view, or a press's card. */
   at?: NotificationsAt | null;
@@ -199,10 +199,10 @@ function Group({ id, title, count, folded, onFold, warn = false, unread, childre
   count: number | null;
   folded: boolean;
   onFold: (group: NotificationsGroup) => void;
-  /** The presses' group wears the warning hue its cards wear (D185 R2: a wait with a clock). */
+  /** The presses' group wears the warning hue its cards wear: a wait with a clock. */
   warn?: boolean;
   /**
-   * Its count in words where it counts what is unread, which waits on nobody (BADGEUX1, the UI/UX design §3.10): said in a neutral
+   * Its count in words where it counts what is unread, which waits on nobody: said in a neutral
    * ink, never a bare figure in open's, which is a wait's.
    */
   unread?: string;

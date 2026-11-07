@@ -55,7 +55,7 @@ export type Translate = (key: string, values?: Record<string, unknown>) => strin
 export type StackNote = { before: string[]; after: string[] };
 
 /**
- * A node's description (§3.7): its state, who acts, whether it was reached, and every edge in and out, in words; a fold's says what
+ * A node's description: its state, who acts, whether it has been reached, and every edge in and out, in words; a fold's says what
  * it holds and the edges between its members, so no cause is lost to it (§3.6).
  */
 export function describe(
@@ -80,7 +80,7 @@ export function describe(
 export const STACK_PRESS = 'cursor-pointer border-0 bg-transparent p-0 text-left text-meta text-ink-soft underline-offset-2 hover:text-ink hover:underline';
 
 /**
- * The flow as drawn with its stacks (FLOWCHART1c; the flowchart design §3.6): each stack not opened is one node in its first
+ * The flow as drawn with its stacks: each stack not opened is one node in its first
  * member's place, titled by the members' shared word and counted, with their first and last time and its press; every edge across
  * its boundary drawn to it with its cause, and those between its members said in its description. An opened stack is its members
  * whole, the first carrying the press that folds them again, which Enter does where the member has no door of its own.
@@ -176,7 +176,7 @@ export type Folded = {
 };
 
 /**
- * The flow as drawn with its folds past 24 nodes (FLOWCHART1d; the flowchart design §3.6 steps 2-3), over the flow its stacks drew:
+ * The flow as drawn with its folds past 24 nodes, over the flow its stacks drew:
  * each fold one node in its first member's place, titled by what it holds and counted (a stack inside it by its members), with its
  * press. Every edge across its boundary is drawn to it, merged by its cause and by the node outside and counted, so no cause is lost
  * and no node says one twice; those between its members are said in its description, merged by cause and counted.

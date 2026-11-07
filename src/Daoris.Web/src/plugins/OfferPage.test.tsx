@@ -34,13 +34,13 @@ describe("an offer's page", () => {
     expect(onInstall).toHaveBeenCalledWith('land-github');
   });
 
-  /** D140 §2 and D141: the detail's blocks share the pane's width, none keeping a measure of its own. */
+  /** The detail's blocks share the pane's width, none keeping a measure of its own. */
   it('lets every block take the pane\'s width', () => {
     const { container } = render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
     expect(cappedBlocks(container)).toEqual([]);
   });
 
-  /** D140 §2: an offer wears its icon too, and the monogram it will wear installed, since both are keyed by its id. */
+  /** An offer wears its icon too, and the monogram it will wear installed, since both are keyed by its id. */
   it('leads its header with its icon', () => {
     render(<OfferPage offer={OFFER} kitPoints={KIT} onInstall={vi.fn()} />);
 
@@ -71,7 +71,7 @@ describe("an offer's page", () => {
     const section = screen.getByRole('region', { name: 'Ask Daoris' });
     expect(section).toHaveTextContent('Reads with search');
     expect(section).toHaveTextContent('A plugin is code that runs as you');
-    // Nothing here has installed it, so there is nothing to approve yet (D170's note).
+    // Nothing here has installed it, so there is nothing to approve yet.
     expect(within(section).queryByRole('button')).toBeNull();
     unmount();
 

@@ -108,7 +108,7 @@ const whole = (value: string) => value.replace(/\r\n?/g, '\n');
  * **A value cut short says so, and opens whole**: beside the cut, how many characters it left out, a press
  * that opens the value beneath the line in a monospace well, its line breaks kept, so an exception reads a frame a
  * line and selects for copying. A line whose values are whole offers nothing to open. A host's exception cut silently
- * after its first sentence hid the type it named, and the defect was misread for a day.
+ * after its first sentence would hide the type it names.
  */
 function LogLine({ line, level }: { line: LogRow; level: string }) {
   const { t } = useTranslation();
@@ -204,7 +204,7 @@ export function LogList({ reading, filters, busy, onFilters, onOpenFolder, onRef
     (name === 'info' || name === 'warn' || name === 'error' ? t(`settings.logs.level.${name}`) : name);
 
   return (
-    // No title of its own (NAME1b, UX5 U57): the card is alone in its domain, and the settings list names
+    // No title of its own: the card is alone in its domain, and the settings list names
     // it *Machine log*, as every card alone in its domain leaves it.
     <Card id="settings-logs" className="scroll-mt-3">
       <Prose className="text-small text-ink-soft"><Inline text={t('settings.logs.body')} /></Prose>

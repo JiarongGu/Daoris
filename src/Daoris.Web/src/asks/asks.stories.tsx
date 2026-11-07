@@ -9,7 +9,7 @@ import {
 } from './fixtures';
 
 // An ask, made at a workspace and read back as a record: its row in Quests' list and the composer
-// that makes one, a drawer since it is a form (FRAME1d, D118 §3d). Its page is `AskPage.stories.tsx`. Every state a
+// that makes one, a drawer since it is a form. Its page is `AskPage.stories.tsx`. Every state a
 // real machine reaches, and a sentence long enough and CJK enough to try the layout.
 
 const meta: Meta = { title: 'Asks' };
@@ -20,7 +20,7 @@ const RECEIVERS = ['engine', 'game', 'lantern'];
 
 const Provided = ({ children }: { children: ReactNode }) => <Tooltip.Provider>{children}</Tooltip.Provider>;
 
-/** Rows at the list's width (D118 §3a: 280 px to start). */
+/** Rows at the list's width (280 px to start). */
 const Rows = ({ children }: { children: ReactNode }) => (
   <ul className="m-0 w-[280px] list-none border border-line bg-page p-0">{children}</ul>
 );

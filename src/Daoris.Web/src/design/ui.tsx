@@ -59,7 +59,7 @@ export function useErrorNotify(error: unknown, notify: Notify) {
 
 /**
  * A failed action as the person reads it: its own sentence — the service's or the driver's — as an
- * error toast. Every mutation's `onError` is handed this, so none can forget `sentence` (frontend
- * architecture §4a); it was written out at some thirty doors.
+ * error toast. Every mutation's `onError` is handed this, so none can forget `sentence`, and none
+ * writes it out again at its own door.
  */
 export const failure = (notify: Notify) => (error: unknown): void => notify(sentence(error), 'error');

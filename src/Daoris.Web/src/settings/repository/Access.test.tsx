@@ -11,7 +11,7 @@ import {
 
 // The access setup a repository's sessions start under, shown and set where it is set up, the same
 // rows a level up for a workspace and this machine. Full access is one switch, confirmed once; each pause shows what it means, its
-// value and where that was set, and changes at this level or goes back to the level above. The words are the person's: a pause is
+// value and where that is set, and changes at this level or goes back to the level above. The words are the person's: a pause is
 // never named by its file key.
 
 const t = i18n.t.bind(i18n);
@@ -111,7 +111,7 @@ describe("a level's access rows", () => {
   it('shows each pause with what it means, its value and where it came from', () => {
     draw(MIXED);
 
-    // Asking holds what the rules do not allow for the person's answer (AUTONOMY1b3c), where the protocol door can hold it.
+    // Asking holds what the rules do not allow for the person's answer, where the protocol door can hold it.
     expect(row('Permission prompts')).toHaveTextContent(
       'The agent runs in its asking mode: it uses what its rules allow, and any other tool call waits for your answer on its '
       + 'session’s page and in What needs you, refused if nobody answers within 15 minutes. An agent not run over its protocol '
@@ -168,7 +168,7 @@ describe("a level's access rows", () => {
     expect(full).toHaveTextContent(
       'Full access turns off permission prompts, an ask waiting for you to accept its route, Accept… before landing, and go-aheads.');
     expect(full).toHaveTextContent('It never turns off your own deny rules, nor a go-ahead the ask itself demands.');
-    // D233 choice 3: Codex holds none of the person's denies, and the setup says so beside what stays.
+    // Codex holds none of the person's denies, and the setup says so beside what stays.
     expect(full).toHaveTextContent('none of your deny rules reaches a Codex session in any setup');
     const box =within(full).getByRole('checkbox', { name: 'Full access' });
     expect(box).not.toBeChecked();
@@ -210,7 +210,7 @@ describe("a level's access rows", () => {
     expect(onChange).toHaveBeenLastCalledWith({ access: { permissions: 'auto', routing: 'person', landing: 'person', goAheads: 'named' } }, expect.anything());
   });
 
-  // A refused change is said under the row it was pressed in, at every level, the editor
+  // A refused change is said under the row it is pressed in, at every level, the editor
   // still open to press again; no other row speaks for it, and the next press there takes it away.
   it.each(['repository', 'workspace', 'machine'] as const)(
     'says a pause’s change refused under its row, the editor open, on the %s’s rows',

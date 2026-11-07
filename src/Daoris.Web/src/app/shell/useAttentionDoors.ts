@@ -26,14 +26,14 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     'parked-quest': (item) => openQuest(item.id),
     // The steward's stop opens its quest's page, as a parked quest does.
     'steward-stopped': (item) => openQuest(item.id),
-    // A quest its role's policy holds (STAFFPOLICY1e2) opens its page, as a parked quest does.
+    // A quest its role's policy holds opens its page, as a parked quest does.
     'policy-hold': (item) => openQuest(item.id),
     // A run held at a declined request opens its work quest's page, where the run and the request are read.
     'request-declined': (item) => { if (item.declined?.work) openQuest(item.declined.work); },
-    // A run waiting on a person's task (NODEKIT1 HUMAN) opens its work quest's page, where the run is read.
+    // A run waiting on a person's task (HUMAN) opens its work quest's page, where the run is read.
     task: (item) => { if (item.task?.work) openQuest(item.task.work); },
     // A held git remote leads to Settings → Git on its host, where its identity is set up, signed in again or
-    // compared; one whose push was refused, or whose repository names its own authentication, to that repository's git remote row,
+    // compared; one whose push is refused, or whose repository names its own authentication, to that repository's git remote row,
     // where another identity or the person's own sign-ins are chosen. A browser has no such page.
     ...(attached ? {
       'git-held': (item: Attention) => {
@@ -46,9 +46,9 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     } : {}),
     // A git go-ahead opens its session, whose head draws it; one no session's marker named has its row alone.
     ...(attached ? { 'git-ask': (item: Attention) => { if (item.session) openInWork(item.session); } } : {}),
-    // A go-ahead opens the ask it was asked on, where every go-ahead of it is listed.
+    // A go-ahead opens the ask it is asked on, where every go-ahead of it is listed.
     'go-ahead': (item) => { if (item.ask) openAsk(item.ask); },
-    // A departure opens its quest's page, where what was required and how its done answered are quoted (DRIFT1d2).
+    // A departure opens its quest's page, where what is required and how its done answered are quoted.
     departure: (item) => openQuest(item.id),
     // A set-up shown for review opens its step's page, where every set-up it said and the review's presses are.
     'set-up': (item) => openQuest(item.id),
@@ -61,12 +61,12 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
       },
     } : {}),
     // An agent's proposal to widen the rules opens the rules it would change, where it is answered beside them:
-    // what the agent may do, on its page since UX6e. Only a shell reads the rules.
+    // what the agent may do, on its page. Only a shell reads the rules.
     ...(attached ? { rule: () => open('agents', null, { agentPart: 'rules' }) } : {}),
     // Work to review opens in Sessions with its review open: accepting needs looking. A shell's alone.
     ...(attached ? { review: (item: Attention) => { open('sessions', item.id); setWorkIntent('review'); } } : {}),
     // A second opinion waiting on the person opens the session whose work it read, where its gate and every press are
-    // (XAGENT1g, the second-agent design §9). A shell's alone: the opinion is this machine's.
+    // A shell's alone: the opinion is this machine's.
     ...(attached ? { opinion: (item: Attention) => open('sessions', item.id) } : {}),
     // An agent's ask for a helper opens the session that asked, whose head and foot carry its yes and no with its other waits.
     // A shell's alone: the asks are this machine's files.
@@ -75,7 +75,7 @@ export function useAttentionDoors({ attached, openInWork, openAsk, openQuest, op
     // A shell's alone: the asks are this machine's files.
     ...(attached ? { 'hand-over': (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
     // A tool call a session holds for the person's answer opens that session, whose head and foot carry its presses with its other
-    // waits (AUTONOMY1b3c). A shell's alone: the holds are this machine's driver's.
+    // waits. A shell's alone: the holds are this machine's driver's.
     ...(attached ? { permission: (item: Attention) => { if (item.session) open('sessions', item.session); } } : {}),
     // A third answer alone held for the person opens the session whose line it would take on, whose head and foot carry its two presses
     // with its other waits. A shell's alone: the marks are this machine's driver's.

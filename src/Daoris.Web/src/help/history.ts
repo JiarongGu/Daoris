@@ -12,35 +12,35 @@ export type HelpConversationRow = {
   name: string | null;
   opening: string | null;
   /**
-   * A line of what it was about: the first line of Ask Daoris's last answer in it, as Markdown, whole up to 1000 characters
-   * (ASKHIST1d1), so the page parses it before it cuts it to a row.
+   * A line of what it is about: the first line of Ask Daoris's last answer in it, as Markdown, whole up to 1000 characters,
+   * so the page parses it before it cuts it to a row.
    */
   about: string | null;
   created: string;
-  /** When it was last spoken in. */
+  /** When it is last spoken in. */
   last: string;
   pinned: string | null;
   live: boolean;
   /**
-   * The access mode it ran under, its record's (HELPMODE1a2, D183 point 3): `restricted` or `full`, the effective one its last
+   * The access mode it ran under, its record's: `restricted` or `full`, the effective one its last
    * start got, never the mode chosen now. Absent from a driver before it.
    */
   mode?: string;
   /**
-   * The workspace it started in, its record's (ASKSCOPE1d, D158's ASKSCOPE1 note, points 1 and 6): kept from its start and never
+   * The workspace it started in, its record's: kept from its start and never
    * moved, `default` for a record from before. Absent from a driver before it, which is `default`'s too (`workspaceOf`).
    */
   workspace?: string;
   /** Whether words written to it once it ended go on in its own conversation; else a new one starts from its words. */
   resumable: boolean;
-  /** The earlier conversation it started from, and what it was handed of it. */
+  /** The earlier conversation it started from, and what it is handed of it. */
   from: string | null;
   handed: string | null;
-  /** Where a search found its words: the title they were in, or 60 characters of what was said around them, raw. */
+  /** Where a search found its words: the title they are in, or 60 characters of what is said around them, raw. */
   found: string | null;
   /**
-   * Where a search found its words in what was said: the line they are on, as Markdown, whole up to 1000 characters, else a
-   * window around them with an ellipsis (ASKHIST1d1). Null when the title held them; absent from a driver before pages.
+   * Where a search found its words in what is said: the line they are on, as Markdown, whole up to 1000 characters, else a
+   * window around them with an ellipsis. Null when the title held them; absent from a driver before pages.
    */
   foundLine?: string | null;
 };
@@ -52,7 +52,7 @@ export const sameWorkspace = (a: string, b: string): boolean => a.toLowerCase() 
 export const HELP_NAME_LIMIT = 80;
 
 /**
- * A page of the history as the driver answers it (ASKHIST1d1): its rows, how many the whole list holds or the search found,
+ * A page of the history as the driver answers it: its rows, how many the whole list holds or the search found,
  * and the offset the next page starts at, null on the last.
  */
 export type HelpListing = { conversations: HelpConversationRow[]; total: number; next: number | null };
@@ -61,8 +61,8 @@ const count = (value: unknown): number | null =>
   typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
 
 /**
- * One `HELP_CONVERSATIONS` answer read as a page (ASKHIST1d2). A driver from before pages answered `{conversations, cut}`,
- * which is read as one page holding all it listed: its `cut` said only that older ones were left out, never where they start.
+ * One `HELP_CONVERSATIONS` answer read as a page. A driver without pages answers `{conversations, cut}`,
+ * which is read as one page holding all it listed: its `cut` says only that older ones were left out, never where they start.
  */
 export function listingPage(answer: unknown): HelpListing {
   const held = (answer ?? {}) as { conversations?: unknown; total?: unknown; next?: unknown };
@@ -71,8 +71,8 @@ export function listingPage(answer: unknown): HelpListing {
 }
 
 /**
- * A history's pages as one list (ASKHIST1d2): in the order they were asked, each conversation once by its session. One spoken
- * in or pinned between two asks can be on two pages (D158's ASKHIST1d1 note); it stays where it was first listed. The count
+ * A history's pages as one list: in the order they are asked, each conversation once by its session. One spoken
+ * in or pinned between two asks can be on two pages; it stays where it is first listed. The count
  * and the next page are the last page's, the newest the driver said.
  */
 export function joinPages(pages: readonly HelpListing[]): HelpListing {
@@ -94,12 +94,12 @@ const DAY = 86_400_000;
 const midnight = (at: Date) => new Date(at.getFullYear(), at.getMonth(), at.getDate());
 
 /**
- * The history grouped as a person reads time: the pinned first, then by the local calendar day each was last
+ * The history grouped as a person reads time: the pinned first, then by the local calendar day each is last
  * spoken in, today, yesterday, the rest of this week from its Monday, and older. Each group keeps the driver's order (pinned
  * first, then the newest), and a group with nothing in it is left out.
  *
  * @remarks
- * By this machine's calendar, not by elapsed hours: a conversation at 23:50 was yesterday at 00:10. A week starts on Monday,
+ * By this machine's calendar, not by elapsed hours: a conversation at 23:50 is yesterday at 00:10. A week starts on Monday,
  * as ISO 8601 and 中文 count it, so on a Monday the week holds today alone and Sunday is yesterday. A time ahead of this
  * machine's clock is today: records travel and clocks do not.
  */

@@ -4,7 +4,7 @@ import { Button } from '../design/ui';
 /** The person's word on a staged build, as `DAORIS.UPDATE` · `SET` takes it. */
 export type UpdateMode = 'when-idle' | 'now' | 'not-now';
 
-/** How a swap ended: installed, rolled back or refused, the build it was, and the check's or the roll-back's reason. */
+/** How a swap ended: installed, rolled back or refused, the build concerned, and the check's or the roll-back's reason. */
 export type UpdateOutcome = {
   phase: string; build?: string | null; version?: string | null; commit?: string | null; reason?: string | null; detail?: string | null;
 };
@@ -46,7 +46,7 @@ const WHY = new Set([
  * words are the banner's half of the two doors; `daoris update` is the terminal's.
  *
  * @remarks
- * A molecule: drawn from props, so every state is reachable without a shell (D52 as amended). Nothing when nothing is
+ * A molecule: drawn from props, so every state is reachable without a shell. Nothing when nothing is
  * staged and nothing is left to say. A version is named with its commit where the build carries one, since a build at
  * `0.0.x` keeps its version across many builds.
  */

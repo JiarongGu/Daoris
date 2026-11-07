@@ -4,7 +4,7 @@ import { CJK_ENTRY, ENTRY, INDEX_ENTRY, LONG_LINES, RULE } from './fixtures';
 import { chinese } from '../design/storyLanguage';
 import { InTheme } from '../plugins/storyIcons';
 
-// An entry's page in Search's main area, where it was the reader drawer: a knowledge document with
+// An entry's page in Search's main area: a knowledge document with
 // its frontmatter, a canonical rule, a source whose lines run long, a 中文 entry; and the main area with no entry:
 // nothing chosen, gone, loading, an error with no answer ever.
 

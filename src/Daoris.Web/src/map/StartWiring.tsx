@@ -18,7 +18,7 @@ export function StartWiringList({ starts, nameOf }: {
   starts: StartWiring[];
   /**
    * What a person calls this account of this tool — who is signed in, a key's handle, or its name.
-   * No profile is the tool's own home, which the roster names as its row does (UX5 U53).
+   * No profile is the tool's own home, which the roster names as its row does.
    */
   nameOf: (owner: string, profile?: string | null) => string;
 }) {

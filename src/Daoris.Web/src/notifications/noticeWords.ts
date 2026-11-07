@@ -3,7 +3,7 @@ import { HELP_REPOSITORY } from '../data/api';
 import { en } from '../locales/index';
 
 /**
- * Where the shell's notifier reads its words in the catalogue (NOTIFY2d, D196, the notification design §3.3): a headline and a body
+ * Where the shell's notifier reads its words in the catalogue: a headline and a body
  * per kind of notification, and the act of every `Person` route, by which a terminal's press is named. Its twin is the modules'
  * `SessionBalloon`, which reads them by these keys and whose English is held equal to this catalogue's.
  */

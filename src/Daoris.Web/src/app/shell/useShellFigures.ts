@@ -44,28 +44,28 @@ export function useShellFigures({ repositories, driver, attached, attention, pre
   const presence: DriverPresence = driver.data
     ? (driver.data.ready === false ? 'starting' : 'running')
     : driver.isError ? 'stopped' : attached ? 'starting' : 'absent';
-  // The bell's count (NOTIFY2b, the notification design §2.1): each press of either source once, and every other row of What needs
-  // you as .NET judged them (PUSH1d4), a press's own row being its card. Two answers to "how many need me" would disagree the first
-  // time either was edited. Before the first judgement the rows are no count yet, and the presses count alone. Each obligation once,
+  // The bell's count: each press of either source once, and every other row of What needs
+  // you as .NET judges them, a press's own row being its card. Two answers to "how many need me" would disagree the first
+  // time either changed. Before the first judgement the rows are no count yet, and the presses count alone. Each obligation once,
   // and an unread message none.
   const needsRows = attention.state === 'known' ? needsListed(attention.rows).length : 0;
   const waiting = bellCount(presses, attention.state === 'known' ? attention.rows : []);
-  // While any press waits unshown, the bell wears the warning hue with the presses' own count (§3.3, Fable's F1.1).
+  // While any press waits unshown, the bell wears the warning hue with the presses' own count.
   const pressUnshown = presses.some((each) => each.shown !== true);
   // The same count on the window's taskbar button and in its title, so it is seen with the window behind others.
   useTaskbarCount(waiting, t('nav.waiting', { count: waiting }));
-  // And the notices' words, so a notification behind the window speaks its language (NOTIFY2d, the notification design §3.3).
+  // And the notices' words, so a notification behind the window speaks its language.
   useNoticeWords();
-  // What a press's card names its references by (§3.2): a session as Sessions names it, its workspace beside it where its
+  // What a press's card names its references by: a session as Sessions names it, its workspace beside it where its
   // repository's name is in two workspaces, from the records the window holds; a quest by its name.
   const allSessions = useSessions(null, true, attached);
   const machineRegistry = useRegistry('machine');
-  // 🔴 One count of the sessions the driver runs (SESSBADGE1, D76's note), the cap's own, judged in.NET beside the rows:
+  // 🔴 One count of the sessions the driver runs, the cap's own, judged in.NET beside the rows:
   // the status bar says it, a standing fact with its noun, never a conversation the person holds. It is no badge.
   const working = attention.state === 'known' ? attention.working : 0;
   // The status bar's: not judged yet is no count, never a zero; a plain browser has no driver here, so none it runs.
   const workingSaid = attention.state === 'reading' ? null : working;
-  // 🔴 One meaning for a number (BADGEUX1, the UI/UX design §3.10): a place counts only what waits on the person there, the bell's rows
+  // 🔴 One meaning for a number: a place counts only what waits on the person there, the bell's rows
   // whose door opens it (`placeOf`), so each place's number is the bell's for the same rows and the places sum to the bell's rows.
   // Running work is a mark, never a number: Sessions' while the driver's work is under way and not parked on the person, Quests'
   // while a quest is taken. The sessions the page holds judge where a unit of work's door goes, as the band's door does.

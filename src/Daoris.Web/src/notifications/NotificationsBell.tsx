@@ -2,12 +2,12 @@ import { useTranslation } from 'react-i18next';
 import { Button, CountBadge, Icon, Tip } from '../design/ui';
 
 /**
- * The title bar's *Notifications* (NOTIFY2b, D196 point 3, the notification design §2.1): a bell on the strip's trailing group,
+ * The title bar's *Notifications*: a bell on the strip's trailing group,
  * before the browser's door, counting what needs the person (each press of either source once, and every other row of *What needs
- * you*) in open's hue, the badge Overview's place wore before it.
+ * you*) in open's hue.
  *
  * @remarks
- * **While any press waits unshown it wears the warning hue with the presses' own count** (§3.3, Fable's F1.1): a toast closes and
+ * **While any press waits unshown it wears the warning hue with the presses' own count**: a toast closes and
  * a count looks like any other row's, so this is what says a press waits for as long as it waits to be seen, in the window in front;
  * it goes back to open's hue and the whole count once every press waiting is shown or has ended. Its name for a reader says which.
  *

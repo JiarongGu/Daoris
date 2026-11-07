@@ -21,7 +21,7 @@ import { QuestPage, QuestsMainNotice } from './QuestPage';
 import { useTranslation } from 'react-i18next';
 import { type LimitWait, limitWaitSaid } from '../work/waits/limitWait';
 
-// A quest's page (FRAME1d, D118 §3d) in Quests' main area, where it was a drawer: open, taken, sitting for the
+// A quest's page in Quests' main area: open, taken, sitting for the
 // person's hold, held for the agent's trust with its question open, parked by its strikes, waiting on a question, a
 // conflict, carrying links and files, a chain, a driven session's record, declined, done, a delete asking, a 中文
 // title, its closure graph's end; and the main area with no record: nothing chosen, gone, loading.
@@ -42,7 +42,7 @@ const meta: Meta<typeof QuestPage> = {
     onRespond: nothing, onDelete: nothing, onDismiss: nothing, onRetry: nothing, onTrusting: nothing, onGrant: nothing,
     onOpenQuest: nothing,
   },
-  // The main area's height, inside the main area at its wide width (the UI/UX design R6, STORYGAP1); a story's own width
+  // The main area's height, inside the main area at its wide width; a story's own width
   // is drawn instead of it.
   decorators: [(Story) => <div className="flex h-[44rem] border border-line bg-page"><Story /></div>, storyWidths.wide],
 };
@@ -53,11 +53,11 @@ type Story = StoryObj<typeof QuestPage>;
 /** Open: *Take* is the loud act in its header, then *Decline…*, and *Mark done…* in its ⋯; it carries a link and two files. */
 export const Open: Story = {};
 
-/** Taken: *Mark done…* is the loud act now (UX5 U31); it asks once under the header, with the person's note. */
+/** Taken: *Mark done…* is the loud act; it asks once under the header, with the person's note. */
 export const Taken: Story = { args: { quest: TAKEN } };
 
 /**
- * Its work in its workflow (WORKFLOW1c, the workflow design §7): one line among the head's facts, *Workflow: waits for your look*,
+ * Its work in its workflow: one line among the head's facts, *Workflow: waits for your look*,
  * in open's hue since it waits on the person, whose door opens the run in the session's side bar.
  */
 export const InItsWorkflow: Story = { args: { quest: TAKEN, workflow: { runs: [IN_REVIEW], onOpen: nothing } } };
@@ -66,7 +66,7 @@ export const InItsWorkflow: Story = { args: { quest: TAKEN, workflow: { runs: [I
 export const InItsWorkflowChinese: Story = { ...InItsWorkflow, decorators: [chinese] };
 
 /**
- * The install's case (QUESTCLOSE1, D126's note): its session here finished at a checkpoint and the quest still taken. *Sitting*
+ * Its session here finished at a checkpoint and the quest still taken. *Sitting*
  * says nothing here carries it on, with *Mark done…* where it is read and loud in its head.
  */
 export const FinishedAtACheckpoint: Story = { args: { quest: TAKEN, session: FINISHED_HERE, onAttend: nothing } };
@@ -78,7 +78,7 @@ export const FinishedAtACheckpointChinese: Story = { ...FinishedAtACheckpoint, d
 export const FinishedAtACheckpointDark: Story = { ...FinishedAtACheckpoint, decorators: [dark] };
 
 /**
- * Its session cut off by an account's limit (LIMITRESUME1d2, D206 §3.7): *limited*, and when it goes on by itself and how, the head's
+ * Its session cut off by an account's limit: *limited*, and when it goes on by itself and how, the head's
  * own sentence worded in the story's language.
  */
 export const SessionWaitsForALimit: Story = {
@@ -113,7 +113,7 @@ export const WaitsForAnAccount: Story = { args: { sitting: WAITS_FOR_ACCOUNT } }
 /** Held by the person's stop: its sentence, and *Try again*, which releases it. */
 export const HeldByAStop: Story = { args: { sitting: STOPPED } };
 
-/** Taken on another machine after this machine's session was cut off: whose take, and no *Try again*. */
+/** Taken on another machine after this machine's session is cut off: whose take, and no *Try again*. */
 export const TakenElsewhere: Story = { args: { quest: TAKEN, sitting: TAKEN_ELSEWHERE } };
 
 /** The same in 中文, said from the machine and session the tick names, never the driver's English. */
@@ -126,7 +126,7 @@ export const WaitingOnAQuestion: Story = { args: { quest: WAITING, question: { i
 export const Conflict: Story = { args: { quest: CONFLICTED } };
 
 /**
- * This machine's lost take on a step open again (SYNCMERGE1c2, D178 point 2): *Bring mine forward* and *Drop mine*, and what each does,
+ * This machine's lost take on a step open again: *Bring mine forward* and *Drop mine*, and what each does,
  * the dismissal's apart from the bring-forward's.
  */
 export const ConflictMine: Story = { args: { quest: MINE_LOST, onForward: nothing } };
@@ -149,7 +149,7 @@ export const ConflictHeldElsewhere: Story = { args: { quest: HELD_ELSEWHERE, onF
 /** The step closed since: *Drop mine* only, and why nothing can be brought forward. */
 export const ConflictOnAClosedStep: Story = { args: { quest: LOST_CLOSED, onForward: nothing } };
 
-/** Brought forward and lost again: one row, the second loss said on the conflict it was to settle, and *Drop mine* takes both. */
+/** Brought forward and lost again: one row, the second loss said on the conflict it is to settle, and *Drop mine* takes both. */
 export const ConflictLostAgain: Story = { args: { quest: LOST_AGAIN, onForward: nothing } };
 
 /** The same in 中文. */
@@ -180,7 +180,7 @@ export const HeldStepMine: Story = { args: { quest: REOPENED_HERE, goOn: { ready
 export const HeldStepMineChinese: Story = { ...HeldStepMine, decorators: [chinese] };
 
 /**
- * A closure graph's quest the person closed done before its graph's end (FABRIC-CLOSE1j2, §E5): *Close* among its facts says so, in
+ * A closure graph's quest the person closed done before its graph's end: *Close* among its facts says so, in
  * the work's foot's words, naming the nodes its done stopped.
  */
 export const ClosedByYouBeforeItsEnd: Story = { args: { quest: CLOSED_EARLY, ends: CLOSED_EARLY_ENDS } };
@@ -189,7 +189,7 @@ export const ClosedByYouBeforeItsEnd: Story = { args: { quest: CLOSED_EARLY, end
 export const ClosedByYouBeforeItsEndChinese: Story = { ...ClosedByYouBeforeItsEnd, decorators: [chinese] };
 
 /**
- * A chain closed only in part (FABRIC-CLOSE1j2, §E5): the quest the remote refused, lost with its take, and the close node that waits
+ * A chain closed only in part: the quest the remote refused, lost with its take, and the close node that waits
  * again and would close it over the winner's take, its stop offered in the danger ink; What needs you holds the press.
  */
 export const PartiallyClosed: Story = { args: { quest: PART_CLOSED, ends: PART_CLOSED_ENDS } };
@@ -294,13 +294,13 @@ export const LongTitleAtTheFloor: Story = { args: { quest: REFILED_UNNAMED, sess
 /** The same in 中文, in dark. */
 export const LongTitleChineseDark: Story = { args: { quest: REFILED_UNNAMED, session: STARTING }, decorators: [chinese, dark] };
 
-// ——— What the person required, and how its done answered (DRIFT1d2, D133 §3–§4). *Open* above names none, and draws no
+// ——— What the person required, and how its done answered. *Open* above names none, and draws no
 // section.
 
 /** Taken, with what the person required in their words and each check; its done answers each. */
 export const ItsRequirements: Story = { args: { quest: REQUIRING } };
 
-/** Done, each requirement met, with how its check was met in the done's words. */
+/** Done, each requirement met, with how its check is met in the done's words. */
 export const RequirementsMet: Story = { args: { quest: MET } };
 
 /**

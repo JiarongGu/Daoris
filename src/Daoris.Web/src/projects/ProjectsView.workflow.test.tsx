@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// The Workflow tab in SHELL mode (WORKFLOW1b; D157 point 12, the workflow design §6.1): a repository's page and a
+// The Workflow tab in SHELL mode: a repository's page and a
 // workspace's ask this machine's driver for their Current over DAORIS.DRIVER's `WORKFLOW_CURRENT`, only while the tab
 // shows, and each door opens the Setup that sets a step. Over a mocked bridge, as the shell-attached half is held
 // (`docs/2026-09-19-frontend-architecture.md` §4).

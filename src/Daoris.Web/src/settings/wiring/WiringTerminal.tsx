@@ -30,10 +30,10 @@ function Found({ found }: { found: SystemWiring['terminal']['firstDaoris'] }) {
 }
 
 /**
- * Terminal (the this-Daoris design §3.7), read-only: whether each launcher is there (a development run has none, and says
+ * Terminal, read-only: whether each launcher is there (a development run has none, and says
  * so), which `PATH` holds them, what a new terminal runs for `daoris`, the address file a terminal reads
  * to find the service and whether it takes it, and the account's `DAORIS_HOME` and `DAORIS_SERVICE_URL`, which a terminal
- * reads first. Only whether `PATH` holds the install's folder is shown, never the whole of it (§5).
+ * reads first. Only whether `PATH` holds the install's folder is shown, never the whole of it.
  *
  * @remarks
  * A molecule: drawn from props. It sets nothing and copies nothing itself: the PATH presses and *Copy a terminal line* come in as `setup`.

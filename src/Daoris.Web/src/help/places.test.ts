@@ -57,17 +57,16 @@ describe('the places a go may name', () => {
       'settings/workspace/sweep → projects/workspace-branches', 'settings/permissions → agents/rules',
       'settings/permissions/across → projects/workspace-defaults',
     ]);
-    // ENTRY1f1: the views a go may name an item in, and how an ask's item is told from a quest's (the driver's `AskItem`).
-    // ENTRY1f2: Sessions too.
+    // The views a go may name an item in, and how an ask's item is told from a quest's (the driver's `AskItem`); Sessions too.
     expect(PLACE_ITEM_VIEWS).toEqual(['sessions', 'quests', 'plugins']);
     expect(offerItem('')).toBe('offer:');
     expect(askItem('')).toBe('ask:');
   });
 
   /**
-   * UX6i2a: the views are the bar's, Knowledge and Plugins among them, and Settings at its foot. Settings → Tools
-   *  is a place a go names once TOOLS8 adds it here and to `HelpPlaces` together. Workspace and
-   * Permissions left Settings with UX6g, and since UX6g2b the twins name neither: a go still spelled so is kept.
+   * The views are the bar's, Knowledge and Plugins among them, and Settings at its foot. Settings → Tools
+   *  is a place a go names once it is added here and to `HelpPlaces` together. Workspace and
+   * Permissions are not Settings domains, and the twins name neither: a go still spelled so is kept.
    */
   it('are every view the activity bar has and every domain Settings shows, and nothing else', () => {
     expect([...PLACE_VIEWS].sort()).toEqual(VIEWS.map(({ view }) => view as string).sort());
@@ -88,7 +87,7 @@ describe('the places a go may name', () => {
 
   it('open where the starters\' doors open: a domain at its card or step, a view, a drawer, a tab, a section', () => {
     expect(placeDoor({ view: 'quests' })).toEqual({ view: 'quests' });
-    // UX6e2: Agents is a place the twins name, its parts the agent's page's; with no agent named, the one that has it opens.
+    // Agents is a place the twins name, its parts the agent's page's; with no agent named, the one that has it opens.
     expect(placeDoor({ view: 'agents' })).toEqual({ view: 'agents' });
     expect(placeDoor({ view: 'agents', part: 'accounts' })).toEqual({ view: 'agents', agentPart: 'accounts' });
     expect(placeDoor({ view: 'agents', part: 'rules' })).toEqual({ view: 'agents', agentPart: 'rules' });
@@ -99,7 +98,7 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
     expect(placeDoor({ view: 'settings', domain: 'start', part: 'helper' })).toEqual({ view: 'settings', section: 'start', anchor: 'step-helper' });
     expect(placeDoor({ view: 'projects', part: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
-    // UX6i2a: Knowledge alone opens as it was left, a part in that mode; Plugins is a place with no parts.
+    // Knowledge alone opens as it is left, a part in that mode; Plugins is a place with no parts.
     expect(placeDoor({ view: 'knowledge' })).toEqual({ view: 'knowledge' });
     expect(placeDoor({ view: 'knowledge', part: 'convergence' })).toEqual({ view: 'knowledge', knowledge: 'convergence' });
     expect(placeDoor({ view: 'knowledge', part: 'search' })).toEqual({ view: 'knowledge', knowledge: 'search' });
@@ -107,7 +106,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * UX6g2b: a workspace's page's tabs and its Setup's two sections are Repositories' parts, prefixed
+   * A workspace's page's tabs and its Setup's two sections are Repositories' parts, prefixed
    * where a repository's page shares their names. A go names no workspace, so each opens the workspace in view's page, as
    * a door naming a tab or a section does; `setup` alone stays a repository's.
    */
@@ -118,7 +117,7 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'projects', part: 'workspace-defaults' })).toEqual({ view: 'projects', workspaceSection: 'defaults' });
     expect(placeDoor({ view: 'projects', part: 'workspace-remote' })).toEqual({ view: 'projects', workspaceSection: 'remote' });
     expect(placeDoor({ view: 'projects', part: 'setup' })).toEqual({ view: 'agents', agentsMode: 'setup' });
-    // UX6h4: a repository's Branches and History tabs (UX6h1), named apart from a workspace's Branches.
+    // A repository's Branches and History tabs, named apart from a workspace's Branches.
     expect(placeDoor({ view: 'projects', part: 'branches' })).toEqual({ view: 'projects', tab: 'branches' });
     expect(placeDoor({ view: 'projects', part: 'history' })).toEqual({ view: 'projects', tab: 'history' });
     expect(placeDoor({ view: 'projects', part: 'branches', workspace: 'work' })).toEqual({ view: 'projects', tab: 'branches' });
@@ -144,7 +143,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * ENTRY1f1 (D161's ENTRY1f note): a go on Quests may name the one quest or ask that waits, as the driver judged it against
+   * A go on Quests may name the one quest or ask that waits, as the driver judged it against
    * the machine's records; the door names it as Quests' list does, a quest by its id and an ask as `askItem`'s, and the
    * application's one opener chooses it there. An item is Quests' alone, with no part beside it, as the driver holds.
    */
@@ -172,7 +171,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * ENTRY1f2 (D161's ENTRY1f note): a go on Sessions may name one session, by the id the driver judged against the machine's
+   * A go on Sessions may name one session, by the id the driver judged against the machine's
    * own records and handed on as the record spells it; the door names it as Sessions' list does, and the application's one
    * opener chooses it there. An item alone in its view, as on Quests; Quests' prefixes are no session's.
    */
@@ -185,7 +184,7 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * ENTRY1d2b (D161's ENTRY1d note): a go to Add repository or Import a folder may carry the workspace the driver judged, and
+   * A go to Add repository or Import a folder may carry the workspace the driver judged, and
    * the drawer opens with it filled; the folder stays the person's pick. Every other place ignores it, as the driver holds.
    */
   it("open Add or Import with the go's workspace filled, and ignore it anywhere else", () => {
@@ -217,8 +216,8 @@ describe('the places a go may name', () => {
   /**
    * Settings → Workspace and Permissions retired into a workspace's page, and a go naming one opens the
    * workspace in view's page where its part went: its remote, its defaults (a line, a landing rule, reading across), its
-   * Branches; Permissions alone opens what agents may do, on the agent that takes the rules. UX6g2b: each is a kept row of
-   * the twin, the old spelling with its part, and one no row names opens nothing.
+   * Branches; Permissions alone opens what agents may do, on the agent that takes the rules. Each is a kept row of
+   * the twin, the retired spelling with its part, and one no row names opens nothing.
    */
   it("open a retired domain's part where it went: the workspace's page, or what agents may do", () => {
     expect(placeDoor({ view: 'settings', domain: 'workspace' })).toEqual({ view: 'projects', workspaceTab: 'details' });
@@ -232,9 +231,9 @@ describe('the places a go may name', () => {
   });
 
   /**
-   * UX6i2a: a go spelled as a place was before it moved, kept in an earlier conversation, opens where the place
+   * A go spelled under an older place name, kept in an earlier conversation, opens where the place
    * went rather than nowhere: Settings → Plugins the Plugins place, Search and Convergence Knowledge in that mode.
-   * None had parts, so one spelled with a part opens nothing.
+   * None has parts, so one spelled with a part opens nothing.
    */
   it('open a place that moved where it went', () => {
     expect(placeDoor({ view: 'settings', domain: 'plugins' })).toEqual({ view: 'plugins' });
@@ -250,11 +249,11 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'settings', domain: 'billing' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'colours' })).toBeNull();
     expect(placeDoor({ view: 'quests', part: 'drawer' })).toBeNull();
-    // UX6e2: Settings → Agents and Permissions' Proposals left Settings with UX6e; the twins no longer name them.
+    // Settings → Agents and Permissions' Proposals are not in Settings; the twins do not name them.
     expect(placeDoor({ view: 'settings', domain: 'agents' })).toBeNull();
     expect(placeDoor({ view: 'settings', domain: 'permissions', part: 'proposals' })).toBeNull();
     expect(placeDoor({ view: 'agents', part: 'workspaces' })).toBeNull();
-    // UX6i2a: Knowledge's parts are its two modes, and Plugins has none.
+    // Knowledge's parts are its two modes, and Plugins has none.
     expect(placeDoor({ view: 'knowledge', part: 'findings' })).toBeNull();
     expect(placeDoor({ view: 'plugins', part: 'kit' })).toBeNull();
   });

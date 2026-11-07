@@ -9,8 +9,8 @@ import { FullAccessAsk, HelpModeChip, useModeChoice } from './HelpModePicker';
 
 // Ask Daoris's access, chosen from its chip. The chip shows the mode the
 // conversation in view runs under, a switch that waits for its next start, and full access in the warning colour; restricted is
-// set at once, and full access asks once, inline, naming the servers it would add and when it takes effect. ACCESSASK1 (the UI/UX
-// design §3.4): the ask is the one `InlineConfirm`, open until the driver answers, and a refusal is said where it was pressed.
+// set at once, and full access asks once, inline, naming the servers it would add and when it takes effect. The
+// ask is the one `InlineConfirm`, open until the driver answers, and a refusal is said where it is pressed.
 
 /** The chip and its confirmation as their holders compose them: the panel's strip, and Settings' row. */
 function Picker({ selected, running = null, adds, onChoose }: {
@@ -155,7 +155,7 @@ describe.each(['en', 'zh'])('Ask Daoris’s access chip in %s', (language) => {
     expect(screen.getByText(i18n.t('help.mode.confirm.addsReading'))).toBeInTheDocument();
   });
 
-  // HELPMODE1c1 (design §5): the menu's door to restricted mode's configured access, offered only where a holder gives it one.
+  // The menu's door to restricted mode's configured access, offered only where a holder gives it one.
   it('offers Configure restricted access… only where its holder gives it a door, and presses that', async () => {
     await i18n.changeLanguage(language);
     const onConfigure = vi.fn();

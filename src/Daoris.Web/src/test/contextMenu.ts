@@ -3,7 +3,7 @@ import { fireEvent, screen, within } from '@testing-library/react';
 // The right-click, as the tests of each surface press it.
 
 /**
- * A right-click on an element, and whether the engine's own menu was left to open (the event not prevented).
+ * A right-click on an element, and whether the engine's own menu is left to open (the event not prevented).
  *
  * @remarks
  * **It focuses first what the engine's press would**: the nearest focusable element around it, or the page. A real

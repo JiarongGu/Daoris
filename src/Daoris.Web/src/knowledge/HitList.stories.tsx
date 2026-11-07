@@ -88,7 +88,7 @@ export const WordsOnly: Story = { args: { semantic: true, answer: answered({ byM
 /** The first search on its way: skeleton rows, with its words on the line the count takes. */
 export const FirstSearch: Story = { args: { answer: { state: 'first' }, chosen: null } };
 
-/** A newer search on its way: the last hits held at reduced opacity, the words on the count's line (audit SR11). */
+/** A newer search on its way: the last hits held at reduced opacity, the words on the count's line. */
 export const SearchingAgain: Story = { args: { query: 'chunk hydration order', answer: answered({ searching: true }) } };
 
 /** No matches by words: the empty state in the lexical tier's words, with the way to Convergence. */

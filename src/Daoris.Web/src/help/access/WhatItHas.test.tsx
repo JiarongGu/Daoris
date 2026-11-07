@@ -82,7 +82,7 @@ describe.each(['en', 'zh'])('What Ask Daoris has, in %s', (language) => {
     expect(field('rules')).toHaveTextContent(i18n.t('help.wired.rules.counts', { allow: 2, ask: 0, deny: 1 }));
     expect(field('rules')).toHaveTextContent(i18n.t('help.wired.guarded'));
     expect(within(field('checkouts')).getByText('engine').closest('li')).toHaveTextContent('aurora');
-    // When it was handed, and whether as it started or as it went on.
+    // When it is handed, and whether as it starts or as it goes on.
     expect(section()).toHaveTextContent(i18n.t('help.wired.at.going-on', { at: clockOf(RESTRICTED.at) }));
   });
 

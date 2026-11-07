@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { Button, Icon, Inline, SettingList, SettingRow } from '../../design/ui';
 import { Refused } from '../../work/InlineConfirm';
 
-// The parts a Setup tab is made of (UX6f, UX6g; D150 §1 rule 4, §4.2, §4.3): a section that folds to the line naming its
+// The parts a Setup tab is made of: a section that folds to the line naming its
 // values, and a value that is the thing's own or stands from above. A repository's Setup and a workspace's share them, so
 // the two read and fold alike. Molecules: every state is reached by props, and every press goes out.
 
 /**
  * One section of a Setup: its name and, folded, the line naming its values; a press opens it to its rows. Its name is
  * the press's name, and the line its description, so a reader hears the section and then what it holds. A section a
- * door asks for after it was drawn opens then (UX6g: a door into a workspace's remote, its page already on Setup).
+ * door asks for after it is drawn opens then (a door into a workspace's remote, its page already on Setup).
  *
  * Given `open`, it is the holder's to say: a place page holds each section's state above its mounts, so a door out and back
  * finds it as left; `onOpenChange` is the press.
@@ -98,8 +98,8 @@ export function Inheritable({ label, twin, why, says, own, busy, wide = false, s
     ? <Button disabled={busy} onClick={() => setEditing(true)}>{setHere}</Button>
     : wide ? close : <>{editor()}{close}</>;
   return (
-    // The row's own wrapper lays the control out (R1): a wrapper of its own here once kept `justify-end`, so the value
-    // drifted to the pane's far edge after the row stopped sending it there (the design §9's trap for UIFIT1b).
+    // The row's own wrapper lays the control out: a wrapper of its own here with `justify-end` would drift the value
+    // to the pane's far edge.
     <SettingRow label={label} hint={twin} why={why} control={control}>
       <p className="m-0 text-small text-ink-soft">{typeof says === 'string' ? <Inline text={says} /> : says}</p>
       {open && wide && <div className="mt-2">{editor()}</div>}

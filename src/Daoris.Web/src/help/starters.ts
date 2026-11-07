@@ -13,20 +13,19 @@ import type { Machine } from './machine';
 /**
  * Where the screen that fixes a starter, or does a setup step, is: a view, and in Settings its domain
  * and the card in it — or on Projects, the Workspace menu's drawer that adds a repository or imports a
- * folder. Since FRAME1c it may name the item it opens in its view — a session, a quest, a
- * repository, a plugin — which the application's one opener chooses there (D118 §3i); since UX6e an agent
- * and the part of its page; since UX6g a workspace's page, its tab and the section of its Setup; since UX6i Knowledge's
- * mode, Search or Convergence.
+ * folder. It may name the item it opens in its view — a session, a quest, a repository, a plugin —
+ * which the application's one opener chooses there; for an agent, the part of its page; for a workspace,
+ * its page, its tab and the section of its Setup; for Knowledge, the mode, Search or Convergence.
  */
 export type StarterDoor = {
   view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
-  /** The workspace the drawer opens filled with (ENTRY1d2b): Ask Daoris's go's. The folder is never a door's. */
+  /** The workspace the drawer opens filled with: Ask Daoris's go's. The folder is never a door's. */
   drawerWorkspace?: string;
   /** The composer opened by a go to New conversation, with the repository it chooses and the words it opens with. */
   compose?: Compose;
   /** A repository page's tab. */
   tab?: ProjectTab;
-  /** The host Settings → Git opens its Add a git identity form on: a sync card's door for a fetch that was not made. */
+  /** The host Settings → Git opens its Add a git identity form on: a sync card's door for a fetch that has not been made. */
   gitHost?: string;
   /** The repository whose place the Agents place's Setup mode opens at, with the section and row of its page. */
   placeOf?: string;
@@ -66,7 +65,7 @@ export type Starter = {
 
 /**
  * Ask Daoris's starters: what this machine lacks, in the order a setup goes — what waits on the person
- * first, since it is waiting now. Pure, so every machine is an argument (D24's no-model tier: the
+ * first, since it is waiting now. Pure, so every machine is an argument (the no-model tier: the
  * useful part with no agent at all).
  *
  * @remarks
@@ -93,7 +92,7 @@ export function starters(
 
   for (const tool of machine.tools) {
     // No Daoris account signed in: none, or each a definite out (an `unknown` is not a lack). The tool's own
-    // sign-in does not count (D175, OWNSPACE1b-C).
+    // sign-in does not count.
     if (tool.present && tool.accounts.every((account) => account.login === 'out')) {
       found.push({
         id: 'agent-signed-out', values: { tool: tool.product ?? tool.name },

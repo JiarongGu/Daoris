@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EDIT_EVENT, fieldTracker, findTarget, runEdit } from './editing';
 
-// Edit and Find from the menu bar: on the field the person was in, and on the box in front.
+// Edit and Find from the menu bar: on the field the person is in, and on the box in front.
 
 afterEach(() => {
   document.body.innerHTML = '';

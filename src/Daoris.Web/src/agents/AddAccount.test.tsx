@@ -9,9 +9,9 @@ import { type AgentActs, AgentPage } from './AgentPage';
 import { NameAccount } from './AddAccount';
 import { CLAUDE_USE, DOORS, READ, toolsOf } from './agentsFixtures';
 
-// The add flow's last step says what an account left unnamed is called (ACCTUX1, the 2026-10-07 second opinion): the name the
-// page gives it, which for a fresh id is who signed in or a key's handle, never the id it said before, which the page shows
-// only where nothing else names it. Since POOL1c it asks only that name (D197 point 4; the account-pool design §4.1).
+// The add flow's last step says what an account left unnamed is called: the name the
+// page gives it, which for a fresh id is who signed in or a key's handle, never the id, which the page shows
+// only where nothing else names it. It asks only that name.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 const nothing = () => {};

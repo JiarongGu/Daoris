@@ -57,7 +57,7 @@ export function OfferPage({ offer, kitPoints, installing = false, onInstall }: {
       {offer.servers.length > 0 && (
         <PageSection title={t('plugin.section.servers')}><NameRows names={offer.servers} /></PageSection>
       )}
-      {/* HELPPLUG1a (D170 point 3): what it would hand Ask Daoris, said before Install. */}
+      {/* What it would hand Ask Daoris, said before Install. */}
       <HelpServers servers={offer.helpServers} />
       <SkillRows skills={offer.skills} />
       <StepRows plugin={offer.id} steps={offer.steps} resources={offer.resources} />

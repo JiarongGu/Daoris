@@ -12,7 +12,7 @@ import {
 } from './agents';
 import type { PoolReceipt } from '../settings/accounts/accounts';
 
-// The Agents place's words and facts, pure: an account's last known state with when it was read, the list's
+// The Agents place's words and facts, pure: an account's last known state with when it is read, the list's
 // rows, and each folded section's line. No bridge, so every state is an argument.
 
 const TEN = '2026-10-04T10:42:00.000Z';
@@ -68,7 +68,7 @@ describe('an account’s state, as last known', () => {
   });
 
   /**
-   * A key its provider refused reads signed out, and saying it *unchecked* told the person nothing was wrong. A
+   * A key its provider refused reads signed out, and saying it *unchecked* would tell the person nothing is wrong. A
    * refusal is kept whatever the account is, ahead of a cool-off as a sign-out is, since a reset frees neither.
    */
   it('says a key its provider refused as Key refused, ahead of a cool-off, in open’s hue while it holds work', () => {
@@ -142,7 +142,7 @@ describe('which accounts hold work', () => {
     expect(agentRows([tool!], { agents: [THREE] })[0]!.phrase).toBe('2 accounts · 1 signed out · 1 key refused');
   });
 
-  /** OWNSPACE1b-A, POOL1c: nothing starts in the tool's own sign-in, so it is never counted. */
+  /** Nothing starts in the tool's own sign-in, so it is never counted. */
   it("never counts the tool's own sign-in, even signed out with no account of Daoris's", () => {
     const [tool] = byTool([claude({ ownLogin: 'out', profiles: [] })]);
     const none: AgentAccounts = { agent: 'claude-code', speaks: false, own: {}, accounts: [], scopes: [scopeOf()] };
@@ -223,7 +223,7 @@ describe('an account’s name, as a person reads it (ACCT2)', () => {
   });
 
   /**
-   * ACCTNAME1's page half: the owner named each account by the email it signs in as, so a name and its identity that differ
+   * The owner names each account by the email it signs in as, so a name and its identity that differ
    * only in case, or in the spaces around them, are one name said once, as every name here is compared without case.
    */
   it('says a name that is its identity once, whatever its case', () => {
@@ -253,7 +253,7 @@ describe('an account’s name, as a person reads it (ACCT2)', () => {
 
 /**
  * One email signed in to two organisations is two accounts that read alike. The organisation is said where it
- * tells two of one agent's sign-ins apart, after the email and each said once (ACCTNAME1's rule); else the plan; else nothing.
+ * tells two of one agent's sign-ins apart, after the email and each said once; else the plan; else nothing.
  */
 describe('two sign-ins of one email, told apart (ACCOUNTID1b)', () => {
   beforeEach(() => i18n.changeLanguage('en'));
@@ -368,7 +368,7 @@ describe('the next start, above the accounts', () => {
     expect(nextStartSaid(near, labelOf)).toEqual({
       takes: 'The next start takes account-3: account-1 is over its curve on its weekly window, so it goes last.', held: null, doors: [],
     });
-    // Passed while another reason names a third account: its hold says which of the three holds it (SWITCH1b-iii).
+    // Passed while another reason names a third account: its hold says which of the three holds it.
     const held = scopeOf({
       list, begins: 'account-1', near: [{ account: 'account-1', window: 'session', by: 'refused' }],
       next: { account: 'account-3', reason: 'fewest', over: 'account-2', others: [{ account: 'account-1', hold: 'near' }] },
@@ -397,7 +397,7 @@ describe('the next start, above the accounts', () => {
     expect(nextStartSaid(null, labelOf)).toBeNull();
   });
 
-  /** OWNSPACE1b-A: no Daoris account signed in is its own line, said apart from a wait. */
+  /** No Daoris account signed in is its own line, said apart from a wait. */
   it('says no Daoris account is signed in, once, where the reason arrives', () => {
     expect(nextStartSaid(scopeOf({ next: { account: null, reason: 'noAccount', others: [] } }), labelOf)).toEqual({
       takes: 'No Daoris account is signed in for it; its starts wait until you sign in.', held: null, doors: [],
@@ -450,8 +450,8 @@ describe('the one act an account’s state asks for (D152 §4)', () => {
 /**
  * What an account's agent last said, as stable cells, a window each,
  * the same two for both makers, `session` then `weekly`, then any other a reading named. Each says its exact share, its
- * agent's own word, its reset and how long ago its own reading was; a window its agent did not report is unknown, in words,
- * with no bar and never 0%. One sentence of every window compared badly across windows and makers. ACCTUX1 holds:
+ * agent's own word, its reset and how long ago its own reading is; a window its agent did not report is unknown, in words,
+ * with no bar and never 0%. One sentence of every window compared badly across windows and makers. So
  * a share is a reading in the ink, a time the soft ink, and a cool-off whose length Daoris chose says the reset is unknown.
  */
 describe('what an account’s agent last said, a cell a window', () => {

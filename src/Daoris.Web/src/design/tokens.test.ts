@@ -5,11 +5,10 @@ import { TYPE_STEPS } from '../lib/cn';
 import { rooted } from '../test/sources';
 
 /**
- * **The type scale is a set of named steps, and a raw size is not one of them** (D41 §3 as amended
- * by D56).
+ * **The type scale is a set of named steps, and a raw size is not one of them**.
  *
- * The rule is held by a test because the literal form had already drifted once, silently and one
- * component at a time: the code carried **fifteen** distinct `text-[…rem]` values where D41 named
+ * The rule is held by a test because the literal form can drift, silently and one
+ * component at a time: code once carried **fifteen** distinct `text-[…rem]` values where the scale named
  * eight, and four of them — 0.7, 0.78, 0.82, 0.85 — belonged to no scale at all. Nothing reported
  * it, because a hardcoded size is valid Tailwind and renders perfectly.
  *
@@ -33,13 +32,13 @@ export function declaredColours(css: string): string[] {
   return [...css.matchAll(/^\s*--color-([a-z][a-z-]*)\s*:/gm)].map((match) => match[1]!);
 }
 
-/** Tailwind's `text-` utilities that are no size and no colour: alignment, wrapping and overflow (UX5 U41). */
+/** Tailwind's `text-` utilities that are no size and no colour: alignment, wrapping and overflow. */
 const LAYOUTS = ['left', 'center', 'right', 'justify', 'start', 'end', 'wrap', 'nowrap', 'balance', 'pretty', 'ellipsis', 'clip'];
 
 /**
- * A `text-` class, read whole: `text-h3` is `h3`. A scan that read letters alone up to a word's end took
- * `text-h3` for nothing at all, so the monitor's title wore a step no token defines and was drawn at the
- * body's size, with every check green (audit MO11, FRAME1h).
+ * A `text-` class, read whole: `text-h3` is `h3`. A scan that read letters alone up to a word's end takes
+ * `text-h3` for nothing at all, so a title wears a step no token defines and is drawn at the
+ * body's size, with every check green.
  */
 const TEXT_CLASS = /(?<![\w-])text-([a-z][a-z0-9]*(?:-[a-z0-9]+)*)/g;
 
@@ -117,7 +116,7 @@ export function scrimsOverTheStrip(files: [path: string, source: string][]): str
 /**
  * 🔴 **And neither does a PANEL.** The scrim learned to start below the strip; the drawer beside it
  * did not, and stayed `inset-y-0` — so on the deployed application its header, close button
- * included, sat exactly where the window paints its caption buttons. The × was under the ✕: not
+ * included, sat exactly where the window paints its caption buttons. The × sat under the ✕: not
  * dimmed, not clickable, not visible. Seen in a screenshot of a quest drawer, on the second
  * deployment; in a browser there is no caption to hide behind.
  */
@@ -197,7 +196,7 @@ describe('the colours', () => {
   const wears = (source: string, css = tokensCss) => undeclaredColours([['./asks/AskPage.tsx', source]], css);
 
   it('catches a colour no token defines — the check itself, in the shape bg-sunken took', () => {
-    // tokens.css as it stood before LOOK6: the box asked for a colour the theme did not have.
+    // tokens.css without a sunken colour: the box asked for a colour the theme did not have.
     const before = tokensCss.replace(/^\s*--color-sunken\s*:.*$/m, '');
     expect(before).not.toBe(tokensCss);
     expect(wears('className="mb-4 flex rounded-control border border-line bg-sunken px-2.5 py-2"', before))
@@ -383,8 +382,7 @@ describe('the surfaces', () => {
 });
 
 /**
- * 🔴 **A status word wears its hue's ink, never the fill's colour** (UXFIX5, UXFIX5c, from the 2026-10-07 second
- * opinion). The status hues were computed to tell four states apart as fills, borders and marks. Declined's dark red
+ * 🔴 **A status word wears its hue's ink, never the fill's colour**. The status hues were computed to tell four states apart as fills, borders and marks. Declined's dark red
  * drawn as a danger button's label, a refusal's sentence or a declined pill's word measured 3.95:1 on the sunken box a
  * move asks once in, 3.18:1 on an overlay and 2.94:1 on its own soft field there. Open's and done's words read 2.8 to
  * 3.8:1 in light, and taken's 4.1:1 on its field over the sunken box; in dark the three read 4.1 to 4.4:1 on their
@@ -602,9 +600,9 @@ describe('the page body', () => {
 });
 
 /**
- * 🔴 **A choice is the platform's own control, never the OS's** (UX5 U5). The start form's three
- * selects and checkbox, and a review file's *viewed*, were native controls beside the atoms', so
- * they wore the OS's look and its accent in a palette that draws its own (platform language §4).
+ * 🔴 **A choice is the platform's own control, never the OS's**. The start form's three
+ * selects and checkbox, and a review file's *viewed*, as native controls beside the atoms' wear
+ * the OS's look and its accent in a palette that draws its own.
  * `SelectField`, `CheckField` and `Segmented` are the controls; only `FormControls` builds one.
  */
 const NATIVE_CHOICE = /<select\b|type=["']checkbox["']|type=["']radio["']/g;
@@ -617,7 +615,7 @@ export function nativeChoices(files: [path: string, source: string][]): string[]
 }
 
 /**
- * 🔴 **A date and a count are in the reader's language** (UX5 U28). A quest's drawer read *发起
+ * 🔴 **A date and a count are in the reader's language**. A quest's drawer read *发起
  * 23/09/2026, 1:58:49 pm* in 中文: `toLocaleString()` with no locale takes the machine's, not the
  * page's. `format.ts` holds the helpers that name `i18n.language`, and only it formats.
  */
@@ -712,9 +710,9 @@ describe("the page's measure", () => {
 });
 
 /**
- * 🔴 **A card sets no outer margin of its own** (the UI/UX design R1, UIFIT1): cards are 16 px apart, set once by the
- * domain's container (`CardStack`). The `mt-3.5` cards wore was 14 px, off the scale's step, and a domain's first card
- * needed `[&>*:first-child]:mt-0` to undo it; two cards that forgot it touched (UIFIT1a's shots of Driver).
+ * 🔴 **A card sets no outer margin of its own**: cards are 16 px apart, set once by the
+ * domain's container (`CardStack`). An `mt-3.5` on a card is 14 px, off the scale's step, and a domain's first card
+ * would need `[&>*:first-child]:mt-0` to undo it; two cards that forgot it would touch.
  */
 const CARD_MARGIN = /<Card\b[^>]*?className=(?:"[^"]*"|'[^']*'|\{[^}]*\})/g;
 const OUTER_MARGIN = /(?:^|[\s"'`])-?m[tbxylr]?-(?:\d|\[|px|auto)/;
@@ -746,7 +744,7 @@ describe('the cards', () => {
 });
 
 /**
- * 🔴 **A form is sized to its content up to the pane** (the UI/UX design R1, UIFIT1d): nothing caps it below the pane.
+ * 🔴 **A form is sized to its content up to the pane**: nothing caps it below the pane.
  * The 40rem and 48rem caps settings' forms wore left half of a wide pane to a form that wanted it, and every one of
  * them passed its stories, which were drawn narrower than the cap. A field's own width (a number's 4.5rem, a name's
  * 16rem) is what it holds, and stays; a cap on a form or a grid of fields goes, and `FormGrid` lays the form out.
@@ -789,10 +787,9 @@ describe('the forms', () => {
 });
 
 /**
- * 🔴 **A region lays out by its own width, never the viewport's** (the frame model §3b, D118; the UI/UX design R7,
- * UIFIT1d): no `sm:`, `md:`, `lg:`, `max-sm:`, `min-[…]:` or their kin inside a region, which is a container query on
+ * 🔴 **A region lays out by its own width, never the viewport's**: no `sm:`, `md:`, `lg:`, `max-sm:`, `min-[…]:` or their kin inside a region, which is a container query on
  * the region or the component. The side bar and the list narrow a region without the window changing: a form at 630 px
- * of pane kept its three columns because the window was 1546. What is placed against the window keeps its viewport
+ * of pane kept its three columns because the window measured 1546. What is placed against the window keeps its viewport
  * variants, by its responsibility, not its file.
  */
 const VIEWPORT_VARIANT = /(?<![@\w/-])(?:(?:max-)?(?:sm|md|lg|xl|2xl)|(?:min|max)-\[[^\]]+\]):(?=[\w[-])/g;

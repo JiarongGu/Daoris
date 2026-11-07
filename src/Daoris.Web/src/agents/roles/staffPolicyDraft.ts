@@ -1,6 +1,6 @@
 import type { RolePolicyRow, StaffPolicy, StaffPolicyChoice } from '../../data/wiring';
 
-/** The presets the doors take (STAFFPOLICY1, the staff policy design §2.4); a preset fills the form and never saves. */
+/** The presets the doors take; a preset fills the form and never saves. */
 export type Preset = 'first' | 'even' | 'weighted';
 
 /** A choice as the editor holds it for the policy: text while typed, so a half-typed number or an IME composition survives. */
@@ -15,7 +15,7 @@ export type PolicyFields = {
   works?: string[] | null;
 };
 
-/** A role's policy as the editor holds it: the rule it was opened on. Its moves to another choice and their bound are the supervisor's rules. */
+/** A role's policy as the editor holds it: the rule it is opened on. Its moves to another choice and their bound are the supervisor's rules. */
 export type PolicyDraft = {
   state: RolePolicyRow['policyState'];
   /** The policy revision read when the editor opened; a save against a moved one is refused. */
@@ -105,7 +105,7 @@ export function recordOf(drafts: readonly Tuple[], policy: PolicyDraft): StaffPo
   return { rule: weighted ? 'weight' : 'order', choices };
 }
 
-/** Keeps the digits of what was typed or composed, full-width digits as ASCII ones. */
+/** Keeps the digits of what is typed or composed, full-width digits as ASCII ones. */
 export const digits = (typed: string): string => typed.normalize('NFKC').replace(/\D+/g, '');
 
 /** A weight stepped by one, held to 0 to 10. */

@@ -21,7 +21,7 @@ function keptWords(t: (key: string, options?: Record<string, unknown>) => string
 export const removable = (row: DownloadedVersion) => row.unfinished || !row.keeps;
 
 /**
- * The Downloads row's clearing (CACHECLEAR1, D88's shape): every version the agents and tools downloaded under `cache/`, listed
+ * The Downloads row's clearing: every version the agents and tools downloaded under `cache/`, listed
  * first with its size and what keeps it, then one press that removes those nothing uses. The driver judges each again right before
  * it goes, so the press's answer may keep a row the list offered, and says why; a version kept is never offered to be forced.
  * The rule's sentence, and beside each version nothing uses the day the rule takes it, once a pass has found it unused.

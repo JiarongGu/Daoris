@@ -7,7 +7,7 @@ import type { Answered } from '../../work/InlineConfirm';
 import { PlaceRolesView } from './PlaceRoles';
 import { AGENTS, CATALOGUE, CHAIN } from './setupFixtures';
 
-// A place's Roles (SETUPUX1l, the setup-UX design §2.4): only the works that differ from the parent as rows, the rest folded to one line
+// A place's Roles: only the works that differ from the parent as rows, the rest folded to one line
 // naming them; the role editor opened in place from *Give … its own…* or *Edit*; a role shared by two works edited once with both named;
 // the driver's refusal under the editor. At the main area's three widths (80, 39 and 25 rem), in both languages and both themes; a
 // `play` presses what a person would, by keyboard-reachable controls.

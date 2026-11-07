@@ -4,7 +4,7 @@ import type { NodeContext } from './FlowCanvas';
 import { Icon, Pill } from './ui';
 
 /**
- * One node of a flow (FLOWCHART1a1; D186 §3.3): a glyph and title, a state's pill, who acts, the caller's lines and a foot of presses,
+ * One node of a flow: a glyph and title, a state's pill, who acts, the caller's lines and a foot of presses,
  * in reading order. The canvas places it; a caller whose nodes need more (the workflow's steps and their ports) draws its own.
  */
 export function FlowNodeBox({ node, stop, feet, description, onFollow, style }: NodeContext) {
@@ -23,7 +23,7 @@ export function FlowNodeBox({ node, stop, feet, description, onFollow, style }: 
       style={style}
       className={cn(
         'min-w-0 rounded-card bg-raised px-3 py-2',
-        // A state never changes the box: the current node's second pixel is an inset ring, not a wider border (CANVAS1b, trap 8).
+        // A state never changes the box: the current node's second pixel is an inset ring, not a wider border.
         node.current ? 'border border-ink-soft ring-1 ring-inset ring-ink-soft' : faint ? 'border border-dashed border-line-strong' : 'border border-line',
       )}
     >

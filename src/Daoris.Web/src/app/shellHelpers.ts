@@ -6,15 +6,14 @@ import { stored } from '../lib/stored';
 export type Tab = View;
 
 /**
- * Whether the person was last watching Sessions — a per-browser preference like the language and the
- * scope, never machine wiring and never a tracked file. Only Sessions is worth returning to (D55's
- * reason for remembering a mode, kept when the mode went — D66): a relaunch lands on Overview, the
- * landing view, unless the person was attending work.
+ * Whether the person last watched Sessions — a per-browser preference like the language and the
+ * scope, never machine wiring and never a tracked file. Only Sessions is worth returning to: a relaunch
+ * lands on Overview, the landing view, unless the person had been attending work.
  */
 export const VIEW = 'daoris.view';
 
-// What each view's list has chosen is its list's memory since FRAME1c (`work/frame/listPanes.ts`, D118 §3f),
-// in the keys that predate it: the session attended, since relaunching into Sessions landed on
+// What each view's list has chosen is its list's memory (`work/frame/listPanes.ts`),
+// in its older keys: the session attended, since relaunching into Sessions landed on
 // *Nothing attended* while a session sat parked, and Settings' domain, so the gear returns to it.
 // A session whose record is gone is let go by the Work frame, a remembered record that closed or went
 // once its view reads it, and a domain this window cannot show opens on Appearance, so a stale
@@ -25,12 +24,12 @@ export function rememberedView(): Tab {
   return stored(VIEW) === 'sessions' ? 'sessions' : 'overview';
 }
 
-// The activity bar: every view but Settings, which has its own gear. Sessions — what the Work frame
-// was — is absent in a browser rather than disabled.
+// The activity bar: every view but Settings, which has its own gear. Sessions — the Work frame —
+// is absent in a browser rather than disabled.
 export const NAV = VIEWS.filter(({ view }) => view !== 'settings');
 
 /**
- * A place's marks (BADGEUX1, the UI/UX design §3.10): its number, what waits on the person there; its running mark, work under way
+ * A place's marks: its number, what waits on the person there; its running mark, work under way
  * there; and both in words for its tip and its description, the waits first, as the taskbar says them. Sessions says its work under
  * way, Quests its quests taken; no other place runs work.
  */
@@ -44,9 +43,9 @@ export function placeMarks(place: View, waits: number, running: number, t: (key:
 
 /**
  * The views drawn with a list pane, each naming it in `layout.list.<view>` and
- * `layout.menu.list.<view>`. Sessions' first, then Plugins, built on the frame, then Quests,
- * Repositories, Settings, and Convergence and Search, one place since UX6i:
- * every view but Overview and Map, which have none (§4). Knowledge names its list by its mode's (`listOf`).
+ * `layout.menu.list.<view>`. Sessions' first, then Plugins, then Quests,
+ * Repositories, Settings, and Knowledge (Convergence and Search, one place):
+ * every view but Overview and Map, which have none. Knowledge names its list by its mode's (`listOf`).
  */
 export const LISTED: ReadonlySet<ListView> = new Set<ListView>([
   'sessions', 'plugins', 'quests', 'projects', 'knowledge', 'agents', 'settings',

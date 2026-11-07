@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { areas } from '../../locales';
 
 // The set-up's own delivery names and lines are gone. A delivery is worded by its id from the page's
-// catalogues (`workflow.shipped.delivery.*`) and *Not driven* by a chrome key, so a key census finds the old ones gone from both languages
+// catalogues (`workflow.shipped.delivery.*`) and *Not driven* by a chrome key, so a key census finds none of those names in either language
 // and from every source that read them.
 
 const GONE = ['agents.setup.' + 'defaultName', 'agents.setup.set.' + 'line.'];

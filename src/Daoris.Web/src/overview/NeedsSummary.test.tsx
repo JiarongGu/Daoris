@@ -8,7 +8,7 @@ import type { Confirmation } from '../person/Confirmations';
 import type { PushedAttention } from '../work/attention/attention';
 import { NeedsSummary } from './NeedsSummary';
 
-// Overview's summary of what needs the person (NOTIFY2b, D196 point 5, the notification design §4): a line per group with its count
+// Overview's summary of what needs the person: a line per group with its count
 // and its oldest wait, each a door into *Notifications* at its group, and no row listed; with nothing waiting, today's one line; in a
 // plain browser, that this is the app's.
 

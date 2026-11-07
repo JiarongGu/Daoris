@@ -9,8 +9,8 @@ import { ListRowDoor } from '../work/frame/ListPane';
 
 /**
  * An ask's state as a pill tone: waiting on a person while it is asked or proposed — a proposal is a
- * person's to accept — quiet once it became quests (QUESTLISTS1: their work is not finished, so the done hue
- * was a false report) or closed, done once their work finished. Exhaustive at compile time, as `QUEST_TONE` is.
+ * person's to accept — quiet once it becomes quests (their work is not finished, so the done hue
+ * would be a false report) or closed, done once their work finished. Exhaustive at compile time, as `QUEST_TONE` is.
  */
 export const ASK_TONE: Record<AskState, 'open' | 'done' | 'neutral'> = {
   Open: 'open',
@@ -27,9 +27,9 @@ export const askEnded = (ask: Ask) => ask.state === 'Closed' || ask.state === 'D
 export const firstLine = (sentence: string) => sentence.split('\n', 1)[0].trim();
 
 /**
- * The asks as the list reads them (UX5 U32): what has waited longest first, and a closed or done ask
+ * The asks as the list reads them: what has waited longest first, and a closed or done ask
  *  after every live one, as a closed quest comes after the open ones. The service lists newest
- * first, which is its terminal door's order; the group ran in it, under quests that run oldest first.
+ * first, which is its terminal door's order; the group does not keep it, as the quests beneath it run oldest first.
  */
 export function asksInOrder(asks: readonly Ask[]): Ask[] {
   const ended = (ask: Ask) => (askEnded(ask) ? 1 : 0);
@@ -48,7 +48,7 @@ export function tierWords(
   return t(form === 'short' ? `asks.tierShort.${tier}` : `asks.tier.${tier}`, { defaultValue: tier });
 }
 
-/** The intake states in which an ask is its intake's to answer, not yet the person's (D65 §1b). */
+/** The intake states in which an ask is its intake's to answer, not yet the person's. */
 const INTAKE_READING: ReadonlySet<Session['state']> = new Set(['queued', 'starting', 'working']);
 
 /**
@@ -58,8 +58,8 @@ const INTAKE_READING: ReadonlySet<Session['state']> = new Set(['queued', 'starti
  *
  * @remarks
  * **It says what it waits for, as the band does**: an intake reading it, or an
- * intake that parked asking the person. Without that, five rows read "proposed" alike while one was
- * somebody else's to answer and one was waiting on the reader. Its place is named as a workspace,
+ * intake that parked asking the person. Without that, five rows would read "proposed" alike while one is
+ * somebody else's to answer and one waits on the reader. Its place is named as a workspace,
  * because a bare name beside `game → engine` reads as one more repository.
  */
 export function AskRow({ ask, intake = null, unread = 0, chosen = false, onOpen }: {
@@ -97,7 +97,7 @@ export function AskRow({ ask, intake = null, unread = 0, chosen = false, onOpen 
         <span className="flex items-baseline justify-between gap-2">
           <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
           <span className="flex items-baseline gap-2">
-            {/* News waits on nobody, so its count is a neutral pill: open's hue is the person's waits alone (BADGEUX1). */}
+            {/* News waits on nobody, so its count is a neutral pill: open's hue is the person's waits alone. */}
             {unread > 0 && <Pill tone="neutral">{t('asks.channel.unread', { count: unread })}</Pill>}
             <CarriedCount links={ask.links.length} files={ask.attachments.length} />
           </span>

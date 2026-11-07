@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { graphLanes } from './graphLanes';
 
-// A commit graph's lanes (UX6h1, the built-in Git design §2.3): laid by the page from each commit's parents, never read from
+// A commit graph's lanes: laid by the page from each commit's parents, never read from
 // `git log --graph`'s drawing. The commits come as `GIT_GRAPH` answers them, newest first in date order, each with its
 // parents' whole ids, the first parent first. A row's lines run from its centre to the next row's.
 

@@ -64,7 +64,7 @@ export function setupRows({ driving, drivingLine, t, repository, busy, i18n, lin
               control={<CheckField checked={driving.held} disabled={busy} onChange={driving.onHold} label={t('projects.driver.hold')} hideLabel />}
             />
           )}
-          {/* Session trees (D51): its sessions open their own worktree, so the person's uncommitted work in the
+          {/* Session trees: its sessions open their own worktree, so the person's uncommitted work in the
               checkout stops holding the driver. */}
           <SettingRow
             label={t('projects.driver.trees')}

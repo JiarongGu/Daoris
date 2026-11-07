@@ -4,7 +4,7 @@ import type { MenuAct } from '../design/ui';
 import { actMenu } from '../work/acts';
 import { ContextMenu } from './ContextMenu';
 
-// The right-click menu: MENU1's menu at a point, its groups between rules, as each press is on — a session's
+// The right-click menu: the menu at a point, its groups between rules, as each press is on — a session's
 // row, a quest's page, selected words, a link on a shell and in a browser, a code span, a link on a page, and in 中文. A
 // molecule, so each is reached by passing it; what a press is on is `press.ts`'s rule and held by its tests.
 

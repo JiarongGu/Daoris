@@ -237,7 +237,7 @@ describe('when an item applies (D152 §2, the design §3.3)', () => {
     expect(entry(table({ view: 'map', list: null }), 'view.list')).toBeUndefined();
   });
 
-  /** Knowledge's list is its mode's, the result list or the finding list, as each was named when it was a place. */
+  /** Knowledge's list is its mode's, the result list or the finding list, as each is named. */
   it("names Knowledge's list by what it holds in the mode in front", () => {
     expect(entry(table({ view: 'knowledge', knowledge: 'search', list: { shown: true } }), 'view.list')?.label)
       .toBe('layout.menu.list.search');
@@ -332,7 +332,7 @@ describe("what left the activity bar's foot (UX6j)", () => {
 
 /**
  * Search and Convergence are one place, Knowledge, and every door either had still reaches its list: Go
- * › Knowledge (Ctrl+6, where Convergence was) opens the place in the mode it was left in, Edit › Search knowledge
+ * › Knowledge (Ctrl+6) opens the place in the mode it is left in, Edit › Search knowledge
  * (Ctrl+Shift+F) its Search, and the palette's *Go to: Convergence* its Convergence, in no menu, since Go's row is the
  * place.
  */
@@ -399,7 +399,7 @@ describe('the palette reads the same table (D152 §2)', () => {
     expect(palette.find((each) => each.id === 'help.log')).toMatchObject({ title: 'command.settingsAt(settings.domain.logs)' });
   });
 
-  /** The design §3.7: what the Agents menu held keeps a palette row, each a part of the Agents place or Overview's. */
+  /** What the Agents menu held keeps a palette row, each a part of the Agents place or Overview's. */
   it('keeps the Agents menu\'s sections as palette rows on a shell, and in no menu', () => {
     const on = doors();
     const entries = table({}, on);

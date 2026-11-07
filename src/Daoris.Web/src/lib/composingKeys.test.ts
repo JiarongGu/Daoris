@@ -90,7 +90,7 @@ const shipped = Object.entries(sources).filter(([path]) => !HARNESS.test(path));
 
 describe('a key an input method is composing with', () => {
   it('catches a handler it is meant to catch — the check itself, sabotaged', () => {
-    // The composer's shape before IME1.
+    // The shape of a composer that acts on Enter without asking whether an input method is composing.
     expect(unasked([['./work/Box.tsx', "const keys = (event) => { if (event.key === 'Enter' && !event.shiftKey) say(); };\n"]]))
       .toEqual(['./work/Box.tsx:1 Enter']);
     // Either side, inequality, a key of its own, a code, and a case in a switch on the key.

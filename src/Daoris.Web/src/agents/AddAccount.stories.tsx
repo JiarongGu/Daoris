@@ -7,10 +7,10 @@ import { NameAccount, RenameAccount, ReSignIn } from './AddAccount';
 import { accountState } from './agents';
 import { READ } from './agentsFixtures';
 
-// *Add an account…*'s steps (UX7b, the UX7 design §4.5; POOL1c, the account-pool design §4.1), each a molecule drawn alone: step
+// *Add an account…*'s steps, each a molecule drawn alone: step
 // 1 steering a person signing an account back in to its row, step 3 saying the new account joined Daoris's accounts and asking
 // its name, and a rename. Step 2 is the tool's own sign-in, `SignIn`, which is an organism. Each drawn at the main area's
-// widths (the UI/UX design R6), in English and 中文, light and dark. The words are the catalogue's, read as each story renders,
+// widths, in English and 中文, light and dark. The words are the catalogue's, read as each story renders,
 // so a story in 中文 is in 中文.
 
 const nothing = () => {};

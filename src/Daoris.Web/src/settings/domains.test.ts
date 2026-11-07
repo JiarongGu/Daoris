@@ -60,8 +60,8 @@ describe('the Settings registry', () => {
   });
 
   /**
-   * The first domain is *Get started* again, as D97 named it, since *Setup* names a repository's
-   * and a workspace's tab now. Its id was always `start`.
+   * The first domain is *Get started*, since *Setup* names a repository's
+   * and a workspace's tab. Its id is `start`.
    */
   it('names the first domain Get started, which Setup no longer names', () => {
     expect(SETTINGS_DOMAINS[0]).toMatchObject({ id: 'start', label: 'settings.domain.start' });
@@ -86,7 +86,7 @@ describe('the Settings registry', () => {
    * domain itself.
    */
   it('is the frame\'s only way to a domain: it imports only the list and its rows from Settings\', and declares only the frame', () => {
-    // The frame sits in `settings/` beside the domains since STRUCT5c, so what it takes from Settings is `./…`.
+    // The frame sits in `settings/` beside the domains, so what it takes from Settings is `./…`.
     const reached = new Set([...frame.matchAll(/from\s+'\.\/([\w./-]+)'/g)].map((match) => match[1]));
     expect([...reached].sort()).toEqual(['DomainList', 'domains']);
     const declared = [...frame.matchAll(/^(?:export\s+)?function\s+(\w+)/gm)].map((match) => match[1]);

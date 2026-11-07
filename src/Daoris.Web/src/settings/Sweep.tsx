@@ -31,7 +31,7 @@ export type SweepBranch = {
   removable: boolean;
   /**
    * Whether its discard is offered beside it, by the driver's own rule: a failed or superseded attempt's commits,
-   * which no clean-up takes. An answer without LAND3b carries none, and nothing is offered.
+   * which no clean-up takes. An answer without it carries none, and nothing is offered.
    */
   discardable?: boolean;
   /**
@@ -46,7 +46,7 @@ export type SweepBranch = {
   landable?: boolean;
 };
 
-/** What discarding a session branch answered: done, or the driver's sentence for why it was kept. */
+/** What discarding a session branch answers: done, or the driver's sentence for why it is kept. */
 export type BranchDiscard = { repository: string; branch: string; done: boolean; message: string };
 
 /**
@@ -66,8 +66,8 @@ export const sayDiscard = (notify: Notify, t: (key: string, options?: Record<str
   };
 
 /**
- * A session branch's discard, asked once (LAND3b, D102's LAND3 note): it names the branch, its repository, its tree where
- * it still has one, and that its commits go with it for good, beside the move and *never mind* (platform language §4).
+ * A session branch's discard, asked once: it names the branch, its repository, its tree where
+ * it still has one, and that its commits go with it for good, beside the move and *never mind*.
  * The commits are the ones the driver counted that no branch of the person's holds; the press is forced, as
  * `daoris tree remove <branch> --repository <name> --force` is. The one inline confirmation: open until
  * the discard lands, a branch the driver kept said inside it.
@@ -119,11 +119,11 @@ export type LandedBranch = {
   /** Ahead of its remote: the commits the remote lacks; otherwise those the line lacks. */
   commits: number;
   removable: boolean;
-  /** When the landing recorded it (LANDRETIRE1 part 2), the age its row says; the answer is none. */
+  /** When the landing recorded it, the age its row says; the answer is none. */
   landedAt?: string | null;
   /** The quest the landing is named for, where it names one. */
   quest?: string | null;
-  /** Whether the service says that quest is closed: false where it was not read, so a row never says a quest closed on no answer. */
+  /** Whether the service says that quest is closed: false where it is not read, so a row never says a quest closed on no answer. */
   questClosed?: boolean;
 };
 
@@ -149,7 +149,7 @@ export const sayWithdraw = (notify: Notify, t: (key: string, options?: Record<st
   };
 
 /**
- * A landing's branch withdrawn, asked once (LANDRETIRE1, D102's note): it names the branch and its repository, that the line will never
+ * A landing's branch withdrawn, asked once: it names the branch and its repository, that the line will never
  * hold its work and its commits stay on a recovery ref, and asks the reason the record keeps; the move waits for one, as
  * `daoris tree remove <branch> --repository <name> --why "…"` asks `--why`. The one inline confirmation.
  */
@@ -203,8 +203,8 @@ export const BRANCH_ROWS = '@container/branches m-0 list-none p-0';
  * @remarks
  * **Its columns follow its list's width** (`BRANCH_ROWS`). Three where the list holds 30rem: the mark, the name up to 16rem,
  * and the sentence never under 13rem, so neither is a word a line at a 680 px window. Narrower, the name stays beside its
- * mark and the sentence goes under the name. At the main area's 400 px floor the three columns stayed, and the sentence was
- * left whatever width the name did not take.
+ * mark and the sentence goes under the name. At the main area's 400 px floor the three columns stay, and the sentence is
+ * left whatever width the name does not take.
  *
  * **Its name is shown whole and heard whole.** It wraps after its separators as a path does (`PathText`). It is never cut
  * to one line with the rest in a tip, since a tip is reached by neither a keyboard nor a reader. The row is named by
@@ -254,12 +254,12 @@ export function BranchRow({ name, moving, word, children, under }: {
  * branch of the person's, and the landed branch's plugin answered that its pull request carried them, where git confirms it.
  * Its row names that landed branch.
  *
- * **A failed or superseded attempt's branch is discarded by its own press** (LAND3b, D102's LAND3 note): its commits are on
+ * **A failed or superseded attempt's branch is discarded by its own press**: its commits are on
  * no branch of the person's, so the clean-up keeps it. Beside each row the driver says `discardable`, *Discard branch…*
  * asks once under the row and then discards it, as `daoris tree remove … --force` does beside the same rows. The
  * ask stays open until the driver answers, and says a branch it kept inside itself.
  *
- * **A kept branch whose tree is still here says how it lands** (LAND4, D102's LAND4 note): where the driver says `landable`,
+ * **A kept branch whose tree is still here says how it lands**: where the driver says `landable`,
  * the row names the session its tree is and how it ended, and that its page offers Accept, as `daoris tree land`
  * does from the terminal, whose list prints that line beside the same row. Words only: the press is the session's.
  */
@@ -335,7 +335,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
   const beneath = (branch: LandedBranch) => branch.kind === 'differs'
     ? branch.files.join(', ')
     : branch.kind === 'unknown' ? branch.detail ?? null : null;
-  // LANDRETIRE1 part 2: how long a row the line does not hold has stood, and whether its quest is closed, as `trees clean` says it.
+  // How long a row the line does not hold has stood, and whether its quest is closed, as `trees clean` says it.
   const standing = (branch: LandedBranch) => {
     if (branch.removable || !branch.landedAt) return null;
     const when = ago(branch.landedAt);
@@ -380,7 +380,7 @@ export function SweepList({ branches, landed, busy, onLook, onClean, onDiscard, 
                   {branch.kind === 'unlanded' && branch.detail && (
                     <span className="mt-0.5 block whitespace-pre-line font-mono text-meta text-ink-faint">{branch.detail}</span>
                   )}
-                  {/* LAND4: whose work it is, and how it lands: its session's page, or the terminal's line beside the row. */}
+                  {/* Whose work it is, and how it lands: its session's page, or the terminal's line beside the row. */}
                   {branch.landable && branch.session && (
                     <span className="mt-0.5 block">
                       <Inline text={t('settings.sweep.lands', {

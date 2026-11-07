@@ -6,7 +6,7 @@ import { type AccountState, type AccountUsage, readLine, stateWhen, stateWord, t
 /**
  * A window's share of its own allowance, drawn: thin and square-ended on a track that shows the whole allowance, as
  * wide as the share and never wider, with no minimum, so 1% stays 1% and is not a blob (the second opinion's mock-ups); a
- * share past the allowance fills the track, and the words beside it say the share as it was said. The warning hue only where
+ * share past the allowance fills the track, and the words beside it say the share as given. The warning hue only where
  * its agent said the window is reached or ahead of its pace, a warning still though never near. For the eye
  * alone: a reader hears the share in words.
  */
@@ -19,8 +19,8 @@ function Allowance({ used, warned }: { used: number; warned: boolean }) {
 }
 
 /**
- * One window's cell: its name, its bar and what a person acts on in the ink (ACCTUX1: at 11 px in the faint ink
- * the line read 3.38:1 in light, as metadata, which it is not), its share against its curve after it; then its
+ * One window's cell: its name, its bar and what a person acts on in the ink (at 11 px in the faint ink
+ * the line reads 3.38:1 in light, as metadata, which it is not), its share against its curve after it; then its
  * reset and its reading's age and source together in the soft ink, on the same line where the cell is wide enough and whole
  * on the next where it is not, the mock-ups' two lines, never a time stranded on a line of its own. An unknown window says so
  * in the soft ink, with no bar.
@@ -34,11 +34,11 @@ function WindowCellView({ cell }: { cell: WindowCell }) {
         {cell.used !== null && <Allowance used={cell.used} warned={cell.warned || cell.over === true} />}
         <span className={cell.known ? 'text-ink' : 'text-ink-soft'}>
           {cell.reading}
-          {/* Against its curve now (SWITCH1d): over it is what a person acts on, in the ink; under it, the soft ink. */}
+          {/* Against its curve now: over it is what a person acts on, in the ink; under it, the soft ink. */}
           {cell.curve && <span className={cell.over ? 'text-ink' : 'text-ink-soft'}>{t('agents.said.comma')}{cell.curve}</span>}
         </span>
       </span>
-      {/* Its projection to now (USAGEPROBE1b): what a person checks use for, in the soft ink beside the reading. */}
+      {/* Its projection to now: what a person checks use for, in the soft ink beside the reading. */}
       {cell.projected && <span className="min-w-0 text-ink-soft">{cell.projected}</span>}
       {cell.times.length > 0 && (
         <span className="min-w-0 text-ink-soft">
@@ -55,21 +55,21 @@ function WindowCellView({ cell }: { cell: WindowCell }) {
   );
 }
 
-// The columns' wide form is the main area at 40rem and over, a container query on it (D118 §3b), never the window: at the
+// The columns' wide form is the main area at 40rem and over, a container query on it, never the window: at the
 // install's 800 px main area the columns fit, and at 680 px the row stacks. Every class names it whole, `@min-[40rem]/main:`,
 // since the stylesheet is built from the class names the sources spell out.
 
 /**
  * The accounts' columns: *Account*, *State*, *Now*, the act and the ⋯, on the list itself so every row's
- * cells line up, each row a subgrid of it. Below 40rem of main area the list is no grid and each row stacks. *Runs for* went
- * with POOL1c (the account-pool design §4.2): every account of Daoris's runs for every workspace.
+ * cells line up, each row a subgrid of it. Below 40rem of main area the list is no grid and each row stacks. There is no
+ * *Runs for* column: every account of Daoris's runs for every workspace.
  */
 export const ACCOUNT_COLUMNS = 'm-0 list-none p-0 @min-[40rem]/main:grid @min-[40rem]/main:grid-cols-[minmax(0,1.35fr)_minmax(0,1.25fr)_minmax(0,0.6fr)_auto_1.75rem] @min-[40rem]/main:gap-x-3';
 
 /**
  * The columns' names over the rows, drawn only where the row is one line: at 680 px a header would name columns that are not
  * there, and the stacked row names each fact by its place. Hidden from a reader, whose row names each
- * fact itself (`Fact`, ACCTUX2).
+ * fact itself (`Fact`).
  */
 export function AccountColumnsHead() {
   const { t } = useTranslation();
@@ -106,27 +106,27 @@ function stateWhy(t: (key: string) => string, state: AccountState, now?: Date): 
  * **One account on its agent's page**: one line at 1546 px, in the list's columns, and three short lines at
  * 680. Its name leads, the account's, with who signed in beside it where the two differ, in the same place on every row and
  * never one as title and the other faint; then its state as last known and when (none for your own sign-in, which Daoris never
- * asks, POOL1c), what runs on it now, its one act by state and its ⋯ with the rest. What its agent last said is under that row alone,
+ * asks), what runs on it now, its one act by state and its ⋯ with the rest. What its agent last said is under that row alone,
  * a cell a window, the session's and the week's on every row whose agent can say them, each unknown in words until
  * it does; *nothing said yet* and *0 sessions* are not said.
  *
  * @remarks
  * **A molecule**: every state arrives as props, and every press goes out. Nothing here asks the agent anything: a state is
- * what was last read, and reading again is the person's press. The panels a press opens on the row (a
+ * what is last read, and reading again is the person's press. The panels a press opens on the row (a
  * sign-in, *Remove…*'s ask, a rename, a new key) arrive as children, so they sit under the row that
  * asked, across every column. It holds one thing of its own: whether its state's explanation is open.
  *
- * **Read without a pointer** (ACCTUX2, the second opinion's account section): who signed in is said whole and wraps, where it
- * was cut into a tip no key reached; each fact is named for a reader on its row, since the columns' names are not read; and
+ * **Read without a pointer**: who signed in is said whole and wraps, not cut into a tip no key reaches; each fact
+ * is named for a reader on its row, since the columns' names are not read; and
  * why a state reads as it does (a cool-off's whose-time, a key's check or refusal) opens under the row from a press a
- * keyboard reaches, where it was a tip on hover alone.
+ * keyboard reaches, not from a tip on hover alone.
  */
 export function AccountRow({ name, label = name, who, id, home, why, state, current, usage, act, menu, now, children }: {
   /** What leads: the person's name for it, a key's handle, who signed in for a fresh id, its id, or *Your own sign-in*. */
   name: string;
   /**
    * The row's name for a reader: its name, with what tells it apart where another sign-in of its agent reads alike
-   * (ACCOUNTID1b, `accountLabel`), so no two rows are one name to a screen reader. Absent, the name.
+   * (`accountLabel`), so no two rows are one name to a screen reader. Absent, the name.
    */
   label?: string;
   /** Who signed in, beside the name where the two differ, and the organisation where it tells two apart. */
@@ -138,8 +138,7 @@ export function AccountRow({ name, label = name, who, id, home, why, state, curr
   /** What the row is, on its name's ⓘ: your own sign-in's explanation, one press away rather than a paragraph (§4.3). */
   why?: string;
   /**
-   * Its state as last known; absent for your own sign-in, which Daoris never asks (POOL1c, D197 point 3; the account-pool design
-   * §3 point 3), so it has no state to show and no time that would only age.
+   * Its state as last known; absent for your own sign-in, which Daoris never asks, so it has no state to show and no time that would only age.
    */
   state?: AccountState;
   /** *Now*: *1 session* while something runs on it; null leaves the cell blank. */
@@ -161,7 +160,7 @@ export function AccountRow({ name, label = name, who, id, home, why, state, curr
   const when = state ? stateWhen(state, now) : null;
   // Why the state reads so, opened under the row from its press; a state its word says whole has none.
   const explanation = state ? stateWhy(t, state, now) : null;
-  // The time's tip says it whole where nothing else does: when it was read. A cool-off's is the explanation's.
+  // The time's tip says it whole where nothing else does: when it is read. A cool-off's is the explanation's.
   const tip = !state || explanation ? null : readLine(state, now);
   const nameTip = id && id !== name ? (home ? `${id} · ${home}` : id) : home;
   const named = <span className="min-w-0 text-body font-medium text-ink [overflow-wrap:anywhere]">{name}</span>;
@@ -169,13 +168,13 @@ export function AccountRow({ name, label = name, who, id, home, why, state, curr
   return (
     <li
       aria-label={label}
-      // A line at 1546 px (D152 §4.2, a row at most 36 px): the act's own padding is the row's air, so the row adds little.
+      // A line at 1546 px (a row at most 36 px): the act's own padding is the row's air, so the row adds little.
       className="grid grid-cols-[minmax(0,1fr)_auto_1.75rem] items-center gap-x-3 gap-y-0.5 border-t border-line py-1 @min-[40rem]/main:col-span-full @min-[40rem]/main:grid-cols-subgrid @min-[40rem]/main:py-0.5"
     >
       <span className="col-start-1 row-start-1 flex min-w-0 flex-wrap items-baseline gap-x-2">
         {nameTip ? <Tip content={nameTip}>{named}</Tip> : named}
         {why && <span className="self-center"><WhyGlyph why={why} /></span>}
-        {/* Who signed in, whole, wrapping where the column is narrow: in a tip it was cut, and no key reached it (ACCTUX2). */}
+        {/* Who signed in, whole, wrapping where the column is narrow: in a tip it would be cut, and no key reaches it. */}
         {who && <span className="min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">{who}</span>}
       </span>
 
@@ -183,10 +182,10 @@ export function AccountRow({ name, label = name, who, id, home, why, state, curr
       {word && (
         <span className="col-span-3 col-start-1 row-start-2 flex min-w-0 flex-wrap items-baseline gap-x-1.5 text-small text-ink-soft @min-[40rem]/main:col-span-1 @min-[40rem]/main:col-start-2 @min-[40rem]/main:row-start-1">
           <Fact label={t('agents.col.state')} />
-          {/* 🔴 A key is never said to be signed in (AGT3): the tool says so for any key, a wrong one included. One its
-              provider refused says so, and its explanation what repairs it (ACCTUX1). */}
+          {/* 🔴 A key is never said to be signed in: the tool says so for any key, a wrong one included. One its
+              provider refused says so, and its explanation what repairs it. */}
           <Pill tone={word.tone}>{word.label}</Pill>
-          {/* When it was read, or a hold's end, is a time the person acts on: the soft ink, not the faint (ACCTUX1). */}
+          {/* When it is read, or a hold's end, is a time the person acts on: the soft ink, not the faint. */}
           {when && (tip ? <Tip content={tip}>{time}</Tip> : time)}
           {explanation && (
             <Button
@@ -246,7 +245,7 @@ export function AccountRow({ name, label = name, who, id, home, why, state, curr
           {explanation}
         </p>
       )}
-      {/* What its agent last said (ACCTUX4): a cell a window, the session's and the week's in two columns at every width, so
+      {/* What its agent last said: a cell a window, the session's and the week's in two columns at every width, so
           each sits in the same place on every row and two makers compare cell by cell; then the account's own notes. */}
       {usage && (
         <div data-usage className="col-span-full col-start-1 min-w-0 text-small text-ink-soft [overflow-wrap:anywhere]">

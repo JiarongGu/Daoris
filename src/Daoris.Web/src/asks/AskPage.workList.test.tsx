@@ -114,7 +114,7 @@ describe("an ask's page lists its work", () => {
     expect(within(section()).getByText('#5e4f3d')).toBeInTheDocument();
   });
 
-  // FABRIC-CLOSE1d2: a quest of the work reads as the quest's page does, from the quests the page holds.
+  // A quest of the work reads as the quest's page does, from the quests the page holds.
   it('says submitted and source reopened for the work\'s quests the page holds so, and taken for the rest', () => {
     const held = (id: string, over: Partial<Quest>): Quest => aQuest({
       id, from: 'ask #a1b2c3', to: 'engine', title: id, body: '', status: 'Taken', filed: '2026-10-01T00:00:00Z', updated: '2026-10-01T00:00:00Z', ...over,

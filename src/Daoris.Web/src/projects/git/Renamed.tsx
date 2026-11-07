@@ -12,7 +12,7 @@ type Step =
   | { is: 'unknown' };
 
 /**
- * **What a rename left, with its Finish and Undo** (GITAPP2e, D204; the git-writes design §5, §6): kept by the list beyond the renamed
+ * **What a rename left, with its Finish and Undo**: kept by the list beyond the renamed
  * row. A rename that stopped between the branch and its settings (its upstream and the like) says so and offers *Finish*, which moves the
  * settings alone, and *Undo*, which moves the branch back alone; the driver allows each only where the branch and the settings stand as
  * the act left them, and refuses otherwise in words. A done rename offers *Undo*, which checks both names. A result the driver cannot

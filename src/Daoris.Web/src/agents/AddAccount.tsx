@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { shellWord } from '../lib/shellWord';
 import { Button, Inline, Pill } from '../design/ui';
-// Why a question's act was refused, said under it, whole: the inline confirmation's, so every ask says it alike.
+// Why a question's act is refused, said under it, whole: the inline confirmation's, so every ask says it alike.
 import { Refused } from '../work/InlineConfirm';
 import { type AccountState, stateWhen, stateWord } from './agents';
 
-// *Add an account…* (UX7b, the UX7 design §4.5; ACCT1's screen half; POOL1c, the account-pool design §4.1): three steps under
-// the agent's header, one live control at a time, since a step in a task happens where it was started (the platform language
-// §4). Step 1 steers a person signing an account back in to its own row, step 2 is the tool's own sign-in (`SignIn`, handed in
+// *Add an account…*: three steps under
+// the agent's header, one live control at a time, since a step in a task happens where it is started. Step 1 steers a person signing an account back in to its own row, step 2 is the tool's own sign-in (`SignIn`, handed in
 // by the organism), and step 3 says the account joined Daoris's accounts and asks only its name: every account serves
 // every workspace, so nothing is asked about where it runs. Molecules: every state arrives as props and every press goes out.
 
@@ -19,7 +18,7 @@ const PANEL = 'rounded-card border border-line bg-raised p-3';
 export type BackAccount = { id: string; name: string; state: AccountState };
 
 /**
- * Step 1, before anything starts (§4.5, the account-pool design §4.1): *Signing an account back in? Use its row, so it stays the
+ * Step 1, before anything starts: *Signing an account back in? Use its row, so it stays the
  * same account*, each account that reads signed out or unknown with its state and *Sign in to account-2*, in the set's order,
  * then *Add a new account* and *Never mind*. On the install the owner pressed *Sign in to another account* to bring one back
  * and made a new account; this is the step that would have stopped them.
@@ -63,11 +62,11 @@ export function ReSignIn({ accounts, busy = false, now, onSignIn, onNew, onClose
 }
 
 /**
- * Step 3 (§4.5; POOL1c, the account-pool design §4.1): *Signed in as …*, or a key's *Added the API key …*; then that it joined
+ * Step 3: *Signed in as …*, or a key's *Added the API key …*; then that it joined
  * Daoris's accounts, every workspace's work may run on it; then *Its name*, who signed in offered and the person's to change;
  * then one press, *Done*, which keeps the name in the field (an emptied field gives none). Nothing is asked about where
  * it runs, since every account serves every workspace, so there is nothing *Not now* could lose. The terminal's twin
- * is the rename, where a name was typed. It stays open until the organism says the name landed: refused, it keeps the name and
+ * is the rename, where a name is typed. It stays open until the organism says the name landed: refused, it keeps the name and
  * says why under it.
  */
 export function NameAccount({
@@ -90,7 +89,7 @@ export function NameAccount({
    */
   fallback?: string;
   busy?: boolean;
-  /** Why the last answer was refused, said under the question until it is answered again; null when none was. */
+  /** Why the last answer is refused, said under the question until it is answered again; null when there is none. */
   refusal?: string | null;
   /** The answer: the name in the field (empty is none). */
   onDone: (answer: { name: string }) => void;
@@ -130,7 +129,7 @@ export function NameAccount({
             placeholder={fallback}
             className={FIELD}
           />
-          {/* The name it is called left empty, and where that is not its id, the id a terminal types (ACCTUX1). */}
+          {/* The name it is called left empty, and where that is not its id, the id a terminal types. */}
           <span className="basis-full text-meta text-ink-faint">
             {t(fallback === account ? 'agents.add.nameHint' : 'agents.add.nameHintId', { name: fallback, id: account })}
           </span>
@@ -150,8 +149,8 @@ export function NameAccount({
 }
 
 /**
- * A rename, under its row (ACCT2's screen twin of `daoris agent profile rename`): the name in a field, *Save the name* and
- * *Never mind*. Emptying it gives the account no name of its own, and it reads as it would unnamed (`fallback`, ACCTUX1):
+ * A rename, under its row (the screen twin of `daoris agent profile rename`): the name in a field, *Save the name* and
+ * *Never mind*. Emptying it gives the account no name of its own, and it reads as it would unnamed (`fallback`):
  * who signed in or a key's handle for a fresh id, else its id. It stays open until the
  * organism says the name landed: refused, the name typed stays in the field and the refusal is said under it,
  * and *Never mind* is the one other way out, held while the answer is on its way so a refusal is never said to nobody.
@@ -164,7 +163,7 @@ export function RenameAccount({ agent, account, current, fallback = account, bus
   /** What it is called with no name of its own, its empty field's placeholder; its id unless the row's namer says otherwise. */
   fallback?: string;
   busy?: boolean;
-  /** Why the last save was refused, said under the field until it is saved again or closed; null when none was. */
+  /** Why the last save is refused, said under the field until it is saved again or closed; null when there is none. */
   refusal?: string | null;
   /** The name to keep, or null for none. */
   onSave: (name: string | null) => void;

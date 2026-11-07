@@ -51,14 +51,14 @@ const ICONS = {
   ahead: ArrowUp,
   behind: ArrowDown,
   conflict: TriangleAlert,
-  // The accounts surface (2026-09-22): an account, signing into one, and removing one. The bin is on
-  // Remove because Remove now deletes; it was kept off Forget while forgetting removed nothing.
+  // The accounts surface: an account, signing into one, and removing one. The bin is on
+  // Remove because Remove deletes.
   account: KeyRound,
   login: LogIn,
   remove: Trash2,
-  // A setting's WHY (2026-09-23): the paragraph that used to sit above every control, one hover away.
+  // A setting's WHY: the paragraph that would otherwise sit above every control, one hover away.
   info: Info,
-  // Signing in (2026-09-23): the link the tool printed, copied into a browser of the person's own.
+  // Signing in: the link the tool printed, copied into a browser of the person's own.
   copy: Copy,
   // What a quest carries: an address, and a file.
   link: Link,
@@ -115,9 +115,9 @@ const ICONS = {
   selectAll: TextSelect,
   // Help › Keyboard shortcuts: the list of every key the window answers.
   keyboard: Keyboard,
-  // The menu bar folded into one on a narrow window (UX7a2): VS Code's own glyph for the same menu.
+  // The menu bar folded into one on a narrow window: VS Code's own glyph for the same menu.
   menu: MenuGlyph,
-  // A workflow's steps by kind (WORKFLOW1b, the workflow design §6.2): what a step is, beside the rail's mark for who takes
+  // A workflow's steps by kind: what a step is, beside the rail's mark for who takes
   // part. The agent's work, another agent reading it, the person looking at it, the two forms of a landing, the pull request a
   // plugin opens, a plugin that may hold a start, and the end of the line.
   stepWork: Bot,
@@ -138,7 +138,7 @@ const ICONS = {
   stepReview: UserCheck,
   // Where a piece of work stands in its workflow: the session's side bar view and the doors into it.
   workflow: Workflow,
-  // Who is at work on a session (COWORKVIEW1a, the cowork view design §5.1): the side bar view of its parts and subagents.
+  // Who is at work on a session: the side bar view of its parts and subagents.
   atWork: Users,
   // Ask Daoris's history: its list, the way back to it from a conversation, a pinned conversation's mark, and a
   // code block's long lines wrapped at its pane.
@@ -146,7 +146,7 @@ const ICONS = {
   back: ArrowLeft,
   pin: Pin,
   wrap: WrapText,
-  // Notifications (NOTIFY2b, the notification design §6): the title bar's button and the view's tab, the one new glyph.
+  // Notifications: the title bar's button and the view's tab.
   bell: Bell,
   // The window's zoom: View's rows and the status bar's level, larger or smaller than the page as drawn.
   zoomIn: ZoomIn,
@@ -156,7 +156,7 @@ const ICONS = {
 export type IconName = keyof typeof ICONS;
 
 /**
- * A glyph's size, given in the pixels it has at 100%, as rem (ZOOM1, the UI/UX design §3.11): the window zooms by the root's
+ * A glyph's size, given in the pixels it has at 100%, as rem: the window zooms by the root's
  * size, so a glyph grows with the words beside it, and in the frame, which wears the level's inverse, it keeps its size.
  */
 export const glyphSize = (pixels: number) => `${pixels / 16}rem`;
@@ -167,7 +167,7 @@ export function Icon({ name, size = 16, className }: { name: IconName; size?: nu
 }
 
 /**
- * The class that keeps the window's frame at its own size while the content zooms (ZOOM1, the UI/UX design §3.11): a CSS
+ * The class that keeps the window's frame at its own size while the content zooms: a CSS
  * zoom of the level's inverse (`--frame-zoom`, set by `design/zoom.ts`), declared in `tokens.css`.
  */
 export const FRAME_HELD = 'frame-held';

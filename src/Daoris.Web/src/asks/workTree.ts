@@ -1,7 +1,7 @@
 import type { Consideration } from '../data/signals';
 import type { Line, PausedByFact, WorkPlan, WorkPlanQuest, WorkPlanSession } from '../work/pausing/pausing';
 
-// An ask's work as its page lists it (PAUSE1h, D132 §7.1, `docs/2026-10-02-pause-and-clean-up-design.md` §1): each quest of
+// An ask's work as its page lists it: each quest of
 // `WORK_PLAN`'s answer with its sessions, and under it the questions those sessions asked of other repositories, each listed
 // the same way; and why each sits. Pure, so the page draws what a pause or an abandon reaches from one rule, and every plan
 // the driver could answer is a test's argument.
@@ -11,7 +11,7 @@ export type WorkItem = {
   quest: WorkPlanQuest;
   /** Its sessions in the plan's order; the ask's intake is never one, since the page names it in a section of its own. */
   sessions: WorkPlanSession[];
-  /** The quests its sessions published (D79's questions), each a work item of its own. */
+  /** The quests its sessions published (their questions), each a work item of its own. */
   questions: WorkItem[];
 };
 
@@ -22,7 +22,7 @@ export type WorkItem = {
 const publishedBy = (session: WorkPlanSession, by: string) => session.session === by || session.session.endsWith(`/${by}`);
 
 /**
- * The work as a tree, in the plan's order (design §1): the quests the ask asked, or the one quest named, at the top; under each
+ * The work as a tree, in the plan's order: the quests the ask asked, or the one quest named, at the top; under each
  * quest the questions its sessions published, applied again to what each question adds. A question whose asker the plan does
  * not place is listed at the top, and every quest once, even where the records ask in a circle: nothing of the work is
  * hidden, since what is listed is what a pause or an abandon reaches.
@@ -62,7 +62,7 @@ function pauseLine(pause: PausedByFact, quest: string, ask: string): Line {
 }
 
 /**
- * Why a quest of the work sits (design §2.1, §2.3), for an open or taken one, in order:
+ * Why a quest of the work sits, for an open or taken one, in order:
  * - **taken where a pause here does not reach it** (a take no session of this machine's worked), by the machine where the
  *   plan names one;
  * - **a pause**, the tick's where it has a `Paused` verdict, else the plan's, for a quest whose session runs or waits on you
@@ -78,7 +78,7 @@ export function whyItSits(item: WorkItem, sitting: Consideration | null, ask: st
   if (quest.status !== 'Open' && quest.status !== 'Taken') return null;
   if (quest.pause === 'elsewhere') {
     if (quest.machine) return { line: { key: 'asks.work.elsewhere', values: { machine: quest.machine } } };
-    // A take lost to the person's own reopen is said as that, never as another machine's (FABRIC-CLOSE1c20).
+    // A take lost to the person's own reopen is said as that, never as another machine's.
     if (quest.kept === 'source-reopened') return { line: { key: 'asks.work.reopenedTake' } };
     return { line: { key: quest.kept === 'taken-outside' ? 'asks.work.outside' : 'asks.work.elsewhereUnnamed' } };
   }

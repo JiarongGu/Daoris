@@ -4,10 +4,10 @@ import { describe, expect, it } from 'vitest';
 import { PROVIDER_VOCABULARY as vocabulary } from '../data/generated/service';
 
 /**
- * AGENTPROVIDER1 row a, part 3 (the agent-provider design §9, D213): the page's twin of the driver's `ProviderCensusTests`. Every site in
+ * The page's twin of the driver's `ProviderCensusTests`. Every site in
  * the page's production sources that names a provider's id, variable, file or wire key is counted over the source with its comments
  * blanked, and each is a named exception in the `page` section of the driver's `fixtures/provider-census.json`, by file and token
- * (the count of a listed file's sites is not pinned, CENSUSRULES1), the design's row that moves it (s: the page reads the sheet) and its class. The ids and the vocabulary are the
+ * (the count of a listed file's sites is not pinned), the design's row that moves it (s: the page reads the sheet) and its class. The ids and the vocabulary are the
  * driver's registrations', `PROVIDER_VOCABULARY` in the generated service types, the one table the four censuses share; nothing here
  * copies a word of it. Tests, the test support in `src/test/`, the translations and the generated files, written from what the other
  * censuses read, are no production source.

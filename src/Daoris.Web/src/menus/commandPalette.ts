@@ -49,7 +49,7 @@ export function shortcutGroups(entries: readonly CommandEntry[], t: Translate): 
 }
 
 /**
- * Which commands match what was typed.
+ * Which commands match what is typed.
  *
  * @remarks
  * **Subsequence, not substring.** "oq" finds *Open quests* and "cnv" finds *Convergence* — the

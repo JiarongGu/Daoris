@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, waitFor, within } from '@testing-library/react';
 
-// FABRIC-CLOSE1j2 (§E5; D173's CLOSE1j and CLOSE1j2 notes): Quests reads the chosen quest's closure graph's ends from this machine's
+// Quests reads the chosen quest's closure graph's ends from this machine's
 // driver (`WORK_STATE`, by the quest's unit `quest:<id>`, which no milestone on the page carries) and its page says them, each in the
 // reader's language; another unit's end is never this quest's. Over a mocked bridge, as the shell-attached half is held
 // (`docs/2026-09-19-frontend-architecture.md` §4).

@@ -13,7 +13,7 @@ export type AccountsHere = {
 };
 
 /**
- * **The accounts each agent may run here** (§4.3, read-only; POOL1c, D197 point 1): for each installed agent, every account of
+ * **The accounts each agent may run here** (read-only): for each installed agent, every account of
  * Daoris's, in the set's order, since one set serves every workspace; one the order does not name yet goes after, as the next
  * change would place it. None where the agent has no account of Daoris's: the tool's own sign-in is never what a start runs on,
  * and the page says no Daoris account is signed in.

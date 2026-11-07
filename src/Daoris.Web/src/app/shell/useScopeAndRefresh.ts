@@ -26,7 +26,7 @@ export function useScopeAndRefresh({ t, refresh, notify }: {
   // 🔴 The scope in words, whatever the machine holds: the one chosen, the one there is,
   // every one among several, or none yet. With none registered the top bar and the status bar both
   // said "every workspace", of nothing, and the switcher that would have said more is absent below
-  // two by WSP5's rule. That rule still hides the control; it no longer hides the fact.
+  // two. That rule hides the control, not the fact.
   const scopeNamed = scope.workspace ?? (workspaces.data === undefined
     ? null
     : workspaces.data.length === 0
@@ -58,7 +58,7 @@ export function useScopeAndRefresh({ t, refresh, notify }: {
           }),
         })
         : counted);
-      // A registered checkout that was not where the registry says contributed nothing, and the count
+      // A registered checkout that is not where the registry says contributes nothing, and the count
       // still looks healthy — so it is named, as the failure it is.
       if (report.absent?.length) notify(t('sidebar.absent', { names: report.absent.join(', ') }), 'error');
       // The semantic half's failure is the service's own sentence — dropped nowhere.

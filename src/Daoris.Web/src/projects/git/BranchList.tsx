@@ -14,7 +14,7 @@ import { RenameRef, type RenamedRef } from './RenameRef';
 import { Renamed } from './Renamed';
 import { FetchOrigin } from './FetchOrigin';
 
-/** Yours are folded after five (the built-in Git design §2.2): the rest are one press away. */
+/** Yours are folded after five: the rest are one press away. */
 export const YOURS_SHOWN = 5;
 
 /** A landed branch as the list says it: how it stands to its own name on origin, and its pull request. */
@@ -32,7 +32,7 @@ export type ListedLanded = {
 
 /**
  * A branch as the list draws it: its kind, its last commit, how far it stands from its line, and what names a session's or a
- * landed one. The bridge's `GitBranch` is one, so the list's answer is handed as it came (D52: the molecule imports nothing of
+ * landed one. The bridge's `GitBranch` is one, so the list's answer is handed as it came (the molecule imports nothing of
  * the bridge).
  */
 export type ListedBranch = {
@@ -63,7 +63,7 @@ export type BranchListValue = {
 const SOURCES = new Set(['repository', 'workspace', 'checkout']);
 
 /**
- * **A repository's branches by kind** (UX6h2a, the built-in Git design §2.2): its line at the head, saying what set it, how it
+ * **A repository's branches by kind**: its line at the head, saying what set it, how it
  * stands to origin's copy and when the checkout last fetched; then *Sessions'*, each named by its session's title and state
  * with how far it stands from the line; *Landed*, each saying whether it is pushed and its pull request, with its state and
  * when; and *Yours*, folded after five.
@@ -71,10 +71,10 @@ const SOURCES = new Set(['repository', 'workspace', 'checkout']);
  * @remarks
  * **A molecule**: the list arrives as a prop, and a session's title with it, joined on the page by its holder (the rail's
  * rule, `sessionTitle`). Origin's branches, with no local branch, are on the wire and drawn only from the list's ⋯ after
- * Yours (drawn where some exist), a ticked item that shows *Origin's* and hides it again (UX6h2b1). **Its words are git's facts**: a count git did not make is said as one it could not make, a fetch as git's own
- * `FETCH_HEAD` time or never, and a pull request's state only where its plugin answered (§2.4); nothing is guessed.
+ * Yours (drawn where some exist), a ticked item that shows *Origin's* and hides it again. **Its words are git's facts**: a count git did not make is said as one it could not make, a fetch as git's own
+ * `FETCH_HEAD` time or never, and a pull request's state only where its plugin answered; nothing is guessed.
  *
- * **A branch's name opens its page** where `onOpen` is handed (UX6h3b, §2.3): the page draws it beside its line since they
+ * **A branch's name opens its page** where `onOpen` is handed: the page draws it beside its line since they
  * parted, so a row opens only where both it and its line have a commit here; and the line's own row opens History, since the
  * line's page is the repository's history. A row with no press says nothing of one: it is absent, never disabled.
  */
@@ -97,7 +97,7 @@ export function BranchList({ repository, list, titles = NO_TITLES, onOpen, onOpe
   const landed = of('landed');
   const yours = of('yours');
   const origins = of('origin');
-  // Hidden each time the tab opens: page state, not remembered (UX6h2b1).
+  // Hidden each time the tab opens: page state, not remembered.
   const [showOrigin, setShowOrigin] = useState(false);
   // The branch just deleted, kept here because its row is gone once the list is read again.
   const [gone, setGone] = useState<{ act: string; name: string } | null>(null);
@@ -288,7 +288,7 @@ function Kind({ heading, branches, note = null, fold, opens, row }: {
 }
 
 /**
- * A branch's name, whole, and when its last commit was made; then that commit's subject, which wraps rather than being cut.
+ * A branch's name, whole, and when its last commit is dated; then that commit's subject, which wraps rather than being cut.
  * Where it opens something, the name is a ghost button named for what it opens, as a workspace's group's heading is.
  */
 function Named({ branch, press }: { branch: ListedBranch; press?: { label: string; onPress: () => void } }) {
@@ -322,7 +322,7 @@ function Said({ text }: { text: string | null }) {
   return text ? <span><Inline text={text} /></span> : null;
 }
 
-/** When a commit was made or a plugin answered: how long ago, its whole stamp in its tip. The branch page says it so too. */
+/** When a commit is dated or a plugin answered: how long ago, its whole stamp in its tip. The branch page says it so too. */
 export function When({ at }: { at: string }) {
   return <time dateTime={at} title={stamp(at)} className="shrink-0 text-meta text-ink-faint tabular-nums">{ago(at)}</time>;
 }

@@ -7,8 +7,8 @@ import { GIT_CHANGES_ENGINE, GIT_COMMIT_PLAN_ENGINE } from '../fixtures';
 import { CommitBox, type CommitPlanValue } from './CommitBox';
 import { type ChangesActs, ChangesTab } from './RepositoryGit';
 
-// Commit and amend in the Changes tab (GITAPP2i, D204, the git-writes design §8): the message, Amend the last commit, the hooks the git runs,
-// who commits, a press that sends the tip and tree it was read with, and the last act said with a hook's words. A molecule: the plan arrives
+// Commit and amend in the Changes tab: the message, Amend the last commit, the hooks the git runs,
+// who commits, a press that sends the tip and tree it read, and the last act said with a hook's words. A molecule: the plan arrives
 // as a prop.
 
 const plan = (over: Partial<CommitPlanValue> = {}): CommitPlanValue => ({ ...GIT_COMMIT_PLAN_ENGINE, ...over });

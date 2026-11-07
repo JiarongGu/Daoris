@@ -29,7 +29,7 @@ export type SizingActs = {
 };
 
 /**
- * **The canvas's toolbar** (CANVAS1a; the canvas design §2.1): above the viewport, never over the drawing, as the map's. The feature's own
+ * **The canvas's toolbar**: above the viewport, never over the drawing, as the map's. The feature's own
  * tools, then the size, which opens the sizing menu: zoom in and out, the feature's fit, to the selection and 100% with their keys, and
  * the sizes by name within the feature's bounds. It never scales with the drawing.
  *

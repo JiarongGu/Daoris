@@ -7,7 +7,7 @@ import { Inheritable } from '../../projects/setup/SetupParts';
 import { type Answered, InlineConfirm, Refused } from '../../work/InlineConfirm';
 
 /**
- * Where a pause's value was set: for the repository, its workspace, this machine, or nowhere, which is
+ * Where a pause's value is set: for the repository, its workspace, this machine, or nowhere, which is
  * today's behaviour (`AccessRules`' sources).
  */
 export type AccessSource = 'repository' | 'workspace' | 'machine' | 'default';
@@ -15,11 +15,11 @@ export type AccessSource = 'repository' | 'workspace' | 'machine' | 'default';
 /** Whose setup a page shows and sets: a repository's, a workspace's or this machine's. */
 export type AccessOwner = Exclude<AccessSource, 'default'>;
 
-/** One pause as it resolves (`LINES`' `access`): its name, its value and where that was set; a newer driver may name others. */
+/** One pause as it resolves (`LINES`' `access`): its name, its value and where that is set; a newer driver may name others. */
 export type ResolvedPause = { pause: string; value: string; source: AccessSource | (string & {}) };
 
 /**
- * One repository's access setup as the driver resolves it (`LINES`' `access`, AUTONOMY1a): whether every pause is open, and each
+ * One repository's access setup as the driver resolves it (`LINES`' `access`): whether every pause is open, and each
  * pause in the order every door says them. Never null for a repository the driver judged; absent where the answer lacks it.
  */
 export type RepositoryAccess = { repository: string; workspace: string; full: boolean; pauses: ResolvedPause[] };
@@ -38,7 +38,7 @@ export type AccessChange = ({ repository: string } | { workspace: string } | { m
 
 /**
  * The pauses, each with its values, today's and the open one, in the order every door says them: the twins' `AccessRules.Pauses`.
- * *Questions* has one value, every setup's since AUTONOMY1e, so it is shown and never chosen.
+ * *Questions* has one value, every setup's, so it is shown and never chosen.
  */
 const PAUSES: Record<string, { values: readonly string[]; today: string; open: string }> = {
   permissions: { values: ['asking', 'auto', 'unrestricted'], today: 'auto', open: 'unrestricted' },
@@ -80,7 +80,7 @@ export const isFull = (pauses: readonly ResolvedPause[]) =>
 const known = (pauses: readonly ResolvedPause[]) => pauses.filter((each) => each.pause in PAUSES);
 
 /**
- * A session's record's pause map (`access`, AUTONOMY1a) as pauses: the ones this page knows in their order, then any other in the
+ * A session's record's pause map (`access`) as pauses: the ones this page knows in their order, then any other in the
  * record's, each from `record`. Nothing is resolved against today's settings: the record is what the driver resolved at the start.
  */
 export function recordedPauses(access: Readonly<Record<string, string>>): ResolvedPause[] {
@@ -168,11 +168,11 @@ function fromSays(t: TFunction, source: string | null, owner: AccessOwner, works
 const WARN_LINE = 'm-0 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-small text-ink';
 
 /**
- * **A level's access rows** (AUTONOMY1d, D184 points 1-3, 5): the full-access switch, then each pause with what it means, its
- * value and where that was set, the same rows on a repository's Setup, a workspace's and Settings → Driver for this machine.
+ * **A level's access rows**: the full-access switch, then each pause with what it means, its
+ * value and where that is set, the same rows on a repository's Setup, a workspace's and Settings → Driver for this machine.
  *
  * @remarks
- * **Full access asks once** (the Ask Daoris modes design §5's shape): its press opens an inline ask saying what it turns off and
+ * **Full access asks once**: its press opens an inline ask saying what it turns off and
  * what stays, and only *Enable full access* sends it, waiting for the driver and saying a refusal inside the ask. Turning it off
  * asks nothing, since nothing loosens: it clears this level, or where the level above is full too, which clearing would leave in
  * force, sets today's pauses here. On, it wears the warning colour, and so does its ask (`InlineConfirm`'s warning tone).
@@ -181,7 +181,7 @@ const WARN_LINE = 'm-0 border-l-[3px] border-warn bg-raised px-3 py-1.5 text-sma
  * in place; one set here carries its choice and *Clear*, which takes it back to the level above. *Questions* is shown with no
  * choice, since every setup asks as Claude Code does. Each row's hint is its terminal twin, `daoris place access`.
  *
- * **A refusal is said where it was pressed** (ACCESSASK1, the UI/UX design R3, §3.3): every change carries how to answer it, and
+ * **A refusal is said where it is pressed**: every change carries how to answer it, and
  * one the driver refused is said under its own row, the pause's editor or the full-access switch, in the driver's sentence and
  * never a toast, until that row's next press.
  *
@@ -193,14 +193,14 @@ export function AccessRows({ owner, name, workspace, pauses, aboveFull, busy = f
   name?: string;
   /** A repository's workspace, which a value from it names. */
   workspace?: string;
-  /** Each pause as it resolves at this level, with where it was set. */
+  /** Each pause as it resolves at this level, with where it is set. */
   pauses: readonly ResolvedPause[];
   /** Whether what stands above this level is full access, so turning it off here sets today's pauses rather than clearing. */
   aboveFull: boolean;
   busy?: boolean;
   /** The press that sets a pause at this level: *Set for this repository*, *… workspace*, *… machine*. */
   setHere: string;
-  /** A change at this level, and how to answer the row it was pressed in. */
+  /** A change at this level, and how to answer the row it is pressed in. */
   onChange: (edit: AccessEdit, answered?: Answered) => void;
 }) {
   const { t } = useTranslation();

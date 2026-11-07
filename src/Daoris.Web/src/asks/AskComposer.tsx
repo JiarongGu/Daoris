@@ -24,7 +24,7 @@ export type AskDraft = Carry & {
   short?: string;
 };
 
-/** A short title's length as the service counts it: by character, a Chinese one counted once (SESSUX1j's rule). */
+/** A short title's length as the service counts it: by character, a Chinese one counted once. */
 const characters = (text: string) => [...text.trim()].length;
 
 /** Whether a draft is whole enough to send: its circle and words, and a short title the service would keep. */
@@ -48,14 +48,14 @@ const BY_RULE = '*';
  *
  * **Naming a receiver is optional.** Named, the ask is published to it at once, as `--to` does.
  * Left unnamed, the declarations tier proposes and publishes nothing, unless the machine sets
- * an intake agent, which reads the ask and publishes on its own. 🔴 So what the composer
- * promises follows `intake` (UX5 U34): it said *nothing is published until you name a receiver*,
- * which an intake breaks, and a door that cannot know, a browser, promises neither.
+ * an intake agent, which reads the ask and publishes on its own. So what the composer
+ * promises follows `intake`: *nothing is published until you name a receiver* would be false
+ * under an intake, and a door that cannot know, a browser, promises neither.
  *
  * It carries what the quest composer carries, through the same fields and the same drop, paste and
- * chooser (`compose/carry`), so the two cannot drift. Props only (components §2).
+ * chooser (`compose/carry`), so the two cannot drift. Props only.
  *
- * **The person may choose the review of its work** (REVIEWENV1g, D154 point 3; the review environment design §1.5): each
+ * **The person may choose the review of its work**: each
  * repository's rule by default, which sends nothing; a review in the default environment, in an environment the circle's
  * rules declare, or none, with their words, which the host judges and refuses in its sentence for a repository that declares
  * none. Only where a shell says which environments are declared is a named one offered; `on` and `off` need no rule read.
@@ -143,7 +143,7 @@ export function AskComposer({
             className="min-h-28 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
         </label>
-        {/* Its short title (HEAD2e), optional and the person's own, as a quest's is (SESSUX1j): what a list and its head show for
+        {/* Its short title, optional and the person's own, as a quest's is: what a list and its head show for
             it. Counted as it is typed, and past the service's limit it says so and holds the ask back, not sends one refused. */}
         <label className="grid gap-1 text-small text-ink-soft">
           <span className="flex items-baseline justify-between gap-2">
@@ -199,7 +199,7 @@ export function AskComposer({
             className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
           />
         )}
-        {/* The terminal's way to the same choice (D50, REVIEWENV1j2). */}
+        {/* The terminal's way to the same choice. */}
         <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('asks.compose.reviewTwin')} /></p>
         <CarryFields
           carry={draft}

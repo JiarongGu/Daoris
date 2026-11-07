@@ -29,7 +29,7 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
   // What an Apply did beyond the driver's sentence: a go opens its place through the starters'
   // door, and an update or a pin is followed by the Agents screen, its console and its end said there.
   const applied = (answer: HelpSettled, proposal?: HelpProposal) => {
-    // The plan moved since the card was drawn: nothing was applied, and the card is drawn again with the new plan.
+    // The plan moved since the card is drawn: nothing is applied, and the card is drawn again with the new plan.
     if (answer.changed) setRefusal(answer.message);
     // A draft card's go is the place's Workflow, which the page opens with its editor on the draft the card is against.
     const draft = proposal?.kind === 'workflow' && proposal.workflow && answer.go ? draftDoor(proposal.workflow, answer.go) : null;
@@ -37,7 +37,7 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
     if (door) onGo?.(door);
     if (answer.harnessAction) runs?.follow(answer.harnessAction.harness, answer.harnessAction.action);
   };
-  // A go card's sentence says where its quest, ask or session stands (since ASKDISMISS1), so the plan its Apply judges
+  // A go card's sentence says where its quest, ask or session stands, so the plan its Apply judges
   // moves with them. While one is shown it is drawn again at each push that moves a standing, never on a clock, so its Apply finds
   // the plan it shows rather than answering that the plan changed.
   const goShown = cards.some((card) => card.kind === 'go');
@@ -53,7 +53,7 @@ export function useHelpFollow({ shown, live, setRefusal, onGo, t }: {
     // Asked again only as the standings move; the query's handle is read from this render.
   }, [standings]);
 
-  // What the conversation published (ASKQUESTS1, the design §9 item 12): its own list, by id, each one's state read from the lists the
+  // What the conversation published: its own list, by id, each one's state read from the lists the
   // shell pushes, every workspace's, never asked on a clock. Read only where it published something; a row opens its record on Quests,
   // the door a go uses, and adds no act.
   const publishedRead = useHelpPublished(shown?.id ?? null);

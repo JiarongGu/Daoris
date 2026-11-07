@@ -17,7 +17,7 @@ import { type SignInPhase, SignInSteps, type SignInWay } from './SignInSteps';
  * brackets; the prompt never arrived at all, and nothing could have answered it — so the flow could
  * not complete, and every control on the page stayed disabled until the window closed.
  *
- * The steps are `SignInSteps`' (SIGNIN1, the UI/UX design §3.2): the driver's phases, each written with its start into the
+ * The steps are `SignInSteps`': the driver's phases, each written with its start into the
  * relay the tool's output takes, drawn as a list standing open, or as the line alone under a row of *What needs you*; the
  * link, the code and the ask are read from the tool's lines by their shape. The tool's own output is one disclosure away and never the surface,
  * the same rule the setting rows follow for their why; a phase line is the driver's and never shown there.
@@ -41,11 +41,11 @@ export function SignIn({
   /** What a person calls the tool — the id when it does not say. */
   tool?: string;
   /**
-   * The driver's sentence where it refused to start this sign-in: said here, whole, where the press was, with
+   * The driver's sentence where it refused to start this sign-in: said here, whole, where the press is, with
    * *Try again* and *Close*, rather than as a toast with the panel gone. Nothing runs then, so no cancel.
    */
   refused?: string | null;
-  /** The sentence of a sign-in that ended without signing in, and when: the phase it was in failed. */
+  /** The sentence of a sign-in that ended without signing in, and when: the phase that failed. */
   failed?: string | null;
   failedAt?: number | null;
   /** The list standing open, its own surface; or the line alone, under a row of *What needs you* (§3.2). */

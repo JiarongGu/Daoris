@@ -105,7 +105,7 @@ describe('bringing repositories up to date', () => {
       expect(onLook).toHaveBeenLastCalledWith(['beta', 'alpha']);
     });
 
-    // UX6h2b3: a workspace's Branches tab lists what is apart once, in its own fold, so the section draws no list of its own
+    // A workspace's Branches tab lists what is apart once, in its own fold, so the section draws no list of its own
     // there; its look takes what the fold included, and its sentence counts them.
     it("draws no list apart where the page's own fold holds it, and looks at what that fold included", async () => {
       const { onLook } = draw({ plan: undefined, scope: SCOPE, included: ['beta'], apartFolded: true });

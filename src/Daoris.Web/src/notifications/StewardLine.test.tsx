@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// The steward's line in *Notifications* (STEWARDROLE1b, D209; the steward design §5.3, §5.4, §8): *Steward appointed · n acts since
+// The steward's line in *Notifications*: *Steward appointed · n acts since
 // Daoris started · Turn off*, opening to the run's acts newest first, each its act in words, its target, its time and the mark *By the
 // steward, on your behalf*, and only while it stands, the owner's own reverse press: *Stop driving* for a drive, *Drive* for an undrive,
 // *Trees off* for trees, *Resume* for a hold, *Hold* for a resume, *Try again* for a stop; none for a finish or a Try again. A stop whose

@@ -7,7 +7,7 @@ import {
 } from '../../work/history/historyFixtures';
 import { KeptHistory } from './KeptHistory';
 
-// A workspace's *Kept on this machine* (HIST1e, D153; the history-clearing design §2.4, §6.1), the last section of its
+// A workspace's *Kept on this machine*, the last section of its
 // Details: the reading of what the home keeps of its finished work, what a clear would take, what keeps the rest by reason
 // with its door, the conversations only *Delete…* takes and the home's own; then *Clear history…* while anything may go.
 // Its first press is `Work/Clear`'s workspace stories. At the main area beside the install's 1546 px window and at 680 px,

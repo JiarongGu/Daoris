@@ -6,7 +6,7 @@ import i18n from '../locales/i18n';
 import { FINISHED_HERE as FINISHED, TAKEN } from './fixtures';
 import { QuestPage } from './QuestPage';
 
-// LIMITRESUME1d2: a quest whose session a limit cut off says on its page when it goes on by itself, and how, in the
+// A quest whose session a limit cut off says on its page when it goes on by itself, and how, in the
 // head's own sentence (`limitWaitLines`), joined the reader's way.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);

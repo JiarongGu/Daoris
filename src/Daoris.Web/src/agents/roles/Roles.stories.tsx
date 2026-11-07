@@ -62,7 +62,7 @@ const meta: Meta<typeof RolesCard> = {
     ],
     onSet: () => {},
   },
-  // The main area at its wide width, as the frame gives it (the UI/UX design R6, UIFIT1).
+  // The main area at its wide width, as the frame gives it.
   decorators: [storyWidths.wide],
 };
 export default meta;
@@ -78,7 +78,7 @@ export const CatalogueHalf: Story = { decorators: [storyWidths.half] };
 /** The same at the 400 px floor: each value under its words. */
 export const CatalogueNarrow: Story = { decorators: [storyWidths.narrow] };
 
-/** The same in 中文, each role named as it was written in Chinese. */
+/** The same in 中文, each role named as written in Chinese. */
 export const CatalogueChinese: Story = { decorators: [chinese] };
 
 /** The same in 中文 at the floor. */
@@ -160,7 +160,7 @@ export const RoleEditorChinese: Story = { args: EDIT, decorators: [chinese] };
 /** The same in 中文 at the floor. */
 export const RoleEditorChineseNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow, chinese] };
 
-/** The same in dark, and in 中文 in dark at the floor (SETUPUX1l: one editor in both themes). */
+/** The same in dark, and in 中文 in dark at the floor: one editor in both themes. */
 export const RoleEditorDark: Story = { args: EDIT, decorators: [dark] };
 export const RoleEditorChineseDarkNarrow: Story = { args: EDIT, decorators: [storyWidths.narrow, chinese, dark] };
 

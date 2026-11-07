@@ -122,7 +122,7 @@ describe('a tool\'s card', () => {
     expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
   });
 
-  /** UXFIX2b1: the version's delete is the shared inline ask: its sentence focused, pending, a refusal said inside. */
+  /** The version's delete is the shared inline ask: its sentence focused, pending, a refusal said inside. */
   it('asks with its sentence focused, waits saying so, says a refusal inside, and closes once it lands', async () => {
     let answer: Answered | undefined;
     card(NODE, { choice: { ...choiceOf(NODE), version: '20.18.0' }, onDelete: (_version, answered) => { answer = answered; } });

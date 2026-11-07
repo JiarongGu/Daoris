@@ -21,8 +21,8 @@ export function PageRoot({ client, window: which }: { client: QueryClient; windo
     <PageBoundary view={which ? `window:${which.kind}` : undefined}>
       <QueryClientProvider client={client}>
         <Tooltip.Provider delayDuration={300}>
-          {/* The workspace scope wraps the whole shell (WSP5): one scope per query, everywhere —
-              including a secondary window, which follows the window that opened it (MAINWINDOWS3). A
+          {/* The workspace scope wraps the whole shell: one scope per query, everywhere —
+              including a secondary window, which follows the window that opened it. A
               monitor scoped to a different circle than the window that opened it would be the worst
               kind of wrong. Each main window holds its own. */}
           <WorkspaceScopeProvider>

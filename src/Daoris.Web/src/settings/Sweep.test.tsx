@@ -352,7 +352,7 @@ describe('the landed branches in the session branches card', () => {
   });
 });
 
-// LANDRETIRE1 part 2: a landing's branch the line has not held says how long it has stood and whether its quest is closed, with the
+// A landing's branch the line has not held says how long it has stood and whether its quest is closed, with the
 // action that withdraws it beside it (`WITHDRAW_LANDING_BRANCH`), asked once with the person's reason.
 
 describe('a landed branch the line will never hold', () => {

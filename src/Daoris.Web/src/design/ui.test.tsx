@@ -40,7 +40,7 @@ describe('the primitives', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'Ask for something' })).toBeInTheDocument();
-    // Its lines are set to leave no word alone on the last one (seen on Search's, UX5 U41).
+    // Its lines are set to leave no word alone on the last one.
     expect(screen.getByText('The family owes itself nothing right now.').closest('p')).toHaveClass('text-pretty');
   });
 
@@ -62,8 +62,8 @@ describe('the primitives', () => {
 });
 
 /**
- * A setting is a row (2026-09-23): label, one-line hint, the control at the right — and the why on
- * the glyph, for the reader who asks, rather than as the paragraph that used to sit above every
+ * A setting is a row: label, one-line hint, the control at the right — and the why on
+ * the glyph, for the reader who asks, rather than as a paragraph above every
  * control on the Machine view.
  */
 describe('a select', () => {
@@ -167,9 +167,9 @@ describe('a setting row', () => {
   });
 
   /**
-   * UX5 U58, seen on the window: at 888 a path as the control took its whole width first, and the label beside it was
+   * Seen on the window: at 888 a path as the control took its whole width first, and the label beside it came out
    * 24px wide, one character a line. The label's column keeps a floor and the control gives way to it: a path breaks at
-   * its separators. Since UIFIT1 (the UI/UX design R1) the column is a label track: content-sized between the floor and
+   * its separators. The column is a label track: content-sized between the floor and
    * a cap, never half the row, so the value sits beside its words and a long label wraps at the cap.
    */
   it('keeps a floor under the label and a cap over it, so a long control gives way to it and a long label wraps', () => {
@@ -184,8 +184,8 @@ describe('a setting row', () => {
   });
 
   /**
-   * R1: a value starts at the track's edge and the row's own acts follow it, never the pane's far edge. The control's
-   * wrapper justifies to the start, at every width (the far-edge `justify-end` is what UIFIT1a's shots showed).
+   * A value starts at the track's edge and the row's own acts follow it, never the pane's far edge. The control's
+   * wrapper justifies to the start, at every width (a far-edge `justify-end` would put it at the pane's edge).
    */
   it("starts the value at the track's edge, and its acts follow it rather than the pane's far edge", () => {
     render(<SettingRow label="Daoris home" control={<span>a-path</span>} />);
@@ -195,9 +195,9 @@ describe('a setting row', () => {
   });
 
   /**
-   * WSR4, seen on the window: with Settings' nav and the side bar open a row was 309px, the floor left the control
+   * Seen on the window: with Settings' nav and the side bar open a row measured 309px, the floor left the control
    * 130px, and a branch pattern showed eleven characters. A row that narrow puts its control under the label, at the
-   * row's full width. A row alone is its own container (R1 moves the floor to the card's list, below); it answers to
+   * row's full width. A row alone is its own container (the card's list holds the floor, below); it answers to
    * the width it has, not the window's.
    */
   it('puts the control under the label when the row itself is narrow', () => {
@@ -224,7 +224,7 @@ describe('a setting row', () => {
 });
 
 /**
- * R1 (the UI/UX design, UIFIT1): a card's rows share one label track. `SettingList` is the one grid, its rows subgrids
+ * A card's rows share one label track. `SettingList` is the one grid, its rows subgrids
  * of it, so the track is the widest of the card's labels between the floor and the cap, and every value starts at its
  * edge. jsdom lays nothing out, so the structure is held here and the geometry in `measured/settings.spec.ts`.
  */
@@ -289,7 +289,7 @@ describe('a setting list', () => {
 });
 
 /**
- * R1 (the UI/UX design, UIFIT1d): a form is sized to its content up to the pane, laid by its own width. `FormGrid` is the
+ * A form is sized to its content up to the pane, laid by its own width. `FormGrid` is the
  * one grid, its columns by what each field holds, each `FormRow` a subgrid of it; below the form's floor, by a container
  * query of its own, each row stacks, the head row goes and each field shows its own label. jsdom lays nothing out, so the
  * structure is held here.
@@ -419,7 +419,7 @@ describe('the liveness dot', () => {
   });
 
   /**
-   * UX5 U1: waiting on the person wore declined's red on the dot and the pill, `--warn` on the map,
+   * Waiting on the person wears one hue everywhere, never declined's red on the dot and the pill, `--warn` on the map,
    * and open's amber on the band's card, three hues for one fact. It is the status palette's waiting
    * hue everywhere, and red stays an outcome's, which is what a failed tool call is.
    */
@@ -434,7 +434,7 @@ describe('the liveness dot', () => {
 });
 
 /**
- * D118 §5: one item on a list closed to its strip — FRAME6's session strip row made general, so Plugins'
+ * One item on a list closed to its strip — the session strip row made general, so Plugins'
  * strip is the same atom.
  */
 describe('the strip mark', () => {
@@ -471,7 +471,7 @@ describe('the strip mark', () => {
   });
 
   /**
-   * Claude Code and Codex both showed `C`. A mark of its own (UX7's *CC*, *Cx*) is drawn as given, its case kept,
+   * Claude Code and Codex would both show `C`. A mark of its own (*CC*, *Cx*) is drawn as given, its case kept,
    * in place of the first character, and faint where it is dimmed.
    */
   it('draws letters it is given as written, in place of the initial', () => {
@@ -516,10 +516,10 @@ describe('a code span in a sentence', () => {
 });
 
 /**
- * LOOK5, seen on the install in Settings → Agents in 中文: a browser may break after any hyphen, so a setting's
+ * Seen on the install in Settings → Agents in 中文: a browser may break after any hyphen, so a setting's
  * terminal twin read `--no-` over `keep` and `--` over `workspace`. jsdom lays nothing out, so what is held is the
  * structure that leaves a line nowhere to break inside a word: each word is an inline box no wider than its line,
- * which moves whole and breaks inside only when it alone is wider (`break-word`, U8), and the spaces between the
+ * which moves whole and breaks inside only when it alone is wider (`break-word`), and the spaces between the
  * boxes are the span's only loose text.
  */
 describe('a code span breaks only between its words', () => {
@@ -577,7 +577,7 @@ describe('a code span breaks only between its words', () => {
 });
 
 /**
- * UXFIX4b, seen at the branch list's 400 px floor: a long branch name filled its line and the comma after it opened the
+ * Seen at the branch list's 400 px floor: a long branch name filled its line and the comma after it opened the
  * next one, `, whose work…`, since Chromium may break after any inline box, even before a comma. jsdom lays nothing out,
  * so what is held is the structure that leaves the line nowhere to break there, measured in Chromium through the Sweep
  * floor stories: a word and the marks after it are one box, as text inside which no line breaks before a closing mark;
@@ -693,7 +693,7 @@ describe('the meta line', () => {
   });
 
   /**
-   * UX5 U8, seen on the window: `break-all` broke a tree anywhere, so the head read `family\g` over
+   * Seen on the window: `break-all` broke a tree anywhere, so the head read `family\g` over
    * `ame`. A path breaks after a separator, and inside a name only when that one name is wider than
    * the line, which is what `anywhere` means once the separators offer somewhere better.
    */
@@ -721,7 +721,7 @@ describe('the session tone map', () => {
     'completed', 'declined', 'stood-down', 'failed', 'stopped',
   ];
 
-  // The nine the wire carries, the one the page shows a live chat between turns (UX5 U17), the two words the
+  // The nine the wire carries, the one the page shows a live chat between turns, the two words the
   // session list's reader derives from the session's quest, the park the person answered, a
   // record going on with their words, and a session waiting on its own helper.
   const SHOWN = [...STATES, 'idle', 'parked', 'awaiting-reply', 'answered', 'going-on', 'awaiting-helper', 'limited', 'limit-waits', 'not-started'];
@@ -729,15 +729,15 @@ describe('the session tone map', () => {
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
     for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
     expect(Object.keys(SESSION_TONE).sort()).toEqual([...SHOWN].sort());
-    // Declined's red beside the word "awaiting you" read as a session that had failed (UX5 U1).
+    // Declined's red beside the word "awaiting you" reads as a session that has failed.
     expect(SESSION_TONE['awaiting-person']).toBe('open');
-    // Idle is quiet: no status hue, and no live mark (U17, the reference console's own reading).
+    // Idle is quiet: no status hue, and no live mark (the reference console's own reading).
     expect(SESSION_TONE.idle).toBe('neutral');
     expect(SESSION_DOT.idle).toBe('idle');
   });
 
   /**
-   * D126 §2.3, audit M6: open's hue means it waits on you, and nothing else in the list wears it. `queued` shared it
+   * Open's hue means it waits on you, and nothing else in the list wears it. `queued` shared it
    * and left the word to tell the two apart; it keeps its idle mark and wears no status hue.
    */
   it("keeps open's hue for what waits on the person alone", () => {
@@ -778,7 +778,7 @@ describe('the session tone map', () => {
   });
 
   /**
-   * UX5 U17: a live chat is idle between turns and working while one runs, as the driver says; a
+   * A live chat is idle between turns and working while one runs, as the driver says; a
    * turn it has not answered for is the record's word. Driven work is one long turn.
    */
   it('shows a live chat between turns as idle, and nothing else', () => {
@@ -794,7 +794,7 @@ describe('the session tone map', () => {
   /**
    * A park the person answered stays parked until the driver's next look, with the answer set, and the
    * same session goes on then. Its state still says it waits on the person; it shows as answered, so no surface asks
-   * the person again. An answer this machine was not told (a teammate's, or none) leaves it waiting. ONEWAY1m: the answer is
+   * the person again. An answer this machine is not told (a teammate's, or none) leaves it waiting. The answer is
    * read from the keyed `said` words, the person's alone, so Daoris's own word on a park leaves it waiting.
    */
   it('shows a park the person answered as answered until the driver takes it up', () => {
@@ -852,7 +852,7 @@ describe('the session tone map', () => {
   });
 
   /**
-   * MODELROLE1c3 (D205 §3.5(c), §7.1): a `failed` record its agent's refusal of the choice ended before anything ran, its note's code
+   * A `failed` record its agent's refusal of the choice ended before anything ran, its note's code
    * `ended.choice-not-offered`, shows *Not started*, quiet and ended, never the failure's red. Any other failure is the failure it says.
    */
   it('shows a record ended choice-not-offered as not started, quietly', () => {
@@ -889,11 +889,11 @@ describe('the session tone map', () => {
 });
 
 /**
- * D41 §6 says a drawer is `role="dialog"` **with `aria-modal`**. Radix writes the role and traps the
- * focus but never writes that attribute, so the sentence described the design and not the page — for
- * as long as it had existed, with every gate green, because no gate reads prose.
+ * A drawer is `role="dialog"` **with `aria-modal`**. Radix writes the role and traps the
+ * focus but never writes that attribute, so a design that says so describes the design and not the page,
+ * with every gate green, because no gate reads prose.
  *
- * This is the gate that now reads it. It covers every modal surface the platform has, so the next one
+ * This is the gate that reads it. It covers every modal surface the platform has, so the next one
  * is caught by the act of not being listed.
  */
 describe('every modal surface says it is modal', () => {
@@ -940,7 +940,7 @@ describe('every modal surface says it is modal', () => {
 });
 
 /**
- * Radix closes a dialog on any Escape, heard on the document before the field it was pressed in, so dropping an
+ * Radix closes a dialog on any Escape, heard on the document before the field it is pressed in, so dropping an
  * input method's composition in Quick Ask's box closed the box. The atoms that open one keep that Escape.
  */
 describe('a dialog keeps the Escape an input method is composing with', () => {
@@ -1132,7 +1132,7 @@ describe('a tip', () => {
 /**
  * 🔴 A count is a circle.
  * jsdom has no layout, so what can be held here is the cause: the box's height and its minimum width
- * are ONE size. The oval was two sizes nothing kept equal — a min-width, and a line-height plus a
+ * are ONE size. An oval comes of two sizes nothing keeps equal — a min-width, and a line-height plus a
  * border. The window's own measurement is the other half, taken on the desktop.
  */
 describe('the count badge', () => {

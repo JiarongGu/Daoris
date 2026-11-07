@@ -37,7 +37,7 @@ export type DriverFacts = {
 /**
  * The Driver domain's cards, drawn from the shell's facts: where this machine's Daoris lives, the driver's dials
  * over `driver.json`, this machine's sessions' access and the install's update. `DriverDomain` holds the hooks and hands
- * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths (the UI/UX design R6, UIFIT1).
+ * the facts here; a story hands a fixture, so the domain is drawn at the frame's widths.
  * A molecule: every state by props, every press out.
  */
 export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, onQuiet, onCap, onAccess, onGitAccess, onSayUpdate }: {
@@ -60,23 +60,22 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
 }) {
   const { t } = useTranslation();
   // The cap as typed, held as text while it is being typed: a number input mid-edit passes through the empty string,
-  // and writing it straight to the config would be refused while the person was still reaching for a digit.
+  // and writing it straight to the config would be refused while the person is still reaching for a digit.
   const [cap, setCap] = useState<string | null>(null);
 
   return (
     <CardStack>
-      {/* 🔴 A setting is a ROW. Every card here used to open with a
-          paragraph and put its one control beneath it, so the first checkbox sat 580px below the
-          title and the next dial a screen further down. `SettingRow` carries the shape now — the
-          label leads, the hint is one line, the value beside its words on the card's track (R1), the paragraph on the
+      {/* 🔴 A setting is a ROW, not a paragraph with its one control beneath it, which would put the first
+          checkbox far below the title and the next dial a screen further down. `SettingRow` carries the shape:
+          the label leads, the hint is one line, the value beside its words on the card's track, the paragraph on the
           glyph — and the cards are the sections of one settings page rather than five essays. */}
 
       {/* The driver's dials, in one card. The notification switch leads because it is the setting a
           person is most likely to have come here to change. */}
       <Card>
         <SettingList>
-          {/* Where this machine's Daoris lives (D63), the card's first row; the home's page is This Daoris since WIRING1c,
-              and this row is its door (the this-Daoris design §2). */}
+          {/* Where this machine's Daoris lives, the card's first row; the home's page is This Daoris,
+              and this row is its door. */}
           {facts.home && (
             <SettingRow
               label={t('settings.home.label')}
@@ -105,7 +104,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
               )}
             />
           )}
-          {/* NOTIFY2d (the notification design §3.3, §5): the switch says what it governs beside its value, as full access does, and
+          {/* The switch says what it governs beside its value, as full access does, and
               what it never governs: a terminal's press, whose terminal waits on the person, and what Notifications lists. */}
           <SettingRow
             label={t('settings.notify.label')}
@@ -117,7 +116,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
             <p className="m-0 mt-1 text-small text-ink-faint">{t('settings.notify.press')}</p>
           </SettingRow>
 
-          {/* How long an account cools when its agent names no reset (TOOL4g, D125 §2.2): offered where the shell says it,
+          {/* How long an account cools when its agent names no reset: offered where the shell says it,
               since the answer has no such field and has no route to write it. */}
           {typeof facts.coolOff === 'number' && (
             <MinutesSetting setting={minutes.cooloff} held={facts.coolOff} onSet={onCoolOff} />
@@ -129,7 +128,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
             <MinutesSetting setting={minutes.quiet} held={facts.quiet} onSet={onQuiet} />
           )}
 
-          {/* How many sessions Daoris starts at once (CAPSET1, D130's CAPCOUNT1 note): the person's one dial for the machine,
+          {/* How many sessions Daoris starts at once: the person's one dial for the machine,
               never per account. Offered where the shell answers the field, as the cool-off is. */}
           {typeof facts.cap === 'number' && (
             <SettingRow
@@ -160,14 +159,14 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
         </SettingList>
       </Card>
 
-      {/* Each installed plugin with what it holds set (PLUGSET1, the modes design §4.1), beside the folder they are looked for
+      {/* Each installed plugin with what it holds set, beside the folder they are looked for
           in: read only, each a door to its page, where its settings are changed. */}
       {facts.plugins && <PluginSettings plugins={facts.plugins} onOpen={(id) => onGo({ view: 'plugins', item: id })} />}
 
-      {/* This machine's sessions' access (AUTONOMY1d, D184 point 1): the level under every workspace's and repository's, whose
+      {/* This machine's sessions' access: the level under every workspace's and repository's, whose
           own are on their Setup tabs. Here because it is the machine's, as the driver's dials are, and offered where the shell
           answers it, since an answer without the field has no route to write it. Nothing stands above it, so turning full access off clears it.
-          Its lead paragraph is its title's ⓘ, as Setup's fold carries its summary line (ACCESSASK1, the UI/UX design §3.3). */}
+          Its lead paragraph is its title's ⓘ, as Setup's fold carries its summary line. */}
       {facts.machineAccess && (
         <Card>
           <section aria-label={t('projects.setup.section.access')}>
@@ -186,7 +185,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
                 setHere={t('settings.access.setHere.machine')}
                 onChange={onAccess}
               />
-              {/* GITAUTH1f (the git-auth design §7.3): this machine's git access, the level under every workspace's and repository's,
+              {/* This machine's git access, the level under every workspace's and repository's,
                   untouched by full access; Settings → Git draws the same rows. */}
               {facts.machineGitAccess && onGitAccess && (
                 <GitAccessRows
@@ -202,7 +201,7 @@ export function DriverCards({ facts, minutes, busy, onGo, onNotify, onCoolOff, o
         </Card>
       )}
 
-      {/* The install's update (UPDATE1b): the banner, its other door on the screen, is gone once dismissed, and this
+      {/* The install's update: the banner, its other door on the screen, is gone once dismissed, and this
           stands. Here because the update is the application's own, as the home above is, and holds the driver's starts
           while it drains. A word the shell refuses is said in its sentence; one it takes is shown by the row itself. */}
       <UpdateSection update={facts.update} busy={busy.update} onSay={onSayUpdate} />

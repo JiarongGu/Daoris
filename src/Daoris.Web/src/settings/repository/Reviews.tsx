@@ -13,14 +13,14 @@ export type ReviewEnvironment = { name: string; kind: string; procedure: string;
 /** A review rule as the driver answers it: none here, or its environments, the first the default, and whether work waits. */
 export type ReviewRule = { none?: boolean; required?: boolean; environments: ReviewEnvironment[] };
 
-/** Where a repository's rule was set: for it, or for its workspace. */
+/** Where a repository's rule is set: for it, or for its workspace. */
 export type ReviewSource = 'repository' | 'workspace';
 
 /** One repository's rule as the driver resolves it (`LINES`' `reviews`); `rule` and `source` absent where nothing is set. */
 export type RepositoryReview = { repository: string; workspace: string; rule?: ReviewRule | null; source?: ReviewSource | null };
 
 /**
- * One change to a review rule, the twins' edit in the shared table's shape (design §1.7): add or replace an environment (with
+ * One change to a review rule, the twins' edit in the shared table's shape: add or replace an environment (with
  * whether work waits), say a repository has none, drop one, say whether it is required, or clear.
  */
 export type ReviewEdit = { put?: ReviewEnvironment; required?: boolean; none?: true; drop?: string; clear?: true };
@@ -28,7 +28,7 @@ export type ReviewEdit = { put?: ReviewEnvironment; required?: boolean; none?: t
 /** The edit for a repository or a workspace, as `SET_REVIEW` takes it. */
 export type ReviewChange = { repository?: string; workspace?: string } & ReviewEdit;
 
-/** What a put's procedure look found (`SET_REVIEW`'s `reviewed`): the workspace's repositories lacking it, and whether it was looked for. */
+/** What a put's procedure look found (`SET_REVIEW`'s `reviewed`): the workspace's repositories lacking it, and whether it is looked for. */
 export type ReviewLook = { lacking: string[]; unchecked: boolean };
 
 /** Names in backticks, the last after the catalogue's *or*: `a`, `a or b`, `a, b or c` — the twins' `either`. */
@@ -40,7 +40,7 @@ function either(t: TFunction, names: string[]): string {
 }
 
 /**
- * What each door says as a rule is set (design §1.7), in the page's language: whether work waits for the person's look and
+ * What each door says as a rule is set, in the page's language: whether work waits for the person's look and
  * where, then what a set-up step may do in each environment, in order — the twins' sentences (`reviewSays`, `ReviewRules.Says`),
  * a catalogue key each. Nothing set says today's behaviour.
  */
@@ -67,8 +67,8 @@ export function reviewSays(t: TFunction, rule: ReviewRule | null | undefined): s
 }
 
 /**
- * What a Setup row says of the rule standing (design §1.7–§1.8): the door's sentences, what the landing's gate does with it
- * (the twins' `reviewGate` and `ReviewRules.Gate`, REVIEWENV1c2), nothing after none here, and where it was set; nothing set
+ * What a Setup row says of the rule standing: the door's sentences, what the landing's gate does with it
+ * (the twins' `reviewGate` and `ReviewRules.Gate`), nothing after none here, and where it is set; nothing set
  * says today's behaviour and nothing more.
  */
 export function reviewRowSays(t: TFunction, rule: ReviewRule | null | undefined, from?: { source?: ReviewSource | null; workspace?: string }): string {
@@ -186,7 +186,7 @@ export function ReviewField({ name, owner, set, busy = false, onChange }: {
 const FIELD = 'w-full min-w-0 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint';
 
 /**
- * An environment's form (design §1.3): its name, its kind, the repository's procedure, where the app runs (required for a
+ * An environment's form: its name, its kind, the repository's procedure, where the app runs (required for a
  * local one, the only place a set-up step may show the work), a local one's command, and for a rule set afresh whether work
  * waits. Sent as typed: the driver's table judges it.
  */
@@ -210,7 +210,7 @@ function EnvironmentForm({ name, fresh, busy, onSave, onCancel }: {
 
   return (
     <form
-      // Sized to its content up to the pane (R1, UIFIT1d): a name has its own width, a procedure and an address take the form's.
+      // Sized to its content up to the pane: a name has its own width, a procedure and an address take the form's.
       className="grid gap-2"
       onSubmit={(event) => {
         event.preventDefault();

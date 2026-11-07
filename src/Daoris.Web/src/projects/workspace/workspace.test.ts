@@ -29,7 +29,7 @@ describe('the accounts each agent may run in a workspace', () => {
       .toEqual(['account-4@claude-code', 'account-1@claude-code', 'account-2@claude-code', 'account-3@claude-code']);
   });
 
-  /** OWNSPACE1b-A: never the tool's own sign-in; none where the agent has no account of Daoris's. */
+  /** Never the tool's own sign-in; none where the agent has no account of Daoris's. */
   it('names none where the agent has no account of Daoris’s, and leaves out an agent not installed', () => {
     expect(accountsHere([tool(), tool({ name: 'codex', product: null, present: false })], { agents: [] }, named)).toEqual([
       { agent: 'claude-code', product: 'Claude Code', accounts: [] },

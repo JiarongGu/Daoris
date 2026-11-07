@@ -10,7 +10,7 @@
  * which is exactly the constraint a 18px strip mark and a 16px taskbar icon have. It also belongs
  * beside the 道衍 the wordmark already carries, where a free-floating glyph would not.
  *
- * 🔴 **The first version was three curved arms with no field, and it failed by being looked at.**
+ * 🔴 **Three curved arms with no field fail by being looked at.**
  * At 18px the curves read as a bird — thin strokes at that size have no silhouette, and a mark
  * whose meaning needs 64px is not a mark. Solid field, straight arms, one centre: the shape is
  * legible before any of its detail is.
@@ -32,8 +32,8 @@ export function Mark({ size = 20, className }: { size?: number; className?: stri
       focusable="false"
       className={className}
     >
-      {/* 🔴 ONE masked rect. The first attempt drew the field, then drew it again through the mask —
-          the same colour twice, so there was no hole and the seal rendered as a solid square. A
+      {/* 🔴 ONE masked rect. Drawing the field, then drawing it again through the mask paints
+          the same colour twice, so there is no hole and the seal renders as a solid square. A
           knockout is the absence of the field, which means exactly one thing may paint it. */}
       <rect width="24" height="24" rx="5.5" fill="currentColor" mask="url(#daoris-mark)" />
       <mask id="daoris-mark">

@@ -51,7 +51,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
     <>
       <Prose className="mb-3">{t('settings.browser.nextStart')}</Prose>
 
-      {/* Which browser (BRW12): Daoris's own, or the person's Edge on a profile of Daoris's. */}
+      {/* Which browser: Daoris's own, or the person's Edge on a profile of Daoris's. */}
       <Card id="settings-which-browser" className="scroll-mt-3">
         <SectionTitle>{t('settings.browser.which.title')}</SectionTitle>
         <SettingList>
@@ -77,7 +77,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
             />
           )}
         />
-        {/* Whose hands are on it (BRW8): the running sessions handed it, each a door into Sessions. */}
+        {/* Whose hands are on it: the running sessions handed it, each a door into Sessions. */}
         <SettingRow
           label={t('settings.browser.driving.label')}
           hint={t('settings.browser.driving.hint')}
@@ -113,7 +113,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
         )}
       </Card>
 
-      {/* Where the page's links open (BRW7): the system's browser, or the one chosen above. The page
+      {/* Where the page's links open: the system's browser, or the one chosen above. The page
           reads this at each click, so unlike the rest of the domain it holds at once. */}
       <Card id="settings-links" className="scroll-mt-3">
         <SettingList>
@@ -181,7 +181,7 @@ export function BrowserDomain({ notify, drivers, onAttend }: {
           </ul>
         )}
         {/* The rule runs the card's width, as the list's rows do; the fields are sized to what they
-            hold, an address long and a title short, by the form's own width (R1, UIFIT1d). */}
+            hold, an address long and a title short, by the form's own width. */}
         <div className="mt-3 border-t border-line pt-3">
         <FormGrid columns={['long', 'name', 'acts']}>
         <FormRow>

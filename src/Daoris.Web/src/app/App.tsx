@@ -59,12 +59,12 @@ import { useViewLayouts } from './shell/useViewLayouts';
 import { useScopeAndRefresh } from './shell/useScopeAndRefresh';
 
 /**
- * The strip's layout toggles, which leave it below the width the seven menus and the caption room need (UX7a, measured
- * on the stories at 680 px and above, `docs/2026-10-05-ux7-design.md` §3.1).
+ * The strip's layout toggles, which leave it below the width the seven menus and the caption room need (measured
+ * on the stories at 680 px and above).
  */
 const TOGGLES_ROOM = 'flex items-center max-[54rem]:hidden';
 
-/** A palette command that says it ran, into the machine log: by its id, never what was typed. */
+/** A palette command that says it ran, into the machine log: by its id, never the text typed. */
 const counted = (command: Command): Command => ({
   ...command,
   run: () => {
@@ -98,7 +98,7 @@ export function App() {
   // A shell whose driver has not answered yet is still a shell: it waits, never reading as a browser.
   const driver = useDriver();
   const attached = useAttached();
-  // The window's zoom (ZOOM1, the UI/UX design §3.11): the content scales, the frame keeps its size. A shell's alone: a browser
+  // The window's zoom: the content scales, the frame keeps its size. A shell's alone: a browser
   // zooms its page itself, so it is left its wheel and its keys.
   const zoom = useZoom();
   useZoomWheel(attached);
@@ -128,17 +128,17 @@ export function App() {
   // keeps a view's list too; Sessions, the one view that needs a shell, is never in front there.
   const listed = isListed(view);
 
-  // A region toggled: the side bar and the panel are the frame's on every view since DOCK1a, and
+  // A region toggled: the side bar and the panel are the frame's on every view, and
   // the list is the view's own, so where the view has none its key does nothing. True when it did. A
-  // browser has the view's list and never the side bar or the panel (D47 §4: they hold this machine's sessions).
+  // browser has the view's list and never the side bar or the panel (they hold this machine's sessions).
   const toggleRegion = (region: LayoutRegion): boolean => {
     if (!attached && region !== 'list') return false;
     if (region === 'right') closings.setDock(!closings.dock);
     else if (region === 'panel') closings.setPanel(!closings.panel);
     else if (isListed(view) && listMode) {
       // By what the room made of it: an open list closes, one laid over goes, and a strip opens — over
-      // the main area where the window drew it. The closing is this view's own (§3f), and one laid
-      // over leaves it as it was. A go's group still on its way goes with it, since the frame lays the list over
+      // the main area where the window drew it. The closing is this view's own, and one laid
+      // over leaves it unchanged. A go's group still on its way goes with it, since the frame lays the list over
       // for it.
       const next = listToggled({ mode: listMode });
       if (next.closed !== undefined) lists.setClosed(view, next.closed);
@@ -184,17 +184,17 @@ export function App() {
   return (
     // A tool's running action — a sign-in above all — outlives the view it started on.
     <HarnessRuns notify={notify}>
-    {/* Every link on the page opens through one place, told here where to (BRW7). */}
+    {/* Every link on the page opens through one place, told here where to. */}
     <LinkOpener.Provider value={linkOpener}>
-    {/* What the main area's page offers, which the menu bar's record groups read (UX7a). */}
+    {/* What the main area's page offers, which the menu bar's record groups read. */}
     <MainOffer.Provider value={offers}>
-    {/* A window, not a page (D55): the viewport IS the frame, every region scrolls inside it, and
-        the status bar is therefore always where it was. Page scrolling would put the output panel
+    {/* A window, not a page: the viewport IS the frame, every region scrolls inside it, and
+        the status bar is therefore always in the same place. Page scrolling would put the output panel
         below the fold exactly when a session is producing output. */}
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* First (PUSHMOUNT1, as the secondary root since PUSH1a): its effects run before any view's, so the driver's state and the
-          lines are read as the snapshot it asks and never pulled beside it. A notification is a door (design §4): clicking the OS
-          balloon lands on that session rather than on whatever was last open. It renders nothing. */}
+      {/* First, as in the secondary root: its effects run before any view's, so the driver's state and the
+          lines are read as the snapshot it asks and never pulled beside it. A notification is a door: clicking the OS
+          balloon lands on that session rather than on whatever is open. It renders nothing. */}
       <ShellSignals
         notify={notify}
         onAttend={openInWork}
@@ -202,8 +202,8 @@ export function App() {
         onConfirming={announcements.heard}
         onMessage={messageAnnouncements.heard}
       />
-      {/* The application's one global row (D56). It holds what is true everywhere, which is exactly
-          why none of it belongs in a sidebar owned by one view. Since SURF7 it is the window's own
+      {/* The application's one global row. It holds what is true everywhere, which is exactly
+          why none of it belongs in a sidebar owned by one view. It is the window's own
           title bar. */}
       <AppStrip
         captionRoom={chrome.present}
@@ -212,7 +212,7 @@ export function App() {
         onToggleMaximize={chrome.present ? chrome.onToggleMaximize : undefined}
         onResizeTop={chrome.present ? chrome.onResizeTop : undefined}
         onSystemMenu={chrome.present ? chrome.onSystemMenu : undefined}
-        // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE, and since D152 they are
+        // 🔴 The APPLICATION's menus, which is what a title bar holds in an IDE, and they are
         // its verbs and places, as VS Code's bar holds them: Workspace, Edit, View, Go, Run, Terminal,
         // Help, every row a row of the one table (`commands.ts`) that the palette and the keys read too.
         // The activity bar is still the one navigation region; Go is its keyboard twin.
@@ -224,7 +224,7 @@ export function App() {
             onOpen={setOpenMenu}
             onChoose={onMenu}
             mnemonics={mnemonics}
-            // Narrower than the seven names need, they fold into one menu (UX7a2), which the keys reach as they reach the bar.
+            // Narrower than the seven names need, they fold into one menu, which the keys reach as they reach the bar.
             compact={foldMenus}
             foldLabel={t('menu.fold')}
           />
@@ -240,15 +240,15 @@ export function App() {
           />
         )}
         // The region toggles at the strip's right, beside the window controls, as VS
-        // Code's sit: the panel and the right side bar on every view since DOCK1a, and the view's list where
+        // Code's sit: the panel and the right side bar on every view, and the view's list where
         // it has one, named for it. Ask Daoris has no button of its own up here: it is a tab of
         // the side bar, so the right toggle, F1 and Ctrl+Alt+I are its doors. Before them, Daoris's browser:
-        // an act of the application's, one press from every view, where View → Browser was the only one.
+        // an act of the application's, one press from every view.
         // 🔴 On a narrow window the toggles leave the strip before any menu does: each is View's,
         // with its key, and seven menus beside a command center reduced to its glyph need the room.
         trailing={attached ? (
           <div className="flex items-center gap-2">
-            {/* *Notifications* (NOTIFY2b, §2.1): first of the trailing group, before the browser's door, and on a narrow window
+            {/* *Notifications*: first of the trailing group, before the browser's door, and on a narrow window
                 too, since it is how anything that came to the person is found. */}
             <NotificationsBell
               needs={waiting}
@@ -258,10 +258,10 @@ export function App() {
               onPress={() => setNotificationsToggle((was) => was + 1)}
             />
             <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
-            {/* A set-up waiting for the person's review (REVIEWENV1d): said beside the browser, never inside it, which an
+            {/* A set-up waiting for the person's review: said beside the browser, never inside it, which an
                 agent drives. */}
             <ReviewChip
-              // Each with the newest set-up its step's record holds, which *Reviewed* names (REVIEWENV1g, REVIEWENV1b3).
+              // Each with the newest set-up its step's record holds, which *Reviewed* names.
               reviews={driver.data?.inReview?.map((row) => ({
                 ...row,
                 setUp: setUpRef(newestSetUp(outstanding.data?.find((quest) => quest.id === row.quest) ?? {})),
@@ -299,7 +299,7 @@ export function App() {
         ) : undefined}
       />
 
-      {/* The install's update, under the strip and above every view (UPDATE1, D139): quiet, one line, and only while
+      {/* The install's update, under the strip and above every view: quiet, one line, and only while
           there is something to say. The shell's alone: a browser has no install to update. */}
       {attached && (
         <UpdateBanner
@@ -310,28 +310,28 @@ export function App() {
         />
       )}
 
-      {/* The adoption notice (D156 §2.3), said once under the strip: about the window's own host. What waits for the person's
-          Confirm is drawn in *Notifications* and nowhere across the page (NOTIFY2b, the notification design §3.1). */}
+      {/* The adoption notice, said once under the strip: about the window's own host. What waits for the person's
+          Confirm is drawn in *Notifications* and nowhere across the page. */}
       {attached && unkeyedHost && !unkeyedSaid && <AdoptionNotice onDismiss={() => setUnkeyedSaid(true)} />}
 
-      {/* No narrow-window stacking. The 15rem sidebar this replaced had to become a top bar under
-          768px (D41 §2) — a 48px icon rail does not, and stacking it was actively wrong: it put a
-          276px-tall column of icons ABOVE the content and left the page 105px, measured in a real
-          browser at 686px. One layout at every width, which is also what keeps D55's "a window, not
+      {/* No narrow-window stacking. A wide sidebar has to become a top bar under
+          768px — a 48px icon rail does not, and stacking it is actively wrong: it puts a
+          276px-tall column of icons ABOVE the content and leaves the page 105px, measured in a real
+          browser at 686px. One layout at every width, which is also what keeps "a window, not
           a page" true on a narrow screen instead of only on a wide one. */}
       <div className="flex min-h-0 flex-1">
-        {/* The application's one navigation (D66): every view is one click from every other, and
-            nothing is gated behind a mode. Its foot holds Settings alone (UX6j, D150 §2.1): the state
-            it once carried went to the status bar, and its two actions, refreshing the index and the
-            language, to View, the palette and Settings → Appearance. */}
+        {/* The application's one navigation: every view is one click from every other, and
+            nothing is gated behind a mode. Its foot holds Settings alone: the state
+            lives in the status bar, and the two actions, refreshing the index and the
+            language, in View, the palette and Settings → Appearance. */}
         <ActivityBar
           label={t('nav.label')}
           items={NAV.filter(({ shellOnly }) => !shellOnly || attached).map(({ view: target, icon }) => ({
             tab: target,
             label: t(`nav.${target}`),
             icon,
-            // 🔴 A place's number is what waits on the person there and nothing else (BADGEUX1, the UI/UX design §3.10, replacing
-            // SESSBADGE1's count of the sessions the driver runs and the outstanding quests): the bell's rows its door opens, in the
+            // 🔴 A place's number is what waits on the person there and nothing else, never a count of the sessions the
+            // driver runs or of the outstanding quests: the bell's rows its door opens, in the
             // bell's hue. Running work is its mark, never a number; Overview holds no wait of its own, its lines being doors.
             ...placeMarks(target, placed[target as keyof typeof placed] ?? 0,
               target === 'sessions' ? sessionsRunning : target === 'quests' ? questsTaken : 0, t),
@@ -351,11 +351,11 @@ export function App() {
           onToggleCurrent={listed ? () => { toggleRegion('list'); } : undefined}
         />
 
-        {/* 🔴 ONE frame on every view (DOCK1a): the right side bar and the panel stay whatever the
+        {/* 🔴 ONE frame on every view: the right side bar and the panel stay whatever the
             centre shows, as VS Code's workbench does. One element in one place, so what is open, selected and sized survives a change
             of view. Sessions' list and main area are its own; every other view hands in its layout. A browser
             keeps the view's list and main area and never the side bar or the panel, which hold this machine's
-            sessions (D47 §4; D118 §4). */}
+            sessions. */}
         {attached
           ? (
             <WorkFrame
@@ -365,7 +365,7 @@ export function App() {
               intent={workIntent}
               onIntentTaken={() => setWorkIntent(null)}
               compose={compose}
-              // The composer's quiet press: its draft in Quick Ask, for the person to send (NEW1d-b, CTX1's draft door).
+              // The composer's quiet press: its draft in Quick Ask, for the person to send.
               onMakeTask={(text) => askQuickly(text, true)}
               // Sending work back is publishing a request, which is the platform's own door — so
               // this goes to the composer rather than growing a second one here.
@@ -450,9 +450,9 @@ export function App() {
           )}
       </div>
 
-      {/* Ambient truth, true on every view without being looked at (D55). Which circle and whether
+      {/* Ambient truth, true on every view without being looked at. Which circle and whether
           it syncs are as true on Quests as on Sessions, and a bar that appeared and vanished with a
-          view would be chrome. Since D56 it also carries the tier — D24's "stated on every screen"
+          view would be chrome. It also carries the tier — "stated on every screen"
           is better served by a bar that is on every screen by construction — and what the index
           holds. */}
       <StatusBar
@@ -490,7 +490,7 @@ export function App() {
               // offered a button that could not run it.
               onSyncNow={attached ? () => onSyncNow(circle) : undefined}
               onOpenQuest={openQuest}
-              // Named for the part (NAME1b, UX5 U72): the workspace's page at its remote, where it is wired.
+              // Named for the part: the workspace's page at its remote, where it is wired.
               onRemotes={attached ? () => open('projects', workspaceItem(circle), { workspaceSection: 'remote' }) : undefined}
             />
           )
@@ -498,7 +498,7 @@ export function App() {
         /* Where each fact leads, and the rule is that a status item goes where the fact is SET
            rather than where it is merely repeated. The driver and the remote are both machine wiring,
            so both land on Settings; sessions land on Sessions; the index count leads to the
-           repositories it was built from.
+           repositories it is built from.
 
            🔴 Handed over unconditionally and refused per-item inside the bar. A browser has no
            machine settings at all, and `driver === 'absent'` is exactly that case — the bar drops
@@ -525,7 +525,7 @@ export function App() {
           : undefined}
       />
 
-      {/* Every action, by name (SURF9). The registry is a pure function of what is true right now,
+      {/* Every action, by name. The registry is a pure function of what is true right now,
           so a browser's list and a shell's list differ by OMISSION rather than by a disabled row —
           a palette is a promise that what it lists can be done. */}
       {/* 🔴 Where the NAME lives now that the strip carries only the mark. It is also the honest
@@ -550,7 +550,7 @@ export function App() {
         </Drawer>
       )}
 
-      {/* Help › Keyboard shortcuts (UX7a): the table's keys by menu, as the menus print them. */}
+      {/* Help › Keyboard shortcuts: the table's keys by menu, as the menus print them. */}
       {shortcuts && (
         <KeyboardShortcuts groups={shortcutGroups(entries, translate)} browser={!attached} onClose={() => setShortcuts(false)} />
       )}
@@ -560,7 +560,7 @@ export function App() {
         onClose={() => setPalette(false)}
         // The menus' rows that apply now, under their menu's name: one table, so a palette row is a menu row.
         commands={paletteCommands(entries, translate).map(counted)}
-        // The command center's one question: what was typed, asked in Quick Ask.
+        // The command center's one question: the text typed, asked in Quick Ask.
         onAsk={attached ? (question) => { logEvent('command.run', { command: 'ask' }); askQuickly(question); } : undefined}
       />
 
@@ -583,15 +583,15 @@ export function App() {
         </QuickAsk>
       )}
 
-      {/* The zoom's level, said for a moment as it changes (ZOOM1); the status bar keeps it while it is not 100%. */}
+      {/* The zoom's level, said for a moment as it changes; the status bar keeps it while it is not 100%. */}
       {attached && <ZoomReadout level={zoom} />}
 
-      {/* A press's toast first, staying until the view opens or the press ends (NOTIFY2b, §3.3); then the window's outcomes. */}
+      {/* A press's toast first, staying until the view opens or the press ends; then the window's outcomes. */}
       <Toasts
         items={[...announcements.toasts, ...messageAnnouncements.toasts, ...toasts]}
         onClose={(id) => { if (!announcements.close(id) && !messageAnnouncements.close(id)) dismiss(id); }}
       />
-      {/* The window's one right-click handler (CTX1, D138): each surface offers its acts, and it draws the menu. */}
+      {/* The window's one right-click handler: each surface offers its acts, and it draws the menu. */}
       <ContextMenus doors={contextDoors} shell={chrome.present} />
     </div>
     </MainOffer.Provider>

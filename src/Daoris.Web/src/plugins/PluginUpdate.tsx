@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Inline, PathText } from '../design/ui';
 
-/** Where an installed plugin came from (PLUG9 c, D103): a folder, the install's offer, no record, or one that does not read. */
+/** Where an installed plugin came from: a folder, the install's offer, no record, or one that does not read. */
 export type PluginSourceShown = {
   kind: 'folder' | 'offer' | 'none' | 'unread';
   folder?: string | null;
@@ -26,7 +26,7 @@ export type PluginUpdatePlanShown = {
 export const updatable = (source?: PluginSourceShown | null): boolean => source?.kind === 'folder' || source?.kind === 'offer';
 
 /**
- * Where an installed plugin came from, under its row (PLUG9 c): the folder it was added from, the install's
+ * Where an installed plugin came from, under its row: the folder it is added from, the install's
  * offer, or no record — said, never guessed — or the driver's sentence for a record that does not read.
  */
 export function PluginSourceLine({ source }: { source?: PluginSourceShown | null }) {
@@ -48,7 +48,7 @@ export function PluginSourceLine({ source }: { source?: PluginSourceShown | null
 }
 
 /**
- * What an update would change, under the plugin's row, before the press (PLUG9 c): each change as the two
+ * What an update would change, under the plugin's row, before the press: each change as the two
  * manifests write it, or that nothing it declares changes, and **Update now** — or the driver's refusal,
  * verbatim, and nothing to press but Not now.
  */

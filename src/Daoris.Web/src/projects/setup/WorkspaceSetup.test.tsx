@@ -137,7 +137,7 @@ describe("a workspace's Setup", () => {
     expect(screen.queryByRole('button', { name: 'Reach' })).toBeNull();
   });
 
-  // D233 point 2: the supervisor is a role of the place's Roles, so the workspace's Setup draws no section of it.
+  // The supervisor is a role of the place's Roles, so the workspace's Setup draws no section of it.
   it("draws no supervisor's section: the supervisor is a role among the place's roles", () => {
     at({});
     expect(screen.queryByRole('button', { name: 'Supervisor' })).toBeNull();
@@ -233,7 +233,7 @@ describe("a workspace's Setup", () => {
   });
 });
 
-/** FABRIC-CLOSE1i2: the machines a wired workspace's remote counts undeclared, each with *Retire*, under Reach. */
+/** The machines a wired workspace's remote counts undeclared, each with *Retire*, under Reach. */
 describe("a workspace's machines its remote counts undeclared", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
@@ -308,7 +308,7 @@ describe("a workspace's review before landing", () => {
 /**
  * A workspace's *Second opinion before landing*, among its Defaults, for every
  * repository there that sets none of its own. Nothing set says today's behaviour; one set carries Clear and says what the gate
- * does with it (XAGENT1f4).
+ * does with it.
  */
 describe("a workspace's second opinion before landing", () => {
   const withOpinion = (opinion: WorkspaceSetupProps['defaults']['opinion']) => at({
@@ -342,7 +342,7 @@ describe("a workspace's second opinion before landing", () => {
     });
 
     expect(screen.getByText(/reads it, in a copy of its own that nothing is taken back from/)).toBeInTheDocument();
-    // XAGENT1f4: the twins' gate sentence, never that nothing reads it.
+    // The twins' gate sentence, never that nothing reads it.
     expect(screen.getByText(/Where work here waits for another agent's reading, it lands only once that reading is settled/))
       .toBeInTheDocument();
     expect(screen.queryByText(/Declared only: nothing reads it yet/)).not.toBeInTheDocument();
@@ -455,7 +455,7 @@ describe("a workspace's sessions' access", () => {
     expect(onChange).toHaveBeenLastCalledWith({ access: { routing: null } }, expect.anything());
   });
 
-  // A change the driver refused is said under the row it was pressed in, its editor open.
+  // A change the driver refused is said under the row it is pressed in, its editor open.
   it('says a refused change under its row, the editor still open', async () => {
     const onChange = vi.fn((_edit: unknown, answered?: Answered) => answered?.refused('The driver could not write aurora’s access.'));
     at({ access: { pauses: pauses({ value: 'person', source: 'default' }), aboveFull: false, onChange } });

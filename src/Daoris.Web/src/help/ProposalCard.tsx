@@ -22,9 +22,9 @@ export type HelpPluginShown = {
   servers: { name: string; command: string[] }[];
   copied?: boolean;
   problem?: string | null;
-  /** What one of the install's own plugins needs, in its README's words (PLUG9 d). */
+  /** What one of the install's own plugins needs, in its README's words. */
   needs?: string[];
-  /** What an update changes, each side as the manifests write it (PLUG9 c). */
+  /** What an update changes, each side as the manifests write it. */
   changes?: { what: string; was: string; now: string }[];
   /** Whether Apply replaces an installed plugin's folder from where it came from (an update). */
   replaced?: boolean;
@@ -32,34 +32,34 @@ export type HelpPluginShown = {
 
 /**
  * A proposal of Ask Daoris's the route takes: what it changes, and the command that does the same.
- * Since HELP6 a kind for each door built since: an agent's update or pin, an account's model and effort, a
+ * A kind for each door: an agent's update or pin, an account's model and effort, a
  * delete of a record made by mistake, and a go to a screen, which has no command since it changes nothing.
- * Since PLUG9 a plugin that has landed, added from its folder, or one switched on or off, with what it runs.
- * Since WSR5b a branch a landing made, handed to a landing plugin, which pushes it. Since HELP10 Daoris's
+ * A plugin that has landed, added from its folder, or one switched on or off, with what it runs.
+ * A branch a landing made, handed to a landing plugin, which pushes it. Daoris's
  * browser's settings, a card as a setting's is, and bringing repositories up to date, which is looked at first.
- * Since DRIFT1d2 the person's yes to a done's departure, with each departure shown before the press.
+ * The person's yes to a done's departure, with each departure shown before the press.
  */
 export type HelpProposal = {
   id: string;
   /** A digest of the plan the card shows: the Apply sends it back, and the host applies only a plan still that one. */
   revision?: string;
-  /** A move to a workspace (`repository`, ENTRY1d1) has no card of its own: its sentence, Apply and Not now. */
-  /** Archiving or unarchiving sessions (`session`, SESSUX1h2a) is the generic card too, with its command. */
-  /** A change of the role catalogue (`role`, FOUNDATION1y-i) is the generic card: its sentence, its `daoris role` command, Apply. */
+  /** A move to a workspace (`repository`) has no card of its own: its sentence, Apply and Not now. */
+  /** Archiving or unarchiving sessions (`session`) is the generic card too, with its command. */
+  /** A change of the role catalogue (`role`) is the generic card: its sentence, its `daoris role` command, Apply. */
   kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'browser' | 'sync' | 'repository' | 'session' | 'pause' | 'clear' | 'workflow' | 'setup' | 'role';
   describe: string;
   terminal: string;
   why: string;
   plugin?: HelpPluginShown | null;
-  /** The person's approval of what a plugin's server offers Ask Daoris, or its withdrawal (`plugin`'s `approve`, HELPPLUG1c). */
+  /** The person's approval of what a plugin's server offers Ask Daoris, or its withdrawal (`plugin`'s `approve`). */
   grant?: HelpGrantShown | null;
   /** A place's supervisor rules, before and after (`role`); the card words them from the catalogue. */
   rules?: HelpRulesShown | null;
   /** Bringing up to date: whether the person has looked, and every row the look listed. */
   sync?: HelpSyncShown | null;
-  /** A workflow version (`workflow`, WORKFLOW1h-a): drawn as the design's card. */
+  /** A workflow version (`workflow`): drawn as the design's card. */
   workflow?: HelpWorkflowShown | null;
-  /** A place's quick set-up (`setup`'s `place` door, AGENTSPLACE1k): the ask and the plan's changes; Apply opens *Set up…* on the ask. */
+  /** A place's quick set-up (`setup`'s `place` door): the ask and the plan's changes; Apply opens *Set up…* on the ask. */
   place?: HelpPlaceShown | null;
 };
 
@@ -92,7 +92,7 @@ function PlaceChanges({ place }: { place: HelpPlaceShown }) {
 }
 
 /**
- * What a workflow card will show (design §8.2), as the driver's judge reads the version: the workflow, the version it is
+ * What a workflow card will show, as the driver's judge reads the version: the workflow, the version it is
  * made on and the one it becomes, the steps' diff lines, the person's part, each outward act, what is still needed, who it
  * applies to, and whether the scope also chooses it. Lines are the driver's words, as it writes them.
  */
@@ -120,7 +120,7 @@ export type HelpWorkflowShown = {
   /** What the change asks less of the person, in the driver's words; only their Apply makes it. */
   lowers?: string[];
   /**
-   * INTEGRATE1r part r3: the repositories a chosen graph integrates in with no gates, by name; the page words the line. Absent from
+   * The repositories a chosen graph integrates in with no gates, by name; the page words the line. Absent from
    * an older driver, which said it in the plan's text alone. What a repository cannot carry stays in `needs`, as the driver sent it.
    */
   noGates?: string[];
@@ -138,7 +138,7 @@ export type HelpWorkflowShown = {
 };
 
 /**
- * One change a draft card makes to its draft (FLOWCHART2e, the driver's `WorkflowGraphDiff`): a step, a way or a field of the graph, added,
+ * One change a draft card makes to its draft (the driver's `WorkflowGraphDiff`): a step, a way or a field of the graph, added,
  * removed or changed. `id` is `step:`, `way:` or `graph:`, then `+`, `-` or `~`, then the step's or way's id or the field; `said` is the
  * driver's English.
  */
@@ -159,9 +159,9 @@ export type WorkflowGraphChange = {
 
 /**
  * What a bring-up-to-date card shows: whether the person has looked — the press that fetches —
- * and each row the look listed, in the terminal's words, and whether the press moves it. Since LEFT3, what the rows do
- * not say, kept by the look: each repository whose line was not fetched, and those left apart. A host
- * older than LEFT3 answers neither.
+ * and each row the look listed, in the terminal's words, and whether the press moves it. Also what the rows do
+ * not say, kept by the look: each repository whose line is not fetched, and those left apart. An older
+ * host answers neither.
  */
 export type HelpSyncShown = {
   looked: boolean;
@@ -173,7 +173,7 @@ export type HelpSyncShown = {
 };
 
 /**
- * What an approval of a plugin's server for Ask Daoris names (HELPPLUG1c, D170's note), as the driver's judge read the
+ * What an approval of a plugin's server for Ask Daoris names, as the driver's judge reads the
  * manifest: the plugin, the server, each tool it reads with and each it writes outside Daoris with, and the writes the approval
  * accepts; for a withdrawal (`withdraw`), those it had accepted. The bridge leaves a false out.
  */
@@ -235,14 +235,14 @@ function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
         said(t('help.proposal.plugin.harness', { name: harness.name, command: line(harness.command) }), `harness-${harness.name}`))}
       {plugin.servers.map((server) =>
         said(t('help.proposal.plugin.server', { name: server.name, command: line(server.command) }), `server-${server.name}`))}
-      {/* PLUG9 (c): each side as the manifests write it; a side that is empty is none. */}
+      {/* Each side as the manifests write it; a side that is empty is none. */}
       {(plugin.changes ?? []).map((change) =>
         said(t('help.proposal.plugin.change', {
           what: t(`plugin.update.what.${change.what}`, { defaultValue: change.what }),
           was: change.was ? `\`${change.was}\`` : t('plugin.update.none'),
           now: change.now ? `\`${change.now}\`` : t('plugin.update.none'),
         }), `change-${change.what}`))}
-      {/* PLUG9 (d): the README's own requirement lines, which the person sets up themselves. */}
+      {/* The README's own requirement lines, which the person sets up themselves. */}
       {(plugin.needs ?? []).map((need) => said(t('help.proposal.plugin.needs', { need }), `need-${need}`))}
     </ul>
   );
@@ -332,7 +332,7 @@ function DraftChange({ workflow }: { workflow: HelpWorkflowShown }) {
 }
 
 /**
- * What a sync card's look did not fetch (LEFT3 b, WSR7), said once, after the rows, as the screen's note says it: how
+ * What a sync card's look did not fetch, said once, after the rows, as the screen's note says it: how
  * many of the lines it looked at, grouped by git's reason, when each last heard from origin — which its row is judged
  * against — and the git identity an origin over SSH or HTTPS needs. Git's words are content.
  */
@@ -379,8 +379,8 @@ function SyncNotFetched({ failed, lines, onGo }: {
 }
 
 /**
- * The repositories a sync card's look left apart (LEFT3 b, D112), collapsed as the screen's list is: they hold no branch
- * of Daoris's, so nothing of theirs was fetched or moves, and a card cannot tick one, so it says how one is included.
+ * The repositories a sync card's look left apart, collapsed as the screen's list is: they hold no branch
+ * of Daoris's, so nothing of theirs is fetched or moves, and a card cannot tick one, so it says how one is included.
  */
 function SyncApart({ apart }: { apart: string[] }) {
   const { t } = useTranslation();
@@ -417,7 +417,7 @@ function SyncApart({ apart }: { apart: string[] }) {
  * become standing, what is needed first and who it applies to. A draft (needs present) offers only *Not now*. A change to the draft open in
  * the editor lists its changes and what to put right, and its press, *Open in the editor*, saves and settles nothing.
  *
- * **A set-up is a place's** (WORKFLOWCLEAN1 1f): its card lists the plan's changes and Apply opens the page's *Set up…* on the ask.
+ * **A set-up is a place's**: its card lists the plan's changes and Apply opens the page's *Set up…* on the ask.
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss, onGo }: {
   proposal: HelpProposal;
@@ -479,7 +479,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss, on
               </li>
             ))}
           </ul>
-          {/* LEFT3 b: what the rows do not say, on the card itself, as the look's message says it too. */}
+          {/* What the rows do not say, on the card itself, as the look's message says it too. */}
           {(syncing.notFetched ?? []).length > 0 && (
             <SyncNotFetched failed={syncing.notFetched!} lines={syncing.rows.filter((row) => row.step === 'line').length} onGo={onGo} />
           )}

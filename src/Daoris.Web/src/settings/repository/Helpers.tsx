@@ -5,12 +5,12 @@ import { Button, Segmented } from '../../design/ui';
 
 /**
  * A helpers rule as the driver answers it: what a helper a session's agent asks for does, `ask`
- * (it waits for the person's yes), `on` (it starts at once within the limits; the default, for Daoris's own agents, HELPERDEFAULT1)
+ * (it waits for the person's yes), `on` (it starts at once within the limits; the default, for Daoris's own agents)
  * or `off` (none is offered), and the agents that may be asked, in the order they are tried.
  */
 export type HelperRule = { mode: string; agents: string[] };
 
-/** Where a repository's rule was set: for it, for its workspace, or nowhere, which is the default's. */
+/** Where a repository's rule is set: for it, for its workspace, or nowhere, which is the default's. */
 export type HelperSource = 'repository' | 'workspace' | 'default';
 
 /** One repository's rule as the driver resolves it (`LINES`' `helpers`): never null, its source `default` where nothing is set. */
@@ -26,7 +26,7 @@ export type HelperEdit = { set?: HelperSet; clear?: true };
 export type HelperChange = { repository?: string; workspace?: string } & HelperEdit;
 
 /**
- * What stands where nothing is set: the twins' `HelperRule.Default` (HELPERDEFAULT1, D163's 2026-10-24 note), `on` for Daoris's own
+ * What stands where nothing is set: the twins' `HelperRule.Default`, `on` for Daoris's own
  * agents, those it has set up and signed in on this machine, which the driver reads from its accounts as it judges each ask.
  */
 export const HELPER_DEFAULT: HelperRule = { mode: 'on', agents: [] };
@@ -38,7 +38,7 @@ const modeKey = (mode: string) => ((MODES as readonly string[]).includes(mode) ?
 
 /**
  * What each door says of a rule, in the page's language: its mode in the terminal's sentence (`driver helpers`), then
- * who may be asked as the driver's choice walks them (D163's MIXAGENT2a-ii note): the agents named, in order, else the one the
+ * who may be asked as the driver's choice walks them: the agents named, in order, else the one the
  * session names or another maker's. Off offers none, so it names no one.
  */
 export function helperSays(t: TFunction, rule: HelperRule): string[] {
@@ -54,7 +54,7 @@ export function helperSays(t: TFunction, rule: HelperRule): string[] {
 }
 
 /**
- * What a Setup row says of the rule standing: the door's sentences, then where it was set, the default included. The default
+ * What a Setup row says of the rule standing: the door's sentences, then where it is set, the default included. The default
  * asks only the agents Daoris set up and signed in on this machine, which it says in place of a list.
  */
 export function helperRowSays(t: TFunction, rule: HelperRule, from: { source?: HelperSource | null; workspace?: string }): string {
@@ -115,7 +115,7 @@ export function HelperField({ name, set, inherited, busy = false, onChange }: {
 
   return (
     <form
-      // Sized to its content up to the pane (R1, UIFIT1d): the agents are a list, which takes the form's width.
+      // Sized to its content up to the pane: the agents are a list, which takes the form's width.
       className="grid gap-2"
       onSubmit={(event) => {
         event.preventDefault();

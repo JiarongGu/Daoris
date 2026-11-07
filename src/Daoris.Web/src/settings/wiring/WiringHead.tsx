@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Pill } from '../../design/ui';
 
 /**
- * The page's head (the this-Daoris design §7): a development run says so before any card, with what follows from it. An
+ * The page's head: a development run says so before any card, with what follows from it. An
  * install, or a home named for one start, has nothing to say here.
  */
 export function WiringHead({ kind }: { kind: string | null | undefined }) {

@@ -6,7 +6,7 @@ import { LANGUAGES } from '../fixtures';
 import { WorkspaceSetup, type WorkspaceSetupProps, type WorkspaceWiring } from '../setup/WorkspaceSetup';
 import { WorkspaceDetails } from './WorkspacePage';
 
-// The homes the workspace's Setup tab's remaining rows moved to (SETUPUX1v, the setup-UX design §4): Remote as a row of Repositories'
+// The homes of what the workspace's Setup tab holds elsewhere: Remote as a row of Repositories'
 // workspace Details; the rules and the machines its remote counts undeclared as Reach among the workspace place's Sessions; the line's
 // defaults among its Workflow. At the main area's three widths (80, 39 and 25 rem), in both languages and both themes; a `play` puts the
 // focus where a keyboard lands first.

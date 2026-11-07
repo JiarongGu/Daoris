@@ -25,7 +25,7 @@ const { invoke, commands, window_, scheme } = vi.hoisted(() => {
       showSystemMenu: command('showSystemMenu'),
     },
     window_: { maximized: false },
-    // The kit's colour-scheme client: what the engine the window renders on was told.
+    // The kit's colour-scheme client: what the engine the window renders on is told.
     scheme: vi.fn((_scheme: string) => Promise.resolve()),
   };
 });
@@ -163,9 +163,9 @@ describe('the app strip as a title bar', () => {
   });
 
   /**
-   * 🔴 FRAME2: a press used to hand off to the OS move loop at once, so a still click on a maximized
-   * window restored it, and the loop swallowed a double-click's second press. A caption's press only
-   * notes where it went down; the drag begins once the pointer has travelled past the drag distance.
+   * Handing a press to the OS move loop at once would restore a maximized window on a still click, and the
+   * loop would swallow a double-click's second press. A caption's press only notes where it goes down;
+   * the drag begins once the pointer has travelled past the drag distance.
    */
   it('starts no drag on a still click, nor on a press that stays within the drag distance', async () => {
     const { onDragStart } = show();
@@ -188,8 +188,8 @@ describe('the app strip as a title bar', () => {
   });
 
   /**
-   * 🔴 UX5 U15: the command center was laid OVER the strip, centred on its whole width at a fixed
-   * 28rem, and at a narrow window (888px) it ran over the View menu. It sits in the strip's flow now,
+   * The command center laid over the strip, centred on its whole width at a fixed 28rem, would run over
+   * the View menu at a narrow window (888px). It sits in the strip's flow instead,
    * between two groups that grow alike from nothing: centred on the strip while both fit beside it,
    * and giving way to them when they do not, as VS Code's does. The geometry is the window's to show
    * (`npm run desktop -- shot`); this holds the arrangement that produces it.
@@ -364,7 +364,7 @@ describe('the window\'s engine and the viewer\'s theme', () => {
 /**
  * A later launch opens another main window of the instance that runs, the whole platform in a
  * frameless window of its own. The kit's window commands act on it, but its `SET_THEME` has no route there, so its page tells
- * its own frame the theme by the name it was opened under, as a utility window's page does.
+ * its own frame the theme by the name it is opened under, as a utility window's page does.
  */
 describe('another main window\'s frame and the viewer\'s theme', () => {
   afterEach(() => {

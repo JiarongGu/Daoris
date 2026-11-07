@@ -62,7 +62,7 @@ export function QuestList({
   filteredTo?: string | null;
   /** What no quest says, under the asks; the whole list empty is the list pane's own empty state. */
   empty: string;
-  /** The sentence for a list that has never had an answer, said in place rather than left blank (D118 §3h). */
+  /** The sentence for a list that has never had an answer, said in place rather than left blank. */
   unanswered?: string | null;
   /** The list's chosen item: a quest's id, or `ask:<id>`. */
   chosen: string | null;
@@ -87,7 +87,7 @@ export function QuestList({
       {filteredTo && (
         <p className="m-0 truncate px-2.5 pb-0.5 pt-2 text-meta text-ink-faint">{t('quests.list.filtered', { repository: filteredTo })}</p>
       )}
-      {/* Each heading's id is what a door into its group brings into view (ENTRY1b). */}
+      {/* Each heading's id is what a door into its group brings into view. */}
       {waiting.length > 0 && (
         <ListGroup id={groupHeading('quests', 'asks')} title={t('asks.group', { count: waiting.length })}>
           {waiting.map(({ ask, intake, unread }) => (
@@ -160,7 +160,7 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
   const sat = sittingDays(quest.filed);
   // The ask's short title names the work where it gave one; else the quest's own name, as before.
   const name = ask?.short?.trim() ? ask.short.trim() : questName(quest);
-  // A done a departure holds still waits on the person (DRIFT1d2), so it reads as live, never dimmed as ended.
+  // A done a departure holds still waits on the person, so it reads as live, never dimmed as ended.
   const ended = (quest.status === 'Done' || quest.status === 'Declined') && quest.held !== true;
   // Only a hold is the person's to lift here; any other reason is said, and offers nothing.
   const resume = sitting?.verdict === 'Held' ? onResume : undefined;
@@ -183,18 +183,18 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
     <li data-list-row="" {...contextOffer(menu)}>
       <ListRowDoor chosen={chosen} dimmed={ended} onPress={() => onChoose(quest.id)}>
         <span className="flex items-baseline gap-2">
-          {/* A closure graph's quest at its submission reads submitted (FABRIC-CLOSE1d, §E5); every other its status. */}
+          {/* A closure graph's quest at its submission reads submitted; every other its status. */}
           <Pill tone={QUEST_TONE[quest.status]} title={t(`statusHint.${shownStatus(quest)}`)}>{t(`status.${shownStatus(quest)}`)}</Pill>
           <span className="ml-auto flex min-w-0 shrink items-baseline justify-end gap-1.5">
             <CarriedCount links={quest.links?.length ?? 0} files={quest.attachments?.length ?? 0} />
             {/* A week of silence is the signal this view exists to surface. */}
             {quest.status === 'Open' && sat >= 7 && <Pill tone="declined">{t('quests.card.sat', { days: sat })}</Pill>}
-            {/* Taken and waiting on another repository's answer (D79): not stuck, and nothing for the person to
+            {/* Taken and waiting on another repository's answer: not stuck, and nothing for the person to
                 do. The waiting tone, as `awaiting-person` wears it. */}
             {waits && <Pill tone="open" title={t('quests.card.waitsHint')}>{t('quests.card.waits', { id: waits })}</Pill>}
-            {/* A departure holds it for the person's yes (DRIFT1d2): what follows waits on them, so open's hue, theirs. A set-up
-                step its review holds waits for their review instead (REVIEWENV1g), which no yes lifts, and a step its source's
-                reopen holds for their go-on or abandon (FABRIC-CLOSE1c3). */}
+            {/* A departure holds it for the person's yes: what follows waits on them, so open's hue, theirs. A set-up
+                step its review holds waits for their review instead, which no yes lifts, and a step its source's
+                reopen holds for their go-on or abandon. */}
             {quest.held && (quest.hold === 'unreviewed'
               ? <Pill tone="open" title={t('review.pillHint')}>{t('review.pill')}</Pill>
               : quest.hold === 'source-reopened'
@@ -206,11 +206,11 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
             )}
           </span>
         </span>
-        {/* Its name (SESSUX1j), the short title where there is one, whole title on its tip. */}
+        {/* Its name, the short title where there is one, whole title on its tip. */}
         <span title={quest.title} className={cn('mt-0.5 block truncate text-body', ended ? 'text-ink-soft' : 'text-ink')}>{name}</span>
         <span className="block truncate font-mono text-meta text-ink-faint">
           <span className="text-accent">{quest.from} → {quest.to}</span>
-          {/* The lanes of the repository it asks (D115 §2.2), beside the repository: `to` stays one. */}
+          {/* The lanes of the repository it asks, beside the repository: `to` stays one. */}
           {quest.lanes?.length ? (
             <>
               {' · '}
@@ -221,16 +221,16 @@ function QuestRow({ facts, ask, chosen, resuming, onChoose, onResume }: {
           ) : null}
           {' '}· {t('quests.card.filed', { ago: ago(quest.filed) })}
           {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
-          {/* A step of a chain says which quest's close published it (D65 §4). */}
+          {/* A step of a chain says which quest's close published it. */}
           {quest.parent && <> · {t('quests.card.follows', { id: quest.parent })}</>}
-          {/* The ask it came from, the one piece of work's other name (QUESTLISTS1), unless its route already names it: a quest
+          {/* The ask it came from, the one piece of work's other name, unless its route already names it: a quest
               an ask published comes `from` that ask, and the row would say it twice. */}
           {ask && !quest.from.includes(ask.id.slice(0, 6)) && (
             <> · <span title={t('quests.card.fromAskHint')}>{t('quests.card.fromAsk', { id: ask.id.slice(0, 6) })}</span></>
           )}
         </span>
-        {/* Why this machine's driver leaves it waiting (USE1): its record said so, the row did not, and a quest to
-            a held repository read as a request that would not start. */}
+        {/* Why this machine's driver leaves it waiting: its record says so, and without it a quest to
+            a held repository reads as a request that would not start. */}
         {sitting && (
           <span className="mt-0.5 block truncate text-small text-ink-soft"><Inline text={sittingSentence(sitting)} /></span>
         )}

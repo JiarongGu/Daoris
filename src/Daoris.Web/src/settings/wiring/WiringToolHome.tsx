@@ -4,7 +4,7 @@ import { PathText, Prose, SettingRow } from '../../design/ui';
 import { moment, size } from '../../locales/format';
 import { Fact, Unread, WiringCard } from './WiringParts';
 
-/** The catalogue word for where the tool home was read from, in `settings.daoris.toolHome.from.*`. */
+/** The catalogue word for where the tool home is read from, in `settings.daoris.toolHome.from.*`. */
 const FROM_WORD = ['process', 'account', 'default'];
 
 /** How many session records a row names before it counts the rest. */
@@ -14,7 +14,7 @@ const NAMED = 2;
  * What Daoris's sessions left in the person's own tool home: the folders whose names equal a
  * working directory in which one of Daoris's own session records shows a session ran, listed with the records that name them,
  * their size, when they were last written, and what would keep each from a removal. **Read-only: Daoris removes nothing here
- * yet** (OWNSPACE2e hardens the press), so the card says they can be removed by hand. The person's own folders are never listed.
+ * yet**, so the card says they can be removed by hand. The person's own folders are never listed.
  *
  * @remarks
  * A molecule: drawn from props, so every state is reachable without a shell.

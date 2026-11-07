@@ -59,7 +59,7 @@ export async function chooseRow(title: string) {
   return questPage(title);
 }
 
-/** The list's ＋, then one of its kinds: a menu opens from the keyboard in jsdom, the path D41 §6 requires anyway. */
+/** The list's ＋, then one of its kinds: a menu opens from the keyboard in jsdom, a path the application requires anyway. */
 export async function makeFromList(kind: 'Ask' | 'New quest') {
   const user = userEvent.setup();
   within(questList()).getByRole('button', { name: 'New ask or quest' }).focus();

@@ -36,7 +36,7 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
                 : <span className="text-small text-ink-faint">{t('harness.absent')}</span>}
               {each.door === adapter && <Chip accent>{t('harness.spawns')}</Chip>}
               {each.plugin && (onOpenPlugin
-                // A door to the plugin's page (PLUGUI1c2b, the Plugins design §5): a control, so a button, not a chip.
+                // A door to the plugin's page: a control, so a button, not a chip.
                 ? <Button variant="ghost" onClick={() => onOpenPlugin(each.plugin!)}>{t('harness.declaredBy', { plugin: each.plugin })}</Button>
                 : <Chip>{t('harness.declaredBy', { plugin: each.plugin })}</Chip>)}
               <span className="ml-auto flex gap-2">
@@ -110,8 +110,8 @@ export function AgentDoors({ t, tool, adapter, open, toggle, onOpenPlugin, busy,
         ))}
       </Fold>
 
-      {/* What it may do (PERM1, D72): the rules every session on this machine is handed, Daoris's defaults and the
-          proposals, only where Daoris hands this agent the rules file (§5.1). */}
+      {/* What it may do: the rules every session on this machine is handed, Daoris's defaults and the
+          proposals, only where Daoris hands this agent the rules file. */}
     </>
   );
 }

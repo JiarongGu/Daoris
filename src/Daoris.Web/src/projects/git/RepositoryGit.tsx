@@ -14,7 +14,7 @@ import type { ConflictPress } from './ConflictHunks';
 const noop = () => {};
 
 /**
- * What a Git tab shows (UX6h1): its answer on its way, no checkout of the repository on this machine, why Git did not answer
+ * What a Git tab shows: its answer on its way, no checkout of the repository on this machine, why Git did not answer
  * in words the page says (`errors.{code}`, or the driver's sentence), or what it read.
  */
 export type GitRead<T> =
@@ -35,7 +35,7 @@ export type HistoryRead =
 /**
  * What a Git tab has nothing to show for: its fact as a headline and why beneath it. A block of the page, so it wraps at the
  * pane's edge as every block of a record page does, where the main area's own empty state keeps a narrow body. A
- * workspace's Branches says its own the same way (UX6h2b2).
+ * workspace's Branches says its own the same way.
  */
 export function Nothing({ headline, body }: { headline: string; body: string }) {
   return (
@@ -57,15 +57,14 @@ export function Waiting({ sentence, reading }: { sentence: string; reading: bool
 }
 
 /**
- * **A repository's Branches tab** (UX6h1, D150 §4.2, §4.4): its branches as `GIT_BRANCHES` reads them for it, the screen's
+ * **A repository's Branches tab**: its branches as `GIT_BRANCHES` reads them for it, the screen's
  * twin of `daoris git branches --repository`. While the list is on its way it says so; a repository with no checkout
  * here, or one Git did not answer for, says why in its place; a checkout with no commit has no branch yet.
  *
  * @remarks
  * **A molecule**: the read arrives as a prop, and its holder reads it only while the tab shows. What it read is the list by
- * kind (UX6h2a, `BranchList`): the line at its head, then sessions', landed and yours, each session's branch named by the
- * title its holder joined. A branch's name opens its page, and the line's opens History, where its holder hands the presses
- * (UX6h3b).
+ * kind (`BranchList`): the line at its head, then sessions', landed and yours, each session's branch named by the
+ * title its holder joined. A branch's name opens its page, and the line's opens History, where its holder hands the presses.
  */
 export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, acts, deleted, unrecorded }: {
   repository: string;
@@ -102,14 +101,13 @@ export function BranchesTab({ repository, read, titles, onOpen, onOpenHistory, a
 }
 
 /**
- * **A repository's History tab** (UX6h1, D150 §4.2, the built-in Git design §2.3): its line's graph, the commits `GIT_GRAPH`
+ * **A repository's History tab**: its line's graph, the commits `GIT_GRAPH`
  * walks from the line's commit, newest first, each beside the lanes laid from its parents. It says while they are on their
  * way, that this machine has no checkout, why Git did not answer, and that its line has no commit here yet.
  *
  * @remarks
- * **A molecule**: the read arrives as a prop, and its holder reads it only while the tab shows. It draws the first page;
- * the pages accumulated, with the load-more foot while the graph answers `more` (UX6h3a); a commit opened beside the graph and
- * *All branches* are UX6h3's.
+ * **A molecule**: the read arrives as a prop, and its holder reads it only while the tab shows. It draws the pages
+ * accumulated, with the load-more foot while the graph answers `more`; *All branches* is the ⋯'s one checked item.
  */
 export function HistoryTab({ repository, read, onMore, all }: {
   repository: string;
@@ -117,7 +115,7 @@ export function HistoryTab({ repository, read, onMore, all }: {
   /** The next page, asked: the holder reads it and hands the commits back accumulated. */
   onMore?: () => void;
   /**
-   * *All branches* (UX6h3c): the ⋯'s one checked item, page state its holder keeps. `limit` says the graph drew only the
+   * *All branches*: the ⋯'s one checked item, page state its holder keeps. `limit` says the graph drew only the
    * first `shown` of `total` branches, the read's own limit. Absent, History has no ⋯.
    */
   all?: { on: boolean; onToggle: () => void; limit?: { shown: number; total: number } };
@@ -248,14 +246,14 @@ export type ChangesActs = {
 };
 
 /**
- * **A repository's Changes tab** (GITAPP2b, D204, the git-writes design §1 and §4): where the person lets Daoris change the
+ * **A repository's Changes tab**: where the person lets Daoris change the
  * checkout's files, what is staged against the last commit, what the files hold beyond it, what is untracked and what a merge
  * left in conflict. It is read when the tab opens, on focus and on *Refresh*, never watched, and says when. With `acts`
  * a file can be staged or unstaged whole, or by the hunks and lines of its changes, and the last act can be undone.
  *
  * @remarks
  * **A molecule**: the read arrives as a prop and `refreshing` says it is being read again while the last stays on show, with its
- * own time. A staged addition whose file was removed since is in Staged and in Not staged: two observations, both true.
+ * own time. A staged addition whose file is removed after staging is in Staged and in Not staged: two observations, both true.
  */
 export function ChangesTab({ repository, read, refreshing = false, onRefresh, acts }: {
   repository: string;

@@ -9,7 +9,7 @@ import { Segmented } from '../../design/ui';
  */
 export type HandOverRule = { mode: string };
 
-/** Where a repository's rule was set: for it, for its workspace, or nowhere, which is the default's. */
+/** Where a repository's rule is set: for it, for its workspace, or nowhere, which is the default's. */
 export type HandOverSource = 'repository' | 'workspace' | 'default';
 
 /** One repository's rule as the driver resolves it (`LINES`' `handOver`): never null, its source `default` where nothing is set. */
@@ -34,7 +34,7 @@ export function handOverSays(t: TFunction, rule: HandOverRule): string {
   return t(`settings.handOver.says.${modeKey(rule.mode)}`);
 }
 
-/** What a Setup row says of the rule standing: the door's sentence, then where it was set, the default included. */
+/** What a Setup row says of the rule standing: the door's sentence, then where it is set, the default included. */
 export function handOverRowSays(t: TFunction, rule: HandOverRule, from: { source?: HandOverSource | null; workspace?: string }): string {
   return [
     handOverSays(t, rule),

@@ -14,7 +14,7 @@ type Shared = {
   ask: string;
   considered: readonly Consideration[];
   questTitles: Record<string, string>;
-  /** The quests the page holds, by id: what says a quest is submitted, or held for its source reopened (FABRIC-CLOSE1d2). */
+  /** The quests the page holds, by id: what says a quest is submitted, or held for its source reopened. */
   quests?: Readonly<Record<string, Quest>>;
   onOpenQuest: (id: string) => void;
   onAttend?: (session: string) => void;

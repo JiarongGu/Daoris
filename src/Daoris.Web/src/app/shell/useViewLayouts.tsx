@@ -69,18 +69,18 @@ export function useViewLayouts({ notify, settingsSection, chooseSettings, settin
   /**
    * Every view but Sessions, as it hands itself to the frame: its list pane where it has one, and
    * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
-   * Plugins was built on the frame, and Quests, Repositories, Settings,
-   * Convergence and Search (FRAME1f, Knowledge since UX6i) moved onto it: each hands its list and its pages whole.
-   * Overview and Map have no list (§4), and their page is their main area.
+   * Plugins, Quests, Repositories, Agents, Settings and
+   * Knowledge are built on it: each hands its list and its pages whole.
+   * Overview and Map have no list, and their page is their main area.
    */
   const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, knowledge, agents, settings };
   const { contextDoors } = useContextDoors({ notify, t, openings, setSearchAsked, open, attached, askQuickly, openBrowser, copyText });
   const renderView = (): ViewLayout => listedLayouts[view] ?? {
     main: (
-      // No cap: content follows the window (UX5 U59), as the session's centre does since U16. It was 72rem,
-      // and a maximized window left every view a third empty. Every block wraps at the column's edge, prose
+      // No cap: content follows the window, as the session's centre does. A 72rem cap
+      // would leave every view a third empty in a maximized window. Every block wraps at the column's edge, prose
       // included, and a form keeps its own size. The main area is the container a view's split
-      // follows (§3b).
+      // follows.
       <ViewMain>
         {view === 'overview' && (
           <OverviewView

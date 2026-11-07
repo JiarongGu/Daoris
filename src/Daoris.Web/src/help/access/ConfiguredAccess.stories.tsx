@@ -6,13 +6,12 @@ import { ConfiguredAccess } from './ConfiguredAccess';
 import { HelpModeChip } from './HelpModePicker';
 import type { HelpGrantAgent, HelpGrantChoice, HelpGrantId } from './wired';
 
-// Restricted mode's configured access (HELPMODE1c1, D183 point 1; the modes design §4.1 and §5), the mock the owner reviews
-// before any grant is built, all here so the review sees them together: a machine as it arrives, each grant closed as §5's
-// sketch draws it; each opened with some chosen, on Claude Code and on Codex, and the two side by side, where Codex cannot be
-// held to the browser; the browser changed since it was approved; in 中文; at the 680 px
-// window's main area; in dark; and the access chip's menu with *Configure restricted access…*. Since HELPMODE1c3 the browser is
-// drawn read only from its plugin's approval, its *Manage* the plugin's tab, with no boxes; and with no plugin offering it. Since
-// HELPMODE1c4 the checkouts are a box each, by the repositories the driver serves, held on Codex too; and none where none is served.
+// Restricted mode's configured access, the mock the owner reviews, all here so the review sees them together: a machine as
+// it arrives, each grant closed as the design's sketch draws it; each opened with some chosen, on Claude Code and on Codex, and
+// the two side by side, where Codex cannot be held to the browser; the browser changed since it is approved; in 中文; at the
+// 680 px window's main area; in dark; and the access chip's menu with *Configure restricted access…*. The browser is
+// drawn read only from its plugin's approval, its *Manage* the plugin's tab, with no boxes; and with no plugin offering it. The
+// checkouts are a box each, by the repositories the driver serves, held on Codex too; and none where none is served.
 
 const nothing = () => {};
 
@@ -92,7 +91,7 @@ export const ClaudeAndCodex: Story = {
 export const ClaudeAndCodexChinese: Story = { ...ClaudeAndCodex, decorators: [chinese] };
 
 /**
- * The browser changed by its plugin's update since it was approved, said apart from never approved, with a choice the
+ * The browser changed by its plugin's update since it is approved, said apart from never approved, with a choice the
  * conversation in view did not start with.
  */
 export const ChangedSinceApproved: Story = {
@@ -121,7 +120,7 @@ export const OpenedNarrow: Story = { args: OpenedOnCodex.args, decorators: [narr
 /** Each grant opened on Claude Code, in dark. */
 export const OpenedDark: Story = { args: OpenedOnClaude.args, decorators: [inCard, dark] };
 
-/** The access chip's menu opened (design §5): the two modes, then *Configure restricted access…*. */
+/** The access chip's menu opened: the two modes, then *Configure restricted access…*. */
 export const PickerMenu: Story = {
   render: () => (
     <div className="h-48 w-[24rem] max-w-full">

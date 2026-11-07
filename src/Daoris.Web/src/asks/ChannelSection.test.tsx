@@ -5,7 +5,7 @@ import i18n from '../locales/i18n';
 import type { Channel, ChannelItem } from '../work/channel';
 import { ChannelPanel, ChannelSection } from './ChannelSection';
 
-// An ask's Channel and a session's panel of it (SESSONE2c, D167 points 6 to 8; the co-working design §2.4): messages and Daoris's
+// An ask's Channel and a session's panel of it: messages and Daoris's
 // coded lines in the reader's language, an open question marked, the person's composer with To and Reply to, the unread count
 // and the mark. Props only, like every molecule here: every state is reached by passing a channel.
 
@@ -340,7 +340,7 @@ describe('a session’s panel', () => {
 });
 
 // Each message names its level where it is urgent, says what it reached in each
-// repository it addresses, never more than was observed, and offers *Send to its session* where it waits or never reached one.
+// repository it addresses, never more than is observed, and offers *Send to its session* where it waits or never reached one.
 describe('what a message reached', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 

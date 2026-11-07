@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Icon, Menu } from '../../design/ui';
 
-/** A row's ⋯ in the Roles mode (COMPANYVIEW1f, the company-view design §4): *On the diagram*, its node chosen there. */
+/** A row's ⋯ in the Roles mode: *On the diagram*, its node chosen there. */
 export function RowMore({ name, onDiagram }: { name: string; onDiagram: () => void }) {
   const { t } = useTranslation();
   return (
