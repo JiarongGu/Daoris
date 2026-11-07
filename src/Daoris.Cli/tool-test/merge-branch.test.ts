@@ -1445,8 +1445,7 @@ const reaches = (paths: string[]): string[] => selected(paths).filter((entry) =>
 const stalens = (paths: string[]): string[] => ALL.filter((gate) => tool.pathsReaching(gate, paths, { lanes: repoLanes }).length > 0);
 const BASE = ['universal', 'code-map', 'test-map', 'cli'];
 const ALL = repoPlan.map((gate) => gate.name);
-/** No reach rule names the comment gate, so it is reached whatever changed: the cases below add it by this rule, not one by one. */
-const ALWAYS_REACHED = ['comments'];
+const ALWAYS_REACHED = ['comments']; // no reach rule names it, so whatever changed reaches it
 // The real-process halves and the deployment rehearsal run only in the full set.
 const LONG = ['service-process', 'driver-process', 'driver-process-git', 'modules-process', 'deployment'];
 /** What a merge runs by default, the blocking checks; every other gate it reaches is "in the CI beside". */
