@@ -21,7 +21,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 | `HomePlacing` | `Mod/Update/HomePlacing.cs` | The one-time rename of an install's entries into D172's places, journalled and recovered |
 | `DaorisHome` | `Drv/Platform/DaorisHome.cs` | The home seam: `Resolve`, `InstallOf`, `Adopt`, `Entry`, `Places`, `FolderOf`, `InstallBin`, `HomeOf` |
 | `ProgramHome` | `Drv/Platform/ProgramHome.cs` | The home a program names once at its entry (the window's and the host's): what carries no home of its own, Daoris's own git and a probe's tools, reads it, never the variable a process inherited; a unit that acts for a home (a fetch's holds, a squash's author) is handed it. `ProcessHomeCensusTests` names each library read of the variable left, with why |
-| `HomeEntry` table | `Drv/Platform/DaorisHome.cs:342-468` | Every home file: name, category, new place, old place |
+| `HomeEntry` table | `Drv/Platform/DaorisHome.cs:342-476` | Every home file: name, category, new place, old place |
 | Home twins | `src/Daoris.Service/Daoris.Service.Core/Platform/DaorisHome.cs`, `src/Daoris.Cli/src/platform/home.ts` | The same table and rules, cell for cell |
 | `HomeLease`, `HomeIdentity` | `Drv/Platform/HomeLease.cs`, `HomeIdentity.cs` | One writer per home (`run/home.lease`); the home's id (`data/home.json`) |
 | `StagedBuild` | `Drv/Install/StagedBuild.cs` | `update/` layout, manifest read and check, the swap journal, the request reader, what runs from a folder |
@@ -51,10 +51,10 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 2. `INSTALLED.md`, headed `# Daoris — installed desktop`, is the marker. It alone makes a folder an install, for the publish, the
    home and every program. (from D60, D93)
 3. `app/` holds everything a build ships: `Daoris.Desktop.exe` beside its Chromium, both service hosts, the driver's program
-   (`daoris-driver/`), the CLI (`cli/`), the launchers (`bin/`), `resources.json` and `plugin-offers/`. An update replaces it
-   whole. (from D93, D99, D103, D121, D124, D172)
+   (`daoris-driver/`), the CLI (`cli/`), the launchers and Daoris's git doors (`bin/`), `resources.json` and `plugin-offers/`.
+   An update replaces it whole. (from D93, D99, D103, D121, D124, D172)
 4. The launcher starts `app/Daoris.Desktop.exe` with its own arguments and environment, through the shell, standing in the
-   install's root, then exits. It names Daoris's taskbar id first, and drops the role key from its environment. (from D93, D108, D139)
+   install's root, then exits. It drops the role key and the inbox's two messaging variables from its environment, then names Daoris's taskbar id. (from D93, D108, D139)
 5. The application finds its install above its own `app/`. It moves its working folder to the install's root at once, so no
    child stands in `app/`. (from D93, D139)
 6. Daoris's browser is the application started with `--daoris-browser`; the install carries one Chromium. (from D99)
@@ -101,8 +101,8 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 
 **Tools and pins**
 
-24. Daoris runs five declared tools: git, Node.js (with npm and npx), PowerShell, GitHub CLI and Azure CLI. A list can offer
-    versions of these and never adds a program. (from D121)
+24. Daoris runs three declared tools: git, Node.js (with npm and npx) and PowerShell. A list can offer versions of these and
+    never adds a program. (from D121)
 25. Each tool has one way in `data/tools.json`: the system's (the default, from `PATH`), managed (one exact version), or a file
     the person names. A managed version not downloaded, or a file that is gone, refuses; neither falls back to `PATH`. The
     driver is the file's one reader and writer. (from D121, D194)
@@ -195,11 +195,14 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
 53. `data/migration.json` names the migration and each step as it finishes. A start whose record holds every step runs
     nothing; a step that throws stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
     `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
-54. This release's steps: the staffing into the store, the caps into the supervisor's rules, `driver.json`'s keys no code
-    writes, `harnesses.json`'s old names and pooled sections, a waiting say's `now`, unkeyed solicited attempts, held presses
-    with no question, the event logs' `answered` receipts, `chat.told-routing` notes and old handed sections, the session
-    records' `answer` column, and the desktop store's names (store step 22: a binding's `door`, the staffing's projection
-    tables dropped). The next release that changes a shape replaces them. (from D232)
+54. This release's migration is `nocompat1`, in the order of `HomeMigration.Steps`: the staffing into the store; the caps as
+    the supervisor's rules; the old workflow records as saved graphs, then a push-landing workflow as steps; `driver.json`'s keys
+    no code writes; `no-push` as git access; `harnesses.json`'s old names and pooled sections; a waiting say's `now`; unkeyed
+    solicited attempts; held presses with no question; the event logs' `answered` receipts, `chat.told-routing` notes and old
+    handed sections; the session records' `answer` column; finished records' English-only notes; closed quests with a
+    six-character id; terminals' `*.turn` marks; the desktop store's names (store step 22: a binding's `door`, the staffing's
+    projection tables dropped); the binding files into the store; and the wired, usage and brainstorm files' door names. The
+    next release that changes a shape replaces them. (from D232)
 55. A read still kept until its chunk deletes it is one register entry with `// transitional: <id>` at the site; the gate
     fails a marker with no entry, an entry with no marker, and an entry whose row is closed. (from D228, D232)
 
@@ -239,15 +242,15 @@ drains, swaps, rolls back and refuses.
    README's Distribution section (a version pin only; the installer verifies the digest). The code reads right.
 2. D43 (`--install` lands the hosts in `~/.daoris/bin`) vs `tools/service-publish.mjs:108-117` (the home's `bin` entry). The
    code reads right; D43 itself carries no amendment.
-3. D172 point 2 (`DAORIS_HOME` names the Daoris folder) vs `Drv/Platform/DaorisHome.cs:26-28`, `:79-80` and
+3. D172 point 2 (`DAORIS_HOME` names the Daoris folder) vs `Drv/Platform/DaorisHome.cs:55`, `:79-80` and
    `Mod/Update/InstallHome.cs:171,196` (an install's home is `<install>/data`). The code and D172's HOMELAYOUT3 note read right.
 4. D172 point 6 (the move runs "at a start after a confirmed update") vs `Mod/Update/HomePlacing.cs:32-35` (any start with the
    update at rest, never the first after a swap). The code reads right.
 5. D139 §3 (`daoris-driver update`) vs `Drv/Install/UpdateCommand.cs`' mark (the verb is `daoris update`; the old name is
    refused). The tree reads right.
-6. D121 §2 (`tools.json` twinned in the CLI; versions in `<home>/tools/`) vs `Drv/Install/Tools.cs:57-59` (the driver alone)
-   and `DaorisHome.cs:428` (`cache/tools`). The code reads right.
-7. D57 (managed agents under `~/.daoris/toolchain/`) vs `DaorisHome.cs:427` (`cache/toolchain`). The code reads right.
+6. D121 §2 (`tools.json` twinned in the CLI; versions in `<home>/tools/`) vs `Drv/Install/Tools.cs:17` and `:57-63` (the driver
+   alone; the CLI's `tools.ts` is gone) and `DaorisHome.cs:434` (`cache/tools`). The code reads right.
+7. D57 (managed agents under `~/.daoris/toolchain/`) vs `DaorisHome.cs:433` (`cache/toolchain`). The code reads right.
 8. D232 (no older reader) vs `DaorisHome.cs:119-128` (old places), `HomeLease.cs:128` (old lease and `driver.lock`) and
    `InstallHome.cs:209` (D63's `~/.daoris` move-in), none of them in the register or the migration. The code is today's
    behaviour until ONEWAY1w moves them into the migration.
