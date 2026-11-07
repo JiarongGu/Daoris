@@ -131,7 +131,7 @@ public static class AccountRotation
 
         // The step that puts it ahead of another, naming that account where the step is about what its agent said.
         WalkChoice Ahead(string a, string b) => Rank(a, b, facts, now, scope.Use) is { Order: < 0 } ranked
-            ? new WalkChoice(ranked.Step) { Over = ranked.Step is WalkStep.Near or WalkStep.Room or WalkStep.Pace ? b : null }
+            ? new WalkChoice(ranked.Step) { Over = ranked.Step is WalkStep.Near or WalkStep.Room or WalkStep.Headroom or WalkStep.Pace ? b : null }
             : new WalkChoice(WalkStep.List);
     }
 
@@ -207,6 +207,7 @@ public static class AccountRotation
             { Order: >= 0 } => NextReason.List,
             // Between two near accounts the one with less room goes last: the page says the same of it as of any near account.
             { Step: WalkStep.Near or WalkStep.Room } => NextReason.Near,
+            { Step: WalkStep.Headroom } => NextReason.Pace,
             { Step: WalkStep.Fewest } => NextReason.Fewest,
             { Step: WalkStep.Lapsing } => NextReason.Lapsing,
             { Step: WalkStep.Pace } => NextReason.Pace,
@@ -282,6 +283,12 @@ public static class AccountRotation
             && Room(x.Said, use, now).CompareTo(Room(y.Said, use, now)) is var room and not 0) return (WalkStep.Room, room);
 
         if (use.Use != "goal") return (WalkStep.List, 0);
+
+        // Room before sessions run: a session started near the end of a window meets its limit within minutes. Not under `off`, which ranks by pace.
+        if (use.Switch != "off" && RoomLeft.BandOf(use, x.Said, now) is var bandX && RoomLeft.BandOf(use, y.Said, now) is var bandY && bandX != bandY)
+        {
+            return (WalkStep.Headroom, bandY.CompareTo(bandX));
+        }
 
         if (x.Running != y.Running) return (WalkStep.Fewest, x.Running.CompareTo(y.Running));
 
