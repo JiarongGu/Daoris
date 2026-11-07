@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { composeStories } from '@storybook/react-vite';
+import { composeStories } from '../test/composeStories';
 import { useState } from 'react';
 import i18n from '../locales/i18n';
 import { Button, Drawer, Icon, Menu } from '../design/ui';
