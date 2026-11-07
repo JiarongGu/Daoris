@@ -7,19 +7,19 @@ import type { HandOverOffer } from './handOverOffer';
 import type { HandOverTold } from '../sessionActs';
 
 /**
- * **Daoris's offer to hand a conversation over** (MIXAGENT1b-ii, D163 point 3, the mixed-agents design §5): one line under the
+ * **Daoris's offer to hand a conversation over**: one line under the
  * page header, where nothing else is asked, saying why (the account is near its limit, or cut until when) and offering *Go on
  * with {agent} ({account})* and *Choose…*, which opens the hand-over's ask with that choice made. *Not now* puts it down for
- * this run. Under the `ask` rule (D163) nothing is taken without a press.
+ * this run. Under the `ask` rule nothing is taken without a press.
  *
  * @remarks
  * A molecule: the offer and its press arrive as props. The line is the page's own, not Overview's band (whose account rows .NET
- * judges for every session, PUSH1d4; the frame already holds the roster and the accounts for the one it attends). A refusal is said
+ * judges for every session; the frame already holds the roster and the accounts for the one it attends). A refusal is said
  * in the line and keeps it; a kept answer, for a conversation that is talking, says where it goes on.
  */
 export function HandOverOfferLine({ offer, actorName, agentName, accountName, busy = false, onGoOn, onChoose, onDismiss }: {
   offer: HandOverOffer;
-  /** What a person calls the session's actor, named where the offer is that actor's next choice (MODELROLE1e). */
+  /** What a person calls the session's actor, named where the offer is that actor's next choice. */
   actorName?: string;
   /** What a person calls the agent it names. */
   agentName: string;
@@ -38,7 +38,7 @@ export function HandOverOfferLine({ offer, actorName, agentName, accountName, bu
   const why = offer.why === 'limit' && offer.until
     ? t('work.handOver.offer.limit', { time: moment(offer.until) })
     : t(offer.why === 'limit' ? 'work.handOver.offer.limitNoTime' : 'work.handOver.offer.near');
-  // MODELROLE1e (D205 §3.5(e)): where the actor has an order, the offer names the choice it is, with the model that choice asks.
+  // Where the actor has an order, the offer names the choice it is, with the model that choice asks.
   const choice = offer.choice && actorName
     ? t('work.handOver.offer.choice', {
       actor: actorName, n: offer.choice.n, entry: `${agentName} · ${offer.choice.model ?? t('work.role.accountDefault')}`,

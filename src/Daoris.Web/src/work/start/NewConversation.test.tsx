@@ -7,9 +7,8 @@ import i18n from '../../locales/i18n';
 import { type CheckoutReader, NewConversation, type StartRepository } from './NewConversation';
 
 /**
- * *New conversation* (NEW1b, D162 point 1, the entry design §1): the prompt first, then the repository, the tree and the
- * agent with its account, and *Start*. It replaced the *Start session* drawer, which started an empty conversation the person
- * typed into after.
+ * *New conversation*: the prompt first, then the repository, the tree and the
+ * agent with its account, and *Start*.
  */
 const REPOSITORIES: StartRepository[] = [
   { name: 'engine', workspace: 'aurora', checkout: true },
@@ -80,7 +79,7 @@ describe('a new conversation', () => {
     expect(onStart).toHaveBeenCalledWith({ repository: 'engine', text: 'Fix the flaky retry\nin the sync loop', files: [] });
   });
 
-  /** IME1: an input method's Enter accepts a candidate; it never starts a conversation on half a sentence. */
+  /** An input method's Enter accepts a candidate; it never starts a conversation on half a sentence. */
   it('does nothing on an input method\'s composing Enter', async () => {
     const onStart = show();
     await userEvent.type(prompt(), '修复');
@@ -102,8 +101,8 @@ describe('a new conversation', () => {
   });
 
   /**
-   * D162 point 2: the tree choice means what it says. The driver's choice sends nothing (the repository's standing opt-in),
-   * the checkout says false, and its own tree says true, with D51 §4's cost said where it is chosen.
+   * The tree choice means what it says. The driver's choice sends nothing (the repository's standing opt-in),
+   * the checkout says false, and its own tree says true, with its cost said where it is chosen.
    */
   it.each([
     [/^Driver's choice/, undefined],
@@ -122,7 +121,7 @@ describe('a new conversation', () => {
   });
 
   /**
-   * NEW1e-b (design §1): the checkout is never switched, so which branch a conversation in it starts on matters, and the chip says
+   * The checkout is never switched, so which branch a conversation in it starts on matters, and the chip says
    * it, only where the checkout is chosen. Driver's choice and its own tree name no branch.
    */
   describe('the checkout\'s branch on the tree chip', () => {
@@ -130,7 +129,7 @@ describe('a new conversation', () => {
       const menu = await chipMenu(/^Tree:/);
       await userEvent.click(within(menu).getByRole('menuitemradio', { name: /^The checkout/ }));
     };
-    /** A reader fixed to `first`, which a refresh replaces with `next`; it keeps the repositories it was asked about. */
+    /** A reader fixed to `first`, which a refresh replaces with `next`; it keeps the repositories it is asked about. */
     const reader = (first: { branch: string | null } | undefined, next = first) => {
       const asked: Array<[string | null, string | undefined]> = [];
       let refreshed = 0;
@@ -208,7 +207,7 @@ describe('a new conversation', () => {
     expect(screen.getByRole('button', { name: 'Agent and account: Claude Code · personal' })).toBeInTheDocument();
 
     menu = await chipMenu(/^Agent and account:/);
-    // The account's name leads, and who signed in sits beside it where the two differ (D152 §4.2): codex's, once chosen.
+    // The account's name leads, and who signed in sits beside it where the two differ: codex's, once chosen.
     await userEvent.click(within(menu).getByRole('menuitemradio', { name: /^Codex/ }));
     expect(screen.getByRole('button', { name: "Agent and account: Codex · driver's" })).toBeInTheDocument();
 
@@ -217,7 +216,7 @@ describe('a new conversation', () => {
   });
 
   /**
-   * POOL1c (D197; the account-pool design §4.3): Daoris's accounts in the set's order, every workspace's, then any the order does
+   * Daoris's accounts in the set's order, every workspace's, then any the order does
    * not name yet, with no group of accounts outside a list.
    */
   it('lists Daoris’s accounts in the set’s order, with no group outside a list', async () => {
@@ -298,7 +297,7 @@ describe('a new conversation', () => {
     expect(screen.getByRole('button', { name: 'Repository: engine' })).toBeInTheDocument();
     cleanup();
 
-    // NEW1f: where the person just was comes ahead of the one last chosen, busy or not; one with no checkout here is passed over.
+    // Where the person just is comes ahead of the one last chosen, busy or not; one with no checkout here is passed over.
     show({ attended: 'game', remembered: 'tools', busy: { game: 's1a2b3c4' } });
     expect(screen.getByRole('button', { name: 'Repository: game' })).toBeInTheDocument();
     cleanup();
@@ -312,7 +311,7 @@ describe('a new conversation', () => {
     expect(screen.getByRole('button', { name: 'Repository: game' })).toBeInTheDocument();
   });
 
-  /** UX5 U68 and the design's states: a busy checkout offers its own tree, or the session holding it; nothing is stopped. */
+  /** A busy checkout offers its own tree, or the session holding it; nothing is stopped. */
   it('says a busy checkout, and offers its own tree or the session holding it', async () => {
     const onOpenSession = vi.fn();
     const onStart = show({ busy: { engine: 's1a2b3c4' }, remembered: 'engine', onOpenSession });
@@ -328,7 +327,7 @@ describe('a new conversation', () => {
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ repository: 'engine', ownTree: true }));
   });
 
-  /** UX5 U68: a refused start is said whole where Start was pressed, its code marks drawn as code; the words stay. */
+  /** A refused start is said whole where Start is pressed, its code marks drawn as code; the words stay. */
   it('says a refusal whole under Start, and keeps the words and the choices', async () => {
     const refusal = '`engine` already has an active session — `669b2930` (awaiting-person, a chat).';
     const onStart = show({ refusal });
@@ -350,7 +349,7 @@ describe('a new conversation', () => {
     expect(onStart).not.toHaveBeenCalled();
   });
 
-  /** NEW1c, the design's first run: Start waits, and *Add repository…* is the primary press, with *Import a folder…* beside it. */
+  /** The first run: Start waits, and *Add repository…* is the primary press, with *Import a folder…* beside it. */
   it('takes words with no repository to start in, and offers to add one where it stands', async () => {
     const onAdd = vi.fn();
     const onImport = vi.fn();
@@ -370,7 +369,7 @@ describe('a new conversation', () => {
     expect(prompt()).toHaveValue('Somewhere');
   });
 
-  /** NEW1c: the picker's foot holds the two presses, and a press puts the list down before its drawer opens. */
+  /** The picker's foot holds the two presses, and a press puts the list down before its drawer opens. */
   it('offers Add repository… and Import a folder… at the picker’s foot, closing the list first', async () => {
     const onAdd = vi.fn();
     const onImport = vi.fn();
@@ -387,7 +386,7 @@ describe('a new conversation', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  /** NEW1c: a registered repository is chosen once the registry lists it, and not before: the choice is kept pending. */
+  /** A registered repository is chosen once the registry lists it, and not before: the choice is kept pending. */
   it('chooses the repository just added once it is listed', () => {
     const onChoose = vi.fn();
     const view = (over: Partial<ComponentProps<typeof NewConversation>>) => (
@@ -410,7 +409,7 @@ describe('a new conversation', () => {
     expect(onChoose).toHaveBeenCalledWith('borealis');
   });
 
-  /** NEW1c: several imported, none chosen for the person: the picker opens on the imported workspace's group. */
+  /** Several imported, none chosen for the person: the picker opens on the imported workspace's group. */
   it('opens the picker on a workspace’s group when asked to reveal it', () => {
     show({ reveal: { workspace: 'aurora', n: 1 } });
 
@@ -420,7 +419,7 @@ describe('a new conversation', () => {
   });
 
   /**
-   * NEW1d-b (D162): *Make it a task with Daoris…* is a quiet press beside *Start*, waiting for words, that hands the draft to Ask
+   * *Make it a task with Daoris…* is a quiet press beside *Start*, waiting for words, that hands the draft to Ask
    * Daoris with one line naming the repository chosen above it. It sends nothing and clears nothing: the composer keeps its draft.
    */
   it('hands the draft and the repository to Ask Daoris from a quiet press, and keeps the draft', async () => {
@@ -457,7 +456,7 @@ describe('a new conversation', () => {
     expect(screen.queryByRole('button', { name: 'Make it a task with Daoris…' })).toBeNull();
   });
 
-  /** A browser has no shell (D46 §7): no composer, and the place says where a conversation starts. */
+  /** A browser has no shell: no composer, and the place says where a conversation starts. */
   it('is absent in a browser, which says to open Daoris on this machine', () => {
     show({ attached: false });
 

@@ -47,68 +47,66 @@ import { leftFor, type Seek, SOUGHT, useSought } from '../waits/WaitAnchor';
 import { rulesAsked } from '../waits/waits';
 import { actorRows, notStartedLine } from '../actors';
 
-// The work's line is its own molecule, which the foot's strip draws too (WAITFOOT1b, D168); its shapes are read from here too.
+// The work's line is its own molecule, which the foot's strip draws too; its shapes are read from here too.
 export type { HeadOpinion, HeadReview, LandingPlan, WorkAsk } from '../review/Lands';
 
 /**
- * The attended session's record (design §3): what it is, where it runs, what it ran as, and — when
+ * The attended session's record: what it is, where it runs, what it ran as, and — when
  * it is parked — the analysis that is waiting on a person.
  *
  * @remarks
  * **The rail's row and this head must not disagree**, so both derive their identity from
  * `sessionTitle` and neither invents one. What the head adds is the room the rail does not have:
  * how it stands, what it left, the tool with its version and account, and both ends of the clock —
- * and the tree's whole path on hover (SESS2: at the head's full weight it was its longest line).
+ * and the tree's whole path on hover (at the head's full weight it would be its longest line).
  *
- * **`AwaitingPerson` gets a surface at last** (design §4). It has meant "only the person can clear
- * this" since D46 and had never been rendered anywhere. It sits **above** the record, because it is
+ * **`AwaitingPerson` has a surface.** It means "only the person can clear
+ * this". It sits **above** the record, because it is
  * the reason the person is looking, and it carries the three moves — which is why `onResolve` is a
  * prop: the head knows nothing about the bridge, and the frame that does hands it down.
  *
- * **A park the person answered is `AnsweredPark`'s** (ANSWER1c): the record stays parked with the answer until the
+ * **A park the person answered is `AnsweredPark`'s**: the record stays parked with the answer until the
  * driver's next look, when the same session goes on, so the head shows the answer and says so, with no moves, wherever
  * the frame could act.
  *
- * **The go-aheads a park asked stand beneath its card** (KNOWUSE1a2, D135 §2), the ask's own list: each with *Approve*
+ * **The go-aheads a park asked stand beneath its card**, the ask's own list: each with *Approve*
  * and *Refuse* where the frame can answer, and answering the last one open there sends the same session on, as on the
- * ask's page (GOAHEAD2b). They stay while it is parked, answered or not, so one still waiting can be answered before it
+ * ask's page. They stay while it is parked, answered or not, so one still waiting can be answered before it
  * goes on.
  *
- * **The rules it proposed stand beneath them, whatever its state** (PROPOSEHERE1b, D74): a session refused something files a
+ * **The rules it proposed stand beneath them, whatever its state**: a session refused something files a
  * proposal and goes on or ends its turn, so its own open proposals are answered here, *Allow…* asking once, as at the foot.
  *
- * **It says how an ended session stands, in the record's note** (SESS2, reversing the rule that it
- * did not): the rule rested on *"the timeline below carries it"*, and since FRAME6 the timeline is in
- * the side bar, which starts closed (U7) — so a failed session's reason and a finished one's ending
- * were on no screen the person had open. A running session says nothing here, since its conversation
+ * **It says how an ended session stands, in the record's note**: the timeline is in
+ * the side bar, which starts closed, so a failed session's reason and a finished one's ending
+ * are said here, on a screen the person has open. A running session says nothing here, since its conversation
  * is the answer, and a parked one's note is its card's.
  *
- * **What it left comes with its move** (SESS2): work no branch of the person's holds has *review*
- * beside it, where the metadata's last pair used to say it with nothing to press. A failed attempt's branch whose tree is
- * gone has *Discard branch…* too (LAND3b), asking once, since no clean-up takes it and the review has no tree to discard.
+ * **What it left comes with its move**: work no branch of the person's holds has *review*
+ * beside it. A failed attempt's branch whose tree is
+ * gone has *Discard branch…* too, asking once, since no clean-up takes it and the review has no tree to discard.
  *
- * **Commits its tree holds are offered to land, whatever its ending** (LAND4, D102's LAND4 note): where the driver's reader
+ * **Commits its tree holds are offered to land, whatever its ending**: where the driver's reader
  * says what the tree offers (`lands`), the line names the commits, the branch and the tree, and *Accept…* asks once under it,
  * saying where accepting puts the work by the repository's rule, as the review's foot says it, and for a session that did
  * not finish that only what it committed lands. The press is the review's Accept; a refusal is said inside the ask.
  *
- * **Commits the line holds by content are never offered to land again** (SQUASHTIDY1b, D102's note): where a squash merge or
+ * **Commits the line holds by content are never offered to land again**: where a squash merge or
  * a cherry-pick put its work elsewhere (`discards`), accepting would make a branch of work already there, so no *Accept…*
  * stands. The driver's sentence says where the work is, in Discard's own clause, and *Discard branch…* asks once with the
  * driver's sentence naming the ref its commits stay at; the press is the review's Discard, unforced.
  *
- * **Where a review's gate holds the work, it stands where *Accept…* would** (REVIEWENV1g, D154 point 7; the review environment
- * design §3.1): *Review in `<environment>`* in the gate's state, as the landing's plan says it, with the set-up step's showing
+ * **Where a review's gate holds the work, it stands where *Accept…* would**: *Review in `<environment>`* in the gate's state, as the landing's plan says it, with the set-up step's showing
  * and the verdict's presses, and no *Accept…*, which the landing door would refuse.
  *
- * **The second opinion stands before it** (XAGENT1g, D155 point 9; the second-agent design §7, §9): wherever a level asks one,
+ * **The second opinion stands before it**: wherever a level asks one,
  * *Second opinion* in its state, its findings beside their answers and its presses, before the review's gate as the gate's order
  * has it. While it holds the work *Accept…* is not offered, except where *Accept…* is the press that answers it (a dispute, or
- * commits nobody read): then its ask says what it answers, and the press sends the gate's token back (§8.2–§8.3).
+ * commits nobody read): then its ask says what it answers, and the press sends the gate's token back.
  *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
- * told none of them (D47 §4). `MetaLine` drops a pair it has no value for, which is why all four
+ * told none of them. `MetaLine` drops a pair it has no value for, which is why all four
  * can be passed unconditionally.
  */
 export function SessionHead({
@@ -122,216 +120,216 @@ export function SessionHead({
   supervisorCourse?: ReactNode;
   /** The line's counts and the acts the person's rules made on it: *Details*' course rows and its Supervisor line. Absent, none is drawn. */
   supervision?: LineSupervision;
-  /** A terminal holding this conversation (RPC1g1, D238), the frame's `SessionTerminalHold`: absent where none can be read. */
+  /** A terminal holding this conversation, the frame's `SessionTerminalHold`: absent where none can be read. */
   terminalHold?: ReactNode;
-  /** What each running session holds of git access (D241 point 7), the frame's: *Details*' *Git access* row, with *Tighten…*. */
+  /** What each running session holds of git access, the frame's: *Details*' *Git access* row, with *Tighten…*. */
   gitAccess?: SessionGitAccessHold | null;
   /**
-   * What its line waits on (COMMS1i, the comms design §7): *At work*'s answer, whose *Waiting on* line the head draws in the same words,
+   * What its line waits on: *At work*'s answer, whose *Waiting on* line the head draws in the same words,
    * and the door that opens *At work*. Absent where the frame holds no answer for it.
    */
   waitingOn?: { answer: AtWorkA; nameOf?: (agent: string) => string; onOpen?: (exchange: string) => void } | null;
-  /** The session's one *Accept…* where its parts offer work to land, in the place of a part's own (REVIEWFLOW1a, D168). */
+  /** The session's one *Accept…* where its parts offer work to land, in the place of a part's own. */
   entry?: EntryPress | null;
   /**
-   * Its pieces (COAGENT1b, D199; the co-agent design §6.1), the frame's: what it asked other agents to write, where each stands, the
+   * Its pieces, the frame's: what it asked other agents to write, where each stands, the
    * ask's press and each piece's door and stop. Absent, a browser, a teammate's record or a session that cannot lead one, none is drawn.
    */
   pieces?: PieceSection | null;
   /**
-   * Its question as its agent asked it (PARKVIEW1, the park's ask design §3), which its waiting card shows in place of its whole last
+   * Its question as its agent asked it, which its waiting card shows in place of its whole last
    * message; null where it asked none through the connector.
    */
   question?: ParkQuestion | null;
   /**
-   * The box below is the park's answer box, and carries every press of what it asks (PARKVIEW1): its go-aheads are listed here with
+   * The box below is the park's answer box, and carries every press of what it asks: its go-aheads are listed here with
    * none, so the person answers in one place. False where no such box is below, and the head keeps their presses.
    */
   parkBox?: boolean;
   /**
-   * The answers the answers-alone bound holds for the person (COWORK1e, D188 point 4; the message-urgency design §8.3), the frame's,
+   * The answers the answers-alone bound holds for the person, the frame's,
    * handed to the foot's strip alike: every one the shell read, its own drawn, the agents' names, the answer's door and its pending.
    */
   answers?: AnswerWaits | null;
   /**
-   * The helpers it asked for (MIXAGENT2b, D163), the frame's: its asks as the driver's look left them, the agents' names, the
+   * The helpers it asked for, the frame's: its asks as the driver's look leaves them, the agents' names, the
    * person's yes and a door to each helper. Absent, a browser or a teammate's record, none is drawn.
    */
   helpers?: HelperWaits | null;
   /**
-   * The tool calls it holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3), the frame's, handed to the foot's
+   * The tool calls it holds for the person's answer under asking, the frame's, handed to the foot's
    * strip alike: every request the shell read, its own drawn, the answer's one door and its pending. Absent, none is drawn.
    */
   permissions?: PermissionWaits | null;
-  /** The git go-aheads its git door holds (GITAUTH1f), the frame's, handed to the foot's strip alike. */
+  /** The git go-aheads its git door holds, the frame's, handed to the foot's strip alike. */
   gitAsks?: GitAskWaits | null;
   /**
-   * The wait a raising block's *To the wait* leads to while the head's waits are on screen (WAITFOOT2b, D168's WAITFOOT2 note),
+   * The wait a raising block's *To the wait* leads to while the head's waits are on screen,
    * counted so the same one pressed again is shown again: its line takes the focus, outlined, as the strip's does.
    */
   seek?: Seek | null;
   /**
-   * The rules it proposed that the person still answers (PROPOSEHERE1b, D74), the frame's, handed to the foot's strip alike:
+   * The rules it proposed that the person still answers, the frame's, handed to the foot's strip alike:
    * the machine's proposals as the shell read them, the answer's door, its pending and whether the session takes words now.
    */
   rules?: RuleWaits | null;
-  /** Where a rule's *Allow…* is open, the frame's, so it is open in the head or at the foot, never both (D168 point 3). */
+  /** Where a rule's *Allow…* is open, the frame's, so it is open in the head or at the foot, never both. */
   ruleAsk?: RuleAsk;
   /**
-   * The way from each wait to the event in the conversation that raised it, where the conversation found one (WAITFOOT1c, D168
-   * point 4): *In the conversation* on the park's card, each go-ahead and the work's line. The frame's, handed to the foot's
+   * The way from each wait to the event in the conversation that raised it, where the conversation found one:
+   * *In the conversation* on the park's card, each go-ahead and the work's line. The frame's, handed to the foot's
    * strip alike.
    */
   toEvent?: WaitEvents;
   /**
    * Where the ask of its work's line (*Accept…*, *Discard branch…*) is open, the frame's, so it is open in the head or in the
-   * foot's strip, never both (WAITFOOT1b, D168 point 3). Absent, the line holds its own.
+   * foot's strip, never both. Absent, the line holds its own.
    */
   workAsk?: WorkAsk;
-  /** A landing or a discard of its work is on its way, pressed here or at the foot: the line's press waits for it (D168). */
+  /** A landing or a discard of its work is on its way, pressed here or at the foot: the line's press waits for it. */
   workBusy?: boolean;
   /**
-   * Open the quest it serves (HEAD2c): the door beside the request as written in *Details*. Absent where nothing can open
+   * Open the quest it serves: the door beside the request as written in *Details*. Absent where nothing can open
    * it, and then the request is shown with no door.
    */
   onOpenQuest?: (quest: Quest) => void;
   /**
-   * The session its record says it continues (`from`, MIXAGENT3a-i), where the frame holds it, with its title. Absent, *Details*
+   * The session its record says it continues (`from`), where the frame holds it, with its title. Absent, *Details*
    * says the record's id, with no door.
    */
   continues?: HeadLink | null;
-  /** The session a helper helps (`serves`, MIXAGENT3a-i), where the frame holds it, with its title; absent, its id. */
+  /** The session a helper helps (`serves`), where the frame holds it, with its title; absent, its id. */
   helps?: HeadLink | null;
-  /** Attend one of those sessions (MIXAGENT3a-i): the door beside its title in *Details*. Absent, the title has no door. */
+  /** Attend one of those sessions: the door beside its title in *Details*. Absent, the title has no door. */
   onOpenSession?: (session: Session) => void;
   /**
-   * *Details*' *Heavy gates* (HEAVYSLOT1, the UI/UX design §3.5): its heavy run's gates as phases, or whom it waits behind, a door
+   * *Details*' *Heavy gates*: its heavy run's gates as phases, or whom it waits behind, a door
    * (`heavyRow`). Absent where it holds and waits for no slot.
    */
   heavy?: DetailRow | null;
   /**
-   * The process its own tree runs under (PROCESS1e, D164's amendment point 3): how its work is committed and how it lands, each
-   * with where it was set, *Details*' rows. Absent or null where it was told none (no tree of its own here) or nothing answered.
+   * The process its own tree runs under: how its work is committed and how it lands, each
+   * with where it is set, *Details*' rows. Absent or null where it is told none (no tree of its own here) or nothing answered.
    */
   process?: SessionProcess | null;
-  /** The landing plan shown is the previous one while the entered name's is read (LANDNAME1b); the press waits. */
+  /** The landing plan shown is the previous one while the entered name's is read; the press waits. */
   planning?: boolean;
   /**
-   * The second opinion's gate where a level asks one (XAGENT1g): its findings beside their answers, where the frame read them,
+   * The second opinion's gate where a level asks one: its findings beside their answers, where the frame read them,
    * and its presses. Drawn from the landing's plan's own `opinion`.
    */
   opinion?: HeadOpinion | null;
   /**
-   * What its own tree offers to land (LAND4), as the driver's reader said it: commits no branch of the person's holds, on its
+   * What its own tree offers to land, as the driver's reader says it: commits no branch of the person's holds, on its
    * branch in its tree, whatever its ending. Absent where it offers none, or nothing has answered.
    */
   lands?: LandOffer | null;
   /**
-   * The review's gate where it holds that work (REVIEWENV1g): the set-up step's record, whether its tab is still served, and
+   * The review's gate where it holds that work: the set-up step's record, whether its tab is still served, and
    * the verdict's presses. Read only where the landing's plan says the gate holds.
    */
   review?: HeadReview | null;
   /**
-   * How the tree stands against its line, from the review's answer (REVIEWBASE5, D164's note): where `ahead` is 0 and nothing is
+   * How the tree stands against its line, from the review's answer: where `ahead` is 0 and nothing is
    * uncommitted, there is nothing to land and no *Accept…* is offered, as in the review. Absent before it answers or where not read.
    */
   behind?: LineBehind | null;
   /**
-   * What its own tree offers where the line holds its commits by content (SQUASHTIDY1b), as the driver's reader said it: its
+   * What its own tree offers where the line holds its commits by content, as the driver's reader says it: its
    * sentences, shown as they are, and whether an unforced discard would go. Absent where it offers none.
    */
   discards?: DiscardOffer | null;
   /** Discard its tree, unforced: the review's Discard, told back to its ask. Absent where nothing can press it. */
   onDiscardTree?: (answered: Answered) => void;
   /**
-   * Where accepting would put it, by the repository's rule (D87, D100): the review's own plan, said in the ask before the
+   * Where accepting would put it, by the repository's rule: the review's own plan, said in the ask before the
    * press. Absent while it is read.
    */
   landing?: LandingPlan | null;
   /**
    * Land it: the review's Accept, told back to its ask, with the second opinion's token where the press answers what it showed
-   * (XAGENT1g). Absent where nothing can press it (a browser, a story).
+   * Absent where nothing can press it (a browser, a story).
    */
   onLand?: (answered: Answered, answers?: string | null, branch?: string | null) => void;
-  /** The press that says the rebase words where replaying conflicts (LANDSYNC1w); the frame holds the say door. */
+  /** The press that says the rebase words where replaying conflicts; the frame holds the say door. */
   onSayRebase?: SayRebase;
-  /** The branch name typed in the land ask (LANDNAME1b), so the frame asks the plan again with it; `''` when the ask is put down. */
+  /** The branch name typed in the land ask, so the frame asks the plan again with it; `''` when the ask is put down. */
   onName?: (name: string) => void;
   /**
    * Its agent has accounts, so a record naming none ran on the tool's own sign-in, and the head says so where it shows an
-   * account (D125 §3.7, TOOL4m's rest with UX6e).
+   * account.
    */
   ownSignIn?: boolean;
-  /** What a person calls an account (ACCTNAME1, D152 §4.2), from the roster; absent, the record's id is said. */
+  /** What a person calls an account, from the roster; absent, the record's id is said. */
   nameOf?: AccountNamer;
-  /** The go-aheads this session asked on its quest's ask (KNOWUSE1a2), as the frame read them; shown while it is parked. */
+  /** The go-aheads this session asked on its quest's ask, as the frame reads them; shown while it is parked. */
   goAheads?: GoAhead[];
   /**
-   * Answer one of them (KNOWUSE1a2), which sends the park on once none is open (GOAHEAD2b): which go-ahead, yes or no, and
+   * Answer one of them, which sends the park on once none is open: which go-ahead, yes or no, and
    * the person's words where they gave any. Absent where nothing can answer them here, and then they are shown with no door.
    */
   onGoAhead?: GoAheadAnswer;
   /**
-   * A page header above carries its state, its title and its facts (SESSUX1d, D126 §3.2; UX7c, D152 §7): the head says
-   * none again, the quest's whole title included: that is a row of *Details* (HEAD2c). Absent, a window with no header
+   * A page header above carries its state, its title and its facts: the head says
+   * none again, the quest's whole title included: that is a row of *Details*. Absent, a window with no header
    * (a detached session), the head keeps the title, its word and its id.
    */
   headed?: boolean;
-  /** When its last turn ended here, as the driver says (RAIL2): *moved* reads the later of it and the record. */
+  /** When its last turn ended here, as the driver says: *moved* reads the later of it and the record. */
   lastTurn?: string | null;
-  /** Open its review (the side bar's, or the panel's where it was moved) — what work left unlanded asks for. */
+  /** Open its review (the side bar's, or the panel's where it is moved) — what work left unlanded asks for. */
   onReview?: () => void;
   session: Session;
   /**
-   * The branch its own tree left, as the clean-up judged it (SESS1 S10, D88): whether its work landed,
+   * The branch its own tree left, as the clean-up judged it: whether its work landed,
    * where, or what only it holds. Absent where it has no tree of its own here, or nothing has answered.
    */
   branch?: SweepBranch | null;
   /**
-   * The branch its tree is on where the agent moved it onto one of its own (TREEFOLLOW1), as the driver's `work` says it
-   * (TREEFOLLOWWEB2): named when the clean-up lists no row, since it lists only `daoris/` branches and the tidy removed that one.
+   * The branch its tree is on where the agent moved it onto one of its own, as the driver's `work` says it:
+   * named when the clean-up lists no row, since it lists only `daoris/` branches and the tidy removed that one.
    */
   ownBranch?: string | null;
   /**
-   * Discard that branch, its commits with it (LAND3b): offered once its tree is gone, where the driver says its commits are a
-   * failed or superseded attempt's, and asked once first; told back to its ask (UXFIX2). Absent where nothing here can press
+   * Discard that branch, its commits with it: offered once its tree is gone, where the driver says its commits are a
+   * failed or superseded attempt's, and asked once first; told back to its ask. Absent where nothing here can press
    * it.
    */
   onDiscardBranch?: (answered: Answered) => void;
   /** That discard is on its way: its presses wait for it. */
   discardingBranch?: boolean;
-  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
+  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle. */
   taking?: boolean;
-  /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
+  /** The quest it serves, where the caller has it — absent is a state, not a gap. */
   quest?: Quest | null;
-  /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
+  /** What the person first said in it, where this machine holds its record — a conversation's name. */
   opening?: string | null;
   resolving?: boolean;
   /**
-   * How a parked session is finished or declined, and a finish's close of its quest (QUESTCLOSE1). Absent where nothing can
-   * act — a browser, or a story. Its stop is the page header's, its one owner (D126 §3.3).
+   * How a parked session is finished or declined, and a finish's close of its quest. Absent where nothing can
+   * act — a browser, or a story. Its stop is the page header's, its one owner.
    */
   onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
   /**
-   * Open the ask an intake serves (INT4g) — a parked one's answer is there, not on the session.
+   * Open the ask an intake serves — a parked one's answer is there, not on the session.
    * Absent where nothing can open it.
    */
   onAnswerAsk?: (ask: string) => void;
   /**
-   * Answer a driven session that parked to ask the person (STANDDOWN2): the same session goes on with the
-   * words at the driver's next look (D131). Absent where nothing can reach this machine's host. Where the box below answers the
-   * park too, the card's answer goes through the box's own door (PARKANSWER1); either settles with a refusal's sentence, or nothing.
+   * Answer a driven session that parked to ask the person: the same session goes on with the
+   * words at the driver's next look. Absent where nothing can reach this machine's host. Where the box below answers the
+   * park too, the card's answer goes through the box's own door; either settles with a refusal's sentence, or nothing.
    */
   onAnswerSession?: (answer: string) => Promise<string | null> | void;
-  /** A press of the park's question's answer from its card, with the card's words (PARKANSWER1, PARKVIEW1). */
+  /** A press of the park's question's answer from its card, with the card's words. */
   onAnswerChoice?: (label: string, words: string) => Promise<string | null> | void;
-  /** The answer selected in its question, the frame's, shared with the box below (QUESTIONUI1a); absent, the card holds its own. */
+  /** The answer selected in its question, the frame's, shared with the box below; absent, the card holds its own. */
   answerPick?: AnswerPick;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
   const parked = session.state === 'awaiting-person';
-  // ANSWER1c: answered, it goes on at the driver's next look, so nothing below asks the person again. ONEWAY1m: its words read from `said`.
+  // Answered, it goes on at the driver's next look, so nothing below asks the person again. Its words read from `said`.
   const answered = answeredPark(session) ? personsSaid(session) : null;
   const waiting = parked && !answered;
   const intake = isIntake(session);
@@ -345,19 +343,19 @@ export function SessionHead({
   const { sought, letGo } = useSought(own, seek);
 
   return (
-    // Where the foot's *To the top* puts the focus (WAITFOOT1b, D168 point 1): every wait stands here with its reading. The
-    // outline a *To the wait* left goes once the person moves on from the head (WAITFOOT2b).
+    // Where the foot's *To the top* puts the focus: every wait stands here with its reading. The
+    // outline a *To the wait* leaves goes once the person moves on from the head.
     <header ref={own} data-record-head tabIndex={-1} className="grid gap-2.5 outline-none" onBlur={(event) => { if (leftFor(event)) letGo(); }}>
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
       {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {terminalHold}
       {supervisorCourse}
-      {/* A member's thread (COWORKUX1b, d): whom it works for, *Back to lead*, and once it answered, *Ask again…* and the pass. */}
+      {/* A member's thread: whom it works for, *Back to lead*, and once it answered, *Ask again…* and the pass. */}
       {helpers?.team?.thread && <MemberThread {...helpers.team.thread} lead={helps?.title ?? helpers.team.thread.lead} />}
       {answered !== null && <AnsweredPark answer={answered} />}
-      {/* COMMS1i: what the line waits on of others, At work's line from the same read; the person's own waits stand below. */}
+      {/* What the line waits on of others, At work's line from the same read; the person's own waits stand below. */}
       {waitingOn && <WaitingOnLine answer={waitingOn.answer} nameOf={waitingOn.nameOf} onOpen={waitingOn.onOpen} />}
-      {/* Each section a wait stands in is marked (WAITFOOT2a): the frame watches them, and the strip at the foot stands aside
+      {/* Each section a wait stands in is marked: the frame watches them, and the strip at the foot stands aside
           while they are on screen. */}
       {waiting && intake && (onResolve || onAnswerAsk) && (
         <div data-wait-section data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
@@ -366,18 +364,18 @@ export function SessionHead({
       )}
       {waiting && !intake && (onResolve || onAnswerSession) && (
         <div data-wait-section data-wait="question" tabIndex={-1} className={sought === 'question' ? SOUGHT : 'outline-none'}>
-          {/* Keyed: a half-written decline reason belongs to the session it was written for, and it
-              carried into the next parked one, ready to decline it with somebody else's reason (REV3). */}
+          {/* Keyed: a half-written decline reason belongs to the session it is written for, and would
+              carry into the next parked one, ready to decline it with somebody else's reason. */}
           <AwaitingPerson
             key={session.id}
             parts={session.noteParts}
             question={question}
-            // The quest it serves, which its finish may close as the person's (QUESTCLOSE1): only its own, and a driven one's.
+            // The quest it serves, which its finish may close as the person's: only its own, and a driven one's.
             quest={session.kind !== 'chat' && quest && quest.id === session.quest ? quest : null}
             pending={resolving}
             onResolve={onResolve}
-            // A driven session parked to ask the person has no process left to message (STANDDOWN2), and is answered from its card
-            // whether or not it holds a quest, and whether or not the box below answers it too (PARKANSWER1). A parked chat's answer
+            // A driven session parked to ask the person has no process left to message, and is answered from its card
+            // whether or not it holds a quest, and whether or not the box below answers it too. A parked chat's answer
             // is its composer's.
             onAnswer={session.kind !== 'chat' ? onAnswerSession : undefined}
             onChoice={session.kind !== 'chat' ? onAnswerChoice : undefined}
@@ -388,8 +386,8 @@ export function SessionHead({
         </div>
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
-          analysis is shown and the moves are not. Half a control is worse than none, and none with no word why is worse still
-          (PARKANSWER1): the card says where it is answered. */}
+          analysis is shown and the moves are not. Half a control is worse than none, and none with no word why is worse still:
+          the card says where it is answered. */}
       {waiting && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && (noted || !intake) && (
         <WaitingCard title={t('work.head.waiting')}>
           <Note parts={session.noteParts} className="mt-1.5 text-body leading-relaxed" />
@@ -406,7 +404,7 @@ export function SessionHead({
           <GoAheadList
             goAheads={goAheads}
             busy={resolving}
-            // PARKVIEW1: where the box below answers the park, its presses are the box's, so the person answers in one place.
+            // Where the box below answers the park, its presses are the box's, so the person answers in one place.
             onAnswer={parkBox ? undefined : onGoAhead}
             lead={t(parkBox ? 'work.park.inTheBox' : 'work.awaiting.goAheadsLead')}
             inConversation={toEvent?.goAheads}
@@ -414,7 +412,7 @@ export function SessionHead({
           />
         </section>
       )}
-      {/* The tool calls it holds for the person's answer (AUTONOMY1b3c, D184 point 3): its turn stands still until they answer, or
+      {/* The tool calls it holds for the person's answer: its turn stands still until they answer, or
           the bound refuses it. A wait's section where an answer can be given here, so the strip stands aside for it too. */}
       {held.length > 0 && (
         <section
@@ -433,7 +431,7 @@ export function SessionHead({
           />
         </section>
       )}
-      {/* The git go-aheads its git door holds (GITAUTH1f, D198 point 12): the act on the remote stands still until they answer, or its
+      {/* The git go-aheads its git door holds: the act on the remote stands still until they answer, or its
           bound. A wait's section where an answer can be given here, so the strip stands aside for it too. */}
       {gitAsked.length > 0 && (
         <section
@@ -447,7 +445,7 @@ export function SessionHead({
           ))}
         </section>
       )}
-      {/* A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, §8.3): its line
+      {/* A third answer in a row with nobody between, which the answers-alone bound holds for the person: its line
           stands still until they answer. A wait's section where it can be answered here, so the strip stands aside for it too. */}
       {alone && (
         <section
@@ -481,8 +479,8 @@ export function SessionHead({
         </section>
       )}
 
-      {/* Its co-workers (COWORKUX1, the co-worker design §6.2): the lead and each member, its thread's door and the pass, an agent's
-          ask that waits on the person's yes with the yes and the no, a wait's section while one does (MIXAGENT2c). */}
+      {/* Its co-workers: the lead and each member, its thread's door and the pass, an agent's
+          ask that waits on the person's yes with the yes and the no, a wait's section while one does. */}
       {helpers && (
         <CoWorkers
           session={session.id}
@@ -499,41 +497,40 @@ export function SessionHead({
         />
       )}
 
-      {/* Its pieces (COAGENT1b, D199): what other agents write for it, each in a clone of its own, and the ask of one. */}
+      {/* Its pieces: what other agents write for it, each in a clone of its own, and the ask of one. */}
       {pieces && (pieces.pieces.length > 0 || pieces.ask) && <Pieces section={pieces} headingId={`pieces-${session.id}`} />}
 
       {!headed && (
-        /* A window with no header (a detached session): the title and its word are said here; its id is its *Details*'
-           (UX7c), as on the page. The state follows the title rather than the far edge (§4: status leads), two lines at
-           most, whole on hover (SESS2). */
+        /* A window with no header (a detached session): the title and its word are said here; its id is its *Details*',
+           as on the page. The state follows the title rather than the far edge (status leads), two lines at
+           most, whole on hover. */
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
           <h2 className="m-0 line-clamp-2 text-title font-[650] leading-[1.35]" title={sessionTitle(session, quest, opening)}>
             {sessionTitle(session, quest, opening)}
           </h2>
           <span className="shrink-0"><Pill tone={SESSION_TONE[shown]}>{t(shownKey(shown))}</Pill></span>
-          {/* With no header's facts line to wear them, the choice its actor ran (D205 §4.6) and the full-access chip follow the word
-              (SESSACCESS1). */}
+          {/* With no header's facts line to wear them, the choice its actor ran and the full-access chip follow the word. */}
           <ChoiceChip session={session} />
           {startedFull(session) && <AccessChip />}
         </div>
       )}
 
-      {/* How it stands, in the record's note (SESS2 H5, H6): why a failed session failed, how a finished
-          one ended, Daoris's lines in the reader's language and the agent's words as written (LANG1b).
+      {/* How it stands, in the record's note: why a failed session failed, how a finished
+          one ended, Daoris's lines in the reader's language and the agent's words as written.
           Not while it runs, when the conversation below is the answer; not parked, where the card above
           already carries it. */}
-      {/* MODELROLE1c3 (D205 §3.5(c), §7.1): a record its agent's refusal of the choice ended before anything ran says so by its code's
-          sentence, quiet, in place of the failure's note: the account it was refused on here, none on a teammate's mirror. */}
+      {/* A record its agent's refusal of the choice ended before anything ran says so by its code's
+          sentence, quiet, in place of the failure's note: the account it is refused on here, none on a teammate's mirror. */}
       {shown === 'not-started'
         ? <p className="m-0 text-body leading-relaxed text-ink-soft">{notStartedLine(t, session)}</p>
         : !running && noted && <Said parts={session.noteParts} />}
 
-      {/* What it left, and the move that acts on it (SESS2 H4): work no branch of the person's holds is
+      {/* What it left, and the move that acts on it: work no branch of the person's holds is
           theirs to review, in the waiting hue; landed work is a quiet fact. */}
-      {/* Keyed by the branch: an ask to discard one session's branch never carries to another's (REV3's lesson). Commits
-          its tree offers to land are the reader's to say (LAND4), keyed by the session for the same reason. */}
+      {/* Keyed by the branch: an ask to discard one session's branch never carries to another's. Commits
+          its tree offers to land are the reader's to say, keyed by the session for the same reason. */}
       {lands ? (
-        // Spaced as the head spaces its own, since the line's parts were the head's before they were the section's.
+        // Spaced as the head spaces its own.
         <div data-wait-section data-wait="work" tabIndex={-1} className={cn('grid gap-2.5', sought === 'work' || sought === 'opinion' ? SOUGHT : 'outline-none')}>
           <Lands
             key={session.id} session={session} lands={lands} landing={landing} planning={planning} onReview={onReview} onLand={onLand} onSayRebase={onSayRebase} onName={onName} review={review} behind={behind}
@@ -557,9 +554,9 @@ export function SessionHead({
         </p>
       ) : null}
 
-      {/* The reference (UX7c, D152 §7): the meta line's eight pairs became a folded *Details*, its line naming the quest,
+      {/* The reference, a folded *Details*, its line naming the quest,
           the agent and the start, so the conversation is not pushed down by facts that are looked up. The tree's machine
-          path is the repository's on hover; an intake names its ask, never `repository: ask #…` (INT4g). */}
+          path is the repository's on hover; an intake names its ask, never `repository: ask #…`. */}
       <DetailsFold
         summary={[
           intake ? t('work.scope.ask', { id: session.ask }) : session.quest ? t('work.scope.quest', { id: session.quest }) : null,
@@ -571,18 +568,18 @@ export function SessionHead({
             ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
             : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
           requestRow(t, quest, session.kind === 'chat' ? opening : null, session.quest ?? session.ask, onOpenQuest),
-          // Whom it continues and whom it helps (MIXAGENT3a-i), the record's own links, each a door where the frame holds it.
+          // Whom it continues and whom it helps, the record's own links, each a door where the frame holds it.
           linkRow(t, t('work.head.continues'), session.from, continues, onOpenSession),
           linkRow(t, t('work.head.helping'), session.opinion ? null : session.serves, helps, onOpenSession),
-          // Its heavy run (HEAVYSLOT1): the head's line opens to its gates here, or its wait with the holder a door.
+          // Its heavy run: the head's line opens to its gates here, or its wait with the holder a door.
           ...(heavy ? [heavy] : []),
-          // The commit rule its own tree runs under and where it was set, in Setup's words.
+          // The commit rule its own tree runs under and where it is set, in Setup's words.
           { label: t('work.head.commits'), value: process ? <Inline text={processCommitsSays(t, process)} /> : null },
-          // The access it started under (SESSACCESS1, D184 point 1): each pause as its record keeps it, never today's settings.
+          // The access it started under: each pause as its record keeps it, never today's settings.
           accessRow(t, session),
-          // What it holds of git access now, one fact, narrowed by what the person tightened (D241 point 7).
+          // What it holds of git access now, one fact, narrowed by what the person tightened.
           gitAccessRow(t, session, gitAccess),
-          // The line's counts and what the person's rules did with them (CONTEXTDRIVE1h), as the driver counted them.
+          // The line's counts and what the person's rules did with them, as the driver counted them.
           ...countRows(t, supervision),
           supervisorRow(t, supervision),
           courseRow(t, supervision),
@@ -597,7 +594,7 @@ export function SessionHead({
           },
           { label: t('work.head.machine'), value: sessionOrigin(session) },
           { label: t('work.head.started'), value: `${stamp(session.created)} · ${ago(session.created)}` },
-          // A running session has an age and a finished one has a lifetime: the label says which (SESS2).
+          // A running session has an age and a finished one has a lifetime: the label says which.
           {
             label: running ? t('work.head.elapsed') : t('work.head.ran'),
             value: elapsed(session.created, running ? null : session.updated),

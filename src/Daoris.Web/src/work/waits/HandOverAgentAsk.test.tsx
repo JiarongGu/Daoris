@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../../locales/i18n';
 import { HandOverAgentAsk, type HandOverAskRow } from './HandOverAgentAsk';
 
-// MIXAGENT1c (D163 point 3; the mixed-agents design §2, §5): a session's agent's own ask to hand it over, on its page. Its note is the
+// A session's agent's own ask to hand it over, on its page. Its note is the
 // agent's claim, shown as written and said to be its claim; where the look holds it waiting on the person's word, *Hand over to …*
 // and *Not now*, each told how it ended, a refusal said beside them in the page's words.
 

@@ -5,7 +5,7 @@ import {
 } from './pausingFixtures';
 import { AbandonAsk, AbandonedWork, PauseAsk } from './WorkAsks';
 
-// What a pause and an abandon ask under a header, and what an abandon leaves on a page (PAUSE1e, D132 §2.6, §3.1, §4.2): the
+// What a pause and an abandon ask under a header, and what an abandon leaves on a page: the
 // pause's ask on an unwired workspace and a wired one, still reading, and on its way; the abandon's list with things kept,
 // with nothing left, and on its way; what went and what stayed, from the answer and from the record. Each in the main area's
 // width; 中文 is the window's look.

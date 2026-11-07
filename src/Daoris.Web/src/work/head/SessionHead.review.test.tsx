@@ -6,7 +6,7 @@ import type { Session } from '../../data/api';
 import { STEP_REVIEWED, STEP_SHOWN } from '../gates/reviewFixtures';
 import { SessionHead } from './SessionHead';
 
-// REVIEWENV1g (D154 point 7; the review environment design §3.1): where the review's gate holds a session's work, the head
+// Where the review's gate holds a session's work, the head
 // says *Review in `<environment>`* in the gate's state where *Accept…* would be, and offers no *Accept…*.
 
 const session = (over: Partial<Session> = {}): Session => ({

@@ -9,58 +9,55 @@ import { QuestionCard } from './QuestionCard';
 import { InConversation } from './WaitAnchor';
 
 /**
- * The answer selected in a park's question (QUESTIONUI1a, the supervisor design §8.4): the frame's, one per session, so a row chosen in
+ * The answer selected in a park's question: the frame's, one per session, so a row chosen in
  * the head's card or the box below is chosen in both; null for none.
  */
 export type AnswerPick = { selected: string | null; onSelect: (label: string | null) => void };
 
-/** What the ledger lets a person do from `awaiting-person` — and nothing this surface invented. */
+/** What the ledger lets a person do from `awaiting-person`, and nothing more. */
 export type Resolution = 'completed' | 'declined' | 'stopped';
 
 /**
- * What a finish does with the quest its session holds (QUESTCLOSE1, D126's note): marks it done as the person's, with their
+ * What a finish does with the quest its session holds: marks it done as the person's, with their
  * words or none. Absent leaves it as it is, the default.
  */
 export type QuestClose = { as: 'done'; note: string | null };
 
 /**
- * A session parked at a checkpoint, and the person's answer to it (design §4).
+ * A session parked at a checkpoint, and the person's answer to it.
  *
  * @remarks
- * **`AwaitingPerson` has meant "only the person can clear this" since D46 and had no surface at
- * all.** This is it: the analysis at the top, verbatim — `autonomous-development` asks a park for
+ * **`AwaitingPerson` means "only the person can clear this".** This is its surface: the analysis at the top, verbatim — `autonomous-development` asks a park for
  * options, a recommendation and a reason, and none of those survive rewording — and beneath it
  * exactly the three moves the ledger already allows.
  *
  * **Three, not four, and no new states.** The ledger also allows `awaiting-person → working`; that
  * one is the driver observing a session that carried on, which a person causes by *answering* it
  * in the composer. A button for it would be a second way to say the same thing, and the surface
- * says so instead. **The third, `stopped`, is the page header's** (SESSUX1d, D126 §3.3): a session's stop has one
+ * says so instead. **The third, `stopped`, is the page header's**: a session's stop has one
  * owner, so this card keeps *Answer and carry on…*, *Finish* and *Decline…*.
  *
- * **Unless nothing is left to take a message (STANDDOWN2).** A driven session that took its quest and
+ * **Unless nothing is left to take a message.** A driven session that took its quest and
  * ended its turn to ask the person has no process: its answer is a move here, handed `onAnswer`. The
- * record stays parked with the words (ANSWER1b), and the same session goes on with them at the driver's
- * next look (D131); until then the head shows `AnsweredPark` in this card's place (ANSWER1c). Then the
+ * record stays parked with the words, and the same session goes on with them at the driver's
+ * next look; until then the head shows `AnsweredPark` in this card's place. Then the
  * composer hint would send the person nowhere, and it is not shown.
  *
- * **🔴 And where the box below answers it too (PARKANSWER1).** The card once handed no answer of its own wherever the box at the
- * foot was the park's, so a park whose box the person did not have before them offered only *Finish* and *Decline…* (the owner
- * report, 2026-10-23). Every park the frame can answer is answered here as well: its question's answers rows to select once
- * *Answer and carry on…* is open (PARKVIEW1, QUESTIONUI1a), else the words under its closing message, through the frame's same door,
+ * **🔴 And where the box below answers it too.** Every park the frame can answer is answered here as well: its question's
+ * answers rows to select once *Answer and carry on…* is open, else the words under its closing message, through the frame's same door,
  * and the hint names both places. Its one *Send* sends the selected answer with the card's words, naming the question, or the words
  * alone. The selection is the frame's, shared with the box below (the card's own where none is handed), tied to the question's id.
- * A refusal is said here, where it was pressed, the words and the selection kept; the frame refuses an answer of either kind while
+ * A refusal is said here, where it is pressed, the words and the selection kept; the frame refuses an answer of either kind while
  * the question's go-aheads are open.
  *
  * **Declining asks for its reason in place**, the same two-step a quest's page uses and for the
  * same reason: the note is the only part whoever reads the record later can act on, and a decline
  * that slipped out on one click would routinely carry nothing.
  *
- * **A finish asks what becomes of its quest, in the same act** (QUESTCLOSE1, D126's note): where the session holds a
+ * **A finish asks what becomes of its quest, in the same act**: where the session holds a
  * quest still open or taken, *Finish…* opens the choice in place, *leave it as it is* by default or *mark it done as
- * yours* with the person's note. On the install two sessions finished at a checkpoint left their quests taken with
- * nothing to close them, since nothing carries a finished session's quest on. With no such quest, *Finish* is one press.
+ * yours* with the person's note. Nothing carries a finished session's quest on, so one left taken would have
+ * nothing to close it. With no such quest, *Finish* is one press.
  *
  * A molecule: it is handed the note and reports a move, so a parked session with a three-paragraph
  * analysis and one with none are both reachable by passing them.
@@ -69,35 +66,35 @@ export function AwaitingPerson({
   parts, question = null, quest = null, pending = false, below = false, onResolve, onAnswer, onChoice, pick, onConversation,
 }: {
   /**
-   * Its question as its agent asked it through the connector (PARKVIEW1, the park's ask design §3): shown in place of its whole last
+   * Its question as its agent asked it through the connector: shown in place of its whole last
    * message, which the conversation holds, its answers listed; their presses are the box's below, or this card's own answer.
    */
   question?: ParkQuestion | null;
-  /** The way to the message that asked, in the conversation, where it holds it (WAITFOOT1c): *In the conversation*. */
+  /** The way to the message that asked, in the conversation, where it holds it: *In the conversation*. */
   onConversation?: () => void;
   /**
-   * Its lines (LANG1a): Daoris's lead-in worded in the reader's language, and the agent's analysis beneath it word for
-   * word (LANG1b, `Note`).
+   * Its lines: Daoris's lead-in worded in the reader's language, and the agent's analysis beneath it word for
+   * word (`Note`).
    */
   parts?: readonly NotePart[] | null;
-  /** The quest its session holds, where it is still open or taken: what a finish may close (QUESTCLOSE1). */
+  /** The quest its session holds, where it is still open or taken: what a finish may close. */
   quest?: Pick<Quest, 'id' | 'status'> | null;
   pending?: boolean;
   /**
    * The ledger's moves this card makes, finish and decline, where this surface can make them (the shell); a finish that
-   * closes its quest says how (QUESTCLOSE1).
+   * closes its quest says how.
    */
   onResolve?: (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => void;
   /**
-   * The answer to a session with no process left, its words said through the say door (STANDDOWN2, ONEWAY1k). It may settle with the
-   * sentence it was refused in (PARKANSWER1), said here with the words kept; nothing, and the answer was taken.
+   * The answer to a session with no process left, its words said through the say door. It may settle with the
+   * sentence it is refused in, said here with the words kept; nothing, and the answer is taken.
    */
   onAnswer?: (answer: string) => Promise<string | null> | void;
-  /** Its question's answer selected, sent with the card's words (PARKANSWER1, QUESTIONUI1a): settled as `onAnswer` is. */
+  /** Its question's answer selected, sent with the card's words: settled as `onAnswer` is. */
   onChoice?: (label: string, words: string) => Promise<string | null> | void;
-  /** The answer selected, the frame's and shared with the box below (QUESTIONUI1a); absent, the card holds its own. */
+  /** The answer selected, the frame's and shared with the box below; absent, the card holds its own. */
   pick?: AnswerPick;
-  /** The box at the foot answers it too (PARKANSWER1): the hint names both places. */
+  /** The box at the foot answers it too: the hint names both places. */
   below?: boolean;
 }) {
   const { t } = useTranslation();
@@ -106,10 +103,10 @@ export function AwaitingPerson({
   const [finishing, setFinishing] = useState(false);
   const [reason, setReason] = useState('');
   const [words, setWords] = useState('');
-  // The answer on its way, and the sentence one was refused in (PARKANSWER1).
+  // The answer on its way, and the sentence one is refused in.
   const [sending, setSending] = useState(false);
   const [refused, setRefused] = useState<string | null>(null);
-  // The answer selected in its question (QUESTIONUI1a), on the question it was selected on: a replaced one is drawn with none.
+  // The answer selected in its question, on the question it is selected on: a replaced one is drawn with none.
   const [choice, setChoice] = useState<{ question: string; label: string } | null>(null);
   const own = question && choice?.question === question.id && question.choices.some((one) => one.label === choice.label)
     ? choice.label : null;
@@ -134,7 +131,7 @@ export function AwaitingPerson({
       setSending(false);
     }
   };
-  // What the finish does with its quest: left as it is unless the person chooses (QUESTCLOSE1).
+  // What the finish does with its quest: left as it is unless the person chooses.
   const [questTo, setQuestTo] = useState<'leave' | 'done'>('leave');
   const [questNote, setQuestNote] = useState('');
   const closable = quest !== null && (quest.status === 'Open' || quest.status === 'Taken');
@@ -148,7 +145,7 @@ export function AwaitingPerson({
   return (
     <WaitingCard title={t('work.head.waiting')}>
 
-      {/* Its answers are rows to select only once the person opens the card's answer, so its words go with them (PARKANSWER1). */}
+      {/* Its answers are rows to select only once the person opens the card's answer, so its words go with them. */}
       {question
         ? (
           <div className="mt-1.5">
@@ -182,7 +179,7 @@ export function AwaitingPerson({
             </label>
             {refused && <p role="status" className="m-0 text-small text-ink-danger [overflow-wrap:anywhere]">{refused}</p>}
             <div className="flex flex-wrap gap-2">
-              {/* ONEWAY1k: the say door keeps words, so an answer with none waits for them, as the box below does. */}
+              {/* The say door keeps words, so an answer with none waits for them, as the box below does. */}
               <Button
                 variant="primary"
                 disabled={pending || sending || (!(selected && onChoice) && !words.trim())}
@@ -271,7 +268,7 @@ export function AwaitingPerson({
             )}
             {onResolve && (
               <>
-                {/* With a quest still to close, the finish asks what becomes of it first (QUESTCLOSE1); with none, one press. */}
+                {/* With a quest still to close, the finish asks what becomes of it first; with none, one press. */}
                 <Button
                   variant={onAnswer ? 'default' : 'primary'}
                   disabled={pending}

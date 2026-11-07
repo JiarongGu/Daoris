@@ -3,11 +3,11 @@ import { figure, moment } from '../../locales/format';
 import type { HandedCut, HandedSection, InstructionAccount } from './conversation';
 
 /**
- * What a session was handed, as the page reads it (CONTEXT1, D143 point 1): the account the driver kept beside its
+ * What a session is handed, as the page reads it: the account the driver keeps beside its
  * instruction, worded from its codes in the reader's language. Pure, so every state a story or a test needs is an argument.
  *
  * @remarks
- * **The page's map of the codes is the twin's third side**, as LANG1b's note codes are: `HANDED_CUTS` names the values each
+ * **The page's map of the codes is the twin's third side**, as a note's codes are: `HANDED_CUTS` names the values each
  * cut's entry says, held to the driver's `HandedCuts.Values` by `handed.test.ts`, which also holds every
  * `work.handed.(section|source|none|cut).*` entry to the codes the driver declares. **What the page cannot word**, a code a
  * newer driver writes or a value its entry needs that the record does not give, shows the driver's own English, marked
@@ -28,15 +28,15 @@ export const HANDED_CUTS: Readonly<Record<string, readonly CutValue[]>> = {
   'indexes-bound': ['n', 'limit'],
   'files-elsewhere': ['n'],
   'rules-unread': [],
-  // SESSCTX1b: what a brief's bound left out (the session-context design §3.2).
+  // What a brief's bound leaves out.
   'brief-words-older': ['n', 'limit'],
   'brief-turns-older': ['n', 'limit'],
   'brief-clipped': ['n'],
   'brief-list': ['n'],
   'brief-parts-bound': ['n', 'limit'],
-  // CONTEXTDRIVE1b: the line's course past its own bound.
+  // The line's course past its own bound.
   'brief-course-bound': ['n', 'limit'],
-  // CONTEXTONE1c: the standing block handed through its own file past the bound on the first prompt.
+  // The standing block handed through its own file past the bound on the first prompt.
   'block-filed': ['limit'],
 };
 
@@ -55,7 +55,7 @@ export type HandedRow = {
   source?: string;
   /** What its source names, shown as code: `#abc123`, `reports`, `docs/code-map.json`. */
   from?: string;
-  /** Its other facts, worded: how many of how many, when its source was set. */
+  /** Its other facts, worded: how many of how many, when its source is set. */
   facts: string[];
   cuts: HandedLine[];
   /** Handed beside the instruction rather than in it: the permission rules. */

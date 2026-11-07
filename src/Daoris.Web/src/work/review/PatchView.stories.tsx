@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PatchView } from './PatchView';
 
-// A file's patch drawn (REVIEW2): numbered, highlighted in the file's language, unified or side by
+// A file's patch drawn: numbered, highlighted in the file's language, unified or side by
 // side. Each state is a patch passed in.
 
 const RUST = [

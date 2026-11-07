@@ -13,15 +13,15 @@ export interface MenuItem {
   /** Separated from what came before — the shape VS Code uses for "and also". */
   separated?: boolean;
   /**
-   * Ticked whatever is on screen: the workspace the window is scoped to (D75), the place in front, a region shown. Said,
-   * not only drawn (UXFIX1): a toggle (a region shown) as a checkbox item, with `radio` one choice among its rows.
+   * Ticked whatever is on screen: the workspace the window is scoped to, the place in front, a region shown. Said,
+   * not only drawn: a toggle (a region shown) as a checkbox item, with `radio` one choice among its rows.
    */
   checked?: boolean;
   /** Its tick is one choice among the rows beside it (the place, the scope): a radio item, in one group with them. */
   radio?: true;
   /** Said, and not choosable: "no workspace yet" is a fact in a menu, and *Stop…* with nothing running keeps its place. */
   disabled?: boolean;
-  /** Its key, shown at the right as VS Code's menus show one (DOCK1c, D152 §3). */
+  /** Its key, shown at the right as VS Code's menus show one. */
   shortcut?: string;
   /** Its group's name over it (Run's *This session*), with the tip that says what to open while its acts are off. */
   heading?: { label: string; tip?: string };
@@ -33,7 +33,7 @@ export interface MenuItem {
 function Name({ label, letter, shown }: { label: string; letter?: string; shown: boolean }) {
   if (!shown || !letter) return <>{label}</>;
   const at = label.toLowerCase().indexOf(letter.toLowerCase());
-  // 中文's names hold no Latin letter, so Windows writes it after the name: 工作区(W) (the design §3.3).
+  // 中文's names hold no Latin letter, so Windows writes it after the name: 工作区(W).
   if (at < 0) return <>{label}({letter})</>;
   return <>{label.slice(0, at)}<u className="underline-offset-2">{label[at]}</u>{label.slice(at + 1)}</>;
 }
@@ -59,13 +59,13 @@ function Row({ item, glyphs }: { item: MenuItem; glyphs: boolean }) {
  * One menu of the application's menu bar — the title bar's left, as every IDE has it.
  *
  * @remarks
- * **What it holds**, since D152: the application's verbs and places, as VS Code's bar does. It is built from the one
+ * **What it holds**: the application's verbs and places, as VS Code's bar does. It is built from the one
  * table (`commands.ts`, through `appMenus.ts`), so a row here is a row of the palette and a key of the drawer.
  *
  * **Open or not is the bar's**, where a bar holds it (`open`, `onOpenChange`), so one menu open moves with the pointer
  * and the arrows walk the bar; alone it holds its own.
  *
- * **Presentational, and it imports no hook from the data** (components §3): a row's check, its count, its key and its
+ * **Presentational, and it imports no hook from the data**: a row's check, its count, its key and its
  * group's name are props on the row.
  */
 /**
@@ -83,11 +83,11 @@ function blocksOf(items: readonly MenuItem[]): MenuItem[][] {
 }
 
 /**
- * A menu's rows (D152 §3.2): a rule before a new group, a record group's name over its first row, a row that opens a
- * submenu to its side, and every other row an act. The bar's menus and the fold's (UX7a2) draw the same rows.
+ * A menu's rows: a rule before a new group, a record group's name over its first row, a row that opens a
+ * submenu to its side, and every other row an act. The bar's menus and the fold's draw the same rows.
  *
  * @remarks
- * **A tick is said, not only drawn** (UXFIX1): a toggle (a region shown) is a checkbox item and a choice (the place, the
+ * **A tick is said, not only drawn**: a toggle (a region shown) is a checkbox item and a choice (the place, the
  * scope) a radio item among its rows, each with `aria-checked`, so a screen reader hears the workspace in force and
  * whether a region is shown. Every row is still chosen through `choose`, the table's run, whatever its kind, and the tick
  * column is reserved on every row so the names line up.
@@ -157,8 +157,8 @@ const NAME = cn(
   // disclosure arrows at all. A menu bar is a convention strong enough not to need marking,
   // and eight chevrons in a title bar is eight pieces of furniture.
   'inline-flex items-center gap-1.5 rounded-control px-2 py-1 text-small',
-  // A target of 28 px at least (UXFIX1, the platform language §6): `py-1` alone left the fold's ☰ about 23 px tall and a
-  // name 24. A minimum, not a height, so the strip (`h-9`, 36 px) stays as tall as it was and centres the 28 in it.
+  // A target of 28 px at least: `py-1` alone gives the fold's ☰ about 23 px and a
+  // name 24. A minimum, not a height, so the strip (`h-9`, 36 px) keeps its height and centres the 28 in it.
   'min-h-7 min-w-7 justify-center',
   'transition-colors duration-(--speed)',
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
@@ -175,11 +175,11 @@ export function AppMenu({
   trigger: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  /** The letter Alt opens it by (the design §3.3). */
+  /** The letter Alt opens it by. */
   letter?: string;
   /** Whether Alt is held, which shows the letter. */
   mnemonic?: boolean;
-  /** A key on its name while it is closed: the bar's ← and →, and Escape back to where the focus was. */
+  /** A key on its name while it is closed: the bar's ← and →, and Escape back to where the focus came from. */
   onTriggerKey?: (event: KeyboardEvent<HTMLButtonElement>) => void;
   /** The pointer came onto its name: with another menu open, this one opens in its place. */
   onHover?: () => void;
@@ -187,7 +187,7 @@ export function AppMenu({
   onWalk?: (by: 1 | -1) => void;
   /** Its close is about to hand the focus back: the bar decides where. */
   onCloseFocus?: (event: Event) => void;
-  /** A row was chosen: the close that follows hands the focus back to where it was. */
+  /** A row is chosen: the close that follows hands the focus back to where it came from. */
   onChosen?: () => void;
 }) {
   const choose = (id: string) => {
@@ -240,10 +240,10 @@ export function focusMenuBar(root: ParentNode): boolean {
 }
 
 /**
- * The window's width, in CSS px, below which the seven menus fold into one (UX7a2, the design §3.3). UX7a measured a
- * shell's strip on its stories at about 590 px for the seven names beside the command center's glyph and the window's
- * buttons (D152's UX7a note); those stories drew no browser door, which the window's strip holds, 28 px more. 39rem keeps
- * that clear. A browser's six names fit a narrower window and fold at the same width, which was not measured apart.
+ * The window's width, in CSS px, below which the seven menus fold into one. A shell's strip on its stories measures
+ * about 590 px for the seven names beside the command center's glyph and the window's
+ * buttons; those stories draw no browser door, which the window's strip holds, 28 px more. 39rem keeps
+ * that clear. A browser's six names fit a narrower window and fold at the same width, which is not measured apart.
  */
 export const MENU_FOLD_BELOW = 624;
 
@@ -252,7 +252,7 @@ export function foldsMenus(width: number): boolean {
   return width > 0 && width < MENU_FOLD_BELOW;
 }
 
-/** Whether the window is narrower than the bar's names need, followed as it resizes (the window decides, as FRAME6's does). */
+/** Whether the window is narrower than the bar's names need, followed as it resizes (the window decides). */
 export function useMenuFold(): boolean {
   const [width, setWidth] = useState(() => window.innerWidth);
   useEffect(() => {
@@ -263,21 +263,21 @@ export function useMenuFold(): boolean {
   return foldsMenus(width);
 }
 
-/** What the caller's `open` holds while the fold is open with none of its menus open in it (UX7a2). */
+/** What the caller's `open` holds while the fold is open with none of its menus open in it. */
 export const FOLD_OPEN = 'fold';
 
 /**
- * The application's menu bar (UX7a, D152 §3.3): the menus side by side, behaving as every Windows menu bar does.
+ * The application's menu bar: the menus side by side, behaving as every Windows menu bar does.
  *
  * @remarks
  * - **One menu open moves with the pointer**: with a menu open, coming onto another's name opens it, and ← and → walk the
  *   bar from inside a menu and between the names. Escape closes a menu onto its name; Escape on a name hands the focus
- *   back to where it was before the bar took it, as choosing a row does.
+ *   back to where it came from before the bar took it, as choosing a row does.
  * - **Which menu is open is the caller's** (`open`), which builds a menu's rows as it opens, so a row reads what is in
  *   front of the person at that moment rather than when the strip last drew.
  * - Built on the dropdown the strip already had, so its names stay buttons that open a menu (`aria-haspopup`): a
  *   menubar primitive would have changed every name's role, and the tests across the page that open the View menu by it.
- * - **Narrower than its names need, it folds** (`compact`, UX7a2): one button, VS Code's ☰, whose menu's rows are the
+ * - **Narrower than its names need, it folds** (`compact`): one button, VS Code's ☰, whose menu's rows are the
  *   menus, each opening its own rows to its side. The keys reach it as they reach the bar: Alt alone and F10 focus it,
  *   Alt with a letter opens it at that menu, ↓ and ↑ walk the menus, → opens one onto its first row and ← goes back to
  *   its name, Escape closes onto the button and Escape there hands the focus back, as choosing a row does.
@@ -298,7 +298,7 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
   foldLabel?: string;
 }): ReactNode {
   const bar = useRef<HTMLElement>(null);
-  // Where the focus was before the bar took it, which Escape on a name and a chosen row hand it back to.
+  // Where the focus sat before the bar took it, which Escape on a name and a chosen row hand it back to.
   const before = useRef<HTMLElement | null>(null);
   const chose = useRef(false);
   const openNow = useRef(open);
@@ -322,7 +322,7 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
     if (was?.isConnected) was.focus();
     else (document.activeElement as HTMLElement | null)?.blur();
   };
-  // A row was chosen: the focus goes back to where it was, as a menu bar's does.
+  // A row is chosen: the focus goes back to where it came from, as a menu bar's does.
   const closeFocus = (event: Event) => {
     if (!chose.current) return;
     chose.current = false;
@@ -381,7 +381,7 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
           onHover={() => { if (openNow.current !== null && openNow.current !== menu.id) switchTo(menu.id); }}
           onWalk={(by) => switchTo(neighbour(menu.id, by))}
           onTriggerKey={(event) => {
-            // A menu's name is no field, and still asks, as every handler of Enter or Escape does (IME1).
+            // A menu's name is no field, and still asks, as every handler of Enter or Escape does.
             if (isComposing(event)) return;
             if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
               event.preventDefault();
@@ -409,7 +409,7 @@ export function AppMenuBar({ menus, open, onOpen, onChoose, mnemonics = false, l
 }
 
 /**
- * The bar folded into one menu (UX7a2): VS Code's ☰ on a narrow window, its rows the menus in the bar's order, each one's
+ * The bar folded into one menu: VS Code's ☰ on a narrow window, its rows the menus in the bar's order, each one's
  * rows opening to its side. Which is open is still the bar's caller's, so Alt with a letter opens the fold at that menu
  * and the pointer moving down the rows opens each in turn, one at a time.
  */
@@ -422,7 +422,7 @@ function Fold({ menus, open, label, mnemonics, onOpen, isOpen, anyOpen, onEscape
   /** Whether this menu is the one open now, read when Radix says one closed: a newer open may have taken its place. */
   isOpen: (id: string) => boolean;
   anyOpen: () => boolean;
-  /** Escape on the button: the focus goes back to where it was. */
+  /** Escape on the button: the focus goes back to where it came from. */
   onEscape: () => void;
   onChoose: (menu: string, item: string) => void;
   onCloseFocus: (event: Event) => void;

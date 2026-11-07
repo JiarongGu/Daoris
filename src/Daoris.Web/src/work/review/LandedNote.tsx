@@ -5,12 +5,12 @@ import { Inline } from '../../design/ui';
 import type { LandedWork } from './diff';
 
 /**
- * Where a landed session's work went, at the top of its review (REVIEW2, D113): the branch its landing made, when,
+ * Where a landed session's work went, at the top of its review: the branch its landing made, when,
  * the pull request a plugin opened, and where that branch stands now.
  *
  * @remarks
  * **A landed session reads as landed.** Its landing tidied its tree away, so the review reads its changes from the
- * landed branch in the repository's own checkout, and says so; a branch gone since is said plainly, with what the
+ * landed branch in the repository's own checkout, and says so; a branch gone is said plainly, with what the
  * clean-up proved when it removed it and whether its work reads on the line now. Each state is its own sentence,
  * because each is a different fact about where the work is.
  *
@@ -39,7 +39,7 @@ export function LandedNote({ landed, source = 'tree' }: {
         ? t('work.review.landed.removedInside', { where: removed.where ?? '' })
         : t('work.review.landed.removed', { where: removed.where ?? '' }));
     }
-    // LANDRETIRE1 part 2: withdrawn on the person's word, with their reason and where its commits stay (never the clean-up's removal).
+    // Withdrawn on the person's word, with their reason and where its commits stay (never the clean-up's removal).
     if (landed.withdrawn) {
       const { why, keptOn } = landed.withdrawn;
       sentences.push(t(`work.review.landed.withdrawn${why ? 'Why' : ''}${keptOn ? 'Kept' : ''}`, { why: why ?? '', ref: keptOn ?? '' }));

@@ -8,17 +8,17 @@ import { proposalChange } from '../../settings/repository/proposals';
 import { type Answered, InlineConfirm, Refused } from '../InlineConfirm';
 import { InConversation } from './WaitAnchor';
 
-/** The person's answer to a rule a session proposed: which, allow or decline, and how the answer ended (UXFIX2). */
+/** The person's answer to a rule a session proposed: which, allow or decline, and how the answer ended. */
 export type RuleAnswer = (proposal: RuleProposal, accept: boolean, answered: Answered) => void;
 
 /**
- * Where an *Allow…*'s ask is open, the frame's (D168 point 3): the proposal's id where it is open in this place, and how to open
+ * Where an *Allow…*'s ask is open, the frame's: the proposal's id where it is open in this place, and how to open
  * or put it down, so it is open in the head or at the foot, never both.
  */
 export type RuleAsk = { open: string | null; onOpen: (id: string | null) => void };
 
 /**
- * What the frame hands the head and the foot's strip for a session's rule proposals (PROPOSEHERE1b, D168 point 3): the machine's
+ * What the frame hands the head and the foot's strip for a session's rule proposals: the machine's
  * proposals as the shell read them, of which the session's own open ones are drawn, the answer's one door, its pending, and
  * whether the session takes words now, so an *Allow* tells it to go on.
  */
@@ -35,13 +35,13 @@ export type RuleWaits = {
 const SOUGHT = 'outline-2 outline-offset-2 outline-accent/60';
 
 /**
- * **The rules a session proposed, answered where the person talks to it** (PROPOSEHERE1b, D168 point 2; D74): what each would
+ * **The rules a session proposed, answered where the person talks to it**: what each would
  * change, in the person's language, the session's reason as it wrote it, and its presses. 🔴 A widening never applies without
- * the person (the permission-scopes design §6), so *Allow…* asks once, as the band's does (PROPOSEHERE1a), saying what it
- * widens; *Decline* changes nothing and is direct (platform UX §4).
+ * the person, so *Allow…* asks once, as the band's does, saying what it
+ * widens; *Decline* changes nothing and is direct.
  *
  * @remarks
- * **Props only** (components §2): the frame holds the answer, its pending and where the ask is open (`ask`), and hands the head
+ * **Props only**: the frame holds the answer, its pending and where the ask is open (`ask`), and hands the head
  * and the strip the same. Without `onAnswer` there is no door, and nothing offers one. A session that takes no words now is
  * said so on the card: allowing still changes the rules, and nothing tells it.
  */
@@ -53,7 +53,7 @@ export function ProposedRules({ proposals, busy = false, onAnswer, heard = true,
   heard?: boolean;
   /** The line above the list, where it stands: absent, none. */
   lead?: string;
-  /** The way to each proposal's call in the conversation, by its id, where the conversation found it (WAITFOOT1c). */
+  /** The way to each proposal's call in the conversation, by its id, where the conversation finds it. */
   inConversation?: Readonly<Record<string, () => void>>;
   /** The proposal a raising block's *To the wait* led to: outlined. */
   marked?: string;
@@ -75,7 +75,7 @@ export function ProposedRules({ proposals, busy = false, onAnswer, heard = true,
   );
 }
 
-/** One proposal: *Allow…* asks under it; *Decline* waits in place, and a refusal is said beside it (UXFIX2b3b). */
+/** One proposal: *Allow…* asks under it; *Decline* waits in place, and a refusal is said beside it. */
 function ProposedRule({ proposal, busy, onAnswer, heard, onConversation, marked, ask }: {
   proposal: RuleProposal;
   busy: boolean;
@@ -136,7 +136,7 @@ function ProposedRule({ proposal, busy, onAnswer, heard, onConversation, marked,
           <Button disabled={waiting} aria-describedby={refusal ? refusalId : undefined} onClick={decline}>
             {t('work.attention.act.declineRule')}
           </Button>
-          {/* Drawn from the first, so it is a live region before it speaks (UXFIX2c). */}
+          {/* Drawn from the first, so it is a live region before it speaks. */}
           <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
             {pending ? t('work.confirm.pending') : null}
           </span>
@@ -144,7 +144,7 @@ function ProposedRule({ proposal, busy, onAnswer, heard, onConversation, marked,
         </div>
       )}
       {onAnswer && asking && (
-        // Outward, and nothing goes: the primary's hue (LAND4's rule), as the band's ask is.
+        // Outward, and nothing goes: the primary's hue, as the band's ask is.
         <InlineConfirm
           className="mt-1"
           tone="primary"

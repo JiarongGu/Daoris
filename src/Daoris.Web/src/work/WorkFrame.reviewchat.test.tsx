@@ -3,8 +3,8 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// REVIEWCHAT1: a driven session that ended and waits for the person's *Accept…* is read as a conversation, every part of its line, and
-// is driven on from its page. One part of the Work frame's suite; the bridge is mocked as present (D55) and the records are the
+// A driven session that ended and waits for the person's *Accept…* is read as a conversation, every part of its line, and
+// is driven on from its page. One part of the Work frame's suite; the bridge is mocked as present and the records are the
 // driver's answers, as the page reads them.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 

@@ -4,8 +4,8 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// SWITCHCTX1c-i (the switch-context design §2.7, §6): a session's page draws its line as one conversation, one part of the Work
-// frame's suite. The bridge is mocked as present, because the frame does not exist without one (D55); what the parts share is in
+// A session's page draws its line as one conversation, one part of the Work
+// frame's suite. The bridge is mocked as present, because the frame does not exist without one; what the parts share is in
 // `test/workFrameBridge.ts` and `test/workFrameKit.tsx`. No test starts a window, a console or an agent: the records are the
 // driver's answers, as the page reads them.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
@@ -259,7 +259,7 @@ describe('a session’s page draws its line as one conversation', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Show the parts' }));
     await userEvent.click(strip().getAllByRole('button')[1]!);
-    // Part 2 attended: its own ancestry above it, and the third part no longer drawn.
+    // Part 2 attended: its own ancestry above it, and the third part not drawn.
     await waitFor(() => expect(drawn()).toEqual(['c0000001']));
     expect(screen.queryByText('Third part words.')).toBeNull();
     expect(screen.getByText('Second part words.')).toBeInTheDocument();

@@ -13,7 +13,7 @@ const ask = (id: string, goAheads?: GoAhead[]): Ask => ({
   updated: '2026-10-03T08:00:00Z', links: [], attachments: [], proposal: [], quests: [], goAheads,
 });
 
-/** KNOWUSE1a2 (D135 §2): which go-aheads a park asked, read from its quest's ask by the requests that name it. */
+/** Which go-aheads a park asked, read from its quest's ask by the requests that name it. */
 describe('the go-aheads a park asked', () => {
   const asks = [ask('a1', [goAhead(1, 'p1'), goAhead(2, 'other'), goAhead(3, 'other', 'p1')]), ask('a2', [goAhead(1, 'p1')])];
 
@@ -43,7 +43,7 @@ describe('the toast for a go-ahead answered on a park\'s page', () => {
     expect(goAheadToast(t, 1, false, answer({}), {})).toBe("Refused go-ahead #1; the same session goes on with it at the driver's next look.");
   });
 
-  /** GOAHEAD2b: the park is answered only once none of its go-aheads is open, so a press that leaves one says which. */
+  /** The park is answered only once none of its go-aheads is open, so a press that leaves one says which. */
   it('says the yes or the no and which go-ahead the park still waits on, where one it asked is still open', () => {
     const asked = [goAhead(1, 'p1'), goAhead(2, 'p1')];
     expect(goAheadToast(t, 1, true, waiting, { asked }))

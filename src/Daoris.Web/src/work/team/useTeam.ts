@@ -10,7 +10,7 @@ import type { OutsideAgent } from './outsideAgents';
 import type { RemoveOutside } from './OutsideAgentRow';
 import { askOfMember, teamSaid } from './teamRows';
 
-/** What the head's *Co-workers* and a member's thread are handed beyond the asks (COWORKUX1): the frame's facts and presses. */
+/** What the head's *Co-workers* and a member's thread are handed beyond the asks: the frame's facts and presses. */
 export type TeamFacts = {
   lead: string;
   onPass?: (ask: string, answered: Answered) => void;
@@ -19,14 +19,14 @@ export type TeamFacts = {
   choices?: readonly BringInChoice[];
   /** Where the attended record is a helper: its thread head. */
   thread?: MemberThreadProps | null;
-  /** The agents outside Daoris on its line's channel, and the person's *Remove* (CHANNELJOIN1c). */
+  /** The agents outside Daoris on its line's channel, and the person's *Remove*. */
   outside?: readonly OutsideAgent[];
   onRemoveOutside?: RemoveOutside;
   removingOutside?: boolean;
 };
 
 /**
- * The team's facts for the attended session (COWORKUX1b, d, f): *Pass to the lead* on its own asks, the dialog's doors, and, where it is
+ * The team's facts for the attended session: *Pass to the lead* on its own asks, the dialog's doors, and, where it is
  * itself a helper, its thread: the lead's asks read to find the one it answers, *Back to lead*, *Ask again…* and the pass, each on the
  * lead. This machine's own files, so only for its own record.
  */
@@ -82,7 +82,7 @@ export function useTeam({ attended, here, nameOf, attend, open }: {
     passing: pass.isPending,
     choices: leads ? [
       { door: 'question', onChoose: () => open('askHelper') },
-      // A piece and a second opinion both need a tree of its own to be kept apart from; the doors judge the rest as they do now.
+      // A piece and a second opinion both need a tree of its own to be kept apart from; the doors judge the rest.
       leadsPieces(attended) ? { door: 'piece', onChoose: () => open('askPiece') } : { door: 'piece', off: t('work.team.off.noTree') },
       leadsPieces(attended) ? { door: 'opinion', onChoose: () => open('review') } : { door: 'opinion', off: t('work.team.off.noTree') },
       { door: 'goOn', onChoose: () => open('handOver') },

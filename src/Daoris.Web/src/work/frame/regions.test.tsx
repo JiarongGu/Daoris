@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { LIST_ROW } from './listKeys';
 import { focusRegion, nextRegion, REGION } from './regions';
 
-// D118 §3e: F6 and Shift+F6 focus the next and the previous region, VS Code's *Focus Next Part*.
+// F6 and Shift+F6 focus the next and the previous region, VS Code's *Focus Next Part*.
 
 describe('the region F6 moves to', () => {
   it('steps forward and back, and goes round, as VS Code\'s parts do', () => {

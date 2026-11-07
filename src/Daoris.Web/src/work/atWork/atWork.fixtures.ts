@@ -2,7 +2,7 @@ import type { Consideration } from '../../data/signals';
 import type { ChannelItem } from '../channel';
 import type { AtWorkA, AtWorkAsker, AtWorkChild, AtWorkExchange, AtWorkHeld, AtWorkHint, AtWorkPart, AtWorkSubagents } from './types';
 
-// Who is at work (COWORKVIEW1a): the answers the view's stories and tests draw, each a state the cowork view design §5.3 names.
+// Who is at work: the answers the view's stories and tests draw, each a state of the view.
 
 const AT = '2026-10-31T14:02:00Z';
 const LATER = '2026-10-31T14:05:00Z';
@@ -58,7 +58,7 @@ export const UNCERTAIN = answerOf(subagents([
 /** Agent ids alone: unmatched and not tied to a process. */
 export const IDS_ONLY = answerOf({ read: 'read', working: 0, children: [], observed: 2, unplaced: 2 });
 
-/** A driven record's history: one child whose end was not recorded beside one its harness ended. */
+/** A driven record's history: one child whose end is not recorded beside one its harness ended. */
 export const HISTORY = answerOf(subagents([
   child('a1', 'unrecorded', { lastSeen: LATER }),
   child('a2', 'completed', { ended: AT }),
@@ -105,7 +105,7 @@ export const LEAD_WAITING_ON_LANE = routed([
   exchanges: [{ id: 'quest:q7', part: 's1', expects: 'work', to: 'driver', delivery: 'taken', outcome: 'taken-in', holds: true, lanes: ['core'] }],
 });
 
-/** COMMS1i: a helper the line asked, by its exchange as the driver's read answers it. */
+/** A helper the line asked, by its exchange as the driver's read answers it. */
 export const helperAsked = (over: Partial<AtWorkExchange> = {}): AtWorkExchange => ({
   id: 'helper:h7', part: 's1', expects: 'answer', to: 'codex-acp', delivery: 'taken', outcome: 'asked', holds: true, at: AT,
   session: 'h-session', agent: 'codex-acp', ...over,
@@ -123,7 +123,7 @@ export const CHAT_TOOK_A_QUEST = routed([
 ], { exchanges: [{ id: 'quest:q9', part: 'c1', expects: 'work', to: 'docs', delivery: 'kept', outcome: 'asked', holds: true }] });
 
 /**
- * COMMS1i: a line's co-workers in each state a member can stand in: a helper asked and waiting for the person's yes, one reading, one
+ * A line's co-workers in each state a member can stand in: a helper asked and waiting for the person's yes, one reading, one
  * answered and taken, a partner refused, and a successor asked by the part before a hand-over; one source not read.
  */
 export const COWORKERS = routed([routedPart('s2', 2, { state: 'working' }), routedPart('s1', 1, { state: 'completed' })], {
@@ -139,7 +139,7 @@ export const COWORKERS = routed([routedPart('s2', 2, { state: 'working' }), rout
 }, 's2');
 
 /**
- * COMMS1i (wave 2's rest): a finished line's reviewers, read from their records that serve it: one reading, which the line waits on,
+ * A finished line's reviewers, read from their records that serve it: one reading, which the line waits on,
  * one whose reading ended and one that failed.
  */
 export const REVIEWERS = routed([routedPart('s1', 1, { state: 'completed' })], {
@@ -165,7 +165,7 @@ export const RESUMED_AND_EARLIER = routed([
   routedPart('s4', 4, { state: 'completed', joined: { began: 'handed-over', after: 3 } }),
 ], { earlier: 4 });
 
-/** Parts that joined by each of §3.4's other doors. */
+/** Parts that joined by each of the other doors. */
 export const JOINED_EACH_WAY = routed([
   routedPart('s1', 1, { joined: { began: 'asked', quest: 'q4', ask: 'a7' } }),
   routedPart('s2', 2, { joined: { began: 'opened', quest: 'q5', ask: 'a7' } }),
@@ -180,7 +180,7 @@ export const OVERFLOW_AND_EARLIER = routed(
   { earlier: 2, moreParts: { working: 10 } },
 );
 
-// COWORKVIEW1b-ii: the quests a part asked, and what asked it.
+// The quests a part asked, and what asked it.
 
 /** The tick's reasons for two untaken quests, as `considered` holds them. */
 export const CONSIDERED: Consideration[] = [
@@ -227,7 +227,7 @@ export const ASKED_BY = (by: AtWorkAsker['by']): AtWorkHeld => routed(
   's2',
 );
 
-// COWORKVIEW1d: an ask's view, a branch of its own.
+// An ask's view, a branch of its own.
 
 /** An ask with two lines of work (one with a subagent working, one done) and a quest untaken. */
 export const ASK_TWO_ENTRIES: AtWorkHeld = {
@@ -254,7 +254,7 @@ export const ASK_TEAMMATE: AtWorkHeld = {
   at: { epoch: 'e1', n: 1 },
 };
 
-// COWORKVIEW1c: the channel's last words.
+// The channel's last words.
 
 const posted = (id: string, at: string, over: Partial<ChannelItem>): ChannelItem => ({ kind: 'message', id, at, ...over });
 
@@ -266,7 +266,7 @@ export const SAID: ChannelItem[] = [
 ];
 
 /**
- * COMMS1k: a line's own channel, a chat's on no ask: the lead and its lane part alongside post to each other, each to the other alone,
+ * A line's own channel, a chat's on no ask: the lead and its lane part alongside post to each other, each to the other alone,
  * and the lead to everyone on it.
  */
 export const LINE_SAID: ChannelItem[] = [
@@ -281,7 +281,7 @@ export const ASK_SAID: ChannelItem[] = [
   posted('m2', '2026-10-31T14:03:00Z', { entry: 'ask:a1/driver', session: 's2', repository: 'driver', agent: 'claude-code', text: 'The core lane is done; the index needs a second look.' }),
 ];
 
-// COWORKVIEW1e-iii: the hint, where two subagents ran and the way to hand rows on is not open.
+// The hint, where two subagents ran and the way to hand rows on is not open.
 
 /** Two subagents working in one generation, and the standing the driver's judge answered. */
 export const HINTED = (hint: AtWorkHint): AtWorkHeld => answerOf(

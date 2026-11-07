@@ -83,7 +83,7 @@ describe('a session timeline', () => {
     });
   });
 
-  /** LANG1b: the note's parts ride with its English, for the entry to word in the reader's language. */
+  /** The note's parts ride with its English, for the entry to word in the reader's language. */
   it('carries the note’s parts beside its English', () => {
     const noteParts = [{ code: 'ended.done', values: {}, text: 'The quest reached done.' }];
     const events = sessionTimeline(session({

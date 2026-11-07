@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRef } from 'react';
 import '../../locales/i18n';
 
-// SESS1 S9, the organism: a jump lands on an event, and where the page does not hold it, the pages
+// The organism: a jump lands on an event, and where the page does not hold it, the pages
 // before are loaded until it does. The bridge is mocked; the driver's answers are the test's.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -69,7 +69,7 @@ describe('SessionConversation', () => {
 });
 
 /**
- * ASKHIST1c: *Back to bottom* floated over the last message's words (`sticky` inside the transcript). A host that names where
+ * *Back to bottom* must not float over the last message's words (`sticky` inside the transcript). A host that names where
  * it goes is told whether the reader is at the tail and how to go there, and draws the press in a strip of its own outside
  * the transcript, which takes its own room and covers nothing.
  */
@@ -139,7 +139,7 @@ describe('the way back to the tail', () => {
 });
 
 /**
- * WAITFOOT1c (D168 point 4): the jump the organism kept to itself is the frame's to press. It tells its host which waits it holds
+ * The jump the organism kept to itself is the frame's to press. It tells its host which waits it holds
  * the raising event of, or may hold on a page before, and shows one when pressed: loading the pages before until it is held, as
  * the jump to an event does, then outlined. The block that raised it says so, with *To the wait*.
  */

@@ -55,7 +55,7 @@ describe('what the list offers', () => {
   });
 
   /**
-   * Seen on the window (CONV4d): `des` offered the one file it meant, then seven whose letters were
+   * Seen on the window: `des` offered the one file it meant, then seven whose letters were
    * scattered across folder names (`.claude/rules/…`). Letters in order across a whole path are the
    * last resort, taken only when nothing better matched; within a name they still count.
    */

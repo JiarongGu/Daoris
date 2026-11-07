@@ -8,14 +8,14 @@ import {
 import { PageSection } from '../frame/ViewMain';
 
 /**
- * **A pause's ask** (PAUSE1e, D132 §2.6): a pause that ends work in flight asks once, under the header, as *Stop…* does
- * (D126 §3.3; platform language §4, a destructive edit asks once). It says what follows: how many running sessions stop,
+ * **A pause's ask**: a pause that ends work in flight asks once, under the header, as *Stop…* does (a destructive edit
+ * asks once). It says what follows: how many running sessions stop,
  * that their trees keep what they wrote, and where they apply, that another machine may still take an open quest and that
  * a running intake keeps reading. Then the move, *Pause ask* or *Pause quest*, and *Never mind*.
  *
  * @remarks
  * **A molecule**: every state is reached by its props. While the plan it says is on its way it says so and offers no move,
- * since a pause pressed before it is read would stop what the person was not told about.
+ * since a pause pressed before it is read would stop what the person is not told about.
  */
 export function PauseAsk({ target, lines, meanIt, busy = false, onPause, onClose, className }: {
   target: WorkTarget;
@@ -62,7 +62,7 @@ function Going({ row, target }: { row: GoingRow; target: WorkTarget }) {
   );
 }
 
-/** One piece kept: its name, and why, in the words of design §3.2. */
+/** One piece kept: its name, and why. */
 function Staying({ row, target }: { row: StayingRow; target: WorkTarget }) {
   const { t } = useTranslation();
   return (
@@ -84,7 +84,7 @@ function Listed({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /**
- * **An abandon's first press** (PAUSE1e, D132 §3.1, §3.2): it lists, under the header, everything the abandon would take
+ * **An abandon's first press**: it lists, under the header, everything the abandon would take
  * and everything it would keep, each kept piece with its reason, and asks for the person's reason, which each declined
  * quest keeps. The move (*Abandon ask*, *Abandon quest*) waits for a reason; *Never mind* puts it down.
  *
@@ -92,7 +92,7 @@ function Listed({ title, children }: { title: string; children: ReactNode }) {
  * **A molecule**: the plan it lists is the one held from when the list opened, handed in, since the reader answers again on
  * every look and the second press sends exactly what the first listed. A list that finds nothing left to take says so and
  * offers only *Close*, never a press that abandons nothing. Each tree is named by its repository and branch, with how many
- * commits it holds only here and up to five uncommitted files, never a path on this machine (platform language §4).
+ * commits it holds only here and up to five uncommitted files, never a path on this machine.
  */
 export function AbandonAsk({ target, plan, meanIt, placeholder, busy = false, onAbandon, onClose }: {
   target: WorkTarget;
@@ -159,7 +159,7 @@ export function AbandonAsk({ target, plan, meanIt, placeholder, busy = false, on
 }
 
 /**
- * **What went and what stayed** (PAUSE1e, D132 §4.2): after an abandon, the page says what went (the quests declined, the ask
+ * **What went and what stayed**: after an abandon, the page says what went (the quests declined, the ask
  * closed, the sessions stopped, each tree discarded with the `git branch` line that brings it back while git keeps its
  * commits, the sessions archived, each shared decline's answer) and what stayed, with why; and, after a step that could
  * not finish, that the work stays paused. From the second press's answer at once, and from `abandoned.json` on a later look.

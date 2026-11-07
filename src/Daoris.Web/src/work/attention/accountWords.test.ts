@@ -7,8 +7,8 @@ import { byTool, type ToolDoor } from '../../agents/tools';
 import type { PushedAccountFacts, PushedNamed } from './accountWords';
 import { attentionOffers, attentionWorded, type PushedAttention } from './attention';
 
-// *What needs you*'s accounts in words (UX6d, D150 §6.2–§6.3; TOOL4m's row). Which start waits on which accounts, in which state,
-// is .NET's (`AttentionStateSliceTests.Accounts`, ported from this file's former judge cell for cell); the page names each account
+// *What needs you*'s accounts in words. Which start waits on which accounts, in which state,
+// is .NET's (`AttentionStateSliceTests.Accounts`); the page names each account
 // from the roster it holds and says the row's title and its line of why.
 
 const NOW = new Date('2026-10-05T10:50:00Z');
@@ -71,7 +71,7 @@ describe('a start waiting for accounts, worded', () => {
     expect(worded(waiting({ holding: { quests: ['q1', 'q2'], asks: [] } })).title).toBe('2 quests');
   });
 
-  /** LIMITRESUME1d2 (D206 §3.1): a cool-off the file would not take is the machine's problem, said beside its account, in en and zh. */
+  /** A cool-off the file would not take is the machine's problem, said beside its account, in en and zh. */
   it('says a cool-off Daoris could not keep beside its account', async () => {
     const row = waiting({ account: facts({ named: [named('account-2', 'cooling', { name: 'home', unwritten: true }), named('account-1', 'out')] }) });
     expect(worded(row).detail).toBe(
@@ -92,14 +92,14 @@ describe('a start waiting for accounts, worded', () => {
     expect(row.detail).toBe(`account-1 and account-3 read signed out at ${clockOf(READ, NOW)}.`);
   });
 
-  /** §6.3: an account the row names that no read has answered is said so, never guessed signed in or out. */
+  /** An account the row names that no read has answered is said so, never guessed signed in or out. */
   it('says an account no read answered is unknown, never read', () => {
     const doors = [door({ profiles: [door().profiles![1]!, { name: 'account-5', home: 'H/account-5', login: 'unknown', read: null }] })];
     const row = worded(waiting({ account: facts({ named: [named('account-2', 'cooling'), named('account-5', 'unknown', { read: null })] }) }), doors);
     expect(row.detail).toBe(`home cools until ${moment(UNTIL)}; account-5 unknown, never read.`);
   });
 
-  /** ACCTUX1: a refused key is said as refused, named by its handle, and offered no sign-in, which no key has. */
+  /** A refused key is said as refused, named by its handle, and offered no sign-in, which no key has. */
   it('says a key its start would run on as refused, with no sign-in for it', () => {
     const doors = [door({ profiles: door().profiles!.map((profile) => (profile.name === 'account-3' ? { ...profile, key: '…abcd' } : profile)) })];
     const row = worded(waiting({ account: facts({ named: [named('account-2', 'cooling'), named('account-1', 'out'), named('account-3', 'refused')] }) }), doors);
@@ -126,7 +126,7 @@ describe('a start waiting for accounts, worded', () => {
   });
 
   /**
-   * POOL1c (the account-pool design §4.3): no account is outside the set, so an older answer's account outside a list, or one to
+   * No account is outside the set, so an older answer's account outside a list, or one to
    * read first, is read as nothing: the row neither names it nor offers to let it run.
    */
   it('reads no account outside a list, nor one to read first: every account serves every workspace', () => {
@@ -137,7 +137,7 @@ describe('a start waiting for accounts, worded', () => {
     expect(attentionOffers(row)).toEqual([{ act: 'sign-in', account: 'account-1' }]);
   });
 
-  /** OWNSPACE1b-B (D175 point 3): no Daoris account signed in names no account, says why, and offers *Sign in for Daoris*. */
+  /** No Daoris account signed in names no account, says why, and offers *Sign in for Daoris*. */
   it('says no Daoris account is signed in, and offers Sign in for Daoris', () => {
     const row = worded(waiting({ id: 'wait:claude-code:no-account', holding: { quests: [], asks: ['a1'] }, account: facts({ noAccount: true }) }), [door({ profiles: [] })]);
 
@@ -158,7 +158,7 @@ describe('a signed-out account of Daoris’s, worded', () => {
   });
 
   /**
-   * UXFIX3: only when it was read is known, so the row says *read …* and no wait. POOL1c: where it runs is not said, since every
+   * Only its read time is known, so the row says *read …* and no wait. Where it runs is not said, since every
    * account serves every workspace, and never *this machine*, whatever an older answer carries.
    */
   it('names the account and when it was read, never how long it waited, nor where it runs', () => {
@@ -168,7 +168,7 @@ describe('a signed-out account of Daoris’s, worded', () => {
     expect(attentionOffers(row)).toEqual([{ act: 'sign-in', account: 'account-1' }]);
   });
 
-  /** ACCTUX1: a key its provider refused says so, and where it is repaired: its agent's page, where a new key is added. */
+  /** A key its provider refused says so, and where it is repaired: its agent's page, where a new key is added. */
   it('says a key its provider refused, and where it is repaired', () => {
     const doors = [door({ profiles: door().profiles!.map((profile) => (profile.name === 'account-3' ? { ...profile, key: '…abcd' } : profile)) })];
     const row = worded(signedOut('account-3', { account: facts({ named: [named('account-3', 'refused')] }) }), doors);
@@ -176,7 +176,7 @@ describe('a signed-out account of Daoris’s, worded', () => {
     expect(attentionOffers(row)).toEqual([]);
   });
 
-  /** ACCOUNTID1b: two accounts signed in as one email in two organisations read alike; each row says its own. */
+  /** Two accounts signed in as one email in two organisations read alike; each row says its own. */
   it('tells two signed-out accounts of one email apart by their organisations', () => {
     const email = 'person@example.invalid';
     const doors = [door({

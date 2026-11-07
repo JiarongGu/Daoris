@@ -3,11 +3,11 @@ import { Button } from '../../design/ui';
 import { type CourseRead, courseWhole } from './lineSupervision';
 
 /**
- * The supervisor's decision on a point a person's rule referred (CONTEXTDRIVE1j): which rule referred it, what the supervisor chose and when,
+ * The supervisor's decision on a point a person's rule referred: which rule referred it, what the supervisor chose and when,
  * and *Overrule* while the decision is held, the window in which it is theirs to take back.
  *
  * @remarks
- * **The card stands only while it can be pressed.** A decision that went on, was overruled, did not go on or was left to the person is
+ * **The card stands only while it can be pressed.** A decision that went on, is overruled, did not go on or is left to the person is
  * *Details*' line alone: a card that said it for as long as the line lives would be a notice that never went away.
  *
  * A molecule: handed the decision and its door. Where nothing can act it is handed none, and still says the decision.

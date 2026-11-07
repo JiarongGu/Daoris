@@ -1,4 +1,4 @@
-// `@` a file in the session's tree (CONV4d). The mention is TEXT, and both doors expand it as typed
+// `@` a file in the session's tree. The mention is TEXT, and both doors expand it as typed
 // (`docs/2026-09-25-message-content-evidence.md`), so all the page adds is help writing it: where the
 // mention being written is, which files it could mean, and how to spell the one chosen. Pure.
 
@@ -6,7 +6,7 @@
 export const MENTION_OPTIONS = 8;
 
 /**
- * The mention the caret is in: the `@` (`start`), the end of the word it runs to (`end`), and what was
+ * The mention the caret is in: the `@` (`start`), the end of the word it runs to (`end`), and what is
  * typed between the `@` and the caret (`query`).
  */
 export type Mention = { start: number; end: number; query: string };
@@ -93,8 +93,8 @@ const depth = (path: string) => path.split('/').length;
 const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 /**
- * A path as both doors read it: bare, or in double quotes when it holds whitespace. Measured on both
- * (CONV4d): `@"my notes.md"` expands, and `@my\ notes.md` does not.
+ * A path as both doors read it: bare, or in double quotes when it holds whitespace. Measured on both:
+ * `@"my notes.md"` expands, and `@my\ notes.md` does not.
  */
 export function spellMention(path: string): string {
   return /\s/.test(path) ? `@"${path}"` : `@${path}`;

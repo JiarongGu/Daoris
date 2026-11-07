@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// REVIEWENV1g (D154 point 8; the review environment design §3.3): *What needs you* lists a set-up waiting for the person's
+// *What needs you* lists a set-up waiting for the person's
 // look, oldest first with the rest, with *Reviewed*, *Not yet…* and *Show it again* on its row, over a mocked shell and a
 // stubbed service.
 
@@ -105,7 +105,7 @@ describe('a set-up waiting in What needs you', () => {
     });
   });
 
-  /** UXFIX2b3a: a refused not yet is said inside its ask, where it was pressed, and never toasted; the ask stays for a retry. */
+  /** A refused not yet is said inside its ask, where the person pressed it, and never toasted; the ask stays for a retry. */
   it('says a refused not yet inside its ask, and toasts nothing', async () => {
     const notify = start(vi.fn(), () => Response.json({ error: 'The set-up moved on.' }, { status: 409 }));
     const user = userEvent.setup();

@@ -3,8 +3,8 @@ import { createElement, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 
-// A session's conversation over the bridge (D76, CONV1): the history read once, live batches merged
-// by sequence, a gap closed by asking for what was missed, and earlier pages on request. The
+// A session's conversation over the bridge: the history read once, live batches merged
+// by sequence, a gap closed by asking for what is missing, and earlier pages on request. The
 // bridge is mocked as present; the host is the test.
 
 const { invoke, eventHandlers } = vi.hoisted(() => ({
@@ -44,7 +44,7 @@ const e = (seq: number, over: Partial<SessionEvent>): SessionEvent => ({ seq, at
 
 describe('toTurns', () => {
   /**
-   * PARKVIEW1 (Fable's read, Q4): words pressed as an answer of the park's question carry the answer by their mark, waiting at the
+   * Words pressed as an answer of the park's question carry the answer by their mark, waiting at the
    * foot and where the session took them, the mark kept from the waiting words where the taking event names none; another origin's
    * mark is never read as the person's choice.
    */
@@ -87,8 +87,7 @@ describe('toTurns', () => {
 
   /**
    * Two messages in a row are two, by the ids the wire gives them: joined, the window read
-   * `DONESubagent finished` (found looking at CONSOLE2). A record from before ids were kept joins as it
-   * always did.
+   * `DONESubagent finished`. A record from before ids were kept still joins.
    */
   it('keeps two messages in a row apart by their ids, and joins chunks with no id as before', () => {
     const { turns } = toTurns([
@@ -103,7 +102,7 @@ describe('toTurns', () => {
     expect(turns[0]!.items.map((b) => b.text)).toEqual(['DONE', 'Subagent finished. More words.']);
   });
 
-  /** CONV4c: what the person attached travels with what they asked — names only, as the record keeps them. */
+  /** What the person attached travels with what they asked — names only, as the record keeps them. */
   it('keeps the names of what the person attached with what they asked', () => {
     const { turns } = toTurns([
       e(1, { kind: 'user', origin: 'person', text: 'what does this log say?', files: ['run.log', 'shot.png'] }),
@@ -115,7 +114,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * CONTEXT1: a target's ask carries what it was composed of, its account, or null where its record keeps none, so the page
+   * A target's ask carries what it is composed of, its account, or null where its record keeps none, so the page
    * says that rather than nothing; the person's own words carry none. The opening a long run reads from carries it too.
    */
   it('carries a target’s account onto its ask, null where its record kept none', () => {
@@ -133,7 +132,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * XAGENT1g (the second-agent design §6.3): another agent's findings, handed as the session's next turn, open a turn of their
+   * Another agent's findings, handed as the session's next turn, open a turn of their
    * own naming the opinion they are from, never the person's and no composed target with an account to miss.
    */
   it('opens a turn with another agent’s findings, naming the opinion they are from', () => {
@@ -147,7 +146,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * COWORK1b (D188's COWORK1b note): Daoris's own words, a reopen told or a step's go-on, open a turn naming them as Daoris's, never the
+   * Daoris's own words, a reopen told or a step's go-on, open a turn naming them as Daoris's, never the
    * person's and no composed target with an account to miss; held for a running session, they wait marked so, and the driver's note
    * that dropped one settles it there.
    */
@@ -166,7 +165,7 @@ describe('toTurns', () => {
     expect(held).toMatchObject({ from: 'daoris', reaches: 'turn-end', settled: true });
   });
 
-  /** COMMS1a: a helper's or a partner's answer is theirs by its mark, told apart by the work of the record it names, and no composed target. */
+  /** A helper's or a partner's answer is theirs by its mark, told apart by the work of the record it names, and no composed target. */
   it('reads a helper’s answer and a partner’s as theirs, and neither as the target Daoris composed', () => {
     const events = [
       e(1, { kind: 'user', origin: 'target', helper: 'h1', id: 'w1', text: 'The helper says: yes.' }),
@@ -183,7 +182,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * STEER1 (D136): what the person tells a working session shows the moment it is said, in the turn it was said in, as
+   * What the person tells a working session shows the moment it is said, in the turn it is said in, as
    * waiting — without opening a turn, since the agent is still on the one before. Where the session took the words, the
    * same words come again under the same id as that turn's ask, and they wait no longer.
    */
@@ -220,7 +219,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * STEER2b (D136): words *Send now* put into the running turn are taken where they were said. They show there as theirs,
+   * Words *Send now* put into the running turn are taken where they were said. They show there as theirs,
    * never waiting: no waiting entry for a later ask to take, and no "never read" once the session ends. A call the steer
    * cut is closed by the record as `cut`, which the session's end does not turn into a stop.
    */
@@ -262,7 +261,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * MSG1f (D137 §3.1): words to a session that parked or ended show at once as a new turn waiting at its foot, never in
+   * Words to a session that parked or ended show at once as a new turn waiting at its foot, never in
    * the run that ended before them. Where the resumed run took them, the same words under the same id are its ask, and
    * the waiting turn goes, keeping the driver's note that the run opened with.
    */
@@ -295,8 +294,8 @@ describe('toTurns', () => {
     expect(taken.turns.map((turn) => turn.ask?.text ?? null)).toEqual([
       'take quest #q1', 'also cap it at 64 KiB', 'and say so in the notes',
     ]);
-    // The driver's opening line goes with the turn that took the first word (USERSHOWN1), and no word waits any more: a
-    // waiting turn holding only the line was a ghost above every resume.
+    // The driver's opening line goes with the turn that took the first word, and no word waits any more: a
+    // waiting turn holding only the line would be a ghost above every resume.
     expect(taken.turns[1]!.items.map((b) => [b.kind, b.key])).toEqual([['note', 'e5']]);
     expect(taken.turns.flatMap((turn) => turn.items).some((b) => b.kind === 'held')).toBe(false);
     expect(taken.where[3]).toBe('e6');
@@ -314,7 +313,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * MSG1f (D137 §3.1): where a fallback handed the words to a new session, the driver's note names their ids, that
+   * Where a fallback handed the words to a new session, the driver's note names their ids, that
    * session and why by code. The note is the words' line, said once: the words stay as written and no longer wait.
    */
   it('pairs the note that the words went to a new session with the words, which wait no longer', () => {
@@ -332,7 +331,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * MSG1f (D137 §2.2): words a closed quest's session or a chat cannot go on with stay as said, and the note names them
+   * Words a closed quest's session or a chat cannot go on with stay as said, and the note names them
    * and why. The words it pairs with are handed to the note, which is what a new conversation would start with.
    */
   it('pairs the note that the words cannot go on here with the words, in the order said', () => {
@@ -350,7 +349,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * MSG1f2: once a later note says the words went to another session (the press started a conversation with them), the note
+   * Once a later note says the words went to another session (the press started a conversation with them), the note
    * that they could not go on here hands them over no longer, so it offers no second conversation with words already gone.
    */
   it('takes the words back from a note whose words a later note says went elsewhere', () => {
@@ -380,7 +379,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * MSG1c3 (D142 point 1): a driver's note the page words itself carries its code. A word the person's stop cut off on its
+   * A driver's note the page words itself carries its code. A word the person's stop cut off on its
    * way is that word's line, said once: it waits no longer, and the note keeps the code its sentence is worded from.
    */
   it('carries a note’s code, and settles the word the lost line names', () => {
@@ -397,8 +396,8 @@ describe('toTurns', () => {
   });
 
   /**
-   * COWORK1c (the message-urgency design §6, §8.2): a word a shell before attempted may have reached its agent, and the line that
-   * says so names it as the person's own only where every word it settles was theirs, which *Say it again* offers; Daoris's never.
+   * A word a shell before attempted may have reached its agent, and the line that
+   * says so names it as the person's own only where every word it settles is theirs, which *Say it again* offers; Daoris's never.
    */
   it('names an uncertain word the person’s own only where every word it settles was theirs', () => {
     const { turns } = toTurns([
@@ -413,8 +412,8 @@ describe('toTurns', () => {
   });
 
   /**
-   * COWORK1c (the message-urgency design §7, §8.2): the receipts a word's door observed fold under the ask it became, each where it
-   * was: sent when the write returned, taken as the ask's own moment, and answered when its turn ended so. A word with none folds
+   * The receipts a word's door observed fold under the ask it became, each where it
+   * is: sent when the write returned, taken as the ask's own moment, and answered when its turn ended so. A word with none folds
    * nothing, and no receipt is ever a block of its own.
    */
   it('folds a word’s receipts under the ask it became, each only where observed', () => {
@@ -436,7 +435,7 @@ describe('toTurns', () => {
     expect(turns.flatMap((turn) => turn.items).some((block) => block.kind === 'raw')).toBe(false);
   });
 
-  /** COMMS1h (the comms design §7): a turn that ended after taking a word is the receipt `ended`, said as what Daoris saw and never as an answer. */
+  /** A turn that ended after taking a word is the receipt `ended`, said as what Daoris saw and never as an answer. */
   it('COMMS1h folds the ended receipt, and no other', () => {
     const said = (receipt: string) => toTurns([
       e(1, { kind: 'user', origin: 'person', id: 'w1', text: 'and the readme' }),
@@ -449,15 +448,15 @@ describe('toTurns', () => {
     expect(said('answered')).toBeUndefined();
   });
 
-  /** COMMS1h: a helper's or a partner's answer names the session it is from, which its exchange card is joined on. */
+  /** A helper's or a partner's answer names the session it is from, which its exchange card is joined on. */
   it('COMMS1h carries the session a solicited answer is from', () => {
     const { turns } = toTurns([e(1, { kind: 'user', origin: 'target', helper: 'h-session', text: 'Yes, the lock is held.' })]);
     expect(turns[0]!.ask).toMatchObject({ from: 'helper', helper: 'h-session' });
   });
 
   /**
-   * CONVNOTE1 (D125's SIGNIN1b note): a driver's note whose lines are worded by code carries its parts, as a session record's
-   * note does (LANG1a), so the page words each line in the reader's language. Its English stays beside them.
+   * A driver's note whose lines are worded by code carries its parts, as a session record's
+   * note does, so the page words each line in the reader's language. Its English stays beside them.
    */
   it('carries a note’s parts beside its English', () => {
     const parts = [{ code: 'account.signed-out', values: { owner: 'claude-code' }, text: 'The agent refused the account.' }];
@@ -488,7 +487,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * A location's line rides with the locations it was said of (LEFT2): an update that carries no locations keeps
+   * A location's line rides with the locations it is said of: an update that carries no locations keeps
    * the card's line, and one that replaces them (ACP replaces a present list whole) replaces the line too.
    */
   it('keeps a tool call\'s line with its locations, replaced only when they are', () => {
@@ -523,7 +522,7 @@ describe('toTurns', () => {
     expect(turns[1]!.ended).toBeUndefined();
   });
 
-  /** Usage is a meter, not a block: the latest reading and the highest are what CONV5 draws. */
+  /** Usage is a meter, not a block: the latest reading and the highest are what the context ring draws. */
   it('keeps usage out of the conversation, as the latest reading and the high-water mark', () => {
     const { turns, usage } = toTurns([
       e(1, { kind: 'usage', used: 900, size: 1000 }),
@@ -535,7 +534,7 @@ describe('toTurns', () => {
   });
 
   /**
-   * CONV5: a turn carries what it consumed as the harness reported it, and how long it took by the
+   * A turn carries what it consumed as the harness reported it, and how long it took by the
    * driver's clock — from the ask to the first thing the agent did, and to the turn's end. The driver's
    * own note is not the agent answering. A turn the wire told nothing of its tokens carries none.
    */
@@ -574,9 +573,9 @@ describe('toTurns', () => {
   });
 
   /**
-   * CONV4b: the calls a stop cut are the ones still open when the turn ended cancelled — whatever the
+   * The calls a stop cut are the ones still open when the turn ended cancelled — whatever the
    * harness called them. Claude Code answers the cut call as failed, another agent leaves it running,
-   * and either way the person stopped it. A call that failed earlier and was followed by more work
+   * and either way the person stopped it. A call that failed earlier and is followed by more work
    * failed on its own, and stays failed.
    */
   it('marks the calls a stop cut as stopped, and nothing else', () => {
@@ -620,9 +619,9 @@ describe('toTurns', () => {
   });
 });
 
-/** WAITSHOWN1: the wait for the first answer, read from the record alone. */
+/** The wait for the first answer, read from the record alone. */
 /**
- * AGENTERRORS1a2 (D210 §5.1, §8): the head’s *Trying again at* reads a transient episode’s quiet events: the latest one’s `next` while no
+ * The head’s *Trying again at* reads a transient episode’s quiet events: the latest one’s `next` while no
  * turn ended after it. Through several waits, a try that works, a stop and the bound.
  */
 describe('when a transient episode tries again', () => {
@@ -680,7 +679,7 @@ describe('the wait for a turn’s first answer', () => {
   });
 });
 
-/** WAITSAY1: the call the agent is inside, read from the record alone. */
+/** The call the agent is inside, read from the record alone. */
 describe('the call a session is running', () => {
   const ask = e(1, { kind: 'user', text: 'test it', origin: 'person' });
   const call = (seq: number, id: string, title: string, status: string) => e(seq, { kind: 'tool', id, title, status });
@@ -699,7 +698,7 @@ describe('the call a session is running', () => {
     }
   });
 
-  /** WAITSAY1b: a call the rules refused (D52) waits on nobody, on either door: the one still open beside it is running. */
+  /** A call the rules refused waits on nobody, on either door: the one still open beside it is running. */
   it('passes over a call the rules refused', () => {
     const { turns } = toTurns([ask, call(2, 'a', 'npm test', 'in_progress'), call(3, 'b', 'git push', 'in_progress'), call(4, 'b', 'git push', 'refused')]);
     expect(runningCall(settle(turns, true))?.title).toBe('npm test');
@@ -722,12 +721,12 @@ describe('the call a session is running', () => {
 });
 
 /**
- * SESS1, looked at on the first real workspace: a driven session is one ask and then its whole run —
+ * A driven session is one ask and then its whole run —
  * 1,855 events in the longest — so the page holds its newest 200, past the ask and past the start of
  * the calls it shows.
  */
 /**
- * A conversation note's codes are a twin (MSG1c3; `.claude/knowledge/twins.md`): the driver declares them in
+ * A conversation note's codes are a twin (`.claude/knowledge/twins.md`): the driver declares them in
  * `SessionEventCodes`, one `public const string` per line, and this page words each as `work.conversation.<code>`. This side
  * parses the declarations and holds `CONVERSATION_CODES` and both catalogues to them; the driver's `ChatTurnsTests` holds the
  * catalogues from its side.
@@ -777,7 +776,7 @@ describe('toTurns, on a page of a long run', () => {
   });
 });
 
-/** SESS1 S9: a jump lands on an event; the page opens and shows the block that event is part of. */
+/** A jump lands on an event; the page opens and shows the block that event is part of. */
 describe('where each event landed', () => {
   it('names the block each event is part of: a message\'s chunks, a call\'s updates, the ask', () => {
     const { where } = toTurns([
@@ -808,9 +807,9 @@ describe('settle', () => {
   });
 
   /**
-   * COWORK1a (D188; the message-urgency design §8.2): a held word keeps the level it asked for beside its reach, and a word told
+   * A held word keeps the level it asked for beside its reach, and a word told
    * again under its id (its level changed while it waited, or raised to the next step) is one word where it stands, never a
-   * second; taken under the same id, it is the turn's ask as before. A word from before carries no level.
+   * second; taken under the same id, it is the turn's ask. A word from before carries no level.
    */
   it('keeps a held word’s level, and a word told again under its id is one word where it stands', () => {
     const waiting = run(
@@ -835,7 +834,7 @@ describe('settle', () => {
     expect(taken[1]!.ask?.text).toBe('tidy the readme after');
   });
 
-  /** STEER1: words still waiting when the session ended never reached it, and say so rather than waiting for ever. */
+  /** Words still waiting when the session ended never reached it, and say so rather than waiting for ever. */
   it('says words still waiting when the session ended never reached it', () => {
     const turns = settle(run(
       { kind: 'user', origin: 'target', text: 'go' },
@@ -852,9 +851,9 @@ describe('settle', () => {
   });
 
   /**
-   * MSG1f (D137 §2.2): words said after a record ended wait for it to go on, so its end is not theirs: they are never
+   * Words said after a record ended wait for it to go on, so its end is not theirs: they are never
    * *it ended before reading this*, and the turn waiting at its foot is not a run the session ended inside. The run before
-   * them still says it was cut where the wire never said its turn ended.
+   * them still says it is cut where the wire never said its turn ended.
    */
   it('leaves words said after the end waiting, and judges the run before them as it ended', () => {
     const turns = settle(run(
@@ -916,7 +915,7 @@ describe('segments', () => {
     expect(parts.map((part) => part.kind === 'run' ? 'run' : part.block.kind)).toEqual(['tool', 'note', 'tool']);
   });
 
-  /** SESS1 S6: the driver's refusal of one call names it, and folds with the run that call is in. */
+  /** The driver's refusal of one call names it, and folds with the run that call is in. */
   it('folds the driver\'s note about one call with that call\'s run', () => {
     const parts = segments(blocks(
       { kind: 'tool', id: 'c1', title: 'Read a', status: 'completed' },
@@ -946,7 +945,7 @@ describe('useSessionEvents', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HISTORY', { payload: { id: 's1' } });
   });
 
-  /** SESS1 S1: the page past the ask carries it, and the hook holds it for the conversation to open with. */
+  /** The page past the ask carries it, and the hook holds it for the conversation to open with. */
   it('holds what the session was first asked, where its newest page does not', async () => {
     const opening = { seq: 1, at: '2026-09-25T00:00:00Z', kind: 'user', origin: 'target', text: 'Your target is…' };
     invoke.mockResolvedValue({ session: 's1', events: [said(900)], earlier: true, latest: 900, opening });
@@ -1018,16 +1017,16 @@ describe('useSessionEvents', () => {
 });
 
 /**
- * CONV4b: where a conversation's turns stand — whether one is in flight, and what the person sent that
+ * Where a conversation's turns stand — whether one is in flight, and what the person sent that
  * has not reached the harness — asked once and then followed live. The driver is the authority: the
- * record lags it, and a message that is only waiting is in no record at all. UX5 U17 made it every
+ * record lags it, and a message that is only waiting is in no record at all. It is every
  * live conversation's, one listener for them all, since the rail reads a chat between turns as idle.
  */
 describe('useChatTurns', () => {
   const queued = (session: string, state: { queued: { text: string; files: string[] }[]; taking: boolean }) =>
     act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session, ...state }); });
 
-  /** QUEUEEDIT1b: a waiting word's id comes with it, from the answer and from every event, and is left off where there is none. */
+  /** A waiting word's id comes with it, from the answer and from every event, and is left off where there is none. */
   it('keeps each waiting word’s id, from the answer and from the event', async () => {
     invoke.mockResolvedValue({ session: 's1', queued: [{ id: 'a1', text: 'one', files: [] }, { id: null, text: 'two', files: [] }], taking: true });
     const { result } = renderHook(() => useChatTurns(['s1']));
@@ -1058,7 +1057,7 @@ describe('useChatTurns', () => {
     expect(result.current).toEqual({ s1: { queued: [], taking: false }, s2: { queued: [], taking: false } });
   });
 
-  /** RAIL2: when the last turn ended here, as the driver says it — and nothing claimed where it says none. */
+  /** When the last turn ended here, as the driver says it — and nothing claimed where it says none. */
   it('carries when the last turn ended, from the answer and from each change', async () => {
     invoke.mockResolvedValue({ session: 's1', queued: [], taking: false, lastTurn: null });
     const { result } = renderHook(() => useChatTurns(['s1']));
@@ -1097,7 +1096,7 @@ describe('useChatTurns', () => {
 });
 
 /**
- * MSG1f (D137 §5.3): what a word said now would do, from `SESSION_QUEUE`'s `reaches` and `why`, asked again as the session
+ * What a word said now would do, from `SESSION_QUEUE`'s `reaches` and `why`, asked again as the session
  * moves; and what the person's words did, read defensively, a null the bridge left out read as none.
  */
 describe('the words’ answers', () => {
@@ -1105,7 +1104,7 @@ describe('the words’ answers', () => {
     QueryClientProvider, { client: new QueryClient({ defaultOptions: { queries: { retry: false } } }) }, children);
 
   /**
-   * MSG1f2: a shell that tells the reach live says so by carrying `reach`, so the session is asked once and then followed by
+   * A shell that tells the reach live says so by carrying `reach`, so the session is asked once and then followed by
    * `SESSION_QUEUED`, never asked again as it moves; an event that carries no reach changes nothing, and `{}` is a word that
    * would start a turn at once.
    */
@@ -1155,7 +1154,7 @@ describe('the words’ answers', () => {
     await waitFor(() => expect(older.result.current).toEqual({ reaches: null, why: null }));
   });
 
-  /** HANDWORDS1: a conversation handed over or moved is `continued`, and the reach names the one it went on in, live too. */
+  /** A conversation handed over or moved is `continued`, and the reach names the one it went on in, live too. */
   it('keeps the conversation a continued one went on in', async () => {
     invoke.mockResolvedValueOnce({ session: 'c1', queued: [], taking: false, why: 'continued', to: 'c2', reach: { why: 'continued', to: 'c2' } });
     const { result } = renderHook(() => useSessionReach({ id: 'c1', state: 'completed' }), { wrapper });
@@ -1182,7 +1181,7 @@ describe('the words’ answers', () => {
   });
 });
 
-// The install's record of a driven session on `claude-code-acp` (2026-10-14, times UTC), as it was kept: each resume's words
+// The install's record of a driven session on `claude-code-acp` (2026-10-14, times UTC), as it is kept: each resume's words
 // shown waiting, its note, the words taken; a word said while the turn hung; the harness's error; the door's failure.
 describe('toTurns, on a resumed turn whose door failed (TURNFAIL1, USERSHOWN1)', () => {
   const at = (time: string) => `2026-10-14T${time}Z`;
@@ -1266,7 +1265,7 @@ describe('toTurns, through a transient episode (AGENTERRORS1a, D210 §5.1, §8)'
   const goOn = `The last request failed on the provider's side (${words}). Go on where you stopped, after anything said above. `
     + 'Before you repeat a step whose result you did not see, check whether it already took effect.';
   const streamed = (seq: number, time: string): SessionEvent => ({ seq, at: at(time), kind: 'message', text: error });
-  // A try going and a wait beginning (AGENTERRORS1a2): the quiet events each try's failure sits between, as the record keeps them.
+  // A try going and a wait beginning: the quiet events each try's failure sits between, as the record keeps them.
   const tried = (seq: number, time: string, number: number): SessionEvent => ({ seq, at: at(time), kind: 'transient', try: number });
   const waits = (seq: number, time: string, next: string): SessionEvent => ({ seq, at: at(time), kind: 'transient', next: at(next) });
   const line = (seq: number): SessionEvent => ({
@@ -1313,10 +1312,9 @@ describe('toTurns, through a transient episode (AGENTERRORS1a, D210 §5.1, §8)'
   });
 
   /**
-   * 🔴 Codex's owed read of D210, finding 10: the suppression is the failed attempts' alone. Each failed attempt's stream is followed by
+   * 🔴 The suppression is the failed attempts' alone. Each failed attempt's stream is followed by
    * the episode's line, a wait or the end's note, never by an answer; an authored message that quotes the provider's error before the
-   * episode, or after it in a turn that answered, merged into a larger message or alone, stays verbatim. Red before: every message in
-   * every turn lost the quoted error, and a quotation alone disappeared.
+   * episode, or after it in a turn that answered, merged into a larger message or alone, stays verbatim.
    */
   it('removes only the failed attempts’ provider error, and keeps a quotation before or after the episode verbatim', () => {
     const before = `Earlier the log said: ${error} I will watch for it.`;
@@ -1349,7 +1347,7 @@ describe('toTurns, through a transient episode (AGENTERRORS1a, D210 §5.1, §8)'
 });
 
 /**
- * SWITCHCTX1c-i (the switch-context design §2.7): where a part began by a move or a hand-over, its first line is the boundary, and
+ * Where a part began by a move or a hand-over, its first line is the boundary, and
  * the opening line the runner wrote beside it is folded under it, never a third line.
  */
 describe('a part’s boundary line', () => {

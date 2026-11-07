@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// NODEKIT1 HUMAN (D245's second note): *What needs you* lists a run waiting on a person's task, keyed by its run and node, with *Done…*, or
+// *What needs you* lists a run waiting on a person's task, keyed by its run and node, with *Done…*, or
 // *Approve…* and *Reject…*, each the run's node word with a note the person may give; over a mocked shell.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));

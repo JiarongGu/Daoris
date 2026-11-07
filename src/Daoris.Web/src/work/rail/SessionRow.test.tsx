@@ -10,7 +10,7 @@ import { menuActs, rightClick } from '../../test/contextMenu';
 import type { SessionGrouping } from '../groups';
 import { SessionRow } from './SessionRow';
 
-// A molecule, so every state below is reached by PASSING it (components plan §2). There is no
+// A molecule, so every state below is reached by PASSING it. There is no
 // bridge here, no query client and no provider — if this file ever needed one, the rule that makes
 // the working surface reviewable would already have been broken.
 
@@ -39,7 +39,7 @@ const quest = (over: Partial<Quest> = {}): Quest => aQuest({
   ...over,
 });
 
-/** A shell call's title as the driver names it (RAILLINE1): the whole command, many statements, past 300 characters. */
+/** A shell call's title as the driver names it: the whole command, many statements, past 300 characters. */
 const LONG_COMMAND = 'cd src/Daoris.Web && npm ci --no-audit --no-fund && npx vitest run src/work/rail/SessionRow.test.tsx '
   + 'src/work/head/headFacts.test.ts --reporter=verbose; dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests '
   + '--filter "FullyQualifiedName~RunningCallsTests|FullyQualifiedName~SessionLookTests" --no-build; git status --short && '
@@ -64,13 +64,13 @@ describe('a session row', () => {
 
     expect(screen.getByText('Expose a streaming budget on the chunk API')).toBeInTheDocument();
     expect(screen.getByText('working')).toBeInTheDocument();
-    // Started 09:46, now 12:00 — the fact "moved 4m ago" cannot carry (D55).
+    // Started 09:46, now 12:00 — the fact "moved 4m ago" cannot carry.
     expect(screen.getByText('2h 14m')).toBeInTheDocument();
     expect(screen.getByText(/moved 4m ago/)).toBeInTheDocument();
   });
 
   /**
-   * RAIL2: a live chat's last move is its last turn. The record moves on state changes only, so
+   * A live chat's last move is its last turn. The record moves on state changes only, so
    * seconds after an answer a chat read "moved 4m ago"; the driver's last turn, when later, is what
    * the row says — written with an offset where the record writes Z, so compared as times.
    */
@@ -94,7 +94,7 @@ describe('a session row', () => {
   });
 
   /**
-   * LIMITRESUME1a (D206 point 1; the limit-resume design §3.1): a record an account's limit ended is `failed` on the wire with its
+   * A record an account's limit ended is `failed` on the wire with its
    * `limit` flag, and the page says *limited*, quiet, never the failure's word or red: its line goes on by itself. In both languages.
    */
   it('says a session a limit ended is limited, quietly, in en and zh', async () => {
@@ -116,8 +116,8 @@ describe('a session row', () => {
   });
 
   /**
-   * MODELROLE1c3 (D205 §3.5(c), §7.1): a record its agent's refusal of the choice ended before anything ran is `failed` on the wire,
-   * and the row says *not started*, quiet, never the failure's word or red, with the code's sentence: here, naming the account it was
+   * A record its agent's refusal of the choice ended before anything ran is `failed` on the wire,
+   * and the row says *not started*, quiet, never the failure's word or red, with the code's sentence: here, naming the account it is
    * refused on; on a teammate's mirror, naming none, since the account is machine-local. In both languages.
    */
   it('says a record ended choice-not-offered is not started, quietly, with its sentence, in en and zh', async () => {
@@ -149,7 +149,7 @@ describe('a session row', () => {
     }
   });
 
-  /** LIMITRESUME1d2 (D206 §3.7): its row says when it goes on by itself, the head's own sentence, handed in worded. */
+  /** Its row says when it goes on by itself, the head's own sentence, handed in worded. */
   it('says when a limited line goes on by itself, as its head says it', () => {
     const limited = session({ state: 'failed', limit: true, quest: '7a82cc' });
     render(<SessionRow session={limited} limitWait="Waiting for a limit to reset: it resumes by itself at Oct 24, 11:02, on work." />);
@@ -157,8 +157,8 @@ describe('a session row', () => {
   });
 
   /**
-   * UX5 U17, decided by the reference console: a live chat whose turn has ended is idle, a quiet
-   * mark and the word, and working only while a turn is in flight. It read *working* between turns.
+   * As the reference console does: a live chat whose turn has ended is idle, a quiet
+   * mark and the word, and working only while a turn is in flight; never *working* between turns.
    * Nothing known is the record's own word, never a guess.
    */
   it('says a live chat between turns is idle, and working only while a turn runs', () => {
@@ -188,7 +188,7 @@ describe('a session row', () => {
     expect(screen.getByText(/chat/)).toBeInTheDocument();
   });
 
-  /** INT4g: an intake is a chat only by the way it was opened; the row says what it is. */
+  /** An intake is a chat only by the way it is opened; the row says what it is. */
   it('says an intake is one, serving its ask — not a chat', () => {
     render(<SessionRow session={session({ kind: 'chat', repository: 'ask #0fda18', ask: '0fda18' })} />);
 
@@ -197,7 +197,7 @@ describe('a session row', () => {
     expect(screen.queryByText(/chat/)).toBeNull();
   });
 
-  /** XAGENT1g (the second-agent design §9): a second opinion's reviewer is marked as one, not as a chat. */
+  /** A second opinion's reviewer is marked as one, not as a chat. */
   it('marks a second opinion’s reviewer as one — not a chat', () => {
     render(<SessionRow session={session({ kind: 'chat', repository: 'engine', opinion: 'o1a2b3c4' })} />);
 
@@ -206,7 +206,7 @@ describe('a session row', () => {
     expect(screen.queryByText(/chat/)).toBeNull();
   });
 
-  /** XAGENT1g4c (§9): the reviewer's row says whose work it reads, where the rail joined it; nothing joined, nothing claimed. */
+  /** The reviewer's row says whose work it reads, where the rail joined it; nothing joined, nothing claimed. */
   it('says whose work a second opinion’s reviewer reads, when it is told', () => {
     const { rerender } = render(
       <SessionRow session={session({ kind: 'chat', repository: 'engine', opinion: 'o1a2b3c4' })} reads="Expose a streaming budget" />,
@@ -218,7 +218,7 @@ describe('a session row', () => {
   });
 
   /**
-   * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another names it on its row, and a helper names whom it
+   * A session that continues another names it on its row, and a helper names whom it
    * helps, where the rail joined them; nothing joined, nothing claimed, and no record's link, nothing said.
    */
   it('says which session it continues and whom a helper helps, when it is told', async () => {
@@ -275,7 +275,7 @@ describe('a session row', () => {
   });
 
   /**
-   * Daoris is multi-machine by construction (D47) and the feed keys a mirrored record by
+   * Daoris is multi-machine by construction and the feed keys a mirrored record by
    * `origin/id`. Silence means here — a row that stamped every session with this machine's name
    * would spend the rail's scarcest space on the unsurprising half.
    */
@@ -289,9 +289,9 @@ describe('a session row', () => {
   });
 
   /**
-   * D51 made the tree the unit of exclusion, so a repository can hold two sessions at once and the
-   * group header alone can no longer say which is where. The root case is the one the first
-   * real-window pass caught: an ordinary session carries the ROOT's path in `tree`, so "has a
+   * The tree is the unit of exclusion, so a repository can hold two sessions at once and the
+   * group header alone cannot say which is where. The root case is the trap:
+   * an ordinary session carries the ROOT's path in `tree`, so "has a
    * tree" would have labelled every row.
    */
   it('names a working tree the session opened for itself, and nothing for the registered root', () => {
@@ -312,9 +312,9 @@ describe('a session row', () => {
   });
 
   /**
-   * LOOK2b: the rail said *in s-2394e5d9* after the landing had tidied that tree away and its branch had gone. It says
-   * where the work landed, as the review does (D113): while the landed branch stands, or once the tree is gone. A tree
-   * still here after its branch went is the session's again, and a tree gone with no landing is not claimed at all.
+   * The rail does not say *in s-2394e5d9* after the landing has tidied that tree away and its branch has gone. It says
+   * where the work landed, as the review does: while the landed branch stands, or once the tree is gone. A tree
+   * still here after its branch is gone is the session's again, and a tree gone with no landing is not claimed at all.
    */
   it('says where the work landed once its landing took the tree, and never names a tree that is gone', () => {
     const tree = 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9';
@@ -336,7 +336,7 @@ describe('a session row', () => {
     expect(screen.getByText(/landed on feature\/7a82cc-streaming-budget/)).toBeInTheDocument();
     shown.unmount();
 
-    // Carried on in its tree after its branch went (WSR6): the tree is where its work is.
+    // Carried on in its tree after its branch is gone: the tree is where its work is.
     shown = row({ treeGone: false, landed: { ...landed, state: 'gone' } });
     expect(screen.getByText(/in s-2394e5d9/)).toBeInTheDocument();
     expect(screen.queryByText(/landed on/)).not.toBeInTheDocument();
@@ -372,7 +372,7 @@ describe('a session row', () => {
 });
 
 /**
- * SESSUX1c, D126 §2.2: a row wears the word the list's reader derived for it, its mark and its hue, and its line says
+ * A row wears the word the list's reader derived for it, its mark and its hue, and its line says
  * what the group it is in is about: how many sessions failed before its quest parked, which question its quest waits
  * on, what its own tree holds to review. By state no group header names a repository, so the row's line does.
  */
@@ -436,7 +436,7 @@ describe("a row as the list's reader places it", () => {
   });
 
   /**
-   * MSG1f2 (D137 §3.2): an ended record the person's words wait on reads *going on* where the reader says the same session
+   * An ended record the person's words wait on reads *going on* where the reader says the same session
    * goes on with them, and, resting under Resumes later, its line names what holds them: the person's hold, the cap, a
    * cool-off's reset, or the planner's own sentence for anything else.
    */
@@ -451,7 +451,7 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/goes on with your words once engine is no longer held/)).toBeInTheDocument();
     held({ why: 'cap', reason: 'the concurrency cap (2) is spent — it frees as sessions finish.' });
     expect(screen.getByText(/goes on with your words when a running session here ends/)).toBeInTheDocument();
-    // An answer without the account says the time alone, and no longer that the words wait for the session's own account.
+    // An answer without the account says the time alone, and not that the words wait for the session's own account.
     held({ why: 'cooling', reason: 'its account is cooling.', until: '2026-10-04T12:30:00Z' });
     const reset = `your words go on by themselves once an account is ready again, at ${moment('2026-10-04T12:30:00Z')}`;
     expect(screen.getByText((said) => said.includes(reset))).toBeInTheDocument();
@@ -461,7 +461,7 @@ describe("a row as the list's reader places it", () => {
   });
 
   /**
-   * LIMITSWITCH1 (D137's note of 2026-10-25): words held for an account's limit say the wait as D206 §3.7 does, its time and the account
+   * Words held for an account's limit say the wait, its time and the account
    * that resets first, in both languages, never only that the record completed; an agent's own sign-in has no id and says so.
    */
   it('says a held record’s wait as a limit’s wait, its account and time, in both languages', async () => {
@@ -490,8 +490,8 @@ describe("a row as the list's reader places it", () => {
   });
 
   /**
-   * LIMITSWITCH3b (D137's note of 2026-10-26): a closed quest's completed record whose words are held for a cooling account reads the wait
-   * as its state label, D206 §3.7's word, in both languages, in place of *completed*; its stored state is still completed, and a record
+   * A closed quest's completed record whose words are held for a cooling account reads the wait
+   * as its state label, in both languages, in place of *completed*; its stored state is still completed, and a record
    * held for anything else, or for nothing, still reads completed.
    */
   it('reads a record held for an account’s reset as that wait, never completed, in both languages', async () => {
@@ -539,7 +539,7 @@ describe("a row as the list's reader places it", () => {
   });
 
   /**
-   * WAITSAY1b (D152's UX7c amendment): the rail holds no session's events, so the call a working session's agent is inside is
+   * The rail holds no session's events, so the call a working session's agent is inside is
    * the reader's, as the driver heard it: said on the row's line with how long it has run, and why in its tip.
    */
   it('says the call a working session is running, and for how long', () => {
@@ -548,7 +548,7 @@ describe("a row as the list's reader places it", () => {
     expect(screen.getByText(/^engine · running npm test for 8m · driven · /)).toBeInTheDocument();
     expect(screen.getByTitle(/The tool call its agent is inside/)).toBeInTheDocument();
 
-    // Not said where none is open, nor of a chat between turns, nor once the session no longer works.
+    // Not said where none is open, nor of a chat between turns, nor once the session stops working.
     rerender(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: null })} />);
     expect(screen.queryByText(/running/)).toBeNull();
     rerender(<SessionRow session={session({ kind: 'chat' })} taking={false} grouping={placed({ group: 'working', shown: 'working', calling })} />);
@@ -557,7 +557,7 @@ describe("a row as the list's reader places it", () => {
     expect(screen.queryByText(/running/)).toBeNull();
   });
 
-  /** WAITSAY1b: a call begun before the window opened is timed from when the driver heard it begin, never from the window's. */
+  /** A call begun before the window opened is timed from when the driver heard it begin, never from the window's. */
   it('times a call begun before the window opened from its start', () => {
     const calling = { title: 'dotnet test', since: '2026-09-21T10:30:00Z' };
     const { rerender } = render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling })} />);
@@ -569,8 +569,8 @@ describe("a row as the list's reader places it", () => {
   });
 
   /**
-   * AUTONOMY1b3b: a call whose permission request is held for the person says it waits for their answer, timed from the hold, and
-   * its tip says where to answer it and that its card says the bound (PERMUNTIL1: the mark carries none, and the page keeps no copy);
+   * A call whose permission request is held for the person says it waits for their answer, timed from the hold, and
+   * its tip says where to answer it and that its card says the bound (the mark carries none, and the page keeps no copy);
    * never that it runs, and never in the words a parked intake's region reads.
    */
   it('says a call held for the person waits for their answer, and for how long', () => {
@@ -591,7 +591,7 @@ describe("a row as the list's reader places it", () => {
   });
 
   /**
-   * FABRIC-PIPELINE1c: a call Daoris told the session ran past its pipeline's bound says so beside its time, and its tip says the word
+   * A call Daoris told the session ran past its pipeline's bound says so beside its time, and its tip says the word
    * went to its conversation and that Daoris ends nothing.
    */
   it('says a call past its bound was told, and that Daoris does not end it', () => {
@@ -616,7 +616,7 @@ describe("a row as the list's reader places it", () => {
   });
 
   /**
-   * RAILLINE1: a shell call's title is its whole command, which took the row's one line and pushed out the kind, the tree and
+   * A shell call's title is its whole command, which would take the row's one line and push out the kind, the tree and
    * the time. The line says its first line in at most 40 characters; the tip says it whole.
    */
   it('says a long call in a few words, whole in its tip', () => {
@@ -635,7 +635,7 @@ describe("a row as the list's reader places it", () => {
   it('says it in 中文 too', async () => {
     await i18n.changeLanguage('zh');
     try {
-      // RAILLINE1: a long call in a few words, the same head in both languages.
+      // A long call in a few words, the same head in both languages.
       const long = render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: LONG_COMMAND, since: '2026-09-21T11:52:00Z' } })} />);
       const line = screen.getByText(/正在运行 cd src\/Daoris\.Web && npm ci --no-audit…，已 8 分钟/);
       expect(line.getAttribute('title')).toBe(`${LONG_COMMAND}\n它的智能体正在进行的工具调用，以及已运行多久，以驱动最近一次所说为准。`);
@@ -645,7 +645,7 @@ describe("a row as the list's reader places it", () => {
       expect(screen.getByText('已挂起')).toBeInTheDocument();
       expect(screen.getByText(/^engine · 3 个会话失败后挂起/)).toBeInTheDocument();
 
-      // WAITSAY1b: the running call, in the head's own words.
+      // The running call, in the head's own words.
       render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: 'npm test', since: '2026-09-21T11:52:00Z' } })} />);
       expect(screen.getByText(/正在运行 npm test，已 8 分钟/)).toBeInTheDocument();
       expect(screen.getByTitle(/它的智能体正在进行的工具调用/)).toBeInTheDocument();
@@ -655,7 +655,7 @@ describe("a row as the list's reader places it", () => {
       expect(screen.getByText(/git push 等你答复，已 3 分钟/)).toBeInTheDocument();
       expect(screen.getByTitle(/“等你处理”.*它的卡片会说明无人答复时何时拒绝它/)).toBeInTheDocument();
 
-      // FABRIC-PIPELINE1c: a call past its bound, told.
+      // A call past its bound, told.
       render(<SessionRow session={session()} grouping={placed({ group: 'working', shown: 'working', calling: { title: 'dotnet test', since: '2026-09-21T11:30:00Z', told: true } })} />);
       expect(screen.getByText(/正在运行 dotnet test，已 30 分钟，超过时限：已告知/)).toBeInTheDocument();
       expect(screen.getByTitle(/Daoris 不会结束这次调用：停止由你决定/)).toBeInTheDocument();
@@ -666,9 +666,9 @@ describe("a row as the list's reader places it", () => {
 });
 
 /**
- * RAIL1: a conversation is named by its first line, and a row carries a small menu of what has no other
+ * A conversation is named by its first line, and a row carries a small menu of what has no other
  * home — its own window, its review, its id. The session's verbs (finish, stop) stay where they are
- * owned (D56), so they are never here.
+ * owned, so they are never here.
  */
 describe('a conversation\'s row', () => {
   it('is named by the first thing the person said in it', () => {
@@ -683,10 +683,10 @@ describe('a conversation\'s row', () => {
 });
 
 /**
- * SESSUX1d, D126 §3.1: a row's ⋯ holds the session's acts where its row is, as the one rule (`acts.ts`) offers them and
+ * A row's ⋯ holds the session's acts where its row is, as the one rule (`acts.ts`) offers them and
  * the one owner (`sessionActs.ts`) carries them out. The row draws what it is handed, in that order, and reports the act
- * with its session; which acts apply is the rule's, held by `acts.test.ts`. SESSUX1e's archive is two of them. An
- * archived row says so on its line where no heading above it does: in a search, and by repository (§4.5).
+ * with its session; which acts apply is the rule's, held by `acts.test.ts`. The archive is two of them. An
+ * archived row says so on its line where no heading above it does: in a search, and by repository.
  */
 describe("a row's acts", () => {
   const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' | 'shown'>): SessionGrouping => ({
@@ -722,14 +722,14 @@ describe("a row's acts", () => {
       'Answer…', 'Stop…', 'Try again', 'Review', 'Open folder', 'Open a terminal here', 'Open in its own window', 'Archive',
       'Unarchive', 'Copy session ID',
     ]);
-    // Finish and Decline… stay the session's card's: one owner each (D56).
+    // Finish and Decline… stay the session's card's: one owner each.
     expect(screen.queryByRole('menuitem', { name: /finish|decline/i })).toBeNull();
 
     await user.click(screen.getByRole('menuitem', { name: 'Stop…' }));
     expect(act).toHaveBeenCalledWith('stop', 's1a2b3c4');
   });
 
-  /** CTX1 (D138, design §4): a right-click on the row offers its ⋯'s acts, the one list, and reports the act the same way. */
+  /** A right-click on the row offers its ⋯'s acts, the one list, and reports the act the same way. */
   it('offers the same acts on a right-click, named for the session', async () => {
     const act = vi.fn();
     render(
@@ -776,7 +776,7 @@ describe("a row's acts", () => {
     expect(act).toHaveBeenCalledWith('archive', 's1a2b3c4');
   });
 
-  /** SESSUX1f (D126 §5.4): a conversation's ⋯ offers *Delete…*, named once, and reports it for the frame to ask. */
+  /** A conversation's ⋯ offers *Delete…*, named once, and reports it for the frame to ask. */
   it('offers Delete… through the act it reports', async () => {
     const act = vi.fn();
     render(
@@ -795,14 +795,14 @@ describe("a row's acts", () => {
     expect(act).toHaveBeenCalledWith('delete', 's1a2b3c4');
   });
 
-  /** SESSUX1b's hold, said where the row is (D126 §2.2): a stop that holds its quest says so, with how it moves again. */
+  /** A hold, said where the row is: a stop that holds its quest says so, with how it moves again. */
   it('says a stop holds its quest here until you try again, and why in its tip', () => {
     render(<SessionRow session={session({ state: 'stopped' })} grouping={placed({ group: 'ended', shown: 'stopped', holdsQuest: true })} />);
     const line = screen.getByText(/held here until you try again/);
     expect(line.getAttribute('title')).toMatch(/Try again/);
   });
 
-  /** PAUSE1e (D132 §6.1): a session whose quest a pause holds says whose pause, before a stop's hold, and why in its tip. */
+  /** A session whose quest a pause holds says whose pause, before a stop's hold, and why in its tip. */
   it('says whose pause holds its quest, before a stop’s hold, and offers Resume in its ⋯', async () => {
     const paused = placed({ group: 'review', shown: 'stopped', holdsQuest: true, pausedBy: { scope: 'ask', id: 'a1b2c3' } });
     const act = vi.fn();

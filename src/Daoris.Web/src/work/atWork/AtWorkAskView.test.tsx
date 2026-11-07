@@ -4,7 +4,7 @@ import i18n from '../../locales/i18n';
 import { AtWorkAskView } from './AtWorkAskView';
 import { ASK_EMPTY, ASK_SAID, ASK_TEAMMATE, ASK_TWO_ENTRIES, CONSIDERED, FAILED, READING } from './atWork.fixtures';
 
-// COWORKVIEW1d: an ask's view (the cowork view design §3.5, §R11.5): its lines of work folded to counts that open their own view, its
+// An ask's view: its lines of work folded to counts that open their own view, its
 // quests as a session's view draws them; empty, reading and failed told apart.
 
 afterEach(async () => {

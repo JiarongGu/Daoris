@@ -1,6 +1,6 @@
 /**
- * A repository's heavy-run slot as the page reads it (HEAVYSLOT1, the UI/UX design §3.5): who holds it, at which gate, and who waits
- * behind it, as the driver read the records its runs keep beside the slot (`HEAVY_SLOT`), never a run's output. A holder or a waiter
+ * A repository's heavy-run slot as the page reads it: who holds it, at which gate, and who waits
+ * behind it, as the driver reads the records its runs keep beside the slot (`HEAVY_SLOT`), never a run's output. A holder or a waiter
  * with no session is a run from a terminal. `HeavySlotLine` draws it.
  */
 
@@ -11,7 +11,7 @@ export type HeavyGateNow = { gate: string; at: number; since: string };
 export type HeavyHolder = {
   /** The session whose run it is; absent for a run from a terminal. */
   session?: string | null;
-  /** The verification run holding it (FABRIC-PIPELINE1d); absent for a session's or a terminal's run. */
+  /** The verification run holding it; absent for a session's or a terminal's run. */
   run?: string | null;
   gates: string[];
   since: string;
@@ -23,11 +23,11 @@ export type HeavyHolder = {
 /** A run waiting for the slot. */
 export type HeavyWaiter = { session?: string | null; since: string };
 
-/** A heavy run of the machine's admission (HEAVYQUEUE1): the merge queue's gate or a driven session's run, holding a place or asking for one. */
+/** A heavy run of the machine's admission: the merge queue's gate or a driven session's run, holding a place or asking for one. */
 export type AdmissionRun = { kind: 'queue' | 'session'; session?: string | null; what: string; since: string };
 
 /**
- * The machine's heavy-run admission as `HEAVY_SLOT` answers it (HEAVYQUEUE1): how many heavy runs it admits at once, those holding a
+ * The machine's heavy-run admission as `HEAVY_SLOT` answers it: how many heavy runs it admits at once, those holding a
  * place and those asking, longest asking first. The merge queue's heavy gates take places in it beside the sessions' runs.
  */
 export type HeavyAdmission = { capacity: number; holds: AdmissionRun[]; waits: AdmissionRun[] };
@@ -42,7 +42,7 @@ export type HeavyPart =
   | { kind: 'running'; n: number; total: number; gate: string; since: string }
   | { kind: 'failed'; gate: string }
   | { kind: 'waiting'; behind: string | null; since: string }
-  /** Waiting for a place in the machine's admission, which `holds` of its `capacity` heavy runs fill (HEAVYQUEUE1). */
+  /** Waiting for a place in the machine's admission, which `holds` of its `capacity` heavy runs fill. */
   | { kind: 'admission'; holds: number; capacity: number; since: string };
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() !== '' ? value : null);
@@ -93,7 +93,7 @@ function readAdmission(raw: unknown): HeavyAdmission | null {
 /**
  * The part `session` has in its repository's slot, or null where it has none. A holder that has taken the slot and not yet started
  * its first gate reads as at its first, from when it took the slot. A session asking for a place in the machine's admission waits for
- * it first, whatever else it holds (HEAVYQUEUE1): its gates have not started.
+ * it first, whatever else it holds: its gates have not started.
  */
 export function heavyPartOf(slot: HeavySlot | null | undefined, session: string): HeavyPart | null {
   if (!slot) return null;

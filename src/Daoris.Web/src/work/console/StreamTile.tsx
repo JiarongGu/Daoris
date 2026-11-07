@@ -7,10 +7,10 @@ import { type SessionGrouping, shownOf } from '../groups';
 import { sessionOrigin, sessionTitle } from '../identity';
 
 /**
- * One session's stream, headed by what it is (SURF8) — the monitor window's unit.
+ * One session's stream, headed by what it is — the monitor window's unit.
  *
  * @remarks
- * **A molecule: it imports no hook** (components plan §2). The stream itself is an organism and
+ * **A molecule: it imports no hook**. The stream itself is an organism and
  * arrives as `children`, which is what makes every state here reachable by passing props — a parked
  * session, a conversation with no quest, and the one nothing local can produce: a session running on
  * another machine.
@@ -20,18 +20,18 @@ import { sessionOrigin, sessionTitle } from '../identity';
  * desk, so the identity is one line and the stream is the rest.
  *
  * **A session somewhere else has no stream here, and says so.** A record fed from another machine is
- * keyed `origin/id` (D47 §6) and its console never left that machine (D47 §4). An empty well would
+ * keyed `origin/id` and its console never left that machine. An empty well would
  * read as "this session is silent", which is the one thing a console must never imply.
  */
 export function StreamTile({ session, quest, opening, taking, grouping, onDetach, children }: {
   session: Session;
-  /** Where the list's reader placed it (D126 §2.4), whose derived word (*awaiting reply*) the mark reads where one is handed (WAITSHOWN1). */
+  /** Where the list's reader placed it, whose derived word (*awaiting reply*) the mark reads where one is handed. */
   grouping?: SessionGrouping | null;
-  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
+  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle. */
   taking?: boolean;
   /** The quest it serves, where the caller has it — absent is a state, not a gap. */
   quest?: Quest | null;
-  /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
+  /** What the person first said in it, where this machine holds its record — a conversation's name. */
   opening?: string | null;
   /**
    * Open this session in a window of its own. Absent where nothing can open one — a browser, or a
@@ -62,7 +62,7 @@ export function StreamTile({ session, quest, opening, taking, grouping, onDetach
           {elapsed(session.created, running ? null : session.updated)}
         </span>
         {/* A `title`, not a `Tip`: a molecule that needed a tooltip provider would be a molecule
-            no story and no props-only test could render (components plan §2). */}
+            no story and no props-only test could render. */}
         {onDetach && (
           <Button
             variant="ghost"

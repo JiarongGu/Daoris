@@ -54,7 +54,7 @@ import { AttendedBoxes } from './conversation/AttendedBoxes';
 import { useSeekPart } from './conversation/useSeekPart';
 
 /**
- * Settles the person's words whose send the page stopped waiting on (SENDLOST1b) by the attended session's record and queue.
+ * Settles the person's words whose send the page stopped waiting on by the attended session's record and queue.
  * Mounted only while some wait, so the record is read a second time, beside its conversation's own reading, only then.
  */
 function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSending>; giveBack: (sent: Sent) => void }) {
@@ -63,27 +63,27 @@ function SentSettler({ sending, giveBack }: { sending: ReturnType<typeof useSend
 }
 
 /**
- * The **Work frame** (D55): the rail, the attended session, the composer and the output panel.
+ * The **Work frame**: the rail, the attended session, the composer and the output panel.
  *
  * @remarks
- * **One selection binds every region** (IDE study §3), which is why it is held here and passed
+ * **One selection binds every region**, which is why it is held here and passed
  * down rather than kept by the rail. It is also why the composer and the panel need no id of their
  * own: they are looking at whatever the person is.
  *
  * **It is a frame, not a view** — it fills the window rather than sitting in the management
- * shell's content column, and the mode switch and the status bar that come with D55 belong to the
+ * shell's content column, and the mode switch and the status bar that come with it belong to the
  * application, because both frames want them.
  *
  * **Desktop-only, structurally.** Over a keyed remote none of this is rendered: the stream and a
- * tree path are machine-local (D47 §4), and a frame whose centre is a stream has nothing honest to
+ * tree path are machine-local, and a frame whose centre is a stream has nothing honest to
  * show a browser. `App` gates on the same "is a shell here" answer every control uses.
  *
- * **The centre is the record, then the conversation** (D76): the head and the session's
+ * **The centre is the record, then the conversation**: the head and the session's
  * conversation scroll together, and the conversation follows its tail. The right dock holds the
- * timeline and the review (components plan §3a); the console is the panel below, the
+ * timeline and the review; the console is the panel below, the
  * conversation's raw view.
  *
- * **Every view hands it a `ViewLayout`** (D118 §5): its list pane where it has one, and its main area. It
+ * **Every view hands it a `ViewLayout`**: its list pane where it has one, and its main area. It
  * draws the list for every view that hands one, and Sessions' rail is one such list, built here because
  * the attended session is this frame's to hold.
  */
@@ -93,37 +93,37 @@ export function WorkFrame({
   onOpenBranch, notifications, notificationsShow = 0, notificationsToggle = 0,
 }: {
   /**
-   * *Notifications* (NOTIFY2b, the notification design §2.1): everything that comes to the person, a view of the regions on the
+   * *Notifications*: everything that comes to the person, a view of the regions on the
    * right by default, as Ask Daoris is. Absent where no shell is attached.
    */
   notifications?: ReactNode;
   /** Bumped each time a door asks for *Notifications* (View, the palette, Overview's summary, a toast's *Open*): it is shown. */
   notificationsShow?: number;
   /**
-   * Bumped by each press of the title bar's bell (§2.1): it shows the view where it stands, or, pressed while the view is shown,
-   * gives the region back to the view it held, or closes the region where it was closed.
+   * Bumped by each press of the title bar's bell: it shows the view where it stands, or, pressed while the view is shown,
+   * gives the region back to the view it held, or closes the region where the press opened it.
    */
   notificationsToggle?: number;
   /**
-   * What each view's list remembers (D118 §3f), held by the application so the list's doors reach it from
+   * What each view's list remembers, held by the application so the list's doors reach it from
    * every view; this frame's own where it is rendered alone.
    */
   lists?: ListPanes;
   /**
-   * The group of the view's list a door into what waits on the person named (ENTRY1b): Sessions' is handed to the rail, which
+   * The group of the view's list a door into what waits on the person named: Sessions' is handed to the rail, which
    * brings it into view and tells `onGroupBrought`, and shown by state for it; another view's is its own to bring. Either
-   * way the frame lays the list over the main area for it where the list is a strip (ENTRY1g).
+   * way the frame lays the list over the main area for it where the list is a strip.
    */
   group?: OpenGroup | null;
   onGroupBrought?: () => void;
   /**
-   * What the view's list is now — open, a strip, laid over, or none (D118 §3a) — for the application,
+   * What the view's list is now — open, a strip, laid over, or none — for the application,
    * whose doors toggle it and say whether it is shown. The room decides it, and only this frame measures.
    */
   onListMode?: (mode: ListMode | null) => void;
   /**
-   * The person's own terminal as a view of the regions (CONSOLE4b, D96): only where a shell is attached,
-   * as Ask Daoris is, since its shells are this machine's and ride the bridge alone (D47 §4).
+   * The person's own terminal as a view of the regions: only where a shell is attached,
+   * as Ask Daoris is, since its shells are this machine's and ride the bridge alone.
    */
   terminal?: boolean;
   /** Go to Sessions, where the attended session is read whole — the door its line offers off Sessions. */
@@ -131,19 +131,19 @@ export function WorkFrame({
   /** *Change the rule…* on a hold a supervisor rule made: the page of the place whose rule held it, `repository` the attended line's. */
   onChangeRule?: (place: string) => void;
   /**
-   * Another view in the frame (DOCK1a, D118 §5): its list pane where it has one, and its main area. Overview,
+   * Another view in the frame: its list pane where it has one, and its main area. Overview,
    * Quests and the rest keep the right side bar and the panel, with every view that stands in them, as VS
    * Code's workbench is one frame whatever its editor shows. Absent, the view is Sessions: the rail and the
    * attended session.
    */
   layout?: ViewLayout;
   /**
-   * Open a quest's record in Quests (SESS1): a stop on the chain, or a quest the session asked. The
+   * Open a quest's record in Quests: a stop on the chain, or a quest the session asked. The
    * record is the application's to open, as an ask's is.
    */
   onOpenQuest?: (quest: string) => void;
   /**
-   * Open a landed branch's page in Repositories, with how it landed (FLOWCHART1c): the work's milestone and a run's landing step
+   * Open a landed branch's page in Repositories, with how it landed: the work's milestone and a run's landing step
    * name the branch. The page is the application's to open, as a quest's is.
    */
   onOpenBranch?: (repository: string, branch: string) => void;
@@ -156,30 +156,30 @@ export function WorkFrame({
   onSelect: (id: string | null) => void;
   notify: Notify;
   /**
-   * Send the reviewed work back as a quest (SURF6b) — a door into the platform's own composer, not
+   * Send the reviewed work back as a quest — a door into the platform's own composer, not
    * a second publish path. It is the one review move Daoris has that an editor does not, and it
    * goes through the channel `repository-owns-its-work` sanctions rather than around it.
    */
   onSendBack?: (repository: string) => void;
   /**
-   * Open the ask a parked intake is waiting on (INT4g). Its answer is there — publish or close —
+   * Open the ask a parked intake is waiting on. Its answer is there — publish or close —
    * and the ask's record is the application's to open, in Quests, the way the attention band does.
    */
   onAnswerAsk?: (ask: string) => void;
   /**
-   * What a menu, the palette or a key asked for (SURF9, UX7a) — an event, consumed on arrival, because leaving it
+   * What a menu, the palette or a key asked for — an event, consumed on arrival, because leaving it
    * set would reopen the drawer every time anything here re-rendered: a start, a review, the attended session's
    * answer, a region's view, a new terminal, or *Archive what ended…*.
    */
   intent?: FrameIntent | null;
   onIntentTaken?: () => void;
   /**
-   * Ask Daoris's go to New conversation (NEW1d-b, D162): the repository to choose and the words to put in the composer, each
-   * only where the go named one. An event like `intent`, consumed once by its `id` and never by "if it is set" (FIX-LOG
-   * 2026-09-23): the attended session is put down, the prompt owed the focus, the words put above any already typed.
+   * Ask Daoris's go to New conversation: the repository to choose and the words to put in the composer, each
+   * only where the go named one. An event like `intent`, consumed once by its `id` and never by "if it is set":
+   * the attended session is put down, the prompt owed the focus, the words put above any already typed.
    */
   compose?: (Compose & { id: number }) | null;
-  /** *Make it a task with Daoris…* in the composer: its draft, to Ask Daoris as a draft the person sends (NEW1d-b). */
+  /** *Make it a task with Daoris…* in the composer: its draft, to Ask Daoris as a draft the person sends. */
   onMakeTask?: (text: string) => void;
   /**
    * Ask Daoris, as a tab of the right dock: one right region, as VS Code's chat is a view of its secondary side bar, never a
@@ -188,14 +188,14 @@ export function WorkFrame({
   ask?: ReactNode;
   /** Bumped each time the person asks for Ask Daoris (its door, `F1`), which opens the dock on it. */
   askFocus?: number;
-  /** What the person closed, held by the application so the strip reaches it (DOCK1c). */
+  /** What the person closed, held by the application so the strip reaches it. */
   closings?: FrameClosings;
-  /** Where each view stands, held by the application so the View menu's reset reaches it (DOCK1b). */
+  /** Where each view stands, held by the application so the View menu's reset reaches it. */
   placements?: Placements;
 }) {
   const { t, i18n } = useTranslation();
   // A refusal belongs to the session that gave it: attending another by any door (a notification, the
-  // palette, a quest's record) must not show one session's "went nowhere" on another's composer (REV3).
+  // palette, a quest's record) must not show one session's "went nowhere" on another's composer.
   const [refusal, setRefusal] = useState<Refusal | null>(null);
   const attend = (id: string) => {
     onSelect(id);
@@ -205,7 +205,7 @@ export function WorkFrame({
   const centre = useRef<HTMLElement>(null);
   const frame = useFrameLayout({ lists, closings, placements, viewLayout, group, onGroupBrought, onListMode });
   const { root, width, listed, placed, collapsed, dockClosed, dockFull, setDockFull, go, layout, list, chosen, resizeDock, closeDock } = frame;
-  // Another view in the frame (DOCK1a): its own list or none, and its main area. Absent, it is Sessions.
+  // Another view in the frame: its own list or none, and its main area. Absent, it is Sessions.
   const elsewhere = viewLayout !== undefined;
 
   const session = useAttendedSession({ selected, onSelect, notify });
@@ -216,13 +216,13 @@ export function WorkFrame({
   const start = useNewStart({ t, notify, attended, selected, onSelect, compose, attend, setRefusal });
   const { newConversationPressed } = start;
 
-  // Which workspaces sync with a remote here: a pause's ask names an open quest another machine may still take (PAUSE1e).
+  // Which workspaces sync with a remote here: a pause's ask names an open quest another machine may still take.
   const wiring = useRemotes().data;
 
   const record = useAttendedRecord({ attended, attendedEntry, channelAsk, where, here, intake });
   const { spent, branch, integration } = record;
 
-  // The person's own terminals (CONSOLE4b), held here rather than by their view, which unmounts whenever
+  // The person's own terminals, held here rather than by their view, which unmounts whenever
   // it moves or another view of its region is shown: a shell outlives that, as VS Code's terminal does.
   const terminals = useTerminals();
 
@@ -240,7 +240,7 @@ export function WorkFrame({
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const boxWords = useBoxWords({ t, notify, attended, box, answering, question, goAheads, parkAsk, draft, setDraft, setRefusal, roster, words });
 
-  // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is (FIX-LOG 2026-09-23):
+  // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is:
   // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
   const views = useDockViews({
@@ -251,14 +251,14 @@ export function WorkFrame({
     setDocked, following, rightViews, panelViews, previewing, dock, setDock, setPanelPick, dragging, onDrag, panelView, openDock,
     openPreview, closePreview, openView, moveView,
   } = views;
-  // Who is at work on the followed session (COWORKVIEW1a), asked whatever its state and whether *At work* shows (COMMS1i): the head's
-  // *Waiting on* is this read's line, and *working with it* (§3.7) its count, at its mount and each `atWork` wake.
+  // Who is at work on the followed session, asked whatever its state and whether *At work* shows: the head's
+  // *Waiting on* is this read's line, and *working with it* its count, at its mount and each `atWork` wake.
   const atWork = useSessionAtWork(following?.id ?? null);
   const atWorkHeld = atWork.data;
   const withIt = atWorkHeld && 'answer' in atWorkHeld
     ? atWorkHeld.answer.subagents.working + atWorkHeld.answer.parts.filter((part) => part.key !== atWorkHeld.answer.attended && part.state === 'working').length
     : 0;
-  // FABRIC-CUTOVER1f: the person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
+  // The person's skip or stop of a graph run's node, pressed under the node in the view, kept for the driver's next look.
   const runNodeWord = useRunNodeWord();
 
   const [taken, setTaken] = useState<typeof intent>(null);
@@ -271,7 +271,7 @@ export function WorkFrame({
   }
   if (!intent && taken) setTaken(null);
 
-  // Where a terminal opened here starts (D96): the attended session's tree (a record with none works in
+  // Where a terminal opened here starts: the attended session's tree (a record with none works in
   // its repository's root), else the first repository of the workspace in scope that has a checkout here.
   // Said by the page, which knows what is attended and what the viewer is scoped to; with nothing to say,
   // the module opens it in the home, and it opens there too when this folder is not on the machine.
@@ -281,13 +281,13 @@ export function WorkFrame({
     ?? undefined;
   useEffect(() => { if (intent) onIntentTaken?.(); }, [intent, onIntentTaken]);
 
-  // Each actor's order (MODELROLE1e): the hand-over's offer and its ask draw from the session's actor's, empty in a browser.
+  // Each actor's order: the hand-over's offer and its ask draw from the session's actor's, empty in a browser.
   const actors = useActors();
-  // What a person calls an account (ACCTNAME1, D152 §4.2): the roster's one namer, so the head's facts, its Details, its
+  // What a person calls an account: the roster's one namer, so the head's facts, its Details, its
   // chain and its trace say the name the agent's page leads its row with.
   const nameOf = namer(t, roster);
   const agentRoster = agentRosterOf(t, roster, accounts.data);
-  // Words a cooling account holds (MSG1g2, D137 §2.2): a driven record of this machine's between runs, parked or ended, whose
+  // Words a cooling account holds: a driven record of this machine's between runs, parked or ended, whose
   // own account cools. A running one hears words at its door, and a chat's go on with the next word said to it.
   const between = attended && here && attended.kind !== 'chat'
     && !(SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
@@ -297,9 +297,9 @@ export function WorkFrame({
   const { setArchivingEnded, doors } = asks;
   const actions = useSessionActs({ notify, doors, entries });
 
-  // The menu bar's verbs that are this frame's (UX7a, D152 §3.2): the attended session's answer, the views of the regions,
+  // The menu bar's verbs that are this frame's: the attended session's answer, the views of the regions,
   // a new terminal where the attended session works, and *Archive what ended…*'s first press. Each from an effect, since
-  // attending and opening a terminal reach past this render; the parent is told it was taken by the effect below it.
+  // attending and opening a terminal reach past this render; the parent is told it is taken by the effect below it.
   useEffect(() => {
     switch (intent) {
       case 'answer':
@@ -325,12 +325,12 @@ export function WorkFrame({
     // Only a new ask; what the frame holds is read, not watched.
   }, [intent]);
 
-  // The attended session's page header (§3.2): its acts by the one rule, its stop asking under it (§3.3).
-  // The call it is making is the shell's push where that is live (WAITSAY1c2), laid over the pull's, and stepped by its own clock.
+  // The attended session's page header: its acts by the one rule, its stop asking under it.
+  // The call it is making is the shell's push where that is live, laid over the pull's, and stepped by its own clock.
   const pushedCalls = usePushedCalls();
   const pulled = attended ? (groups.data ?? []).find((row) => row.session === attended.id) ?? null : null;
   const grouping = withCall(pulled, pushedCalls) ?? null;
-  // HEAVYSLOT1 (the UI/UX design §3.5): its part in its repository's heavy-run slot, for the head's line and *Details*' gates, the
+  // Its part in its repository's heavy-run slot, for the head's line and *Details*' gates, the
   // holder it waits behind named by its title and a door to it. Asked only while it runs.
   const attendedRuns = Boolean(attended && SESSION_ACTIVE.has(attended.state));
   const heavySlot = useHeavySlot(attended?.repository ?? '', { enabled: attendedRuns });
@@ -361,7 +361,7 @@ export function WorkFrame({
   });
   const { limitLine, pageMenu, pageHead } = headState;
 
-  // COMMS1i: the head's *Waiting on* opens At work at the request it names.
+  // The head's *Waiting on* opens At work at the request it names.
   const atWorkSeek = useAtWorkSeek(openView);
   const regions = useRegionSurfaces({
     t, notify, ask, notifications, elsewhere, onOpenSessions, onOpenQuest, onAnswerAsk, onOpenBranch, onSendBack, terminals, terminalCwd,
@@ -375,11 +375,11 @@ export function WorkFrame({
   const { partBox, seek } = useSeekPart();
 
   return (
-    // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
-    // 🔴 `min-w-0` (USE1): a flex item is otherwise no narrower than its content, and every view but
-    // Sessions is drawn in here, so a long title that should truncate widened the frame past the
-    // window (seen on the install's Quests view; a browser draws the view outside the frame).
-    // `isolate` (D118 §3d, audit F10): its layers stay its own — a full side bar's `z-20`, a list laid
+    // Positioned, so a dock filling the frame lies over exactly this and nothing more.
+    // 🔴 `min-w-0`: a flex item is otherwise no narrower than its content, and every view but
+    // Sessions is drawn in here, so a long title that should truncate would widen the frame past the
+    // window (a browser draws the view outside the frame).
+    // `isolate`: its layers stay its own — a full side bar's `z-20`, a list laid
     // over — so every overlay drawn at the page's root, a drawer among them, lies above all of it.
     <div ref={root} className="relative isolate flex min-h-0 min-w-0 flex-1">
       {spec && list && <ViewListPane spec={spec} layout={list} lists={listed} onOver={go.setOver} />}
@@ -389,15 +389,15 @@ export function WorkFrame({
         <ViewMain
           ref={centre}
           gutters="session"
-          // Pinned at the top while the conversation scrolls under it (D126 §3.2); none with nothing attended.
+          // Pinned at the top while the conversation scrolls under it; none with nothing attended.
           header={pageHead || undefined}
           menu={pageMenu}
           // A remembered session is found in the list, so while the list first loads it is on its way, never
-          // the composer (audit SE11). With nothing attended the main area is *New conversation* (NEW1b): no notice is
+          // the composer. With nothing attended the main area is *New conversation*: no notice is
           // handed, so the state's body is the composer.
           state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
         >
-          {/* *New conversation* (NEW1b, D162 point 1), the main area while nothing is attended. */}
+          {/* *New conversation*, the main area while nothing is attended. */}
           {!attended && (
             <StartPane
               start={start}
@@ -449,14 +449,14 @@ export function WorkFrame({
             partRows={partRows}
             partBox={partBox}
             attend={attend}
-            // COMMS1h: the channel its panel reads names each message's poster, and a turn's door opens that panel.
+            // The channel its panel reads names each message's poster, and a turn's door opens that panel.
             channel={attendedEntry && channelAsk && record.channel.available ? channelHomeOf(
               record.channel.channel, (agent) => agentRoster.names?.[agent] ?? agent, () => record.setChannelOpened((n) => n + 1),
             ) : undefined}
           />
         </ViewMain>
 
-        {/* The waiting panel (WAITPANEL1): the strip and the box, its top edge a handle that sizes what waits, kept per viewer;
+        {/* The waiting panel: the strip and the box, its top edge a handle that sizes what waits, kept per viewer;
             and the conversation's *To the top* and *Back to bottom* above that edge, never under it. */}
         <WaitPanel
           height={waitPanel.height}
@@ -469,11 +469,11 @@ export function WorkFrame({
             </>
           ) : undefined}
         >
-          {/* What waits on the person, where they read (WAITFOOT1b, D168): above the box and outside the conversation's scroll,
-              each wait with the head's own press. None on a teammate's record, which has no press here (D47 §4). Keyed by the
-              session, so a fold is its own. 🔴 The strip, the settler and the composer each name their kind beside the id (RELSPAM1):
-              keyed by the id alone, they took each other's fibers, and the one left over was never unmounted. */}
-          {/* A limit's wait (LIMITRESUME1d2, D206 §3.7): the head's line again where the reader is, aside while the head is on screen. */}
+          {/* What waits on the person, where they read: above the box and outside the conversation's scroll,
+              each wait with the head's own press. None on a teammate's record, which has no press here. Keyed by the
+              session, so a fold is its own. 🔴 The strip, the settler and the composer each name their kind beside the id:
+              keyed by the id alone, they would take each other's fibers, and the one left over would never unmount. */}
+          {/* A limit's wait: the head's line again where the reader is, aside while the head is on screen. */}
           {waitsOnScreen === false && limitLine('mb-2')}
           {attended && here && waits && (
             <WaitStrip
@@ -541,11 +541,11 @@ export function WorkFrame({
         )}
       </div>
 
-      {/* The third column, built now that it has a second occupant (components plan §3a). It is
+      {/* The third column. It is
           keyed to the attended session like every other region, and it is what gives the centre
-          column its height back — the timeline used to share that space with the composer and the
-          panel. An emptied one that is closed is not drawn at all (DOCK1b), unless a view is being
-          dragged to it (DOCK1e). */}
+          column its height: the timeline does not share that space with the composer and the
+          panel. An emptied one that is closed is not drawn at all, unless a view is being
+          dragged to it. */}
       {(rightViews.length > 0 || !dockClosed || dragging !== null) && (
         <RightDock
           tab={dock}

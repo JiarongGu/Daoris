@@ -5,18 +5,18 @@ import { isComposing } from '../lib/composing';
 import { Button, Icon, Inline } from '../design/ui';
 
 /**
- * How an act pressed in a question hears how it ended (ACCTEDIT1, D152): `done` once it landed, and `refused` with the
- * sentence the person reads, said in the question where it was pressed. The one contract every inline ask keeps (UXFIX2).
+ * How an act pressed in a question hears how it ended: `done` once it landed, and `refused` with the
+ * sentence the person reads, said in the question where it is pressed. The one contract every inline ask keeps.
  */
 export type Answered = { done: () => void; refused: (sentence: string) => void };
 
 /**
- * Why an act was refused, in the sentence the person reads (ACCTEDIT1): said whole, where it was pressed, as a refused start
- * is said in its form (UX5 U68). A toast is for an error with no form to stand in (the platform language §4).
+ * Why an act is refused, in the sentence the person reads: said whole, where it is pressed, as a refused start
+ * is said in its form. A toast is for an error with no form to stand in.
  *
  * @remarks
- * It shrinks with its column and breaks anywhere (UXFIX2c): a refusal carries what nothing breaks, a long id or a raw error,
- * which otherwise widened its flex or grid item past the main area's 400 px floor. Its own line holds it, so breaking inside
+ * It shrinks with its column and breaks anywhere: a refusal carries what nothing breaks, a long id or a raw error,
+ * which otherwise widens its flex or grid item past the main area's 400 px floor. Its own line holds it, so breaking inside
  * a word cannot squeeze it to a character a line.
  */
 export function Refused({ sentence, id, className }: { sentence: string; id?: string; className?: string }) {
@@ -34,7 +34,7 @@ export function Refused({ sentence, id, className }: { sentence: string; id?: st
   );
 }
 
-/** Where the focus was when an ask opened: the element, its name, and what held it, nearest first. */
+/** Where the focus is when an ask opens: the element, its name, and what held it, nearest first. */
 type Opener = { node: HTMLElement; label: string; around: HTMLElement[] };
 
 const labelOf = (node: Element) => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim();
@@ -49,7 +49,7 @@ function noted(node: Element | null): Opener | null {
 /**
  * A surface that gives the focus back by itself as it closes: a menu, or a box over the page (the palette). A drawer matches
  * too and stays open around an ask drawn in it; its focus trap keeps every focus inside it, so the beat's second reading
- * finds nothing outside it to take, and the press keeps its place (UXFIX2d).
+ * finds nothing outside it to take, and the press keeps its place.
  */
 const CLOSES_ITSELF = '[role="menu"], [role="dialog"]';
 
@@ -57,9 +57,9 @@ const CLOSES_ITSELF = '[role="menu"], [role="dialog"]';
 const PRESS = 'button, a[href], [role="button"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"]';
 
 /**
- * The press the last click went to, until the task that heard it ends (UXFIX2d). A click need not move the focus: a script's
+ * The press the last click went to, until the task that heard it ends. A click need not move the focus: a script's
  * `click()` (the desktop driver's) or a browser that does not focus a clicked button leaves it where it sat, a drawer's
- * *Close* as the drawer opened, and an ask that took what opened it from the focus alone gave the focus back there. Heard at the document before the page's own handlers, so it is known when the ask is first drawn; the
+ * *Close* as the drawer opened, and an ask that takes what opened it from the focus alone gives the focus back there. Heard at the document before the page's own handlers, so it is known when the ask is first drawn; the
  * next task forgets it, so an ask drawn later by anything but that click reads the focus.
  */
 let pressed: Element | null = null;
@@ -86,7 +86,7 @@ function openedBy(node: Element | null): Opener | null {
 /** A list: once the opener's own item went with its record, a press of the same name in it is a neighbour's. */
 const LIST = 'ul, ol, [role="list"], [role="listbox"]';
 
-/** What a page holds its records in: where the focus goes once no press is drawn again (UXFIX2c). */
+/** What a page holds its records in: where the focus goes once no press is drawn again. */
 const HOLDS = `section, [role="region"], article, main, [role="main"], [role="tabpanel"], ${LIST}`;
 
 /**
@@ -110,9 +110,9 @@ function likeOf(gone: HTMLElement, near: HTMLElement): HTMLElement | null {
 }
 
 /**
- * The nearest section or list the opener sat in that is still drawn (UXFIX2c): what still holds it, where that is a list or
- * a section; else a holder that went and was drawn again in its place (a page's main area, drawn anew for *nothing chosen*
- * once its record went); else a holder further up; else whatever still held it.
+ * The nearest section or list the opener sat in that is still drawn: what still holds it, where that is a list or
+ * a section; else a holder that goes and is drawn again in its place (a page's main area, drawn anew for *nothing chosen*
+ * once its record goes); else a holder further up; else whatever still held it.
  */
 function heldIn(opener: Opener): HTMLElement | null {
   const at = opener.around.findIndex((each) => each.isConnected);
@@ -127,7 +127,7 @@ function heldIn(opener: Opener): HTMLElement | null {
 }
 
 /**
- * Where the focus goes as an ask is put down (UXFIX2c): the press drawn again; where none is (a delete took its record, or
+ * Where the focus goes as an ask is put down: the press drawn again; where none is (a delete took its record, or
  * nothing more is offered), the nearest section or list that held it. Never the page's body, where a keyboard starts again
  * from the top.
  */
@@ -146,9 +146,9 @@ function giveBack(opener: Opener) {
 }
 
 /**
- * **The one inline confirmation for a destructive act** (UXFIX2; the second-opinion review's cross-cutting note; the
- * platform language §4, a destructive edit asks once): a first press opens it in the page, never a modal, saying what the
- * second press does; then the move, in danger's hue, and *Never mind*, the move first as every confirming pair is (U38).
+ * **The one inline confirmation for a destructive act** (a destructive edit asks
+ * once): a first press opens it in the page, never a modal, saying what the
+ * second press does; then the move, in danger's hue, and *Never mind*, the move first as every confirming pair is.
  *
  * @remarks
  * **A molecule**: what it says arrives as props and the press goes out with how to answer it; it holds only its own wait,
@@ -157,25 +157,25 @@ function giveBack(opener: Opener) {
  * - **The explanation takes the focus on opening and describes the move** (`aria-describedby`), so a keyboard reaches the
  *   move having heard what goes. A first press made from a menu leaves with its menu, which gives the focus back to its
  *   trigger a beat later; the ask waits that beat and takes the trigger as what opened it.
- * - **It opens whole in view** (UXFIX2d): the ask is scrolled into view, nearest edge first, before the explanation takes
+ * - **It opens whole in view**: the ask is scrolled into view, nearest edge first, before the explanation takes
  *   the focus without scrolling again, so an ask opened near the page's foot shows its presses, not one line.
  * - **Escape and *Never mind* put it down** and give the focus back to what opened it, or to the same press drawn again
- *   where it was not offered twice while the ask was open. What opened it is the press its click went to, whether or not the
- *   click moved the focus (UXFIX2d), and the focus only where no click opened it.
- * - **The press keeps it open and waiting** until the act answers (ACCTEDIT1's `done`/`refused`): `done` closes it, and
+ *   where it is not offered twice while the ask is open. What opened it is the press its click went to, whether or not the
+ *   click moved the focus, and the focus only where no click opened it.
+ * - **The press keeps it open and waiting** until the act answers (`done`/`refused`): `done` closes it, and
  *   `refused` says the sentence inside it, whole (`role="alert"`), and lets the move be pressed again. *Never mind* and
  *   Escape wait with the move, so a refusal is never said to nobody. An answer to an ask put down changes nothing; a `done`
  *   still closes an ask the page drew away while it waited, so the page's own hold on it lets go.
- * - **While it waits it says so** (UXFIX2c): a status beside the presses, drawn from the first so a reader hears it speak
+ * - **While it waits it says so**: a status beside the presses, drawn from the first so a reader hears it speak
  *   (`role="status"`, polite), and nothing around it busy, since a reader may hold back what a busy element says until the
  *   wait is over and the status quiet again; the waiting presses and the status are the wait's signs. The move keeps its
  *   name; the page's own `busy` is another act, so it says nothing.
- * - **Landed, the focus goes where a cancel's does** (UXFIX2c): the press drawn again, and where none is, since a delete took
+ * - **Landed, the focus goes where a cancel's does**: the press drawn again, and where none is, since a delete took
  *   its record or nothing more is offered, the nearest section or list that held it, never the page's body.
  * - **A rich body** (a clear's *What goes* and *What stays*) is its explanation too: `block` lays it out as rows.
  * - **The move wears danger's hue**, since it is a destructive edit's; an outward-facing act that destroys nothing (a
- *   landing, LAND4) asks the same way with the primary's (`tone`), so the hue never says something goes when nothing does.
- *   One that loosens what runs unasked (Ask Daoris's full access, ACCESSASK1; the UI/UX design §3.4) asks with the warning's:
+ *   landing) asks the same way with the primary's (`tone`), so the hue never says something goes when nothing does.
+ *   One that loosens what runs unasked (Ask Daoris's full access) asks with the warning's:
  *   its line down the ask's edge and its icon on the move, never red, since full access is a choice and not an outcome.
  */
 export function InlineConfirm({
@@ -217,7 +217,7 @@ export function InlineConfirm({
   const [pending, setPending] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(refused);
   // Read while it is first drawn, before the commit that draws it can take the press away (a press not offered twice, a
-  // menu's item): the press a click just went to, else the focus (UXFIX2d).
+  // menu's item): the press a click just went to, else the focus.
   const [first] = useState(() => {
     const now = typeof document === 'undefined' ? null : pressed?.isConnected ? pressed : document.activeElement;
     return { opener: openedBy(now), closing: Boolean(now?.closest(CLOSES_ITSELF)) };
@@ -229,8 +229,8 @@ export function InlineConfirm({
   const leaving = useRef(false);
   const waiting = busy || pending;
 
-  // The whole ask comes into view, then the explanation takes the focus without scrolling again (UXFIX2d): a focus alone
-  // scrolled only the explanation's line into view, and an ask opened near the page's foot left its list and presses below
+  // The whole ask comes into view, then the explanation takes the focus without scrolling again: a focus alone
+  // scrolls only the explanation's line into view, and an ask opened near the page's foot leaves its list and presses below
   // the fold. `nearest` moves the page least: an ask already in view stays put, and one taller than the view shows its top.
   const show = () => {
     own.current?.scrollIntoView?.({ block: 'nearest' });
@@ -238,7 +238,7 @@ export function InlineConfirm({
   };
 
   // Pressed in a menu, the ask waits for the menu to close and give the focus back, which it does a beat after it goes, and
-  // only where nothing took the focus while it was open: taking it at once would leave the focus nowhere to return to.
+  // only where nothing takes the focus while it is open: taking it at once would leave the focus nowhere to return to.
   // Whatever the menu gave it to is what opened the ask.
   useEffect(() => {
     if (!first.closing) {
@@ -306,7 +306,7 @@ export function InlineConfirm({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    // A reason typed through an input method drops its composition on Escape, and the ask stays (IME1).
+    // A reason typed through an input method drops its composition on Escape, and the ask stays.
     if (isComposing(event) || event.key !== 'Escape') return;
     // Its own Escape: nothing behind it closes on the same key.
     event.stopPropagation();
@@ -331,7 +331,7 @@ export function InlineConfirm({
       <Button variant="ghost" disabled={meanIt ? waiting : false} onClick={cancel}>
         {t(meanIt ? 'common.cancel' : 'common.close')}
       </Button>
-      {/* Drawn from the first, empty and out of the row, so it is a live region before it speaks (UXFIX2c). */}
+      {/* Drawn from the first, empty and out of the row, so it is a live region before it speaks. */}
       <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
         {pending ? t('work.confirm.pending') : null}
       </span>

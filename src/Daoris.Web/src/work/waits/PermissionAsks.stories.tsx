@@ -4,9 +4,9 @@ import { chinese } from '../../design/storyLanguage';
 import { sessionWidths } from '../../design/storyWidths';
 import { PermissionAsks, type PermissionWait } from './PermissionAsks';
 
-// A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): the call as the agent named it,
+// A tool call a session holds for the person's answer under asking: the call as the agent named it,
 // its kind, how long it has waited and the bound, and a press per choice the agent offered, never an allow it did not offer. In
-// English, 中文 and dark, in a session's page at the frame's widths (the UI/UX design R6): its head and its foot carry it.
+// English, 中文 and dark, in a session's page at the frame's widths: its head and its foot carry it.
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -33,7 +33,7 @@ export default meta;
 
 type Story = StoryObj<typeof PermissionAsks>;
 
-/** A command and an edit with *Allow once* and *Refuse*, and an untitled fetch where no allow was offered. */
+/** A command and an edit with *Allow once* and *Refuse*, and an untitled fetch where no allow is offered. */
 export const Held: Story = {};
 
 /** The same at a 1546 px window. */

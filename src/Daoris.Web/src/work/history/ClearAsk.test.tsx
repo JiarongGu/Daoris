@@ -10,7 +10,7 @@ import {
   WORKSPACE_PLAN,
 } from './historyFixtures';
 
-// A clear's first press (HIST1e, D153; the history-clearing design §5, §6.1), as a molecule: it lists what the clear would
+// A clear's first press, as a molecule: it lists what the clear would
 // take and what it would keep, each kept unit with its reason's sentence and its door, and its second press sends exactly
 // the units it listed, held from when the list opened. Every state is reached by passing it, and every press goes out.
 
@@ -108,8 +108,8 @@ describe('a workspace’s first press (design §6.1)', () => {
   });
 
   /**
-   * HIST1o (seen on the install): with only left-over files to take, the ask opened with what the finished work keeps, its
-   * words, transcripts and files, while its own list said only the left-over files went. It opens with what goes.
+   * With only left-over files to take, the ask opens with what goes, never with what the finished work keeps, its
+   * words, transcripts and files.
    */
   it('opens with only the left-over files where no unit goes, in both languages, and with the finished work where one does', () => {
     const { unmount } = render(
@@ -154,7 +154,7 @@ describe('a clear’s second press (design §5 step 2)', () => {
   it('sends exactly the units the first press listed, held from when the list opened', async () => {
     const clear = vi.fn();
     const { rerender } = render(<ClearAsk target={WORKSPACE} plan={WORKSPACE_PLAN} meanIt="Clear 3" onClear={clear} onClose={() => {}} />);
-    // The plan is read again while the list is open (a tick, a refetch): the press still sends what was listed.
+    // The plan is read again while the list is open (a tick, a refetch): the press still sends what is listed.
     rerender(<ClearAsk target={WORKSPACE} plan={WORKSPACE_KEPT} meanIt="Clear 3" onClear={clear} onClose={() => {}} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Clear 3' }));
@@ -175,7 +175,7 @@ describe('a clear’s second press (design §5 step 2)', () => {
 });
 
 /**
- * UXFIX2 (the second-opinion review, `ClearAsk.tsx:101`): the clear's ask is the one inline confirmation. What it would take
+ * The clear's ask is the one inline confirmation. What it would take
  * and keep takes the focus on opening and describes the move; the press keeps it open until the clear answers; a refusal is
  * said inside it, word for word; it closes once the clear lands, or on *Never mind*.
  */

@@ -10,7 +10,7 @@ import {
 } from './pausing';
 
 /**
- * **The one owner of a pause, a resume and an abandon** (PAUSE1e, D132 §7.1): the ask's page, the quest's page and a
+ * **The one owner of a pause, a resume and an abandon**: the ask's page, the quest's page and a
  * session's header each call this, so each act has one implementation whichever door pressed it, as `sessionActs.ts` is
  * the one owner of a session's acts.
  *
@@ -18,7 +18,7 @@ import {
  * **An organism**: it holds the bridge's hooks, so the pages and the header, which each press it, hold none. What each act
  * says is `pausing.ts`'s rule, said here in the catalogue's words with the scope's own name: a pause in one line, and a
  * failure for each session it meant to stop and could not; a resume, and what still holds a quest of it by its hold's own
- * sentence, translated by its verdict (UX5 U27) and worded from the facts the host hands beside it (CARRY2d), the driver's
+ * sentence, translated by its verdict and worded from the facts the host hands beside it, the driver's
  * sentence where the answer hands none; an abandon as how many of the listed pieces went. A refusal is the catalogue's
  * sentence for its code.
  */
@@ -30,13 +30,13 @@ export function useWorkActs({ notify }: { notify: Notify }) {
 
   const tell = (notices: readonly WorkNotice[], target: WorkTarget) => {
     for (const notice of notices) {
-      // The hold whole, its facts with it (CARRY2d): the one rule that words a sitting quest words a resume's hold.
+      // The hold whole, its facts with it: the one rule that words a sitting quest words a resume's hold.
       const why = notice.hold ? { why: sittingSentence({ ...notice.hold, repository: '' }) } : {};
       notify(t(notice.key, { ...notice.values, ...why, what: scopeName(t, target) }), notice.tone);
     }
   };
 
-  // A refusal is said inside the ask that was answered (UXFIX2b2a), whole; with no ask to say it in, in a toast.
+  // A refusal is said inside the ask being answered, whole; with no ask to say it in, in a toast.
   const refusedIn = (answered?: Answered) => (answered
     ? (error: unknown) => answered.refused(sentence(error))
     : failure(notify));

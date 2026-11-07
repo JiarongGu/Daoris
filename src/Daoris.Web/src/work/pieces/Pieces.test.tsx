@@ -6,7 +6,7 @@ import { AskPartner } from './AskPartner';
 import { type PieceRow, partnersOf, readPieces, shownOf } from './pieceRows';
 import { type PieceSection, Pieces } from './Pieces';
 
-// COAGENT1b (D199; the co-agent design §6.1): the Pieces section under a driven session's head, in English and Chinese. Each piece the
+// The Pieces section under a driven session's head, in English and Chinese. Each piece the
 // session asked another agent to write, where the driver's look left it, its frozen commit and its files; a working piece's door and
 // stop; and *Ask another agent to work on a piece…*, the person's own ask, with the piece, its paths and the agent named.
 
@@ -134,7 +134,7 @@ describe('the Pieces section', () => {
       { piece: 'Make the window seven days.', agent: 'codex-acp', paths: ['src/window.ts', 'docs'] }, expect.anything());
   });
 
-  /** COAGENT1c: where the frame holds the ask, the head's ⋯ opens the same ask the section's press opens, and its close is the frame's. */
+  /** Where the frame holds the ask, the head's ⋯ opens the same ask the section's press opens, and its close is the frame's. */
   it('opens the ask the frame holds open, as the head’s ⋯ asks, and tells the frame of its own press and its close', async () => {
     const onOpen = vi.fn();
     const { rerender } = render(<Pieces section={section({ ask: { from: 'claude-code', roster, onAsk: vi.fn(), open: false, onOpen } })} headingId="h" />);

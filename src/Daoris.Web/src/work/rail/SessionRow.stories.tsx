@@ -10,9 +10,9 @@ import { type LimitWait, limitWaitSaid } from '../waits/limitWait';
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
-// Every state of a rail row, on the shipped component (D42 §5) — including the ones real data
+// Every state of a rail row, on the shipped component — including the ones real data
 // rarely shows. A row is a molecule, so each of these is reached by passing props: no driver, no
-// service and no arranged world (components plan §2).
+// service and no arranged world.
 
 /** Relative to now, so a story reads as a duration rather than as the age of this file. */
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
@@ -80,7 +80,7 @@ export const EveryState: Story = {
   ),
 };
 
-/** A conversation, serving no quest: the identity is derived, never invented (design §3). */
+/** A conversation, serving no quest: the identity is derived, never invented. */
 export const Conversation: Story = {
   args: { session: { ...SESSION, kind: 'chat', quest: null, created: at(7), updated: at(1) }, quest: null },
 };
@@ -111,7 +111,7 @@ export const ChineseTitle: Story = {
 };
 
 /**
- * A record mirrored from another machine (D47 §6): the id carries the origin, so the row can say
+ * A record mirrored from another machine: the id carries the origin, so the row can say
  * where the work is actually happening. A local row says nothing here, deliberately.
  */
 export const AnotherMachine: Story = {
@@ -119,7 +119,7 @@ export const AnotherMachine: Story = {
 };
 
 /**
- * A session in a working tree of its own (D51) — which is how a repository comes to hold two at
+ * A session in a working tree of its own — which is how a repository comes to hold two at
  * once, and therefore why a row has to say which tree it is in. Silence is the registered root.
  */
 export const OwnTree: Story = {
@@ -139,8 +139,8 @@ export const InTheRegisteredRoot: Story = {
 };
 
 /**
- * A session whose landing tidied its tree away (LOOK2b, D113): the row says where the work landed, not the tree it
- * no longer has.
+ * A session whose landing tidied its tree away: the row says where the work landed, not the tree
+ * it has gone from.
  */
 export const Landed: Story = {
   args: {
@@ -164,7 +164,7 @@ export const RunningThreeHours: Story = {
   args: { session: { ...SESSION, created: at(181), updated: at(4) } },
 };
 
-/** Parked: only the person can clear it, and the row is where they find out (SURF5). */
+/** Parked: only the person can clear it, and the row is where they find out. */
 export const AwaitingPerson: Story = {
   args: { session: { ...SESSION, state: 'awaiting-person', created: at(52), updated: at(11) } },
 };
@@ -175,7 +175,7 @@ export const Finished: Story = {
 };
 
 /**
- * A line its account's limit cut off (LIMITRESUME1d2, D206 §3.7): *limited*, quiet, and when it goes on by itself, the head's first
+ * A line its account's limit cut off: *limited*, quiet, and when it goes on by itself, the head's first
  * sentence worded in the story's language.
  */
 export const LimitedWaiting: Story = {
@@ -190,13 +190,13 @@ export const LimitedWaiting: Story = {
 /** The same in 中文. */
 export const LimitedWaitingChinese: Story = { ...LimitedWaiting, decorators: [chinese] };
 
-/** Where the list's reader placed a row (SESSUX1c): the facts each story below adds to it. */
+/** Where the list's reader placed a row: the facts each story below adds to it. */
 const placed = (over: Partial<SessionGrouping> & Pick<SessionGrouping, 'group' | 'shown'>): SessionGrouping => ({
   session: SESSION.id, archived: false, teammate: false, ...over,
 });
 
 /**
- * Parked (D126 §2.2): the last session here of a quest parked after three failed sessions. It waits on the person, so
+ * Parked: the last session here of a quest parked after three failed sessions. It waits on the person, so
  * it wears open's hue and the waiting mark, never the failure's red; its line says how many failed.
  */
 export const Parked: Story = {
@@ -208,7 +208,7 @@ export const Parked: Story = {
 };
 
 /**
- * WAITSAY1b: a working session inside a long call, as the driver heard it begin before this window opened: its line says
+ * A working session inside a long call, as the driver heard it begin before this window opened: its line says
  * the call and how long it has run, where the rail holds none of its events.
  */
 export const RunningACall: Story = {
@@ -223,7 +223,7 @@ export const RunningACall: Story = {
 export const RunningACallChinese: Story = { ...RunningACall, decorators: [chinese] };
 
 /**
- * RAILLINE1: a shell call's title is its whole command, which took the row's one line on the install and pushed out the kind,
+ * A shell call's title is its whole command, which would take the row's one line and push out the kind,
  * the tree and the time. Its line says the command's head in at most 40 characters; its tip says it whole.
  */
 export const RunningALongCall: Story = {
@@ -246,7 +246,7 @@ export const RunningALongCall: Story = {
 export const RunningALongCallChinese: Story = { ...RunningALongCall, decorators: [chinese] };
 
 /**
- * FABRIC-PIPELINE1c: a call past its pipeline's bound, which Daoris told the session of once: its line says so beside its time, and its
+ * A call past its pipeline's bound, which Daoris told the session of once: its line says so beside its time, and its
  * tip that the word is in its conversation and that Daoris does not end the call.
  */
 export const PastItsBoundTold: Story = {
@@ -261,7 +261,7 @@ export const PastItsBoundTold: Story = {
 export const PastItsBoundToldChinese: Story = { ...PastItsBoundTold, decorators: [chinese] };
 
 /**
- * SESSWATCH1b: a session nothing was heard from for a quarter of an hour, which the watcher marked quiet and told its one word: the row
+ * A session nothing is heard from for a quarter of an hour, which the watcher marks quiet and tells its one word: the row
  * says *quiet* with its time, and that Daoris told it.
  */
 export const QuietAndTold: Story = {
@@ -318,13 +318,13 @@ export const UncommittedToReview: Story = {
   },
 };
 
-/** Queued: neutral now, keeping its idle mark (D126 §2.3); open's hue is the person's alone. */
+/** Queued: neutral, keeping its idle mark; open's hue is the person's alone. */
 export const Queued: Story = {
   args: { session: { ...SESSION, state: 'queued', created: at(1), updated: at(1) }, place: 'engine' },
 };
 
 /**
- * Ended, with *Archive* on its ⋯ (SESSUX1e, D126 §5.2): the reader placed it in Ended, so the menu offers it beside its
+ * Ended, with *Archive* on its ⋯: the reader placed it in Ended, so the menu offers it beside its
  * window, its review and its id. Hover the row for the ⋯.
  */
 export const Archivable: Story = {
@@ -338,7 +338,7 @@ export const Archivable: Story = {
 };
 
 /**
- * Archived, as a search or the list by repository shows it (§4.5): its line says so, its tip says how it comes back, and
+ * Archived, as a search or the list by repository shows it: its line says so, its tip says how it comes back, and
  * its ⋯ offers *Unarchive*.
  */
 export const Archived: Story = {
@@ -351,7 +351,7 @@ export const Archived: Story = {
   },
 };
 
-/** Running, with every act its row offers a live driven session (SESSUX1d, D126 §3.1): *Stop…* first. Hover for the ⋯. */
+/** Running, with every act its row offers a live driven session: *Stop…* first. Hover for the ⋯. */
 export const RunningWithItsActs: Story = {
   args: {
     session: { ...SESSION, state: 'working', created: at(40), updated: at(2) },
@@ -362,7 +362,7 @@ export const RunningWithItsActs: Story = {
   },
 };
 
-/** Waiting on you: *Answer…* attends it and opens the box at its foot (§3.1). */
+/** Waiting on you: *Answer…* attends it and opens the box at its foot. */
 export const WaitingWithItsActs: Story = {
   args: {
     session: { ...SESSION, state: 'awaiting-person', created: at(40), updated: at(5) },
@@ -385,7 +385,7 @@ export const ParkedWithTryAgain: Story = {
 };
 
 /**
- * An ended conversation that served no quest (SESSUX1f, D126 §5.4): its ⋯ offers *Delete…*, which attends it and asks
+ * An ended conversation that served no quest: its ⋯ offers *Delete…*, which attends it and asks
  * under its header. Hover for the ⋯.
  */
 export const DeletableConversation: Story = {
@@ -399,7 +399,7 @@ export const DeletableConversation: Story = {
   },
 };
 
-/** Stopped by its ask's pause (PAUSE1e): its line names the pause, and its ⋯ offers *Resume ask* in *Try again*'s place. */
+/** Stopped by its ask's pause: its line names the pause, and its ⋯ offers *Resume ask* in *Try again*'s place. */
 export const PausedWithItsAsk: Story = {
   args: {
     session: { ...SESSION, state: 'stopped', created: at(80), updated: at(20) },
@@ -410,7 +410,7 @@ export const PausedWithItsAsk: Story = {
   },
 };
 
-/** Running, its quest an ask's (PAUSE1e): its ⋯ offers *Pause quest…* and *Pause ask…* beside *Stop…*. */
+/** Running, its quest an ask's: its ⋯ offers *Pause quest…* and *Pause ask…* beside *Stop…*. */
 export const RunningWithItsPauses: Story = {
   args: {
     session: { ...SESSION, state: 'working', created: at(30), updated: at(1) },
@@ -421,7 +421,7 @@ export const RunningWithItsPauses: Story = {
 };
 
 /**
- * A conversation handed over (MIXAGENT3a-i, the mixed-agents design §4): its line names the session it continues, as the rail
+ * A conversation handed over: its line names the session it continues, as the rail
  * joined it; in English, 中文 and dark.
  */
 export const ContinuesAnother: Story = {
@@ -436,7 +436,7 @@ export const ContinuesAnotherChinese: Story = {
 };
 export const ContinuesAnotherDark: Story = { ...ContinuesAnother, decorators: [dark] };
 
-/** A helper (MIXAGENT3a-i): titled as one, its line names the session it helps; in English, 中文 and dark. */
+/** A helper: titled as one, its line names the session it helps; in English, 中文 and dark. */
 export const Helper: Story = {
   args: {
     session: { ...SESSION, id: 'h3lp3r00', kind: 'chat', quest: null, serves: 's1a2b3c4', created: at(3), updated: at(1) },
@@ -447,7 +447,7 @@ export const HelperChinese: Story = { ...Helper, decorators: [chinese] };
 export const HelperDark: Story = { ...Helper, decorators: [dark] };
 
 /**
- * LIMITSWITCH3b (D137's note of 2026-10-26): a closed quest's finished session whose words wait for an account's reset reads the wait as its
+ * A closed quest's finished session whose words wait for an account's reset reads the wait as its
  * word, never *completed*, and its line says when it goes on by itself and on which account.
  */
 export const HeldForALimit: Story = {
@@ -463,7 +463,7 @@ export const HeldForALimit: Story = {
 export const HeldForALimitChinese: Story = { ...HeldForALimit, decorators: [chinese] };
 export const HeldForALimitDark: Story = { ...HeldForALimit, decorators: [dark] };
 
-/** A person's stop that holds its quest (SESSUX1b): its line says so, and its ⋯ offers *Try again*. */
+/** A person's stop that holds its quest: its line says so, and its ⋯ offers *Try again*. */
 export const StoppedHoldingItsQuest: Story = {
   args: {
     session: { ...SESSION, state: 'stopped', created: at(80), updated: at(20) },

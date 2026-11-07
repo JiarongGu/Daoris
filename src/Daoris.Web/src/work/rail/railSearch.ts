@@ -1,11 +1,11 @@
 import type { Session } from '../../data/api';
 
-// Searching the rail (RAIL1). By name happens here, at once: the derived title — a conversation's
+// Searching the rail. By name happens here, at once: the derived title — a conversation's
 // first line, a quest's title — the repository and the id. By content is the host's, over the bridge,
-// because what a session said is on this machine and nowhere else (D47 §4). Pure.
+// because what a session said is on this machine and nowhere else. Pure.
 
 /**
- * The sessions whose title, repository or id holds what was typed, whatever the case, in the order
+ * The sessions whose title, repository or id holds what the person typed, whatever the case, in the order
  * given. Nothing typed finds nothing — the rail's own list is what shows then.
  */
 export function byName(sessions: readonly Session[], query: string, title: (session: Session) => string): Session[] {
@@ -23,7 +23,7 @@ export function readable(snippet: string): string {
   return snippet.replaceAll('**', '').replaceAll('`', '');
 }
 
-/** A snippet cut around every match of what was typed, so the match can be marked; case does not count. */
+/** A snippet cut around every match of what the person typed, so the match can be marked; case does not count. */
 export function marked(text: string, query: string): Array<{ text: string; match: boolean }> {
   const wanted = query.trim().toLowerCase();
   if (!wanted) return [{ text, match: false }];

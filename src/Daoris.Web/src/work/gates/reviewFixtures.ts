@@ -1,7 +1,7 @@
 import type { Quest, QuestSetUp } from '../../data/api';
 import { aQuest } from '../../quests/aQuest';
 
-// A review's records as the host answers them (REVIEWENV1g): a chain's work quest and its set-up step in each state the gate
+// A review's records as the host answers them: a chain's work quest and its set-up step in each state the gate
 // reads, for the stories and the tests. Neutral names only.
 
 /** The chain's work: done, in a repository whose rule asks for a review in `local`. */

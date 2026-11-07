@@ -14,24 +14,24 @@ type Showing = 'file' | 'changes';
 const NUMBER = 'w-[1%] select-none whitespace-nowrap border-l-2 px-1.5 text-right align-top';
 
 /**
- * One file, read-only, in the side bar (PREVIEW1, D111): what a tool card or the review named, read
+ * One file, read-only, in the side bar: what a tool card or the review named, read
  * without leaving the window.
  *
  * @remarks
- * **A preview, never an editor** (D55): no caret, no save, nothing that writes. The file is the disk's,
- * as it is now, named relative to its tree — never the machine's path (platform language §4).
+ * **A preview, never an editor**: no caret, no save, nothing that writes. The file is the disk's,
+ * as it is now, named relative to its tree — never the machine's path.
  *
- * **Line-numbered and highlighted in its language**, where the highlighter ships it (REVIEW2), a whole
+ * **Line-numbered and highlighted in its language**, where the highlighter ships it, a whole
  * file at once so what spans lines is coloured on each. A language it does not know is shown plain.
  *
  * **The lines a tool call named are marked and scrolled to**, where the card knew them: a bar beside
- * their numbers and a wash across them, and a sentence saying which — never the hue alone (D41 §6).
+ * their numbers and a wash across them, and a sentence saying which — never the hue alone.
  *
  * **Every other state is a sentence**: reading, the host's refusal as it said it, a binary file with its
  * size, an empty file, and the bound — how much the file holds and that the disk has the rest.
  *
  * **The file's changes are the review's own patch**, where the review holds one: one press away, drawn
- * by `PatchView`, and never a second diff (D111).
+ * by `PatchView`, and never a second diff.
  *
  * A molecule: the file arrives as props, and the one state it owns is which of the two it shows.
  */
@@ -164,7 +164,7 @@ export function FilePreview({ path, file, pending = false, refusal, lines, patch
         </div>
       )}
 
-      {/* Once a landing tidied the tree away, the file is the landed branch's copy (REVIEW2, D113), said in words. */}
+      {/* Once a landing has tidied the tree away, the file is the landed branch's copy, said in words. */}
       {file?.branch && !pending && !refusal && (
         <p className="m-0 shrink-0 border-b border-line px-3 py-1 text-meta text-ink-faint [overflow-wrap:anywhere]">
           <Inline text={t('work.preview.fromBranch', { branch: file.branch })} />
@@ -173,7 +173,7 @@ export function FilePreview({ path, file, pending = false, refusal, lines, patch
 
       <div className="min-h-0 flex-1 overflow-auto">{body}</div>
 
-      {/* The bound is stated, never hidden (design §5) — and where the rest is: the disk, or the landed branch. */}
+      {/* The bound is stated, never hidden — and where the rest is: the disk, or the landed branch. */}
       {file?.truncated && !file.binary && shown === 'file' && (
         <p className="m-0 shrink-0 border-t border-line px-3 py-2 text-meta text-ink-faint">
           {t(file.branch ? 'work.preview.truncatedBranch' : 'work.preview.truncated', { size: size(file.size), count: rows.length })}

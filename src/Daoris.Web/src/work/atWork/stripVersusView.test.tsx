@@ -7,7 +7,7 @@ import { AtWorkView } from './AtWorkView';
 import { answerOf } from './atWork.fixtures';
 import type { AtWorkHeld } from './types';
 
-// COWORKVIEW1a rule 17: the view's parts are the strip's set and order, each with its record's own state; the strip's derived
+// The view's parts are the strip's set and order, each with its record's own state; the strip's derived
 // word (the reader's grouping) is deliberately not the view's.
 
 afterEach(async () => {
@@ -45,7 +45,7 @@ describe('the strip and the view over one entry', () => {
     expect(view[1]).not.toContain('awaiting helper');
   });
 
-  // COWORKVIEW1b-i: every part the strip draws waiting the view draws waiting and unfolded, worded as the rail words it.
+  // Every part the strip draws waiting the view draws waiting and unfolded, worded as the rail words it.
   it('draws every part the strip draws waiting as waiting, listed and never among the earlier parts', () => {
     const entry = {
       ...APP,

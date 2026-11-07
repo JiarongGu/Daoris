@@ -5,7 +5,7 @@ import { Button } from '../../design/ui';
 export type TerminalHeld = { asker?: { process?: string | null; pid?: number | null } | null };
 
 /**
- * A conversation a terminal holds (RPC1g1, D238 point 2, the terminal-conversation design §3.1): said on its head with the terminal's
+ * A conversation a terminal holds: said on its head with the terminal's
  * process, and the person's door to take it back.
  *
  * @remarks

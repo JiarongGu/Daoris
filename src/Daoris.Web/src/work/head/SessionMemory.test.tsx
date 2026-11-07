@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { type MemoryRow, SessionMemory } from './SessionMemory';
 
-// KNOWCENTRAL2e (the memory coordinator design §1, §4): a session's memory changes on its page, the person deciding its waits.
+// A session's memory changes on its page, the person deciding its waits.
 
 const row = (over: Partial<MemoryRow> & { id: string; kind: string }): MemoryRow => {
   const { kind, ...rest } = over;

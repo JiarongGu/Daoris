@@ -5,7 +5,7 @@ import '../../locales/i18n';
 import type { Command } from '../../menus/commands';
 import { CommandPalette } from './CommandPalette';
 
-// The widget half of SURF9. What is IN the list is the registry's job and is tested there; this is
+// The widget half of the palette. What is IN the list is the registry's job and is tested there; this is
 // about the keyboard, the selection, and the promise that pressing Enter runs the thing you can see.
 
 const command = (id: string, title: string, run = vi.fn()): Command =>
@@ -60,7 +60,7 @@ describe('the command palette', () => {
     expect(onClose.mock.invocationCallOrder[0]).toBeLessThan(run.mock.invocationCallOrder[0]);
   });
 
-  // IME1: a question typed through an input method is composed, and accepting its candidate runs nothing, moves
+  // A question typed through an input method is composed, and accepting its candidate runs nothing, moves
   // nothing and closes nothing.
   it('leaves a composing press to the input method: no run, no move, no close', () => {
     const quests = command('go.quests', 'Quests');
@@ -144,7 +144,7 @@ describe('the command palette', () => {
     expect(input.getAttribute('aria-activedescendant')).toBe('palette-go.overview');
   });
 
-  // DOCK1d: the command center's one question — what is typed can be asked of Ask Daoris.
+  // The command center's one question — what is typed can be asked of Ask Daoris.
   it('offers to ask Ask Daoris what was typed, last and set apart, and asks on Enter', async () => {
     const onAsk = vi.fn();
     const onClose = vi.fn();

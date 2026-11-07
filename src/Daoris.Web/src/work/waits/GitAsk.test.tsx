@@ -6,7 +6,7 @@ import { waitsOf } from './waits';
 import { GitAsk, gitAsksFor, type GitAskRow } from './GitAsk';
 import type { Session } from '../../data/api';
 
-// GITAUTH1f (the git auth design §6.6, §7.4): a git go-ahead drawn on its session's head and foot, from the same pushed rows the band
+// A git go-ahead drawn on its session's head and foot, from the same pushed rows the band
 // draws, answered Allow or Refuse through the one door the frame builds.
 
 const ASK: GitAskRow = {

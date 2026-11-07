@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import '../../locales/i18n';
 import { ConversationFind } from './ConversationFind';
 
-// SESS1 S9: the way through a long run — the jumps and the search — props in, presses out.
+// The way through a long run — the jumps and the search — props in, presses out.
 
 const draw = (props: Partial<Parameters<typeof ConversationFind>[0]> = {}) => {
   const calls = { failure: vi.fn(), words: vi.fn(), query: vi.fn(), step: vi.fn() };
@@ -53,7 +53,7 @@ describe('the way through a long run', () => {
     expect(calls.step.mock.calls).toEqual([[1], [-1], [1], [-1]]);
   });
 
-  // IME1: words found through an input method are composed, and the Enter that accepts a candidate steps nowhere.
+  // Words found through an input method are composed, and the Enter that accepts a candidate steps nowhere.
   it('steps nowhere on an Enter an input method is composing with', () => {
     const calls = draw({ query: '闸门', hits: 3, at: 0 });
     const box = screen.getByRole('searchbox', { name: 'find in this session' });

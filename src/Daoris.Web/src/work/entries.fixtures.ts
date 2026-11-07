@@ -3,7 +3,7 @@ import { aQuest } from '../quests/aQuest';
 import type { SessionGrouping } from './groups';
 import type { EntryPart, SessionEntry } from './entries';
 
-// The install's evidence of 2026-10-14 as the page now reads it (D167, SESSONE1c), with neutral names: two asks, one of
+// The install's evidence of 2026-10-14 as the page reads it, with neutral names: two asks, one of
 // them over an app and its database, which the list showed as eleven records and which are three lines of work. Shared by
 // the rail's tests, the strip's, the ask page's and the stories.
 

@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { rowRun } from './attention';
 import { type Attention, AttentionRow } from './AttentionRow';
 
-// WORKFLOW1c (the workflow design §7): *What needs you*'s row for a step that waits on the person opens that step, in the run of
+// *What needs you*'s row for a step that waits on the person opens that step, in the run of
 // the session it names or its quest's newest here. A row that is no step of a run has no such door.
 
 const row = (over: Partial<Attention> & Pick<Attention, 'kind'>): Attention => ({

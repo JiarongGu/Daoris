@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HELP_REPOSITORY } from '../../data/api';
 import { CHOSEN_START, keepChosen, keepRecent, MAX_RECENT, mergeRecent, readChosen, readRecent, RECENT_STARTS, withRecent } from './startRecent';
 
-/** What this machine remembers of its starts (NEW1b, the entry design §1): the picker's *Recent*, and the one last chosen. */
+/** What this machine remembers of its starts: the picker's *Recent*, and the one last chosen. */
 describe('the starts this machine remembers', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -17,7 +17,7 @@ describe('the starts this machine remembers', () => {
     expect(withRecent(many, 'f')).toHaveLength(MAX_RECENT);
   });
 
-  /** NEW1f: Recent is where the person has been, not only what the composer started. */
+  /** Recent is where the person has been, not only what the composer started. */
   it('merges this machine’s own sessions into the starts, newest first, one a repository, five at most', () => {
     const row = (repository: string, updated: string, id = `${repository}-1`) => ({ id, repository, updated });
     // The dates are parsed, not compared as text: +02:00 is earlier than its text suggests.

@@ -10,7 +10,7 @@ import { PartsFold } from './PartsFold';
 // The canvas toolbar's tooltips need the provider the app shell holds.
 const render = (ui: React.ReactElement) => plain(ui, { wrapper: Tooltip.Provider });
 
-// HEADFIT1 (the UI/UX design §3.7 and R4, the UX7 design §6.2): the parts' flowchart cost 339 to 484 px above the conversation, more
+// The parts' flowchart cost 339 to 484 px above the conversation, more
 // than the whole budget, so the page folds it to one line (how many parts, which the page is on, how the newest began) and opens it
 // in place. jsdom lays nothing out, so the pane's width is stood in for as `PartsFlow.test.tsx` does; the line's own height is the
 // measured check's (`measured/head.spec.ts`).

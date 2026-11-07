@@ -1,5 +1,5 @@
-// The frame's geometry (FRAME6, then D118): the reference console's field-tested numbers (components plan
-// §3a), decided in one pure function from the frame's width and what the person chose. Pure, so every
+// The frame's geometry: the reference console's field-tested numbers,
+// decided in one pure function from the frame's width and what the person chose. Pure, so every
 // width a window can be is an ordinary assertion, and the frame only measures and renders.
 
 /** A list pane's bounds: the least and the most it is dragged to, and the width it starts at. */
@@ -8,15 +8,15 @@ export type ListBounds = { min: number; max: number; initial: number };
 const LIST_WIDE: ListBounds = { min: 264, max: 420, initial: 280 };
 
 /**
- * Each view's list pane (D118 §3a), one table: FRAME6's 264–420 px, 280 to start, for every list but
+ * Each view's list pane, one table: 264–420 px, 280 to start, for every list but
  * Settings', whose rows are single names (its 11 rem). A view that is absent here has no list: Overview
- * and Map (D118 §4).
+ * and Map.
  *
- * The monitor window's rail is a list of its own (D118 §4, FRAME1h): the session list, live, so its bounds
+ * The monitor window's rail is a list of its own: the session list, live, so its bounds
  * are Sessions', and what it remembers is the monitor's rather than the main window's.
  *
- * Knowledge's pane is one (UX6i, D150 §2.2): its bounds, its closing and its width are the place's. Search and Convergence
- * are its two modes, each still a list's memory, its chosen item and its filters under the keys it had as a place, and
+ * Knowledge's pane is one: its bounds, its closing and its width are the place's. Search and Convergence
+ * are its two modes, each still a list's memory, its chosen item and its filters under the keys it has as a place, and
  * their bounds are Knowledge's, since that is the pane they are drawn on.
  */
 export const LIST_BOUNDS = {
@@ -27,7 +27,7 @@ export const LIST_BOUNDS = {
   search: LIST_WIDE,
   convergence: LIST_WIDE,
   agents: LIST_WIDE,
-  // The Agents place's Roles mode (COMPANYVIEW1b): its sections are a list's memory under this key, the pane's bounds, closing and width the place's.
+  // The Agents place's Roles mode: its sections are a list's memory under this key, the pane's bounds, closing and width the place's.
   roles: LIST_WIDE,
   plugins: LIST_WIDE,
   settings: { min: 176, max: 320, initial: 176 },
@@ -54,8 +54,8 @@ export type ListChoice = {
   width: number | null;
   closed: boolean;
   /**
-   * The person opened a strip the window drew (D118 §3a), or a go brought a group of the list into view
-   * (ENTRY1g), so the list lies over the main area. Never remembered: it closes on a choice, on Escape and
+   * The person opened a strip the window drew, or a go brought a group of the list into view,
+   * so the list lies over the main area. Never remembered: it closes on a choice, on Escape and
    * on a press outside it.
    */
   over: boolean;
@@ -63,11 +63,11 @@ export type ListChoice = {
 
 /** What the person chose. The closings are theirs alone. */
 export type FramePrefs = {
-  /** The view's list, or null where the view has none (DOCK1a; D118 §4), which leaves no strip either. */
+  /** The view's list, or null where the view has none, which leaves no strip either. */
   list: ListChoice | null;
   /**
-   * The dock's share of the window, once dragged (LAYOUT1). Never pixels: a width kept in pixels
-   * stayed the same while the window grew, and read as a pane stuck at a small size. A list keeps
+   * The dock's share of the window, once dragged. Never pixels: a width kept in pixels
+   * stays the same while the window grows, and reads as a pane stuck at a small size. A list keeps
    * pixels, because a list is as wide as its rows and its bounds say so.
    */
   dockShare: number | null;
@@ -79,7 +79,7 @@ export type FramePrefs = {
 /**
  * - `open`: beside the main area, at its width.
  * - `strip`: its 56 px strip, closed by the person or drawn by the window.
- * - `over`: a strip the window drew, opened, or any strip a go opened (ENTRY1g): the list lies over the main area,
+ * - `over`: a strip the window drew, opened, or any strip a go opened: the list lies over the main area,
  *   beside the strip.
  */
 export type ListMode = 'open' | 'strip' | 'over';
@@ -110,19 +110,19 @@ export type FrameLayout = {
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 /**
- * The view's list in a frame `frame` wide, beside a side bar that takes `sideBar` (D118 §3a).
+ * The view's list in a frame `frame` wide, beside a side bar that takes `sideBar`.
  *
  * @remarks
- * **By room, never by a fixed width.** FRAME6 drew the rail as a strip below 1024 px, which kept it a
+ * **By room, never by a fixed width.** A strip below 1024 px would keep the rail a
  * strip at 900 px with the side bar closed and 540 px free beside it, and would strip Settings' 176 px
  * list where it fits. So the list is a strip when, at its width, the main area would fall below its floor
  * beside the side bar as it stands. It gives way before the side bar does, because its strip keeps its
  * doors.
  *
- * A browser's frame asks it with no side bar at all (D118 §4): its view keeps its list and its main area,
+ * A browser's frame asks it with no side bar at all: its view keeps its list and its main area,
  * and never the side bar.
  *
- * **A strip the person closed is laid over only for a go** (ENTRY1g, D161's ENTRY1b note): a go to a group of the list
+ * **A strip the person closed is laid over only for a go**: a go to a group of the list
  * lays it over the main area, room or none, since opening it beside would undo their closing. Their own open still
  * undoes it (`listToggled`), and laying over is never remembered, so the strip is theirs again once it goes.
  */
@@ -166,9 +166,9 @@ export function frameLayout(viewport: number, frame: number, prefs: FramePrefs):
 }
 
 /**
- * What a toggle of the list asks for (D118 §3a), from any of its four doors: an open list closes, the
- * person's; one laid over the main area is dismissed, its closing left as it was (`closed` absent), since a
- * go lays over a strip the person closed (ENTRY1g); a strip opens — beside where there is room, and over the
+ * What a toggle of the list asks for, from any of its four doors: an open list closes, the
+ * person's; one laid over the main area is dismissed, its closing left as it is (`closed` absent), since a
+ * go lays over a strip the person closed; a strip opens — beside where there is room, and over the
  * main area where the window drew it for want of room.
  */
 export function listToggled(list: Pick<ListLayout, 'mode'>): { closed?: boolean; over: boolean } {

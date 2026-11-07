@@ -5,7 +5,7 @@ import type { NotePart } from '../data/api';
 import { code } from '../test/code';
 import { Note } from './Note';
 
-// Props-only, like every molecule here (LANG1b, D142; the language design §2, §5, §6): the coded parts in both languages,
+// Props-only, like every molecule here: the coded parts in both languages,
 // a split note with the agent's question, a code the page does not know, and a record with no parts are each reached
 // by passing them.
 

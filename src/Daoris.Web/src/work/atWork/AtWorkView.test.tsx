@@ -9,7 +9,7 @@ import {
   BOUND, CODEX, CODEX_NONE, ELSEWHERE, EMPTY, FAILED, IDS_ONLY, LOST, NOW, PARTS, READING, STALE, THREE, TURN_WAITS, UNCERTAIN, UNREADABLE,
 } from './atWork.fixtures';
 
-// COWORKVIEW1a: who is at work, drawn from the read's answer (the cowork view design §5.2, rules 15 to 19).
+// Who is at work, drawn from the read's answer.
 
 describe('who is at work on a session', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });

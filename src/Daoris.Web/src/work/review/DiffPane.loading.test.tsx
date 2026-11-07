@@ -5,14 +5,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { Session } from '../../data/api';
 
-// REVIEW4: the review while git reads, over a slow mocked bridge. Its frame and skeleton stand at once and the words
+// The review while git reads, over a slow mocked bridge. Its frame and skeleton stand at once and the words
 // say for how long after a moment; each refusal is worded with the person's next move; an ended session's second open
 // is served from the cache while a live one's reads again behind the last answer; and leaving stops the wait without
 // throwing away what the host answers after.
 
 const { invoke, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
-  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  // The state hub's ear: what the mocked shell publishes after a press reaches it, as the kit's pump would.
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
@@ -305,7 +305,7 @@ describe('the review while git reads (REVIEW4)', () => {
   /**
    * A kept answer stands until something moves the tree: the clean-up removes trees and bringing up to date replays
    * them, so either press reads every kept review again rather than leaving acts on a tree that is gone. The state hub asks it,
-   * from what the route declares it changed, as in every window (STATEHUB1f, D169 point 6).
+   * from what the route declares it changed, as in every window.
    */
   const presses: [name: string, route: string, press: () => { mutateAsync: (only: string[]) => Promise<unknown> }][] = [
     ['the clean-up', 'SWEEP', () => useSweep()],
@@ -329,7 +329,7 @@ describe('the review while git reads (REVIEW4)', () => {
     await waitFor(() => expect(diffs()).toHaveLength(2));
   });
 
-  /** LAND3b: discarding a session branch takes its tree where it still has one, so it reads every kept review again too. */
+  /** Discarding a session branch takes its tree where it still has one, so it reads every kept review again too. */
   it('reads a kept review again after a session branch is discarded', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;

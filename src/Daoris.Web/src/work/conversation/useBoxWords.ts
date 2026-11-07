@@ -19,7 +19,7 @@ import type { Refusal, useWords } from './useWords';
 type Box = ReturnType<typeof useAttendedBox>;
 
 /**
- * The words through the box at the foot and a park's card (MSG1f, PARKVIEW1, PARKANSWER1): a running door's word, a park's
+ * The words through the box at the foot and a park's card: a running door's word, a park's
  * answer with the choice selected in its question, its go-aheads, its finish or decline, and words said as it winds up,
  * each through the one say door and judged before anything is sent.
  */
@@ -42,11 +42,11 @@ export function useBoxWords({
 }) {
   const { sending, say, counted, untaken, stillTaking, nowSaid } = words;
   const resolve = useResolveSession();
-  // The person's done on the quest a finish at a checkpoint leaves (QUESTCLOSE1): the service's own door for it.
+  // The person's done on the quest a finish at a checkpoint leaves: the service's own door for it.
   const personDone = usePersonDone();
   const parkGoAhead = useParkGoAhead();
-  // QUESTIONUI1a (the supervisor design §8.4): the answer selected in the park's question, the frame's beside the draft, in memory, so a
-  // reload starts with none and the words kept. Drawn selected only on the question it was selected on: a replaced question is drawn
+  // The answer selected in the park's question, the frame's beside the draft, in memory, so a
+  // reload starts with none and the words kept. Drawn selected only on the question it is selected on: a replaced question is drawn
   // with none, so a kept label never answers a question the park no longer asks.
   const [parkChoice, setParkChoice] = useState<{ session: string; question: string; label: string } | null>(null);
   const parkPicked = attended && answering && question && parkChoice?.session === attended.id && parkChoice.question === question.id
@@ -54,17 +54,17 @@ export function useBoxWords({
   const onParkPick = (label: string | null) => {
     setParkChoice(label !== null && attended && question ? { session: attended.id, question: question.id, label } : null);
   };
-  // Words said as the attended session winds up, held for its record to end (D137 §2.1), shown above its box until then.
+  // Words said as the attended session winds up, held for its record to end, shown above its box until then.
   const [ending, setEnding] = useState<{ session: string; words: string[] } | null>(null);
   useEffect(() => {
     if (!attended || ending?.session !== attended.id || !SESSION_ACTIVE.has(attended.state)) setEnding(null);
   }, [attended, ending?.session]);
 
-  // A door that takes fewer characters at once than these says so before anything is sent, and the words stay in the box
-  // (D137 §2.4): a driven session on the native door, whose resumed run takes them as one argument.
-  // Why these words are not sent, or null: the box's refusal and the card's alike (PARKANSWER1).
+  // A door that takes fewer characters at once than these says so before anything is sent, and the words stay in the box:
+  // a driven session on the native door, whose resumed run takes them as one argument.
+  // Why these words are not sent, or null: the box's refusal and the card's alike.
   const unaccepted = (text: string): string | null => {
-    // PARKVIEW1 (the park's ask design §4): where its question waits beside go-aheads still open, the go-aheads come first, each
+    // Where its question waits beside go-aheads still open, the go-aheads come first, each
     // keeping the park for this answer, which then sends it on with them; the words stay in the box, said why.
     if (attended && answering && question && openGoAheads(goAheads).length > 0) return t('work.park.goAheadsFirst');
     if (!attended || !tooLong(text, { door: doorOf(attended.door, roster), kind: attended.kind })) return null;
@@ -75,13 +75,13 @@ export function useBoxWords({
     if (why && attended) setRefusal({ session: attended.id, text: why });
     return why === null;
   };
-  // The box's judge (QUESTIONUI1a): its words with the answer selected, as they would go; refused alike for a choice and free words while
-  // the question's go-aheads are open, through Enter and *Send* (Codex's round-2 finding 14).
+  // The box's judge: its words with the answer selected, as they would go; refused alike for a choice and free words while
+  // the question's go-aheads are open, through Enter and *Send*.
   const boxAccepts = (text: string) => accepts(parkPicked ? choiceWords(parkPicked, text) : text);
 
   const onSay = (text: string, level?: Level) => {
     if (!attended || box.kind === 'none' || box.kind === 'line' || box.kind === 'chat') return;
-    // QUESTIONUI1a: the box's *Send* with an answer selected sends it, then the words, naming its question.
+    // The box's *Send* with an answer selected sends it, then the words, naming its question.
     if (parkPicked && question) { onChoice(parkPicked, question.id, text); return; }
     if (!text) return;
     const session = attended.id;
@@ -112,11 +112,11 @@ export function useBoxWords({
     });
   };
 
-  // The person's answer to a parked session (design §4). The refusal — a move that is not theirs,
+  // The person's answer to a parked session. The refusal — a move that is not theirs,
   // a decline with nothing in it — is the host's own sentence and reaches them word for word.
-  // A finish that closes its quest (QUESTCLOSE1) sends the person's done once the finish stood: the session first, as the
+  // A finish that closes its quest sends the person's done once the finish stood: the session first, as the
   // driver moves the process before the record, then the quest, whose refusal is the service's sentence, the finish kept.
-  // The ask the finish or decline was pressed in hears how the session's move ended (UXFIX2b2b): the refusal is said inside
+  // The ask the finish or decline is pressed in hears how the session's move ended: the refusal is said inside
   // it, and it closes once the session landed, the quest's done being its own notice.
   const onResolve = (state: Resolution, note: string | null, close?: QuestClose, answered?: Answered) => {
     if (!attended) return;
@@ -136,9 +136,9 @@ export function useBoxWords({
     });
   };
 
-  // PARKANSWER1 (the owner report, 2026-10-23): a park's card answers it through the box's own say door (MSG1f), the one door that
-  // answers a park (ONEWAY1k), and as the box would (its refusals, a question changed under the page, words on their way). A choice
-  // names its question (PARKVIEW1). Settles with the sentence a refusal is said in, for the card to say beside its words.
+  // A park's card answers it through the box's own say door, the one door that
+  // answers a park, and as the box would (its refusals, a question changed under the page, words on their way). A choice
+  // names its question. Settles with the sentence a refusal is said in, for the card to say beside its words.
   const sayFromCard = (text: string, choice?: { label: string; question: string }) => new Promise<string | null>((settle) => {
     if (!attended) { settle(null); return; }
     const why = unaccepted(text);
@@ -156,7 +156,7 @@ export function useBoxWords({
         notify(choice ? t('work.park.chose', { label: choice.label }) : t('work.awaiting.answered'));
         settle(null);
       },
-      // A send the page stopped waiting on may still land (SENDLOST1b): it is shown on its way, so it leaves the card.
+      // A send the page stopped waiting on may still land: it is shown on its way, so it leaves the card.
       onError: (error: unknown) => settle(stillTaking(n, error) ? null : sentence(error)),
     });
   });
@@ -164,13 +164,13 @@ export function useBoxWords({
   const choiceFromCard = (label: string, words: string) =>
     (question ? sayFromCard(choiceWords(label, words), { label, question: question.id }) : Promise.resolve(null));
 
-  // A go-ahead the park asked, answered on its page (KNOWUSE1a2, D135 §2): through one door, which sends the same session
-  // on once none of the go-aheads it asked is open, as the ask's page does (GOAHEAD2b). The person's words are the
+  // A go-ahead the park asked, answered on its page: through one door, which sends the same session
+  // on once none of the go-aheads it asked is open, as the ask's page does. The person's words are the
   // go-ahead's, never a message to the park, so nothing is counted as one; the toast names any go-ahead still open from the
   // list as it stood at the press.
-  // A refusal is said beside the go-ahead that was answered (UXFIX2b3b), not toasted.
-  // PARKVIEW1 (the park's ask design §4): where the park's question waits unanswered, a go-ahead keeps the park for that answer
-  // (`goesOn: false`, GOAHEAD2's provision for a caller that answers the park itself), which then sends it on with them all.
+  // A refusal is said beside the go-ahead that is answered, not toasted.
+  // Where the park's question waits unanswered, a go-ahead keeps the park for that answer
+  // (`goesOn: false`, for a caller that answers the park itself), which then sends it on with them all.
   const onGoAhead: GoAheadAnswer = (number, approved, words, answered) => {
     if (!attended || !parkAsk) { answered.done(); return; }
     const sessionQuest = attended.quest;
@@ -181,8 +181,8 @@ export function useBoxWords({
     });
   };
 
-  // PARKVIEW1 (the park's ask design §4): a press in the park's box takes the box's words with it. They leave the box only once the
-  // door kept them, and only where it still begins with them, so words typed while the press was on its way stay; a refusal is said
+  // A press in the park's box takes the box's words with it. They leave the box only once the
+  // door kept them, and only where it still begins with them, so words typed while the press is on its way stay; a refusal is said
   // in the box, the words kept.
   const onBoxGoAhead = (number: number, approved: boolean) => {
     if (!attended) return;
@@ -194,7 +194,7 @@ export function useBoxWords({
       refused: (said) => setRefusal({ session, text: said }),
     });
   };
-  // One of the answers its question offered, selected (QUESTIONUI1a): its label, then the words the box's *Send* took, as the park's answer
+  // One of the answers its question offered, selected: its label, then the words the box's *Send* took, as the park's answer
   // through the box's one door, naming the question so a label never answers one the park no longer asks (`question-changed`). The
   // box has let its words go: a refusal gives them back with the selection kept; a question changed keeps the words and draws the new
   // one with none selected, as its id is another.
@@ -218,7 +218,7 @@ export function useBoxWords({
         notify(t('work.park.chose', { label }));
       },
       onError: (error: unknown) => {
-        // A send the page stopped waiting on may still land (SENDLOST1b): its words are shown on their way, so they stay out of the box.
+        // A send the page stopped waiting on may still land: its words are shown on their way, so they stay out of the box.
         if (stillTaking(n, error)) return;
         giveBack();
         setRefusal({ session, text: sentence(error) });

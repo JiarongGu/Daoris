@@ -5,7 +5,7 @@ import { aQuest } from '../../quests/aQuest';
 import type { SessionGrouping } from '../groups';
 import { leadingAgentOf, nextPress, questFacts, sessionFacts, sessionFactsTip } from './headFacts';
 
-// The facts line under a head's title (UX7c, D152 §7; the UX7 design §5.2, §5.3): the facts a record's state makes
+// The facts line under a head's title: the facts a record's state makes
 // matter, each said once. The clock is held, so every span reads the same on every run.
 
 const NOW = new Date('2026-10-05T10:00:00Z');
@@ -26,7 +26,7 @@ const quest = (over: Partial<Quest> = {}): Quest => aQuest({
 
 const t = i18n.t.bind(i18n);
 
-/** A shell call's title as the driver names it (RAILLINE1): the whole command, many statements, past 300 characters. */
+/** A shell call's title as the driver names it: the whole command, many statements, past 300 characters. */
 const LONG_COMMAND = 'cd src/Daoris.Web && npm ci --no-audit --no-fund && npx vitest run src/work/rail/SessionRow.test.tsx '
   + 'src/work/head/headFacts.test.ts --reporter=verbose; dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests '
   + '--filter "FullyQualifiedName~RunningCallsTests|FullyQualifiedName~SessionLookTests" --no-build; git status --short && '
@@ -41,7 +41,7 @@ describe('a session’s facts line', () => {
       .toEqual(['engine', '2m']);
   });
 
-  /** WAITSHOWN1: a working session whose agent has not answered says so, with when it was asked, after its age and attempt. */
+  /** A working session whose agent has not answered says so, with when it is asked, after its age and attempt. */
   it('says a working session has no answer yet, and when it was asked', () => {
     const since = '2026-10-05T09:49:00Z';
     const [repository, age, waiting] = sessionFacts(t, { session: session(), shown: 'working', waitingSince: since });
@@ -53,7 +53,7 @@ describe('a session’s facts line', () => {
   });
 
   /**
-   * AGENTERRORS1a2 (D210 §5.1, §8): a working session whose provider failed says when Daoris tries again, while that is still ahead,
+   * A working session whose provider failed says when Daoris tries again, while that is still ahead,
    * in place of the first answer's wait it explains; nothing once past, and in Chinese with 重试.
    */
   it('says a working session is trying again at its next try while it waits, and nothing once that is past', async () => {
@@ -67,7 +67,7 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', retrying })[2]).toMatch(/^将于 .+ 重试$/);
   });
 
-  /** INTEGRATE1h (the integration design §5.8): its unit's integration state is one fact after the repository, in both languages, in any state. */
+  /** Its unit's integration state is one fact after the repository, in both languages, in any state. */
   it('says its unit’s integration state after the repository, and nothing where none was asked', async () => {
     expect(sessionFacts(t, { session: session({ state: 'failed' }), shown: 'failed', integration: { state: 'held', line: 'main' } })[1])
       .toBe('held for main');
@@ -77,7 +77,7 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', integration: { state: 'handed-back', line: 'main' } })[1]).toBe('已从 main 打回');
   });
 
-  /** REVIEWFLOW1b (the review-flow design §1): *now* leads the facts after the repository, one word for the phase the driver's facts show. */
+  /** *now* leads the facts after the repository, one word for the phase the driver's facts show. */
   it('says where the work stands, once, by the phase the driver’s facts show', async () => {
     const flow = { parts: 0, landing: false };
     expect(sessionFacts(t, { session: session(), shown: 'working', flow })).toEqual(['engine', 'working', '2m']);
@@ -90,7 +90,7 @@ describe('a session’s facts line', () => {
       .toEqual(['engine', 'being integrated into main', '2m']);
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', flow, branch: { kind: 'landed', where: 'main' } as never })
       .filter((fact) => /land/.test(fact))).toEqual(['landed on main']);
-    // Without the flow the line is what it was.
+    // Without the flow the line says nothing of the phase.
     expect(sessionFacts(t, { session: session(), shown: 'working' })).toEqual(['engine', '2m']);
     await i18n.changeLanguage('zh');
     expect(sessionFacts(t, { session: session(), shown: 'working', flow })[1]).toBe('进行中');
@@ -106,7 +106,7 @@ describe('a session’s facts line', () => {
     expect(nextPress([{ kind: 'discard' }])).toBeNull();
   });
 
-  /** WAITSAY1: a working session inside a long call names it and says for how long. */
+  /** A working session inside a long call names it and says for how long. */
   it('says a working session is running a call, and for how long', () => {
     const calling = { title: 'npm test', since: '2026-10-05T09:40:00Z' };
     const facts = sessionFacts(t, { session: session(), shown: 'working', calling });
@@ -115,7 +115,7 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session({ state: 'completed' }), shown: 'completed', calling }).join()).not.toMatch(/running npm/);
   });
 
-  /** COWORKVIEW1a rule 18 (the cowork view design §3.7): who works with a session and when it was last heard, giving way to *quiet*. */
+  /** Who works with a session and when it is last heard, giving way to *quiet*. */
   it('says how many work with a working session and when it was last heard, and quiet in its place once the watcher marks it', async () => {
     const heard = '2026-10-05T09:59:00Z';
     const calling = { title: '', since: heard, heard };
@@ -155,8 +155,8 @@ describe('a session’s facts line', () => {
   });
 
   /**
-   * WAITSAY1b: where the page holds none of the call's events (begun before the window opened, or past the history's page), the
-   * head says the call the driver heard, from the row's reader. RAILLINE1: the head and the row read that one source wherever the
+   * Where the page holds none of the call's events (begun before the window opened, or past the history's page), the
+   * head says the call the driver heard, from the row's reader. The head and the row read that one source wherever the
    * reader answered, so the two never say different calls; the record read here speaks only where no reader carries a call.
    */
   it('says the call the driver heard, the row’s, before the record read here', () => {
@@ -173,7 +173,7 @@ describe('a session’s facts line', () => {
   });
 
   /**
-   * RAILLINE1: a shell call's title is its whole command, which wrapped the head's facts line to three lines on the install. The
+   * A shell call's title is its whole command, which can wrap the head's facts line to three lines. The
    * line says it in at most 40 characters, the row's same head; the tip says the line with the command whole.
    */
   it('says a long call in a few words, whole in the line’s tip', async () => {
@@ -208,7 +208,7 @@ describe('a session’s facts line', () => {
     expect(sessionFacts(t, { session: session(), shown: 'working', grouping: unnamed }).at(-1)).toBe('一个工具调用等你答复，已 5 分钟');
   });
 
-  /** The install's fourth try, three failed before it, was the fourth line of a strip in mono; the head says it. */
+  /** A fourth try, three failed before it: the head says it. */
   it('says a working session is another try, and how many failed before it', () => {
     expect(sessionFacts(t, { session: session({ profile: 'account-1' }), shown: 'working', grouping: grouping({ strikes: 3 }) }))
       .toEqual(['engine', '2m', 'attempt 4: the 3 before it failed']);
@@ -216,7 +216,7 @@ describe('a session’s facts line', () => {
       .toEqual(['engine', '2m', 'attempt 2: the one before it failed']);
   });
 
-  /** The account is *Details*' (ACCTNAME1 names it there), whoever it is and however it signed in. */
+  /** The account is *Details*', whoever it is and however it signed in. */
   it('leaves the account to Details, named or on the tool’s own sign-in', () => {
     const nameOf = () => 'work';
     expect(sessionFacts(t, { session: session({ profile: 'acct-3f9c1a2b' }), shown: 'working', nameOf })).toEqual(['engine', '2m']);
@@ -224,7 +224,7 @@ describe('a session’s facts line', () => {
   });
 
   /**
-   * SESSCTX1d (the session-context design §7): the head shows the agent its line's leading part runs on, where its parts ran on
+   * The head shows the agent its line's leading part runs on, where its parts ran on
    * more than one agent, by the roster's name; a line on one agent, a record alone and a leading part not held say none.
    */
   it('says the agent the line is on now where its parts moved between agents, in both languages', async () => {
@@ -238,8 +238,8 @@ describe('a session’s facts line', () => {
     expect(leadingAgentOf({ leading: 'p1', parts: [{ session: 'p1' }] } as never, moved, roster)).toBeNull();
     expect(leadingAgentOf(null, moved, roster)).toBeNull();
 
-    // AGENTPROVIDER1 s-vii: counted by agent. A line moved between one agent's two doors is on one agent, as the roster's sheet says;
-    // before, each door was counted as an agent, which a roster with no sheet still reads.
+    // Counted by agent. A line moved between one agent's two doors is on one agent, as the roster's sheet says;
+    // a roster with no sheet still counts each door as an agent.
     const sheets = [
       { id: 'claude-code', doors: [{ door: 'claude-code', transport: 'native' as const, rows: [] }, { door: 'claude-code-acp', transport: 'protocol' as const, rows: [] }] },
       { id: 'codex', doors: [{ door: 'codex-acp', transport: 'protocol' as const, rows: [] }] },
@@ -268,8 +268,8 @@ describe('a session’s facts line', () => {
   });
 
   /**
-   * LIMITSWITCH1 (D137's note of 2026-10-25): the page's head says a held record's wait in D206 §3.7's words, its time and the account
-   * that resets first, in both languages, where it said only that the record completed.
+   * The page's head says a held record's wait as a limit's wait, its time and the account
+   * that resets first, in both languages, not only that the record completed.
    */
   it('says a held record’s wait as a limit’s wait, its account and time, in both languages', async () => {
     const held = { why: 'cooling', reason: 'cooling.', until: '2026-10-05T16:02:00Z', account: 'account-2', accountName: 'Work' };
@@ -323,7 +323,7 @@ describe('a session’s facts line', () => {
   });
 
   /**
-   * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another says which agent's, and why in the hand-over's
+   * A session that continues another says which agent's, and why in the hand-over's
    * own words; a helper says whom it helps. Both follow the repository, whatever the state, since they say what the session is.
    */
   describe('who it continues or helps', () => {
@@ -337,13 +337,13 @@ describe('a session’s facts line', () => {
         session: continued({ fromWhy: 'press', fromBy: 'person', state: 'completed', created: '2026-10-05T09:40:00Z', updated: '2026-10-05T09:54:00Z' }),
         shown: 'completed', continuesAgent: 'Codex',
       })).toEqual(['engine', 'continues from Codex', 'you asked for it', 'ran 14m']);
-      // SWITCH1c-i (D165 point 3): Daoris moved it to another account by the usage curve, its agent unchanged.
+      // Daoris moved it to another account by the usage curve, its agent unchanged.
       expect(sessionFacts(t, { session: continued({ fromWhy: 'curve' }), shown: 'working', continuesAgent: 'Claude Code' }))
         .toEqual(['engine', 'continues from Claude Code', 'its account was over its usage curve', 'started 2m ago']);
     });
 
     /**
-     * SESSCTX1b (the session-context design §7): every continuation names its link, so a carry-on, a driven record's fallback and a
+     * Every continuation names its link, so a carry-on, a driven record's fallback and a
      * conversation that went on from one it lost say so by the same map, in both languages.
      */
     it('says why a carry-on, a fallback and a lost conversation’s new part continue another', async () => {
@@ -395,7 +395,7 @@ describe('a session’s facts line', () => {
     });
   });
 
-  // COAGENT1b (D199; the co-agent design §6.1): a lead's partners where its pieces exist, and a partner's own lead.
+  // A lead's partners where its pieces exist, and a partner's own lead.
   describe('its partners and its lead', () => {
     const CHAT = { kind: 'chat', quest: null } as const;
 

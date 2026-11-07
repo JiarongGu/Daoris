@@ -1,11 +1,11 @@
 import { CLAIMED } from '../conversation/handedFixtures';
 import type { TraceAnswer, TraceAskLink, TraceChain, TraceQuestLink, TraceSessionLink } from './trace';
 
-// How a session or a quest came to be, as the driver's `TRACE` route answers it (TRACE1b): the shapes its route test holds,
+// How a session or a quest came to be, as the driver's `TRACE` route answers it: the shapes its route test holds,
 // shared by the molecule's stories and its tests. Ids, repositories, branches and the person's words are as a record keeps
 // them; every line Daoris says is a code.
 
-/** The ask: the person's words, each with how and when it was given, and a go-ahead approved and one still waiting. */
+/** The ask: the person's words, each with how and when it is given, and a go-ahead approved and one still waiting. */
 export const ASK: TraceAskLink = {
   id: 'a1', source: 'asks', namedBy: { kind: 'quest', id: 'q1' }, workspace: 'work', state: 'Published', tier: 'intake',
   intake: { session: 'i1', state: { state: 'completed' }, agent: { door: 'claude-code', doorVersion: '2.1.4', account: 'work' } },
@@ -37,7 +37,7 @@ export const QUEST: TraceQuestLink = {
   records: [{ id: 's1', state: 'failed' }, { id: 's2', state: 'completed' }],
 };
 
-/** The first session: cut off by its account's limit, before the standing answer was set and before the go-ahead's answer. */
+/** The first session: cut off by its account's limit, before the standing answer is set and before the go-ahead's answer. */
 export const FIRST: TraceSessionLink = {
   id: 's1', source: 'sessions', kind: 'driven', state: { state: 'failed', limit: true },
   opened: '2026-10-03T09:05:00Z', moved: '2026-10-03T09:15:00Z',
@@ -140,7 +140,7 @@ export const MISSING_CHAIN: TraceChain = {
   ],
 };
 
-/** A quest no ask asked, a running session's rules read from the file it was handed, and its work not landed yet. */
+/** A quest no ask asked, a running session's rules read from the file it is handed, and its work not landed yet. */
 export const NO_ASK_CHAIN: TraceChain = {
   kind: 'quest', id: 'q5', unread: [],
   links: [
@@ -215,7 +215,7 @@ export const OLD_CHAIN: TraceChain = {
 };
 
 /**
- * A landing of an earlier session from before who accepted it was kept.
+ * A landing of an earlier session recorded without who accepted it.
  */
 export const WAITING_CHAIN: TraceChain = {
   kind: 'session', id: 's8', unread: [],

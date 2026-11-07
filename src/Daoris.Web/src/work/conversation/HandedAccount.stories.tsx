@@ -6,10 +6,10 @@ import { chinese } from '../../design/storyLanguage';
 import { HandedAccount } from './HandedAccount';
 import { BARE, CLAIMED, CUT, NEWER, SET_UP, UNREAD } from './handedFixtures';
 
-// What a driven session was handed, section by section (CONTEXT1, D143 point 1), as it sits beneath the target on the
-// session's page: folded to its size; a claim on an ask, open, with the rules handed beside it and what was not handed; a
+// What a driven session is handed, section by section, as it sits beneath the target on the
+// session's page: folded to its size; a claim on an ask, open, with the rules handed beside it and what is not handed; a
 // carry-on whose every bound left something out; words that could not be read; a quest that carries nothing on an agent
-// that takes no rules; a target from before the account was kept; a newer driver's codes; and each in 中文 and in dark.
+// that takes no rules; a target from before the account is kept; a newer driver's codes; and each in 中文 and in dark.
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
@@ -41,7 +41,7 @@ type Story = StoryObj<typeof HandedAccount>;
 /** Folded, as the page first shows it: its size, its sections. */
 export const Folded: Story = {};
 
-/** A claim on an ask, open: each section's size and source, the rules handed beside it, and what was not handed. */
+/** A claim on an ask, open: each section's size and source, the rules handed beside it, and what is not handed. */
 export const Claimed: Story = { args: { defaultOpen: true } };
 
 /** The same in 中文: the names, sources and absences worded; ids, names and files as written. */
@@ -65,13 +65,13 @@ export const WordsUnread: Story = { args: { account: UNREAD, defaultOpen: true }
 /** A repository's quest that carries nothing, on an agent that takes no rules from Daoris: most of it the driver's own. */
 export const CarriesNothing: Story = { args: { account: BARE, defaultOpen: true } };
 
-/** A set-up step's: its own section, from the review rule set on this machine, beside what the quest carries (REVIEWENV1c2). */
+/** A set-up step's: its own section, from the review rule set on this machine, beside what the quest carries. */
 export const SetUpStep: Story = { args: { account: SET_UP, defaultOpen: true } };
 
 /** A set-up step's, in 中文. */
 export const SetUpStepChinese: Story = { ...SetUpStep, decorators: [chinese] };
 
-/** A target handed before the account was kept says so, rather than showing nothing (D143 point 3). */
+/** A target handed with no account kept says so, rather than showing nothing. */
 export const NotKept: Story = { args: { account: null } };
 
 /** Not kept, in 中文. */

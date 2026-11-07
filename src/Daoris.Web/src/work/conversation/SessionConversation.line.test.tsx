@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRef } from 'react';
 import '../../locales/i18n';
 
-// SWITCHCTX1c-i (the switch-context design §2.7), the organism's half: an earlier part of a line is drawn by a mode of its own, read
+// The organism's half: an earlier part of a line is drawn by a mode of its own, read
 // with its own record's liveness, owning neither the region's scroll nor any fact of the frame; and a part's first line, where it
 // began by a move, holds its opening line folded under it. The bridge is mocked; the driver's answers are the test's.
 

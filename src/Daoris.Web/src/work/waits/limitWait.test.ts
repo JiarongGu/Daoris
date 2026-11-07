@@ -5,7 +5,7 @@ import type { AccountsAnswer, AgentAccounts } from '../../settings/accounts/acco
 import { USE_DEFAULTS } from '../../settings/accounts/accounts';
 import { chatLimitHeldOf, limitedLine, limitWaitLines, limitWaitOf, limitWaitSaid, notLiftedOf } from './limitWait';
 
-// LIMITRESUME1d (D206 §3.7): what a line an account's limit cut off says while it waits, read from the accounts the page holds.
+// What a line an account's limit cut off says while it waits, read from the accounts the page holds.
 
 const NOW = new Date('2026-10-24T09:00:00Z');
 const SOON = '2026-10-24T11:02:00Z';
@@ -79,7 +79,7 @@ describe('a limited line\'s wait', () => {
     ]);
   });
 
-  // LIMITRESUME1d2: the row and the quest's page read the head's own sentence, for a limited line alone.
+  // The row and the quest's page read the head's own sentence, for a limited line alone.
   it('words a limited line’s wait for its row and its quest’s page, and nothing for another', () => {
     const line = { door: 'claude-code-acp', profile: 'a', noteParts: [], state: 'failed', limit: true, kind: 'driven', quest: 'q1' } as never;
     expect(limitWaitLines(t, { session: line, questStatus: 'Taken', doors, answer: answer(), label, now: NOW })).toEqual([
@@ -97,7 +97,7 @@ describe('a limited line\'s wait', () => {
   });
 });
 
-// LIMITRESUME1d2 (D206 §3.5, §3.7): a conversation's wait is read from its events, never from the accounts alone.
+// A conversation's wait is read from its events, never from the accounts alone.
 describe('a conversation\'s wait', () => {
   const waits = (seq: number, why = 'stated') => ({
     seq, at: NOW.toISOString(), kind: 'note',

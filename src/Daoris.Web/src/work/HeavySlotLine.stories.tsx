@@ -9,7 +9,7 @@ import { DetailsFold } from './head/DetailsFold';
 import { SessionRow } from './rail/SessionRow';
 import { useTranslation } from 'react-i18next';
 
-// HEAVYSLOT1 (the UI/UX design §3.5 and §4's `HeavySlotLine`, D185): a heavy run seen running and waiting. Each state as the rail
+// A heavy run seen running and waiting. Each state as the rail
 // draws its two rows, as the session's line with its door and its *Details*' gates, and as the repository's *Heavy run* row:
 // running, waiting, a failed gate, held by a run from a terminal, and none; at the frame's widths, in English, 中文 and dark.
 

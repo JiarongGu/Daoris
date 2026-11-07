@@ -12,19 +12,19 @@ import {
 } from './review';
 
 /**
- * The presses a review's gate is handed (REVIEWENV1g; the review environment design §3.2–§3.3, §3.6), each where the frame can
+ * The presses a review's gate is handed, each where the frame can
  * press it: a browser has no shell to show a build again or to say a *not yet*'s words to a session. Each verdict carries the
- * set-up this view drew, named whole, so a set-up shown after it was drawn refuses the verdict as stale (REVIEWENV1b3).
+ * set-up this view drew, named whole, so a set-up shown after it is drawn refuses the verdict as stale.
  */
 export type ReviewGateActs = {
   reviewed?: (setUp: SetUpRef, answered: Answered) => void;
-  /** *Not yet…*, with the person's words, which go to the set-up's session as its next turn (design §3.4). */
+  /** *Not yet…*, with the person's words, which go to the set-up's session as its next turn. */
   notYet?: (setUp: SetUpRef, words: string, answered: Answered) => void;
-  /** *Skip the review for this work…*, with the person's words where they give any (design §3.6). */
+  /** *Skip the review for this work…*, with the person's words where they give any. */
   skip?: (words: string | null, answered: Answered) => void;
-  /** *Set it up in `<environment>`*: a set-up step published following the work (design §2.1, §3.6). */
+  /** *Set it up in `<environment>`*: a set-up step published following the work. */
   setUp?: (environment: string, answered: Answered) => void;
-  /** *Show it again*: the set-up's build served to its tab again, the tab brought forward (REVIEWENV1d). */
+  /** *Show it again*: the set-up's build served to its tab again, the tab brought forward. */
   showAgain?: () => void;
   /** The set-up step's own page, where the gate is not drawn on it. */
   open?: () => void;
@@ -34,12 +34,12 @@ export type ReviewGateActs = {
 
 
 /**
- * **Review in `<environment>`** (REVIEWENV1g, D154 points 7–8; the review environment design §3.1–§3.3, §3.6): where a chain's
+ * **Review in `<environment>`**: where a chain's
  * work waits for the person's look, what the gate says, what the set-up step showed and where, and the presses that answer it,
  * drawn where *Accept…* would be while the gate holds: the session's head, and a set-up step's page.
  *
  * @remarks
- * **Each state says itself in the reader's language**, from its code (the platform language §4: a sentence the driver writes is
+ * **Each state says itself in the reader's language**, from its code (a sentence the driver writes is
  * chrome, translated by its typed half). Where the driver names a state the page does not know, or could not read the gate,
  * its own sentence follows, marked as the driver's.
  *
@@ -50,8 +50,8 @@ export type ReviewGateActs = {
  * own server, with nothing to say so; *Show it again* is the door, which serves the step's build to its tab first. A deployed
  * environment's address is the environment itself, and opens.
  *
- * **Never in the browser** (design §3.3): the page in Daoris's browser has no bridge and an agent can drive it, so this is drawn
- * in the window alone. Every verdict is one of the person's doors (D156 §3.2), and the page reaches them as `api.ts` says.
+ * **Never in the browser**: the page in Daoris's browser has no bridge and an agent can drive it, so this is drawn
+ * in the window alone. Every verdict is one of the person's doors, and the page reaches them as `api.ts` says.
  *
  * A molecule: it is handed the gate, the step's record and the presses, and reports each press.
  */
@@ -65,11 +65,11 @@ export function ReviewGate({
   step?: Quest | null;
   /** The set-up step's id where the frame names one and holds no record of it. */
   stepId?: string | null;
-  /** Whether Daoris still serves the newest set-up's tab here (REVIEWENV1d); null where no shell says. */
+  /** Whether Daoris still serves the newest set-up's tab here; null where no shell says. */
   served?: boolean | null;
   /** The driver's own sentence, said beneath where the page words none (an unread gate, a newer driver's state). */
   said?: string | null;
-  /** The intake's proposal for this work and its reason (design §1.6), shown beside *Skip…* while nothing shows it. */
+  /** The intake's proposal for this work and its reason, shown beside *Skip…* while nothing shows it. */
   proposal?: { choice: string; reason: string } | null;
   acts?: ReviewGateActs;
   /** A press on the record is on its way: none is offered again until it answers. */
@@ -154,7 +154,7 @@ export function ReviewGate({
       )}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-        {/* Status leads (D41 §4): the state, then where the work is reviewed. */}
+        {/* Status leads: the state, then where the work is reviewed. */}
         <Pill tone={REVIEW_TONE[state]}>{t(`review.state.${state}`)}</Pill>
         <h3 id={headingId} className="m-0 min-w-0 text-small font-semibold text-ink">
           {/* An unread gate names no environment: what it could not read is whether one waits. */}
@@ -163,7 +163,7 @@ export function ReviewGate({
       </div>
 
       {sentence && <p className="m-0 text-small text-ink-soft"><Inline text={sentence} /></p>}
-      {/* A look that cannot start says the driver's words beneath: a chat run's name the terminal's door, `workflow skip` (D50). */}
+      {/* A look that cannot start says the driver's words beneath: a chat run's name the terminal's door, `workflow skip`. */}
       {said && (state === 'unread' || state === 'cannot-start') && (
         <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]"><Inline text={t('review.driverSaid', { said })} /></p>
       )}
@@ -174,7 +174,7 @@ export function ReviewGate({
       )}
 
       {newest && (state === 'shown' || state === 'not-yet' || state === 'not-held' || whole) && (
-        // Whether it is still served matters only while it waits for the look: a verdict lets the tab go (REVIEWENV1d).
+        // Whether it is still served matters only while it waits for the look: a verdict lets the tab go.
         <SetUpShown setUp={newest} step={step!} served={state === 'shown' ? served : null} lead={t('review.setUp.newest')} full />
       )}
 
@@ -195,7 +195,7 @@ export function ReviewGate({
           )}
         </div>
       )}
-      {/* The terminal's way to the two choices the page presses here (D50, REVIEWENV1j2): needs the quest to name. */}
+      {/* The terminal's way to the two choices the page presses here: needs the quest to name. */}
       {quest && (offered.includes('skip') || offered.includes('setUp')) && asking === null && (
         <p className="m-0 text-meta text-ink-faint [overflow-wrap:anywhere]">
           <Inline text={t('review.choiceTwin', { quest: shellWord(quest, '<quest>') })} />
@@ -204,8 +204,8 @@ export function ReviewGate({
       {refusal && <Refused sentence={refusal} />}
 
       {asking === 'notYet' && ref && (
-        /* *Not yet* needs words: they are what the step's session acts on (design §3.3). Open until the host answers, a
-           refusal said inside it (UXFIX2). */
+        /* *Not yet* needs words: they are what the step's session acts on. Open until the host answers, a
+           refusal said inside it. */
         <InlineConfirm
           tone="primary"
           block
@@ -249,7 +249,7 @@ export function ReviewGate({
         </InlineConfirm>
       )}
       {asking === 'skip' && (
-        /* A skip asks once (design §3.6): the work lands without being shown, on the person's word. */
+        /* A skip asks once: the work lands without being shown, on the person's word. */
         <InlineConfirm
           tone="primary"
           label={t('review.ask.skipTitle')}
@@ -281,7 +281,7 @@ export function ReviewGate({
   );
 }
 
-/** A review choice in the reader's words (design §1.5): `off`, `on`, or an environment's name. */
+/** A review choice in the reader's words: `off`, `on`, or an environment's name. */
 export function choiceWords(t: ReturnType<typeof useTranslation>['t'], choice: string): string {
   if (choice === 'off') return t('review.choice.off');
   if (choice === 'on') return t('review.choice.on');
@@ -289,7 +289,7 @@ export function choiceWords(t: ReturnType<typeof useTranslation>['t'], choice: s
 }
 
 /**
- * One set-up as the step said it (design §2.6, §3.3): what it shows, where (a local one's address as code, a deployed one's as
+ * One set-up as the step said it: what it shows, where (a local one's address as code, a deployed one's as
  * a link), whether Daoris still serves it, how to show it again by hand, who said it and at which commit, and the person's
  * verdict on it where they gave one. Content is shown as it is.
  */

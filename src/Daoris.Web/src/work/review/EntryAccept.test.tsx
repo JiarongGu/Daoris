@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// ACCEPTALL1 (D167's 2026-10-15 amendment): one Accept for a line of work's parts and one for an ask's. The ask says where the
+// One Accept for a line of work's parts and one for an ask's. The ask says where the
 // parts land, in the order they ran, what each leaves out, which part a later one superseded, with the person's choice to leave it
 // out, and what holds a part; a gate holding a part holds its whole line of work. In both languages.
 
@@ -49,7 +49,7 @@ describe("a line of work's one Accept", () => {
     expect(within(group).getByText('part 2 leaves out 1 commit the line already holds.')).toBeInTheDocument();
   });
 
-  // ACCEPTCONFLICT1: a part with work of its own beside its conflict is a clash, never redone, so nothing offers to leave it out.
+  // A part with work of its own beside its conflict is a clash, never redone, so nothing offers to leave it out.
   const CLASH: EntryAcceptPlan = {
     ...PLAN,
     parts: [{ session: 's1', clash: { by: 's2', says: 'CLAUDE.md' } }, PLAN.parts[1]!],
@@ -105,7 +105,7 @@ describe("a line of work's one Accept", () => {
     expect(screen.queryByRole('button', { name: 'Accept all' })).toBeNull();
   });
 
-  // STANDSREFUSE1b: a part's problem (a standing branch the press would refuse) is said, and holds the press.
+  // A part's problem (a standing branch the press would refuse) is said, and holds the press.
   const REFUSED = 'The branch mine/fix was made by someone else.';
 
   it("says a part's refusal before the press and offers no move where the entry would be refused", () => {

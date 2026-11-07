@@ -6,10 +6,10 @@ import { cn } from '../../lib/cn';
 import { Mark } from '../../design/Mark';
 import { LIST_DOOR } from './listKeys';
 
-// The window's own furniture (D55, extended by D56, simplified by D66): the app strip, the activity
+// The window's own furniture: the app strip, the activity
 // bar, the status bar and the output panel. Small, presentational, and kept together because they
 // are one arrangement rather than four features — what the workbench references all have and what
-// this platform had nowhere to put.
+// this platform has nowhere else to put.
 
 /** The attribute the app strip's layout groups carry: their empty space is the strip's own. */
 export const STRIP_SPACE = 'data-strip-space';
@@ -21,18 +21,18 @@ function isStripSpace(target: EventTarget, strip: EventTarget) {
 
 /**
  * How far, in CSS px either side of the press, the pointer may travel on the strip before the press is
- * a drag (FRAME2). Windows' own drag distance (`SM_CXDRAG`, `SM_CYDRAG`) is 4 px by default; a page
+ * a drag. Windows' own drag distance (`SM_CXDRAG`, `SM_CYDRAG`) is 4 px by default; a page
  * cannot read the system metric, so the default stands in for it.
  */
 export const DRAG_DISTANCE = 4;
 
 /**
- * The strip's press, as a caption's (FRAME2): it only notes where it went down, and the drag begins once
+ * The strip's press, as a caption's: it only notes where it went down, and the drag begins once
  * the pointer travels past {@link DRAG_DISTANCE} with the button still held. A still click is nothing,
  * and since no move loop has started, the browser's `dblclick` arrives for a double-click.
  *
  * @remarks
- * Handing the press straight to the OS move loop, as SURF7 did, restored a maximized window on a single
+ * Handing the press straight to the OS move loop would restore a maximized window on a single
  * click and let the loop swallow a double-click's second press. The move and the release are heard on
  * the window rather than the strip, because a quick drag leaves the strip's 36px before its first move.
  */
@@ -73,30 +73,29 @@ function useCaptionPress(onDragStart: (() => void) | undefined) {
 }
 
 /**
- * The **app strip** (D56): the application's one global row, across the top of the window.
+ * The **app strip**: the application's one global row, across the top of the window.
  *
  * @remarks
  * It holds what is true everywhere — the mark, the application's menus, the command center — which
- * is precisely why none of them belongs in a sidebar owned by one view. Measured before it was
- * built: 42% of the window's width was navigation and a form, and the session that is the
- * application's organising object (D55) got about 28%.
+ * is precisely why none of them belongs in a sidebar owned by one view. A sidebar
+ * would spend 42% of the window's width on navigation and a form, and leave the session, the
+ * application's organising object, about 28%.
  *
- * **`captionRoom` reserves the right edge, and the WINDOW paints there** (SURF7; D56 as amended has
- * the reason). The three slots are empty by design — the window cuts their rectangles out of the
+ * **`captionRoom` reserves the right edge, and the WINDOW paints there.** The three slots are empty by design — the window cuts their rectangles out of the
  * WebView2 and draws the buttons itself.
  *
  * **It is presentational, and the window wiring arrives as props** — `useWindowChrome` holds the
  * bridge, so every state of this strip is still reachable by passing props, including in a browser
  * where there is no window to command and none of them are passed at all.
  *
- * **It keeps its size while the window zooms** (ZOOM1, the UI/UX design §3.11): it wears the level's inverse, and so does
+ * **It keeps its size while the window zooms**: it wears the level's inverse, and so does
  * what it opens, a menu or a tip, so the caption room stays the rectangles the window paints its buttons into.
  */
 export function AppStrip({
   scope, center, menus, trailing, captionRoom,
   stripRef, onDragStart, onToggleMaximize, onResizeTop, onSystemMenu,
 }: {
-  /** The workspace switcher, or nothing while the deployment holds one circle (WSP5). */
+  /** The workspace switcher, or nothing while the deployment holds one circle. */
   scope?: ReactNode;
   /** The command center — where you are, and the way into everything (taken from VS Code's shape). */
   center?: ReactNode;
@@ -111,12 +110,12 @@ export function AppStrip({
   stripRef?: (element: HTMLElement | null) => void;
   /**
    * Called once a press on the strip's own space has travelled past {@link DRAG_DISTANCE}, never on the
-   * press itself (FRAME2). Absent in a browser: there is no window to move, so the strip is simply a strip.
+   * press itself. Absent in a browser: there is no window to move, so the strip is simply a strip.
    */
   onDragStart?: () => void;
   onToggleMaximize?: () => void;
   onResizeTop?: () => void;
-  /** A right-click on the strip's own space opens the window's system menu, as a caption's does (CTX1, D138 §4). */
+  /** A right-click on the strip's own space opens the window's system menu, as a caption's does. */
   onSystemMenu?: () => void;
 }) {
   const onPress = useCaptionPress(onDragStart);
@@ -129,7 +128,7 @@ export function AppStrip({
         event.preventDefault();
         onSystemMenu();
       }}
-      // The title bar's own gesture, as a caption's (FRAME2): a press notes where it went down, and a
+      // The title bar's own gesture, as a caption's: a press notes where it went down, and a
       // move past the drag distance starts the OS move loop while the button is still held, which is
       // also why the host dispatches it inline.
       onPointerDown={onPress}
@@ -140,7 +139,7 @@ export function AppStrip({
         onToggleMaximize?.();
       }}
       // 🔴 One line, by rule: a Chinese label may break between any two characters, so without this
-      // 中文's menus wrapped onto two lines each (道 / 衍) once the sides shared the strip (UX5 U15).
+      // 中文's menus would wrap onto two lines each (道 / 衍) once the sides share the strip.
       className={cn(
         'relative flex h-9 shrink-0 items-center gap-3 whitespace-nowrap border-b-[length:var(--frame-rule)] border-line bg-raised',
         FRAME_HELD,
@@ -158,30 +157,30 @@ export function AppStrip({
         />
       )}
 
-      {/* 🔴 Three groups, and the middle one is the command center (UX5 U15). The two sides grow
+      {/* 🔴 Three groups, and the middle one is the command center. The two sides grow
           alike from nothing, so the middle is centred on the STRIP while both fit beside it, rather
           than on whatever the mark and the menus leave over. When they do not fit, the middle gives
-          way instead of covering them: it was laid over the strip at a fixed 28rem, and at 888px it
-          ran over the View menu. VS Code's title bar behaves the same way. 🔴 The mark's inset is
+          way instead of covering them: laid over the strip at a fixed 28rem, at 888px it
+          would run over the View menu. VS Code's title bar behaves the same way. 🔴 The mark's inset is
           the mark's own: the sides share the free space by their CONTENT boxes, so padding on the
           strip or on a group puts the middle that far off centre (12px, measured on the window). */}
       <div {...{ [STRIP_SPACE]: 'start' }} className="flex h-full flex-1 basis-0 items-center gap-3">
-        {/* 🔴 The MARK alone. The name was 20px of serif in every window
-            forever, and a title bar is where an IDE puts what you can DO — the application's name
-            belongs in its About, which the menu beside this now carries. D41 §1 gave the serif one
-            appearance; this is it not being spent on saying the name of the thing you are already
+        {/* 🔴 The MARK alone. A name of 20px of serif in every window
+            is not what a title bar holds: an IDE puts there what you can DO — the application's name
+            belongs in its About, which the menu beside this carries. The serif has one
+            appearance, and it is not spent on saying the name of the thing you are already
             looking at. */}
         <div className="pointer-events-none flex items-center pl-3.5">
           <Mark size={18} className="text-accent" />
         </div>
 
-        {/* The application's menus (VS Code's menu bar). There is no mode switch beside them any
-            more (D66): the activity bar is the one navigation, so a second one up here was a concept
+        {/* The application's menus (VS Code's menu bar). There is no mode switch beside them:
+            the activity bar is the one navigation, so a second one up here would be a concept
             and a click between every reading and every working. */}
         {menus}
       </div>
 
-      {/* The middle, which used to be ~1,400px of nothing at any real window width. */}
+      {/* The middle, the command center's. */}
       <div {...{ [STRIP_SPACE]: 'center' }} className="flex h-full min-w-0 basis-md items-center justify-center">
         {center}
       </div>
@@ -211,33 +210,32 @@ export type ActivityItem<T extends string> = {
   label: string;
   icon: IconName;
   /**
-   * What waits on the person here (BADGEUX1, the UI/UX design §3.10): the bell's rows whose door opens this place, a number in the
+   * What waits on the person here: the bell's rows whose door opens this place, a number in the
    * bell's hue. The only number a place wears, so a number on the window means one thing; zero wears nothing.
    */
   waits?: number;
   /**
-   * Work under way here, which waits on nobody (BADGEUX1): a mark, never a number, in taken's hue at the lower corner the number
+   * Work under way here, which waits on nobody: a mark, never a number, in taken's hue at the lower corner the number
    * leaves free, still, since it stands for as long as the work runs. Shown with a number or without one.
    */
   running?: boolean;
-  /** What its marks show, in words, said in its tip and as its description, so a mark is never hue alone (D41 §6). */
+  /** What its marks show, in words, said in its tip and as its description, so a mark is never hue alone. */
   detail?: string;
-  /** Its key, as the Go menu prints it (UX7a, D152 §3.4), said in its tip: a place's position is its key. */
+  /** Its key, as the Go menu prints it, said in its tip: a place's position is its key. */
   keys?: string;
 };
 
 /**
- * The **activity bar**: the application's one navigation, down the window's left edge (D56, and
- * since D66 the only one).
+ * The **activity bar**: the application's one navigation, down the window's left edge.
  *
  * @remarks
- * 🔴 **One list, not two frames**: every view is a tab, so there is nothing for two to divide. The
- * bar carried two frame icons above a rule and the views below them —
+ * 🔴 **One list, not two frames**: every view is a tab, so there is nothing for two to divide. Two
+ * frame icons above a rule with the views below them would be
  * a second navigation stacked on the first, and a click between every reading and every working.
- * Sessions is a view now, one of the list, and nothing is gated behind a mode.
+ * Sessions is a view, one of the list, and nothing is gated behind a mode.
  *
- * It replaced a 15rem labelled sidebar. The cost is the labels, paid by the tooltip here, each
- * view's own page header, and SURF9's palette.
+ * The cost of a bar without labels is paid by the tooltip here, each
+ * view's own page header, and the palette.
  *
  * **Absent, never disabled**: a browser is handed a shorter `items` (no Sessions — a stream never
  * leaves the machine), because a greyed row implies the thing exists somewhere you could get to.
@@ -249,15 +247,15 @@ export function ActivityBar<T extends string>({
   label: string;
   items: ActivityItem<T>[];
   /**
-   * The places at the FOOT — Settings, where every workbench puts its gear, and nothing else (UX6j, D150 §2.1): the
-   * index's refresh and the language were actions here, and left for View, the palette and Settings → Appearance.
+   * The places at the FOOT — Settings, where every workbench puts its gear, and nothing else: the
+   * index's refresh and the language are not actions here; they live in View, the palette and Settings → Appearance.
    * Places, so they wear the current-place marking the list above does.
    */
   end?: ActivityItem<T>[];
   active: T;
   onSelect: (tab: T) => void;
   /**
-   * A press on the place you are on (D118 §3a, audit F1): its view's list toggles, as VS Code's activity
+   * A press on the place you are on: its view's list toggles, as VS Code's activity
    * bar toggles its side bar. Absent where the view has no list, and the press then selects it again.
    */
   onToggleCurrent?: () => void;
@@ -270,7 +268,7 @@ export function ActivityBar<T extends string>({
         aria-description={detail}
         aria-keyshortcuts={keys}
         aria-current={active === tab ? 'page' : undefined}
-        // The current place is a door to its list where it toggles it (D118 §3a).
+        // The current place is a door to its list where it toggles it.
         {...(active === tab && onToggleCurrent ? { [LIST_DOOR]: '' } : {})}
         onClick={() => (active === tab && onToggleCurrent ? onToggleCurrent() : onSelect(tab))}
         className={cn(
@@ -280,13 +278,13 @@ export function ActivityBar<T extends string>({
             : 'text-ink-faint hover:bg-raised hover:text-ink',
         )}
       >
-        {/* The 2px accent rail D41 §2 gives the active nav item, rotated onto a narrow bar. */}
+        {/* The 2px accent rail the active nav item takes, rotated onto a narrow bar. */}
         {active === tab && (
           <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />
         )}
         <Icon name={icon} size={17} />
         <CountBadge count={waits ?? 0} />
-        {/* Running work, beside the waits, at the corner the number leaves free (BADGEUX1): a shape, a place and a hue of its own. */}
+        {/* Running work, beside the waits, at the corner the number leaves free: a shape, a place and a hue of its own. */}
         {running && <DotMark tone="running" data-running="" className="absolute bottom-1 right-1 size-2 ring-2 ring-page" />}
       </button>
     </Tip>
@@ -296,11 +294,11 @@ export function ActivityBar<T extends string>({
     <nav
       aria-label={label}
       data-region="activity"
-      // 🔴 A place keeps its size, and a bar too short to hold them scrolls (UX5 U22). At the
-      // window's least height the places shrank until they touched, the counts sat over their
-      // neighbours and Settings went under the status bar. No scrollbar is drawn in a 48px bar;
+      // 🔴 A place keeps its size, and a bar too short to hold them scrolls. At the
+      // window's least height shrinking places would touch, the counts would sit over their
+      // neighbours and Settings would go under the status bar. No scrollbar is drawn in a 48px bar;
       // the wheel and the keyboard still reach every place.
-      // It keeps its size while the window zooms, and so do its tips (ZOOM1): a place stays where the hand learned it.
+      // It keeps its size while the window zooms, and so do its tips: a place stays where the hand learned it.
       className={cn(
         'flex min-h-0 w-12 shrink-0 flex-col items-center gap-0.5 overflow-x-hidden overflow-y-auto border-r-[length:var(--frame-rule)] border-line py-1.5 [scrollbar-width:none]',
         FRAME_HELD,
@@ -321,8 +319,8 @@ export function ActivityBar<T extends string>({
 
 /**
  * What the driver is, as a surface can honestly know it. `starting` is a shell whose driver answers from its file while
- * its service is not up yet, so every route that reads the service still refuses (LOOK2a), and a shell whose driver has not
- * answered at all yet (PUSHUX2), which is coming up too and never `absent`.
+ * its service is not up yet, so every route that reads the service still refuses, and a shell whose driver has not
+ * answered at all yet, which is coming up too and never `absent`.
  */
 export type DriverPresence = 'running' | 'starting' | 'stopped' | 'absent';
 
@@ -330,62 +328,61 @@ export type DriverPresence = 'running' | 'starting' | 'stopped' | 'absent';
  * Ambient truth: the driver, how much is running, which circle, and whether this one syncs.
  *
  * @remarks
- * **It must be true without being looked at** — VS Code's status bar, and the reason D55 added
- * one: none of these four had anywhere to live, so each was either absent or buried in a view the
- * person was not on.
+ * **It must be true without being looked at** — VS Code's status bar, and the reason for
+ * one: none of these four has anywhere else to live, so each would be absent or buried in a view the
+ * person is not on.
  *
  * `driver` is three states rather than a boolean because the third is real and different: `absent`
  * is a browser, which has no driver and never will, and `stopped` is a shell whose driver did not
  * answer. Telling a person "not answering" when the honest answer is "not here" sends them looking
  * for a fault.
  *
- * **It gained the recall tier and the index count when the sidebar was retired** (D56). Both are
- * ambient state and neither was ever anything else; the tier in particular must be *stated on every
- * screen* (D24), which a bar present on every screen by construction serves better than a sidebar
- * foot ever did. The tier is said by its value in the page's language, and what it means in its tip (OVERVIEWNOISE1c):
- * the service's label and note were English on a Chinese page, and the page never read a word of them but the flag.
+ * **It holds the recall tier and the index count.** Both are ambient state; the tier in particular
+ * must be *stated on every screen*, which a bar present on every screen by construction serves better than a sidebar
+ * foot. The tier is said by its value in the page's language, and what it means in its tip:
+ * the service's label and note are English, so the page reads nothing of them but the flag.
  */
 export function StatusBar({
   driver, sessions, workspace, remote, sync, tier, indexed, scope, setup, zoom,
   onDriver, onSessions, onRemote, onIndex, onTier, onSetup,
 }: {
   driver: DriverPresence;
-  /** How many sessions run, or null while the sessions are not answered yet: no number, never a zero (PUSHUX1). */
+  /** How many sessions run, or null while the sessions are not answered yet: no number, never a zero. */
   sessions: number | null;
   /**
-   * The scope in words (D75 §3): the chosen workspace, the one there is, every one among several, or
+   * The scope in words: the chosen workspace, the one there is, every one among several, or
    * none yet. Null only while the registry has not answered.
    */
   workspace: string | null;
   /** Whether this workspace has a deployment wired, or null where the question cannot be asked. */
   remote: boolean | null;
   /**
-   * Where a wired circle stands, as a control (SYNC6b) — it takes the remote item's place, because
+   * Where a wired circle stands, as a control — it takes the remote item's place, because
    * "wired" is exactly what it elaborates. Absent leaves the plain remote item.
    */
   sync?: ReactNode;
-  /** What answered — D24's tier, by whether meaning answers beside the words. Absent until the service says. */
+  /** What answered — the recall tier, by whether meaning answers beside the words. Absent until the service says. */
   tier?: { semantic: boolean };
   /** What the index holds, already worded by the caller. */
   indexed?: string;
-  /** The scope as a control, where the deployment holds more than one circle (WSP5). */
+  /** The scope as a control, where the deployment holds more than one circle. */
   scope?: ReactNode;
   /** Where each fact leads. Absent means the fact is stated and not offered (see `StatusItem`). */
   onDriver?: () => void;
   onSessions?: () => void;
   onRemote?: () => void;
   onIndex?: () => void;
-  /** Where the tier is explained and changed — Daoris's own AI, on Settings (AGT6). */
+  /** Where the tier is explained and changed — Daoris's own AI, on Settings. */
   onTier?: () => void;
   /**
-   * How many of the setup's required steps are done (SETUP1b, D97), stated until they all are — or
+   * How many of the setup's required steps are done, stated until they all are — or
    * absent where that is not known, a browser or a machine still being read.
    */
   setup?: { done: number; of: number };
   /** Where the setup is done: Get started, on Settings. */
   onSetup?: () => void;
   /**
-   * The window's zoom (ZOOM1, the UI/UX design §3.11): said at the bar's right end while it is not 100%, as VS Code's bar says
+   * The window's zoom: said at the bar's right end while it is not 100%, as VS Code's bar says
    * it, and pressed, back to 100%. Absent where the window has no zoom of its own: a browser zooms its page itself.
    */
   zoom?: { level: number; onReset: () => void };
@@ -402,7 +399,7 @@ export function StatusBar({
          target that stops short of the bar's edges reads as a word that lit up rather than as a
          control. Every item fills the bar's full height; that single property is most of what makes
          the reference console's bar feel like a bar. */
-      // It keeps its size while the window zooms, and so do its tips and menus (ZOOM1): the zoom it says never grows under the
+      // It keeps its size while the window zooms, and so do its tips and menus: the zoom it says never grows under the
       // pointer that presses it back.
       className={cn(
         'flex h-6 shrink-0 items-stretch overflow-hidden border-t-[length:var(--frame-rule)] border-line bg-raised text-meta text-ink-soft',
@@ -415,12 +412,12 @@ export function StatusBar({
         tip={t('work.status.driverTip')}
         label={t('work.status.driver')}
       >
-        {/* 🔴 The NOUN stays, dimmed, in front of the value. Photographing the bar without it
-            showed `● ready` — ready is not a thing, and the subject was one hover away. The
+        {/* 🔴 The NOUN stays, dimmed, in front of the value. The bar without it
+            would show `● ready` — ready is not a thing, and the subject would be one hover away. The
             reference console keeps its nouns for the same reason (`Spaces: 2`, `UTF-8`), and the
             two weights are what stop a noun from competing with its own value.
-            The mark and its word are one component and one tone — the label is not optional
-            (D41 §6), so a second copy beside it would say the same thing twice in two colours. */}
+            The mark and its word are one component and one tone — the label is not optional,
+            so a second copy beside it would say the same thing twice in two colours. */}
         <span className="text-ink-faint">{t('work.status.driver')}</span>
         <Dot tone={tone} label={t(`work.status.driver${driverWord}`)} />
       </StatusItem>
@@ -465,7 +462,7 @@ export function StatusBar({
       )}
 
       {/* Until the setup's required steps are done, and then gone: an always-there all-clear is not
-          read. Waiting on the person, so the mark wears open's hue (platform-ux §3). */}
+          read. Waiting on the person, so the mark wears open's hue. */}
       {setup && setup.done < setup.of && (
         <StatusItem onPress={onSetup} tip={t('work.status.setupTip')} label={t('work.status.setupLabel')}>
           <Icon name="plan" size={12} className="text-st-open" />
@@ -488,8 +485,8 @@ export function StatusBar({
             <span className="tabular-nums">{indexed}</span>
           </StatusItem>
         )}
-        {/* The tier by its value, and what it means in the tip, in the page's language (OVERVIEWNOISE1c). It was text
-            alone while there was nothing to go to; since AGT6 it leads where the tier is explained
+        {/* The tier by its value, and what it means in the tip, in the page's language. It leads
+            where the tier is explained
             and how to change it is said — Daoris's own AI, on Settings — by the bar's own rule that
             an item goes where its fact is set. */}
         {tier && (
@@ -503,7 +500,7 @@ export function StatusBar({
             </span>
           </StatusItem>
         )}
-        {/* The zoom, last, at the bar's right end, as VS Code's bar keeps it (ZOOM1): only while it is not 100%, since an
+        {/* The zoom, last, at the bar's right end, as VS Code's bar keeps it: only while it is not 100%, since an
             always-there 100% is not read, and pressed, back to 100% as Ctrl+0 goes. */}
         {zoom && zoom.level !== 100 && (
           <StatusItem
@@ -523,7 +520,7 @@ export function StatusBar({
 
 /**
  * What makes a status item PRESSABLE: the hover wash, the focus ring, the full-height box. Exported so
- * an item that opens a menu rather than going somewhere (the sync item, SYNC6b) is the same control
+ * an item that opens a menu rather than going somewhere (the sync item) is the same control
  * to look at and to tab to — two copies of this string would be two bars.
  */
 export const STATUS_PRESSABLE = cn(
@@ -588,7 +585,7 @@ function StatusItem({ children, label, tip, onPress, className }: {
 const SPLITTER_STEP = 24;
 
 /**
- * The edge a column is resized by (FRAME6): the rail's right edge, the dock's left.
+ * The edge a column is resized by: the rail's right edge, the dock's left.
  *
  * @remarks
  * **Moving away from its column grows the column**, whichever side of it the edge is on, by pointer

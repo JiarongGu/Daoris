@@ -4,13 +4,12 @@ import { type Answered, InlineConfirm } from '../InlineConfirm';
 import type { DiscardOffer } from '../groups';
 
 /**
- * The discard a tree offers where the line, or a branch of the person's, holds its commits by content (SQUASHTIDY1b, D102's
- * note): the session's head offers it where *Accept…* would be, and so does its review (SQUASHTIDY1f), from these pieces, so
+ * The discard a tree offers where the line, or a branch of the person's, holds its commits by content: the session's head offers it where *Accept…* would be, and so does its review, from these pieces, so
  * the two say it alike and press it alike.
  *
  * @remarks
- * **A molecule**: the press arrives as `onDiscard`, told back to its ask (UXFIX2), and the parent holds whether it is asking,
- * so each lays the button out among its own. The word is *Discard branch…*, the head's since LAND3b, since the branch goes
+ * **A molecule**: the press arrives as `onDiscard`, told back to its ask, and the parent holds whether it is asking,
+ * so each lays the button out among its own. The word is *Discard branch…*, the head's, since the branch goes
  * with the tree; the ask names the branch and says the driver's sentence naming the ref the commits stay at, shown as it is,
  * as the review's own sentence is: no catalogue words the driver's sentences again.
  */
@@ -19,7 +18,7 @@ import type { DiscardOffer } from '../groups';
 export const heldDiscardable = (discards: DiscardOffer, onDiscard?: (answered: Answered) => void): boolean =>
   Boolean(onDiscard && discards.keptAt);
 
-/** *Discard branch…*: the first press, which opens the ask; held while a discard pressed elsewhere is on its way (D168). */
+/** *Discard branch…*: the first press, which opens the ask; held while a discard pressed elsewhere is on its way. */
 export function HeldDiscardButton({ onAsk, className, disabled = false }: { onAsk: () => void; className?: string; disabled?: boolean }) {
   const { t } = useTranslation();
   return <Button variant="danger" className={className} disabled={disabled} onClick={onAsk}>{t('settings.sweep.discard')}</Button>;

@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { type AgentChoice, AgentChip } from './AgentChip';
 
 /**
- * The agent and account chip both *New conversation* and *Go on with another agent…* draw (MIXAGENT1b-i, D163): the agents
+ * The agent and account chip both *New conversation* and *Go on with another agent…* draw: the agents
  * offered, then the chosen agent's accounts in the scope's order. The start leaves both to the driver; the hand-over names the
  * agent, so it has no default row.
  */
@@ -69,7 +69,7 @@ describe('the agent and account chip', () => {
   });
 
   /**
-   * POOL1c (the account-pool design §4.3): Daoris's accounts are one set, every workspace's, so the menu lists them in its order
+   * Daoris's accounts are one set, every workspace's, so the menu lists them in its order
    * with no group of accounts outside a list; one the order does not name yet goes after.
    */
   it('lists Daoris’s accounts in the set’s order, with no group outside a list', async () => {
@@ -82,7 +82,7 @@ describe('the agent and account chip', () => {
     expect(within(menu).queryByText(/Not in|this machine's list/)).toBeNull();
   });
 
-  /** ACCOUNTID1b: two sign-ins of one email read alike; each says its organisation, after the email and once. */
+  /** Two sign-ins of one email read alike; each says its organisation, after the email and once. */
   it('tells two accounts of one email apart by their organisations, in its rows and on the chip', async () => {
     const email = 'person@example.invalid';
     show({

@@ -5,7 +5,7 @@ import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PartsFold } from './PartsFold';
 
-// A session's parts folded to one line (HEADFIT1; the UI/UX design §3.7 and R4, the UX7 design §6.2): which part the page is on out of
+// A session's parts folded to one line: which part the page is on out of
 // how many, how the newest began, and the press that opens the flowchart in its place. The flow's own stories (`PartsFlow`) draw the
 // drawing at every width; these draw the fold at the main area's three (`storyWidths`) and the drawing opened from it.
 

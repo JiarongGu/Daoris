@@ -28,60 +28,60 @@ import { nodeWordRefused } from '../../workflow/NodeWord';
 
 export type { AttentionDoors } from './AttentionList';
 
-/** The sessions working now, which the line says when nothing needs the person (design §6.1). */
+/** The sessions working now, which the line says when nothing needs the person. */
 const WORKING: ReadonlySet<string> = new Set(['starting', 'working']);
 
-/** The kinds that are an account's (UX6d): their acts wait while a sign-in of their agent's runs. */
+/** The kinds that are an account's: their acts wait while a sign-in of their agent's runs. */
 const ACCOUNT_KINDS: ReadonlySet<Attention['kind']> = new Set(['account-wait', 'signed-out']);
 
-/** What the band's act is on its way for while the stale go-aheads are refused in one press (GOAHEADSTALE1): no row's key. */
+/** What the band's act is on its way for while the stale go-aheads are refused in one press: no row's key. */
 const STALE_KEY = 'stale-go-aheads';
 
 /**
- * **What needs you**, whose rows *Notifications* holds (UX6c, design §6; D196).
+ * **What needs you**, whose rows *Notifications* holds.
  *
  * @remarks
- * Overview keeps one summary line per group (`NeedsSummary`, D196), and this band is the rows behind those lines: what holds work,
- * what waits for the person's word, and what is ready for them, in three groups, the longest waiting first in each. Continuous monitoring is the reported source of fatigue (research §2), so visibility is
+ * Overview keeps one summary line per group (`NeedsSummary`), and this band is the rows behind those lines: what holds work,
+ * what waits for the person's word, and what is ready for them, in three groups, the longest waiting first in each. Continuous monitoring is the reported source of fatigue, so visibility is
  * load-bearing and *watching* is not the mechanism: the band is what a person checks instead of watching.
  *
- * **Who needs the person is .NET's to judge** (PUSH1d4, D182 point 6): the rows are pushed (`useAttention`), read from memory and
+ * **Who needs the person is .NET's to judge**: the rows are pushed (`useAttention`), read from memory and
  * asked again by no tick or focus; the band orders them, names each from the records the page holds (the sessions, quests and asks
  * pushed beside them, the roster's last readings for an account), words them and keeps their acts. Before the owner has judged,
- * the band draws its skeleton, never *Nothing needs you* (PUSHUX1). A plain browser has no Daoris to judge: it says the band is
+ * the band draws its skeleton, never *Nothing needs you*. A plain browser has no Daoris to judge: it says the band is
  * the app's.
  *
- * **It settles what one press can** (§6.3): a proposed ask is published to what its declarations named, a parked quest
+ * **It settles what one press can**: a proposed ask is published to what its declarations named, a parked quest
  * tried again, a departure accepted, each on its record's own route with its sentence said back; a go-ahead's answer, a
  * folder's trust and a widening of the rules ask once under the row. Every other row is a door. **No row starts a process
- * to find out**. The stale go-aheads (GOAHEADSTALE1) are refused together, with one reason, each through its row's own door.
+ * to find out**. The stale go-aheads are refused together, with one reason, each through its row's own door.
  *
- * **The accounts** (UX6d): *Sign in* runs the agent's own sign-in through the application's one running action (SIGNIN1), the
- * agent page's own, so it outlives leaving Overview and its steps follow under the row; *Read* reads that one account (ROSTER1).
- * No row lets an account run: every account of Daoris's serves every workspace (POOL1c, D197).
+ * **The accounts**: *Sign in* runs the agent's own sign-in through the application's one running action, the
+ * agent page's own, so it outlives leaving Overview and its steps follow under the row; *Read* reads that one account.
+ * No row lets an account run: every account of Daoris's serves every workspace.
  *
- * **With nothing waiting it is one line**, *Nothing needs you*, and what is working (§6.1).
+ * **With nothing waiting it is one line**, *Nothing needs you*, and what is working.
  *
- * The organism: it holds the queries and the acts, so the list and its rows hold none (components §2).
+ * The organism: it holds the queries and the acts, so the list and its rows hold none.
  */
 export function AttentionBand({ doors = {}, notify = () => {}, onSessions, onRun, inView = false }: {
   /**
-   * Drawn in *Notifications* (NOTIFY2b, the notification design §2.2): its rows alone under the view's group head, which says its
+   * Drawn in *Notifications*: its rows alone under the view's group head, which says its
    * name and count, and the `confirmation` row left out, since each press is its whole card in the group above.
    */
   inView?: boolean;
   doors?: AttentionDoors;
-  /** Where each act's sentence is said: the service's or the driver's, verbatim (frontend §4a). */
+  /** Where each act's sentence is said: the service's or the driver's, verbatim. */
   notify?: Notify;
   /** Sessions itself, where *Ready for you*'s rows past its fifth are: a shell's alone. */
   onSessions?: () => void;
   /**
-   * The door into a run (WORKFLOW1c, the workflow design §7): a row whose step waits on the person opens that step, its session
+   * The door into a run: a row whose step waits on the person opens that step, its session
    * attended and the side bar on its *Workflow*. A shell's alone.
    */
   onRun?: (session: string) => void;
 }) {
-  // The application's running action where it holds one (a sign-in outlives the view, SIGNIN1); its own where drawn alone.
+  // The application's running action where it holds one (a sign-in outlives the view); its own where drawn alone.
   return (
     <WithHarnessRuns notify={notify}>
       <Band doors={doors} notify={notify} onSessions={onSessions} onRun={onRun} inView={inView} />
@@ -93,7 +93,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   doors: AttentionDoors; notify: Notify; onSessions?: () => void; onRun?: (session: string) => void; inView: boolean;
 }) {
   const { t } = useTranslation();
-  // Who needs the person, as the shell pushes it (PUSH1d4): the rows, judged in .NET.
+  // Who needs the person, as the shell pushes it: the rows, judged in .NET.
   const attention = useAttention();
   const shell = attention.state !== 'app';
   // What names each row and what its doors open: every record, ended ones too, the quests and the asks, pushed beside the rows and
@@ -101,7 +101,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const sessions = useSessions(null, true, shell);
   const quests = useQuests(null, true, shell);
   const asks = useAsks(true, shell);
-  // The roster as last read (ROSTER1), which names an account as the person knows it: never a refresh, which asks the agents.
+  // The roster as last read, which names an account as the person knows it: never a refresh, which asks the agents.
   const roster = useHarnesses();
   const approveHelper = useApproveHelper();
   const declineHelper = useDeclineHelper();
@@ -124,21 +124,21 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
   const accept = useAcceptQuest();
   const retry = useRetryQuest();
   const trust = useTrustFolder();
-  // A proposal's answer, its one owner (PROPOSEHERE1b): the session's conversation and the Agents page press the same.
+  // A proposal's answer, its one owner: the session's conversation and the Agents page press the same.
   const ruleAnswer = useRuleAnswer({ notify });
-  // The words to the session that proposed an allowed rule (PROPOSEHERE1c): the conversation's own door, `sessions say`'s.
+  // The words to the session that proposed an allowed rule: the conversation's own door, `sessions say`'s.
   const say = useSay();
   const nudge = useNudge();
   const readOne = useRefreshHarnesses();
   const harnessRun = useHarnessRun();
-  // A set-up's verdict, from its row (REVIEWENV1g): the review's one owner, as the step's page presses it.
+  // A set-up's verdict, from its row: the review's one owner, as the step's page presses it.
   const reviewActs = useReviewActs({ notify });
-  // A second opinion's presses' one owner (XAGENT1g), as the session's page has.
+  // A second opinion's presses' one owner, as the session's page has.
   const opinionActs = useOpinionActs({ notify });
   // The row an act is on its way for: its acts are held until it answers.
   const [acting, setActing] = useState<string | null>(null);
 
-  // A plain browser: the band is the app's (PUSH1d4), since nothing here judges who needs the person.
+  // A plain browser: the band is the app's, since nothing here judges who needs the person.
   if (attention.state === 'app') {
     return (
       <AttentionRegion>
@@ -146,13 +146,13 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
       </AttentionRegion>
     );
   }
-  // Not judged yet: loading, never empty (PUSHUX1).
+  // Not judged yet: loading, never empty.
   if (attention.state === 'reading') {
     return <AttentionRegion bare={inView}><SkeletonRows /></AttentionRegion>;
   }
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
-  // In *Notifications* a press is its card, drawn above from the confirmation channel, never its row (NOTIFY2b, §3.1).
+  // In *Notifications* a press is its card, drawn above from the confirmation channel, never its row.
   const rows = inView ? needsListed(attention.rows) : attention.rows;
   const waiting = attentionOf(rows, {
     sessions: sessions.data ?? [], quests: quests.data ?? [], asks: asks.data ?? [], tools: byTool(harnesses),
@@ -169,7 +169,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
 
   // One owner for each act's press: what it is on its way for, its sentence said, a refusal in its own words, and the row
   // released either way.
-  // An ask under the row hands its own `answered` (UXFIX2b3a): it stays open while the act runs, and a refusal is said inside it
+  // An ask under the row hands its own `answered`: it stays open while the act runs, and a refusal is said inside it
   // rather than toasted. The row is released first, so the press that opened the ask is enabled again when its focus returns.
   const run = <T,>(item: Attention, act: () => Promise<T>, said: (answer: T) => void, answered?: Answered) => {
     setActing(attentionKey(item));
@@ -183,9 +183,9 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     done: () => { setActing(null); answered.done(); },
     refused: (said) => { setActing(null); answered.refused(said); },
   });
-  // A set-up row's presses (REVIEWENV1g): the set-up the row drew, its step's record for the session a *not yet* goes to; the
+  // A set-up row's presses: the set-up the row drew, its step's record for the session a *not yet* goes to; the
   // row is released whichever way the host answered. A single press toasts a refusal in its words, a stale one's above all;
-  // an ask says it inside itself, where it was pressed.
+  // an ask says it inside itself, where the person pressed it.
   const review = (item: Attention, ask?: Answered) => {
     setActing(attentionKey(item));
     const answered = ask ? releasing(ask) : {
@@ -199,7 +199,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
       }),
     };
   };
-  // A second opinion's row's presses (XAGENT1g): the gate's one owner, the row released whichever way the driver answered, and
+  // A second opinion's row's presses: the gate's one owner, the row released whichever way the driver answered, and
   // a refusal said in its words.
   const opinion = (item: Attention, ask?: Answered): Answered => {
     setActing(attentionKey(item));
@@ -235,7 +235,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         notify(answer.message);
       }
     }, () => nudge(), answered),
-    // GOAHEADSTALE1: a stale one's refusal sends no park on (`goesOn: false`) and nudges nothing, since no session waits for it: it
+    // A stale one's refusal sends no park on (`goesOn: false`) and nudges nothing, since no session waits for it: it
     // runs nothing.
     answer: (item, approved, words, answered) => run(
       item,
@@ -253,15 +253,15 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
       if (hold) run(item, () => trust.mutateAsync(hold), (granted) => notify(granted.message, granted.verified ? 'ok' : 'error'), answered);
       else answered.done();
     },
-    // An *Allow* tells the session that proposed it, as the conversation's does (PROPOSEHERE1c); a proposal naming none tells none.
+    // An *Allow* tells the session that proposed it, as the conversation's does; a proposal naming none tells none.
     acceptRule: (item, answered) => run(item, () => ruleAnswer.settled(
       item.id, true, item.title, 'allow',
       ruleHearing(item.proposal, sessions.data ?? [], (session, text) => say.mutateAsync({ id: session, text })),
     ), (said) => notify(said), answered),
     declineRule: (item) => run(item, () => ruleAnswer.settled(item.id, false, item.title), (said) => notify(said)),
-    // The person's word on a plugin step's attempt held for them (FABRIC-PERFORM1g): recorded, it is said; refused (the desktop not holding
-    // the home, the attempt no longer held), the driver's own sentence in the error's tone. Its row moves as the slice is judged again.
-    // FABRIC-CLOSE1j: a close found closed only in part takes the person's stop through the same door, on its close's attempt.
+    // The person's word on a plugin step's attempt held for them: recorded, it is said; refused (the desktop not holding
+    // the home, the attempt not held now), the driver's own sentence in the error's tone. Its row moves as the slice is judged again.
+    // A close found closed only in part takes the person's stop through the same door, on its close's attempt.
     held: (item, resolution) => {
       const end = item.ended;
       const attempt = item.held
@@ -271,10 +271,10 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         // *Ask for a fix…* publishes an ask rather than recording a word: the driver's sentence names it.
         (answer) => notify(answer.done && resolution !== 'ask-fix' ? t('work.milestone.held.recorded', { node: attempt.node }) : answer.message, answer.done ? undefined : 'error'));
     },
-    // The folder a node record that does not read is kept in (FABRIC-PERFORM1j), opened for the person to mend it; a refusal (no record
+    // The folder a node record that does not read is kept in, opened for the person to mend it; a refusal (no record
     // kept now) in the driver's words. Its row goes once the record reads, as the slice is judged again.
     openRecords: (item) => run(item, () => openRecords.mutateAsync(), () => {}),
-    // A held git remote's *Try again* (GITAUTH1a, the git auth design §5.2): its repositories' holds lifted in its workspace, said in the
+    // A held git remote's *Try again*: its repositories' holds lifted in its workspace, said in the
     // page's words; a refusal in the driver's. Its row goes as .NET judges the slice again, which the lift wakes.
     gitTryAgain: (item) => {
       const held = item.git;
@@ -284,7 +284,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
           ? t('work.attention.gitHeld.lifted', { count: answer.lifted, host: held.host })
           : t('work.attention.gitHeld.liftedNone', { host: held.host })));
     },
-    // An agent's ask for a helper said yes or no to, as its session's page says it (MIXAGENT2c): its answer said in the page's
+    // An agent's ask for a helper said yes or no to, as its session's page says it: its answer said in the page's
     // words, a refusal by its code in the error's tone.
     helper: (item, yes) => {
       const session = item.session;
@@ -301,7 +301,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         else notify(helperSaid(t, why, message), 'error');
       });
     },
-    // An agent's ask to hand its session over said yes or no to, as its session's foot says it (NOTIFY2e, MIXAGENT1c), by the ask's
+    // An agent's ask to hand its session over said yes or no to, as its session's foot says it, by the ask's
     // own id: its answer said in the page's words, a refusal by its code in the error's tone.
     handOver: (item, yes) => {
       const session = item.session;
@@ -311,7 +311,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         else notify(yes ? t('work.handOverAsk.approved', { agent: item.agent ?? answer.agent ?? '' }) : t('work.handOverAsk.declined'));
       });
     },
-    // A tool call held for the person answered with the choice pressed, as its session's page answers it (AUTONOMY1b3c): its answer
+    // A tool call held for the person answered with the choice pressed, as its session's page answers it: its answer
     // said in the page's words, a refusal by its code in the error's tone.
     permission: (item, option) => {
       const held = item.permission;
@@ -322,12 +322,12 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         else notify(permissionSaid(t, answer.why, answer.message), 'error');
       });
     },
-    // A held remote's doors (GITAUTH1e, §6.8, §7.4): the row's own door, which opens Settings → Git on its host or its first repository's
+    // A held remote's doors: the row's own door, which opens Settings → Git on its host or its first repository's
     // git remote row by its class, where the identity is set up, signed in again or compared, and the person's own sign-ins are kept after
     // the confirmation that names what they let Daoris's git use; a browser has no such door.
     gitSetUp: (item) => doors['git-held']?.(item),
     gitChoose: (item) => doors['git-held']?.(item),
-    // A git go-ahead allowed or refused (GITAUTH1f, §6.6), as its session's head answers it: said in the page's words, a door that had gone
+    // A git go-ahead allowed or refused, as its session's head answers it: said in the page's words, a door that has gone
     // said with its Allow kept for the identical retry; a refusal in the driver's words.
     gitAnswer: (item, allow) => {
       run(item, () => gitAnswer.mutateAsync({ ask: item.id, answer: allow ? 'allow' : 'refuse' }),
@@ -335,14 +335,14 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     },
     // The host's own page for SSH keys, in the system's browser, as Settings → Git's link opens it.
     gitKeyPage: (item) => { if (item.git?.keyPage) window.open(item.git.keyPage, '_blank', 'noreferrer'); },
-    // The identity a push was refused with marked read only on its host (§7.4): the hard form of Write deny, a narrowing.
+    // The identity a push is refused with marked read only on its host: the hard form of Write deny, a narrowing.
     gitReadOnly: (item) => {
       const held = item.git;
       if (!held?.identityId) return;
       run(item, () => gitIdentity.mutateAsync({ action: 'read-only', identity: held.identityId!, on: true }),
         () => notify(t('work.attention.git.readOnlyDone', { identity: held.identity ?? '' })));
     },
-    // A quiet session's presses (SESSWATCH1a, the session-watch design §2.3): *End and carry on* and *Stop…* asked once under the row,
+    // A quiet session's presses: *End and carry on* and *Stop…* asked once under the row,
     // *Leave it running* one press, *Hand over…* its session's page, whose head asks it; a refusal said in its words.
     quiet: (item, act, answered) => {
       const session = item.session ?? item.id;
@@ -357,10 +357,10 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         else notify(answer.message || t('work.attention.quietGone'), 'error');
       }, answered && releasing(answered));
     },
-    // A run held at a declined request (INTEGRATE1o part o3) passed over with the person's words, as the run's view passes its node: kept
+    // A run held at a declined request passed over with the person's words, as the run's view passes its node: kept
     // for the driver's next look, which applies it and clears the row; a refusal by its code, in the ask.
-    // INTEGRATE1p (C33): the run's own request is asked again or gone on without by the same door's other two words.
-    // NODEKIT1 HUMAN: a person's task is pressed by the same door, on its run and node.
+    // The run's own request is asked again or gone on without by the same door's other two words.
+    // A person's task is pressed by the same door, on its run and node.
     passOver: (item, words, answered, act) => {
       const node = item.task?.node ?? item.declined?.node;
       if (!node) { answered.done(); return; }
@@ -369,7 +369,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         if (!answer.done) throw new Error(nodeWordRefused(t, answer));
       }, () => {}, answered);
     },
-    // A third answer alone held for the person let go on or kept, as its session's page answers it (COWORK1e, §8.3): its answer said
+    // A third answer alone held for the person let go on or kept, as its session's page answers it: its answer said
     // in the page's words, a refusal by its code in the error's tone.
     answerAlone: (item, goOn) => {
       const session = item.answer?.session ?? item.session;
@@ -379,26 +379,26 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
         else notify(answerAloneSaid(t, answer.why, answer.message), 'error');
       });
     },
-    // The agent's own sign-in through its account-owning door, as its page starts it (SIGNIN1): its end is said wherever the
-    // person is, and the roster read again then, which reads that account (ROSTER1).
+    // The agent's own sign-in through its account-owning door, as its page starts it: its end is said wherever the
+    // person is, and the roster read again then, which reads that account.
     signIn: (item, account) => {
       const harness = item.account?.door;
       if (harness) harnessRun.run(harness, 'login', account);
     },
-    // *Sign in for Daoris* (OWNSPACE1b-B, D175 point 7): the add flow's new sign-in, through the same door, in place. Its end is
+    // *Sign in for Daoris*: the add flow's new sign-in, through the same door, in place. Its end is
     // said wherever the person is; a new account serves by default, so there is no step 3 here.
     signInNew: (item) => {
       const harness = item.account?.door;
       if (harness) harnessRun.run(harness, 'login-new');
     },
-    // That one account, read on the press (ROSTER1): the reading a person may ask for, one account at a time.
+    // That one account, read on the press: the reading a person may ask for, one account at a time.
     read: (item, account) => {
       const agent = item.account?.agent;
       if (agent) run(item, () => readOne.mutateAsync({ agent, profile: account }), () => {});
     },
   };
 
-  // A sign-in in flight is shown under the first row that names its account, where it was started (platform language §4).
+  // A sign-in in flight is shown under the first row that names its account, where the person started it.
   const signing = harnessRun.running?.endsWith(':login') && harnessRun.runningProfile
     ? { harness: harnessRun.running.slice(0, -':login'.length), account: harnessRun.runningProfile }
     : null;
@@ -406,15 +406,15 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     ? waiting.find((item) => item.account?.door === signing.harness
       && item.account.named.some((one) => one.id === signing.account))
     : undefined;
-  // A new account's sign-in, from the no-account row (OWNSPACE1b-B): under the first row that offers it for that door.
+  // A new account's sign-in, from the no-account row: under the first row that offers it for that door.
   const signingNewRow = harnessRun.signingInNew
     ? waiting.find((item) => item.account?.noAccount && item.account.door === harnessRun.signingInNew)
     : undefined;
-  // A row of What needs you says the sign-in's line alone, its phase now with what it says (SIGNIN1, the UI/UX design §3.2).
+  // A row of What needs you says the sign-in's line alone, its phase now with what it says.
   const ends = {
     refused: harnessRun.refusal, failed: harnessRun.failure?.sentence, failedAt: harnessRun.failure?.at,
     onRetry: harnessRun.retry, onClose: harnessRun.dismiss, shown: 'line' as const,
-    // The other way in, where the agent has one (CODEXLOGIN1): Codex's device code beside its browser.
+    // The other way in, where the agent has one: Codex's device code beside its browser.
     other: harnessRun.otherWay, onSwitch: harnessRun.switchWay,
   };
   const below = (item: Attention) => {
@@ -426,7 +426,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     return <SignIn id={harnessRun.running!} harness={signing.harness} profile={label} tool={item.account?.product} {...ends} />;
   };
 
-  // GOAHEADSTALE1: every stale go-ahead refused with the person's one reason, each through its own door, the service's answer, as its
+  // Every stale go-ahead refused with the person's one reason, each through its own door, the service's answer, as its
   // row's *Refuse…* sends it: one after another, each its own answer, saying no park goes on, and nothing nudged, since nothing waits
   // for any of them. What the service refused is said inside the ask, beside how many it took; those it took stay taken.
   const refuseStale = (items: readonly Attention[], words: string, answered: Answered) => {
@@ -449,7 +449,7 @@ function Band({ doors, notify, onSessions, onRun, inView }: {
     })();
   };
 
-  // Each row whose step waits on the person opens its run there (WORKFLOW1c): the session it names, else its quest's newest here.
+  // Each row whose step waits on the person opens its run there: the session it names, else its quest's newest here.
   const runDoor = (item: Attention) => {
     const named = onRun ? rowRun(item) : null;
     const session = named ? runSessionOf(named, sessions.data ?? []) : null;

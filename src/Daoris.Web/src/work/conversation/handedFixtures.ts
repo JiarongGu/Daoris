@@ -1,6 +1,6 @@
 import type { HandedSection, InstructionAccount } from './conversation';
 
-// What a session was handed, as the driver's account keeps it (CONTEXT1): the shapes its goldens hold
+// What a session is handed, as the driver's account keeps it: the shapes its goldens hold
 // (`golden/target-prompt/*.account.json`), shared by the molecule's stories and its tests.
 
 const own = (name: string, chars: number, said: string): HandedSection =>

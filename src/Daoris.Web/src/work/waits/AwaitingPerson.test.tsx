@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { AwaitingPerson } from './AwaitingPerson';
 
-/** How the ask hears its end (UXFIX2's contract). */
+/** How the ask hears its end. */
 const ANSWERED = expect.objectContaining({ done: expect.any(Function), refused: expect.any(Function) });
 
 const ANALYSIS ='Two ways forward.\n1. Cap in the scheduler.\n2. Cap in the chunk API.\nI recommend the second.';
@@ -19,8 +19,8 @@ describe('a session parked at a checkpoint', () => {
   });
 
   /**
-   * Finish and decline, and never the fourth move the ledger allows. The third, a stop, is the page header's since
-   * SESSUX1d (D126 §3.3): one owner for a session's stop.
+   * Finish and decline, and never the fourth move the ledger allows. The third, a stop, is the page header's:
+   * one owner for a session's stop.
    */
   it('offers finish and decline, never the move the ledger keeps for the driver, and no stop of its own', async () => {
     const resolve = vi.fn();
@@ -37,9 +37,9 @@ describe('a session parked at a checkpoint', () => {
   });
 
   /**
-   * STANDDOWN2: a driven session that took its quest and stopped to ask has no process left to take a
+   * A driven session that took its quest and stopped to ask has no process left to take a
    * message, so the answer is a move here — written on the record, and the quest carried on in the same
-   * tree, handed the words. FG5's verify session asked for a merge, a sign-in and a go-ahead.
+   * tree, handed the words.
    */
   it('answers a session that has no process left, and carries its quest on with the words', async () => {
     const answer = vi.fn();
@@ -54,7 +54,7 @@ describe('a session parked at a checkpoint', () => {
     expect(screen.queryByText(/in the box below/)).toBeNull();
   });
 
-  /** ONEWAY1k (the oneway design §4 M1): the answer goes through the say door, which keeps words, so the card sends none without them, as the box below. */
+  /** The answer goes through the say door, which keeps words, so the card sends none without them, as the box below. */
   it('sends no answer without words, its press waiting for them as the box below does', async () => {
     const answer = vi.fn();
     show({ onAnswer: answer });
@@ -146,8 +146,7 @@ describe('a session parked at a checkpoint', () => {
 });
 
 /**
- * QUESTCLOSE1 (D126's note): on the install the person finished two driven sessions at a checkpoint and each quest stayed
- * taken, with nothing to close it. A finish whose session holds a quest still open or taken asks, in the same act, what
+ * A finish whose session holds a quest still open or taken asks, in the same act, what
  * becomes of that quest: left as it is, the default, or marked done as the person's, with their note.
  */
 describe('finishing a session that holds a quest (QUESTCLOSE1)', () => {

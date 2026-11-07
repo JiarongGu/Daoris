@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { FilePreview } from './FilePreview';
 import type { TreeFile } from './preview';
 
-// A file's preview (PREVIEW1, D111), in the side bar at its floor (300px) and at a roomier width. Every
+// A file's preview, in the side bar at its floor (300px) and at a roomier width. Every
 // state is a file passed in: read, marked, bounded, binary, empty, refused, reading, with its changes.
 
 const SOURCE = [
@@ -71,7 +71,7 @@ export const WithItsChanges: Story = { args: { patch: PATCH } };
 /** Past the bound: the first lines, and a sentence saying how much the file holds and where the rest is. */
 export const Bounded: Story = { args: { file: { ...FILE, size: 3 * 1024 * 1024, truncated: true } } };
 
-/** REVIEW2: the landing tidied the tree away, so the file is the landed branch's copy, and says so. */
+/** The landing tidied the tree away, so the file is the landed branch's copy, and says so. */
 export const FromTheLandedBranch: Story = {
   args: { file: { ...FILE, branch: 'feature/0fda18-fix-the-api-gap', size: 3 * 1024 * 1024, truncated: true }, patch: PATCH },
 };

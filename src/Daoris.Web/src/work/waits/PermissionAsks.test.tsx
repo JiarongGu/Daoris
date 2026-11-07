@@ -4,12 +4,12 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { boundMinutes, heldFor, permissionSaid, PermissionAsks, type PermissionWait } from './PermissionAsks';
 
-// AUTONOMY1b3c (D184 point 3 and its AUTONOMY1b3a note): a tool's permission request a session holds for the person under asking,
+// A tool's permission request a session holds for the person under asking,
 // answered where they talk to it, as the console asks its person. One press per choice the agent offered, by its own name: this
 // call's allow and a refusal, never an allow nobody offered. A molecule: the frame holds the answer and its pending.
 
 // Held three minutes before the tests run; a few seconds' run still reads three. Its bound is the driver's answer for it, `until`
-// (PERMUNTIL1), so the card says the route's minutes: 15 from its start, as the driver's `HeldPermissions.Bound` is.
+// so the card says the route's minutes: 15 from its start, as the driver's `HeldPermissions.Bound` is.
 const HELD = Date.now() - 3 * 60_000 - 10_000;
 const SINCE = new Date(HELD).toISOString();
 const UNTIL = new Date(HELD + 15 * 60_000).toISOString();

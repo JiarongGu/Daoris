@@ -6,7 +6,7 @@ import type { EntryPart, SessionEntry } from '../entries';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PartsFlow } from './PartsFlow';
 
-// A session's parts drawn as a flowchart (FLOWCHART1b; the flowchart design §2.3, §4.4): each part hung by what it followed and
+// A session's parts drawn as a flowchart: each part hung by what it followed and
 // labelled by how it began, an asked part from a faint node, the part the page is on lit, and where Accept would land them as a
 // dashed node. At the frame's widths, 300 px the side bar's floor (the parts strip, which is the flow's rail), 400 and 544
 // top to bottom, 1200 left to right. Parts are lineage, never a cause or a concurrency. The first decorator is the innermost.
@@ -79,8 +79,8 @@ export const WithTheLandingPlanChinese: Story = {
 };
 
 /**
- * A session that moved (SESSCTX1d; the session-context design §7): handed over from Claude Code at its account's limit, then moved
- * on from Codex when its own conversation was lost, each part with what it spent on its own row: read as one session.
+ * A session that moved: handed over from Claude Code at its account's limit, then moved
+ * on from Codex when its own conversation is lost, each part with what it spent on its own row: read as one session.
  */
 const MOVED: SessionEntry = {
   ...RETRY,

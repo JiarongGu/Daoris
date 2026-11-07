@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import i18n from '../../locales/i18n';
 import { RepositoryGroup } from './RepositoryGroup';
 
-// The rail's second level (design §3): grouping is by repository because that is the axis a person
+// The rail's second level: grouping is by repository because that is the axis a person
 // switches on, and the header is where the REPOSITORY's own facts live — the session rows beneath
 // it carry only the session's. Props-only, like every molecule here.
 
@@ -24,8 +24,8 @@ describe('a repository group', () => {
   });
 
   /**
-   * A hold is the person stopping the driver from starting anything new here (D46 §6). It outranks
-   * "drives here" on the header, because the standing choice is no longer what is happening.
+   * A hold is the person stopping the driver from starting anything new here. It outranks
+   * "drives here" on the header, because the standing choice is not what is happening.
    */
   it('shows a hold instead of the standing choice it suspends', () => {
     render(<RepositoryGroup repository="engine" count={1} drivable held>{row}</RepositoryGroup>);
@@ -47,8 +47,8 @@ describe('a repository group', () => {
   });
 
   /**
-   * UX5 U60: busy is a fact about the TREE (it is held), not a liveness mark. It wore the live dot a
-   * working session wears, so a group whose one chat was idle, or parked on its person, read live.
+   * Busy is a fact about the TREE (it is held), not a liveness mark: it carries no live dot, which a
+   * working session wears, so a group whose one chat is idle, or parked on its person, does not read live.
    */
   it('says busy in words, without the live mark a working session wears', () => {
     const { container } = render(<RepositoryGroup repository="engine" count={1} busy>{row}</RepositoryGroup>);
@@ -59,7 +59,7 @@ describe('a repository group', () => {
 
   /**
    * A session can run in a repository that never adopted doctrine, and the header says so rather
-   * than leaving the person to wonder why nothing can be asked of it (D48 §4).
+   * than leaving the person to wonder why nothing can be asked of it.
    */
   it('marks a repository that has not adopted', () => {
     render(<RepositoryGroup repository="sandbox" count={1} adopted={false}>{row}</RepositoryGroup>);

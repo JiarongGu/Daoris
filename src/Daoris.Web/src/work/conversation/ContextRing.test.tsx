@@ -9,8 +9,8 @@ const show = (props: Parameters<typeof ContextRing>[0]) =>
   render(<Tooltip.Provider><ContextRing {...props} /></Tooltip.Provider>);
 
 /**
- * CONV5: context used against the window, as the agent last reported it — under the composer, where
- * the reference keeps it. Absent is never zero (TOOL3): a session that reported nothing says so.
+ * Context used against the window, as the agent last reported it — under the composer, where
+ * the reference keeps it. Absent is never zero: a session that reported nothing says so.
  */
 describe('the context ring', () => {
   it('shows how full the context is, as a meter a screen reader can read', async () => {

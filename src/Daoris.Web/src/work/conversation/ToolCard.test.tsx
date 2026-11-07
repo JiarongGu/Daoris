@@ -7,7 +7,7 @@ import type { Block } from './conversation';
 import { FileOpener, type FileOpen } from '../review/preview';
 import { ToolCard } from './ToolCard';
 
-// A tool card's file as a door into the side bar's preview (PREVIEW1, D111). A molecule: the opener is a
+// A tool card's file as a door into the side bar's preview. A molecule: the opener is a
 // context the Work frame provides, so each case is a card and an opener passed in.
 
 const TREE = 'C:/somewhere/engine';
@@ -64,7 +64,7 @@ describe('a tool card\'s file', () => {
     expect(open).toHaveBeenCalledWith({ path: 'src/world.ts', lines: null });
   });
 
-  /** A door that could only refuse is not offered (UX5 U66): the host would refuse this path. */
+  /** A door that could only refuse is not offered: the host would refuse this path. */
   it('stays text for a path outside the session\'s tree', () => {
     show({ ...READ, title: 'Read C:/somewhere/game/a.ts', locations: ['C:/somewhere/game/a.ts'] }, vi.fn());
 
@@ -72,7 +72,7 @@ describe('a tool card\'s file', () => {
     expect(screen.getByText('Read C:/somewhere/game/a.ts')).toBeInTheDocument();
   });
 
-  /** ACP's `locations[].line` (LEFT2): an edit's location names where its first hunk now starts. */
+  /** ACP's `locations[].line`: an edit's location names where its first hunk now starts. */
   it('opens an edit\'s file marked at the line its location names', async () => {
     const open = vi.fn();
     show({ ...EDIT, status: 'completed', title: `Edit ${TREE}/src/world.ts`, locations: [`${TREE}/src/world.ts`], line: 17 }, open);

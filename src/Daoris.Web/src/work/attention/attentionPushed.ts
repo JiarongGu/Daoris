@@ -17,7 +17,7 @@ import type { NoteRecord } from '../noteLines';
 export type StaleSince = { since: string | null };
 
 /**
- * A quiet row's watch: the minutes nothing was heard from its session, whether something it runs keeps the machine
+ * A quiet row's watch: the minutes since its session last spoke, whether something it runs keeps the machine
  * busy (the *busy, nothing heard* row, offered no end), whether it is an intake, and whether the person's words wait to reach it.
  */
 export type QuietWait = {
@@ -27,9 +27,9 @@ export type QuietWait = {
 };
 
 /**
- * One row of *What needs you* as the shell pushes it (D182's PUSH1d4 note): who needs the person is judged in .NET
+ * One row of *What needs you* as the shell pushes it: who needs the person is judged in .NET
  * (`NeedsAPerson`, `AccountAttention`), and the page orders and words its rows. Each carries its kind, its id, since when it has
- * waited (null where nothing says), the values its words are made of, and the workspace of the record it was judged from where a
+ * waited (null where nothing says), the values its words are made of, and the workspace of the record it is judged from where a
  * window's scope filters it. What it is called is named here from the records the page holds (`attentionWorded`).
  */
 export type PushedAttention = {
@@ -100,14 +100,14 @@ export type PushedAttention = {
   wholeWorkspace?: boolean;
   /** What a start waiting on accounts holds, which its title says. */
   holding?: { quests: string[]; asks: string[] };
-  /** When a signed-out account was read. */
+  /** When the read that found the account signed out happened. */
   read?: string | null;
   account?: PushedAccountFacts;
   /** A press a terminal sent that waits for the window's Confirm: {@link PushedConfirmation}. */
   confirmation?: PushedConfirmation;
   /**
    * A volume still below its free-space floor once the floor's acts ran: where it is mounted, its free space, size and floor in
-   * bytes as read when it was said, what the floor freed in this stretch, and what *Free up space…* could free (null where none was read).
+   * bytes as read when the row is said, what the floor freed in this stretch, and what *Free up space…* could free (null where none is read).
    */
   space?: { root: string | null; free: number; total: number; floor: number | null; freed: number; could?: number | null };
   /** The old records every part's census holds while one has not ended, and their count by part. */
@@ -132,10 +132,10 @@ export type PushedAttention = {
 export type MemoryWait = { ends: number; replacements: number; staged: number };
 
 /**
- * An integration's wait on the owner (the integration design §5.8, §17.4): a candidate the line's rule held for their decide,
+ * An integration's wait on the owner: a candidate the line's rule held for their decide,
  * with its members' branches and the judge's words; a superseded commit awaiting their answer, by its request and commit; or a landed branch
- * whose integration waits for their card; or a repository whose committed declaration waits for their acceptance (§5.8), where `tip` is the
- * declaration's blob and `state` says whether none was accepted yet or the accepted one changed. Branches, subjects and words are content,
+ * whose integration waits for their card; or a repository whose committed declaration waits for their acceptance, where `tip` is the
+ * declaration's blob and `state` says whether none is accepted yet or the accepted one changed. Branches, subjects and words are content,
  * shown as written.
  */
 export type IntegrationWait = {
@@ -157,12 +157,12 @@ export type IntegrationWait = {
 
 /**
  * A run held at a request the receiver declined: the `work.requests` node the person's *Pass over…* is said on, the
- * declined quest and the repository it was addressed to, and the run's newest work quest here (null where it has none), which its door reads.
+ * declined quest and the repository it addresses, and the run's newest work quest here (null where it has none), which its door reads.
  */
 export type DeclinedRequest = { node: string; quest: string; to: string; work?: string | null; request?: boolean };
 
 /**
- * A run waiting on a person's task (NODEKIT1 HUMAN): the run and its `human` node the press is said on, the presses it waits for (`done`, or
+ * A run waiting on a person's task: the run and its `human` node the press is said on, the presses it waits for (`done`, or
  * `approve` and `reject`), and the run's newest work quest here (null where it has none), which its door reads.
  */
 export type HumanTaskWait = { run: string; node: string; acts: string[]; work?: string | null };
@@ -181,13 +181,13 @@ export type PushedConfirmation = {
 };
 
 /**
- * Why a git remote is held (the git auth design §5.1): refused, its push refused, its host key unknown, its host key changed, or
+ * Why a git remote is held: refused, its push refused, its host key unknown, its host key changed, or
  * its repository's own ssh command, which Daoris's ssh door cannot stand in front of on this install.
  */
 export type GitHeldClass = 'refused' | 'write-refused' | 'host-unknown' | 'host-changed' | 'own-input' | 'no-identity';
 
 /**
- * A git go-ahead (D198 point 12; the git auth design §6.6): the door holds one act on a remote whose class is ask, a push or a
+ * A git go-ahead: the door holds one act on a remote whose class is ask, a push or a
  * fetch, until the person allows or refuses it; where its door has gone (`gone`), an Allow is kept for the identical retry. The
  * repository, remote and host are content.
  */
@@ -200,11 +200,11 @@ export type GitAskWait = {
   gone: boolean;
 };
 
-/** What serves a held group's remote now, as the doors resolve it (the git auth design §7.4): an identity, the person's own sign-ins, or nothing. */
+/** What serves a held group's remote now, as the doors resolve it: an identity, the person's own sign-ins, or nothing. */
 export type GitServed = 'identity' | 'own' | 'none';
 
 /**
- * A held group of git remotes (D198; the git auth design §5.2): the host, why, what it holds (reads and writes, or writes
+ * A held group of git remotes: the host, why, what it holds (reads and writes, or writes
  * alone), the remote, the repositories held in this group, and git's or ssh's own last line, already redacted. Its
  * way and what serves it, the identity by label and id where one does; the move's row (`no-identity`) names every host it covers and
  * the repositories whose own configuration names authentication. The host, the remote, the repositories, the label and git's words

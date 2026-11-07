@@ -1,6 +1,6 @@
 /**
- * The person's own terminals (CONSOLE4, D96), as the page holds them: the shape lives here, beside the
- * view that draws it, so the view can name it without importing the bridge (SURF6's rule for shapes).
+ * The person's own terminals, as the page holds them: the shape lives here, beside the
+ * view that draws it, so the view can name it without importing the bridge.
  */
 
 /** One terminal the page opened: its shell, where it started, and how it ended once it has. */
@@ -8,7 +8,7 @@ export type OpenTerminal = {
   id: string;
   /** The shell's id: `pwsh`, `powershell`, `cmd` or `bash`. */
   shell: string;
-  /** Where it started, as the module answered: the folder asked for, or the home when that was not here. */
+  /** Where it started, as the module answered: the folder asked for, or the home when that is not here. */
   cwd: string;
   /** The shell's exit code once it ended on its own; null while it runs. */
   exit: number | null;
@@ -26,12 +26,12 @@ export type TerminalShellChoice = { shells: string[]; default: string | null };
  */
 export type Terminals = {
   list: OpenTerminal[];
-  /** The tab shown (CONSOLE4c): the one opened last, until the person picks another. */
+  /** The tab shown: the one opened last, until the person picks another. */
   selected: string | null;
   select: (id: string) => void;
   /** Whether an open is on its way; a second one waits for it. */
   opening: boolean;
-  /** Why the last open was refused, as the bridge rejected it, or null. */
+  /** Why the last open is refused, as the bridge rejects it, or null. */
   refused: unknown;
   open: (opening?: TerminalOpening) => void;
   input: (id: string, data: string) => void;
@@ -52,7 +52,7 @@ export function folderName(path: string): string {
 }
 
 /**
- * Each terminal's tab name (CONSOLE4c): its shell and where it started, and, where that name repeats,
+ * Each terminal's tab name: its shell and where it started, and, where that name repeats,
  * which of them it is — the first plain, the next numbered in the order they opened, so a name already
  * on a tab never changes under the person.
  */

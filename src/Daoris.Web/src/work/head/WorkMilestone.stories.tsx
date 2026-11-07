@@ -5,7 +5,7 @@ import { storyWidths } from '../../design/storyWidths';
 import type { HeldAttempt, MilestoneEntry, MilestoneUnit } from './milestone';
 import { WorkMilestone } from './WorkMilestone';
 
-// Where a piece of work stands (MILESTONEUX1, the UI/UX design §3.7): four independent facts, each marked by `Dot`'s tone and
+// Where a piece of work stands: four independent facts, each marked by `Dot`'s tone and
 // never a sequence, folded to their line and opened in place. A story per row of the design's state table, each folded and
 // opened, then the narrow main area, 中文 and dark. The folded stories open on a press; the opened ones start open.
 

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { TogetherDoor, type TogetherView } from './TogetherDoor';
 
-// LINESTOGETHER1d: Bring them together… on the head, the phases on the head and on a member, and the presses each phase allows.
+// Bring them together… on the head, the phases on the head and on a member, and the presses each phase allows.
 
 const operation = (over: Partial<TogetherView> = {}): TogetherView => ({
   id: 'tg1', phase: 'asked', role: 'head', head: 'hhhh0000', why: null, into: null, line: false,

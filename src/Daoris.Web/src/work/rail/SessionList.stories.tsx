@@ -9,7 +9,7 @@ import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from '../frame/layout';
 import { ListMore, ListPane } from '../frame/ListPane';
 import { ArchiveEndedAsk, type SessionRowFacts, SessionList, SessionStrip } from './SessionList';
 
-// Sessions' list (SESSUX1c, D126 §2.1, §4) on its list pane, in every state the design names: by state with every
+// Sessions' list on its list pane, in every state: by state with every
 // group, by repository, one group only, a long Ended group and its press, archived shown, empty, loading, 中文 titles,
 // the strip with what waits on the person first, and laid over the main area. A molecule, so each is reached by
 // passing it: no driver, no service.
@@ -62,7 +62,7 @@ const GROUPINGS: SessionGrouping[] = [
 ];
 
 const facts = (sessions: readonly Session[]): SessionRowFacts[] => {
-  // The rail's join of a record's own links (MIXAGENT3a-i): the linked session's quest title, where the list holds it.
+  // The rail's join of a record's own links: the linked session's quest title, where the list holds it.
   const titled = (id: string | null | undefined) => {
     const linked = id ? sessions.find((row) => row.id === id) : undefined;
     return linked?.quest ? QUESTS.get(linked.quest)?.title ?? null : null;
@@ -71,7 +71,7 @@ const facts = (sessions: readonly Session[]): SessionRowFacts[] => {
     session: row,
     quest: row.quest ? QUESTS.get(row.quest) : null,
     opening: row.id === 'c4a7c4a7' ? 'Why does the loader block on the first chunk?' : null,
-    // A chat between turns reads idle, as the driver says (UX5 U17).
+    // A chat between turns reads idle, as the driver says.
     taking: row.kind === 'chat' ? false : undefined,
     continues: titled(row.from),
     helps: titled(row.serves),
@@ -82,13 +82,13 @@ const facts = (sessions: readonly Session[]): SessionRowFacts[] => {
 /** Whose work each second opinion reads, by the opinion's id: what the rail joins from `/api/opinions` (XAGENT1g4c). */
 const READS: Record<string, string> = { o9a1b2c3: 'w0rk1ng0' };
 
-/** The rail's join for MIXAGENT3a-ii: each helper's `serves`, and each reviewer's opinion's `working`. */
+/** The rail's join: each helper's `serves`, and each reviewer's opinion's `working`. */
 const servingOf = (sessions: readonly Session[]): Record<string, string> => Object.fromEntries(sessions.flatMap((row) => {
   const served = row.serves ?? (row.opinion ? READS[row.opinion] : null);
   return served ? [[row.id, served]] : [];
 }));
 
-/** Fifteen that ended, newest first: past the twelve a group shows before its press (§4.4). */
+/** Fifteen that ended, newest first: past the twelve a group shows before its press. */
 const MANY_ENDED = Array.from({ length: 15 }, (_, index) =>
   session({ id: `e${String(index).padStart(7, '0')}`, state: index % 4 === 0 ? 'failed' : 'completed', updated: at(30 + index * 45) }));
 
@@ -100,7 +100,7 @@ type Args = {
   archived?: boolean;
   layout?: ListLayout;
   loading?: boolean;
-  /** *Archive what ended…*'s first press, under the list's header (SESSUX1e), listed from these sessions. */
+  /** *Archive what ended…*'s first press, under the list's header, listed from these sessions. */
   asking?: boolean;
 };
 
@@ -148,7 +148,7 @@ function SessionsListPane({
           repositoryFacts={(repository) => ({ drivable: repository !== 'tools', held: repository === 'tools', busy: repository === 'game' ? true : null })}
           serving={servingOf(sessions)}
           onSelect={() => {}}
-          // Each row's acts as the one rule offers them (SESSUX1d), as the rail hands them.
+          // Each row's acts as the one rule offers them, as the rail hands them.
           actsFor={(row) => offeredActs({ session: row, grouping: groupings?.find((each) => each.session === row.id) }, 'row')}
           onAct={() => {}}
         />
@@ -190,7 +190,7 @@ export const OneGroup: Story = {
 };
 
 /**
- * ANSWER1c (D131): the person answered the park, and for up to one look of the driver's its record is still parked with
+ * The person answered the park, and for up to one look of the driver's its record is still parked with
  * the answer set. The reader lists it under *Working*, its row *answered* and quiet, and *Waiting on you* holds only the
  * quest parked on its failed sessions. Its ⋯ offers no *Answer…*.
  */
@@ -206,7 +206,7 @@ export const AnsweredGoesOn: Story = {
   },
 };
 
-/** A long *Ended*: twelve, then *Show 3 more* (§4.4). */
+/** A long *Ended*: twelve, then *Show 3 more*. */
 export const LongEnded: Story = {
   args: {
     sessions: MANY_ENDED, selected: null,
@@ -214,7 +214,7 @@ export const LongEnded: Story = {
   },
 };
 
-/** Archived shown: last, after *Ended* (§4.1), each row's ⋯ offering *Unarchive*. Hidden unless shown. */
+/** Archived shown: last, after *Ended*, each row's ⋯ offering *Unarchive*. Hidden unless shown. */
 export const ArchivedShown: Story = {
   args: {
     archived: true,
@@ -222,10 +222,10 @@ export const ArchivedShown: Story = {
   },
 };
 
-/** *Show archived* ticked with nothing archived (SESSUX1e): the group says so, rather than the tick seeming to do nothing. */
+/** *Show archived* ticked with nothing archived: the group says so, rather than the tick seeming to do nothing. */
 export const ArchivedEmpty: Story = { args: { archived: true } };
 
-/** By repository with archived shown: an archived row sits among the ended, and its line says it is archived (§4.5). */
+/** By repository with archived shown: an archived row sits among the ended, and its line says it is archived. */
 export const ArchivedByRepository: Story = {
   args: {
     arrangement: 'repository',
@@ -235,7 +235,7 @@ export const ArchivedByRepository: Story = {
 };
 
 /**
- * *Archive what ended…*'s first press (§5.3), under the list's header: what the second press would archive, and what
+ * *Archive what ended…*'s first press, under the list's header: what the second press would archive, and what
  * stays because it needs the person: two waiting on you, one to review.
  */
 export const ArchiveWhatEnded: Story = { args: { asking: true, selected: null } };
@@ -254,18 +254,18 @@ export const Loading: Story = { args: { loading: true } };
 /** Titles in 中文: content, never translated, cut to one line with the whole in its tip. */
 export const ChineseTitle: Story = { args: { selected: 'qu3u3d00' } };
 
-/** No reader has answered (a browser): every record by its own word, by repository, as the list always was. */
+/** No reader has answered (a browser): every record by its own word, by repository. */
 export const NoReader: Story = { args: { arrangement: 'repository', groupings: undefined } };
 
-/** Closed by the person: its strip holds what waits on the person first, then what runs (§2.5). */
+/** Closed by the person: its strip holds what waits on the person first, then what runs. */
 export const Strip: Story = { args: { layout: CLOSED } };
 
 /** A strip the window drew, opened: the list over the main area, beside its strip. */
 export const LaidOver: Story = { args: { layout: { mode: 'over', width: LIST_BOUNDS.sessions.initial, beside: LIST_STRIP, auto: true } } };
 
 /**
- * MIXAGENT3a-i (the mixed-agents design §4): a conversation handed over says on its line the session it continues. And
- * MIXAGENT3a-ii: a helper, titled as one, is drawn under the session it helps (out of *Working*, into *Waiting on you* under
+ * A conversation handed over says on its line the session it continues. And
+ * a helper, titled as one, is drawn under the session it helps (out of *Working*, into *Waiting on you* under
  * the parked session that asked it), and a second opinion's reviewer under the work it read (out of *Ended*), their lines
  * leaving whose work it is to the row above; in English, 中文 and dark.
  */

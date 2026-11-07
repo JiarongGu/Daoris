@@ -11,15 +11,15 @@ export type HandOverRoster = {
   labels?: Readonly<Record<string, string>>;
   names?: Readonly<Record<string, string>>;
   accounts: AgentAccounts;
-  /** Each agent's accounts of Daoris's in the set's order, every workspace's (POOL1c, D197). */
+  /** Each agent's accounts of Daoris's in the set's order, every workspace's. */
   orderOf?: (harness: string) => readonly string[] | null;
 };
 
 /**
- * **A hand-over's ask** (MIXAGENT1b-i, D163 §2, the mixed-agents design §5): *Go on with another agent…* opens it under the
+ * **A hand-over's ask**: *Go on with another agent…* opens it under the
  * page header as the stop's ask opens, on the primary's hue since nothing is destroyed. It says what goes on and what carries
  * over, the agent and account chip (the agents other than the conversation's own, and the chosen one's accounts in the set's
- * order), then *Hand over* and *Never mind*. A refusal is said inside it and keeps the choice (UX5 U68). While the conversation
+ * order), then *Hand over* and *Never mind*. A refusal is said inside it and keeps the choice. While the conversation
  * works the move is *Stop and hand over…*'s: the turn is stopped after the ask is kept, and the ask says where it goes on.
  *
  * @remarks
@@ -35,7 +35,7 @@ export function HandOverAsk({ from, first, working = false, roster, initial, bus
   /** It works: the move stops its turn. */
   working?: boolean;
   roster: HandOverRoster;
-  /** The choice it opens with, where Daoris's offer made one (MIXAGENT1b-ii); an agent it does not offer is left out. */
+  /** The choice it opens with, where Daoris's offer makes one; an agent it does not offer is left out. */
   initial?: AgentChoice;
   /** A hand-over on its way: the presses wait for it. */
   busy?: boolean;
@@ -47,7 +47,7 @@ export function HandOverAsk({ from, first, working = false, roster, initial, bus
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  // The offer's candidates (other tools) lead, and the rest stay a choice: only Daoris's own offer is narrowed (MIXAGENT1b-iii).
+  // The offer's candidates (other tools) lead, and the rest stay a choice: only Daoris's own offer is narrowed.
   const others = roster.harnesses.filter((harness) => harness !== from)
     .sort((a, b) => Number(!first?.includes(a)) - Number(!first?.includes(b)));
   const [choice, setChoice] = useState<AgentChoice>(
@@ -63,7 +63,7 @@ export function HandOverAsk({ from, first, working = false, roster, initial, bus
 
   return (
     <InlineConfirm
-      // Keyed by whether it was kept: a kept ask is another, with its wait let go and only *Close* left.
+      // Keyed by whether it is kept: a kept ask is another, with its wait let go and only *Close* left.
       key={kept ? 'kept' : 'ask'}
       className="mt-2.5"
       tone="primary"

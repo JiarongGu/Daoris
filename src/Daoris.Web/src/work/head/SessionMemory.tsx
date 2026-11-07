@@ -18,11 +18,11 @@ const KNOWN_STATES = ['staged', 'ready', 'awaiting', 'applying', 'applied', 'dro
 
 const PROPOSAL_STATES = ['awaiting', 'declined', 'answered', 'stale', 'dropped'];
 
-/** The kinds that end an entry and so await the person: an end, and a replacement (KNOWCENTRAL2h). */
+/** The kinds that end an entry and so await the person: an end, and a replacement. */
 const ENDS = ['end', 'supersede'];
 
 /**
- * A session's memory changes (KNOWCENTRAL2e; the memory coordinator design §1, §4), each its own decision: a write and the entry it
+ * A session's memory changes, each its own decision: a write and the entry it
  * disputes or amends, an end with who proposed it, its door and models and the revision it read, and a proposal with its standing on
  * the owner's quest. An end awaiting its approver is the person's to approve or decline; an ended session's staged changes are theirs to
  * keep or drop. Nothing to say, and nothing is drawn.

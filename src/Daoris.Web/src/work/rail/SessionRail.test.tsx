@@ -6,14 +6,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 // An ORGANISM, so this is the layer that holds the hooks and the layer a mocked bridge is for
-// (components plan §2). The bridge is mocked as present, because the Work frame is desktop-only
-// (D55) and the group header's driver facts exist nowhere else; one case takes it away, as a browser has none.
+// The bridge is mocked as present, because the Work frame is desktop-only
+// and the group header's driver facts exist nowhere else; one case takes it away, as a browser has none.
 
 const { invoke, notifyReady, bridge, heard } = vi.hoisted(() => ({
   invoke: vi.fn(),
   notifyReady: vi.fn(() => Promise.resolve()),
   bridge: { available: true },
-  // The state hub's ear (STATEHUB1f, D169): what the mocked shell publishes after a press reaches it, as the kit's pump would.
+  // The state hub's ear: what the mocked shell publishes after a press reaches it, as the kit's pump would.
   heard: new Map<string, (payload: unknown) => void>(),
 }));
 
@@ -70,7 +70,7 @@ const LIVE = [
   { ...base, id: 'd4e5f6a7', quest: null, repository: 'engine', state: 'completed', created: at(300), updated: at(240) },
 ];
 
-/** The driver's one reader on LIVE (SESSUX1a), in its order: what waits on you, what runs, what ended. */
+/** The driver's one reader on LIVE, in its order: what waits on you, what runs, what ended. */
 let GROUPS: unknown[] = [];
 const LIVE_GROUPS = [
   { session: 'b2c3d4e5', group: 'you', shown: 'awaiting-person', archived: false, teammate: false },
@@ -97,7 +97,7 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
-/** The session rows in a region — its buttons less each row's menu trigger (RAIL1). */
+/** The session rows in a region — its buttons less each row's menu trigger. */
 const rows = (region: HTMLElement) => within(region).getAllByRole('button')
   .filter((button) => !button.getAttribute('aria-label')?.startsWith('more for'));
 
@@ -123,7 +123,7 @@ describe('the session rail', () => {
     show(<SessionRail notify={() => {}} arrangement="repository" />);
 
     // The repository groups' headings — not the ended section's, which is a peer of the groups
-    // rather than one of them, and lists what is no longer running.
+    // rather than one of them, and lists what is not running.
     const ended = await screen.findByRole('region', { name: 'Ended' });
     const headings = screen.getAllByRole('heading', { level: 3 })
       .filter((heading) => !ended.contains(heading));
@@ -131,10 +131,10 @@ describe('the session rail', () => {
   });
 
   /**
-   * FRAME6: closed to its 56px strip, the rail keeps every running session one press away — its
+   * Closed to its 56px strip, the rail keeps every running session one press away — its
    * repository's initial and its mark, with the title, the repository and the state as its name, since
-   * a strip has no room for the words and a mark is never hue alone (D41 §6). What ended is left to
-   * the open rail; the attended session stays, whatever state it reached. By state (D126 §2.5), what
+   * a strip has no room for the words and a mark is never hue alone. What ended is left to
+   * the open rail; the attended session stays, whatever state it reached. By state, what
    * waits on the person comes first, then what runs, in the open list's order.
    */
   it('keeps every running session one press away as a strip, what waits on you first', async () => {
@@ -164,8 +164,8 @@ describe('the session rail', () => {
   });
 
   /**
-   * RAIL1: a conversation is named by the first thing the person said, from this machine's record over
-   * the bridge; searching finds sessions by name at once and by what was said once a word is typed,
+   * A conversation is named by the first thing the person said, from this machine's record over
+   * the bridge; searching finds sessions by name at once and by what the person said once a word is typed,
    * with the words marked; and each row's menu does what it says.
    */
   describe('names, search and the row menu (RAIL1)', () => {
@@ -195,7 +195,7 @@ describe('the session rail', () => {
     });
 
     /**
-     * LOOK2b: the rail said *in s-2394e5d9* of a session whose landing had tidied that tree away. Where each row's work
+     * The rail does not say *in s-2394e5d9* of a session whose landing has tidied that tree away. Where each row's work
      * is now is asked once for the rows the rail shows, naming the tree each record holds, and a landed row says where
      * the work landed.
      */
@@ -212,7 +212,7 @@ describe('the session rail', () => {
 
       expect(await screen.findByText(/landed on feature\/7a82cc-streaming-budget/)).toBeInTheDocument();
       expect(screen.queryByText(/in s-2394e5d9/)).toBeNull();
-      // The live session's own tree is still named: nothing was said of it but that it is there.
+      // The live session's own tree is still named: nothing is said of it but that it is there.
       expect(screen.getByText(/in streaming-budget/)).toBeInTheDocument();
       expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_WHERE', {
         payload: {
@@ -220,14 +220,14 @@ describe('the session rail', () => {
             { id: 'e5f6a7b8', tree: tidied },
             { id: 's1a2b3c4', tree: 'C:/somewhere/.daoris/trees/default/engine/streaming-budget' },
           ],
-          // NOBLOCK1: the query the shell's event names when its look answers.
+          // The query the shell's event names when its look answers.
           held: expect.any(String),
         },
       });
     });
 
     /**
-     * NOBLOCK1: SESSION_WHERE held the window's thread up to 65.9 s. The shell answers what it holds, nothing yet on its first
+     * SESSION_WHERE never holds the window's thread. The shell answers what it holds, nothing yet on its first
      * ask, and its look's answer comes as `ANSWERED` naming this query: the row says what it said until then, and where the
      * work landed once it comes.
      */
@@ -287,7 +287,7 @@ describe('the session rail', () => {
       await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'streamer');
       const said = await screen.findByRole('region', { name: 'In what was said' });
       expect(within(said).getByText('streamer').tagName).toBe('MARK');
-      // Its tint adds no space beside the word (UX5 U61).
+      // Its tint adds no space beside the word.
       expect(within(said).getByText('streamer')).toHaveClass('-mx-0.5');
       await userEvent.click(within(said).getByRole('button', { name: /…belongs in the streamer/ }));
       expect(select).toHaveBeenCalledWith('c3d4e5f6');
@@ -398,7 +398,7 @@ describe('the session rail', () => {
     });
 
     /**
-     * SESSUX1d, D126 §3.1: a running driven session's row offers its acts where its row is, as the one rule offers them;
+     * A running driven session's row offers its acts where its row is, as the one rule offers them;
      * what only the frame can do (ask to stop it, open a terminal in its tree) goes to the frame's door with the session.
      */
     it('offers a running session its acts on its row, and hands the frame what is the frame’s', async () => {
@@ -421,7 +421,7 @@ describe('the session rail', () => {
       await user.keyboard('{Enter}');
       await user.click(screen.getByRole('menuitem', { name: 'Open a terminal here' }));
       expect(terminal).toHaveBeenCalledWith('C:/somewhere/.daoris/trees/default/engine/streaming-budget');
-      // Nothing was stopped on the first press: the frame asks.
+      // Nothing is stopped on the first press: the frame asks.
       expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', expect.anything());
     });
 
@@ -446,14 +446,14 @@ describe('the session rail', () => {
     expect(screen.getByText('held')).toBeInTheDocument();
   });
 
-  /** D51: the tree is the unit of exclusion, so "busy" is a question about a tree, not a repository. */
+  /** The tree is the unit of exclusion, so "busy" is a question about a tree, not a repository. */
   it('names the tree an active session is holding', async () => {
     show(<SessionRail notify={() => {}} arrangement="repository" />);
     expect(await screen.findByText('busy · streaming-budget')).toBeInTheDocument();
   });
 
   /**
-   * INT4g: a parked intake has asked and ended — no process, so it holds no room (INT4b: "the room's
+   * A parked intake has asked and ended — no process, so it holds no room ("the room's
    * lock is the process"). Its group claims nothing busy; a parked REPOSITORY session still does,
    * because it holds its working tree.
    */
@@ -469,8 +469,8 @@ describe('the session rail', () => {
   });
 
   /**
-   * ASKRAIL1: Ask Daoris's conversations (HELP1a, `daoris:help`) are no session of the list: they are reached from Ask Daoris's
-   * panel and its history. Beside a session's, in every arrangement, in the search by name and by what was said.
+   * Ask Daoris's conversations (`daoris:help`) are no session of the list: they are reached from Ask Daoris's
+   * panel and its history. Beside a session's, in every arrangement, in the search by name and by what the person said.
    */
   describe.each([['en', 'Ask Daoris'], ['zh', '问道衍']])('Ask Daoris\'s records beside a session\'s (%s) (ASKRAIL1)', (language, name) => {
     const HELP = { ...base, id: 'h1e1p000', quest: null, kind: 'chat', repository: 'daoris:help', state: 'working', workspace: 'default' };
@@ -523,13 +523,10 @@ describe('the session rail', () => {
   });
 
   /**
-   * 🔴 Rewritten after the deployed application showed four empty-state sentences on a machine with
-   * four real session records (D62). This test used to assert that a finished record was absent and
-   * "left to the views that review them" — and there was no such view: the rail was the only door
-   * to a session, and it listed live ones only, so after a restart the driver's own record was
-   * reachable exactly never. The working-surface design's §7 promises the opposite.
+   * The rail is the only door to a session, so a finished record is reachable from it: after a restart
+   * the driver's own record must still be there.
    *
-   * The live groups are unchanged — engine still holds one button — and the finished record is
+   * The live groups hold only what runs — engine holds one button — and the finished record is
    * listed beneath them, not among them, because the group headers carry live facts an ended
    * session has none of.
    */
@@ -628,7 +625,7 @@ describe('the session rail', () => {
 });
 
 /**
- * SESSUX1c, D126 §2.1, §4: by state, the default, each session where the driver's one reader places it, asked once
+ * By state, the default, each session where the driver's one reader places it, asked once
  * under the sessions' key; a record the reader has not answered for yet by its record alone; and with no driver to ask,
  * the arrangement the list always had.
  */
@@ -654,13 +651,13 @@ describe('the session rail by state', () => {
     await screen.findByRole('heading', { level: 3, name: 'Waiting on you (1)' });
     expect(groupHeadings()).toEqual(['Waiting on you (1)', 'Working (2)', 'Ended (1)']);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE_SLICE', { payload: { slice: 'groups' } });
-    // No group header names a repository by state, so each row's line does (§4.2).
+    // No group header names a repository by state, so each row's line does.
     const working = screen.getByRole('heading', { level: 3, name: 'Working (2)' }).closest('section')!;
     expect(within(working).getByText(/^engine · driven/)).toBeInTheDocument();
     expect(screen.queryByText('drives here')).toBeNull();
   });
 
-  /** D126's 1 October, on the list (audit M2): a quest parked on its failed sessions waits on the person, with its count. */
+  /** A quest parked on its failed sessions waits on the person, with its count. */
   it("shows a parked quest's last session where it waits on you, in the reader's words", async () => {
     SESSIONS = [...LIVE, { ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];
     GROUPS = [
@@ -685,7 +682,7 @@ describe('the session rail by state', () => {
     expect(within(waiting).getAllByText('waiting on you')).toHaveLength(2);
   });
 
-  /** A browser has no driver to ask (D47 §4): the list is the arrangement it always had, and asks no reader. */
+  /** A browser has no driver to ask: the list is the arrangement by repository, and asks no reader. */
   it('keeps the arrangement by repository where there is no driver to ask', async () => {
     bridge.available = false;
     show(<SessionRail notify={() => {}} />);
@@ -704,7 +701,7 @@ describe('the session rail by state', () => {
   });
 
   /**
-   * SESSUX1e, D126 §5.2: an ended row archived from its ⋯ goes to the driver as one session, and the person is told
+   * An ended row archived from its ⋯ goes to the driver as one session, and the person is told
    * where it went; refused, the host's code is said in the person's words from the catalogue, naming which group kept it.
    */
   describe('archive (SESSUX1e)', () => {
@@ -716,7 +713,7 @@ describe('the session rail by state', () => {
       invoke.mockImplementation(async (module: string, type: string, options?: { payload?: Record<string, unknown> }) =>
         (type === 'SESSION_ARCHIVE' ? archive(options?.payload ?? {}) : drive(module, type)));
 
-    /** The window's state hub, as `ShellSignals` mounts it: the sessions an archive moved are asked again here (STATEHUB1f). */
+    /** The window's state hub, as `ShellSignals` mounts it: the sessions an archive moved are asked again here. */
     function Hub() {
       useStateHub();
       return null;
@@ -804,7 +801,7 @@ describe('the session rail by state', () => {
       expect(notify).toHaveBeenCalledWith('Unarchived. It is back in the list.');
     });
 
-    /** One that was not archived is information, never a refusal (D48 §6). */
+    /** One that is not archived is information, never a refusal. */
     it('says a session that was not archived was not, as information', async () => {
       const notify = vi.fn();
       GROUPS = [...LIVE_GROUPS.slice(0, 3), { session: DONE, group: 'archived', shown: 'completed', archived: true, teammate: false }];
@@ -817,7 +814,7 @@ describe('the session rail by state', () => {
       await waitFor(() => expect(notify).toHaveBeenCalledWith('It was not archived, so nothing changed.'));
     });
 
-    /** §4.5: a search finds archived sessions too, each marked archived, since a search is how one is found without the tick. */
+    /** A search finds archived sessions too, each marked archived, since a search is how one is found without the tick. */
     it('finds an archived session in a search, marked archived', async () => {
       GROUPS = [...LIVE_GROUPS.slice(0, 3), { session: DONE, group: 'archived', shown: 'completed', archived: true, teammate: false }];
       answering(() => undefined);
@@ -830,7 +827,7 @@ describe('the session rail by state', () => {
       expect(within(byName).getByText(/^archived · driven · /)).toBeInTheDocument();
     });
 
-    /** §5.3: the first press lists under the list's header; the second archives what it listed, and the ask closes. */
+    /** The first press lists under the list's header; the second archives what it listed, and the ask closes. */
     it('archives what ended on the second press of Archive what ended, and says where they went', async () => {
       const notify = vi.fn();
       const closed = vi.fn();
@@ -848,7 +845,7 @@ describe('the session rail by state', () => {
       expect(closed).toHaveBeenCalled();
     });
 
-    /** Each is judged again as it goes (§5.3): what changed since the list stays, and the person is told how many went. */
+    /** Each is judged again as it goes: what changed since the list stays, and the person is told how many went. */
     it('says how many of the listed went where some changed since the list', async () => {
       const notify = vi.fn();
       SESSIONS = [...LIVE, ENDED_TWO];
@@ -889,7 +886,7 @@ describe('the session rail by state', () => {
     });
   });
 
-  /** Group by repository, chosen in the list's ⋯, is today's arrangement with the reader's words (§4.3). */
+  /** Group by repository, chosen in the list's ⋯, is today's arrangement with the reader's words. */
   it('draws the list by repository when that is chosen, parked with waiting on you', async () => {
     SESSIONS = [...LIVE, { ...base, id: 'f41led00', quest: '7a82cc', repository: 'engine', state: 'failed', created: at(60), updated: at(20) }];
     GROUPS = [...LIVE_GROUPS, { session: 'f41led00', group: 'you', shown: 'parked', archived: false, teammate: false, strikes: 3 }];
@@ -902,7 +899,7 @@ describe('the session rail by state', () => {
 });
 
 /**
- * ENTRY1b (D161's ENTRY1 note): a go to what waits on the person names a group of the list, and the rail brings it into
+ * A go to what waits on the person names a group of the list, and the rail brings it into
  * view once it and the driver's reader have answered: its heading scrolled to and focused, then the door told. A rail that
  * does not draw the group then lets the door go, rather than taking the focus when the group appears later.
  */
@@ -954,7 +951,7 @@ describe('a group a door brings into view', () => {
     expect(heading).toHaveFocus();
   });
 
-  /** ENTRY1g (D161's ENTRY1b note): a search typed in the rail hides its groups, so a go clears it; it is the rail's alone. */
+  /** A search typed in the rail hides its groups, so a go clears it; it is the rail's alone. */
   it('clears a search typed in the rail for a go, and brings the group into view', async () => {
     const brought = vi.fn();
     function Searched() {
@@ -1003,7 +1000,7 @@ describe('a group a door brings into view', () => {
   });
 
   /**
-   * XAGENT1g4c (the second-agent design §9): a reviewer's row says whose work it reads, joined through the opinions the
+   * A reviewer's row says whose work it reads, joined through the opinions the
    * service lists; a service that holds none (404) makes no claim, and a list with no reviewer asks nothing.
    */
   describe('a second opinion’s reviewer says whose work it reads (XAGENT1g4c)', () => {
@@ -1017,7 +1014,7 @@ describe('a group a door brings into view', () => {
     });
     afterEach(() => { OPINIONS = []; });
 
-    /** MIXAGENT3a-ii closes XAGENT1g4d: drawn under the work it reads, whose row above says whose it is. */
+    /** Drawn under the work it reads, whose row above says whose it is. */
     it('draws the reviewer under the work it reads', async () => {
       OPINIONS = [opinion];
       show(<SessionRail notify={() => {}} />);
@@ -1066,7 +1063,7 @@ describe('a group a door brings into view', () => {
   });
 
   /**
-   * MIXAGENT3a-i (the mixed-agents design §4): a session that continues another names it on its row, and a helper names whom it
+   * A session that continues another names it on its row, and a helper names whom it
    * helps, joined to the sessions the list holds; a link to one it does not hold claims nothing.
    */
   describe('a session says whom it continues, and a helper whom it helps (MIXAGENT3a-i)', () => {
@@ -1080,7 +1077,7 @@ describe('a group a door brings into view', () => {
     });
 
     /**
-     * A helper is drawn under the session it serves (MIXAGENT3a-ii), never beside it as a second row of that work: its line
+     * A helper is drawn under the session it serves, never beside it as a second row of that work: its line
      * leaves the title to the row above. A session that continues another is no helper, and keeps its own row.
      */
     it('names the session one continues by its title, and draws a helper under the session it helps', async () => {

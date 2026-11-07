@@ -10,14 +10,14 @@ import { type OutcomeMember, type SessionOfLife, sessionFlow } from './sessionLi
 const FOLDED_KEY = 'daoris.timeline.states';
 
 /**
- * **A session's states drawn as a flowchart** (FLOWCHART1b; D186, the flowchart design §2.2): at the head of the side bar's
+ * **A session's states drawn as a flowchart**: at the head of the side bar's
  * *Timeline* view, above the observed events, folded to its line (*States · working*) when the person folds it, else the four
  * live states and one node of outcomes, the state the record is in lit, the moves out of each said by who makes them, and the
  * return from waiting on you to working on its own lane.
  *
  * @remarks
  * - **The record's state, not its path.** The hint says the record keeps where a session stands and not how it got there, so
- *   the drawing has no earlier state lit and no time (trap 19).
+ *   the drawing has no earlier state lit and no time.
  * - **The word on the lit node** is `shown`'s, the page's reading over the record (*idle*, *parked*, *awaiting reply*,
  *   *answered*, *going on*), where the caller holds it, and the record's own reading otherwise.
  */

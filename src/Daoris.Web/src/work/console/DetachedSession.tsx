@@ -15,43 +15,42 @@ import { SessionConversation } from '../conversation/SessionConversation';
 import { panelTabs } from './streams';
 
 /**
- * One session in a window of its own (D55 §b, SURF8).
+ * One session in a window of its own.
  *
  * @remarks
- * **The same components as the attended column**, because it is the same thing: a record, what was
+ * **The same components as the attended column**, because it is the same thing: a record, what is
  * observed about it, and the stream. A second screen holding one conversation while the main window
  * is in Manage is what this is for.
  *
  * **Read-only, like the monitor** — `onResolve` is not passed, and `SessionHead` already has that
  * state and its reason: nothing here can act, so the analysis is shown and the moves are not. Half a
- * control is worse than none. The moves stay with the main window, which is D56's one-owner rule
- * holding across windows rather than only within one.
+ * control is worse than none. The moves stay with the main window, which keeps one owner
+ * across windows rather than only within one.
  *
  * **A record it cannot find is a state, not a failure.** This window outlives the ledger's memory of
- * a session, and a workspace scope can change under it (WSP5) — so it says so plainly instead of
+ * a session, and a workspace scope can change under it — so it says so plainly instead of
  * rendering an empty frame.
  *
- * **Its console carries the session's streams** (CONSOLE3b), a tab each as in the main window, so a
+ * **Its console carries the session's streams**, a tab each as in the main window, so a
  * subagent or a dev server is not out of sight here. With no stop: nothing in this window acts.
  *
- * **Its console is the main window's output panel** (D118 §4, FRAME1h): grown for a long console, hidden
+ * **Its console is the main window's output panel**: grown for a long console, hidden
  * for a long conversation, on its handle, its *Hide*, and Ctrl+J, the key of the one region this window
  * has. What a person makes of it is kept for every detached window, apart from the main window's panel
  * (`useDetachedPanel`). It offers no views to move: there is no side bar here to move one to.
  *
- * **The same head as the other windows'**: a chat named by what was asked of it, and idle between
- * turns, as the driver says. Without them this window headed one session `conversation · working`
- * beside a main window heading it `start the dev server · idle`.
+ * **The same head as the other windows'**: a chat named by its opening, and idle between
+ * turns, as the driver says.
  */
 export function DetachedSession({ id, notify }: { id: string; notify: Notify }) {
   const { t } = useTranslation();
   const sessions = useSessions(null, true);
   const quests = useQuests(null, true);
-  // The roster, so a detached session names its account by the person's name as the frame does (ACCTNAME1).
+  // The roster, so a detached session names its account by the person's name as the frame does.
   const harnesses = useHarnesses();
   const nameOf = namer(t, Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : []);
   const scroller = useRef<HTMLDivElement>(null);
-  // What the session runs beside itself (CONSOLE3b), and the one picked; one it no longer lists falls
+  // What the session runs beside itself, and the one picked; one it no longer lists falls
   // back to the session's own console, as the main window's panel does.
   const streams = useSessionStreams(id);
   const [picked, setPicked] = useState<string | null>(null);
@@ -67,9 +66,9 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   const quest = session?.quest
     ? (quests.data ?? []).find((row) => row.id === session.quest) ?? null
     : null;
-  // The console is this machine's to give only for a session this machine ran (D47 §4).
+  // The console is this machine's to give only for a session this machine ran.
   const here = session ? sessionOrigin(session) === null : false;
-  // The process its own tree runs under, as the main window's head says it (PROCESS1e); never an intake's, which is told none.
+  // The process its own tree runs under, as the main window's head says it; never an intake's, which is told none.
   const told = useSessionProcess(session && here && !isIntake(session) ? session.id : null);
 
   // Ctrl+J, wherever focus is, as in the main window: the panel is the one region this window has, so
@@ -91,7 +90,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
     return <div className="p-4"><SkeletonRows rows={4} /></div>;
   }
 
-  // A read that failed is not a session gone (PUSHUX1): its sentence, never the gone state.
+  // A read that failed is not a session gone: its sentence, never the gone state.
   if (sessions.data === undefined) {
     return <div className="p-4"><Prose><Inline text={sentence(sessions.error)} /></Prose></div>;
   }
@@ -110,10 +109,10 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      {/* The record and the conversation scroll together, as in the main window (D76); the
+      {/* The record and the conversation scroll together, as in the main window; the
           conversation follows its tail there too. */}
       <div ref={scroller} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
-        {/* No dock in this window, so the timeline stays in the column at every width (REV3). */}
+        {/* No dock in this window, so the timeline stays in the column at every width. */}
         <AttendedSession
           session={session}
           quest={quest}

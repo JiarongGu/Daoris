@@ -6,7 +6,7 @@ import { cappedBlocks } from '../../test/measure';
 import { Prose } from '../../design/ui';
 import { PageHead, PageTabs, ViewMain } from './ViewMain';
 
-// The main area (D118 §3b): props only, since a molecule imports no hook. jsdom lays nothing out, so what
+// The main area: props only, since a molecule imports no hook. jsdom lays nothing out, so what
 // it holds is the property each state rests on — the container a view's split is measured by, the region
 // the keys focus, and what each state draws in place of the page.
 
@@ -20,7 +20,7 @@ describe('the main area', () => {
     // Named, so a split inside a card's own container still measures the main area (`@4xl/main:`).
     expect(main).toHaveClass('@container/main');
     expect(main).toHaveAttribute('data-region', 'main');
-    // It scrolls by itself, and is the block what is positioned inside it is placed in (PERM1).
+    // It scrolls by itself, and is the block what is positioned inside it is placed in.
     expect(main).toHaveClass('overflow-y-auto', 'relative', 'min-w-0');
     expect(screen.getByText('the page')).toBeInTheDocument();
   });
@@ -69,9 +69,9 @@ describe('the main area', () => {
   });
 
   /**
-   * D141 (LAYOUT11): the main area is the page's one column and the one place a line's length could be set, and it
-   * sets none. On the install a quest's title ran the pane while its body stopped at 65ch, with 750 px empty beside it,
-   * and a plugin's detail wrapped at two edges: so neither the column nor a block it holds keeps a measure, the header's
+   * The main area is the page's one column and the one place a line's length could be set, and it
+   * sets none: a title running the pane over a body stopped at 65ch leaves 750 px empty beside it, and a detail
+   * wrapped at two edges, so neither the column nor a block it holds keeps a measure, the header's
    * line and the console's own explanation (`Prose`) included.
    */
   it('is the page\'s one column, and neither it nor a block it holds keeps a measure', () => {
@@ -97,9 +97,9 @@ describe('the main area', () => {
 
 describe("a page's header", () => {
   /**
-   * NAME2: a plugin's description, a repository's summary and a quest's state line are content, shown as they
-   * are (platform language §4). Cut to one line, the install showed a plugin's description ending in an
-   * ellipsis; it wraps whole instead, and at the column's edge as every block of the page does (D141).
+   * A plugin's description, a repository's summary and a quest's state line are content, shown as they
+   * are. Cut to one line, a plugin's description would end in an
+   * ellipsis; it wraps whole instead, and at the column's edge as every block of the page does.
    */
   it('shows its line whole, wrapping at the column\'s edge', () => {
     const description = 'Holds every quest that arrives after hours until the morning, then lets the driver start them in the order they came.';
@@ -111,7 +111,7 @@ describe("a page's header", () => {
     expect(line).not.toHaveAttribute('title');
   });
 
-  /** HEAD2f (D162 §2): a head with its own door to the whole text offers one way, so the title keeps its tip and drops Show all. */
+  /** A head with its own door to the whole text offers one way, so the title keeps its tip and drops Show all. */
   it('drops Show all where the head has its own door to the whole text, and keeps the tip', () => {
     const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(120);
     const fits = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(60);
@@ -123,7 +123,7 @@ describe("a page's header", () => {
   });
 
   /**
-   * UX7c (D152 §7, the UX7 design §5.1, §5.3): a record whose state moves leads with its state, then its title, at most the
+   * A record whose state moves leads with its state, then its title, at most the
    * lines it is given, whole in its tip; and under them its facts, once, faint. No id line where it is handed none.
    */
   it('leads with its state, clamps its title to the lines given, and says its facts on one line', () => {
@@ -139,7 +139,7 @@ describe("a page's header", () => {
   });
 
   /**
-   * RAILLINE1: a session's head keeps its facts to one line, cut with an ellipsis before the door at its end, which is never cut;
+   * A session's head keeps its facts to one line, cut with an ellipsis before the door at its end, which is never cut;
    * the line says what it cut in its tip. jsdom lays nothing out, so the classes are what is read.
    */
   it('keeps its facts to one line where asked, whole in its tip, and never cuts the door after them', () => {
@@ -158,7 +158,7 @@ describe("a page's header", () => {
     expect(screen.getByRole('button', { name: 'Full access' }).parentElement).toHaveClass('shrink-0');
   });
 
-  /** A title cut at its lines is whole on a press (the UX7 design §5.3), and only where it was cut. */
+  /** A title cut at its lines is whole on a press, and only where it is cut. */
   it('offers the whole title on a press where it was cut, and nothing where it fits', async () => {
     const tall = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(120);
     const fits = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(60);
@@ -176,7 +176,7 @@ describe("a page's header", () => {
   });
 
   /**
-   * HEAD2a (D162 §3, the entry-and-heads design §2): the acts hold still. Above 640 px of the main area the head is a grid of
+   * The acts hold still. Above 640 px of the main area the head is a grid of
    * the title's flexible column and the acts' own, the acts at the title's first line; at 640 px or less they take a row
    * under the facts. jsdom lays nothing out, so the container-query classes and the order are what is read.
    */
@@ -219,7 +219,7 @@ describe("a page's header", () => {
 describe("a page's tabs", () => {
   const TABS = [{ id: 'details', label: 'Details' }, { id: 'setup', label: 'Setup' }] as const;
 
-  // UX6f (D150 §4.2): a repository's page is several pages under one header, each a tab, the chosen one its holder's to
+  // A repository's page is several pages under one header, each a tab, the chosen one its holder's to
   // remember. One tab panel at a time, named by its tab, and the tabs one stop the arrow keys move along.
   it('shows the chosen tab\'s panel, named by its tab, and says which tab is chosen', () => {
     render(<PageTabs label="engine" tabs={TABS} chosen="setup" onChoose={vi.fn()}>the setup</PageTabs>);
@@ -248,7 +248,7 @@ describe("a page's tabs", () => {
     expect(onChoose).toHaveBeenLastCalledWith('details');
   });
 
-  // TABS1: a tab is its whole name, never a name cut; a row too narrow for them scrolls rather than cutting one.
+  // A tab is its whole name, never a name cut; a row too narrow for them scrolls rather than cutting one.
   it('keeps each tab\'s whole name on one line', () => {
     render(<PageTabs label="engine" tabs={TABS} chosen="details" onChoose={vi.fn()}>the details</PageTabs>);
     for (const tab of screen.getAllByRole('tab')) {

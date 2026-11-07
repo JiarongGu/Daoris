@@ -1,6 +1,6 @@
 import type { SessionRecord } from './sessionRecord';
 
-/** A finished session's record as the service kept it (KEEPSIZE1): landed, a ref holding the tip, two commits, one file no commit held. */
+/** A finished session's record as the service keeps it: landed, a ref holding the tip, two commits, one file no commit held. */
 export const RECORD: SessionRecord = {
   at: '2026-10-24T10:00:00Z',
   post: {

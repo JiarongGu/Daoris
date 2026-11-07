@@ -7,7 +7,7 @@ import {
   STEP_DEPLOYED, STEP_ELSEWHERE, STEP_NOT_YET, STEP_REVIEWED, STEP_SETTING_UP, STEP_SHOWN, STEP_SHOWN_AGAIN,
 } from './reviewFixtures';
 
-// *Review in `<environment>`* (REVIEWENV1g; the review environment design §3.1–§3.3, §3.6), where *Accept…* would be while the
+// *Review in `<environment>`*, where *Accept…* would be while the
 // gate holds: not shown yet with the intake's proposal, being set up, shown and still served, shown and no longer served,
 // shown again after a not yet, not yet, work added since, unread with the driver's sentence, a deployed environment's link, a
 // teammate's local set-up, and a step's own page listing every set-up. At the main area's width beside a 1546 px window and at
@@ -82,7 +82,7 @@ export const NotYetChinese: Story = { ...NotYet, decorators: [chinese] };
 /** Shown again after the not yet: the newest set-up waits, the first is listed as shown before on the step's page. */
 export const ShownAgain: Story = { args: { step: STEP_SHOWN_AGAIN, whole: true } };
 
-/** Reviewed, and work added since: what was reviewed does not hold it. */
+/** Reviewed, and work added since: what is reviewed does not hold it. */
 export const NotHeld: Story = { args: { state: 'not-held', step: STEP_REVIEWED } };
 
 /** The same in 中文. */

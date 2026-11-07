@@ -5,8 +5,8 @@ import { useWaitsOnScreen } from './waitsOnScreen';
 
 describe("whether the head's waits are on screen", () => {
   /**
-   * PAGELOOP1: read after every drawing of the Sessions frame, the answer was set again each time though nothing moved, an update
-   * React could not drop with the frame just drawn, so a streamed hand-back's every line left one behind its commit.
+   * Read after every drawing of the Sessions frame, an answer set again each time though nothing moved is an update
+   * React cannot drop with the frame just drawn, so a streamed hand-back's every line would leave one behind its commit.
    */
   it('sets nothing where a drawing changed nothing', () => {
     const scroller = { current: document.createElement('div') };

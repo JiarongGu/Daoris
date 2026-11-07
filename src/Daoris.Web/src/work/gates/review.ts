@@ -1,8 +1,7 @@
 import type { Quest, QuestSetUp, QuestVerdict, SetUpRef } from '../../data/api';
 
 /**
- * Where a review's gate stands for a chain's work in one repository (REVIEWENV1c, D154 point 7; the review environment design
- * §3.1–§3.2), as the driver spells it (`ReviewStates`): `none`, `skipped` and `reviewed` let the work go; the rest hold it.
+ * Where a review's gate stands for a chain's work in one repository, as the driver spells it (`ReviewStates`): `none`, `skipped` and `reviewed` let the work go; the rest hold it.
  * A newer driver may name another, which the page reads as holding and words as unread.
  */
 export type ReviewState =
@@ -21,9 +20,9 @@ export const reviewState = (state: string | null | undefined): ReviewState =>
   state && KNOWN.has(state) ? state as ReviewState : 'unread';
 
 /**
- * What the review's gate says beside a landing's plan or press (REVIEWENV1c, `DriverModule.Waits`): its state, the environment,
+ * What the review's gate says beside a landing's plan or press (`DriverModule.Waits`): its state, the environment,
  * the level that decided, the set-up step where there is one, and the driver's sentence. Present only while it holds the work,
- * so a landing no review touches answers as it did.
+ * so a landing no review touches answers as one with no gate.
  */
 export type ReviewWaits = {
   state: string;
@@ -41,7 +40,7 @@ export type ReviewWaits = {
 
 /**
  * The hue a state wears: the person's (open) where it waits on their look, taken's while a step works, neutral otherwise. The
- * gate draws it, and the foot's strip names the gate as a wait on the person where it is open (D168 point 2).
+ * gate draws it, and the foot's strip names the gate as a wait on the person where it is open.
  */
 export const REVIEW_TONE: Readonly<Record<ReviewState, 'open' | 'taken' | 'done' | 'neutral'>> = {
   'not-shown': 'open',
@@ -61,7 +60,7 @@ export const REVIEW_TONE: Readonly<Record<ReviewState, 'open' | 'taken' | 'done'
 export const reviewHolds = (landing: { review?: ReviewWaits | null } | null | undefined): ReviewWaits | null =>
   landing?.review && !LETS_GO.has(reviewState(landing.review.state)) ? landing.review : null;
 
-/** A set-up step's newest set-up: the one a verdict answers, and the one the gate reads (design §3.2). */
+/** A set-up step's newest set-up: the one a verdict answers, and the one the gate reads. */
 export const newestSetUp = (step: Pick<Quest, 'setUps'>): QuestSetUp | null => step.setUps?.at(-1) ?? null;
 
 /** A set-up's reference, whole, or null where the record carries half of one or none (REVIEWENV1b3: half is refused). */
@@ -83,7 +82,7 @@ export function verdictOn(step: Pick<Quest, 'verdicts'>, setUp: QuestSetUp, said
 }
 
 /**
- * Where a set-up step stands, from its own record (design §3.2): declined is nothing to review; skipped; open, taken or with
+ * Where a set-up step stands, from its own record: declined is nothing to review; skipped; open, taken or with
  * nothing posted yet is being set up; then its newest set-up reviewed, said not yet to, or shown and waiting for the person's
  * look. Whether a reviewed set-up holds what would land is git's, the driver's to say (`not-held`), and never read here.
  */
@@ -97,18 +96,18 @@ export function stepState(step: Pick<Quest, 'status' | 'setUps' | 'verdicts'>): 
   return 'shown';
 }
 
-/** Whether a quest is a set-up step whose newest set-up waits for the person's look: *What needs you*'s row (design §3.3). */
+/** Whether a quest is a set-up step whose newest set-up waits for the person's look: *What needs you*'s row. */
 export const waitsForLook = (quest: Quest): boolean =>
   Boolean(quest.setUpIn) && stepState(quest) === 'shown' && setUpRef(newestSetUp(quest)) !== null;
 
-/** A press the gate offers (design §3.2–§3.3, §3.6), named as the page draws it. */
+/** A press the gate offers, named as the page draws it. */
 export type ReviewPress = 'reviewed' | 'notYet' | 'showAgain' | 'skip' | 'setUp' | 'withoutLook';
 
 /**
- * What each state offers, in the order it shows them (design §3.2's table): no set-up step, *Set it up* and *Skip…*; shown and
+ * What each state offers, in the order it shows them: no set-up step, *Set it up* and *Skip…*; shown and
  * waiting, *Reviewed*, *Not yet…*, *Show it again* (a local set-up's alone, which Daoris serves) and *Skip…*; being set up,
  * said not yet to, or reviewed with work added since, *Skip…*, since the step's session acts next. *Show it again* serves the
- * set-up that was shown, which for work added since is not what would land, so it is not offered there. One rule, read by the
+ * set-up that is shown, which for work added since is not what would land, so it is not offered there. One rule, read by the
  * page and the tests.
  */
 export function reviewPresses(state: ReviewState, { local = false }: { local?: boolean } = {}): ReviewPress[] {
@@ -125,7 +124,7 @@ export function reviewPresses(state: ReviewState, { local = false }: { local?: b
 }
 
 /**
- * Where a skip is given (design §3.6, `ReviewGate.Says`): on the set-up step while it is not reviewed, else on the chain's work,
+ * Where a skip is given (`ReviewGate.Says`): on the set-up step while it is not reviewed, else on the chain's work,
  * the session's own quest, since a reviewed step refuses one.
  */
 export function skipOn(state: ReviewState, step: string | null | undefined, work: string | null | undefined): string | null {

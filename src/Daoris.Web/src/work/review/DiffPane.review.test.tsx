@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// REVIEWENV1g (D154 point 7; the review environment design §3.1): the session's review says the work waits for the person's
-// review where *Accept* would be, and offers no *Accept* the landing door would refuse; where nothing waits, it is as it was.
+// The session's review says the work waits for the person's
+// review where *Accept* would be, and offers no *Accept* the landing door would refuse; where nothing waits, it is as before.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
@@ -148,7 +148,7 @@ describe('the review’s forced discard', () => {
 });
 
 /**
- * REVIEWDIRTY1-b (D164 point 4): a session tree's uncommitted work is read beside what it committed, under its own heading;
+ * A session tree's uncommitted work is read beside what it committed, under its own heading;
  * "Nothing landed" is said only where both are empty, and Accept's refusal is said before the press.
  */
 describe('the review of a tree holding uncommitted work', () => {
@@ -205,7 +205,7 @@ describe('the review of a tree holding uncommitted work', () => {
     drive({ uncommitted: UNCOMMITTED }, { ...PLAN, uncommitted: 5 });
     pane();
 
-    // LANDBACK1 part 1: an Accept on a dirty tree carries the session on, where it used to refuse.
+    // An Accept on a dirty tree carries the session on, where a refusal would not.
     expect(await screen.findByText(/Accept carries its session on to commit the 5 uncommitted files/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Accept' })).toBeEnabled();
   });
@@ -220,7 +220,7 @@ describe('the review of a tree holding uncommitted work', () => {
 });
 
 /**
- * REVIEWBASE1 (D164's note): the review measures from the newest commit the work shares with the line, and says in its head how
+ * The review measures from the newest commit the work shares with the line, and says in its head how
  * far the latest line the host knows is past the work. A tree that holds nothing beyond the line says so, never "Nothing landed".
  */
 describe('the review against the latest line', () => {
@@ -269,7 +269,7 @@ describe('the review against the latest line', () => {
 });
 
 /**
- * REVIEWBASE4 (D164's note): a tree that holds nothing beyond the line has nothing to land. Its review says so where *Accept*
+ * A tree that holds nothing beyond the line has nothing to land. Its review says so where *Accept*
  * would be, offers neither *Accept* nor *Send back…*, asks no landing plan, and leads with *Discard tree*. Its head names the
  * branch the tree stands on once the review answers, over the record's guess, and none where the tree is detached.
  */
