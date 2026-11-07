@@ -4,11 +4,11 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WORKFLOW1e (D157 point 11, the workflow design §4.5): a run is bound at its first start in its repository, on the machine that
-/// drives it, to the workflow §4.1 chooses then, with what chose it; a later quest of the same run keeps that binding, and a
+/// A run is bound at its first start in its repository, on the machine that
+/// drives it, to the workflow chosen then, with what chose it; a later quest of the same run keeps that binding, and a
 /// start that opened nothing binds nothing.
 /// </summary>
-/// <remarks>Over the real client and planner with the service's doors and each start's run standing in, in-process (DEV3).</remarks>
+/// <remarks>Over the real client and planner with the service's doors and each start's run standing in, in-process.</remarks>
 public sealed class WorkflowBindingLookTests : IDisposable
 {
     private readonly string _home = Path.Combine(TestHomes.Root, "daoris-workflow-look-" + Guid.NewGuid().ToString("N")[..8]);

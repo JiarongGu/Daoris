@@ -1,8 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A desktop project's sources, found by name wherever they lie under the project's folder (STRUCT1, D166; the code-structure
-/// design §6): the driver's files move into module folders one module per branch, so a test that reads a source names the
+/// A desktop project's sources, found by name wherever they lie under the project's folder: the driver's files move into module folders one module per branch, so a test that reads a source names the
 /// file and never the folder it is in, and a test that walks a project walks every folder of it. The build's own output
 /// (<c>bin/</c>, <c>obj/</c>) is no source. <c>SourceFilesTests</c> holds it; the CLI's <c>driver-names.test.ts</c> holds
 /// that each name a test reads through it is one file.
@@ -12,7 +11,7 @@ internal static class SourceFiles
     /// <summary>The driver library's project folder's name.</summary>
     public const string DriverProject = "Daoris.Desktop.Driver";
 
-    /// <summary>The driver's tests' project folder's name, whose folders mirror the modules that have moved (STRUCT2a).</summary>
+    /// <summary>The driver's tests' project folder's name, whose folders mirror the modules that have moved.</summary>
     public const string DriverTestsProject = "Daoris.Desktop.Driver.Tests";
 
     /// <summary>The modules' tests' project folder's name.</summary>
@@ -43,7 +42,7 @@ internal static class SourceFiles
 
     /// <summary>
     /// The one CLI source of this name, at any depth of <c>src/Daoris.Cli/src/</c> but its command rows' <c>cli/</c>, whose
-    /// files share their verbs' names: the CLI's sources sit in module folders too (STRUCT5d, D166).
+    /// files share their verbs' names: the CLI's sources sit in module folders too.
     /// </summary>
     /// <exception cref="InvalidOperationException">No source has the name, or two do.</exception>
     public static string Cli(string name)

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// LANDBACK1 part 2 (TURNWAIT1), through a REAL tick on the protocol door. On the install a driven session left its fix uncommitted, closed
-/// its quest done and ended its turn to wait on its own background check, and was concluded with the check killed. Here the stand-in agent
+/// Through a REAL tick on the protocol door. A driven session can leave its fix uncommitted, close
+/// its quest done and end its turn to wait on its own background check, then be concluded with the check killed. Here the stand-in agent
 /// does the same: the run waits for its check, then carries the session on in Daoris's own words, and reads done only once the tree is
 /// clean, or the bound (<see cref="LandCarry.Bound"/>) is met. Daoris commits nothing: any commit in the tree is the stand-in's.
 /// </summary>
@@ -37,7 +37,7 @@ public sealed class TurnCarryTickTests : IDisposable
         GitSeed.Discard(_home);
     }
 
-    /// <summary>TURNWAIT1's case, whole: the check runs on, the quest is done, the fix is uncommitted; the commit comes on the carry-on.</summary>
+    /// <summary>The whole case: the check runs on, the quest is done, the fix is uncommitted; the commit comes on the carry-on.</summary>
     [Fact]
     public async Task A_done_quest_with_its_check_running_and_its_fix_uncommitted_waits_for_the_check_then_ends_only_after_the_commit()
     {
@@ -70,7 +70,7 @@ public sealed class TurnCarryTickTests : IDisposable
             transcript.IndexOf("The session waits for that work", StringComparison.Ordinal)
             < transcript.IndexOf("the session was carried on", StringComparison.Ordinal),
             "the carry-on went before the check ended");
-        // The one carry-on prompt the agent was given, after its own first, was Daoris's words and nothing of a card's.
+        // The one carry-on prompt the agent is given, after its own first, is Daoris's words and nothing of a card's.
         var told = Prompted(pidFile);
         Assert.Equal(2, told.Count);
         Assert.StartsWith(Words, told[1], StringComparison.Ordinal);
@@ -128,7 +128,7 @@ public sealed class TurnCarryTickTests : IDisposable
         Assert.Equal("?? fix.txt", Git(record["tree"]!.GetValue<string>(), "status", "--porcelain").Trim());
     }
 
-    /// <summary>Each prompt the stand-in agent was given, in the order it was given them.</summary>
+    /// <summary>Each prompt the stand-in agent is given, in order.</summary>
     private static IReadOnlyList<string> Prompted(string pidFile) =>
         File.ReadAllText($"{pidFile}.prompts").Split("\n---\n", StringSplitOptions.RemoveEmptyEntries);
 

@@ -4,8 +4,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTPROVIDER1m-i: <see cref="TransportRun"/>, Daoris's <see cref="AgentRun"/> over today's two transports, admits an operation by the
-/// run's own evidence (its door's wire and its resume) and refuses one it does not, before anything is written (design §2.4, §4.1); its
+/// <see cref="TransportRun"/>, Daoris's <see cref="AgentRun"/> over its two transports, admits an operation by the
+/// run's own evidence (its door's wire and its resume) and refuses one it does not, before anything is written; its
 /// spawn asks its host in order. No process: every refusal here comes before a start, so the run holds nothing. The unit of a start itself,
 /// over both doors, is <see cref="TransportRunProcessTests"/>'s.
 /// </summary>
@@ -29,7 +29,7 @@ public sealed class TransportRunTests : IDisposable
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
-    /// <summary>A run over a door's adapter that was never started: a program that does not exist, which nothing here reaches.</summary>
+    /// <summary>A run over a door's adapter that never starts: a program that does not exist, which nothing here reaches.</summary>
     private TransportRun Over(string door)
     {
         var adapters = ProviderRegistry.Built();
@@ -63,7 +63,7 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
-    /// A run's words are two named ports, one per transport (D246): a native door's lines go through its <c>Input</c> and it has no
+    /// A run's words are two named ports, one per transport: a native door's lines go through its <c>Input</c> and it has no
     /// <c>Words</c>; a protocol door's input refuses a line before anything is written, its words being requests on its session.
     /// </summary>
     [Theory]
@@ -139,7 +139,7 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-i: the run's spawn keeps the downloads its start is handed (KEEP1b), brackets its process's lineage (COWORKVIEW1a) and starts
+    /// The run's spawn keeps the downloads its start is handed, brackets its process's lineage and starts
     /// it, in that order, each through the host; a start the gate refuses refuses the spawn.
     /// </summary>
     [Fact]
@@ -156,7 +156,7 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-iii: a run bracketed before its spawn (the conversation's, whose connector names its process) keeps its start's downloads and
+    /// A run bracketed before its spawn (the conversation's, whose connector names its process) keeps its start's downloads and
     /// issues its token through its host once, and its spawn starts under that token without either again.
     /// </summary>
     [Fact]
@@ -187,7 +187,7 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
-    /// ONEWAY1h-ii: the run admits the native go-on with held words (MSG1b) by its own evidence, a native door that resumes, and only where its
+    /// The run admits the native go-on with held words by its own evidence, a native door that resumes, and only where its
     /// executor handed it the target and the selection its resume is prepared from. Where it admits none, its executor holds no words.
     /// </summary>
     [Fact]
@@ -203,9 +203,9 @@ public sealed class TransportRunTests : IDisposable
     }
 
     /// <summary>
-    /// 🔴 Words held while a native run worked go on in its own conversation before the record concludes (MSG1b, D137 §2.1): the run's go-on
-    /// prepares <c>claude -p --resume &lt;kept id&gt;</c> under the rules and servers the run was handed, the words never among its arguments
-    /// (AGENTLYNTAI1s-i: they go on its input), the target not sent again, and keeps no downloads. Its executor is told nothing until its
+    /// 🔴 Words held while a native run worked go on in its own conversation before the record concludes: the run's go-on
+    /// prepares <c>claude -p --resume &lt;kept id&gt;</c> under the rules and servers the run is handed, the words never among its arguments
+    /// (they go on its input), the target not sent again, and keeps no downloads. Its executor is told nothing until its
     /// process is up.
     /// </summary>
     [Fact]
@@ -219,7 +219,7 @@ public sealed class TransportRunTests : IDisposable
         var told = 0;
         using var refusing = ProcessStarts.Within(_ => throw new System.ComponentModel.Win32Exception(2, "The system cannot find the file specified."));
 
-        // The words wait on the run's input and the next process is its resume (D243); a spawn that fails writes none of them.
+        // The words wait on the run's input and the next process is its resume; a spawn that fails writes none of them.
         run.Input.Hold(new DoorWord([], "Also log the port.", Written: () => told++));
         await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => run.NextProcessAsync("0b5e7c1a", CancellationToken.None));
 
@@ -256,7 +256,7 @@ public sealed class TransportRunTests : IDisposable
                 "ResumeAsync", "StopTaskAsync", "StopTurnAsync",
             ],
             methods);
-        // The words are two named ports, one per transport, and no operation of their own (D246).
+        // The words are two named ports, one per transport, and no operation of their own.
         var ports = typeof(AgentRun).GetProperties(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.DeclaredOnly)
             .OrderBy(property => property.Name, StringComparer.Ordinal)
             .Select(property => (property.Name, property.PropertyType))
@@ -274,7 +274,7 @@ internal sealed class RecordingTransportHost(string home, SessionProcesses proce
 {
     public List<string> Asked { get; } = [];
 
-    /// <summary>The process each bracket was written for, the one the spawn after it starts.</summary>
+    /// <summary>The process each bracket is written for, the one the spawn after it starts.</summary>
     public List<ProcessStartInfo> Bracketing { get; } = [];
 
     /// <summary>The command every door is configured with, or null for its own.</summary>

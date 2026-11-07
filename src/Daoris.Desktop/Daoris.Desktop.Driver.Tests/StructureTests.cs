@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// The structure gate (D166, D212; the design §14.5): every driver source sits in the folder of one of the subdomains of
+/// The structure gate: every driver source sits in the folder of one of the subdomains of
 /// <c>fixtures/structure.json</c>, which is its subdomain, and a file names only its own subdomain's types and those of the subdomains
 /// listed before it, read through Roslyn's semantic model: every name that binds to a type a driver file declares, whatever its spelling.
 /// Today's edges against the order are the census's, each an exact edge under its family and the row after which it is cut; a
@@ -369,7 +369,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
             map.Subdomains.Select(subdomain => subdomain.Name));
         Assert.Equal(23, map.Subdomains.Select(subdomain => subdomain.Folder).Distinct().Count());
         Assert.Equal("WorkOrders", map.Subdomains.Single(subdomain => subdomain.Name == "Work orders").Folder);
-        // Every namespace stays Daoris.Driver (D166 point 4).
+        // Every namespace stays Daoris.Driver.
         Assert.All(map.Subdomains, subdomain => Assert.Null(subdomain.Namespace));
         // Loop's folder is the composition root's, and holds no Domain.
         Assert.False(map.Subdomains[^1].Domain);
@@ -719,7 +719,7 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
     {
         var errors = Tree.Value.Analysis.Errors();
 
-        // CS8795: a [GeneratedRegex] or [LibraryImport] method, whose body the source generator writes and this compile has none of.
+        // The one compile error left: a [GeneratedRegex] or [LibraryImport] method, whose body the source generator writes and this compile has none of.
         Assert.True(errors.Keys.SequenceEqual(["CS8795"]), string.Join('\n', errors.Select(each => $"{each.Key} x{each.Value.Count}: {each.Value.Example}")));
     }
 
@@ -741,15 +741,15 @@ public sealed class StructureTests(Xunit.Abstractions.ITestOutputHelper output)
         var store = sources.Select(source => source.Path).Where(path => map.OwnerOf(path) == "Store").ToHashSet(StringComparer.Ordinal);
         Assert.Empty(analysis.Edges.Where(edge => map.OwnerOf(edge.File) == "Platform" && store.Contains("Store/" + edge.Type + ".cs")));
 
-        // Each seam a Domain may not name is a type the driver declares: `DesktopStore` too, since row z-i (FOUNDATION1).
+        // Each seam a Domain may not name is a type the driver declares: `DesktopStore` too.
         Assert.Empty(map.Seams.Where(seam => !analysis.DeclaredTypes.Contains(seam)));
 
         // A record struct is declared, `BoundedLine` among them.
         Assert.Contains("BoundedLine", analysis.DeclaredTypes);
 
         // The compile is the gate's cost in the fast half, about half a minute on an idle machine (the row's archive entry). What
-        // holds that cost is the reuse proof's counts, which no load moves; a wall clock here measured the machine as much as the
-        // walk (73 s and 89 s beside the queue's gates and driven sessions' builds, STRUCTBOUND1), so it only catches a hang.
+        // holds that cost is the reuse proof's counts, which no load moves; a wall clock here measures the machine as much as the
+        // walk (73 s and 89 s beside the queue's gates and driven sessions' builds), so it only catches a hang.
         output.WriteLine($"the compile and the walk took {took.TotalSeconds:F1}s");
         Assert.True(took < TimeSpan.FromMinutes(5), $"the compile and the walk took {took.TotalSeconds:F0}s");
     }

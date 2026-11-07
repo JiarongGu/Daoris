@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// One subdomain of the driver's map (D212; the design §14.2): its folder, whether it holds a <c>Domain/</c>, and its namespace where it
+/// One subdomain of the driver's map: its folder, whether it holds a <c>Domain/</c>, and its namespace where it
 /// has one of its own. The map lists them bottom to top.
 /// </summary>
 internal sealed record Subdomain(string Name, string Folder, bool Domain)
@@ -90,13 +90,13 @@ internal sealed record StructureBreach(string File, int Line, string Rule, strin
 }
 
 /// <summary>
-/// The structure gate's rules (the design §14.5; D166, D212), over a driver's sources as (path, text) pairs, each path relative to the
+/// The structure gate's rules, over a driver's sources as (path, text) pairs, each path relative to the
 /// driver's folder with <c>/</c> between its parts:
 /// <list type="bullet">
 /// <item><c>place</c>: every source sits in the folder of the subdomain it is placed in; a source at the top or in no subdomain's
 /// folder fails.</item>
 /// <item><c>module</c>: a subdomain's layer folder is a <c>Domain</c>, in a subdomain the map lets hold one; an <c>Application</c> or an
-/// <c>Infrastructure</c> folder is refused (FLAT1a).</item>
+/// <c>Infrastructure</c> folder is refused.</item>
 /// <item><c>direction</c>: a file names only its own subdomain's types and those of the subdomains listed before it, read through Roslyn's
 /// semantic model (<see cref="StructureAnalysis"/>): every name that binds to a type a driver file declares, however it is spelled. An edge
 /// against the order is allowed only where the census names it, as an exact edge, a file and the type it names, under its edge family and

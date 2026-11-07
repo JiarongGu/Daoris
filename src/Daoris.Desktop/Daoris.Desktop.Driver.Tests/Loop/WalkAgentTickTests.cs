@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// WALKAGENT1 (D206 point 6, D205 §3.5) through REAL ticks on the protocol door: a driven line a limit cut off is carried on by walking its
+/// Through REAL ticks on the protocol door: a driven line a limit cut off is carried on by walking its
 /// Build actor's choices, choice-major, and never opens on an agent the role does not list. The install's case first: Build lists two
 /// choices of one agent, every account of that agent is cooling and another agent has an account ready, which the role does not list, so
 /// the line waits for the earliest reset and goes on in its own conversation at it. Then a role that does list another agent after the
@@ -145,7 +145,7 @@ public sealed class WalkAgentTickTests : IDisposable
         Assert.DoesNotContain(Heard(), line => line["tag"]!.GetValue<string>() == "other");
         Assert.Empty(await new ServiceClient(service.Url, null).StrikesAsync());
 
-        // At the earliest reset the line goes on in its own conversation on its own account, as D206's step 1 has it.
+        // At the earliest reset the line goes on in its own conversation on its own account.
         _now = Until.AddMinutes(1);
         var look = await driver.RunOnceAsync().WaitAsync(Poll.Patience);
         Assert.True(service.SessionCount == 1, Seeing(service, look));
@@ -202,7 +202,7 @@ public sealed class WalkAgentTickTests : IDisposable
 
     /// <summary>
     /// The protocol door's stand-in for both agents, <c>stub</c> or <c>other</c> by its argument. It offers a model and an effort and writes
-    /// down each frame with the agent it is, the account it runs as and what it was set or prompted. A first prompt on the stub takes the
+    /// down each frame with the agent it is, the account it runs as and what it is set or prompted. A first prompt on the stub takes the
     /// quest and is refused by observation 4's sentence; any other prompt, a carry-on's, a resumed one or the other agent's, closes it.
     /// </summary>
     private string Agent()

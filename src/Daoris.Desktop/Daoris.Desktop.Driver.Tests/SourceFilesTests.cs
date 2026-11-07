@@ -1,8 +1,7 @@
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// A source a test reads is found by its name wherever it lies under its project (STRUCT1, D166; the code-structure design
-/// §6): the driver's files move into module folders one module per branch, and a reader that named a folder would break
+/// A source a test reads is found by its name wherever it lies under its project: the driver's files move into module folders, and a reader that named a folder would break
 /// at each move. A name is one file, or the read is refused, since a name found twice says neither.
 /// </summary>
 [Trait(Category.Name, Category.Census)]
@@ -57,7 +56,7 @@ public sealed class SourceFilesTests
         var cli = Path.Combine(WorkspaceRoot.Folder, "src", "Daoris.Cli", "src");
 
         Assert.Equal(Path.Combine(cli, "platform", "driverprogram.ts"), SourceFiles.Cli("driverprogram.ts"));
-        // `cli/analyze.ts` is the verb's row, which shares its name with the module that handles it (STRUCT5d).
+        // `cli/analyze.ts` is the verb's row, which shares its name with the module that handles it.
         Assert.Equal(Path.Combine(cli, "doctrine", "analyze.ts"), SourceFiles.Cli("analyze.ts"));
         var refused = Assert.Throws<InvalidOperationException>(() => SourceFiles.Cli("gone.ts"));
         Assert.Equal("no gone.ts under Daoris.Cli: a source read by name must be there, at any depth", refused.Message);

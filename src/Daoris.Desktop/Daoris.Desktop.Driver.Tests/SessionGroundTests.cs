@@ -4,13 +4,13 @@ using StandInService = Daoris.Desktop.Driver.Tests.OrphanedSessionTests.StandInS
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// Where a session ran and what it started from (SURF6): the two machine-local facts its review, its
+/// Where a session ran and what it started from: the two machine-local facts its review, its
 /// merge and its discard are read from.
 /// </summary>
 /// <remarks>
-/// 🔴 GROUND1, found on the window (FRAME6's look): these were read from <c>/api/sessions</c>, which
-/// lists ACTIVE sessions, so every session that had ended — the usual moment to review one — answered
-/// "no tree on this machine" beside a head that showed its tree.
+/// 🔴 These must not be read from <c>/api/sessions</c>, which
+/// lists ACTIVE sessions, or every session that has ended — the usual moment to review one — would answer
+/// "no tree on this machine" beside a head that shows its tree.
 /// </remarks>
 public sealed class SessionGroundTests
 {

@@ -5,7 +5,7 @@ using static Daoris.Desktop.Driver.Tests.SessionMessagesTickTests;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// AGENTERRORS1a (D210, the agent-errors design §5.1, §11's row) through REAL ticks: a driven session whose prompt fails with the 529 is
+/// Through REAL ticks: a driven session whose prompt fails with the 529 is
 /// tried again in the SAME conversation inside its run, on the driver's retry clock, which the test holds
 /// (<c>.claude/knowledge/held-clocks.md</c>); one that keeps failing ends <c>ended.transient</c>, no strike and no cool-off, and the planner
 /// holds its quest across looks until a word of the person's said after the end resumes the same conversation with their words alone.
@@ -13,12 +13,12 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// The stand-in agent is a script this class writes under its own scratch home, never an agent's binary (<c>node tools/live-logins.mjs</c>),
 /// and its 529 frame is replayed from <c>claude-agent-acp</c> 0.84.0's source (<c>acp-agent.js:4178-4180</c>, <c>:7249-7251</c>):
-/// source-derived (§3.3). The service is MSG1b's stand-in, <see cref="SaidStandIn"/>.
+/// source-derived. The service is the stand-in <see cref="SaidStandIn"/>.
 /// </remarks>
 [Trait(Category.Name, Category.Process)]
 public sealed class TransientRetryTickTests : IAsyncLifetime
 {
-    /// <summary>The count the transient hold says once, read from the run's tries (CONTEXTDRIVE1s), which goes with the release as Daoris's word.</summary>
+    /// <summary>The count the transient hold says once, read from the run's tries, which goes with the release as Daoris's word.</summary>
     private const string Counted = "Daoris's count for this line: 5 tries while the service did not answer; the next waits for the person.";
 
     private readonly string _home = Path.Combine(WorkspaceRoot.Folder, "_fixtures", "transient-tick", Guid.NewGuid().ToString("N")[..8]);
@@ -132,10 +132,9 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
         $"look: {look}\nrecord: {service.Record("s1")}\nfaults: {Faults(service)}\nheard: {string.Join(" | ", Heard().Select(h => h.ToJsonString()))}";
 
     /// <summary>
-    /// 🔴 Shape 1 (the design §0): the prompt fails <c>-32603</c> with <c>data.errorKind: "overloaded"</c> twice, then the agent works.
+    /// 🔴 The prompt fails <c>-32603</c> with <c>data.errorKind: "overloaded"</c> twice, then the agent works.
     /// One record, one session id, no carry-on: the run goes on in the same conversation and ends as its work does, with one
-    /// <c>agent.transient-retrying</c> line, no strike and no <c>cooling.json</c> entry. Red before the retry was handed, as today's
-    /// <c>ended.turn-failed-taken</c>.
+    /// <c>agent.transient-retrying</c> line, no strike and no <c>cooling.json</c> entry. Without the retry it ends <c>ended.turn-failed-taken</c>.
     /// </summary>
     [Fact]
     public async Task A_driven_session_failing_transient_twice_goes_on_in_the_same_conversation_and_ends_as_its_work_does()
@@ -171,7 +170,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
     /// <summary>
     /// 🔴 The same agent erring every try: past the bound the record ends <c>failed</c> with <c>ended.transient</c>, no strike and no
     /// cool-off, after five tries and 31 minutes of waits. Then the next looks start nothing for the Taken quest, a word of Daoris's kept
-    /// on the record releasing nothing, until the person's word, said after the end, resumes the SAME conversation id by MSG1b's go-on
+    /// on the record releasing nothing, until the person's word, said after the end, resumes the SAME conversation id by the go-on
     /// with their words alone and no go-on after them.
     /// </summary>
     [Fact]
@@ -247,8 +246,8 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 AGENTERRORS1a2, <b>the release</b> (the design §5.1, §11's row, moved from 1a by R3-O11): exhausted, then <i>Try again</i> once
-    /// (<see cref="QuestRetry.Decide"/> over the look's verdicts) resumes the SAME conversation by D206's step 1 with Daoris's go-on
+    /// 🔴 <b>The release</b>: exhausted, then <i>Try again</i> once
+    /// (<see cref="QuestRetry.Decide"/> over the look's verdicts) resumes the SAME conversation with Daoris's go-on
     /// alone; the resumed run, exhausted again, is held again by its new end, across several looks and a driver restart that reads the
     /// same release from its config: nothing starts. Red before the release, as <c>quest-not-held</c>.
     /// </summary>
@@ -342,10 +341,10 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 AGENTERRORS1a2, the open's <b>nothing prompted</b> end (the design §5.1, §5.6; round 3, R2-O2; round 3's read, R3-O9): the person's
+    /// 🔴 The open's <b>nothing prompted</b> end: the person's
     /// word resumes the held record, and its <c>session/resume</c> meets the 529 past the bound, so none of their words went. The record
     /// ends <c>ended.transient</c> again, no word of Daoris's waits and no mark is written, and the next looks start nothing, since the
-    /// carried word was said before this end; a new word of theirs, said after it, goes on with the carried one, alone.
+    /// carried word predates this end; a new word of theirs, said after it, goes on with the carried one, alone.
     /// </summary>
     [Fact]
     public async Task A_resume_whose_open_fails_past_the_bound_holds_its_carried_words_until_a_new_word_of_theirs()
@@ -392,7 +391,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 Codex's owed read of D210, finding 5, a D79 continuation: the quest's session asked another repository and ended waiting; its
+    /// 🔴 A continuation: the quest's session asked another repository and ended waiting; its
     /// answer came, and the resume's first prompt meets the 529. The question it names stays on the quest once answered, which is
     /// history, not this run's wait: the run is tried again and finishes its quest. Red before: the owner's check read the named
     /// question as a wait, sent no try, and the quest stayed taken.
@@ -409,7 +408,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
 
         service.Close("q2", "Done", "POST /notes takes { text }.");
         var tick = driver.RunOnceAsync();
-        // The resume is a session of its own (D79), whose record says its wait.
+        // The resume is a session of its own, whose record says its wait.
         await PassAsync(clock, tick, "s2", 1);
         var look = await tick.WaitAsync(Poll.Patience);
 
@@ -422,8 +421,8 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 Finding 5, the person's explicit continuation of a closed quest: their word resumes a done quest's conversation, and its prompt
-    /// meets the 529. The quest was closed before their word began, so its close is no new completion: the run is tried again and
+    /// 🔴 The person's explicit continuation of a closed quest: their word resumes a done quest's conversation, and its prompt
+    /// meets the 529. The quest closed before their word began, so its close is no new completion: the run is tried again and
     /// answers them. Red before: the check read the closed quest as done, sent no try, and the record ended as though it had answered.
     /// </summary>
     [Fact]
@@ -449,9 +448,9 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// 🔴 Finding 6: the person's word resumes the held record, and its open meets the 529 and then a limit by its code alone
+    /// 🔴 The person's word resumes the held record, and its open meets the 529 and then a limit by its code alone
     /// (<c>rate_limit</c>, no sentence), at <c>session/resume</c> and at <c>session/load</c>. The limit keeps its policy through the
-    /// resume's wrapper: its account cools for D125's unstated hour before the refused resume's fallback is chosen. Red before: the
+    /// resume's wrapper: its account cools for the unstated hour before the refused resume's fallback is chosen. Red before: the
     /// wrapper's refusal took the fallback first, and nothing cooled.
     /// </summary>
     [Theory]
@@ -498,7 +497,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
         await service.SayAsync("s1", "Go on where the overload stopped you.");
         var resuming = driver.RunOnceAsync();
         await PassAsync(clock, resuming, 1);
-        // The stub's own sign-in runs in its own home whatever its reading (OWNSPACE1a), so the refused resume's briefed fallback starts
+        // The stub's own sign-in runs in its own home whatever its reading, so the refused resume's briefed fallback starts
         // a session of its own, which meets the 529 as every first prompt here does: its waits are passed too.
         await DrainAsync(clock, resuming);
         await resuming.WaitAsync(Poll.Patience);
@@ -526,7 +525,7 @@ public sealed class TransientRetryTickTests : IAsyncLifetime
     /// <c>always</c> whose first six resumes meet the 529 at the open, before any prompt, and whose seventh works. <c>open-limit</c> and
     /// <c>open-access</c> are <c>always</c> whose resume meets the 529 at the open and then a limit by its code alone, or the stub's refused
     /// credential; with <c>-load</c> the agent offers no resume, so the open is <c>session/load</c>. <c>asks</c> takes its quest and waits on
-    /// <c>q2</c> (D79), and the resume's session meets the 529 once, then finishes; <c>closed-then</c> closes its quest done at once, and a
+    /// <c>q2</c>, and the resume's session meets the 529 once, then finishes; <c>closed-then</c> closes its quest done at once, and a
     /// resumed prompt meets the 529 once, then is answered.
     /// </summary>
     private string Agent()
