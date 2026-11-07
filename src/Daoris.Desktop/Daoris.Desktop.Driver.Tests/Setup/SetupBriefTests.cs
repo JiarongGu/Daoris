@@ -270,24 +270,28 @@ public sealed partial class SetupBriefTests
         Assert.DoesNotContain(".gitattributes", declaring);
     }
 
-    /// <summary>A set-up that declares the safe work proposes the rooms and classes where none are, and one that declares nothing asks none.</summary>
+    /// <summary>
+    /// A set-up that declares the safe work proposes the rooms where none are, and one that declares nothing asks none. What git does
+    /// not manage is Daoris's own analysis to read, so no class is proposed.
+    /// </summary>
     [Fact]
-    public void A_set_up_proposes_rooms_and_classes_for_a_repository_with_none()
+    public void A_set_up_proposes_rooms_for_a_repository_with_none()
     {
         foreach (var kind in new[] { SetupCase.Whole, SetupCase.Move })
         {
             var (_, body) = SetupBrief.Compose(Input(kind));
 
-            Assert.Contains("**Propose the rooms and the classes** where none are declared", body);
+            Assert.Contains("**Propose the rooms** where none are declared", body);
             Assert.Contains("Read the doctrine's `rooms-and-classes` knowledge first", body);
-            Assert.Contains("the lanes file's rooms and the `trees` section of `daoris.gates.json`", body);
-            Assert.Contains("the rooms and classes proposed, the rooms whose builds meet, or why none were", body);
+            Assert.Contains("where it declares none, the lanes file's rooms;", body);
+            Assert.Contains("the rooms proposed, the rooms whose builds meet, or why none were", body);
+            Assert.DoesNotContain("trees", body.Split('`'));
             Assert.True(body.IndexOf("**Declare the safe work**", StringComparison.Ordinal) < body.IndexOf("**Propose the rooms", StringComparison.Ordinal));
         }
 
         foreach (var kind in new[] { SetupCase.Declare, SetupCase.Index })
         {
-            Assert.DoesNotContain("**Propose the rooms and the classes**", SetupBrief.Compose(Input(kind)).Body);
+            Assert.DoesNotContain("**Propose the rooms**", SetupBrief.Compose(Input(kind)).Body);
         }
     }
 

@@ -355,7 +355,7 @@ public static class SetupBrief
             .Append("`AGENTS.md` and `CLAUDE.md` (the region, the brief, the import); `.agents/`, with the ")
             .Append("shared documents and this repository's own knowledge; the copies under `.claude/skills/` the tool ")
             .Append("writes; each room's `AGENTS.md`; the `safe` section of `daoris.gates.json`; where it declares none, the lanes ")
-            .Append("file's rooms and the `trees` section of `daoris.gates.json`; and a document that keeps a ")
+            .Append("file's rooms; and a document that keeps a ")
             .Append("collision's mechanism. Never push, merge or open a pull request; never write outside this tree (another ")
             .Append("repository's checkout you may read is read only); never publish a request to another repository; never ")
             .Append("run `daoris connect` or `daoris upstream`; never set `remote.join` or `remote.knowledge` in `daoris.json`, ")
