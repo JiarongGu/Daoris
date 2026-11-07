@@ -17,7 +17,13 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
         + "until the person presses Apply, whatever access you have: no setting you are granted reaches a role. The supervisor's rules "
         + "are a `set` of the id `supervisor` naming `place`, `rules` and `rules_revision` alone: when a line's count reaches a number "
         + "there, Daoris waits for the person, asks before the next move, waits for a reset or moves to another choice. The card shows the "
-        + "place's rules before and after: say what holds earlier or later.")]
+        + "place's rules before and after: say what holds earlier or later. An appointed supervisor of kinds is a `set` of an id of its own "
+        + "with `supervisor` true: `decides` names the kinds of decision it answers (question, course, limit, allow, files, landing; `[]` is the "
+        + "scope's generic supervisor, which answers what no kind supervisor takes), `acts` the acts it may do, each `<kind>.<act>` and every one "
+        + "off unless asked (question.answer, course.go-on, limit.move, limit.wait, allow.once, allow.reject, allow.standing, allow.steward, "
+        + "files.allow-run, files.allow-copy, files.allow-share, landing.accept, landing.approve, landing.reject), `holder` `rules` (your rules, "
+        + "then the person) or `terminal`, and `window` the minutes an answer is held for the person's overrule. A field left out keeps "
+        + "the supervisor's own; a new one names `decides`. An agent does not hold a supervisor yet.")]
     public string ProposeRole(
         [Description("`set`, `remove`, `default` or `default-all`.")] string change,
         [Description("The role's id: lowercase letters, digits and hyphens, as the catalogue names it (`build`, `designer`); `*` for `default-all`, which names no one role.")] string id,
@@ -50,9 +56,18 @@ public sealed class HelpRoleTool(IntakeScope? intake = null, HelpProposalBox? he
             + "move needs a `moves` rule, and `tries` cannot be removed.")]
         string? rules = null,
         [Description("The supervisor's rules only: the revision of the place's rules you read (`ROLES`' `supervisor`), so a change made since is refused rather than overwritten.")]
-        long? rules_revision = null)
+        long? rules_revision = null,
+        [Description("An appointed supervisor: true for a `set` of one, which `decides`, `acts`, `holder` and `window` describe. Not for the id `supervisor`, whose rules go by `place`.")]
+        bool? supervisor = null,
+        [Description("A supervisor's kinds of decision, `[]` for its scope's generic supervisor; left out keeps the supervisor's own.")] string[]? decides = null,
+        [Description("A supervisor's granted acts, each `<kind>.<act>` of a kind it decides; `[]` grants none. Left out keeps the supervisor's own.")] string[]? acts = null,
+        [Description("A supervisor's holder: `rules` or `terminal`; left out keeps its own, a new one is held by `rules`.")] string? holder = null,
+        [Description("A supervisor's window: the minutes (1 to 60) an answer is held for the person's overrule; left out keeps its own.")] int? window = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
-        return box.ProposeRole(change, id, name, name_in, takes, scope, choices, revision, why, intake?.Session, DateTimeOffset.UtcNow, policy, policy_revision, place, rules, rules_revision).Message;
+        return box.ProposeRole(change, id, name, name_in, takes, scope, choices, revision, why, intake?.Session, DateTimeOffset.UtcNow, policy, policy_revision, place, rules, rules_revision,
+            supervisor == true || decides is not null || acts is not null || holder is not null || window is not null
+                ? new HelpSupervisorFields(decides, acts, holder, window)
+                : null).Message;
     }
 }
