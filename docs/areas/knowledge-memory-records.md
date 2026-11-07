@@ -23,7 +23,7 @@ one job each, checked by `verify`.
 | `KnowledgeFeeds`, `KnowledgeRegistrar`, `KnowledgeCodeMaps` | `Core/Knowledge/` | The feed doors (a declaration, knowledge, a code map) behind one gate; register, retire and re-stamp; a code map read or held |
 | Feed records | `Core/Knowledge/Records/` | `FeedProvenance`, `FeedOutcome`, `FeedRefusal`, `RepositorySummary` |
 | `WorkRecordStore` | `Core/Sessions/WorkRecordStore.cs`, records in `Core/Sessions/Records/` | A finished tree's record, kept in `knowledge.db` and searched through `work_records_fts`; `NewerWorkRecordsException` when a newer build stamped them |
-| `RepositoryScanner` | `Core/Registry/RepositoryScanner.cs` (`Scan` 94-204) | Reads one checkout into entries, in a fixed order; one file is one place |
+| `RepositoryScanner` | `Core/Registry/RepositoryScanner.cs` (`Scan` 94-203) | Reads one checkout into entries, in a fixed order; one file is one place |
 | `RepositoryLayout`, `RepositoryDocuments`, `DaorisLock` | `Core/Registry/` | Where a checkout keeps its doctrine, which roles `daoris.json` declares, and which files are canonical |
 | Ingest | `Core/Knowledge/Ingest/` | Splits files: `DecisionNotes`, `IndexSections`, `IndexRows`, `MarkdownSections`, `MarkdownFence`, `EntryPieces` |
 | `KnowledgeIndex`, `DisclosurePolicy` | `Core/Knowledge/` | Writes a source into the store, withholding at ingest what may not leave |
@@ -33,7 +33,7 @@ one job each, checked by `verify`.
 | `EntryStanding`, `Citation` | `Core/Knowledge/` | The `standing:` line of a hit; a record cited by id, lines, commit and digest |
 | `Registry`, `RegistrationStore`, `RegistryImport` | `Core/Registry/` | Registrations pushed by `connect` and persisted; a folder scan only proposes |
 | `AmbientWorkspace`, `WorkspaceScope` | `Core/Registry/`, `Mcp/WorkspaceScope.cs` | Which workspace a call answers from |
-| Feed | `Core/Knowledge/Feed/` | `FeedOrder`, `FeedDigest`, `CodeMap`, `CodeMapWire`: what a remote is fed and how it is ordered |
+| Feed | `Core/Knowledge/Feed/` | `FeedOrder` and `FeedDigest` (both in `FeedOrder.cs`), `CodeMap`, `CodeMapWire`: what a remote is fed and how it is ordered |
 | Connector host | `Mcp/Program.cs`, `Mcp/KnowledgeServer.cs` | The stdio MCP server; `ToolTypes` is the one list of tool classes |
 | HTTP knowledge reads | `src/Daoris.Contracts/Knowledge/KnowledgeContracts.cs`, the HTTP host's `Routes/KnowledgeRoutes.cs` | Status, protocol, repositories, search (its tier in `x-daoris-tier`), entry, entries and convergence, each declared once as its request record; the driver sends the records, and the page sends them by name with its generated types (`data/api.ts`) |
 | Knowledge tools | `Mcp/KnowledgeSearchTools.cs` | `knowledge_search`, `knowledge_get`, `knowledge_repositories`, `knowledge_convergence`, `registry`, `knowledge_refresh` |
@@ -100,8 +100,8 @@ one job each, checked by `verify`.
 17. Every registered tool has a class: read, restricted or publish. A tool with no class is refused to every named session.
     (from D173)
 18. The call table serves by work. A session in a repository gets the 18 core tools (knowledge, memory, quests, its line, the
-    registry, a helper's ask, the channel, handbacks) plus its kind's own. Ask Daoris gets every tool but the brainstorm turns
-    and memory changes. A partner, a reviewer and a brainstorm voice get their handed rows. A session that cannot be placed gets
+    registry, a helper's ask, the channel, handbacks) plus its kind's own. Ask Daoris gets every tool but the brainstorm turns,
+    memory changes and `helper_ask`, which an intake is refused too: neither works in a repository of its own. A partner, a reviewer and a brainstorm voice get their handed rows. A session that cannot be placed gets
     the reads. (from D212, D230)
 19. `tools/list` names only what the table serves, and a refused call answers a sentence and a closed code before the tool
     runs. `McpRoleFilterTests` holds the table to `fixtures/call-table.json`. (from D212, D230)
@@ -133,9 +133,10 @@ one job each, checked by `verify`.
 30. A workspace's remote is machine configuration: the home's `remotes.json`, keyed by workspace, the environment overriding.
     The repository's manifest says whether it may share (join, share knowledge); the machine says where. (from D47, D48)
 31. Quests: every verb commits locally and succeeds locally. Sync is fetch, rebase and push of operations. The first push wins
-    and the loser is kept as a conflict for a person. A take claims by push, waiting 15 seconds at most. (from D68, D69)
+    and the loser is kept as a conflict for a person. A take claims by push and awaits the remote's answer (its client gives up after 15 seconds); a take the remote does not
+    answer stands unconfirmed and the next sync decides. (from D68, D69)
     A quest id is twelve characters only: no lookup reads the six-character width. A closed (Done or Declined) quest is removed
-    by one remover, `QuestClosedRemoval`: tombstoned with a `deleted` operation where it may have travelled (the delete applies to
+    by one remover, `Core/Quests/QuestClosedRemoval.cs`: tombstoned with a `deleted` operation where it may have travelled (the delete applies to
     an open or a closed quest, never a taken one), simply gone where it never left. The home migration's `closed-quests` step
     clears the closed six-character quests the same way; an open one stays until it closes, and the same words published again
     make a new quest.
@@ -147,8 +148,8 @@ one job each, checked by `verify`.
 
 **This repository's records**
 
-34. `daoris.json`'s `documents` declares each record once: router, index, decisions, backlog, archive, fixes, changelog,
-    glossary, gates, and the `present` homes. The doctrine region renders them as *Where things are*. (from D122, D151)
+34. `daoris.json`'s `documents` declares each record once: brief, router, index, areas, decisions, backlog, archive, fixes,
+    changelog, glossary, gates, and the `present` homes. The doctrine region renders them as *Where things are*. (from D122, D151)
 35. Each decision is its own file, `docs/decisions/D<n>.md`, its heading first and its notes appended at its end. The dispatching
     parent reserves the number. `docs/DECISIONS.md` is a fixed page with no rows. (from D106, D134)
 36. Changelog, archive, fix log and twins merge by union; decisions by the `notes` driver; the router by the `rows` driver; the
@@ -193,44 +194,36 @@ The web: `src/Daoris.Web/src/knowledge/*.test.tsx`, `work/head/SessionMemory.tes
 **Gates that bite** (`daoris.gates.json`): `service` (`dotnet test src/Daoris.Service`, its `Process` category apart);
 `service-process` (the route budgets over a benchmark home of three thousand sessions, run alone, on the `service` gate's build,
 in the full set and the CI wherever the service's sources or tests change); `cli` (`npm run verify`:
-`doc-duplicates`, `doc-system`, `doc-links`, the tools' tests); `tool-tests`; `orient-index`; `code-map`; `universal` (the docs
-gate fails `src/Daoris.Service/README.md` more than seven days behind its code, and the sensitive scan); `web-unit` for the
+`doc-duplicates`, `doc-system`, `doc-links`, the tools' tests); `tool-tests`; `code-map`; `universal` (`orient-index`, the docs
+gate that fails `src/Daoris.Service/README.md` more than seven days behind its code, and the sensitive scan); `web-unit` for the
 Knowledge view and session memory; `deployment` for the shared host.
 
 ## Contradictions
 
-1. D151 points 1-2 (the index is committed files, never text-merged) vs `.gitignore:13-14` and `tools/orient-index.mjs:27-31`
+1. D151 points 1-2 (the index is committed files, never text-merged) vs `.gitignore:13-14` and `tools/orient-index.mjs:18-26`
    (ignored, written per checkout). The code reads right.
-2. `.gitattributes:20-27` and `daoris.gates.json:33-35` still declare merge handling and a `generated` rewrite for `docs/index/`,
-   and `AGENTS.md:48-49` still lists it as generated output to merge: leftovers of the committed index (D228). The ignore reads
-   right.
-3. D134 point 3 (union per file, a merge driver rejected) and D151's rejected merge driver vs `.gitattributes:49` (`merge=rows`)
-   and `:55` (`merge=notes`), installed by `npm ci`. The code reads right.
-4. Two ways set apart a glued decision note: the `notes` driver (`tools/index-hook.mjs:13-15`) and `setApart` in
-   `tools/merge-branch.mjs:1838` (D106's MERGEJOIN1 note). D228 allows one; the driver is the newer.
-5. D134 point 2 (no index of the decisions, hand-kept or generated) vs the generated digest `docs/index/decisions.md` (its own
+2. D134 point 3 (union per file, a merge driver rejected) and D151's rejected merge driver vs `.gitattributes:39` (`merge=rows`)
+   and `:45` (`merge=notes`), installed by `npm ci`. The code reads right.
+3. Two ways set apart a glued decision note: the `notes` driver (`tools/index-hook.mjs:14-16`) and `setApart` in
+   `tools/merge-branch.mjs:1866` (D106's MERGEJOIN1 note). D228 allows one; the driver is the newer.
+4. D134 point 2 (no index of the decisions, hand-kept or generated) vs the generated digest `docs/index/decisions.md` (its own
    ORIENT1b note). The code reads right.
-6. D106 (`docs/README.md` and `docs/DECISIONS.md` merge by union) vs `.gitattributes:39-49` (the router by rows, the page not
+5. D106 (`docs/README.md` and `docs/DECISIONS.md` merge by union) vs `.gitattributes:28-39` (the router by rows, the page not
    union). The code reads right.
-7. D47 (a quest has one home; its verbs write through or fail) vs D68 (every verb commits locally; fetch, rebase, push) and
+6. D47 (a quest has one home; its verbs write through or fail) vs D68 (every verb commits locally; fetch, rebase, push) and
    `Core/Remote/Remote.cs:10-20`. D68 reads right.
-8. D21 (the shared store a git repository first; keys read-only; access mirrors the source host) vs D47 (git as store priced and
+7. D21 (the shared store a git repository first; keys read-only; access mirrors the source host) vs D47 (git as store priced and
    declined) and `Core/Platform/ApiKeys.cs` (keyed writes at a SQLite host). D47 reads right.
-9. D21 and D47 (people sign in to a shared host with OIDC) vs the service, which has no OIDC code. The code is today's truth.
-10. D30 (the web's primary view is convergence) vs `src/Daoris.Web/src/knowledge/modes.ts:8,18-21` (Search first and default).
-    The code reads right.
-11. (Resolved.) `Mcp/CallTable.cs` (`Unowned`) refuses `helper_ask` to Ask Daoris and an intake, as `Core/Sessions/HelperBox.cs`
-    does, and `fixtures/call-table.json` pins both columns without it.
-12. D22 (depend on released siblings, never a working tree) vs `src/Daoris.Service/Directory.Packages.props:19-22` (a local
+8. D21 and D47 (people sign in to a shared host with OIDC) vs the service, which has no OIDC code. The code is today's truth.
+9. D30 (the web's primary view is convergence) vs `src/Daoris.Web/src/knowledge/modes.ts:8,18-21` (Search first and default).
+   The code reads right.
+10. D22 (depend on released siblings, never a working tree) vs `src/Daoris.Service/Directory.Packages.props:19-22` (a local
     Lyntai build until its next release). The code is today's truth.
-13. D21 (`local/` a hard exclusion in shared mode) vs `Core/Knowledge/DisclosurePolicy.cs:17-25` (no path rule): `local/` stays
+11. D21 (`local/` a hard exclusion in shared mode) vs `Core/Knowledge/DisclosurePolicy.cs:17-25` (no path rule): `local/` stays
     out only because the walk skips what git ignores, and a declared folder git ignores whole is read. The code holds in
     practice.
-14. `tools/knowledge-server.mjs:22` (a reading re-read once a minute old) vs `Core/Knowledge/Store/CheckoutFreshness.cs:42` and
-    `Mcp/Program.cs` (five minutes while watched, one when not). The code reads right.
-15. The `change` skill (`.claude/skills/change/SKILL.md:13-14,25-28`: the brief names the area documents; nothing else is
-    written by hand) vs `AGENTS.md` (no area document; `docs/areas/` absent) and `docs/development.md:267-269,517-519` (archive,
-    changelog and fix-log entries per change). What main does today is the development guide; CONSOLIDATE1 settles it.
+12. `tools/knowledge-server.mjs:22` (a reading re-read once a minute old) vs `Core/Knowledge/Store/CheckoutFreshness.cs:42` and
+    `Core/Composition/ServiceFactory.cs:61` (five minutes while watched, one when not). The code reads right.
 
 ## Open
 
@@ -238,10 +231,8 @@ Knowledge view and session memory; `deployment` for the shared host.
   (PROFILEFIX1's re-open condition).
 - **KNOWCENTRAL1** (next round) — retirement through decay, which upkeep a model takes alone, a memory shared across repositories.
 - **MC8** — a second opinion as an end's approver; until then the person approves every end.
-- **KNOWFRESH1** — iv: a restatement within one repository found; b: a Lyntai release carrying MC7, MC11 and MC12 (today a local
-  build); c: the machine's memory server's half; `doc-current` is report-only and not in `verify`.
+- **KNOWFRESH1** — a-iv: a restatement within one repository found; b: a Lyntai release carrying MC7, MC11 and MC12 (today a
+  local build); c: the machine's memory server's half; `doc-current` is report-only and not in `verify`.
 - **D129 §6, KNOW2a** (parked) — recall by meaning pushed into a driven session's prompt.
 - **OIDC for people on a shared host** (D21, D47) — no row.
-- **CONSOLIDATE1** — area documents under `docs/areas/`, named by the brief and declared in `daoris.json`; decisions read as
-  history behind a status table.
 - **DOCSHOME1** — managed documents and skills with more than one source, given two portable homes.

@@ -96,7 +96,7 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     `profiles/git/`; Codex holds no rules. The session still runs as the person's account (`GitSessionHolds`). (from D198, D241)
 13. One reader, `GitRemotes`, gives every address Daoris keeps, says or judges, with `daoris::` taken off. A plugin tool
     that reads remotes is named the repository or runs unrouted. (from D198)
-14. Below git 2.31 the doors cannot stand: Daoris's fetches and the landing's push refuse as `old-git`. Below 2.32 a git
+14. Below git 2.31 the doors cannot stand: Daoris's fetches and the push act refuse as `old-git`. Below 2.32 a git
     setting refuses as `git-too-old`. (from D198)
 15. Every text from git, ssh, a door or a plugin passes `GitWords.Redact` before it is kept, said or answered. (from D198)
 
@@ -107,8 +107,11 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     serves is held `no-identity` before SSH connects, and HTTPS reads anonymously. A home with no install beside it (a run
     from source), or an install missing a door (its fetch is not offered, the words naming the door), is not moved and its git
     is as it was. Nothing is pre-applied. (from D198, D232, D233, D241)
-17. The move is one *What needs you* row per workspace: *Set up identity…* or *Keep using my own sign-ins…*. A held row
-    holds work where a session of one of its repositories runs or is parked. (from D198)
+17. The move is one *What needs you* row per workspace for every remote nothing serves, whatever its host (its repositories
+    counted, those whose own configuration names authentication listed apart). It opens Settings → Git on the host, where an
+    identity is added; a row whose push was refused or whose repository names its own authentication opens that repository's git
+    row, where another identity or `own` is chosen. A held row holds work where a session of one of its repositories runs or is
+    parked. (from D198)
 18. `own` is a widening. It is confirmed before it is written, on the page or in the window for a terminal's press. No
     migration applies it. (from D198)
 19. A failure is classed by the transport's words and held, keyed by repository, effective address, what served it and
@@ -164,15 +167,12 @@ Driver paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/`; `Workplace/`
     (`Landing` has no plugin; `TreeDeliveries` holds no dispatch). There is no `work/land` point, no hand-off verb, route or page, and no
     automatic hand-on of a held-back push: a pull request is a place's workflow steps and nothing else pushes for the person.
     A delivery or note recorded before that is read and said, never sent again (G8-CONVERT1 deletes the reading). (from D87, D100, D241)
-31. The landing asks the judge before it starts the plugin. The person's Accept, or a rule that accepts for them, is the
-    yes, so only `deny` or a read-only origin identity refuses. The doors refuse the same push; the landing asks first
-    because the plugin's start and its pull-request call pass no door. (from D198, D145)
-32. The plugin's push carries a grant bound to its process, origin's push address and exactly its own ref and commit
-    (`refs/heads/<branch>` at the frame's tip), taken once within the bound by the push that it carries; it carries a creation or a
-    fast-forward and never a Dangerous kind, and a ref it does not name is refused at the door. A grant with the old commit
-    bound carries that exact update whatever its kind but a tag. The frame names origin's address; the plugin has two minutes and answers
-    `{pushed, pullRequest, message}`. (from D100, D198, D241)
-33. A pull request's state is asked only of the plugin that pushed it, at occasions that may remove, never on a timer. A
+31. A plugin process holds no git grant and runs no git: only the push act writes a grant, and `DAORIS_GIT_GRANT` is dropped
+    from every start (`GitWiring.Hand`). A plugin's `pull-request` step opens the request through its service's REST API. (from D241)
+32. That step's process is handed the API token of the identity serving the place's origin as `DAORIS_HOST_TOKEN`, one process per
+    place (`PlaceHostTokens`, `PluginHostToken`, `HookSet`); one the desktop inherited never reaches it. No plugin is started where
+    origin is served by `own`, no identity serves it, Write is denied or the identity is read only, or no API token is set. (from D241, D242)
+33. A pull request's state is asked only of the plugin that opened it, at occasions that may remove, never on a timer. A
     `completed` answer clears a branch only where git holds its merge commit on the line. (from D148)
 
 **The line**
@@ -297,7 +297,7 @@ floor (the git-app design §4.3), for at most 9 starts of a merge press's 39.
 - **A new failure or hold:** `GitFailures`, `GitHolds` or `GitOwnInput`, with its row words where `git-held` rows are made.
 - **What an act may do:** `GitAccessKeys` and `GitAccessRules`; what a session's harness is told in `GitAccessPolicy`.
 - **A new person's act:** a step kind on the act engine, a `Git*Command.cs` twin, a `GitRoutes` route, and its rows in
-  `OwnerTargetRows` and `PipeCensus`.
+  `PipeTargets`' marks and `PipeCensus`.
 - **A platform's push or pull request:** the plugin, in the plugins repository. The driver changes only the wire
   (`LandingPlugins`, the hook points).
 - **A record that syncs:** `IRemote` plus a `*Sync` in `Service.Core/Remote/`, and the host's routes. Machine wiring goes
@@ -311,7 +311,7 @@ under its grant on the SSH host, the same push refused without one, a tag refuse
 `GitSessionAccessTests`, `GitSessionHoldsTests`, `DriverModuleSessionGitAccessTests`, `GitMoveTests`, `GitHoldsTests`, `GitOwnInputScopedGitTests`, `GitAccessTests`, `GitPushStepTests`, `GitRemotesTests` (the address reader's
 census), `ProcessStartsCensusTests` (every start through `Tools.Hand`), `ViewGitCountTests` (each page read's git starts held to those measured), `GitRefActTests`, `GitHistoryEditTests`,
 `GitFetchTests`, `CheckoutWritersCensusTests`, `PullRequestStateTests`, `PullRequestProofTests`,
-`PullRequestPresetPluginTests`, `WorkflowSquashChainProcessTests` (land, push, pull-request, monitor and tidy against the stand-ins, a squash
+`WorkflowSquashChainProcessTests` (land, push, pull-request, monitor and tidy against the stand-ins, a squash
 merge ending a two-part chain once with an Undo), `RemoteSyncTests`, `RemoteTargetTests`, `QuestSyncTests`, `QuestReopenSyncTests`,
 `SessionSyncTests`, `BroughtForwardLookTests`, `RemotesModuleTests`, `DriverModuleGitAccessTests`; on the page
 `Git.test.tsx`, `GitRemotes.test.tsx`, `GitAccess.test.tsx`, `GitAccessFact.test.tsx`, `GitAsk.test.tsx`, `ProjectsView.git.test.tsx`, `PushRef.test.tsx`.
@@ -332,16 +332,17 @@ catalogues (`i18n:check`).
   through `GitRuns.cs` (`GitStart`): D198 and the code read right. `WorkingTree` is the door to git's reads and runs; the diff reads are
   `TreeDiffs` and the process starts, with their test seams, are `GitRuns`. A set-aside folder's marks, reads and keeping are
   `SetAsideMarks`, `SetAsideReads` and `SetAsideKeeps`, with `TreeSetAside` the front.
-- D147 point 1 (Git a place on the activity bar) vs D150 and `ProjectsView.tsx:44` (Git inside Repositories): D150 reads right.
+- D147 point 1 (Git a place on the activity bar) vs D150 and `ProjectsView.tsx:41` (Git inside Repositories): D150 reads right.
 - D204's head ("proposed, not yet read; nothing built") vs its 2026-10-31 acceptance note and the built acts
-  (`ActRuns.cs:67`): the note and the code read right.
-- D87 and D100's plugin push "with whatever that platform's tools are signed in as" (still said at `LandingPlugins.cs:8-10`)
-  vs D198 point 13 and `LandingPlugins.cs:122-131` (its git push passes the door under origin's identity and a grant): D198 reads right.
+  (`ActRuns.cs:68`): the note and the code read right.
+- D87 and D100's plugin push "with whatever that platform's tools are signed in as" vs D241 point 4 and `LandingPlugins`' remarks
+  (Daoris pushes through its own push act under origin's identity and a grant; the plugin opens the pull request): D241 reads right.
 
 ## Open
 
-- **GITDESIGN1:** git's place, proposed in `docs/2026-11-05-git-design.md`: every remote act through the doors, one push, a pull
-  request as a place's workflow steps, the path proven in CI against stand-in remotes. GITAUTH1b and WORKSETUP1 follow it.
+- **GITDESIGN1:** git's place (D241, `docs/2026-11-05-git-design.md`): every remote act through the doors, one push, a pull
+  request as a place's workflow steps, the path proven in CI against stand-in remotes. G1 to G9 are built; G8-CONVERT1 and G10 remain
+  (`TASKS.md`). WORKSETUP1 follows it.
 - **GITAUTH1b:** built. The doors' classes (`GitDoorsProcessTests`, `GitSshProcessTests`, `GitHttpsProcessTests`) run twice, with the
   runner's git and with the MinGit the built-in list pins (`PinnedMinGit`, fetched by the toolchain's own download into `_fixtures/`
   and held to the list's size and SHA-256; the `GitHttpsPinnedProcessTests` subclass). MinGit 2.56 carries both a Schannel and an
@@ -374,6 +375,6 @@ catalogues (`i18n:check`).
   `resources.json`), and no web fixture, story, test or sample plugin-tool message names either as a sample tool.
 - **D178 point 6:** *Hand mine to the winner*, no row until a way to publish a branch is asked for.
 - **D47:** OIDC sign-in for people on a shared deployment, and the platform served from it; only machine keys are built.
-- **FABRIC-PERFORM1l:** the pull request's fields kept on the wire evidence (`WorkWire.cs:354`).
+- **FABRIC-PERFORM1l:** the pull request's fields kept on the wire evidence (`WorkEvidence` in `WorkWire.cs`).
 - **OPTIMIZE1a:** counted per view, landing and count class (*Git's starts, counted*); the held reader is not proposed. Left: the
   cuts the figures name (PERF1's row), and the other test classes that start git counted beside a Process run.

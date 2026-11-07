@@ -16,6 +16,8 @@ public sealed partial class AgentsTextTests
     private static readonly Lazy<JsonElement> Read = new(() => JsonDocument.Parse(File.ReadAllText(Path.Combine(
         WorkspaceRoot.Folder, "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "fixtures", "agents-text.json"))).RootElement.Clone());
 
+    private static readonly DateTime Laid = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     public static TheoryData<string> Names() => Rows(standIn: false);
 
     /// <summary>The rows whose agent is a stand-in program asked as a start runs it (<c>windows</c>, PUSH1f2e4's <c>list</c>), or the rest.</summary>
@@ -94,6 +96,8 @@ public sealed partial class AgentsTextTests
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(At(file.Name))!);
                 File.WriteAllText(At(file.Name), Placed(file.Value.GetString()!));
+                // Each laid file written at one moment, so a binary's reading of it (PERF3) is the same in every run.
+                File.SetLastWriteTimeUtc(At(file.Name), Laid);
             }
 
             var home = !row.TryGetProperty("home", out var hasHome) || hasHome.GetBoolean() ? Path.Combine(root, "daoris") : null;

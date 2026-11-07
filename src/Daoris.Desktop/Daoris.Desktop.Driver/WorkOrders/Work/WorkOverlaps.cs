@@ -8,8 +8,8 @@ namespace Daoris.Driver;
 /// units of one repository, each told once as an ordinary word.
 /// </summary>
 /// <remarks>
-/// One git read per running session of this machine, so the reads are bounded by its running sessions; a teammate's session is read by its
-/// own machine. The told words' keys are kept in <c>overlaps-told.json</c> beside the driver's state, so a restart tells nothing twice.
+/// A running session of this machine is read where its tree moved since the last look (<see cref="TreeChangesKept"/>), and the pairs are
+/// compared in memory; a teammate's session is read by its own machine. The told words' keys are kept in <c>overlaps-told.json</c> beside the driver's state, so a restart tells nothing twice.
 /// </remarks>
 public static class WorkOverlaps
 {
@@ -35,9 +35,12 @@ public static class WorkOverlaps
     }
 
     /// <summary>git's names of the paths <c>before</c> differs from the tree in, where the tree is its own checkout's top level.</summary>
-    public static async Task<IReadOnlyList<string>?> DiffAsync(string tree, string before, CancellationToken ct)
+    public static async Task<IReadOnlyList<string>?> DiffAsync(string tree, string before, CancellationToken ct) =>
+        !WorkingTree.IsCommitId(before) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false) ? null : await NamesAsync(tree, before, ct).ConfigureAwait(false);
+
+    /// <summary>git's names of the paths <c>before</c> differs from <paramref name="tree"/> in, the tree known to be its checkout's top level.</summary>
+    internal static async Task<IReadOnlyList<string>?> NamesAsync(string tree, string before, CancellationToken ct)
     {
-        if (!WorkingTree.IsCommitId(before) || !await WorkingTree.IsTopLevelAsync(tree, ct).ConfigureAwait(false)) return null;
         var (code, stdout, _) = await WorkingTree.GitAsync(tree, ["--no-optional-locks", "diff", "--name-only", before], ct).ConfigureAwait(false);
         return code == 0
             ? [.. stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Order(StringComparer.Ordinal)]

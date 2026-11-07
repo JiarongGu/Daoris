@@ -46,7 +46,7 @@ type SettingsDomain = {
  * (MOD4). A domain is a `settings/<Name>Domain.tsx` and a row here; the frame renders whichever row is
  * chosen and names none itself, and `domains.test.ts` holds both.
  *
- * Eight since WIRING1c (seven since UX6j, D150 §2.3): what is the machine's or the person's. Every other setting lives on its thing.
+ * Nine since WIRING1c (seven since UX6j, D150 §2.3): what is the machine's or the person's. Every other setting lives on its thing.
  */
 export const SETTINGS_DOMAINS = [
   // The setup guide leads (SETUP1a, D97), named Get started again since Setup names a repository's and a workspace's tab

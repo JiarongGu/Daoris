@@ -14,9 +14,9 @@ public sealed record GitVerdict(bool Allowed, string Code, string? Line, bool As
 /// <summary>
 /// The one judge of git access (GITAUTH1b, D198 points 8, 11 and 13; the git-auth design §6.1, §6.2, §6.5 and §6.7), asked by both
 /// doors at the remote command. Until the person can set git access (GITAUTH1f) it answers Daoris's default, door by door, which is
-/// today's behaviour: <b>Read</b> is allowed; <b>Write</b> is allowed to the landing alone, by the grant the driver writes for its
-/// plugin's push on the person's yes (<see cref="GitGrants"/>), and refused to every other process, a session on any harness among
-/// them; <b>Dangerous</b>, each update of a push judged by its kind, is judged at the doors for every agent whatever its harness
+/// today's behaviour: <b>Read</b> is allowed; <b>Write</b> is allowed to the push act alone, by the grant the driver writes for that
+/// act's git start on the person's press (<see cref="GitGrants"/>), and refused to every other process, a session on any harness and a
+/// plugin among them; <b>Dangerous</b>, each update of a push judged by its kind, is judged at the doors for every agent whatever its harness
 /// (D233 choice 3, D241 point 3), refused unless the person's git access allows it (<see cref="GitPushJudge"/>).
 /// </summary>
 /// <remarks>
@@ -143,8 +143,8 @@ public static class GitAddressKeys
 }
 
 /// <summary>
-/// The landing's grant (GITAUTH1b, D198 point 13; the git-auth design §6.7): written by the driver for a plugin's push on the person's
-/// yes, handed to that one plugin process in <see cref="GitRouting.GrantVariable"/>, and taken by the door for one write connection to
+/// The push act's grant (GITAUTH1b, D198 point 13; the git-auth design §6.7): written by the driver for the act's push on the person's
+/// press, handed to that act's own git start in <see cref="GitRouting.GrantVariable"/>, and taken by the door for one write connection to
 /// the address it names, once, within its bound. Kept in the home's <c>run/git/grants/</c>, one file per grant, holding the address's
 /// key and its bound and nothing else.
 /// </summary>

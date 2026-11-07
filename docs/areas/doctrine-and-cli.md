@@ -9,8 +9,8 @@ hash in `daoris.lock`. `check` fails a build when a copy drifted from the lock. 
 canon would change, and the repository's own session adopts, keeps or proposes each item. Every other `daoris` word is
 handed to the desktop's program. Set-up of a repository is a quest that the driver's set-up press publishes to that
 repository's own session. The devkit is a .NET binary that runs the universal gates and delegates doctrine to `daoris check`.
-The lean canon (CONSOLIDATE1) is on main as of the merge `d2db27eb8`: three rules in full, five rules read on demand,
-one `change` skill, and `co-working` as a pack.
+The canon is lean (CONSOLIDATE1): three rules in full, five rules read on demand, one `change` skill, and `co-working`
+as a pack.
 
 ## Its parts
 
@@ -21,7 +21,7 @@ one `change` skill, and `co-working` as a pack.
 | Hand-off seam | `src/Daoris.Cli/src/platform/driverprogram.ts` | Finds the desktop's program and starts it, the CLI's one spawn, marked `DAORIS_HANDED=cli` |
 | Canon reader | `src/Daoris.Cli/src/doctrine/canon.ts` | The canon root, packs and their API version, the selection with switches, the canon digest |
 | Manifest and lock | `src/Daoris.Cli/src/doctrine/config.ts`, `records.ts` | `daoris.json` and `daoris.lock`: shapes, defaults, reading, writing |
-| Sync | `src/Daoris.Cli/src/doctrine/materialize.ts` | `planSync` (the lock × disk × canon table), `planChanges`, `applySync`, the refusals `--force` cannot pass |
+| Sync | `src/Daoris.Cli/src/doctrine/materialize.ts`, `syncplan.ts`, `syncchanges.ts`, `syncapply.ts` | `commandSync`; `planSync` (the lock × disk × canon table); `planChanges`, renames; `applySync` and `refuseWhatForceCannot` |
 | Check | `src/Daoris.Cli/src/doctrine/drift.ts` | `inspect` and `check`: offline, with no canon read |
 | Status and init | `src/Daoris.Cli/src/doctrine/commands.ts` | `status` (the update check), `init` (the manifest and the line-ending pin), the repository's own files |
 | Keep | `src/Daoris.Cli/src/doctrine/keep.ts` | A kept file's state and its canon file digest |
@@ -29,7 +29,7 @@ one `change` skill, and `co-working` as a pack.
 | Upstream | `src/Daoris.Cli/src/doctrine/upstream.ts` | Writes into the canon in its own checkout; elsewhere composes a request's words |
 | Newer lock, notes | `src/Daoris.Cli/src/doctrine/lockversion.ts`, `notes.ts` | Refuses a lock a newer canon wrote; the canon changelog entries between two versions |
 | Region | `src/Daoris.Cli/src/doctrine/region.ts` | The marked region in `AGENTS.md` and the import region in `CLAUDE.md`: find, write, remove, refuse damage |
-| Region text and index | `src/Daoris.Cli/src/doctrine/tierrender.ts`, `indexgen.ts` | The rules table, the on-demand rows, *Where things are*, and `<target>/INDEX.md` |
+| Region text and index | `src/Daoris.Cli/src/doctrine/tierrender.ts`, `indexgen.ts`, `document.ts` | The rules table, the on-demand rows, *Where things are*, and `<target>/INDEX.md`; frontmatter and the provenance header |
 | Documents | `src/Daoris.Cli/src/layout/documents.ts` | The roles a manifest may bind in `documents`, and their checks |
 | Layouts | `src/Daoris.Cli/src/layout/harness.ts`, `layout.ts`, `mirror.ts`, `rooms.ts`, `links.ts` | The `claude-code` and `agents` descriptors, the lock's layout, the skills mirror, rooms, links |
 | Adoption reads | `src/Daoris.Cli/src/doctrine/analyze.ts`, `twins.ts`, `lineendings.ts` | `analyze` (what adopting would do), `doctor` (look-alike documents), the LF pin |
@@ -37,9 +37,9 @@ one `change` skill, and `co-working` as a pack.
 | Command tree | `Daoris.Desktop.Driver/Platform/CommandGroupAttribute.cs`, `CommandWords.cs`, `Loop/CommandTree.cs` | Each group's mark on its command, the groups collected at start, the router, and the carried CLI's path |
 | Doctrine hand-back | `Daoris.Desktop.Driver.Host/DoctrineConsole.cs` | Runs a word no group owns through the CLI an install carries, marked `DAORIS_HANDED=driver`; the CLI's usage at the end of `daoris help` |
 | Host composition | `Daoris.Desktop.Driver.Host/Program.cs`, `DriveConsole.cs`, `TreesConsole.cs`, `Trees*Verb.cs`, `TreesUsage.cs` | The program routes the words once and hands each group to its console; the headless loop is `DriveConsole`; `daoris tree` dispatches in `TreesConsole` to the verbs that own their bodies |
-| Set-up press | `Driver/Setup/SetupPress.cs`, `Setup/Domain/SetupPressRules.cs`, `SetupBrief.cs` | Which set-up a line calls for, its refusals, its quest and the exact-verb rule |
-| Place and workspace plan | `Driver/Setup/Place*.cs`, `WorkspaceSetup*.cs`, `Domain/WorkspaceSetupRules.cs`, `SetupOrder.cs` | `daoris place`: a place's set-up, and a workspace's paced adoption |
-| Doctrine status read | `Driver/Setup/DoctrineStatusRead.cs`, `Domain/DoctrineStatus.cs`, `ReconcileBrief.cs` | Reads `daoris status --json` in a checkout; the reconcile quest's words |
+| Set-up press | `Driver/Setup/SetupPress.cs`, `Setup/Domain/SetupPressRules.cs`, `Setup/Domain/SetupBrief.cs` | Which set-up a line calls for, its refusals, its quest and the exact-verb rule |
+| Place and workspace plan | `Driver/Setup/Place*.cs`, `WorkspaceSetup*.cs`, `Domain/WorkspaceSetupRules.cs`, `Domain/SetupOrder.cs` | `daoris place`: a place's set-up, and a workspace's paced adoption |
+| Doctrine status read | `Driver/Setup/DoctrineStatusRead.cs`, `Domain/DoctrineStatus.cs`, `Domain/ReconcileBrief.cs` | Reads `daoris status --json` in a checkout; the reconcile quest's words |
 | Devkit | `src/Daoris.Devkit/Daoris.Devkit.Core/` (`GateRunner`, `*Gate.cs`, `GateDeclaration`, `VersionPin`), `Daoris.Devkit.Cli/Program.cs` | `daoris-devkit verify`, `scan`, `init`, `install-hooks`, `map` |
 
 ## Its rules
@@ -85,7 +85,7 @@ one `change` skill, and `co-working` as a pack.
     with no text is refused, `--force` included. (from D19, D71, D230)
 16. `--force` discards an edit and nothing else. It never passes a link, a move that would leave the repository's own
     documents unlisted, a room with no text, a declared document behind a link, an absent kept core file, or a move
-    carrying a kept file (`materialize.ts:540-593`). (from D117, D230)
+    carrying a kept file (`syncapply.ts:47-100`). (from D117, D230)
 17. Files are written as BOM-less UTF-8 with LF, beside the target and renamed over it. Comparisons normalise line
     endings on read. `init` pins `* text=auto eol=lf` where the repository says nothing. (from D25)
 18. Each written file opens with a provenance header, and each span with a provenance comment. The hash, not the header,
@@ -183,7 +183,7 @@ one `change` skill, and `co-working` as a pack.
     `upstream`, or changes code. (from D124)
 48. The rule is exact `daoris` verbs as `Bash(…)`, never a runner: `--version`, `init --harness agents`, `analyze --json`,
     `sync` (plain, `--dry-run`, `--force`), `check`, `status --json`, `doctor`. A reconcile adds `reconcile` and
-    `upstream --all`. (from D122, D124, D230)
+    `upstream --all`; an index quest's own are `--version`, `sync`, `check`, `status --json` and its generator's two commands. (from D122, D124, D230)
 49. A child's `node` older than 22, or a `daoris` that answers no version, is the machine's refusal, and pauses a workspace
     plan. (from D124)
 50. A set-up keeps the checks green: it runs them before its first change and at its close, moves only skills, declares
@@ -203,7 +203,7 @@ one `change` skill, and `co-working` as a pack.
 - New doctrine: `canon/`. Core only if nearly every task needs it; a long rule goes to `knowledge/` with `rule: true`; a
   concern only some repositories have is a pack. Read `.claude/knowledge/canon-authoring.md`, add a `canon/CHANGELOG.md`
   entry, then `daoris sync` here and in both examples.
-- A new sync cell: `planSync` in `materialize.ts`. Write the cell into rule 13 to 16 above before building it.
+- A new sync cell: `planSync` in `syncplan.ts`. Write the cell into rule 13 to 16 above before building it.
 - The region's shape: `tierrender.ts` (text) and `region.ts` (markers).
 - The update check, keep or reconcile: `commands.ts` (`commandStatus`), `keep.ts`, `reconcile.ts`. A change to the
   `status --json` shape also changes the driver's `Setup/Domain/DoctrineStatus.cs`.
@@ -212,7 +212,7 @@ one `change` skill, and `co-working` as a pack.
 - A management verb: a command in the driver library marked `[CommandGroup]` (`.claude/knowledge/command-group.md` lists
   every place a group goes). Never the CLI.
 - A set-up behaviour: the pure rules in `Setup/Domain/` first, then `SetupPress.cs` or `WorkspaceSetup.cs`.
-- A gate every repository runs: a new gate type in `Daoris.Devkit.Core`, registered in `GateRunner`.
+- A gate every repository runs: a new gate type in `Daoris.Devkit.Core`, added where `Daoris.Devkit.Cli/Program.cs` builds the `GateRunner`.
 
 **The tests that pin the area**
 
@@ -229,8 +229,8 @@ one `change` skill, and `co-working` as a pack.
 
 **The gates that bite**
 
-- `cli` (`npm run verify`): typecheck, the CLI tests, `daoris check` on this repository, the document tools, the size
-  ratchet, the transitional markers, and the devkit's universal gates.
+- `cli` (`npm run verify`): typecheck, the CLI tests, `daoris check` on this repository, the document tools, the censuses
+  (size ratchet, partial types, optional locks and the others `package.json` lists), the tools' tests, and the devkit's universal gates.
 - `devkit`, `driver` and `tool-tests` for their halves.
 - The merge tool adds by path: `canon/**` reaches `service`, `rehearse` and `rehearse-family` (both examples must be
   current); CLI sources reach `driver`, `rehearse`, `rehearse-family`, `web` and `deployment`.
@@ -243,7 +243,7 @@ one `change` skill, and `co-working` as a pack.
    reads the area): the code reads right.
 3. D230 point 2 (the lock's canon digest orders the canons) vs `canon.ts:141-145` and `commands.ts:168-172` (the digest
    tells two canons apart and never orders them): the code reads right.
-4. D35 (`connect` is the CLI's one online command) vs `dogfood.test.ts:659` (no CLI module touches the network) and
+4. D35 (`connect` is the CLI's one online command) vs `dogfood.test.ts:662` (no CLI module touches the network) and
    `Service/RegistryWords.cs`' mark (`connect` is the driver's `repository connect`): the code reads right.
 5. D194 point 1 (a `driver` family beside `agent`, `plugin` and `tool`) vs its own 2026-11-03 note and the `[CommandGroup]` marks (one
    tree of groups, no `driver` group): the note and the code read right.
@@ -256,28 +256,26 @@ one `change` skill, and `co-working` as a pack.
    skills among its files.
 8. D27 (the devkit verifies itself against the hash) vs `src/Daoris.Devkit/README.md:255` (deliberately not built; the
    installer verifies): the README reads right.
-9. `src/Daoris.Devkit/README.md:264` (the CLI's service client) and `AGENTS.md:23` (a service seam) vs `dogfood.test.ts:659`
+9. `src/Daoris.Devkit/README.md:263` (the CLI's service client) and `AGENTS.md:23` (a service seam) vs `dogfood.test.ts:662`
    (no network in the CLI): the test reads right.
 10. D9 (`upstream` promotes into the canon) vs `upstream.ts:256-264` (writes only inside the canon's checkout): D230 and the
     code read right.
-11. D23 (one harness is supported) vs `layout/harness.ts:27-110` (two descriptors, `agents` serving several harnesses): D117
+11. D23 (one harness is supported) vs `layout/harness.ts:28-118` (two descriptors, `agents` serving several harnesses): D117
     and the code read right.
 12. D28's amendment (Daoris declares no packs) vs `daoris.json:3` (`co-working`, `localized-ui`): the manifest reads right.
-13. D122 point 1 (twelve roles) vs `canon/core/knowledge/development-documents.md:44-59` (adds `area` and `index`): the
+13. D122 point 1 (twelve roles) vs `canon/core/knowledge/development-documents.md:46-59` (adds `areas` and `index`): the
     canon reads right.
-14. D194's ONEWAY1ai-i note (the CLI starts on the node `PATH` finds) vs `DoctrineConsole.cs:67-78` (the tools' resolved node
+14. D194's ONEWAY1ai-i note (the CLI starts on the node `PATH` finds) vs `DoctrineConsole.cs:72-85` (the tools' resolved node
     where a home exists, `PATH` only without one): the code reads right.
 
 ## Open
 
-- **LAYOUT5**: move this repository to the `agents` layout; it is still `claude-code` at `.claude` (`daoris.json:4`).
-- **LAYOUT6**: the brief and rooms, after LAYOUT5.
-- **LAYOUT2**: measure the layout's unmeasured cells; named only in a sequence line (`TASKS.md:293`), with no row.
-- **DOCSHOME1**: managed documents and skills in two portable homes, with the round trip through both.
-- **WSSETUP7**: Ask Daoris's `setup` kind's `register` and workspace doors; named only in `TASKS.md:284`, with no row.
-- **WSSETUP14b–e**: the set-up pilot's remaining parts; named only in `TASKS.md:284`, with no row.
-- **CONSOLIDATE1**: the lean canon is merged; the area documents under `docs/areas/`, the decisions as history and the
-  status table are not built yet.
-- No row: a `PowerShell(…)` rule for a set-up waits on the canary that a driven Windows session uses that tool, and codex
-  and dsh get no safe-work rules until measured (`SetupPress.cs` remarks; D122 point 6).
-- No row: the newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`lockversion.ts:30-31`).
+No backlog row holds any of these; each is named only in the decision shown.
+
+- **LAYOUT5** and **LAYOUT6** (D117, D122): move this repository to the `agents` layout, then the brief and rooms. It is
+  still `claude-code` at `.claude` (`daoris.json:4`).
+- **LAYOUT2** (D117 point 8): measure the layout's unmeasured cells.
+- **DOCSHOME1** (D117's note of 2026-10-27): managed documents and skills in two portable homes, with the round trip through both.
+- A `PowerShell(…)` rule for a set-up waits on the canary that a driven Windows session uses that tool, and codex and dsh
+  get no safe-work rules until measured (`SetupPress.cs:17`; D122 point 6).
+- The newer-lock refusal cannot fire until a release moves the canon version past 0.0.1 (`lockversion.ts:30-31`).
