@@ -8,11 +8,11 @@ namespace Daoris.Devkit;
 /// <remarks>
 /// <para>The cheapest documentation check there is, and the one most worth having: a link that points at
 /// a renamed or deleted file is *silently* wrong. Nothing compiles it, the page still renders, and the
-/// reader concludes the thing it pointed at was never important.</para>
+/// reader concludes the thing it points at never mattered.</para>
 ///
 /// <para>It exists because a survey of the family found a hand-written "documentation health" skill in
-/// two repositories doing four checks. Three of them had already become gates here — redundancy, index
-/// staleness, version agreement. This was the fourth, and a gate that runs is worth more than a skill
+/// two repositories doing four checks. Three of them are gates here — redundancy, index
+/// staleness, version agreement. This is the fourth, and a gate that runs is worth more than a skill
 /// somebody has to remember to invoke.</para>
 ///
 /// <para><b>Only relative links to files.</b> External URLs need the network, which no gate here may

@@ -6,7 +6,7 @@ namespace Daoris.Devkit;
 /// <remarks>
 /// <para>This gate is four lines of real work because it must be. `daoris check` already answers "has
 /// this repository's doctrine drifted", against a lock whose semantics took four corrections to get
-/// right (D19). A second implementation here would be a second answer to a question that already has
+/// right. A second implementation here would be a second answer to a question that already has
 /// one — which is the pathology both artefacts exist to remove, committed by the tool that removes
 /// it.</para>
 ///

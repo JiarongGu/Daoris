@@ -4,14 +4,14 @@ using System.Text;
 namespace Daoris.Devkit;
 
 /// <summary>
-/// The devkit's git, started past Git for Windows' launcher (GITSTART3): every git the devkit runs starts here. A
+/// The devkit's git, started past Git for Windows' launcher: every git the devkit runs starts here. A
 /// start is pointed at the git this process's <c>PATH</c> finds, by its whole path, and where that is the launcher, at
 /// the real git behind it with the launcher's variables (<see cref="GitForWindows.Direct"/>). One process per git where
 /// the launcher made two, and the sensitive gate's staged scan starts one git per staged file.
 /// </summary>
 /// <remarks>
 /// A <c>PATH</c> that finds no git, or finds a <c>git.cmd</c> or <c>git.bat</c>, starts as before, through
-/// <see cref="Process.Run"/>'s own lookup. The lookup is kept while this process's <c>PATH</c> is the one it was made on.
+/// <see cref="Process.Run"/>'s own lookup. The lookup is kept while this process's <c>PATH</c> is unchanged.
 /// </remarks>
 public static class GitStart
 {
@@ -64,7 +64,7 @@ public static class GitStart
 }
 
 /// <summary>
-/// Git for Windows' launcher, started past (GITSTART1; the devkit's twin of the driver's <c>GitForWindows</c>, GITSTART3):
+/// Git for Windows' launcher, started past (the devkit's twin of the driver's <c>GitForWindows</c>):
 /// the <c>git.exe</c> in an install's <c>cmd</c> folder is a launcher that starts <c>&lt;top&gt;\&lt;prefix&gt;\bin\git.exe</c>
 /// as a second process. Where the system's git is that launcher, the real git starts directly, handed the environment
 /// the launcher would have handed it.
@@ -72,8 +72,8 @@ public static class GitStart
 /// <remarks>
 /// <para>🔴 A twin, not a reference: the devkit ships as its own binary and references nothing of the desktop's. The
 /// driver's <c>Platform/GitForWindows.cs</c> is the source, and a change to the launcher's rule there is made here too;
-/// <c>GitForWindowsTests</c> in each holds the same rows. The variables are what the launcher was measured setting (git
-/// 2.53.0.windows.3; FIX-LOG, GITSTART1). git started bare with any <c>MSYSTEM</c> set repairs nothing of its
+/// <c>GitForWindowsTests</c> in each holds the same rows. The variables are what the launcher sets, measured on git
+/// 2.53.0.windows.3. git started bare with any <c>MSYSTEM</c> set repairs nothing of its
 /// <c>PATH</c>, so <c>sh</c>, and with it every hook and <c>!</c> alias, would go unfound; so the start sets them all.</para>
 /// <para>Recognised only where the layout is unmistakable: a <c>git.exe</c> in a <c>cmd</c> folder, a git under a known
 /// prefix beside it, and <c>usr\bin</c>. An install with an <c>etc\git-bash.config</c>, whose <c>MSYS=</c> lines the
@@ -121,7 +121,7 @@ public static class GitForWindows
     }
 
     /// <summary>
-    /// The variables the launcher sets for its child, read from the environment it was started with: <c>MSYSTEM</c> named
+    /// The variables the launcher sets for its child, read from the environment it starts with: <c>MSYSTEM</c> named
     /// for its prefix over any; <c>PLINK_PROTOCOL</c> <c>ssh</c> where unset; <c>HOME</c> where unset, from
     /// <c>HOMEDRIVE</c> and <c>HOMEPATH</c> where that is a folder other than the system's, else <c>USERPROFILE</c>; and
     /// its two folders and <c>HOME</c>'s <c>bin</c> before <c>PATH</c>. A variable set empty counts as set.
@@ -159,7 +159,7 @@ public static class GitForWindows
 
     /// <summary>
     /// Start the real git where <paramref name="info"/> names the launcher, handed the launcher's variables over the
-    /// environment <paramref name="info"/> already holds; true where it now does. Any other start is left as it was, and
+    /// environment <paramref name="info"/> already holds; true where it now does. Any other start is left unchanged, and
     /// so is one whose <c>PATH</c> would pass <see cref="LongestVariable"/>.
     /// </summary>
     public static bool Direct(ProcessStartInfo info)

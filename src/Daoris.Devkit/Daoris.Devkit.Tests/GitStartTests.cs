@@ -3,10 +3,10 @@ using System.Diagnostics;
 namespace Daoris.Devkit.Tests;
 
 /// <summary>
-/// The devkit's git, started past Git for Windows' launcher (GITSTART3): which layout is the launcher's, the variables it
+/// The devkit's git, started past Git for Windows' launcher: which layout is the launcher's, the variables it
 /// hands its child, and that every git the devkit runs goes the same way. The rows are the driver's
 /// <c>GitForWindowsTests</c>, held alike because the devkit's <see cref="GitForWindows"/> is its twin; the variables are
-/// the ones measured on git 2.53.0.windows.3 (FIX-LOG, GITSTART1).
+/// the ones measured on git 2.53.0.windows.3.
 /// </summary>
 /// <remarks>An install is empty files and folders under the devkit's <c>_fixtures/</c>; only the last rows start a git.</remarks>
 public sealed class GitStartTests : IDisposable
@@ -144,7 +144,7 @@ public sealed class GitStartTests : IDisposable
         Assert.Equal(held, tooLong.Environment.ToDictionary(pair => pair.Key, pair => pair.Value));
     }
 
-    // ── The launcher's variables (measured: FIX-LOG, GITSTART1) ─────────────────────────────────────
+    // ── The launcher's variables (measured) ─────────────────────────────────────
 
     [Theory]
     [InlineData("mingw64", "MINGW64")]

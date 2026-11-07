@@ -5,8 +5,7 @@ namespace Daoris.Devkit.Tests;
 public sealed class VersionPinTests
 {
     /// <summary>
-    /// A pin that nothing checks is a comment. This one was parsed and never read for a while, under a
-    /// doc comment claiming a launcher enforced it — a launcher that did not exist.
+    /// A pin that nothing checks is a comment.
     /// </summary>
     [Fact]
     public void A_mismatched_pin_stops_the_run_and_names_both_versions()

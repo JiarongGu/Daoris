@@ -21,9 +21,8 @@ public sealed record ProducedMap(
     IReadOnlyList<string> Notes, string? Problem);
 
 /// <summary>
-/// A repository's code map, produced from its own project files (MAP3c,
-/// <c>docs/2026-09-23-map-design.md</c> §3) — the tool half of "both": exact where a stack declares its
-/// structure, without a compiler.
+/// A repository's code map, produced from its own project files — the tool half of "both": exact where a
+/// stack declares its structure, without a compiler.
 /// </summary>
 /// <remarks>
 /// <para><b>What it reads.</b> Every tracked <c>*.csproj</c> is a module, and its
@@ -156,7 +155,7 @@ public static class CodeMapProducer
     }
 
     /// <summary>
-    /// Whether the committed map is what the project files say — a FACT, so it gates (D54). Stale, it
+    /// Whether the committed map is what the project files say — a FACT, so it gates. Stale, it
     /// names what differs and the command that fixes it.
     /// </summary>
     public static (bool Fresh, string Detail) Check(string repositoryRoot, ProducedMap produced)

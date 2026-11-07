@@ -4,10 +4,9 @@ namespace Daoris.Devkit;
 /// The `devkit` field in the declaration, enforced.
 /// </summary>
 /// <remarks>
-/// <para>A pin that nothing checks is a comment. This one was parsed and never read, under a doc
-/// comment claiming "the launcher enforces it" — describing a launcher that does not exist. The field
+/// <para>A pin that nothing checks is a comment. The field
 /// is the whole reason gates can be *declared* rather than copied: it says which toolkit's semantics
-/// this repository's declaration was written against.</para>
+/// this repository's declaration is written against.</para>
 ///
 /// <para>Checked <b>before</b> the gates, not alongside them. If the toolkit is the wrong one, the gate
 /// results are not trustworthy, and reporting a mismatch after printing seven confident lines is

@@ -19,7 +19,7 @@ public sealed record RunReport(IReadOnlyList<GateResult> Results, bool Passed);
 ///
 /// <para><b>Disabled gates are printed on every run.</b> Turning one off is allowed — it is written down
 /// in the repository, which makes it a decision. Printing it keeps the decision visible, so nobody
-/// discovers a year later that the scan they were relying on was off the whole time.</para>
+/// discovers a year later that the scan they were relying on is off the whole time.</para>
 /// </remarks>
 public sealed class GateRunner(GateContext context, IReadOnlyList<IGate> universal)
 {

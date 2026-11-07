@@ -66,13 +66,13 @@ public static class Process
     }
 
     /// <summary>
-    /// A command as a person types it, made startable (REV3): on Windows a name with no extension is
+    /// A command as a person types it, made startable: on Windows a name with no extension is
     /// looked up by `PATHEXT` — as `cmd` would — and a `.cmd` or `.bat` is run through `cmd.exe`.
     /// </summary>
     /// <remarks>
     /// Started without a shell, .NET looks for `name.exe` only, and npm installs a command as
     /// `name.cmd`: the doctrine gate's default `daoris` could not start on any Windows machine that had
-    /// installed it. The driver's harness actions learned the same thing (FIX-LOG, `WindowsShim`).
+    /// installed it.
     /// Through `cmd.exe` an argument is re-read by `cmd`, so one carrying its metacharacters is refused
     /// rather than passed.
     /// </remarks>
@@ -133,7 +133,7 @@ public static class Process
     /// a large build log in memory to print it unchanged at the end.
     ///
     /// Through the platform shell, because what is declared is a command LINE — with pipes, quoting and
-    /// argument forms that belong to the shell the author was writing for.
+    /// argument forms that belong to the shell the author writes for.
     /// </remarks>
     public static int RunShell(string commandLine, string workingDirectory)
     {

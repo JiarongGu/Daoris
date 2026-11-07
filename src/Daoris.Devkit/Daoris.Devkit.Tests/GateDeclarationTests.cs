@@ -77,7 +77,7 @@ public sealed class GateDeclarationTests : IDisposable
     }
 
     /// <summary>
-    /// TREELOCAL1 (D216): the machine-local files the gates read beside the pattern list, which the desktop copies into a session's
+    /// The machine-local files the gates read beside the pattern list, which the desktop copies into a session's
     /// tree; read as listed, none by default, and anything but a string passed over as the other lists are.
     /// </summary>
     [Fact]

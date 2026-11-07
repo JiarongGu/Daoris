@@ -8,13 +8,13 @@ namespace Daoris.Devkit;
 /// <remarks>
 /// <para>The failure this exists for is not inconsistency — it is <b>authorship</b>. A version edited by
 /// hand leaves every file perfectly consistent and still wrong, because the number no longer corresponds
-/// to anything that was released. A sibling in this family burned a version outright that way, and the
-/// tell was that nothing disagreed.</para>
+/// to anything released. A sibling in this family burned a version outright that way, and the
+/// tell is that nothing disagrees.</para>
 ///
 /// <para>So this gate does two different jobs. It reports disagreement between the source and its
 /// mirrors, which is the cheap half. And it reports a version that does not appear in the changelog,
 /// which is the half that catches a hand-bump: the release tooling stamps both together, so a version
-/// with no entry was written by a person.</para>
+/// with no entry is the work of a person.</para>
 /// </remarks>
 public sealed class VersionGate : IGate
 {
@@ -62,7 +62,7 @@ public sealed class VersionGate : IGate
 
         // The authorship half. Only meaningful once a changelog is declared, and deliberately silent
         // about pre-release versions — every 0.x (SemVer's initial development) and anything with a
-        // suffix, where the version is not yet a claim (IsPreRelease below; REV3 corrected "0.0.x").
+        // suffix, where the version is not yet a claim (IsPreRelease below).
         var changelog = context.Declaration.Docs.Changelog;
         if (changelog is not null && !IsPreRelease(version))
         {

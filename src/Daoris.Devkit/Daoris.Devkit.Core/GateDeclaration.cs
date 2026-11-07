@@ -64,7 +64,7 @@ public sealed record TrackedDocument(string Document, IReadOnlyList<string> Desc
 /// `daoris.gates.json` — what this repository runs, and how the universal gates are configured for it.
 /// </summary>
 /// <remarks>
-/// A separate file from `daoris.json` on purpose (D26). The manifest is inert data the CLI parses on
+/// A separate file from `daoris.json` on purpose. The manifest is inert data the CLI parses on
 /// every invocation; this file names commands that execute. Keeping the two apart means a reader of the
 /// manifest can still be certain nothing in it runs.
 ///
@@ -77,7 +77,7 @@ public sealed class GateDeclaration
     public const string FileName = "daoris.gates.json";
 
     /// <summary>
-    /// The devkit release this repository's declaration was written against.
+    /// The devkit release this repository's declaration is written against.
     /// </summary>
     /// <remarks>
     /// Enforced by <see cref="VersionPin"/> before any gate runs — see the reasoning there. Optional: an
@@ -102,7 +102,7 @@ public sealed class GateDeclaration
     /// </summary>
     /// <remarks>
     /// Read by the desktop, not by any gate here: a session's tree, which git checks out without them, opens with each copied from
-    /// the checkout read-only, so the tree's gates run the checks the checkout's do (TREELOCAL1; D216 holds the rules).
+    /// the checkout read-only, so the tree's gates run the checks the checkout's do.
     /// </remarks>
     public IReadOnlyList<string> LocalInputs { get; init; } = [];
 
@@ -111,8 +111,8 @@ public sealed class GateDeclaration
     /// </summary>
     /// <remarks>
     /// Opting out is allowed and is recorded in the repository, which is the difference that matters: a
-    /// gate that is off because someone wrote it down is a decision, and one that is off because it was
-    /// never wired up is an accident nobody can tell from the outside. The runner prints what was
+    /// gate that is off because someone wrote it down is a decision, and one that is off because it is
+    /// never wired up is an accident nobody can tell from the outside. The runner prints what is
     /// disabled on every run, so the decision stays visible rather than becoming invisible.
     /// </remarks>
     public IReadOnlySet<string> Disabled { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
