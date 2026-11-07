@@ -83,6 +83,23 @@ public sealed class KnowledgeStandingTests : IDisposable
         return Lines(hit).Single(line => line.StartsWith("standing: ", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// The standing of the one hit whose id holds <paramref name="idPart"/> once its root's uncommitted reading is in. The probe
+    /// answers in the background and a search waits only <see cref="KnowledgeService.StandingWait"/> for it, which a loaded
+    /// machine's <c>git status</c> outlasts, so a real checkout's reading is awaited.
+    /// </summary>
+    private static async Task<string> Settled(KnowledgeSearchTools tools, string query, string idPart, string? kind = "decision")
+    {
+        var standing = StandingOf(await tools.SearchAsync(query, kind, workspace: "all"), idPart);
+        for (var until = DateTime.UtcNow + Poll.Patience; standing.Contains("not yet read") && DateTime.UtcNow < until;)
+        {
+            await Task.Delay(50);
+            standing = StandingOf(await tools.SearchAsync(query, kind, workspace: "all"), idPart);
+        }
+
+        return standing;
+    }
+
     private static string[] Lines(string text) => [.. text.Split('\n').Select(line => line.TrimEnd('\r'))];
 
     /// <summary>The row's proof: an opening says it was superseded, its note says what follows it, an unmarked decision says so.</summary>
@@ -94,10 +111,10 @@ public sealed class KnowledgeStandingTests : IDisposable
         await using var _ = composed;
         var read = Head(checkout)[..8];
 
-        var opening = StandingOf(await tools.SearchAsync("Aardvark", "decision", workspace: "all"), "D10.md`");
-        var note = StandingOf(await tools.SearchAsync("Quokka", "decision", workspace: "all"), "D10.md#");
-        var marking = StandingOf(await tools.SearchAsync("Wombat", "decision", workspace: "all"), "D10.md#");
-        var unmarked = StandingOf(await tools.SearchAsync("Platypus", "decision", workspace: "all"), "D60.md`");
+        var opening = await Settled(tools, "Aardvark", "D10.md`");
+        var note = await Settled(tools, "Quokka", "D10.md#");
+        var marking = await Settled(tools, "Wombat", "D10.md#");
+        var unmarked = await Settled(tools, "Platypus", "D60.md`");
 
         Assert.Equal($"standing: read at {read} · later: 3 notes · superseded by D50", opening);
         Assert.Equal($"standing: read at {read} · later: 2 notes · no mark", note);
@@ -121,8 +138,8 @@ public sealed class KnowledgeStandingTests : IDisposable
         var (composed, tools) = await Serve();
         await using var _ = composed;
 
-        Assert.EndsWith("no mark", StandingOf(await tools.SearchAsync("Heron", "decision", workspace: "all"), "D20.md`"));
-        Assert.EndsWith("later: 1 note · amended by D21", StandingOf(await tools.SearchAsync("Ibis", "decision", workspace: "all"), "D20.md#"));
+        Assert.EndsWith("no mark", await Settled(tools, "Heron", "D20.md`"));
+        Assert.EndsWith("later: 1 note · amended by D21", await Settled(tools, "Ibis", "D20.md#"));
     }
 
     [Fact]
@@ -132,7 +149,7 @@ public sealed class KnowledgeStandingTests : IDisposable
         var (clean, cleanTools) = await Serve();
         await using (clean)
         {
-            Assert.DoesNotContain("uncommitted", await cleanTools.SearchAsync("Platypus", "decision", workspace: "all"));
+            Assert.DoesNotContain("uncommitted", await Settled(cleanTools, "Platypus", "D60.md`"));
         }
 
         Write("family/served/docs/decisions/D60.md", Unmarked + "\n**Built 2026-10-04 (PICK1b).** Quail note, not yet committed.\n");
@@ -142,8 +159,8 @@ public sealed class KnowledgeStandingTests : IDisposable
         var read = Head(checkout)[..8];
         Assert.Equal(
             $"standing: read at {read} + uncommitted · later: 2 notes · no mark",
-            StandingOf(await dirtyTools.SearchAsync("Platypus", "decision", workspace: "all"), "D60.md`"));
-        Assert.Contains($"read at {read} + uncommitted", StandingOf(await dirtyTools.SearchAsync("Quail", "decision", workspace: "all"), "D60.md#"));
+            await Settled(dirtyTools, "Platypus", "D60.md`"));
+        Assert.Contains($"read at {read} + uncommitted ·", await Settled(dirtyTools, "Quail", "D60.md#"));
     }
 
     [Fact]
@@ -152,12 +169,12 @@ public sealed class KnowledgeStandingTests : IDisposable
         Committed();
         var (composed, tools) = await Serve();
         await using var _ = composed;
-        var hit = await tools.SearchAsync("Aardvark", "decision", workspace: "all");
+        var hit = await Settled(tools, "Aardvark", "D10.md`");
 
         var read = await tools.GetAsync("served:docs/decisions/D10.md");
 
-        Assert.Contains(StandingOf(hit, "D10.md`"), Lines(read));
-        Assert.Contains(StandingOf(hit, "D10.md`"), Lines(await tools.GetAsync("served:docs/decisions/D10.md", "1-3")));
+        Assert.Contains(hit, Lines(read));
+        Assert.Contains(hit, Lines(await tools.GetAsync("served:docs/decisions/D10.md", "1-3")));
     }
 
     /// <summary>A kind that is no decision says only the reading, and a reading that is nowhere says it is unknown.</summary>
@@ -173,14 +190,7 @@ public sealed class KnowledgeStandingTests : IDisposable
         Git(checkout, "commit", "-q", "-m", "first");
         var (composed, tools) = await Serve();
         await using var _ = composed;
-        // The uncommitted probe answers in the background; until it does, a hit says so, so the reading is awaited.
-        var standing = StandingOf(await tools.SearchAsync("Pelican", workspace: "all"), "pelican.md");
-        for (var until = DateTime.UtcNow + Poll.Patience; standing.Contains("not yet read") && DateTime.UtcNow < until;)
-        {
-            await Task.Delay(50);
-            standing = StandingOf(await tools.SearchAsync("Pelican", workspace: "all"), "pelican.md");
-        }
-        Assert.Equal($"standing: read at {Head(checkout)[..8]}", standing);
+        Assert.Equal($"standing: read at {Head(checkout)[..8]}", await Settled(tools, "Pelican", "pelican.md", kind: null));
 
         // A service composed over a folder it was never told is a registered root names no reading at all.
         var store = new InMemoryKnowledgeStore();
