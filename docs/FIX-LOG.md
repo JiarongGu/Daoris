@@ -18,7 +18,7 @@ repository.
   chunks went past their censuses and README rows.
 - **Fix:** `BinaryPresence` keeps the look as the door's reading, written only where it differs from the kept one; the tests read
   `door`; the going back is asked through Install's `GoingBackRefusals` port, which Workplace fills, and `ReferredPoints` lies in
-  `Course/GoOn`; each census entry carries its reason, the README its rows. `canon/canon.json`'s reach to the driver was 5d2f0a9506's.
+  `WorkOrders`, which it reaches since it reads the planner's considerations; each census entry carries its reason, the README its rows. `canon/canon.json`'s reach to the driver was 5d2f0a9506's.
 - **Verify:** each class red first at the tip, then green filtered; both projects' censuses, `AgentSheetStartsTests` with the process
   settings, the home census and the merge tool's suite-reads test.
 
