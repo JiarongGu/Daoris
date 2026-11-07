@@ -69,7 +69,7 @@ public sealed class OwnResumeReportTests : IDisposable
 
         var continues = OwnResume.Of(start, agent, session => new HarnessConversations(_home).Read(session)?.Adapter) is not null;
         var reported = SessionGroups.Waiting(
-                SessionLook.From(json, [], [start], _ => 0), json, _home, config, fresh: true, (_, profile) => profile == "work" ? Cooling : null,
+                SessionLook.From(json, [], [start], _ => 0), json, _home, config, fresh: true, (_, profile, _) => profile == "work" ? Cooling : null,
                 TimeZoneInfo.Utc)
             .Held.ContainsKey(id);
 
@@ -89,7 +89,7 @@ public sealed class OwnResumeReportTests : IDisposable
 
         var byMachine = OwnResume.Of(start, Machine, _ => null) is not null;
         var reported = SessionGroups.Waiting(
-                SessionLook.From(json, [], [start], _ => 0), json, _home, config, fresh: true, (_, profile) => profile == "work" ? Cooling : null,
+                SessionLook.From(json, [], [start], _ => 0), json, _home, config, fresh: true, (_, profile, _) => profile == "work" ? Cooling : null,
                 TimeZoneInfo.Utc)
             .Held.ContainsKey("second");
 

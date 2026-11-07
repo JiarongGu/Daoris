@@ -25,7 +25,7 @@ internal static class SessionsVerbs
         var output = new StringWriter { NewLine = "\n" };
         var world = new SessionsWorld(service, loop.Home, config, DriverContext.UnadoptedOf(loop, config), loop.Log)
         {
-            CoolingOf = (adapter, profile) => loop.Harnesses.CoolingOf(adapter ?? "", profile),
+            CoolingOf = (adapter, profile, model) => loop.Harnesses.CoolingOf(adapter ?? "", profile, model),
             // COAGENT1b: `sessions partner`'s read of the lead's tree, the loop's, as the page's press reads it.
             PieceBase = loop.PieceBases,
             // COWORK1a: `sessions stop <id> --turn`, the keeping stop, on the turns this Daoris's loop holds.
@@ -52,7 +52,7 @@ internal static class SessionsVerbs
         var config = DriverConfig.Load(loop.ConfigPath);
         var world = new SessionsWorld(service, loop.Home, config, DriverContext.UnadoptedOf(loop, config), loop.Log)
         {
-            CoolingOf = (adapter, profile) => loop.Harnesses.CoolingOf(adapter ?? "", profile),
+            CoolingOf = (adapter, profile, model) => loop.Harnesses.CoolingOf(adapter ?? "", profile, model),
         };
 
         var said = await TerminalSaid.RunAsync(output => HelpCommand.RunAsync(ask, world, adapter => Resumes(loop, adapter), output, ct)).ConfigureAwait(false);

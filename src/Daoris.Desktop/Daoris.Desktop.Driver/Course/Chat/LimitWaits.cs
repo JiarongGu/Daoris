@@ -51,12 +51,13 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
     /// with them, and its conversation says when the first account is ready again. False where its turns would not wait.
     /// </summary>
     /// <param name="picked">The account the person picked for it (FOUNDATION1a-ii): its own reset is what it waits for, not the agent's first.</param>
-    public bool Wait(string session, ITurnedChat chat, string adapter, string? picked = null)
+    /// <param name="model">The model its line asks (MODELROLE1k2): the accounts it waits for are those a cool-off of that model holds.</param>
+    public bool Wait(string session, ITurnedChat chat, string adapter, string? picked = null, string? model = null)
     {
         if (!chat.Turns.WaitForLimit()) return false;
         var first = picked is null
-            ? LineAccount.Earliest(ResetSet.Wake, coolings: context.Harnesses.CoolingsOf(adapter))
-            : context.Harnesses.CoolingOf(adapter, picked);
+            ? LineAccount.Earliest(ResetSet.Wake, coolings: context.Harnesses.CoolingsOf(adapter, model))
+            : context.Harnesses.CoolingOf(adapter, picked, model);
         if (first is not null)
         {
             context.Note(session, LimitNotes.Waits(first, context.Harnesses.Zone));
@@ -181,8 +182,9 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
         IReadOnlyList<CoolingEntry> cooling;
         try
         {
-            own = context.Harnesses.CoolingOf(adapter, record.Profile);
-            cooling = context.Harnesses.CoolingsOf(adapter);
+            var model = record.ModelOn(adapter);
+            own = context.Harnesses.CoolingOf(adapter, record.Profile, model);
+            cooling = context.Harnesses.CoolingsOf(adapter, model);
         }
         catch (DriverException)
         {
@@ -363,7 +365,7 @@ internal sealed class LimitWaits(IExecutorWiring wiring) : IExecutor
         if (WordsNever.ContinuedIn(json, record.Id) is not null) return false;
         if (LimitHeld.Waiting(context.Events.After(record.Id, 0).Events, prior.Limit) is not null) return true;
         return prior.WordsWaiting && !GoOnMarks.Judged(prior, context.Marks.Read(record.Id))
-            && LineAccount.OwnHold(context.Harnesses.CoolingOf(prior.Adapter ?? "", prior.Profile)) == NextHold.Cooling;
+            && LineAccount.OwnHold(context.Harnesses.CoolingOf(prior.Adapter ?? "", prior.Profile, prior.ModelOn(prior.Adapter ?? ""))) == NextHold.Cooling;
     }
 
     private static bool Ended(PriorSession record) => record.State is "completed" or "declined" or "failed" or "stopped";

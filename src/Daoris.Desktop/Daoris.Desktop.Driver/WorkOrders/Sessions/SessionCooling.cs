@@ -15,7 +15,7 @@ internal static class SessionCooling
     /// The earliest cool-off among the agent's accounts on this machine, the own account's included; null where one of them is not
     /// cooling, since the words then go on there (a sign-in or a refusal is the walk's to find, as before the first look).
     /// </summary>
-    internal static CoolingEntry? Soonest(Func<string?, string?, CoolingEntry?> coolingOf, string home, string adapter, CoolingEntry own)
+    internal static CoolingEntry? Soonest(Func<string?, string?, string?, CoolingEntry?> coolingOf, string home, string adapter, CoolingEntry own, string? model)
     {
         IReadOnlyList<string> profiles;
         try
@@ -31,7 +31,7 @@ internal static class SessionCooling
         foreach (var profile in profiles)
         {
             if (string.Equals(profile, own.Account, StringComparison.OrdinalIgnoreCase)) continue;
-            if (coolingOf(adapter, profile) is not { } other) return null;
+            if (coolingOf(adapter, profile, model) is not { } other) return null;
             cooling.Add(other);
         }
 
@@ -39,20 +39,20 @@ internal static class SessionCooling
     }
 
     /// <summary>The home's cool-offs as a start reads them: by the account's owner, over the build's harnesses and the plugins'.</summary>
-    internal static Func<string?, string?, CoolingEntry?> On(string home)
+    internal static Func<string?, string?, string?, CoolingEntry?> On(string home)
     {
         var built = ProviderRegistry.Built();
         var adapters = built.WithPlugins(AgentPluginReads.Current.Load(home, built.Names));
         var roster = new HarnessRoster(adapters, DaorisHome.Entry(home, HomeEntry.Harnesses));
-        return (adapter, profile) => roster.CoolingOf(adapter ?? "", profile);
+        return (adapter, profile, model) => roster.CoolingOf(adapter ?? "", profile, model);
     }
 
     /// <summary>The cool-off on the account a record ran on, or null: none, or an adapter this build no longer has.</summary>
-    internal static CoolingEntry? Of(Func<string?, string?, CoolingEntry?> coolingOf, PriorSession record)
+    internal static CoolingEntry? Of(Func<string?, string?, string?, CoolingEntry?> coolingOf, PriorSession record)
     {
         try
         {
-            return coolingOf(record.Adapter, record.Profile);
+            return coolingOf(record.Adapter, record.Profile, record.ModelOn(record.Adapter ?? ""));
         }
         catch (DriverException)
         {

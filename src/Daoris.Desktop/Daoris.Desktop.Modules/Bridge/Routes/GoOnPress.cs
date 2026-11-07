@@ -19,7 +19,7 @@ internal static class GoOnPress
     {
         var service = loop.Service ?? throw DriverArguments.NotReady();
         var answer = await GoOnNew.AskAsync(
-                service, loop.Home, (adapter, profile) => loop.Harnesses.CoolingOf(adapter ?? "", profile), id, DateTimeOffset.UtcNow, cancellationToken)
+                service, loop.Home, (adapter, profile, model) => loop.Harnesses.CoolingOf(adapter ?? "", profile, model), id, DateTimeOffset.UtcNow, cancellationToken)
             .ConfigureAwait(false);
         if (answer.Why is GoOnNew.Conversation or GoOnNew.Closed or WordsNever.Help)
         {

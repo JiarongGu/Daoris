@@ -179,7 +179,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
         if (picked)
         {
             // FOUNDATION1a-ii: the account the person picked is the one whose reset it waits for.
-            if (!chat.Turns.Limited) wiring.Of<LimitWaits>().Wait(sessionId, chat, ranOn, prior.Profile);
+            if (!chat.Turns.Limited) wiring.Of<LimitWaits>().Wait(sessionId, chat, ranOn, prior.Profile, prior.ModelOn(ranOn));
             return new StartedFrom(null, false, null, $"you picked `{prior.Profile}` for `{sessionId}`, so it waits on it.");
         }
 
@@ -189,7 +189,7 @@ internal sealed class LimitMove(IExecutorWiring wiring) : IExecutor
             if (!chat.Turns.Limited)
             {
                 context.Note(sessionId, elsewhere.Stays!);
-                wiring.Of<LimitWaits>().Wait(sessionId, chat, ranOn);
+                wiring.Of<LimitWaits>().Wait(sessionId, chat, ranOn, model: prior.ModelOn(ranOn));
             }
 
             return new StartedFrom(null, false, null, $"no other account of {agent.Id.Value} has room, so `{sessionId}` waits on its own: {elsewhere.Why}");

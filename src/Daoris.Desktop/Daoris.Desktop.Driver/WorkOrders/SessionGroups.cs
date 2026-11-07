@@ -187,7 +187,7 @@ public static class SessionGroups
     /// </param>
     public static async Task<SessionLook> LookAsync(
         ServiceClient service, DriverConfig config, bool unadopted, IReadOnlyList<Consideration>? lastLook, string home,
-        IReadOnlyCollection<string>? only = null, CancellationToken ct = default, Func<string?, string?, CoolingEntry?>? coolingOf = null,
+        IReadOnlyCollection<string>? only = null, CancellationToken ct = default, Func<string?, string?, string?, CoolingEntry?>? coolingOf = null,
         LookTimes? times = null, Func<string, bool?>? turnEnded = null)
     {
         // Each step timed where the caller asked (HELPROOM1); a look nobody times runs its steps as they are.
@@ -215,10 +215,10 @@ public static class SessionGroups
         });
         // MSG1f3: what holds words the planner cannot see, a chat's runner and a cool-off a fresh plan missed. The home's roster
         // is built only where a record asks it, since most looks hold no words waiting.
-        var roster = new Lazy<Func<string?, string?, CoolingEntry?>>(() => CoolingOn(home));
+        var roster = new Lazy<Func<string?, string?, string?, CoolingEntry?>>(() => CoolingOn(home));
         look = times.Time("waiting", () => Waiting(
             look, records, home, config, fresh: lastLook is null,
-            coolingOf ?? ((adapter, profile) => roster.Value(adapter, profile)), TimeZoneInfo.Local));
+            coolingOf ?? ((adapter, profile, model) => roster.Value(adapter, profile, model)), TimeZoneInfo.Local));
         if (asked) times.Trees = TreesToJudge(look, trees.Holds, only).Count;
         return await times.TimeAsync("trees", () => JudgeAsync(look, trees.Holds, trees.WorkAsync, only, ct)).ConfigureAwait(false);
     }
@@ -265,9 +265,9 @@ public static class SessionGroups
     /// </remarks>
     /// <param name="config">The machine's choices, whose roles a record's words go on with.</param>
     /// <param name="fresh">Whether the verdicts are a fresh plan's, which saw no cool-off; a loop's look holds its own.</param>
-    /// <param name="coolingOf">The cool-off a start on an adapter would read for an account, or null where it is ready.</param>
+    /// <param name="coolingOf">The cool-off a start on an adapter would read for an account and the model its line asks (MODELROLE1k2), or null where it is ready.</param>
     public static SessionLook Waiting(
-        SessionLook look, string recordsJson, string home, DriverConfig config, bool fresh, Func<string?, string?, CoolingEntry?> coolingOf,
+        SessionLook look, string recordsJson, string home, DriverConfig config, bool fresh, Func<string?, string?, string?, CoolingEntry?> coolingOf,
         TimeZoneInfo zone)
     {
         // FOUNDATION1j part ii (the foundation design §2.4, §7 row 5; D205 point 1): a record's words go on with its own agent, the one its
@@ -307,7 +307,7 @@ public static class SessionGroups
                     reason,
                     prior.Repository is { } repository && string.Equals(repository, KnowledgeRoomIdentity.Repository, StringComparison.OrdinalIgnoreCase)
                         ? cooling
-                        : (prior.Adapter ?? GoesOnWith(prior, ParticipantWork.Chat)) is { } agent ? Soonest(coolingOf, home, agent, cooling) ?? cooling : cooling,
+                        : (prior.Adapter ?? GoesOnWith(prior, ParticipantWork.Chat)) is { } agent ? Soonest(coolingOf, home, agent, cooling, prior.ModelOn(agent)) ?? cooling : cooling,
                     home)
                 : new WordsHold(WordsHold.Waits, reason);
         }
@@ -345,7 +345,7 @@ public static class SessionGroups
                     continue;
                 }
 
-                if (Soonest(coolingOf, home, adapter, cooling) is not { } soonest) continue;
+                if (Soonest(coolingOf, home, adapter, cooling, words.ModelOn(adapter)) is not { } soonest) continue;
 
                 // Where the own account is not the earliest, the sentence is the roster's: whose reset comes first.
                 var sentence = ReferenceEquals(LineAccount.Earliest(ResetSet.Switch, own: cooling, walked: soonest), cooling)
@@ -362,14 +362,14 @@ public static class SessionGroups
     }
 
     /// <summary>The home's cool-offs as a start reads them (see <see cref="SessionCooling.On"/>).</summary>
-    public static Func<string?, string?, CoolingEntry?> CoolingOn(string home) => SessionCooling.On(home);
+    public static Func<string?, string?, string?, CoolingEntry?> CoolingOn(string home) => SessionCooling.On(home);
 
     private static WordsHold CoolingHold(string reason, CoolingEntry cooling, string home) => SessionCooling.Hold(reason, cooling, home);
 
-    private static CoolingEntry? Soonest(Func<string?, string?, CoolingEntry?> coolingOf, string home, string adapter, CoolingEntry own) =>
-        SessionCooling.Soonest(coolingOf, home, adapter, own);
+    private static CoolingEntry? Soonest(Func<string?, string?, string?, CoolingEntry?> coolingOf, string home, string adapter, CoolingEntry own, string? model) =>
+        SessionCooling.Soonest(coolingOf, home, adapter, own, model);
 
-    private static CoolingEntry? Cooling(Func<string?, string?, CoolingEntry?> coolingOf, PriorSession record) => SessionCooling.Of(coolingOf, record);
+    private static CoolingEntry? Cooling(Func<string?, string?, string?, CoolingEntry?> coolingOf, PriorSession record) => SessionCooling.Of(coolingOf, record);
 
     private static string? NotYet(SessionEvents events, string session) => SessionCooling.NotYet(events, session);
 

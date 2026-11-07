@@ -211,7 +211,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 HandedNote = handedNote,
                 // Another agent's accounts are not this agent's: a hand-over says no account was cooling for it to be told of.
                 AccountChanged = elsewhere && !handedFrom && prior!.Limit
-                    && LineAccount.OwnHold(context.Harnesses.CoolingOf(agent, prior.Profile)) == NextHold.Cooling,
+                    && LineAccount.OwnHold(context.Harnesses.CoolingOf(agent, prior.Profile, prior.ModelOn(agent))) == NextHold.Cooling,
                 // A set-up step is told its environment as the rule declares it now, and its account says where that rule was set.
                 SetUp = setUp,
                 SetUpFrom = setUp is null ? null : ReviewRules.Resolve(config, quest.To, start.Workspace)?.Source,
