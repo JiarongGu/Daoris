@@ -4,8 +4,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { fireEvent } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// SQUASHTIDY1f (D102's SQUASHTIDY1b and SQUASHTIDY1f notes): the review of a session whose work the line holds by content, a
-// squash-merged pull request's, offers no *Accept*, which the landing door now refuses, but says where the work is in the
+// The review of a session whose work the line holds by content, a
+// squash-merged pull request's, offers no *Accept*, which the landing door refuses, but says where the work is in the
 // head's clause and offers the head's discard in its place, from the same pieces and through the same press. Where the tree
 // holds what no commit does, it says why the tree stays, and the review's own Discard, which asks twice, stays the door.
 
@@ -123,7 +123,7 @@ describe.each(['en', 'zh'])('the review of a session whose work the line holds b
 
   /**
    * Both: the landing door asks the content proof before the review's gate, since a review of work already on the line lands
-   * nothing, so where a review's gate (REVIEWENV1g) would also hold the work the discard stands, and the plan is never asked.
+   * nothing, so where a review's gate would also hold the work the discard stands, and the plan is never asked.
    */
   it('offers the discard, not the review’s gate, where the review would also hold the work', async () => {
     await i18n.changeLanguage(language);

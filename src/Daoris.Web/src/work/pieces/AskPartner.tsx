@@ -10,7 +10,7 @@ export const MAX_PIECE = 4000;
 export type PieceAsk = { piece: string; agent: string; paths: string[] };
 
 /**
- * ***Ask another agent to work on a piece…*'s ask** (COAGENT1b, D199 point 2; the co-agent design §2.3 step 1, §6.1): the person's own
+ * ***Ask another agent to work on a piece…*'s ask**: the person's own
  * door to a partner, on the primary's hue since nothing here goes. What a piece is (another agent writes it in a clone of its own from
  * the commit this session stands at, and Daoris keeps it as one commit to merge), the piece, the paths it is about, and which agent:
  * the person names one, since a piece is written by the agent named. Then *Ask* and *Never mind*; a refusal is said inside it and

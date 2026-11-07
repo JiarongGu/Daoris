@@ -10,7 +10,7 @@ import {
 } from './effectiveFixtures';
 import type { WorkflowEffective } from '../current';
 
-// SETUPUX1o (D221; the Setup design's §2.3): the chart of the chosen route, drawn from the driver's effective graph through the one drawing:
+// The chart of the chosen route, drawn from the driver's effective graph through the one drawing:
 // its label says what is drawn, each step is a title and one fact, and its cell shows on selection. jsdom lays nothing out, so the drawing
 // is the rail here, whose nodes are the same list.
 

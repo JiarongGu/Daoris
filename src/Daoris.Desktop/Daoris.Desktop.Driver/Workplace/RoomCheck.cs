@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The check of a repository's rooms, deterministic and stack-agnostic: it reads the lanes
-/// file's rooms, the gates file's classes and git's tracked paths, nothing else. It refuses two rooms holding one path, a tracked path
+/// file's rooms, the repository's rule file and git's tracked paths, nothing else. It refuses two rooms holding one path, a tracked path
 /// no entry places, a unit that is not a tracked file of its room or whose folder holds another room's sources, a lockfile apart from
 /// the unit beside it, a file written from two rooms, and a read or a write naming nothing tracked or declared. It joins into one claim
 /// group the rooms whose build closures meet: a room's own paths, its units, and what its builds read and write, wherever another
@@ -14,14 +14,14 @@ internal static class RoomCheck
     /// <summary>How many paths of one kind of problem are named before the rest are counted.</summary>
     private const int Named = 5;
 
-    /// <summary>The check of a lanes file's and a gates file's texts (null for a file the repository lacks) over its tracked paths.</summary>
-    internal static RoomCheckReport Of(string? lanes, string? gates, IReadOnlyList<string> tracked) =>
-        Run(LaneRooms.Read(lanes), TreeClassesReader.Read(gates, tracked), tracked);
+    /// <summary>The check of a lanes file's and a rule file's texts (null for a file the repository lacks) over its tracked paths.</summary>
+    internal static RoomCheckReport Of(string? lanes, string? files, IReadOnlyList<string> tracked) =>
+        Run(LaneRooms.Read(lanes), RepositoryFilesReader.Read(files, tracked), tracked);
 
-    internal static RoomCheckReport Run(LaneRoomsRead read, TreeClassesRead classes, IReadOnlyList<string> tracked)
+    internal static RoomCheckReport Run(LaneRoomsRead read, RepositoryFilesRead files, IReadOnlyList<string> tracked)
     {
-        var problems = read.Problems.Concat(classes.Problems).ToList();
-        if (!read.Declares) return new RoomCheckReport([], [], [], read.InNone, classes.Classes, problems);
+        var problems = read.Problems.Concat(files.Problems).ToList();
+        if (!read.Declares) return new RoomCheckReport([], [], [], read.InNone, files.Rules, problems);
 
         var rooms = read.Rooms;
         var at = rooms.Select((room, i) => (room.Id, i)).ToDictionary(pair => pair.Id, pair => pair.i, StringComparer.Ordinal);
@@ -50,11 +50,11 @@ internal static class RoomCheck
                 if (matched.Count == 0)
                 {
                     untracked.Add((i, verb, path));
-                    if (!classes.Classes.Paths.Any(declared => RoomPaths.Meet(declared.Path, path)))
+                    if (!files.Rules.SelectMany(rule => rule.Paths).Any(declared => RoomPaths.Meet(declared, path)))
                     {
                         problems.Add(verb == "reads"
                             ? $"room {rooms[i].Id} reads {path}, which no tracked file or declared output is"
-                            : $"room {rooms[i].Id} writes {path}, which is neither tracked nor declared in trees");
+                            : $"room {rooms[i].Id} writes {path}, which is neither tracked nor named in {RepositoryFilesReader.FileName}");
                     }
                 }
 
@@ -75,11 +75,11 @@ internal static class RoomCheck
 
         Untracked(rooms, untracked, groups, crossings, problems);
         var units = Units(rooms, tracked, owner, problems);
-        Lockfiles(classes.Classes, units, owner, problems);
+        Lockfiles(files.Rules, units, owner, problems);
 
         var joined = Enumerable.Range(0, rooms.Count).GroupBy(groups.Root).OrderBy(group => group.Min())
             .Select(group => (IReadOnlyList<string>)[.. group.Order().Select(i => rooms[i].Id)]).ToList();
-        return new RoomCheckReport([.. rooms.Select(room => room.Id)], joined, [.. crossings.Distinct()], read.InNone, classes.Classes, problems);
+        return new RoomCheckReport([.. rooms.Select(room => room.Id)], joined, [.. crossings.Distinct()], read.InNone, files.Rules, problems);
     }
 
     /// <summary>Each tracked path's room, or null for one in none; two rooms holding a path and a path no entry places, refused.</summary>
@@ -160,9 +160,10 @@ internal static class RoomCheck
     }
 
     /// <summary>A lockfile belongs to the room of the unit beside it (R5.3 break 4): one in another room splits it.</summary>
-    private static void Lockfiles(TreeClasses classes, Dictionary<string, string> units, Dictionary<string, string?> owner, List<string> problems)
+    private static void Lockfiles(IReadOnlyList<FileRule> rules, Dictionary<string, string> units, Dictionary<string, string?> owner, List<string> problems)
     {
-        foreach (var key in classes.Dependencies.SelectMany(each => each.Key).Distinct(StringComparer.Ordinal).Where(owner.ContainsKey))
+        var keys = rules.Where(rule => rule.Kind == FileKind.Dependency).SelectMany(rule => rule.Key ?? []);
+        foreach (var key in keys.Distinct(StringComparer.Ordinal).Where(owner.ContainsKey))
         {
             foreach (var (unit, room) in units.Where(pair => Folder(pair.Key) == Folder(key) && pair.Value != owner[key]))
             {

@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AskHelper } from './AskHelper';
 
-// MIXAGENT2b (D163 point 2; the mixed-agents design §3): *Ask another agent…*'s ask under the page header, the person's own door
+// *Ask another agent…*'s ask under the page header, the person's own door
 // with the tool's fields: the question, and the agent, left to Daoris unless the person names one.
 
 const roster = {

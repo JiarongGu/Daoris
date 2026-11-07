@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A brainstorm's and a meeting's files in the shape this build reads (D232; AGENTPROVIDER1t-ii): the pass records, the document, the
+/// A brainstorm's and a meeting's files in the shape this build reads: the pass records, the document, the
 /// room measures and the meeting's packet name the door a pass ran on <c>door</c>, where they said <c>adapter</c>. A meeting's packet is
 /// named by the digest of its content, so a packet whose names changed is written again under the digest of what it now holds. A tool's
 /// answers are not ours and are left as they are; a file already in today's shape is left as it is.

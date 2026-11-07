@@ -3,8 +3,8 @@ import { Button, Inline } from '../../design/ui';
 import type { GraphProblem } from './answers';
 import { refusalSaid } from './editWords';
 
-// The driver's refusals where they are (WORKFLOWEDIT1b): each in the reader's words, the driver's beneath where its code is one this page
-// words, and the driver's alone where it is a rule newer than the page. And the head's list of them (FLOWCHART2c): a door to the step each
+// The driver's refusals where they are: each in the reader's words, the driver's beneath where its code is one this page
+// words, and the driver's alone where it is a rule newer than the page. And the head's list of them: a door to the step each
 // names, and *Ask why* and *Fix it* to put the refusal in Ask Daoris's box where this window has one.
 
 export function Refusals({ problems }: { problems: readonly GraphProblem[] }) {

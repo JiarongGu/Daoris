@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Re-reads the clock every `every` ms while mounted, so a count of elapsed time steps without a new record (WAITSHOWN1,
- * WAITSAY1). `null` stops the ticking, for a host that has no count to step.
+ * Re-reads the clock every `every` ms while mounted, so a count of elapsed time steps without a new record.
+ * `null` stops the ticking, for a host that has no count to step.
  */
 export function useNow(every: number | null): number {
   const [now, setNow] = useState(() => Date.now());

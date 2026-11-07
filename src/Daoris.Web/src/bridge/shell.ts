@@ -1,9 +1,9 @@
-// The shell's half of the platform (D46 §6). In a browser none of this exists — the bridge is absent,
+// The shell's half of the platform. In a browser none of this exists — the bridge is absent,
 // the query never runs, and every control gated on it stays unrendered. That is the design, not a
 // degradation: the controls act where a driver is attached, and only the desktop has one.
 //
-// The bridge by domain (MOD3): each domain's types and calls live in `bridge/<domain>.ts`, or a scope's
-// `bridge/<scope>/<domain>.ts` (STRUCT5c-ii), and this file is only the barrel, so no import moved when they did. It re-exports every domain and holds no
+// The bridge by domain: each domain's types and calls live in `bridge/<domain>.ts`, or a scope's
+// `bridge/<scope>/<domain>.ts`, and this file is only the barrel. It re-exports every domain and holds no
 // code of its own, which `bridge/bridge.test.ts` holds. `bridge/call.ts` is the domains' own helper
 // and is re-exported by nothing.
 export * from './agents/accounts';

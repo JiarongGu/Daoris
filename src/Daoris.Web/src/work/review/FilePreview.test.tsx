@@ -7,7 +7,7 @@ import i18n from '../../locales/i18n';
 import { FilePreview } from './FilePreview';
 import type { TreeFile } from './preview';
 
-// A file's preview (PREVIEW1, D111). A molecule: every state — read, marked, binary, bounded, empty,
+// A file's preview. A molecule: every state — read, marked, binary, bounded, empty,
 // refused, reading — is reached by passing props, with no bridge, no tree and no git.
 
 const FILE: TreeFile = {
@@ -58,7 +58,7 @@ describe('a file\'s preview', () => {
     expect(screen.queryAllByRole('row')).toHaveLength(0);
   });
 
-  /** The bound is stated, never hidden (design §5): how much the file holds, and where the rest is. */
+  /** The bound is stated, never hidden: how much the file holds, and where the rest is. */
   it('says how much of a long file it shows, and that the file on disk has the rest', () => {
     wrap(<FilePreview path={FILE.path} file={{ ...FILE, size: 3 * 1024 * 1024, truncated: true }} />);
 
@@ -67,7 +67,7 @@ describe('a file\'s preview', () => {
   });
 
   /**
-   * REVIEW2 (D113): once a landing tidied the tree away, the file is the landed branch's copy, and the preview says
+   * Once a landing has tidied the tree away, the file is the landed branch's copy, and the preview says
    * so in a sentence — and that the branch, not the disk, has the rest of a long one.
    */
   it('says a file read from the landed branch is as that branch holds it', () => {
@@ -107,7 +107,7 @@ describe('a file\'s preview', () => {
     expect(screen.getByRole('status')).toHaveTextContent('reading…');
   });
 
-  /** The review's own patch, where it has one: never a second diff (D111). */
+  /** The review's own patch, where it has one: never a second diff. */
   it('offers the file\'s changes where the review holds a patch for it, and draws that patch', async () => {
     wrap(<FilePreview path={FILE.path} file={FILE} patch={'@@ -1 +1 @@\n-export const a = 0;\n+export const a = 1;'} />);
 

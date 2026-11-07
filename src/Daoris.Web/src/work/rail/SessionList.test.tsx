@@ -8,7 +8,7 @@ import { offeredActs } from '../acts';
 import type { SessionGrouping } from '../groups';
 import { ArchiveEndedAsk, type SessionRowFacts, SessionList, SessionStrip } from './SessionList';
 
-// Sessions' list (SESSUX1c, D126 §2.1, §4) as a molecule: by state, by repository, the strip and a long Ended group,
+// Sessions' list as a molecule: by state, by repository, the strip and a long Ended group,
 // each reached by passing it. No bridge and no query client: the rail above it holds them.
 
 const NOW = new Date('2026-10-02T12:00:00Z');
@@ -68,7 +68,7 @@ describe("Sessions' list by state", () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  /** D126 §2.1: five groups in the order the person acts on them, each heading counted, each in the reader's order. */
+  /** Five groups in the order the person acts on them, each heading counted, each in the reader's order. */
   it('lists the five groups in the order the person acts on them, each counted', () => {
     list();
 
@@ -78,7 +78,7 @@ describe("Sessions' list by state", () => {
     expect(within(groupRows('Ended (2)')[0]!).getByText('declined')).toBeInTheDocument();
   });
 
-  /** §4.2: no group header names a repository, so each row's line does; the group headers carry no repository facts. */
+  /** No group header names a repository, so each row's line does; the group headers carry no repository facts. */
   it("says each row's repository on its line, and no repository's facts on a group", () => {
     list();
 
@@ -88,7 +88,7 @@ describe("Sessions' list by state", () => {
     expect(screen.queryByText('drives here')).toBeNull();
   });
 
-  /** MIXAGENT3a-i: what the rail joined of a record's links rides each row's facts to its line. */
+  /** What the rail joined of a record's links rides each row's facts to its line. */
   it('says on a row whom it continues, and on a helper whom it helps, as the rail joined them', () => {
     const carried = session({ id: 'c4rr13d0', state: 'working', kind: 'chat', from: 'w0rk1ng0', fromWhy: 'press', fromBy: 'person' });
     const helper = session({ id: 'h3lp3r00', state: 'working', kind: 'chat', serves: 'w0rk1ng0' });
@@ -104,8 +104,8 @@ describe("Sessions' list by state", () => {
   });
 
   /**
-   * MIXAGENT3a-ii (the mixed-agents design §4, XAGENT1g4d): a helper and a reviewer are drawn under the row of the work they
-   * serve, out of their own groups, their lines no longer naming it; the groups count the rows they draw as their own.
+   * A helper and a reviewer are drawn under the row of the work they
+   * serve, out of their own groups, their lines not naming it; the groups count the rows they draw as their own.
    */
   it('draws a helper and a reviewer under the work they serve, their lines no longer naming it', () => {
     const helper = session({ id: 'h3lp3r00', state: 'working', kind: 'chat', repository: 'tools', serves: 'w0rk1ng0' });
@@ -147,7 +147,7 @@ describe("Sessions' list by state", () => {
     expect(headings()).toEqual(['Working (1)']);
   });
 
-  /** Archived is out of the way unless shown (§4.1), and shown last, in the reader's order. */
+  /** Archived is out of the way unless shown, and shown last, in the reader's order. */
   it('hides what is archived unless it is shown', () => {
     const marked = [...GROUPINGS.slice(0, 6), placed({ session: 'd0ne0000', group: 'archived', shown: 'completed', archived: true })];
 
@@ -159,7 +159,7 @@ describe("Sessions' list by state", () => {
     expect(headings().at(-1)).toBe('Archived (1)');
   });
 
-  /** §4.4: Ended shows twelve, then a press that shows the rest; the attended session is never cut out of it. */
+  /** Ended shows twelve, then a press that shows the rest; the attended session is never cut out of it. */
   it('shows twelve of a long Ended group, then the rest on a press', async () => {
     const ended = Array.from({ length: 15 }, (_, index) => session({ id: `e${String(index).padStart(7, '0')}`, state: 'completed', updated: at(index + 1) }));
     list({ rows: facts(ended), groupings: ended.map((row) => placed({ session: row.id, group: 'ended', shown: 'completed' })) });
@@ -206,7 +206,7 @@ describe("Sessions' list by state", () => {
 });
 
 /**
- * SESSUX1e, D126 §4.1, §5.2: *Show archived* draws Archived last, its rows Unarchive-able, and says when nothing is
+ * *Show archived* draws Archived last, its rows Unarchive-able, and says when nothing is
  * archived; an archived row under no Archived heading says it is archived on its line (by repository).
  */
 describe("Sessions' list, archived", () => {
@@ -228,7 +228,7 @@ describe("Sessions' list, archived", () => {
   });
 
   /** Under the Archived heading the heading says it; a row's line need not say it again. */
-  /** Each row's acts as the one rule offers them for where the reader placed it (SESSUX1d, D126 §3.1), as the rail hands them. */
+  /** Each row's acts as the one rule offers them for where the reader placed it, as the rail hands them. */
   const actsBy = (groupings: SessionGrouping[]) => (row: Session) =>
     offeredActs({ session: row, grouping: groupings.find((each) => each.session === row.id) }, 'row');
 
@@ -284,7 +284,7 @@ describe("Sessions' list, archived", () => {
 });
 
 /**
- * SESSUX1e, D126 §5.3: *Archive what ended…* lists first, under the list's header, what it would take and what stays,
+ * *Archive what ended…* lists first, under the list's header, what it would take and what stays,
  * and archives on a second press exactly what the first listed, since a list is a fact about a moment.
  */
 describe("Archive what ended's first press", () => {
@@ -380,7 +380,7 @@ describe("Archive what ended's first press", () => {
 });
 
 describe("Sessions' list by repository", () => {
-  /** §4.3: today's arrangement, with the reader's words: a parked quest's last session sorts with waiting on you. */
+  /** Today's arrangement, with the reader's words: a parked quest's last session sorts with waiting on you. */
   it("groups by repository with its facts, waiting on you and parked first, and the ended beneath", () => {
     list({
       arrangement: 'repository',
@@ -397,7 +397,7 @@ describe("Sessions' list by repository", () => {
       .toEqual(['stopped', 'awaiting reply', 'declined', 'completed']);
   });
 
-  /** MIXAGENT3a-ii: by repository too, a helper under the session it serves, which counts it as none of its own. */
+  /** By repository too, a helper under the session it serves, which counts it as none of its own. */
   it('draws a helper under the session it serves, out of its repository group', () => {
     const helper = session({ id: 'h3lp3r00', state: 'working', kind: 'chat', serves: 'p4rk3d00' });
     list({
@@ -412,7 +412,7 @@ describe("Sessions' list by repository", () => {
     expect(within(within(engine).getByRole('list', { name: 'Working for Chat' })).getByText('Helper')).toBeInTheDocument();
   });
 
-  /** The monitor's list is the present tense only (UX5 U70): nothing ended, and no parked row with no tile to go to. */
+  /** The monitor's list is the present tense only: nothing ended, and no parked row with no tile to go to. */
   it('lists only what is running where it is live', () => {
     list({ arrangement: 'repository', groupings: undefined, live: true });
     expect(screen.queryByRole('region', { name: 'Ended' })).toBeNull();
@@ -421,7 +421,7 @@ describe("Sessions' list by repository", () => {
 });
 
 describe("Sessions' strip", () => {
-  /** §2.5: what waits on the person first, then what runs, each named in words, since a mark is never hue alone. */
+  /** What waits on the person first, then what runs, each named in words, since a mark is never hue alone. */
   it('holds waiting on you, then working, each named with its word', () => {
     render(
       <Tooltip.Provider>

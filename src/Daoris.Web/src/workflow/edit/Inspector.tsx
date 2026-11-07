@@ -15,7 +15,7 @@ import { StepOptions } from './StepOptions';
 import type { RolePlace } from './StepRole';
 import { type WaysActs, WaysOnTable } from './WaysOnTable';
 
-// The inspector (FLOWCHART2b; the flowchart design §2, §3, §8.2; D221 §2.3): the selected step, beside the chart where the editor's region
+// The inspector: the selected step, beside the chart where the editor's region
 // holds both and in a drawer where it does not. Its plugin's words, its refusals, *What happens next*, what it *Carries*, its options and
 // role, *More ways* (a trigger, how its ways in join, and any way it holds that no row draws, kept as written), its id under *Details*, and
 // its actions: a step after, a move within its chain and a removal each confirmed in place with what they rewire said first.
@@ -63,7 +63,7 @@ export function optionsShown(t: TFunction, i18n: i18n, palette: WorkflowPaletteA
   return { options, notes };
 }
 
-/** A step's option set through the draft's acts; a landing's method also brings or takes out the tail it means (SETUPUX1r). */
+/** A step's option set through the draft's acts; a landing's method also brings or takes out the tail it means. */
 export function setNodeOption(
   t: TFunction, i18n: i18n, palette: WorkflowPaletteAnswer, draft: GraphDraft, node: DraftNode, title: string,
   acts: Pick<InspectorActs, 'onChange' | 'onOption'>, option: string, value: string | boolean | string[] | undefined,
@@ -84,7 +84,7 @@ export function Inspector({ palette, draft, roles, place, staffing, lines, node,
   palette: WorkflowPaletteAnswer;
   draft: GraphDraft;
   roles: EditorRole[];
-  /** The place the editor opened from, which a step's role is given and named for, and the role editor's reads and presses (SETUPUX1t). */
+  /** The place the editor opened from, which a step's role is given and named for, and the role editor's reads and presses. */
   place?: RolePlace | null;
   staffing?: StepStaffing;
   /** The lines the place declares, which a landing's target is chosen from. */

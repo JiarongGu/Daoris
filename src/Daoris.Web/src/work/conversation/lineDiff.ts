@@ -6,7 +6,7 @@
  * **A longest-common-subsequence over lines**, which is exact for the edits an agent makes (a few
  * lines in a file) and cheap at that size. Past {@link LIMIT} lines on either side the table would
  * be large for a card nobody reads line by line, so the whole old text reads as removed and the new
- * as added — still true, only less precise, and the review pane (SURF6) has git's own diff.
+ * as added — still true, only less precise, and the review pane has git's own diff.
  */
 
 import type { PatchLine } from '../review/patch';
@@ -53,7 +53,7 @@ export function lineDiff(oldText: string | null | undefined, newText: string | n
 }
 
 /**
- * An edit's lines in the review's line model (REVIEW2), so one renderer draws both. Numbered from 1
+ * An edit's lines in the review's line model, so one renderer draws both. Numbered from 1
  * within the edit's own text, which is why the card draws them unnumbered: they are not the file's.
  */
 export function patchLines(diff: readonly DiffLine[]): PatchLine[] {

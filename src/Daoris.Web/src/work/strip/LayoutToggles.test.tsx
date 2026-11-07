@@ -6,8 +6,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../../locales/i18n';
 import { LayoutToggles } from './LayoutToggles';
 
-// DOCK1c (SURF11): the region toggles on the strip, beside the window controls, as VS Code's are. D118
-// §3a: the first is the view's list, named for the view, and absent where the view has none.
+// The region toggles on the strip, beside the window controls, as VS Code's are. The first is the view's list,
+// named for the view, and absent where the view has none.
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 

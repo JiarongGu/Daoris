@@ -5,7 +5,7 @@ import { BRANCH_AUTOMATIC, FULL, NOTHING_SET, WORK } from './fixtures';
 import { GRAPH_RUN, GRAPH_RUN_ADDED_LOOK, GRAPH_RUN_DECIDED } from './runFixtures';
 import { FINISHED, outcomeOf, workflowFlow } from './workflowFlow';
 
-// FLOWCHART1d (D186; the flowchart design §2.4, §2.5, §5.1): a workflow drawn as a flowchart, from what `WORKFLOW_CURRENT` and
+// A workflow drawn as a flowchart, from what `WORKFLOW_CURRENT` and
 // `WORKFLOW_RUN` answer. Its steps in their version's order and the end of the line, each edge the move the step names; a step that
 // says what follows its failure or its refusal hangs that outcome on a failure path; the landing divides before from after; a run
 // lights each step by its state and draws no path. No group the answer does not hold is invented (`current.ts:27-42`).
@@ -105,7 +105,7 @@ describe('a workflow as a flowchart', () => {
     expect(ended.edges.at(-1)).toMatchObject({ from: 'landing', to: FINISHED });
   });
 
-  // FABRIC-CUTOVER1e (D186's FLOWCHART1d note): a run bound to a graph version answers its graph's wires, the first read that does, so its
+  // A run bound to a graph version answers its graph's wires, the first read that does, so its
   // drawing follows them: a fork and its join as the version holds them, a failure's path in its style, the end of the line after its end.
   it('draws a graph run by its wires, a fork and its join, a failure path, and flags its configured end', () => {
     const { graph, steps } = GRAPH_RUN;
@@ -126,7 +126,7 @@ describe('a workflow as a flowchart', () => {
     expect(flow.nodes.filter((node) => node.id.includes(':'))).toEqual([]);
   });
 
-  // DECIDE1c: a decision's route leaves the port of its outcome (FLOWCHART2a), and a way back is drawn as a return, said by what it is taken on.
+  // A decision's route leaves the port of its outcome, and a way back is drawn as a return, said by what it is taken on.
   it("draws a decision's route by its outcome and a way back as a return", () => {
     const { graph, steps } = GRAPH_RUN_DECIDED;
     const flow = workflowFlow(t, { steps: steps.map((step) => step.step) }, 'engine', undefined, graph);

@@ -18,7 +18,7 @@ import { workCutFor } from './attentionCounts';
 import type { GitAskWait, GitHeld, PushedAttention, StaleSince } from './attentionPushed';
 
 /**
- * *What needs you*'s three groups (UX6c, design §6.2), in the order a person acts on them: what holds work up until they
+ * *What needs you*'s three groups, in the order a person acts on them: what holds work up until they
  * act, what waits for their word, and what is ready for them to look at.
  */
 export type AttentionGroup = 'holding' | 'word' | 'ready';
@@ -27,7 +27,7 @@ export type AttentionGroup = 'holding' | 'word' | 'ready';
 export const GROUP_ORDER: readonly AttentionGroup[] = ['holding', 'word', 'ready'];
 
 /**
- * Each kind's group (design §6.2). **Holding work**: a parked session holds its tree, a parked quest its repository's next
+ * Each kind's group. **Holding work**: a parked session holds its tree, a parked quest its repository's next
  * start, a go-ahead its session's act, a folder to trust the start the driver holds. **Waiting for your word**: an ask to
  * publish, an intake's question, a departure, a widening, a quest nobody can take, none of which holds anything already
  * running. **Ready for you**: finished work to review.
@@ -35,67 +35,66 @@ export const GROUP_ORDER: readonly AttentionGroup[] = ['holding', 'word', 'ready
 export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = {
   parked: 'holding',
   'parked-quest': 'holding',
-  // STEWARDROLE1b (D209 §5.3): a quest the steward's stop holds for a Try again, the steward's or the person's.
+  // A quest the steward's stop holds for a Try again, the steward's or the person's.
   'steward-stopped': 'holding',
-  // STAFFPOLICY1e2 (D226, design §11 point 7): a quest its role's policy holds for the person's yes to one move to another choice.
+  // A quest its role's policy holds for the person's yes to one move to another choice.
   'policy-hold': 'holding',
-  // INTEGRATE1o part o3 (§17.3): a run held at a request the receiver declined stands still until the person passes it over.
+  // A run held at a request the receiver declined stands still until the person passes it over.
   'request-declined': 'holding',
-  // NODEKIT1 HUMAN: a run waiting on a person's task stands still until they press it.
+  // A run waiting on a person's task stands still until they press it.
   task: 'holding',
-  // A stale one holds nothing and waits for the person's word instead (GOAHEADSTALE1, `attentionGroup`).
+  // A stale one holds nothing and waits for the person's word instead (`attentionGroup`).
   'go-ahead': 'holding',
-  // A tool call a session holds for the person's answer under asking (AUTONOMY1b3c, D184 point 3): its turn stands still until they
+  // A tool call a session holds for the person's answer under asking: its turn stands still until they
   // answer, or the bound refuses it, as a go-ahead holds its session's act.
   permission: 'holding',
-  // A third answer in a row with nobody between, which the answers-alone bound holds for the person (COWORK1e, D188 point 4): its
+  // A third answer in a row with nobody between, which the answers-alone bound holds for the person: its
   // line stands still until they let it go on or keep it.
   answer: 'holding',
-  // A press a terminal sent that waits for the person's Confirm on the window's card (CONFIRMSEEN1): its terminal holds still until
+  // A press a terminal sent that waits for the person's Confirm on the window's card: its terminal holds still until
   // they answer, or its time ends, which refuses it.
   confirmation: 'holding',
   trust: 'holding',
-  // A start waiting on its accounts holds that start; a signed-out account a list holds, the next start the list takes (UX6d).
+  // A start waiting on its accounts holds that start; a signed-out account a list holds, the next start the list takes.
   'account-wait': 'holding',
   'signed-out': 'holding',
   proposal: 'word',
   intake: 'word',
   departure: 'word',
-  // A set-up waiting for the person's look (REVIEWENV1g): its chain's landing waits on their verdict, as a departure's next
+  // A set-up waiting for the person's look: its chain's landing waits on their verdict, as a departure's next
   // step waits on their yes, and nothing already running is held by it.
   'set-up': 'word',
-  // A second opinion that waits on the person (XAGENT1g, the second-agent design §9): its landing waits on their answer, and
+  // A second opinion that waits on the person: its landing waits on their answer, and
   // nothing already running is held by it.
   opinion: 'word',
   rule: 'word',
-  // An agent's ask for a helper that waits on the person's yes (MIXAGENT2c, D163 point 3): the session that asked goes on
+  // An agent's ask for a helper that waits on the person's yes: the session that asked goes on
   // meanwhile, as one that proposed a rule does, so it holds nothing up.
   helper: 'word',
-  // An agent's ask to hand its session over (NOTIFY2e, MIXAGENT1c): while its turn runs it holds nothing up yet; once its turn has
+  // An agent's ask to hand its session over: while its turn runs it holds nothing up yet; once its turn has
   // ended the session stands still on the person's yes or no, and the row holds work (`attentionGroup`).
   'hand-over': 'word',
-  // A unit only the person's press settles (FABRIC-MILESTONE1b, the fabric events design §D0; OVERVIEWNOISE1b): one whose owner
+  // A unit only the person's press settles: one whose owner
   // nothing records, or a tree its session recorded that no branch record follows. Nothing running is held by it, and nothing of it
   // is removed until they press. A guard the look keeps a branch by is said on its session's page, never here.
   work: 'word',
-  // A volume still below its free-space floor once the floor freed what Daoris can make again (KEEP1f, the cleanup design §3.2): the
+  // A volume still below its free-space floor once the floor freed what Daoris can make again: the
   // rest waits for the person's choice on *Free up space…*, and nothing running is held by it yet.
   space: 'word',
-  // A git remote held because it could not authenticate (GITAUTH1a, D198; the git auth design §5.2, §7.4): nothing connects for it
+  // A git remote held because it could not authenticate: nothing connects for it
   // until the person's *Try again* or a change lifts it, and nothing already running is held by this row.
   'git-held': 'word',
-  // A git go-ahead (GITAUTH1f, D198 point 12; the git auth design §6.6): its door holds the act on the remote until the person allows or
+  // A git go-ahead: its door holds the act on the remote until the person allows or
   // refuses it, or its bound passes, as a held call holds its session's turn.
   'git-ask': 'holding',
-  // A session the watcher brings to the person (SESSWATCH1a, D200, the session-watch design §5.2): it holds its slot and its tree, and
+  // A session the watcher brings to the person: it holds its slot and its tree, and
   // its work stands still until they press, or it is heard again.
   quiet: 'holding',
-  // A session whose helper ended unanswered and whose move back to the person the service refused (HELPERWAIT1c, the co-worker
-  // design §5 point 4): the park row it would have had, holding its tree until they look.
+  // A session whose helper ended unanswered and whose move back to the person the service refused: the park row it would have had, holding its tree until they look.
   'helper-ended': 'holding',
-  // An end, a replacement or a stopped session's rows that memory keeps for the person (KNOWCENTRAL2e): nothing running is held by it.
+  // An end, a replacement or a stopped session's rows that memory keeps for the person: nothing running is held by it.
   memory: 'word',
-  // An integration's wait on the owner (INTEGRATE1h): a superseded commit's answer holds nothing running; a candidate held for their decide
+  // An integration's wait on the owner: a superseded commit's answer holds nothing running; a candidate held for their decide
   // holds its line's next, and a landing waiting for their card its unit's flow, which hold work (`attentionGroup`).
   integration: 'word',
   unanswerable: 'word',
@@ -103,13 +102,13 @@ export const ATTENTION_GROUP: Readonly<Record<AttentionKind, AttentionGroup>> = 
 };
 
 /**
- * A row's group: its kind's, but an agent's ask to hand its session over whose session stands still on it, which holds work
- * (NOTIFY2e), and a stale go-ahead (GOAHEADSTALE1), which holds no session's act since nothing on its ask could still use it, so it
+ * A row's group: its kind's, but an agent's ask to hand its session over whose session stands still on it, which holds work,
+ * and a stale go-ahead, which holds no session's act since nothing on its ask could still use it, so it
  * waits for the person's word with what holds nothing running. The band, its order and Overview's summary read this one answer, so a
  * row is counted in the group it is listed in.
  */
 export function attentionGroup(row: { kind: AttentionKind; stands?: boolean; stale?: StaleSince | null }): AttentionGroup {
-  // GITAUTH1e (§6.8): a held git remote holds work where a session of one of its repositories runs or waits on the person.
+  // A held git remote holds work where a session of one of its repositories runs or waits on the person.
   if ((row.kind === 'hand-over' || row.kind === 'integration' || row.kind === 'git-held') && row.stands) return 'holding';
   if (row.kind === 'go-ahead' && row.stale) return 'word';
   return ATTENTION_GROUP[row.kind] ?? 'word';
@@ -120,7 +119,7 @@ export type { AttentionPlace } from './attentionCounts';
 
 /**
  * The rows by group, only the groups that hold any, in `GROUP_ORDER`, each keeping the order `attentionInOrder` gave it.
- * A group with no rows is not shown (design §6.2).
+ * A group with no rows is not shown.
  */
 export function attentionGroups(items: readonly Attention[]): { group: AttentionGroup; items: Attention[] }[] {
   return GROUP_ORDER
@@ -129,7 +128,7 @@ export function attentionGroups(items: readonly Attention[]): { group: Attention
 }
 
 /**
- * The stale go-aheads a list holds (GOAHEADSTALE1), in its order: what the one refusal refuses, each through its own door with the one
+ * The stale go-aheads a list holds, in its order: what the one refusal refuses, each through its own door with the one
  * reason the person gave.
  */
 export function staleGoAheads(items: readonly Attention[]): Attention[] {
@@ -137,7 +136,7 @@ export function staleGoAheads(items: readonly Attention[]): Attention[] {
 }
 
 /**
- * An ask's stale go-aheads by number, from the rows .NET pushed (GOAHEADSTALE1): what its page marks, so the ask and What needs you say
+ * An ask's stale go-aheads by number, from the rows .NET pushed: what its page marks, so the ask and What needs you say
  * the one judgement.
  */
 export function staleOnAsk(rows: readonly PushedAttention[], ask: string): Record<number, StaleSince> {
@@ -149,7 +148,7 @@ export function staleOnAsk(rows: readonly PushedAttention[], ask: string): Recor
 }
 
 /**
- * What a row's door into its run names (WORKFLOW1c, the workflow design §7: *What needs you*'s row for a waiting step opens that
+ * What a row's door into its run names (*What needs you*'s row for a waiting step opens that
  * step): the session it stands for, or the quest whose newest session here does. A row that is no step of a run (an ask still to
  * publish, a folder's trust, an account, a rule) has none. The run opens where it stands, which is the step the row waits at.
  */
@@ -158,9 +157,9 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     // The work's session waits on the person's answer; the landing on their accept, in its review.
     case 'parked':
     case 'review': return { session: item.id };
-    // HELPERWAIT1c: the session that would have parked, its move back to the person refused.
+    // The session that would have parked, its move back to the person refused.
     case 'helper-ended': return { session: item.session ?? item.id };
-    // KNOWCENTRAL2e: the session whose memory waits.
+    // The session whose memory waits.
     case 'memory': return { session: item.session ?? item.id };
     // The work's act waits on the person's go-ahead, asked by the session the row names.
     case 'go-ahead': return item.session ? { session: item.session } : null;
@@ -169,11 +168,11 @@ export function rowRun(item: Attention): { session?: string | null; quest?: stri
     // The work's done waits on the person's yes; a quest parked on its failed sessions waits on their *Try again*.
     case 'departure':
     case 'parked-quest': return { quest: item.id };
-    // The steward's stop (STEWARDROLE1b): its quest, and the session it stopped.
+    // The steward's stop: its quest, and the session it stopped.
     case 'steward-stopped': return { session: item.session ?? null, quest: item.id };
-    // A policy's hold (STAFFPOLICY1e2): its quest, as a parked quest's.
+    // A policy's hold: its quest, as a parked quest's.
     case 'policy-hold': return { quest: item.id };
-    // INTEGRATE1o part o3: the run's newest work quest here, whose run the step waits in.
+    // The run's newest work quest here, whose run the step waits in.
     case 'request-declined': return item.declined?.work ? { quest: item.declined.work } : null;
     case 'task': return item.task?.work ? { quest: item.task.work } : null;
     default: return null;
@@ -190,7 +189,7 @@ export type {
 
 /**
  * The detail's key for a held group: an `own-input` hold is lifted by removing the repository's setting, not by a retry, and git said
- * nothing, since nothing failed (GITAUTH1b); one that names a setting says its name (GITAUTH1d's certificate hold).
+ * nothing, since nothing failed; one that names a setting says its name (a certificate hold's).
  */
 function gitHeldDetailKey(held: Pick<GitHeld, 'class' | 'words'>): string {
   if (held.class === 'own-input') return ownSetting(held) ? 'work.attention.gitHeld.detailOwnSetting' : 'work.attention.gitHeld.detailOwnInput';
@@ -198,16 +197,16 @@ function gitHeldDetailKey(held: Pick<GitHeld, 'class' | 'words'>): string {
 }
 
 /**
- * The setting an `own-input` hold names (GITAUTH1d's certificate hold, REVIEW2's scoped header or cookie file): its words are the
+ * The setting an `own-input` hold names (a certificate hold, a scoped header or cookie file): its words are the
  * setting's name (`http.sslCert`, `http.<url>.extraHeader`), never its value; an ssh command's hold says none.
  */
 const ownSetting = (held: Pick<GitHeld, 'class' | 'words'>) => (held.class === 'own-input' && held.words?.startsWith('http.') ? held.words : null);
 
 /**
- * Each kind's place among the kinds of its group when two waited as long (design §6.2's order of kinds): the accounts', parks, a
- * move back to the person refused (HELPERWAIT1c), parked quests, go-aheads, held calls, git go-aheads (GITAUTH1f), held answers (COWORK1e), a terminal's presses (CONFIRMSEEN1)
+ * Each kind's place among the kinds of its group when two waited as long (the order of kinds): the accounts', parks, a
+ * move back to the person refused, parked quests, go-aheads, held calls, git go-aheads, held answers, a terminal's presses
  * and folders; then asks, departures, set-ups, second opinions, widenings, helpers, hand-overs, a unit's blocked clean-up, a held attempt,
- * a volume below its floor, a held git remote (GITAUTH1a) and quests nobody can take; then review.
+ * a volume below its floor, a held git remote and quests nobody can take; then review.
  */
 const KIND_ORDER: readonly AttentionKind[] = [
   'account-wait', 'signed-out', 'parked', 'helper-ended', 'parked-quest', 'steward-stopped', 'policy-hold', 'request-declined', 'task', 'go-ahead', 'permission', 'git-ask', 'answer', 'confirmation', 'trust',
@@ -222,9 +221,9 @@ function kindRank(row: PushedAttention): number {
 }
 
 /**
- * The band's order (UX6c, design §6.2; D182's PUSH1d4 note): by group, holding work first; within a group what has waited longest
- * first, whatever its kind, a row with no known wait (a signed-out account's, UXFIX3) after every row with one; then §6.2's order
- * of kinds; then the row's key. A place in the list is never pushed (D182's PUSH1c3a note): one move would push every row after it.
+ * The band's order: by group, holding work first; within a group what has waited longest
+ * first, whatever its kind, a row with no known wait (a signed-out account's) after every row with one; then the order
+ * of kinds; then the row's key. A place in the list is never pushed: one move would push every row after it.
  */
 export function attentionInOrder(rows: readonly PushedAttention[]): PushedAttention[] {
   const groupOf = (row: PushedAttention) => GROUP_ORDER.indexOf(attentionGroup(row));
@@ -252,7 +251,7 @@ function goAheadTitle(goAhead: Pick<GoAhead, 'kind' | 'on' | 'act'>): string {
 }
 
 /**
- * A stale go-ahead's line (GOAHEADSTALE1): that it is stale, for how long nothing on its ask has needed it where a moment says, and that
+ * A stale go-ahead's line: that it is stale, for how long nothing on its ask has needed it where a moment says, and that
  * no session on the ask runs or waits and no quest of it is open; then why its session asked, as written.
  */
 function staleDetail(ask: string, stale: StaleSince, why: string | null, now: Date): string {
@@ -271,7 +270,7 @@ function departureWhy(departed: PushedAttention['departed']): string | null {
 }
 
 /**
- * A pushed row worded (PUSH1d4): what it is called, from the records the page holds (a session as Sessions names it, a quest and an
+ * A pushed row worded: what it is called, from the records the page holds (a session as Sessions names it, a quest and an
  * ask by their names, an account as the roster names it), where it waits, and its line of why in the reader's language, with the
  * values its acts and its door read. Pure: the judge is .NET's, and nothing here decides whether a row is.
  */
@@ -302,7 +301,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       return {
         ...base,
         title: ask ? askName(ask) : `#${row.id}`,
-        // A refused receiver's sentence is the service's, verbatim; otherwise what was proposed.
+        // A refused receiver's sentence is the service's, verbatim; otherwise what the declarations proposed.
         detail: row.detail ?? (publishTo.length > 0
           ? i18n.t('work.attention.proposalWhy', { repositories: publishTo.join(', ') })
           : i18n.t('work.attention.proposalNobody')),
@@ -315,7 +314,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...base,
         title: row.goAhead ? goAheadTitle(row.goAhead) : row.id,
         where: askWhere(row.ask ?? ''),
-        // GOAHEADSTALE1: a stale one says so first, with how long nothing on its ask has needed it, then why its session asked.
+        // A stale one says so first, with how long nothing on its ask has needed it, then why its session asked.
         detail: row.stale ? staleDetail(row.ask ?? '', row.stale, row.detail ?? null, now) : row.detail ?? null,
         ask: row.ask,
         number: row.number,
@@ -356,7 +355,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         title: questOf(row.id)?.title ?? `#${row.id}`,
         detail: row.sitting ? sittingSentence(row.sitting) : null,
       };
-    // STEWARDROLE1b (D209 §5.3): the steward's stop, its session said by the planner's sentence, else by itself.
+    // The steward's stop, its session said by the planner's sentence, else by itself.
     case 'steward-stopped':
       return {
         ...base,
@@ -365,14 +364,14 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         detail: row.sitting ? sittingSentence(row.sitting)
           : row.session ? i18n.t('work.attention.stewardStoppedSession', { session: row.session }) : null,
       };
-    // STAFFPOLICY1e2: the policy's hold, said by the planner's typed sentence (`policy-ask`, `moves-bound`).
+    // The policy's hold, said by the planner's typed sentence (`policy-ask`, `moves-bound`).
     case 'policy-hold':
       return {
         ...base,
         title: questOf(row.id)?.title ?? `#${row.id}`,
         detail: row.sitting ? sittingSentence(row.sitting) : null,
       };
-    // INTEGRATE1o part o3 (§17.3): the run's work as its quest names it, and the quest declined, to where it went, held until passed over.
+    // The run's work as its quest names it, and the quest declined, to where it went, held until passed over.
     case 'request-declined': {
       const declined = row.declined;
       return {
@@ -384,7 +383,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(declined ? { declined } : {}),
       };
     }
-    // NODEKIT1 HUMAN: the run's work as its quest names it, and the presses its task waits for.
+    // The run's work as its quest names it, and the presses its task waits for.
     case 'task':
       return row.task ? { ...base, ...taskRead(row.task, questOf(row.task.work)?.title) } : { ...base, title: `#${row.id}` };
     case 'unanswerable':
@@ -394,12 +393,12 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...base,
         title: row.trust?.folder ?? row.id,
         where: row.where ?? (row.ask ? askWhere(row.ask) : `#${row.quest ?? ''}`),
-        // On the person's own sign-in's file (POOL1c, D197 point 3), it says to trust the folder with the tool itself.
+        // On the person's own sign-in's file, it says to trust the folder with the tool itself.
         detail: i18n.t(row.trust?.own ? 'trust.ownHome' : 'work.attention.trustWhy'),
         ...(row.trust
           ? { trust: { folder: row.trust.folder, trustFile: row.trust.trustFile, ...(row.trust.own ? { own: true } : {}) } }
           : {}),
-        // What its door opens: the quest it holds, or the ask whose intake it holds (D73).
+        // What its door opens: the quest it holds, or the ask whose intake it holds.
         ...(row.quest ? { quest: row.quest } : row.ask ? { ask: row.ask } : {}),
       };
     case 'rule':
@@ -417,7 +416,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         detail: i18n.t('work.attention.helperWhy', { session: named(row.session) }),
         session: row.session ?? null,
       };
-    // SESSWATCH1a (the session-watch design §5.2): the session as Sessions names it, what happened, and, where the person's words wait,
+    // The session as Sessions names it, what happened, and, where the person's words wait,
     // that ending it hands them on. Its words say only what happened, so they hold before and after Daoris's word is built.
     case 'quiet': {
       const quiet = row.quiet;
@@ -440,7 +439,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(quiet ? { quiet } : {}),
       };
     }
-    // HELPERWAIT1c (the co-worker design §5 point 4): the session as Sessions names it, that its helper ended unanswered, and the
+    // The session as Sessions names it, that its helper ended unanswered, and the
     // service's refusal as it said it, a value passed through, never re-worded.
     case 'helper-ended':
       return {
@@ -450,7 +449,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         session: row.session ?? row.id,
         ...(row.quest ? { quest: row.quest } : {}),
       };
-    // KNOWCENTRAL2e: the session as Sessions names it, and what waits, counted by the kind of wait.
+    // The session as Sessions names it, and what waits, counted by the kind of wait.
     case 'memory': {
       const wait = row.memory ?? { ends: 0, replacements: 0, staged: 0 };
       return {
@@ -465,7 +464,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.memory ? { memory: row.memory } : {}),
       };
     }
-    // INTEGRATE1h: a held candidate by its line, a superseded commit and a waiting landing by their branch, each said by its wait.
+    // A held candidate by its line, a superseded commit and a waiting landing by their branch, each said by its wait.
     case 'integration': {
       const wait = row.integration;
       const short = (commit?: string | null) => (commit ?? '').slice(0, 7);
@@ -478,14 +477,14 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
           ? i18n.t('work.attention.integrationSupersededWhy', { commit: short(wait.commit), subject: wait.subject ?? '', line: wait.line ?? '' })
           : wait?.wait === 'card'
             ? i18n.t('work.attention.integrationCardWhy', { tip: short(wait.tip) })
-            // §5.8: a declaration never accepted runs nothing; one changed since goes on under the last accepted blob.
+            // A declaration never accepted runs nothing; one changed since goes on under the last accepted blob.
             : wait?.wait === 'declaration'
               ? i18n.t(wait.state === 'changed' ? 'work.attention.integrationDeclarationChangedWhy' : 'work.attention.integrationDeclarationUnacceptedWhy',
                 { line: wait.line ?? '', tip: short(wait.tip) })
               : null;
       return { ...base, title, detail, stands: row.stands === true, ...(wait ? { integration: wait } : {}) };
     }
-    // NOTIFY2e: its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.
+    // Its note's first line as the agent wrote it, the session as Sessions names it, and the agent as the roster names it.
     case 'hand-over': {
       const agent = row.agent ? agentNamed(row.agent, names.tools) : null;
       return {
@@ -498,7 +497,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       };
     }
     case 'permission': {
-      // The bound as the driver answered it for this request (PERMUNTIL1); a host that does not say leaves it out.
+      // The bound as the driver answered it for this request; a host that does not say leaves it out.
       const minutes = row.permission ? boundMinutes(row.permission) : null;
       return {
         ...base,
@@ -510,11 +509,11 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.permission ? { permission: row.permission } : {}),
       };
     }
-    // COWORK1e: named as Sessions names the session whose line it would take on, said by the agent that answered.
+    // Named as Sessions names the session whose line it would take on, said by the agent that answered.
     case 'answer': {
       const agent = row.answer?.agent;
       const words = agent ? i18n.t('work.attention.answerWhy', { agent }) : i18n.t('work.attention.answerWhySomeone');
-      // CONTEXTDRIVE1h: the person's rule that held it, said in the one sentence the head and the foot say.
+      // The person's rule that held it, said in the one sentence the head and the foot say.
       const rule = row.answer?.rule;
       return {
         ...base,
@@ -533,8 +532,8 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
       if (row.held) return heldWorded(row, row.held);
       if (row.ended) return endedWorded(row, row.ended);
       const entries = row.blocked?.entries ?? [];
-      // OVERVIEWNOISE1b: named by the session that recorded its tree, as Sessions names it, else its branch or its tree's folder; each
-      // entry worded by its code in the reader's language, the reason said once. An unknown owner says so first (FABRIC-UNKNOWN1).
+      // Named by the session that recorded its tree, as Sessions names it, else its branch or its tree's folder; each
+      // entry worded by its code in the reader's language, the reason said once. An unknown owner says so first.
       const recorder = sessionOf(row.session);
       const cut = workCutFor(row, names.sessions);
       return {
@@ -551,14 +550,14 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
     case 'account-wait':
     case 'signed-out':
       return accountRowWorded(row, names, now);
-    // CONFIRMSEEN1: named as its card names it, by its act where the page words its route and by its route otherwise; the terminal as
+    // Named as its card names it, by its act where the page words its route and by its route otherwise; the terminal as
     // the system names it, and until when it waits.
     case 'confirmation':
       return { ...base, ...(row.confirmation ? confirmationWorded(row.confirmation) : { title: row.id, detail: null }) };
-    // KEEP1f: named by the volume's free space and where it is mounted; why, its floor, what Daoris freed, and what the press could.
+    // Named by the volume's free space and where it is mounted; why, its floor, what Daoris freed, and what the press could.
     case 'space':
       return { ...base, ...(row.space ? spaceWorded(row.space) : { title: row.id, detail: null }) };
-    // GITAUTH1a (the git auth design §5.2, §7.4): named by its host and why, said once; its repositories, that nothing tries it again
+    // Named by its host and why, said once; its repositories, that nothing tries it again
     // until the person's *Try again* or a change, and git's own words, as written. What its press lifts is its git and its workspace.
     case 'git-held':
       return {
@@ -568,7 +567,7 @@ export function attentionWorded(row: PushedAttention, names: AttentionNames = {}
         ...(row.git ? { git: row.git } : {}),
         ...(row.workspace ? { workspace: row.workspace } : {}),
       };
-    // GITAUTH1f (§6.6, §7.4): who asks to push to or fetch from which remote, how long it has waited and the bound; a door that has gone
+    // Who asks to push to or fetch from which remote, how long it has waited and the bound; a door that has gone
     // is said so, its Allow kept for the identical retry.
     case 'git-ask':
       return {
@@ -590,8 +589,8 @@ function agentNamed(harness: string, tools: readonly Tool[] = []): string {
 }
 
 /**
- * A terminal's press waiting for the window (CONFIRMSEEN1), in its card's own words: what it asks, by its route's act where the page
- * has one; what sent it; and that it runs only on the card's Confirm, and waits until the person answers (CONFIRMWAIT1a-i). Never a value
+ * A terminal's press waiting for the window, in its card's own words: what it asks, by its route's act where the page
+ * has one; what sent it; and that it runs only on the card's Confirm, and waits until the person answers. Never a value
  * it carries.
  */
 function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']>): Pick<Attention, 'title' | 'detail'> {
@@ -609,7 +608,7 @@ function confirmationWorded(waiting: NonNullable<PushedAttention['confirmation']
 }
 
 /**
- * A volume still below its free-space floor (KEEP1f; the cleanup design §3.2), in the card's words: its free space of its size where it
+ * A volume still below its free-space floor, in the card's words: its free space of its size where it
  * is mounted; then the floor, what Daoris freed early of what it can make again, and what *Free up space…* could free where it listed any.
  */
 function spaceWorded(low: NonNullable<PushedAttention['space']>): Pick<Attention, 'title' | 'detail'> {
@@ -624,13 +623,13 @@ function spaceWorded(low: NonNullable<PushedAttention['space']>): Pick<Attention
 }
 
 /**
- * A held git remote (GITAUTH1a, the git auth design §7.4), in the reader's language: its host and why as its title; then the repositories
+ * A held git remote, in the reader's language: its host and why as its title; then the repositories
  * it holds, that Daoris does not try it again until *Try again* or a change, and git's own last line. The host, the repositories and git's
  * words are content.
  */
 export function gitHeldWorded(held: GitHeld, t: TFunction = i18n.t.bind(i18n)): Pick<Attention, 'title' | 'detail'> {
   const repositories = held.repositories ?? [];
-  // The move (§6.8): one row for every remote nothing serves, counted, its hosts named, and the repositories whose own configuration
+  // The move: one row for every remote nothing serves, counted, its hosts named, and the repositories whose own configuration
   // names authentication listed apart.
   if (held.class === 'no-identity') {
     const hosts = (held.hosts?.length ? held.hosts : [held.host]).join(', ');
@@ -646,7 +645,7 @@ export function gitHeldWorded(held: GitHeld, t: TFunction = i18n.t.bind(i18n)): 
   }
   const setting = ownSetting(held);
   const identity = held.served === 'identity' && held.identity ? held.identity : null;
-  // §7.4's titles: a refusal names the identity the host refused, a push refused the identity it let read, a host's key the identity's
+  // The titles: a refusal names the identity the host refused, a push refused the identity it let read, a host's key the identity's
   // or the person's own ssh; an own-input hold that names a setting names the repository's own authentication.
   const title = setting ? t('work.attention.gitHeld.title.own-setting', { host: held.host, repository: repositories[0] ?? '' })
     : identity && (held.class === 'refused' || held.class === 'write-refused')
@@ -661,7 +660,7 @@ export function gitHeldWorded(held: GitHeld, t: TFunction = i18n.t.bind(i18n)): 
 }
 
 /**
- * A git go-ahead in the reader's language (GITAUTH1f, the git auth design §7.4): *{session} asks to push to {remote}*, or a fetch, of its
+ * A git go-ahead in the reader's language: *{session} asks to push to {remote}*, or a fetch, of its
  * repository; then how long it has waited of its bound, or that its command has stopped and an Allow is kept for its retry. Shared by
  * its row and its session's head.
  */
@@ -683,7 +682,7 @@ export function gitAskWorded(ask: GitAskWait, since?: string | null, t: TFunctio
 export const GIT_ASK_BOUND_MINUTES = 15;
 
 /**
- * A unit's node record that does not read (FABRIC-PERFORM1j, the fabric events design §D3): named by its unit where it still names one,
+ * A unit's node record that does not read: named by its unit where it still names one,
  * else by its file; it says that nothing on that unit is judged or started until the person mends it, in the folder its press opens.
  */
 function unreadableWorded(row: PushedAttention, record: UnreadableRecord): Attention {
@@ -701,7 +700,7 @@ function unreadableWorded(row: PushedAttention, record: UnreadableRecord): Atten
 }
 
 /**
- * A closure graph closed only in part (FABRIC-CLOSE1j, the fabric events design §E5): the quest lost and why, and its close node, which
+ * A closure graph closed only in part: the quest lost and why, and its close node, which
  * waits again and would close that quest over the winner's take; the person's stop recorded stays a row, saying so, until the next look.
  */
 function endedWorded(row: PushedAttention, end: GraphEnd): Attention {

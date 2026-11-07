@@ -5,7 +5,7 @@ import { moment } from '../../locales/format';
 import i18n from '../../locales/i18n';
 import { type HelperAskRow, HelperAsks, openAsks } from './HelperAsks';
 
-// MIXAGENT2b (D163 points 2 and 3; the mixed-agents design §3, §5): the helpers a session asked for, on its page, each its question
+// The helpers a session asked for, on its page, each its question
 // as written, who asked and where the driver's look left it; the person's yes to an agent's ask that waits on it, and a door to
 // each helper once started. A molecule: every state is reached by passing it.
 
@@ -49,7 +49,7 @@ describe('the helpers a session asked for', () => {
     expect(lineOf('Approved.').getByText('The agent asked · you said yes · starts at the driver’s next look')).toBeInTheDocument();
   });
 
-  /** WAITFOOT1e: the way from an ask that waits to its `helper_ask` call, only on the ask the conversation holds the call of. */
+  /** The way from an ask that waits to its `helper_ask` call, only on the ask the conversation holds the call of. */
   it('offers the way to its call only on the ask whose call the conversation holds, and outlines the one sought', async () => {
     const show = vi.fn();
     render(
@@ -94,7 +94,7 @@ describe('the helpers a session asked for', () => {
   });
 
   /**
-   * HELPERNO1 (D163 point 3): the person's no beside the yes, on an agent's ask the driver's look holds waiting on their word. One
+   * The person's no beside the yes, on an agent's ask the driver's look holds waiting on their word. One
    * the look has not read yet takes the yes only, since a no there could cross a start under the rule's `on`.
    */
   it('offers the person’s no beside the yes on an agent’s ask that waits on their word, and tells the press how it ended', async () => {
@@ -142,7 +142,7 @@ describe('the helpers a session asked for', () => {
     expect(open).toHaveBeenCalledWith('h1');
   });
 
-  /** COAGENT1a (D199 point 5): an ask waits for its session's turn to end, and one whose work could not be captured whole says why. */
+  /** An ask waits for its session's turn to end, and one whose work could not be captured whole says why. */
   it('says an ask waiting for the turn to end, and a work in progress not captured whole, in both languages', async () => {
     const asks = [
       row({ id: 'a1', question: 'Waits on the turn.', state: 'waiting', code: 'turn' }),
@@ -165,7 +165,7 @@ describe('the helpers a session asked for', () => {
   });
 
   /**
-   * LIMITRESUME1h (D206 design §3.8): an ask whose helper an account's limit cut off stays on the page while its session waits on it,
+   * An ask whose helper an account's limit cut off stays on the page while its session waits on it,
    * saying it runs again and when that account is ready; one its session no longer waits on is refused as limited, in both languages.
    */
   it('says a helper a limit cut off, still waited on or refused as limited, in both languages', async () => {

@@ -21,9 +21,9 @@ export type WorkflowDoors = {
 };
 
 /**
- * Where each step of a run stands (WORKFLOW1c, design §7), drawn on the same chart in place of what each step is set to: a
+ * Where each step of a run stands, drawn on the same chart in place of what each step is set to: a
  * step's mark, whether the work has come to it (a step not reached is drawn faint), and whether the run stands at it. Its node
- * on the flowchart (FLOWCHART1d) wears the state's word and tone as its pill, says whether the step is done, holds the mark's
+ * on the flowchart wears the state's word and tone as its pill, says whether the step is done, holds the mark's
  * lines without that pill, and Enter opens its door.
  */
 export type RunMarks = Record<string, {
@@ -108,7 +108,7 @@ function setupPress(
   return where && doors?.setup ? { label: t('workflow.door.setup'), open: () => doors.setup?.(where.section) } : null;
 }
 
-/** What follows a step's failure or its refusal, where the step names one (FLOWCHART1d): the rail's words for the flowchart's path. */
+/** What follows a step's failure or its refusal, where the step names one: the rail's words for the flowchart's path. */
 function FailurePath({ step }: { step: WorkflowStep }) {
   const { t } = useTranslation();
   const outcome = outcomeOf(step);
@@ -117,8 +117,8 @@ function FailurePath({ step }: { step: WorkflowStep }) {
 }
 
 /**
- * **One step** (design §6.2): its kind's glyph and title, the person's part as a word and who acts; then what it is set
- * to; where that was set, with a door to the Setup that sets it, and how much of it this build runs; its limit whole,
+ * **One step**: its kind's glyph and title, the person's part as a word and who acts; then what it is set
+ * to; where that is set, with a door to the Setup that sets it, and how much of it this build runs; its limit whole,
  * never folded away; and at its foot, beside the rail, what moves work on to the next.
  */
 function StepRow({ step, first, into, page, workspace, limits, doors, run }: {
@@ -131,7 +131,7 @@ function StepRow({ step, first, into, page, workspace, limits, doors, run }: {
   workspace: string;
   limits: Record<string, string>;
   doors?: WorkflowDoors;
-  /** Where the step stands in a run (WORKFLOW1c): drawn in place of what it is set to, where it was set and its edge. */
+  /** Where the step stands in a run: drawn in place of what it is set to, where it is set and its edge. */
   run?: RunMarks[string];
 }) {
   const { t } = useTranslation();
@@ -193,7 +193,7 @@ function RunLimit({ limit }: { limit: { text: string; recorded: boolean } | null
 }
 
 /**
- * What a step is set to, where that was set with its door, how much of it this build runs, its limit, and on the rail its edge
+ * What a step is set to, where that is set with its door, how much of it this build runs, its limit, and on the rail its edge
  * and its failure path: the flowchart's node says those in its foot, as its edges.
  */
 export function StepSettings({ step, page, workspace, limit, doors, edge }: {
@@ -243,7 +243,7 @@ export function StepSettings({ step, page, workspace, limit, doors, edge }: {
   );
 }
 
-/** Who acts in a step's node (FLOWCHART1d): the person's part by its shape and its word, and the executor, names as code. */
+/** Who acts in a step's node: the person's part by its shape and its word, and the executor, names as code. */
 export function Who({ step }: { step: WorkflowStep }) {
   const { t } = useTranslation();
   return (
@@ -268,8 +268,8 @@ function Holds({ holds }: { holds: string }) {
 }
 
 /**
- * **The rail** (WORKFLOW1b; the workflow design §6.2, §6.4): a vertical list, the flowchart's narrow placement (FLOWCHART1d, the
- * flowchart design §5.1): the same marks, words, edge line, ↑/↓ and section titles. Steps are nodes and the rail is the edges.
+ * **The rail**: a vertical list, the flowchart's narrow placement:
+ * the same marks, words, edge line, ↑/↓ and section titles. Steps are nodes and the rail is the edges.
  * The rail's mark says who takes part, a shape each (`PartMark`), and each edge says what moves work on: the person's press, or
  * automatically. The plugins that may hold a start are drawn above the work, never as a step (design §3.2). *Before it lands* and
  * *After it lands* are small section titles, and the landing is the hinge between them: last before it.
@@ -347,10 +347,9 @@ function WorkflowRail({ workflow, page, name, doors, run, end, finished }: {
 }
 
 /**
- * **A workflow drawn as a flowchart** (WORKFLOW1b, FLOWCHART1d; D157 point 12 as D186 amends it, the flowchart design §2.4, §2.5,
- * §5.1): a layered graph laid out by Daoris on the canvas (`FlowChart`), top to bottom where the pane holds a step's 19rem, with the rail, today's
+ * **A workflow drawn as a flowchart**: a layered graph laid out by Daoris on the canvas (`FlowChart`), top to bottom where the pane holds a step's 19rem, with the rail, today's
  * list, as its narrow placement at the side bar's floor and wherever the person chose *Show as list*. No free positioning, no
- * panning and no zoom (D157's rejection stands).
+ * panning and no zoom.
  *
  * @remarks
  * **Its steps in their version's order** (`workflowFlow`): each a node with its kind's glyph and title, the person's part by its
@@ -358,12 +357,12 @@ function WorkflowRail({ workflow, page, name, doors, run, end, finished }: {
  * node's foot. A step that names what follows its failure or its refusal hangs that outcome on a dashed failure path. *Before it
  * lands* heads the drawing, with the plugins that may hold a start, and *After it lands* divides it where the landing hands on.
  * A Current's answer holds no group, so none is drawn for it; a run bound to a graph version answers its graph's wires and is drawn by
- * them, a fork and its join among them (FABRIC-CUTOVER1e).
+ * them, a fork and its join among them.
  *
  * **Read-only.** Current is the rules as they stand, so a step's door opens the Setup that sets it (design §4.7), Enter on its
  * node too, and nothing here edits.
  *
- * **A run is drawn on the same chart** (WORKFLOW1c, design §7; the flowchart design §2.5): handed `run`, each node wears where its
+ * **A run is drawn on the same chart**: handed `run`, each node wears where its
  * step stands, the one the run stands at current, one the work has not come to dashed, the end reached once the run finished; no
  * path is drawn, since a run keeps where each step stands now and not the order the work went through.
  *
@@ -381,7 +380,7 @@ export function WorkflowChart({ workflow, page, name, doors, run, end, finished 
   end?: ReactNode;
   /** A run's: it finished, so its end is reached. */
   finished?: boolean;
-  /** A run bound to a graph version's own graph (FABRIC-CUTOVER1e): the flowchart follows its wires, a fork and its join among them. */
+  /** A run bound to a graph version's own graph: the flowchart follows its wires, a fork and its join among them. */
   graph?: FlowGraph | null;
 }) {
   const { t } = useTranslation();

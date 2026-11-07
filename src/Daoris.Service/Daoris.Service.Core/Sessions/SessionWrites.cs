@@ -14,7 +14,7 @@ internal sealed class SessionWrites(SessionStore store)
 
     /// <summary>
     /// Record a new attempt, queued. Random id: two attempts at one quest are two records — and a
-    /// chat, which may name no quest at all, is the same record with a different way in (D49 §3).
+    /// chat, which may name no quest at all, is the same record with a different way in.
     /// </summary>
     public Task<Session> CreateAsync(
         string? quest, string repository, string adapter, DateTimeOffset now,
@@ -25,32 +25,32 @@ internal sealed class SessionWrites(SessionStore store)
         string? entryOrigin = null, string? entryPart = null, bool ownEntry = false, string? helpMode = null,
         IReadOnlyDictionary<string, string>? access = null, string? piece = null, string? actor = null) => _db.RunAsync<Session>(async () =>
     {
-        // A why or an asker with no session continued is no link (MIXAGENT1a-iii): the three are kept together or not at all.
+        // A why or an asker with no session continued is no link: the three are kept together or not at all.
         var continues = Blank(from);
         var id = Guid.NewGuid().ToString("N")[..8];
         var session = new Session(
             id, quest, repository, adapter,
             SessionState.Queued, null, null, null, now, now, Workspaces.Normalize(workspace), kind,
             // Written at creation and never again: these say what the spawn ran ON, AS and IN, and a
-            // later state change is about how it ended, not about what it was.
+            // later state change is about how it ended, not about what it is.
             Blank(doorVersion), Blank(profile), Trees.Normalize(tree), Blank(baseCommit))
         {
             Ask = Blank(ask),
             Actor = Blank(actor),
             Opinion = Blank(opinion),
             Serves = Blank(serves),
-            // A piece means nothing without the lead it serves (COAGENT1b): kept together or not at all.
+            // A piece means nothing without the lead it serves: kept together or not at all.
             Piece = Blank(serves) is null ? null : Blank(piece),
             From = continues,
             FromWhy = continues is null ? null : Blank(fromWhy),
             FromBy = continues is null ? null : Blank(fromBy),
-            // SESSONE1a: the key is the ledger's to decide, since the rule reads quests; this store writes what it is told. A caller that
+            // The key is the ledger's to decide, since the rule reads quests; this store writes what it is told. A caller that
             // tells it nothing leaves a record as one from before, which the reader answers a derived key and never writes back.
             Entry = ownEntry ? SessionEntries.Compose($"session:{id}", entryPart ?? repository)
                 : Blank(entryOrigin) is { } origin ? SessionEntries.Compose(origin, entryPart ?? repository) : null,
         };
-        // HELPMODE1a2: an Ask Daoris record told none reads as one from before does, restricted; any other record has none.
-        // AUTONOMY1a: the access setup as told, which the ledger judged a short map of words; none told keeps none.
+        // An Ask Daoris record told none reads as one from before does, restricted; any other record has none.
+        // The access setup as told, which the ledger judged a short map of words; none told keeps none.
         session = session with { HelpMode = Blank(helpMode) ?? HelpModeRead(repository, null), Access = access is { Count: > 0 } ? access : null };
 
         await using var command = _db.Command();
@@ -61,7 +61,7 @@ internal sealed class SessionWrites(SessionStore store)
         command.Parameters.AddWithValue("$entry", (object?)session.Entry ?? DBNull.Value);
         command.Parameters.AddWithValue("$actor", (object?)session.Actor ?? DBNull.Value);
         command.Parameters.AddWithValue("$access", (object?)SessionAccess.Written(session.Access) ?? DBNull.Value);
-        // What it was told only: a record told none keeps none, and reads as one from before.
+        // What it is told only: a record told none keeps none, and reads as one from before.
         command.Parameters.AddWithValue("$helpMode", (object?)Blank(helpMode) ?? DBNull.Value);
         command.Parameters.AddWithValue("$serves", (object?)session.Serves ?? DBNull.Value);
         command.Parameters.AddWithValue("$piece", (object?)session.Piece ?? DBNull.Value);
@@ -92,15 +92,15 @@ internal sealed class SessionWrites(SessionStore store)
     /// Move a session and attach what the move carries. An attachment left null keeps its old value:
     /// a later move must not erase the transcript an earlier one recorded.
     /// </summary>
-    /// <param name="interrupted">That this move ends it not by the person's hand (D104) — kept once said.</param>
-    /// <param name="limit">That an account's limit refused its turn (TOOL4c) — kept once said.</param>
-    /// <param name="clearSaid">That the person's words go with this move (ANSWER1b, MSG1a): the ledger's to say.</param>
+    /// <param name="interrupted">That this move ends it not by the person's hand — kept once said.</param>
+    /// <param name="limit">That an account's limit refused its turn — kept once said.</param>
+    /// <param name="clearSaid">That the person's words go with this move: the ledger's to say.</param>
     /// <param name="forgive">
-    /// That this move takes an ended record out of its ended state (MSG1a, D137 §2.3), so what ended it — a stop that was
+    /// That this move takes an ended record out of its ended state, so what ended it — a stop that is
     /// not the person's, a limit's failure — says nothing of the run that follows: both start unsaid again.
     /// </param>
     /// <param name="noteParts">
-    /// The note's parts, written with the note (LANG1a): a note written without them clears the record's, so an older
+    /// The note's parts, written with the note: a note written without them clears the record's, so an older
     /// driver's note never sits beside stale parts; a move that writes no note keeps both.
     /// </param>
     public Task<Session?> SetStateAsync(
@@ -124,7 +124,7 @@ internal sealed class SessionWrites(SessionStore store)
             Said = clearSaid ? [] : session.Said,
         };
 
-        // The words are cleared or left alone, never rewritten from what was read: a move is about the state.
+        // The words are cleared or left alone, never rewritten from what it read: a move is about the state.
         await using var command = _db.Command();
         command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, note_parts = $noteParts, evidence = $evidence,
@@ -148,7 +148,7 @@ internal sealed class SessionWrites(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Copy another machine's session record into this store, whole (D47 §6). The judgement already ran
+    /// Copy another machine's session record into this store, whole. The judgement already ran
     /// where the process lived — the ledger's rules governed the original — so a fed record upserts
     /// verbatim and is never re-judged. The caller keys it by origin + id and names the origin; the
     /// transcript never arrives, because no wire has a field for a machine path.
@@ -166,14 +166,14 @@ internal sealed class SessionWrites(SessionStore store)
               entry = COALESCE($entry, entry),
               revision = {NextRevision}
             """;
-        // SESSONE1a: the entry's key travels with the record (it names a line of work and a repository). A record from a machine from before
+        // The entry's key travels with the record (it names a line of work and a repository). A record from a machine from before
         // it brings none, which keeps whatever this one holds and otherwise leaves the reader to derive it.
         command.Parameters.AddWithValue("$entry", (object?)Blank(record.Entry) ?? DBNull.Value);
-        // CHATTAKE1: the quest a chat took travels with it; none from a machine from before.
+        // The quest a chat took travels with it; none from a machine from before.
         command.Parameters.AddWithValue("$tookQuest", (object?)Blank(record.TookQuest) ?? DBNull.Value);
-        // A limit names no account (TOOL4c), so it is copied like the state beside it.
+        // A limit names no account, so it is copied like the state beside it.
         command.Parameters.AddWithValue("$limited", record.Limit ? 1 : (object)DBNull.Value);
-        // The note's parts travel with the note, already cleaned where they left their machine (LANG1a).
+        // The note's parts travel with the note, already cleaned where they left their machine.
         command.Parameters.AddWithValue("$noteParts", (object?)record.NoteParts ?? DBNull.Value);
         // Whose record: named, or read from the id a mirror is always keyed by — never empty, because
         // a mirrored row with no origin would count as this machine's own and hold its trees.
@@ -182,7 +182,7 @@ internal sealed class SessionWrites(SessionStore store)
         command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(record.Workspace));
         command.Parameters.AddWithValue("$kind", record.Kind.ToString());
         // The version crosses; the PROFILE NAME and the TREE never do — machine-local, like the
-        // transcript beside them (D47 §4, D51). Written as literal NULLs rather than from the record,
+        // transcript beside them. Written as literal NULLs rather than from the record,
         // so a caller that filled either field cannot make it travel by accident.
         command.Parameters.AddWithValue("$doorVersion", (object?)record.DoorVersion ?? DBNull.Value);
         command.Parameters.AddWithValue("$id", record.Id);
@@ -198,13 +198,13 @@ internal sealed class SessionWrites(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Mark that this session took its quest itself (STANDDOWN2) — said by the session's own connector
+    /// Mark that this session took its quest itself — said by the session's own connector
     /// at the moment of the take. False when there is no such record of this machine's.
     /// </summary>
     public Task<bool> MarkTookAsync(string id, string? quest = null, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
         await using var command = _db.Command();
-        // CHATTAKE1: a chat has no quest of its own, so the quest it took is named here, which keeps an earlier take's id when none is said.
+        // A chat has no quest of its own, so the quest it took is named here, which keeps an earlier take's id when none is said.
         // The revision moves only with a quest named, so the team's copy of the chat learns it at the next push.
         command.CommandText = quest is null
             ? "UPDATE sessions SET took = 1 WHERE id = $id AND origin IS NULL"
@@ -214,7 +214,7 @@ internal sealed class SessionWrites(SessionStore store)
         return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) != 0;
     }, ct);
 
-    /// <summary>D205's later door: this machine's record only, without a sync revision. Omitted members keep their value.</summary>
+    /// <summary>The actor's provenance door: this machine's record only, without a sync revision. Omitted members keep their value.</summary>
     public Task<bool> KeepActorAsync(string id, string? choice, JsonElement? asked, JsonElement? changed, JsonElement? ran,
         JsonElement? chosen = null, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
@@ -234,7 +234,7 @@ internal sealed class SessionWrites(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Add the downloaded versions a start of this machine's record was handed (KEEP1b) to those its earlier starts were, in order, in one
+    /// Add the downloaded versions a start of this machine's record gets to those its earlier starts got, in order, in one
     /// read and write. Blind, like every write here: that each is a version's key is the ledger's to judge. No revision, since nothing that
     /// travels changed. False when there is no such record of this machine's.
     /// </summary>
@@ -288,7 +288,7 @@ internal sealed class SessionWrites(SessionStore store)
 
     /// <summary>
     /// Write this machine's record's review whole. A read, then the write it decides: the ledger and the exchange call it inside
-    /// <see cref="SessionStore.ExclusiveAsync{T}"/> (REV3). No revision, since nothing that travels changed. False when there is no such record.
+    /// <see cref="SessionStore.ExclusiveAsync{T}"/>. No revision, since nothing that travels changed. False when there is no such record.
     /// </summary>
     public Task<bool> KeepReviewAsync(string id, SessionReview review, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>
     {
@@ -300,7 +300,7 @@ internal sealed class SessionWrites(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Mark these records as gone up to a remote (SESSUX1f, D126 §5.4), once a push took them. No revision moves: the mark
+    /// Mark these records as gone up to a remote, once a push took them. No revision moves: the mark
     /// is this machine's fact about the record, not a change to it, so the next push does not send it again. An id with
     /// no record of this machine's is passed over.
     /// </summary>
@@ -332,9 +332,9 @@ internal sealed class SessionWrites(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Remove a record whole (SESSUX1f, D126 §5.4). Blind, like every write here: whether a record may go is the ledger's
-    /// judgement, made before this is asked. False when there was none.
-    /// <para>KEEPSIZE1b (the keep-size design §2.2): its links to finished trees' records go with it, and a record left with no session,
+    /// Remove a record whole. Blind, like every write here: whether a record may go is the ledger's
+    /// judgement, made before this is asked. False when there is none.
+    /// <para>Its links to finished trees' records go with it, and a record left with no session,
     /// in the same transaction, as the history clear's and the single delete's callers hold it.</para>
     /// </summary>
     public Task<bool> DeleteAsync(string id, CancellationToken ct = default) => _db.InTransactionAsync<bool>(async (_, inside) =>
@@ -349,7 +349,7 @@ internal sealed class SessionWrites(SessionStore store)
 
     /// <summary>
     /// The finished trees' records no session names in <paramref name="workspace"/>, kept at or before <paramref name="through"/>, gone with a
-    /// clear of history (KEEPSIZE1b, the keep-size design §2.2), inside its transaction; how many went.
+    /// clear of history, inside its transaction; how many went.
     /// </summary>
     public Task<int> ForgetOrphanRecordsAsync(string workspace, DateTimeOffset through, CancellationToken ct = default) =>
         _db.RunAsync(() => WorkRecordStore.ForgetOrphansAsync(_db, workspace, through, ct), ct);

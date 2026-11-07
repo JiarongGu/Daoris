@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// FOUNDATION1 row k part 1 (D212, the foundation design §4.1, §19.12): the schema of the service's event journal, <c>event_journal</c>, and
+/// The schema of the service's event journal, <c>event_journal</c>, and
 /// the triggers on <c>sessions</c> that mint it. One row per raw transition of a record this machine owns, in the order the statements
 /// committed (<c>position</c>, never reused), read by nothing yet.
 /// </summary>
@@ -22,11 +22,11 @@ namespace Daoris.Knowledge;
 /// 64 and one <c>words-overflow</c> row with the count past them.</para>
 ///
 /// <para><b>The moves.</b> A <c>state</c> row is a move of the state, carrying the limit flag on either side; a <c>limited</c> row is the flag
-/// moving with the state where it was, so a move that also limits is one row.</para>
+/// moving where the state stays, so a move that also limits is one row.</para>
 ///
 /// <para><b>Part 2</b> adds the triggers of the quest log (<see cref="QuestLogSchema"/>), the asks (<see cref="AsksSchema"/>) and the channel
 /// (<see cref="ChannelSchema"/>) in the same shape, each in its own store's schema after <see cref="Table"/>, which every one of them runs
-/// first, and the change stream's <c>journal</c> family that wakes a reader who asks for it. <c>line_code</c> stays empty: it was set aside for
+/// first, and the change stream's <c>journal</c> family that wakes a reader who asks for it. <c>line_code</c> stays empty: it is set aside for
 /// Daoris's lines, which are read from the quests per read and never stored.</para>
 /// </remarks>
 internal static class EventJournal
@@ -202,7 +202,7 @@ internal static class EventJournal
         """;
 
     /// <summary>
-    /// The quests cache's triggers (EVENTHOOK1d-i, D244 point 1): an <c>opened</c> row where the replay begins a quest (a publish, or a
+    /// The quests cache's triggers: an <c>opened</c> row where the replay begins a quest (a publish, or a
     /// publish after a delete) and a <c>state</c> row for each move of its status, whoever's operation the replay wrote: this machine's, a
     /// remote's integrated by sync, or a rebase that lost this machine's close. The cache is written whole in the operation's transaction,
     /// so its move is the quest's move; an operation kept that moves nothing rewrites the row with the same status and journals nothing.
@@ -255,7 +255,7 @@ internal static class EventJournal
         """;
 
     /// <summary>
-    /// The memory log's triggers (KNOWCENTRAL2c, the memory coordinator design §3): a <c>memory</c> row for each operation kept and each move
+    /// The memory log's triggers: a <c>memory</c> row for each operation kept and each move
     /// of its state, naming the operation, its kind, its target or the entry it wrote, its session and scope; never its text, reason or
     /// repository. Waking the journal's readers wakes the applier, and the journal never travels.
     /// </summary>

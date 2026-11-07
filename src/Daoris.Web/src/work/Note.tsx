@@ -9,8 +9,7 @@ import { noteBlocks, noteLines } from './noteLines';
 const CLAMP = { 2: 'line-clamp-2', 3: 'line-clamp-3', 4: 'line-clamp-4' } as const;
 
 /**
- * A session's note, in the reader's language where it is Daoris's and as written where it is someone's (LANG1b, D142
- * points 1, 4, 5; the language design §2, §5, §6, §9).
+ * A session's note, in the reader's language where it is Daoris's and as written where it is someone's.
  *
  * @remarks
  * **Daoris's lines are chrome**: each coded part is worded from the catalogue with its values, and they run together as
@@ -25,13 +24,13 @@ const CLAMP = { 2: 'line-clamp-2', 3: 'line-clamp-3', 4: 'line-clamp-4' } as con
  * A molecule: handed the record's note and parts, it reads the catalogue and nothing else.
  */
 export function Note({ parts, className, clamp, compact = false, names }: {
-  /** What the person calls each account, by id, for a note that names one (NOTENAME1); absent, an id is said as written. */
+  /** What the person calls each account, by id, for a note that names one; absent, an id is said as written. */
   names?: AccountNames;
-  /** The note's lines, as the record answers them (LANG1a). */
+  /** The note's lines, as the record answers them. */
   parts?: readonly NotePart[] | null;
   /** The type step and ink its words are set in, which the place showing it chooses. */
   className?: string;
-  /** How many lines show before the rest is cut: the timeline's four (UX6b), the head's three, a row's two. Absent, the whole note. */
+  /** How many lines show before the rest is cut: the timeline's four, the head's three, a row's two. Absent, the whole note. */
   clamp?: 2 | 3 | 4;
   /** One run of words, for a row too narrow for blocks: someone's words inline rather than set apart. */
   compact?: boolean;
@@ -77,7 +76,7 @@ export function Note({ parts, className, clamp, compact = false, names }: {
   );
 }
 
-/** The mark on a line the page could not word: its record's own words, shown as kept (D142 points 4, 5). */
+/** The mark on a line the page could not word: its record's own words, shown as kept. */
 function Recorded() {
   const { t } = useTranslation();
   return (

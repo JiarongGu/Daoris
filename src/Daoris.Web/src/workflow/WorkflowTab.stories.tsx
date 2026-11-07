@@ -8,14 +8,14 @@ import {
 import { FAILED_GATE, lineOf, UNKNOWN_HELD, VERIFIED } from './verify/lineFixtures';
 import { WorkflowTab } from './WorkflowTab';
 
-// The Workflow tab (WORKFLOW1b; D157 point 12, the workflow design §6.1, §6.2, §6.4), every state the design names drawn
+// The Workflow tab, every state the design names drawn
 // from props: nothing set anywhere, a repository with everything at once, a step whose plugin is not ready, a workspace with
 // its repositories, its registry unread, the answer on its way and refused, a kind and a limit a newer driver draws, 中文,
 // dark, and the main area at a 680 px window and at its 400 px floor.
 
 const nothing = () => {};
 
-// The main area at the frame's widths (the UI/UX design R6, UIFIT1): `storyWidths.half` is about 630 px, a 680 px
+// The main area at the frame's widths: `storyWidths.half` is about 630 px, a 680 px
 // window with the list a strip beside it, and `storyWidths.narrow` the 400 px floor.
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
@@ -32,7 +32,7 @@ type Story = StoryObj<typeof WorkflowTab>;
 
 /**
  * **Everything at once**: a plugin that may hold a start, the work with the standing answer, the workspace's second opinion
- * (in part, since XAGENT1f's gate), the repository's look in `dev` (in part), an automatic landing on a branch, and the pull request its plugin
+ * (in part), the repository's look in `dev` (in part), an automatic landing on a branch, and the pull request its plugin
  * opens, which the person merges. Each step's door opens the Setup that sets it.
  */
 export const FullRepository: Story = {};
@@ -102,7 +102,7 @@ export const AtTheFloor: Story = { decorators: [storyWidths.narrow] };
 export const AtTheFloorChineseDark: Story = { decorators: [storyWidths.narrow, chinese, dark] };
 
 /**
- * **A failure path** (FLOWCHART1d): a newer driver's check after the pull request, which this build runs none of, so its kind has
+ * **A failure path**: a newer driver's check after the pull request, which this build runs none of, so its kind has
  * no words here; its failure, sent back once, then you, a dashed edge to its outcome beside the end of the line. Wide, a rank of
  * two fits; at a 680 px window and the floor it is the rail, the outcome said under its step.
  */
@@ -113,16 +113,16 @@ export const AFailurePathAtTheFloorChineseDark: Story = {
 };
 
 /**
- * **The start node first** (FABRIC-PIPELINE1a; the pipeline design §1.3): the default to Current, Documentation to its own workflow by
+ * **The start node first**: the default to Current, Documentation to its own workflow by
  * the workspace's choice, and the work that lands to `Verify the line`, its gates accepted at the line's tip; then the steps.
  */
 export const Routed: Story = { args: { current: ROUTED, onAcceptGates: nothing } };
 
-/** **Verify…** (FABRIC-PIPELINE1d part 5): the gates accepted, so the person may verify a branch or a commit of the repository. */
+/** **Verify…**: the gates accepted, so the person may verify a branch or a commit of the repository. */
 export const WithVerify: Story = { args: { current: ROUTED, onAcceptGates: nothing, onVerify: (_ask, answered) => answered.done() } };
 export const WithVerifyChinese: Story = { ...WithVerify, decorators: [chinese] };
 
-/** **Verifications** (FABRIC-PIPELINE1d): under the start node, the repository's verifications and their verdicts, one held for the person. */
+/** **Verifications**: under the start node, the repository's verifications and their verdicts, one held for the person. */
 export const WithVerifications: Story = {
   args: {
     ...WithVerify.args,
@@ -131,7 +131,7 @@ export const WithVerifications: Story = {
 };
 export const WithVerificationsChineseDark: Story = { ...WithVerifications, decorators: [chinese, dark] };
 
-/** The declaration at the tip changed since it was accepted: shown whole, nothing runs, and *Accept the gates* is the person's. */
+/** The declaration at the tip changed since its acceptance: shown whole, nothing runs, and *Accept the gates* is the person's. */
 export const GatesChanged: Story = { args: { current: { ...ROUTED, start: GATES_CHANGED }, onAcceptGates: nothing } };
 
 /** No landed route anywhere: the work that lands goes to *No verification here*, today's. */

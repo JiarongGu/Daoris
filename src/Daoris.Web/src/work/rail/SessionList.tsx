@@ -20,33 +20,33 @@ export type SessionRowFacts = {
   session: Session;
   /** The quest it serves, where the list holds it. */
   quest?: Quest | null;
-  /** What the person first said in it (RAIL1). */
+  /** What the person first said in it. */
   opening?: string | null;
-  /** Whether a turn is in flight, as the driver says (UX5 U17). */
+  /** Whether a turn is in flight, as the driver says. */
   taking?: boolean;
-  /** When its last turn ended here (RAIL2). */
+  /** When its last turn ended here. */
   lastTurn?: string | null;
   /** Its repository's checkout, to tell a tree of its own from the root. */
   root?: string | null;
-  /** Where its work is now (LOOK2b). */
+  /** Where its work is now. */
   where?: SessionWhere | null;
   /** Whose work a second opinion's reviewer reads, by that session's title (XAGENT1g4c). */
   reads?: string | null;
-  /** The session it continues, by that session's title, where the rail joined them (MIXAGENT3a-i). */
+  /** The session it continues, by that session's title, where the rail joined them. */
   continues?: string | null;
-  /** The session a helper helps, by that session's title, where the rail joined them (MIXAGENT3a-i). */
+  /** The session a helper helps, by that session's title, where the rail joined them. */
   helps?: string | null;
   /** What a helper or a part that continues another spent, from this machine's record; absent where none answered. */
   spent?: PartSpent | null;
-  /** The entry's name where it is not the record's own: the ask's (SESSONE1c, D167). Not drawn by ask, whose heading says it. */
+  /** The entry's name where it is not the record's own: the ask's. Not drawn by ask, whose heading says it. */
   name?: string | null;
-  /** The entry this row stands for (SESSONE1c): how many parts it holds, and all their ids, so any part attended marks the row. */
+  /** The entry this row stands for: how many parts it holds, and all their ids, so any part attended marks the row. */
   entry?: EntryFacts | null;
-  /** Its part in its repository's heavy-run slot (HEAVYSLOT1), where it holds it or waits for it. */
+  /** Its part in its repository's heavy-run slot, where it holds it or waits for it. */
   heavy?: HeavyPart | null;
   /** When a line its account's limit cut off goes on by itself, and on which account (LIMITRESUME1d2, `limitWaitLines`' first). */
   limitWait?: string | null;
-  /** The title of the session its wait is behind, where the rail holds it (HEAVYSLOT1); absent, its id. */
+  /** The title of the session its wait is behind, where the rail holds it; absent, its id. */
   heavyBehind?: string | null;
 };
 
@@ -60,7 +60,7 @@ export type RepositoryFacts = {
   hasCheckout?: boolean;
 };
 
-/** A row's choice and its menu, the rail's (RAIL1; SESSUX1d, D126 §3.1): each told the session it was pressed for. */
+/** A row's choice and its menu, the rail's: each told the session it is pressed for. */
 type RowActs = {
   onSelect?: (id: string) => void;
   /** The acts the one rule offers each session (`offeredActs`), in their order; absent, the rows have no menu. */
@@ -69,23 +69,23 @@ type RowActs = {
 };
 
 /**
- * **Sessions' list** (SESSUX1c, D126 §2.1, §4): by state, the default, in the groups the driver's one reader answers,
- * or by repository, the arrangement it had before.
+ * **Sessions' list**: by state, the default, in the groups the driver's one reader answers,
+ * or by repository.
  *
  * @remarks
- * **A molecule: every state is reached by its props** (components plan §2). The rail above it holds the queries and
+ * **A molecule: every state is reached by its props**. The rail above it holds the queries and
  * hands it the records, the reader's answer and what each row needs; this file only draws them.
  *
- * - **By state** (§4.2): *Waiting on you*, *To review*, *Working*, *Resumes later* and *Ended*, each a `ListGroup` with
+ * - **By state**: *Waiting on you*, *To review*, *Working*, *Resumes later* and *Ended*, each a `ListGroup` with
  *   its count, in the reader's order, and *Archived* last where it is shown. No group header names a repository, so a
  *   row's line does, and the headers carry no repository facts (*drives here*, *held*, *busy*): those belong to a
  *   repository, on the view by repository and on Repositories' page.
- * - **By repository** (§4.3): a group per repository with its facts, *waiting on you* first and *parked* with it, and
- *   *Ended* beneath. Live (the monitor's), it lists only what is running (UX5 U70).
- * - **Ended** shows twelve and then *Show N more* (§4.4), and never cuts the attended session out of its group.
- * - **Archived** (SESSUX1e, §5.2) is drawn while *Show archived* is ticked, and says so where nothing is archived. An
+ * - **By repository**: a group per repository with its facts, *waiting on you* first and *parked* with it, and
+ *   *Ended* beneath. Live (the monitor's), it lists only what is running.
+ * - **Ended** shows twelve and then *Show N more*, and never cuts the attended session out of its group.
+ * - **Archived** is drawn while *Show archived* is ticked, and says so where nothing is archived. An
  *   archived row under no Archived heading (by repository) says it is archived on its line.
- * - **A helper and a reviewer under the work they serve** (MIXAGENT3a-ii, the mixed-agents design §4), in every arrangement:
+ * - **A helper and a reviewer under the work they serve**, in every arrangement:
  *   moved there out of their own group (`nestServing`), so a group counts the rows it draws as its own, and their lines leave
  *   whose work it is to the row above. Where that row is not drawn, or the person must act on them, they keep their place.
  */
@@ -94,19 +94,19 @@ export function SessionList({
   entries, askNames = {}, unread = {}, askAccept, serving = {},
 }: RowActs & {
   /**
-   * The session whose work each helper and reviewer serves, by the helper's or reviewer's id, as the rail joined them
-   * (MIXAGENT3a-ii): a helper's `serves`, a reviewer's opinion's `working`. Absent, every row is its own.
+   * The session whose work each helper and reviewer serves, by the helper's or reviewer's id, as the rail joined them:
+   * a helper's `serves`, a reviewer's opinion's `working`. Absent, every row is its own.
    */
   serving?: Readonly<Record<string, string>>;
-  /** What is unread on each ask's channel, by its id (SESSONE2c, D167), said in the heading *by ask* draws; none where no driver says. */
+  /** What is unread on each ask's channel, by its id, said in the heading *by ask* draws; none where no driver says. */
   unread?: Readonly<Record<string, number>>;
   /**
-   * An ask's one Accept under its heading *by ask* (ACCEPTALL1, D167's 2026-10-15 amendment), drawn by the rail, which holds its
+   * An ask's one Accept under its heading *by ask*, drawn by the rail, which holds its
    * plan and press; null where the ask offers none. Not a row, so the list's arrows pass it by.
    */
   askAccept?: (ask: string) => ReactNode;
   arrangement: SessionArrangement;
-  /** The reader's entries (SESSONE1c, D167): what *by ask* groups by. Absent, the list by ask is the list by state. */
+  /** The reader's entries: what *by ask* groups by. Absent, the list by ask is the list by state. */
   entries?: readonly SessionEntry[];
   /** Each ask's name by its id (`askName`), for the headings *by ask* draws; an ask the page does not hold is named by its id. */
   askNames?: Readonly<Record<string, string>>;
@@ -116,9 +116,9 @@ export function SessionList({
   groupings?: readonly SessionGrouping[];
   /** The attended session, held by the frame. */
   selected?: string | null;
-  /** Whether archived sessions are shown (§4.1). */
+  /** Whether archived sessions are shown. */
   archived?: boolean;
-  /** The present tense only (the monitor's, UX5 U70): no ended section. By repository. */
+  /** The present tense only (the monitor's): no ended section. By repository. */
   live?: boolean;
   /** Each repository group's facts, by repository; absent, the groups assert none. */
   repositoryFacts?: (repository: string, sessions: readonly Session[]) => RepositoryFacts;
@@ -137,8 +137,8 @@ export function SessionList({
     return facts.session.repository;
   };
 
-  // `underArchived`: the row is drawn under the Archived heading, which already says what its line would (§4.5). `parent`: the
-  // row it is drawn under (MIXAGENT3a-ii), which says whose work it serves and, where it is the same, the repository.
+  // `underArchived`: the row is drawn under the Archived heading, which already says what its line would. `parent`: the
+  // row it is drawn under, which says whose work it serves and, where it is the same, the repository.
   const row = (session: Session, byState: boolean, underArchived = false, byAsk = false, parent?: Session) => {
     const facts = factsOf.get(session.id) ?? { session };
     const grouping = live ? null : placed.get(session.id);
@@ -154,7 +154,7 @@ export function SessionList({
         grouping={grouping}
         place={byState && parent?.repository !== session.repository ? placeOf(facts) : null}
         archived={Boolean(grouping?.archived) && !underArchived}
-        // The entry is attended while any of its parts is: the strip on its page picks which one (SESSONE1c).
+        // The entry is attended while any of its parts is: the strip on its page picks which one.
         selected={session.id === selected || Boolean(selected && facts.entry?.ids.includes(selected))}
         onSelect={onSelect && ((id) => onSelect(opensOf(entries, id)))}
         acts={actsFor?.(session)}
@@ -163,7 +163,7 @@ export function SessionList({
     );
   };
 
-  // Each helper and reviewer under the row of the work it serves (MIXAGENT3a-ii): that work's entry's row where entries are
+  // Each helper and reviewer under the row of the work it serves: that work's entry's row where entries are
   // answered, and never one the reader says waits on the person or is to review.
   const nest = (drawn: readonly (readonly Session[])[]) => nestServing(drawn, serving, {
     standsFor: (id) => entryOfSession(entries, id)?.leading ?? id,
@@ -188,7 +188,7 @@ export function SessionList({
     );
   };
 
-  // The rest of a long Ended group, on a press (§4.4): counted, never silently cut, and never the row the attended one is under.
+  // The rest of a long Ended group, on a press: counted, never silently cut, and never the row the attended one is under.
   const ended = (all: readonly NestedRow[], byState: boolean, underArchived = false): ReactNode => {
     const keep = all.find((each) => each.under.some((child) => child.id === selected))?.id ?? selected;
     const { rows: shown, hidden } = cutEnded(all, { limit: ENDED_SHOWN, open: allEnded, keep });
@@ -210,7 +210,7 @@ export function SessionList({
     return <EmptyState icon="inbox" headline={t('work.rail.empty.headline')} body={t('work.rail.empty.body')} />;
   }
 
-  // By ask (D167 point 5): each ask a heading, its entries under it with their repositories, what no ask began last.
+  // By ask: each ask a heading, its entries under it with their repositories, what no ask began last.
   if (arrangement === 'ask' && entries && !live) {
     const byAsk = sessionsByAsk(sessions, entries, { selected, archived });
     const nested = nest(byAsk.map((group) => group.sessions));
@@ -220,7 +220,7 @@ export function SessionList({
         {asks.map(({ ask, members }) => {
           const accept = ask === null ? null : askAccept?.(ask);
           return (
-            // What is unread on the ask's channel is said in its heading (SESSONE2c, D167): the person's count, not any session's.
+            // What is unread on the ask's channel is said in its heading: the person's count, not any session's.
             <ListGroup
               key={ask ?? 'none'}
               title={ask === null

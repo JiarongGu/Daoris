@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { type QueryKey, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// The remaining presses (STATEHUB1h, D169): each hook below asked again by hand, after its press, what its route now declares it
+// The remaining presses: each hook below is checked not to ask again by hand, after its press, what its route declares it
 // changes. The route publishes it, and the window's state hub asks it again, as every other window's does; the hook asks
 // nothing again itself. The mocked shell publishes what each press declares, as `StatePublisher` does (`test/publishing.ts`).
 
@@ -41,7 +41,7 @@ import { ALL_TOOLS, useToolDelete, useToolDownload, useToolLocation, useToolsLoo
 
 type Press = { mutateAsync: (variables: never) => Promise<unknown> };
 
-/** Each hook, what it is pressed with, and the family it used to ask again by hand. */
+/** Each hook, what it is pressed with, and the family its route declares. */
 const presses: [hook: string, usePress: () => Press, variables: unknown, family: QueryKey[]][] = [
   ['useSetLine', useSetLine, { repository: 'engine', branch: 'main' }, [keys.lines]],
   ['useSetLanguage', useSetLanguage, { repository: 'engine', language: 'en' }, [keys.lines]],
@@ -51,14 +51,14 @@ const presses: [hook: string, usePress: () => Press, variables: unknown, family:
   ['useSetHelpers', useSetHelpers, { repository: 'engine' }, [keys.lines]],
   ['useSetReadAcross', useSetReadAcross, { repository: 'engine', read: true }, [keys.across]],
   ['useSetWriteAcross', useSetWriteAcross, { repository: 'engine', to: 'game', allow: true }, [keys.across]],
-  // MODELROLE1d, ONEWAY1a: Intake's order, set by the role door, moves what an intake in each circle runs on, as SET_INTAKE's did.
+  // Intake's order, set by the role door, moves what an intake in each circle runs on.
   ['useSetRole', useSetRole, { change: 'set', id: 'intake', choices: [{ agent: 'claude-code' }] }, [keys.allStarts]],
   ['useTrustFolder', useTrustFolder, { folder: 'engine', trustFile: 'trust.json' }, [keys.driver]],
   ['useAccountUse', useAccountUse, { door: 'claude-code', action: 'use' }, [keys.accounts, keys.harnesses]],
   ['useHarnessAction', useHarnessAction, { door: 'claude-code', action: 'profile-rename', profile: 'work' },
     [keys.harnesses, keys.accounts]],
   ['useSetAgentSettings', useSetAgentSettings, { door: 'claude-code', profile: 'work', model: 'opus' }, [keys.harnesses]],
-  // HARNESSREFRESH1: *Read again* moved the roster, the starts an account's reading lets through and the accounts, which sit under it.
+  // *Read again* moves the roster, the starts an account's reading lets through and the accounts, which sit under it.
   ['useRefreshHarnesses', useRefreshHarnesses, { agent: 'claude-code', profile: 'work' }, [keys.harnesses, keys.allStarts, keys.accounts]],
   ['usePostChannel', usePostChannel, { ask: 'a1', post: { text: 'hi' } }, [channelKey('a1')]],
   ['useParkGoAhead', useParkGoAhead, { id: 's1', ask: 'a1', number: 1, approved: true }, [keys.allSessions, keys.allAsks]],
@@ -67,7 +67,7 @@ const presses: [hook: string, usePress: () => Press, variables: unknown, family:
   ['useToolDelete', useToolDelete, { tool: 'git', version: '2.46.0' }, [[...ALL_TOOLS, 'list', false]]],
   ['useToolsLook', useToolsLook, 1, [[...ALL_TOOLS, 'list', true]]],
   ['useToolLocation', useToolLocation, { action: 'add', address: 'https://tools.example' }, [[...ALL_TOOLS, 'list', false]]],
-  // BROWSERPUBLISH1: the browser module's own presses (`DAORIS.BROWSER`), each answering the whole state it also declares.
+  // The browser module's own presses (`DAORIS.BROWSER`), each answering the whole state it also declares.
   ['useAddFavorite', useAddFavorite, { address: 'https://example.com' }, [keys.browserSettings]],
   ['useRemoveFavorite', useRemoveFavorite, { address: 'https://example.com' }, [keys.browserSettings]],
   ['useSetExtensions', useSetExtensions, { extensions: 'refuse' }, [keys.browserSettings]],
@@ -117,7 +117,7 @@ describe('the remaining presses, heard through the state hub (STATEHUB1h)', () =
   });
 
   /**
-   * A go-ahead refused as an error publishes nothing (D169 point 5), yet the park may not have gone on after its go-ahead was
+   * A go-ahead refused as an error publishes nothing, yet the park may not have gone on after its go-ahead is
    * answered: the window that pressed asks the sessions and the asks again itself.
    */
   it('asks the sessions and the asks again itself after a go-ahead refused as an error', async () => {

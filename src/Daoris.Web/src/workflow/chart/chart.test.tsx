@@ -12,7 +12,7 @@ import { StepNode } from './StepNode';
 import { Terminal } from './Terminal';
 import type { ChartNode, ChartStep } from './stepKinds';
 
-// FLOWCHART2a (D223): the chart's components. Each draws one kind of node as the canvas hands it over: the same list item, tab stop and
+// The chart's components. Each draws one kind of node as the canvas hands it over: the same list item, tab stop and
 // description as every node, and a decision's outcomes as ports a keyboard presses. jsdom lays nothing out, so the geometry is the
 // measured-box check's.
 
@@ -250,7 +250,7 @@ describe('the release workflow through the components', () => {
   });
 });
 
-// CANVAS1b (D224): a chart read selects a step too, one at a time; a press with Ctrl or Shift is told to the editor, which alone chooses many.
+// A chart read selects a step too, one at a time; a press with Ctrl or Shift is told to the editor, which alone chooses many.
 describe('selection', () => {
   const chart = (props: Partial<React.ComponentProps<typeof FlowChart>> = {}) => {
     const flow = graphFlow(t, drawnFromJson(t, i18n, RELEASE_GRAPH), { label: 'How work moves' });
@@ -302,7 +302,7 @@ describe('selection', () => {
   });
 });
 
-// FLOWCHART2b (D223 §3): the chart as the editor draws it. A step pressed is selected; a port pressed or dragged from starts its way, which a
+// The chart as the editor draws it. A step pressed is selected; a port pressed or dragged from starts its way, which a
 // step that can take it picks or open ground gives a new step; a ◎ and each way the editor offers one wear a ＋.
 describe('the chart in the editor', () => {
   const edit = (more: Partial<ChartEdit> = {}): ChartEdit => ({

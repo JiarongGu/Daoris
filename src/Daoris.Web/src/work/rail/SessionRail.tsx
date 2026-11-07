@@ -31,28 +31,28 @@ import { namer } from '../../settings/accounts/namer';
 import { limitWaitLines } from '../waits/limitWait';
 
 /**
- * The rail: Sessions' list, by state or by repository (SESSUX1c, D126 §4), and its search (RAIL1).
+ * The rail: Sessions' list, by state or by repository, and its search.
  *
  * @remarks
- * **An organism — it holds the hooks so the molecules below it hold none** (components plan §2).
+ * **An organism — it holds the hooks so the molecules below it hold none.**
  * That is the whole arrangement: `SessionList`, its rows and its group headers are reviewable in every
  * state without a service or a driver, and this file is the one place that knows where their props come from.
  *
  * **Selection is not held here.** The rail is told which session is attended and reports a choice,
- * because one selection binds every region of the Work frame (IDE study §3) and a frame cannot
+ * because one selection binds every region of the Work frame and a frame cannot
  * bind a selection its rail keeps to itself.
  *
- * **By state, a session is where the driver's one reader places it** (`useSessionGroups`, D126 §2.4): the page asks
+ * **By state, a session is where the driver's one reader places it** (`useSessionGroups`): the page asks
  * and never derives a group of its own. A record the reader has not answered for yet, or every record while no answer
  * has come, is placed by its record alone (`groups.ts`) until the next answer. **A browser has no driver to ask**, so
- * its list is the arrangement it always had, by repository (D47 §4); and the monitor's list, the present tense only,
+ * its list is the arrangement by repository; and the monitor's list, the present tense only,
  * asks nothing and keeps it too.
  *
- * **A row's acts are the one owner's** (SESSUX1d, D126 §3.1): each row is offered what the one rule offers it
+ * **A row's acts are the one owner's**: each row is offered what the one rule offers it
  * (`offeredActs`), and a press goes to `useSessionActs`, which the page header calls too. What only the frame can do
  * (attend and answer, attend and ask to stop, review, a terminal there) goes through the frame's `doors`. The monitor's
  * list, the present tense on a second screen, offers only its window and its id: the moves stay in the main window.
- * *Archive what ended…*'s second press is the owner's too (SESSUX1e, §5.3).
+ * *Archive what ended…*'s second press is the owner's too.
  */
 export function SessionRail({
   selected = null, onSelect, notify, compact = false, doors, taking = {}, lastTurns = {}, live = false,
@@ -63,41 +63,41 @@ export function SessionRail({
   onSelect?: (id: string) => void;
   notify: Notify;
   /**
-   * The rail closed to its 56px strip (FRAME6): what waits on the person, then what runs, as its initial and its mark,
-   * in the open rail's order (D126 §2.5). What ended is left to the open rail.
+   * The rail closed to its 56px strip: what waits on the person, then what runs, as its initial and its mark,
+   * in the open rail's order. What ended is left to the open rail.
    */
   compact?: boolean;
   /**
-   * What only the frame can do with a session (SESSUX1d): attend it and open its answer's box, attend it and ask to stop
+   * What only the frame can do with a session: attend it and open its answer's box, attend it and ask to stop
    * it, review it in the dock, open a terminal in its folder. Absent, a row offers none of them.
    */
   doors?: SessionDoors;
   /**
    * Whether each live conversation has a turn in flight, as the driver says — the frame's, which
-   * follows them for its composer too (UX5 U17). A chat between turns reads idle; one absent here
+   * follows them for its composer too. A chat between turns reads idle; one absent here
    * keeps its record's word.
    */
   taking?: Record<string, boolean>;
-  /** When each live conversation's last turn ended here (RAIL2): a row's *moved* reads the later of it and the record. */
+  /** When each live conversation's last turn ended here: a row's *moved* reads the later of it and the record. */
   lastTurns?: Record<string, string>;
   /**
    * The present tense only: no ended section, and a search that finds only what is running. The
    * monitor's, whose tiles are the running sessions a press scrolls to; an ended row there scrolled
-   * to a tile that is not there (UX5 U70). By repository, and asking no reader.
+   * to a tile that is not there. By repository, and asking no reader.
    */
   live?: boolean;
-  /** By state, the default, or by repository (D126 §4.1): the list's ⋯, remembered by the frame. */
+  /** By state, the default, or by repository: the list's ⋯, remembered by the frame. */
   arrangement?: SessionArrangement;
-  /** Whether archived sessions are shown (D126 §4.1). */
+  /** Whether archived sessions are shown. */
   archived?: boolean;
   /**
-   * *Archive what ended…* pressed in the list's ⋯ (SESSUX1e, D126 §5.3): its first press, listed under the list's header
+   * *Archive what ended…* pressed in the list's ⋯: its first press, listed under the list's header
    * until it archives or the person never minds, which `onArchiveEnded` tells the frame.
    */
   archiveEnded?: boolean;
   onArchiveEnded?: () => void;
   /**
-   * The group a door into what waits on the person names (ENTRY1b): *Waiting on you* or *To review*, brought into view once
+   * The group a door into what waits on the person names: *Waiting on you* or *To review*, brought into view once
    * the records and the reader have answered, and `onGroupBrought` told, whether this rail drew it or not.
    */
   group?: OpenGroup | null;
@@ -107,7 +107,7 @@ export function SessionRail({
   // Closed records included, then filtered here: the rail needs the attended one whatever state it
   // reached, and this is the query key the quest view already warms.
   const pulled = useSessions(null, true);
-  // Ask Daoris's records (`daoris:help`) are no session of this list (ASKRAIL1): they are reached from Ask Daoris's panel and its
+  // Ask Daoris's records (`daoris:help`) are no session of this list: they are reached from Ask Daoris's panel and its
   // history, so the list, its groups, its entries and its search never hold them.
   const helpIds = useMemo(() => new Set((pulled.data ?? []).filter(isHelp).map((session) => session.id)), [pulled.data]);
   const sessions = useMemo(
@@ -117,32 +117,32 @@ export function SessionRail({
   const quests = useQuests(null, true);
   const registry = useRegistry();
   const driver = useDriver();
-  // Each act on a row, by the one owner the page header calls too (SESSUX1d).
-  // Where each session is listed by state (SESSUX1a): the driver's one reader, asked under the sessions' key, so every
+  // Each act on a row, by the one owner the page header calls too.
+  // Where each session is listed by state: the driver's one reader, asked under the sessions' key, so every
   // tick that asks the records again asks this too. The monitor's list draws no group and asks nothing.
   const groups = useSessionGroups(undefined, { enabled: !live });
-  // The entries beside them (SESSONE1c, D167 point 5): one row per line of work in one repository, its records its parts.
+  // The entries beside them: one row per line of work in one repository, its records its parts.
   // The same answer, so nothing more is asked. The monitor's list is the present tense, by record; a host before entries
-  // answers none and the list is the records it always was.
+  // answers none and the list is the records.
   const entryAnswer = useSessionEntries(undefined, { enabled: !live });
   const entries = useMemo(
     () => (live ? undefined : entryAnswer.data?.filter((entry) => !entry.parts.some((part) => helpIds.has(part.session)))),
     [live, entryAnswer.data, helpIds],
   );
-  // Each act on a row, by the one owner the page header calls too (SESSUX1d); an archive reaches every part of its entry.
+  // Each act on a row, by the one owner the page header calls too; an archive reaches every part of its entry.
   const actions = useSessionActs({ notify, doors, entries });
-  // A query that is not asking and has never answered is one with no driver to ask: a browser (D47 §4).
+  // A query that is not asking and has never answered is one with no driver to ask: a browser.
   const noReader = live || (groups.fetchStatus === 'idle' && groups.status === 'pending');
   const drawn: SessionArrangement = noReader ? 'repository' : arrangement;
   const groupings = useMemo(
     () => (live ? undefined : groups.data?.filter((row) => !helpIds.has(row.session))),
     [live, groups.data, helpIds],
   );
-  // A conversation's name is what was first said in it (RAIL1), from this machine's record.
+  // A conversation's name is the first thing said in it, from this machine's record.
   const openings = useSessionOpenings(sessions.data);
   // What the list holds: every record, or where the rail is live, what runs and the attended session, whatever state it
   // reached.
-  // One record per entry, its leading part (D167); the others are its page's strip.
+  // One record per entry, its leading part; the others are its page's strip.
   const listed = listedSessions(
     (sessions.data ?? []).filter((session) => !live || SESSION_ACTIVE.has(session.state) || session.id === selected),
     entries,
@@ -151,25 +151,25 @@ export function SessionRail({
   const asked = (entries ?? []).some((entry) => askOfEntry(entry) !== null);
   const asks = useAsks(true, asked);
   const askNames = Object.fromEntries((asks.data ?? []).map((ask): [string, string] => [ask.id, askName(ask)]));
-  // What is unread on each such ask's channel (SESSONE2c, D167), said in the headings of the list *by ask*: asked only there, the
+  // What is unread on each such ask's channel, said in the headings of the list *by ask*: asked only there, the
   // same reads the ask's page and its row hold under one key. None in a browser, which has no driver.
   const unreads = useChannelUnreads(
     [...new Set((entries ?? []).map(askOfEntry).filter((ask): ask is string => ask !== null))],
     { enabled: arrangement === 'ask' && !live },
   );
-  // Where each row's work is now (LOOK2b): its tree, or where its landing put the work — asked once, for the rows listed.
+  // Where each row's work is now: its tree, or where its landing put the work — asked once, for the rows listed.
   const where = useSessionWhere(listed);
-  // Searching (RAIL1): by name at once, and by what was said once the typing settles.
+  // Searching: by name at once, and by what the person said once the typing settles.
   const [query, setQuery] = useState('');
   const settled = useDebounced(query, 250);
   const said = useSessionSearch(settled);
 
   useErrorNotify(sessions.error, notify);
 
-  // ENTRY1b: a door's group, looked for once the records and the reader have answered, since a parked quest's session waits
+  // A door's group, looked for once the records and the reader have answered, since a parked quest's session waits
   // on the person by the reader's word alone. A list that draws none (nothing waits there, no reader, the strip) lets it go.
   // A search typed here hides every group, and is this rail's alone and never kept, so a go clears it, in the render the
-  // go arrives in (ENTRY1g); the frame shows the list by state for it, and lays its strip over.
+  // go arrives in; the frame shows the list by state for it, and lays its strip over.
   const bringing = group === 'you' || group === 'review';
   if (bringing && !compact && query) setQuery('');
   const answered = !sessions.isPending && (noReader || groups.data !== undefined || groups.isError);
@@ -189,7 +189,7 @@ export function SessionRail({
     const working = byId.get(opinion.working);
     if (working) reads[opinion.session] = titleOf(working);
   }
-  // Whom each session continues and whom each helper helps (MIXAGENT3a-i): the records' own links, joined to the sessions the
+  // Whom each session continues and whom each helper helps: the records' own links, joined to the sessions the
   // list holds, as the reviewers' are. A link to one it does not hold claims nothing.
   const continues: Record<string, string> = {};
   const helps: Record<string, string> = {};
@@ -198,7 +198,7 @@ export function SessionRail({
     if (linked.continues) continues[session.id] = titleOf(linked.continues);
     if (linked.helps) helps[session.id] = titleOf(linked.helps);
   }
-  // The work each helper and reviewer serves (MIXAGENT3a-ii, closing XAGENT1g4d): the list draws it under that work's row where
+  // The work each helper and reviewer serves: the list draws it under that work's row where
   // that row is drawn. The same two joins: a helper's own `serves`, and the reviewer's opinion's `working`.
   const serving: Record<string, string> = {};
   for (const opinion of opinions.data ?? []) {
@@ -208,7 +208,7 @@ export function SessionRail({
     if (session.serves) serving[session.id] = session.serves;
   }
 
-  // HEAVYSLOT1: each running session's part in its repository's heavy-run slot, and whom its wait is behind by title, from the
+  // Each running session's part in its repository's heavy-run slot, and whom its wait is behind by title, from the
   // driver's reading of the slot's records; asked only for the repositories a running session is in.
   const heavySlots = useHeavySlots((sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)).map((session) => session.repository));
   const heavyOf = (session: Session) => {
@@ -222,7 +222,7 @@ export function SessionRail({
   // Each row the list holds, with what it is drawn from besides its record.
   const factsOfEntry = entryFacts(entries);
   const entryOf = new Map((entries ?? []).map((entry): [string, SessionEntry] => [entry.leading, entry]));
-  // LIMITRESUME1d2 (D206 §3.7): a line its account's limit cut off says on its row when it goes on by itself, the head's first
+  // A line its account's limit cut off says on its row when it goes on by itself, the head's first
   // sentence, from the accounts the page holds; a browser holds none, and its row says nothing more.
   const accounts = useAccounts();
   const harnesses = useHarnesses();
@@ -242,7 +242,7 @@ export function SessionRail({
   const spent = useSessionSpent(listed.filter((session) => isHelper(session) || Boolean(session.from)).map((session) => session.id), 1);
   const rows: SessionRowFacts[] = listed.map((session) => ({
     session,
-    // A line of work an ask began is named by its ask, whose page names it the same way (D167, design §1.6); an intake
+    // A line of work an ask began is named by its ask, whose page names it the same way; an intake
     // keeps its own name, which already names its ask.
     name: nameOfEntry(entryOf.get(session.id), askNames),
     entry: factsOfEntry.get(session.id),
@@ -263,7 +263,7 @@ export function SessionRail({
   const calls = usePushedCalls();
   const placed = new Map((groupings ?? []).map((row) => [row.session, withCall(row, calls) ?? row]));
 
-  // ACCEPTALL1 (D167's 2026-10-15 amendment point 4): an ask's one Accept, under its heading in the list by ask, where its lines of
+  // An ask's one Accept, under its heading in the list by ask, where its lines of
   // work hold more than one part with work to land. Its plan reads git for every part, so it is asked only once its ask is open.
   const [askAsking, setAskAsking] = useState<string | null>(null);
   const askPlan = useAskLanding(askAsking, askAsking !== null);
@@ -305,17 +305,17 @@ export function SessionRail({
     );
   } : undefined;
 
-  // What decides each row's acts: its record, where the reader placed it, its checkout, where its work is (D126 §3.1).
+  // What decides each row's acts: its record, where the reader placed it, its checkout, where its work is.
   const factsFor = (session: Session) => ({
     session,
-    // Whether an ask asked its quest decides *Pause ask…* (PAUSE1e).
+    // Whether an ask asked its quest decides *Pause ask…*.
     quest: session.quest ? questFor.get(session.quest) : null,
     grouping: live ? null : placed.get(session.id),
     root: registered.get(session.repository)?.root,
     where: where[session.id],
   });
   // The acts each row is offered, as the one rule offers them and this door can carry out. The monitor's list is read
-  // only: its window and its id (D55 §b).
+  // only: its window and its id.
   const actsFor = (session: Session): SessionActId[] => offeredActs(factsFor(session), 'row')
     .filter((act) => actions.can(act) && (!live || act === 'detach' || act === 'copy'));
   const acts = {
@@ -327,11 +327,11 @@ export function SessionRail({
     },
   };
 
-  // A repository group's facts (by repository): the driver answers only where a shell is attached (D46 §6); with no
+  // A repository group's facts (by repository): the driver answers only where a shell is attached; with no
   // answer these stay undefined, and the header asserts nothing rather than reading silence as "no".
   const repositoryFacts = (repository: string, members: readonly Session[]): RepositoryFacts => {
     // A parked session holds its working tree, and a parked INTAKE holds nothing: it has asked and ended, and the room's
-    // lock is the process (INT4b), so it claims no busy (INT4g).
+    // lock is the process, so it claims no busy.
     const holding = members.find((session) => SESSION_ACTIVE.has(session.state)
       && !(isIntake(session) && session.state === 'awaiting-person'));
     const registration = registered.get(repository);
@@ -340,7 +340,7 @@ export function SessionRail({
       held: driver.data && driver.data.holds.includes(repository),
       busy: holding ? (ownTree(holding, registration?.root) ?? true) : null,
       adopted: registration?.adopted,
-      // A root is answered only to a caller on the machine that holds it (D48 §7), so the question is only ASKED where a
+      // A root is answered only to a caller on the machine that holds it, so the question is only ASKED where a
       // driver answered — otherwise every registration would look like a teammate's, which is a claim rather than an absence.
       hasCheckout: driver.data && registration ? Boolean(registration.root) : undefined,
     };
@@ -383,7 +383,7 @@ export function SessionRail({
       {...heavyOf(session)}
       limitWait={live ? null : limitWaitOf(session)}
       grouping={live ? null : placed.get(session.id)}
-      // A search finds archived sessions too, marked, since it is how one is found without the tick (D126 §4.5).
+      // A search finds archived sessions too, marked, since it is how one is found without the tick.
       archived={!live && Boolean(placed.get(session.id)?.archived)}
       selected={session.id === selected}
       onSelect={onSelect}
@@ -392,7 +392,7 @@ export function SessionRail({
     />
   );
 
-  // *Archive what ended…*'s first press (§5.3), once the reader has answered: what it says is what it lists, and a list
+  // *Archive what ended…*'s first press, once the reader has answered: what it says is what it lists, and a list
   // read before the answer would say nothing ended.
   const asking = archiveEnded && !live && groupings !== undefined;
 
@@ -402,13 +402,13 @@ export function SessionRail({
         <ArchiveEndedAsk
           {...endedToArchive(listed, groupings)}
           busy={actions.archiving}
-          // What the first press listed are entries (D167): every part of each goes, and is counted once.
+          // What the first press listed are entries: every part of each goes, and is counted once.
           onArchive={(ids, answered) => actions.archiveListed(ids, answered)}
           onCancel={() => onArchiveEnded?.()}
         />
       )}
 
-      {/* Searching (RAIL1): on the open rail only — the strip has no room to type in. Escape clears it,
+      {/* Searching: on the open rail only — the strip has no room to type in. Escape clears it,
           and the rail's own list comes back. The list's full empty state has no search above it. */}
       {rows.length > 0 && (
         <div className="px-2 pb-1 pt-1.5">
@@ -420,7 +420,7 @@ export function SessionRail({
               aria-label={t('work.rail.search.label')}
               placeholder={t('work.rail.search.placeholder')}
               onChange={(event) => setQuery(event.target.value)}
-              // Escape clears a search, and one with nothing in it is left to the list laid over (D118 §3a).
+              // Escape clears a search, and one with nothing in it is left to the list laid over.
               onKeyDown={(event) => { if (!isComposing(event) && event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
               className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
             />
@@ -473,7 +473,7 @@ export function SessionRail({
 }
 
 /**
- * An ask's one Accept, waiting while its landing is under way in any window (ACCEPTALL1e): this window's own press, or the driver's
+ * An ask's one Accept, waiting while its landing is under way in any window: this window's own press, or the driver's
  * telling of another's, read where the molecule is drawn, since a hook cannot be called where the list draws each ask.
  */
 function AskAccept({ ask, ...accept }: { ask: string } & Omit<ComponentProps<typeof EntryAccept>, 'busy'>) {
@@ -481,12 +481,12 @@ function AskAccept({ ask, ...accept }: { ask: string } & Omit<ComponentProps<typ
 }
 
 /**
- * What a search of the rail found (RAIL1): sessions by name first, then the rest by what was said in
+ * What a search of the rail found: sessions by name first, then the rest by what the person said in
  * them, with the words marked. A session its name already found is not listed twice.
  *
  * @remarks
  * By name answers as the person types; by content answers once the typing settles, for the words it
- * was asked about — never a stale answer beside a newer query. The host's bounds are said, not hidden.
+ * is asked about — never a stale answer beside a newer query. The host's bounds are said, not hidden.
  */
 export function SearchResults({
   query, settled, named, hits, cut, total, covered, asking, onMore, loadingMore, moreError, sessionOf, titleOf, row, selected, onSelect,
@@ -498,15 +498,15 @@ export function SearchResults({
   hits?: SessionHit[];
   /** Whether the host left some out; said only by a shell that gives no `total`, which cannot page (the older line). */
   cut: boolean;
-  /** How many sessions the search found in what was said, as the host counts; null from a shell before pages. */
+  /** How many sessions the search found in what the person said, as the host counts; null from a shell before pages. */
   total: number | null;
   /** How many of them the pages read so far hold. */
   covered: number;
   asking: boolean;
-  /** Read the next page of sessions; absent on the last (RAILPAGE1b, UX §4's load-more rule). */
+  /** Read the next page of sessions; absent on the last. */
   onMore?: () => void;
   loadingMore?: boolean;
-  /** Why the next page could not be read, in the sentence the person reads; null when it was. */
+  /** Why the next page could not be read, in the sentence the person reads; null when it is read. */
   moreError?: string | null;
   sessionOf: (id: string) => Session | undefined;
   titleOf: (session: Session) => string;

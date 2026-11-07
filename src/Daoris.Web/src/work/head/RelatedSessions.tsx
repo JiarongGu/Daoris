@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { clockOf } from '../../locales/format';
 
-/** One session beside another, as `SESSION_RELATED` answers it (the review-flow design §3). */
+/** One session beside another, as `SESSION_RELATED` answers it. */
 export type RelatedRow = {
   id: string;
   kind: string;
@@ -13,7 +13,7 @@ export type RelatedRow = {
   changedOverlap: string[];
 };
 
-/** The asking session's own tree could not be read here; when it last was, or null. */
+/** The asking session's own tree could not be read here; when it last could be, or null. */
 export type RelatedOwn = { readAt: string | null };
 
 const DOOR = 'min-w-0 cursor-pointer border-0 bg-transparent p-0 font-mono text-meta underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
@@ -29,9 +29,9 @@ const byPath = (rows: readonly RelatedRow[], paths: (row: RelatedRow) => readonl
 };
 
 /**
- * The sessions beside one in its repository (LINESTOGETHER1c): the files they change and the paths they declare, told apart, each
+ * The sessions beside one in its repository: the files they change and the paths they declare, told apart, each
  * session a door to its head where `onSession` is given and plain where it is not (the Integration tab's list is read-only), and a
- * session git could not read said *not read here* (D137). Nothing to say, and nothing is drawn.
+ * session git could not read said *not read here*. Nothing to say, and nothing is drawn.
  */
 export function RelatedSessions({ repository, related, own = null, onSession }: {
   repository: string;

@@ -6,7 +6,7 @@ import { PartsStrip } from '../head/PartsStrip';
 import { SessionList, type SessionRowFacts } from './SessionList';
 import type { SessionArrangement } from '../groups';
 
-// Sessions as entries (SESSONE1c, D167 point 5): the owner's two asks, which the list showed as eleven records, as the three
+// Sessions as entries: two asks, which the list would show as eleven records, as the three
 // lines of work they are, and the parts strip on a session's page. Molecules, so each is reached by passing it: no driver,
 // no service. English and 中文, since the strip's and the list's words are chrome.
 

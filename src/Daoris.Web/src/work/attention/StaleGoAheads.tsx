@@ -8,14 +8,14 @@ import type { Attention } from './AttentionRow';
 export const STALE_AT_ONCE = 2;
 
 /**
- * The stale go-aheads refused in one press, with one reason (GOAHEADSTALE1): a line above the group's rows saying how many nothing on
+ * The stale go-aheads refused in one press, with one reason: a line above the group's rows saying how many nothing on
  * their asks waits for, and *Refuse all …*, which asks once under it, taking the person's reason, before anything is sent.
  *
  * @remarks
- * **The same door as each row's own Refuse.** The press hands back the go-aheads it was drawn over and the person's words; the band
+ * **The same door as each row's own Refuse.** The press hands back the go-aheads it is drawn over and the person's words; the band
  * refuses each on its own ask through the service's answer, as that row's *Refuse…* would, so each refusal is the person's own and
  * is said back. Nothing new runs: no session waits for any of them, and the band sends none on. There is no *Approve all*: a yes is
- * read one act at a time (D135 §2), and a stale go-ahead is offered none.
+ * read one act at a time, and a stale go-ahead is offered none.
  *
  * **A reason is required.** Every later session on these asks is handed the refusal with the person's words, which is what tells it
  * why; the move waits for them.

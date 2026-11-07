@@ -5,7 +5,7 @@ import type { Answered } from '../InlineConfirm';
 import { TrustAsk } from './TrustAsk';
 
 // The question the agent asks the first time it runs in a folder, asked by Daoris for a folder the
-// driver is holding (D73) — and answered only by the person pressing the grant.
+// driver is holding — and answered only by the person pressing the grant.
 
 const HOLD = {
   folder: 'C:/somewhere/engine',
@@ -83,7 +83,7 @@ describe('the grant, answered in the question (UXFIX2b3b)', () => {
 });
 
 /**
- * POOL1c (D197 point 3; the account-pool design §3 point 4, §4.3): a hold whose file is your own sign-in's offers no press,
+ * A hold whose file is your own sign-in's offers no press,
  * since Daoris writes nothing there; it shows the folder and says to trust it with the tool itself, at your terminal.
  */
 describe('a hold on your own sign-in’s file', () => {

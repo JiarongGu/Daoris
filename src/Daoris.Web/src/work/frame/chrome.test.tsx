@@ -21,8 +21,8 @@ const render = (node: ReactElement) => {
 };
 
 /**
- * A drag's data, as a page sees it (DOCK1e): jsdom has no `DataTransfer`, and a region reads a drag's
- * types while it is over it, so the stand-in keeps the types in step with what was set.
+ * A drag's data, as a page sees it: jsdom has no `DataTransfer`, and a region reads a drag's
+ * types while it is over it, so the stand-in keeps the types in step with what is set.
  */
 function carried(initial: Record<string, string> = {}) {
   const data: Record<string, string> = { ...initial };
@@ -35,9 +35,9 @@ function carried(initial: Record<string, string> = {}) {
   };
 }
 
-// The application's chrome (D56, D66), as molecules: props in, states out. No shell, no service, no
+// The application's chrome, as molecules: props in, states out. No shell, no service, no
 // arranged world — which is what lets "in a browser" and "with attention" be ordinary assertions
-// rather than integration setup (components plan §2).
+// rather than integration setup.
 
 const VIEWS = [
   { tab: 'overview' as const, label: 'Overview', icon: 'overview' as const },
@@ -48,11 +48,11 @@ const SETTINGS = [{ tab: 'settings' as const, label: 'Settings', icon: 'settings
 
 describe('AppStrip', () => {
   /**
-   * 🔴 The strip carries the MARK and no name. The wordmark was 20px of serif in
-   * every window forever, saying the name of the thing you are already looking at; a title bar in an
-   * IDE says what you can DO, and the name moved to About.
+   * 🔴 The strip carries the MARK and no name. A wordmark of 20px of serif in
+   * every window would say the name of the thing you are already looking at; a title bar in an
+   * IDE says what you can DO, and the name lives in About.
    *
-   * D41 §1's rule survives and is now stricter: the serif's one appearance is not spent here at all.
+   * The serif's one appearance is not spent here at all.
    */
   it('carries the mark and not the name — the serif is not spent on the strip', () => {
     const { container } = render(<AppStrip />);
@@ -61,7 +61,7 @@ describe('AppStrip', () => {
     expect(container.querySelectorAll('.font-serif')).toHaveLength(0);
   });
 
-  /** One navigation (D66): the strip holds the application's menus and no switch between frames. */
+  /** One navigation: the strip holds the application's menus and no switch between frames. */
   it('carries no mode switch — the activity bar is the one navigation', () => {
     render(<AppStrip menus={<span>menus</span>} />);
     expect(screen.queryByRole('group', { name: /mode/i })).toBeNull();
@@ -77,7 +77,7 @@ describe('AppStrip', () => {
   });
 
   /**
-   * The room is reserved only where a window will claim it. SURF7 filled it: those slots are now the
+   * The room is reserved only where a window will claim it. Those slots are the
    * rectangles the window paints its caption buttons into, which is why they are empty and why there
    * are exactly three. What is DONE with them belongs to `windowChrome.test.tsx`.
    */
@@ -115,7 +115,7 @@ describe('ActivityBar', () => {
     expect(screen.getByRole('navigation', { name: 'Views' })).toBeTruthy();
   });
 
-  /** One list (D66): whichever view is in front is the one marked — Settings at the foot included. */
+  /** One list: whichever view is in front is the one marked — Settings at the foot included. */
   it('marks the current view, wherever on the bar it sits', () => {
     const { rerender } = render(
       <ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="quests" onSelect={() => {}} />,
@@ -128,8 +128,8 @@ describe('ActivityBar', () => {
   });
 
   /**
-   * BADGEUX1 (the UI/UX design §3.10): a place's number counts only what waits on the person there, as the bell does, so every number
-   * on the bar wears the bell's hue, its digits in that hue's ink (UXFIX5c). There is no quantity in the accent any more.
+   * A place's number counts only what waits on the person there, as the bell does, so every number
+   * on the bar wears the bell's hue, its digits in that hue's ink. There is no quantity in the accent.
    */
   it('draws every number as a wait, in open’s hue', () => {
     render(<ActivityBar label="Views" items={VIEWS} active="overview" onSelect={() => {}} />);
@@ -141,8 +141,8 @@ describe('ActivityBar', () => {
   });
 
   /**
-   * BADGEUX1: running work is a mark, never a number, in taken's hue (the status palette's *in progress*), at the lower corner the
-   * number leaves free. Never a mark alone (D41 §6): what each shows is said in words, as the place's tip and its description.
+   * Running work is a mark, never a number, in taken's hue (the status palette's *in progress*), at the lower corner the
+   * number leaves free. Never a mark alone: what each shows is said in words, as the place's tip and its description.
    */
   it('marks running work with no number, and says it in words', async () => {
     const items = [{ ...VIEWS[1]!, waits: 0, running: true, detail: '3 under way' }];
@@ -202,7 +202,7 @@ describe('ActivityBar', () => {
   });
 
   /**
-   * D118 §3a (audit F1): pressing the place you are on toggles its list, as VS Code's activity bar toggles
+   * Pressing the place you are on toggles its list, as VS Code's activity bar toggles
    * its side bar. It is one of the list's four doors, so a view without a list is handed none, and the
    * press then only selects the place again.
    */
@@ -245,7 +245,7 @@ describe('ActivityBar', () => {
   });
 
   /**
-   * 🔴 UX5 U22: at the window's least height (300px at 200%), the bar crushed its places. Every icon
+   * 🔴 At the window's least height (300px at 200%), the bar crushed its places. Every icon
    * shrank until they touched, the counts sat over their neighbours, and Settings went under the
    * status bar. A place keeps its size, and a bar too short for them scrolls instead. jsdom has no
    * layout, so this holds the rules and the window shows them.
@@ -262,8 +262,8 @@ describe('ActivityBar', () => {
   });
 
   /**
-   * UX6j (D150 §2.1): the bar is places alone, its foot Settings, where every workbench keeps its gear. The index's
-   * refresh and the language were actions at its foot, and left for View, the palette and Settings → Appearance.
+   * The bar is places alone, its foot Settings, where every workbench keeps its gear. The index's
+   * refresh and the language are not actions at its foot; they live in View, the palette and Settings → Appearance.
    */
   it('holds its places, then at its foot Settings alone', () => {
     render(<ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="overview" onSelect={() => {}} />);
@@ -283,7 +283,7 @@ describe('ActivityBar', () => {
  */
 describe('StatusBar', () => {
   /**
-   * 🔴 UX5 U21: the sessions item was *running sessions*, and it counts `SESSION_ACTIVE`, which holds
+   * 🔴 The sessions item must not say *running sessions*, for it counts `SESSION_ACTIVE`, which holds
    * a session parked on its person. On the scratch window it said 2 while both were parked and
    * neither had a process. A claim in a catalogue has no test pointing at the code it describes, so
    * this one points at the set it counts.
@@ -297,8 +297,8 @@ describe('StatusBar', () => {
   });
 
   /**
-   * SESSBADGE1: it counts what the Sessions badge counts, the sessions the driver runs (CAPCOUNT1's rule), and never the person's
-   * own conversations: it counted an Ask Daoris conversation idle between turns. Its tip says so, in both languages.
+   * It counts what the Sessions badge counts, the sessions the driver runs, and never the person's
+   * own conversations, an Ask Daoris conversation idle between turns among them. Its tip says so, in both languages.
    */
   it('says it counts the sessions the driver runs, and not the person\'s own conversations', () => {
     expect(en['work.status.sessionsTip']).toMatch(/driver/);
@@ -336,7 +336,7 @@ describe('StatusBar', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /driver/i }));
     expect(onDriver).toHaveBeenCalled();
-    // Sessions was given no handler, so it is not a target.
+    // Sessions is given no handler, so it is not a target.
     expect(screen.queryByRole('button', { name: /session/i })).toBeNull();
   });
 
@@ -364,7 +364,7 @@ describe('StatusBar', () => {
   });
 
   /**
-   * SETUP1b (D97 §2): a small *setup: n of 5* until the required steps are done, leading to Get started
+   * A small *setup: n of 5* until the required steps are done, leading to Get started
    * — and nothing once they are, since an always-there all-clear is not read.
    */
   it('counts the setup until it is done, and leads to Get started', async () => {
@@ -384,9 +384,9 @@ describe('StatusBar', () => {
   });
 
   /**
-   * The absent driver is a browser, which has no driver and never will (D55). Offering to take a
+   * The absent driver is a browser, which has no driver and never will. Offering to take a
    * person to the machine's driver settings from a window that has no machine is a promise the
-   * frame cannot keep, so the item stays text there however it was wired.
+   * frame cannot keep, so the item stays text there however it is wired.
    */
   it('is not a target when the fact it states cannot be acted on here', () => {
     render(
@@ -398,8 +398,8 @@ describe('StatusBar', () => {
   });
 
   /**
-   * LOOK2a: the driver's file answers before its service is up, and the bar said *ready* while every route that reads
-   * the service still refused *still coming up*. Starting is its own word, and its settings are still one press away.
+   * The driver's file answers before its service is up, and the bar must not say *ready* while every route that reads
+   * the service still refuses with *still coming up*. Starting is its own word, and its settings are still one press away.
    */
   it('says the driver is starting until its service is up', () => {
     const onDriver = vi.fn();
@@ -412,8 +412,8 @@ describe('StatusBar', () => {
   });
 
   /**
-   * AGT6: the tier leads where it is explained and changed — Daoris's own AI, on Settings — with what it means one hover
-   * away (D24); since OVERVIEWNOISE1c both are said by the tier's value, in the page's language.
+   * The tier leads where it is explained and changed — Daoris's own AI, on Settings — with what it means one hover
+   * away; both are said by the tier's value, in the page's language.
    */
   it('lets the tier lead to where it is changed, said by its value', async () => {
     const onTier = vi.fn();
@@ -424,7 +424,7 @@ describe('StatusBar', () => {
     expect(screen.getByText('lexical only')).toBeTruthy();
   });
 
-  /** OVERVIEWNOISE1c: in 中文 the tier and its tip are Chinese — the service's English label and note are never shown. */
+  /** In 中文 the tier and its tip are Chinese — the service's English label and note are never shown. */
   it('says the tier and its tip in 中文', async () => {
     await i18n.changeLanguage('zh');
     try {
@@ -442,7 +442,7 @@ describe('StatusBar', () => {
     }
   });
 
-  /** The scope is a control in its own right (WSP5) and replaces the read-only circle entirely. */
+  /** The scope is a control in its own right and replaces the read-only circle entirely. */
   it('gives the scope control the workspace slot rather than sitting beside it', () => {
     render(
       <StatusBar
@@ -459,7 +459,7 @@ describe('StatusBar', () => {
   });
 
   /**
-   * ZOOM1 (the UI/UX design §3.11): the zoom is said on the bar while it is not 100%, as VS Code's status bar says it, at the
+   * The zoom is said on the bar while it is not 100%, as VS Code's status bar says it, at the
    * bar's right end, and pressing it goes back to 100%.
    */
   it('says the zoom while it is not 100%, and goes back to 100% when pressed', async () => {
@@ -494,7 +494,7 @@ describe('StatusBar', () => {
 });
 
 /**
- * ZOOM1 (the UI/UX design §3.11): the window zooms by the root's size, and the frame (the title strip, the activity bar, the
+ * The window zooms by the root's size, and the frame (the title strip, the activity bar, the
  * status bar and what each opens) wears the level's inverse, so it keeps its size. jsdom lays nothing out: the bars' class is
  * held here, the arithmetic in `zoom.test.ts`, and the measured sizes in `measured/zoom.spec.ts`.
  */
@@ -522,13 +522,12 @@ describe('the frame, as the window zooms', () => {
 });
 
 /**
- * The output panel keeps the height the person gave it (D55), and it kept it as an empty bordered
- * well: on the installed window an ended session's console was a blank white box, which reads as a
- * field to type in. SURF8 had already given the console a sentence for this, and the panel never
- * passed one.
+ * The output panel keeps the height the person gave it, but never as an empty bordered
+ * well: a blank white box reads as a field to type in. The console has a sentence for an ended
+ * session, which the panel passes on.
  */
 /**
- * FRAME6: the edge a column is resized by. Keyboard-operable as the output panel's is — a resize that
+ * The edge a column is resized by. Keyboard-operable as the output panel's is — a resize that
  * needs a mouse is one some people do not have — and moving AWAY from its column grows the column,
  * whichever side of it the edge is on.
  */
@@ -587,7 +586,7 @@ describe('the output panel', () => {
     expect(container.querySelector('pre')).toBeNull();
   });
 
-  // CONSOLE2c: a tab for each thing that is running, so no console is missed.
+  // A tab for each thing that is running, so no console is missed.
   const TABS: PanelTab[] = [
     { key: 's1', kind: 'session', label: 'session', tone: 'idle', status: "the session's own console" },
     { key: 's1/subagent/a2fe', kind: 'subagent', label: 'Read README first line', tone: 'ended', status: 'subagent · completed' },
@@ -626,7 +625,7 @@ describe('the output panel', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
-  // DOCK1b: a region, not the console's alone — it holds whichever views stand in the panel.
+  // A region, not the console's alone — it holds whichever views stand in the panel.
   it('holds whichever views stand in it, a tab each, and draws the shown one', () => {
     const onView = vi.fn();
     render(
@@ -661,7 +660,7 @@ describe('the output panel', () => {
     expect(screen.getByText('the timeline')).toBeTruthy();
   });
 
-  // DOCK1e: a view's tab dragged from the side bar and dropped here moves it; one of its own does not.
+  // A view's tab dragged from the side bar and dropped here moves it; one of its own does not.
   it('takes a view dragged from the side bar, lit while it is over, and not one of its own', () => {
     const onMove = vi.fn();
     render(
@@ -696,8 +695,8 @@ describe('the output panel', () => {
     expect(onMove).not.toHaveBeenCalled();
   });
 
-  // FRAME1h: a detached session's window has one view and no side bar, so its ⋯ would list the console alone
-  // and offer nothing; absent, never a menu with nothing to do (D118 §3a). Where a view can move, it stays.
+  // A detached session's window has one view and no side bar, so its ⋯ would list the console alone
+  // and offer nothing; absent, never a menu with nothing to do. Where a view can move, it stays.
   it('offers its views menu only where there is a view to choose or somewhere to move one', () => {
     const { rerender } = render(<OutputPanel console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} />);
     expect(screen.queryByRole('button', { name: 'views in the panel' })).toBeNull();
@@ -715,7 +714,7 @@ describe('the output panel', () => {
     expect(screen.queryByText('the console')).toBeNull();
   });
 
-  // TABS1: the side bar's rule, a size down — a view's tab is its whole name or its icon, never a name
+  // The side bar's rule, a size down — a view's tab is its whole name or its icon, never a name
   // cut to one character (控…).
   describe('its views\' tabs', () => {
     let room: ReturnType<typeof layTabs> | undefined;

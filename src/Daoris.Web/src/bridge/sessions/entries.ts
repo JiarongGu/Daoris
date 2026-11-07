@@ -7,7 +7,7 @@ import { call, pressBound } from '../call';
 
 export type { EntryAcceptPart, EntryAcceptPlan } from '../../work/review/EntryAccept';
 
-// A line of work as one (D167): its one Accept and its ask's (ACCEPTALL1, the amendment of 2026-10-15), over the driver's
+// A line of work as one: its one Accept and its ask's, over the driver's
 // `EntriesRoutes`. Each part lands by its own landing, so what a part's answer carries is what `LAND_SESSION_TREE` answers.
 
 /** One part's outcome at an entry's Accept: `landed`, `refused`, `left-out`, `same-tree` or `not-tried`, with its landing's words. */
@@ -52,11 +52,11 @@ export const useAskLanding = (ask: string | null, open: boolean) => {
 
 /**
  * A line of work's one Accept (`LAND_ENTRY`): its parts land in the order they ran, leaving out only those the person chose. What
- * it moved is the route's to declare and the state hub's to ask again, in every window (D169); the hook asks nothing itself.
+ * it moved is the route's to declare and the state hub's to ask again, in every window; the hook asks nothing itself.
  */
 export const useLandEntry = () =>
   useMutation({
-    // Keyed by its route, so every view reads it under way (STATEHUB1c).
+    // Keyed by its route, so every view reads it under way.
     mutationKey: ['LAND_ENTRY'],
     mutationFn: ({ entry, parts, leaveOut }: { entry: string; parts: number; leaveOut: readonly string[] }) =>
       call('LAND_ENTRY', { entry, ...(leaveOut.length ? { leaveOut: [...leaveOut] } : {}) }, { timeoutMs: pressBound(parts) }) as Promise<EntryLanded>,

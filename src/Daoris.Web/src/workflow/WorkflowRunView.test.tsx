@@ -14,7 +14,7 @@ import {
 import { WorkflowLine } from './WorkflowLine';
 import { WorkflowRunView } from './WorkflowRunView';
 
-// WORKFLOW1c (D157 point 12; the workflow design §5.2, §7): the session's side bar view *Workflow* draws its run on the chart of
+// The session's side bar view *Workflow* draws its run on the chart of
 // the workflow it follows, each step where it stands, the person's part kept as the rail's shape and its word; and a quest's and
 // an ask's pages carry the run in one line whose door opens it. Molecules: every state is reached by its props.
 
@@ -23,7 +23,7 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 /** The step rows, in order, as a reader meets them. */
 const steps = () => screen.getAllByRole('listitem').filter((item) => item.hasAttribute('data-step'));
 const row = (id: string) => steps().find((item) => item.getAttribute('data-step') === id)!;
-/** The press that opens a step's record (SETUPUX1u): none on the step already open, and none on one the work has not come to. */
+/** The press that opens a step's record: none on the step already open, and none on one the work has not come to. */
 const detailsOf = (id: string) => within(row(id)).queryByRole('button', { name: /^Details of |的详情$/ });
 /** Opens a step's record, unless it is open already. */
 const open = async (id: string) => {
@@ -40,7 +40,7 @@ describe("the session's Workflow view", () => {
     expect(screen.queryByText(/Current workflow/)).toBeNull();
   });
 
-  // FABRIC-PIPELINE1a (the pipeline design §1.3): the run's view heads with the route that chose its workflow, as its binding keeps it.
+  // The run's view heads with the route that chose its workflow, as its binding keeps it.
   it('heads with the route that chose its workflow', async () => {
     const routed = (route: NonNullable<WorkflowRun['workflow']['route']>) =>
       answerOf({ ...IN_REVIEW, workflow: { ...IN_REVIEW.workflow, id: 'release', boundVersion: 1, route } });
@@ -116,7 +116,7 @@ describe("the session's Workflow view", () => {
     render(<WorkflowRunView answer={answerOf(IN_REVIEW)} doors={{ review: vi.fn(), session: vi.fn() }} />);
     const landing = row('landing');
 
-    // Faint at a token ink, never by opacity (FLOWCHART1d: the rail is the flowchart's, the flowchart design §3.3, trap 9).
+    // Faint at a token ink, never by opacity.
     expect(landing).toHaveAttribute('data-reached', 'false');
     expect(landing.outerHTML).not.toMatch(/opacity-/);
     expect(landing).toHaveTextContent('not reached');
@@ -172,7 +172,7 @@ describe("the session's Workflow view", () => {
     expect(document.body).toHaveTextContent('· waiting on you');
   });
 
-  // FLOWCHART1c: a landing that made a branch opens that branch's page, with how it landed; one into the line keeps no branch to open.
+  // A landing that made a branch opens that branch's page, with how it landed; one into the line keeps no branch to open.
   it("opens a landed branch's page from its landing step, and nothing from a landing into the line", async () => {
     const branch = vi.fn();
     const { unmount } = render(<WorkflowRunView answer={answerOf(PULL_REQUEST_OPEN)} doors={{ branch }} />);
@@ -223,7 +223,7 @@ describe("the session's Workflow view", () => {
     expect(document.body).toHaveTextContent('At Second opinion · waiting on you');
   });
 
-  /** XAGENT1g (WORKFLOW1c3's remainder): the gate's own control draws *Go on anyway…* under the step, in the twin's place. */
+  /** The gate's own control draws *Go on anyway…* under the step, in the twin's place. */
   it("draws the second opinion's own control under its step where the frame hands it, in place of the terminal's twin", () => {
     render(
       <WorkflowRunView answer={answerOf(OPINION_DISPUTED)} controls={{ opinion: <button type="button">Go on anyway…</button> }} />,
@@ -307,7 +307,7 @@ describe("the session's Workflow view", () => {
     expect(screen.queryByRole('list')).toBeNull();
   });
 
-  // CHATFLOW1b (the chat-flow design §10): a read that names no run comes with a code, which the page words in the reader's language;
+  // A read that names no run comes with a code, which the page words in the reader's language;
   // a code it does not know is the driver's sentence, and no code at all the page's own fallback.
   describe('no run, by its code', () => {
     const NO_RUN: { code: string; id?: string; workflow?: string; en: string; zh: string }[] = [
@@ -404,8 +404,8 @@ describe("the session's Workflow view", () => {
     });
   });
 
-  // CHATFLOW1c (the chat-flow design §4.2, §4.4): a chat's run, its checks marked not yet enforced for a conversation, never shown as a limit
-  // its tree holds, and its second opinion, which the person's Accept asks (CHATFLOW1d), in both languages.
+  // A chat's run, its checks marked not yet enforced for a conversation, never shown as a limit
+  // its tree holds, and its second opinion, which the person's Accept asks, in both languages.
   describe("a chat's run", () => {
     it('marks its checks not yet enforced and says its Accept asks its opinion, in both languages', async () => {
       const { rerender } = render(<WorkflowRunView answer={answerOf(CHAT_RUN)} here="work" />);
@@ -447,9 +447,9 @@ describe("the session's Workflow view", () => {
   });
 });
 
-// FABRIC-CUTOVER1e (D190 points 2, 3 and 7; the cutover design §2.3, §6): a run bound to a graph version is drawn from its record, its
+// A run bound to a graph version is drawn from its record, its
 // subjects named, its branches said to be its graph's, a look its work added beside it; its nodes are its graph's, a fork and its join among
-// them. FABRIC-CUTOVER1d: its landing doors read its record, so no line says they hold it, and no node is said not begun.
+// them. Its landing doors read its record, so no line says they hold it, and no node is said not begun.
 describe("a graph run's Workflow view", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
@@ -520,8 +520,8 @@ describe("a graph run's Workflow view", () => {
   });
 });
 
-// FABRIC-CUTOVER1f (D190 point 6; the cutover design §5.2): the person's skip and stop of a graph run's node, offered under each node the
-// driver's one table takes them on, a skip asking for words, each press answered in the ask it was pressed in; a word kept is drawn on its
+// The person's skip and stop of a graph run's node, offered under each node the
+// driver's one table takes them on, a skip asking for words, each press answered in the ask it is pressed in; a word kept is drawn on its
 // node until the driver's next look applies it. Seen failing first.
 describe("the person's skip and stop of a graph run's node", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -605,7 +605,7 @@ describe("the person's skip and stop of a graph run's node", () => {
   });
 });
 
-// DECIDE1c: a graph run says which routes were taken, a decision's outcome on its node and a route its outcome left untaken said so, and a
+// A graph run says which routes were taken, a decision's outcome on its node and a route its outcome left untaken said so, and a
 // review waiting on the person offers their changes in place of their Accept, which asks for their words before it sends them.
 describe("a graph run's routes and a review's changes", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -665,7 +665,7 @@ describe("a graph run's routes and a review's changes", () => {
   });
 });
 
-// INTEGRATE1h (the integration design §17.9): the run's view draws the integrate node with its record's head, in both languages.
+// The run's view draws the integrate node with its record's head, in both languages.
 describe('the integrate node', () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 
@@ -680,7 +680,7 @@ describe('the integrate node', () => {
   });
 });
 
-// INTEGRATE1o part o2 (the integration design §17.3): the requests the work's sessions made are drawn inside the work node, and a decline holds
+// The requests the work's sessions made are drawn inside the work node, and a decline holds
 // the work's requests waiting on the person, whose Pass over… is the run's existing skip.
 describe("the work's requests", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -718,7 +718,7 @@ describe("the work's requests", () => {
     expect(onNodeWord).toHaveBeenCalledWith({ run: 'q1', node: 'requests', act: 'skip', words: 'tools will not take it; I do it myself' });
   });
 
-  // INTEGRATE1p (C33): a declined request of the run's own offers the driver's two words, asked again with nothing to say, gone on without with words.
+  // A declined request of the run's own offers the driver's two words, asked again with nothing to say, gone on without with words.
   it('offers a declined request Ask again… and Go on without it…, each sent as the run’s node word', async () => {
     const asked = answerOf(GRAPH_RUN_REQUESTS);
     const [only] = asked.runs;
@@ -816,7 +816,7 @@ describe("a quest's and an ask's one line", () => {
   });
 });
 
-// FABRIC-PIPELINE1d part 5 (the pipeline design §4.4): a check's verdict in its status words, the unknown held for the person offering *Run again*
+// A check's verdict in its status words, the unknown held for the person offering *Run again*
 // and *Not now*. Seen failing first.
 describe("a check's verdict on the run's view", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
@@ -877,7 +877,7 @@ describe("a check's verdict on the run's view", () => {
   });
 });
 
-// SETUPUX1u (D221; the Setup design's §2.3 run view): a run's view of where its work stands, through the one drawing.
+// A run's view of where its work stands, through the one drawing.
 describe("a run's view of where its work stands", () => {
   afterEach(async () => { await i18n.changeLanguage('en'); });
 

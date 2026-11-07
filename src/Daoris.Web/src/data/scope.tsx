@@ -2,18 +2,18 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { store, stored, storedHere, storeHere } from '../lib/stored';
 import { FIRST_MAIN_WINDOW, ownWindowName, secondaryWindow } from '../work/window';
 
-// The workspace scope (WSP5; workspace design §4): every cross-repository answer is scoped to ONE
+// The workspace scope: every cross-repository answer is scoped to ONE
 // workspace per query, and the platform never silently mixes circles. The scope is global chrome
-// state — it lives in exactly one place (platform language §2) — and is read here by the query layer,
+// state — it lives in exactly one place — and is read here by the query layer,
 // so a view that never mentions workspaces still asks for one. Nothing chosen means every circle the
 // deployment holds, stated out loud by the switcher rather than picked on the person's behalf: the
 // door never invents a default (the host's own words), so the page does not either.
 //
-// Remembered per browser, like the language (D42): a viewer's convenience, not machine wiring. It is
+// Remembered per browser, like the language: a viewer's convenience, not machine wiring. It is
 // never written into a tracked file and never leaves the browser that chose it.
 //
-// 🔴 Each main window holds its own (MAINWINDOWS3; D171's note has the rule and why). One key every document followed
-// meant a choice in one main window moved them all, so two windows could not hold two workspaces side by side.
+// 🔴 Each main window holds its own. One key every document follows would let a choice in one main window move them all,
+// so two windows could not hold two workspaces side by side.
 
 /** The last scope chosen in any window, which a new main window starts from. Shared; absent for every workspace. */
 const REMEMBERED = 'daoris.workspace';
@@ -87,7 +87,7 @@ function openedAs(name: string, entry: { follows: string } | { workspace: string
 }
 
 /**
- * What a utility window holds: its session's workspace where it was opened with one, else what the window that opened it
+ * What a utility window holds: its session's workspace where it opens with one, else what the window that opened it
  * holds, the first main window where nothing says which. The last chosen anywhere only where that window has said nothing,
  * which no window of this build leaves unsaid.
  */
@@ -141,8 +141,8 @@ export function WorkspaceScopeProvider({ initial, search, own = SESSION_STORE, c
     if (tells) store(HELD + self, workspace ?? '');
   }, [pinned, follows, tells, own, self, workspace]);
 
-  // 🔴 A workspace the window that opened this one moved to (WINDOW1). A detached session read the scope once, at open,
-  // so its queries kept asking for the circle it opened in after the main window moved. The browser tells every OTHER
+  // 🔴 A workspace the window that opened this one moved to. A detached session reading the scope once, at open,
+  // would keep asking for the circle it opened in after the main window moved. The browser tells every OTHER
   // document of a storage write; a utility window hears what its opener says, or its opening again from another window.
   useEffect(() => {
     if (!follows) return undefined;

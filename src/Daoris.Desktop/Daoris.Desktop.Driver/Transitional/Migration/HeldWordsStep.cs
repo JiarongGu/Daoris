@@ -3,8 +3,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The held words in the shape this build reads (D232; COMMS1e): a press held before its question was kept with it names its choice and no
-/// question, so the head could not check it was still the question asked; it is taken out, the person's press kept in the copy.
+/// The held words in the shape this build reads: a press held without its question names its choice and no
+/// question, so the head cannot check it is still the question asked; it is taken out, the person's press kept in the copy.
 /// </summary>
 public sealed class HeldWordsStep : IHomeMigrationStep
 {

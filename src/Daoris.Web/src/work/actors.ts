@@ -21,7 +21,7 @@ function askedValue(t: TFunction, value?: ActorValue | null): string {
 }
 
 /**
- * The head's chip for the choice its actor ran (D205 §4.6 item 2, §7.1; MODELROLE1c2): *choice n* only where a later choice than the
+ * The head's chip for the choice its actor ran : *choice n* only where a later choice than the
  * first ran, *your pick* where the person picked the agent; none for choice 1, *as before*, a rule's agent or a handed quest.
  */
 export function choiceChip(t: TFunction, session: Pick<Session, 'choice' | 'chosen'>): string | null {
@@ -48,7 +48,7 @@ function chipReason(t: TFunction, chosen?: ActorChosen | null): string | null {
   return code === null ? null : t(`work.role.chip.reason.${code}`);
 }
 
-/** *Details*' sentence for how the choice was reached; the policy's absence on the record is said, not left blank. */
+/** *Details*' sentence for how the choice came about; the policy's absence on the record is said, not left blank. */
 export function chosenLine(t: TFunction, chosen?: ActorChosen | null): string {
   if (!chosen) return t('work.role.chosen.none');
   if (chosen.by === 'moved') {
@@ -61,8 +61,8 @@ export function chosenLine(t: TFunction, chosen?: ActorChosen | null): string {
 }
 
 /**
- * What a record ended `choice-not-offered` says in place of a failure (D205 §3.5(c), §7.1; MODELROLE1c3): here, the agent, the model and
- * the account it was refused on, the record's own; on a teammate's mirror, which carries no account (D47 §4), the code's sentence naming
+ * What a record ended `choice-not-offered` says in place of a failure: here, the agent, the model and
+ * the account that refused it, the record's own; on a teammate's mirror, which carries no account, the code's sentence naming
  * none. Null for every other record.
  */
 export function notStartedLine(t: TFunction, session: Pick<Session, 'id' | 'state' | 'noteParts' | 'profile'>): string | null {
@@ -77,7 +77,7 @@ export function notStartedLine(t: TFunction, session: Pick<Session, 'id' | 'stat
     : t('work.notStarted.mirror');
 }
 
-/** Details compares no aliases: asked, acknowledged and ran are separate facts (D205). */
+/** Details compares no aliases: asked, acknowledged and ran are separate facts. */
 export function actorRows(t: TFunction, session: Session): DetailRow[] {
   const last = session.ran?.entries.at(-1);
   return [

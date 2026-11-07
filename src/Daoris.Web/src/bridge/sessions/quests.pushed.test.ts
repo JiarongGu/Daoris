@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// The quests and the asks as the shell pushes them (PUSH1d3, D182): a partition per workspace keyed by record, composed into the widest
+// The quests and the asks as the shell pushes them: a partition per workspace keyed by record, composed into the widest
 // list each route answers (every repository, closed included, every workspace), from which each view's list is read.
 
 vi.mock('@shenora/react', () => ({

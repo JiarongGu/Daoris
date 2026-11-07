@@ -6,7 +6,7 @@ import { moment } from '../../locales/format';
 import { LimitWaitLine } from './LimitWaitLine';
 import { limitWaitSaid } from './limitWait';
 
-// LIMITRESUME1d (D206 §3.7): the line a waiting limited line shows, its words and its presses, in en and zh.
+// The line a waiting limited line shows, its words and its presses, in en and zh.
 
 const UNTIL = '2026-10-24T11:02:00Z';
 const t = i18n.t.bind(i18n) as (key: string, options?: Record<string, unknown>) => string;

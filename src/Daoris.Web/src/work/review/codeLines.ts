@@ -1,6 +1,6 @@
 import hljs from 'highlight.js/lib/common';
 
-// Code highlighted a line at a time (REVIEW2). A diff draws each line on its own row, and a
+// Code highlighted a line at a time. A diff draws each line on its own row, and a
 // highlighter reads text whole — a comment or a string opened on one line is still open on the next.
 // So a side's text is highlighted whole and split back into lines, each one's markup balanced. Pure.
 

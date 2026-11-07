@@ -10,7 +10,7 @@ import { RELEASE_GRAPH as SHIPPED_RELEASE } from '../graphFixtures';
 import type { WorkflowSaveAnswer } from './answers';
 import { HOLDS, LIST, PALETTE, REFUSED, REFUSED_GRAPH } from './editFixtures';
 
-// FLOWCHART2c (D223 §3, §7 row c, §8.7): the driver's judgement on the editor's chart. Each answer belongs to the draft it judged, by its
+// The driver's judgement on the editor's chart. Each answer belongs to the draft it judged, by its
 // fingerprint: an edit makes the last answer invalid at once, a failed request leaves it invalid, and an answer older than the newest
 // request is dropped. A refusal is marked where it is, in words, and the head lists what is to put right with a door to each.
 
@@ -148,7 +148,7 @@ describe('a refusal where it is', () => {
     expect(await screen.findByText('3 to put right')).toBeInTheDocument();
 
     // The role at its step: declined's outline and a chip beside it (the rail's, here, since jsdom lays nothing out), the sentence said in
-    // its description and never as a line that would move the ranks below (CANVAS1b).
+    // its description and never as a line that would move the ranks below.
     const work = step('The work');
     expect(work).toHaveAttribute('data-refused', 'true');
     expect(work.className).toContain('border-st-declined');

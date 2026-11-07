@@ -3,7 +3,7 @@ import { store, stored } from '../../lib/stored';
 import { LIST_BOUNDS, type ListView } from './layout';
 
 /**
- * What a view's list remembers (D118 §3f), per view, beside `closings.ts`, which holds what the frame
+ * What a view's list remembers, per view, beside `closings.ts`, which holds what the frame
  * remembers for every view.
  *
  * @remarks
@@ -12,13 +12,13 @@ import { LIST_BOUNDS, type ListView } from './layout';
  * here: it is never kept (`closings.ts`), and a search's query is not either, since it is what the person
  * is typing now.
  *
- * Per-viewer conveniences (D42), through the page's one storage guard: never machine wiring and never a
+ * Per-viewer conveniences, through the page's one storage guard: never machine wiring and never a
  * tracked file.
  */
 export type ListMemory = {
   /** The person closed it to its strip. */
   closed: boolean;
-  /** The width it was dragged to, or null for the view's own. */
+  /** The width it is dragged to, or null for the view's own. */
   width: number | null;
   /** The item the list has chosen, which the main area shows. */
   chosen: string | null;
@@ -29,7 +29,7 @@ export type ListMemory = {
 type Part = keyof ListMemory;
 
 /**
- * The keys that predate the frame (FRAME6, D56, D75), kept so nothing a person closed, widened or chose
+ * The keys that predate the frame, kept so nothing a person closed, widened or chose
  * reopens or forgets itself on the upgrade: Sessions' rail and its attended session, and Settings' domain.
  */
 const KEPT: Partial<Record<ListView, Partial<Record<Part, string>>>> = {
@@ -63,7 +63,7 @@ export function readList(view: ListView): ListMemory {
 }
 
 /**
- * What a list's chosen item is now, as its view reads it (UX6b, D150 §8): still there and waiting on something (an open
+ * What a list's chosen item is now, as its view reads it: still there and waiting on something (an open
  * quest, a finding still listed, a repository still registered), closed (a done or declined quest, a closed ask), gone
  * (deleted, retired, no longer listed), or not read yet.
  */
@@ -94,7 +94,7 @@ export type ListPanes = {
  * toggle, the View menu, Ctrl+B, a press on the current place), and by a frame drawn alone for itself.
  *
  * @remarks
- * **A remembered choice ends with what it chose** (UX6b, design §1 rule 6): a view reopens its chosen item only while
+ * **A remembered choice ends with what it chose**: a view reopens its chosen item only while
  * that item still waits on something. What a launch read from the keys, and what a view held when a door that names
  * nothing opened it again, is remembered; it is read once by the view, and let go if its item closed or went, so the view
  * opens with nothing chosen and never on the *gone* state. An item chosen now, by the person in the list or by a door that

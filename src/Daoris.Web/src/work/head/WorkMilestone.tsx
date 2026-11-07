@@ -25,7 +25,7 @@ function endSentence(t: TFunction, unit: MilestoneUnit): string {
     ].filter(Boolean).join(' ');
     case 'handed': return t('work.milestone.end.handed', { said: unit.end.said });
     case 'unknown': return t('work.milestone.end.unknown', { said: unit.end.said });
-    // CLEANUP1: over without its result (the person removed its branch outside Daoris), never read as not reached.
+    // Over without its result (the person removed its branch outside Daoris), never read as not reached.
     case 'dropped': return t('work.milestone.end.dropped', { said: unit.end.said });
     default: return t('work.milestone.end.notEnded', { said: unit.end.said });
   }
@@ -37,7 +37,7 @@ function keptUntil(unit: MilestoneUnit): string | null {
   return dates[0] ?? null;
 }
 
-/** `Dot`'s tones, by the value a fact has (the UI/UX design §3.7); a fact with no tone wears no mark. */
+/** `Dot`'s tones, by the value a fact has; a fact with no tone wears no mark. */
 type FactTone = 'done' | 'waits' | 'failed' | 'ended' | 'idle';
 
 /** The end's own mark: reached is done's, an end not reached or handed waits, an unknown one is neutral, never read as reached. */
@@ -46,7 +46,7 @@ const END_TONE: Record<string, FactTone> = { ended: 'done', handed: 'waits', unk
 /**
  * One fact and the mark of its own value. The words beside it say the value, so the mark is never hue alone; a fact with
  * nothing to mark (a recovery with nothing kept) keeps its place in the column and wears none, since no fact is marked
- * because another is (R4). The label column stacks over its words under 24rem of the list's own width.
+ * because another is. The label column stacks over its words under 24rem of the list's own width.
  */
 function Row({ label, tone, children }: { label: string; tone?: FactTone; children: ReactNode }) {
   return (
@@ -61,7 +61,7 @@ function Row({ label, tone, children }: { label: string; tone?: FactTone; childr
 }
 
 /**
- * **Where this work stands** (FABRIC-MILESTONE1b, the fabric events design §D0): whether its end was reached and by what proof, the
+ * **Where this work stands**: whether its end is reached and by what proof, the
  * result kept, the clean-up pending (what waits and why, a blocked entry apart) or completed (what went), and the recovery kept and
  * until when. The same facts `daoris work state` prints, read from the driver's answer and said in the reader's language.
  *
@@ -70,7 +70,7 @@ function Row({ label, tone, children }: { label: string; tone?: FactTone; childr
  * what git or the records found, as a note's English does. A label, a state, a kind and a proof's code are the page's own words.
  * Nothing here is judged again: an end the keeper has not proved is *not reached*, never guessed.
  *
- * **Four facts, never a sequence** (MILESTONEUX1, the UI/UX design R4 and §3.7): the end, the result, the clean-up and the
+ * **Four facts, never a sequence**: the end, the result, the clean-up and the
  * recovery are separate collections, each marked by its own value with `Dot`'s tone, so a clean-up completed with nothing kept
  * for recovery wears no recovery mark. **Folded to its line** (`MilestoneLine`, which says *blocked* and *held* too, so nothing
  * that waits on the person hides behind it) and opened in place; a held attempt stays its own row under the facts.
@@ -148,7 +148,7 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
             </>
           )}
       </Row>
-      {/* Nothing kept wears no mark: a clean-up completed with nothing kept for recovery is ordinary, no recovery done (R4). */}
+      {/* Nothing kept wears no mark: a clean-up completed with nothing kept for recovery is ordinary, no recovery done. */}
       <Row label={t('work.milestone.recovery.label')} tone={unit.recovery.length === 0 ? undefined : 'done'}>
         {unit.recovery.length === 0
           ? <span>{t('work.milestone.recovery.none')}</span>
@@ -160,7 +160,7 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
             </span>
           ))}
       </Row>
-      {/* FABRIC-PERFORM1g: a plugin step's attempt held for the person, its node's place here, under the four facts it is no part of;
+      {/* A plugin step's attempt held for the person, its node's place here, under the four facts it is no part of;
           their word is What needs you's. */}
       {(unit.held?.length ?? 0) > 0 && (
         <Row label={t('work.milestone.held.label')} tone={unworded ? 'failed' : 'waits'}>
@@ -169,8 +169,8 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
           ))}
         </Row>
       )}
-      {/* FABRIC-CLOSE1j (§E5): its closure graph ended by the person's own done, or closed only in part, the stop of its close node
-          offered while it waits again; their press is What needs you's. FABRIC-CLOSE1q4: a word on its close taken back, said here. */}
+      {/* Its closure graph ended by the person's own done, or closed only in part, the stop of its close node
+          offered while it waits again; their press is What needs you's. A word on its close taken back is said here. */}
       {(unit.ends?.length ?? 0) > 0 && (
         <Row label={t('work.milestone.closed.label')} tone={unit.ends!.some(endOffersStop) ? 'failed' : 'ended'}>
           {unit.ends!.flatMap((end, index) => endSentences(t, end).map((said, part) => (
@@ -183,8 +183,8 @@ function Facts({ id, unit }: { id: string; unit: MilestoneUnit }) {
 }
 
 /**
- * The milestone in one line, for a row that names a branch (FABRIC-MILESTONE1b, *Branches*) and for the record's fold head
- * (MILESTONEUX1): the end, whether the clean-up is pending or completed, *blocked* where a clean-up entry is, the recovery kept,
+ * The milestone in one line, for a row that names a branch (*Branches*) and for the record's fold head:
+ * the end, whether the clean-up is pending or completed, *blocked* where a clean-up entry is, the recovery kept,
  * when there is one, and *held for you* where an attempt is held, so nothing that waits on the person hides behind a fold. What
  * waits on them wears the danger ink (a held attempt the person has already worded, only the plain one).
  */
@@ -200,11 +200,11 @@ export function MilestoneLine({ unit, className }: { unit: MilestoneUnit; classN
       : unit.recovery.length > 0 ? t('work.milestone.line.recovery') : null,
     (unit.held?.length ?? 0) > 0
       ? <span className={unit.held!.some((held) => !held.resolution) ? 'text-ink-danger' : undefined}>{t('work.milestone.line.held')}</span> : null,
-    // FABRIC-CLOSE1j: a closure graph's end said on the line too, a stop offered in the danger ink.
+    // A closure graph's end said on the line too, a stop offered in the danger ink.
     (unit.ends ?? []).some((end) => end.kind === 'overridden') ? t('work.milestone.line.overridden') : null,
     (unit.ends ?? []).some((end) => end.kind === 'partially-closed')
       ? <span className={unit.ends!.some(endOffersStop) ? 'text-ink-danger' : undefined}>{t('work.milestone.line.partial')}</span> : null,
-    // FABRIC-CLOSE1q4: a word of the person's on its close taken back, which no held row says once its node moved off.
+    // A word of the person's on its close taken back, which no held row says once its node moved off.
     (unit.ends ?? []).some((end) => end.kind === 'word-taken-back') ? t('work.milestone.line.takenBack') : null,
   ].filter(Boolean);
   return (

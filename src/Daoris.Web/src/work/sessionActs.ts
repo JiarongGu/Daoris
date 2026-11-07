@@ -16,33 +16,33 @@ import { sessionWindowName } from './window';
 import { useWorkActs } from './pausing/workActs';
 
 /**
- * What only the frame can do with a session, because the frame holds the attended session and its regions (D118 §5):
+ * What only the frame can do with a session, because the frame holds the attended session and its regions:
  * each attends the session first, as a press on its row would, then does its part there.
  */
 export type SessionDoors = {
-  /** Attend it, then open the box at its foot with the focus (*Answer…*, D126 §3.1). */
+  /** Attend it, then open the box at its foot with the focus (*Answer…*). */
   answer?: (id: string) => void;
-  /** Attend it, then open its stop's ask under its page header (*Stop…*, §3.3). */
+  /** Attend it, then open its stop's ask under its page header (*Stop…*). */
   stop?: (id: string) => void;
   /** Attend it, with the side bar open on its review (*Review*). */
   review?: (id: string) => void;
-  /** Open the panel's terminal in this folder, and show the panel (*Open a terminal here*, §3.5). */
+  /** Open the panel's terminal in this folder, and show the panel (*Open a terminal here*). */
   terminal?: (folder: string) => void;
-  /** Attend it, then open its delete's ask under its page header (*Delete…*, SESSUX1f, §5.4). */
+  /** Attend it, then open its delete's ask under its page header (*Delete…*). */
   delete?: (id: string) => void;
-  /** Attend it, then open its pause's ask under its page header (*Pause quest…*, *Pause ask…*, PAUSE1e, D132 §2.6). */
+  /** Attend it, then open its pause's ask under its page header (*Pause quest…*, *Pause ask…*). */
   pause?: (id: string, target: WorkTarget) => void;
-  /** Attend it, then open its hand-over's ask under its page header (*Go on with another agent…*, MIXAGENT1b-i, D163). */
+  /** Attend it, then open its hand-over's ask under its page header (*Go on with another agent…*). */
   handOver?: (id: string) => void;
-  /** Attend the conversation a hand-over opened (not an act: the ask's answer, MIXAGENT1b-i). */
+  /** Attend the conversation a hand-over opened (not an act: the ask's answer). */
   attend?: (id: string) => void;
-  /** Attend it, then open its helper's ask under its page header (*Ask another agent…*, MIXAGENT2b, D163). */
+  /** Attend it, then open its helper's ask under its page header (*Ask another agent…*). */
   askHelper?: (id: string) => void;
-  /** Attend it, then open its Pieces section's ask (*Ask another agent to work on a piece…*, COAGENT1c). */
+  /** Attend it, then open its Pieces section's ask (*Ask another agent to work on a piece…*). */
   askPiece?: (id: string) => void;
 };
 
-/** What a hand-over's ask tells back: how it ended, and that it was kept for the conversation's turn to end (MIXAGENT1b-i). */
+/** What a hand-over's ask tells back: how it ended, and that it is kept for the conversation's turn to end. */
 export type HandOverTold = Answered & { kept: (sentence: string) => void };
 
 /** The acts the frame carries out: a door that has no frame to hand them (the monitor) offers none of them. */
@@ -51,21 +51,21 @@ const FRAME_ACTS = new Set<SessionActId>([
 ]);
 
 /**
- * The codes a helper's ask and the person's yes or no to one answer by (MIXAGENT2b, HELPERNO1; the bridge's `HelperAskWhy`), each
+ * The codes a helper's ask and the person's yes or no to one answer by (the bridge's `HelperAskWhy`), each
  * said in the catalogue's words. A code a later driver adds is said in the driver's own sentence.
  */
 const HELPER_REFUSALS = new Set([
   'blank', 'too-long', 'agent', 'not-held', 'helper', 'reviewer', 'intake', 'ask-daoris', 'gone', 'person', 'waits', 'past', 'approved', 'unread',
 ]);
 
-/** The codes a piece's ask answers by (COAGENT1b; the bridge's `PartnerAskWhy`), each said in the catalogue's words. */
+/** The codes a piece's ask answers by (the bridge's `PartnerAskWhy`), each said in the catalogue's words. */
 const PIECE_REFUSALS = new Set(['blank', 'too-long', 'agent', 'path', 'not-held', 'unfit', 'no-commit', 'no-piece', 'state', 'no-copy', 'unknown-act']);
 
 /** A piece's refusal in the catalogue's words, by its code; one a later driver adds is said in the driver's own sentence. */
 export const pieceSaid = (t: Translate, why: string | null, message: string) =>
   (why && PIECE_REFUSALS.has(why) ? t(`work.pieces.refused.${why}`) : message || why || '');
 
-/** A helper's refusal in the catalogue's words, by its code: *What needs you*'s yes and no say them too (MIXAGENT2c). */
+/** A helper's refusal in the catalogue's words, by its code: *What needs you*'s yes and no say them too. */
 export const helperSaid = (t: Translate, why: string | null, message: string) =>
   (why && HELPER_REFUSALS.has(why) ? t(`work.helper.refused.${why}`) : message || why || '');
 
@@ -73,12 +73,12 @@ export const helperSaid = (t: Translate, why: string | null, message: string) =>
 const DOOR_OF: Partial<Record<SessionActId, keyof SessionDoors>> = { pauseQuest: 'pause', pauseAsk: 'pause' };
 
 /**
- * The names a delete's `stayed` carries (SESSDEL1; the driver's `SessionHomeFiles`), each said by the catalogue's words for
+ * The names a delete's `stayed` carries (the driver's `SessionHomeFiles`), each said by the catalogue's words for
  * it. A name a later driver adds is said as it is named, rather than as a key the catalogue does not hold.
  */
 const KEPT_NAMES = new Set([
   'conversation', 'transcript', 'files', 'binding', 'marker', 'mark', 'choice', 'hand-over', 'spawn', 'help', 'held', 'landing', 'archived',
-  // CHATFLOW1c: a chat run's binding, gate file and look file, which go with the record its key names.
+  // A chat run's binding, gate file and look file, which go with the record its key names.
   'run',
 ]);
 
@@ -86,8 +86,8 @@ const keptSaid = (t: Translate, name: string) =>
   (KEPT_NAMES.has(name) ? t(`work.delete.kept.${name}`) : t('work.delete.kept.other', { name }));
 
 /**
- * **The one owner of each act on a session** (SESSUX1d, D126 §3.1): the row's ⋯ and the page header each call this,
- * so an act has one implementation whichever door pressed it. D56's one owner holds: the module is the owner, and each
+ * **The one owner of each act on a session**: the row's ⋯ and the page header each call this,
+ * so an act has one implementation whichever door pressed it: the module is the owner, and each
  * door calls it.
  *
  * @remarks
@@ -95,29 +95,29 @@ const keptSaid = (t: Translate, name: string) =>
  * offered is `acts.ts`'s rule; this carries out the one pressed, and says how it went in the catalogue's words.
  *
  * - **Try again** sends the session's quest to `RETRY_QUEST`, which marks a parked quest or releases a held one as the
- *   driver's verdict says (SESSUX1b), and says which: the sentence the quest's page says for the same press.
+ *   driver's verdict says, and says which: the sentence the quest's page says for the same press.
  * - **Open folder** names the session alone (`SESSION_OPEN_FOLDER`): the module names the folder from its record.
- * - **Archive** and **Unarchive** of one session (SESSUX1e, moved here from the rail), and *Archive what ended…*'s second
+ * - **Archive** and **Unarchive** of one session, and *Archive what ended…*'s second
  *   press, which archives exactly what its first listed.
- * - **The stop's second press** (§3.3): a session waiting on you through `RESOLVE_SESSION`'s `stopped`, as its card's stop
- *   was, since that route lets a parked process go before the record ends; every other through `STOP_SESSION`, whose
+ * - **The stop's second press**: a session waiting on you through `RESOLVE_SESSION`'s `stopped`, as its card's stop
+ *   does, since that route lets a parked process go before the record ends; every other through `STOP_SESSION`, whose
  *   three answers are said as `stopNotice` says them.
- * - **The hand-over's second press** (MIXAGENT1b-i, D163) through `SESSION_HAND_OVER` with the reason `press`, then, for a
+ * - **The hand-over's second press** through `SESSION_HAND_OVER` with the reason `press`, then, for a
  *   conversation that works, `CANCEL_TURN`, so the turn's end takes the kept ask; *Go on with another agent…* itself is the
  *   frame's, which asks once under the header.
- * - **The delete's second press** (SESSUX1f, §5.4) through `SESSION_DELETE`; *Delete…* itself is the frame's, which asks
+ * - **The delete's second press** through `SESSION_DELETE`; *Delete…* itself is the frame's, which asks
  *   once under the header.
- * - **A helper's ask's second press** (MIXAGENT2b, D163) through `SESSION_HELPER_ASK`, and the person's yes to an agent's ask
- *   through `SESSION_HELPER_APPROVE` and their no through `SESSION_HELPER_DECLINE` (HELPERNO1); *Ask another agent…* itself is
+ * - **A helper's ask's second press** through `SESSION_HELPER_ASK`, and the person's yes to an agent's ask
+ *   through `SESSION_HELPER_APPROVE` and their no through `SESSION_HELPER_DECLINE`; *Ask another agent…* itself is
  *   the frame's, which asks once under the header.
- * - **Pause quest…** and **Pause ask…** are the frame's (PAUSE1e, D132 §2.6), which asks once under the header where the
+ * - **Pause quest…** and **Pause ask…** are the frame's, which asks once under the header where the
  *   pause ends work in flight; **Resume** goes to the work's one owner (`workActs.ts`), the press the pages make too, and
  *   never asks, since it starts nothing itself.
  */
 export function useSessionActs({ notify, doors = {}, entries }: {
   notify: Notify;
   doors?: SessionDoors;
-  /** The reader's entries (SESSONE1c): an archive reaches every part of the entry it is pressed for. Absent, a record is its own. */
+  /** The reader's entries: an archive reaches every part of the entry it is pressed for. Absent, a record is its own. */
   entries?: readonly SessionEntry[];
 }) {
   const { t } = useTranslation();
@@ -141,8 +141,8 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   const can = (act: SessionActId) => !FRAME_ACTS.has(act) || Boolean(doors[DOOR_OF[act] ?? (act as keyof SessionDoors)]);
 
   // Asked of one session, a refusal is the host's answer, said in the catalogue's words with the group that kept it; one
-  // that was not archived is information (D48 §6).
-  // An archive is of the entry (D167 point 5, D126 §5.2): every part's id goes, so no part is left as a row of its own.
+  // that is not archived is information.
+  // An archive is of the entry: every part's id goes, so no part is left as a row of its own.
   const archiveOne = (id: string, mark: boolean) => {
     const ids = partIds(entries, id);
     archive.mutate({ ids, archived: mark }, {
@@ -199,7 +199,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
         folder.mutate(session.id, { onError: failure(notify) });
         return;
       case 'detach':
-        // Its window holds the session's own workspace where it names one, else follows this window's (MAINWINDOWS3).
+        // Its window holds the session's own workspace where it names one, else follows this window's.
         openWindow.mutate({ name: sessionWindowName(session.id), workspace: session.workspace });
         return;
       case 'archive':
@@ -212,12 +212,12 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     }
   };
 
-  // A refusal is said in the ask that was answered (UXFIX2), whole; with no ask to say it in, in a toast.
+  // A refusal is said in the ask the person answered, whole; with no ask to say it in, in a toast.
   const refusedIn = (answered?: Answered) => (answered
     ? (error: unknown) => answered.refused(sentence(error))
     : failure(notify));
 
-  /** The stop's second press (§3.3), told back to its ask: `done` once the driver has answered it, `refused` with why not. */
+  /** The stop's second press, told back to its ask: `done` once the driver has answered it, `refused` with why not. */
   const stopNow = (session: Session, answered?: Answered) => {
     if (session.state === 'awaiting-person') {
       resolve.mutate({ id: session.id, state: 'stopped' }, {
@@ -239,11 +239,11 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   };
 
   /**
-   * *Go on with another agent…*'s second press (MIXAGENT1b-i, D163), told back to its ask. A conversation that is not talking
+   * *Go on with another agent…*'s second press, told back to its ask. A conversation that is not talking
    * goes on at once: the ask closes and the new conversation is attended (`attend`; an unbriefed one is said as an answer, since
    * it opened all the same). One that is talking keeps the ask for its turn's end, and then, *Stop and hand over…*, the turn is
    * stopped here, so its end takes it; the ask says where it goes on. A refusal is said inside the ask by its code and keeps the
-   * choice (UX5 U68); a refused hand-over stops nothing. Daoris's offer (MIXAGENT1b-ii) passes its reason: `near` or `limit`.
+   * choice; a refused hand-over stops nothing. Daoris's offer passes its reason: `near` or `limit`.
    */
   const handOverNow = (
     session: Session, choice: { agent: string; account: string; name: string; model?: string | null; effort?: string | null },
@@ -263,7 +263,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
           told.refused(said ?? answer.message);
           return;
         }
-        // SESSWATCH1a: a quest's own session is kept for the driver's next look, which stops it and carries its quest on: no turn of
+        // A quest's own session is kept for the driver's next look, which stops it and carries its quest on: no turn of
         // a conversation to stop here.
         if (session.kind !== 'chat') {
           told.kept(t('work.handOver.keptQuest', { agent: choice.name }));
@@ -282,7 +282,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   );
 
   /**
-   * *Ask another agent…*'s second press (MIXAGENT2b, D163 point 2), told back to its ask: `done` once the ask is on file for the
+   * *Ask another agent…*'s second press, told back to its ask: `done` once the ask is on file for the
    * driver's next look, said where its answer comes back; a refusal said inside the ask by its code, which keeps the question.
    */
   const askHelperNow = (session: Session, asked: { question: string; agent: string | null }, answered: Answered) => askHelper.mutate(
@@ -301,7 +301,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   );
 
   /**
-   * *Ask another agent to work on a piece…*'s second press (COAGENT1b, D199 point 2), told back to its ask: `done` once the driver's
+   * *Ask another agent to work on a piece…*'s second press, told back to its ask: `done` once the driver's
    * file holds it, a refusal by its code said inside the ask, keeping the words.
    */
   const askPartnerNow = (session: Session, asked: { piece: string; agent: string; paths: readonly string[] }, answered: Answered) =>
@@ -321,7 +321,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     );
 
   /**
-   * A working piece's *Stop…* (COAGENT1b): its partner's record's stop, the stop's one press, told back to its ask. The driver reads it
+   * A working piece's *Stop…*: its partner's record's stop, the stop's one press, told back to its ask. The driver reads it
    * as the person's and keeps what the partner wrote.
    */
   const stopPartnerNow = (partner: string, answered: Answered) => stop.mutate(partner, {
@@ -333,7 +333,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   });
 
   /**
-   * A piece's later act (COAGENT1b2): *Discard…* or *Hand over what it left*, its one press, told back to its ask. `done` once the driver's
+   * A piece's later act: *Discard…* or *Hand over what it left*, its one press, told back to its ask. `done` once the driver's
    * file holds the act, which its next look does; a refusal by its code, said inside the ask.
    */
   const actPieceNow = (session: Session, piece: string, act: 'discard' | 'hand-over', answered: Answered) =>
@@ -350,7 +350,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     });
 
   /**
-   * The person's yes to an agent's ask that waits on it (MIXAGENT2b, D163 point 3), told back to its press: `done` once the
+   * The person's yes to an agent's ask that waits on it, told back to its press: `done` once the
    * driver's file holds it; a refusal by its code, said beside the press.
    */
   const approveHelperNow = (session: string, ask: string, answered: Answered) => approveHelper.mutate({ session, ask }, {
@@ -366,7 +366,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   });
 
   /**
-   * The person's no to an agent's ask that waits on their word (HELPERNO1, D163 point 3), told back to its press: `done` once the
+   * The person's no to an agent's ask that waits on their word, told back to its press: `done` once the
    * driver refused it and noted so on the session's record; a refusal by its code, said beside the press.
    */
   const declineHelperNow = (session: string, ask: string, answered: Answered) => declineHelper.mutate({ session, ask }, {
@@ -382,12 +382,12 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   });
 
   /**
-   * *Delete…*'s second press (SESSUX1f, D126 §5.4), told back to its ask: `done` once the host deleted it, when the record
-   * and what this machine kept of it go, and so does the draft this viewer kept for it (§5.1). A refusal is said in the
-   * catalogue's words inside the ask (UXFIX2), and the ask stays, since nothing went.
+   * *Delete…*'s second press, told back to its ask: `done` once the host deleted it, when the record
+   * and what this machine kept of it go, and so does the draft this viewer kept for it. A refusal is said in the
+   * catalogue's words inside the ask, and the ask stays, since nothing went.
    *
-   * What the disk would not let go of (`stayed`, SESSDEL1) is said by name, in the error's tone, since not all of it went
-   * (SESSDEL1b); the ask still closes, since the record did.
+   * What the disk would not let go of (`stayed`) is said by name, in the error's tone, since not all of it went;
+   * the ask still closes, since the record did.
    */
   const deleteNow = (session: Session, answered?: Answered) => remove.mutate(session.id, {
     onSuccess: (answer) => {
@@ -401,7 +401,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
   });
 
   /**
-   * *Archive what ended…*'s second press (§5.3): what its first listed, each judged again by the host as it goes. What
+   * *Archive what ended…*'s second press: what its first listed, each judged again by the host as it goes. What
    * changed since the list is kept and counted, never refused as a whole.
    */
   const archiveListed = (ids: readonly string[], answered?: Answered) => archive.mutate({ ids: ids.flatMap((id) => partIds(entries, id)), archived: true }, {
@@ -430,9 +430,9 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     declineHelperNow,
     deleteNow,
     archiveListed,
-    /** A helper's ask on its way: its ask's presses wait for it (MIXAGENT2b). */
+    /** A helper's ask on its way: its ask's presses wait for it. */
     askingHelper: askHelper.isPending,
-    /** A piece's ask on its way: its ask's presses wait for it (COAGENT1b). */
+    /** A piece's ask on its way: its ask's presses wait for it. */
     askingPartner: askPartner.isPending,
     /** A piece's discard or hand-over on its way. */
     actingOnPiece: partnerAct.isPending,
@@ -444,7 +444,7 @@ export function useSessionActs({ notify, doors = {}, entries }: {
     handingOver: handOver.isPending || cancelTurn.isPending,
     /** A delete on its way: its ask's presses wait for it. */
     deleting: remove.isPending,
-    /** The work's one owner, whose pause the frame's ask presses (PAUSE1e). */
+    /** The work's one owner, whose pause the frame's ask presses. */
     work,
     /** An act on its way that the header's buttons wait for. */
     busy: retry.isPending || archive.isPending || folder.isPending || work.busy,

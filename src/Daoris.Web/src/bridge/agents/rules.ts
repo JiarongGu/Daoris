@@ -6,13 +6,13 @@ import { call } from '../call';
 import { readSlice } from '../driver';
 import { readPushed, type SliceSpec } from '../state/slices';
 
-// What an agent Daoris starts may do (MOD3): the machine's `permissions.json`, and an agent's proposals (D72, D74).
+// What an agent Daoris starts may do: the machine's `permissions.json`, and an agent's proposals.
 
 /** The rules' slice, as the shell's owner names it (`RulesStateSlice`). */
 export const RULES_SLICE = 'rules';
 
 /**
- * The rules as the shell pushes them (FOUNDATION1s part B, D182): one partition, `RULES`'s answer whole, pushed when the rules move.
+ * The rules as the shell pushes them: one partition, `RULES`'s answer whole, pushed when the rules move.
  * Nothing judged yet composes nothing, which is waited for.
  */
 export const rulesSlice: SliceSpec = {
@@ -23,7 +23,7 @@ export const rulesSlice: SliceSpec = {
 };
 
 /**
- * What an agent Daoris starts may do (PERM1, D72): Claude Code's own rules in Daoris's scopes, from the
+ * What an agent Daoris starts may do: Claude Code's own rules in Daoris's scopes, from the
  * one file under the home the driver composes each spawn from. Desktop only — the file is machine-local. As the shell pushes them,
  * read from memory, never stale and asked on no focus.
  */
@@ -39,7 +39,7 @@ export const useRules = () => {
   });
 };
 
-/** The screen's half of `daoris agent rules` (D50): an edit to the same file, answered with the state after it. */
+/** The screen's half of `daoris agent rules`: an edit to the same file, answered with the state after it. */
 export const useRuleAction = () => {
   const client = useQueryClient();
   return useMutation({
@@ -53,7 +53,7 @@ export const useRuleAction = () => {
 };
 
 /**
- * The screen's half of `daoris agent rules accept|decline` (PERM2, D74): the person's answer to an
+ * The screen's half of `daoris agent rules accept|decline`: the person's answer to an
  * agent's proposal, answered with the rules after it. 🔴 The only way a widening an agent proposed applies.
  */
 export const useRuleProposal = () => {

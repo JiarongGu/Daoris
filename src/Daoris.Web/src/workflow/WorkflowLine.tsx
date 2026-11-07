@@ -6,13 +6,13 @@ import { waitsOnYou, type WorkflowRun } from './run';
 import { runShort } from './runSaid';
 
 /**
- * **A record's work in its workflow, in one line** (WORKFLOW1c; the workflow design §7): a quest's or an ask's page carries it
+ * **A record's work in its workflow, in one line**: a quest's or an ask's page carries it
  * among its head's facts, *Workflow: waits for your look*, and its door opens the run in the session's side bar. An ask's work in
- * several repositories says each run apart (design §3.8), each its own door.
+ * several repositories says each run apart, each its own door.
  *
  * @remarks
  * Where a run waits on the person its words wear open's hue, the person's alone (platform-ux §3), beside the word that says it,
- * so it is never hue alone. With no run, nothing is drawn: a browser has no driver to read one (D47 §4), and a quest not
+ * so it is never hue alone. With no run, nothing is drawn: a browser has no driver to read one, and a quest not
  * published has none yet.
  *
  * A molecule: the runs arrive as a prop, and the door goes out.

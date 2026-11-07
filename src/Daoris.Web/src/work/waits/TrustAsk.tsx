@@ -5,11 +5,11 @@ import { Button, PathText, WaitingCard } from '../../design/ui';
 import { type Answered, Refused } from '../InlineConfirm';
 
 /**
- * The agent's trust question, asked by Daoris for a folder the driver is holding (D73).
+ * The agent's trust question, asked by Daoris for a folder the driver is holding.
  *
  * @remarks
  * **The grant is the person's, and this is where they give it.** The agent ignores a folder's own
- * `permissions.allow` until someone has trusted it there (DEPLOY1, both doors, measured), so the
+ * `permissions.allow` until someone has trusted it there (measured on both doors), so the
  * driver holds rather than spend a session that could not take its quest. The flag is the person's
  * grant, so this asks exactly what the agent would ask, names the one file that is written, and
  * grants only on the press. Nothing grants it at adoption, sync or spawn.
@@ -21,12 +21,12 @@ import { type Answered, Refused } from '../InlineConfirm';
  * A molecule: handed the hold, it reports the grant and the putting-down. It sits inline on a
  * quest's page and inside the drawer the band's row opens.
  *
- * **It keeps its card and answers in it** (UXFIX2b3b): it is the agent's own question, not a destructive edit's second
+ * **It keeps its card and answers in it**: it is the agent's own question, not a destructive edit's second
  * press, so it is not an `InlineConfirm`. It takes the same `Answered`: it waits saying so while the grant is written, and a
  * refusal is said inside it (not toasted) with the grant pressable again. The caller puts it down once the grant landed.
  * Trust is outward and loses nothing, so the grant stays the primary's hue.
  *
- * **A hold on your own sign-in's file offers no grant** (POOL1c, D197 point 3; the account-pool design §3 point 4, §4.3): a
+ * **A hold on your own sign-in's file offers no grant**: a
  * conversation that began there goes on there, and Daoris writes nothing in that file, so the question shows the folder and
  * says to trust it with the tool itself, at the person's terminal, with no *Trust this folder* and no file named.
  */
@@ -34,7 +34,7 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
   hold: TrustHold;
   /** The grant is being written: the press is held so it cannot be given twice. */
   busy?: boolean;
-  /** The grant, and how to tell the question how it ended (UXFIX2b3b): a refusal is said inside it, not toasted. */
+  /** The grant, and how to tell the question how it ended: a refusal is said inside it, not toasted. */
   onGrant: (answered: Answered) => void;
   /** Put the question down. Absent where there is nothing to return to. */
   onCancel?: () => void;
@@ -101,7 +101,7 @@ export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
           {t('trust.grant')}
         </Button>
         {onCancel && <Button variant="ghost" disabled={pending} onClick={onCancel}>{t('trust.cancel')}</Button>}
-        {/* Drawn from the first, so it is a live region before it speaks (UXFIX2c). */}
+        {/* Drawn from the first, so it is a live region before it speaks. */}
         <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
           {pending ? t('work.confirm.pending') : null}
         </span>

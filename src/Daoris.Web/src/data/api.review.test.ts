@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { api } from './api';
 
-/** The one request the stubbed host was sent: where, and the body it carried. */
+/** The one request sent to the stubbed host: where, and the body it carried. */
 function sent(fetcher: ReturnType<typeof vi.fn>): { path: string; method: string; body: unknown } {
   const [[path, init]] = fetcher.mock.calls as [[string, RequestInit]];
   return { path, method: init.method ?? 'GET', body: init.body ? JSON.parse(String(init.body)) : undefined };
@@ -10,9 +10,9 @@ function sent(fetcher: ReturnType<typeof vi.fn>): { path: string; method: string
 const answered = () => vi.fn(async () => Response.json({ quest: { id: 'q2' }, message: 'kept' }));
 
 /**
- * REVIEWENV1g (D154 point 8; the review environment design §3.3, §3.6; REVIEWENV1b3): the person's verdict names the set-up
+ * The person's verdict names the set-up
  * their view drew, whole, and a skip names none; *Set it up* and an ask's review choice reach their own doors. Each is one of
- * D156 §3.2's person-only doors, which the page reaches through one seam where PERSONDOOR1f puts the key.
+ * the person-only doors, which the page reaches through one seam where the person key goes.
  */
 describe("the review's doors", () => {
   afterEach(() => { vi.unstubAllGlobals(); });

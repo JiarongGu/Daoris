@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { store, stored } from '../../lib/stored';
 
 /**
- * A view that can move (DOCK1b, `docs/2026-09-29-dock-design.md` §3): what the right side bar and the
+ * A view that can move: what the right side bar and the
  * bottom panel hold, as VS Code's views move between its secondary side bar and its panel. The terminal
- * (CONSOLE4b, D96) is the person's own shell, beside the console as VS Code's terminal is beside its output.
+ * is the person's own shell, beside the console as VS Code's terminal is beside its output.
  */
 export type ViewId = 'notifications' | 'timeline' | 'review' | 'workflow' | 'atWork' | 'ask' | 'console' | 'terminal';
 
@@ -16,12 +16,12 @@ export type ViewId = 'notifications' | 'timeline' | 'review' | 'workflow' | 'atW
  * Daoris is told (`help/where.ts`) are records over `ViewId`, so the compiler asks for them; its surface and
  * where it is present are the Work frame's. The one place nothing checks is Ask Daoris's room
  * (`Knowledge/Room/HelpRoomWindow.cs`), which lists the views in prose: its test holds a phrase for each, and its
- * goldens are written again by their test's write switch (CONSOLE4b found it). A view on the right by default also
- * joins the frame tests that move every side bar view to the panel (COWORKVIEW1a found it).
+ * goldens are written again by their test's write switch. A view on the right by default also
+ * joins the frame tests that move every side bar view to the panel.
  */
-// The workflow (WORKFLOW1c, the workflow design §7): where the attended session's work stands, beside its timeline and review.
-// *Notifications* first (NOTIFY2b, the notification design §2.1): everything that comes to the person, the same on every view.
-// *At work* after it (COWORKVIEW1a, the cowork view design §5.1): who is at work on the attended session, from Daoris's records.
+// The workflow: where the attended session's work stands, beside its timeline and review.
+// *Notifications* first: everything that comes to the person, the same on every view.
+// *At work* after it: who is at work on the attended session, from Daoris's records.
 export const VIEW_IDS: readonly ViewId[] = ['notifications', 'timeline', 'review', 'workflow', 'atWork', 'ask', 'console', 'terminal'];
 
 /** A region a view can go: the right side bar, or the panel under the session. */
@@ -38,7 +38,7 @@ export const VIEW_PLACES = 'daoris.viewPlaces';
 
 /**
  * Where the views stand, from what the viewer kept. What cannot be read is ignored rather than
- * refused (a layout is a convenience, D42), and a view or a place this build does not know is dropped,
+ * refused (a layout is a convenience), and a view or a place this build does not know is dropped,
  * so a later build's choice never breaks an earlier one.
  */
 export function placesOf(raw: string | null): Record<ViewId, Place> {
@@ -60,7 +60,7 @@ export function placesOf(raw: string | null): Record<ViewId, Place> {
 }
 
 /**
- * The views a region holds: its own first, then what was moved into it, each in the frame's order —
+ * The views a region holds: its own first, then what is moved into it, each in the frame's order —
  * so a view moved in arrives at the end, as a tab dragged into VS Code's panel does, and the region's
  * own keep their places. `here` leaves out a view this frame does not have (Ask Daoris with no shell).
  */
@@ -77,7 +77,7 @@ export function viewsIn(
 }
 
 /**
- * Where the views stand, held by the application like the closings (DOCK1c), so the View menu's
+ * Where the views stand, held by the application like the closings, so the View menu's
  * *Reset view locations* reaches them from every view.
  */
 export type Placements = {

@@ -6,18 +6,18 @@ import { clearRefusal, clearSaid, clearWent, type HistoryTarget, type HistoryUni
 import type { Answered } from '../InlineConfirm';
 
 /**
- * **The one owner of a clear** (HIST1e, D153; the history-clearing design §5, §6.1): the quest's page, the ask's page and a
+ * **The one owner of a clear**: the quest's page, the ask's page and a
  * workspace's Details each press this, so the clear has one implementation whichever door pressed it, as `workActs.ts` is the
  * one owner of a pause and an abandon.
  *
  * @remarks
  * **An organism**: it holds the bridge's hook, so the pages and the workspace's section, which each press it, hold none.
  * What the press says is `history.ts`'s rule, said here in the catalogue's words: what went, and how many changed since the
- * list and were kept, in no plain success's tone where any was; a file the disk kept apart, as an error. A refusal (one
+ * list and stayed, in no plain success's tone where any did; a file the disk kept apart, as an error. A refusal (one
  * quest, one ask or one quest's failed sessions that changed since the list) is the catalogue's sentence for its code and
- * variant, said inside the ask that was pressed (UXFIX2), which stays open.
+ * variant, said inside the ask that is pressed, which stays open.
  *
- * **The answer is judged before the ask closes** (HIST1n): a workspace's press whose every unit changed since the list is
+ * **The answer is judged before the ask closes**: a workspace's press whose every unit changed since the list is
  * answered, not refused, and it took nothing, so its ask stays open saying why, each kept unit by its reason, as a discard
  * the driver kept is said (`settings/Sweep.tsx`'s `sayDiscard`).
  */

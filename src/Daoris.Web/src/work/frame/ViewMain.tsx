@@ -6,23 +6,23 @@ import { type ContextOffer, contextOffer } from '../../menus/press';
 import { usePublishedOffer } from '../../menus/mainOffer';
 
 /**
- * A page's header in the main area (D118 §3b, D119 §3.2): its title, with what is beside it (a version, its pills); its
+ * A page's header in the main area: its title, with what is beside it (a version, its pills); its
  * id in the mono face; its line; and its acts. A title and a line are content.
  *
  * @remarks
- * Shared by every view's page since FRAME1d: PLUGUI1b drew it for a plugin, and a quest's and an ask's wear it. A
- * repository's has no id line (FRAME1e): its name is its id, and a title said twice is noise.
+ * Shared by every view's page: a plugin's, a quest's and an ask's wear it. A
+ * repository's has no id line: its name is its id, and a title said twice is noise.
  *
- * **The line is shown whole** (NAME2): content is shown as it is (platform language §4), and cut to one line a plugin's
- * description ended in an ellipsis on the install, its tip the only place it could be read. It wraps at the column's
- * edge, as the page's every block does (D141): a plugin's page asked for that alone (D140 §2), and every page has it.
+ * **The line is shown whole**: content is shown as it is, and cut to one line a plugin's
+ * description would end in an ellipsis, its tip the only place it could be read. It wraps at the column's
+ * edge, as the page's every block does.
  *
- * **An icon leads it where the record has one** (PLUGUI2, D140 §2): a plugin's, beside its title, decoration the title
+ * **An icon leads it where the record has one**: a plugin's, beside its title, decoration the title
  * names.
  *
- * **A record whose state moves leads with its state** (UX7c, D152 §7; the UX7 design §5.1): `lead` is drawn before the
+ * **A record whose state moves leads with its state**: `lead` is drawn before the
  * title, so the pill stays in one place whatever the title's length; `clamp` gives the title that many lines at most,
- * whole in its tip and on *Show all* where it was cut; and `facts` is the line under it, the facts the state makes
+ * whole in its tip and on *Show all* where it is cut; and `facts` is the line under it, the facts the state makes
  * matter, said once. Such a head has no id line: the id is its ⋯'s and its *Details*'.
  */
 export function PageHead({
@@ -31,7 +31,7 @@ export function PageHead({
 }: {
   title: string; version?: string; pills?: ReactNode; id?: string; line?: string; icon?: ReactNode;
   /**
-   * The acts (HEAD2a, D162 §3, the entry-and-heads design §2): primary first, then the secondary. They hold still: above
+   * The acts: primary first, then the secondary. They hold still: above
    * 640 px of the main area they sit in a column of their own at the title's first line, so a long title wraps under itself;
    * at 640 px or less they take a right-aligned row under the facts.
    */
@@ -47,26 +47,26 @@ export function PageHead({
   /** The facts line under the title, in order; none draws no line. */
   facts?: readonly string[];
   /**
-   * A fact that is a door, last on the facts line (WORKFLOW1c, the workflow design §7): where the record's work stands in its
+   * A fact that is a door, last on the facts line: where the record's work stands in its
    * workflow, whose door opens the run.
    */
   fact?: ReactNode;
   /**
-   * The head offers its own door to the whole text (*View full request*, HEAD2f, D162 §2), so the clamped title keeps its tip
+   * The head offers its own door to the whole text (*View full request*), so the clamped title keeps its tip
    * and drops its *Show all*: one way to the same text.
    */
   wholeElsewhere?: boolean;
   /**
-   * The acts stay beside the title at every width (HEADFIT1b, D185): a session's head, whose acts at the narrow width are an icon
+   * The acts stay beside the title at every width: a session's head, whose acts at the narrow width are an icon
    * and the ⋯, so a row of their own under the facts would spend 38 px of the record head's 200.
    */
   actsBeside?: boolean;
   /**
-   * The facts line keeps to one line, cut with an ellipsis before `fact`, which it never cuts (RAILLINE1): a session's head,
-   * whose line a running call's whole command once wrapped to three.
+   * The facts line keeps to one line, cut with an ellipsis before `fact`, which it never cuts: a session's head,
+   * whose line a running call's whole command would wrap to three.
    */
   factsOneLine?: boolean;
-  /** The facts line's tip: what a fact says whole where the line says it short (a running call's title, RAILLINE1). */
+  /** The facts line's tip: what a fact says whole where the line says it short (a running call's title). */
   factsTip?: string;
 }) {
   const said = facts && facts.length > 0 ? facts.join(' · ') : null;
@@ -132,8 +132,8 @@ export function useCut(element: RefObject<HTMLElement | null>, when: unknown): b
 }
 
 /**
- * A title clamped to its lines (UX7c, the UX7 design §5.3): whole in its tip, and whole on *Show all* where the clamp cut
- * it. Content is shown as it is (platform language §4): nothing is rewritten to fit.
+ * A title clamped to its lines: whole in its tip, and whole on *Show all* where the clamp cuts
+ * it. Content is shown as it is: nothing is rewritten to fit.
  */
 function ClampedTitle({ title, lines, showAll }: { title: string; lines: 1 | 2; showAll: boolean }) {
   const { t } = useTranslation();
@@ -162,14 +162,14 @@ function ClampedTitle({ title, lines, showAll }: { title: string; lines: 1 | 2; 
 }
 
 /**
- * **A page's tabs** (UX6f, D150 §4.2): several pages of one record under one header, each a tab, and the chosen one's
+ * **A page's tabs**: several pages of one record under one header, each a tab, and the chosen one's
  * panel beneath, named by its tab, as a repository's page and a workspace's hold theirs (`projects/tabs.ts`).
  *
  * @remarks
- * **The chosen tab is its holder's**, remembered per view (§4.2), so a door can open the page at a tab.
+ * **The chosen tab is its holder's**, remembered per view, so a door can open the page at a tab.
  *
  * **One stop for the keys**: the chosen tab is where Tab lands, and ←, →, Home and End choose along the row, as every
- * tab list's do. **A tab is its whole name** (TABS1): the names are short words in both languages, and a row too narrow
+ * tab list's do. **A tab is its whole name**: the names are short words in both languages, and a row too narrow
  * for them scrolls rather than cutting one.
  *
  * A molecule: every state is reached by its props, and every press goes out.
@@ -234,7 +234,7 @@ export function PageTabs<T extends string>({ label, tabs, chosen, onChoose, chil
   );
 }
 
-/** A section of a page: its name as a heading, and the region it names (D119 §3.2). */
+/** A section of a page: its name as a heading, and the region it names. */
 export function PageSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section aria-label={title} className="mt-6 first:mt-0">
@@ -265,31 +265,31 @@ export const GUTTERS = {
 } as const;
 
 /**
- * A view's **main area** (D118 §3b, §5): the scroll box beside its list, its page header's slot, and its
+ * A view's **main area**: the scroll box beside its list, its page header's slot, and its
  * four states.
  *
  * @remarks
  * **It lays out by its own width, never the viewport's.** It is the container named `main`, and a split
  * inside it follows it (`@4xl/main:grid-cols-2`), since the list and the side bar narrow it while the
- * window stays as wide (audit A4). USE1's container query on Overview's repository rows was the rule's
+ * window stays as wide. Overview's repository rows' container query is the rule's
  * first instance.
  *
- * **It is the page's one column, and the column is its pane** (D141, LAYOUT11). Every block of a page
+ * **It is the page's one column, and the column is its pane.** Every block of a page
  * takes its width, so a page wraps at one edge in every language; it is the one place a line's length
  * could be capped, and it caps none. A cap, if the window ever shows one is wanted, goes here once, in
- * `em` (D141 §3), never on a paragraph.
+ * `em`, never on a paragraph.
  *
  * **It scrolls by itself**, and is the block anything positioned inside it is placed in: an `sr-only` label
- * far down a long page otherwise took the viewport as its block and grew a second scrollbar (PERM1).
+ * far down a long page otherwise takes the viewport as its block and grows a second scrollbar.
  *
  * **A molecule**: every state is reached by its props. A first load is skeleton rows, never the empty
- * state, which read as *Nothing attended* while the list that held the attended session was still on its
- * way (audit SE11).
+ * state, which would read as *Nothing attended* while the list that holds the attended session is still on its
+ * way.
  *
- * **A right-click on the page offers what is done to its record** (CTX1, D138 §2): `menu`, the page's header's acts and
+ * **A right-click on the page offers what is done to its record**: `menu`, the page's header's acts and
  * its body's, from the owner each already has. A field, a link, a selection and a code span on it add their own.
  *
- * **The menu bar reads the same offer** (UX7a, D152 §2): Run's record group and Edit's *Copy ID* run what the page offers,
+ * **The menu bar reads the same offer**: Run's record group and Edit's *Copy ID* run what the page offers,
  * by the page's own presses, so a menu row applies exactly when the page offers it.
  */
 export function ViewMain({ header, state = 'chosen', none, gone, gutters = 'page', menu, ref, children }: {

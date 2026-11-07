@@ -6,10 +6,9 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// Every call's lineage read from its <c>_meta</c> and written before its tool runs (FABRIC-C1a, D173): the one new read the
-/// C0 audit names, since the connector took its identity once, from the environment it was started with, and a native child
-/// calls with its parent's. Then, for a connector that names a session, who made the call decides whether its tool runs
-/// (FABRIC-C2a, D173's FABRIC-C2a note).
+/// Every call's lineage read from its <c>_meta</c> and written before its tool runs: the connector takes its identity once, from the
+/// environment it is started with, and a native child
+/// calls with its parent's. Then, for a connector that names a session, who made the call decides whether its tool runs.
 /// </summary>
 /// <remarks>
 /// <para>Only the harness's <c>_meta</c> says who called, never the arguments, which are the model's; they are read only to refuse
@@ -91,7 +90,7 @@ public static class CallLineageFilter
         .Select(pair => pair.Value);
 
     /// <summary>
-    /// The refusal: that nothing was done, why (a subagent, or lineage that could not be verified, and the second never claims
+    /// The refusal: that nothing is done, why (a subagent, or lineage that could not be verified, and the second never claims
     /// the first), that the reads remain, and where the request belongs.
     /// </summary>
     private static string Text(string? tool, Caller caller, string? shape)

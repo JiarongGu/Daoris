@@ -4,8 +4,8 @@ using static Daoris.Knowledge.SaidKeeping;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The say door: what the person (or Daoris, or the supervisor) said to a session, kept on its record to go on with (MSG1a, D137 §2.2,
-/// §5.3), and the supervisor's answer to a park and the restore of a park its release did not hand.
+/// The say door: what the person (or Daoris, or the supervisor) said to a session, kept on its record to go on with,
+/// and the supervisor's answer to a park and the restore of a park its release did not hand.
 /// </summary>
 /// <param name="home">This machine's home, where a park's question is filed, or null on a host with none.</param>
 internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskStore? asks, string? home)
@@ -13,52 +13,52 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
     private static string Spell(SessionState state) => Session.Spell(state);
 
     /// <summary>
-    /// Keep what the person said to a parked or ended session of this machine's, for it to go on with (MSG1a, D137 §2.2,
-    /// §5.3): verbatim, in order after the words already waiting, with its own id, when, and its files' names. The record
+    /// Keep what the person said to a parked or ended session of this machine's, for it to go on with:
+    /// verbatim, in order after the words already waiting, with its own id, when, and its files' names. The record
     /// does not move. A park takes the words as its answer, said on its note as an answer is; an ended record keeps them
     /// for the driver's next look, which takes it out of its ended state with them (<see cref="SessionAdvances.AdvanceAsync"/>).
     /// </summary>
     /// <remarks>
     /// <para><b>What never goes on is refused, before anything is kept</b>: a teammate's record, whose process and
     /// conversation are on their machine; an intake, answered through its ask; a session that stood down, whose quest is
-    /// someone else's. So is a running session, which hears words through the driver that runs it (D136), never its
+    /// someone else's. So is a running session, which hears words through the driver that runs it, never its
     /// record.</para>
     ///
-    /// <para><b>Words follow the line's head</b> (FOUNDATION1 row d-ii, D212; the design §3.4 rule 2): inside the step, after the settlement
+    /// <para><b>Words follow the line's head</b>: inside the step, after the settlement
     /// and before every refusal above, a record its line has left is refused <see cref="SessionSayRefusal.Continued"/> naming the head
     /// (<see cref="Lines.WalkAsync"/>), so no part opens between the judgement and the keep; a line that loops or runs past
     /// <see cref="Lines.Bound"/> is refused <see cref="SessionSayRefusal.Unplaced"/>. A key's word waiting at the head answers a retry named
     /// to an earlier part settled; one waiting on a part the line has left is answered by the door as it stands.</para>
     ///
     /// <para><b>The words are this machine's alone</b>, like a transcript: on an ended record nothing that travels changes,
-    /// so no revision is written. A park's answer line is on its note, which travels, as ANSWER1b's always was.</para>
+    /// so no revision is written. A park's answer line is on its note, which travels.</para>
     ///
-    /// <para><b>Keeping them on the ask is the door's</b> (DRIFT1a), beside this and never inside it: a park's answer at
+    /// <para><b>Keeping them on the ask is the door's</b>, beside this and never inside it: a park's answer at
     /// once, words to an ended record once the session took them.</para>
     /// </remarks>
     /// <param name="walksHead">Whether the door walks the line's head (row d-ii): always, but for the landing measurement's copy of the door as it stood before the row.</param>
     /// <param name="files">What the person gave with the words: only each one's name is kept, never where it is.</param>
-    /// <param name="channel">The channel message the words are (SESSONE2e): kept on the word, so its door tells the ask nothing more.</param>
+    /// <param name="channel">The channel message the words are: kept on the word, so its door tells the ask nothing more.</param>
     /// <param name="from">
-    /// Their author where that is not the person (COWORK1b, <see cref="SaidFrom"/>): Daoris's own words are kept as Daoris's, never
+    /// Their author where that is not the person (<see cref="SaidFrom"/>): Daoris's own words are kept as Daoris's, never
     /// read as the person's. An author this build does not know is refused before anything is kept.
     /// </param>
     /// <param name="key">
-    /// The producer's key (COWORK1b, the message-urgency design §6): where a word with it already waits on the record, nothing more
+    /// The producer's key: where a word with it already waits on the record, nothing more
     /// is kept and the answer is that word, so a producer's retry keeps one word. Once a session took it, the key is the producer's
-    /// own to remember (D188's COWORK1b note).
+    /// own to remember.
     /// </param>
-    /// <param name="level">When its sender asked it to reach a working session (COWORK1c, <see cref="SaidLevel"/>); one this build does not know is refused.</param>
+    /// <param name="level">When its sender asked it to reach a working session (<see cref="SaidLevel"/>); one this build does not know is refused.</param>
     /// <param name="running">
-    /// The driver that runs the session asks for its run (COWORK1c, the message-urgency design §6): a running record keeps the word,
+    /// The driver that runs the session asks for its run: a running record keeps the word,
     /// which that driver's one dispatcher hands its run and takes off once on the wire. Without it a running record refuses as before,
     /// since only that driver hands a running session its words.
     /// </param>
-    /// <param name="decision">With <c>from: supervisor</c> only: the decision whose release this is (SUPERVISOR1a-i).</param>
+    /// <param name="decision">With <c>from: supervisor</c> only: the decision whose release this is.</param>
     /// <param name="question">With <c>from: supervisor</c> only: the recorded question it answers.</param>
     /// <param name="choice">With <c>from: supervisor</c> only: the offered label it chose, from which the service composes the text.</param>
     /// <param name="ending">
-    /// The shell asks for a record that winds up or moves, its dispatcher closed (FOUNDATION1o, the foundation design §3.4 rule 4): a running
+    /// The shell asks for a record that winds up or moves, its dispatcher closed: a running
     /// record keeps the word as one said once it ended, for its next part to go on with, where the shell held it before. Without it a running
     /// record refuses as before.
     /// </param>
@@ -72,7 +72,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
             return await SuperviseAsync(id, text, files, now, channel, key, level, decision, question, choice, ct).ConfigureAwait(false);
         }
 
-        // COMMS1e: the person's press names its question alone; a decision and a choice stay the supervisor's, and no other author presses.
+        // The person's press names its question alone; a decision and a choice stay the supervisor's, and no other author presses.
         if (decision is not null || choice is not null || (question is not null && from is not null))
         {
             return new(
@@ -112,7 +112,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
                 Session: null);
         }
 
-        // Read, judged and written as one step (REV3): the driver taking the record up and the words arriving could
+        // Read, judged and written as one step: the driver taking the record up and the words arriving could
         // otherwise both read it waiting, and the words land on a record already going on.
         return await sessions.ExclusiveAsync(async inside =>
         {
@@ -122,7 +122,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
                 return new SessionSayOutcome(SessionSayRefusal.NotFound, $"No session `{id}`.", Session: null);
             }
 
-            // Row d-ii (D212, the design §3.4 rule 2, §19.13): the line's head, read inside this step, so no part opens between this
+            // The line's head, read inside this step, so no part opens between this
             // judgement and the keep below. One probe a hop on `sessions_from`, and one on `sessions_quest` for a driven part with none.
             var line = walksHead
                 ? await Lines.WalkAsync(sessions, session, inside).ConfigureAwait(false)
@@ -151,8 +151,8 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
             if (Never(session) is { } never) return never;
 
             var parked = session.State == SessionState.AwaitingPerson;
-            // COWORK1c: a running record keeps words only for its own run, asked by the driver that runs it.
-            // FOUNDATION1o: a record that winds up or moves keeps the word for its next part, as an ended record keeps one.
+            // A running record keeps words only for its own run, asked by the driver that runs it.
+            // A record that winds up or moves keeps the word for its next part, as an ended record keeps one.
             var forNext = session.Active && !parked && ending && !running;
             var forRun = session.Active && !parked && !forNext;
             if (forRun && !running)
@@ -164,7 +164,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
                     Session: null);
             }
 
-            // COWORK1b (trap 19): a word with this producer's key already waits, so this say is its producer's retry.
+            // A word with this producer's key already waits, so this say is its producer's retry.
             if (key is not null && session.Said.FirstOrDefault(each => string.Equals(each.Key, key, StringComparison.Ordinal)) is { } waiting)
             {
                 return new SessionSayOutcome(
@@ -173,7 +173,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
                     session, waiting) { Again = true };
             }
 
-            // COMMS1e: after the retry, so a double press is answered with its word whatever the question did since; before the keep, in this step.
+            // After the retry, so a double press is answered with its word whatever the question did since; before the keep, in this step.
             if (question is not null && QuestionBox.Read(home!, id) is var onFile
                 && (onFile is null || !string.Equals(onFile.Id, question, StringComparison.Ordinal)))
             {
@@ -199,19 +199,19 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
     }
 
     /// <summary>
-    /// Keep the supervisor's answer on a park, the release's one conditional step (SUPERVISOR1a-i, D208; the supervisor design §3.4):
+    /// Keep the supervisor's answer on a park, the release's one conditional step:
     /// its text composed here from <paramref name="choice"/> (<see cref="SupervisorWord.Handed"/>), its key the release's receipt, and
     /// every check made inside the store's one exclusive step, so nothing is kept where any fails.
     /// </summary>
     /// <remarks>
     /// <para><b>A claim, never an authority.</b> Any caller can reach this door; what makes a word the supervisor's is the driver's
-    /// memory of the id its own release was answered with, never this word's fields. So nothing here grants: a word kept by another
+    /// memory of the id its own release is answered with, never this word's fields. So nothing here grants: a word kept by another
     /// caller is unattributed by the driver, quarantined and taken back. No answered line is written on the note, so a forged word
     /// leaves nothing that asserts authority; the supervisor's line is the driver's, for an attributed word.</para>
     ///
     /// <para><b>The key's retry compares</b> its author, decision, question, choice and text, so a lost response is recovered with the
     /// word already kept and a different say under the same key is refused (<see cref="SessionSayRefusal.KeyMismatch"/>). A word claiming
-    /// the decision under another key was never the release's (<see cref="SessionSayRefusal.DecisionTaken"/>).</para>
+    /// the decision under another key is never the release's (<see cref="SessionSayRefusal.DecisionTaken"/>).</para>
     /// </remarks>
     private async Task<SessionSayOutcome> SuperviseAsync(
         string id, string? text, IReadOnlyList<string>? files, DateTimeOffset now, string? channel, string? key, string? level,
@@ -293,7 +293,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
     }
 
     /// <summary>
-    /// Put a park the driver took up back as it was, less the supervisor's word it admitted (SUPERVISOR1a-i, the supervisor design §6.3):
+    /// Put a park the driver took up back as it stood, less the supervisor's word it admitted:
     /// a failure between the admission and the wire hands nothing, so the record returns to <c>awaiting-person</c> with
     /// <paramref name="note"/>, the note as the look read it, <b>keeping every other waiting word</b>: a helper's, an opinion's,
     /// Daoris's, and any word of the owner's that arrived after the admission. One exclusive step. Unlike a move to
@@ -334,7 +334,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
         }, ct).ConfigureAwait(false);
 
     /// <summary>
-    /// Why the supervisor's answer may not land on <paramref name="session"/> (SUPERVISOR1a-i, the supervisor design §3.1), or null:
+    /// Why the supervisor's answer may not land on <paramref name="session"/>, or null:
     /// read inside the say's step, the question from this service's own file and the go-aheads from the ask's record.
     /// </summary>
     private async Task<SessionSayOutcome?> SupervisedParkAsync(Session session, string question, string choice, CancellationToken inside)
@@ -362,7 +362,7 @@ internal sealed class SessionSays(QuestStore quests, SessionStore sessions, AskS
             return Refused(SessionSayRefusal.QuestionChanged, $"The question on file for session `{id}` is not `{question}`: nothing was kept.");
         }
 
-        // SUPERVISOR1b (§4.1): the agent's mark, read again here from the file, so a question marked after the keeping is still the owner's.
+        // The agent's mark, read again here from the file, so a question marked after the keeping is still the owner's.
         if (filed.Owner is { } owner)
         {
             return Refused(SessionSayRefusal.OwnerQuestion, $"Session `{id}`'s question is marked the owner's ({owner}): the supervisor answers none of it.");

@@ -26,7 +26,7 @@ export function highlighted(code: string, language?: string | null): string {
 }
 
 /**
- * Below this width of its own pane a block's long lines wrap until the person says otherwise (ASKHIST1c): the container
+ * Below this width of its own pane a block's long lines wrap until the person says otherwise: the container
  * query's number, written whole in each class that reads it. 48rem holds a hundred characters of the code face, so a
  * conversation in Ask Daoris's dock (300 px to about 700) wraps, and one in Sessions' centre at a wide window scrolls as
  * before; Sessions' centre narrowed by an open side bar wraps by the same rule.
@@ -39,21 +39,21 @@ const remPx = () =>
   (typeof document === 'undefined' ? 16 : parseFloat(getComputedStyle(document.documentElement).fontSize)) || 16;
 
 /**
- * One code block in a conversation (D76, CONV2): its language named, highlighted in the paper's own
+ * One code block in a conversation: its language named, highlighted in the paper's own
  * inks (`code.css`), and a copy button — the reference console's shape.
  *
  * @remarks
- * **The colours are D41's tokens**, not an imported theme: a keyword wears the accent, a string and a
+ * **The colours are the design tokens**, not an imported theme: a keyword wears the accent, a string and a
  * number the two cool status hues, a comment the faint ink. So it follows the chosen theme with no
  * second palette to keep in step.
  *
- * **Its long lines wrap where its pane is narrow** (ASKHIST1c): in Ask Daoris's dock a line of a hundred characters scrolled
+ * **Its long lines wrap where its pane is narrow**: in Ask Daoris's dock a line of a hundred characters scrolled
  * sideways, cut off at the edge. *Wrap* beside *Copy* says which it is and switches it; until pressed, the block's own width
  * decides (`WRAP_BELOW`), by a container query on the block before it is measured and by its measure after, so the press
  * and the lines agree. Never the window's width: the dock is narrow on a wide window. A table is not code and keeps its own
  * scrolling box (`Markdown`). Copy takes the original text, whatever is shown.
  *
- * A molecule: props in; its state is whether it was just copied and whether the person chose to wrap.
+ * A molecule: props in; its state is whether it is just copied and whether the person chose to wrap.
  */
 export function CodeBlock({ code, language }: { code: string; language?: string | null }) {
   const { t } = useTranslation();

@@ -3,9 +3,9 @@ import { type Query, type QueryClient, type QueryKey, hashKey, useQueryClient } 
 import { useShenora, useShenoraEvent } from '@shenora/react';
 
 /**
- * A slice of the machine's state the shell pushes with its data (PUSH1a, D182): which cache entry its partitions feed, and how.
- * The page's store stays its query cache (D182 point 7): a pushed entry is written by the pushes and read from memory alone, since
- * the page and the shell are one build (D139) and the shell pushes every slice the page reads.
+ * A slice of the machine's state the shell pushes with its data: which cache entry its partitions feed, and how.
+ * The page's store stays its query cache: a pushed entry is written by the pushes and read from memory alone, since
+ * the page and the shell are one build and the shell pushes every slice the page reads.
  */
 export type SliceSpec = {
   /** The slice's name, as the shell's owner names it. */
@@ -45,9 +45,9 @@ type Slice = {
   mode: 'unknown' | 'live';
   epoch: string | null;
   partitions: Map<string, Held>;
-  /** Whether the owner has judged it in this epoch: its snapshot said `ready`, or a push of it was applied. */
+  /** Whether the owner has judged it in this epoch: its snapshot says `ready`, or a push of it is applied. */
   judged: boolean;
-  /** What was heard before the baseline, applied after it where newer. */
+  /** What is heard before the baseline, applied after it where newer. */
   waiting: Push[];
   asking: Promise<void> | null;
 };
@@ -96,7 +96,7 @@ function manifestOf(value: unknown): Manifest | null {
 }
 
 /**
- * What one window holds of the slices it reads pushed (D182 points 3 and 4): kept beside its query client, so every window keeps
+ * What one window holds of the slices it reads pushed: kept beside its query client, so every window keeps
  * its own and a second window reads its own snapshot once.
  */
 class Pushed {
@@ -147,7 +147,7 @@ class Pushed {
 
   /**
    * Whether a live slice is being read again whole (a missed push, another epoch, a delta off its base): a state of its own, in which
-   * what is held is the last render, never a first load (PUSHUX1, the UI/UX design §3.8).
+   * what is held is the last render, never a first load.
    */
   resyncing(name: string): boolean {
     const slice = this.slices.get(name);
@@ -200,7 +200,7 @@ class Pushed {
   }
 
   /**
-   * Read the slice's snapshot and install it as the baseline (D182 point 3): asked once its pushes are heard, as a window mounts,
+   * Read the slice's snapshot and install it as the baseline: asked once its pushes are heard, as a window mounts,
    * and again where the manifest or a push says this window missed one. A slice whose read failed keeps what it holds, live or not
    * yet, and the next manifest asks again.
    */
@@ -308,14 +308,14 @@ export function readPushed<T>(client: QueryClient, name: string): Promise<T> {
 }
 
 /**
- * For a broad invalidation: every query but a live slice's own entry, which its pushes write (D182 point 7), so a tick or a scope
+ * For a broad invalidation: every query but a live slice's own entry, which its pushes write, so a tick or a scope
  * asks again what is read beneath it and never the pushed entry.
  */
 export const notPushed = (client: QueryClient) => (query: Pick<Query, 'queryKey'>) => !pushedOf(client).feeds(query.queryKey);
 
 /**
- * A keyed partition's delta applied (PUSH1d2, the shell's `StateSlice.Keyed`): the partition an object of records by key, the delta
- * the records that moved, `removed` the keys gone. A new object, so what was held is never changed under a reader.
+ * A keyed partition's delta applied (the shell's `StateSlice.Keyed`): the partition an object of records by key, the delta
+ * the records that moved, `removed` the keys gone. A new object, so what is held is never changed under a reader.
  */
 export function mergeKeyed(held: unknown, delta: unknown, removed: readonly string[]): Record<string, unknown> {
   const object = (value: unknown) => (typeof value === 'object' && value !== null && !Array.isArray(value) ? value : {});
@@ -332,7 +332,7 @@ export function usePushedLive(name: string): boolean {
 
 /**
  * Whether `name` is live in this window and being read again whole: its readers hold the last render at reduced opacity until the
- * snapshot lands, never a first load's skeleton (PUSHUX1, the UI/UX design §3.8). A query's own fetching is not this.
+ * snapshot lands, never a first load's skeleton. A query's own fetching is not this.
  */
 export function usePushedResyncing(name: string): boolean {
   const store = pushedOf(useQueryClient());
@@ -340,7 +340,7 @@ export function usePushedResyncing(name: string): boolean {
 }
 
 /**
- * The page's half of the push path (PUSH1a, D182): each slice's pushes and manifests heard, then each slice's snapshot asked, in
+ * The page's half of the push path: each slice's pushes and manifests heard, then each slice's snapshot asked, in
  * that order, so nothing pushed while the snapshot is on its way is missed. Mounted by `ShellSignals` in both roots, so every
  * window holds its own; mounted again, it reads each snapshot again. A plain browser, the stories' and e2e's harness, has no bus and
  * keeps the service's pulls.

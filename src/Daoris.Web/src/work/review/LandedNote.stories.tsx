@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { LandedWork } from './diff';
 import { LandedNote } from './LandedNote';
 
-// Every state of where a landed session's work went (REVIEW2, D113), on the shipped component. A molecule, so
-// each is reached by passing props (components plan §2) — including the ones a real record rarely shows.
+// Every state of where a landed session's work went, on the shipped component. A molecule, so
+// each is reached by passing props — including the ones a real record rarely shows.
 
 const LANDED: LandedWork = {
   branch: 'feature/0fda18-fix-the-api-gap',

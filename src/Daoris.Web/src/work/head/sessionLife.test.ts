@@ -8,7 +8,7 @@ import { en, zh } from '../../locales';
 import { ENDED_STATES, LIVE_STATES, SESSION_MOVES, SESSION_STATES, sessionFlow } from './sessionLife';
 import { said } from '../../test/said';
 
-// FLOWCHART1b (the flowchart design §2.2, §7 traps 8, 10, 11, 18 and 19): a session's states and the moves between them,
+// A session's states and the moves between them,
 // drawn at the head of its Timeline view. The moves are a page constant, so this holds them to the code's own table,
 // `SessionAdvances.Allowed`, read from the service's source (`.claude/knowledge/twins.md`): a second copy no test holds drifts.
 
@@ -124,7 +124,7 @@ describe('the states a session\'s Timeline view draws (§2.2)', () => {
     for (const state of ENDED_STATES) {
       expect(Object.values(reached(state)).every((each) => each === undefined), state).toBe(true);
     }
-    // No node says who acts or when it was entered: the record's `updated` is its last write, not its entry into a state.
+    // No node says who acts or when it is entered: the record's `updated` is its last write, not its entry into a state.
     for (const node of sessionFlow(t, session('working')).nodes) expect(node.actor ?? null).toBeNull();
   });
 

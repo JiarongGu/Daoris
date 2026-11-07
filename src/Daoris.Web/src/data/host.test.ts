@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { hostBase } from './host';
 
-// D92: on the Chromium the desktop ships, the page lives on its engine's app origin and calls its host
+// On the Chromium the desktop ships, the page lives on its engine's app origin and calls its host
 // at the loopback address the shell puts in its URL. Only a loopback address, and only in the shell.
 
 describe('where the page reaches its host', () => {

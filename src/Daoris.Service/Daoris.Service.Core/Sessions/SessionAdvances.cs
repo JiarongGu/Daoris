@@ -43,38 +43,38 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     /// Move a session, attaching what the move carries. States arrive as text because they travel over
     /// HTTP in the design's spelling — `awaiting-person`, `stood-down` — and a door should accept what
     /// it prints. A finished session does not move, but for one move: to working, with the person's words
-    /// waiting on a record of this machine's (MSG1a, D137 §2.3).
+    /// waiting on a record of this machine's.
     /// </summary>
     /// <param name="interrupted">
-    /// That a stop was not the person's (D104): the orphan sweep's, or the driver's shutdown. Only a move
-    /// to <c>stopped</c> may say so, since it says whose decision a stop was.
+    /// That a stop is not the person's: the orphan sweep's, or the driver's shutdown. Only a move
+    /// to <c>stopped</c> may say so, since it says whose decision a stop is.
     /// </param>
     /// <param name="limit">
-    /// That an account's limit refused the turn (TOOL4c, D125 §5.2), as the driver read it from the door's
+    /// That an account's limit refused the turn, as the driver read it from the door's
     /// failure. Only a move to <c>failed</c> may say so, since it says why a turn failed.
     /// </param>
     /// <param name="noteParts">
-    /// The note's parts beside it (LANG1a, D142 point 2), as <see cref="NoteParts.Normalize"/> keeps them; only with a note.
+    /// The note's parts beside it, as <see cref="NoteParts.Normalize"/> keeps them; only with a note.
     /// A note moved without them clears the record's.
     /// </param>
     /// <param name="expected">
-    /// The state the record must be in for the move to be made, compared inside the step (TERMTRUST1a, D201 point 2): a finish under
+    /// The state the record must be in for the move to be made, compared inside the step: a finish under
     /// the standing confirmation sends <c>awaiting-person</c>, so a session resumed between the verb's read and the move is not ended.
     /// Null moves from any state the move allows, as before.
     /// </param>
     /// <param name="unbindAsk">
-    /// That the intake's ask is let go with its end (LIMITRESUME1h, D206 design §3.8; D205 §3.5(f)'s door): the ask's binding cleared in the
+    /// That the intake's ask is let go with its end: the ask's binding cleared in the
     /// same step, only where it still names this session, so the next look may give the ask to another intake. Only a move to <c>failed</c>
     /// may say so; the record stays, still naming its ask.
     /// </param>
     /// <param name="expect">
-    /// The supervisor's words a move to working carries (SUPERVISOR1a-i, the supervisor design §6.3): the exact ids of the
+    /// The supervisor's words a move to working carries: the exact ids of the
     /// <see cref="SaidFrom.Supervisor"/> words its go-on admitted. The move is refused <see cref="SessionAdvanceRefusal.WordsChanged"/>
     /// where the record's waiting supervisor's words are not exactly these, and absent reads as none, so a mover that names none never
     /// carries one. Naming any needs the record parked.
     /// </param>
     /// <param name="turns">
-    /// The turn lines of each session a completion releases memory for, by session (KNOWCENTRAL2c, the memory coordinator design §1): its
+    /// The turn lines of each session a completion releases memory for, by session: its
     /// rows name the models of the turn that holds their instant, and <c>unknown</c> where none is handed.
     /// </param>
     public async Task<SessionAdvanceOutcome> AdvanceAsync(
@@ -129,12 +129,12 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                 Session: null);
         }
 
-        // A completion in the main tree is its session's commit point (KNOWCENTRAL2c): the root is read before the step, as an open reads it.
+        // A completion in the main tree is its session's commit point: the root is read before the step, as an open reads it.
         var mainTree = target == SessionState.Completed && await sessions.FindAsync(id, ct).ConfigureAwait(false) is { } named
             ? Trees.Normalize(await holders.RootOfAsync(named.Repository, ct).ConfigureAwait(false))
             : null;
 
-        // Read, judged and written as one step (REV3): the driver's conclusion and a person's stop,
+        // Read, judged and written as one step: the driver's conclusion and a person's stop,
         // arriving from two hosts, could both read the session active, and the second moved a finished one.
         return await sessions.ExclusiveAsync(async inside =>
         {
@@ -180,19 +180,19 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
                     Session: null);
             }
 
-            // A session that parks again asks anew (ANSWER1b, D131 §5): the answer it went on with is not this park's.
+            // A session that parks again asks anew: the answer it went on with is not this park's.
             var moved = await sessions.SetStateAsync(
                     id, target.Value, note, evidence, transcript, now, inside, interrupted, limit,
                     clearSaid: target == SessionState.AwaitingPerson, noteParts: noteParts)
                 .ConfigureAwait(false);
-            // An ask whose earlier intake already ended transient stays bound to this failed record (AGENTERRORS1d), so the person hears of it.
+            // An ask whose earlier intake already ended transient stays bound to this failed record, so the person hears of it.
             if (unbindAsk && moved!.Ask is { } ask && asks is not null
                 && !await IntakeTransients.SecondAsync(sessions, moved, inside).ConfigureAwait(false))
             {
                 await asks.UnbindIntakeAsync(ask, moved.Id, now, inside).ConfigureAwait(false);
             }
 
-            // The models of what it staged are named from the turn lines handed as it ends (KNOWCENTRAL2d), whatever releases the rows later.
+            // The models of what it staged are named from the turn lines handed as it ends, whatever releases the rows later.
             if (turns is not null && target is not (SessionState.Starting or SessionState.Working or SessionState.AwaitingPerson))
             {
                 await sessions.Memory.StampAsync(id, turns, inside).ConfigureAwait(false);
@@ -212,7 +212,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     }
 
     /// <summary>
-    /// Why a move to working may not carry the record's supervisor's words (SUPERVISOR1a-i, §6.3), or null: those waiting must be
+    /// Why a move to working may not carry the record's supervisor's words, or null: those waiting must be
     /// exactly <paramref name="expect"/>, and naming any needs a park.
     /// </summary>
     private static SessionAdvanceOutcome? Admits(Session session, IReadOnlyCollection<string>? expect)
@@ -236,14 +236,14 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     }
 
     /// <summary>
-    /// The one move out of an ended state (MSG1a, D137 §2.3): an ended record of this machine's goes on to working with the
-    /// person's words waiting, because one record stands for one harness conversation (D131 §3) and the conversation goes
+    /// The one move out of an ended state: an ended record of this machine's goes on to working with the
+    /// person's words waiting, because one record stands for one harness conversation and the conversation goes
     /// on. Called inside <see cref="AdvanceAsync"/>'s step, the record already read.
     /// </summary>
     /// <remarks>
     /// <para><b>Nothing else leaves an ended state.</b> A teammate's record, a stand-down, an intake, and a record with no
     /// words waiting each stay as they ended; and the tree it worked in must be free, since one session per working tree
-    /// (D51) holds for going on as for a start.</para>
+    /// holds for going on as for a start.</para>
     ///
     /// <para><b>Its history stays.</b> The note keeps what ended it and says when it went on, a note passed with the
     /// move after that; the evidence stays, so the review counts from the record's own base. What ended it is forgiven
@@ -259,9 +259,9 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
             { Origin: { } origin } => $"Session `{id}` ran on `{origin}`; a finished record of another machine's does not move here.",
             { State: SessionState.StoodDown } => $"Session `{id}` stood down — a stand-down has nothing to go on with, so it does not move.",
             { Ask: { } ask } => $"Session `{id}` is an intake — it is answered through its ask `#{ask}`, so it does not move.",
-            // XAGENT1c: a pass is one turn, read afresh each time (design §4), so a reviewer's record never goes on.
+            // A pass is one turn, read afresh each time, so a reviewer's record never goes on.
             { Opinion: { } opinion } => $"Session `{id}` read the work for second opinion `{opinion}` — a pass is never resumed, so it does not move.",
-            // MIXAGENT2a-i: a helper takes one turn and is never resumed either.
+            // A helper takes one turn and is never resumed either.
             { Serves: { } serves } => $"Session `{id}` is a helper for session `{serves}` — a helper is never resumed, so it does not move.",
             { Said.Count: 0 } =>
                 $"Session `{id}` is {Spell(session.State)} — a finished session goes on only with the person's words, and none wait for it.",
@@ -272,7 +272,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
             return new SessionAdvanceOutcome(SessionAdvanceRefusal.Terminal, refused, Session: null);
         }
 
-        // Ask Daoris's holds its own workspace's one at a time (ASKSCOPE1a), as its start does: every workspace's runs in one room.
+        // Ask Daoris's holds its own workspace's one at a time, as its start does: every workspace's runs in one room.
         var holder = SessionLedger.IsHelp(session)
             ? await sessions.RunningInWorkspaceAsync(session.Repository, session.Workspace, parked: true, inside).ConfigureAwait(false)
             : await holders.HolderAsync(session.Repository, session.Tree, inside, except: session.Id).ConfigureAwait(false);
@@ -303,15 +303,15 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     }
 
     /// <summary>
-    /// The second move out of an ended state (HELPERWAIT1, D131's and D188's notes): a driven session of this machine's that ended waiting on
+    /// The second move out of an ended state: a driven session of this machine's that ended waiting on
     /// its own helper parks for the person when that helper ended with no answer, as its turn's end would have parked it, its note the
     /// driver's (the reason, then the park's own line). Called inside <see cref="AdvanceAsync"/>'s step, the record already read.
     /// </summary>
     /// <remarks>
-    /// <para><b>Only that ending, and only to a park.</b> The record is still the one conversation (D131 §3), its quest still taken by it,
+    /// <para><b>Only that ending, and only to a park.</b> The record is still the one conversation, its quest still taken by it,
     /// and nothing ran since it ended; the person's answer resumes that conversation as any park's does. A record words wait on goes on
     /// with them instead; a teammate's, an intake, a pass or a helper, or one with no quest, does not move; and its tree must be free,
-    /// since a park holds it (D51).</para>
+    /// since a park holds it.</para>
     ///
     /// <para><b>Its history stays</b> as a park's does: the note is the move's, and the evidence and the transcript are kept.</para>
     /// </remarks>
@@ -329,7 +329,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
         };
         if (refused is not null) return new SessionAdvanceOutcome(SessionAdvanceRefusal.Terminal, refused, Session: null);
 
-        // A park holds its quest (D83): one closed or taken elsewhere since it ended has nothing to wait on the person for.
+        // A park holds its quest: one closed or taken elsewhere since it ended has nothing to wait on the person for.
         if (await quests.FindAsync(session.Quest!, inside).ConfigureAwait(false) is not { Status: QuestStatus.Taken })
         {
             return new SessionAdvanceOutcome(
@@ -352,13 +352,13 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
     }
 
     /// <summary>
-    /// Whose words an ended record goes on with, read from each waiting word's <see cref="SaidWord.By"/> (XAGENT1e2, D155's
-    /// XAGENT1e note): the person's, another agent's findings, or both. A record with none reads as the person's, as it did.
+    /// Whose words an ended record goes on with, read from each waiting word's <see cref="SaidWord.By"/>:
+    /// the person's, another agent's findings, or both. A record with none reads as the person's.
     /// </summary>
     /// <remarks>
-    /// A helper's answer (MIXAGENT2a-ii, <see cref="SaidWord.Helper"/>) is its own third, never findings: alone, or beside the
-    /// person's words. Where findings and a helper's answer wait together the line says the findings, as it always did. Daoris's own
-    /// words (COWORK1b, <see cref="SaidWord.From"/>) alone are a fourth, never "your words"; beside another's, the other's line stands.
+    /// A helper's answer (<see cref="SaidWord.Helper"/>) is its own third, never findings: alone, or beside the
+    /// person's words. Where findings and a helper's answer wait together the line says the findings. Daoris's own
+    /// words (<see cref="SaidWord.From"/>) alone are a fourth, never "your words"; beside another's, the other's line stands.
     /// </remarks>
     private static (bool Persons, bool Findings, bool Helper, bool Daoris, bool Supervisor) WentOnWith(Session session) =>
         (session.Said.Count == 0 || session.Said.Any(word => word.Persons),
@@ -368,15 +368,15 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
          session.Said.Any(word => word.Supervisors));
 
     /// <summary>
-    /// The note an ended record goes on with (MSG1a, D137 §2.3): what ended it, when it went on, and the note the move passed,
-    /// each with its parts (LANG1a, the language design §4 row 66): the record's own, or its note carried whole; the ledger's
+    /// The note an ended record goes on with: what ended it, when it went on, and the note the move passed,
+    /// each with its parts: the record's own, or its note carried whole; the ledger's
     /// line with its moment; the move's own, or its note carried whole.
     /// </summary>
     /// <remarks>
-    /// <b>Whose words, from <c>by</c></b> (XAGENT1e2): the person's alone keep <see cref="LedgerNoteCodes.WentOn"/> as it was.
+    /// <b>Whose words, from <c>by</c></b>: the person's alone keep <see cref="LedgerNoteCodes.WentOn"/>.
     /// Another agent's findings are never "your words", since the person said nothing; with the person's beside them the line
     /// says both, as the driver's opening line does. Each is a coded line with its moment (<see cref="LedgerNoteCodes.WentOnFindings"/>,
-    /// <see cref="LedgerNoteCodes.WentOnBoth"/>) since the page words them (XAGENT1g); a note written before keeps its English.
+    /// <see cref="LedgerNoteCodes.WentOnBoth"/>) since the page words them; a note written before keeps its English.
     /// </remarks>
     internal static (string Note, string Parts) WentOnNote(Session session, string? note, string? noteParts, DateTimeOffset now)
     {
@@ -388,7 +388,7 @@ internal sealed class SessionAdvances(QuestStore quests, SessionStore sessions, 
             (Persons: false, Findings: false, Helper: true, _, _) => ($"Went on with a helper's answer at {at}.", LedgerNoteCodes.WentOnHelper),
             (Persons: true, Findings: false, Helper: true, _, _) => ($"Went on with your words and a helper's answer at {at}.", LedgerNoteCodes.WentOnHelperBoth),
             (Persons: false, Findings: false, Helper: false, Daoris: true, _) => ($"Went on with Daoris's words at {at}.", LedgerNoteCodes.WentOnDaoris),
-            // SUPERVISOR1a-i: the supervisor's answer alone is never "your words".
+            // The supervisor's answer alone is never "your words".
             (Persons: false, Findings: false, Helper: false, Daoris: false, Supervisor: true) =>
                 ($"Went on with the supervisor's answer at {at}.", LedgerNoteCodes.WentOnSupervisor),
             _ => ($"Went on with your words at {at}.", LedgerNoteCodes.WentOn),

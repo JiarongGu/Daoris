@@ -4,7 +4,7 @@ import { atWidths, inDark, inLight } from '../../design/flowFrames';
 import { chinese } from '../../design/storyLanguage';
 import { SessionLifeFlow } from './SessionFlow';
 
-// A session's states drawn as a flowchart (FLOWCHART1b; the flowchart design §2.2, §3.5, §4.4): the four live states, the
+// A session's states drawn as a flowchart: the four live states, the
 // working ⇄ awaiting-person return on a lane of its own, one node of outcomes, and going on as a guarded edge, at the frame's
 // widths, 300 px the side bar's floor (the rail), 400 and 544 top to bottom, 1200 left to right. The record's state is lit in
 // the tone of the word the page shows it as. The first decorator is the innermost, so a theme's page wraps the frames.

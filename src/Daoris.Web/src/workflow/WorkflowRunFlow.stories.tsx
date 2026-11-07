@@ -6,8 +6,8 @@ import { answerOf, GRAPH_RUN_DECIDED, GRAPH_RUN_RELEASED, GRAPH_RUN_REVIEW } fro
 import type { NodeWordAsk } from './run';
 import { WorkflowRunView } from './WorkflowRunView';
 
-// A run's view of where its work stands (SETUPUX1u; D221, the Setup design's §2.3), at the side bar's floor (300 px), 25rem (400 px) and 45%
-// of the install's window (696 px), in each language and theme: its head naming the bound version and how it was chosen, one sentence of
+// A run's view of where its work stands, at the side bar's floor (300 px), 25rem (400 px) and 45%
+// of the install's window (696 px), in each language and theme: its head naming the bound version and how it is chosen, one sentence of
 // where the work stands, the step the run stands at open with its owner's control, and a decision's returned outcome with the route
 // not taken told apart. The measured-box check draws these in a rendered browser (`measured/flow.spec.ts`, the `runview` book); the view's
 // other states are `WorkflowRunView.stories.tsx`.
@@ -24,7 +24,7 @@ const dark = [frames, inDark];
 /** What a press of the person's word answers in a story: kept, so the ask closes. */
 const kept = async (ask: NodeWordAsk) => ({ run: ask.run, node: ask.node, act: ask.act, done: true });
 
-/** **A release run, outcome `release`**: the find came to release, which was recorded and copied; *Finished* follows the copy, from the record. */
+/** **A release run, outcome `release`**: the find came to release, which is recorded and copied; *Finished* follows the copy, from the record. */
 export const ReleaseRun: Story = { args: { answer: answerOf(GRAPH_RUN_RELEASED) }, decorators: light };
 export const ReleaseRunDark: Story = { ...ReleaseRun, decorators: dark };
 export const ReleaseRunChinese: Story = { ...ReleaseRun, decorators: [chinese, frames, inLight] };

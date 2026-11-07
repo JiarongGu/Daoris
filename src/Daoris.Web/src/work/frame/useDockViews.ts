@@ -7,7 +7,7 @@ import { type Place, type Placements, type ViewId, viewsIn } from './placements'
 import { dockOpensOn, type DockTab, followed } from './RightDock';
 
 /**
- * Which view each region shows (DOCK1b, FRAME6): the side bar's tab per followed session, the panel's view, a file's preview,
+ * Which view each region shows: the side bar's tab per followed session, the panel's view, a file's preview,
  * a view moved or dragged, and the doors that ask for Ask Daoris or *Notifications* where it stands.
  */
 export function useDockViews({
@@ -29,25 +29,25 @@ export function useDockViews({
   notificationsShow: number;
   notificationsToggle: number;
 }) {
-  // Which dock surface each session has up (FRAME6: tabs per session). Not remembered across launches:
+  // Which dock surface each session has up (tabs per session). Not remembered across launches:
   // unlike the attended session, this one is answered by what the person is doing in the next ten seconds.
   const [docked, setDocked] = useState<Record<string, DockTab>>({});
-  // The session a session's views follow (UX6b, D150 §8): on Sessions the attended one; off Sessions only while it runs or
-  // waits on the person, so an ended one's note no longer runs down every other view's side bar.
+  // The session a session's views follow: on Sessions the attended one; off Sessions only while it runs or
+  // waits on the person, so an ended one's note does not run down every other view's side bar.
   const following = followed(attended, elsewhere);
-  // The followed session's dock surface: the one it had, or the tab it opens on — the timeline (FRAME6), or Ask Daoris
+  // The followed session's dock surface: the one it has, or the tab it opens on — the timeline, or Ask Daoris
   // off Sessions with none followed.
   const dockKey = following?.id ?? '';
-  // What stands where (DOCK1b): Ask Daoris only where a shell handed it in, and the terminal likewise.
-  // *Notifications* likewise (NOTIFY2b): where the application handed it in.
+  // What stands where: Ask Daoris only where a shell handed it in, and the terminal likewise.
+  // *Notifications* likewise: where the application handed it in.
   const present = (view: ViewId) => (view === 'ask' ? Boolean(ask) : view === 'terminal' ? terminal
     : view === 'notifications' ? Boolean(notifications) : true);
   const rightViews = viewsIn(placed.places, 'right', present);
   const panelViews = viewsIn(placed.places, 'panel', present);
   // Ask Daoris and *Notifications* are the machine's, not the attended session's: their tab stays whichever session is attended.
   const [machineTab, setMachineTab] = useState<'ask' | 'notifications' | null>(null);
-  // A file's preview per session (PREVIEW1, D111): what a tool card or the review opened, and the tab it
-  // covered, which its × goes back to. Kept while the window is open, like the dock's tab.
+  // A file's preview per session: what a tool card or the review opened, and the tab it
+  // covers, which its × goes back to. Kept while the window is open, like the dock's tab.
   const [previews, setPreviews] = useState<Record<string, FileOpen & { back: DockTab }>>({});
   const previewing = following && here ? previews[following.id] ?? null : null;
   const sessionTab = docked[dockKey] ?? dockOpensOn(elsewhere, following !== null);
@@ -63,7 +63,7 @@ export function useDockViews({
   };
   // The panel's shown view: the machine's, like its height, not the attended session's.
   const [panelPick, setPanelPick] = useState<ViewId>('console');
-  // The view being dragged (DOCK1e), so a region with nothing in it is drawn to be dropped on.
+  // The view being dragged, so a region with nothing in it is drawn to be dropped on.
   const [dragging, setDragging] = useState<ViewId | null>(null);
   // 🔴 Told a beat after the drag starts, never inside it: Chromium drops a drag whose page changes
   // under the pointer in the same task as `dragstart`, and drawing an emptied region is such a change.
@@ -74,7 +74,7 @@ export function useDockViews({
     setDock(tab);
     closeDock(false);
   };
-  // A door opening a file's preview (PREVIEW1): the side bar opens on it, over the tab it covers. Handed to
+  // A door opening a file's preview: the side bar opens on it, over the tab it covers. Handed to
   // the conversation's cards through a context, so one stable function is handed and the latest state read.
   const previewNow = useRef<(file: FileOpen) => void>(() => {});
   previewNow.current = (file: FileOpen) => {
@@ -89,7 +89,7 @@ export function useDockViews({
     const back = previews[following.id]?.back ?? 'timeline';
     setPreviews(({ [following.id]: _closed, ...rest }) => rest);
     if (dock === 'preview') setDock(back);
-    // A side bar the preview leaves with nothing in it closes, as one a moved view leaves does (DOCK1b).
+    // A side bar the preview leaves with nothing in it closes, as one a moved view leaves does.
     if (rightViews.length === 0) closeDock(true);
   };
   // The person asking for a view by a door that does not know where it stands — the palette's review,
@@ -102,7 +102,7 @@ export function useDockViews({
       openDock(view);
     }
   };
-  // A view moved (DOCK1b): shown where it went, as VS Code opens the container a view lands in, and a
+  // A view moved: shown where it went, as VS Code opens the container a view lands in, and a
   // region it leaves with nothing closes, as VS Code hides an empty one.
   const moveView = (view: ViewId, to: Place) => {
     const from = placed.places[view];
@@ -111,7 +111,7 @@ export function useDockViews({
     if (from === to) return;
     placed.move(view, to);
     logEvent('panel.moved', { view, region: to });
-    // Not `openView`: this render's places still say where the view was.
+    // Not `openView`: this render's places still say where the view is.
     if (to === 'panel') {
       setPanelPick(view);
       closed.setPanel(false);
@@ -131,8 +131,8 @@ export function useDockViews({
     // Only a new ask for it; where it stands and the closings are read, not watched.
   }, [askFocus]);
 
-  // NOTIFY2b (the notification design §2.1): *Notifications* shown where it stands, by a door that asks for it; and what its region
-  // showed before the bell opened it, so the bell's next press gives the region back: the view it held, or closed where it was.
+  // *Notifications* shown where it stands, by a door that asks for it; and what its region
+  // showed before the bell opened it, so the bell's next press gives the region back: the view it held, or closed as it stood.
   const notificationsBack = useRef<{ place: Place; view: ViewId | DockTab | undefined; closed: boolean } | null>(null);
   const notificationsShown = placed.places.notifications === 'panel'
     ? !collapsed && panelView === 'notifications'
@@ -158,7 +158,7 @@ export function useDockViews({
     notificationsBack.current = null;
     const others: (ViewId | DockTab)[] = (place === 'panel' ? panelViews : rightViews).filter((view) => view !== 'notifications');
     if (back?.closed) {
-      // Opened from a closed region: the region closes, as it was.
+      // Opened from a closed region: the region closes again.
       if (place === 'panel') closed.setPanel(true);
       else closeDock(true);
       return;

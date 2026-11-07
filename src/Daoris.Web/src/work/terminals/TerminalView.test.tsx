@@ -4,7 +4,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// CONSOLE4b (D96): the terminal view over the mocked bridge, held the way the Work frame holds it — the
+// The terminal view over the mocked bridge, held the way the Work frame holds it — the
 // terminals in the frame, the view drawing them. The renderer is stood in for: jsdom lays nothing out,
 // and what the view owes the person is the traffic, which is asserted here; the look is the window's.
 
@@ -167,7 +167,7 @@ describe('the terminal view (CONSOLE4b)', () => {
     expect(screen.queryByText('PowerShell ended with code 3.')).toBeNull();
   });
 
-  /** SUPERVISOR1a-ii: the supervisor's holder's terminal, opened by the window itself, is a tab here and is shown; no OPEN is asked for it. */
+  /** The supervisor's holder's terminal, opened by the window itself, is a tab here and is shown; no OPEN is asked for it. */
   it('adopts a terminal the window opened itself as a shown tab', async () => {
     render(<Held />);
     await waitFor(() => expect(screens).toHaveLength(1));
@@ -187,7 +187,7 @@ describe('the terminal view (CONSOLE4b)', () => {
   });
 
   /**
-   * ZOOM1: the window zooms by the page's root size, which the screen's type is read from, while its panel keeps its size, so
+   * The window zooms by the page's root size, which the screen's type is read from, while its panel keeps its size, so
    * the type is read again and the shell told its new rows and columns.
    */
   it("follows the window's zoom: its type read again, the shell told its new size", async () => {

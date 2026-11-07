@@ -3,8 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// LINESTOGETHER1b (the review-flow design §2): the box says where a word goes, and a word held on a part beside the head moves to
-// the head by one press. The bridge is mocked as present (D55); what the parts share is in `test/workFrameBridge.ts`.
+// The box says where a word goes, and a word held on a part beside the head moves to
+// the head by one press. The bridge is mocked as present; what the parts share is in `test/workFrameBridge.ts`.
 vi.mock('@shenora/react', async () => (await import('../test/workFrameBridge')).shenoraMock());
 
 import i18n from '../locales/i18n';

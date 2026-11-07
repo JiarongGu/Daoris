@@ -8,7 +8,7 @@ import { howSaid, kindIn, plain, stepTitle } from './editWords';
 import { entriesOf, type GraphDraft, outcomesOf } from './graphDraft';
 import { presetName } from './presetWords';
 
-// The editor's canvas (FLOWCHART2b; the flowchart design §3): the draft drawn through the one drawing (`graphFlow`) and the chart's
+// The editor's canvas: the draft drawn through the one drawing (`graphFlow`) and the chart's
 // components, edited on through `ChartEdit`; and, while it holds no step, where to begin: a preset or a workflow saved here, so nothing
 // *Start from* offered is lost with it.
 

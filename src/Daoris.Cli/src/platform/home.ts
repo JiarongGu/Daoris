@@ -103,6 +103,8 @@ export const HOME_ENTRIES = [
   row('windows', 'data', 'data/windows.json', 'windows.json'),
   row('reads', 'data', 'data/reads.json', 'reads.json'),
   row('permissions', 'data', 'data/permissions.json', 'permissions.json'),
+  row('files', 'data', 'data/files.json', 'data/files.json'),
+  row('files-found', 'data', 'data/files-found.json', 'data/files-found.json'),
   row('rule-proposals', 'data', 'data/proposals', 'proposals'),
   row('tools', 'data', 'data/tools.json', 'tools.json'),
   row('plugin-state', 'data', 'data/plugins.json', 'plugins.json'),

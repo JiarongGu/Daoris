@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { TerminalTabs } from './TerminalTabs';
 
-// The terminal view's tabs (CONSOLE4c), in every state they have. A molecule, so each is reached by
-// passing props: no shell, no bridge (components plan §2).
+// The terminal view's tabs, in every state they have. A molecule, so each is reached by
+// passing props: no shell, no bridge.
 
 const SHELLS = [
   { shell: 'pwsh', name: 'PowerShell', default: true },

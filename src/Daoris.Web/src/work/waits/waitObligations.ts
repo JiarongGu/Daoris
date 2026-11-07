@@ -4,7 +4,7 @@ import type { Wait, WaitFacts } from './waits';
 type ObligationOn = { session: string; ask?: string | null; quest?: string | null };
 
 /**
- * The obligation a wait of a session is (COMMS1j, the comms design §4.1 clause 3, §7): the key *What needs you* lists its row by
+ * The obligation a wait of a session is: the key *What needs you* lists its row by
  * (`obligationOf`), so the foot, the bell and *Notifications* count one wait once. Each is the key .NET's row for the same wait
  * carries (`NeedsAPerson`): a go-ahead by its exchange's id, the work's acceptance as its *To review* row, the rest by kind and id.
  */

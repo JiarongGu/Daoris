@@ -9,9 +9,9 @@ import { StepSettings, Who, type WorkflowDoors } from '../WorkflowChart';
 import { bindingProblemSaid, effectiveFlow, effectiveLabel, routeWords } from './effective';
 
 /**
- * **The chart of the chosen route** (SETUPUX1o; D221, the Setup design's §2.3): the graph the driver answers as `effective`, Current drawn
+ * **The chart of the chosen route**: the graph the driver answers as `effective`, Current drawn
  * from the rules as they stand or a saved workflow's newest version, through the one drawing (`graphFlow`). Its caption says which; each
- * step is a card with its title and who acts, and its cell, with what it is set to, where that was set and its limit, shows on selection.
+ * step is a card with its title and who acts, and its cell, with what it is set to, where that is set and its limit, shows on selection.
  *
  * @remarks
  * The page draws what the driver answered: a route with no graph says why in the driver's words (a workflow that does not read) or its own
@@ -29,7 +29,7 @@ export function EffectiveChart({ effective, routeLabel, page, name, workspace, s
   page: 'repository' | 'workspace';
   /** The repository or the workspace whose work it draws, which names the chart for a reader. */
   name: string;
-  /** The workspace whose rules reach it, for where a step was set. */
+  /** The workspace whose rules reach it, for where a step is set. */
   workspace: string;
   /** The node whose cell shows, or none. */
   selected: string | null;

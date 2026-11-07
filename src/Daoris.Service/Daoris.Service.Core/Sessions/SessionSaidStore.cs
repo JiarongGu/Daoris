@@ -5,7 +5,7 @@ using static Daoris.Knowledge.SessionSchema;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The words waiting on a record, as the table keeps them (MSG1a, D137 §2.4): kept after the ones already there, taken off, moved to another
+/// The words waiting on a record, as the table keeps them: kept after the ones already there, taken off, moved to another
 /// record, marked as written to a harness, and the settlements of the words that left. Blind, like every write here: whose words and where
 /// they go is the ledger's to judge.
 /// </summary>
@@ -15,15 +15,15 @@ internal sealed class SessionSaidStore(SessionStore store)
 
     /// <summary>
     /// Keep a word the person said on this machine's record, after the words already waiting, leaving its state where it
-    /// is (STANDDOWN2, ANSWER1b, MSG1a). With a <paramref name="note"/> (an answer's line) the note is written too, as a
+    /// is. With a <paramref name="note"/> (an answer's line) the note is written too, as a
     /// new revision at the word's moment, since the note travels; with none, nothing that travels changes, so no
     /// revision is written. Null when there is no such record of this machine's.
     /// </summary>
     /// <remarks>
-    /// <para><b>Appended in one statement</b>, for the reason an ask's words are (REV3): a whole-list save from two
+    /// <para><b>Appended in one statement</b>, for the reason an ask's words are: a whole-list save from two
     /// doors at once would drop one of them.</para>
     /// </remarks>
-    /// <param name="noteParts">The note's parts beside it (LANG1a), written with it; a note without them clears the record's.</param>
+    /// <param name="noteParts">The note's parts beside it, written with it; a note without them clears the record's.</param>
     public Task<Session?> KeepSaidAsync(
         string id, SaidWord word, string? note = null, CancellationToken ct = default, string? noteParts = null) => _db.RunAsync<Session?>(async () =>
     {
@@ -51,11 +51,11 @@ internal sealed class SessionSaidStore(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Take these words off this machine's record (MSG1a, D137 §2.4): the session took them. An id it does not hold is
+    /// Take these words off this machine's record: the session took them. An id it does not hold is
     /// passed over, and the last word taken leaves the record with none. No revision, since the words never travel. Null
     /// when there is no such record of this machine's.
     /// </summary>
-    /// <remarks>A read, then the write it decides: the ledger calls it inside <see cref="SessionStore.ExclusiveAsync{T}"/> (REV3).</remarks>
+    /// <remarks>A read, then the write it decides: the ledger calls it inside <see cref="SessionStore.ExclusiveAsync{T}"/>.</remarks>
     public Task<Session?> TakeSaidAsync(string id, IReadOnlyCollection<string> ids, CancellationToken ct = default) => _db.RunAsync<Session?>(async () =>
     {
         var session = await store.FindAsync(id, ct).ConfigureAwait(false);
@@ -74,9 +74,9 @@ internal sealed class SessionSaidStore(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Move the words <paramref name="moves"/> picks off one record of this machine's onto another (FOUNDATION1 row d-ii part 3, the design §3.4
-    /// rule 3), as the ledger's keyed open judges them. Each keeps its element as stored, its id and every field, a later build's among them,
-    /// but its attempt, which was the record left's dispatcher's: on the record opened no dispatcher has written it yet, and a word kept there
+    /// Move the words <paramref name="moves"/> picks off one record of this machine's onto another,
+    /// as the ledger's keyed open judges them. Each keeps its element as stored, its id and every field, a later build's among them,
+    /// but its attempt, which is the record left's dispatcher's: on the record opened no dispatcher has written it yet, and a word kept there
     /// with another record's attempt would be taken back as uncertain at the next come-up and never go. They go in the order they waited,
     /// ahead of any word the record opened holds, and leave the record left in the same step, so the settlement's trigger writes a row there
     /// for each. The words moved, as kept on the record opened; none where either record is not this machine's or none moves.
@@ -134,7 +134,7 @@ internal sealed class SessionSaidStore(SessionStore store)
         }
     }
 
-    /// <summary>The element without its <c>attempt</c>, every other field as it was; the element itself where it has none.</summary>
+    /// <summary>The element without its <c>attempt</c>, every other field as stored; the element itself where it has none.</summary>
     private static string Unattempted(string element)
     {
         using var document = JsonDocument.Parse(element);
@@ -192,8 +192,8 @@ internal sealed class SessionSaidStore(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// The newest settlement of <paramref name="key"/> on any record, within the horizon: for a key that names its own source, a move's
-    /// (LINESTOGETHER1b), which no other producer can write. One probe on the table's key.
+    /// The newest settlement of <paramref name="key"/> on any record, within the horizon: for a key that names its own source, a move's,
+    /// which no other producer can write. One probe on the table's key.
     /// </summary>
     public Task<SettledWord?> SettledUnderAsync(string key, long since, CancellationToken ct = default) => _db.RunAsync<SettledWord?>(async () =>
     {
@@ -208,12 +208,12 @@ internal sealed class SessionSaidStore(SessionStore store)
     }, ct);
 
     /// <summary>
-    /// Mark the moment a dispatcher first wrote one waiting word to a harness (COWORK1c, the message-urgency design §6): before the
+    /// Mark the moment a dispatcher first wrote one waiting word to a harness: before the
     /// wire, so a shell that comes up again tells a word that may have reached the agent from one that never left. Only the first
     /// mark holds. No revision, since the words never travel. False where this machine's record holds no such word.
     /// </summary>
     /// <remarks>
-    /// <b>One statement</b>, for the reason a word is appended in one (REV3): the word is found in the list and marked in place in the
+    /// <b>One statement</b>, for the reason a word is appended in one: the word is found in the list and marked in place in the
     /// same write, so a word kept or taken off meanwhile is never lost under a whole-list save.
     /// </remarks>
     public Task<bool> MarkAttemptAsync(string id, string word, DateTimeOffset at, CancellationToken ct = default) => _db.RunAsync<bool>(async () =>

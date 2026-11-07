@@ -1,4 +1,4 @@
-// Who is at work on a session (COWORKVIEW1a, the cowork view design §3.8): what the shell's read answers and the view draws.
+// Who is at work on a session: what the shell's read answers and the view draws.
 
 /** A child's state: its latest run's, as the driver's fold read it. */
 export type AtWorkChildState =
@@ -20,10 +20,10 @@ export type AtWorkChild = {
   parentKey?: string;
   depth?: number;
   state: AtWorkChildState;
-  /** Its run's start, or its first line where none was said (`startSaid` false): *first seen*. */
+  /** Its run's start, or its first line where none is said (`startSaid` false): *first seen*. */
   since?: string;
   startSaid: boolean;
-  /** The moment its end was said. */
+  /** The moment its end is said. */
   ended?: string;
   /** Its last line, for a run read not known, unrecorded or whose agent ended. */
   lastSeen?: string;
@@ -46,10 +46,10 @@ export type AtWorkSubagents = {
   more?: Record<string, number>;
 };
 
-/** What a part waits on as the strip places it (COWORKVIEW1b-i): a quest, with the repository it was asked of and its lanes, or its helper. */
+/** What a part waits on as the strip places it: a quest, with the repository it is asked of and its lanes, or its helper. */
 export type AtWorkWait = { quest?: string; of?: string; lanes?: string[]; helper?: true };
 
-/** How a part joined the entry (the design §3.4): the strip's word for its start and what its record and quest say of the routing. */
+/** How a part joined the entry: the strip's word for its start and what its record and quest say of the routing. */
 export type AtWorkJoined = {
   began: string;
   /** The strip's number of the part it follows. */
@@ -81,7 +81,7 @@ export type AtWorkPart = {
   alongside?: true;
 };
 
-/** Who took a quest (COWORKVIEW1b-ii): a session here, a chat through its connector, another machine, no session recorded here, or nobody yet. */
+/** Who took a quest: a session here, a chat through its connector, another machine, no session recorded here, or nobody yet. */
 export type AtWorkTaker = {
   session?: string;
   /** The taking session's agent and its record's own state. */
@@ -93,13 +93,13 @@ export type AtWorkTaker = {
   untaken?: true;
 };
 
-/** A quest a part of the entry published that opened no part of it, or a step of its chain (the cowork view design §3.1). */
+/** A quest a part of the entry published that opened no part of it, or a step of its chain. */
 export type AtWorkQuest = {
   id: string;
   title: string;
   /** The service's status: Open, Taken, Done or Declined. */
   status: string;
-  /** The repository it was sent to, where that is not the attended part's own. */
+  /** The repository it is sent to, where that is not the attended part's own. */
   of?: string;
   lanes?: string[];
   /** The quest whose close published this one: the chain's step before it. */
@@ -116,11 +116,11 @@ export type AtWorkAsker = {
 };
 
 /**
- * One request of the attended line (COMMS1i, the comms design §7), as the driver's exchanges read found it: an ask of a helper or a
+ * One request of the attended line, as the driver's exchanges read found it: an ask of a helper or a
  * partner, a quest waited on, a successor asked for. What Daoris saw of its delivery and the protocol's own outcome are apart.
  */
 export type AtWorkExchange = {
-  /** `helper:<ask>`, `piece:<ask>`, `quest:<id>`, `hand-over:<id>` or `opinion:<id>`, a reviewer of the line (COMMS1i). */
+  /** `helper:<ask>`, `piece:<ask>`, `quest:<id>`, `hand-over:<id>` or `opinion:<id>`, a reviewer of the line. */
   id: string;
   /** The part of the line that asked it: after a hand-over, a predecessor's. */
   part: string;
@@ -158,18 +158,18 @@ export type AtWorkA = {
   /** How many more the bound left out. */
   moreQuests?: number;
   askedBy?: AtWorkAsker;
-  /** The attended line's requests (COMMS1i): those that hold are its *Waiting on*, the rest of its co-workers beside them. */
+  /** The attended line's requests: those that hold are its *Waiting on*, the rest of its co-workers beside them. */
   exchanges?: AtWorkExchange[];
   /** The exchanges' sources that could not be read: said, never drawn as none. */
   unread?: string[];
-  /** Where its newest generation started two subagents and the repository's routing standing is not open (the design §6.4 point 3). */
+  /** Where its newest generation started two subagents and the repository's routing standing is not open. */
   hint?: AtWorkHint;
   subagents: AtWorkSubagents;
   /** When the shell's process began; absent where the answer has none. */
   windowOpened?: string;
 };
 
-/** One of an ask's lines of work folded to a count, its own view being where its parts are (COWORKVIEW1d, the design §3.5). */
+/** One of an ask's lines of work folded to a count, its own view being where its parts are. */
 export type AtWorkAskEntry = {
   /** The line's key, `<origin>/<repository>`: the channel's `entry` on a message its parts posted. */
   entry: string;

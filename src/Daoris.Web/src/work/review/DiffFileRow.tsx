@@ -4,11 +4,11 @@ import { Button, CheckField, Icon, Inline, Tip } from '../../design/ui';
 import { cn } from '../../lib/cn';
 import { type DiffLayout, PatchView } from './PatchView';
 
-// One file in a review (SURF6). A molecule: it is handed a file and told whether it is open and
+// One file in a review. A molecule: it is handed a file and told whether it is open and
 // whether it has been seen, so every state — binary, dropped patch, a 4,000-line rename — is
-// reachable by passing props (components plan §2).
+// reachable by passing props.
 
-/** How a status reads as a mark. Never colour alone (D41 §6) — the letter is the label. */
+/** How a status reads as a mark. Never colour alone — the letter is the label. */
 const MARK: Record<string, { letter: string; tone: string }> = {
   added: { letter: 'A', tone: 'text-ink-done' },
   modified: { letter: 'M', tone: 'text-ink-taken' },
@@ -21,22 +21,22 @@ const MARK: Record<string, { letter: string; tone: string }> = {
  * One changed file, with its patch beneath it.
  *
  * @remarks
- * **This is a multibuffer row, not a tree node** (IDE study §2): every file is in one scroll and
+ * **This is a multibuffer row, not a tree node**: every file is in one scroll and
  * opens in place, because a tree beside a pane is what makes a forty-file review unfinishable.
  *
  * **`viewed` is the person's own mark**, not a state of the work. GitHub's per-file "viewed" is the
  * single thing that makes a long diff finishable, and it is cheap — one boolean per path, held by
  * the reader, never written to the record.
  *
- * **A dropped patch says so.** The bound is the host's (design §5) and the file is still listed,
+ * **A dropped patch says so.** The bound is the host's and the file is still listed,
  * because "this changed and you cannot read it here" is information and an absent row is not.
  *
- * **Its patch is drawn by `PatchView`** (REVIEW2): numbered, highlighted in the file's language, and
+ * **Its patch is drawn by `PatchView`**: numbered, highlighted in the file's language, and
  * in the layout the pane chose — unified, or the old side beside the new.
  */
 export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, onViewed, onPreview, uncommitted = false }: {
   file: DiffFile;
-  /** An uncommitted file (REVIEWDIRTY1): when it has no patch, the words say why, since `git diff` does not list it. */
+  /** An uncommitted file: when it has no patch, the words say why, since `git diff` does not list it. */
   uncommitted?: boolean;
   open: boolean;
   viewed: boolean;
@@ -45,8 +45,8 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
   onToggle: () => void;
   onViewed: (viewed: boolean) => void;
   /**
-   * Opens the file itself in the side bar's preview (PREVIEW1, D111). Absent where nothing opens one; and
-   * a deleted file offers none, since it is not in the tree any more (UX5 U66).
+   * Opens the file itself in the side bar's preview. Absent where nothing opens one; and
+   * a deleted file offers none, since it is not in the tree.
    */
   onPreview?: () => void;
 }) {
@@ -92,7 +92,7 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
 
         <span className="shrink-0 font-mono text-meta tabular-nums">
           {file.added === null || file.removed === null
-            // A binary file was not counted, which is not the same as counting zero.
+            // A binary file is not counted, which is not the same as counting zero.
             ? <span className="text-ink-faint">{t('work.review.binary')}</span>
             : (
               <>
@@ -103,7 +103,7 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
             )}
         </span>
 
-        {/* The platform's own box (UX5 U5): a native one wore the OS's accent. */}
+        {/* The platform's own box: a native one would wear the OS's accent. */}
         <CheckField
           checked={viewed}
           onChange={onViewed}

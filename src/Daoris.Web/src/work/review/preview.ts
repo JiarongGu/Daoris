@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 
-// A file's preview (PREVIEW1, D111): its shape and the derivations the tool card, the review and the
+// A file's preview: its shape and the derivations the tool card, the review and the
 // preview share. In its own module for `diff.ts`'s reason: the molecules that RENDER a preview may not
 // import the bridge, and the hook that FETCHES one lives there.
 
@@ -18,7 +18,7 @@ export type TreeFile = {
   /** Whether the file holds more than `text`. */
   truncated: boolean;
   /**
-   * The landed branch it was read from, once the session's tree is gone (REVIEW2, D113): the file as that branch
+   * The landed branch it is read from, once the session's tree is gone: the file as that branch
    * holds it, not a file on disk. Null or absent for the file on disk.
    */
   branch?: string | null;
@@ -31,7 +31,7 @@ export type LineRange = { from: number; to: number };
 export type FileOpen = { path: string; lines?: LineRange | null };
 
 /**
- * What opens a file's preview, or null where nothing does (PREVIEW1, D111).
+ * What opens a file's preview, or null where nothing does.
  *
  * @remarks
  * **Context, not a prop**, as the link opener is (`links.tsx`): a tool card deep in a conversation holds no
@@ -50,7 +50,7 @@ const isAbsolute = (path: string) => /^(?:[A-Za-z]:)?[\\/]/.test(path) || /^[A-Z
  * can already see the preview would refuse it (outside the tree, the tree itself, under `.git`).
  *
  * @remarks
- * **A door that could only refuse is not offered** (UX5 U66), so a card shows such a path as text. The host
+ * **A door that could only refuse is not offered**, so a card shows such a path as text. The host
  * judges again by its own rule, links included, which a page cannot see. A folder is compared as a folder,
  * never by string prefix, and a drive letter's case is the same place.
  */
@@ -86,16 +86,16 @@ const whole = (value: unknown): number | null =>
   typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
 
 /**
- * The lines a tool call named, from its own input as the wire carried it: a read's `offset` (the line it
+ * The lines a tool call named, from its own input as the wire carries it: a read's `offset` (the line it
  * starts at) and `limit` (how many), which both doors carry for Claude Code's read. Null where the input
- * names none, or was cut before it could be read — nothing is inferred from a title or an output.
+ * names none, or is cut before it can be read — nothing is inferred from a title or an output.
  */
 export function namedLines(input: string | null | undefined): LineRange | null {
   const parsed = inputObject(input);
   return parsed ? linesOf(parsed) : null;
 }
 
-/** A call's input as the object it is, or null where it is absent, not JSON, not an object, or was cut. */
+/** A call's input as the object it is, or null where it is absent, not JSON, not an object, or cut. */
 export function inputObject(input: string | null | undefined): Record<string, unknown> | null {
   if (!input) return null;
   let parsed: unknown;
@@ -116,7 +116,7 @@ function linesOf({ offset, limit }: Record<string, unknown>): LineRange | null {
 }
 
 /**
- * The lines a card marks when it opens its call's file (PREVIEW1, LEFT2): a read's own input's lines, and
+ * The lines a card marks when it opens its call's file: a read's own input's lines, and
  * otherwise the line the call's first location names (ACP's `locations[].line`), as one line.
  *
  * @remarks

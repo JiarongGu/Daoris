@@ -13,9 +13,9 @@ import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { LayoutToggles } from './LayoutToggles';
 import { ATTENDED, IN_A_BROWSER, menuWorld, OPEN_QUEST } from './menuFixtures';
 
-// The menu bar (UX7a, D152): the strip as the window draws it, with each menu open over the page, built from the one
+// The menu bar: the strip as the window draws it, with each menu open over the page, built from the one
 // table the palette and the keys read. `theme`, `language` and `world` are args, so one story is photographed in both
-// themes and both languages at 1546 and 680 px; `width` sets the window's, and below the names' room they fold (UX7a2).
+// themes and both languages at 1546 and 680 px; `width` sets the window's, and below the names' room they fold.
 
 type World = 'shell' | 'attended' | 'quest' | 'browser';
 
@@ -26,7 +26,7 @@ const WORLDS: Record<World, Partial<CommandState>> = {
   browser: IN_A_BROWSER,
 };
 
-/** The theme on the document, as a person chooses it (D66), put back when the story goes. */
+/** The theme on the document, as a person chooses it, put back when the story goes. */
 function useTheme(theme: 'light' | 'dark') {
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -42,7 +42,7 @@ function useTheme(theme: 'light' | 'dark') {
 function Strip({ menu, world, mnemonics, chinese, width }: {
   menu: MenuId | typeof FOLD_OPEN | null; world: World; mnemonics: boolean; chinese: boolean; width?: number;
 }) {
-  // A reader of its own in either language, so English is English whatever the window speaks; neither is remembered (STORY2).
+  // A reader of its own in either language, so English is English whatever the window speaks; neither is remembered.
   const reader = useMemo(() => readerIn(chinese ? 'zh' : 'en'), [chinese]);
   const t = reader.t.bind(reader) as Translate;
   const [open, setOpen] = useState<string | null>(menu);
@@ -51,7 +51,7 @@ function Strip({ menu, world, mnemonics, chinese, width }: {
   const menus = MENUS.filter((each) => !each.shell || attached).map((each) => ({
     id: each.id, label: t(each.label), ...(attached ? { letter: each.letter } : {}), items: menuRows(entries, each.id),
   }));
-  // A story's window is the width it is given (UX7a2): the strip folds its menus where the window would.
+  // A story's window is the width it is given: the strip folds its menus where the window would.
   const compact = width !== undefined && foldsMenus(width);
   return (
     <I18nextProvider i18n={reader}>
@@ -158,17 +158,17 @@ export const Terminal: Story = { args: { menu: 'terminal' } };
 /** Help: Ask Daoris and Quick Ask, Setup, Keyboard shortcuts, the machine log, Update, About. */
 export const Help: Story = { args: { menu: 'help' } };
 
-/** A browser: six menus, no machine verb, no key a browser keeps (D152 §3.6). */
+/** A browser: six menus, no machine verb, no key a browser keeps. */
 export const BrowserWorkspace: Story = { args: { menu: 'workspace', world: 'browser' } };
 
 /** A browser's Go: its places, no keys. */
 export const BrowserGo: Story = { args: { menu: 'go', world: 'browser' } };
 
-/** At a 680 px window: the seven names still, the command center its glyph, the layout toggles gone (D152 §3.1). */
+/** At a 680 px window: the seven names still, the command center its glyph, the layout toggles gone. */
 export const At680: Story = { args: { menu: 'none', width: 680 } };
 
 /**
- * At a 560 px window (UX7a2): narrower than the seven names need, so they fold into one menu, VS Code's ☰, beside the
+ * At a 560 px window: narrower than the seven names need, so they fold into one menu, VS Code's ☰, beside the
  * command center's glyph, the browser's door and the window's buttons.
  */
 export const FoldedAt560: Story = { args: { menu: 'none', width: 560 } };
@@ -189,7 +189,7 @@ export const Shortcuts: Story = {
 };
 
 /**
- * Which of the table's keys reach the page in the engine the story runs in (D152 §3.4: found, not assumed). Press each:
+ * Which of the table's keys reach the page in the engine the story runs in (found, not assumed). Press each:
  * its row says *reached* when the page heard it, and the page takes it, so the engine's own use of it shows as no row
  * lit. Opened in the window's engine, it answers for the window; in a browser, for that browser.
  */

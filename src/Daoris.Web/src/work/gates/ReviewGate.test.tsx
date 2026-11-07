@@ -10,7 +10,7 @@ import {
 const gate = () => screen.getByRole('region', { name: /Review in/ });
 
 /**
- * REVIEWENV1g (D154 points 7–8; the review environment design §3.1–§3.3, §3.6): *Review in `<environment>`* in each state the
+ * *Review in `<environment>`* in each state the
  * gate shows, in place of *Accept…*, and each press: *Reviewed* and *Not yet…* name the set-up the view drew, *Not yet* needs
  * the person's words, *Skip…* asks once, *Set it up* publishes a step, and a stale verdict is said in the host's sentence.
  */

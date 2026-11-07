@@ -3,8 +3,8 @@ using System.Text.Json.Nodes;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// One agent's key on an MCP call's <c>_meta</c> and how its lineage is read from it (the agent-provider design §3.3, §6, O1-F17): one
-/// file per agent, read by <see cref="CallLineage"/>'s one ordered list. The service knows an agent nowhere else but D23's default.
+/// One agent's key on an MCP call's <c>_meta</c> and how its lineage is read from it: one
+/// file per agent, read by <see cref="CallLineage"/>'s one ordered list. The service knows an agent nowhere else but its default.
 /// </summary>
 public interface ICallKeys
 {

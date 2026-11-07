@@ -5,7 +5,7 @@ import i18n from '../../locales/i18n';
 import { holdsOf } from '../../bridge/hold';
 import { TerminalHold } from './TerminalHold';
 
-// A conversation a terminal holds (RPC1g1, D238 point 2): its head says so with the terminal's process, in each shipped language, and
+// A conversation a terminal holds: its head says so with the terminal's process, in each shipped language, and
 // offers the person *Let go of the terminal*.
 
 const HOLD = { session: '3f2a91c4', asker: { process: 'pwsh', pid: 4120 }, since: '2026-11-06T09:00:00Z' };

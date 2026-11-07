@@ -5,7 +5,7 @@ import { Button, Icon, Tip } from '../../design/ui';
 import type { AnchorWait } from './anchors';
 import type { Wait } from './waits';
 
-/** A press that leads to a wait's line (WAITFOOT1c), counted so the same one pressed again leads there again. */
+/** A press that leads to a wait's line, counted so the same one pressed again leads there again. */
 export type Seek = { wait: AnchorWait; n: number };
 
 /** The outline a line wears once a raising block's *To the wait* led to it, as the conversation outlines a revealed block. */
@@ -37,7 +37,7 @@ function lineOf(box: HTMLElement | null, wait: AnchorWait): HTMLElement | null |
 }
 
 /**
- * The wait a press led to, in the strip at the foot or the record's head (WAITFOOT1c; WAITFOOT2b, D168's WAITFOOT2 note): each
+ * The wait a press led to, in the strip at the foot or the record's head: each
  * new `seek` makes its wait the one outlined, `onSeek` first opens whatever hides its line, and the line in `box` takes the focus
  * once it is drawn. `letGo` puts the outline down, once the person moves on from the place it led to.
  */
@@ -73,7 +73,7 @@ export function waitName(t: TFunction, wait: Wait): string {
 }
 
 /**
- * *In the conversation* (WAITFOOT1c, D168 point 4): on the head's section and the strip's line of a wait whose raising event the
+ * *In the conversation*: on the head's section and the strip's line of a wait whose raising event the
  * conversation holds, or may hold on a page before; the press shows that event, outlined. Props only.
  */
 export function InConversation({ onPress }: { onPress: () => void }) {
@@ -84,8 +84,8 @@ export function InConversation({ onPress }: { onPress: () => void }) {
 }
 
 /**
- * The mark under a block that raised a wait (WAITFOOT1c, D168 point 4): a quiet glyph in the waiting hue, *To the wait* and what
- * waits its name, and what waits on the person from here its tip (WAITFOOT2b: a line of words under the block was one more copy
+ * The mark under a block that raised a wait: a quiet glyph in the waiting hue, *To the wait* and what
+ * waits its name, and what waits on the person from here its tip (a line of words under the block would be one more copy
  * of the wait on the screen). Its press takes the person to the wait's line, in the head or at the foot, where it is answered.
  * Props only.
  */

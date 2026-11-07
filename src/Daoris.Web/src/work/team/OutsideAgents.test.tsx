@@ -7,7 +7,7 @@ import { whoOf } from '../../asks/ChannelSection';
 import { CoWorkers } from './CoWorkers';
 import type { OutsideAgent } from './outsideAgents';
 
-// CHANNELJOIN1c (the event-channel design §5.8): *At work* lists a line's outside agents beside its co-workers: the agent, the repository,
+// *At work* lists a line's outside agents beside its co-workers: the agent, the repository,
 // when it joined and last read or posted, and *Remove*; shown as itself, never as the person or a session. In both languages.
 
 const nameOf = (agent: string) => (agent === 'codex' ? 'Codex' : agent);

@@ -4,8 +4,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { StatusBar } from './frame';
 import { OutputPanel } from './OutputPanel';
 
-// The window's furniture (D55) — regions the platform had nowhere to put. Starting a conversation is
-// *New conversation*'s, with its own stories (NEW1b). The panel's console is absent here on purpose: a stream arrives over the shell's
+// The window's furniture — regions the platform has nowhere else to put. Starting a conversation is
+// *New conversation*'s, with its own stories. The panel's console is absent here on purpose: a stream arrives over the shell's
 // bridge and Storybook has none, so what these stories are for is the CHROME around it.
 
 const meta: Meta = { title: 'Work/Frame' };
@@ -13,7 +13,7 @@ export default meta;
 
 /**
  * 🔴 Wrapped in the tooltip provider the application mounts once (`main.tsx`). Every status item
- * carries a tip since the bar became a bar (2026-09-22), and a `Tooltip` outside a provider throws —
+ * carries a tip, and a `Tooltip` outside a provider throws —
  * so a story that renders one without it is a story that cannot render at all. Caught by the suite
  * that asserts every story renders, which is exactly what that suite is for.
  */
@@ -22,9 +22,9 @@ export const Statuses: StoryObj = {
     <Tooltip.Provider>
       <div className="grid gap-3">
         <StatusBar driver="running" sessions={2} workspace="default" remote onDriver={() => {}} />
-        {/* A first start (SETUP1b): the setup's count, until its required steps are done. */}
+        {/* A first start: the setup's count, until its required steps are done. */}
         <StatusBar driver="running" sessions={0} workspace={null} remote={false} setup={{ done: 1, of: 5 }} onSetup={() => {}} />
-        {/* A shell whose driver's file answers while its service is not up yet (LOOK2a): starting, not ready. */}
+        {/* A shell whose driver's file answers while its service is not up yet: starting, not ready. */}
         <StatusBar driver="starting" sessions={0} workspace="aurora" remote onDriver={() => {}} />
         {/* A shell whose driver did not answer — different from having none, and it says so. */}
         <StatusBar driver="stopped" sessions={0} workspace="aurora" remote />
@@ -48,7 +48,7 @@ export const Panels: StoryObj = {
 };
 
 /**
- * A tab for each thing that is running (CONSOLE2c): the session, then a subagent that finished, a
+ * A tab for each thing that is running: the session, then a subagent that finished, a
  * background task still going, one that failed, and one with a name too long for its tab.
  */
 export const PanelTabs: StoryObj = {
@@ -75,7 +75,7 @@ export const PanelTabs: StoryObj = {
 };
 
 /**
- * The panel as a region (DOCK1b): holding the console and Ask Daoris, moved in from the right side
+ * The panel as a region: holding the console and Ask Daoris, moved in from the right side
  * bar, with Ask Daoris shown; holding the timeline alone, named for it; and emptied, saying how to
  * fill it.
  */
@@ -101,7 +101,7 @@ export const PanelViews: StoryObj = {
 };
 
 /**
- * The panel's views at three widths, narrowest first (TABS1): the console shown keeps its name, and the
+ * The panel's views at three widths, narrowest first: the console shown keeps its name, and the
  * terminal gives way to its icon, its name in its tip, before any name is cut. The row scrolls only when
  * even the icon does not fit, and with room for both names both are whole. Where each width falls
  * differs by language. Storybook lays them out, so the measure is real here.
@@ -123,7 +123,7 @@ export const PanelViewsNarrow: StoryObj = {
 };
 
 /**
- * The panel as a detached session's window draws it (FRAME1h): the console and its streams, with no views
+ * The panel as a detached session's window draws it: the console and its streams, with no views
  * menu, since the window has no side bar to move a view to and nothing in it acts, so no stop either. Open,
  * then hidden, then at a narrow window's width, where the streams' tabs scroll beside *Hide the panel*.
  */

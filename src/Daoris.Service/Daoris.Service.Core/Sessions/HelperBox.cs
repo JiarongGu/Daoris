@@ -4,8 +4,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Where a working session's ask for a helper, and a helper's answer, are written (MIXAGENT2a-i, D163 point 2; the mixed agents
-/// design §3). Three files under the home's <c>helpers</c> folder, one writer each, the file the contract:
+/// Where a working session's ask for a helper, and a helper's answer, are written. Three files under the home's <c>helpers</c> folder, one writer each, the file the contract:
 /// <c>&lt;askId&gt;.ask.json</c> (the connector's <c>helper_ask</c>, or the person's door, and never changed once written),
 /// <c>&lt;askId&gt;.state.json</c> (the driver's alone) and <c>&lt;askId&gt;.answer.json</c> (the helper's <c>helper_answer</c>).
 /// </summary>
@@ -14,7 +13,7 @@ namespace Daoris.Knowledge;
 /// helper, a reviewer, an intake or Ask Daoris (a helper cannot ask for a helper). Whether the rule allows an ask, the two at once and which
 /// agent are the driver's, which alone reads <c>driver.json</c>; it answers a refusal through the state file's code.</para>
 ///
-/// <para><b>The person's fields are not written here</b> (COWORKUX1d, the co-worker design §4.3): <c>after</c>, the ask a follow-up
+/// <para><b>The person's fields are not written here</b>: <c>after</c>, the ask a follow-up
 /// follows, and <c>to: person</c>, an answer kept for the person, are the person's doors' alone, which the driver writes. An ask from here
 /// carries neither, so it is a first ask whose answer goes to the session that asked.</para>
 ///
@@ -32,7 +31,7 @@ public sealed class HelperBox(string? home)
 
     /// <summary>
     /// The states the driver writes, in the order an ask goes through them (<c>refused</c> ends it with a code); <c>cooling</c> is a started
-    /// ask an account's limit cut off, open again (LIMITRESUME1h). Only <c>started</c> finds an ask its helper answers.
+    /// ask an account's limit cut off, open again. Only <c>started</c> finds an ask its helper answers.
     /// </summary>
     public static readonly IReadOnlyList<string> States = ["waiting", "approved", "started", "answered", "refused", "cooling"];
 
@@ -41,7 +40,7 @@ public sealed class HelperBox(string? home)
 
     public string? Home { get; } = home;
 
-    /// <summary>The home the driver names on the connector it offers, else the account's (D63): where the rules live.</summary>
+    /// <summary>The home the driver names on the connector it offers, else the account's: where the rules live.</summary>
     public static HelperBox FromEnvironment() => new(RuleProposalBox.FromEnvironment().Home);
 
     /// <summary>Where one ask's files are: <c>&lt;home&gt;/helpers/&lt;id&gt;.&lt;kind&gt;.json</c>, the home's <see cref="HomeEntry.Helpers"/>.</summary>
@@ -53,7 +52,7 @@ public sealed class HelperBox(string? home)
     /// <param name="asker">The record of the session that asks, or null when the connector names none or it is not held.</param>
     /// <param name="named">The session the connector names, said back when no record is held for it.</param>
     /// <param name="urgent">
-    /// The asker's level (COWORK1d, D188 point 2): the answer at its next step, where its door takes words then; kept as `urgent: true`.
+    /// The asker's level: the answer at its next step, where its door takes words then; kept as `urgent: true`.
     /// An ordinary ask keeps no field, which reads as today's delivery.
     /// </param>
     public (string? Id, string Message) Ask(Session? asker, string? named, string? question, string? agent, DateTimeOffset at, bool urgent = false)

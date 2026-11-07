@@ -7,15 +7,15 @@ import { call, toolLookBound } from '../call';
 import { askHeld, isPending } from '../state/held';
 import { ownWindowName } from '../../work/window';
 
-// The programs Daoris runs beside its agents (MOD3, TOOLS7): how each is run, a version downloaded and followed, a
-// delete, the resource locations, and what a switch of git changes (D121 §4.1). The same `tools.json` the terminal's
-// `daoris tool` edits (D50).
+// The programs Daoris runs beside its agents: how each is run, a version downloaded and followed, a
+// delete, the resource locations, and what a switch of git changes. The same `tools.json` the terminal's
+// `daoris tool` edits.
 
 /**
  * The tools' own query keys, under a root of their own rather than the driver's: the driver's state is asked again on
  * every tick, and the list with versions starts each program. Kept here, as Ask Daoris's proposals keep theirs, so
- * this domain's change touches no shared file. The root is what the state hub asks again when a tools press publishes
- * (STATEHUB1h, D169): the list, and what a switch of git would change.
+ * this domain's change touches no shared file. The root is what the state hub asks again when a tools press publishes:
+ * the list, and what a switch of git would change.
  */
 export const ALL_TOOLS = ['tools'] as const;
 const toolsList = (ask: boolean) => ['tools', 'list', ask] as const;
@@ -37,8 +37,8 @@ export type ToolStart = {
 };
 
 /**
- * Every tool as it is run, what is downloaded and offered, and the locations (TOOLS7). Shell-only: a tool's file is a
- * machine path (D47 §4). Without `ask` it reads files and answers at once; with it, the shell asks each tool's file its
+ * Every tool as it is run, what is downloaded and offered, and the locations. Shell-only: a tool's file is a
+ * machine path. Without `ask` it reads files and answers at once; with it, the shell asks each tool's file its
  * version, which starts the program, so the screen draws from the first and fills in from the second.
  */
 export const useTools = ({ ask = false }: { ask?: boolean } = {}) => {
@@ -47,7 +47,7 @@ export const useTools = ({ ask = false }: { ask?: boolean } = {}) => {
   const queryKey = toolsList(ask);
   return useQuery({
     queryKey,
-    // Told by event (NOBLOCK1): the shell answers what it holds, and its read of the files comes as `ANSWERED`.
+    // Told by event: the shell answers what it holds, and its read of the files comes as `ANSWERED`.
     // Nothing held yet reads as null, which the screen draws as loading until the event comes.
     queryFn: () => askHeld('TOOLS_LIST', client, queryKey, ask ? { ask: true } : {},
       (answer): ToolsShown | null => (isPending(answer) ? null : answer as ToolsShown)),
@@ -56,12 +56,12 @@ export const useTools = ({ ask = false }: { ask?: boolean } = {}) => {
 };
 
 /**
- * The screen's half of `daoris tool use <tool> system|managed|file` (D50): the system's and a named file are written at
+ * The screen's half of `daoris tool use <tool> system|managed|file`: the system's and a named file are written at
  * once, a named file only once it answers a version; managed downloads a version that is not here, then switches, and
  * is followed as a download is.
  *
  * Every press here that writes what the list reads is published by its route, and the state hub asks the tools again in
- * every window (STATEHUB1h, D169): the hooks ask nothing again themselves.
+ * every window: the hooks ask nothing again themselves.
  */
 export const useToolUse = () =>
   useMutation({
@@ -89,9 +89,9 @@ export const useToolDelete = () =>
   });
 
 /**
- * *Look for updates* (§3.7): each location fetched on the person's press. It waits as long as the shell may look,
- * a look's bound for each location (`hostBounds`, WSR7), since the bridge's own thirty seconds is one location's.
- * The copy each location's look keeps is what the list offers, so its route publishes the tools (STATEHUB1h).
+ * *Look for updates*: each location fetched on the person's press. It waits as long as the shell may look,
+ * a look's bound for each location (`hostBounds`), since the bridge's own thirty seconds is one location's.
+ * The copy each location's look keeps is what the list offers, so its route publishes the tools.
  */
 export const useToolsLook = () =>
   useMutation({
@@ -107,7 +107,7 @@ export const useToolLocation = () =>
   });
 
 /**
- * A setting Daoris's git carries, set or cleared (TOOLS6, GITAUTH1e): the screen's half of `daoris tool git ssh`. No `value` clears it;
+ * A setting Daoris's git carries, set or cleared: the screen's half of `daoris tool git ssh`. No `value` clears it;
  * a git older than the one that reads it refuses as `TOOL_GIT_TOO_OLD`, naming both versions.
  */
 export const useToolGitSet = () =>
@@ -116,7 +116,7 @@ export const useToolGitSet = () =>
       call('TOOLS_GIT_SET', change) as Promise<{ key: string; value: string | null; version: string | null }>,
   });
 
-/** One act on a git identity (GITAUTH1e, the git-auth design §7.1-§7.2), in the words `daoris git identity` uses. */
+/** One act on a git identity, in the words `daoris git identity` uses. */
 export type GitIdentityChange =
   | { action: 'add-ssh'; host: string; label: string; name?: string; email?: string; import?: string; rsa?: boolean }
   | { action: 'add-https'; host: string; label: string; user: string; token: string; name?: string; email?: string }
@@ -129,7 +129,7 @@ export type GitIdentityChange =
   | { action: 'default'; host: string; identity?: string };
 
 /**
- * A git identity added, tested, changed or removed (GITAUTH1e): the screen's half of `daoris git identity` and
+ * A git identity added, tested, changed or removed: the screen's half of `daoris git identity` and
  * `git default`. A refusal is the operation's own sentence. A token goes in and never comes back, only whether it is set; the press
  * that loosens what Daoris's git may use is confirmed in the page first.
  */
@@ -144,13 +144,13 @@ export type GitUseChange =
   | { scope: 'workspace'; workspace: string; host: string; value?: string }
   | { scope: 'machine'; host: string; value?: 'own' };
 
-/** The screen's half of `daoris git use` (GITAUTH1e). Choosing `own` is a widening, confirmed in the page before it is sent. */
+/** The screen's half of `daoris git use`. Choosing `own` is a widening, confirmed in the page before it is sent. */
 export const useSetGitUse = () =>
   useMutation({ mutationFn: (change: GitUseChange) => call('GIT_USE', change) as Promise<{ scope: string }> });
 
 /**
- * A git go-ahead answered (GITAUTH1f, the git-auth design §6.6): the screen's half of `daoris git answer`. `waiting` is whether its door
- * still held the act; where it had gone, an Allow is kept for the identical retry. Its row goes as the slice hears the answer.
+ * A git go-ahead answered: the screen's half of `daoris git answer`. `waiting` is whether its door
+ * still holds the act; where it has gone, an Allow is kept for the identical retry. Its row goes as the slice hears the answer.
  */
 export const useGitAnswer = () =>
   useMutation({
@@ -173,13 +173,13 @@ export const useToolGit = (target: GitTarget | null) => {
 };
 
 /**
- * *Browse…* (§4.1): the system's file picker. It waits for as long as the dialog is open, as the folder picker does
- * (SHEN2); `file` absent is the person cancelling, and `can: false` a window with no picker.
+ * *Browse…*: the system's file picker. It waits for as long as the dialog is open, as the folder picker does;
+ * `file` absent is the person cancelling, and `can: false` a window with no picker.
  */
 export const useToolPick = () =>
   useMutation({
     mutationFn: (title: string) => {
-      // The dialog is owned by the window this page is in (MAINWINDOWS2c); the first main window names none.
+      // The dialog is owned by the window this page is in; the first main window names none.
       const window = ownWindowName(globalThis.location?.search ?? '');
       return call('TOOLS_PICK', window === null ? { title } : { title, window }, { timeoutMs: Infinity }) as Promise<{ can: boolean; file?: string | null }>;
     },

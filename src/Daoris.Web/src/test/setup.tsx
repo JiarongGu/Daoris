@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 import { configure } from '@testing-library/react';
-import { setProjectAnnotations } from '@storybook/react-vite';
-import preview from '../../.storybook/preview';
+// Components read the catalogues the page loads at start, so every file has them loaded before its first render.
+import '../locales/i18n';
 
 // 🔴 A `findBy` waits five seconds, not testing-library's one — the vite config's `testTimeout` has
 // the same reason. A file's first find waits on its first fetch through React Query, and across 83
@@ -64,14 +64,3 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
       dispatchEvent: () => false,
     }) as MediaQueryList;
 }
-
-/**
- * 🔴 Storybook's project annotations, so `composeStories` renders a story the way Storybook does.
- *
- * Without this, `stories.test.tsx` applies each story's OWN decorators and none of the project's —
- * so the tooltip provider `.storybook/preview.tsx` mounts for every story is absent here, and any
- * component carrying a `Tip` throws. That reads as "this story needs
- * wrapping", which is the wrong fix: the suite is meant to render what a reviewer sees, and
- * without this it renders something slightly different.
- */
-setProjectAnnotations(preview);

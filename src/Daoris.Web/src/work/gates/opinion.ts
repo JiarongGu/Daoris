@@ -1,7 +1,7 @@
 import type { FileOpen } from '../review/preview';
 
 /**
- * Where the second opinion's part of a landing's gate stands (XAGENT1f, D155 points 9–10; the second-agent design §8.5), as the
+ * Where the second opinion's part of a landing's gate stands, as the
  * driver spells it (`OpinionGateStates`). `none`, `settled`, `anyway`, `myself` and `answered` let the work go, and so does
  * `unavailable` where the rule does not require one; the rest hold it. A newer driver may name another, which the page words as
  * unread, holding, with the driver's sentence beneath.
@@ -20,11 +20,11 @@ export const opinionState = (state: string | null | undefined): OpinionState =>
   state && KNOWN.has(state) ? state as OpinionState : 'unread';
 
 /**
- * What the second opinion's gate says beside a landing's plan or press, and after each of its presses (XAGENT1f,
- * `DriverModule.Opinion`): its state, whether it holds the work, whether the rule requires one, the reviewer by its product and
+ * What the second opinion's gate says beside a landing's plan or press, and after each of its presses
+ * (`DriverModule.Opinion`): its state, whether it holds the work, whether the rule requires one, the reviewer by its product and
  * maker and how it stands to the work (`label`), its session, the findings and the disputes counted, the commits nobody read,
  * why none could be had and until when, the later step of the chain, the person's answer, the token a press sends back to answer
- * what it showed, and the driver's English. Absent where the level asks no opinion, so a landing no rule touches reads as it did.
+ * what it showed, and the driver's English. Absent where the level asks no opinion, so a landing no rule touches reads as one with no gate.
  */
 export type OpinionGate = {
   state: string;
@@ -44,18 +44,18 @@ export type OpinionGate = {
   until?: string | null;
   later?: string | null;
   person?: string | null;
-  /** The token *Accept…* sends back to answer what it showed (§8.2–§8.3); absent where no press answers the state. */
+  /** The token *Accept…* sends back to answer what it showed; absent where no press answers the state. */
   answers?: string | null;
   says?: string | null;
 };
 
-/** The working session's answer to one finding as the host keeps it (§6.4): its own claim. */
+/** The working session's answer to one finding as the host keeps it: its own claim. */
 export type OpinionAnswer = { said: string; commit?: string | null; evidence?: string | null; why?: string | null };
 
-/** How the driver read that answer as the turn ended (§6.4): what counts, and why it does not count as said. */
+/** How the driver read that answer as the turn ended: what counts, and why it does not count as said. */
 export type OpinionCounts = { counts: string; why?: string | null; fix?: string | null };
 
-/** One finding (§6.1), a claim and never a fact (§6.6), with what stands beside it. */
+/** One finding, a claim and never a fact, with what stands beside it. */
 export type OpinionFinding = {
   number: number;
   weight: string;
@@ -74,7 +74,7 @@ export type OpinionFinding = {
   };
 };
 
-/** One pass (§6.2): the first, or the recheck. */
+/** One pass: the first, or the recheck. */
 export type OpinionPass = {
   id: string;
   occasion?: string;
@@ -93,20 +93,20 @@ export type OpinionPass = {
   handedTo?: string | null;
   read?: string | null;
   limits?: string | null;
-  /** The reviewer's measured use (XAGENT1g4b, §6.3); null where its door carried none: *not measured*, never 0 (D57 §4). */
+  /** The reviewer's measured use; null where its door carried none: *not measured*, never 0. */
   usage?: { used: number; size: number } | null;
   /** Null until it said its opinion. */
   findings?: OpinionFinding[] | null;
 };
 
-/** The second opinion as the review draws it (XAGENT1g, `DriverModule.OpinionDetail`; the second-agent design §9). */
+/** The second opinion as the review draws it (`DriverModule.OpinionDetail`). */
 export type OpinionDetail = {
-  /** `agent`, `person` where the person read it themselves, `none` where no agent could (§10). */
+  /** `agent`, `person` where the person read it themselves, `none` where no agent could. */
   tier: string;
-  /** Whether what was read covers what would land; null where git could not say. */
+  /** Whether what the reviewer read covers what would land; null where git could not say. */
   covers?: boolean | null;
   passes?: number;
-  /** Why the findings went to the person rather than the working session (§6.7), a code. */
+  /** Why the findings went to the person rather than the working session, a code. */
   toPerson?: string | null;
   answered?: string | null;
   person?: { said: string; at: string; words?: string | null; door?: string | null } | null;
@@ -114,14 +114,14 @@ export type OpinionDetail = {
   recheck?: OpinionPass | null;
 };
 
-/** One work whose gate waits on the person (XAGENT1g, `OPINION_WAITS`): *What needs you*'s row. */
+/** One work whose gate waits on the person (`OPINION_WAITS`): *What needs you*'s row. */
 export type OpinionWait = {
   session: string;
   quest: string;
   repository: string;
   workspace?: string;
   since: string;
-  /** The work lands by itself (D145): no press of the person's is coming to answer what is unsettled. */
+  /** The work lands by itself: no press of the person's is coming to answer what is unsettled. */
   auto: boolean;
   opinion: OpinionGate;
 };
@@ -137,23 +137,23 @@ export const opinionHolds = (landing: { opinion?: OpinionGate | null } | null | 
 };
 
 /**
- * Whether *Accept…* is the press that answers the gate (§8.2–§8.3): a dispute or commits nobody read, drawn with the token the
+ * Whether *Accept…* is the press that answers the gate: a dispute or commits nobody read, drawn with the token the
  * press sends back. Then *Accept…* stands, showing what it answers; any other hold keeps it away, as the landing door would
  * refuse it.
  */
 export const acceptAnswers = (gate: OpinionGate | null | undefined): boolean =>
   Boolean(gate?.holds && gate.answers && (gate.state === 'disputed' || gate.state === 'commits-since'));
 
-/** A press at the gate (design §8.5), named as the page draws it. */
+/** A press at the gate, named as the page draws it. */
 export type OpinionPress = 'askNow' | 'stop' | 'tryAgain' | 'sameAgent' | 'askAgain' | 'myself' | 'anyway' | 'sendBack';
 
 /** The presses that ask once under the gate before they do anything: words to give, or a reading to end. */
 export const OPINION_ASKS_ONCE: ReadonlySet<OpinionPress> = new Set(['stop', 'myself', 'anyway', 'sendBack']);
 
 /**
- * What each state offers, in the order it shows them (the second-agent design §8.5's table): not asked, *Ask now*, and while the
+ * What each state offers, in the order it shows them: not asked, *Ask now*, and while the
  * chain's later step works, *Go on anyway…* too; being read, *Stop*; disputed, *Send back…* and *Ask again*, with *Go on anyway…*
- * only where no press is coming (`pressComing`: *Accept…* or D154's *Reviewed* answers it); unavailable and required, *Try again*,
+ * only where no press is coming (`pressComing`: *Accept…* or the review's *Reviewed* answers it); unavailable and required, *Try again*,
  * *Ask the same agent, fresh*, *I looked myself…* and *Go on anyway…*; commits unread, *Ask again*, and *Go on anyway…* where no
  * press is coming. Being answered and read again offer the sessions' doors alone. One rule, read by the page and the tests.
  */
@@ -196,7 +196,7 @@ export function reviewerName(gate: Pick<OpinionGate, 'product' | 'reviewer' | 'm
 }
 
 /**
- * Where a finding is, as a door: a repository-relative path with its line opens the file's preview at that line (PREVIEW1); a
+ * Where a finding is, as a door: a repository-relative path with its line opens the file's preview at that line; a
  * commit or `general` is said as it is. Null for what no preview opens.
  */
 export function findingPlace(where: string): FileOpen | null {

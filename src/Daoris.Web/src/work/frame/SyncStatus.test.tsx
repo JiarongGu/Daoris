@@ -13,7 +13,7 @@ const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Toolt
 const minutesAgo = (count: number) => new Date(Date.now() - count * 60_000).toISOString();
 const LEVEL = { ahead: 0, behind: [], synced: minutesAgo(2), tried: minutesAgo(2), problem: null };
 
-// Where a circle stands with its remote (SYNC6b), as a molecule: props in, states out. The standing
+// Where a circle stands with its remote, as a molecule: props in, states out. The standing
 // is the host's to tell; *Sync now* is the shell's, so a browser is simply this without `onSyncNow`.
 
 describe('SyncStatus', () => {

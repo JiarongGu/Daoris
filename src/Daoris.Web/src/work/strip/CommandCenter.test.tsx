@@ -35,8 +35,7 @@ describe('CommandCenter', () => {
   });
 
   /**
-   * 🔴 The shortcut is PRINTED, not implied. The palette existed before this and was reachable only
-   * by a key nothing displayed, which is the same discoverability debt SURF10 took on and named.
+   * 🔴 The shortcut is PRINTED, not implied: a key nothing displays is not discoverable.
    */
   it('prints the keyboard way in, so it is learnable rather than folklore', () => {
     render(
@@ -53,9 +52,9 @@ describe('CommandCenter', () => {
   });
 
   /**
-   * 🔴 It is the pill and nothing around it. It used to bring a centring wrapper that spanned the
-   * whole strip, which had to refuse pointers or the title bar would lose its drag; the strip lays
-   * the pill out now (UX5 U15), so there is no wrapper to take a press.
+   * 🔴 It is the pill and nothing around it. A centring wrapper spanning the
+   * whole strip would have to refuse pointers or the title bar would lose its drag; the strip lays
+   * the pill out, so there is no wrapper to take a press.
    */
   it('is the pill alone, so no wrapper of its own can take the title bar\'s drag', () => {
     const { container } = render(
@@ -66,9 +65,9 @@ describe('CommandCenter', () => {
   });
 
   /**
-   * UXFIX1b: a target of 28 px at least, the platform language's floor (§6), where `h-6` drew it 24 px tall; and no
+   * A target of 28 px at least, the platform language's floor, where `h-6` would draw it 24 px tall; and no
    * taller than the 36 px strip it sits in (`AppStrip`'s `h-9`), so the strip keeps its height and centres it. A minimum
-   * rather than a fixed height, as the menu bar's names have (UXFIX1); jsdom lays nothing out, so this holds the classes
+   * rather than a fixed height, as the menu bar's names have; jsdom lays nothing out, so this holds the classes
    * and the window shows the box.
    */
   it('is a target of 28 px at least, and no taller than the strip', () => {
@@ -88,8 +87,8 @@ describe('CommandCenter', () => {
   });
 
   /**
-   * 🔴 Narrowed to its least (a 500px window, UX5 U15), the pill clipped its own words: `defau`,
-   * cut mid-letter, with the shortcut pushed out of sight. The shortcut goes first below 12rem of
+   * 🔴 Narrowed to its least (a 500px window), the pill must not clip its own words (`defau`,
+   * cut mid-letter) or push the shortcut out of sight. The shortcut goes first below 12rem of
    * pill, then the detail, then the scope ends in an ellipsis. jsdom has no container queries, so
    * this holds the rules and the window shows them.
    */

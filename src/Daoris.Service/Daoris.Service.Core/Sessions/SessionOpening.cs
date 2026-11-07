@@ -1,11 +1,11 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// When a session may open (D49, D51, D65, D89): a driven session for a quest, a chat in a repository, Ask Daoris's conversation and an
-/// intake for an ask, each judged and written as one step across hosts, and the keyed open that moves the old part's words with it.
+/// When a session may open: a driven session for a quest, a chat in a repository, Ask Daoris's conversation and an
+/// intake for an ask, each judged and written as one step across hosts, and the keyed open that moves the earlier part's words with it.
 /// </summary>
 /// <param name="opinions">
-/// The second opinions, where findings an open moved to a new part are followed (COMMS1b): the part that holds them answers them.
+/// The second opinions, where findings an open moved to a new part are followed: the part that holds them answers them.
 /// </param>
 internal sealed class SessionOpening(
     QuestStore quests, SessionStore sessions, KnowledgeService? registry, AskStore? asks, OpinionStore? opinions)
@@ -22,7 +22,7 @@ internal sealed class SessionOpening(
     private static string Spell(SessionState state) => Session.Spell(state);
 
     /// <summary>
-    /// Open an INTAKE for an ask (D65 §1b) — a conversation Daoris opens in a room it owns, which
+    /// Open an INTAKE for an ask — a conversation Daoris opens in a room it owns, which
     /// decides from the circle's declarations, publishes the quests itself, and asks the person where
     /// the declarations do not settle it.
     /// </summary>
@@ -48,8 +48,8 @@ internal sealed class SessionOpening(
             return new(SessionOpenRefusal.AskNotFound, $"No ask `#{askId.TrimStart('#')}`.", Session: null);
         }
 
-        // As it stands, the way the desk reads it (USE1c, D95): an ask whose every quest was deleted is a
-        // proposal again — an intake's to answer, but never a named ask's (QUESTDELETE1).
+        // As it stands, the way the desk reads it: an ask whose every quest is deleted is a
+        // proposal again — an intake's to answer, but never a named ask's.
         var ask = AskDesk.Standing(
             stored, await quests.FromAsync(AskDesk.SenderOf(stored.Id), ct: ct).ConfigureAwait(false));
 
@@ -59,7 +59,7 @@ internal sealed class SessionOpening(
             {
                 AskState.Published or AskState.Done => $"it already became {string.Join(", ", ask.Quests.Select(q => $"`#{q}`"))}",
                 AskState.Closed => $"it is closed ({ask.Note})",
-                // QUESTDELETE1: the person named its receiver and that quest was deleted — an intake would route it by its proposal.
+                // The person named its receiver and that quest is deleted — an intake would route it by its proposal.
                 AskState.Proposed when ask.Tier == AskDesk.ByName =>
                     "the person named its receiver, and the quest it became was deleted: no intake routes an ask by its proposal after that",
                 _ => null,
@@ -76,7 +76,7 @@ internal sealed class SessionOpening(
         var holding = Trees.Normalize(room)
             ?? throw new ArgumentException("an intake runs in a room — name it", nameof(room));
 
-        // The check and the write as one step, across hosts (REV3): see SessionStore.ExclusiveAsync.
+        // The check and the write as one step, across hosts: see SessionStore.ExclusiveAsync.
         return await sessions.ExclusiveAsync(async inside =>
         {
             var running = await sessions.RunningInTreeAsync(holding, inside).ConfigureAwait(false);
@@ -108,24 +108,24 @@ internal sealed class SessionOpening(
     }
 
     /// <summary>
-    /// Open Ask Daoris's conversation (HELP1a, D89) — a chat about Daoris itself, in the room the
+    /// Open Ask Daoris's conversation — a chat about Daoris itself, in the room the
     /// driver keeps for it under its home.
     /// </summary>
     /// <remarks>
     /// <para><b>The intake's open, for a conversation.</b> It serves no quest and no ask, so nothing
-    /// plans from it. It belongs to the workspace its window was on when it started (ASKSCOPE1a, D158's ASKSCOPE1 note point
-    /// 1), recorded here and never moved; none named is <c>default</c>, as a record from before reads.</para>
+    /// plans from it. It belongs to the workspace its window is on when it starts, recorded here and never moved;
+    /// none named is <c>default</c>, as a record from before reads.</para>
     ///
     /// <para><b>One running per workspace</b> (point 3): a second in the same workspace is refused naming the first, and the
     /// driver hands the page the running one rather than asking for another; one in another workspace runs beside it, in the
-    /// same room folder (D158's ASKSCOPE1a note, point 4, says why that is safe).</para>
+    /// same room folder.</para>
     ///
     /// <para><b>A workspace this machine does not hold is refused</b>, naming those it does: <c>default</c> and each registered
     /// repository's. With no registry to ask, the name is taken as told.</para>
     /// </remarks>
-    /// <param name="workspace">The workspace the person's window was on at the press; null is <c>default</c>.</param>
+    /// <param name="workspace">The workspace the person's window is on at the press; null is <c>default</c>.</param>
     /// <param name="mode">
-    /// The access mode its start got (HELPMODE1a2, D183 point 3), the driver's to say, since it is the half that spawns it; null is
+    /// The access mode its start gets, the driver's to say, since it is the half that spawns it; null is
     /// <see cref="SessionLedger.HelpRestricted"/>, as a driver from before sends it.
     /// </param>
     /// <exception cref="ArgumentException">No room, or a mode the ledger does not know.</exception>
@@ -184,7 +184,7 @@ internal sealed class SessionOpening(
     }
 
     /// <summary>
-    /// Open a chat in a repository (D49 §3) — a person-initiated session serving no quest yet.
+    /// Open a chat in a repository — a person-initiated session serving no quest yet.
     /// </summary>
     /// <remarks>
     /// <para><b>The same lock, for the same reason.</b> One active session per repository holds for
@@ -196,10 +196,10 @@ internal sealed class SessionOpening(
     /// end by publishing several. The quest system is where the work lands, not the toll to begin.</para>
     ///
     /// <para><b>The circle comes from the repository</b>, because there is no quest to take it from —
-    /// the registry row is the machine's own wiring (D48 §2), and it is the only honest source.</para>
+    /// the registry row is the machine's own wiring, and it is the only honest source.</para>
     /// </remarks>
-    /// <param name="from">The conversation this one continues, handed over (MIXAGENT1a-iii), with <paramref name="fromWhy"/> and <paramref name="fromBy"/>; recorded as told.</param>
-    /// <param name="moves">The words a keyed open moves onto the record it opens (row d-ii part 3), in its own step; none moves without it.</param>
+    /// <param name="from">The conversation this one continues, handed over, with <paramref name="fromWhy"/> and <paramref name="fromBy"/>; recorded as told.</param>
+    /// <param name="moves">The words a keyed open moves onto the record it opens, in its own step; none moves without it.</param>
     /// <exception cref="ArgumentException"><paramref name="moves"/> without <paramref name="opens"/>, or moves that do not read; nothing is opened.</exception>
     public async Task<SessionOpenOutcome> OpenChatAsync(
         string repository, string adapter, DateTimeOffset now,
@@ -229,12 +229,12 @@ internal sealed class SessionOpening(
                 Session: null);
         }
 
-        // Unstated means the registered root — this repository's main tree (D51). Resolved here rather
+        // Unstated means the registered root — this repository's main tree. Resolved here rather
         // than taken on trust, so a caller that names the root and one that says nothing land on the
         // same key instead of holding one tree twice.
         var holding = Trees.Normalize(tree) ?? Trees.Normalize(known.Root);
 
-        // SESSONE1a: a conversation is its own line, and one handed over or started from another's words takes that one's (D167 point 2).
+        // A conversation is its own line, and one handed over or started from another's words takes that one's.
         var continuedOrigin = from is not null && await sessions.FindOrMirrorAsync(from, ct).ConfigureAwait(false) is { } continued
             ? await SessionEntries.OriginOfAsync(continued, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false)
             : null;
@@ -316,7 +316,7 @@ internal sealed class SessionOpening(
                 var moved = await sessions.MoveSaidAsync(before.Id, opened.Id,
                     word => named.Contains(word.Id) || (word.Persons && word.Attempt is null && !read.Contains(word.Id)), inside).ConfigureAwait(false);
                 transfer = [.. moved.Select((word, order) => new OpenTransfer(word.Id, word.Key, $"{key}/{word.Id}", order, word.Id))];
-                // The part that now holds a waiting findings word answers its opinion (COMMS1b, an authority change): handed_to follows the word.
+                // The part that now holds a waiting findings word answers its opinion (an authority change): handed_to follows the word.
                 if (opinions is not null)
                 {
                     foreach (var word in moved.Where(each => each.By is not null))
@@ -347,11 +347,11 @@ internal sealed class SessionOpening(
     /// already has an active session.
     /// </summary>
     /// <param name="from">
-    /// The session this one carries on from another agent's or another account's (MIXAGENT1a-iii), with <paramref name="fromWhy"/>
+    /// The session this one carries on from another agent's or another account's, with <paramref name="fromWhy"/>
     /// and <paramref name="fromBy"/>; recorded as told, since the driver is the half that knows.
     /// </param>
     /// <param name="access">
-    /// The access setup the start resolved (AUTONOMY1a, D184 point 1), each pause with its value; recorded as told, since the driver is
+    /// The access setup the start resolved, each pause with its value; recorded as told, since the driver is
     /// the half that resolves it, and judged only as a short map of words (<see cref="SessionAccess.Judged"/>).
     /// </param>
     /// <param name="moves">The words a keyed open moves onto the record it opens (row d-ii part 3), in its own step; none moves without it.</param>
@@ -385,37 +385,37 @@ internal sealed class SessionOpening(
                 Session: null);
         }
 
-        // A resume (D79): a taken quest whose taker waited on a question, now answered, is its taker's
+        // A resume: a taken quest whose taker waited on a question, now answered, is its taker's
         // to carry on — the one taken quest a session may start on.
         var question = quest is { Status: QuestStatus.Taken, Awaits: { } awaits }
             ? await quests.FindAsync(awaits, ct).ConfigureAwait(false)
             : null;
         var resumes = question is { Status: QuestStatus.Done or QuestStatus.Declined };
 
-        // A carry-on (D80): a taken quest that is not waiting, whose last session on THIS machine
+        // A carry-on: a taken quest that is not waiting, whose last session on THIS machine
         // failed — timed out, refused, crashed — before closing it. The take is this machine's and its
         // tree holds the work. The driver's strikes bound how often; a stand-down or a teammate's
         // record never counts, because either means the take is somebody else's.
-        // And the person's answer to one that parked to ask them (STANDDOWN2), where the driver could not
-        // go on with that record itself: it ended the park `completed` with their words kept, saying why
-        // (D131 §2), and the quest it held is carried on the same way. A park still parked holds its quest.
-        // And a stop that was not the person's (D104): the sweep found nothing running it, or the driver
+        // And the person's answer to one that parked to ask them, where the driver could not
+        // go on with that record itself: it ended the park `completed` with their words kept, saying why,
+        // and the quest it held is carried on the same way. A park still parked holds its quest.
+        // And a stop that is not the person's: the sweep found nothing running it, or the driver
         // shut down under it.
-        // And the person's own stop, of a take a session here made (SESSUX1b2): the driver holds the quest
-        // until Try again releases it (D126 §3.3), so an open reaching here is the release. A stop before
+        // And the person's own stop, of a take a session here made: the driver holds the quest
+        // until Try again releases it, so an open reaching here is the release. A stop before
         // the take leaves none here, and the quest taken since is somebody else's, as after a stand-down.
         var last = quest is { Status: QuestStatus.Taken } && question is null
             ? await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false)
             : null;
         var tookHere = last is not null && await sessions.TookHereAsync(quest.Id, ct).ConfigureAwait(false);
-        // And a stand-down whose take lost, once the person brought its work forward (SYNCMERGE1b0, D178 point 3): the quest stands
+        // And a stand-down whose take lost, once the person brought its work forward: the quest stands
         // taken by the fresh take that settled its conflict, made after the record began. Once, since the session carried on is the
         // newest record from then, and a later one is never older than the take. Read from the log; no record marks it.
         var forward = last is { State: SessionState.StoodDown }
             ? (await quests.ReadTakesAsync(quest.Id, ct).ConfigureAwait(false)).BroughtForwardBy(quests.Machine)
             : null;
         var brought = forward is not null && forward.At > last!.Created;
-        // And a session the person's reopen of the work its step grew from stopped (FABRIC-CLOSE1c26, D173's CLOSE1c2 note): it ended
+        // And a session the person's reopen of the work its step grew from stopped: it ended
         // completed with its quest still taken, said by the driver's code alone, and their go-on carries it on in its tree.
         var carriesOn = last is { State: SessionState.Failed }
                 or { State: SessionState.Completed, PersonSaid: true }
@@ -436,8 +436,8 @@ internal sealed class SessionOpening(
                 Session: null);
         }
 
-        // A carry-on goes on with this machine's take, so it asks whose the take is (CARRY2). D80 asked none, so a
-        // session that failed before its take carried on over whoever took the quest since.
+        // A carry-on goes on with this machine's take, so it asks whose the take is: a
+        // session that failed before its take does not carry on over whoever took the quest since.
         if (carriesOn && await TakenElsewhereAsync(quest, last!, tookHere, brought, ct).ConfigureAwait(false) is { } elsewhere)
         {
             return new(SessionOpenRefusal.TakenElsewhere, elsewhere, Session: null);
@@ -447,7 +447,7 @@ internal sealed class SessionOpening(
         // onto one tree must agree about which tree that is.
         var holding = Trees.Normalize(tree) ?? Trees.Normalize(await holders.RootOfAsync(quest.To, ct).ConfigureAwait(false));
 
-        // SESSONE1a: the line of work the quest belongs to (D167 point 2), read before the lock is taken so it holds nothing while it asks.
+        // The line of work the quest belongs to, read before the lock is taken so it holds nothing while it asks.
         var origin = await SessionEntries.OriginOfQuestAsync(quest, new StoreEntryFacts(quests, sessions), ct).ConfigureAwait(false);
 
         return await sessions.ExclusiveAsync(async inside =>
@@ -459,7 +459,7 @@ internal sealed class SessionOpening(
             }
 
             // The record's circle is the quest's circle — derived, never passed beside it, so a record can
-            // never be filed under a workspace its quest does not belong to (D48 §4).
+            // never be filed under a workspace its quest does not belong to.
             var session = await sessions
                 .CreateAsync(
                     quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
@@ -475,18 +475,18 @@ internal sealed class SessionOpening(
     }
 
     /// <summary>
-    /// Whose a carry-on's take is (CARRY2): the refusal's sentence when it is not this machine's, else null.
+    /// Whose a carry-on's take is: the refusal's sentence when it is not this machine's, else null.
     /// </summary>
     /// <remarks>
-    /// <para><b>The quest's log names the machine that took it</b> (D68 §2): a take another machine made is theirs,
-    /// whichever session here failed or stopped, and so is one that beat this machine's own take to the remote (D68 §5).
+    /// <para><b>The quest's log names the machine that took it</b>: a take another machine made is theirs,
+    /// whichever session here failed or stopped, and so is one that beat this machine's own take to the remote.
     /// Never by the clock, which is another machine's there. Named by a teammate's record on the quest where one came,
-    /// since the log's machine is an id no person reads, else as another machine (D132's words).</para>
+    /// since the log's machine is an id no person reads, else as another machine.</para>
     ///
     /// <para><b>A take made here after this machine's last session on the quest ended</b> is not that session's, and no
-    /// session here marked it (STANDDOWN2): a chat's connector took it, whose mark names no quest (CHATTAKE1), or work
+    /// session here marked it: a chat's connector took it, whose mark names no quest, or work
     /// outside Daoris did. Both times are this machine's own clock. A take with no mark made before the session ended
-    /// is still carried on, as D80 did: the HTTP door marks none, and a take from before STANDDOWN2 has none.</para>
+    /// is still carried on: the HTTP door marks none, and a take from before the mark has none.</para>
     ///
     /// <para><b>A take the person's bring-forward made</b> (SYNCMERGE1b0, <paramref name="broughtForward"/>) is made after the session
     /// ended and marked by no session, and is this machine's own for the session it carries on: the person made it for that work.</para>

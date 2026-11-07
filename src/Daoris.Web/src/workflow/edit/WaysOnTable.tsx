@@ -6,7 +6,7 @@ import { kindIn, rowNone, rowSaid, targetSaid } from './editWords';
 import { canInsertOn, type DraftWire, type GraphDraft, rowsOf, targetsOf, type WayRowKey } from './graphDraft';
 import { Refusals } from './Refusals';
 
-// *What happens next* (FLOWCHART2b; the flowchart design §3, §8.1; D221 §2.3): a step's rows, one for each way it may go on (*Once done*,
+// *What happens next*: a step's rows, one for each way it may go on (*Once done*,
 // *If you ask for changes*, *If it fails*, each outcome), each holding its targets. A target is chosen, never a wire's kind: the row and
 // where the target stands give it, so the choices are only the steps that can take the way, a later one by its title and an earlier one as
 // *Back to* it. A row may hold several (*Also to…*), each removable alone, and each way that can take a step between its ends offers one.

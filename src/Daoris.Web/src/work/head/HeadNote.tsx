@@ -11,8 +11,8 @@ import { noteBlocks, noteLines } from '../noteLines';
 const NOTE_LINES = 3;
 
 /**
- * The record's note about how the session stands (LANG1b): Daoris's lines worded in the reader's language, someone's
- * words as written, a record from before as it was kept. Long is judged on what is shown, a block at least a line each.
+ * The record's note about how the session stands: Daoris's lines worded in the reader's language, someone's
+ * words as written, a record from before as kept. Long is judged on what is shown, a block at least a line each.
  */
 export function Said({ parts }: { parts?: Session['noteParts'] }) {
   const { t, i18n } = useTranslation();
@@ -37,8 +37,8 @@ export function Said({ parts }: { parts?: Session['noteParts'] }) {
 }
 
 /**
- * What its own tree left, and whether the person has anything to do about it (SESS1 S10, SESS2 H4). A failed or superseded
- * attempt's branch whose tree is gone is discarded here (LAND3b, D102's LAND3 note), asking once under the line: no clean-up
+ * What its own tree left, and whether the person has anything to do about it. A failed or superseded
+ * attempt's branch whose tree is gone is discarded here, asking once under the line: no clean-up
  * takes its commits, and the review has no tree left to discard. While the tree is here, the review's Discard serves.
  */
 export function Left({ branch, onReview, onDiscard, discarding = false }: {
@@ -56,7 +56,7 @@ export function Left({ branch, onReview, onDiscard, discarding = false }: {
       <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
         <span className="text-ink-faint">{t('work.head.itsWork')}</span>
         <span className={theirs ? 'text-ink-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
-        {/* Whole, as a branch row's name is (UXFIX4b): it wraps after its separators on this line's own row, never cut. */}
+        {/* Whole, as a branch row's name is: it wraps after its separators on this line's own row, never cut. */}
         <PathText path={branch.branch} className="min-w-0 text-meta text-ink-faint" />
         {theirs && onReview && (
           <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>
@@ -67,7 +67,7 @@ export function Left({ branch, onReview, onDiscard, discarding = false }: {
           </Button>
         )}
       </p>
-      {/* Open until the discard answers, a branch the driver kept said inside it (UXFIX2). */}
+      {/* Open until the discard answers, a branch the driver kept said inside it. */}
       {discardable && asking && (
         <DiscardBranchAsk branch={branch} busy={discarding} onDiscard={onDiscard!} onClose={() => setAsking(false)} />
       )}
@@ -75,7 +75,7 @@ export function Left({ branch, onReview, onDiscard, discarding = false }: {
   );
 }
 
-/** Whether a session's branch landed, in a few words for the head (D88's proof). */
+/** Whether a session's branch landed, in a few words for the head. */
 function landed(t: (key: string, options?: Record<string, unknown>) => string, branch: SweepBranch): string {
   switch (branch.kind) {
     case 'empty': return t('work.head.landed.empty', { line: branch.where ?? '' });

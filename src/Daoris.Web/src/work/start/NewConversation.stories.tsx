@@ -7,7 +7,7 @@ import { InTheme } from '../../plugins/storyIcons';
 import { chinese } from '../../design/storyLanguage';
 import { type CheckoutReader, NewConversation, type StartRepository } from './NewConversation';
 
-// *New conversation* (NEW1b, D162 point 1, the entry design §1): Sessions' main area while nothing is attended. Drawn in the
+// *New conversation*: Sessions' main area while nothing is attended. Drawn in the
 // main area's own width: about 1,200 px of a 1546 px window with the list open, and about 630 px of a 680 px one, where the
 // list is a strip and the chips wrap under the prompt.
 
@@ -53,7 +53,7 @@ function withAddDrawer(Story: () => ReactNode) {
 }
 
 /**
- * The checkout's branch as the shell would have answered (NEW1e-b). A story handing none is the read still pending, refused or
+ * The checkout's branch as the shell would answer. A story handing none is the read still pending, refused or
  * unavailable: the checkout is said plain. Module-level, as the molecule's prop is a hook and must stay stable.
  */
 const onMain: CheckoutReader = () => ({ read: { branch: 'main' }, refresh: () => {} });
@@ -99,7 +99,7 @@ export const PickerOpen: Story = {
   args: { draft: DRAFT, busy: { game: 's1a2b3c4' }, pickerOpen: true },
 };
 
-/** A refused start: the driver's sentence, whole, under Start, the words and the choices kept (UX5 U68). */
+/** A refused start: the driver's sentence, whole, under Start, the words and the choices kept. */
 export const Refused: Story = {
   args: {
     draft: DRAFT,
@@ -111,12 +111,12 @@ export const Refused: Story = {
 /** A start on its way: Start presses once. */
 export const Starting: Story = { args: { draft: DRAFT, pending: true } };
 
-/** No repository with a checkout here: the prompt takes words, Start waits, and *Add repository…* is the primary press (NEW1c). */
+/** No repository with a checkout here: the prompt takes words, Start waits, and *Add repository…* is the primary press. */
 export const FirstRun: Story = {
   args: { repositories: [{ name: 'website', workspace: 'default', checkout: false }], recent: [], draft: 'Look around' },
 };
 
-/** One drawer over Sessions with the words still in the prompt (NEW1c): the composer's own, opened from the picker's foot. */
+/** One drawer over Sessions with the words still in the prompt: the composer's own, opened from the picker's foot. */
 export const AddOver: Story = {
   args: { draft: DRAFT },
   decorators: [withAddDrawer],
@@ -150,7 +150,7 @@ export const Chinese: Story = { args: Typed.args, decorators: [chinese] };
 export const ChineseNarrow: Story = { args: Refused.args, decorators: [narrow, chinese] };
 
 /**
- * Opened by Ask Daoris's go (NEW1d-b): the repository chosen and the words in, nothing sent; *Make it a task with Daoris…* sits
+ * Opened by Ask Daoris's go: the repository chosen and the words in, nothing sent; *Make it a task with Daoris…* sits
  * quiet beside *Start* and hands the draft back, with a line naming the repository.
  */
 export const OpenedByAGo: Story = {
@@ -161,7 +161,7 @@ export const NarrowOpenedByAGo: Story = { args: OpenedByAGo.args, decorators: [n
 
 export const ChineseOpenedByAGo: Story = { args: { draft: '修复同步循环里不稳定的重试。', pick: { repository: 'game', n: 1 } }, decorators: [chinese] };
 
-/** The checkout chosen, on a branch (NEW1e-b): the chip says *The checkout · main*, and the menu's row says it too. */
+/** The checkout chosen, on a branch: the chip says *The checkout · main*, and the menu's row says it too. */
 export const CheckoutOnABranch: Story = { args: { draft: DRAFT, openingTree: 'checkout', readCheckout: onMain } };
 
 /** The checkout chosen, HEAD detached. */

@@ -1,7 +1,7 @@
 import type { HistoryClearAnswer, HistoryPlan, HistoryReading, HistorySizes, HistoryUnit } from './history';
 
-// What the driver's `HISTORY_PLAN` and `HISTORY_CLEAR` answer (HIST1c, D153; the history-clearing design §2.4, §5, §6.3),
-// as the stories and the tests hand them to the clear's screens (HIST1e): a closed quest's work, its failed sessions, an
+// What the driver's `HISTORY_PLAN` and `HISTORY_CLEAR` answer,
+// as the stories and the tests hand them to the clear's screens: a closed quest's work, its failed sessions, an
 // ask's work, and a workspace's finished history with what it keeps and why. Ids, counts and bytes only, as the routes
 // answer: never a path or a title.
 
@@ -140,7 +140,7 @@ export const WORKSPACE_EMPTY: HistoryPlan = {
 
 /**
  * A closed quest no session here served, whose record holds no file on this machine: a clear takes it and frees nothing on
- * the disk, so the reading says what goes rather than that nothing would (HIST1k).
+ * the disk, so the reading says what goes rather than that nothing would.
  */
 export const WORKSPACE_RECORDS_ONLY: HistoryPlan = {
   scope: 'workspace', id: 'aurora', units: [unit('quest', '7e8f9a')],
@@ -151,7 +151,7 @@ export const WORKSPACE_RECORDS_ONLY: HistoryPlan = {
 };
 
 /**
- * The same quest beside two left-over files that hold nothing (HIST1n): the reading has read records and 0 B, and says only
+ * The same quest beside two left-over files that hold nothing: the reading has read records and 0 B, and says only
  * that, since files of 0 B go too and *What goes* names them.
  */
 export const WORKSPACE_RECORDS_EMPTY_FILES: HistoryPlan = {
@@ -170,7 +170,7 @@ export const WORKSPACE_LEFT_OVER: HistoryPlan = {
 };
 
 /**
- * Only left-over files, as the install had them (HIST1o): no finished work may go and no intake's room is here, so the press
+ * Only left-over files: no finished work may go and no intake's room is here, so the press
  * takes 1.3 KB of files no record holds, and its opening says only that.
  */
 export const WORKSPACE_FILES_ONLY: HistoryPlan = {
@@ -200,8 +200,8 @@ export const WORKSPACE_CLEARED: HistoryClearAnswer = {
 };
 
 /**
- * The workspace's second press where every unit it listed changed since the list and was kept, and nothing else went
- * (HIST1n): the driver answered, and nothing left this machine.
+ * The workspace's second press where every unit it listed changed since the list and stayed, and nothing else went:
+ * the driver answered, and nothing left this machine.
  */
 export const WORKSPACE_ALL_KEPT: HistoryClearAnswer = {
   scope: 'workspace', id: 'aurora', listed: 3, cleared: [],

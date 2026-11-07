@@ -32,8 +32,8 @@ const dock = (props: Partial<Parameters<typeof RightDock>[0]> = {}) => (
 );
 
 /**
- * UX6b (design §2.5, D150 §8): off Sessions the side bar kept an ended session from the day before, its whole done note
- * running past the window's foot. A session's views follow the attended session off Sessions only while it runs or waits
+ * Off Sessions the side bar does not keep an ended session, whose whole done note
+ * would run past the window's foot. A session's views follow the attended session off Sessions only while it runs or waits
  * on the person; with none followed the side bar opens on Ask Daoris. On Sessions nothing changes.
  */
 describe('what the side bar follows', () => {
@@ -66,8 +66,8 @@ const shown = () => screen.getAllByRole('tab').map((tab) => [tab.getAttribute('a
 const row = () => screen.getByRole('tablist').closest('[data-fit]');
 
 /**
- * TABS1: a dock tab shows its whole name or its icon, never a name cut to one character. At a 430px
- * side bar four tabs needed 367 of 349px, each unselected one shrank by about 6px, and 时间线 read as
+ * A dock tab shows its whole name or its icon, never a name cut to one character. At a 430px
+ * side bar four tabs need 367 of 349px, so shrinking each unselected one by about 6px would read 时间线 as
  * 时… — cutting a short name buys nothing.
  */
 describe('the side bar\'s tabs', () => {

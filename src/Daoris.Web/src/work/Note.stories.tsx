@@ -7,14 +7,14 @@ import { Note } from './Note';
 
 const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
-// A session's note in every shape a record brings it (LANG1b, D142; the language design §2, §5, §6): Daoris's lines worded
+// A session's note in every shape a record brings it: Daoris's lines worded
 // in the reader's language, in English and in 中文; a split note, the lead-in worded and the agent's question beneath it
 // as written; a code this page does not know; a record from before parts; a program's words; and one run for a row.
 
 /**
  * A driven session that went on with its answer and ended with its quest still taken, on an account now cooling: the
- * cooling line in the shape a note from before AGT3d keeps, then in the shape written since, naming whose accounts and the
- * kind of limit (D125's AGT3d note), so both are seen worded.
+ * cooling line in the shape an older note keeps, then in the shape written now, naming whose accounts and the
+ * kind of limit, so both are seen worded.
  */
 const ENDED: NotePart[] = [
   {
@@ -49,7 +49,7 @@ const meta: Meta<typeof Note> = {
   title: 'Work/Note',
   component: Note,
   args: { parts: ENDED, className: 'text-body leading-relaxed text-ink-soft' },
-  // A session's page at the frame's widths (the UI/UX design R6, STORYGAP1), where its head draws the note: wide by default.
+  // A session's page at the frame's widths, where its head draws the note: wide by default.
   decorators: [sessionWidths.wide],
 };
 export default meta;

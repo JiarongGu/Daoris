@@ -7,17 +7,17 @@ import { pauseName, recordedFull, recordedPauses, valueName } from '../../settin
 import type { DetailRow } from './DetailsFold';
 
 /**
- * **A session's access, as it started** (SESSACCESS1, D184 point 1; the UI/UX design §3.3, D185): read from the record's pause map,
+ * **A session's access, as it started**: read from the record's pause map,
  * the one the driver resolved at the start (`Session.access`), and never from today's settings, which may have moved since.
  *
  * @remarks
  * **The chip** (`AccessChip`) is worn on the head's facts line only where `recordedFull` holds: every pause the page knows recorded at
- * its open value, and none it does not know, which is never read as open. A start whose pauses were not all open wears nothing, so an
- * untouched start reads as it did. It is the plain warning chip Ask Daoris's full access wears: the warning line and icon, never red,
+ * its open value, and none it does not know, which is never read as open. A start whose pauses are not all open wears nothing, so an
+ * untouched start says nothing. It is the plain warning chip Ask Daoris's full access wears: the warning line and icon, never red,
  * since full access is a choice, not an outcome. Text, not a control.
  *
  * **The row** (`accessRow`) is *Details*' *Access*: each pause and its value as recorded, in the setup's words, one the page does not
- * know by its code; never where it was set, which the record does not keep. A driven record from before the field says *Not
+ * know by its code; never where it is set, which the record does not keep. A driven record from before the field says *Not
  * recorded*; a conversation, an intake or a helper started under no setup has no row.
  */
 export function AccessChip({ className }: { className?: string }) {
@@ -43,7 +43,7 @@ export function accessRow(t: TFunction, session: Pick<Session, 'access' | 'kind'
   if (!access || Object.keys(access).length === 0) {
     return { label, value: session.kind !== 'chat' && session.quest && !session.ask ? t('work.access.notRecorded') : null };
   }
-  // *Questions* has one value in every setup (AUTONOMY1e), which the setup never offers as a choice, so it has no choice's word.
+  // *Questions* has one value in every setup, which the setup never offers as a choice, so it has no choice's word.
   const value = (pause: string, recorded: string) =>
     (pause === 'questions' && recorded === 'claude-code' ? t('work.access.questions') : valueName(t, pause, recorded));
   const said = recordedPauses(access)

@@ -6,7 +6,7 @@ import { ConversationView } from './ConversationView';
 import { exchangesOf } from './exchanges';
 import { askedEvents, askRow, nameOf } from './exchanges.fixtures';
 
-// COMMS1h (the comms design §7): an agent's ask for a helper drawn once, as its card at its call, before and after its answer, at the
+// An agent's ask for a helper drawn once, as its card at its call, before and after its answer, at the
 // main area's three widths (80, 39 and 25rem: `storyWidths.tsx`) and the side bar's 300 px dock floor, each in English in light and in
 // 中文 in dark.
 

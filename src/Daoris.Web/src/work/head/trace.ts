@@ -2,14 +2,14 @@ import type { NotePart } from '../../data/api';
 import type { InstructionAccount } from '../conversation/conversation';
 
 /**
- * How a session or a quest came to be (TRACE1b, D143, D50): `daoris trace`'s read, as the driver's `TRACE` route
- * answers it. Each link names the store it was read from, and a link nothing keeps carries why, as a code this page words
+ * How a session or a quest came to be: `daoris trace`'s read, as the driver's `TRACE` route
+ * answers it. Each link names the store it is read from, and a link nothing keeps carries why, as a code this page words
  * (`work.trace.json`). The driver declares every code (`TraceCodes.cs`), and `trace.test.ts` holds both catalogues to it.
  *
  * @remarks
- * **No machine path is in it** (D47 §4): a tree is its folder's name, a file under the home is named by its store, and what a
+ * **No machine path is in it**: a tree is its folder's name, a file under the home is named by its store, and what a
  * failed read said is the terminal's alone. The person's words, a requirement's quote and a session's answer are someone's
- * words, shown as written (D142); everything Daoris says is a code.
+ * words, shown as written; everything Daoris says is a code.
  */
 
 /** The kinds a trace starts from on a page. The terminal also starts from a commit. */
@@ -132,38 +132,38 @@ export type TraceBranch = {
   gone?: string | null;
   removedAs?: string | null;
   removedOn?: string | null;
-  /** Who accepted it (LAND2b): `person` or `auto`; absent for a landing recorded before it was kept. */
+  /** Who accepted it: `person` or `auto`; absent for a landing recorded without it. */
   acceptedBy?: string | null;
   /**
-   * The landing rule it was made under, as it stood then: absent for one recorded before it was kept. `access` is the level whose
-   * access setup turned its switch on (ACCESSWORDS1b, D184's AUTONOMY1c2 note); absent where the rule's own switch stood.
+   * The landing rule it lands under, as it stood then: absent for one recorded without it. `access` is the level whose
+   * access setup turned its switch on; absent where the rule's own switch stood.
    */
   rule?: { plugin?: string | null; autoAccept: boolean; source: string; access?: string | null } | null;
   /**
-   * What its plugin last answered about its pull request, with when it was asked (PLUGHOOK1c): a snapshot, never a sequence of
+   * What its plugin last answered about its pull request, with when it is asked: a snapshot, never a sequence of
    * states; absent where none is kept.
    */
   pullRequestState?: TracePullRequestState | null;
   /** The latest ask about it that failed since that answer. */
   pullRequestAskFailed?: { code: string; plugin: string; at: string } | null;
-  /** The review that let it land (REVIEWENV1c): `reviewed` with its environment, or `skipped` with the person's words. */
+  /** The review that let it land: `reviewed` with its environment, or `skipped` with the person's words. */
   review?: TraceReview | null;
-  /** The second opinion that let it land (XAGENT1f): how its gate let it go, by its code. */
+  /** The second opinion that let it land: how its gate let it go, by its code. */
   opinion?: { said: string; reviewer?: string | null; code?: string | null } | null;
-  /** The named workflow it landed by (WORKFLOW1f); absent under Current. */
+  /** The named workflow it landed by; absent under Current. */
   workflow?: { workflow: string; version: number; level: string } | null;
-  /** The session it was made for (FLOWCHART1c); absent from a driver before the field. */
+  /** The session it is made for; absent from a driver before the field. */
   session?: string | null;
   /**
-   * Each later done that moved it on (FLOWCHART1c, LAND2c), oldest first, each with its session. Absent from a driver before the
-   * field, which a drawing says was not read; empty where none moved it.
+   * Each later done that moved it on, oldest first, each with its session. Absent from a driver before the
+   * field, which a drawing says is not read; empty where none moved it.
    */
   advances?: TraceAdvance[];
-  /** The branch work units whose work it carries, its own session's first (FLOWCHART1c); absent from a driver before the field. */
+  /** The branch work units whose work it carries, its own session's first; absent from a driver before the field. */
   units?: string[];
 };
 
-/** A pull request's kept answer (PLUGHOOK1c): its state, the platform's own time where it ended, and when Daoris asked. */
+/** A pull request's kept answer: its state, the platform's own time where it ended, and when Daoris asked. */
 export type TracePullRequestState = {
   state: string;
   pullRequest?: string | null;
@@ -176,7 +176,7 @@ export type TracePullRequestState = {
 
 export type TraceReview = { said: string; environment?: string | null; quest?: string | null; commit?: string | null; at?: string | null; words?: string | null };
 
-/** One later done that moved a landed branch on (FLOWCHART1c): from and to, when, its session, who accepted it and what let it go. */
+/** One later done that moved a landed branch on: from and to, when, its session, who accepted it and what let it go. */
 export type TraceAdvance = {
   from: string;
   to: string;

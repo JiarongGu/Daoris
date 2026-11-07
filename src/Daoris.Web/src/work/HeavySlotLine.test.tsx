@@ -8,7 +8,7 @@ import { heavyLine, heavyPhases, HeavySlotLine, HeavySlotRow } from './HeavySlot
 import { sessionFacts } from './head/headFacts';
 import { SessionRow } from './rail/SessionRow';
 
-// HEAVYSLOT1 (the UI/UX design §3.5, D185): a heavy run is seen running and waiting, from the driver's reading of the records its
+// A heavy run is seen running and waiting, from the driver's reading of the records its
 // runs keep beside the slot (`HEAVY_SLOT`). The fixture is that answer; nothing here reads a run's output.
 
 const AT = Date.now();
@@ -194,7 +194,7 @@ describe('where it is said', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  // FABRIC-PIPELINE1d (the pipeline design §4.4): the *Heavy run* row names the verification run while it holds the slot, in both languages.
+  // The *Heavy run* row names the verification run while it holds the slot, in both languages.
   it('names the verification run holding the slot', async () => {
     const read = readHeavySlot({ repository: 'engine', holder: { run: 'v-0123456789abcdef', gates: ['suite'], since: ago(2) }, waiters: [] });
     expect(read?.holder?.run).toBe('v-0123456789abcdef');

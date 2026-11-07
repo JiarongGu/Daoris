@@ -7,8 +7,8 @@ vi.mock('@shenora/react', () => ({ getBridge: () => ({ invoke }) }));
 import { call, lookBound, pressBound, stoppedWaiting } from './call';
 
 /**
- * WSR7: a long route waits as long as the host may work. The bridge gives up after its default 30 seconds, and a
- * look that fetched 29 repositories one after another ran for minutes and was answered to nobody.
+ * A long route waits as long as the host may work. The bridge gives up after its default 30 seconds, and a
+ * look that fetches 29 repositories one after another runs for minutes and would be answered to nobody.
  */
 describe('a call onto the driver', () => {
   afterEach(() => invoke.mockClear());

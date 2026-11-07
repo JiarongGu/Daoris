@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// STATEHUB1c (D169 point 7): a press under way is the window's and the driver's, never the one component's that pressed. The
+// A press under way is the window's and the driver's, never the one component's that pressed. The
 // review's *Accept* reads *Landing…* while its session's landing runs, after a tab switch remounted it and where another window
 // pressed it; so too its *Discard* and its hand-off.
 
@@ -103,11 +103,11 @@ describe('a press under way, in the review', () => {
 
     told({ seq: 3, presses: [] });
     expect(await screen.findByRole('button', { name: 'Accept' })).toBeEnabled();
-    // Nothing was pressed here: the press was the other window's.
+    // Nothing is pressed here: the press is the other window's.
     expect(invoke.mock.calls.filter(([, type]) => type === 'LAND_SESSION_TREE')).toHaveLength(0);
   });
 
-  /** PRESSSTEP1: the driver says the landing is at its gate, and the review's press says so, then *Landing…* once it moves on. */
+  /** The driver says the landing is at its gate, and the review's press says so, then *Landing…* once it moves on. */
   it('says Checking… while the driver says the landing is at its gate, and Landing… once it has moved on', async () => {
     answer();
     root();
@@ -128,7 +128,7 @@ describe('a press under way, in the review', () => {
   });
 
   /**
-   * LANDHOLD2b: an Accept whose landing the runtime performs waits for the pass that lands it, never behind a tree's hold: the button
+   * An Accept whose landing the runtime performs waits for the pass that lands it, never behind a tree's hold: the button
    * and the note beside it say so and say the pass's bound, in the page's language. Another session's wait is not this one's.
    */
   it.each([
@@ -160,7 +160,7 @@ describe('a press under way, in the review', () => {
   });
 
   /**
-   * ACCEPTALL1h (D169's ACCEPTALL1e note): a part's own *Accept* holds while its line of work's one Accept, or its ask's, lands it,
+   * A part's own *Accept* holds while its line of work's one Accept, or its ask's, lands it,
    * from this window or another, read by the entry's and the ask's subject; another entry's or ask's press holds nothing.
    */
   it('holds a part’s Accept while its line of work’s or its ask’s landing is under way, and not for another’s', async () => {

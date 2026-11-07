@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// The registry's machine half: the folder the shell names (MOD3, beside the domain it calls).
+// The registry's machine half: the folder the shell names.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn(async () => null) }));
 
@@ -11,9 +11,9 @@ vi.mock('@shenora/react', () => ({ getBridge: () => ({ invoke }) }));
 import { usePickFolder } from './registry';
 
 /**
- * SHEN2: the folder dialog is the person's for as long as they keep it open. The bridge gave up after its default
- * 30 seconds while the dialog stayed up, and the folder picked after that answered nobody, which is the defect the kit
- * fixed for its own file dialogs in 0.19 by letting a call wait without a limit (`timeoutMs: Infinity`).
+ * The folder dialog is the person's for as long as they keep it open. The bridge's default 30 seconds would give up
+ * while the dialog stays up, and the folder picked after that would answer nobody, which the kit avoids for its own
+ * file dialogs by letting a call wait without a limit (`timeoutMs: Infinity`).
  */
 describe('picking a folder', () => {
   afterEach(() => invoke.mockClear());
@@ -29,7 +29,7 @@ describe('picking a folder', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', { timeoutMs: Infinity });
   });
 
-  // MAINWINDOWS2c: the dialog is owned by the window whose page asked, which the first main window, put away, is not.
+  // The dialog is owned by the window whose page asked, which the first main window, put away, is not.
   it('names the window it is in, so the dialog is that window\'s', async () => {
     window.history.pushState({}, '', '/?window=main%3A2');
     try {

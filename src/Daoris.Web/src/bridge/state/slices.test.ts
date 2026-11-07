@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 
-// The push path's page half (PUSH1a, D182 points 3 and 7): a window installs a slice's snapshot as its baseline, applies the
+// The push path's page half: a window installs a slice's snapshot as its baseline, applies the
 // newer pushes and never an older one, and reads a partition again where the manifest says it missed one.
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -105,7 +105,7 @@ describe('a pushed slice (PUSH1a)', () => {
   it('repairs a dropped final update when the manifest names a newer number: the partition is read again once', async () => {
     const { store, held } = await window(snapshot(1, 1), snapshot(2, 1));
 
-    // Push a@2 never arrives; the manifest after it says it was made.
+    // Push a@2 never arrives; the manifest after it says it exists.
     store.manifest({ slice: 'test', epoch: 'e1', partitions: [{ partition: 'a', seq: 2 }, { partition: 'b', seq: 1 }] });
     await settle();
     await store.asking('test');

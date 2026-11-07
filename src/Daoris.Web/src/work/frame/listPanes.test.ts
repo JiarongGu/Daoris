@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 import { LIST_BOUNDS, type ListView } from './layout';
 import { endsChoice, listKey, readList, useListPanes } from './listPanes';
 
-// Each view's list remembers its own (D118 §3f): its closing, its width, its chosen item and its filters,
+// Each view's list remembers its own: its closing, its width, its chosen item and its filters,
 // per view, because each list differs in kind and in width. Sessions' and Settings' keys predate the frame,
 // and are kept, so nothing reopens or forgets itself on the upgrade.
 
@@ -22,7 +22,7 @@ describe('where each list keeps what it remembers', () => {
     expect(listKey('quests', 'filters')).toBe('daoris.list.quests.filters');
     expect(listKey('settings', 'width')).toBe('daoris.list.settings.width');
     expect(listKey('sessions', 'filters')).toBe('daoris.list.sessions.filters');
-    // The monitor window's rail is its own list (FRAME1h): closing it closes no main window's rail.
+    // The monitor window's rail is its own list: closing it closes no main window's rail.
     expect(listKey('monitor', 'closed')).toBe('daoris.list.monitor.closed');
     expect(listKey('monitor', 'width')).toBe('daoris.list.monitor.width');
     // One home per part per view: no two parts of any list share a key.
@@ -111,8 +111,8 @@ describe('what a list remembers', () => {
   });
 });
 
-// UX6b (design §1 rule 6, D150 §8): a remembered choice ends with what it chose. Quests reopened yesterday's done quest,
-// and Convergence a finding the index no longer held, because a list kept its choice whatever became of the item.
+// A remembered choice ends with what it chose, so Quests never reopens a done quest,
+// nor Convergence a finding the index no longer holds, whatever became of the item.
 describe('a remembered choice, once its view reads what became of it', () => {
   it('ends with an item that closed or went, and stands while the item still waits or is not read yet', () => {
     expect(endsChoice('closed')).toBe(true);
@@ -147,7 +147,7 @@ describe('a remembered choice, once its view reads what became of it', () => {
     act(() => result.current.settle('quests', 'live'));
     expect(result.current.pane('quests').chosen).toBe('abc123');
 
-    // Marked done while its page is open: the page stays on it as the act left it (platform language §5).
+    // Marked done while its page is open: the page stays on it as the act left it.
     act(() => result.current.settle('quests', 'closed'));
     expect(result.current.pane('quests').chosen).toBe('abc123');
   });

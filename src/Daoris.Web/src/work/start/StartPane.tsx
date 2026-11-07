@@ -10,7 +10,7 @@ import { mergeRecent } from './startRecent';
 import type { useNewStart } from './useNewStart';
 
 /**
- * The composer's tree chip reads the checkout's branch through this (NEW1e-b): a refusal or a pending read is no answer, and
+ * The composer's tree chip reads the checkout's branch through this: a refusal or a pending read is no answer, and
  * the chip says the checkout plain. A module-level hook, so the molecule's prop is stable.
  */
 const readCheckout: CheckoutReader = (repository, workspace) => {
@@ -19,8 +19,8 @@ const readCheckout: CheckoutReader = (repository, workspace) => {
 };
 
 /**
- * *New conversation* (NEW1b, D162 point 1), the main area while nothing is attended: what the drawer it replaced knew is
- * its chips', and the drawers its picker opens over Sessions (NEW1c), Projects' own.
+ * *New conversation*, the main area while nothing is attended: its chips are the composer's own, and the drawers its picker
+ * opens over Sessions are Projects' own.
  */
 export function StartPane({ start, registered, sessions, agentRoster, defaultHarness, notify, onMakeTask, attend }: {
   start: ReturnType<typeof useNewStart>;
@@ -42,11 +42,11 @@ export function StartPane({ start, registered, sessions, agentRoster, defaultHar
       <NewConversation
         readCheckout={readCheckout}
         // A checkout on this machine is what makes a repository choosable: there is nowhere else to talk, and a teammate's
-        // mirrored registration has no tree here (D48 §3/§7). One without is listed and says so.
+        // mirrored registration has no tree here. One without is listed and says so.
         repositories={registered
           .map((row) => ({ name: row.repository, workspace: row.workspace || 'default', checkout: Boolean(row.root) }))
           .sort((a, b) => a.name.localeCompare(b.name))}
-        // A checkout an active session on this machine holds refuses a second one (UX5 U68): with the session holding it.
+        // A checkout an active session on this machine holds refuses a second one: with the session holding it.
         busy={Object.fromEntries((sessions ?? [])
           .filter((session) => SESSION_ACTIVE.has(session.state) && sessionOrigin(session) === null
             && !ownTree(session, registered.find((row) => row.repository === session.repository)?.root))
@@ -78,7 +78,7 @@ export function StartPane({ start, registered, sessions, agentRoster, defaultHar
         onMakeTask={onMakeTask}
       />
       {adding && (
-        // Once registered it is chosen, as Projects' list chooses what it registered, and the words stay (NEW1c).
+        // Once registered it is chosen, as Projects' list chooses what it registered, and the words stay.
         <AddProjectDrawer
           onClose={drawerDown(() => setAdding(false))}
           onAdded={(repository) => setPickNew((last) => ({ repository, n: (last?.n ?? 0) + 1 }))}

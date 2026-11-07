@@ -15,9 +15,9 @@ export type PartFacts = {
   session: Session;
   /** Its repository's registered checkout, to tell a tree of its own from the root (as the row does). */
   root?: string | null;
-  /** Where its work is now (LOOK2b): the tree it opened, or where its landing put the work. */
+  /** Where its work is now: the tree it opened, or where its landing put the work. */
   where?: SessionWhere | null;
-  /** What it spent, from this machine's record (SESSCTX1d, `SESSION_SPENT`); absent where none answered or it ended no turn. */
+  /** What it spent, from this machine's record (`SESSION_SPENT`); absent where none answered or it ended no turn. */
   spent?: PartSpent | null;
 };
 
@@ -62,7 +62,7 @@ export function PartsHeading({ entry, attended }: Pick<PartsProps, 'entry' | 'at
 
 /**
  * The parts, one button each, oldest first: each with its word, how it began and which tree or branch it held. The strip's
- * body, and the rail of the parts' flowchart where the flow does not fit (FLOWCHART1b).
+ * body, and the rail of the parts' flowchart where the flow does not fit.
  */
 export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
   const { t } = useTranslation();
@@ -108,18 +108,18 @@ export function PartsList({ entry, attended, rows, onShow }: PartsProps) {
 }
 
 /**
- * **A session's parts** (SESSONE1c, D167 point 5, the co-working design §1.6): under its head, one button per record of the
- * entry, oldest first, each with its word, how it began (a move or a hand-over from which agent, and why: SESSCTX1d), which tree
+ * **A session's parts**: under its head, one button per record of the
+ * entry, oldest first, each with its word, how it began (a move or a hand-over from which agent, and why), which tree
  * or branch it held, and what it spent, on its own row, so a moved session reads as one. The part shown is marked and counted,
  * *Part 2 of 3*; a press shows another, and every act on the page stays the part shown's, since each part is still one
- * record with its own lifecycle (D167 point 1).
+ * record with its own lifecycle.
  *
  * @remarks
  * **A molecule**: the entry arrives as the driver's reader placed it and each part's record and place as props, so every
  * entry is reached without a bridge. Nothing is drawn for a line of work of one part, whose page needs no strip. A part the
  * page does not hold the record of (a teammate's, deleted) is still listed by its word and how it began, with no tree.
  *
- * **The page mounts the flow in its place** (FLOWCHART1b, `PartsFlow`), and this strip is that flow's rail: where the flowchart
+ * **The page mounts the flow in its place** (`PartsFlow`), and this strip is that flow's rail: where the flowchart
  * does not fit, or the person chose the list, the strip is what is shown.
  */
 export function PartsStrip(props: PartsProps) {

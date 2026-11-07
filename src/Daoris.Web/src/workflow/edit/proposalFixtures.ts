@@ -2,8 +2,8 @@ import type { HelpProposal, WorkflowGraphChange } from '../../help/ProposalCard'
 import { MERGE_GRAPH, RELEASE_GRAPH } from '../graphFixtures';
 import { canon, type DraftProposal } from './proposalTake';
 
-// Ask Daoris's proposals against the open draft, for the take's proofs, the editor's page tests and its stories (FLOWCHART2f): a mirror of
-// the driver's `WorkflowGraphDiff` (FLOWCHART2e) saying a proposed graph against its base as the driver says it, change by change with what
+// Ask Daoris's proposals against the open draft, for the take's proofs, the editor's page tests and its stories: a mirror of
+// the driver's `WorkflowGraphDiff` saying a proposed graph against its base as the driver says it, change by change with what
 // each needs, held to the driver's own answer by `proposalTake.test.ts`; and the release workflow proposed against the Merge workflow.
 
 type Json = Record<string, unknown>;

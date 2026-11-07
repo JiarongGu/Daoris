@@ -9,7 +9,7 @@ export type Roster = NonNullable<Session['harnesses']['data']>['harnesses'];
 
 /**
  * The agents a conversation may be started or handed over on, with their accounts: *New conversation*'s chips and the hand-over's
- * ask (MIXAGENT1b-i) choose from the one roster.
+ * ask choose from the one roster.
  */
 export function agentRosterOf(
   t: TFunction,
@@ -21,7 +21,7 @@ export function agentRosterOf(
     labels: Object.fromEntries(roster.map((row) => [row.door, doorLabel(t, row)])),
     names: Object.fromEntries(roster.map((row) => [row.door, row.product || row.door])),
     accounts: Object.fromEntries(roster.map((row) => [row.door, Array.isArray(row.profiles) ? row.profiles : []])),
-    // The set's order of the agent's accounts of Daoris's, every workspace's (POOL1c, D197), by the accounts' owner (AGT7),
+    // The set's order of the agent's accounts of Daoris's, every workspace's, by the accounts' owner,
     // from the files the frame already reads.
     orderOf: (harness) => {
       const door = roster.find((row) => row.door === harness);

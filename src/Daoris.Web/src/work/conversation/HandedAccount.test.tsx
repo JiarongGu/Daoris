@@ -6,7 +6,7 @@ import { moment } from '../../locales/format';
 import { HandedAccount } from './HandedAccount';
 import { BARE, CLAIMED, CUT, NEWER, SET_UP, UNREAD } from './handedFixtures';
 
-// Props-only, like every molecule here (CONTEXT1, D143 point 1): what a session was handed, section by section, worded from
+// Props-only, like every molecule here: what a session is handed, section by section, worded from
 // the account's codes in the reader's language, every state reached by passing an account.
 
 const rowOf = (name: string | RegExp) =>
@@ -79,7 +79,7 @@ describe('what a session was handed', () => {
     expect(screen.queryByRole('rowheader', { name: /Permission rules/ })).toBeNull();
   });
 
-  /** D143 point 3: a target handed before the account was kept says so, rather than showing nothing. */
+  /** A target handed with no account kept says so, rather than showing nothing. */
   it('says a target from before kept no sections', () => {
     render(<HandedAccount account={null} />);
 
@@ -98,7 +98,7 @@ describe('what a session was handed', () => {
     expect(rowOf('The quest')).toHaveTextContent('#abc123');
   });
 
-  /** REVIEWENV1c2: a set-up step's instruction is its own section, no longer counted with what the quest carries. */
+  /** A set-up step's instruction is its own section, counted apart from what the quest carries. */
   it('names a set-up step’s own section, from the rule set on this machine, in English', () => {
     render(<HandedAccount account={SET_UP} defaultOpen />);
 

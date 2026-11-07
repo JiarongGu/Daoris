@@ -13,7 +13,7 @@ export type LineCountRead = {
   watch?: { at: number; do: string; place: string } | null;
 };
 
-/** One act a person's rule made on the line, as it was kept. */
+/** One act a person's rule made on the line, as kept. */
 export type RuleActRead = {
   count: string;
   n: number;
@@ -25,7 +25,7 @@ export type RuleActRead = {
 
 /**
  * The supervisor's decision on a point a person's `refer` rule held the line at, as `SESSION_SUPERVISOR` answers it: the count the rule
- * read and its place, the supervisor's act (`go-on` or `hold`), when it was kept and when it goes on, and where it stands.
+ * read and its place, the supervisor's act (`go-on` or `hold`), when it is kept and when it goes on, and where it stands.
  */
 export type CourseRead = {
   id: string;

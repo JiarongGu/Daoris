@@ -3,13 +3,13 @@ import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../data/queries';
 import type { UpdateMode, UpdateState } from '../update/UpdateBanner';
 
-// An install's update (UPDATE1, D139): where it stands, and the person's word on it, over `DAORIS.UPDATE`. The terminal's
-// door is `daoris update`; both write the same request under the home (D50).
+// An install's update: where it stands, and the person's word on it, over `DAORIS.UPDATE`. The terminal's
+// door is `daoris update`; both write the same request under the home.
 
 /**
  * Where the install's update stands — what the banner renders, and the last swap (`last`) Settings' row says after the
- * banner's *Dismiss* (UPDATE1d). Desktop only: the update is the install's, and a browser over the service has no bridge to
- * ask (D47 §4). Kept current by the shell's `UPDATE_STATE`, each change once.
+ * banner's *Dismiss*. Desktop only: the update is the install's, and a browser over the service has no bridge to
+ * ask. Kept current by the shell's `UPDATE_STATE`, each change once.
  */
 export function useUpdateState() {
   const { isAvailable } = useShenora();
@@ -21,7 +21,7 @@ export function useUpdateState() {
     queryKey: keys.update,
     queryFn: () => getBridge().invoke<UpdateState>('DAORIS.UPDATE', 'STATE'),
     enabled: isAvailable,
-    // The event keeps it current; a look now and then covers an event missed while the page was away.
+    // The event keeps it current; a look now and then covers an event missed while the page is away.
     refetchInterval: 30_000,
   });
 }

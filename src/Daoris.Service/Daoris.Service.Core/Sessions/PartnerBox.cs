@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The service's reading of a piece's box under the home's <c>partners</c> entry (COAGENT1b, D199 point 2; the co-agent design §7.1):
+/// The service's reading of a piece's box under the home's <c>partners</c> entry:
 /// <c>&lt;id&gt;.ask.json</c> (written once), <c>&lt;id&gt;.state.json</c> (the driver's alone) and <c>&lt;id&gt;.answer.json</c>, which
 /// the partner's <c>partner_answer</c> writes here. The driver's <c>PartnerFiles</c> and this share no code and hold the same shapes
 /// (<c>twins.md</c>); each side's tests carry them.
@@ -28,7 +28,7 @@ public sealed class PartnerBox(string? home)
 
     public string? Home { get; } = home;
 
-    /// <summary>The home the driver names on the connector it offers, else the account's (D63).</summary>
+    /// <summary>The home the driver names on the connector it offers, else the account's.</summary>
     public static PartnerBox FromEnvironment() => new(RuleProposalBox.FromEnvironment().Home);
 
     public static string PathOf(string home, string id, string kind) => DaorisHome.Entry(home, HomeEntry.Partners, $"{id}.{kind}.json");

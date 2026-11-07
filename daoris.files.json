@@ -1,0 +1,16 @@
+{
+  "_why": "How Daoris's trees handle this repository's files git does not manage (docs/2026-10-26-tree-pool-design.md §29). Read in order, a later rule winning; this machine's own rules come after these.",
+  "rules": [
+    { "kind": "local", "paths": ["local/"] },
+    { "kind": "scratch", "paths": ["_fixtures/", "**/_fixtures/"] },
+    { "kind": "dependency", "paths": ["src/Daoris.Web/node_modules/"],
+      "key": ["src/Daoris.Web/package-lock.json", "src/Daoris.Web/package.json", "src/Daoris.Web/.npmrc"],
+      "caches": [".cache/", ".vite/", ".vite-temp/"] },
+    { "kind": "dependency", "paths": ["node_modules/"],
+      "key": ["package-lock.json", "package.json", "src/Daoris.Cli/package.json", ".npmrc"] },
+    { "kind": "intermediate", "paths": ["src/**/obj/", "tools/**/obj/"], "toolchain": ["dotnet --version"] },
+    { "kind": "output", "paths": ["src/Daoris.Contracts/bin/", "src/Daoris.Desktop/*/bin/", "src/Daoris.Service/*/bin/",
+      "src/Daoris.Devkit/*/bin/", "tools/*/bin/", "src/Daoris.Service/Daoris.Service.Http/wwwroot/", "src/Daoris.Cli/dist/",
+      "docs/index/", "src/Daoris.Web/src/data/generated/", "src/Daoris.Web/src/bridge/generated/"] }
+  ]
+}

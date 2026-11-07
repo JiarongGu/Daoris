@@ -4,13 +4,13 @@ using static Daoris.Knowledge.JsonFields;
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// Session records on the wire (D47 §6, SYNC4) — written once, here, and read by both sides: the
+/// Session records on the wire — written once, here, and read by both sides: the
 /// remote's two session doors and the machine's client that speaks to them.
 /// </summary>
 /// <remarks>
 /// <para>What travels is a fact about work: which quest, which repository, which tool, how it ended,
 /// whether an account's limit cut it off (never whose), what landed. What never travels has no field here at all — the TRANSCRIPT and the TREE are paths on
-/// a machine's disk, and the PROFILE is the name of the account it ran as (D47 §4, D49 §4, D51). Absent,
+/// a machine's disk, and the PROFILE is the name of the account it ran as. Absent,
 /// not policed: a record read from a store that holds them is copied field by field, and none of the
 /// three is a field.</para>
 ///
@@ -123,14 +123,14 @@ public static class SessionWire
     {
         writer.WriteString("id", id);
         if (origin is not null) writer.WriteString("origin", origin);
-        // A chat serves no quest (D49 §3): omitted rather than sent blank, which would read as an id
+        // A chat serves no quest: omitted rather than sent blank, which would read as an id
         // that failed to parse.
         if (quest is not null) writer.WriteString("quest", quest);
         writer.WriteString("repository", repository);
         writer.WriteString("door", door);
         writer.WriteString("state", state);
         if (note is not null) writer.WriteString("note", note);
-        // LANG1a: the note's parts beside it, as kept; absent for a record from before parts, which a reader from before ignores.
+        // The note's parts beside it, as kept; absent for a record from before parts, which a reader from before ignores.
         if (NoteParts.Element(noteParts) is { } parts)
         {
             writer.WritePropertyName("noteParts");
@@ -142,17 +142,17 @@ public static class SessionWire
         writer.WriteString("updated", Moments.Write(updated));
         if (kind is not null) writer.WriteString("kind", kind);
         if (doorVersion is not null) writer.WriteString("doorVersion", doorVersion);
-        // TOOL4c: said only where true, so a record from before the field and one it never applied to read
+        // Said only where true, so a record from before the field and one it never applied to read
         // alike on both sides, as false. It names no account, which is why it has a field at all.
         if (limit) writer.WriteBoolean("limit", true);
-        // SESSONE1a (D167 point 3): the line of work the record belongs to. It names no path and no account, so it goes with the record;
+        // The line of work the record belongs to. It names no path and no account, so it goes with the record;
         // absent from a machine from before, which the reader then derives as it does for a record that holds none.
         if (entry is { Length: > 0 }) writer.WriteString("entry", entry);
-        // CHATTAKE1: the quest a conversation took, said only where there is one; a machine from before sends none and reads as before.
+        // The quest a conversation took, said only where there is one; a machine from before sends none and reads as before.
         if (tookQuest is { Length: > 0 }) writer.WriteString("tookQuest", tookQuest);
     }
 
-    /// <summary>A record's note parts as the wire carried them, kept only as what a part is (LANG1a); null for none.</summary>
+    /// <summary>A record's note parts as the wire carries them, kept only as what a part is; null for none.</summary>
     private static string? Parts(JsonElement item) =>
         item.ValueKind == JsonValueKind.Object && item.TryGetProperty("noteParts", out var parts) ? NoteParts.Normalize(parts) : null;
 

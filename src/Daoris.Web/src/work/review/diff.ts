@@ -1,4 +1,4 @@
-// The shape of a review (SURF6), in its own module for the reason `caption.ts` is: the components
+// The shape of a review, in its own module for the reason `caption.ts` is: the components
 // that RENDER a diff are presentational and may not import `./shell`, and the hook that FETCHES one
 // lives there. A type-only import would still cross that line — the presentational check reads
 // imports, not their erasure — and it would be right to, because a molecule that knows where its
@@ -9,15 +9,15 @@ import { sessionOrigin, treeName } from '../identity';
 import { readEvidence } from '../head/timeline';
 
 /**
- * How long the page waits for a review, in minutes (REVIEW4): the bridge's own 30 seconds stopped waiting for a diff the
- * host took most of a minute to read, and the host bounds no git call of a review, so this is the page's patience, not a
+ * How long the page waits for a review, in minutes: the bridge's own 30 seconds would stop waiting for a diff the
+ * host takes most of a minute to read, and the host bounds no git call of a review, so this is the page's patience, not a
  * twin of a host bound. The review's sentence for a wait that ran out names it.
  */
 export const REVIEW_BOUND_MINUTES = 3;
 
 /**
- * What the page knows of a session before its review answers (REVIEW4): read from the record, never from git, so the
- * review's frame stands at once while git reads the range — which took most of a minute on a session of seventy files.
+ * What the page knows of a session before its review answers: read from the record, never from git, so the
+ * review's frame stands at once while git reads the range — which can take most of a minute on a session of seventy files.
  */
 export type ReviewKnown = {
   /** The session's title, or null where something above the review already names it. */
@@ -25,7 +25,7 @@ export type ReviewKnown = {
   repository: string | null;
   /**
    * Its own branch, where it holds a tree of its own here: `daoris/` and the tree's folder, as the trees name it. The record's guess,
-   * which {@link reviewBranch} replaces once the review answers with the branch the tree stands on (REVIEWBASE4).
+   * which {@link reviewBranch} replaces once the review answers with the branch the tree stands on.
    */
   branch: string | null;
   /** The commit the record says its tree stood at when it began. */
@@ -37,7 +37,7 @@ export type ReviewKnown = {
 };
 
 /**
- * The review's frame from a session's record (REVIEW4). The branch only where the tree is its own: a session in the
+ * The review's frame from a session's record. The branch only where the tree is its own: a session in the
  * repository's checkout has no branch of its own to name. The commits are the evidence's `git log` lines, read by shape
  * as the timeline reads them; none listed is left unsaid, since *nothing landed* is the review's answer to give.
  */
@@ -55,10 +55,10 @@ export function reviewKnown(session: Session, { title, ownTree }: { title: strin
 }
 
 /**
- * The branch the review's head names (REVIEWBASE4, D164's note): the record's guess until the review answers with the branch its
- * tree's HEAD stands on, since the agent may have switched it (TREEFOLLOW1), or deleted its `daoris/` branch and detached. Said only
+ * The branch the review's head names: the record's guess until the review answers with the branch its
+ * tree's HEAD stands on, since the agent may have switched it, or deleted its `daoris/` branch and detached. Said only
  * where the record names a tree of its own, and only from the tree's own answer: a landed branch's review and an answer without
- * REVIEWBASE4 name none, so the guess stands. A detached tree names no branch, and says so.
+ * the tree's branch name none, so the guess stands. A detached tree names no branch, and says so.
  */
 export function reviewBranch(
   known: Pick<ReviewKnown, 'branch'>,
@@ -83,7 +83,7 @@ export type DiffFile = {
 };
 
 /**
- * Where a landed session's work went (REVIEW2, D113), from this machine's landing record: the branch its landing
+ * Where a landed session's work went, from this machine's landing record: the branch its landing
  * made, when, the pull request a plugin opened, and where that branch stands now.
  */
 export type LandedWork = {
@@ -109,8 +109,8 @@ export type LandedWork = {
   /** What the clean-up proved when it removed the branch, where it did. */
   removed: { kind: string; where: string | null; at: string | null } | null;
   /**
-   * A branch the person withdrew (LANDRETIRE1 part 2): when, the reason they gave and the recovery ref its commits stay on, where the
-   * record kept them. Absent from a shell before it, and null where the branch was not withdrawn.
+   * A branch the person withdrew: when, the reason they gave and the recovery ref its commits stay on, where the
+   * record kept them. Absent from a shell before it, and null where the branch is not withdrawn.
    */
   withdrawn?: { at: string | null; why: string | null; keptOn: string | null } | null;
   /** Why a standing branch's changes could not be read, in git's terms. */
@@ -121,43 +121,43 @@ export type SessionDiff = {
   session: string;
   /**
    * The commit the range is measured from: the newest the work shares with its line, or the one its record says it began at where
-   * that is newer (REVIEWBASE1). Empty where no range was read.
+   * that is newer. Empty where no range is read.
    */
   base: string;
-  /** What the bound dropped, in the host's own words, or null when nothing was. */
+  /** What the bound dropped, in the host's own words, or null when nothing is. */
   truncated: string | null;
   files: DiffFile[];
   /**
-   * Where the files were read from (REVIEW2): the session's own tree, or its landed branch in the repository's
-   * checkout once the tree cannot be read. An answer without REVIEW2 names none, which is the tree.
+   * Where the files were read from: the session's own tree, or its landed branch in the repository's
+   * checkout once the tree cannot be read. An answer without it names none, which is the tree.
    */
   source?: 'tree' | 'branch';
   /** Where this session's work landed, where this machine's landing record holds it. */
   landed?: LandedWork | null;
   /**
-   * What the session's own tree holds that no commit does (REVIEWDIRTY1, D164 point 4): the modified and the untracked,
+   * What the session's own tree holds that no commit does: the modified and the untracked,
    * each file as the committed ones are (status `added` for an untracked one, its patch empty where large or not text).
    * Absent or null where nothing is uncommitted or the files were read from a branch; the answer names none.
    */
   uncommitted?: { files: DiffFile[]; truncated: boolean } | null;
   /**
    * How the session's own tree stands against the latest its line is known on this machine, the branch and its copy on origin
-   * together, as the last fetch left them (REVIEWBASE1, D164's note). Absent or null where the files were read from a branch or the
-   * line could not be read; the answer names none.
+   * together, as the last fetch left them. Absent or null where the files are read from a branch or the
+   * line cannot be read; the answer names none.
    */
   behind?: LineBehind | null;
   /**
-   * The branch the session's own tree stands on, as its HEAD names it (REVIEWBASE4, D164's note): null where HEAD is detached, and
-   * where the files were read from a branch. Absent where the answer lacks it, whose head says the record's guess.
+   * The branch the session's own tree stands on, as its HEAD names it: null where HEAD is detached, and
+   * where the files are read from a branch. Absent where the answer lacks it, whose head says the record's guess.
    */
   treeBranch?: string | null;
   /**
-   * What the driver would land of the session's own tree (ACCEPTFOOT1, D164's note): LAND4's offer as `SESSION_GROUPS` says it, by
-   * D88's proof and SQUASHTIDY1b's content hold, read where the work is beyond the line and nothing landed it. Null where it offers
+   * What the driver would land of the session's own tree: the landing offer as `SESSION_GROUPS` says it, by
+   * the proof and the content hold, read where the work is beyond the line and nothing landed it. Null where it offers
    * none; absent from a host before it.
    */
   offer?: { branch: string; tree: string; commits: number; uncommitted: number | null } | null;
 };
 
-/** The line's name, the commits it has that the tree does not, and the commits the tree has beyond it (REVIEWBASE1). */
+/** The line's name, the commits it has that the tree does not, and the commits the tree has beyond it. */
 export type LineBehind = { line: string; commits: number; ahead: number };

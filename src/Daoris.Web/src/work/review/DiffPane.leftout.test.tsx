@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// ACCEPTALL1c (D167's 2026-10-15 amendment point 3): a part the person left out of its entry's Accept is recorded on its conversation,
+// A part the person left out of its entry's Accept is recorded on its conversation,
 // and its review reads it from the plan (`leftOutOf`, the branch its line of work landed on): it says so, and *Discard tree* leads,
 // with *Accept* after it, still a press of its own for landing it later.
 

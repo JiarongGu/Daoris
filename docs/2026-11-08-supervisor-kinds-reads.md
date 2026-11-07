@@ -500,3 +500,103 @@ The tree guard expressly does not refuse a program’s own file writes, whose ta
 **Smallest change:** For supervise turns on the rule-taking harness, deny unrestricted shell/interpreter execution, or provide an enforced execution boundary that prevents those writes. Extend the installed proof to an inherited interpreter allow attempting a direct permission-file write. This need not change development sessions or refuse the owner-authorized `copy-alone` choices.
 
 I found nothing further in kind-first resolution, structural refusal to fall through, agent-generation separation, the exact one-request steward approval, or held-request arbitration. I found **no further defect in row f or row g** within the requested scope.
+
+
+## Opus (independent), round 3
+
+Read on 2026-11-08 by Claude Opus 5.5, read-only, from main at `540de34a85`: §2.8 with §2.2's door checks for row c, §5.2 and §5.3
+for row e, against round 3's table and the passages marked *(R3-Cn)* and *(R3-On)*, with the code they cite. D214's notes of
+2026-11-07 and 2026-11-08 and D233's of 2026-11-08 bound it. No code was built or run. Paths are under `src/Daoris.Desktop/`'s
+`Daoris.Desktop.Driver/`, or its `Daoris.Desktop.Modules/` where they begin `Modules/`.
+
+### Verdict per row
+
+- **c — another round, one clause.** Finding 1: the shell is denied, but the turn still loads the person's and the copy's MCP servers
+  and the copy's hooks.
+- **e — another round, one clause.** Finding 2: a widening that names a publish undoes `no-publish` without switching it.
+
+### Round 2's findings
+
+- **1: answered** for a deny of the proposal's scope and a default's switch; a deny elsewhere still wins, since `Compose` unions
+  every deny (`Agents/Permissions.cs:369-392`). One default denies by its sentence alone: finding 2.
+- **2: answered**, and the sweep reads the three lasting doors first.
+- **4: answered.** Every steward act targets a session, a quest, a repository, the desk or an update
+  (`Modules/Bridge/StewardRouteAct.cs:24-33`), so read as `ActAsync` reads it (`Modules/Bridge/SupervisorDoor.cs:110-132`, `:194-217`)
+  only the desk and the update fall to the machine. An allowed `land` waits the window.
+- **5, 6 and 8: answered.** **3** is row f's, outside this read.
+- **Codex B3: answered for the shell**; finding 1 is the same hole through what that deny does not name.
+
+### Findings
+
+**1. Blocking (row c; §2.8). Denying the shell leaves the turn's other ways to run a program.** The turn is spawned as a helper is:
+`--settings`, "merged with the person's own settings and the repository's" (`Agents/Providers/ClaudeCode/ClaudeCodeSpawn.cs:105-113`),
+and `--mcp-config` beside the other servers, "the repository's own `.mcp.json` still govern[ing] its own" (`:87-95`). The reviewer's
+shape keeps every other allow (`Review/Domain/OpinionPermissions.cs:111`).
+
+- *Sequence:* the person runs a filesystem or shell MCP server and allows `mcp__fs__*`. A subject's fenced claims steer the turn to
+  call its write tool on the home's permissions: no deny names it, the allow passes it, and the tree guard matches only the edit and
+  shell tools (`Agents/Domain/TreeGuardHook.cs:10`). Or the asking session leaves a `SessionStart` hook in its uncommitted
+  `.claude/settings.json`; laid over the copy, it runs as the turn starts, outside every rule.
+- *Smallest change:* the turn on Claude Code starts as the holder's terminal does (`Modules/Platform/HolderTerminal.cs:46-48`): the
+  person's settings and the handed file alone (`--setting-sources user`), Daoris's connector alone (`--strict-mcp-config`), on either
+  door. The copy's hooks, allows and servers and the person's other servers are then not the turn's; the tree guard still comes in the
+  handed file. Row c's real-harness proof gains an allowed MCP write and a copy's hook, neither reaching the home.
+
+**2. Blocking (row e; §5.3). A widening naming a publish undoes `no-publish` without switching it.** `no-publish` is a deny with no
+rules, its sentence to the classifier alone (`Agents/Permissions.cs:186-190`), so `Compose` adds nothing for it. `add allow
+Bash(npm publish:*)` for repository X is a plain widening (`RuleProposals.cs:127`): an `allow` subject under `allow.standing` at X.
+
+- *Sequence:* a session in X proposes it; X's agent-held allow supervisor keeps it; the explicit allow passes the publish at the
+  harness in either mode, the classifier never asked, and the release leaves the machine. *Take back* comes after it, though D233's
+  third note keeps the window for what is not taken back.
+- *Smallest change:* in §5.3's paragraph, a widening whose rule names what a denying default holds by its sentence is the person's
+  too: `no-publish`'s forms listed in code, as `no-push`'s four are (`Permissions.cs:180-181`), a widening matching one waiting for the
+  person. `no-push`'s deny and the tree guard's hook already outrank any allow.
+
+**3. Not blocking (row c). `MultiEdit` is not denied** (`OpinionPermissions.cs:67`), though the guard's matcher names it
+(`TreeGuardHook.cs:7`). Where the harness offers it, the guard now always on holds it to the copy; a deny costs nothing.
+
+**4. Not blocking (row e; §5.2). An allowed `land` in its window names no end for the steward's withdrawal.** The allow settled the
+entry, so a withdrawal then settles nothing; an ended hold stops the run, read live, but a withdrawn request still lands. Say a
+withdrawal in the window drops it as an overrule does, with no card.
+
+### Where I found nothing
+
+- **The place and the one settlement**: a quest whose repository does not read is the person's card; four settlers under one gate.
+- **The person's deny**: an `add allow`, `add ask` or `remove` over a deny of its scope, and a denying default's switch, wait for the
+  person, the switch placed at the machine.
+- **`settling`**: settled only where `Effect` answers `Nothing`, else the person's, so a Take back between stands.
+- **The sweep**: a decision its door holds is recorded made before any closing.
+- **Containment**: the whole-shell deny outranks every allow; the role verb refused from an agents' job; `copy-alone` as chosen.
+
+
+## Codex, round 3
+
+Codex's confirming read of rows c and e, at `540de34a85`, run by the steward from outside the install, read-only; verbatim but for its headings set down.
+
+Read at `540de34a85`. **Row c: ready to build. Row e: another narrow round**, for one remaining permission-write race.
+
+- **B2 — answered.** §5.3’s recovery never saves a `settling` proposal again. A withdrawal or replacement deny therefore survives recovery; a change already standing completes settlement. §2.2 also makes the startup sweep consult that door before closing the decision.
+- **B3 — answered.** §2.8 denies the shell tools entirely on the rule-taking harness, overriding an inherited interpreter allow. It also requires the tree guard regardless of defaults and refuses the role verb’s writes from an agent job. The owner-authorized `copy-alone` choice is not a finding.
+
+**New finding — blocking for row e: ordinary settlement can still restore an allow the person just removed.**
+
+**Where:** §5.3, “The widening’s one settlement.” Code references use the design’s Driver/Modules convention: `Agents/Permissions.cs:333–345`, `Store/JsonKeeping.cs:111–157`, `:306–314`, and `Modules/Bridge/Routes/RulesRoutes.cs:32–57`.
+
+The proposed lock covers the proposal file. The existing permission-file lock covers the save’s reread and rename, but begins **after** the caller reads and computes its permission change. Changed permission arrays are written whole; they are not merged as sets.
+
+**Concrete sequence:**
+
+1. A repository’s rules allow operation A and ask for operation B.
+2. The supervisor approves the proposal allowing B. Settlement holds that proposal’s lock, reads the rules, and computes `allow: [A, B]`.
+3. Before settlement saves, the person removes A through their rule door. That write succeeds.
+4. Settlement saves its computed change. `JsonKeeping` restores the changed allow array `[A, B]`, undoing the person’s removal of A.
+5. A restart preserves the restored access. No recovery replay is involved, so round 3’s no-save recovery does not prevent it.
+
+The supervisor decided B, yet its write also restores A.
+
+**Smallest change:** make permission mutation one locked read–judge–edit–write operation using the permission file’s existing lock. Recheck the deny/default exclusions against that locked read, and save without reacquiring the lock. Route the person’s rule edits through the same mutation operation. Add an interleaving regression proving that approval of B cannot restore withdrawn A.
+
+I found **nothing further in row c**, including §2.2’s durable-door checks. In row e, I found no further defect in resolving the steward’s target as `ActAsync` does, settling its pending pipe entry once, holding an allowed `land` for the window, keeping deny-removing changes the person’s, placing default switches at the machine, or recovering `settling` without another save.
+
+No files changed; no builds or tests ran.

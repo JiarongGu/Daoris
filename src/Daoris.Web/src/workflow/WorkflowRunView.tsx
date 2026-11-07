@@ -28,7 +28,7 @@ export type RunDoors = {
   ask?: (id: string) => void;
   /** A session's review, where its work is accepted. */
   review?: (session: string) => void;
-  /** A landed branch's page in its repository, with how it landed (FLOWCHART1c). */
+  /** A landed branch's page in its repository, with how it landed. */
   branch?: (repository: string, branch: string) => void;
 };
 
@@ -47,7 +47,7 @@ const notTakenIn = notTakenBy;
 /** A step's title as a name for a reader to hear: its code marks dropped. */
 const plain = (text: string) => text.replace(/`/g, '');
 
-/** One route a decision leads along (SETUPUX1u): its outcome, where it goes on in words, and whether the outcome it returned ruled it out. */
+/** One route a decision leads along: its outcome, where it goes on in words, and whether the outcome it returned ruled it out. */
 type Route = { outcome: string; said: string; to: string; notTaken: boolean };
 
 /**
@@ -122,7 +122,7 @@ function StateLine({ run, step, here, pill, children }: { run: WorkflowRun; step
 }
 
 /**
- * **A step the person has not opened** (SETUPUX1u): its state, the outcome a decision came to and the routes it led along, and the press that
+ * **A step the person has not opened**: its state, the outcome a decision came to and the routes it led along, and the press that
  * opens its record. Its record and its owner's control wait for that press.
  */
 function StepBrief({ run, step, here, pill, onPick }: { run: WorkflowRun; step: RunStep; here: boolean; pill: boolean; onPick: () => void }) {
@@ -152,17 +152,17 @@ function StepBrief({ run, step, here, pill, onPick }: { run: WorkflowRun; step: 
   );
 }
 
-/** The person's words a step keeps, shown as written: a skip's and a *not yet*'s (D154). */
+/** The person's words a step keeps, shown as written: a skip's and a *not yet*'s. */
 const QUOTES: ReadonlySet<string> = new Set(['look.skip', 'look.not-yet']);
 
-/** The person's words a graph run's node keeps (FABRIC-CUTOVER1e): a skip's, a refusal's and a stop's, by its record's state. */
+/** The person's words a graph run's node keeps: a skip's, a refusal's and a stop's, by its record's state. */
 const NODE_QUOTES: ReadonlySet<string> = new Set(['skipped', 'rejected', 'stopped']);
 
 /**
  * One step's place in its run (design §5.2, §7): its state on its pill, *this session* where the attended session is its own,
  * when it came to stand there, what that state says, the person's words where it keeps them, why a step Current does not draw is
- * here, the owner's control where it waits, and the door to where its record is. The step the person has opened (SETUPUX1u): the others
- * are `StepBrief`s. On the flowchart (FLOWCHART1d) the node wears the state's pill itself, so its mark is drawn without it, and without
+ * here, the owner's control where it waits, and the door to where its record is. The step the person has opened: the others
+ * are `StepBrief`s. On the flowchart the node wears the state's pill itself, so its mark is drawn without it, and without
  * the routes, which its edges draw.
  */
 function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, onHeld }: {
@@ -176,18 +176,18 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
   onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
 }) {
   const { t } = useTranslation();
-  // DECIDE1c: a node the outcomes reached leave no route to says so in place of its state's words; a decision says the outcome it reached.
+  // A node the outcomes reached leave no route to says so in place of its state's words; a decision says the outcome it reached.
   const notTaken = notTakenIn(run, step);
   const returned = run.graph?.outcomes?.[step.step.id] ?? null;
   const outcome = returned === null ? null : outcomeSaid(t, step.step.kind, returned);
   const said = notTaken ? t('workflow.run.notTaken.said') : runSaid(t, step);
   const added = addedSaid(t, step);
   const kind = step.step.kind;
-  // A graph run's node keeps the person's words of a skip, a refusal or a stop (FABRIC-CUTOVER1e); a go-ahead's act is its sentence's.
+  // A graph run's node keeps the person's words of a skip, a refusal or a stop; a go-ahead's act is its sentence's.
   const quoted = (step.node ? NODE_QUOTES.has(step.detail) : QUOTES.has(`${kind}.${step.detail}`)) && step.words ? step.words : null;
   const door = doorFor(t, run, step, doors);
-  // The second opinion's gate holding the work on the person (XAGENT1f): its owner's control draws *Go on anyway…* under the step
-  // (XAGENT1g), where the frame hands it, the attended session's own run; elsewhere its twins are said, the session's own page
+  // The second opinion's gate holding the work on the person: its owner's control draws *Go on anyway…* under the step
+  // where the frame hands it, the attended session's own run; elsewhere its twins are said, the session's own page
   // and the terminal's, and the door opens the review, where the gate's presses stand.
   const twin = !control && kind === 'opinion' && step.state === 'waiting-on-you' && step.session
     ? t('workflow.run.opinionTwin', { session: step.session })
@@ -199,13 +199,13 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
       {said && <p className="m-0 text-small text-ink-soft"><Inline text={said} /></p>}
       {outcome && <p className="m-0 text-small text-ink-soft"><Inline text={t('workflow.run.outcome', { outcome })} /></p>}
       {pill && <Routes routes={routesOf(t, run, step)} />}
-      {/* INTEGRATE1o part o2: the requests the work's sessions made, inside the work: each quest they published and each helper they asked. */}
+      {/* The requests the work's sessions made, inside the work: each quest they published and each helper they asked. */}
       {step.requests && step.requests.length > 0 && (
         <ul aria-label={t('workflow.run.requests.title')} className="m-0 grid list-none gap-1 p-0">
           {step.requests.map((request) => <RequestRow key={`${request.kind}:${request.id}`} request={request} doors={doors} />)}
         </ul>
       )}
-      {/* INTEGRATE1h: the integrate node's record, in one line; a state this page has no words for is said as recorded. */}
+      {/* The integrate node's record, in one line; a state this page has no words for is said as recorded. */}
       {step.integration && (
         <p className="m-0 text-small text-ink-soft">
           {t(`workflow.run.integration.${step.integration.step && step.integration.state === 'in-candidate' ? 'in-candidate.at' : step.integration.state}`,
@@ -214,9 +214,9 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
       )}
       {quoted && <p className="m-0 text-small text-ink">{t('workflow.run.quoted', { words: quoted })}</p>}
       {added && <p className="m-0 text-meta text-ink-faint">{added}</p>}
-      {/* FABRIC-CUTOVER1f: the person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
+      {/* The person's skip and stop of a graph run's node, wherever the driver's table takes them, and a word kept. */}
       {step.node && run.graph && <NodeWord run={run.graph.run} step={step} onWord={onNodeWord} />}
-      {/* FABRIC-PIPELINE1d: a check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
+      {/* A check held unknown for the person: *Run again* and *Not now*, the held attempt's own words. */}
       {step.node === 'check' && <CheckHeld step={step} onHeld={onHeld} />}
       {control}
       {twin && <p className="m-0 text-meta text-ink-faint"><Inline text={twin} /></p>}
@@ -226,7 +226,7 @@ function StepMark({ run, step, here, doors, control, pill = true, onNodeWord, on
 }
 
 /**
- * One request the work's sessions made (INTEGRATE1o part o2): where it was asked, its state, whether a session of the work waits on the
+ * One request the work's sessions made: where it is asked, its state, whether a session of the work waits on the
  * answer, and its close's note as written; a quest's door opens its page where one is handed in.
  */
 function RequestRow({ request, doors }: { request: RunRequest; doors?: RunDoors }) {
@@ -265,16 +265,16 @@ function DoorPress({ door }: { door: Door }) {
 }
 
 /**
- * A step's door (design §7): where its record is. The work's session, or the ask where a go-ahead waits, or the quest its taker
+ * A step's door: where its record is. The work's session, or the ask where a go-ahead waits, or the quest its taker
  * waits on; the reviewer's session; the set-up step's page, where the review is answered; the session's review, where its work
  * is accepted; the pull request's address, outside the window as any link opens. A step not reached has none. On the flowchart
- * (FLOWCHART1d) a press is its node's door too, which Enter opens.
+ * a press is its node's door too, which Enter opens.
  */
 function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, step: RunStep, doors?: RunDoors): Door | null {
   if (step.state === 'not-reached') return null;
   const kind = step.step.kind;
 
-  // A graph run's node (FABRIC-CUTOVER1e): where the record of what it observes is. A go-ahead's ask, where it is answered; its quest; the
+  // A graph run's node: where the record of what it observes is. A go-ahead's ask, where it is answered; its quest; the
   // landed branch's page for what follows the landing; the session whose branch it observes.
   if (step.node) {
     if (step.node === 'go-ahead' && step.state === 'waiting-on-you' && run.ask && doors?.ask) {
@@ -299,7 +299,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   if (kind === 'work' && ['awaits', 'queued', 'unclosed', 'declined', 'reopened', 'go-on'].includes(step.detail) && step.quest && doors?.quest) {
     return { label: t('workflow.run.door.quest', { id: step.quest }), open: () => doors.quest?.(step.quest!) };
   }
-  // The gate holds the work on the person: its presses stand beside the review's Accept (XAGENT1f's `LANDING` answers it there).
+  // The gate holds the work on the person: its presses stand beside the review's Accept (`LANDING` answers it there).
   if (kind === 'opinion' && step.state === 'waiting-on-you' && step.session && doors?.review) {
     return { label: t('workflow.run.door.review'), open: () => doors.review?.(step.session!) };
   }
@@ -312,7 +312,7 @@ function doorFor(t: ReturnType<typeof useTranslation>['t'], run: WorkflowRun, st
   if (kind === 'landing' && ['waiting-on-you', 'cannot-start'].includes(step.state) && step.session && doors?.review) {
     return { label: t('workflow.run.door.review'), open: () => doors.review?.(step.session!) };
   }
-  // Landed on a branch (FLOWCHART1c): its page draws how it landed. A landing into the line keeps no branch, so it has none.
+  // Landed on a branch: its page draws how it landed. A landing into the line keeps no branch, so it has none.
   if (kind === 'landing' && step.state === 'done' && step.detail === 'branch' && step.branch && doors?.branch) {
     return { label: t('landing.door', { branch: step.branch }), open: () => doors.branch?.(run.repository, step.branch!) };
   }
@@ -333,7 +333,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
 }) {
   const { t, i18n } = useTranslation();
   const at = run.at ?? null;
-  // The step whose record and owner's control are drawn: the person's choice, else where the run stands (SETUPUX1u).
+  // The step whose record and owner's control are drawn: the person's choice, else where the run stands.
   const [picked, setPicked] = useState<string | null>(null);
   const opened = picked !== null && run.steps.some((step) => step.step.id === picked) ? picked : openedBy(run);
   const finished = finishedBy(run);
@@ -359,8 +359,8 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
       reached: reached.has(id),
       at: id === at,
       mark: mark(true),
-      // Its node on the flowchart (FLOWCHART1d): its state's word in `runTone`'s tone, done only where it is (a skip stays in view
-      // when a long run folds), its lines without the pill the node draws, and Enter opens its record. DECIDE1c: a route not taken says so.
+      // Its node on the flowchart: its state's word in `runTone`'s tone, done only where it is (a skip stays in view
+      // when a long run folds), its lines without the pill the node draws, and Enter opens its record. A route not taken says so.
       state: notTakenIn(run, step)
         ? { word: t('workflow.run.notTaken.state'), tone: 'neutral' as const }
         : { word: stepWord(t, step), tone: runTone(step.state) },
@@ -390,7 +390,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
         <Prose className="text-ink"><Inline text={placeSaid(t, run, named)} /></Prose>
         <p className="m-0 text-meta text-ink-faint">{source && !run.problem ? t('workflow.run.headSource', { head, source }) : head}</p>
       </div>
-      {/* FABRIC-CUTOVER1e: a graph run says what its record says, what its graph observes, that its branches are its graph's and that
+      {/* A graph run says what its record says, what its graph observes, that its branches are its graph's and that
           every landing door still holds it, before its nodes. */}
       {run.graph && (
         <ul aria-label={t('workflow.run.graph.says')} className="m-0 grid list-none gap-1 p-0">
@@ -399,7 +399,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
           ))}
         </ul>
       )}
-      {/* CHATFLOW1c: a chat run's checks are not yet enforced for a conversation, so they are never shown as a limit its tree holds. */}
+      {/* A chat run's checks are not yet enforced for a conversation, so they are never shown as a limit its tree holds. */}
       {checks && <p className="m-0 text-small text-ink-soft"><Inline text={checks} /></p>}
       {run.workflowGate?.holds && <WorkflowHold gate={run.workflowGate} />}
       {run.problem ? <Prose className="text-small"><Inline text={bindingProblemSaid(t, run)} /></Prose> : <WorkflowChart
@@ -416,7 +416,7 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
 }
 
 /**
- * **Where a piece of work stands in its workflow** (WORKFLOW1c; D157 point 12, the workflow design §5.2, §7): the session's side
+ * **Where a piece of work stands in its workflow**: the session's side
  * bar view *Workflow*, its run drawn on the chart of the workflow it follows, each step where it stands and *this session*
  * marked on its own.
  *
@@ -430,17 +430,17 @@ function Run({ run, here, doors, controls, named, onNodeWord, onHeld }: {
  *
  * **Hues** (design §7, platform-ux §3): waiting on the person in open's hue, theirs alone; a wait on an agent or on Daoris
  * neutral; done's green for a step done; red only for a failure. The person's part stays the rail's shape and its word,
- * never a hue (D157 §6.2).
+ * never a hue.
  *
  * **An ask's work in several repositories is several runs** (design §3.8), each at its own step, drawn one after another.
  *
  * A molecule: the answer arrives as a prop, and every door goes out.
  */
 export function WorkflowRunView({ answer, reading = false, refusal = null, here = null, doors, controls, onNodeWord, onHeld, onRetry }: {
-  /** What the shell answered; absent while it is read, or where it was refused. */
+  /** What the shell answered; absent while it is read, or where it is refused. */
   answer?: WorkflowRunAnswer | null;
   reading?: boolean;
-  /** The read was refused, in the driver's sentence that says why. */
+  /** The read is refused, in the driver's sentence that says why. */
   refusal?: string | null;
   /** The step the attended session is its own: marked *this session*. */
   here?: string | null;
@@ -448,13 +448,13 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
   /** Each owner's control where the step the run stands at waits on a press, by the step's id. */
   controls?: Partial<Record<string, ReactNode>>;
   /**
-   * The person's skip or stop of a graph run's node (FABRIC-CUTOVER1f), answered by the driver; absent where nothing presses it, and only a
+   * The person's skip or stop of a graph run's node, answered by the driver; absent where nothing presses it, and only a
    * word kept is drawn.
    */
   onNodeWord?: (ask: NodeWordAsk) => Promise<NodeWordAnswer>;
-  /** The person's *Run again* or *Not now* on a check held unknown (FABRIC-PIPELINE1d), answered by the driver; absent where nothing presses it. */
+  /** The person's *Run again* or *Not now* on a check held unknown, answered by the driver; absent where nothing presses it. */
   onHeld?: (ask: CheckHeldAsk) => Promise<CheckHeldAnswer>;
-  /** Read again, where the service did not answer (CHATFLOW1b): *Try again*; absent where nothing reads again. */
+  /** Read again, where the service did not answer: *Try again*; absent where nothing reads again. */
   onRetry?: () => void;
 }) {
   const { t } = useTranslation();
@@ -468,7 +468,7 @@ export function WorkflowRunView({ answer, reading = false, refusal = null, here 
     );
   }
 
-  // No run (CHATFLOW1b): its code in the reader's language, or the driver's sentence for a code the page does not know; a service that
+  // No run: its code in the reader's language, or the driver's sentence for a code the page does not know; a service that
   // did not answer offers *Try again*, which reads again before the view's next tick.
   if (answer.runs.length === 0) {
     return (

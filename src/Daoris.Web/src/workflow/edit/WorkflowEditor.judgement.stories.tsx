@@ -9,7 +9,7 @@ import type { WorkflowSaveAnswer } from './answers';
 import { HOLDS, judgedFor, LIST, PALETTE, REFUSED, REFUSED_GRAPH, ROLES } from './editFixtures';
 import { WorkflowEditor } from './WorkflowEditor';
 
-// The driver's judgement on the editor's chart (FLOWCHART2c; D223 §3, §8.7), drawn from props: a refusal at its step (declined's border and
+// The driver's judgement on the editor's chart, drawn from props: a refusal at its step (declined's border and
 // its words) and at its way (a ⚠ chip, its sentence in the source's foot), the head's *n to put right* with a door, *Ask why* and *Fix it*
 // to each where the window has Ask Daoris; a refusal inside the folded holds opening them; and the two states in which the last answer is
 // no longer the draft's, an edit before the new answer and a request that failed. In English and 中文, both themes, at the main area's

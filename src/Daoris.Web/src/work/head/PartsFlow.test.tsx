@@ -7,7 +7,7 @@ import { EVIDENCE_ENTRIES, EVIDENCE_SESSIONS } from '../entries.fixtures';
 import type { EntryAcceptPlan } from '../review/EntryAccept';
 import { PartsFlow } from './PartsFlow';
 
-// FLOWCHART1b (the flowchart design §2.3, §7 trap 21): the parts flow takes the parts strip's place on the session's page, the
+// The parts flow takes the parts strip's place on the session's page, the
 // strip its rail. jsdom lays nothing out, so the pane's width is stood in for, as `FlowNodeBox.test.tsx` does, and the drawing's own
 // geometry is the measured-box check's; here is what the page reads and presses.
 

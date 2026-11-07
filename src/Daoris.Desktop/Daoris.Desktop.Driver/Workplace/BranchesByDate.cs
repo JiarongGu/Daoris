@@ -13,6 +13,8 @@ internal static class BranchesByDate
 
     internal static string[] Ask => ["for-each-ref", "--sort=-committerdate", "--format=%(objectname) %(refname)", "refs/heads/"];
 
+    internal static void Forget() => Kept.Clear();
+
     /// <summary>The listing from <paramref name="cwd"/>'s repository: the kept one where its counted refs are the same, else git's, kept where it answered.</summary>
     internal static async Task<(int Code, string Stdout, string Stderr)> ReadAsync(string cwd, CancellationToken ct)
     {

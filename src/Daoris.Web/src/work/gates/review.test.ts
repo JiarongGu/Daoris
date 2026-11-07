@@ -8,7 +8,7 @@ import {
 } from './reviewFixtures';
 
 /**
- * REVIEWENV1g (the review environment design §3.2–§3.3, §3.6): the gate as the page reads it. The driver's state where it
+ * The gate as the page reads it. The driver's state where it
  * answers one, and otherwise a set-up step's own record; the set-up a verdict answers named whole; which presses each state
  * offers, by one rule.
  */

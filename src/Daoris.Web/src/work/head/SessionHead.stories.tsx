@@ -11,7 +11,7 @@ const dark: Decorator = (Story) => <InTheme theme="dark"><Story /></InTheme>;
 
 // The record in every shape it really arrives in: driven, a conversation, parked with its analysis,
 // ended, and read over a remote where the machine-local half is deliberately absent. Drawn in a session's page at the
-// frame's widths (the UI/UX design R6), with the session's gutters.
+// frame's widths, with the session's gutters.
 
 const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000).toISOString();
 
@@ -87,7 +87,7 @@ export const Conversation: Story = {
 /**
  * Parked. The analysis sits ABOVE the record because it is the reason the person is looking, and
  * it renders verbatim — `autonomous-development` asks it for options, a recommendation and a
- * reason, none of which survive rewording. The three moves are SURF5's and attach here.
+ * reason, none of which survive rewording. The three moves attach here.
  */
 export const Parked: Story = {
   args: {
@@ -101,7 +101,7 @@ export const Parked: Story = {
   },
 };
 
-/** Presses the parked card's *Finish…* and chooses to mark its quest done (QUESTCLOSE1), as a person would. */
+/** Presses the parked card's *Finish…* and chooses to mark its quest done, as a person would. */
 const finishMarkingDone: Story['play'] = async ({ canvasElement }) => {
   const press = (name: string) => [...canvasElement.querySelectorAll<HTMLButtonElement>('button')]
     .find((button) => button.textContent === name)?.click();
@@ -111,8 +111,8 @@ const finishMarkingDone: Story['play'] = async ({ canvasElement }) => {
 };
 
 /**
- * Finishing a park whose quest is still taken (QUESTCLOSE1, D126's note): *Finish…* asks, in the same act, what becomes of
- * the quest, *Leave it as it is* by default or *Mark it done as yours* with the person's note. Here it was chosen.
+ * Finishing a park whose quest is still taken: *Finish…* asks, in the same act, what becomes of
+ * the quest, *Leave it as it is* by default or *Mark it done as yours* with the person's note. Here it is chosen.
  */
 export const FinishingMarksItsQuestDone: Story = {
   args: { ...Parked.args, onResolve: () => {} },
@@ -120,7 +120,7 @@ export const FinishingMarksItsQuestDone: Story = {
 };
 
 /**
- * Answered (ANSWER1c, D131): the park above, once the person answered, for up to one look of the driver's. The record is
+ * Answered: the park above, once the person answered, for up to one look of the driver's. The record is
  * still parked with the answer set; the head shows the answer, says the same session goes on with it, and offers none
  * of the parked card's moves, though the frame could act. Its state reads *answered*, quiet, not the waiting hue.
  */
@@ -139,7 +139,7 @@ export const Answered: Story = {
   },
 };
 
-/** Two go-aheads a parked session asked on its quest's ask (KNOWUSE1a), both still waiting on the person. */
+/** Two go-aheads a parked session asked on its quest's ask, both still waiting on the person. */
 const GO_AHEADS: GoAhead[] = [
   {
     number: 1, kind: 'write', on: 'production', act: 'chunk budget configuration', state: 'asked',
@@ -152,8 +152,8 @@ const GO_AHEADS: GoAhead[] = [
 ];
 
 /**
- * Parked asking for go-aheads (KNOWUSE1a2, D135 §2): what it asked stands beneath its card, each with *Approve* and
- * *Refuse*, and answering the last one open there sends the same session on, as on the ask's page (GOAHEAD2b).
+ * Parked asking for go-aheads: what it asked stands beneath its card, each with *Approve* and
+ * *Refuse*, and answering the last one open there sends the same session on, as on the ask's page.
  */
 export const ParkedAskingGoAheads: Story = {
   args: {
@@ -171,7 +171,7 @@ export const ParkedAskingGoAheads: Story = {
 };
 
 /**
- * PARKVIEW1 (the park's ask design §3): parked on a question its agent asked through the connector, beside a go-ahead, where the box
+ * Parked on a question its agent asked through the connector, beside a go-ahead, where the box
  * below answers it. The card shows the question and its answers in place of the whole last message, and the go-ahead is listed with
  * no press: every press is the box's, where the person writes.
  */
@@ -206,7 +206,7 @@ export const ParkedOnAQuestionAnsweredBelowDarkNarrow: Story = {
 };
 
 /**
- * The same park once the person approved the first (GOAHEAD2b): go-ahead 2 is still open, so it stays parked with no
+ * The same park once the person approved the first: go-ahead 2 is still open, so it stays parked with no
  * answer, as at the ask's door, and goes on once the second is answered.
  */
 export const OneGoAheadAnsweredOneOpen: Story = {
@@ -222,7 +222,7 @@ export const OneGoAheadAnsweredOneOpen: Story = {
 };
 
 /**
- * The same park answered on its card with a go-ahead still open (KNOWUSE1a2): its blank answer is kept, so it goes on at
+ * The same park answered on its card with a go-ahead still open: its blank answer is kept, so it goes on at
  * the driver's next look with what it holds, and the second, still waiting, can be answered before it does.
  */
 export const AnsweredWithAGoAheadWaiting: Story = {
@@ -238,7 +238,7 @@ export const AnsweredWithAGoAheadWaiting: Story = {
 };
 
 /**
- * A parked INTAKE (INT4g): it serves an ask and runs in Daoris's own room, so the record says *ask*
+ * A parked INTAKE: it serves an ask and runs in Daoris's own room, so the record says *ask*
  * and *room* rather than *repository* and *tree*, and its answer is a door to the ask.
  */
 export const IntakeAsking: Story = {
@@ -263,7 +263,7 @@ export const IntakeAsking: Story = {
   },
 };
 
-/** A RUNNING intake (INT4h): no box to type in, its ask's door in the head; its stop is the page header's (SESSUX1d). */
+/** A RUNNING intake: no box to type in, its ask's door in the head; its stop is the page header's. */
 export const IntakeRunning: Story = {
   args: {
     session: {
@@ -306,7 +306,7 @@ export const Failed: Story = {
 };
 
 /**
- * Failed, its tree gone and its branch standing with commits no branch of the person's holds (LAND3b): *Discard branch…*
+ * Failed, its tree gone and its branch standing with commits no branch of the person's holds: *Discard branch…*
  * beside what it left, asking once under the line on its press.
  */
 export const FailedItsBranchLeft: Story = {
@@ -325,7 +325,7 @@ export const FailedItsBranchLeft: Story = {
 };
 
 /**
- * Failed, its tree still here holding a commit no branch of the person's holds (LAND4, the owner's case): what it left, its
+ * Failed, its tree still here holding a commit no branch of the person's holds: what it left, its
  * branch and its tree, with *Accept…*, which asks once under the line, saying where the rule puts it.
  */
 export const FailedItsWorkToLand: Story = {
@@ -340,7 +340,7 @@ export const FailedItsWorkToLand: Story = {
   },
 };
 
-/** Finished at a checkpoint by the person, its commits not landed yet (LAND4): the same offer, with no word that it did not finish. */
+/** Finished at a checkpoint by the person, its commits not landed yet: the same offer, with no word that it did not finish. */
 export const FinishedAtACheckpointToLand: Story = {
   args: {
     ...FailedItsWorkToLand.args,
@@ -351,11 +351,11 @@ export const FinishedAtACheckpointToLand: Story = {
   },
 };
 
-/** The review's presses on the desktop (REVIEWENV1g). */
+/** The review's presses on the desktop. */
 const REVIEW_ACTS = { reviewed: () => {}, notYet: () => {}, skip: () => {}, setUp: () => {}, showAgain: () => {}, open: () => {} };
 
 /**
- * Finished, its work waiting for the person's review (REVIEWENV1g): *Review in `local`* where *Accept…* would be, the set-up
+ * Finished, its work waiting for the person's review: *Review in `local`* where *Accept…* would be, the set-up
  * step's showing, its tab still served, and *Reviewed*, *Not yet…*, *Show it again* and *Skip…*.
  */
 export const WaitsForReviewShown: Story = {
@@ -393,7 +393,7 @@ export const WaitsForReviewBeingSetUp: Story = {
   },
 };
 
-/** Reviewed, and work added since: what was reviewed does not hold it. */
+/** Reviewed, and work added since: what is reviewed does not hold it. */
 export const WaitsForReviewNotHeld: Story = {
   args: {
     ...FinishedAtACheckpointToLand.args,
@@ -403,7 +403,7 @@ export const WaitsForReviewNotHeld: Story = {
 };
 
 /**
- * Finished, its work squash-merged as a pull request and its tree still here (SQUASHTIDY1b, the owner's case): no *Accept…*,
+ * Finished, its work squash-merged as a pull request and its tree still here: no *Accept…*,
  * the driver's sentence where it would be, and *Discard branch…*, which asks once naming the ref its commits stay at.
  */
 export const SquashMergedItsDiscard: Story = {
@@ -439,8 +439,8 @@ export const SquashMergedItsTreeStays: Story = {
 };
 
 /**
- * UXFIX4b: the same with a long branch name, at the main area's 400 px floor, in the session's gutters. The name is whole,
- * wrapping after its separators on the line's own row, where it was cut to one line with nothing to read the rest by.
+ * The same with a long branch name, at the main area's 400 px floor, in the session's gutters. The name is whole,
+ * wrapping after its separators on the line's own row, never cut to one line with nothing to read the rest by.
  */
 export const FailedItsLongBranchLeftAtTheFloor: Story = {
   args: {
@@ -451,8 +451,8 @@ export const FailedItsLongBranchLeftAtTheFloor: Story = {
 };
 
 /**
- * Failed, its note by code (LANG1b, D142): Daoris's lines worded in the window's language, the agent's words beneath their
- * lead-in as written. The cooling line is shown in the shape a note from before AGT3d keeps and in the shape written since,
+ * Failed, its note by code: Daoris's lines worded in the window's language, the agent's words beneath their
+ * lead-in as written. The cooling line is shown in the shape an older note keeps and in the current shape,
  * naming whose accounts and the kind of limit, both worded.
  */
 export const FailedByCode: Story = {
@@ -474,7 +474,7 @@ export const FailedByCode: Story = {
   },
 };
 
-/** Parked, its lead-in by code and its question as the agent wrote it (LANG1b), with the moves a shell has. */
+/** Parked, its lead-in by code and its question as the agent wrote it, with the moves a shell has. */
 export const ParkedByCode: Story = {
   args: {
     session: {
@@ -491,7 +491,7 @@ export const ParkedByCode: Story = {
 };
 
 /**
- * A record mirrored from another machine (D47 §6): the machine is named, and the tree and the
+ * A record mirrored from another machine: the machine is named, and the tree and the
  * account are absent because they never travelled. Three absences, none of them an error.
  */
 export const FromAnotherMachine: Story = {
@@ -512,7 +512,7 @@ export const ChineseQuest: Story = {
   },
 };
 
-// ——— Whom it continues and whom a helper helps (MIXAGENT3a-i, the mixed-agents design §4): *Details* opened, the other
+// ——— Whom it continues and whom a helper helps: *Details* opened, the other
 // session's title with its door where the frame holds it, its id in mono where it does not; in English, 中文 and dark.
 
 /** Opens the folded *Details*, in either language, so the story shows its rows. */
@@ -558,7 +558,7 @@ export const Helping: Story = {
 export const HelpingChinese: Story = { ...Helping, decorators: [chinese] };
 export const HelpingDark: Story = { ...Helping, decorators: [dark] };
 
-/** D205: asked, acknowledged and reported stay separate, in the agent's own names. */
+/** Asked, acknowledged and reported stay separate, in the agent's own names. */
 export const ActorReported: Story = {
   args: { session: { ...SESSION, ran: { models: ['claude-sonnet-5-5', 'claude-haiku-4-5-20251001'], more: 1,
     entries: [{ at: at(2), acknowledged: 'sonnet', effort: 'high' }], entriesMore: 0 } } },
@@ -569,7 +569,7 @@ export const ActorReportedNarrow: Story = { ...ActorReported, decorators: [sessi
 export const ActorReportedChinese: Story = { ...ActorReported, decorators: [chinese, sessionWidths.wide] };
 export const ActorReportedChineseHalf: Story = { ...ActorReported, decorators: [chinese, sessionWidths.half] };
 export const ActorReportedChineseNarrow: Story = { ...ActorReported, decorators: [chinese, sessionWidths.narrow] };
-/** STAFFPOLICY1f: *Details* says how the choice was reached; a record with no `chosen` says the policy was not recorded. */
+/** *Details* says how the choice is reached; a record with no `chosen` says the policy is not recorded. */
 export const ActorChosenAfterALimit: Story = {
   args: { session: { ...SESSION, choice: '2', chosen: { rule: 'order', by: 'moved', condition: 'limit', from: '1' } } },
   play: openDetails,

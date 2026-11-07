@@ -8,7 +8,7 @@ import { DetailsFold } from './DetailsFold';
 import { type CourseRead, countRows, courseRow, type LineSupervision, readSupervision, supervisionChip, supervisorRow } from './lineSupervision';
 import { SessionPageHead } from './SessionPageHead';
 
-// The line's counts and the acts the person's rules made on it (CONTEXTDRIVE1h): *Details*' course and Supervisor line, and the head's
+// The line's counts and the acts the person's rules made on it: *Details*' course and Supervisor line, and the head's
 // chip with its count, in both languages.
 
 const t = i18n.t.bind(i18n);

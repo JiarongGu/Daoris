@@ -6,8 +6,8 @@ import {
 import { lastWords, type SessionEvent, toTurns } from '../conversation/conversation';
 import type { Wait } from './waits';
 
-// WAITFOOT1c (D168 point 4): each wait on the person is anchored to the event in its conversation that raised it, by a join the
-// page can make from what it holds, never by a call's title (D52). A wait with no raising event, or none the join finds, has no
+// Each wait on the person is anchored to the event in its conversation that raised it, by a join the
+// page can make from what it holds, never by a call's title. A wait with no raising event, or none the join finds, has no
 // anchor rather than a guessed one.
 
 const SESSION = 's1a2b3c4';
@@ -156,7 +156,7 @@ describe('a rule proposal', () => {
     expect(proposalKey(turns, proposal)).toBeUndefined();
   });
 
-  // PROPOSEHERE1b: the proposal is a wait, anchored by its call.
+  // The proposal is a wait, anchored by its call.
   const asks = { session: SESSION, waits: [{ kind: 'rule', id: 'r1' } as Wait], proposals: [{ id: 'r1', ...proposal }] };
 
   it('anchors the wait the proposal is by its call', () => {
@@ -174,8 +174,8 @@ describe('a rule proposal', () => {
   });
 });
 
-// WAITFOOT1e (D168 point 4): an agent's ask for a helper that waits on the person is raised by its `helper_ask` call, joined on the
-// question the call's input carries (and the agent, where the ask named one), nearest when the ask was made, within the bound.
+// An agent's ask for a helper that waits on the person is raised by its `helper_ask` call, joined on the
+// question the call's input carries (and the agent, where the ask named one), nearest when the ask is made, within the bound.
 describe('an agent\'s ask for a helper', () => {
   const ask = { id: 'a1', question: 'Which test covers the loader?', agent: null, at: at(20) };
   const input = { question: 'Which test covers the loader?' };
@@ -306,7 +306,7 @@ describe('the marks and the ways', () => {
     expect(events.opinion).toBeUndefined();
     expect(events.goAheads![4]).toBeUndefined();
     expect(waitEvents([], () => {})).toBeUndefined();
-    // A rule proposal's, by its id (PROPOSEHERE1b).
+    // A rule proposal's, by its id.
     const rules = waitEvents(['rule:r1'], (wait) => shown.push(wait))!;
     rules.rules!.r1!();
     expect(shown.at(-1)).toBe('rule:r1');

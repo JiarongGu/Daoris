@@ -6,8 +6,8 @@ import { InTheme } from '../../plugins/storyIcons';
 import { SessionHead } from './SessionHead';
 import { SessionPageHead } from './SessionPageHead';
 
-// SESSACCESS1 (D184 point 1; the UI/UX design §3.3 and §4's `AccessFact`, D185): a session's head says the access it started
-// under, from its record's pause map. The page head wears *Full access* only where every pause was recorded open; the record's
+// A session's head says the access it started
+// under, from its record's pause map. The page head wears *Full access* only where every pause is recorded open; the record's
 // *Details*, opened, lists each pause as recorded. No pause open, some open, every one open, one the page does not know, and a
 // record from before the field; at the frame's three widths, in English, 中文 and dark.
 

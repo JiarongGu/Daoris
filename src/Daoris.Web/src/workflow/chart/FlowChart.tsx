@@ -13,19 +13,19 @@ import { StepNode } from './StepNode';
 import { Terminal } from './Terminal';
 import { type ChartNode, isChartNode } from './stepKinds';
 
-// The workflow's flowchart (FLOWCHART2a; D223): the canvas drawing `graphFlow`'s nodes through the chart's components, a node for each
+// The workflow's flowchart: the canvas drawing `graphFlow`'s nodes through the chart's components, a node for each
 // kind of step, a decision's outcomes as ports, a terminal for each end, the holds as one group, and a chip for each way. A node the
-// canvas drew of its own (a fold of a large run's settled stretch) is the generic `FlowNodeBox`. In the editor (FLOWCHART2b) the same chart is edited
+// canvas drew of its own (a fold of a large run's settled stretch) is the generic `FlowNodeBox`. In the editor the same chart is edited
 // on: a step pressed is selected, a port pressed or dragged from starts its way, and each way and each ◎ wears a ＋.
 
 /**
- * What the editor hands the chart (FLOWCHART2b; D223 §3): the step selected and the press that selects one, the ＋ on each way and in each
+ * What the editor hands the chart: the step selected and the press that selects one, the ＋ on each way and in each
  * ◎, a port's press, and pick mode. A drag from a port picks the step it is dropped on where that step can take the way, and gives open
  * ground (`onGround`) a new step for it.
  */
 export type ChartEdit = {
   selected: string | null;
-  /** The steps chosen with it, for Copy alone (CANVAS1b): outlined as it is, never the inspector's. */
+  /** The steps chosen with it, for Copy alone: outlined as it is, never the inspector's. */
   chosen?: ReadonlySet<string>;
   /** A press on a step; with Ctrl (`toggle`) or Shift (`add`) held it chooses more than one where `onBox` is given. */
   onSelect: (id: string, how?: SelectHow) => void;
@@ -37,7 +37,7 @@ export type ChartEdit = {
   onPort?: (node: string, outcome: string) => void;
   onGround?: () => void;
   pick?: FlowPick | null;
-  /** How a proposal marks a way (FLOWCHART2f): new or to remove, its sign and its word, drawn in the way's chip; null where it marks none. */
+  /** How a proposal marks a way: new or to remove, its sign and its word, drawn in the way's chip; null where it marks none. */
   wayMark?: (edge: string) => { sign: string; word: string } | null;
 };
 
@@ -56,7 +56,7 @@ function drawLabel({ style, text, count, edge }: LabelContext, edit: ChartEdit |
 }
 
 /**
- * The workflow's viewport (CANVAS1a; D224, the canvas design §3.1): 80–200% while it is edited, so the ＋ and the ports stay usable, and
+ * The workflow's viewport: 80–200% while it is edited, so the ＋ and the ports stay usable, and
  * 50–200% while it is read, in the workflow's own words for its fit and how it moves.
  */
 export function workflowViewport(t: TFunction, mode: 'edit' | 'display'): CanvasOptions {
@@ -67,20 +67,20 @@ export function workflowViewport(t: TFunction, mode: 'edit' | 'display'): Canvas
 
 export function FlowChart({ edit, canvas, ...props }: Omit<FlowCanvasProps, 'renderNode' | 'renderLabel' | 'renderInsert' | 'pick' | 'viewport' | 'selection' | 'connect'> & {
   edit?: ChartEdit;
-  /** Drawn in the canvas's viewport from its floor (CANVAS1a): edited in the editor, read on a place's chart, the tab's and a run's. */
+  /** Drawn in the canvas's viewport from its floor: edited in the editor, read on a place's chart, the tab's and a run's. */
   canvas?: 'edit' | 'display';
 }) {
   const { t } = useTranslation();
   const latest = useRef(edit);
   latest.current = edit;
-  // A chart read, not edited, still selects a step (an outline): one, released by the ground and by a second press with Ctrl (CANVAS1b).
+  // A chart read, not edited, still selects a step (an outline): one, released by the ground and by a second press with Ctrl.
   const [shown, setShown] = useState<string | null>(null);
   const reading = canvas === 'display' && !edit;
   const acting: ChartEdit | undefined = edit ?? (reading
     ? { selected: shown, onSelect: (id, how) => setShown((was) => (how === 'toggle' && was === id ? null : id)) }
     : undefined);
 
-  // The connection line from a port (CANVAS1b): the press begins the way and the editor's pick mode with it; a release over a step that
+  // The connection line from a port: the press begins the way and the editor's pick mode with it; a release over a step that
   // can take it picks it, over open ground is the editor's, and Escape or a lost capture gives the way up.
   const connect: Connect | null = edit?.onPort ? {
     from: (target) => {

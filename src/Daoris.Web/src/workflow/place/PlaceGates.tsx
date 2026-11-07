@@ -85,14 +85,14 @@ const pressed = (press: (answered: Answered) => void) =>
   new Promise<string | null>((resolve) => press({ done: () => resolve(null), refused: (sentence) => resolve(sentence) }));
 
 /**
- * **Gates** (AGENTSPLACE1h; the Agents-place design §3): the declaration at the line's tip shown once, and its acceptance as two
+ * **Gates**: the declaration at the line's tip shown once, and its acceptance as two
  * choices, *Accept for landed verification* and *Accept for integration*. Each names its purpose, the blob it pins and the standing it
  * leaves, keeps its own record and, for integration, its own withdrawal; one confirmation applies the ones chosen, each by the blob
- * that was read, so a tip that moved is refused for that purpose alone and the other stands.
+ * that is read, so a tip that moved is refused for that purpose alone and the other stands.
  *
  * @remarks
  * Changed landed gates stop verification; changed integration declarations go on under the last accepted blob (the standings say each).
- * The acceptance is the person's alone (D156, D157 point 10): nothing here takes it for a role. The page judges nothing: a refusal is
+ * The acceptance is the person's alone: nothing here takes it for a role. The page judges nothing: a refusal is
  * the driver's sentence, said inside the confirmation.
  *
  * A molecule: the standings arrive as props and each acceptance goes out as its own press.
@@ -110,7 +110,7 @@ export function PlaceGates({ landed, integration, busy = false, bare = false, on
 }) {
   const { t } = useTranslation();
   const headId = useId();
-  // A tick is the key of what it was made at (purpose, line and blob), and starts empty.
+  // A tick is the key of what it is made at (purpose, line and blob), and starts empty.
   const [ticks, setTicks] = useState<Partial<Record<Purpose, string>>>({});
   const [asking, setAsking] = useState(false);
   const [withdrawn, setWithdrawn] = useState<string | null>(null);

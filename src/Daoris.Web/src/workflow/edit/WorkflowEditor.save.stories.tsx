@@ -7,9 +7,9 @@ import type { WorkflowSaveAnswer, WorkflowUseAnswer } from './answers';
 import { APPEND, HOLDS, judgedFor, LIST, PALETTE, ROLES } from './editFixtures';
 import { WorkflowEditor } from './WorkflowEditor';
 
-// The editor's save and choice (SETUPUX1s; the Setup design's §2.3): *Review and save* once the draft's judgement holds, the review that
+// The editor's save and choice: *Review and save* once the draft's judgement holds, the review that
 // says what is saved and which places an append reaches (one consent for exactly those), a new workflow saved by its name alone, and *Use
-// here* reading the plan of the choice for a draft that is the version it was saved as. In English and 中文, both themes, at the main
+// here* reading the plan of the choice for a draft that is the version it is saved as. In English and 中文, both themes, at the main
 // area's wide, half and narrow widths (80, 39 and 25rem). A `play` presses what a person would.
 
 const nothing = () => {};

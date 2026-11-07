@@ -102,7 +102,7 @@ export function useEditorSave({ wireOf, t, titleOf, draft, setWaiting, onShow, i
     if (first) focusOn(first);
   };
 
-  // The review (SETUPUX1s): of this draft, once its judgement holds. Saving is its press, so nothing is saved that was not reviewed.
+  // The review: of this draft, once its judgement holds. Saving is its press, so nothing is saved unreviewed.
   const holds = draft.nodes.length > 0 && judgement?.done === true;
   const reviewOpen = holds && reviewing === fingerprint;
   useEffect(() => { setReviewing(null); }, [fingerprint]);
@@ -155,7 +155,7 @@ export function useEditorSave({ wireOf, t, titleOf, draft, setWaiting, onShow, i
     onShow(target.id);
   };
 
-  // The choice (SETUPUX1s): only of a version the draft still is, for the route the editor opened for, with the plan's token where one is read.
+  // The choice: only of a version the draft still is, for the route the editor opened for, with the plan's token where one is read.
   const unchanged = target.base !== null && baseFingerprint === fingerprint;
   const kindOfRoute = route?.startsWith('kind:') ? route.slice('kind:'.length) : null;
   const choice: WorkflowUseAsk | null = target.base === null ? null : {

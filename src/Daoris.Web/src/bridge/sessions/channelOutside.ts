@@ -5,7 +5,7 @@ import type { OutsideAgent } from '../../work/team/outsideAgents';
 import { call } from '../call';
 import { askHeld } from '../state/held';
 
-// The agents outside Daoris on a channel (CHANNELJOIN1c, the event-channel design §5.8): who is on a line's channel, for *At work*, and the
+// The agents outside Daoris on a channel: who is on a line's channel, for *At work*, and the
 // person's *Remove*. The driver's `ChannelOutsideRoutes` answers over the service's doors. Shell-only: a browser has no driver.
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value ? value : null);

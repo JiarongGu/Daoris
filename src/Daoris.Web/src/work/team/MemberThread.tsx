@@ -5,7 +5,7 @@ import { type Answered, Refused } from '../InlineConfirm';
 import type { HelperAskRow } from '../waits/HelperAsks';
 import { wentOf } from './teamRows';
 
-/** What *Ask again…* sends (COWORKUX1d): the person's words, and whether the answer goes to the lead rather than to them. */
+/** What *Ask again…* sends: the person's words, and whether the answer goes to the lead rather than to them. */
 export type AskedAgain = { question: string; forLead: boolean };
 
 export type MemberThreadProps = {
@@ -25,7 +25,7 @@ export type MemberThreadProps = {
 };
 
 /**
- * A member's thread head (COWORKUX1b, d; the co-worker design §6.4, §7): *Working for {lead}*, its role and its confinement, and *Back to
+ * A member's thread head: *Working for {lead}*, its role and its confinement, and *Back to
  * lead*. While it works, the sentence that a co-worker takes one turn; once it ended, where its answer went, *Pass to the lead* where the
  * answer is the person's, and *Ask again…*: a new helper on a fresh copy, handed this exchange as Daoris's record. Nothing is resumed.
  */

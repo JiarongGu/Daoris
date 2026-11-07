@@ -8,7 +8,7 @@ import { type OutsideAgent, outsideRowLine } from './outsideAgents';
 export type RemoveOutside = (member: string, answered: Answered) => void;
 
 /**
- * One agent outside Daoris on the line's channel, beside its co-workers (CHANNELJOIN1c, the event-channel design §5.8): the agent and the
+ * One agent outside Daoris on the line's channel, beside its co-workers: the agent and the
  * repository it claimed, that it is outside Daoris, when it joined and last read or posted, and the person's *Remove*. It is shown as
  * itself, never as the person or a session; it reads and posts as itself and starts, stops and steers nothing.
  */

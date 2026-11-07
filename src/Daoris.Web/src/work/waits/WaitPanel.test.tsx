@@ -7,9 +7,8 @@ import { WaitPanel, WAIT_PART } from './WaitPanel';
 import { keptWaitPanel, useWaitPanelHeight, WAIT_PANEL, WAIT_PANEL_KEY, waitPanelMax } from './waitPanelHeight';
 
 /**
- * WAITPANEL1: what waits on the person at the foot of a session's conversation was too tall and could not be resized (the owner's
- * report, 2026-10-23). Its top edge sizes it now, the height kept per viewer, between a floor and half the window; and the
- * conversation's *To the top* and *Back to bottom* lie above that edge, never under the panel.
+ * What waits on the person at the foot of a session's conversation is sized by its top edge, the height kept per
+ * viewer, between a floor and half the window; and the conversation's *To the top* and *Back to bottom* lie above that edge, never under the panel.
  */
 
 /** The panel as the frame holds it: its height kept by the hook, a part that waits, and the conversation's presses. */
@@ -137,7 +136,7 @@ describe('the waiting panel', () => {
     }
     render(<Coming />);
     expect(screen.queryByRole('separator')).toBeNull();
-    // A strip standing aside (WAITFOOT2a) takes none of the height.
+    // A strip standing aside takes none of the height.
     fireEvent.click(screen.getByRole('button', { name: 'next' }));
     await act(async () => {});
     expect(screen.queryByRole('separator')).toBeNull();
@@ -184,7 +183,7 @@ describe('the waiting panel', () => {
   });
 
   /**
-   * The owner's second report: the conversation's scroll presses sat under the panel. They are the panel's own now, laid over
+   * The conversation's scroll presses never sit under the panel. They are the panel's own, laid over
    * the conversation's foot above its top edge, in a layer over the handle and over the conversation's sticky lines (z-[9]).
    * jsdom lays nothing out, so this holds the arrangement; `measured/waitPanel.spec.ts` measures it in a real browser.
    */

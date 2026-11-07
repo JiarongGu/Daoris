@@ -50,6 +50,7 @@ group.
 | `events` | The work cycle's events for a session outside Daoris, through the `event-relay` plugin: `events relay --where` lays the relay's copy out and prints its command; `events relay --once` prints one batch of fixed lines and ends |
 | `gate` | A checkout's heavy gates under its repository's one slot (`gate run`), and a branch's or a commit's verification (`gate verify`) |
 | `git` | Each repository's branches and their acts (`branches`, `branch`, `tag`, `fetch`, `pick`, `revert`, `rebase`), a session's `review`, and the identities and accesses Daoris's git doors use (`identity`, `use`, `access`, `asks`, `answer`) |
+| `files` | What Daoris's trees do with each path git does not manage in a repository, by which rule |
 | `history` | What this machine keeps of finished work, and a workspace's `clear` |
 | `integrate` | A repository's integration as the window's Integration view draws it |
 | `logs` | The machine log, every source merged by time |

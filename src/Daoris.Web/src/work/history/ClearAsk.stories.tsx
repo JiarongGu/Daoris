@@ -10,10 +10,10 @@ import {
   WORKSPACE_LEFT_OVER, WORKSPACE_PLAN,
 } from './historyFixtures';
 
-// A clear's first press (HIST1e, D153; the history-clearing design §5, §6.1), as it asks under a quest's or an ask's header
+// A clear's first press, as it asks under a quest's or an ask's header
 // and in a workspace's Details: what it takes and that nothing brings it back, or that the remote keeps the team's copy;
 // for a workspace the counts by kind and every unit kept with its reason and door; a teammate's failed session kept; only
-// left-over files, said as only those (HIST1o); nothing to take; on its way; pressed and every unit kept (HIST1n). At the
+// left-over files, said as only those; nothing to take; on its way; pressed and every unit kept. At the
 // main area's width beside the install's 1546 px window and at 680 px, in both languages and both themes.
 
 const nothing = () => {};
@@ -79,7 +79,7 @@ export const WorkspaceNarrowChinese: Story = { ...WorkspaceChinese, decorators: 
 /** At 680 px, in dark. */
 export const WorkspaceNarrowDark: Story = { ...Workspace, decorators: [dark, narrow] };
 
-/** A workspace's clear whose press the driver answers as every unit kept (HIST1n), as `useHistoryActs` says it. */
+/** A workspace's clear whose press the driver answers as every unit kept, as `useHistoryActs` says it. */
 function KeptAtThePress(props: ComponentProps<typeof ClearAsk>) {
   const { t } = useTranslation();
   return <ClearAsk {...props} onClear={(_units, answered) => answered.refused(clearRefusal(t, WORKSPACE_ALL_KEPT))} />;
@@ -91,7 +91,7 @@ const pressClear: Story['play'] = async ({ canvasElement }) => {
 };
 
 /**
- * Pressed, where every unit it listed changed since the list and was kept (HIST1n): nothing went, so it stays open, saying
+ * Pressed, where every unit it listed changed since the list and is kept: nothing went, so it stays open, saying
  * so and each kept unit by its name and reason, a line each, in the refusal's rail.
  */
 export const WorkspaceKeptAtThePress: Story = { ...Workspace, render: (args) => <KeptAtThePress {...args} />, play: pressClear };
@@ -105,7 +105,7 @@ export const WorkspaceKeptAtThePressNarrowDark: Story = { ...WorkspaceKeptAtTheP
 /** Only what records already gone left, and the intake's room: the press sends no unit. */
 export const LeftOverOnly: Story = { args: { target: WORKSPACE, plan: WORKSPACE_LEFT_OVER, meanIt: 'Clear 5' } };
 
-/** Only left-over files, as the install had them (HIST1o): the opening says only those, never the finished work's words. */
+/** Only left-over files: the opening says only those, never the finished work's words. */
 export const LeftOverFilesOnly: Story = { args: { target: WORKSPACE, plan: WORKSPACE_FILES_ONLY, meanIt: 'Clear' } };
 
 /** The same in 中文, in dark. */

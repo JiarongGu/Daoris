@@ -13,7 +13,7 @@ import { mergeKeyed, readPushed, type SliceSpec } from '../state/slices';
  */
 export const groupsKey = (ids?: readonly string[]) => ['sessions', 'groups', ...(ids ? [...new Set(ids)].sort() : ['*'])] as const;
 
-/** One `SESSION_GROUPS` answer: the rows, and the entries beside them (D167); undefined where the partition held none. */
+/** One `SESSION_GROUPS` answer: the rows, and the entries beside them; undefined where the partition holds none. */
 export type GroupsAnswer = { sessions: SessionGrouping[]; entries: SessionEntry[] | undefined };
 
 /** A row as the slice pushes it: the answer's, with the sort inputs its group is ordered by (`GroupsStateSlice.OrderFields`). */
@@ -53,7 +53,7 @@ const groupPlace = (row: PushedRow) => {
 };
 
 /**
- * The reader's order (`SessionGroups.Ordered`, D126 §2.1): the groups in `GROUP_ORDER`; waiting on you and
+ * The reader's order (`SessionGroups.Ordered`): the groups in `GROUP_ORDER`; waiting on you and
  * resuming later oldest move first; to review and working by repository without case, then when each began; ended and archived
  * newest move first; every tie by the session's id by unit.
  */
@@ -78,7 +78,7 @@ const valuesOf = (partition: unknown): unknown[] =>
 
 /**
  * The entries as the answer holds them, read defensively: absent where the host is older than the entries, and then the list
- * is the records it always was. A malformed entry is left out rather than guessed at.
+ * is the records. A malformed entry is left out rather than guessed at.
  */
 const readEntries = (answer: unknown): SessionEntry[] | undefined => (Array.isArray(answer)
   ? answer.filter((row): row is SessionEntry => Boolean(row)
@@ -106,7 +106,7 @@ function composeGroups(rows: unknown, entries: unknown): GroupsAnswer {
 }
 
 /**
- * The session list's groups as the shell pushes them (D182's PUSH1c3a note): two keyed partitions, `rows` by session and
+ * The session list's groups as the shell pushes them: two keyed partitions, `rows` by session and
  * `entries` by key, a session's move a delta of its row and its entry (`mergeKeyed`; a whole push or `{}` taken as well), composed
  * into `SESSION_GROUPS`' widest answer in the reader's order. Nothing judged, or no rows held yet, composes nothing, which is
  * waited for. `calling` is never pushed here: the `calls` slice's is laid over the rows (`withCall`).
@@ -156,7 +156,7 @@ const entriesOf = (answer: GroupsAnswer) => answer.entries;
 
 /**
  * Each session's group by state, its word and its line's facts, in the order a list shows them; asked for
- * some, those sessions' alone. Shell-only: Sessions is (D47 §4), and no browser has a driver to ask. A list that does
+ * some, those sessions' alone. Shell-only: Sessions is, and no browser has a driver to ask. A list that does
  * not read the groups (the monitor's) asks nothing, since each answer may walk git in every tree to review.
  * Pushed where the shell pushes them (`useGroupsRead`).
  */
@@ -166,7 +166,7 @@ export const useSessionGroups = (ids?: readonly string[], { enabled = true }: { 
 };
 
 /**
- * The session list's entries (D167 point 5): one line of work in one repository, its records its parts, in the
+ * The session list's entries: one line of work in one repository, its records its parts, in the
  * reader's group order. The same answer as `useSessionGroups`, under the same key, so asking both asks once, pushed where it
  * is. Undefined while no answer has come and where the answer carries no entries, and then the list is the records;
  * shell-only.

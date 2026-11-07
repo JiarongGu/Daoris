@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 export const PASS_BOUND_SECONDS = 20;
 
 /**
- * Beside *Accept* while it waits for the pass that lands it (LANDHOLD2b): why it waits, which is the pass and never a tree's hold,
+ * Beside *Accept* while it waits for the pass that lands it: why it waits, which is the pass and never a tree's hold,
  * and for how long before it says the work is accepted and lands when the pass does.
  *
  * @remarks A molecule: the bound arrives as a prop, the driver's by default.

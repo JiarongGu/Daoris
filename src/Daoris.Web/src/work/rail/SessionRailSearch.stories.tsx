@@ -3,7 +3,7 @@ import type { Session } from '../../data/api';
 import { type SessionHit } from '../../bridge/shell';
 import { SearchResults } from './SessionRail';
 
-// What the rail's search found in what was said (RAIL1), read a page of sessions at a time (RAILPAGE1b, UX §4): the foot's count
+// What the rail's search found in what the person said, read a page of sessions at a time: the foot's count
 // line and *Show more*, the page on its way, a page that could not be read, the last page, and a shell before pages. The
 // results are reached by passing them: no driver, no service.
 

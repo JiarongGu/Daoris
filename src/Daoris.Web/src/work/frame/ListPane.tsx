@@ -7,7 +7,7 @@ import { LIST_STRIP, type ListBounds, type ListLayout } from './layout';
 import { LIST_DOOR, useListKeys } from './listKeys';
 
 /**
- * What a view makes from its list's `＋` (D118 §3a): one control, and where the view makes two kinds of
+ * What a view makes from its list's `＋`: one control, and where the view makes two kinds of
  * thing, a menu of both with its primary first.
  */
 export type ListMake = {
@@ -28,7 +28,7 @@ const OPEN_ATTRIBUTE = 'data-list-open';
 const OPENED_ELSEWHERE = `[data-radix-popper-content-wrapper], [role="menu"], [role="dialog"], [${LIST_DOOR}]`;
 
 /**
- * A view's **list pane** (D118 §3a, §5): the header with the list's name, its `＋`, the view's ⋯ and its
+ * A view's **list pane**: the header with the list's name, its `＋`, the view's ⋯ and its
  * close; the list; the edge it is resized by; its 56px strip; and the list laid over the main area.
  *
  * @remarks
@@ -37,10 +37,10 @@ const OPENED_ELSEWHERE = `[data-radix-popper-content-wrapper], [role="menu"], [r
  *
  * - **Open**, it sits beside the main area at its width, resized by `Splitter` within the view's bounds.
  * - **A strip**, it keeps its doors: the open, the `＋`, and the view's marks. A strip the window drew
- *   has an open too, which lays the list over the main area (amending FRAME6, whose window strip offered
- *   none and so left an ended session and the rail's search out of reach below 1024 px).
+ *   has an open too, which lays the list over the main area, so an ended session and the rail's search stay in
+ *   reach below 1024 px.
  * - **Laid over**, the list lies beside its strip, over the main area, and takes the focus where nothing in it
- *   took it first (a group's heading a go brought into view, ENTRY1g). It closes on
+ *   took it first (a group's heading a go brought into view). It closes on
  *   Escape, on a press outside it, from its header, and from the strip's open pressed again; the caller
  *   closes it on a choice. Escape a search inside it answered first is the search's.
  *
@@ -60,7 +60,7 @@ export function ListPane({
   more?: ReactNode;
   /**
    * What heads the list under its header, outside its rows' scroll, so it stays in reach as they scroll: Knowledge's
-   * two-way choice (UX6i, D150 §2.2). Open and laid over; a strip's marks stand for it.
+   * two-way choice. Open and laid over; a strip's marks stand for it.
    */
   head?: ReactNode;
   /** The view's marks on its strip (`StripMark`s), where it has them. */
@@ -68,7 +68,7 @@ export function ListPane({
   /** The list's first load: skeleton rows, and the strip its controls alone. */
   loading?: boolean;
   /**
-   * Its pushed slice read again whole (PUSHUX1, the UI/UX design §3.8): the last rows held at reduced opacity until the snapshot
+   * Its pushed slice read again whole: the last rows held at reduced opacity until the snapshot
    * lands, never a first load's skeleton nor an empty state.
    */
   resyncing?: boolean;
@@ -93,7 +93,7 @@ export function ListPane({
   dismiss.current = onDismiss;
 
   // Laid over, the list takes the focus, so its keys work at once; and a press outside it closes it. Not from something in
-  // it that took the focus first: a group's heading a go brought into view as it was laid over (ENTRY1g), whose effect, a
+  // it that took the focus first: a group's heading a go brought into view as it is laid over, whose effect, a
   // child's, runs before this one.
   useEffect(() => {
     if (!laid) return undefined;
@@ -108,7 +108,7 @@ export function ListPane({
   }, [laid]);
 
   const onOverKey = (event: KeyboardEvent<HTMLDivElement>) => {
-    // An Escape that drops an input method's composition in the list's search leaves the list where it is (IME1).
+    // An Escape that drops an input method's composition in the list's search leaves the list where it is.
     if (isComposing(event) || event.key !== 'Escape' || event.defaultPrevented) return;
     event.preventDefault();
     onDismiss();
@@ -155,7 +155,7 @@ export function ListPane({
     />
   );
 
-  // Named by the list's name, open or a strip (FRAME1d): a landmark a reader, and a test, finds by its name.
+  // Named by the list's name, open or a strip: a landmark a reader, and a test, finds by its name.
   if (layout.mode === 'open') {
     return (
       <aside ref={aside} aria-label={name} data-region="list" data-list-mode="open" className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.beside }}>
@@ -189,7 +189,7 @@ export function ListPane({
       {strip && !loading && <div className="min-h-0 flex-1 overflow-y-auto" onKeyDown={keys}>{strip}</div>}
 
       {laid && (
-        // Beside the strip and over the main area, above a full side bar (D118 §3d).
+        // Beside the strip and over the main area, above a full side bar.
         <div
           ref={over}
           role="region"
@@ -213,8 +213,7 @@ export function ListPane({
 }
 
 /**
- * An empty list's acts: the `＋`'s, or where it makes two kinds, each by its own name with its primary first (PLUGUI1b,
- * D119 §3.1), since a menu behind one button is a door too many on a list with nothing in it.
+ * An empty list's acts: the `＋`'s, or where it makes two kinds, each by its own name with its primary first, since a menu behind one button is a door too many on a list with nothing in it.
  */
 function EmptyActs({ make }: { make: ListMake }) {
   if (!make.kinds || make.kinds.length < 2) {
@@ -230,7 +229,7 @@ function EmptyActs({ make }: { make: ListMake }) {
 /**
  * A group of a list's rows under its name and count, as the session rail draws a repository's (`RepositoryGroup`) and
  * the Plugins view a state's. Its rows are `<li>`s, each a row of its list (`data-list-row`). A group a door may bring into
- * view (ENTRY1b) has its heading's `id` (`groupHeading`), and the heading takes the focus there, out of the Tab order.
+ * view has its heading's `id` (`groupHeading`), and the heading takes the focus there, out of the Tab order.
  */
 export function ListGroup({ title, id, children }: { title: string; id?: string; children: ReactNode }) {
   return (
@@ -243,18 +242,18 @@ export function ListGroup({ title, id, children }: { title: string; id?: string;
   );
 }
 
-/** The id of a list's group heading, the one a door brings into view (ENTRY1b): the view's, then the group's own name. */
+/** The id of a list's group heading, the one a door brings into view: the view's, then the group's own name. */
 export const groupHeading = (view: string, group: string) => `${view}-group-${group}`;
 
 /**
- * A group a door names, brought into view once its list has answered (ENTRY1b, D161's ENTRY1 note): its heading scrolled to
- * the list's top and focused, then the door told, so the next visit opens as the list was left.
+ * A group a door names, brought into view once its list has answered: its heading scrolled to
+ * the list's top and focused, then the door told, so the next visit opens as the list is left.
  *
  * @remarks
  * **An event, let go once the list has answered**, as Settings' anchor and an agent's part are told once brought. A list
  * that draws no such group then (nothing waits in it, a receiver's filter hides it, no reader places it) tells the door
  * all the same: a group that appeared later would take the focus from wherever the person had gone since. What hid a
- * group the list holds is undone for the go (ENTRY1g): its strip laid over by the frame, Sessions shown by state, the
+ * group the list holds is undone for the go: its strip laid over by the frame, Sessions shown by state, the
  * rail's search cleared.
  */
 export function useBringGroup(heading: string | null, answered: boolean, onBrought?: () => void) {
@@ -271,7 +270,7 @@ export function useBringGroup(heading: string | null, answered: boolean, onBroug
 
 /**
  * A row's door: the whole row chooses it, wearing the list's selection as the rail's rows do, and a closed record
- * read as finished, dimmed (FRAME1d). `aria-current`, as the rail's: the row is a button, not a listbox option.
+ * read as finished, dimmed. `aria-current`, as the rail's: the row is a button, not a listbox option.
  */
 export function ListRowDoor({ chosen, dimmed = false, onPress, children }: {
   chosen: boolean;
@@ -298,7 +297,7 @@ export function ListRowDoor({ chosen, dimmed = false, onPress, children }: {
 
 /**
  * One of the ⋯'s items: an act, or a toggle where it says whether it is on (a filter: *Include closed*). `rule` draws a
- * rule above it, setting an act apart from the filters before it (Sessions' *Archive what ended…*, D126 §4.1).
+ * rule above it, setting an act apart from the filters before it (Sessions' *Archive what ended…*).
  */
 export type MoreItem = { id: string; label: string; checked?: boolean; rule?: boolean };
 
@@ -311,13 +310,13 @@ export type MoreChoice = {
 };
 
 /**
- * The list's own **⋯** (D118 §3a): its filters and its menu, in its header before its close. An arrow is a direction,
- * never a menu, so a region's own menu is "⋯", as VS Code's *Views and More Actions* is (platform language §4).
+ * The list's own **⋯**: its filters and its menu, in its header before its close. An arrow is a direction,
+ * never a menu, so a region's own menu is "⋯", as VS Code's *Views and More Actions* is.
  *
  * @remarks
- * **A filter is a ticked item** (FRAME1d): one value among several is a group named for what it filters, its chosen
+ * **A filter is a ticked item**: one value among several is a group named for what it filters, its chosen
  * value ticked, and a toggle is ticked while it is on. The view keeps the values (`listPanes.ts`); the menu only says
- * them and tells it what was chosen.
+ * them and tells it what is chosen.
  */
 export function ListMore({ label, items = [], choice, onChoose }: {
   /** Its name and its tip. */

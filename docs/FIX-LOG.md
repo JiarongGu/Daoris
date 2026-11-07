@@ -5,6 +5,17 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## 2026-11-08 - The review graph's equality test failed on the kept branch listing (SCOPEVERIFY1)
+
+- **Symptom:** twelve of `ReviewGraphTodayTests`' twenty cases failed on main: "today's chain ran `git for-each-ref --sort=-committerdate ...`,
+  which the graph neither ran nor answered".
+- **Root cause:** 7ac609371e kept the content proof's listing of branches by date for as long as the repository's counted refs stand
+  (`BranchesByDate`). The test reads the chain first and the graph second, in one repository, so the graph was answered from what the chain
+  kept and started no listing: the two read alike in what they answer, and differed only in which commands ran, because the second read
+  of a repository no longer asks git where nothing moved. Both reads already go through `BranchesByDate`.
+- **Fix:** the test's `SameAsync` calls `BranchesByDate.Forget()` before each read, so both start cold.
+- **Verify:** the class whole, twice, under the git settings.
+
 ## 2026-11-08 - A session branch its tree moved off was never tidied (CI 12, SCOPEVERIFY1)
 
 - **Symptom:** CI run 12's git half on bb912f3537: `TidyEffectGitTests.A_removed_branchs_live_tree_is_followed_to_its_next_branch`

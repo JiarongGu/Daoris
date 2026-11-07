@@ -10,7 +10,7 @@ import { EDIT_EVENT } from '../../menus/editing';
 import { RELEASE_GRAPH as SHIPPED_RELEASE } from '../graphFixtures';
 import { LIST, PALETTE, REFUSED_GRAPH } from './editFixtures';
 
-// WORKFLOWEDIT1b, FLOWCHART2b (D223 §3, §7 row b, §8): the editor composes a workflow on its chart, through a stubbed bridge. The release
+// The editor composes a workflow on its chart, through a stubbed bridge. The release
 // workflow is composed from the Merge workflow by keyboard alone and by pointer, both data wires included: a step put between two, a way back
 // on changes the person never names a kind for, a decision's outcome given a new step, and what each step carries. Pick mode never focuses a
 // step that cannot take the way; a port dragged to a step routes it; removing joins only a plain chain; and every change is undone and redone
@@ -395,7 +395,7 @@ describe('removing, moving, and every change undone', () => {
   });
 });
 
-// FLOWCHART2d's half (D223 §4, §8.3): Ask Daoris is told the draft open in the editor, as the editor registers it while it is mounted.
+// Ask Daoris is told the draft open in the editor, as the editor registers it while it is mounted.
 describe('the draft Ask Daoris is told', () => {
   it('follows the draft, its place, source, save target and selected step, and is let go when the editor closes', async () => {
     const { unmount } = render(wrap(<Editor />));
@@ -435,7 +435,7 @@ describe('the judgement, the inspector beside the chart, and the languages', () 
     await screen.findByText('These steps hold, and can be saved.');
   });
 
-  // SETUPUX1r (D221 §2.3): the inspector's options in the page's words, a method's tail, and a pattern's preview.
+  // The inspector's options in the page's words, a method's tail, and a pattern's preview.
   it("words a landing's options, brings an integrate's tail in one change, previews a pattern and keeps the option names under Details", async () => {
     render(wrap(<Editor />));
     await user.click(await screen.findByRole('button', { name: 'Begin from Merge workflow' }));

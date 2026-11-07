@@ -7,17 +7,17 @@ import type { InstructionAccount } from './conversation';
 import { type HandedLine, type HandedRow, handedView } from './handed';
 
 /**
- * What a driven session was handed, section by section (CONTEXT1, D143 point 1): the account the driver kept beside the
+ * What a driven session is handed, section by section: the account the driver kept beside the
  * instruction it composed, under that instruction on the session's page. Not the words again, which the instruction above
- * holds: each section's size, where it came from, and what its bound left out and why; then what was handed beside it (the
- * permission rules) and what could have been handed and was not.
+ * holds: each section's size, where it came from, and what its bound left out and why; then what is handed beside it (the
+ * permission rules) and what could have been handed and is not.
  *
  * @remarks
  * - **Folded to one line**: the instruction's size, its sections and how many had a part left out. A press opens the table.
- * - **Worded from codes, in the reader's language** (LANG1a's rule): a code this page does not know, or a value its entry
+ * - **Worded from codes, in the reader's language**: a code this page does not know, or a value its entry
  *   needs that the record lacks, shows the driver's own English, marked *shown as recorded*.
- * - **A target handed before the account was kept says so** (D143 point 3), rather than showing nothing.
- * - **No measure of its own** (D141): the table takes the card's width, and its last column wraps.
+ * - **A target handed with no account kept says so**, rather than showing nothing.
+ * - **No measure of its own**: the table takes the card's width, and its last column wraps.
  *
  * A molecule: handed the account, it reads the catalogue and nothing else.
  */
@@ -28,7 +28,7 @@ export function HandedAccount({ account, defaultOpen = false, ruled = true }: {
   defaultOpen?: boolean;
   /**
    * The rule above it, which sets it apart at the foot of the target's card; a trace's step draws it under its own line
-   * instead (TRACE1b), where a rule would read as the step's end.
+   * instead, where a rule would read as the step's end.
    */
   ruled?: boolean;
 }) {
@@ -138,7 +138,7 @@ function Row({ row }: { row: HandedRow }) {
   );
 }
 
-/** The driver's own English where the page could not word a code, marked as the note's are (D142 points 4, 5). */
+/** The driver's own English where the page could not word a code, marked as the note's are. */
 function Said({ line }: { line: HandedLine }) {
   const { t } = useTranslation();
   return (

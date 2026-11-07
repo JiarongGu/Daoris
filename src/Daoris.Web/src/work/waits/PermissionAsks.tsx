@@ -9,17 +9,16 @@ import { useNow } from '../useNow';
 import { InConversation, SOUGHT } from './WaitAnchor';
 
 /**
- * One option an agent offered on a permission request it holds for the person (AUTONOMY1b3a, D184 point 3), as `PERMISSION_WAITS`
+ * One option an agent offered on a permission request it holds for the person, as `PERMISSION_WAITS`
  * answers it: the `optionId` the answer names, the agent's own label, and the protocol's kind. Only what the person may choose is
- * listed: this call's allow and a rejection, never a standing allow, which is a rule's (D74).
+ * listed: this call's allow and a rejection, never a standing allow, which is a rule's.
  */
 export type PermissionChoice = { id: string; name: string; kind: string };
 
 /**
- * A tool's permission request a driven session holds for the person under its repository's asking permission prompts (AUTONOMY1b3a,
- * D184 point 3), as `PERMISSION_WAITS` answers it: the session, the request's id on the agent's wire, the call it asks for and its
- * title and kind as the agent wrote them (null where it gave none), what the person may choose, when it was held, and when the
- * driver's bound releases it (PERMUNTIL1; null from a host that does not say).
+ * A tool's permission request a driven session holds for the person under its repository's asking permission prompts, as `PERMISSION_WAITS` answers it: the session, the request's id on the agent's wire, the call it asks for and its
+ * title and kind as the agent wrote them (null where it gave none), what the person may choose, when it is held, and when the
+ * driver's bound releases it (null from a host that does not say).
  */
 export type PermissionWait = {
   session: string;
@@ -35,11 +34,11 @@ export type PermissionWait = {
 /** The person's answer as the driver took it (`SESSION_PERMISSION_ANSWER`): whether it stands, and where not, its code and sentence. */
 export type PermissionAnswered = { answered: boolean; why: string | null; message: string };
 
-/** The person's answer to one held permission: the option they pressed, by the agent's id, and how the answer ended (UXFIX2). */
+/** The person's answer to one held permission: the option they pressed, by the agent's id, and how the answer ended. */
 export type PermissionAnswer = (wait: PermissionWait, option: string, answered: Answered) => void;
 
 /**
- * What the frame hands the head and the foot's strip for a session's held permissions (AUTONOMY1b3c, D168 point 3): every request
+ * What the frame hands the head and the foot's strip for a session's held permissions: every request
  * the shell read, of which the session's own are drawn, the answer's one door and its pending. Absent where nothing reads them (a
  * browser, a teammate's record).
  */
@@ -52,8 +51,8 @@ export type PermissionWaits = {
 
 /**
  * How long a held request waits before the driver refuses it, in whole minutes, from what `PERMISSION_WAITS` answered for it: its
- * `until` less its `since` (PERMUNTIL1), so the page keeps no copy of the driver's bound. Null where either is not a moment, or they
- * say no wait: a host that does not say, whose card says how long it waited and no bound.
+ * `until` less its `since`, so the page keeps no copy of the driver's bound. Null where either is not a moment, or they
+ * say no wait: a host that does not say, whose card says how long it waits and no bound.
  */
 export const boundMinutes = (wait: Pick<PermissionWait, 'since' | 'until'>): number | null => {
   const span = wait.until ? Date.parse(wait.until) - Date.parse(wait.since) : Number.NaN;
@@ -74,7 +73,7 @@ const CHOICE_WORDS: Readonly<Record<string, string>> = {
 export const choiceLabel = (t: TFunction, choice: PermissionChoice) =>
   (CHOICE_WORDS[choice.kind] ? t(CHOICE_WORDS[choice.kind]!) : choice.name);
 
-/** The codes an answer is refused by (AUTONOMY1b3a's `HeldPermissions.Answer`), each said in the catalogue's words. */
+/** The codes an answer is refused by (the driver's `HeldPermissions.Answer`), each said in the catalogue's words. */
 const REFUSALS = new Set(['unheld', 'unoffered', 'standing']);
 
 /** An answer's refusal in the catalogue's words, by its code; a code a later driver adds is said in the driver's own sentence. */
@@ -82,19 +81,19 @@ export const permissionSaid = (t: TFunction, why: string | null, message: string
   (why && REFUSALS.has(why) ? t(`work.wait.permission.refused.${why}`) : message || why || '');
 
 /**
- * **A tool call its session holds for the person's answer** (AUTONOMY1b3c; D184 point 3 and its AUTONOMY1b3a note): under a
+ * **A tool call its session holds for the person's answer**: under a
  * repository's asking permission prompts, a call its rules do not allow by themselves waits here, as the console asks its person,
  * with the call as the agent named it (content, shown as written), its kind, how long it has waited and the bound at which the
  * driver refuses it, as the driver answered it (`boundMinutes`), and one press per choice the agent offered, named for what it does: *Allow once* lets this call alone run,
- * and a refusal refuses it. Never an allow the agent did not offer, and never a standing one, which is a rule's to give (D74).
+ * and a refusal refuses it. Never an allow the agent did not offer, and never a standing one, which is a rule's to give.
  *
  * @remarks
- * **One press, no ask under it** (D52's in-flow cards): the allow widens nothing standing, only this call, as the console's yes
- * does; what widens the rules is a proposal, whose *Allow…* asks once. Nothing learns from the answer (D37).
+ * **One press, no ask under it**: the allow widens nothing standing, only this call, as the console's yes
+ * does; what widens the rules is a proposal, whose *Allow…* asks once. Nothing learns from the answer.
  *
- * **Props only** (components §2): the frame holds the answer and its pending, and hands the head and the strip the same. Without
+ * **Props only**: the frame holds the answer and its pending, and hands the head and the strip the same. Without
  * `onAnswer` no press is drawn: a browser or a teammate's record still says what waits. Each waits in place, and a refusal of the
- * answer is said beside it (UXFIX2b3b).
+ * answer is said beside it.
  */
 export function PermissionAsks({ waits, onAnswer, busy = false, lead, inConversation, marked }: {
   waits: readonly PermissionWait[];
@@ -102,7 +101,7 @@ export function PermissionAsks({ waits, onAnswer, busy = false, lead, inConversa
   busy?: boolean;
   /** The line above the list, where it stands: absent, none. */
   lead?: string;
-  /** The way to each held call in the conversation, by its request's id, where the conversation found it (PERMANCHOR1). */
+  /** The way to each held call in the conversation, by its request's id, where the conversation finds it. */
   inConversation?: Readonly<Record<string, () => void>>;
   /** The request a press led to, outlined, by its id. */
   marked?: string;
@@ -165,7 +164,7 @@ function PermissionAsk({ wait, onAnswer, busy, onConversation, marked }: {
       className={cn('grid gap-1 rounded-control border border-line bg-raised px-3 py-2', marked ? SOUGHT : 'outline-none')}
     >
       {/* The call as the agent named it (content, shown as written); its kind where it named one. *In the conversation* leads to
-          the call itself, where what it asks is read in context (PERMANCHOR1). */}
+          the call itself, where what it asks is read in context. */}
       <p className="m-0 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span className="min-w-0 break-words text-body font-semibold">
           {wait.title ? <CodeText text={wait.title} /> : <Inline text={untitled} />}
@@ -193,7 +192,7 @@ function PermissionAsk({ wait, onAnswer, busy, onConversation, marked }: {
               {choiceLabel(t, choice)}
             </Button>
           ))}
-          {/* Drawn from the first, so it is a live region before it speaks (UXFIX2c). */}
+          {/* Drawn from the first, so it is a live region before it speaks. */}
           <span role="status" aria-live="polite" className={pending ? 'self-center text-small text-ink-faint' : 'sr-only'}>
             {pending ? t('work.confirm.pending') : null}
           </span>

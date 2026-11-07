@@ -1,4 +1,4 @@
-// Two shipped workflows' graphs, for the drawing's stories (SETUPUX1n). Each equals its file in the driver's `Defaults/workflows`, which
+// Two shipped workflows' graphs, for the drawing's stories. Each equals its file in the driver's `Defaults/workflows`, which
 // `graphFlow.test.ts` asserts, so a changed default fails there and these are changed with it.
 
 /** `release.json`: the work, its holds, the checks, your review, the landing and the line, then a pending release found, recorded and copied. */
@@ -52,7 +52,7 @@ export const RELEASE_GRAPH = {
 };
 
 /**
- * A decision whose two outcomes reach one step (FLOWCHART2a; the flowchart design's §8.9): each leaves its own port and stays a way of
+ * A decision whose two outcomes reach one step: each leaves its own port and stays a way of
  * its own, and the third goes nowhere. Not shipped; it stands beside the shipped graphs for the drawing's proof.
  */
 export const TWO_OUTCOMES_GRAPH = {

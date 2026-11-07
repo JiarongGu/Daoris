@@ -2784,3 +2784,175 @@ The cited `tools/index-hook.mjs:84–88` explains why this repository’s index 
 **Smallest change:** Separate output handling from dependency validity. Record install-written paths needed by that install even when another rule controls their kind. Clearing such an output must invalidate the retained install, causing its producer to run before handoff in an unworked tree. Keep the owner’s requirement that outputs are cleared at every take. Prove this with a lifecycle-generated, separately classified output and a same-key take.
 
 I found nothing further blocking in the specified set-aside lifetime, worked-tree preservation, copy hash gates, secret-value identity, group invalidation, or F5’s cleanup before handoff. I found no additional case of a session receiving another line’s files within this narrow scope.
+
+
+## Opus (independent), round 12
+
+The independent Opus 5.5 reader's last confirming read of rows 3 and 4, at main `557594b07a` (round 12 is `c491406c01`): §29.7,
+floor 4, R5.6's and §10's round-11 notes against §32.1, with the code they cite. Main has since changed only the chat start's limit
+carry: `Loop/Chat/ChatStarts.cs`'s first turn is now `:328-333`, `ChatLimitCarry.RunAsync` beside it, after the conversation's step.
+I built and ran nothing and changed no file but this one; D214's notes of 2026-11-07 and 2026-11-08 bound the read. *R12-Fn* is my
+round-11 finding n, *Fn* this read's; a bare path is under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and `Design` is
+`docs/2026-10-26-tree-pool-design.md`.
+
+**Verdict: 4 findings, 2 blocking, each where the `unworked` mark outlives the hand-off it stands for.**
+- **Row 3: another round, narrowly, on F2**: a terminal opened during the files stage takes the mark, and the stage still writes back.
+- **Row 4: another round, narrowly, on F1**, and F2 through row 3: a go-on back by a return keeps the mark under its agent.
+
+### 1. My round 11, answered?
+
+| Finding | Round 12 |
+|---|---|
+| R12-F1 a conversation's open | **Yes for the open**, the limit carry after its step; not a go-on by a return (F1) |
+| R12-F2 an absent mark | **Yes**: positive, no record or an unreadable one worked; a running stage misses its removal (F2) |
+| R12-F3 a cut-off install's change | **Yes**, step 1 first; F4 where it meets row i |
+| R12-F4 a group's member alone | **Yes**, in both kinds of tree |
+| R12-F5 `toolchain` in a worked tree | **Yes**, as reads; my narrowing rightly refused |
+| R12-F6 a take's set-aside | **Yes**, read from the record (`Workplace/TreeSetAside.cs:17-32`) |
+| R11-F2's proof wording | **Yes** in §28.9; §17.0's row 4 still reads *made again*, which a hook's output also meets |
+| Codex's C | **Yes** where the stage runs its hook; F3 for a carry-on |
+
+### 2. Findings
+
+1. **Blocking (row 4). A go-on back by a return keeps `unworked` while its agent works.**
+   - **Where:** words going on come back to "its last slot where free, switched back to its branch, where its conversation is"
+     (Design:1186); a return marks the slot once its check passes (Design:1362-1363); a go-on "removes nothing" (Design:3441-3442),
+     resuming at `Course/Chat/GoingOnRun.cs:225`. The open's step it follows came before the return marked the slot again.
+   - **What goes wrong:** conversation C is not spoken to for an hour; line B takes its slot and finishes. The person writes to C: the
+     return switches the slot back and marks it, the stage installs, C resumes by its kept id, the mark standing. C edits the lockfile,
+     uncommitted, and reaches its limit; the new part's stage reads `unworked`, and step 1 writes C's edit back and removes C's new files.
+   - **Smallest change:** a go-on into a tree holding `unworked` removes it in its own step before its resumed turn, a failed removal
+     holding its words. Proof: that sequence, the edit as it was.
+
+2. **Blocking (row 3). A terminal opened during the files stage takes the mark, and the running install still writes back.**
+   - **Where:** the shell removes `unworked` as it writes a visit row (Design:3440-3441), refused only while a claim that moves the slot
+     is in flight (Design:1486), so not during the stage, after the claim and outside the hold (Design:3482-3483). The Terminal tab
+     opens in the attended session's tree (`src/Daoris.Web/src/work/WorkFrame.tsx:279`), which the record names before the stage. The
+     stage reads the mark once (Design:3446-3448); an install's after-read writes back each tracked change, removes each unignored path
+     and makes each unnamed ignored one its companion (Design:578-585).
+   - **What goes wrong:** during a fresh tree's install (72 to 93 s) the person presses Terminal, edits `src/app.ts` and writes
+     `notes.md` and `.env.local`. All three count as the install's: the edit written back, `notes.md` removed, `.env.local` the
+     dependency's, kept with it into the next line at a take.
+   - **Smallest change:** the files record written under one lock, lest two writers put the mark back, the stage reading the mark
+     under it before each after-read, write-back, hook and copy; once a visit has taken it the stage stops, said, writing nothing back
+     and listing nothing, the folder left with no record. Proof: a terminal's edit and new file during an install, as they were at
+     `hand`.
+
+3. **Not blocking (row 3; row 4's C proof). A carry-on into a still-unworked tree runs no hook.**
+   - **Where:** step 4 runs it "where this start switched the tree or made it" (Design:3463); a cut-off start's carry-on installs in a
+     tree it did neither to (Design:3479-3480).
+   - **What goes wrong:** a take clears `generated/client/` and the desktop restarts before step 4. The carry-on runs no hook; if the
+     other-writes read goes with it, C's incomplete install is handed, and if not, only the hook's output is lost.
+   - **Smallest change:** the record holds the hook owed from the making or switch until it runs, step 1's write-back owing it again;
+     the other-writes read runs at every unworked stage.
+
+4. **Not blocking (row i, not 3 or 4). A lay-back meets step 1.** Row i lays kept work back as phases of the return (Design:1436-1438),
+   after a check allowing no tracked change (Design:1385-1388), so after the mark, and step 1 writes it back (Design:3448-3450). A return
+   that lays work back writes no `unworked`, or lays it back after the stage: a sentence in §5.5 for the owner's yes.
+
+### 3. Where I found nothing
+
+- A fresh tree and a remake mark at their end; a slot whose start was cut off before `hand` holds a true mark, no agent having run.
+- A take across differing ignore rules fails the check (Design:1386-1388), so step 1's *only Daoris's* holds after one.
+- A conversation's replacement after a refused set-at-open opens in a tree its first part's step left worked.
+- C here: nothing sets `DAORIS_INDEX_HOOK`, a branch's checkout passes the hook (`tools/index-hook.mjs:27`, `:34`), and it writes
+  `docs/index/` again, so the root stays kept.
+
+Nothing I found loses committed work. F1 and F2 lose a line's uncommitted work through Daoris's own write-back; F3 costs a hook's
+output; F4 is row i's sentence. None reopens an owner's choice.
+
+
+## Codex, round 12
+
+Codex's confirming read of rows 3 and 4 as round 12 left them, at `f22f391b94`, run by the steward from outside the install, read-only, without seeing the independent Opus reader's; verbatim but for its headings set down.
+
+**Rows 3 and 4: another round, narrowly.** One remaining blocking case can place the wrong install in a worked tree. Read at `f22f391b94`; no files changed, no `local/` folder read, and no builds or tests run.
+
+**My round-11 companion case is answered.** R5.6’s revised note, §29.7 step 4 and §32.1 C record install-written paths classified by another rule as “other writes.” After the hook, an absent other write invalidates the retained placement and repeats its install in the unworked tree. That closes the earlier lifecycle-generated client sequence while preserving output clearing.
+
+1. **Blocking — a worked-tree hit can use a preceding dependency’s expected key despite that dependency’s changed files.**
+
+   **Where:** §29.7’s worked-tree paragraph, particularly lines 3476–3478; R5.6’s round-11 group bullet, whose last sentence retains preceding dependency keys for installs that read earlier folders without changing them.
+
+   **Concrete sequence:**
+
+   - Dependency A installs headers. Dependency B’s install reads A’s headers and compiles files entirely inside B’s namespace. B changes nothing in A, so they form no group. B seals successfully; its key includes A’s key.
+   - A session changes A’s ignored headers, then removes B’s folder to rebuild against them. Tracked key inputs remain unchanged.
+   - The session resumes. A’s placement record fails, so the worked-tree stage correctly leaves A’s changed files alone.
+   - B’s folder is absent, its tracked inputs have no working change, and no group names it. Its calculated key still contains A’s original **expected key**, which has not changed with the ignored header edit.
+   - The stage places sealed B, compiled against A’s original headers, beside the session’s changed A. It supplies the wrong install before the session can rebuild B.
+
+   The cited code confirms that standing trees preserve this working state: `Workplace/TreeReturns.cs:59–65` accepts the standing tree, and `Loop/Run/Tree/GrowTree.cs:58–63` selects it for resume or carry-on. §32.1 F4 prevents independent placement of a **group member**, but this read-only dependency relationship creates no group.
+
+   **Smallest change:** Extend the worked-tree hit condition to the preceding dependency state represented in the key. Before placing B, require those dependencies’ actual placements or groups to validate at their current keys, including their recorded companions and other writes. If one is changed, absent or unrecorded, leave B absent and report `started.deps-left`. Add this sequence to row 3’s proof; row 4 inherits it through worked-slot resumes.
+
+I found no further work-loss case in the positive `unworked` mark, its removal before run/conversation/terminal access, or the treatment of missing and unreadable files records. The early write-back now covers a cut-off install even when its retry is held. I found nothing further in the keyed environment values, `toolchain` read allowance, failed-install mark cleanup, or §10’s record-based protection of a returning line’s set-aside files, including a no-output line.
+
+I found no committed-work loss or additional case of a session receiving another line’s files within the specified scope.
+
+
+## Opus (independent), round 13
+
+The independent Opus 5.5 reader's final confirming read of rows 3 and 4, at main `540de34a85` (round 13 is `d8652720eb`): only the
+passages §33.2 names, against §33.1, with the code they cite. I built and ran nothing and changed no file but this one; D214's and
+D233's notes bound the read. *R13-Fn* is my round-12 finding n; a bare path is under `src/Daoris.Desktop/Daoris.Desktop.Driver/`, and
+`Design` is `docs/2026-10-26-tree-pool-design.md`.
+
+**Verdict: rows 3 and 4 ready to build.** Nothing I found loses committed work, writes a line's work back, or places a wrong install.
+Two findings, neither blocking.
+
+### 1. My round 12, answered?
+
+| Finding | Round 13 |
+|---|---|
+| R13-F1 a go-on back by a return | **Yes**: its own removal after the place (`Course/Chat/GoingOnRun.cs:221`) and before the resumed turn (`:225`), a failed one holding its words. Read from the mark, so it also covers a slot a landing's return left marked and free (Design:1207) |
+| R13-F2 a terminal during the stage | **Yes** for every write of Daoris's: one lock over the whole record, the shell's removal one writer under it, the mark read again before each write; once a visit has it, nothing is written back or listed |
+| R13-F3 the hook on a carry-on | **Yes**, owed in the record until it runs |
+| R13-F4 row i's lay-back | **Yes**, no mark written |
+| Codex's C | **Yes**: a hit only beside earlier dependencies kept or placed by the stage, so the earlier keys it holds say what stands |
+
+### 2. Findings
+
+1. **Not blocking (row 3). An install or hook already running when a visit takes the mark runs on beside the person.**
+   - **Where:** the lock is never held "while an install or the hook runs" (Design:3515), and a visit stops the stage at its next
+     write (Design:3516-3519); the command itself runs on, though floor 4 runs one "only in an unworked tree" (Design:3602).
+   - **What goes wrong:** the person opens Terminal during a fresh tree's install and edits `package-lock.json`; an `npm install`
+     finishing after it writes the file over the edit. Daoris wrote nothing back, but its command overwrote the line's work. It needs
+     the edit and the command's own write to meet on one path within the command's remaining run.
+   - **Smallest change:** the visit that takes the mark ends the running install's or hook's process tree, its folder left as the
+     stop leaves it, said: a build is lost, never an edit. Proof: a terminal's lockfile edit during an install that rewrites it, as it
+     was at `hand`.
+
+2. **Not blocking (row 4's proof). Step 4's `git hook run` names no arguments.** This repository's `post-checkout` exits unless its
+   third argument is `1` and `HEAD` is a branch (`tools/index-hook.mjs:27`, `:34`). Run bare, it writes no `docs/index/`, so the root's
+   other write is absent after every take and its install runs again; row 4's *this repository's root kept* would meet it. Say
+   `-- <the old HEAD, or the null id for a fresh tree> <HEAD> 1`.
+
+### 3. Where I found nothing
+
+- The one lock: the `installing` mark taken away after a visit cannot put `unworked` back.
+- A placement or copy into an absent target in a worked tree, where a terminal may stand open, stays create-only as today's are
+  (`Workplace/TreeLocalInputs.cs:180`; `Workplace/TreeDependencies.cs:186`), so a target the person made after the check is left.
+- A worked tree's hit beside an earlier dependency kept with a working change to its key input: that dependency is at its record.
+- Today's open runs `post-checkout` inside `worktree add` (`Workplace/TreeOpening.cs:133`); step 4's *made with hooks held* is row 3's
+  change there.
+
+None of it reopens an owner's choice.
+
+
+## Codex, round 13
+
+Codex's final confirming read of rows 3 and 4, at `540de34a85`, run by the steward from outside the install, read-only; verbatim but for its headings set down.
+
+**Rows 3 and 4: ready to build.** No remaining findings, blocking or otherwise, in the specified passages against §33.1. Read at `540de34a85`, including the cited code.
+
+**My round-12 blocking case is answered.** §29.7’s worked-tree paragraph and R5.6’s group bullet now require every preceding dependency to have been kept or placed by this stage before a store hit is placed. In the earlier sequence—A’s headers edited, B removed, then resume—A fails validation, so B stays absent and the reason is reported. Its expected key no longer stands in for A’s actual files.
+
+I found nothing further in:
+
+- **§29.7’s files-record paragraph:** the go-on removes a return’s mark before its resumed turn; failed removal preserves the waiting words. The cited resume code supports that hand-off location.
+- **The paragraph after step 6 and floor 4’s R13-F2 sentence:** serialized record writes prevent mark resurrection. Rechecking the mark before subsequent writes stops the stage from restoring, deleting or recording the terminal user’s work after a visit takes it.
+- **§29.7 step 4:** persisted hook debt survives an interrupted start, and other writes are checked at every unworked stage.
+- **§5.5 step 5’s R13-F4 sentence:** a return laying back uncommitted work writes no `unworked`, so the files stage cannot reset that restored work.
+
+No file changed, no `local/` folder read, and no builds or tests run.

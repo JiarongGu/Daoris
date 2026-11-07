@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import i18n from '../../locales/i18n';
 import { RelatedSessions, type RelatedRow } from './RelatedSessions';
 
-// LINESTOGETHER1c: the sessions beside one, named by the file they change, each a door to its head.
+// The sessions beside one, named by the file they change, each a door to its head.
 
 const row = (over: Partial<RelatedRow> & { id: string }): RelatedRow => ({
   kind: 'driven', quest: null, read: 'read', readAt: null, declaredOverlap: [], changedOverlap: [], ...over,

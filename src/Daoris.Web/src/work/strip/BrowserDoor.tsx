@@ -4,21 +4,21 @@ import { Button, Icon, Menu, Tip } from '../../design/ui';
 import type { BrowserDriver } from './browserDrivers';
 
 /**
- * Daoris's browser's door on the app strip (BRW7), and who is driving it (BRW8): one press from every
- * view, where View → *Browser* and the palette were the only ways in, and, beside it, whose hands are on
+ * Daoris's browser's door on the app strip, and who is driving it: one press from every
+ * view, besides View → *Browser* and the palette, and, beside it, whose hands are on
  * the page before the person types into it.
  *
  * @remarks
- * **On the strip, not the activity bar.** The bar is the one navigation (D66), a place per icon: every
+ * **On the strip, not the activity bar.** The bar is the one navigation, a place per icon: every
  * item there changes what this window's centre shows and wears the current-place mark, and its foot
  * holds actions on this window. The browser is neither — it is another window, and opening it changes
  * no place. The strip is where the application's acts are, the View menu that already opens the
  * browser among them, and its right end holds what changes the work's surroundings rather than the
  * view: the region toggles, beside which this sits.
  *
- * **Who is driving is said here, in Daoris** (BRW8): neither the engine's window nor Edge's is Daoris's
+ * **Who is driving is said here, in Daoris**: neither the engine's window nor Edge's is Daoris's
  * to draw in, and an agent's current tab is the first page it found, not the one in front. So the strip
- * names the session in words — never a mark alone (D41 §6) — and is a door to it: one session is a
+ * names the session in words — never a mark alone — and is a door to it: one session is a
  * chip that opens it, two or more a count whose menu lists each. Nothing is said while nobody drives.
  *
  * **A molecule**: the presses go out, and the shell opens whichever browser the machine uses, on its

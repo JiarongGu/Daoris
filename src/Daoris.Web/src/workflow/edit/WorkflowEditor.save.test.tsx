@@ -9,7 +9,7 @@ import { MERGE_GRAPH } from '../graphFixtures';
 import type { WorkflowSaveAnswer, WorkflowUseAnswer } from './answers';
 import { APPEND, HOLDS, LIST, PALETTE, REFUSED } from './editFixtures';
 
-// SETUPUX1s (D221 §2.3; the Setup design's §5 row s): the editor's save and choice. *Review and save* waits for this draft's holding
+// The editor's save and choice. *Review and save* waits for this draft's holding
 // judgement and says the changed steps and every place an append reaches; an append's consent is bound to exactly the places the driver
 // named and resets when that set changes; a new workflow is saved by its name alone; *Use here* is offered only on a draft that is the
 // version it is saved as, and reads the plan of the choice where the driver announces one.
@@ -250,7 +250,7 @@ describe('Use here', () => {
     render(wrap(<Editor startFrom={{ graph: told, id: 'docs-release', name: 'Docs release', base: 2, told: true }} />));
     await screen.findByRole('list', { name: 'How the steps go on' });
 
-    // The version the draft was made from is asked for, and until it is read the draft is not that version.
+    // The version the draft is made from is asked for, and until it is read the draft is not that version.
     await waitFor(() => expect(asked('WORKFLOW_SHOW')[0]).toMatchObject({ id: 'docs-release', version: 2 }));
     expect(screen.queryByRole('button', { name: 'Use here' })).toBeNull();
     answer();

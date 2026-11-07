@@ -1,7 +1,7 @@
 namespace Daoris.Knowledge;
 
 /// <summary>
-/// The records are stamped newer than this build reads (the keep-size design §2.2, as KSCHEMA1 refuses the index's): no row is read or
+/// The records are stamped newer than this build reads: no row is read or
 /// written, and a post is refused, so the driver keeps its folder <c>deleted</c>, awaiting its record, and says why.
 /// </summary>
 public sealed class NewerWorkRecordsException(int found, int known)
