@@ -263,10 +263,7 @@ export type RoleRow = {
   hold?: RoleHoldRead | null;
 };
 
-/**
- * What an appointed role holds: its kind, its acts, who holds it (none is a role not staffed), the supervisor's window in minutes, and the
- * kinds of decision a supervisor decides (none is its scope's generic supervisor).
- */
+/** What an appointed role holds: kind, acts, holder (none is not staffed), a supervisor's window and its kinds (none is generic). */
 export type RoleHoldRead = { kind: 'supervisor' | 'steward'; acts: string[]; holder?: 'rules' | 'terminal' | null; window?: number; decides?: string[] };
 
 /** A role Daoris suggests adding: the Designer while no role takes design, applied only by the person's press. */

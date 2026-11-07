@@ -185,10 +185,8 @@ public sealed class StandingConfirmation : IDecisionAdmission
     /// <summary>Whether a holder holds the steward: what the desk, the steward's starts and the owner's marks wait on.</summary>
     public bool StewardStaffed => AppointedRoles.StewardOf(Appointed()) is { Hold.Holder: not null };
 
-    /// <summary>The supervisor that answers a decision of <paramref name="kind"/> at <paramref name="place"/>, as the catalogue says now.</summary>
     internal SupervisorFound Supervising(string kind, RolePlace place) => SupervisorResolution.Find(Slots(), kind, place, Wider());
 
-    /// <summary><paramref name="repository"/>'s place, in the workspace the store keeps it in; none where the map does not read.</summary>
     internal RolePlace Placed(string repository) => new(Wider().WorkspaceOf.GetValueOrDefault(repository), repository);
 
     /// <summary>The steward's desk: the requests, which grant nothing.</summary>

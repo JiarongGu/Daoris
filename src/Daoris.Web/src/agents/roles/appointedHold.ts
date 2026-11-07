@@ -12,7 +12,6 @@ export const DECISION_KINDS: Readonly<Record<string, readonly string[]>> = {
   landing: ['landing.accept', 'landing.approve', 'landing.reject'],
 };
 
-/** The kinds whose decisions act as soon as they are kept, with no overrule window. */
 export const AT_ONCE: readonly string[] = ['allow', 'files'];
 
 /** The acts each kind may hold, as the driver's vocabulary has them (`AppointedRoles`). */
@@ -38,7 +37,6 @@ export const holdDraftOf = (hold: RoleHoldRead): HoldDraft => ({
   kind: hold.kind, acts: [...hold.acts], holder: hold.holder ?? 'none', window: String(hold.window ?? 5), decides: [...(hold.decides ?? [])],
 });
 
-/** The kinds a supervisor's acts are offered for: those it decides, or every kind for a generic one. */
 export const decidedKinds = (decides: readonly string[]): string[] => (decides.length > 0 ? [...decides] : Object.keys(DECISION_KINDS));
 
 /** The draft with <kind> decided or not, its acts kept to the kinds it decides. */
