@@ -38,12 +38,11 @@ const ACCOUNT_KINDS: ReadonlySet<Attention['kind']> = new Set(['account-wait', '
 const STALE_KEY = 'stale-go-aheads';
 
 /**
- * Overview's **what needs you**, the page's lead (UX6c, design §6).
+ * **What needs you**, whose rows *Notifications* holds (UX6c, design §6; D196).
  *
  * @remarks
- * **Overview keeps the landing** (D40 — "is anything sitting" is still the first question), and since UX6c this is its
- * first content: what holds work, what waits for the person's word, and what is ready for them, in three groups, the
- * longest waiting first in each. Continuous monitoring is the reported source of fatigue (research §2), so visibility is
+ * Overview keeps one summary line per group (`NeedsSummary`, D196), and this band is the rows behind those lines: what holds work,
+ * what waits for the person's word, and what is ready for them, in three groups, the longest waiting first in each. Continuous monitoring is the reported source of fatigue (research §2), so visibility is
  * load-bearing and *watching* is not the mechanism: the band is what a person checks instead of watching.
  *
  * **Who needs the person is .NET's to judge** (PUSH1d4, D182 point 6): the rows are pushed (`useAttention`), read from memory and

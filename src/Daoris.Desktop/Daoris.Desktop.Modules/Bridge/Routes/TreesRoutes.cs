@@ -7,16 +7,17 @@ namespace Daoris.Desktop;
 /// <summary>
 /// What a session's tree holds and what becomes of it, the page's `bridge/trees.ts`: the review's
 /// diff, the files a composer offers, a file's preview, discard, landing
-/// and the hand-off.
+/// and the second opinion's gate.
 /// </summary>
-public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
+public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses presses)
 {
     private readonly DriverLoop _loop = loop;
     private readonly ReadLeaves _reads = reads;
+    private readonly LandPresses _presses = presses;
 
     /// <summary>
     /// What a landing changes: the session, every plan and gate (the line it merged into is what each
-    /// session's plan judges against, LANDSYNC1, so `landing` is never only its own), its review, its hand-off, the clean-up's
+    /// session's plan judges against, LANDSYNC1, so `landing` is never only its own), its review, the clean-up's
     /// list, and which repositories hold Daoris's branches.
     /// </summary>
     private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff
@@ -270,7 +271,8 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads)
     [Says("LAND_SESSION_TREE", "id:session")]
     [Publishes("LAND_SESSION_TREE", Lands, Session = "id")]
     private Task<object?> LandSessionTreeAsync(LandSessionTree press, CancellationToken cancellationToken) =>
-        _land.LandAsync(new TreesLandDesk.LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), cancellationToken);
+        _presses.PressAsync(press.Id, Lands, token =>
+            _land.LandAsync(new TreesLandDesk.LandAsk(press.Id, press.Branch, Press: true, Answers: press.Answers, Follow: press.Follow), token), cancellationToken);
 
     /// <summary>
     /// What a press that reached the landing answers: whether it landed, the driver's sentence, the branch, the gate's parts, what it left
