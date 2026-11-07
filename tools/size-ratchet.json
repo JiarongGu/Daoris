@@ -55,7 +55,7 @@
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/PlannerTests.cs": 120573,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/ReopenTellingTests.cs": 43619,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionGroupsTests.cs": 80881,
-  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionsCommandTests.cs": 67382,
+  "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionsCommandTests.cs": 67379,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/WorkOrders/SessionsSayCommandTests.cs": 79055,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/NodeLifecycleTests.cs": 74680,
   "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Workflows/WireEvaluationTests.cs": 58575,
