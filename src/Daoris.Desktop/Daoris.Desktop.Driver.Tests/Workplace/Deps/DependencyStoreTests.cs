@@ -328,4 +328,23 @@ public sealed class DependencyStorePiecesTests : IDisposable
         Assert.Equal(["mid"], DependencyStore.Evict(Home, TimeSpan.FromDays(30), 1500, now));
         Assert.Equal(["new"], DependencyStore.Entries(Home).Select(each => each.Key));
     }
+
+    [Fact]
+    public void The_daily_eviction_takes_an_entry_past_the_kind_s_thirty_days_and_waits_a_day_before_the_next()
+    {
+        Write("deps/a.bin", new string('a', 1000));
+        var manifest = DependencyManifest.Read(Tree, "deps", [], out _);
+        foreach (var key in new[] { "old", "new" }) Assert.True(DependencyStore.Seal(Home, key, Tree, "deps", manifest, CancellationToken.None));
+        var now = DateTimeOffset.UtcNow;
+        File.SetLastWriteTimeUtc(Path.Combine(DependencyStore.EntryOf(Home, "old"), "placed"), now.AddDays(-31).UtcDateTime);
+        var at = now;
+        var keeping = new DepsKeeping(() => at);
+
+        Assert.True(keeping.Due(Home));
+        Assert.Equal((1, 1000L), keeping.Keep(Home, KeepPolicy.Default));
+        Assert.Equal(["new"], DependencyStore.Entries(Home).Select(each => each.Key));
+        Assert.False(keeping.Due(Home));
+        at = now.AddDays(1);
+        Assert.True(keeping.Due(Home));
+    }
 }

@@ -176,7 +176,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
     copies the machine-local files by the effective `copy` rules. In a worked tree it only keeps, or places a hit into an
     absent folder while each earlier dependency stood and no group names it. The hand, a conversation's open, a go-on and
     a terminal's visit take the mark off first, a visit ending a running install or hook; every stage write re-reads the
-    mark under the record's lock, and a lost mark ends the stage `started.files-stopped`. (from D51, D214, D216)
+    mark under the record's lock, and a lost mark ends the stage `started.files-stopped`. Once a day the tidy's Keeping pass evicts
+    a store entry not placed or sealed in thirty days, then the least recently placed while the store holds more than 10 GB; the
+    Disk space card shows the store as its `deps` kind, a rule the person does not set. (from D51, D214, D216)
 22. A tree serves one line of work and is never handed to another. A repository may declare its rooms (lanes carrying
     `builds`, joined by a `room`); `RoomCheck` checks them with its rule file over git's tracked files and names the claim
     groups. Every path git does not manage has an effective rule from four layers, a later one's match winning and the last

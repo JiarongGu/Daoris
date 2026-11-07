@@ -37,6 +37,10 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     private DateTimeOffset? _historyDaily;
     private TimeSpan? _historyDays;
 
+    private DepsKeeping? _deps;
+
+    private DepsKeeping Deps => _deps ??= new DepsKeeping(Clock);
+
     /// <summary>
     /// The Keeping pass, in the tidy's task after its repositories, where the purge ran,
     /// so it holds no repository's hold and a start never waits on it: it tries the home's run lock, and held elsewhere removes nothing
@@ -44,7 +48,8 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
     /// the pass's budget; then <c>keeping.json</c>'s <c>last</c> for the kind, where it removed something or newly kept a path. Then the
     /// downloads' rule (<see cref="DownloadKeeping"/>): each version's unused stretch each pass, and once a day, or at once after
     /// the rule changed, the versions past their days. Then the machine log's daily prune at the person's days, and finished
-    /// history's daily clear where the person set an age (<see cref="HistoryKeeping"/>). First of all, the free-space floor
+    /// history's daily clear where the person set an age (<see cref="HistoryKeeping"/>), and the dependency store's daily eviction
+    /// (<see cref="DepsKeeping"/>). First of all, the free-space floor
     /// (<see cref="SpaceFloor"/>): each volume read, and below its floor the floor's three acts at once, at most hourly.
     /// </summary>
     internal async Task<IReadOnlyList<string>> KeepAsync(SessionTrees trees, ServiceClient service, MachineLog? log, HashSet<string> met, CancellationToken ct)
@@ -59,9 +64,10 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         var history = Policy(home).History;
         bool historyDue;
         lock (_gate) historyDue = history.Days is not null && (_historyDaily is not { } cleared || Clock() - cleared >= DownloadsPace || _historyDays != history.Days);
-        // Nothing set aside, nothing downloaded, no log's day and no history's clear due, nothing to keep: the run lock and its holder's
-        // file are not written every pace for nothing.
-        if (!setAside && !Downloaded() && !logsDue && !historyDue) return lines;
+        var depsDue = Deps.Due(home);
+        // Nothing set aside, nothing downloaded, no log's day, no history's clear and no store's eviction due, nothing to keep: the run
+        // lock and its holder's file are not written every pace for nothing.
+        if (!setAside && !Downloaded() && !logsDue && !historyDue && !depsDue) return lines;
         using var run = KeepingRun.TryTake(home, KeepingRun.Look);
         if (run is null)
         {
@@ -94,6 +100,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         lines.AddRange(await KeepDownloadsAsync(service, run, left > TimeSpan.Zero ? left : TimeSpan.Zero, log, met, ct).ConfigureAwait(false));
         if (logsDue) lines.AddRange(KeepLogs(logs, run, met));
         if (historyDue) lines.AddRange(await KeepHistoryAsync(service, history, run, log, met, ct).ConfigureAwait(false));
+        if (depsDue) lines.AddRange(KeepDeps(run, met));
         if (Sizes is not null && (setAside || Downloaded())) lines.AddRange(await KeepLimitsAsync(service, run, log, ct).ConfigureAwait(false));
 
         // Each kind counted at most once a day, and the kinds this run wrote a `last` for at
@@ -354,6 +361,26 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         if (removed == 0) return lines;
         lines.Add(Look.Of(LookClass.Progress, "tidy", $"tidy  removed {removed} file(s) of the machine log older than {days} days ({Size(bytes)})."));
         if (KeepingRecord.WriteLast(home, read, KeepKinds.Logs.Id, new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, new Dictionary<string, int>())) is { } refused)
+        {
+            lock (_gate)
+            {
+                if (First(met, "", KeepingRecord.PathOf(home), "unwritten")) lines.Add(Look.Of(LookClass.Retry, "tidy", $"tidy  {Clause(refused)}."));
+            }
+        }
+
+        return lines;
+    }
+
+    /// <summary>The dependency store's daily eviction, holding the home's run; what went said, and <c>last.deps</c> written where one went.</summary>
+    private IReadOnlyList<string> KeepDeps(KeepingRun run, HashSet<string> met)
+    {
+        var lines = new List<string>();
+        var read = KeepingRecord.Read(home);
+        var policy = Policy(home);
+        var (removed, bytes) = Deps.Keep(home, policy);
+        if (removed == 0) return lines;
+        lines.Add(Look.Of(LookClass.Progress, "tidy", $"tidy  removed {removed} dependency store entr{(removed == 1 ? "y" : "ies")} not placed in {(int)policy.DepsDays.TotalDays} days or over its limit ({Size(bytes)})."));
+        if (KeepingRecord.WriteLast(home, read, KeepKinds.Deps.Id, new KeepingLast(Clock(), run.Door, run.Id, removed, bytes, new Dictionary<string, int>())) is { } refused)
         {
             lock (_gate)
             {

@@ -20,7 +20,7 @@ public sealed record SpacePlaces(IReadOnlyList<string> Places, IReadOnlyList<str
 
 /// <summary>
 /// The card's rows, in its order, and where each lies. Every rule a row shows already runs: the set-aside
-/// folders' days and slim, the downloads' days, the machine log's days, history's press or the person's age,
+/// folders' days and slim, the downloads' days, the dependency store's days and size, the machine log's days, history's press or the person's age,
 /// the trees' clean-up; the rest say whose rule it is. The person sets the first four (<see cref="KeepRules.Settable"/>),
 /// each row's <i>Change…</i>.
 /// </summary>
@@ -31,6 +31,7 @@ public static class SpaceKinds
     [
         new("set-aside", "days", null, KeepKinds.SetAside),
         new("downloads", "days", null, KeepKinds.Downloads),
+        new("deps", "days", null, KeepKinds.Deps),
         new("browser-cache", "own", "browser", KeepKinds.BrowserCache),
         new("logs", "days", null, KeepKinds.Logs),
         new("history", "press", null, KeepKinds.History),
@@ -75,6 +76,8 @@ public static class SpaceKinds
             case "downloads":
                 return new([DaorisHome.Entry(home, HomeEntry.Toolchain), DaorisHome.Entry(home, HomeEntry.ToolVersions)], [],
                     [HomeEntry.Toolchain.Name, HomeEntry.ToolVersions.Name]);
+            case "deps":
+                return new([DependencyStore.RootOf(home)], [], [HomeEntry.Deps.Name]);
             case "browser-cache":
                 return new(caches, [], [HomeEntry.BrowserEngine.Name]);
             case "logs":
@@ -542,6 +545,11 @@ public static class SystemSpace
                 rule["gb"] = policy.Limits.DownloadsGb;
                 rule["default"] = policy.Downloads == KeepPolicy.Default.Downloads && policy.Limits.DownloadsGb == KeepPolicy.Default.Limits.DownloadsGb;
                 break;
+            case "deps":
+                rule["days"] = (int)policy.DepsDays.TotalDays;
+                rule["gb"] = policy.Limits.DepsGb;
+                rule["default"] = policy.Limits.DepsGb == KeepPolicy.Default.Limits.DepsGb;
+                break;
             case "browser-cache":
                 rule["gb"] = policy.Limits.BrowserCacheGb;
                 rule["default"] = policy.Limits.BrowserCacheGb == KeepPolicy.Default.Limits.BrowserCacheGb;
@@ -590,6 +598,7 @@ public static class SystemSpace
                 "set-aside" => SetAsideNext(world.Home, policy, reading, now),
                 "downloads" => DownloadsNext(world, policy, record, now),
                 "logs" => LogsNext(world.Home, policy),
+                "deps" => (DepsKeeping.Next(world.Home, policy), null),
                 _ => (null, null),
             };
         }

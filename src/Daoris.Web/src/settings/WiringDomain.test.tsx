@@ -577,7 +577,7 @@ describe('Settings → This Daoris', () => {
     expect(scope.getByText('kept until you clear it')).toBeTruthy();
     expect(scope.getByText('cleaned up once its work is on the line')).toBeTruthy();
     expect(scope.getByText("the browser's own limit")).toBeTruthy();
-    // What an earlier build left goes only by the person's press, which frees space, listed first.
+    // What an earlier build left goes only by the person's press, which frees space, shown first.
     expect(scope.getByText('removed only by your press')).toBeTruthy();
     expect(scope.getByRole('button', { name: 'Free up space…' })).toBeTruthy();
     // The rules the person sets carry their editor and their terminal twin, history's age among them.
@@ -592,7 +592,7 @@ describe('Settings → This Daoris', () => {
     invoke.mockImplementation(shell(WIRED, SPACE_UNCOUNTED));
     open();
     const card = within(await screen.findByRole('region', { name: 'Disk space' }));
-    expect(card.getAllByText('not counted yet')).toHaveLength(9);
+    expect(card.getAllByText('not counted yet')).toHaveLength(10);
 
     await userEvent.click(card.getAllByRole('button', { name: 'Count' })[0]!);
     await vi.waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYSTEM_SPACE', { payload: { measure: ['set-aside'] } }));

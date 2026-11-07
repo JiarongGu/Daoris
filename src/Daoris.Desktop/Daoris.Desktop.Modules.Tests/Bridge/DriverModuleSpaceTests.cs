@@ -140,7 +140,7 @@ public sealed class DriverModuleSpaceTests : DriverModuleBridge
     }
 
     [Theory]
-    [InlineData("""{ "measure": true }""", 9)]
+    [InlineData("""{ "measure": true }""", 10)]
     [InlineData("""{ "measure": ["logs", "nowhere", 3] }""", 1)]
     [InlineData("""{ "measure": false }""", 0)]
     [InlineData("""{}""", 0)]
