@@ -5,6 +5,10 @@ the per-task record. Entries preserve their original wording so the archive stay
 
 ---
 
+## MODELROLE1k2 — a model's cool-off read everywhere a start's model is known (2026-11-07)
+
+> **MODELROLE1k2** (driver): a limited line's wait, a carry-on's hold and the usage questions read any cool-off as the whole account's. Outcome: every reader that knows a line's model (`PriorSession.ModelOn`) reads the cool-offs that hold a start of it (`CoolingOf` and `CoolingsOf` with the model, over `AccountCooling.Holding`): the limit-wait stage, the sessions listing's hold, the hand-over press and the switch candidates; the family's recorded limit words are MODELROLE1k3.
+
 ## EVENTHOOK1d — the quest kinds, `confirmation.ended` and `work.ended` (2026-11-07)
 
 > **EVENTHOOK1d** (D244): the quest kinds, `confirmation.ended` and `work.ended` told at `work/event`. Outcome: the last proof built; a press made over the pipe and left by its terminal is told to the lease's plugin with the pipe's own id and its end, a waited one told nothing (`PipeConfirmationToldTests`, over the loop's own sink `SettledTelling`); it found no gap.
