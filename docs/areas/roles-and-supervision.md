@@ -88,8 +88,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start wi
 14. A role of the five with no stored order has no agent: nothing reads the old single-agent keys. (from D232)
 15. A change of `driver.json`'s staffing by hand is read nowhere. (from D232)
 16. A start walks its role's order choice by choice, each choice's accounts before the next. A choice that cannot run is
-    passed with a code, a provider not opened to the start's place `not-opened` before its accounts are asked. Only the choice
-    taken counts under the cap. (from D205, D197, D212)
+    passed with a code, a provider not opened to the start's place `not-opened` before its accounts are asked. An account
+    cooling for one model family passes that family's choices and serves the others. Only the choice taken counts under the
+    cap. (from D205, D197, D212)
 17. With no choice ready, a driven start holds with one sentence naming the soonest way out. A conversation's press is
     refused in that sentence. (from D205)
 18. The rules say who may; the choices say with which model. A fence (reviewers, helpers, partners, brainstorm agents)

@@ -394,6 +394,7 @@
   "note.held.tail": "你的话会等着。",
   "note.held.agent-gone": "还不能继续：`{{agent}}` 已不是本机上的智能体，所以它的话无法由它继续。这些话会等着：把它转交给另一个智能体来继续，`daoris session hand-over {{session}} --agent <agent>`。",
   "note.held.cooling-account": "`{{owner}}` 账户 `{{account}}` 冷却至 {{until}}（{{why}}）。在那之前道衍不会在它上面启动任何会话。",
+  "note.held.cooling-model": "`{{owner}}` 账户 `{{account}}` 已达到 `{{model}}` 的限额，`{{model}}` 冷却至 {{until}}（{{why}}）。在那之前道衍不会在它上面启动任何要求 `{{model}}` 的会话。",
   "note.held.cooling-own": "`{{owner}}` 自身的登录冷却至 {{until}}（{{why}}）。在那之前道衍不会在它上面启动任何会话。",
   "note.held.limit-waits": "它可用的所有账户都已达上限：`{{owner}}` 账户 `{{account}}` 于 {{until}} 重新可用后，它将自动继续。",
   "note.held.limit-waits-own": "它可用的所有账户都已达上限：`{{owner}}` 自身的登录于 {{until}} 重新可用后，它将自动继续。",

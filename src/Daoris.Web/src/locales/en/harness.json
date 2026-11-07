@@ -135,6 +135,7 @@
   "harness.use.problem.alone": "The account kept for conversations, {{account}}, is the only one, so nothing is kept for driven work's sake. Add another account, or keep none.",
   "harness.use.unknown": "These accounts also set {{settings}}, which this build does not know; it is kept as written.",
   "harness.cooling.until": "Cooling until {{when}} · in {{span}} · {{why}}",
+  "harness.cooling.untilModel": "Cooling for {{model}} until {{when}} · in {{span}} · {{why}}",
   "harness.cooling.why.stated": "the agent said so",
   "harness.cooling.why.assumed": "the agent said so, in this machine's zone",
   "harness.cooling.why.default": "Daoris's default: the agent named no time",

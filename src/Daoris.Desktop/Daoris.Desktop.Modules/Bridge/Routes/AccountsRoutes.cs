@@ -223,9 +223,9 @@ public sealed class AccountsRoutes(DriverLoop loop)
     /// (<see cref="AccountCooling.Unwritten(string, string, string?)"/>): the band says Daoris could not keep it.
     /// </remarks>
     private static object? CoolingShown(CoolingEntry? entry, string home) => entry is null ? null
-        : AccountCooling.Unwritten(home, entry.Agent, entry.Account)
-            ? new { entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved, Unwritten = true }
-            : new { entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved };
+        : AccountCooling.Unwritten(home, entry.Agent, entry.Account, entry.Model)
+            ? new { entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved, entry.Model, Unwritten = true }
+            : new { entry.Until, entry.Stated, entry.Window, entry.Seen, entry.AssumedZone, entry.NotBelieved, entry.Model };
 
     /// <param name="use">How the list the account's row is measured by is used; none for the tool's own sign-in, which no list holds.</param>
     private static object? SaidShown(AccountSaid? said, DateTimeOffset now, AccountProjection? projection = null, RotationUse? use = null) =>

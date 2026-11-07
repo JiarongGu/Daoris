@@ -20,6 +20,8 @@ export type AccountCooling = {
   notBelieved: boolean;
   /** Held in memory only, the file not having taken it (LIMITRESUME1d2, D206 §3.1); absent where it was kept. */
   unwritten?: boolean;
+  /** The model family whose limit this is (`opus`, `sonnet`), so a start asking another still runs; absent for the whole account's. */
+  model?: string | null;
 };
 
 /** One window as an account's agent last said it (TOOL6c, D130 §5.2): a floor, as of when it was seen. */
@@ -301,11 +303,15 @@ export function coolingWhy(cooling: AccountCooling): string {
   return i18n.t(cooling.notBelieved ? 'harness.cooling.why.notBelieved' : 'harness.cooling.why.default');
 }
 
-/** An account's cool-off as its row says it: until when, in this machine's zone and named, how long from now, and why. */
+/**
+ * An account's cool-off as its row says it: for which model family where it is one's, until when, in this machine's zone and named,
+ * how long from now, and why.
+ */
 export function coolingLine(cooling: AccountCooling, now: Date = new Date()): string {
-  return i18n.t('harness.cooling.until', {
-    when: moment(cooling.until), span: elapsed(now.toISOString(), cooling.until), why: coolingWhy(cooling),
-  });
+  const said = { when: moment(cooling.until), span: elapsed(now.toISOString(), cooling.until), why: coolingWhy(cooling) };
+  return cooling.model
+    ? i18n.t('harness.cooling.untilModel', { ...said, model: cooling.model })
+    : i18n.t('harness.cooling.until', said);
 }
 
 /**

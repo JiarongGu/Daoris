@@ -455,6 +455,7 @@ export const NOTE_CODES: Readonly<Record<string, NoteCode>> = {
   // id as a shell spells it, the tool's own sign-in's refresh `waits.read-again`.
   'held.cooling-account': { values: ['owner', 'account', 'until', 'why'], why: 'cooling' },
   'held.cooling-own': { values: ['owner', 'until', 'why'], why: 'cooling' },
+  'held.cooling-model': { values: ['owner', 'account', 'model', 'until', 'why'], why: 'cooling' },
   'held.limit-waits': { values: ['owner', 'account', 'until'], why: 'cooling' },
   'held.limit-waits-own': { values: ['owner', 'until'], why: 'cooling' },
   // The same wait where some accounts need the person's sign-in, named apart from those cooling.

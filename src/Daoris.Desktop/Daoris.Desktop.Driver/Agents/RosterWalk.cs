@@ -60,7 +60,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         // 🔴 No Daoris account to run on (OWNSPACE1a, D175 point 2): the start waits for the person's sign-in, before anything is
         // probed or spawned, and never runs in the person's own tool home, which a scope naming nothing once meant (D125 point 5).
         if (ours && order is [null]) return HarnessRoster.NoAccount(owner, [], names);
-        var states = order.Select(account => roster.Before(owner, account, now, names, HarnessRoster.FactOf(known, account))).ToList();
+        var states = order.Select(account => roster.Before(owner, account, now, names, HarnessRoster.FactOf(known, account), offer.Model)).ToList();
 
         // 🔴 A cooling account is held FIRST, by a file read, before any probe (TOOL4d, D125 §3.3, §4): a start on a
         // spent account is refused at once and spends nothing, and three of them parked a quest on 1 October whose only
@@ -176,11 +176,11 @@ internal sealed class RosterWalk(HarnessRoster roster)
         {
             if (counts)
             {
-                lock (_walking) pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except, asks);
+                lock (_walking) pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except, asks, offer.Model);
             }
             else
             {
-                pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except, asks);
+                pass = Pass(owner, scope, kind, picked, ours, counts, names, walk, Offers, offer.Except, asks, offer.Model);
             }
 
             if (pass.Held is { } hold) return hold;
@@ -315,11 +315,12 @@ internal sealed class RosterWalk(HarnessRoster roster)
     /// </remarks>
     private WalkPass Pass(
         string owner, RotationScope scope, StartKind kind, string? picked, bool ours, bool counts,
-        IReadOnlyDictionary<string, string> names, WalkMemory walk, Func<string, string?>? offers = null, long except = 0, bool asks = true)
+        IReadOnlyDictionary<string, string> names, WalkMemory walk, Func<string, string?>? offers = null, long except = 0, bool asks = true,
+        string? model = null)
     {
         var now = roster.Clock();
         var (order, facts) = OrderOf(owner, scope, kind, picked, ownHome: false, now, except);
-        var states = order.Select(account => roster.Before(owner, account, now, names, HarnessRoster.FactOf(facts, account))).ToList();
+        var states = order.Select(account => roster.Before(owner, account, now, names, HarnessRoster.FactOf(facts, account), model)).ToList();
         // What the agent last said of each account (ROSTER1), as a report says it: an account not on this machine said nothing.
         var present = HarnessSettings.Profiles(roster.Home, owner);
         var reads = AccountReads.Of(roster.Home, owner);

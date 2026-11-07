@@ -320,8 +320,9 @@ public sealed class HarnessRoster(ProviderRegistry adapters, string? settingsPat
 
     internal static bool SaidOut(AgentReads reads, string account) => RosterNext.SaidOut(reads, account);
 
-    internal AccountState Before(string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null, AccountFacts? fact = null)
-        => Upcoming.Before(owner, account, now, names, fact);
+    internal AccountState Before(
+        string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null, AccountFacts? fact = null, string? model = null)
+        => Upcoming.Before(owner, account, now, names, fact, model);
 
     internal static readonly IReadOnlyDictionary<string, AccountFacts> NoFacts =
         new Dictionary<string, AccountFacts>(StringComparer.OrdinalIgnoreCase);

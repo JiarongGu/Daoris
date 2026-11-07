@@ -194,8 +194,10 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 29. The walk: under `goal` (the default) a near account goes last, then fewest of Daoris's sessions running, then a week about to
     lapse, then most room under the curve, then least recently started, then the order. Under `order` the first ready
     account runs. The cap stays one number per machine. (from D130, D165, D197)
-30. A cooling account is held first, by a file read, before any probe. A refused or signed-out account is passed until a
-    person acts. With no account ready the start waits, saying the soonest way out. (from D125, D130)
+30. A cooling account is held first, by a file read, before any probe. A model family's cool-off holds a start whose model
+    names that family as a word of its id (`opus`, `claude-opus-4-5`), or one at account default, and passes a start naming
+    another, its hold naming the family's limit (`held.cooling-model`). A refused or signed-out account is passed until a
+    person acts. With no account ready the start waits, saying the soonest way out. (from D125, D130, D205)
 31. A running session moves at its turn's end to another account of the same agent with room (10 points under its curve on
     every window), never mid-turn, and not again within 30 minutes unless refused. Where none has room, the `handOver` rule
     decides another agent. (from D165, D163)
@@ -215,7 +217,11 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
     open and the conclusion's sign-out read that, never the name of the entry. (from D210, D125)
 37. A limit cools that account until the reset the agent named, plus 2 minutes, with 15 minutes' grace and nothing believed
     past 8 days, else 60 minutes. The grace is a dated reset's alone, never a time of day's or a weekday's. One function
-    holds these bounds (`ResetBounds`), whoever read the reset. A limit is never a strike. (from D125)
+    holds these bounds (`ResetBounds`), whoever read the reset. A limit is never a strike. A limit whose words name a model
+    family the agent's windows declare (`WindowWords.Models`, Claude's `opus` and `sonnet`), and a reading that puts that
+    family's week (`seven_day_opus`, `seven_day_sonnet`) at 100% with its reset ahead, cool the account plus that family alone
+    until the reset, under the account's `models` in `cooling.json` (`ModelLimits`); every other limit cools the whole
+    account. *Try now* and a sign-in end both. (from D125, D205)
 38. A limited line resumes by itself at the look: its own conversation on its own account when ready, else a briefed resume on
     another account or choice, else it waits showing the earliest reset. (from D206)
 39. A transient failure is tried again in the same conversation after 1, 2, 4, 8 and 16 minutes, up to the line's tries
@@ -300,7 +306,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 - spawn: `SpawnTableTests`, `SpawnInheritedTests`, `ShellStructureTests`, `ToolsAtTheStartTests` and its census, `OwnContextTests`, `OwnSpaceTests`, `SpawnSkillsTests`, `PermissionSpawnTests`,
   `StandingHandedTests`, `TargetPromptGoldenTests`;
 - accounts: `AccountRotation*Tests`, `AccountSetTests`, `AccountNextStartTests`, `SwitchDecisionTests`, `UsageCurvesTests`,
-  `AccountCoolingTests`, `AccountLimitsTests`, `ResumeAccountTests`, `LineAccountTests` and its callers' census;
+  `AccountCoolingTests`, `ModelCoolingTests`, `AccountLimitsTests`, `ResumeAccountTests`, `LineAccountTests` and its callers' census;
 - errors and usage: `AgentErrorsTests`, `ClaudeUsageTests`, `CodexUsageTests`, `UsageHistoryTests`, `UsageProjectionTests`;
 - rules: `PermissionRulesTests`, `RuleProposalsTests`, `WorkspaceTrustTests`, `AcrossTests`;
 - the twins with the CLI: `RotationTwinTests`, `RotationUseTwinTests`, `CoolingTwinTests`, `WindowsTwinTests`,
@@ -346,6 +352,10 @@ Agents page, and `orient-index` and `code-map` once files move.
 
 ## Open
 
+- A model family's cool-off: only the start walk and a resume's own-account judgement read the start's model; a limited line's
+  wait (`LimitWaits`, `CoolingsOf`), a carry-on's hold and the usage questions read every cool-off of the account. No sentence
+  naming a family's limit is recorded yet (`ClaudeLimits.Words.Recorded`), and `get_usage` has answered the families' weeks null
+  on every account read so far (`docs/2026-10-12-usage-read-evidence.md`).
 - **AGENTPROVIDER1d**'s rest: s-ix on, whose three cells are named in the design (`p-claude-bare`, `p-dsh` and `p-b`, where the
   page's own-home question reads the owner's first door and the walk the door's own), waits on the owner's choice: the page's agent
   card is one per account key, so which door's home it speaks for where an owner's doors disagree is not yet chosen

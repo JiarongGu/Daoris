@@ -205,10 +205,12 @@ internal sealed class RosterNext(HarnessRoster roster)
     /// </summary>
     /// <param name="names">The owner's names by id, which a cooling account's hold names it by (ACCT2b); null says the id.</param>
     /// <param name="fact">What the walk knows of the account: a reading at its limit cools it until that window's reset (LIMITPICK1).</param>
+    /// <param name="model">The model the start asks (MODELROLE1k): a model family's cool-off passes only a start of that family.</param>
     internal AccountState Before(
-        string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null, AccountFacts? fact = null)
+        string owner, string? account, DateTimeOffset now, IReadOnlyDictionary<string, string>? names = null, AccountFacts? fact = null,
+        string? model = null)
     {
-        if ((AccountCooling.Of(roster.Home, owner, account, now) ?? AccountRotation.Spent(owner, account, fact, now)) is { } cooling)
+        if ((AccountCooling.Of(roster.Home, owner, account, now, model) ?? AccountRotation.Spent(owner, account, fact, now)) is { } cooling)
         {
             var hold = CoolingWords.HoldOf(cooling, roster.Zone, names);
             return new AccountState(account, AccountReadiness.Cooling, cooling, hold.Note) { RefusalNote = hold };

@@ -26,7 +26,9 @@ public static class ClaudeWindows
             new("""{"status":"allowed_warning"}""", "2026-10-02", Declared),
             new("""{"status":"rejected"}""", "2026-10-02", Declared),
         ],
-        Shape: Shape);
+        Shape: Shape,
+        // The families `get_usage` answers a week of (`seven_day_opus`, `seven_day_sonnet`; the usage-read evidence's field table).
+        Models: ["opus", "sonnet"]);
 
     /// <summary>
     /// A window's length and scope as Claude Code's key names it, for the usage history (USAGECAP1a1): <c>five_hour</c> five
