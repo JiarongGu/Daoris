@@ -152,8 +152,9 @@ public static class TargetPrompt
 
     /// <summary>
     /// The most characters of the requirements' words and checks an instruction carries, for the person's words' reason
-    /// (<see cref="AskWordsText"/>): the native door hands the instruction as one argument, and Windows caps a command
-    /// line. The service bounds each half at 2,000 characters and a quest at 20, which together would not fit.
+    /// (<see cref="AskWordsText"/>): the instruction is one value of the first prompt, which <c>DAORIS_TARGET</c> carries and
+    /// Windows caps (<see cref="StandingBlock.ArgumentLimit"/>). The service bounds each half at 2,000 characters and a quest at 20,
+    /// which together would not fit.
     /// </summary>
     internal const int RequirementsLimit = 8_000;
 

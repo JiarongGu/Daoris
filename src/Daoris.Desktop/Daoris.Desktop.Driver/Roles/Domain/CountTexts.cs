@@ -109,7 +109,7 @@ public static class CountTexts
     private static readonly IReadOnlyDictionary<string, string> Began = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [HandOverWhy.Press] = "handed over by the person",
-        [HandOverWhy.Near] = "handed over near its context's end",
+        [HandOverWhy.Near] = "handed over as its account was near its limit",
         [HandOverWhy.Limit] = "moved on at a limit",
         [HandOverWhy.Agent] = "handed over at its agent's ask",
         [HandOverWhy.Curve] = "moved on by its account's curve",

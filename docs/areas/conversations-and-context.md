@@ -186,7 +186,8 @@ of everything it handed, section by section.
 35. The driver composes the standing block with no model. It is handed once, at the start or at a move (with the memory the
     line read), and never at a go-on. It says where things are, the routing, the person's choices, and the repository's and
     workspace's facts. (from D230)
-36. The whole first prompt fits the native door's one argument (32,767). Over 30,000, the block goes to
+36. The whole first prompt fits the one value Windows allows (32,767 characters: the native door takes it on stdin, and
+    `DAORIS_TARGET` carries it as an environment variable). Over 30,000, the block goes to
     `spawn/<session>.standing/block.md`, and one line points to it. (from D230)
 37. A conversation's first message carries the browser line, the process in a tree of its
     own, where the person is (bounded), an open workflow draft, the person's words, then the block. A hand-over's first
@@ -259,18 +260,14 @@ of everything it handed, section by section.
 5. D80, D125 point 4, D131 point 3 and D163 point 1 (a new part gets the request, last plan, last words and what is
    uncommitted) vs D189 point 4 and `ContextBrief.Compose` (`Context/Domain/ContextBrief.cs`): every new part gets the brief. D189 reads right.
 6. D163's MIXAGENT1a-i note point 1 (the ask is the box `<id>.hand-over.json`) vs `HandOver.JudgedAsync`'s summary in
-   `Course/HandOver/HandOver.cs`: a move row in the store; boxes are imported only. The code reads right. The class summary at
-   the top of `HandOver.cs` is stale.
-7. `HandOverWhy.Near` (`Events/Domain/HandOverWhy.cs`) and D163's note (`near` means the account is near its limit) vs
-   the `Began` map of `Roles/Domain/CountTexts.cs` ("handed over near its context's end"). D163 reads right; the count's words are wrong.
-8. D206's body cites `Conversations/Chat/ChatGoOn.cs`. The driver has no `Conversations` folder; the unit is
+   `Course/HandOver/HandOver.cs`: a move row in the store; boxes are imported only. The code reads right.
+7. D206's body cites `Conversations/Chat/ChatGoOn.cs`. The driver has no `Conversations` folder; the unit is
    `Course/Chat/ChatGoOn.cs`. The code reads right.
-9. D188's status line says *proposed*. Its own note (`docs/decisions/D188.md:178`) says accepted and built by COWORK1a-d.
+8. D188's status line says *proposed*. Its own note (`docs/decisions/D188.md:178`) says accepted and built by COWORK1a-d.
     The note reads right.
-10. The archived LIMITGOON1 entry (`docs/task-archive.md`) and the summary of `Course/Chat/LimitMove.cs` say a limit move goes
-    on "in the same conversation". D189 points 1-2 and `LimitMove`'s remark on the carrier make it a new part handed the brief. The new part is right; the wording mixes up the
-    line and the agent's conversation.
-11. SESSCTX1e's re-cut (*Go on fresh* as a hand-over to the same agent and account) vs `HandOverOf` in `LineCourse.Decide.cs`, which
+9. The archived LIMITGOON1 entry (`docs/task-archive.md`) says a limit move goes on "in the same conversation". D189 points 1-2 and
+    `LimitMove`'s summary make it a new part handed the brief. The new part is right; the wording mixes up the line and the agent's conversation.
+10. SESSCTX1e's re-cut (*Go on fresh* as a hand-over to the same agent and account) vs `HandOverOf` in `LineCourse.Decide.cs`, which
     refuses exactly that (`HandOver.SameAgent`). The code is today's; the re-cut must change the refusal when it is built.
 
 ## Open
