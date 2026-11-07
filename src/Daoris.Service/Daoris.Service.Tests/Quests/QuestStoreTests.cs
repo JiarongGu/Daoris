@@ -363,7 +363,9 @@ public sealed class QuestStoreTests : IAsyncLifetime
         Assert.NotEqual(elder.Id, next.Id);
         Assert.Equal(QuestStatus.Open, next.Status);
         Assert.Equal("The new one.", next.Body);
-        Assert.Equal(elder.Id, (await _quests.PublishAsync("Intake", "Owner", "Verify in the browser", "x", Now)).Id);
+        var asked = await _quests.PublishAsync("Intake", "Owner", "Verify in the browser", "x", Now);
+        Assert.DoesNotContain(asked.Id, new[] { elder.Id, next.Id });
+        Assert.Equal(QuestStatus.Open, asked.Status);
     }
 
     [Fact]

@@ -350,7 +350,7 @@ public sealed class UsageProbeRosterTests : IDisposable
         Assert.Equal(3, Asked().Length);
 
         Assert.Equal("account-2", asked.Profile);
-        Assert.Equal(WalkStep.Pace, asked.Choice?.Step);
+        Assert.Equal(WalkStep.Headroom, asked.Choice?.Step);
         Assert.Equal(asked.Profile, held.Profile);
         Assert.Equal(asked.Choice?.Step, held.Choice?.Step);
         Assert.Equal(asked.Choice?.Clause, held.Choice?.Clause);

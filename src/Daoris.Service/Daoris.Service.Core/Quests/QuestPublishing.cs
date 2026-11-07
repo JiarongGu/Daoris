@@ -171,10 +171,9 @@ internal sealed class QuestPublishing(
                 Quest: null, addressable);
         }
 
-        var quest = await quests.PublishAsync(
-            from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct,
-            publishedBy: ask.PublishedBy, lanes: lanes, requirements: required, shortTitle: shortTitle, review: review, weight: weight,
-            paths: paths, request: request)
+        var (quest, held) = await quests.PublishHeldAsync(
+            from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct,
+            ask.PublishedBy, lanes, required, shortTitle, review, setUpIn: null, parent: null, weight, paths, request)
             .ConfigureAwait(false);
 
         var caution = !target.Adopted
@@ -204,9 +203,13 @@ internal sealed class QuestPublishing(
                         + "is only the person's own press, and the review stands as the ask or the repository sets it until they press it.";
         }
 
+        var said = held
+            ? $"Quest `#{quest.Id}` to `{QuestAddress.Spell(quest.To, quest.Lanes)}` was already published and is still {quest.Status}: "
+              + "this is that quest, answered again as a retry, and nothing new was asked. Its words stay as they were first published."
+            : $"Published quest `#{quest.Id}` to `{QuestAddress.Spell(quest.To, quest.Lanes)}` — {quest.Status}.";
         return new(
             QuestPublishRefusal.None,
-            $"Published quest `#{quest.Id}` to `{QuestAddress.Spell(quest.To, quest.Lanes)}` — {quest.Status}.{carrying}{reviewed}{caution}\n\n"
+            $"{said}{carrying}{reviewed}{caution}\n\n"
             + "It is held by the service, not written into that repository. Its agent will see it and "
             + "decide. Do not make the change yourself."
             + await carry.KeepAsync(quest, ask, carried, ct).ConfigureAwait(false),
