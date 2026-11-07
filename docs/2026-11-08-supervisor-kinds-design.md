@@ -7,14 +7,16 @@ reads and writes in D233's second note of 2026-11-08, which settles round 1's fo
 *(R2-Cn)* for Codex's finding n or *(R2-On)* for the Opus reader's, and its section near the end answers each finding. **Round 3**,
 by Claude Opus 5.5 on 2026-11-08 from main at `6b47d1f6ac`, answers both narrow reads of round 2 and writes in D233's third note of
 2026-11-08, which keeps a landing's window: a passage it changes is marked *(R3-Cn)* for Codex's finding Bn or *(R3-On)* for the Opus
-reader's finding n, and the last section answers each. Nothing here is accepted, and no decision records it yet. Read with
+reader's finding n, and its section answers each. **Round 4**, by Claude Opus 5.5 on 2026-11-08 from main at `0e50a18388`,
+answers both confirming reads of round 3, narrowly: a passage it changes is marked *(R4-C1)* for Codex's one finding or *(R4-On)*
+for the Opus reader's finding n, and the last section answers each. Nothing here is accepted, and no decision records it yet. Read with
 `docs/areas/roles-and-supervision.md` (cited *rule n*), the supervisor design (`docs/2026-10-24-supervisor-design.md`, D208) §3 to §6,
 the context-counters design (`docs/2026-11-03-context-counters-design.md`, D229) §4 and §5, the staff-policy design
 (`docs/2026-11-02-staff-policy-design.md`, D226), and TREEPOOL1's round 10
 (`docs/2026-10-26-tree-pool-design.md` §30). Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/` unless they start with
 `Modules/` (`src/Daoris.Desktop/Daoris.Desktop.Modules/`), `Service/` (`src/Daoris.Service/`) or `Web/` (`src/Daoris.Web/src/`), as
-the area writes them. Line numbers are main's at `bdab99e6f4`, and those round 3 adds main's at `6b47d1f6ac`. Nothing was built or
-run.
+the area writes them. Line numbers are main's at `bdab99e6f4`, those round 3 adds main's at `6b47d1f6ac`, and those round 4 adds
+main's at `0e50a18388`. Nothing was built or run.
 
 ## 0. In short
 
@@ -47,8 +49,9 @@ run.
   of the person's rules a session proposes, and an `ask` in the rule file's `permissions` (TREEPOOL1 §30.4). The steward's act outside
   its grants is one too: it goes to the place's allow supervisor first, under its own grant, off by default. Each allow is decided at the
   place its effect reaches, under the act its subtype takes. A widening that removes the person's deny, or switches off a default that
-  denies, asks for no allow and stays the person's *(R3-O1)*. A review or an approval before a landing is the `landing` kind's, not an
-  allow.
+  denies, asks for no allow and stays the person's *(R3-O1)*, and so does one whose rule would let a publish run while `no-publish` is
+  on, its forms listed in code *(R4-O2)*. Every writer of the rule file reads, judges and writes it under the file's own lock *(R4-C1)*.
+  A review or an approval before a landing is the `landing` kind's, not an allow.
 - **Rows a to h** (§9): kinds and grants in the catalogue; one decision door; the actor; limits and moves; allows, the steward's
   among them; landings; the rule file's allows with TREEPOOL1; the install's proof.
 
@@ -84,11 +87,11 @@ allow is.
 | A held decision's release | Asks the admission for a generation alone; a role press ends only a hold whose holder or kind changed, and `daoris role set` writes from its own process, reaching no sweep *(R2-O2, R2-C2)* | `Roles/SupervisorReleasing.cs:29`; `Roles/SupervisorCourses.cs:105`; `Roles/SupervisorTickets.cs:27`; `Modules/Platform/RoleTerminals.cs:135-146`; `Roles/RoleVerbs.cs:62` |
 | The effective supervisor | Two copies of *the most specific scope's role of a kind*: `RoleCatalog.Appointed`, which no production code calls, and `StandingConfirmation.Staffed`, which the admission and `StewardStaffed` read. The repository's workspace comes from the loop's registry, handed in as `WorkspaceOf` | `Roles/RoleCatalog.cs:229-230`; `Modules/Platform/StandingConfirmation.cs:176`, `:179-180`, `:219-223`; `Modules/Loop/LoopRun.cs:247` |
 | Its admission | Only a started terminal admits. Held by rules, the admission answers `not-staffed`, and a `refer` point waits for the person, said `supervisor.unreferred` | `Modules/Platform/RoleJudge.cs:25-35`; rule 42 |
-| Allows *(R2-C4, R2-C5)* | A held request takes one end, whoever answers first, and only the person's press allows. A widening is answered by `RuleProposals.Answer`, which opens, saves the rules and marks the proposal in three steps under no lock. `permission_propose` takes a scope of the machine, a workspace or a repository. *(R3-O1)* An `add allow` or `add ask` over a rule its scope denies, and a `remove` of a deny, class as widenings; a default's switch edits one machine-wide list whatever scope it names | `Events/HeldPermissions.cs:81-82`, `:136-174`, `:216`; `Agents/RuleProposals.cs:119-142`, `:154`, `:220-231`; `Agents/Permissions.cs:399-436`; `Service/Daoris.Service.Mcp/RuleProposalTools.cs:27-28` |
+| Allows *(R2-C4, R2-C5)* | A held request takes one end, whoever answers first, and only the person's press allows. A widening is answered by `RuleProposals.Answer`, which opens, saves the rules and marks the proposal in three steps under no lock. `permission_propose` takes a scope of the machine, a workspace or a repository. *(R3-O1)* An `add allow` or `add ask` over a rule its scope denies, and a `remove` of a deny, class as widenings; a default's switch edits one machine-wide list whatever scope it names. *(R4-O2)* `no-publish` holds no rule, its sentence to the classifier alone. *(R4-C1)* Every writer of the rule file reads it, edits, and saves, the file's lock held over the save's re-read and rename alone, and a changed list is written whole | `Events/HeldPermissions.cs:81-82`, `:136-174`, `:216`; `Agents/RuleProposals.cs:119-142`, `:154`, `:220-231`; `Agents/Permissions.cs:186-190`, `:333-346`, `:399-436`; `Store/JsonKeeping.cs:111-116`, `:306-314`; `Service/Daoris.Service.Mcp/RuleProposalTools.cs:27-28` |
 | A node's word *(R2-C6)* | `NodeWord(Node, Act, Words, At)` names no author; a pending word refuses a second (`worded`); the pass keeps it as `person-<act>`, its move the person's | `Workflows/Nodes/NodeRecord.cs:249`; `Workflows/Nodes/RunNodeWords.cs:113`, `:203`; `Workflows/Nodes/NodeRecordFiles.cs:519-532`; `Workflows/Kinds/Human/HumanNode.cs:54-60` |
 | The steward's ungranted act *(R2-O1)* | Asks the person as its row's person's route, a card whose press waits with no expiry; one terminal may hold several roles, answered together | `Modules/Platform/StewardAsk.cs:20-23`; `Modules/Platform/PipeAdmission.cs:85-93`; `Modules/Platform/RoleTerminals.cs:36-45`; `Modules/Platform/RoleJudge.cs:160` |
 | A restart *(R2-C7)* | The start's sweep reads a question's decision files alone and remembers a question closed to the owner; a course decision is history after it, and its point waits for a holder again | `Roles/SupervisorSweeps.cs:105-138`; `Roles/SupervisorCourses.cs:131-133` |
-| The actor | Designed as SUPERVISOR1c (the supervisor design §3.5, §11): one read-only turn, ten minutes, one attempt per question, its result the run's last message. Parked in `docs/backlog-parked.md` behind SUPERVISOR1d's bench. The helper exemplar hands a harness with no rule language no rules, so its copy alone holds it *(R2-C8)*. *(R3-C3)* The reviewer's read-only shape keeps every other allow of the person's composition, an interpreter's among them, and the tree guard reads no program's own write | `Loop/Session/SessionRules.cs:39-41`; `Participants/Domain/OpinionPosture.cs`; `Review/Domain/OpinionPermissions.cs:111`; `Workplace/TreeGuard.cs:14-21` |
+| The actor | Designed as SUPERVISOR1c (the supervisor design §3.5, §11): one read-only turn, ten minutes, one attempt per question, its result the run's last message. Parked in `docs/backlog-parked.md` behind SUPERVISOR1d's bench. The helper exemplar hands a harness with no rule language no rules, so its copy alone holds it *(R2-C8)*. *(R3-C3)* The reviewer's read-only shape keeps every other allow of the person's composition, an interpreter's among them, and the tree guard reads no program's own write. *(R4-O1)* A helper's Claude Code is handed its file beside the person's and the repository's settings, and Daoris's connector beside every other server | `Loop/Session/SessionRules.cs:39-41`; `Participants/Domain/OpinionPosture.cs`; `Review/Domain/OpinionPermissions.cs:111`; `Workplace/TreeGuard.cs:14-21`; `Agents/Providers/ClaudeCode/ClaudeCodeSpawn.cs:87-113` |
 | The home's newest build *(R3-C1)* | Kept by the updater once a start is confirmed, a write that fails left to the next start; the migration runs once the swap lets the home go, reading no such record | `Modules/Update/InstallUpdater.cs:190-198`; `Install/HomeLastBuild.cs:38-45`; `Transitional/Migration/HomeMigration.cs:98-103` |
 
 This design reverses rule 7's refusal for the supervisor. What rules 41 to 52 hold for a terminal holder holds for each kind and for
@@ -254,7 +257,8 @@ spending or a deletion, a question the repository says to ask the person, a pref
 that tries to direct it; they bound a free question, not the steward's `delete`, which §5.2 places *(R3-O4)*. So do the structural
 refusals: a question the agent marked the owner's, one past the answers-alone bound, and one on a line a rule holds (`rule-holds`).
 *(R2-O9)* The `allow` kind takes only the structured allows §5.3 names, a widening among them under `allow.standing` at its rule's reach
-but never one that removes the person's deny or switches off a default that denies *(R3-O1)*, and changes none of these for a free
+but never one that removes the person's deny or switches off a default that denies *(R3-O1)*, nor one whose rule would let a publish
+run while `no-publish` is on *(R4-O2)*, and changes none of these for a free
 question, so a question marked `access` stays the person's. The text a session is handed for a supervisor's answer still grants
 nothing (`SupervisorHanded.Text`). *(R2-O1)* A go-ahead is no kind and stays the person's
 alone (D233's second note; §10).
@@ -278,6 +282,23 @@ grant rests on, and restricts nothing a person's development does.
   reads through the harness's read tools and the connector's reading tools, and is handed what it decides on (§2.4), so it is given
   none of the reviewer's git reading allows. The install's role, rules, permission and files verbs are commands, so they are denied
   with the shell, and round 2's denies of them are not written. The hard-deny sentence handed to the classifier names a role's grants.
+  *(R4-O3)* `MultiEdit` joins the reviewer's denied writes (`Review/Domain/OpinionPermissions.cs:65-70`): they name `Edit`, `Write`
+  and `NotebookEdit` though their sentence says every tool that writes a file, and the tree guard's matcher names `MultiEdit` too
+  (`Agents/Domain/TreeGuardHook.cs:7`). The reviewer's and the helper's shapes deny it with the supervise shape.
+- *(R4-O1)* **Its sources, on Claude Code.** Spawned as a helper is, the turn would be handed its file beside the person's and the
+  copy's settings (`--settings`, merged with both, `Agents/Providers/ClaudeCode/ClaudeCodeSpawn.cs:105-113`) and Daoris's connector
+  beside every other server (`--mcp-config`, the repository's `.mcp.json` still governing its own, `:87-95`). So a write tool of a
+  server the person allows (`mcp__fs__*`) passes the shape, which keeps every other allow, and no deny or guard names it; and a hook
+  the asking session leaves in its uncommitted `.claude/settings.json`, laid over the copy, runs as the turn starts, outside every
+  rule. The turn therefore starts as the holder's terminal does (`Modules/Platform/HolderTerminal.cs:46-48`): the user tier and the
+  handed file alone (`--setting-sources user`), and Daoris's connector alone (`--strict-mcp-config` beside `--mcp-config`, whose
+  plan a helper's start already draws from that connector alone, `Agents/ConnectorPlans.cs:12-13`). On the protocol door the same
+  is `settingSources: ["user"]` and `strictMcpConfig: true` beside `settings` in `_meta.claudeCode.options`, which the adapter
+  spreads over its own list (`docs/2026-10-01-entry-point-evidence.md` step 1; carried and measured with `["project"]`,
+  `docs/2026-10-03-steer-evidence.md` §6). The copy's settings, allows, hooks, servers and instruction files, and the
+  person's other servers, are then not the turn's: the tree guard and the lineage hook still come in the handed file, the account's
+  user tier stays as every session has it, and the turn reads the copy's own `CLAUDE.md` as a file, if at all, never loaded as its
+  instructions (the project tier gates it, `docs/2026-10-01-entry-point-evidence.md` step 5).
 - **The reading posture and its place**, on a harness that takes no rules but has a reading posture (Codex's `read-only`,
   `Agents/Providers/Codex/CodexProvider.cs:38`). Its posture is said `copy-alone` until row h measures whether that posture stops a write
   outside its place; then it is said by what was measured. Codex holds no denies, and is said to (D233's choice 3).
@@ -498,7 +519,10 @@ written there (§30.4):
   repository, even where the `ask` that held the act is the machine's. It is the held act's own text (`run(npm ci)`), never the `ask`
   rule's pattern (`run(npm *)`): `allow` is read before `ask` (§30.4), so an allow of the pattern would lift the whole restriction.
   §30.4's *may be a pattern* is the person's own allow, theirs to write. It acts at its keeping (§3.1) and is read by
-  the next stage that reads the rules, at any later start. There is no once-only `files` allow, so nothing is consumed: the start that
+  the next stage that reads the rules, at any later start. *(R4-C1)* The person's file is edited under no lock today
+  (`PersonFiles.Edit`, `Workplace/Files/PersonFiles.cs:106-127`), so the allow is written as §5.3's one change of the rules is: read,
+  judged and written under the file's own lock, every writer of it the same, so neither the person's write nor the supervisor's
+  loses what the other made between. There is no once-only `files` allow, so nothing is consumed: the start that
   met the ask went on without it, as §30.4 says, and every later start reads the standing allow.
 - **The person decides** where §30.4 says: no supervisor for the place can act, its `authority` lacks the act, or the ask names the
   person (`run(…)@person`).
@@ -539,7 +563,11 @@ answers what waits. They meet in three places.
     first as for a granted act, and it runs as a granted act does. It is never sent on as the person's press (`StewardAsk.Press`),
     which would make a supervisor's word the person's own. *(R3-O4)* A `land` lands a tree on its line, and D233's third note holds a
     landing for the window since a landed branch is not taken back: allowed, it waits the allowing supervisor's window with
-    *Overrule* before it runs, and overruled, the person's card follows.
+    *Overrule* before it runs, and overruled, the person's card follows. *(R4-O4)* Through the window it stays the pipe's one pending
+    entry, the allow having ended its ten minutes, and is settled once more under the gate by the first of: the window's end, which
+    runs it; the person's *Overrule*; and the steward's withdrawal of its request (`WITHDRAW` or the kit's `CANCEL`,
+    `Modules/Platform/PipeTakeBacks.cs:27-65`, `:136-203`), which drops it as an overrule does but with no card, the request answered
+    `withdrawn` and the decision `stale`.
   - **Left, ungranted, unavailable, or undecided within ten minutes of its raise** *(R3-O5)*: the request's own clock, whichever holder
     holds the supervisor, never a turn's, since an attempt starts only at the look's `supervise` pass and a limited end takes the next
     choice (§2.3). The person's card follows, exactly as today, saying the supervisor's outcome in one sentence.
@@ -578,13 +606,32 @@ restriction asks for. A default's switch is placed at the machine whatever scope
 machine-wide list (`Agents/Permissions.cs:419-436`; `RuleProposals.cs:154`); switching an allowing default back on is the machine's
 supervisor's under `allow.standing`.
 
+*(R4-O2)* **A publish stays the person's too.** `no-publish` denies by its sentence alone: it holds no rule
+(`Agents/Permissions.cs:186-190`), so `Compose` hands nothing for it, and `add allow Bash(npm publish:*)` for repository X is a plain
+widening (`RuleProposals.cs:127`), whose explicit allow passes the publish at the harness in either mode, the classifier never asked.
+So `no-publish`'s forms are listed in code beside its sentence, as `no-push`'s four are (`Permissions.cs:180-181`): each publishing
+program's publish and a release's creation, in the plain and option-first shapes `no-push`'s rules take (`Bash(npm publish:*)`,
+`Bash(npm -* publish)`, `Bash(npm -* publish *)`, and so for `pnpm`, `yarn`, `cargo`, `dotnet nuget push`, `twine upload` and
+`gh release create`), held by a test. While `no-publish` is on, a widening whose rule would match a command one of them matches, read
+as the harness reads both (`:*` a prefix, `*` any text, a shell tool's rule with no specifier every command, so `Bash(npm:*)` and
+`Bash(npm *)` among them), is no `allow` subject and waits for the person. The forms class widenings alone and are never handed as
+denies, so a session's handed rules are as today and the person's own allow of a publish stays theirs. A go-ahead stays the person's
+(D233's second note): `no-push`'s denies and git access's doors already hold a push whatever an allow says
+(`docs/areas/git-and-remotes.md` rules 25 and 27), and the tree guard's hook outranks any allow of an edit, so `no-publish` is the
+one denying default a widening's rule could undo. What no rule names (a program that publishes when an interpreter's allow runs it)
+no rule of either default holds today, and this design changes neither.
+
 **The widening's one settlement** *(R2-C5)*. `RuleProposals.Answer` (`Agents/RuleProposals.cs:220-231`) opens, saves and marks in three
 steps under no lock, so a person's decline and a supervisor's yes can both succeed, and a crash between the save and the mark leaves an
 applied proposal reading unanswered. It becomes one settlement, `RuleProposals.Settle(home, id, by, yes, receipt)`, the person's press,
 their verb and the supervisor's keeping all calling it. Under an exclusive lock on the proposal's file (the person's verb runs in its own
-process as often as the window does), it reads the proposal's state and refuses one already settled (`answered`); it writes `settling`
-with its `by` and receipt, saves the rules, and marks the proposal settled. *(R3-C2, R3-O2)* **A proposal found `settling`** (a stop
-between the save and the mark) **is never saved again**, since the save is idempotent against itself but not against an edit between:
+process as often as the window does), it reads the proposal's state and refuses one already settled (`answered`). *(R4-C1)* Then, as
+one change of the rules (below), it reads the rules, judges the change against them as they stand, writes `settling` with its `by`
+and receipt, and saves the rules; once the rule file's lock is let go, it marks the proposal settled. A yes the rules already say is
+marked settled with no save, as `Unchanged` reads it. A supervisor's yes that an exclusion above now holds, read again (a deny of
+its scope the person added since, or `no-publish` switched back on), writes nothing and returns the proposal to the person
+(`waiting`), the supervisor's decision closed as the person's. *(R3-C2, R3-O2)* **A proposal found `settling`** (a stop between the
+save and the mark) **is never saved again**, since the save is idempotent against itself but not against an edit between:
 the person's `daoris agent rules remove` acts alone while no Daoris runs (`Agents/AgentsCommand.cs:11-13`), and saving again would
 undo it, or drop a deny that replaced it (`PermissionRules.Add`, `Agents/Permissions.cs:399-416`). Whoever finds it, under the same
 lock (the tick, the person's press or verb, the start's sweep), reads the rules as they stand and marks it settled by its `by` where
@@ -593,6 +640,23 @@ they already say its change (`Effect` answers `Nothing`, as the tick's `Unchange
 read leaves it `settling` for the next tick, as the tick leaves every proposal today (`:174-181`). So a person's Take back or deny
 between the save and the recovery stands, nothing reapplies a save that may have run, and no receipt need be kept with the rules. A
 person's press that finds it settled by a supervisor says so, with *Take back*, their own act on the rules.
+
+*(R4-C1)* **One change of the rules.** Every writer of the rule file reads it, decides its edit and saves it, and the save holds the
+file's lock over its own re-read and rename alone (`Agents/Permissions.cs:333-346`, `Store/JsonKeeping.cs:111-116`), a changed list
+written whole, never merged as a set (`:306-314`). So a settlement that reads `allow: [A]` and `ask: [B]`, computes `allow: [A, B]`,
+and saves after the person's removal of A has landed writes A back, with no restart or recovery involved. Every writer therefore
+goes through one change, `PermissionRules.Change(home, edit)`, as every writer of `harnesses.json` goes through
+`HarnessSettingsChange.Change` (`Agents/HarnessSettingsChange.cs:31-56`, whose `read` seam lets a test's other writer wait on the
+lock): the file's lock taken, the rules read, the edit decided from them as they stand (it may refuse, writing nothing), and the edit
+saved holding the same lock (`JsonKeeping.SaveHolding`, `Store/JsonKeeping.cs:121`), never taking it again; a lock held past its
+wait refuses the change, nothing written, as `KeepLock` refuses any (`Store/KeepLock.cs:61-73`). Its writers are the person's rule
+door (`Modules/Bridge/Routes/RulesRoutes.cs:32-57`), their verb (`Agents/AgentRulesVerb.cs:62-67`, `:117-120`), the settlement above,
+the tick's narrowing, which reads and saves per proposal (`Agents/RuleProposals.cs:170-198`) and so writes back an allow the person
+removed when it moves a rule out of `allow`, and the setups' allows (`Setup/WorkspaceSetup.cs:157-173`,
+`Setup/SetupPress.cs:251-263`). A proposal's lock is taken before the rule file's, never inside it, and the person's door takes the
+rule file's alone. So the person's removal of A lands wholly before the settlement's read, which then computes `allow: [B]`, or wholly
+after its save, which it then edits; either way A stays removed. The `settling` recovery reads the rules and saves nothing, so it
+needs no change of them.
 
 **No dispatch arbitrates.** The roles' route dispatch (`StewardRouteAct.DispatchAsync`) only calls a route. Each kind settles at its
 subject's own door, which takes one settlement whoever presses first: the held request's end, the widening's settlement, the count's
@@ -731,7 +795,7 @@ Test paths are under `src/Daoris.Desktop/` (`Daoris.Desktop.Driver.Tests/`, `Dao
 | `StandingState` | `Modules/Platform/StandingState.cs` | Unchanged: an agent's generation is never in `Holds`, and nothing of it is kept in memory *(R2-O2)* | — |
 | The releases | `Roles/SupervisorReleasing.cs:29`, `Roles/SupervisorCourses.cs:105`, `Roles/SupervisorTickets.cs:27` | Each asks the admission with the decision's kind, place and act *(R2-O2, R2-C2)* | a |
 | `IDecisionAdmission`, `SupervisorHolder` | `Roles/SupervisorDecision.cs:8-33`, `:148` | `Admit(kind, place, act)`; the holder gains the agent's role, revision, choice, tier, posture and session, a terminal's holder unchanged | b, c |
-| The person's card after the allow | `Modules/Platform/PipeAdmission.cs:85-93`, `:160`, `:188`, `Modules/Platform/PipeState.cs`, `Modules/Platform/PipeTakeBacks.cs`, `Modules/Platform/StewardAsk.cs` | The card is asked once the steward's `allow` subject falls to the person; an allowed act is admitted as the steward's, never pressed as the person's *(R2-O1)*; the request one pending entry under `PipeState.Gate`, settled by the first of an allow, a leave, the withdrawal and ten minutes from the raise, before either runs *(R3-O5)*; an allowed `land` held for the allowing supervisor's window *(R3-O4)* | e |
+| The person's card after the allow | `Modules/Platform/PipeAdmission.cs:85-93`, `:160`, `:188`, `Modules/Platform/PipeState.cs`, `Modules/Platform/PipeTakeBacks.cs`, `Modules/Platform/StewardAsk.cs` | The card is asked once the steward's `allow` subject falls to the person; an allowed act is admitted as the steward's, never pressed as the person's *(R2-O1)*; the request one pending entry under `PipeState.Gate`, settled by the first of an allow, a leave, the withdrawal and ten minutes from the raise, before either runs *(R3-O5)*; an allowed `land` held for the allowing supervisor's window *(R3-O4)*, still the pending entry there, settled by the first of the window's end, an overrule and the steward's withdrawal, which drops it with no card *(R4-O4)* | e |
 | The steward's act's place *(R3-O4)* | `Modules/Bridge/SupervisorDoor.cs:110-132`, `:194-217` | The target's resolution of `ActAsync` read for the `allow` subject's place, a session's to its quest first; a target that does not resolve, or a dependency that does not read, the person's card | e |
 
 ### 7.4 `RoleActs` and the kinds' rows
@@ -741,8 +805,9 @@ Test paths are under `src/Daoris.Desktop/` (`Daoris.Desktop.Driver.Tests/`, `Dao
 | `StewardActs.TableOf` | `Modules/Platform/RoleActs.cs:79-81` | Unchanged for the steward. The supervisor's table stays empty: its decisions are the kinds' rows below, not `ROLE_ACT` acts | — |
 | The kinds' rows | `Modules/Bridge/SupervisorKinds/` (new): `ISupervisorKind`; `QuestionKind`, from `SupervisorDoor.AnswerAsync`, `DeferAsync` and `WaitingAsync`; `CourseKind`, from `SupervisorCourseDoor`; `LimitKind`; `AllowKind` with its three subtypes; `FilesKind`; `LandingKind` | Each kind one unit, registered once as a steward's act is a row: its list of waiting subjects by their typed references, its offered acts, its keeping against the subject as it stands, when it takes effect, and its release through its subject's own door | b; d, e, f, g |
 | The roles' route dispatch | `Modules/Bridge/StewardRouteAct.cs` | `DispatchAsync` made the one dispatch by which a role makes a person's press inside the role's door, for the steward's route acts and the supervisor's releases alike; it settles nothing, each subject's door does *(R2-C5)* | e |
-| The widening's settlement *(R2-C5)* | `Agents/RuleProposals.cs:220-231`, `:355-362` | `Settle(home, id, by, yes, receipt)` in place of `Answer`: under the proposal file's lock, conditional, `settling` with its receipt; a proposal found `settling` never saved again, marked settled where `Effect` finds its change standing, else returned to the person, by whichever caller finds it *(R3-C2, R3-O2)* | e |
-| The widening's class and place *(R3-O1)* | `Agents/RuleProposals.cs:102-147`, `Modules/Bridge/SupervisorKinds/` (`AllowKind`) | A widening that removes or moves a deny of its scope, or switches off `no-publish` or `tree-guard`, never an `allow` subject; a default's switch placed at the machine | e |
+| The widening's settlement *(R2-C5)* | `Agents/RuleProposals.cs:220-231`, `:355-362` | `Settle(home, id, by, yes, receipt)` in place of `Answer`: under the proposal file's lock, conditional, `settling` with its receipt; a proposal found `settling` never saved again, marked settled where `Effect` finds its change standing, else returned to the person, by whichever caller finds it *(R3-C2, R3-O2)*; the change judged and saved as one change of the rules, returned to the person where their restrictions now hold it *(R4-C1)* | e |
+| The widening's class and place *(R3-O1)* | `Agents/RuleProposals.cs:102-147`, `Agents/Permissions.cs:186-190`, `Modules/Bridge/SupervisorKinds/` (`AllowKind`) | A widening that removes or moves a deny of its scope, or switches off `no-publish` or `tree-guard`, never an `allow` subject; a default's switch placed at the machine; *(R4-O2)* `no-publish`'s forms listed beside its sentence, read by the class alone, and a widening whose rule would match one while it is on never an `allow` subject | e |
+| One change of the rules *(R4-C1)* | `Agents/Permissions.cs:333-346`, `Store/JsonKeeping.cs:111-121`, after `Agents/HarnessSettingsChange.cs:31-56`; its writers `Modules/Bridge/Routes/RulesRoutes.cs:32-57`, `Agents/AgentRulesVerb.cs:62-67`, `:117-120`, `Agents/RuleProposals.cs:170-198`, `:220-231`, `Setup/WorkspaceSetup.cs:157-173`, `Setup/SetupPress.cs:251-263` | `PermissionRules.Change(home, edit)`: the rule file's lock, the read, the edit decided from it, the save holding the lock; every writer through it | e |
 | The held request's door *(R2-O9)* | `Events/HeldPermissions.cs:81-82`, `:136-174` | Answered by the allow kind at the same door and its one end; the remark that only the person's press allows rewritten to the person's or the place's supervisor's under its grant | e |
 | A node's word *(R2-C6)* | `Workflows/Nodes/NodeRecord.cs:249`, `Workflows/Nodes/RunNodeWords.cs:96-127`, `:158-207`, `Workflows/Nodes/NodeRecordFiles.cs:519-534`, `Workflows/Kinds/Human/HumanNode.cs:54-60`, `Workflows/Kinds/Review/ReviewNode.cs:45-46` | `NodeWord`'s `by` and attempt written, read and applied; a person's word replacing a supervisor's pending one; a supervisor's move's cause and source its own; a supervisor's word whose decision is not live in this run dropped at the pass *(R3-O3)* (§3.6) | f |
 | The person's holds on a line *(R2-O13)* | `Modules/Bridge/StewardTargets.cs:29` | The person's stop and the pause read through one unit, by the steward's hand-over and the course, limit and landing releases | d, f |
@@ -770,7 +835,7 @@ Test paths are under `src/Daoris.Desktop/` (`Daoris.Desktop.Driver.Tests/`, `Dao
 | The work | `Roles/Domain/ParticipantWork.cs`, `Service/Daoris.Service.Core/Sessions/ParticipantWork.cs`, `Web/work/identity.ts`, `Service/Daoris.Service.Tests/fixtures/participant-work.json` | `supervise`, read from `decides` before every other mark; not in `HoldsSlot`; `RoleWork.Codes` stays the nine works a working role takes | c |
 | The record | `Participants/Helpers/HelperDoors.cs` and its service route, as a helper's record is opened | A `supervise` record's open, marked `decides` and `serves` | c |
 | The tools | `Service/Daoris.Service.Mcp/CallTable.cs`, `Service/Daoris.Service.Tests/fixtures/call-table.json` | `SupervisorServed`: the reads alone | c |
-| Its containment *(R2-C8, R2-O5)* | `Loop/Session/SessionRules.cs:31-95`, `Review/Domain/OpinionPermissions.cs:100-117`, `Agents/Domain/TreeGuardHook.cs`, `Participants/Domain/OpinionPosture.cs` | The supervise shape: the reviewer's, with the harness's shell tools denied whole and none of the reviewer's git reading allows *(R3-C3)*, and the hard-deny sentence naming a role's grants; the tree guard handed whatever the defaults say *(R3-O8)*; the reading posture where a harness has one; the posture said on the decision | c |
+| Its containment *(R2-C8, R2-O5)* | `Loop/Session/SessionRules.cs:31-95`, `Review/Domain/OpinionPermissions.cs:65-70`, `:100-117`, `Agents/Domain/TreeGuardHook.cs`, `Participants/Domain/OpinionPosture.cs`, `Agents/Providers/ClaudeCode/ClaudeCodeSpawn.cs:87-113`, `Agents/Providers/ClaudeCode/ClaudeProtocolDialect.cs:15-23` | The supervise shape: the reviewer's, with the harness's shell tools denied whole and none of the reviewer's git reading allows *(R3-C3)*, `MultiEdit` among the reviewer's denied writes *(R4-O3)*, and the hard-deny sentence naming a role's grants; the tree guard handed whatever the defaults say *(R3-O8)*; on Claude Code, the user tier and the handed file alone and Daoris's connector alone, on either door *(R4-O1)*; the reading posture where a harness has one; the posture said on the decision | c |
 | Who may ask | `Participants/Domain/StartAdmission.cs` | A `supervise` session asks for no co-worker | c |
 
 ### 7.7 The censuses
@@ -800,6 +865,8 @@ Test paths are under `src/Daoris.Desktop/` (`Daoris.Desktop.Driver.Tests/`, `Dao
 - `SUPERVISOR_ANSWER`, `SUPERVISOR_DEFER` and `SUPERVISOR_COURSE`, with `sessions supervise`'s `--point` and `--course` (row b).
 - The `RoleHolders.Terminal` written at the keeping (row b).
 - `RuleProposals.Answer`, replaced by `Settle` (row e) *(R2-C5)*.
+- *(R4-C1)* Every unlocked read-then-save of the rule file, each writer moved onto `PermissionRules.Change`, and `PermissionRules.Save`
+  called from inside it alone (row e).
 - The area sentences each row changes, rewritten in place by that row *(R2-O9)*: this area's rule 7, rules 41, 42, 46 and 48 that name
   the terminal alone (rows a to c), rule 47's access widening, which becomes the `allow` kind's while a free question about access stays
   the person's, and rule 51's ungranted act (row e), rule 49's window, which no longer holds an allow (row e), and rule 55's Accept,
@@ -846,6 +913,15 @@ Test paths are under `src/Daoris.Desktop/` (`Daoris.Desktop.Driver.Tests/`, `Dao
   controls with no verb; the shell denied whole holds every form (§2.8).
 - **A `files` allow of the `ask`'s pattern, or in the machine's layer** *(R3-O6)*. Either lifts the restriction past the one act and
   the one place the supervisor decided (§5.1).
+- **Denying each other server's tools on a supervise turn** *(R4-O1)*. Another server's name is not known before the turn starts, and a
+  hook in the copy runs outside every rule; the turn's sources and servers held to the user tier, the handed file and Daoris's
+  connector hold both (§2.8).
+- **`no-publish`'s forms handed as denies** *(R4-O2)*. A deny would also refuse the person's own allow of a publish, a session's rules
+  changing for a supervisor's sake; read by the widening's class alone, they keep the publish the person's and every session as it is
+  (§5.3).
+- **The rule file's lists merged as sets** *(R4-C1)*, as `driver.json`'s sets are. Each writer would still decide from a read another
+  has changed, and one rule's one place in a scope would be lost when two writers move it; one locked change decides from the file as
+  it stands (§5.3).
 
 ## 9. The rows, in build order
 
@@ -888,9 +964,11 @@ two routes in and three out.
 **SUPERVISOR2c — the actor holder** (driver, service, modules, web). Changes: `holder: agent` for the supervisor with its staffing and
 policy through the role door; the agent's generation by role and revision, and its admission; the `supervise` work, its record, its
 call-table column and its start rule; the attempt, its outcome and its closure at a start; the turn with its containment and the empty
-folder, the shell denied whole on a harness that takes rules *(R3-C3)*, the tree guard whatever the defaults, and the role verb refused
-from an agents' job *(R3-O8)*; the start's sweep reading each kind's durable door *(R3-O2)*; the prompt from the shared composer, and the
-look's pass; the unavailable path; the suggested row; the censuses of §7.7 for c;
+folder, the shell denied whole on a harness that takes rules *(R3-C3)*, `MultiEdit` among the reviewer's denied writes *(R4-O3)*,
+the tree guard whatever the defaults, and the role verb refused from an agents' job *(R3-O8)*; on Claude Code, the turn's sources the
+user tier and the handed file alone and its servers Daoris's connector alone, on either door *(R4-O1)*; the start's sweep reading
+each kind's durable door *(R3-O2)*; the prompt from the shared composer, and the look's pass; the unavailable path; the suggested
+row; the censuses of §7.7 for c;
 the editor's *An agent* with its choices, bench scorecards, posture, policy and week; *Used by*. The person sees a supervisor held by an
 agent answering questions and courses at its places within its grants, each decision on its card with *Overrule*, the tier that ran and
 what held it read-only, its turn readable, and its week in the editor. Proof (a stub harness, and one real-process check): answering,
@@ -902,8 +980,11 @@ a revoke, a role change from another process, or a changed subject dropped *(R2-
 subject with no repository run in its own empty folder, removed after; on Claude Code, a real supervise turn told to run
 `daoris driver role set` and to write the home's permissions refused both, its decision saying `rules-and-copy` *(R2-C8, R2-O5)*, and,
 with the person's composition allowing `Bash(python:*)`, the same turn told to write the home's permissions with a Python program
-refused *(R3-C3)*; the turn handed the tree guard with `tree-guard` switched off, and `daoris role set` refused from a process in an
-agents' job while it acts from the person's terminal *(R3-O8)*; the record's actor fields and each decision's tokens.
+refused *(R3-C3)*; on each door, with the account's user tier serving a server whose write tool the person's composition allows and
+the copy's uncommitted `.claude/settings.json` holding a `SessionStart` hook, the turn offered neither that tool nor the copy's
+servers and running no hook of the copy's, the home unwritten *(R4-O1)*; the turn handed the tree guard with `tree-guard` switched
+off, and `daoris role set` refused from a process in an agents' job while it acts from the person's terminal *(R3-O8)*; the record's
+actor fields and each decision's tokens.
 
 **SUPERVISOR2d — limits and moves** (driver, modules, web). Changes: `refer` offered on `limits` and `moves` for a driven line (the judge
 still refuses it on a conversation's line, `do`); the `LimitKind` row (`limit.move` as an approved move in `role_moves`, `limit.wait` as
@@ -917,9 +998,12 @@ stopped; a conversation's `refer` on limits refused; `moves-unbounded` still jud
 reaches and covered by its own acts (§5.3), released at its keeping. A held request: `allow.once` or `allow.reject` through the door's
 one end. A widening: `allow.standing` or `allow.reject` at its rule's reach, through `RuleProposals.Settle`, recorded `by` the role,
 one that removes the person's deny or switches off a default that denies left theirs, a default's switch at the machine *(R3-O1)*, and
-a `settling` one recovered by what the rules hold, never saved again *(R3-C2, R3-O2)*. The steward's act outside its grants: an `allow`
+a `settling` one recovered by what the rules hold, never saved again *(R3-C2, R3-O2)*; `no-publish`'s forms in code, a widening
+whose rule would match one while it is on left the person's *(R4-O2)*; every writer of the rule file through one locked change
+*(R4-C1)*. The steward's act outside its grants: an `allow`
 subject raised where `StewardAsk.Outside` asks today at the target's place as `ActAsync` reads it, one pending entry settled once
-*(R3-O4, R3-O5)*, `allow.steward` admitting it once as the steward's own act, an allowed `land` held for the window *(R3-O4)*, refused
+*(R3-O4, R3-O5)*, `allow.steward` admitting it once as the steward's own act, an allowed `land` held for the window *(R3-O4)* and
+dropped with no card where the steward withdraws it there *(R4-O4)*, refused
 from a holder that holds the steward too, falling to the person's card otherwise (§5.2). The person sees the held permission's card
 saying *the supervisor allowed this once* with no *Overrule*, a widening allowed by a supervisor on the Agents page with who allowed it
 and *Take back*, and the steward's line saying which act a supervisor allowed, a `land` with when it lands and *Overrule*. Proof: a
@@ -930,14 +1014,20 @@ option refused at a held request *(R2-C4)*; a person's decline and a supervisor'
 its place, while no Daoris runs, and the recovery leaving the access withdrawn, the proposal returned to the person; a crash with the
 change standing marked settled with no save *(R3-C2, R3-O2)*; under an agent-held allow supervisor, a widening that moves the person's
 deny to `allow` and one switching `no-publish` off waiting for the person, and a default's switch proposed with a repository's scope
-decided by the machine's supervisor *(R3-O1)*; a widening allowed standing and taken back by the person; the steward's `delete` outside
-its grants allowed once, logged `by: steward` naming the decision, the next `delete` asked again; one left and falling to the person's
-card; one refused where one terminal holds the steward and the allow supervisor *(R2-O4)*; a `stop` on a session placed at its quest's
-repository and decided there, and one on a quest whose repository does not read going to the person's card *(R3-O4)*; an allowed
-`land` waiting the window and overruled inside it, the person's card following *(R3-O4)*; an allow arriving after the ten minutes
-dropped, the card asked once and the act run once, and the steward's withdrawal settling the entry before either *(R3-O5)*; an update
-act outside the grants still refused `not-granted`; `owner-set` read before an allowed steward act *(R2-O1)*; an allow no grant covers
-waiting for the person; the owner's-marks census.
+decided by the machine's supervisor *(R3-O1)*; under it, `add allow Bash(npm publish:*)`, `add allow Bash(npm:*)` and an option-first
+form for repository X waiting for the person while `no-publish` is on, `add allow Bash(npm run build:*)` decided, and the publish's
+widening decided once the person has switched `no-publish` off *(R4-O2)*; the supervisor's yes on a proposal moving B from `ask` to
+`allow` while the person's removal of allowed A waits on the rule file's lock, and the removal landing first, each leaving A removed
+and B allowed, and the tick's narrowing, the verb and the setups the same, through the change's read seam *(R4-C1)*; a yes on a
+widening whose rule the person has since denied in its scope returned to them, nothing written *(R4-C1)*; a widening allowed
+standing and taken back by the person; the steward's `delete` outside its grants allowed once, logged `by: steward` naming the
+decision, the next `delete` asked again; one left and falling to the person's card; one refused where one terminal holds the steward
+and the allow supervisor *(R2-O4)*; a `stop` on a session placed at its quest's repository and decided there, and one on a quest whose
+repository does not read going to the person's card *(R3-O4)*; an allowed `land` waiting the window and overruled inside it, the
+person's card following *(R3-O4)*, and one the steward withdraws inside it dropped, answered `withdrawn`, with no card and nothing
+landed *(R4-O4)*; an allow arriving after the ten minutes dropped, the card asked once and the act run once, and the steward's
+withdrawal settling the entry before either *(R3-O5)*; an update act outside the grants still refused `not-granted`; `owner-set` read
+before an allowed steward act *(R2-O1)*; an allow no grant covers waiting for the person; the owner's-marks census.
 
 **SUPERVISOR2f — landings** (driver, modules, web). Changes: the `LandingKind` row over a `review` step's Accept and a `human`
 approval's *Approve* and *Reject*, pressed through each node's own press door; the node's word carrying its author and attempt, the
@@ -954,7 +1044,8 @@ the node kinds' census.
 
 **SUPERVISOR2g — the rule file's allows** (driver, web; with TREEPOOL1 §30's rows 6a, 3 and 6b). Changes: the `FilesKind` row over
 §30.4's asks (§5.1), at the place its act reaches, under `files.allow-run`, `files.allow-copy` and `files.allow-share`; a standing allow of
-the held act's own text written into the deciding place's layer with `by` *(R3-O6)*. The person sees the repository page's waiting ask
+the held act's own text written into the deciding place's layer with `by` *(R3-O6)*, under the person's file's lock as every writer
+of it is *(R4-C1)*. The person sees the repository page's waiting ask
 answered by its supervisor, and a standing allow saying who gave it, with *Take back*. Proof: a command a person's `ask` holds at a
 start, not run there, allowed by the repository's supervisor, written to the repository's layer `by` the role, and run at the next
 start; taken back, and asked again; under a machine's `ask` of `run(npm *)`, repository X's allow of `run(npm ci)` written into X's
@@ -967,7 +1058,8 @@ press *(R2-C9)*.
 supervisor on one repository: a question answered and one overruled inside the window, an allow given at once and a standing one taken
 back, a budget reached and falling to the person *(R2-O1)*, and each harness the install runs measured on whether its supervise turn's
 posture stops a write outside its place *(R2-C8)*, Claude Code's with the person's `Bash(python:*)` allowed and a program told to write
-the home's permissions *(R3-C3)*. The spend is reported, run once at the least that proves it.
+the home's permissions *(R3-C3)*, and with a server the person allows and a hook in the copy *(R4-O1)*. The spend is reported, run
+once at the least that proves it.
 
 ## 10. What the owner settled *(R2-O1, R3-O4)*
 
@@ -985,17 +1077,19 @@ D233's second note of 2026-11-08 settles round 1's four questions, and its third
 
 No question is left for the owner.
 
-## 11. Whether it is ready *(R3)*
+## 11. Whether it is ready *(R3, R4)*
 
 - **Rows b, d and h** are ready to build once a's and c's contracts hold. Row b's change is the typed subject, which today's forms
   already carry for a question and a point, and the sweep by kind; row d's is the person's stop and pause read at its release; row h's is
   its proof.
 - **Rows a, f and g** are ready to build. Round 3's changes to them are clauses taken as their readers gave them: a's migration step
   keeping the home's newest build first and its workspace map held for the person; f's word bound to its run; g's layer, the held
-  act's text and the sweep reading its allow.
-- **Rows c and e** are ready once a last confirming read takes the sections round 3 changed in kind: §2.8 for c (the shell denied
-  whole, in place of round 2's verb denies) and §2.2's door reads; §5.2 and §5.3 for e (the steward's place, its one pending entry
-  and an allowed `land`; the person's deny and a default's place; a `settling` proposal never saved again).
+  act's text and the sweep reading its allow. *(R4-C1)* Round 4 adds one clause to g, its allow written under the person's file's
+  lock as §5.3's change of the rules is, the same mechanism and no new kind.
+- **Rows c and e** *(R4)* are ready to build once a one-paragraph confirming check reads round 4's clauses: for c, §2.8's *Its
+  sources, on Claude Code* and its `MultiEdit` sentence, with §7.6's containment row and §9 c's proof; for e, §5.3's *A publish stays
+  the person's too*, its settlement's sentences marked *(R4-C1)* and *One change of the rules*, and §5.2's allowed `land` in its
+  window, with §7.4's rows and §9 e's proof.
 
 ## Round 2: both reads of round 1 answered
 
@@ -1051,3 +1145,18 @@ what round 3 does, and where. Each smallest change is taken, but for Codex B2, w
 | Opus's reading: a `files` allow is the ask's exact text | A reading of §30.4 | **Taken as read.** The held act's own text (`run(npm ci)`), never the `ask` rule's pattern, since `allow` is read before `ask`; §30.4's *may be a pattern* is the person's own allow | §3.1, §5.1, §8, §9 g |
 | Opus's reading: the steward's ungranted act waits at most ten minutes | A reading of §2.5 and §5.2 | **Taken as read.** The request's own clock from its raise, never a turn's | §2.5, §5.2 |
 | Codex: rows f and g ready; Opus: rows a and c ready | — | f changes only by Opus 3, g by Opus 6 and the sweep's door (Opus 2), a by Codex B1 and Opus 7, c by Codex B3 and Opus 2 and 8 | §11 |
+
+## Round 4: the confirming reads of round 3 answered
+
+Each finding of `## Opus (independent), round 3` and `## Codex, round 3` read against main at `0e50a18388`: whether it holds there,
+what round 4 does, and where. Each smallest change is taken as its reader gave it; the code shows none smaller, and for Codex's
+it shows the exemplar the change follows. A go-ahead stays the person's (D233's notes of 2026-11-08), which Opus 2's change keeps.
+
+| Finding | Holds at main | Round 4 | Where |
+|---|---|---|---|
+| Opus 1, blocking (c): denying the shell leaves the turn's other ways to run a program | Yes: a helper's Claude Code takes its file by `--settings`, merged with the person's and the repository's (`Agents/Providers/ClaudeCode/ClaudeCodeSpawn.cs:105-113`), and the connector by `--mcp-config` beside every other server (`:87-95`); the shape keeps every other allow (`Review/Domain/OpinionPermissions.cs:111`), and the guard matches the edit and shell tools alone (`Agents/Domain/TreeGuardHook.cs:10`) | **Taken.** The turn starts as the holder's terminal does (`Modules/Platform/HolderTerminal.cs:46-48`): `--setting-sources user` and `--strict-mcp-config`, and on the protocol door `settingSources: ["user"]` and `strictMcpConfig: true` in `_meta.claudeCode.options`, the shape already carried and measured (`docs/2026-10-03-steer-evidence.md` §6). The copy's settings, hooks, servers and instruction files and the person's other servers are not the turn's; the tree guard and lineage hook come in the handed file. The real-harness proof gains an allowed server's write tool and a copy's `SessionStart` hook on each door; row h measures both | §1.2, §2.8, §7.6, §8, §9 c, h |
+| Opus 2, blocking (e): a widening naming a publish undoes `no-publish` without switching it | Yes: `no-publish` holds no rule (`Agents/Permissions.cs:186-190`), so `Compose` hands nothing for it, and `add allow Bash(npm publish:*)` is a plain widening (`Agents/RuleProposals.cs:127`) | **Taken.** Its forms listed beside its sentence as `no-push`'s are (`:180-181`), plain and option-first, held by a test; while it is on, a widening whose rule would match one (`Bash(npm:*)` among them) waits for the person. The forms class widenings alone and are never handed as denies, so no session's rules change and the person's own allow of a publish stays theirs. `no-push` and the tree guard already outrank any allow; what no rule names stays as today | §0, §1.2, §2.7, §5.3, §7.4, §8, §9 e |
+| Opus 3, not blocking (c): `MultiEdit` not denied | Yes: the reviewer's writes name `Edit`, `Write` and `NotebookEdit` (`Review/Domain/OpinionPermissions.cs:67`), the guard's matcher `MultiEdit` too (`Agents/Domain/TreeGuardHook.cs:7`) | **Taken** in the reviewer's own list, whose sentence says every tool that writes a file, so the reviewer's, the helper's and the supervise shapes deny it | §2.8, §7.6, §9 c |
+| Opus 4, not blocking (e): an allowed `land` in its window names no end for the steward's withdrawal | Yes: the allow settles round 3's entry, and `WITHDRAW` takes back only a press still waiting for the person (`Modules/Platform/PipeTakeBacks.cs:136-203`) | **Taken.** The allowed `land` stays the pipe's one pending entry through the window, settled by the first of the window's end, the person's *Overrule* and the steward's withdrawal or cancel, which drops it as an overrule does but with no card: answered `withdrawn`, the decision `stale` | §5.2, §7.3, §9 e |
+| Codex, blocking (e): ordinary settlement can still restore an allow the person just removed | Yes: the rules are read, edited and saved (`Agents/Permissions.cs:333-346`), the lock held over the save's re-read and rename alone (`Store/JsonKeeping.cs:111-116`), a changed list written whole (`:306-314`); the person's door reads and saves the same way (`Modules/Bridge/Routes/RulesRoutes.cs:32-57`), and so do the verb, the tick's narrowing and the setups, the narrowing able to write back a removed allow when it moves a rule out of `allow` | **Taken**, after the code's exemplar: `PermissionRules.Change(home, edit)`, as `HarnessSettingsChange.Change` (`Agents/HarnessSettingsChange.cs:31-56`) is for `harnesses.json`: the rule file's lock, the read, the edit judged from it (a yes the rules say marked with no save, one the person's restrictions now hold returned to them), the save holding the lock (`JsonKeeping.SaveHolding`). Every writer goes through it; a proposal's lock comes first and never inside. The proof interleaves through the change's read seam. Carried to row g, whose person's file is edited under no lock (`Workplace/Files/PersonFiles.cs:106-127`). **Declined:** the lists merged as sets (§8) | §0, §1.2, §5.1, §5.3, §7.4, §7.8, §8, §9 e, g, §11 |
+| Opus: round 2's findings answered, and nothing in the place, the one settlement, the person's deny, `settling`, the sweep or the containment's other parts; Codex: row c ready, nothing further in row e's other parts | — | Unchanged | — |
