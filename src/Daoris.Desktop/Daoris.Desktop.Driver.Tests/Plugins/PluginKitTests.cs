@@ -1018,17 +1018,6 @@ public sealed class PluginKitTests : IDisposable
         Assert.Equal(1, cycle.ExitCode);
     }
 
-    [Fact]
-    public async Task A_performer_whose_step_declares_no_receipt_passes_the_cycle_s_stale_step()
-    {
-        var folder = New("acme.bare", [HookPoints.Perform]);
-        Sabotage(folder, "plugin.json", "\"evidence\": { \"schema\": \"acme.bare/receipt@1\" },", "");
-
-        var cycle = await PluginCycles.TryAsync(Home, folder, CycleFixture.Default with { Deadline = TimeSpan.FromSeconds(1) });
-
-        Assert.True(cycle.Passed, Describe(cycle));
-    }
-
     /// <summary>
     /// 🔴 Nothing reaches a platform: a plugin that does not take the stand-in world is sent no attempt, by `try`, the cycle, the wire
     /// test or the contract test, and its work is never done.

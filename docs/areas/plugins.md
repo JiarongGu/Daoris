@@ -160,6 +160,7 @@ example's `node --test`.
 
 ## Open
 
+- PLUGREV1: the code review's findings not yet fixed, each with its file and line (`TASKS.md`).
 - PLUGHOOK1d: ask a pull request's state again once the first pull request opens.
 - FABRIC-PERFORM1l: keep a pull request's fields in the work wire's evidence (`WorkEvidence`, `WorkWire.cs:63`).
 - EVENTHOOK1b is built whole: the kit's entry and the ending's adapter are in, and an intake's, a helper's and a reviewer's park are
