@@ -21,7 +21,7 @@ internal sealed class LandedReviews(TreeContext context)
     /// its index are untouched whatever state they are in.</para>
     ///
     /// <para>🔴 <b>The checkout is proven first</b>: git walks UP, so a registered root that is not the top of a
-    /// repository of its own would answer for whatever repository encloses it (FIX-LOG). Such a root is
+    /// repository of its own would answer for whatever repository encloses it. Such a root is
     /// <see cref="LandedState.NoCheckout"/>, and git is asked nothing else.</para>
     ///
     /// <para><b>A trace is gone, whatever stands under its name now</b>: the record says the landing's branch went, and

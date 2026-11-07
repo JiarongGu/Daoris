@@ -40,7 +40,7 @@ internal sealed class SetAsideKeeps(TreeContext context)
     /// <para>The manifest beside it, where it reads, says what the slim removed, which the read
     /// passes over (<see cref="WrittenSince"/>). One that does not read says nothing, so the folder is read whole: kept more, never less.</para>
     /// </summary>
-    /// <param name="top">A finished tree's folder: its own top's time is read too (Codex's read of the design, finding 2), since a top-level
+    /// <param name="top">A finished tree's folder: its own top's time is read too, since a top-level
     /// entry deleted after the judgement's read leaves no later time on anything that stays. A folder from before, whose top was made when it
     /// was copied or moved, is read as before.</param>
     internal (string Code, string Sentence)? Kept(string folder, DateTimeOffset moved, bool top = false)
@@ -64,9 +64,9 @@ internal sealed class SetAsideKeeps(TreeContext context)
     /// write is read, never what it points at, and it is never walked into.
     /// </summary>
     /// <remarks>
-    /// <para>🔴 <b>Each entry's creation time too</b> (Fable F1.1, as <see cref="TreeStrays"/> reads one): a copy keeps its source's
+    /// <para>🔴 <b>Each entry's creation time too</b> (as <see cref="TreeStrays"/> reads one): a copy keeps its source's
     /// write time and takes a new creation time, so a file copied in after the move is a write.</para>
-    /// <para>🔴 <b>What the slim removed</b> (the steward's S1): removing a folder changes the time of the
+    /// <para>🔴 <b>What the slim removed</b>: removing a folder changes the time of the
     /// folder above it, which this read would take for a write after the move and keep for ever. So a path the manifest marks
     /// <c>removing</c> is passed over, never read into; the folder directly above a <c>removed</c> path has its own write time read
     /// against when that removal ended, and passed over while a path below it is still <c>removing</c>. Its creation time, and every
@@ -121,7 +121,7 @@ internal sealed class SetAsideKeeps(TreeContext context)
             }
         }
 
-        // A finished tree's own top, read last: an entry deleted there leaves no later time on anything that stays (Codex's read of the design, finding 2).
+        // A finished tree's own top, read last: an entry deleted there leaves no later time on anything that stays.
         if (top && !passedOver.Contains("") && new DirectoryInfo(folder).LastWriteTimeUtc > Since(""))
         {
             return (SetAsideKept.Written, "something at its top was added or removed after it was judged");

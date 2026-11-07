@@ -81,7 +81,7 @@ public static class ActStepKinds
 public sealed record ActStepPlan(string Kind, string Arguments, string Postconditions, string? Rollback = null);
 
 /// <summary>
-/// An act as it is judged, before anything of it is written (§5's fields): its id and kind, the press and its Confirm, the repository and the
+/// An act as it is judged, before anything of it is written: its id and kind, the press and its Confirm, the repository and the
 /// checkout (its top and its canonical common directory, the checkout lock's key), the plan it showed, its steps, and its recovery.
 /// </summary>
 public sealed record ActOpening(

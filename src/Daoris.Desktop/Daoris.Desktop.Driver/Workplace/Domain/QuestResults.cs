@@ -28,7 +28,7 @@ public static class QuestResults
 
     /// <summary>
     /// Whether two reads of one quest stand on the same result: the same submission, by its machine and sequence, or none
-    /// on either. A later <c>ready</c> is another submission, judged again from the start (§E5), even at the same commit.
+    /// on either. A later <c>ready</c> is another submission, judged again from the start, even at the same commit.
     /// </summary>
     public static bool Same(QuestView? judged, QuestView? now) =>
         judged is not null && now is not null

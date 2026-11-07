@@ -19,7 +19,7 @@ public static class SetAsideClass
     public const string Refused = "refused";
 
     /// <summary>
-    /// A manifest beside it that does not read, or of a schema this build does not know (Codex's read of the design, finding 3): what it is
+    /// A manifest beside it that does not read, or of a schema this build does not know: what it is
     /// cannot be told, so no rule takes it; it waits, said, for a build or a hand that can read it, and the press lists it.
     /// </summary>
     public const string Unread = "unread";
@@ -34,9 +34,9 @@ public static class SetAsideClass
 /// <summary>
 /// One judgement of a set-aside folder: its class, the moment a write after which keeps it, and when
 /// a rule may take it. Read and never written. <see cref="Due"/> is a schedule, never an authorization: a recorded folder's hour is taken only
-/// on a holding check run right before its rename (<see cref="HoldingAsync"/>, Codex's read of the branch, finding 1).
+/// on a holding check run right before its rename (<see cref="HoldingAsync"/>).
 /// </summary>
-/// <param name="Threshold">The manifest's <c>read</c> for a finished tree (§3.5's race), else the moment in the folder's name.</param>
+/// <param name="Threshold">The manifest's <c>read</c> for a finished tree, else the moment in the folder's name.</param>
 /// <param name="Due">When a rule takes it: an hour after <c>recorded</c>, else its days after the move; null where it waits for its record, or cannot be read.</param>
 /// <param name="Hour">It goes by the hour's rule, not its days, so its holding check runs right before its removal.</param>
 internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshold, DateTimeOffset? Due, bool Hour, SlimManifest? Manifest)
@@ -46,8 +46,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
 
     /// <summary>
     /// Why a folder waits where the registry read and names no checkout of its repository: a recorded one's check cannot run, an awaiting one's
-    /// commits cannot be read, so neither goes nor is posted, and the card counts it with this reason, never as next (the last fixes' check,
-    /// findings 2 and 7).
+    /// commits cannot be read, so neither goes nor is posted, and the card counts it with this reason, never as next.
     /// </summary>
     internal const string NoCheckout = "the registry names no checkout of its repository on this machine";
 
@@ -65,7 +64,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
     internal static SetAsideEligibility Of(string folder, DateTimeOffset moved, TimeSpan days, bool whole)
     {
         var (manifest, problem) = SlimManifest.Read(SlimManifest.PathFor(folder));
-        // Codex's read of the design, finding 3: a manifest that is there and does not read is never a known legacy folder.
+        // A manifest that is there and does not read is never a known legacy folder.
         if (manifest is null && problem is not null) return new(SetAsideClass.Unread, moved, null, false, null);
         if (manifest?.Finished is not { } finished)
         {
@@ -89,7 +88,7 @@ internal sealed record SetAsideEligibility(string Class, DateTimeOffset Threshol
     /// own word, and the tip is an ancestor of the manifest's ref, or of <c>refs/heads/&lt;line&gt;</c> where it names none.
     /// <see cref="Holding.Passed"/>; <see cref="Holding.Failed"/> only where git said so for certain (the branch stands, the holder is missing,
     /// the tip is no ancestor); <see cref="Holding.Unread"/> for a root not given or any answer git does not define, which keeps the folder
-    /// as it is and is asked again (Codex's read of the design, finding 3).
+    /// as it is and is asked again.
     /// </summary>
     internal static async Task<(Holding Result, string? Why)> HoldingAsync(string? root, SlimManifest manifest, CancellationToken ct)
     {

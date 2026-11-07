@@ -70,7 +70,7 @@ public sealed class SessionDeletion(string home, Action<string, bool>? remover =
         var deleted = await service.DeleteSessionAsync(id, ct).ConfigureAwait(false);
         if (!deleted.Taken) return Refused(id, deleted);
 
-        // The one helper a clear also calls, so a delete takes every file §2.2 lists, the four it once left included.
+        // The one helper a clear also calls, so a delete takes every file a clear takes.
         var files = new SessionHomeFiles(home, remover).Remove([id], events);
         var stayed = files.Stayed[id];
 

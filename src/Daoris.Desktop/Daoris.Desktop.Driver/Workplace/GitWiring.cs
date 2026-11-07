@@ -19,7 +19,7 @@ namespace Daoris.Driver;
 /// shell characters (<see cref="Bare"/>), which git starts directly, with no <c>sh</c>; where the install's path holds one, by
 /// <c>GIT_SSH</c>, which git starts whole but which a repository's own <c>core.sshCommand</c> outranks. The remote helper is
 /// reached by <c>insteadOf</c> in the command scope, appended after any the start already holds.</para>
-/// <para>The configuration file of §4.1 is handed beside these by <see cref="GitGlobalFile"/>, through the same seam; the
+/// <para>The configuration file is handed beside these by <see cref="GitGlobalFile"/>, through the same seam; the
 /// identity's author by <c>GitAuthor</c> at a session's start and a squash.</para>
 /// </remarks>
 public static class GitWiring

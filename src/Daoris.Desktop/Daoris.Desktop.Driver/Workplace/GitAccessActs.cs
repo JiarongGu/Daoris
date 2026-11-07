@@ -129,7 +129,7 @@ public static class GitAccessActs
     }
 
     /// <summary>
-    /// The classes the edit loosens in the view of the level it changes (§8's widenings: a class loosened, or a level cleared where the
+    /// The classes the edit loosens in the view of the level it changes (a class loosened, or a level cleared where the
     /// level above is looser; <i>one value for both</i> where it loosens). Narrowing and no change are none.
     /// </summary>
     public static IReadOnlyList<string> Widened(GitAccessLevels before, GitAccessEdit edit)

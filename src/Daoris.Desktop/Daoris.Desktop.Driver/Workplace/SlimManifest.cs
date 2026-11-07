@@ -234,7 +234,7 @@ internal sealed record SlimManifest(
 /// A finished tree's facts in its schema-2 manifest, written at <c>judged</c>: the record's inputs,
 /// so the pass, the press and a restart compose the same post from it alone. Never a session: the service resolves those from its rows.
 /// </summary>
-/// <param name="Read">The moment before the judgement's read of what the tree holds: the folder's threshold (§3.5's race).</param>
+/// <param name="Read">The moment before the judgement's read of what the tree holds: the folder's threshold.</param>
 /// <param name="Tree">Its path before the move.</param>
 /// <param name="Tip">The commit judged.</param>
 /// <param name="GrewFrom">The commit it grew from, from <c>session-branches.json</c>; null where none is kept.</param>
@@ -246,7 +246,7 @@ internal sealed record FinishedTree(
     FinishedLeft Left, bool Whole)
 {
     /// <summary>
-    /// The landing that carried its work, captured before the move from the landings' record (Codex's read of the design, finding 6), so the
+    /// The landing that carried its work, captured before the move from the landings' record, so the
     /// record says it after that trace retires; null where none could be established, and <see cref="LandingWhy"/> says why. Never the
     /// judgement's or the move's moment in place of the landing's.
     /// </summary>
@@ -260,7 +260,7 @@ internal sealed record FinishedTree(
 internal sealed record FinishedLanding(string Branch, string? Line, DateTimeOffset At, string? PullRequest);
 
 /// <summary>
-/// A removal's own record beside its folder in <c>.tidied/.going</c> (Codex's read of the design, finding 5): which door removed it, when, the
+/// A removal's own record beside its folder in <c>.tidied/.going</c>: which door removed it, when, the
 /// threshold a later write is read against, and whether its delete began. A stop before the delete moves the folder back whole; one after
 /// it finishes only where nothing was written in it since and, for the hour's door, its holding check passes again; else what remains goes
 /// back, saying why. Its manifest moves into <c>.going</c> with it, and back with it.
@@ -330,7 +330,7 @@ internal sealed record FinishedLeft(IReadOnlyList<string> Names, int Count, bool
 /// <param name="Path">Relative to the tree's top, in git's spelling: <c>node_modules</c>, <c>web/node_modules</c>.</param>
 /// <param name="Why">Kept: why, a <see cref="SlimKept"/> code; removing: the last failure's words.</param>
 /// <param name="Tried">When a removal last failed for the same reason as the try before it: it waits a day from here.</param>
-/// <param name="Ended">Removed: when its removal ended, against which the purge reads the folder above it (Fable F1.1).</param>
+/// <param name="Ended">Removed: when its removal ended, against which the purge reads the folder above it.</param>
 internal sealed record SlimPath(string Path, string State, string? Why = null, DateTimeOffset? Tried = null, DateTimeOffset? Ended = null)
 {
     /// <summary>Whether its end is written: removed, or kept.</summary>

@@ -4,8 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The press's runs, per home, in this process: one at a time, under the home's run lock, tried and never waited for (the cleanup
-/// design §3.1). A press while a run is under way here joins it; one while another process, or the look's pass, holds the lock is refused
+/// The press's runs, per home, in this process: one at a time, under the home's run lock, tried and never waited for. A press while a run is under way here joins it; one while another process, or the look's pass, holds the lock is refused
 /// naming its holder. The last run is kept, so a page opened again reads the same run.
 /// </summary>
 public sealed class SpaceRuns

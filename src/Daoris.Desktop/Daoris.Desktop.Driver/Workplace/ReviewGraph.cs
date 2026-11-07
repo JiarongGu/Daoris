@@ -52,7 +52,7 @@ internal sealed class ReviewRead(string name, IReadOnlyList<ReviewRead> needs, b
 }
 
 /// <summary>
-/// The executor of one open of Review (the git-app design P1.1-P1.2): each git start a node, started the moment the
+/// The executor of one open of Review: each git start a node, started the moment the
 /// nodes it needs have answered. The reads that can run a configured program (Π) are one chain in today's order: each Π node also
 /// needs the Π node before it, so no two run together and none is speculative. Everything else runs at once and ahead.
 /// </summary>

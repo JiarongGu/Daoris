@@ -15,7 +15,7 @@ internal interface IWorkplaceResolvedAccess
 
 /// <summary>
 /// The access setup's resolution and its words (5), as the landing's effective rule and the merges note read
-/// them: Participants keeps the rule (the foundation design's §14.2 places <c>Domain/AccessRules</c> there), so the workplace names only
+/// them: Participants keeps the rule (<c>Domain/AccessRules</c> lives there), so the workplace names only
 /// these operations, which Participants installs when the driver loads.
 /// </summary>
 internal interface IWorkplaceAccessSetup

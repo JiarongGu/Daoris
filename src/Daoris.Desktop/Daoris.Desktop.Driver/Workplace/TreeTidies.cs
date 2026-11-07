@@ -35,7 +35,7 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
                 + "branch of yours is yours to delete.");
         }
 
-        // The root must BE the top of its own repository: git walks UP, and would answer for the one above it (FIX-LOG).
+        // The root must BE the top of its own repository: git walks UP, and would answer for the one above it.
         var (topCode, toplevel, topErr) = await WorkingTree.GitAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
         if (topCode != 0 || !SamePath(toplevel.Trim(), root))
         {
@@ -94,7 +94,7 @@ internal sealed class TreeTidies(TreeContext context, ContentHolds content, Tree
                     + "The branch stays; say it again with --force to discard it.");
             }
 
-            // What the proof that clears it rests on (third review), each ref at the commit it read, returned by that proof and
+            // What the proof that clears it rests on, each ref at the commit it read, returned by that proof and
             // verified exactly by the delete: the branch of the person's holding it, a squashing landing's branch, or the ref holding its
             // work by content.
             IReadOnlyList<(string Ref, string Commit)> rests = [];

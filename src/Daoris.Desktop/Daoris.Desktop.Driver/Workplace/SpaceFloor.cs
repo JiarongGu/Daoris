@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 public sealed record VolumeReading(string Id, string Root, long Free, long Total);
 
 /// <summary>
-/// The free-space read (Fable F4.3): the volume that holds a folder, read for that folder's own path, so
+/// The free-space read: the volume that holds a folder, read for that folder's own path, so
 /// a folder reached through a junction, or a folder a volume is mounted at, answers for its own volume, never its drive letter's. Never a
 /// walk; one read took 0.3 ms on the install.
 /// </summary>
@@ -139,7 +139,7 @@ public sealed record FloorStretch(string Volume, DateTimeOffset Since)
     /// <summary>When the floor's acts last ran for it: at most once an hour while below.</summary>
     public DateTimeOffset? Acted { get; init; }
 
-    /// <summary>The browser's caches were cleared, or could never be asked, in this stretch: once a stretch (Fable F4.1).</summary>
+    /// <summary>The browser's caches were cleared, or could never be asked, in this stretch: once a stretch.</summary>
     public bool Caches { get; init; }
 
     /// <summary>What the floor's acts freed in this stretch, in bytes.</summary>
@@ -250,7 +250,7 @@ public sealed record FloorPass(IReadOnlyList<FloorAct> Acts, IReadOnlyList<Floor
 /// The free-space floor: below it, Daoris frees early what it can make again, and says the rest.
 /// </summary>
 /// <remarks>
-/// <para><b>Measured per volume</b> (Fable F4.3): the Daoris folder's own path and each entry the acts free from (the trees home, the
+/// <para><b>Measured per volume</b>: the Daoris folder's own path and each entry the acts free from (the trees home, the
 /// downloads, the browser's profile) are read for their own volume, since the trees home may sit on another through a junction; each
 /// volume's floor is computed from its own size, each act runs where its own entry's volume is below, and a volume two entries share is
 /// said once.</para>

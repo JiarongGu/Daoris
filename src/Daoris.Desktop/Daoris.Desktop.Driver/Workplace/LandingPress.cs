@@ -154,7 +154,7 @@ internal sealed class LandingPress(
 
         TreeLanding landed;
         // The session tip a squash made the branch's commit from: the tidy's proof of what the landing holds; and the
-        // commit the squash made, which binds the branch the tidy reads to this landing (fourth review).
+        // commit the squash made, which binds the branch the tidy reads to this landing.
         string? squashedTip = null;
         string? squashedInto = null;
         var branchForm = landing.Form == LandingForm.Branch;

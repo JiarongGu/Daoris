@@ -99,7 +99,7 @@ internal sealed class TreeStrays(TreeContext context, TreeSetAside setAside, Con
         if (!Directory.Exists(trees) || !Directory.EnumerateDirectories(trees).Any()) return [];
         // Its trees reached through a link are somewhere else, and git lists them where they are.
         if (context.Worktrees.LinkBelowTreesRoot(trees) is not null) return [];
-        // A checkout that is not a repository of its own would list the trees of the repository above it (FIX-LOG), and every
+        // A checkout that is not a repository of its own would list the trees of the repository above it, and every
         // folder here would be none of them.
         if (!Directory.Exists(Path.Combine(root, ".git"))) return [];
         var (topCode, toplevel, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);

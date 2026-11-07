@@ -45,7 +45,7 @@ public interface IWorkspaceSetupWorld : ISetupWorld
     /// <summary>The supervisor's rules the home holds: a set-up quest parks at its line's failures rule, as the planner parks it.</summary>
     SupervisorRuleBook Rules();
 
-    /// <summary>Every session record this machine keeps, with the repository it ran in: what §4.2 counts.</summary>
+    /// <summary>Every session record this machine keeps, with the repository it ran in: what the set-up order counts.</summary>
     Task<IReadOnlyList<SessionRun>> RunsAsync(CancellationToken ct);
 
     /// <summary>The files a session's tool calls touched, from its conversation record; none where it has none.</summary>

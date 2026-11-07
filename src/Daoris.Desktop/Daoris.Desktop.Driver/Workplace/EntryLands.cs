@@ -247,7 +247,7 @@ internal sealed class EntryLands(TreeContext context, TreeLands lands, TreeLandS
             if (sync is not null) judged.Add((at, sync));
         }
 
-        // Point 3: an earlier part whose kept commits, replayed after a later part's, conflict with them or add nothing.
+        // An earlier part whose kept commits, replayed after a later part's, conflict with them or add nothing.
         for (var i = 0; i < judged.Count; i++)
         {
             var (at, earlier) = judged[i];

@@ -44,8 +44,8 @@ public static class SpaceKinds
     public static SpaceKind? Named(string id) => Table.FirstOrDefault(kind => string.Equals(kind.Id, id, StringComparison.Ordinal));
 
     /// <summary>
-    /// The browser's caches, relative to <c>browser-engine</c>'s root, its active profile being <c>Default</c> (the cleanup design §3.2's
-    /// table): counted here as the browser's own, cleared by the person's press while the browser is closed (<see cref="BrowserCacheClearing"/>), and below the floor once a stretch.
+    /// The browser's caches, relative to <c>browser-engine</c>'s root, its active profile being <c>Default</c>:
+    /// counted here as the browser's own, cleared by the person's press while the browser is closed (<see cref="BrowserCacheClearing"/>), and below the floor once a stretch.
     /// </summary>
     public static IReadOnlyList<string> BrowserCaches { get; } =
     [
@@ -444,7 +444,7 @@ public static class SystemSpace
     };
 
     /// <summary>
-    /// A kind's own volume (§4.4's <c>kinds[].volume</c>): only where its entry lies on another volume than
+    /// A kind's own volume (<c>kinds[].volume</c>): only where its entry lies on another volume than
     /// the Daoris folder's, read for its own path; null otherwise, or where either does not read.
     /// </summary>
     private static JsonObject? KindVolume(SpaceWorld world, SpaceKind kind, KeepPolicy policy, string? folderId, IReadOnlyDictionary<string, FloorStretch> stretches)
@@ -601,7 +601,7 @@ public static class SystemSpace
 
     /// <summary>
     /// How many set-aside folders wait with no rule's date: awaiting their record, whose manifest does not read, or recorded where the
-    /// registry names no checkout of their repository, so no holding check can run (<c>unnamed</c>, the last fixes' check, finding 7). Read from
+    /// registry names no checkout of their repository, so no holding check can run (<c>unnamed</c>). Read from
     /// the manifests beside them, no walk; null where none waits.
     /// </summary>
     internal static JsonObject? SetAsideWaiting(string home, KeepPolicy policy)
@@ -622,7 +622,7 @@ public static class SystemSpace
         return awaiting + unread + unnamed == 0 ? null : new JsonObject { ["awaiting"] = awaiting, ["unread"] = unread, ["unnamed"] = unnamed };
     }
 
-    /// <summary>A recorded folder whose last holding check found no checkout of its repository named: it waits, never next (finding 7).</summary>
+    /// <summary>A recorded folder whose last holding check found no checkout of its repository named: it waits, never next.</summary>
     private static bool Unnamed(SetAsideEligibility judged) =>
         judged.Class == SetAsideClass.Recorded && judged.Manifest?.Why == SetAsideEligibility.NoCheckout;
 
@@ -640,7 +640,7 @@ public static class SystemSpace
         {
             if (TreeSetAside.MovedAt(Path.GetFileName(folder)) is not { } moved) continue;
             // A recorded folder an hour after its record; one awaiting its record has no next, nor one
-            // whose repository the registry no longer names, which the waiting line counts (the last fixes' check, finding 7).
+            // whose repository the registry no longer names, which the waiting line counts.
             var judged = SetAsideEligibility.Of(folder, moved, policy.SetAside.Days, policy.SetAside.Whole);
             if (judged.Due is not { } due || Unnamed(judged)) continue;
             goes.Add((due, $"{Path.GetFileName(workspace)}/{Path.GetFileName(repository)}/{Path.GetFileName(folder)}"));

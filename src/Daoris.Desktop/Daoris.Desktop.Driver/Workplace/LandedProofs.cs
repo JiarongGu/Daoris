@@ -34,7 +34,7 @@ internal static class LandedProofs
     internal sealed record Proof(string Kind, string? Where, IReadOnlyList<string> Files, string? Detail, int Commits, bool Judgeable)
     {
         /// <summary>
-        /// What a removal by it rests on (third review): the form of the line it found the work on, at the commit it compared.
+        /// What a removal by it rests on: the form of the line it found the work on, at the commit it compared.
         /// Empty where it found none, or where the form was a caller's, read at no commit.
         /// </summary>
         internal IReadOnlyList<(string Ref, string Commit)> Rests { get; init; } = [];

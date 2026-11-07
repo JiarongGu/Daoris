@@ -2,9 +2,9 @@ namespace Daoris.Driver;
 
 /// <summary><c>tools.json</c> as it stands.</summary>
 /// <param name="Entries">Every declared tool, in the declared order.</param>
-/// <param name="Unknown">The ids the file names that this build does not declare: kept, never applied (rule 3).</param>
-/// <param name="Git">The settings Daoris's git carries (rule 4).</param>
-/// <param name="Locations">The resource locations, in order (rule 5).</param>
+/// <param name="Unknown">The ids the file names that this build does not declare: kept, never applied.</param>
+/// <param name="Git">The settings Daoris's git carries.</param>
+/// <param name="Locations">The resource locations, in order.</param>
 /// <param name="Notes">What the file keeps without applying, or skips, and why.</param>
 /// <param name="Problem">Why the whole file does not read; every tool is then refused.</param>
 public sealed record ToolsRead(

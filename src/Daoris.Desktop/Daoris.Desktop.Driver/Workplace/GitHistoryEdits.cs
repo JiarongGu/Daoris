@@ -67,7 +67,7 @@ internal sealed record HistoryEditRead(string Id, IReadOnlyList<string> Parents,
 }
 
 /// <summary>
-/// **Pick, revert and rebase onto, without a working tree** (§12 row m). On a branch no
+/// **Pick, revert and rebase onto, without a working tree**. On a branch no
 /// tree has out, never the line, a session's, a landing's or one bound to bring sessions together: each commit made from
 /// <c>merge-tree --write-tree --merge-base</c> and <c>commit-tree</c>, then the branch's <c>update</c>, its old tip's recovery ref under
 /// <c>refs/daoris/discarded/</c> and the proof refs' <c>verify</c>, one transaction run as an act of the journal (<see cref="ActRuns"/>).

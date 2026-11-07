@@ -32,8 +32,8 @@ public static class SpaceFree
     /// The finished trees' record pass at the press's run, before it removes: each stopped or refused
     /// folder resumed and each record due posted first, from its manifest, so a folder whose branch went reaches its record before the
     /// person's word can remove it, and a recorded folder's hour is checked. The list never runs it: it reads the classes as they stand, and
-    /// changes nothing (the second maker's read, finding 7). Nothing where it has no service, or its registry did not read: then no recorded
-    /// folder's hour is due (finding 1).
+    /// changes nothing. Nothing where it has no service, or its registry did not read: then no recorded
+    /// folder's hour is due.
     /// </summary>
     /// <returns>The registry's checkouts, for the run's holding checks; null where it has none, or it did not read.</returns>
     private static async Task<Func<string, string, string?>?> RecordAsync(SpaceFreeWorld world, Func<string, bool>? only, CancellationToken ct)
@@ -171,8 +171,8 @@ public static class SpaceFree
                 {
                     case "set-aside":
                     {
-                        // The listed folders' steps again, a record due posted first, before any of them goes. The last fixes'
-                        // check, finding 3: each listed class is compared with the class read before this run's own record pass, which moves a
+                        // The listed folders' steps again, a record due posted first, before any of them goes.
+                        // Each listed class is compared with the class read before this run's own record pass, which moves a
                         // stopped folder to its record by the press's own word, so it is no change since the list.
                         var before = ClassesNow(world);
                         var checkouts = await RecordAsync(world, null, ct).ConfigureAwait(false);
@@ -296,7 +296,7 @@ public static class SpaceFree
             // What it reads now, after the run's record pass: the removal compares this with what it reads right before its rename.
             var judged = TreeSetAside.MovedAt(Path.GetFileName(folder)) is { } moved ? SetAsideEligibility.Of(folder, moved, TimeSpan.Zero, whole: true) : null;
             var now = judged is null ? null : ListedClass.Of(judged.Class, judged.Manifest?.Why, judged.Manifest?.Finished is not null);
-            // The last fixes' check, finding 4: a folder listed recorded, or recorded now, is checked for its holder right before it goes, as the
+            // A folder listed recorded, or recorded now, is checked for its holder right before it goes, as the
             // hour's door checks it, and kept `changed` unless the check passes; with no registry, it cannot pass.
             if ((unit.Class == SetAsideClass.Recorded || now == SetAsideClass.Recorded) && judged?.Manifest is { Finished: { } finished } manifest)
             {
@@ -538,7 +538,7 @@ public static class SpaceFree
 
     /// <summary>
     /// How many of a group's set-aside folders are of each listed class (<see cref="SpaceUnit.Class"/>): what the list can say of
-    /// each and nothing more (the second maker's read, finding 9).
+    /// each and nothing more.
     /// </summary>
     private static JsonObject Classes(IReadOnlyList<SpaceUnit> units) => new()
     {
@@ -547,7 +547,7 @@ public static class SpaceFree
         ["stands"] = units.Count(unit => unit.Class == ListedClass.Stands),
         ["stopped"] = units.Count(unit => unit.Class is SetAsideClass.Stopped or SetAsideClass.Refused),
         ["unheld"] = units.Count(unit => unit.Class == ListedClass.Unheld),
-        // The last fixes' check, finding 9: a folder whose manifest does not read is listed early too, and counted as what it is.
+        // A folder whose manifest does not read is listed early too, and counted as what it is.
         ["unread"] = units.Count(unit => unit.Class == SetAsideClass.Unread),
         ["unmarked"] = units.Count(unit => unit.Class is null or SetAsideClass.Unmarked),
     };

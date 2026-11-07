@@ -245,7 +245,7 @@ internal sealed class ContentHolds(TreeContext context)
             .Select(parts => (parts[1].Trim(), parts[0].Trim()));
 
     /// <summary>
-    /// The holder a proof by ancestry rests on (third review), out of what <see cref="HoldersAsync"/> read: a form of
+    /// The holder a proof by ancestry rests on, out of what <see cref="HoldersAsync"/> read: a form of
     /// <paramref name="line"/> first, its own branch then origin's copy; else the first ref <paramref name="admit"/> takes, a branch of the
     /// person's before any other, since another session branch may go in the same pass. Null where none holds it: the holder the proof found
     /// is gone, and that is a refusal, never a fallback to a line that never held the tip.
@@ -339,9 +339,9 @@ internal sealed class ContentHolds(TreeContext context)
     /// it was judged, or a ref the proof rested on no longer at its commit; else git's own words. Nothing was deleted.
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Gone only on git's own word</b> (third review): any failure to read is never "gone": the branch is said kept, unread, and any
+    /// 🔴 <b>Gone only on git's own word</b>: any failure to read is never "gone": the branch is said kept, unread, and any
     /// recovery ref the act made stays with it. Exit 1
-    /// from <c>rev-parse --verify --quiet</c> is any failure to resolve, a broken ref's too (fourth review), so absence is asked of
+    /// from <c>rev-parse --verify --quiet</c> is any failure to resolve, a broken ref's too, so absence is asked of
     /// <c>show-ref --exists</c>, whose exit 2 alone says the ref is missing. A git older than 2.43 has no <c>--exists</c>, and its refusal
     /// reads as unread: the branch said kept where it went, never the other way.
     /// </remarks>

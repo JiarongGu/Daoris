@@ -19,7 +19,7 @@ public sealed record ActPlan(string Kind, string Press, string Repository, strin
     /// <summary>The press's Confirm, as its door names it.</summary>
     public string? Confirmed { get; init; }
 
-    /// <summary>The index entries whose blobs the act's own ref holds until its record expires (§8's stage and unstage, here the fixture's).</summary>
+    /// <summary>The index entries whose blobs the act's own ref holds until its record expires.</summary>
     public IReadOnlyList<ActEntry> Keep { get; init; } = [];
 
     /// <summary>The fresh reads under the lock, before any effect: why the act is refused, or null where they equal the plan.</summary>
@@ -82,7 +82,7 @@ internal sealed record ActRunsLimits(Func<string, int, Task>? Seam, Action<Proce
 /// </remarks>
 public sealed class ActRuns(ActJournal journal)
 {
-    /// <summary>How long an act's own ref holds its index's blobs after its record closes (§8: thirty days, provisional).</summary>
+    /// <summary>How long an act's own ref holds its index's blobs after its record closes (thirty days, provisional).</summary>
     public static readonly TimeSpan Kept = TimeSpan.FromDays(30);
 
     // The acts this process runs now: its own run's reconciler never takes one up while it runs.

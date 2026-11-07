@@ -28,7 +28,7 @@ internal sealed class TreeSweeps(
     /// branch's work is on the line too. Null for the press's list and the press, which take a landed branch wherever it is.
     /// </param>
     /// <param name="slims">
-    /// For the look's judgement before its hold (Fable F1.5): each row the look would take is judged for the package folders its
+    /// For the look's judgement before its hold: each row the look would take is judged for the package folders its
     /// tree may drop once set aside (<see cref="SweepItem.Droppable"/>), so the hold gains no <c>status --ignored</c> of its own.
     /// </param>
     internal async Task<IReadOnlyList<SweepItem>> SweepPlanAsync(
@@ -176,7 +176,7 @@ internal sealed class TreeSweeps(
                 continue;
             }
 
-            // The last fixes' check, finding 5: the delete refuses a judgement that rested on nothing, but the tip's holder appended below would
+            // The delete refuses a judgement that rested on nothing, but the tip's holder appended below would
             // hide that, so the branch is kept here, said, before any ref is written or anything moves.
             if (rests.Count == 0)
             {
@@ -205,7 +205,7 @@ internal sealed class TreeSweeps(
                 (keep, kept) = (name, name.Ref);
             }
 
-            // 🔴 Codex's reads (the design's finding 1, the branch's finding 2): the exact tip's holder rests in the delete's own transaction,
+            // 🔴 The exact tip's holder rests in the delete's own transaction,
             // at the commit read, beside what the judgement rested on: the recovery ref made or verified there at the tip, or the line's own
             // branch at the commit that held it. That holder moved or gone between here and the delete refuses the delete.
             // One verify for each ref: git refuses two for one ref in a transaction, and one the judgement already rests on is verified already.
@@ -232,7 +232,7 @@ internal sealed class TreeSweeps(
                 if (!moved.Gone)
                 {
                     // A branch kept makes no recovery ref, which only the delete's act makes. Where its folder could not be put back, its
-                    // manifest stays to be resumed, and names the ref that act would make (Codex's read of the design, finding 4).
+                    // manifest stays to be resumed, and names the ref that act would make.
                     results.Add(new(now, false, moved.Sentence) { Kept = moved.Code });
                     continue;
                 }
@@ -268,8 +268,8 @@ internal sealed class TreeSweeps(
             var stays = await content.DeleteJudgedAsync(root, now.Repository, now.Branch, judged, rests, done, keep).ConfigureAwait(false);
             // The manifest says the delete's outcome; a refused one is never armed.
             if (movedTo is not null) TreeSetAside.Mark(SlimManifest.PathFor(movedTo), stays is null ? SlimStates.Deleted : SlimStates.Refused, DateTimeOffset.UtcNow);
-            // §3.5's resume: the delete of a branch with no tree marks the manifest of its folder moved aside before, at that branch and tip.
-            // A registration whose folder a failed put-back left aside goes the same way (Codex's read of the design, finding 4).
+            // Resume: the delete of a branch with no tree marks the manifest of its folder moved aside before, at that branch and tip.
+            // A registration whose folder a failed put-back left aside goes the same way.
             if (stays is null && movedTo is null) setAside.MarkDeletedOf(now.Workspace, now.Repository, now.Branch, judged, DateTimeOffset.UtcNow);
             if (stays is not null)
             {
@@ -521,14 +521,14 @@ internal sealed class TreeSweeps(
     }
 
     /// <summary>
-    /// The landing that carried a finished tree's work (Codex's read of the design, finding 6), from the landings' record before the tree goes:
+    /// The landing that carried a finished tree's work, from the landings' record before the tree goes:
     /// the one its hold names (a landing's or a squash's branch), else the one its work unit is among; none, with why, where neither is
     /// recorded. Never a judgement's or a move's moment in place of the landing's.
     /// </summary>
     private (FinishedLanding? Landing, string? Why) LandingOf(SweepItem item, string? unit)
     {
         var entries = context.Recorded.All().Where(entry => string.Equals(entry.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).ToList();
-        // The last fixes' check, finding 6: a landing's hold names the form of the line in `Where`, so its landing is found by its own branch.
+        // A landing's hold names the form of the line in `Where`, so its landing is found by its own branch.
         var by = item.Hold switch { "landing" => item.LandingBranch, "squash" => item.Where, _ => null };
         var found = (by is null ? null : entries.FirstOrDefault(entry => entry.Branch == by))
             ?? (unit is null ? null : entries.Where(entry => entry.Units.Contains(unit, StringComparer.Ordinal)).OrderByDescending(entry => entry.LandedAt).FirstOrDefault());

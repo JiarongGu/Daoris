@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 public sealed record TreeOpened(string Path, string Branch, string BasedOn, string Sentence, string? GrewFrom = null)
 {
     /// <summary>
-    /// <see cref="Sentence"/> with its codes (the language design §4 rows 25–26): the tree's branch and what it grew
+    /// <see cref="Sentence"/> with its codes: the tree's branch and what it grew
     /// from as facts, never its path; and where its start went unrecorded, that line with git's words beside it.
     /// </summary>
     public Noted? Opening { get; init; }

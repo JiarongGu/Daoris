@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The moments a test's flow interleaves with the set-aside's destructive steps (Codex's reads of the design and the branch):
+/// The moments a test's flow interleaves with the set-aside's destructive steps:
 /// a holder moved between the tip's ref and the branch's delete, a tracked file deleted between the judgement and the move, git refusing
 /// to let go of a tree and the folder's put-back refused, and a stop right after the move, right after a removal's rename, or inside its
 /// delete. Null in

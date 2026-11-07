@@ -11,7 +11,7 @@ namespace Daoris.Driver;
 public sealed record GitSessionRecord(string Session, string? Repository, string? Workspace, IReadOnlyList<GitAccessClass> Classes);
 
 /// <summary>
-/// The git access a running session holds (the git design §3.1 G5): a record in the home's <c>run/git/sessions/{id}.json</c>
+/// The git access a running session holds: a record in the home's <c>run/git/sessions/{id}.json</c>
 /// begun at the session's start with its repository and workspace, and the classes the person has tightened since. What the session
 /// holds is what its repository resolves to now, narrowed by those classes; a tightening only narrows, and the doors read it
 /// through <see cref="Held"/> for every act the session's marker names. Holds no secret.

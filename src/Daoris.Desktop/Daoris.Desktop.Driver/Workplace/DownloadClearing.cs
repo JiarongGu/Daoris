@@ -75,7 +75,7 @@ public sealed record DownloadJudge(Func<DownloadUses> Uses, Func<DateTimeOffset>
 {
     /// <summary>
     /// The use files whose keep locks are held, in this order, from a version's judgement to its rename, never across the removal that
-    /// follows (Fable F2.2 to F2.4): the harness file the roster reads, <c>tools.json</c>, and <c>driver.json</c> at the loop's path.
+    /// follows: the harness file the roster reads, <c>tools.json</c>, and <c>driver.json</c> at the loop's path.
     /// </summary>
     public IReadOnlyList<string> Locked { get; init; } = [];
 

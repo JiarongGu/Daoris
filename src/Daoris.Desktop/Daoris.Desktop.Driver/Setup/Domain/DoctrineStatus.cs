@@ -44,7 +44,7 @@ public sealed record DoctrineStatus
     /// <summary>The version of the newer canon that wrote the lock, which the tool never rolls back; null where none did.</summary>
     public string? NewerLock { get; init; }
 
-    /// <summary>Whether a reconcile is offered (the design §3 B): the canon moved, or a keep reopened, over a lock this tool may read.</summary>
+    /// <summary>Whether a reconcile is offered: the canon moved, or a keep reopened, over a lock this tool may read.</summary>
     public bool Offers => Synced && NewerLock is null && (Update is not null || Reopened > 0);
 
     /// <summary>The tool's answer read, or null where what it printed is no status.</summary>

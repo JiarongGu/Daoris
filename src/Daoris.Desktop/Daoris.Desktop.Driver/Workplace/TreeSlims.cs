@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// Which of a tree's folders the look may drop once it is set aside: its package folders,
 /// each a <c>node_modules</c> beside a <c>package.json</c> git tracks, whose producer discards it whole at every clean install, so nothing
 /// kept there outlives the next. Judged before the repository's hold and checked again inside it by the last look's own reads
-/// (<see cref="TreeSetAside.LastLookAsync"/>, Fable F1.5). Static: it reads git and the paths it is handed, nothing of the trees' context.
+/// (<see cref="TreeSetAside.LastLookAsync"/>). Static: it reads git and the paths it is handed, nothing of the trees' context.
 /// </summary>
 /// <remarks>
 /// 🔴 <b>Where anything about a path is unknown, it stays</b>: git's status, the index or the folders that could not be read judge
@@ -16,7 +16,7 @@ internal static class TreeSlims
     internal const string PackageFolder = "node_modules";
 
     /// <summary>
-    /// The judgement, before the hold (Fable F1.5), in <c>SweepPlanAsync</c>: each folder git ignores whole
+    /// The judgement, before the hold, in <c>SweepPlanAsync</c>: each folder git ignores whole
     /// (<c>status --ignored=traditional --untracked-files=normal</c> names it <c>!! &lt;path&gt;/</c>; one git lists file by file, a tracked
     /// file inside it, is not one) whose last segment is <c>node_modules</c> and whose folder above holds a <c>package.json</c> the index
     /// lists, in git's spelling, in order. None where git could not answer.
@@ -52,7 +52,7 @@ internal static class TreeSlims
     }
 
     /// <summary>
-    /// The judgement checked again inside the hold by the last look's own reads (Fable F1.5): its index read still lists each folder's
+    /// The judgement checked again inside the hold by the last look's own reads: its index read still lists each folder's
     /// <c>package.json</c>; no repository lies at, under or above it; and no link lies on the way to it from the tree's top, it included.
     /// A link inside it is a package manager's, which goes as a link with its target untouched.
     /// </summary>

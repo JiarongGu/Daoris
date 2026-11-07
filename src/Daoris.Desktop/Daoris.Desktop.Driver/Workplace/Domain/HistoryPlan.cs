@@ -53,7 +53,7 @@ public static class HistoryWords
 }
 
 /// <summary>
-/// Which of a word's sentences is meant, where one word says several things (the design §1.2's table): the variant a catalogue
+/// Which of a word's sentences is meant, where one word says several things: the variant a catalogue
 /// keeps beside the word's own sentence. Read from the facts the word names, never from the service's sentence.
 /// </summary>
 public static class HistoryContexts

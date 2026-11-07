@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The end judgement's one writer (§C7): for one repository, each standing landing branch
+/// The end judgement's one writer: for one repository, each standing landing branch
 /// and each standing session branch judged through <see cref="EndJudgement"/>, and <see cref="HeldFact"/> written on its entry where the
 /// line holds it, kept while it still holds, and cleared where it stopped holding. Called where the look's tidy and <i>Accept</i>'s tidy
 /// judge the work (<see cref="AutoTidies"/>, <see cref="TreeLands"/>), before either removes anything, so an ended entry outlives its branch
@@ -20,7 +20,7 @@ namespace Daoris.Driver;
 /// anew, or cleared, which a reader reads as not known. A trace is never judged again. A fact that still holds is not written again, so a
 /// look that changes nothing writes nothing.</para>
 ///
-/// <para><b>Nothing is removed here</b> (§B8): the look's tidy takes its candidates from what is kept, and the
+/// <para><b>Nothing is removed here</b>: the look's tidy takes its candidates from what is kept, and the
 /// inventory reads it. <i>Ended</i> is derived at read from the
 /// kept fact and the effective cycle, never stored.</para>
 ///
@@ -141,7 +141,7 @@ internal sealed class EndKeeping(TreeContext context, PullRequestAsks asks)
             // A fact ended through a landing rests on that landing's end, so it holds while that end holds this pass.
             if (grown.Held is { } kept && await HoldsAsync(kept, tip).ConfigureAwait(false)
                 && (kept.By != EndBy.Landed || (ends.TryGetValue(kept.On, out var on) && on.End.Ended))) continue;
-            // The landing that carries its unit's work, where one stands: its cycle is what that landing recorded (§B3).
+            // The landing that carries its unit's work, where one stands: its cycle is what that landing recorded.
             var landing = grown.Unit is { } unit ? landings.LastOrDefault(entry => entry.Units.Contains(unit, StringComparer.Ordinal)) : null;
             var landingEnd = landing is not null && ends.TryGetValue(landing.Branch, out var its) ? its.End : null;
             var cycle = landing is not null ? EndCycle.Recorded(landing) : EndCycle.Accepts(config ??= context.Config(), repository, workspace);

@@ -86,7 +86,7 @@ internal static class IntegrationDeclaration
     internal static string PassDaoris(string name) =>
         $"`integration.env.pass` names `{name}`: a `DAORIS_` variable is the install's, and never passes to a gate.";
 
-    /// <summary>What a merge message may say (the design §4.1's <c>message</c>).</summary>
+    /// <summary>What a merge message may say.</summary>
     internal static readonly IReadOnlyList<string> MessageNames = ["name", "title", "quest", "repository", "branch"];
 
     private static readonly IntegrationRead None = new(null, null);

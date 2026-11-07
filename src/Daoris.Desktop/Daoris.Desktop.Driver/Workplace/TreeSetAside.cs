@@ -191,7 +191,7 @@ internal sealed class TreeSetAside(TreeContext context)
 
             to = moved.To;
 
-            // 🔴 Codex's read of the design, finding 2: what the tree holds read again in the moved folder, while git still knows it, so a change
+            // 🔴 What the tree holds read again in the moved folder, while git still knows it, so a change
             // made between the judgement's read and the move (a tracked file deleted at the top, which leaves no later time on anything that
             // stays) keeps the tree: put back, as git's refusal below puts it back.
             if (finished is not null && await UncommittedAsync(to!, ct).ConfigureAwait(false) is { } dirty)
@@ -285,7 +285,7 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// §3.5's resume: a branch with no tree deleted by the look, whose folder was moved aside before and stopped or refused, marks the manifest
+    /// The resume: a branch with no tree deleted by the look, whose folder is moved aside and stopped or refused, marks the manifest
     /// of that branch and tip <c>deleted</c>, at every place of the trees entry, so the folder reaches its record at the next pass.
     /// </summary>
     internal void MarkDeletedOf(string workspace, string repository, string branch, string tip, DateTimeOffset at)
@@ -352,7 +352,7 @@ internal sealed class TreeSetAside(TreeContext context)
     /// manifest's <c>read</c>, and its own top is read too. Each folder that goes is renamed into <c>.going</c> first, with a record of its
     /// removal (<see cref="GoingRecord"/>).
     /// <para>🔴 A recorded folder goes by the hour only on a holding check run right before its rename, in the root
-    /// <paramref name="rootOf"/> gives (Codex's read of the branch, finding 1): a check that fails for certain makes it <c>unmarked</c>, one
+    /// <paramref name="rootOf"/> gives: a check that fails for certain makes it <c>unmarked</c>, one
     /// that cannot run or read keeps it as it is, and with no <paramref name="rootOf"/> none is taken by the hour.</para>
     /// </summary>
     internal async Task<(IReadOnlyList<SetAside> Purged, bool Stopped)> PurgeSetAsideAsync(
@@ -440,9 +440,9 @@ internal sealed class TreeSetAside(TreeContext context)
     /// A set-aside folder removed: renamed first into <c>.tidied/.going/</c>, so nothing is half deleted
     /// under the name a person opened, then deleted never following a link, and its manifest with it. A refused rename keeps it whole,
     /// <c>busy</c>.
-    /// <para>🔴 Where it would go is reached through no link (the second maker's read, finding 2): a link on the way into <c>.going</c>, asked
+    /// <para>🔴 Where it would go is reached through no link: a link on the way into <c>.going</c>, asked
     /// before the folders are made and again after, keeps the folder where it is, <c>linked</c>, as <see cref="MoveFolderAside"/> keeps a move.</para>
-    /// <para>Codex's read of the design, finding 5: a record of the removal goes beside it in <c>.going</c> before the rename (its door, when, the
+    /// <para>A record of the removal goes beside it in <c>.going</c> before the rename (its door, when, the
     /// threshold, and whether its delete began), and its manifest stays where it was until the delete ends, so a stop at any moment is
     /// resumed by <see cref="ResumeGoingAsync"/> with the folder's identity whole.</para>
     /// </summary>
@@ -483,7 +483,7 @@ internal sealed class TreeSetAside(TreeContext context)
         if (SetAsideFaults.Current?.StopAfterRename == true) throw new SetAsideStop();
         try
         {
-            // The last fixes' check, finding 8: the rules' doors read the folder again under `.going`, where nothing writes by its old name, so a
+            // The rules' doors read the folder again under `.going`, where nothing writes by its old name, so a
             // write between the purge's read and the rename puts it back whole; the press removes what its list disclosed and was chosen.
             if (door != GoingDoors.Press
                 && SetAsideKeeps.WrittenSince(going, threshold, SlimManifest.Read(SlimManifest.PathFor(folder)).Manifest, top) is { } late)
@@ -509,11 +509,11 @@ internal sealed class TreeSetAside(TreeContext context)
     }
 
     /// <summary>
-    /// What a stop left under one place's <c>.tidied/.going</c> (Codex's read of the design, finding 5), each folder within the budget: one whose
+    /// What a stop left under one place's <c>.tidied/.going</c>, each folder within the budget: one whose
     /// delete never began, or whose record does not read, goes back to its place whole; one whose delete began finishes only where no file
     /// in it was written since its removal began and, for the hour's door, its holding check passes now; else what remains goes back, the
-    /// result says why, and a finished folder's manifest ends <c>unmarked</c> with that why (the last fixes' check, finding 8). 🔴 A folder
-    /// reached through a link on the way, <c>.going</c> or any level below it included, is never touched (the second maker's read, finding 2).
+    /// result says why, and a finished folder's manifest ends <c>unmarked</c> with that why. 🔴 A folder
+    /// reached through a link on the way, <c>.going</c> or any level below it included, is never touched.
     /// </summary>
     private async Task ResumeGoingAsync(
         string root, Func<string, string, string?>? rootOf, Func<bool> spent, PurgeState state, List<SetAside> results, CancellationToken ct)
@@ -549,7 +549,7 @@ internal sealed class TreeSetAside(TreeContext context)
             string? back;
             try
             {
-                // The last fixes' check, finding 9: a folder whose remains cannot be read is put back, never a purge that throws.
+                // A folder whose remains cannot be read is put back, never a purge that throws.
                 back = record is null ? "its removal's record does not read, so it was put back"
                     : !record.Started ? "its removal stopped before its delete began, so it was put back whole"
                     : SetAsideKeeps.FileWrittenSince(folder, record.At) is { } late ? $"something in it was written after its removal began ({late}), so what remains was put back"
@@ -575,7 +575,7 @@ internal sealed class TreeSetAside(TreeContext context)
                     if (Directory.Exists(place)) throw new IOException($"{place} is there again");
                     Directory.Move(folder, place);
                     TryDelete(path);
-                    // The last fixes' check, finding 8: a finished folder whose delete began is no longer what was recorded, so whatever put it back,
+                    // A finished folder whose delete began is no longer what is recorded, so whatever put it back,
                     // a late write or a check that did not pass or could not run, it ends unmarked, saying why, and waits its days.
                     if (record is { Started: true }) Unmark(place, back);
                     results.Add(new SetAside(place, moved, false, back, SetAsideKept.Returned));

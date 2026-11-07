@@ -37,7 +37,7 @@ public sealed class IntegrationSteps(IntegrationStore store)
     }
 
     /// <summary>
-    /// Resume a candidate the claim holds, at the come-up or after a step's effect threw (§5.6's recovery): its promotion judged by ancestry
+    /// Resume a candidate the claim holds, at the come-up or after a step's effect threw: its promotion judged by ancestry
     /// first, in the registered checkout at <paramref name="root"/>, then its open step ended for its next attempt. What to do next is the
     /// answer's (<see cref="IntegrationResumes"/>).
     /// </summary>

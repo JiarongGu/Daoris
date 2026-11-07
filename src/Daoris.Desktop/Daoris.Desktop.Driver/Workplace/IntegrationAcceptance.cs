@@ -84,7 +84,7 @@ public static class IntegrationAcceptance
 
     /// <summary>
     /// The text of the declaration <paramref name="repository"/>'s integration acceptance names, read only where that blob is the one at
-    /// <paramref name="commit"/> (the design §4.3: the accepted blob alone, at the commit it acts on); <paramref name="frozen"/> is the blob an
+    /// <paramref name="commit"/> (the accepted blob alone, at the commit it acts on); <paramref name="frozen"/> is the blob an
     /// epoch froze, which stands in for the configuration's current acceptance; null where nothing is accepted,
     /// the declaration there is another (it waits for the owner), git cannot say, or the line held none.
     /// </summary>

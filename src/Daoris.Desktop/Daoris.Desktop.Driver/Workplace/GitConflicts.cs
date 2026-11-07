@@ -15,7 +15,7 @@ public sealed record FileConflict(
     string Path, string? Head, string Base, string Ours, string Theirs, string Worktree, string? Why, IReadOnlyList<ConflictHunk> Hunks);
 
 /// <summary>
-/// **A file in conflict, read by its stages** (the git-writes design §8 Resolve). The three stages are merged by
+/// **A file in conflict, read by its stages**. The three stages are merged by
 /// <c>git merge-file --object-id</c> (no merge driver, no attribute, the configuration's conflict style set aside), whose marked output is read
 /// back as text between conflicts and the two sides of each conflict. The text is the stages' own bytes read as UTF-8; a file that is not is not
 /// resolved here.

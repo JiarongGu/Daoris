@@ -126,7 +126,7 @@ internal static class TreeRefs
 
         var (code, _, err) = await WorkingTree.GitAsync(
             root, ["fetch", "--quiet", "--no-write-fetch-head", "origin", line], NoPrompt, SyncBounds.Fetch, ct).ConfigureAwait(false);
-        // Every fetch of the line counted, made or failed, so a moment inside its minute fetches nothing more (§A4.3).
+        // Every fetch of the line counted, made or failed, so a moment inside its minute fetches nothing more.
         RemoteFetches.Fetched(root, line, DateTimeOffset.UtcNow);
         if (code == 0)
         {

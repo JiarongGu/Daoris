@@ -21,8 +21,8 @@ public sealed record GitIdentityTest(string Result, string? User, DateTimeOffset
 /// <param name="Host">The host it signs in to, canonical (<see cref="GitHosts.Canonical"/>), with a port where not the default.</param>
 /// <param name="Way"><c>ssh</c>, or <c>https</c>.</param>
 /// <param name="User">The account on the host, as the host named it at a test, else as the person typed it.</param>
-/// <param name="CommitsName">The name a commit carries where §3.6 applies; null for none.</param>
-/// <param name="CommitsEmail">The email a commit carries where §3.6 applies; null for none.</param>
+/// <param name="CommitsName">The name a commit carries under this identity; null for none.</param>
+/// <param name="CommitsEmail">The email a commit carries under this identity; null for none.</param>
 /// <param name="KeyType">An SSH key's type: <c>ed25519</c>, <c>rsa-4096</c>, <c>ecdsa-256</c>.</param>
 /// <param name="Fingerprint">An SSH key's SHA-256 fingerprint, as OpenSSH writes it (<c>SHA256:…</c>).</param>
 /// <param name="ReadOnly">The person's statement that the host grants it reading alone.</param>
@@ -40,7 +40,7 @@ public sealed record GitIdentity(
 }
 
 /// <summary>
-/// The machine's one set of git identities (the git-auth design §3.1-§3.2), kept in
+/// The machine's one set of git identities, kept in
 /// <c>data/git-identities.json</c>, which holds no secret, written whole or not at all. Read by the driver and by the
 /// ssh door, which compiles this in, so the base library alone.
 /// </summary>
@@ -245,7 +245,7 @@ public static class GitKeys
         return folder;
     }
 
-    /// <summary>Remove an identity's key folder whole (§7.1 <i>Remove…</i>).</summary>
+    /// <summary>Remove an identity's key folder whole.</summary>
     public static void Remove(string home, string id)
     {
         if (!GitIdentities.IsId(id)) return;
@@ -313,7 +313,7 @@ public static class GitKeys
     public sealed record ImportRead(byte[] Bytes, string PublicLine, string Type, string Fingerprint);
 
     /// <summary>
-    /// Read the one key file the person named for an import (§3.3's one read of the person's own): an OpenSSH private key with
+    /// Read the one key file the person named for an import, the one read of the person's own: an OpenSSH private key with
     /// no passphrase. Refused with one line naming why: no such file, too large, encrypted, another format.
     /// </summary>
     /// <exception cref="DriverException">The file is not a key Daoris can use.</exception>

@@ -12,8 +12,7 @@ namespace Daoris.Driver;
 /// both halves; its log line says <c>door: rule</c>. A unit past its days that a refusal keeps stays, and is said with its word.</para>
 ///
 /// <para><b>A unit's last move</b> is the newest of its quests' last status moves and its sessions' last moves, as the service answers
-/// them. One whose moment is not known (a host that answers none, a record not read) is not past its days: the unknown keeps (the
-/// cleanup design §6).</para>
+/// them. One whose moment is not known (a host that answers none, a record not read) is not past its days: the unknown keeps.</para>
 /// </remarks>
 public static class HistoryKeeping
 {

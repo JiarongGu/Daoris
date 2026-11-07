@@ -119,7 +119,7 @@ public sealed record HistoryChangedAnswer(string Kind, string Id, HistoryReasonA
 public sealed record HistoryWorkspacesAnswer(IReadOnlyList<HistoryPlanAnswer> Workspaces);
 
 /// <summary>
-/// What a clear's two presses answer, for both doors (the history-clearing design §6.2–§6.3): the shell's
+/// What a clear's two presses answer, for both doors: the shell's
 /// <c>HISTORY_PLAN</c> and <c>HISTORY_CLEAR</c> return these, and <c>daoris history --json</c> prints the first, so the
 /// terminal's answer is the route's field for field by construction. Ids, counts and bytes: never a path or a title.
 /// </summary>

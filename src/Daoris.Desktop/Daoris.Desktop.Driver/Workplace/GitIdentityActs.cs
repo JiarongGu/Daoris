@@ -74,7 +74,7 @@ public static partial class GitIdentityActs
     // ---- Add ----
 
     /// <summary>
-    /// Add an SSH identity (§7.2 steps 1-3, §8 <c>git identity add-ssh</c>): its folder made private first, then its key generated
+    /// Add an SSH identity (<c>git identity add-ssh</c>): its folder made private first, then its key generated
     /// (ed25519, or RSA 4096 where the host takes RSA alone or the person asks) or imported from the one file the person named.
     /// </summary>
     /// <exception cref="DriverException">A label in use, a host that does not read, an import refused, or ssh-keygen failed.</exception>
@@ -301,7 +301,7 @@ public static partial class GitIdentityActs
     public static GitIdentity ReadOnly(string home, string name, bool on) => Replace(home, Find(home, name) with { ReadOnly = on });
 
     /// <summary>
-    /// Remove an identity (§7.1 <i>Remove…</i>): every pointer at it is cleared, each scope falling to the next step of §3.2, and its
+    /// Remove an identity: every pointer at it is cleared, each scope falling to the next step of the resolution order, and its
     /// key and token folders deleted. Answers the scopes that pointed at it.
     /// </summary>
     public static IReadOnlyList<string> Remove(string home, string name)
@@ -333,7 +333,7 @@ public static partial class GitIdentityActs
         return pointing;
     }
 
-    /// <summary>Make an identity its host's default, or clear the host's default (§8 <c>git default</c>).</summary>
+    /// <summary>Make an identity its host's default, or clear the host's default (<c>git default</c>).</summary>
     public static GitIdentity? Default(string home, string host, string? name)
     {
         var canonical = HostOf(host);
@@ -347,7 +347,7 @@ public static partial class GitIdentityActs
     }
 
     /// <summary>
-    /// Point a repository's remote at an identity, at <c>own</c>, or clear it (§8 <c>git use</c>). Two remotes of one repository at one
+    /// Point a repository's remote at an identity, at <c>own</c>, or clear it (<c>git use</c>). Two remotes of one repository at one
     /// effective address must point at one identity: a choice that would differ is refused, naming the other remote.
     /// </summary>
     /// <param name="addresses">The repository's remotes and their effective addresses, as <c>GitRemotes.AddressOf</c> reads them.</param>

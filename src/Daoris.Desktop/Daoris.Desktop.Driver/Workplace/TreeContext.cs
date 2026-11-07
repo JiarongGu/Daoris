@@ -35,7 +35,7 @@ internal sealed class TreeContext
     /// <summary>The test seam: true for a checkout whose working trees git could not list. Production sets none.</summary>
     internal Func<string, bool>? ListFails { get; set; }
 
-    /// <summary>What time it is (second review: the look's fallback judges a kept branch again at a bound); the system's unless a test sets it.</summary>
+    /// <summary>What time it is (the look's fallback judges a kept branch again at a bound); the system's unless a test sets it.</summary>
     internal Func<DateTimeOffset> Clock { get; set; } = () => DateTimeOffset.UtcNow;
 
     /// <summary>The branches this machine's landings made — the only ones the clean-up and the hand-off act on.</summary>

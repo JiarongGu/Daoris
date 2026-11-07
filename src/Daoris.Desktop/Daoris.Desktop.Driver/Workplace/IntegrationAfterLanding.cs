@@ -18,7 +18,7 @@ public sealed record AfterLandingCommit(string Sha, string Subject, string Dispo
     public IReadOnlyList<string> Files { get; init; } = [];
 }
 
-/// <summary>The three judgements of §5.7.</summary>
+/// <summary>The three judgements of an after-landing replay.</summary>
 public static class AfterLandingDispositions
 {
     /// <summary>The line holds it by content or patch, or its replay is empty: said, and never offered again.</summary>
@@ -26,11 +26,11 @@ public static class AfterLandingDispositions
 
     /// <summary>
     /// Its replay conflicts, and in every conflicted hunk the line's side was changed after the frozen base by a commit outside the unit's work:
-    /// kept on a recovery ref and offered as superseded or rebase it, visible until one is answered (row e4's settle).
+    /// kept on a recovery ref and offered as superseded or rebase it, visible until one is answered.
     /// </summary>
     public const string Superseded = "superseded";
 
-    /// <summary>Anything else: offered by §4.6's rule for its request.</summary>
+    /// <summary>Anything else: offered by the rule for its request.</summary>
     public const string New = "new";
 }
 

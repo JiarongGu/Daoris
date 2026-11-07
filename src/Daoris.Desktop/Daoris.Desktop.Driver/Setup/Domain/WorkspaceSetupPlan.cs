@@ -51,7 +51,7 @@ public sealed record SetupSkip(string Code, string Said, DateTimeOffset At);
 /// A workspace's set-up plan, <c>&lt;home&gt;/setup/&lt;workspace&gt;.json</c>: the person's choices and
 /// the quests it published. <b>Nothing in it is a count</b>: progress is read from the quests and the registry every time.
 /// </summary>
-/// <param name="Order">The repositories, in §4.2's order, less the ones the person unticked.</param>
+/// <param name="Order">The repositories, in the set-up order, less the ones the person unticked.</param>
 /// <param name="AtOnce">How many of its set-ups may be open at once, as the person chose it; a tick holds it to the cap's <c>cap − 1</c>.</param>
 /// <param name="Pilot">How many go first: once they have all closed, the plan pauses itself until the person resumes it.</param>
 public sealed record WorkspaceSetupPlan(string Workspace, IReadOnlyList<string> Order, int AtOnce, int Pilot)

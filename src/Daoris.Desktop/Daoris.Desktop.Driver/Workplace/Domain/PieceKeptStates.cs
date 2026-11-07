@@ -16,7 +16,7 @@ internal static class PieceKeptStates
     internal const string Uncertain = "uncertain";
 
     /// <summary>
-    /// How the create-only import reads the piece's ref (the design §7.2's import row): absent, it is created; at the keeper's
+    /// How the create-only import reads the piece's ref: absent, it is created; at the keeper's
     /// commit, the import already happened and is <see cref="Imported"/>; at another commit, <see cref="Uncertain"/>.
     /// </summary>
     internal static string? AfterRef(string? refCommit, string kept) =>

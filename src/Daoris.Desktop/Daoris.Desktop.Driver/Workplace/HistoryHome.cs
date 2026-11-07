@@ -3,7 +3,7 @@ using static Daoris.Driver.HistoryClearing;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the home keeps of finished work, read and tidied (the history-clearing design §2.2–§2.4): the
+/// What the home keeps of finished work, read and tidied: the
 /// kept files' sizes, a workspace's reading, the left-over files of records no store has any more, and the files that name a
 /// cleared record. <see cref="HistoryClearing"/> plans and clears; this reads the home's folders for it.
 /// </summary>

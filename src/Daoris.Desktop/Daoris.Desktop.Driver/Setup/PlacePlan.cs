@@ -68,7 +68,7 @@ public sealed record PlaceReleased(string Quest, string Title);
 /// <summary>What the page preselects: the delivery read from the driver's facts and why, and adoption for a repository that has not adopted.</summary>
 public sealed record PlaceSuggestion(string Preset, bool Adoption, SuggestionWhy Why);
 
-/// <summary>One repository of a plan: before and after, the changes it makes there, what lowers your part, §17.7's reach, and the rest.</summary>
+/// <summary>One repository of a plan: before and after, the changes it makes there, what lowers your part, the workflows' reach, and the rest.</summary>
 public sealed record PlaceRepository(
     string Repository, string Workspace, PlaceSide Before, PlaceSide After, IReadOnlyList<PlaceChange> Changes, IReadOnlyList<string> Lowers,
     IReadOnlyList<WorkflowReach> Reach, IReadOnlyList<PlaceReleased> Released, PlaceDeclaration? Declaration, string? Unread, PlaceSuggestion Suggested);
@@ -105,7 +105,7 @@ public sealed record PlaceSave(string Id, string Default, bool Opinion, bool Loo
 /// copy of the configuration through today's doors' own edits (driving, trees, the workflow choice, the landing rule by
 /// the line's policy, the second opinion and the review rule), read before and after through the resolvers a start uses
 /// (<see cref="PlaceProjection.ValuesAt"/>, <see cref="WorkflowProcesses.Otherwise(IWorkflowStore, DriverConfig, string, string?, string?)"/>,
-/// <see cref="WorkPolicies.Of"/>). It says every refusal at once, what lowers the person's part, §17.7's reach, the work driving releases or,
+/// <see cref="WorkPolicies.Of"/>). It says every refusal at once, what lowers the person's part, the workflows' reach, the work driving releases or,
 /// with adoption and driving off, that the set-up quest starts alone, and each declaration with what accepting it is for. It
 /// writes nothing and asks no account, plugin, tool or remote.
 /// </summary>
@@ -354,7 +354,7 @@ public static class PlacePlans
     }
 
     /// <summary>
-    /// The plan over <paramref name="ask"/>'s repositories: each read before and after, its changes, what lowers the person's part, §17.7's
+    /// The plan over <paramref name="ask"/>'s repositories: each read before and after, its changes, what lowers the person's part, the workflows'
     /// reach, the work driving releases and its declaration; the changes made at several repositories said once. Reads the registry, the
     /// quests where driving or adoption asks them, and each line's tip; writes nothing.
     /// </summary>

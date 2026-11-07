@@ -137,7 +137,7 @@ internal sealed class AutoTidies(
     /// are judged again and removed, and a look with nothing to take never holds the repository.</para>
     ///
     /// <para><b>The checkout must be a repository of its own</b>: git walks up from a folder that is not one, and would answer
-    /// for the repository above it (FIX-LOG).</para>
+    /// for the repository above it.</para>
     /// </remarks>
     /// <param name="inUse">The trees sessions still running or waiting name, asked once the repository is held.</param>
     internal async Task<TidyPass> TidyEmptyAsync(
@@ -272,7 +272,7 @@ internal sealed class AutoTidies(
         // Each with what its own proof rested on, which a session branch's removal through it rests on too.
         var onLine = landed.Where(each => each.Line is not null)
             .Select(each => new LineLanding(each.Item.Branch, each.Tip, each.Line!) { Rests = each.Rests }).ToList();
-        // Each tree that may go is judged here for the package folders it may drop once set aside, before the hold (Fable F1.5),
+        // Each tree that may go is judged here for the package folders it may drop once set aside, before the hold,
         // unless the person keeps every folder whole; inside the hold the last look checks that judgement by its own reads.
         var plan = branches.Count == 0 ? []
             : await sweeps.SweepPlanAsync([(repository, space, root)], before, ct, branches, byItself: true, onLine,

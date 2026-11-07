@@ -18,7 +18,7 @@ namespace Daoris.Driver;
 ///
 /// <para><b>Partly elsewhere is kept whole</b>, as the clean-up keeps it: which half the person meant is its review's to
 /// decide. A count git cannot give keeps it. 🔴 git walks UP: a tree is asked only when it is a repository of its own, and a
-/// checkout only when it is the top of one (FIX-LOG).</para>
+/// checkout only when it is the top of one.</para>
 ///
 /// <para>Its discard removes a tree through the removal (<see cref="TreeRemovals"/>).</para>
 /// </remarks>

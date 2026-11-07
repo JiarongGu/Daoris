@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The names both doors and <see cref="GitWiring"/> share (the git-auth design §4.1-§4.3): the home variable, the grant
+/// The names both doors and <see cref="GitWiring"/> share: the home variable, the grant
 /// variable, the rewrite's prefix and settings, and the command scope's reading and writing. The base library alone: the doors
 /// compile it in (<c>Daoris.Desktop.GitDoor</c>).
 /// </summary>

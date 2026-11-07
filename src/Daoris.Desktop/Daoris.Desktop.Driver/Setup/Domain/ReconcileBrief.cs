@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The reconcile quest's words (the context-one design §3 B): <see cref="SetupQuests.Reconcile"/> and a body that asks
+/// The reconcile quest's words: <see cref="SetupQuests.Reconcile"/> and a body that asks
 /// an adopted repository's own session to run the doctrine tool's brief and decide each item it lists, with the person's
 /// standing answer for it on this machine among the items.
 /// </summary>

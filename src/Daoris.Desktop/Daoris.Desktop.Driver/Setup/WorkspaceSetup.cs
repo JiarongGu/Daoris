@@ -30,7 +30,7 @@ namespace Daoris.Driver;
 public static class WorkspaceSetup
 {
     /// <summary>
-    /// What a press on <paramref name="workspace"/> would write today: the repositories with a checkout here in §4.2's order,
+    /// What a press on <paramref name="workspace"/> would write today: the repositories with a checkout here in the set-up order,
     /// each with what touched it, where it stands, and what the press would refuse now; and why the press as a whole would
     /// not write. Reads, and writes nothing.
     /// </summary>

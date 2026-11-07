@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One event of a line's run (the integration design §5.2's last column): its code, the line, and the candidate, request and outcome it is of.
+/// One event of a line's run: its code, the line, and the candidate, request and outcome it is of.
 /// Told to the log by the transport; a code and its facts, never a sentence.
 /// </summary>
 public sealed record IntegrationEvent(string Code, string Repository, string Line)

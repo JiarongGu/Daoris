@@ -20,7 +20,7 @@ public enum GitRunner
 }
 
 /// <summary>
-/// What a git start reads, by its command (the git-app design §1.1's kinds): what part two's effect policy will decide a
+/// What a git start reads, by its command: what part two's effect policy will decide a
 /// read's flags by. In part one the kind is counted and never changes an argument.
 /// </summary>
 public enum GitKind
@@ -224,7 +224,7 @@ internal static class GitLaunch
         return at == 0 ? arguments : [.. arguments.Skip(at)];
     }
 
-    /// <summary>The read kind of a start by its command (§1.1's table).</summary>
+    /// <summary>The read kind of a start by its command.</summary>
     internal static GitKind KindOf(IReadOnlyList<string> arguments)
     {
         var command = Command(arguments);

@@ -26,7 +26,7 @@ public sealed record GrownBranch(
     /// </summary>
     public string? Unit { get; init; }
 
-    /// <summary>That the line held its committed work, and the evidence (§B5, §C7); null where not yet judged held. Written only by <see cref="EndKeeping"/>.</summary>
+    /// <summary>That the line held its committed work, and the evidence; null where not yet judged held. Written only by <see cref="EndKeeping"/>.</summary>
     public HeldFact? Held { get; init; }
 
     /// <summary>

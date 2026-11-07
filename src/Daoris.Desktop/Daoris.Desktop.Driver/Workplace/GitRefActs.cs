@@ -15,7 +15,7 @@ public sealed record RefDeleteAsk(string Repository, string Checkout, string Kin
 public sealed record RefRenameAsk(string Repository, string Checkout, string Kind, string Name, string To, string? At = null, string? Line = null);
 
 /// <summary>
-/// **Create or delete a branch or a lightweight tag, and undo either** (d; §12 rows c and d). One
+/// **Create or delete a branch or a lightweight tag, and undo either**. One
 /// <c>create</c>, or one transaction of the <c>delete</c>, the recovery ref's <c>create</c> and each proof ref's <c>verify</c>, through
 /// <see cref="RefTransaction"/> run as an act of the journal (<see cref="ActRuns"/>), so it holds the checkout alone, is journaled, and is
 /// reconciled by its postconditions where its run died. The undo is an act of its own: a create's <c>delete</c> at the id the create made,

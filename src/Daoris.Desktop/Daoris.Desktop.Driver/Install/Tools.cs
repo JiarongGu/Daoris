@@ -119,7 +119,7 @@ public static class Tools
                 + $"fix the entry, or `daoris tool use {tool.Id} system` writes a new one");
         }
 
-        // Rule 3: an id a newer build may know.
+        // An id a newer build may know.
         foreach (var (id, _) in held)
         {
             if (Find(id) is not null) continue;
@@ -127,7 +127,7 @@ public static class Tools
             notes.Add($"`{id}` in `tools` is not a tool this build runs: it is kept as written, and never applied");
         }
 
-        // Rule 4: what git carries.
+        // What git carries.
         if (root?["git"] is { } gitNode)
         {
             if (gitNode is not JsonObject settings)
@@ -154,7 +154,7 @@ public static class Tools
             }
         }
 
-        // Rule 5: where versions come from.
+        // Where versions come from.
         if (root?["locations"] is { } locationsNode)
         {
             if (locationsNode is not JsonArray addresses)
@@ -179,7 +179,7 @@ public static class Tools
     }
 
     /// <summary>
-    /// A setting Daoris's git carries (rule 4), or null to clear it: a key off the allow-list refused, every other key of the file kept.
+    /// A setting Daoris's git carries, or null to clear it: a key off the allow-list refused, every other key of the file kept.
     /// Whether the git runs new enough to read it is <see cref="ToolChoices.SetGitAsync"/>'s judgement.
     /// </summary>
     /// <exception cref="DriverException">A key off the allow-list, or a file this build cannot read; nothing is written.</exception>
@@ -213,7 +213,7 @@ public static class Tools
         Keep(path, understood, root);
     }
 
-    /// <summary>A key off git's allow-list, refused on a write (rule 4); null for a key on it.</summary>
+    /// <summary>A key off git's allow-list, refused on a write; null for a key on it.</summary>
     public static string? GitKeyProblem(string key) =>
         GitSettings.Contains(key, StringComparer.Ordinal)
             ? null
@@ -223,8 +223,8 @@ public static class Tools
     public static bool IsLoopback(string host) => LoopbackHosts.Is(host);
 
     /// <summary>
-    /// Whether an address is one Daoris reads from: https://, or http:// to this machine. Rule 5's for a location,
-    /// and a resource list's for a download. The CLI's <c>isAddress</c>.
+    /// Whether an address is one Daoris reads from: https://, or http:// to this machine. It judges a location,
+    /// and a resource list's download. The CLI's <c>isAddress</c>.
     /// </summary>
     public static bool IsAddress(string address)
     {
@@ -233,7 +233,7 @@ public static class Tools
         return uri.Scheme == Uri.UriSchemeHttp && IsLoopback(uri.Host);
     }
 
-    /// <summary>An address that is no resource location, refused on a write (rule 5); null for one that is.</summary>
+    /// <summary>An address that is no resource location, refused on a write; null for one that is.</summary>
     public static string? LocationProblem(string address) =>
         IsAddress(address)
             ? null
@@ -290,14 +290,14 @@ public static class Tools
                 + $"file you name: `daoris tool use {tool} file <path>` names one");
     }
 
-    /// <summary>The system's: the one <c>PATH</c> finds, as before (rule 6).</summary>
+    /// <summary>The system's: the one <c>PATH</c> finds, as before.</summary>
     /// <exception cref="DriverException">An undeclared tool, or a file this build cannot read; nothing is written.</exception>
     public static void UseSystem(string home, string tool) => SetWay(home, tool, "system", null, null, read: null);
 
     /// <summary><see cref="UseSystem(string, string)"/>, with what happens once the file is read: a test's other writer.</summary>
     internal static void UseSystem(string home, string tool, Action? read) => SetWay(home, tool, "system", null, null, read);
 
-    /// <summary>A file the person names, by its whole path (rule 6); one that is not there is refused.</summary>
+    /// <summary>A file the person names, by its whole path; one that is not there is refused.</summary>
     /// <exception cref="DriverException">An undeclared tool, a path that is not whole or holds no file, or a file
     /// this build cannot read; nothing is written.</exception>
     public static void UseFile(string home, string tool, string file)
@@ -334,7 +334,7 @@ public static class Tools
     }
 
     /// <summary>
-    /// A downloaded version's executable, or why there is none (§3.6's layout): its record, naming a file that is
+    /// A downloaded version's executable, or why there is none: its record, naming a file that is
     /// there. Finding it is the proof the download verified. The CLI's <c>managedExecutable</c>.
     /// </summary>
     /// <exception cref="DriverException">A tool this build does not declare.</exception>
@@ -435,7 +435,7 @@ public static class Tools
         JsonKeeping.SaveHolding(path, read is not null, read ?? "{}\n", JsonFile.Serialize(root));
 
     /// <summary>
-    /// Set one tool's way (rule 6): the other ways' fields go, and every key the writer has no field for stays,
+    /// Set one tool's way: the other ways' fields go, and every key the writer has no field for stays,
     /// on the entry and on the file. Refused over a file it could not read, and over a <c>tools</c> that is no
     /// object.
     /// </summary>
@@ -471,7 +471,7 @@ public static class Tools
         Keep(path, understood, root);
     }
 
-    /// <summary>A downloaded version's executable, or why there is none (§3.6's layout).</summary>
+    /// <summary>A downloaded version's executable, or why there is none.</summary>
     private static (string? File, string? Problem) ManagedFile(string home, ToolDeclaration tool, string version)
     {
         var folder = DaorisHome.Entry(home, HomeEntry.ToolVersions, tool.Id, version);
@@ -505,7 +505,7 @@ public static class Tools
         _ => "a file",
     };
 
-    /// <summary>One entry of <c>tools</c>, judged (rule 2): its way, or the reason it is refused.</summary>
+    /// <summary>One entry of <c>tools</c>, judged: its way, or the reason it is refused.</summary>
     private static (ToolEntry? Entry, string? Why) Judge(JsonNode value)
     {
         if (value is not JsonObject entry) return (null, "it is not an object");
@@ -564,7 +564,7 @@ public static class Tools
         return parsed is JsonObject root ? (root, null) : (null, $"{path} is not a JSON object");
     }
 
-    // ---- Children (docs/2026-10-01-tools-design.md §2.4) ----
+    // ---- Children ----
     // One answer for Daoris and every child: the file a command's first word starts, and the environment every process
     // the driver and the modules start is handed. A TWIN of the CLI's tools.ts (toolFolders, childPath, childEnvironment,
     // resolveCommand): ToolsChildrenTests here and tools-children.test.ts there hold the same tables, row for row.
@@ -576,7 +576,7 @@ public static class Tools
     //   while sessions start is the trap the modules' serialized tests already know.
     // - An install's app/bin/ beside the home comes first of all: the doctrine tool's launchers,
     //   so every child finds daoris by its bare name. A home with no install beside it builds what it built before.
-    // GIT_CONFIG_GLOBAL, the other variable §2.4 names, is handed by Hand alone (GitGlobalFile), never in ChildEnvironment:
+    // GIT_CONFIG_GLOBAL, the other variable a child needs, is handed by Hand alone (GitGlobalFile), never in ChildEnvironment:
     // the terminal's shells take that, and they are the person's own git.
 
     /// <summary>The variable a child's <c>PATH</c> is. Windows reads it in any case, and a start's environment there is case-blind.</summary>

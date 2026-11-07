@@ -11,12 +11,12 @@ namespace Daoris.Driver;
 /// Daoris, so no decision number, no row of a backlog, no path of Daoris's own and no machine path. <c>SetupBriefTests</c>
 /// holds it with the other cases.</para>
 ///
-/// <para><b>Inventory, generator, check, marks, declaration, and nothing else</b> (the design §2.2's bounds): an index the
+/// <para><b>Inventory, generator, check, marks, declaration, and nothing else</b>: an index the
 /// repository already keeps stays whole and where it is, and the generator is the one the press named, at its path,
 /// with exactly the two commands it grants (<see cref="SetupPressRules.IndexRules"/>).</para>
 ///
-/// <para><b>What driven sessions read most is not carried</b>: the design's §2.2 has the press count it from their typed
-/// events where there are any; this body leaves the tables to the session's reading of the code, which §2.2 allows.</para>
+/// <para><b>What driven sessions read most is not carried</b>: the press counts it from their typed
+/// events where there are any; this body leaves the tables to the session's reading of the code.</para>
 /// </remarks>
 public static class IndexBrief
 {

@@ -163,7 +163,7 @@ internal sealed class TreeLands
                 hold.Waited ? null : uncommitted, beside, entry).ConfigureAwait(false));
         }
 
-        // Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo (§B4).
+        // Accept is Daoris's own ref move; its repository is judged at once by the ref watch, with its echo.
         if (landed.Landed) RefMoves.Mine(context.Home, repository);
         return landed;
     }

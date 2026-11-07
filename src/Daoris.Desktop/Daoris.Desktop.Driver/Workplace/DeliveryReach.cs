@@ -17,7 +17,7 @@ public static class DeliveryReaches
 public sealed record DeliveryReached(string Unit, string How, string? Delivery, string Said);
 
 /// <summary>
-/// The reach of a unit's <c>land</c> (the land node design §9's first question, decided): one Accept carrying several sessions is
+/// The reach of a unit's <c>land</c>: one Accept carrying several sessions is
 /// one delivery, the head's unit's. Each member is reached as brought into it once the operation that brought them together has landed, read
 /// from that operation, the inclusion record of every form; while the operation is open the member is bound to it and starts no delivery of
 /// its own, so there is no second fence.

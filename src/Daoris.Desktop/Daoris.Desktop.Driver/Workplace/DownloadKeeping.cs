@@ -8,7 +8,7 @@ namespace Daoris.Driver;
 /// use files' locks and kept while a running session was handed it. The look's Keeping pass runs it, holding the home's run lock.
 /// </summary>
 /// <remarks>
-/// <para><b>The current unused stretch</b> (Fable F2.1): each pass lists the versions without measuring them and records, in
+/// <para><b>The current unused stretch</b>: each pass lists the versions without measuring them and records, in
 /// <c>keeping.json</c>'s <c>unused</c>, when it first finds one nothing pins, uses or names; a pass that finds it pinned, used or named, or
 /// finds it gone, clears that time, so the next that finds it unused starts a new stretch. A version a running session was handed does not
 /// clear it: the session's own versions are the guard while it runs. One whose use cannot be read now (<c>unread</c>), or downloaded within

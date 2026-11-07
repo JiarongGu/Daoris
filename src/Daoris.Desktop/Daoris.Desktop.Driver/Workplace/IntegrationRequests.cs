@@ -52,7 +52,7 @@ public sealed class IntegrationRequests(IIntegrationRecords records, IIntegratio
     }
 
     /// <summary>
-    /// The merge rule's policy as the transport carries it (§4.2's named legacy exception, C9, C18): the owner's press, no gates, one member at a
+    /// The merge rule's policy as the transport carries it (the legacy exception): the owner's press, no gates, one member at a
     /// time, a merge commit. It claims no gate, so a build that merged it on the press as before loses nothing it promised.
     /// </summary>
     public static LandingIntegrate Legacy { get; } =

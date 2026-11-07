@@ -103,7 +103,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         var candidate = store.Candidate(claim.Candidate);
         if (candidate is { Stands: false })
         {
-            // §5.6: every end of the candidate closes its one job, its descendants ending with it, before anything else forms.
+            // Every end of the candidate closes its one job, its descendants ending with it, before anything else forms.
             try
             {
                 await ProcessJob.EndNamedAsync(candidate.Job).ConfigureAwait(false);
@@ -117,7 +117,7 @@ internal sealed class IntegrationPromotes(IntegrationStore store, string treesRo
         return new IntegrationPromoteRun(kind, said) { Candidate = candidate, Members = store.Members(claim.Candidate), Verdict = verdict };
     }
 
-    // ——— The verdict, then the promotion (§5.2 steps 6 to 8).
+    // ——— The verdict, then the promotion.
 
     /// <summary>Everything up to and including the promotion: null where the line now holds the candidate's tip and the settle goes on; else the answer.</summary>
     private async Task<IntegrationPromoteRun?> PromoteAsync(

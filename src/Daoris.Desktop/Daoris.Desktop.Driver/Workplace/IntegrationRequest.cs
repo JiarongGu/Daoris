@@ -94,7 +94,7 @@ public sealed record IntegrationRequester(string Kind, string Door)
     /// <summary>A unit's <c>integrate</c> node's start: Daoris's, on the landing's own provenance.</summary>
     public static IntegrationRequester NodeStart { get; } = new(Daoris, IntegrationDoors.Node);
 
-    /// <summary>The person's press under a merge rule (§4.2's named legacy exception): their Accept or their merge.</summary>
+    /// <summary>The person's press under a merge rule (the legacy exception): their Accept or their merge.</summary>
     public static IntegrationRequester Press { get; } = new(Person, IntegrationDoors.Press);
 
     /// <summary>A workflow's <c>land</c> merged by the standing automatic authority, with no press: Daoris's, carried by the transport as a press is.</summary>

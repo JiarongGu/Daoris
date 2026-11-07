@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// <param name="Root">The main checkout, whose <c>.git</c> folder is the repository's common dir.</param>
 public sealed record RefRepository(string Repository, string Workspace, string Root)
 {
-    /// <summary>The common git dir: every branch of the repository and every tree's <c>HEAD</c> is written under it (§A4.1).</summary>
+    /// <summary>The common git dir: every branch of the repository and every tree's <c>HEAD</c> is written under it.</summary>
     public string CommonDir => Path.Combine(Root, ".git");
 }
 
@@ -73,24 +73,24 @@ public static class RefMoves
 }
 
 /// <summary>
-/// The ref watch (§B4, link 1 of §C6): one <see cref="ChangeWatch"/> root on the common git dir of each
+/// The ref watch (link 1 of its chain): one <see cref="ChangeWatch"/> root on the common git dir of each
 /// repository holding Daoris's work, never one per tree, whose hint makes that repository's end judgement due. The judge keeps what the
 /// line holds (<see cref="EndKeeping"/>, through <see cref="SessionTrees.KeepEndsAsync"/>): a fact link, which emits only where a
 /// <see cref="HeldFact"/> was written.
 /// </summary>
 /// <remarks>
 /// <para><b>A hint is a wake, never a value.</b> The judge is handed the repository alone and reads its refs afresh; a ref told deleted is
-/// read like any other move, and a ref missing at one read is never an end (§B7).</para>
+/// read like any other move, and a ref missing at one read is never an end.</para>
 ///
 /// <para><b>The filter</b> (<see cref="Hears"/>): <c>HEAD</c>, <c>packed-refs</c>, <c>refs/heads/**</c>, <c>refs/remotes/**</c>,
 /// <c>worktrees/*/HEAD</c>, <c>reftable/**</c> and <c>worktrees/*/reftable/**</c>, by their final names. Git writes each through a
-/// temporary renamed onto it (§A5, measured), so the rename is the event, and the temporaries, the objects, the logs and the index are
+/// temporary renamed onto it, so the rename is the event, and the temporaries, the objects, the logs and the index are
 /// never heard.</para>
 ///
 /// <para><b>Daoris's own moves</b> (<see cref="RefMoves"/>): its repository is judged at once, and the watcher's echo already heard is taken
-/// up with it, so the move is judged once (canary 11); a later echo finds the facts as they were and writes nothing.</para>
+/// up with it, so the move is judged once; a later echo finds the facts as they were and writes nothing.</para>
 ///
-/// <para><b>The reconciliation is the tidy's pass</b>, unchanged at its pace (§B4): it keeps every registered repository's ends before it
+/// <para><b>The reconciliation is the tidy's pass</b>, unchanged at its pace: it keeps every registered repository's ends before it
 /// removes anything. The topic's deadline is that pace. A repository's own deadline reconciles its root (an absent folder tried, a folder
 /// replaced at its path reopened, each then judged) and judges nothing a second time; the topic's whole deadline reads the set again.
 /// Recovery and bounds are the change watch's: generations, a loss judged at once and reopened, a resume, at most
@@ -143,7 +143,7 @@ public sealed class RefWatch : IAsyncDisposable
         _chain.Topic(ChangeTopics.Refs, ChainEvents.Refs, every ?? Deadline, AtOnce);
         if (tidy is null) return;
 
-        // Link 2's unblocking wakes (§C6), each a topic of its own on this chain so a burst of them is one wake: a session leaving its tree
+        // Link 2's unblocking wakes, each a topic of its own on this chain so a burst of them is one wake: a session leaving its tree
         // or ending, a press, the home's files. Their deadlines wake no link; the `refs` deadline is the effect's.
         _tidy = true;
         _chain.Bind(ChainRanks.Tidy, tidy);
@@ -182,7 +182,7 @@ public sealed class RefWatch : IAsyncDisposable
     public Action<string, bool>? Heard { get; init; }
 
     /// <summary>
-    /// Something that can unblock a refused tidy happened (§C6): <paramref name="wake"/> is one of <see cref="Unblocking"/>. Coalesced on
+    /// Something that can unblock a refused tidy happened: <paramref name="wake"/> is one of <see cref="Unblocking"/>. Coalesced on
     /// its topic, so a burst is one try of each pending repository. Nothing where link 2 is not bound here.
     /// </summary>
     public void Unblocked(string wake)
@@ -191,7 +191,7 @@ public sealed class RefWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// The start's reconciliation (§C6, canary 16): every topic judged whole and every repository link 2 is pending for, read from the
+    /// The start's reconciliation: every topic judged whole and every repository link 2 is pending for, read from the
     /// persisted facts, tried once, so a crash between a fact and its tidy loses nothing. What the links acted on.
     /// </summary>
     public Task<int> RecoverAsync(CancellationToken ct) => _chain.RecoverAsync(ct);
@@ -228,7 +228,7 @@ public sealed class RefWatch : IAsyncDisposable
     /// </summary>
     public static bool Hears(string name)
     {
-        // A temporary's rename onto its final name is the event (§A5): `<ref>.lock`, `packed-refs.new` and reftable's locks never are.
+        // A temporary's rename onto its final name is the event: `<ref>.lock`, `packed-refs.new` and reftable's locks never are.
         if (name.EndsWith(".lock", StringComparison.Ordinal) || name.EndsWith(".new", StringComparison.Ordinal)) return false;
         return name.Split('/') switch
         {
@@ -242,7 +242,7 @@ public sealed class RefWatch : IAsyncDisposable
     }
 
     /// <summary>
-    /// The repositories holding Daoris's work (§A4.1): those <c>session-branches.json</c> or <c>landings.json</c> keeps a standing entry of,
+    /// The repositories holding Daoris's work: those <c>session-branches.json</c> or <c>landings.json</c> keeps a standing entry of,
     /// at the root the registry names, where that root's <c>.git</c> is a folder (a main checkout, as the tidy asks). With no work kept,
     /// the registry is not asked.
     /// </summary>

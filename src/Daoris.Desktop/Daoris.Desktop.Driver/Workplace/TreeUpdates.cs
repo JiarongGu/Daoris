@@ -143,7 +143,7 @@ internal sealed class TreeUpdates(
     /// to date. What the session is told comes back with it.
     /// </summary>
     /// <remarks>
-    /// <para><b>Never a reason not to start.</b> A fetch that fails is judged against the last one and said in point 6's words, where the
+    /// <para><b>Never a reason not to start.</b> A fetch that fails is judged against the last one and said in the words the person's own press would hear, where the
     /// person's own press refuses it. A conflict, or any reason the press leaves a tree, leaves it as it stands and
     /// tells the session to replay its own commits itself.</para>
     ///

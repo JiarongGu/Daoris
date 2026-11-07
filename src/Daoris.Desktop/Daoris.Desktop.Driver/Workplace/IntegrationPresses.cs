@@ -3,7 +3,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A merge rule's press carried by the integration transport (the integration design §4.2's named legacy exception, C9, C18): the
+/// A merge rule's press carried by the integration transport (the legacy exception): the
 /// press is admitted at the one door under <see cref="IntegrationRequests.Legacy"/> and its line run to rest at once, so the person's checkout is
 /// only ever fast-forwarded to a merge made in the line's integration tree, with today's message and the repository's own hooks.
 /// </summary>

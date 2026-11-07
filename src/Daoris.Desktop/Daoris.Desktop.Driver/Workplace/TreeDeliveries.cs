@@ -98,7 +98,7 @@ internal sealed class TreeDelivering
         _wrote = phases.LastOrDefault(each => each.Phase == DeliveryPhases.RefWritten && each.Outcome == DeliveryOutcomes.Done)?.Evidence;
     }
 
-    /// <summary>The git phase this landing goes on from: the first not done (a restart's rule 1).</summary>
+    /// <summary>The git phase this landing goes on from: the first not done.</summary>
     public string? Next => GitPhases.FirstOrDefault(each => !_done.Contains(each));
 
     /// <summary>Where this delivery's own ref write left <c>refs/heads/<paramref name="name"/></c>, read back done before it stopped; null where it wrote none.</summary>

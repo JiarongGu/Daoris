@@ -105,7 +105,7 @@ public static class ToolInstall
         $"{System.Runtime.InteropServices.RuntimeInformation.OSDescription} {System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture}";
 
     /// <summary>
-    /// Which version a download, a use or an update means, and whether it is fetched (rule 4). It reads the home's
+    /// Which version a download, a use or an update means, and whether it is fetched. It reads the home's
     /// file and what is downloaded, and the lists as last fetched; it fetches nothing. The CLI's <c>planTool</c>.
     /// </summary>
     /// <param name="action"><c>download</c>, <c>use</c> or <c>update</c>.</param>
@@ -284,7 +284,7 @@ public static class ToolInstall
                 Directory.Delete(folder, recursive: true);
             }
 
-            // The scanner opens the executable just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
+            // The scanner opens the executable just unpacked, and the folder cannot move until it lets go.
             AtomicFile.MoveFolder(staged.Staging, folder);
             write($"  unpacked into {Path.Combine(folder, Tools.Package)}");
             (log ?? MachineLog.None).Info("tool.download.verified", ("tool", staged.Tool), ("version", staged.Version));
@@ -380,7 +380,7 @@ public static class ToolInstall
         JsonFile.Write(path, record);
     }
 
-    /// <summary>The archive, from the first address whose bytes are the list's (rule 3).</summary>
+    /// <summary>The archive, from the first address whose bytes are the list's.</summary>
     /// <returns>That address.</returns>
     private static async Task<string> FetchVerifiedAsync(
         HttpClient http, ToolDeclaration tool, OfferedVersion offered, string to, Action<string> write, CancellationToken ct)
@@ -428,7 +428,7 @@ public static class ToolInstall
     }
 
     /// <summary>
-    /// Delete a downloaded version nothing uses (rule 5), through the downloads' one act: judged as the press and the look's rule judge it, under the use files' locks and against the running sessions,
+    /// Delete a downloaded version nothing uses, through the downloads' one act: judged as the press and the look's rule judge it, under the use files' locks and against the running sessions,
     /// then moved aside before anything of it goes, so a refusal leaves it whole. The person names this one version, so one downloaded within
     /// the hour is theirs to delete.
     /// </summary>
@@ -494,7 +494,7 @@ public static class ToolInstall
             ("tool", declared.Name), ("version", version));
 
     /// <summary>
-    /// Fetch each resource location, in order, each bounded (rule 6). A list that reads replaces its copy, the bytes
+    /// Fetch each resource location, in order, each bounded. A list that reads replaces its copy, the bytes
     /// as fetched; anything else keeps the last copy and says its age. Downloads nothing. The CLI's <c>lookLocations</c>.
     /// </summary>
     /// <param name="ct">The person's stop.</param>

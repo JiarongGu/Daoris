@@ -12,7 +12,7 @@ internal static class SetAsideReads
     /// Every folder below the tree's top that holds a <c>.git</c> file or folder, as paths from the tree's root with forward
     /// slashes, none read into: what lies inside one is that repository's. Read from the folders, hidden ones included, never
     /// following a link; the tree's own <c>.git</c> at its top is passed over, and never read into. A folder that cannot be read throws.
-    /// The same walk names every link it meets, never followed, which the slim's judgement reads (Fable F1.5: one walk shared).
+    /// The same walk names every link it meets, never followed, which the slim's judgement reads.
     /// </summary>
     internal static (List<string> Nested, List<string> Links) NestedRepositories(string tree)
     {
@@ -93,7 +93,7 @@ internal static class SetAsideReads
     }
 
     /// <summary>
-    /// The holding check right before a recorded folder's rename (Codex's read of the branch, finding 1): null where it passes; else why it is
+    /// The holding check right before a recorded folder's rename: null where it passes; else why it is
     /// kept. Failing for certain, the manifest is marked <c>unmarked</c>, so the folder waits its days.
     /// </summary>
     internal static async Task<(string Code, string Sentence)?> HeldNowAsync(

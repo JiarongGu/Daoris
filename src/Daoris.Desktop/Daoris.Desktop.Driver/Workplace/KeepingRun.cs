@@ -8,12 +8,12 @@ namespace Daoris.Driver;
 /// pass, a press's run or a terminal's alone, runs holding <c>locks/keeping</c>, so two never remove beside each other.
 /// </summary>
 /// <remarks>
-/// <para><b>Tried, never waited for</b> (Fable F3.1), in <see cref="TreeLock"/>'s shape: the handle is the lock, opened with no sharing, at
+/// <para><b>Tried, never waited for</b>, in <see cref="TreeLock"/>'s shape: the handle is the lock, opened with no sharing, at
 /// once or not at all, so a process that dies lets go with its handles and nothing stale blocks; never <see cref="RecordLock"/>'s ten
 /// seconds, since a run elsewhere is a long one and a wait would hold a pass for nothing.</para>
 /// <para><b>Its holder named</b>: the holder writes <c>{ pid, since, door }</c> to a file of its own beside it,
 /// <c>locks/keeping.holder</c>, as the keep lock writes its own (<see cref="KeepLock"/>), and removes it at the run's end, while it still
-/// says what this holder wrote. A refusal names the holder; a holder's file whose process is gone is a run a crash cut short (Fable F3.3),
+/// says what this holder wrote. A refusal names the holder; a holder's file whose process is gone is a run a crash cut short,
 /// which the card says.</para>
 /// </remarks>
 public sealed class KeepingRun : IDisposable

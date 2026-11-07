@@ -102,7 +102,7 @@ public static class ReleaseChannels
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(staged.Where)!);
-            // The scanner opens the executables just unpacked, and the folder cannot move until it lets go (FIX-LOG 2026-10-07).
+            // The scanner opens the executables just unpacked, and the folder cannot move until it lets go.
             AtomicFile.MoveFolder(Path.Combine(staged.Staging, "package"), staged.Where);
             return (exe, true);
         }

@@ -203,7 +203,7 @@ public static class IntegrationDecideRefusals
     public const string Land = "land";
 }
 
-/// <summary>Where a queued request is moved in its line's queue (§8's <c>order</c>).</summary>
+/// <summary>Where a queued request is moved in its line's queue (its <c>order</c>).</summary>
 public static class IntegrationOrders
 {
     public const string First = "first";
@@ -287,7 +287,7 @@ public static class IntegrationStepOutcomes
     public static IReadOnlyList<string> All { get; } = [Done, Promoted, Held, HandedBack, Stopped, Interrupted, Split];
 }
 
-/// <summary>What the steps make of a member (§17.4's states).</summary>
+/// <summary>What the steps make of a member.</summary>
 public static class IntegrationMemberStates
 {
     public const string Formed = "formed";
@@ -323,7 +323,7 @@ public static class IntegrationCandidateEnds
     /// <summary>Dropped by a person's stop or the steward's act.</summary>
     public const string Dropped = "dropped";
 
-    /// <summary>The line's integration stopped (§5.2's last paragraph).</summary>
+    /// <summary>The line's integration stopped.</summary>
     public const string Stopped = "stopped";
 
     /// <summary>

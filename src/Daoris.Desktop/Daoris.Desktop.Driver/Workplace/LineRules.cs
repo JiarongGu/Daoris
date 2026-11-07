@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A repository's declared line rules (the integration design §4.1's <c>merge</c>):
+/// A repository's declared line rules:
 /// <c>daoris.gates.json</c>'s <c>integration.merge</c> entries <c>{ "paths": file, "line": pattern, "run": command line }</c>. A
 /// landing's replay that conflicts in such a file, where both sides changed only lines the pattern matches, takes the line's side
 /// of those lines and has the rule's writer recompute them from the replayed tree (<see cref="GeneratedWriters.WriteAsync"/>), in a

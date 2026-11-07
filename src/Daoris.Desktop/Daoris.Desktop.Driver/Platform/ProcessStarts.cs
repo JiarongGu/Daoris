@@ -162,7 +162,7 @@ public sealed class ProcessStarts
 
     /// <summary>
     /// Tell <paramref name="timed"/> the wait for a place and the creation inside it, in <see cref="Stopwatch"/> ticks, of each start this
-    /// flow makes through a gate until disposed (the git-app design §1.2: the gate's wait, the creation and the run apart).
+    /// flow makes through a gate until disposed (the gate's wait, the creation and the run apart).
     /// It changes nothing of the start: one the runtime refused or that threw is timed still, and one cancelled while it waited for its
     /// place, which never started, is not.
     /// </summary>

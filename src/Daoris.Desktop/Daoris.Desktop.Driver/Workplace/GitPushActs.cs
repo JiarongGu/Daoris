@@ -16,7 +16,7 @@ public sealed record PushAsk(string Repository, string Checkout, string Kind, st
 public sealed record PushPlan(bool Offered, string? Reason, string? Why, string? Address, string Dangerous, string Command);
 
 /// <summary>
-/// **Push one ref to origin** (§12 rows g and n): the one push Daoris makes.
+/// **Push one ref to origin**: the one push Daoris makes.
 /// One <c>push</c> step of the act journal (<see cref="ActPushSteps"/>) whose command is fixed whatever the repository's configuration says:
 /// one ref, <c>&lt;commit&gt;:refs/heads/&lt;name&gt;</c> or <c>&lt;commit&gt;:refs/tags/&lt;name&gt;</c>, no <c>+</c>, no <c>-u</c>, no followed
 /// tags, no submodules, no signing, no push options; the repository's hooks run. It carries a grant bound to origin's push address, the ref,

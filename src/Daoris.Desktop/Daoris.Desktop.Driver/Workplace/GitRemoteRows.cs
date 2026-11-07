@@ -15,7 +15,7 @@ public sealed record GitRemoteRow(
     IReadOnlyList<string> Passed, string? Chosen);
 
 /// <summary>
-/// A repository's git remotes with what serves each, read through §4.4's one reader of an
+/// A repository's git remotes with what serves each, read through the one reader of an
 /// address. Starts git once for the names and once for each address.
 /// </summary>
 public static class GitRemoteRows

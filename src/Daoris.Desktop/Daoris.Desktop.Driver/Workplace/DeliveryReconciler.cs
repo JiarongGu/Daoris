@@ -186,7 +186,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         }
     }
 
-    /// <summary>The delivery's phases settled under <paramref name="claim"/>: an open entry read and ended, then rule 1 from what is done.</summary>
+    /// <summary>The delivery's phases settled under <paramref name="claim"/>: an open entry read and ended, then every entry's outcome recorded from what is done.</summary>
     private async Task<DeliveryReconciled> SettleAsync(DeliveryRecord delivery, DeliveryClaim claim, bool look, CancellationToken ct)
     {
         var phases = store.Phases(delivery.Key);
@@ -229,7 +229,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
     }
 
     /// <summary>
-    /// Rule 1, every entry's outcome recorded: delivered where its method's reaching phase is done; a merge's line read where its press got as
+    /// Every entry's outcome recorded: delivered where its method's reaching phase is done; a merge's line read where its press got as
     /// far as the line; else its landing goes on from the first git phase not done, or its plugin's phases follow.
     /// </summary>
     private async Task<DeliveryReconciled> GoOnAsync(DeliveryRecord delivery, DeliveryClaim claim, IReadOnlyList<DeliveryPhase> phases, CancellationToken ct)
@@ -273,12 +273,12 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         return Delivered(delivery, claim);
     }
 
-    /// <summary>Rule 2 for a preparation cut before any ref was written ahead: withdrawn, since nothing of it stands.</summary>
+    /// <summary>A preparation cut before any ref is written ahead: withdrawn, since nothing of it stands.</summary>
     private static readonly (string Outcome, string? Evidence, string Said) Cut =
         (DeliveryOutcomes.Withdrawn, null, "it stopped while it was prepared, before any ref was written ahead of it, so nothing of it stands");
 
     /// <summary>
-    /// Rule 2, the open entry of <paramref name="phase"/> after its preparation read: a ref done where it stands at the intended tip, withdrawn
+    /// The open entry of <paramref name="phase"/> after its preparation read: a ref done where it stands at the intended tip, withdrawn
     /// where it is absent or stands where its record had it or at the tip judged, else unknown; a record done where it holds the branch at the
     /// tip its ref was written at, else withdrawn, to be written again. Null where git cannot say.
     /// </summary>

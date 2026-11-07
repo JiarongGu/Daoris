@@ -354,13 +354,13 @@ public sealed class SessionTrees(string home, IWorkplacePluginWire? plugins = nu
         CancellationToken ct = default)
     {
         var pass = await AutoTidy.TidyEmptyAsync(root, repository, workspace, inUse, ct).ConfigureAwait(false);
-        // The tidy's own removals are Daoris's ref moves, judged at once by the ref watch with their echo (§B4, canary 11).
+        // The tidy's own removals are Daoris's ref moves, judged at once by the ref watch with their echo.
         if (pass.Results.Any(result => result.Removed) || pass.Landed.Any(result => result.Removed)) RefMoves.Mine(_context.Home, repository);
         return pass;
     }
 
     /// <summary>
-    /// One repository's end judgement, its line read here as the look's tidy reads it (link 1 of the design §C6): what the
+    /// One repository's end judgement, its line read here as the look's tidy reads it: what the
     /// ref watch's hint asks. How many facts were written; nothing where this process does not hold the home's lease.
     /// </summary>
     /// <param name="root">The repository's main checkout, whose <c>.git</c> folder is its common dir.</param>

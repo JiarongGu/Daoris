@@ -19,7 +19,7 @@ public static class LayoutGit
     /// <returns>The facts, or why the line could not be read: no repository there, or a line that names no commit.</returns>
     public static async Task<LineReading> ReadAsync(string root, string line, CancellationToken ct = default)
     {
-        // 🔴 git walks UP (FIX-LOG): a folder that is not a repository's top would answer for the one above it.
+        // 🔴 git walks UP: a folder that is not a repository's top would answer for the one above it.
         if (!await WorkingTree.IsTopLevelAsync(root, ct).ConfigureAwait(false))
         {
             return new(null, "its checkout here is not a git repository");

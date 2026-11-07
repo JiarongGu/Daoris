@@ -192,7 +192,7 @@ internal sealed class TreeOpening(TreeContext context)
             throw;
         }
 
-        // A tree opened is Daoris's own ref move; its repository is watched from here, and judged at once (§B4).
+        // A tree opened is Daoris's own ref move; its repository is watched from here, and judged at once.
         RefMoves.Mine(context.Home, repository, workspace, root);
 
         // What it grew from as a fact: the branch it started at, never the sentence spelling it for a person.
@@ -202,7 +202,7 @@ internal sealed class TreeOpening(TreeContext context)
     }
 
     /// <summary>
-    /// The opening's sentence, price included, with its codes (the language design §4 rows 25–26): its branch and the
+    /// The opening's sentence, price included, with its codes: its branch and the
     /// branch it started at as facts, never its path, which only the English names and the cleaner cuts where it travels. Where
     /// its checkout's dependencies were copied in, its own code says them; each project that copied none says why. The
     /// machine-local files its gates read, copied in read-only, are a line after those, and each declared one not copied

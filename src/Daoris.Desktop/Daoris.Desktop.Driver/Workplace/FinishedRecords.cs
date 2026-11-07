@@ -19,29 +19,29 @@ internal sealed record FinishedStep(string Folder, string From, string To, strin
 
 /// <summary>
 /// Why the service did not keep a record: its words, and whether it has no door for one at all (a service older than this driver, which
-/// answers 404). Either way the folder stays <c>deleted</c>, awaiting its record past its days and said, and every later pass posts again
-/// (Codex's read of the branch, finding 3): an upgraded service keeps it.
+/// answers 404). Either way the folder stays <c>deleted</c>, awaiting its record past its days and said, and every later pass posts again:
+/// an upgraded service keeps it.
 /// </summary>
 internal sealed record RecordRefusal(string Why, bool NoDoor = false);
 
 /// <summary>
 /// The steps after the hold (7, and its resume): at each Keeping pass before the purge,
-/// and at the press's run before it removes. Outside every repository's hold, reading git read-only (§3.4's <i>Git outside the hold</i>) in
+/// and at the press's run before it removes. Outside every repository's hold, reading git read-only in
 /// the root the registry gives. For each schema-2 manifest beside its folder:
 /// <list type="bullet">
 /// <item><c>judged</c>, <c>moved</c> or <c>refused</c>: where its branch is absent and the holding check passes, <c>deleted</c>, then on;
 /// otherwise it waits its days and says why.</item>
 /// <item><c>deleted</c>: its record composed from the manifest and the tip (<c>git log --first-parent --numstat</c>) and posted; answered,
-/// <c>recorded</c> at the moment read after the service's answer (Codex's read of the branch, finding 5); not, it stays <c>deleted</c> and the
+/// <c>recorded</c> at the moment read after the service's answer; not, it stays <c>deleted</c> and the
 /// next pass, the press or a restart posts it again, a service with no door for it included.</item>
 /// <item><c>recorded</c>, its hour come: the holding check again; failing for certain, <c>unmarked</c>, waiting its days. Passing authorizes
 /// nothing: the purge runs its own check right before each rename.</item>
 /// </list>
-/// <para>🔴 A registry that could not be read is not a registry that names no checkout (the second maker's read, finding 3): with none, no
+/// <para>🔴 A registry that could not be read is not a registry that names no checkout: with none, no
 /// step runs, so nothing is unmarked and no record is posted without its commits for an outage. A git read that failed posts nothing
-/// either, nor does a repository the registry does not name (the last fixes' check, finding 2); only a tip git says is missing, or a range
+/// either, nor does a repository the registry does not name; only a tip git says is missing, or a range
 /// not known, is posted without its commits.</para>
-/// <para>Within the pass's budget (finding 6): between folders, never inside one's steps.</para>
+/// <para>Within the pass's budget: between folders, never inside one's steps.</para>
 /// </summary>
 internal sealed class FinishedRecords(TreeSetAside setAside)
 {
@@ -85,7 +85,7 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
             if (state == SlimStates.Deleted)
             {
                 if (post is null) continue;
-                // 🔴 The last fixes' check, finding 2: a repository the registry does not name is read as a git read that failed, never as one
+                // 🔴 A repository the registry does not name is read as a git read that failed, never as one
                 // with no commits, since the post is idempotent and a record kept without them stays so; it waits, said, past its days.
                 var (commits, unread, failedRead) = root is null
                     ? (null, null, SetAsideEligibility.NoCheckout)
@@ -121,7 +121,7 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
             }
 
             // The hour come, the holding check again: a ref dropped by hand, a line rewound, unmarks it. One that passes authorizes nothing and
-            // writes nothing: the purge runs its own right before each rename (Codex's read of the branch, finding 1).
+            // writes nothing: the purge runs its own right before each rename.
             if (state == SlimStates.Recorded && manifest.Recorded is { } recorded && clock() - recorded >= KeepKinds.SetAsideSettle && !finished.Whole)
             {
                 var (held, why) = await SetAsideEligibility.HoldingAsync(root, manifest, ct).ConfigureAwait(false);
@@ -131,7 +131,7 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
                 }
                 else if (held == Holding.Unread && manifest.Why != why && Save(file, manifest with { Why = why }))
                 {
-                    // Codex's read of the design, finding 3: unread is never certain; it keeps the folder recorded, said, and is asked again.
+                    // Unread is never certain; it keeps the folder recorded, said, and is asked again.
                     steps.Add(new(folder, state, state, why));
                 }
             }
@@ -153,7 +153,7 @@ internal sealed class FinishedRecords(TreeSetAside setAside)
         if (tipCode == 1) return (null, "its tip no longer reads, so its commits are not listed", null);
         if (tipCode != 0) return (null, null, $"git could not say whether its tip reads: {TreeGit.FirstLine(tipErr)}");
         if (tree.GrewFrom is not { } grew) return (null, "the commit it grew from is not known, so its commits are not listed", null);
-        // Codex's read of the branch, finding 10: `-z` with no rename detection, so each file is `added\tremoved\tpath\0` and its path is git's
+        // `-z` with no rename detection, so each file is `added\tremoved\tpath\0` and its path is git's
         // own bytes, never quoted or escaped for display; the header is `\x1e<id>\x1f<subject>`, its subject ending at the first line break.
         var (code, output, err) = await WorkingTree.GitAsync(
             root, ["-c", "core.quotePath=false", "log", "-z", "--no-renames", "--first-parent", "--numstat", "--format=%x1e%H%x1f%s", $"{grew}..{tree.Tip}"], ct)
@@ -218,7 +218,7 @@ internal static class FinishedPosts
                                 commit.Id, commit.Subject, [.. commit.Files.Select(file => new WorkRecordFileWire(file.Path, file.Added, file.Removed))]))]
                             : null,
                         record.Unread, new WorkRecordLeftWire([.. tree.Left.Names], tree.Left.Count, tree.Left.Cut), tree.Whole,
-                        // Codex's read of the design, finding 6: the landing captured before the move, or why none is named.
+                        // The landing captured before the move, or why none is named.
                         tree.Landing is { } landing
                             ? new WorkRecordLandingWire(landing.Branch, landing.Line, landing.At.ToUniversalTime(), landing.PullRequest)
                             : null,

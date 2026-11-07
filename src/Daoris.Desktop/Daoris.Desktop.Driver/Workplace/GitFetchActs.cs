@@ -13,7 +13,7 @@ public sealed record FetchOffer(bool Offered, string? Reason, string? Why);
 public sealed record FetchPlan(bool Offered, string? Reason, string? Why, string? Address, string Command);
 
 /// <summary>
-/// **Fetch origin's branches** (§12 row f). One <c>fetch</c> step of the act journal whose command
+/// **Fetch origin's branches**. One <c>fetch</c> step of the act journal whose command
 /// is fixed whatever the repository's configuration says of origin: its refspec is given, <c>--refmap=</c> turns the configured ones off, tags
 /// and submodules and maintenance are off, so only <c>refs/remotes/origin/*</c> moves, and <c>--prune</c> removes only what origin no longer has
 /// there. <c>FETCH_HEAD</c> is neither written nor emptied. A fetch is a Read through Daoris's doors, which must be

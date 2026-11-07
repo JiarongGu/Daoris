@@ -196,7 +196,7 @@ internal interface IPullRequestMomentWorld
 /// which alone keeps ends.</para>
 ///
 /// <para><b>An end with no press.</b> Where an answer comes back completed, the repository's ends are judged again at once, as Daoris's own
-/// move is (<see cref="RefMoves.Mine"/>), so a merged pull request's work is held (§B) with nobody pressing anything.</para>
+/// move is (<see cref="RefMoves.Mine"/>), so a merged pull request's work is held with nobody pressing anything.</para>
 ///
 /// <para><b>What the person sees:</b> nothing new on the window. The machine log has link 6's <c>chain.fired</c> (topic <c>refs</c> or
 /// <c>focus</c>, the count asked), the plugin's own lines, and a failure where a moment failed. The topics' deadlines wake no link: the

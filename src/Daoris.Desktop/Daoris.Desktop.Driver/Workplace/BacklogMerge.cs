@@ -107,7 +107,7 @@ internal static class BacklogMerge
     }
 
     /// <summary>
-    /// The files a declaration's text says settle by rows (the integration design's §4.1 <c>merge</c>): <c>daoris.gates.json</c>'s
+    /// The files a declaration's text says settle by rows:<c>daoris.gates.json</c>'s
     /// <c>integration.merge</c>, each rule <c>{ "paths": file, "by": "rows" }</c>, settled by the merge base line by line as the backlog
     /// is (<see cref="ByBase"/>), read through the whole declaration (<see cref="IntegrationDeclaration.Read"/>). No command
     /// runs, so no acceptance is read: a <c>line</c> rule's <c>run</c> writer waits for the accepted declaration and is passed over.

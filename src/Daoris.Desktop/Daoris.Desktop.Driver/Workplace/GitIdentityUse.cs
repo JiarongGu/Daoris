@@ -168,7 +168,7 @@ public static class GitIdentityUse
     }
 
     /// <summary>
-    /// Write one pointer into a <c>driver.json</c> object (§8 <c>git use</c>): <paramref name="value"/> an identity's id or
+    /// Write one pointer into a <c>driver.json</c> object (<c>git use</c>): <paramref name="value"/> an identity's id or
     /// <see cref="Own"/>, or null to clear it; an emptied scope is removed. The caller writes the object back under the home's lease.
     /// </summary>
     public static void Set(JsonObject root, string key, string scope, string? inner, string? value)
@@ -194,7 +194,7 @@ public static class GitIdentityUse
     }
 
     /// <summary>
-    /// Every scope pointing at an identity (§7.1 <i>Remove…</i> lists them before it goes): <c>repository/remote</c> and
+    /// Every scope pointing at an identity (listed before a removal goes): <c>repository/remote</c> and
     /// <c>workspace/host</c>, as written.
     /// </summary>
     public static IReadOnlyList<string> PointingAt(Pointers pointers, string id) =>

@@ -25,24 +25,24 @@ public static class GitLog
         : variable(SessionVariable) is { Length: > 0 } ? "session"
         : "daoris";
 
-    /// <summary>A door's refusal (§11 <c>git.refused</c>): its code, the act's class, the remote and host where known.</summary>
+    /// <summary>A door's refusal (<c>git.refused</c>): its code, the act's class, the remote and host where known.</summary>
     public static void Refused(
         string? home, Func<string, string?> variable, string code, GitAct? act, string? remote, string? host) =>
         Write(home, "git.refused", ("repository", variable("DAORIS_REPOSITORY")), ("remote", remote), ("host", host),
             ("class", act is { } known ? ClassName(known) : null), ("code", code), ("door", DoorOf(variable)),
             ("session", variable(SessionVariable)));
 
-    /// <summary>A grant written (§11 <c>git.granted</c>): the landing's, for its plugin's push to <paramref name="remote"/>.</summary>
+    /// <summary>A grant written (<c>git.granted</c>): the landing's, for its plugin's push to <paramref name="remote"/>.</summary>
     public static void Granted(string home, string repository, string remote, string? session, string by) =>
         Write(home, "git.granted", ("repository", repository), ("remote", remote), ("class", ClassName(GitAct.Write)),
             ("session", session), ("by", by), ("door", "landing"));
 
-    /// <summary>A grant taken by a door's write (§11 <c>git.grant.used</c>).</summary>
+    /// <summary>A grant taken by a door's write (<c>git.grant.used</c>).</summary>
     public static void GrantUsed(string home, Func<string, string?> variable, string? remote, string? host) =>
         Write(home, "git.grant.used", ("repository", variable("DAORIS_REPOSITORY")), ("remote", remote), ("host", host),
             ("class", ClassName(GitAct.Write)), ("door", DoorOf(variable)), ("session", variable(SessionVariable)));
 
-    /// <summary>A git go-ahead answered at a door (§11 <c>git.asked</c>): allowed or refused, or not answered in the bound.</summary>
+    /// <summary>A git go-ahead answered at a door (<c>git.asked</c>): allowed or refused, or not answered in the bound.</summary>
     public static void Asked(string home, Func<string, string?> variable, bool allowed, GitAct act, string? remote, string? host) =>
         Write(home, "git.asked", ("repository", variable("DAORIS_REPOSITORY")), ("remote", remote), ("host", host), ("class", ClassName(act)),
             ("allowed", allowed), ("door", DoorOf(variable)), ("session", variable(SessionVariable)));

@@ -38,7 +38,7 @@ public enum PieceEntryKind
 }
 
 /// <summary>
-/// The import's rules (Codex's read 24), pure over what the walk found and what the base holds: regular files only;
+/// The import's rules, pure over what the walk found and what the base holds: regular files only;
 /// a link, a junction or another reparse point, a submodule or a nested repository refused, and what the base held under it left as
 /// it was; a new file the repository's own ignore rules ignore left out; a file over <see cref="FileBound"/> refused, and a piece over
 /// <see cref="PieceBound"/> refused whole. Paths outside the piece's are kept and named beyond it, never refused.
@@ -252,7 +252,7 @@ public static class PieceCopy
 public sealed record PieceKept(string? State, string? Commit, string? Code, PieceImport.Judged? Judged, string? Why);
 
 /// <summary>
-/// The keeper and the import (Codex's read 23): once the partner's job is empty its copy is data the
+/// The keeper and the import: once the partner's job is empty its copy is data the
 /// partner controlled, <c>.git</c> included, so Daoris never runs git in it again. It reads the files, judges them by
 /// <see cref="PieceImport"/>, and writes one commit onto the ask's base in the repository itself through a temporary index, with no
 /// filters, no hooks and no signing, by the repository's identity, dated by the keeper's moment, so the same inputs make the same

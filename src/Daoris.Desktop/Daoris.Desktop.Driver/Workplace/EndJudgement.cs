@@ -105,7 +105,7 @@ internal sealed record EndCycle(string Form, bool Plugin = false, bool Squash = 
         entry.Squashed is not null, entry.Workflow);
 }
 
-/// <summary>Which branch of the unit is judged (§B1): the session's own, or the landing branch that carries it.</summary>
+/// <summary>Which branch of the unit is judged: the session's own, or the landing branch that carries it.</summary>
 internal enum EndRole
 {
     Session,
@@ -125,7 +125,7 @@ internal sealed record EndSubject(string Branch, string Tip, EndRole Role, Lande
     /// <summary>The agent's word that it is done: stated so that it is visibly not read.</summary>
     public bool Claimed { get; init; }
 
-    /// <summary>Whether its tree holds uncommitted work. It does not stop the committed tip's end; a reader says both (§B7).</summary>
+    /// <summary>Whether its tree holds uncommitted work. It does not stop the committed tip's end; a reader says both.</summary>
     public bool? Uncommitted { get; init; }
 
     /// <summary>
@@ -192,8 +192,7 @@ internal sealed record EndFacts(string? Line)
 }
 
 /// <summary>
-/// What the judgement says and the evidence for it: the proof's code, where it held, the commit and the line judged (the design's §B5
-/// names each, so a stored end can stop holding when one moves).
+/// What the judgement says and the evidence for it: the proof's code, where it held, the commit and the line judged (each is named, so a stored end can stop holding when one moves).
 /// </summary>
 internal sealed record EndVerdict(EndState State, string? By, string? Where, string Evidence)
 {
@@ -210,14 +209,14 @@ internal sealed record EndVerdict(EndState State, string? By, string? Where, str
 }
 
 /// <summary>
-/// The one judgement of an end (§B7): the cycles' proofs, which four places judged
+/// The one judgement of an end: the cycles' proofs, which four places judged
 /// alone (the clean-up, the sweep, the pull request's asks and the look's tidy), behind one answer: claim, handed, ended or unknown.
 /// <see cref="Judge"/> is pure over <see cref="EndFacts"/>; <see cref="GatherAsync"/> reads them through the proofs' own seams.
 /// </summary>
 /// <remarks>
-/// <para>Nothing is stored and nothing removed here (§B8). <see cref="EndKeeping"/> keeps what it finds held; the look's
+/// <para>Nothing is stored and nothing removed here. <see cref="EndKeeping"/> keeps what it finds held; the look's
 /// tidy takes its candidates from that and judges each again, and the sweep keeps its own judgement.</para>
-/// <para>🔴 <b>Never ended by a guess</b> (§B7): the agent's done, a remote branch reading <c>[gone]</c>, patch equivalence, a plugin's
+/// <para>🔴 <b>Never ended by a guess</b>: the agent's done, a remote branch reading <c>[gone]</c>, patch equivalence, a plugin's
 /// word without its merge commit on the line here, an unread answer, a work only another branch of the person's holds. A dirty tree
 /// does not make an end a guess, it is carried beside it.</para>
 /// </remarks>

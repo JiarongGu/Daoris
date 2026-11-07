@@ -12,8 +12,7 @@ namespace Daoris.Driver;
 /// <para><b>One file per source per day</b> (<c>&lt;date&gt;.&lt;source&gt;.jsonl</c>, the date in UTC):
 /// the shell, the headless driver and the browser each write their own, and the HTTP host writes its own
 /// with its own code. Two processes appending to one file can overwrite each other's lines, and the
-/// artefacts share no code to hold a lock between them, so the format is the contract
-/// (<c>docs/2026-09-30-machine-log-design.md</c> §3, the twins rule).</para>
+/// artefacts share no code to hold a lock between them, so the format is the contract.</para>
 ///
 /// <para><b>Appended, not written whole.</b> A log grows a line at a time, as a session transcript does;
 /// the atomic write-beside-and-rename is for files that are replaced.</para>

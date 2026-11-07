@@ -133,7 +133,7 @@ public static class ToolResources
 
     private static readonly Regex Hash = new(@"^[0-9A-Fa-f]{64}\z", RegexOptions.CultureInvariant);
 
-    /// <summary>The fields one download is, whoever names it (§3.4 rule 2), in the order a refusal names the first that differs.</summary>
+    /// <summary>The fields one download is, whoever names it, in the order a refusal names the first that differs.</summary>
     private static readonly string[] FileFields = ["sha256", "size", "archive", "exe", "paths"];
 
     /// <summary>The platform an operating system and architecture name, or null for one no list may name.</summary>
@@ -190,7 +190,7 @@ public static class ToolResources
 
         if (parsed is not JsonObject root) return Read($"{origin} is not a JSON object");
 
-        // Rule 1: the schema, before anything else.
+        // The schema, before anything else.
         if (root["schema"] is not { } schema) return Read($"{origin} names no `schema`: nothing in it is read");
         if (!IsSchema(schema))
         {
@@ -203,7 +203,7 @@ public static class ToolResources
 
         foreach (var (id, entry) in Ordinal(held))
         {
-            // Rule 2: a list offers versions of the tools this build declares, and can never add one.
+            // A list offers versions of the tools this build declares, and can never add one.
             if (Tools.Find(id) is null)
             {
                 unknown.Add(id);
@@ -336,7 +336,7 @@ public static class ToolResources
             {
                 if (!list.Tools.TryGetValue(declared.Id, out var tool)) continue;
                 named.Add(list.Origin);
-                // Rule 7: the first list that names them, in read order.
+                // The first list that names them, in read order.
                 if (source is null && tool.Source is not null) (source, sourceFrom) = (tool.Source, list.Origin);
                 if (licence is null && tool.Licence is not null) (licence, licenceFrom) = (tool.Licence, list.Origin);
                 if (platform is null) continue;
@@ -363,7 +363,7 @@ public static class ToolResources
                         continue;
                     }
 
-                    // Rule 4: the same bytes under another address are a mirror, tried in read order.
+                    // The same bytes under another address are a mirror, tried in read order.
                     if (!held.Urls.Contains(file.Url, StringComparer.Ordinal)) held.Urls.Add(file.Url);
                     if (!held.Lists.Contains(list.Origin, StringComparer.Ordinal)) held.Lists.Add(list.Origin);
                 }
@@ -458,7 +458,7 @@ public static class ToolResources
         return new ResourceTool(source, licence, versions);
     }
 
-    /// <summary>A file of the list, judged (rule 4): what it downloads, or why it is skipped.</summary>
+    /// <summary>A file of the list, judged: what it downloads, or why it is skipped.</summary>
     private static (ToolFile? File, string? Why) JudgeFile(JsonNode? value)
     {
         if (value is not JsonObject file) return (null, "it is not an object");

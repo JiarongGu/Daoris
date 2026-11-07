@@ -63,7 +63,7 @@ public static class TogetherInclusion
 /// is written; then the landing, its record listing the members; again before the push; then what came of it.
 /// </summary>
 /// <remarks>
-/// Under a delivery (the land node design §9's first question): one Accept carrying several sessions is one delivery, the head's
+/// Under a delivery: one Accept carrying several sessions is one delivery, the head's
 /// unit's, bound at the checked tip, whose intent chooses the form and the target; each member is brought into it and starts none of its own
 /// (<see cref="DeliveryReach"/>), so there is no second fence.
 /// </remarks>

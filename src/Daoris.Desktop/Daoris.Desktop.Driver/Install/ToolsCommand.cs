@@ -583,7 +583,7 @@ public static class ToolsCommand
     }
 
     /// <summary>
-    /// A press as the alone-path design §1.1 takes it: its route through the instance that answers, its words read from the answer's
+    /// A press as the alone path takes it: its route through the instance that answers, its words read from the answer's
     /// fields; else its operation here, refused from a session's terminal where it is the person's, its refusal one line
     /// with its code.
     /// </summary>

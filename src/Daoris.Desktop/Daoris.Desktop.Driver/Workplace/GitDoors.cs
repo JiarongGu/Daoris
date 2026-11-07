@@ -28,7 +28,7 @@ public static class GitDoors
     // ---- The ssh door ----
 
     /// <summary>
-    /// What git handed the ssh door (§4.2's contract, OpenSSH's variant): its options, the <c>[user@]host</c>, and the remote command,
+    /// What git handed the ssh door (OpenSSH's variant): its options, the <c>[user@]host</c>, and the remote command,
     /// split into its program, its path and LFS's operation. Null with the refusal's line for anything else.
     /// </summary>
     public sealed record SshCall(IReadOnlyList<string> Options, string Host, string Command, string Program, string Path, string? Operation);

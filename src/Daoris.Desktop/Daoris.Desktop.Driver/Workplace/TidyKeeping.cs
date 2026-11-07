@@ -83,7 +83,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         if (setAside)
         {
             // The registry read once for the record pass and the purge's holding checks; the record pass within the pass's
-            // budget, between folders, and the purge within what it left (Codex's read of the branch, finding 11).
+            // budget, between folders, and the purge within what it left.
             var roots = SessionTrees.RootsOf(await RegistryAsync(service, ct).ConfigureAwait(false));
             lines.AddRange(await RecordSetAsideAsync(trees, service, roots, met, () => spent.Elapsed >= Budget, ct).ConfigureAwait(false));
             var rest = Budget - spent.Elapsed;
@@ -462,7 +462,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         var steps = await trees.RecordSetAsideAsync(roots, service.PostWorkRecordAsync, Clock, ct, spent: spent).ConfigureAwait(false);
         lock (_gate)
         {
-            // A record kept is no line of the look's (Codex's read of the branch, finding 7): the folder's removal at its hour says it.
+            // A record kept is no line of the look's: the folder's removal at its hour says it.
             foreach (var step in steps)
             {
                 if (step.Why is { } why && First(met, step.Folder, "record", why)) lines.Add(Look.Retry("tidy", $"tidy  {Path.GetFileName(step.Folder)} waits: {Clause(why)}."));
@@ -472,7 +472,7 @@ internal sealed class TidyKeeping(BranchTidying tidy, string home)
         return lines;
     }
 
-    /// <summary>The registry's repositories; null where the service did not say, so no step needing a checkout runs (Codex's read of the design, finding 3).</summary>
+    /// <summary>The registry's repositories; null where the service did not say, so no step needing a checkout runs.</summary>
     private static async Task<IReadOnlyList<RepoView>?> RegistryAsync(ServiceClient service, CancellationToken ct)
     {
         try

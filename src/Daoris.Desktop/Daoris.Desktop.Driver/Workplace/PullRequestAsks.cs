@@ -304,7 +304,7 @@ internal sealed class PullRequestAsks(TreeContext context)
 
     /// <summary>
     /// The carrier whose pull request carried <paramref name="revision"/>: at or under its source commit, or under a tip it cleared; that tip's
-    /// branch at it is then one more thing a removal by it rests on (third review).
+    /// branch at it is then one more thing a removal by it rests on.
     /// </summary>
     internal static async Task<PullRequestCarrier?> CarrierOfAsync(
         string root, string revision, IReadOnlyList<PullRequestCarrier> carriers, CancellationToken ct)

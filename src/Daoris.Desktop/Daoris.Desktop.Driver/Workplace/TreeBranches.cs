@@ -183,8 +183,8 @@ internal sealed class TreeBranches(TreeContext context, TreeFollows follows, Tre
             return new TreeLanding(false, EnteredStands(name, repository)) { Refusal = LandingCode.Exists };
         }
 
-        // The branch this delivery wrote and read back before Daoris stopped goes on to its record (the land node design §3, a
-        // restart's rule 1): never judged as a branch another made, never written twice; an advance from where the record had it.
+        // The branch this delivery wrote and read back before Daoris stopped goes on to its record:
+        // never judged as a branch another made, never written twice; an advance from where the record had it.
         if (exists == 0 && delivering?.Wrote(name) is { } wrote && string.Equals(wrote, standing.Trim(), StringComparison.OrdinalIgnoreCase))
         {
             var was = context.Recorded.Of(repository, name)?.Tip;

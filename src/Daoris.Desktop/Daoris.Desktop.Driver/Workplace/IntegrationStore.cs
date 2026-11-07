@@ -223,7 +223,7 @@ public sealed class IntegrationStore(
         }, []);
 
     /// <summary>
-    /// Move a queued request first or last in its line's queue (§8's <c>order</c>): before, or after, every other open request of
+    /// Move a queued request first or last in its line's queue (its <c>order</c>): before, or after, every other open request of
     /// the line, in one write. Null where it moved; else why not (<see cref="IntegrationOrderRefusals"/>), nothing written.
     /// </summary>
     /// <exception cref="ArgumentException">A place that is neither first nor last.</exception>
@@ -469,7 +469,7 @@ public sealed class IntegrationStore(
             .FirstOrDefault(), null, ActsSince);
 
     /// <summary>
-    /// Record a decide on a candidate held for one (§4.5's <c>hold</c>: its last step a judge ended <c>held</c>), once, in one write that judges
+    /// Record a decide on a candidate held for one (its last step a judge ended <c>held</c>), once, in one write that judges
     /// it under the lock. The person's or the steward's act, not the run's, so no claim is checked: the run consumes it at its next look. Refused,
     /// nothing written, for a candidate that does not stand, one not held for a decide, one decided already (whose decide is answered), and a
     /// <c>land</c> by anyone but the person.
