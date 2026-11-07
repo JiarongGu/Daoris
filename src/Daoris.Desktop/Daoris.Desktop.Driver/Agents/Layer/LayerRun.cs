@@ -23,8 +23,6 @@ namespace Daoris.Driver;
 internal sealed class LayerRun(
     LayerRegistration registration, LayerStart start, LauncherSeat seat, Func<string, bool> exists, LayerHold? hold = null) : HeldRun
 {
-    public const string ChoiceAbility = "a later choice on a layer run's session (AG11, LQ8)";
-
     public const string TaskAbility = "a task stopped on a layer run (AG18 with LQ7)";
 
     private readonly object _gate = new();
@@ -126,8 +124,6 @@ internal sealed class LayerRun(
         _goneOn = true;
         return LegAsync(conversation, first: false, Input.Openings(), preamble: null, named: () => Input.Acknowledge(), ct);
     }
-
-    public override Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct) => Task.FromException(Unsupported(ChoiceAbility));
 
     internal override DoorInput Input { get; } = new();
 
