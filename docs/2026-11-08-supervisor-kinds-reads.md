@@ -203,3 +203,121 @@ accepted, or a move made, on a quest the person has just held is the case. The d
   and a conversation's `refer` on limits stays refused.
 - **The claims of §1.2.** Each cited line says what the design says it does, `StewardRouteAct.DispatchAsync` among them
   (`Modules/Bridge/StewardRouteAct.cs:89`, reached from `SupervisorDoor.cs:170`).
+
+
+## Codex, round 1
+
+Codex's read of the design at `31e8acd1a7`, run by the steward from outside the install, read-only, without seeing the independent Opus reader's; verbatim but for its headings set down.
+
+**Verdict: another round before implementation.**
+
+| Row | Verdict | Why |
+|---|---|---|
+| a | **Another round** | Downgrade safety and revocation of held grants are incomplete. |
+| b | **Another round** | The unified form loses decision identity; final closures need restart semantics. |
+| c | **Another round** | Durable attempt outcomes and the claimed read-only boundary need tightening. |
+| d | **Another round** | It inherits the unresolved identity, release and restart contracts in a–c. |
+| e | **Another round** | Allows need effect-based scope, act applicability and atomic arbitration with the person. |
+| f | **Another round** | Today’s workflow word queue cannot preserve supervisor attribution and person-first replacement. |
+| g | **Another round** | Its contract must agree with the current rule-file design and define consumption of once-only allows. |
+| h | **Ready to build after its predecessors** | The installed proof is appropriately bounded; I found no independent defect in that row. |
+
+Reviewed checkout: `31e8acd1a7`; the proposal cites `50055ee6d6`. References below use the proposal’s Driver/Modules/Service path convention. Design line references are to `docs/2026-11-08-supervisor-kinds-design.md`.
+
+The later **D233:45–51** note governs: allows act immediately, and a separately granted supervisor approval may cover an ungranted steward request. Those choices are authorized, not findings against the design.
+
+1. **Blocking — the grant migration permits an older build to misread the new records.**
+
+   **Where:** design §4, lines 263–267; §7.1, line 413. Code: `Roles/RoleRecords.cs:124–128`, `Roles/RoleHold.cs:119–133`, `Roles/RoleCatalog.cs:113–117`; `Modules/Platform/RoleJudge.cs:162–166`; `Store/DesktopStoreReader.cs:14–15`.
+
+   **Sequence:** the new build stores a terminal supervisor deciding only `landing`, with qualified grants. An older build reads it successfully: its parser accepts arbitrary nonempty authority strings and ignores `decides`. Its resolver treats the record as a generic supervisor, and its judge permits a question answer without checking those grants. This is misreading, not refusal.
+
+   A writer-stamp increase alone does not solve this: older readers deliberately read newer stores, and answering a question has effects outside the desktop-store write transaction.
+
+   **Smallest change:** specify an incompatibility boundary existing builds actually obey, covering both reads that authorize effects and writes. Preserve or explicitly refuse pre-migration records, including historical role revisions. Test the old parser and execution path against migrated records; a migration-only test is insufficient.
+
+2. **Blocking — removing a grant need not stop an already-held terminal decision.**
+
+   **Where:** design §2.2, lines 89–93; §3.4, lines 248–252; §4, lines 268–280. Code: `Modules/Platform/RoleTerminals.cs:135–145`, `Modules/Platform/RoleJudge.cs:25–33`, `Roles/SupervisorReleasing.cs:27–45`, `Roles/SupervisorCourses.cs:104–110`.
+
+   **Sequence:** a terminal keeps a granted answer or go-on. During its window, the person removes that grant while retaining the same role and terminal holder. Today, `RolesChanged` preserves the generation when holder and role kind remain unchanged. Release checks admission/generation, not authority, so the decision still acts.
+
+   The proposal adds checks at the judge and keeping, but does not explicitly add the final grant check. Its claim that changing a role ends its hold is stronger than today’s terminal implementation.
+
+   **Smallest change:** revalidate effective role, kind, current grant and subject at the final execution step. Alternatively invalidate affected generations on every authority, scope or `decides` revision, consistently for both holders. Serialize that cutoff with revocation.
+
+3. **Blocking — `subject` does not identify the decision being answered.**
+
+   **Where:** design §2.3, lines 123–136; §7.5, lines 451–454. Code: `Roles/SupervisorProof.cs:153–173`, `Roles/SupervisorCourseForm.cs:6–23`, `Roles/SupervisorKeeping.cs:147–150`, `WorkOrders/ReferredPoints.cs:44–51`.
+
+   **Sequence:** the holder reads question Q1 on a session. The person answers it; that session later parks on Q2, which offers the same label. A delayed form naming only the session, kind and label cannot distinguish Q1 from Q2. The same problem applies to successive referred points, permission requests and workflow attempts.
+
+   Today’s forms carry separate `question` or `point` identifiers. The proposed example makes `subject` the session identifier, removing that protection. Re-reading “the subject” cannot establish which version was originally considered.
+
+   **Smallest change:** define a typed, immutable subject reference: session plus question; line plus referred-point id; session/run generation plus permission request; run plus node and binding/attempt; or file-operation instance. Include it in canonical proof bytes, attempts, keeping and release. No new route is needed.
+
+4. **Blocking — an allow’s scope must follow its effect, and its grant must match its subtype.**
+
+   **Where:** design §3.1, line 208; §3.4, lines 235–246; §5.1, lines 292–300; row e, lines 559–565. Code: `Service/Daoris.Service.Core/Help/RuleProposals.cs:93–99`, `Agents/RuleProposals.cs:150–154`, `:220–230`; `Events/HeldPermissions.cs:152–164`.
+
+   **Sequence:** a session in one repository proposes a machine-wide permission widening. Resolving its repository’s supervisor and invoking the proposal’s yes door changes permissions for every repository. The proposal format already permits this; its origin is not its effect’s scope.
+
+   Separately, the table groups all allow acts together, but accepting a widening installs a persistent rule. Mapping `allow.once` to that yes door would therefore exceed the grant. Conversely, today’s held-request door explicitly refuses standing options.
+
+   **Smallest change:** give each allow subtype an exact effect scope and supported-act table. Resolve against the affected scope: machine changes require the machine’s supervisor; cross-repository effects require a covering scope. Widenings require `allow.standing`; once-only requests use only their offered one-call options. The newly authorized steward approval should bind one proved request and exact operation, without changing the steward’s authority record.
+
+5. **Blocking — dispatching through the person’s route does not make permission decisions atomic or person-first.**
+
+   **Where:** design §3.1, lines 199–200; §4, lines 279–281; §5.2, lines 312–316. Code: `Agents/RuleProposals.cs:220–231`, `:239–251`; `Modules/Bridge/Routes/RulesRoutes.cs:63–75`; `Modules/Bridge/StewardRouteAct.cs:89–93`.
+
+   **Sequence:** the supervisor opens a waiting proposal. The person declines it and receives success. The supervisor then applies its already-read change and marks the proposal accepted. `Answer` performs open, permission save and settlement as separate operations without a shared decision lock or conditional settlement.
+
+   The common dispatcher merely invokes the handler. It supplies neither arbitration nor a durable receipt. A crash between permission save and settlement also leaves an applied proposal apparently unanswered.
+
+   **Smallest change:** use one conditional settlement operation shared by person and supervisor, with source, subject version and idempotency receipt. Check the person’s settlement and current restrictions inside that operation. Recover an interrupted application by receipt instead of blindly applying it again.
+
+6. **Blocking — a supervisor’s pending workflow word can block the person’s replacement and become recorded as theirs.**
+
+   **Where:** design §3.1, line 209; §4, lines 279–280; §7.7, lines 479–480; row f, lines 567–571. Code: `Workflows/Nodes/RunNodeWords.cs:110–127`, `:190–207`; `Workflows/Nodes/NodeRecord.cs:254`; `Workflows/Nodes/NodeRecordFiles.cs:240–250`, `:519–534`; `Workflows/Kinds/Human/HumanNode.cs:54–59`.
+
+   **Sequence:** release queues a supervisor approval. Before the workflow pass consumes it, the person presses Reject. Today, any existing pending word makes the second press fail `worded`, regardless of its author. The supervisor’s approval consequently wins.
+
+   Adding `by: supervisor` only at the route is insufficient: `NodeWord` has no author, its parser reconstructs no author, application records `person-<act>`, and the node move assigns person provenance.
+
+   **Smallest change:** carry source and decision identity through serialization, parsing and application. Under the existing record lock, let the person replace an unconsumed supervisor word. Bind it to the reviewed attempt and acceptance inputs, and define the effect cutoff. Prevent older readers from silently consuming that new word as a person’s word.
+
+7. **Blocking — discarding live authority on restart must not discard final owner decisions or completed attempt outcomes.**
+
+   **Where:** design §2.2, lines 93–95; §2.3, lines 110–140; §7.5, line 454. Code: `Roles/SupervisorSweeps.cs:105–133`, `Roles/SupervisorDecisionFiles.cs:76–83`, `Roles/SupervisorCourses.cs:121–133`, `Roles/SupervisorReads.cs:83–90`.
+
+   **Sequence:** the person overrules an agent’s course decision, or the supervisor leaves the point to them. Restart empties `Courses`. The startup sweep only recognizes question-shaped files, while course files are read as history. The unchanged referred point therefore appears undecided again. Automatic staffing can reconsider what was final.
+
+   A completed attempt whose held result is discarded also needs a defined durable outcome: recording only interrupted attempts as failed does not establish whether another choice may answer that same subject.
+
+   Additionally, state appends are best effort (`SupervisorDecisionFiles.cs:45–54`), so acknowledging an overrule does not prove its closure survived.
+
+   **Smallest change:** durably retain and reload per-subject closure markers for person answers, overrules, leaves and terminal attempt outcomes, independently of live generations. Acknowledgement must follow durable closure. Pending decisions may still become stale on restart; they need not regain authority.
+
+8. **Blocking — the helper exemplar does not establish the promised read-only actor boundary.**
+
+   **Where:** design §2.3, lines 112–122; §7.6, lines 461–469. Code: `Loop/Helpers/HelperTurn.cs:153–171`, `Loop/Session/SessionRules.cs:37–42`, `Participants/Domain/OpinionPosture.cs:4–17`, `Review/OpinionTree.cs:12–16`.
+
+   **Sequence:** an available staffing choice uses a harness with no rule language. The exemplar hands it no permission rules; the posture explicitly says its protection is the copy alone. For a machine-scoped subject, the proposal provides no copy either. Denying connector mutation tools does not stop a native filesystem or command tool from changing permission files directly, bypassing the decision’s grants.
+
+   **Smallest change:** specify the actual execution containment for every supported supervisor harness, including subjects without repositories. Give those turns an isolated working place and enforce their read-only posture independently of model instructions and connector listings. Verify an attempted policy-file write with the real harness. This implements the requested read-only turn, not an additional default restriction on development.
+
+9. **Blocking — row g’s once-only consumption contract conflicts with the current rule-file handoff.**
+
+   **Where:** design §5.1, lines 287–304; row g, lines 573–577. Current counterpart: `docs/2026-10-26-tree-pool-design.md:3423–3443`. Existing analogue: `Roles/StaffMoves.cs:69–73`, `:118–119`.
+
+   **Sequence:** a take encounters an ask, skips the operation and continues. Its supervisor later allows “this take alone,” but that take has already passed the consuming stage. Using the allow at the next take exceeds its identity; refusing it there leaves the acknowledged allow unused.
+
+   The counterpart now explicitly asks for the next start and specifies standing, per-operation grants. The proposal still says §30 has not landed and instead specifies `allow.once` for the current take.
+
+   **Smallest change:** reconcile the two documents before building either contract. Define the operation instance an allow releases, its expiry, and atomic once-only consumption. Either resume that exact pending operation or explicitly authorize the next identified operation. Standing allows remain immediate and revocable as directed.
+
+Both reported defects in today’s code **hold**. `Modules/Platform/RoleJudge.cs:162–166` bypasses supervisor authority; neither question keeping nor course keeping supplies that missing check. `Roles/RoleCatalog.cs:229–230` and `StandingConfirmation.cs:179–180` duplicate scope selection; production admission uses the latter through `RoleJudge.cs:58`.
+
+I found **no additional defect** in the proposed six-step structural resolution order, its refusal to fall through when the selected supervisor cannot act, grant-free leaving, or the separate agent-generation namespace. Today’s question-word path also has substantive person-first protection: `Service/Daoris.Service.Core/Sessions/SessionSays.cs:245–286` and `SaidKeeping.cs:65–74` serialize release and replacement.
+
+No files were changed; no builds or tests were run.
