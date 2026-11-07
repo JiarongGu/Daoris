@@ -373,7 +373,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   page's own-home question reads the owner's first door and the walk the door's own), waits on the owner's choice: the page's agent
   card is one per account key, so which door's home it speaks for where an owner's doors disagree is not yet chosen
   (`RosterNext.OwnersToolchain` reads the owner's first door as before). `OwnerOf` of the old set is retired, every read asks
-  `ProviderRegistry.OwnerOfAgent`, and every read of an agent's program and accounts `ProviderRegistry.AgentNamed`, which answers an
+  `ProviderRegistry.OwnerOfAgent` (whether an agent runs on another's accounts is its `BorrowedFrom`, which the hand-over
+  roster, the agent list and the agents route ask, none reading `AccountOf` itself), and every read of an agent's program and accounts `ProviderRegistry.AgentNamed`, which answers an
   `AccountAgent` (a holder's included). The roster's `LimitsOf`, `SignInOf`, `WindowsOf` and `UsageOf` read through the registry.
   Door words (AGENTPROVIDER1e, built): a door's own limit, window, sign-in and refused words are its `DoorTablesPart` (`Own`), beside its provider's
   `TablesPart` and its `Lent` words (a plugin's door states its toolchain's once in both; `codex-acp` says Codex's limits, as it
