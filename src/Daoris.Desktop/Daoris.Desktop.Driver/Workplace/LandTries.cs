@@ -23,10 +23,6 @@ public static class LandTries
         _ => false,
     };
 
-    /// <summary>
-    /// Whether the run's work landed at this tip already: its tree may have been tidied since and its record may no longer read the landing, so
-    /// the node is started again, and a landed run is done with its landing, never tried again.
-    /// </summary>
     public static bool Landed(LandEntry entry, string? tip) =>
         entry.Last is { Code: LandingCode.Landed or LandingCode.Advanced, Tip: { } at } && string.Equals(at, tip, StringComparison.OrdinalIgnoreCase);
 

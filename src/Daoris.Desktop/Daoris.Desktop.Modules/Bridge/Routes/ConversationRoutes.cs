@@ -204,6 +204,7 @@ public sealed class ConversationRoutes(DriverContext context)
     [DriverRoute("SESSION_HAND_OVER", PipeClass.Person, Drain = PipeDrain.Waits)]
     [Owner("SESSION_HAND_OVER", Session = "id")]
     [GroundSession("SESSION_HAND_OVER", "id")]
+    [GroundRefusal("SESSION_HAND_OVER", "hand-over", "id", "agent", "account", "said")]
     [Says("SESSION_HAND_OVER", "id:session", "agent:agent")]
     [Publishes("SESSION_HAND_OVER", StateScopes.Sessions | StateScopes.Driver, Session = "id")]
     private async Task<object?> SessionHandOverAsync(SessionHandOverPress press, CancellationToken cancellationToken)

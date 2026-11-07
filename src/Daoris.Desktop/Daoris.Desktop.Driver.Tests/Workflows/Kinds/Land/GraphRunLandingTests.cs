@@ -380,10 +380,7 @@ public sealed class GraphRunLandingTests : ReviewLandingFixture
         Assert.Equal(DeliverySettlements.Delivered, delivery.Settled);
     }
 
-    /// <summary>
-    /// A run's landing is done with its landing: its tree tidied afterwards, the looks that follow try it no more, so the machine log holds the
-    /// one <c>landing.auto</c> line of its landing and no <c>gone</c> after it.
-    /// </summary>
+    /// <summary>A landed run's tree tidied afterwards is tried no more: the log holds its one <c>landing</c> line and no <c>gone</c>.</summary>
     [Fact]
     public async Task A_landed_run_whose_tree_is_tidied_is_not_tried_again_at_the_next_looks()
     {

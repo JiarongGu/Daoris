@@ -1037,7 +1037,7 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   under way and published in every window. Only a route `PipeCensus` classes `open` runs as asked; a `person` route waits for
   the person's Confirm on its card (RPC1c) until they answer, with no clock (CONFIRMWAIT1a-i): its grounds (`PipeCensus.Targets`,
   `PipeGrounds`, read by the loop's `LoopGrounds`) are read at its ask and again at its Confirm, which ends it `changed` where one
-  moved; a press it already is `already`, one with no grounds row `ungrounded`, one whose grounds do not read `unread-grounds`,
+  moved; a press it already is `already`, one its route would refuse for the state it acts on (`[GroundRefusal]`: a quest session's hand-over naming an agent) `not-allowed` with the route's own sentence, one with no grounds row `ungrounded`, one whose grounds do not read `unread-grounds`,
   the eleventh of ten waiting `confirmations-full`; `WITHDRAW { id, key }`, beside `RESULT`, takes back a press of the key's still
   waiting (`withdrawn`, `running` once confirmed, `ended` with its answer), and `RESULT` says `waiting` with `asked`, `waitedOn` and
   `shownAt`; a press its terminal took back once shown is a notice (`withdrawn`). Each waiting press is kept at its ask in
