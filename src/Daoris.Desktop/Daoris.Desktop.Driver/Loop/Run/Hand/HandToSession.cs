@@ -33,7 +33,7 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         if (await CutLimitPart.BehindAsync(context, prior, ct).ConfigureAwait(false) is { } ended)
         {
             prior = ended;
-            continues = new ContinuedFrom(ended.Session, HandOverWhy.Limit, continues?.By ?? HandOverBy.Daoris);
+            continues = continues is null ? null : continues with { Session = ended.Session, Why = HandOverWhy.Limit };
         }
 
         var refusedHanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
