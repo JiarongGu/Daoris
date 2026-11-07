@@ -219,6 +219,9 @@ Paths are under `src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/` unless they s
 
 34. Usage is machine-local: it names accounts, lives under the home and has no HTTP route. Each account's real use is read at
     no model spend (Claude's `get_usage`, Codex's app server), with its source and age. (from D57, D165)
+    Opening Agents starts no process for it: the page answers from the kept readings (`ACCOUNTS`, `HARNESSES`). An account is read
+    anew only at a press (*Read now*, *Read again*) or where a start's walk needs its allowance, one reading (`FreshenAsync`,
+    `AskUsageAsync`) under the question's floor, and one that is not older than the floor is not asked.
 35. Capacity is estimated from Daoris's own turns and the readings, with weights that are dated ratios, never prices.
     Acting on the estimate waits. (from D179)
 36. A door's failure is read by one reader into four kinds, in order: limit, access, transient, fatal. It reads the door's
@@ -377,8 +380,8 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   `AccountAgent` (a holder's included). The roster's `LimitsOf`, `SignInOf`, `WindowsOf` and `UsageOf` read through the registry.
   Door words (AGENTPROVIDER1e, built): a door's own limit, window, sign-in and refused words are its `DoorTablesPart` (`Own`), beside its provider's
   `TablesPart` and its `Lent` words (a plugin's door states its toolchain's once in both; `codex-acp` says Codex's limits, as it
-  lends them); a candidate's read floor is its provider's (s-iii, `SwitchCandidate.Floor`), and the page's is the accounts answer's
-  `readFloor` per agent, its question's own, a minute only for a shell that names none. `alt-stub` (`Providers/AltStub/`) is built: its own
+  lends them); a candidate's read floor is its provider's (s-iii, `SwitchCandidate.Floor`); the page has none, since it reads no account as it
+  opens. `alt-stub` (`Providers/AltStub/`) is built: its own
   limit, window and sign-in grammar and home variable, one line in `Providers.Built()`, its pending file beside its program. Its native door is Daoris-run on today's plain capture as `stub`'s
   is and passes the stream cases `stub`'s does; its protocol door's frames cases wait on row `j` (D248's note), its others on `l` and `n`. Neither
   door has an own-vocabulary stream reader yet (the native door's waits on LQ13's turn at AGENTLYNTAI1f-ii, the protocol door's on AG15 at j).
@@ -450,7 +453,7 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
   The provider censuses' ids and words are the registrations' own: Claude Code, Codex and dsh declare their `Vocabulary` part,
   `ProviderVocabulary` reads every provider's id, its program's name, its doors' ids and those words, the driver's census and the
   service's (`ServiceProviderCensusTests`, in the driver's tests, which hold the registrations; a service change reaches them through
-  the service lane's gates; D250) read it, and the page's and tools' read it as the contracts' generator writes it (`PROVIDER_VOCABULARY` in the page's service types),
+  the service lane's gates; D250) read it, and the page's and tools' read it as the contracts' generator writes it (`PROVIDER_VOCABULARY` in the page's service types; the tools' census runs the generator itself first, D251),
   every hyphened id counted in a sentence; a vocabulary's variable is its program's, kept in its spawn and stripped from every other
   provider's. The stored names' census (`StoredOldNamesCensusTests`: a fresh desktop store names no column by an old seam's word, and
   every source spelling `adapter`, `harness`, `intakeAdapter`, `helperAdapter`, `harnessVersion`, `pipe` or `acp` as a stored name is one

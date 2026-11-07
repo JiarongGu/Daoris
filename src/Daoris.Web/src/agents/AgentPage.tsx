@@ -101,7 +101,7 @@ export type AgentActs = {
  * - **A door is a property, never a second roster** (D53, D57 §c): *Ways in* lists each door and its version; the accounts
  *   are the agent's.
  * - **No sign-in is asked when it opens** (§5.3): each account says its last known state and when it was read, and *Read* or
- *   *Read again* asks on the press. Its use is read as it opens where a reading is older than a minute, and at *Read now*, by
+ *   *Read again* asks on the press. Its use is read at *Read now* alone, by
  *   the organism (SWITCH1d; D165 point 1, which spends nothing), and each window is drawn against its scope's curve.
  * - **Explanation folds** (D152 §4.4): your own sign-in's paragraph is its row's ⓘ, the plans and terms one line that opens.
  */
@@ -127,7 +127,7 @@ export function AgentPage({
   part?: AgentPart | null;
   /** *Read again* is on its way. */
   reading?: boolean;
-  /** *Read now*, or the read as the page opened, is on its way (SWITCH1d). */
+  /** *Read now* is on its way (SWITCH1d). */
   readingNow?: boolean;
   /** An act on the agent is on its way: one at a time, by construction. */
   busy?: boolean;

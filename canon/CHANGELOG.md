@@ -12,6 +12,10 @@ network.
 
 ## Unreleased
 
+- **`no-global-memory` says a memory the repository owns is not global.** A memory written by the repository's own
+  sessions, reviewed with their work and read by every other session there is repository knowledge, and a confirmed
+  fact belongs in it; the rule stays about the assistant's own memory, which no clone carries. **Adopting
+  repositories:** run `daoris sync`; nothing else.
 - **The co-working skill says what the person sees of an agent's part, and the persist-working-state rule says to follow
   a process the starting tool tells you.** The skill: every word shows its sender, a helper's answer sits under its
   question, a request owed is a wait counted once, every line has a channel, and a post to a teammate's ask names its

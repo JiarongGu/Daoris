@@ -211,12 +211,10 @@ export type AgentAccounts = {
   /** Whether its sessions say how near their limits are (TOOL6c): what switching before the limit waits for. */
   speaks: boolean;
   /**
-   * Whether its accounts' use is read by asking its agent, with no prompt (USAGEREAD2a, CODEXUSE1): what *Read now* and the read
-   * as its page opens ask (SWITCH1d). Left out where it is not, and neither is offered.
+   * Whether its accounts' use is read by asking its agent, with no prompt (USAGEREAD2a, CODEXUSE1): what *Read now*
+   * asks (SWITCH1d). Left out where it is not, and neither is offered.
    */
   reads?: boolean;
-  /** How long a reading of its accounts stands, in seconds, its question's own; none where the answer lacks it. */
-  readFloor?: number | null;
   /**
    * The tool's own sign-in's cool-off (D125 §3.7), or when it ended (TOOL6e): never one of the accounts, never in a list. What
    * its agent last said of its windows where a press read them (CODEXUSE3).
