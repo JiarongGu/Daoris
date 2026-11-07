@@ -13,11 +13,10 @@ import { DaorisError } from '../platform/errors.ts';
  * any tool. A harness descriptor is the translation: where each tier lands, what a skill's entry file
  * is called, which frontmatter fields it must carry, where the generated index goes.
  *
- * Everything in here was previously a constant scattered across six modules, each quietly asserting
- * one harness's conventions as though they were universal. Naming them in one place is what makes a
- * second harness an addition rather than an excavation.
+ * Naming a harness's conventions in one place, rather than scattering them as though they were
+ * universal, is what makes a second harness an addition rather than an excavation.
  *
- * **Two implementations ship** (D23, D117). `claude-code` is the older layout, kept for every
+ * **Two implementations ship.** `claude-code` is the older layout, kept for every
  * repository that has not moved. `agents` is the first descriptor to serve several harnesses at once:
  * one target every agent that reads a skill root reads, plus what the one harness that looks elsewhere
  * needs — a pointer for its instruction file and a mirror of its skills. The others are detected and
@@ -37,13 +36,13 @@ export const HARNESSES: Record<string, Harness> = {
     defaultTarget: '.claude',
 
     /**
-     * 🔴 **The tier is the LOCATION** (D7 as amended by D59). The on-demand tiers are directories
+     * 🔴 **The tier is the LOCATION**. The on-demand tiers are directories
      * this harness reaches for by path. The always-loaded one is a **region in `AGENTS.md`**, because
      * `.claude/rules/` is read by exactly one of the three harnesses this family drives — measured,
      * `docs/2026-09-21-dsh-evaluation.md` §6.5 — and `AGENTS.md` is the only file all three read.
      *
-     * `alwaysLoaded` is still what the byte budget measures; a region has a byte count exactly as a
-     * directory did, which is the half of D7 that survives.
+     * `alwaysLoaded` is what the byte budget measures; a region has a byte count exactly as a
+     * directory has.
      */
     tiers: {
       rules: { region: { file: 'AGENTS.md', name: 'rules' }, alwaysLoaded: true },
@@ -68,18 +67,18 @@ export const HARNESSES: Record<string, Harness> = {
 
     /**
      * Frontmatter must start at byte 0 or this harness does not see it, so the provenance line goes
-     * beneath the closing fence rather than above the opening one (D14).
+     * beneath the closing fence rather than above the opening one.
      */
     headerPlacement: 'below-frontmatter',
   },
 
   /**
-   * The agents layout (D117, `docs/2026-10-01-agent-layout-design.md` §2). Knowledge and skills live
-   * under `.agents/`, the always-loaded tier stays the region in `AGENTS.md` (D59), and the vocabulary
+   * The agents layout (`docs/2026-10-01-agent-layout-design.md` §2). Knowledge and skills live
+   * under `.agents/`, the always-loaded tier stays the region in `AGENTS.md`, and the vocabulary
    * does not move: no canon file names a layout, which is what makes this a descriptor rather than an
    * edit to the doctrine.
    *
-   * Measured before relied on (LAYOUT2, `docs/2026-10-01-entry-point-evidence.md`): codex reads
+   * Measured before relied on (`docs/2026-10-01-entry-point-evidence.md`): codex reads
    * `.agents/skills/` from the project root down, dsh reads it at the root, and Claude Code reads only
    * `.claude/skills/`, and `AGENTS.md` only through `CLAUDE.md`'s import. So the two things the
    * reference links, Daoris writes: the pointer, and the mirror.
@@ -96,7 +95,7 @@ export const HARNESSES: Record<string, Harness> = {
       skills: { dir: 'skills', alwaysLoaded: false, entryFile: 'SKILL.md', frontmatter: SKILL_FIELDS },
     },
     pointer: { file: 'CLAUDE.md', imports: 'AGENTS.md' },
-    // A copy, not a link (D3): on a checkout with `core.symlinks=false` a link is a text file holding
+    // A copy, not a link: on a checkout with `core.symlinks=false` a link is a text file holding
     // its target, and the harness reading it gets a path and no skills. Each skill's `agents/` folder
     // is left out: per-agent metadata another agent writes there belongs to that agent.
     mirror: { tier: 'skills', root: '.claude/skills', reader: 'Claude Code', skip: ['agents'] },
@@ -144,7 +143,7 @@ export const tierNames = (harness: Harness): string[] => Object.keys(harness.tie
 export const alwaysLoadedTiers = (harness: Harness): string[] =>
   Object.entries(harness.tiers).filter(([, tier]) => tier.alwaysLoaded).map(([name]) => name);
 
-/** The region this harness keeps in `file` (D59), or null when it keeps none there. */
+/** The region this harness keeps in `file`, or null when it keeps none there. */
 export const regionIn = (harness: Harness, file: string): { file: string; name: string } | null =>
   Object.values(harness.tiers).find((tier) => tier.region?.file === file)?.region ?? null;
 
@@ -207,7 +206,7 @@ export function verifyHarnessContract(
   }
 
   // A tier that IS a directory is read one level deep, so a document nested below that is never
-  // read. The always-loaded tier is a span (D59) and has no directory to nest anything in.
+  // read. The always-loaded tier is a span and has no directory to nest anything in.
   for (const [name, tier] of Object.entries(harness.tiers)) {
     if (tier.entryFile || !tier.dir) continue; // skills are directories on purpose; a region is not one
     const dir = join(root, target, tier.dir);

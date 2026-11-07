@@ -1,13 +1,12 @@
-// Links, and links held as text (LAYOUT3; D117 §5.4, the last table).
+// Links, and links held as text.
 //
-// D3 stands: materialization is always a real file. What this adds is the other side of it — a link
+// Materialization is always a real file. What this adds is the other side of it — a link
 // ALREADY at a path Daoris writes. Writing beside and renaming replaces the link with a file holding a
 // copy of what it pointed at, and git records the link turned into a file. On a checkout without links
 // (`core.symlinks=false`) the link is a text file holding its target, and appending to that text is
 // worse: git reads the edit as the link's new target, broken for every other contributor.
 //
-// 🔴 **Refused, never written through, and never guessed at** — D59's "never guess at a boundary" in
-// another shape. On the other side of the guess is how the repository is laid out for its other
+// 🔴 **Refused, never written through, and never guessed at** — a boundary is never guessed at. On the other side of the guess is how the repository is laid out for its other
 // contributors, so the refusal names both answers and leaves the choice to the repository.
 
 import type { LinkProblem } from '../doctrine/records.ts';
@@ -45,7 +44,7 @@ function token(root: string, rel: string): string | null {
  * something beside it.
  *
  * @remarks
- * A probable, and refusing on a probable is safe (D117 §5.4): the reference's `CLAUDE.md` is the nine
+ * A probable, and refusing on a probable is safe: the reference's `CLAUDE.md` is the nine
  * bytes `AGENTS.md`, which names its partner whether or not the partner exists yet, and a folder link
  * reads `../.agents/skills`. A one-word file that names nothing beside it is prose, however short.
  */
@@ -99,7 +98,7 @@ export function linkProblems(
   return [...found.values()].sort((a, b) => a.path.localeCompare(b.path));
 }
 
-/** What a person is told about one, in the words D117 §5.4 gives it. */
+/** What a person is told about one. */
 export function describeLink(problem: LinkProblem): string {
   switch (problem.kind) {
     case 'link':

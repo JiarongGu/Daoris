@@ -18,7 +18,7 @@ export function readText(file: string): string {
 /**
  * Write beside the target, then rename — a crash never leaves a half-written
  * rule on disk. Node writes UTF-8 without a BOM, and the text is already LF.
- * The rename waits while something holds the file it replaces (FLAKE1, 2026-10-07).
+ * The rename waits while something holds the file it replaces.
  *
  * @param rename The move itself; a test hands in one that records or refuses.
  */
@@ -27,8 +27,8 @@ export function writeTextAtomic(file: string, text: string, { rename = renameSyn
 }
 
 /**
- * The staging file is named per write and removed when the write fails, as the driver's `AtomicFile` does (FABRIC-GRAPH1's re-check,
- * finding 2): under one fixed name, two writers of one file at once wrote into and moved each other's, so one could put the other's
+ * The staging file is named per write and removed when the write fails, as the driver's `AtomicFile` does: under one fixed name,
+ * two writers of one file at once would write into and move each other's, so one could put the other's
  * text in place, or find its own already moved.
  */
 function writeBeside(file: string, write: (beside: string) => void, rename: (from: string, to: string) => void = renameSync): void {
@@ -51,7 +51,7 @@ function writeBeside(file: string, write: (beside: string) => void, rename: (fro
 export function readJsonObject(path: string): { value: Record<string, unknown> | null; problem: string | null; text?: string } {
   if (!existsSync(path)) return { value: null, problem: null };
   let parsed: unknown;
-  // The text as it stands, its BOM apart: an editor that keeps what it does not own writes from it (FABRIC-GRAPH1's review).
+  // The text as it stands, its BOM apart: an editor that keeps what it does not own writes from it.
   const text = readFileSync(path, 'utf8').replace(/^﻿/, '');
   try {
     parsed = JSON.parse(text);
@@ -68,10 +68,10 @@ export function readJsonObject(path: string): { value: Record<string, unknown> |
  * Write an edited home file — refused while the file on disk is one the editor could not have read.
  *
  * @remarks
- * 🔴 The choke point for every editor (REV3): each reader answers an unreadable file with the empty
+ * 🔴 The choke point for every editor: each reader answers an unreadable file with the empty
  * default, which is the right reading for a session about to spawn and the wrong starting point for an
- * edit. Writing it back erased every deny rule, every other workspace's key and every disabled plugin,
- * and reported success. Checking here holds every editor, including the next one.
+ * edit. Writing it back would erase every deny rule, every other workspace's key and every disabled plugin,
+ * and report success. Checking here holds every editor, including the next one.
  */
 export function writeJsonAtomic(path: string, value: unknown): void {
   writeJsonTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
@@ -102,7 +102,7 @@ export function digestBytes(bytes: Buffer): string {
     : sha256(bytes.toString('utf8'));
 }
 
-/** `writeTextAtomic` for bytes copied as they are: a mirror of a file that is not its skill's entry (D117 §3.2). */
+/** `writeTextAtomic` for bytes copied as they are: a mirror of a file that is not its skill's entry. */
 export function writeBytesAtomic(file: string, bytes: Buffer): void {
   writeBeside(file, (beside) => writeFileSync(beside, bytes));
 }
@@ -111,7 +111,7 @@ export function writeBytesAtomic(file: string, bytes: Buffer): void {
 const HELD = new Set(['EPERM', 'EACCES', 'EBUSY']);
 
 /**
- * A rename tried again while a held file refuses it, as `tools/fsx.mjs`'s is (UPDATE1, FIX-LOG 2026-10-07). On
+ * A rename tried again while a held file refuses it, as `tools/fsx.mjs`'s is. On
  * Windows a folder holding an executable written a moment ago cannot be renamed while something holds a file in it,
  * the virus scanner most often, and the refusal is EPERM; it gives way within seconds. Any other failure throws at
  * once, and the last refusal throws after the tries.
@@ -165,7 +165,7 @@ export function onPath(
   }
 
   const windows = process.platform === 'win32';
-  // Windows reads a name in any case, and a copy of `process.env` keeps the system's own spelling (`Path`) (TOOLS5).
+  // Windows reads a name in any case, and a copy of `process.env` keeps the system's own spelling (`Path`).
   const read = (name: string) => (windows ? env[Object.keys(env).find((key) => key.toUpperCase() === name) ?? name] : env[name]);
   const pathExt = (read('PATHEXT') ?? '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean);
   const extensions = !windows ? [''] : startable ? pathExt : ['', ...pathExt];
