@@ -18,6 +18,8 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
 
     private const string AllId = "*";
 
+    private const string SupervisorPress = "supervisor";
+
     /// <summary>The staffing policy's presets, as the driver's role door fills them.</summary>
     private static readonly string[] Presets = ["first", "even", "weighted"];
 
@@ -87,7 +89,7 @@ internal sealed class HelpRoleProposalWriter(HelpProposalFile file)
         {
             Head(writer, door!, named!);
             writer.WriteStartObject("press");
-            if (supervisor is not null) writer.WriteString("kind", "supervisor");
+            if (supervisor is not null) writer.WriteString("kind", SupervisorPress);
             if (names.Count == 0 && Blank(name) is { } alone) writer.WriteString("name", alone);
             else if (names.Count > 0)
             {
