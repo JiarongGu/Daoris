@@ -55,6 +55,12 @@ internal sealed class ChatLimitCarry(
     public static string? NotCarried(CarryPlan? plan) => (plan as CarryPlan.Briefed)?.Why;
 
     /// <summary>
+    /// The new part's record bound to the conversation its files were copied for, the moment it exists, so a shell cut off before the part
+    /// ran goes on by resuming it, not by the brief; a resume the door then refuses is the brief's, said.
+    /// </summary>
+    public void Bound(string to) => context.Conversations.Keep(to, door.Id.Value, carried.Conversation);
+
+    /// <summary>
     /// The new part's run, its record open: the move's fence first, then its record moved to working and its run handed the carried
     /// conversation to resume. A fence that holds takes the copy back out and runs the part with nothing handed, its words waiting there.
     /// </summary>

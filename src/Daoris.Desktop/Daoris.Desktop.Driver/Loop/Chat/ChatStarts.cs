@@ -245,6 +245,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
 
         // The role this start took and its revision, on its binding beside its pick, which a continuation reads.
         context.Conversations.KeepRole(sessionId, roleTaken, roleRevision);
+        carries?.Bound(sessionId);
         // A start the person named an account for keeps, on its binding in the desktop store and nowhere else, that they picked the account it
         // opened on, so the account rule holds the conversation to it. Never the walk's own choice.
         if (picked) context.Conversations.Pick(sessionId, selection.Profile);

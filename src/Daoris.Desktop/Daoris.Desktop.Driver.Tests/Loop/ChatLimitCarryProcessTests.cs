@@ -31,6 +31,7 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
 
     public void Dispose()
     {
+        _gate.Set();
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
@@ -122,8 +123,94 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// 🔴 A shell cut off after the carry opened the new part and before it ran, then one coming up: the part goes on in the carried
+    /// conversation on account-2, resumed by its id with the word waiting on it and no brief.
+    /// </summary>
+    [Fact]
+    public async Task A_carried_move_cut_by_a_restart_goes_on_in_the_carried_conversation_after_the_come_up()
+    {
+        var (ledger, runner, _, _) = await LimitedAsync("small", cut: Cuts.Opened);
+        using var _ = runner;
+        await Poll.Until(() => _reached.Task.IsCompleted, () => Seen(ledger, "c1"));
+        Restart(ledger);
+
+        var next = Comer(ledger, out var client);
+        await next.TakeUpAsync();
+        await Poll.Until(() => Prompts("account-2").Any(), () => Seen(ledger, "c2"));
+
+        var resumed = Assert.Single(Heard(), line => line["method"]!.GetValue<string>() is "session/resume" or "session/load");
+        Assert.Equal(("conv-account-1", Account("account-2")), (Text(resumed, "conversation"), Text(resumed, "account")));
+        var blocks = Blocks(Prompts("account-2").First());
+        Assert.Contains(Waited, blocks);
+        Assert.DoesNotContain("You continue session", blocks);
+        Assert.DoesNotContain(Heard(), line => line["method"]!.GetValue<string>() == "session/new" && Text(line, "account") == Account("account-2"));
+        client.Dispose();
+        next.Dispose();
+    }
+
+    /// <summary>🔴 The same cut where the carried copy is gone by the come-up: the part goes on in the brief, the refusal said.</summary>
+    [Fact]
+    public async Task A_carried_move_cut_by_a_restart_whose_copy_is_gone_goes_on_by_the_brief_after_the_come_up()
+    {
+        var (ledger, runner, _, _) = await LimitedAsync("small", cut: Cuts.Opened);
+        using var _ = runner;
+        await Poll.Until(() => _reached.Task.IsCompleted, () => Seen(ledger, "c1"));
+        Restart(ledger);
+        File.Delete(Path.Combine(Home("account-2"), StubConversationHome.Folder, "conv-account-1"));
+
+        var next = Comer(ledger, out var client);
+        await next.TakeUpAsync();
+        await Poll.Until(() => Prompts("account-2").Any(), () => Seen(ledger, "c2"));
+
+        var blocks = Blocks(Prompts("account-2").Last());
+        Assert.Contains(Waited, blocks);
+        Assert.Contains("You continue session", blocks);
+        Assert.Contains("its own conversation was lost", blocks);
+        client.Dispose();
+        next.Dispose();
+    }
+
+    private const string Waited = "Now add the tests.";
+
+    private readonly TaskCompletionSource _reached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    private readonly ManualResetEventSlim _gate = new(false);
+
+    private sealed class ShellKilled : OperationCanceledException;
+
+    /// <summary>The shell that carried is gone: its run dead by the lease's test, its records ended, a word waiting on the part it opened.</summary>
+    private void Restart(ChatLedger ledger)
+    {
+        using (var store = DesktopStore.Open(DesktopStore.LocationIn(_home), new DesktopStoreOptions { Settled = () => StoreSettled.Yes }))
+        {
+            store.Write("probe", write => write.Execute("UPDATE store_runs SET started = 1 WHERE run = $run", ("$run", "run-a")));
+        }
+
+        foreach (var id in new[] { "c1", "c2" })
+        {
+            ledger.Edit(id, record =>
+            {
+                record["state"] = "stopped";
+                record["door"] = "acp-stub";
+            });
+        }
+
+        ledger.For("c2").Say("w9", Waited);
+    }
+
+    /// <summary>A shell coming up over the same home.</summary>
+    private ChatRunner Comer(ChatLedger ledger, out ServiceClient client)
+    {
+        client = ledger.Client();
+        var adapters = ProviderRegistry.Built();
+        return new ChatRunner(
+            client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
+            harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+    }
+
     /// <summary>The conversation on account-1, one exchange answered and the next refused by that account's limit.</summary>
-    private async Task<(ChatLedger Ledger, ChatRunner Runner, List<AccountLine> Lines, string Old)> LimitedAsync(string mode)
+    private async Task<(ChatLedger Ledger, ChatRunner Runner, List<AccountLine> Lines, string Old)> LimitedAsync(string mode, string? cut = null)
     {
         var ledger = new ChatLedger { Opens = 2 }.Register("engine", _root);
         var config = DriverConfig.Empty with
@@ -142,6 +229,19 @@ public sealed class ChatLimitCarryProcessTests : IDisposable
         var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(DaorisHome.Entry(_home, HomeEntry.Sessions)), events: Events,
             harnesses: new HarnessRoster(adapters, DaorisHome.Entry(_home, HomeEntry.Harnesses)));
+        if (cut is not null)
+        {
+            runner.Moves = new ConversationMoves(_home, client, Events, store: new MoveStore(_home, () => StoreSettled.Yes, run: "run-a", kind: StoreProcess.Shell))
+            {
+                Cut = name =>
+                {
+                    if (name != cut) return;
+                    _reached.TrySetResult();
+                    _gate.Wait();
+                    throw new ShellKilled();
+                },
+            };
+        }
 
         var old = (await runner.StartAsync("engine", "acp-stub", config, profile: "account-1")).SessionId!;
         await Poll.Until(() => ledger.State(old) == "working", () => Seen(ledger, old));
