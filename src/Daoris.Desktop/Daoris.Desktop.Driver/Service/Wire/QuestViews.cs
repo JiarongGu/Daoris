@@ -35,7 +35,7 @@ public static class QuestViews
     }
 
     /// <summary>
-    /// One quest's moves as the service wrote them, in the order its history replays. Null from a host from before the door, which
+    /// One quest's moves as the service wrote them, in the order its history replays. Null from a host without the door, which
     /// answers the route not found: its own answer is never a 404, since it answers an id with no history with no moves.
     /// </summary>
     /// <exception cref="DriverException">The host answered the door with a failure.</exception>
@@ -50,7 +50,7 @@ public static class QuestViews
     /// <summary>
     /// Decline a quest with the person's reason, verbatim: an abandon's decline. With <paramref name="whileOpen"/> it applies only while
     /// the quest is open, so a take that reached a remote first stands and the decline is kept on the quest as a conflict. A refusal is
-    /// an answer: a decline refused because the quest was taken meanwhile is not an exception.
+    /// an answer: a decline refused because the quest is taken meanwhile is not an exception.
     /// </summary>
     public static Task<(bool Ok, string Message)> DeclineQuestAsync(
         this ServiceClient service, string id, string reason, bool whileOpen, CancellationToken ct = default) =>
@@ -61,7 +61,7 @@ public static class QuestViews
         service.MovedAsync(new AcceptQuest(id.TrimStart('#')), "accept", ct);
 
     /// <summary>
-    /// The person marks a quest done: their words, to the service's own door for it, which says the done was theirs and answers none
+    /// The person marks a quest done: their words, to the service's own door for it, which says the done is theirs and answers none
     /// of their requirements. Never respond's door, which is an agent's done.
     /// </summary>
     public static Task<(bool Ok, string Message)> PersonDoneAsync(this ServiceClient service, string id, string? note, CancellationToken ct = default) =>
@@ -208,7 +208,7 @@ public static class QuestViews
         return read.Count == 0 ? [] : read;
     }
 
-    /// <summary>What was last read of a done's evidence, or null: none, or one whose commit, how or any item does not read.</summary>
+    /// <summary>The last read of a done's evidence, or null: none, or one whose commit, how or any item does not read.</summary>
     internal static EvidenceVerdict? VerdictOf(QuestEvidenceVerdictResponse? verdict)
     {
         if (verdict is not { Commit: { } commit, How: { } how, Items: { } items } || !EvidenceCodes.IsObjectId(commit) || !EvidenceCodes.How.Contains(how))

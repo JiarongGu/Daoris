@@ -17,10 +17,10 @@ public static class RecordNotes
     /// <summary>An end past a transient bound, its provider's outage (<see cref="EndNoteCodes.EndedTransient"/>).</summary>
     public const string EndedTransient = "ended.transient";
 
-    /// <summary>A stop that was the steward's (<see cref="EndNoteCodes.EndedStoppedSteward"/>).</summary>
+    /// <summary>A stop by the steward (<see cref="EndNoteCodes.EndedStoppedSteward"/>).</summary>
     public const string EndedStoppedSteward = "ended.stopped-steward";
 
-    /// <summary>A checkpoint's stop that was the steward's (<see cref="EndNoteCodes.StoppedCheckpointStoppedSteward"/>).</summary>
+    /// <summary>A checkpoint's stop by the steward (<see cref="EndNoteCodes.StoppedCheckpointStoppedSteward"/>).</summary>
     public const string StoppedCheckpointStoppedSteward = "stopped.checkpoint-stopped-steward";
 
     /// <summary>A quest's work paused by the steward (<see cref="EndNoteCodes.StoppedPausedQuestSteward"/>).</summary>
@@ -32,7 +32,7 @@ public static class RecordNotes
     /// <summary>A choice its agent refused at the open (<see cref="EndNoteCodes.EndedChoiceNotOffered"/>).</summary>
     public const string EndedChoiceNotOffered = "ended.choice-not-offered";
 
-    /// <summary>The lines that say the account was refused or signed out, which is the account's fault and never the quest's (<see cref="AccountNoteCodes.AccountsOwn"/>).</summary>
+    /// <summary>The lines that say the account is refused or signed out, which is the account's fault and never the quest's (<see cref="AccountNoteCodes.AccountsOwn"/>).</summary>
     public static IReadOnlyList<string> AccountsOwn { get; } =
         ["account.refused", "account.refused-own", "account.signed-out", "account.signed-out-own", "account.refused-model"];
 }

@@ -39,8 +39,8 @@ public static class QuestPersonViews
         CloseAsync(service, new CloseQuest(quest.TrimStart('#'), key, token, Items(quests)), ct);
 
     /// <summary>
-    /// What became of a close sent with <paramref name="key"/>: the close as it was sent, answered from the door's own record, or refused
-    /// <c>withdrawn</c> where it never took the key. A host before the question has no such door, which proves nothing, so the close stays unknown.
+    /// What became of a close sent with <paramref name="key"/>: the close as sent, answered from the door's own record, or refused
+    /// <c>withdrawn</c> where it never took the key. A host without the question's door has no such door, which proves nothing, so the close stays unknown.
     /// </summary>
     /// <exception cref="HttpRequestException">The host did not answer, or answered as no door of its own: the close stays unknown.</exception>
     public static Task<QuestCloseAnswer> CloseOutcomeAsync(

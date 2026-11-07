@@ -3,21 +3,21 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a held wait on the service's confirmations answered (NOTIFY2j): the cursor to ask from next, and each confirmation waiting
+/// What a held wait on the service's confirmations answered: the cursor to ask from next, and each confirmation waiting
 /// for the person, whole, oldest first, as the door answers it.
 /// </summary>
 public sealed record ConfirmationsWaiting(string Since, IReadOnlyList<JsonElement> Waiting);
 
 /// <summary>
-/// How the person's answer at the service's door went (ONEWAY1n-i): <see cref="Done"/> where the door took it, a Confirm's request
+/// How the person's answer at the service's door went: <see cref="Done"/> where the door took it, a Confirm's request
 /// made; otherwise the host's <see cref="Code"/> where it gave one (<c>not-made</c>, <c>restarted</c>) and its sentence.
 /// </summary>
 public sealed record ConfirmationAnswered(bool Done, string? Code, string Message);
 
 /// <summary>
-/// The local host's confirmation doors, as the desktop's host reads and answers them (NOTIFY2j, D196 point 4; ONEWAY1n-i;
-/// <c>GET /api/confirmations</c>, <c>/waiting</c>, and <c>POST /api/confirmations/{id}/confirm</c> and <c>/refuse</c>): a class over the
-/// service's client, reached as its <see cref="ServiceClient.Confirmations"/> (PART8). The window answers through the bridge's
+/// The local host's confirmation doors, as the desktop's host reads and answers them
+/// (<c>GET /api/confirmations</c>, <c>/waiting</c>, and <c>POST /api/confirmations/{id}/confirm</c> and <c>/refuse</c>): a class over the
+/// service's client, reached as its <see cref="ServiceClient.Confirmations"/>. The window answers through the bridge's
 /// <c>PERSON_CONFIRM</c>, which the person's Confirm reaches here.
 /// </summary>
 public sealed class ConfirmationDoors
@@ -34,7 +34,7 @@ public sealed class ConfirmationDoors
 
     /// <summary>
     /// What waits after <paramref name="since"/>, held up to <paramref name="waitSeconds"/> until it moves; null where the host has no
-    /// such door (one from before NOTIFY2j), whose list <see cref="ListAsync"/> reads. Another refusal throws, carrying its status.
+    /// such door, whose list <see cref="ListAsync"/> reads. Another refusal throws, carrying its status.
     /// </summary>
     public async Task<ConfirmationsWaiting?> WaitAsync(string? since, int waitSeconds, CancellationToken ct = default)
     {

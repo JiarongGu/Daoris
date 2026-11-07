@@ -4,8 +4,8 @@ using Daoris.Contracts;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A declared route's reply: the host's status, text and headers as <see cref="Reply"/>, and its answer where it was a success
-/// that read as the declaration types it. A success that does not read is reported as the host's refusal, never thrown as
+/// A declared route's reply: the host's status, text and headers as <see cref="Reply"/>, and its answer where it is a success
+/// that reads as the declaration types it. A success that does not read is reported as the host's refusal, never thrown as
 /// JSON's: a host of another build may answer a shape this one does not read.
 /// </summary>
 public sealed class Sent<T> where T : class

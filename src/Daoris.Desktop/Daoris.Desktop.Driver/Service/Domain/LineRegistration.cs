@@ -5,10 +5,10 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a manifest read from a repository's line registers as (WSSETUP5, D124 §3.3): the body <c>connect</c> would
+/// What a manifest read from a repository's line registers as: the body <c>connect</c> would
 /// send, or why <c>connect</c> would send none.
 /// </summary>
-/// <param name="Body">The body, in <c>connect</c>'s order of fields; null where a file was refused.</param>
+/// <param name="Body">The body, in <c>connect</c>'s order of fields; null where a file is refused.</param>
 /// <param name="Declares">Whether the manifest's domain says anything (<c>connect</c>'s <c>isDeclared</c>).</param>
 /// <param name="ManifestProblem">Why <c>daoris.json</c> does not read, or a field in it that is refused; null when it reads.</param>
 public sealed record ComposedRegistration(JsonObject? Body, bool Declares, string? ManifestProblem)
@@ -18,7 +18,7 @@ public sealed record ComposedRegistration(JsonObject? Body, bool Declares, strin
 }
 
 /// <summary>
-/// A registration composed from the two files a repository's line holds (WSSETUP5, D124 §3.3): exactly what
+/// A registration composed from the two files a repository's line holds: exactly what
 /// <c>connect</c> would send from that manifest, so the registry follows the line with no <c>connect</c> run.
 /// </summary>
 /// <remarks>
@@ -26,8 +26,8 @@ public sealed record ComposedRegistration(JsonObject? Body, bool Declares, strin
 /// and the registry's follow of a line (<c>RegistrationFollow</c>) both call it, and the CLI has no counterpart;
 /// <c>LineRegistrationTests</c> holds its table. The body: the packs; the domain as written with <c>uses</c> by its
 /// rule, and only when it names something; <c>join</c> and <c>shareKnowledge</c> as explicit booleans; the lanes' words
-/// as a list, <c>[]</c> for none; and the root, to a service on this machine only. Adoption is said by sending no <c>adopted: false</c> (D70), and no workspace
-/// is sent, since silence preserves the wiring (D48).</para>
+/// as a list, <c>[]</c> for none; and the root, to a service on this machine only. Adoption is said by sending no <c>adopted: false</c>, and no workspace
+/// is sent, since silence preserves the wiring.</para>
 ///
 /// <para><b>What is read is what the registration sends.</b> A manifest is refused as <c>connect</c> refuses it where
 /// that bears on the body: not JSON, not an object, no <c>source</c>, knowledge without a join. A shape <c>connect</c>
@@ -41,7 +41,7 @@ public static partial class LineRegistration
     /// <summary>The manifest, at the repository's root.</summary>
     public const string ManifestFile = "daoris.json";
 
-    /// <summary>The lanes (D115 §2.1), beside it.</summary>
+    /// <summary>The lanes, beside it.</summary>
     public const string LanesFile = "daoris.lanes.json";
 
     /// <summary>
@@ -129,7 +129,7 @@ public static partial class LineRegistration
     }
 
     /// <summary>
-    /// What a repository says it uses (D91), by the rule the CLI's <c>usesOf</c> and the service's <c>Declared.Uses</c>
+    /// What a repository says it uses, by the rule the CLI's <c>usesOf</c> and the service's <c>Declared.Uses</c>
     /// hold: each name trimmed, a blank dropped, a repeat in any case dropped with the first spelling kept, and the
     /// repository's own name dropped. Anything but a list is none, and anything in it but text is skipped.
     /// </summary>

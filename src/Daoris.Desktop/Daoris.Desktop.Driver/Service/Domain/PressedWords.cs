@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a session is handed of words a press marked with a choice (PARKVIEW1): a pressed answer as <c>chose: &lt;label&gt;</c>, then the person's own
+/// What a session is handed of words a press marked with a choice: a pressed answer as <c>chose: &lt;label&gt;</c>, then the person's own
 /// words after a blank line. The words a record keeps (<see cref="SaidWordView.Handed"/>) are read through it; the question's
 /// own judgement of a press (<see cref="QuestionWords"/>) answers its <c>Chose</c>, <c>Begins</c> and <c>Handed</c> through here.
 /// </summary>

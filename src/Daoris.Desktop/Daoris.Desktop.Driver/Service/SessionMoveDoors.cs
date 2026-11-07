@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed class SessionMoveDoors
 {
-    /// <summary>The states a session's record ends in: where its staged memory's models are named (the memory coordinator design §1).</summary>
+    /// <summary>The states a session's record ends in: where its staged memory's models are named.</summary>
     private static readonly string[] Ending = ["completed", "stopped", "failed", "declined", "stood-down"];
 
     private readonly ServiceClient _service;
@@ -21,27 +21,27 @@ public sealed class SessionMoveDoors
 
     /// <summary>Move a session's record. The ledger judges; the driver reports what it observed.</summary>
     /// <param name="interrupted">
-    /// That a stop was not the person's (D104): the orphan sweep's, or this driver's shutdown — so a take it ended is carried on. A host older
+    /// That a stop is not the person's: the orphan sweep's, or this driver's shutdown — so a take it ended is carried on. A host older
     /// than the field ignores it, and the stop reads as the person's.
     /// </param>
     /// <param name="limit">
-    /// That an account's limit refused the turn of a session moved to <c>failed</c> (TOOL4d, D125 §5.2) — which is never a strike. Sent only
-    /// where true; the ledger refuses it on a move to any other state (TOOL4c). It names no account.
+    /// That an account's limit refused the turn of a session moved to <c>failed</c> — which is never a strike. Sent only
+    /// where true; the ledger refuses it on a move to any other state. It names no account.
     /// </param>
     /// <param name="parts">
-    /// The note's parts beside its English (LANG1a, D142 point 2), sent only with a note: a note sent without them clears the record's parts, so
+    /// The note's parts beside its English, sent only with a note: a note sent without them clears the record's parts, so
     /// an older driver's note never sits beside stale ones.
     /// </param>
     /// <param name="expected">
-    /// The state the record must be in, which the ledger compares in its step (TERMTRUST1a, D201 point 2): a finish under the standing
+    /// The state the record must be in, which the ledger compares in its step: a finish under the standing
     /// confirmation sends <c>awaiting-person</c>.
     /// </param>
     /// <param name="unbindAsk">
-    /// That an intake's end lets its ask go for the next intake (LIMITRESUME1h, D206 design §3.8), in the same step, only where the ask still
+    /// That an intake's end lets its ask go for the next intake, in the same step, only where the ask still
     /// names it; a move to <c>failed</c> alone.
     /// </param>
     /// <param name="expect">
-    /// The exact ids of the supervisor's words a go-on's move to working admits (SUPERVISOR1a-i, D208; the supervisor design §6.3): the ledger
+    /// The exact ids of the supervisor's words a go-on's move to working admits: the ledger
     /// refuses the move (<c>words-changed</c>) where the record's waiting supervisor's words are not exactly these. Null sends none.
     /// </param>
     public async Task<string> AdvanceAsync(
@@ -65,7 +65,7 @@ public sealed class SessionMoveDoors
         // The refusal sentence is the contract; losing it would make the driver's log say less than the service said.
         if (!sent.Reply.Ok) throw new DriverException($"the service refused moving session `{id}` to {state}: {ErrorWords(sent.Reply.Payload) ?? sent.Reply.Payload}");
 
-        // TREELOCK2: the successful move's local record owns the lock, including a person's end of a park after its run returned.
+        // The successful move's local record owns the lock, including a person's end of a park after its run returned.
         // Use the returned state, never the requested one: a refused move releases nothing, and a teammate supplies no machine path.
         if (sent.Answer?.Session is { } record && !SessionReads.IsTeams(record) && record.Id == id)
         {
@@ -76,7 +76,7 @@ public sealed class SessionMoveDoors
         return sent.Answer?.Message ?? "";
     }
 
-    /// <summary>Move a session's record with a composed note: its English and its parts together (LANG1a).</summary>
+    /// <summary>Move a session's record with a composed note: its English and its parts together.</summary>
     public Task<string> AdvanceAsync(
         string id, string state, Noted noted, string? evidence = null, string? transcript = null,
         CancellationToken ct = default, bool interrupted = false, bool limit = false, string? expected = null,
@@ -84,7 +84,7 @@ public sealed class SessionMoveDoors
         AdvanceAsync(id, state, noted.Note, evidence, transcript, ct, interrupted, limit, noted.Parts, expected, expect: expect);
 
     /// <summary>
-    /// An intake refused its choice at the open (D205 §3.5(f), MODELROLE1d): one write ends its record <paramref name="conclusion"/>
+    /// An intake refused its choice at the open: one write ends its record <paramref name="conclusion"/>
     /// (<c>failed</c>, <c>ended.choice-not-offered</c>) and lets its ask go, only where the ask's binding still names
     /// <paramref name="session"/>; the record stays, naming its ask, so the ask's history keeps its line.
     /// </summary>
@@ -92,7 +92,7 @@ public sealed class SessionMoveDoors
         AdvanceAsync(session, conclusion.State, note: conclusion.Note, ct: ct, parts: conclusion.Parts, unbindAsk: true);
 
     /// <summary>
-    /// Put a park the driver took up and could not hand back to waiting on the owner (SUPERVISOR1a-i, D208; the supervisor design §6.3), keeping
+    /// Put a park the driver took up and could not hand back to waiting on the owner, keeping
     /// every waiting word but <paramref name="takeBack"/>, the supervisor's word it admitted, with the note the look read. Refused where the
     /// record is not the working one a go-on took up; a refusal throws as a move's does.
     /// </summary>
