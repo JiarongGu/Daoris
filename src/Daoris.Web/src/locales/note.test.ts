@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BACKGROUND_STATES, HAND_OVER_ASK_REASONS, HANDED_REASONS, HELPER_REASONS, NOTE_CODES, PARTNER_REASONS, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
+import { BACKGROUND_STATES, DEPS_REASONS, HAND_OVER_ASK_REASONS, HANDED_REASONS, HELPER_REASONS, NOTE_CODES, PARTNER_REASONS, NOTE_VALUES, OPENING_REASONS, RESUMED_REASONS, UNREACHED_REASONS } from '../work/noteLines';
 import { driverSource } from '../test/driverSource';
 import { REASONS } from '../work/say';
 import { en, zh } from '.';
@@ -90,7 +90,7 @@ describe('a session note’s codes, held to both catalogues', () => {
 
   it.each([['en', en], ['zh', zh]] as const)('keeps no `note.*` entry in %s that no writer declares', (_, catalogue) => {
     // A reason a `why` names is declared by its writer too (the opening's, `note.opening.why.*`).
-    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed', 'Unreached', 'Handed', 'Helper', 'HandOver', 'Partner'].flatMap((family) => reasons(family).map((reason) => reason.key)), ...backgroundStates().map((state) => `note.background.state.${state}`)]);
+    const keys = new Set([...codes.map((code) => code.key), ...['Continue', 'Cooling', 'Opening', 'Resumed', 'Unreached', 'Handed', 'Helper', 'HandOver', 'Partner', 'Deps'].flatMap((family) => reasons(family).map((reason) => reason.key)), ...backgroundStates().map((state) => `note.background.state.${state}`)]);
     const orphans = Object.keys(catalogue).filter((key) => key.startsWith('note.') && !keys.has(key));
     expect(orphans).toEqual([]);
   });
@@ -262,6 +262,20 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     expect(page.sort(byKey)).toEqual([...asked].sort(byKey));
     for (const catalogue of [en, zh]) {
       for (const { key, values } of asked) {
+        expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
+      }
+    }
+  });
+
+  /** Why the files stage kept, left, placed or stored a dependency is a reason family of its own, held key for key with its values. */
+  it('words every reason the files stage gives for a dependency, with the values each says', () => {
+    const declared = reasons('Deps');
+    expect(declared.length).toBe(19);
+    const page = Object.values(DEPS_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
+    const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
+    expect(page.sort(byKey)).toEqual([...declared].sort(byKey));
+    for (const catalogue of [en, zh]) {
+      for (const { key, values } of declared) {
         expect(placeholders(catalogue[key] ?? ''), `\`${key}\``).toEqual([...values].sort());
       }
     }

@@ -325,6 +325,11 @@ export function renderRules(input: TierInput): string[] {
   return lines;
 }
 
+/** The first line of a rule's text the region reads as its own structure (a provenance line or a marker), or null. */
+export function structureLine(text: string): string | null {
+  return text.split('\n').map((line) => line.replace(/\r$/, '')).find((line) => /^<!-- \/?daoris:/.test(line)) ?? null;
+}
+
 /**
  * One rule's body, read back out of a rendered region.
  *

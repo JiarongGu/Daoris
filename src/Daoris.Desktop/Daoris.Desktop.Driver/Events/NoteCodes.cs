@@ -233,6 +233,30 @@ public static class NoteCodes
         new(PartnerWhy.HandCut, [], "note.partner.why.hand-cut"),
     ]);
 
+    /// <summary>Why the files stage kept, left, placed or stored a dependency as it did (<see cref="DepsWhy"/>): the page's <c>note.deps.why.*</c>.</summary>
+    public static readonly NoteReasons Deps = new(
+    [
+        new(DepsWhy.Changed, [], "note.deps.why.changed"),
+        new(DepsWhy.Companion, ["file"], "note.deps.why.companion"),
+        new(DepsWhy.Unplaced, [], "note.deps.why.unplaced"),
+        new(DepsWhy.KeyMoved, [], "note.deps.why.key-moved"),
+        new(DepsWhy.BeforeOwn, ["before"], "note.deps.why.before-own"),
+        new(DepsWhy.InputChanged, [], "note.deps.why.input-changed"),
+        new(DepsWhy.Gone, [], "note.deps.why.gone"),
+        new(DepsWhy.Grouped, ["with"], "note.deps.why.grouped"),
+        new(DepsWhy.Denied, ["install"], "note.deps.why.denied"),
+        new(DepsWhy.Held, ["install"], "note.deps.why.held"),
+        new(DepsWhy.Failed, ["install", "tail"], "note.deps.why.failed"),
+        new(DepsWhy.Tracked, ["file"], "note.deps.why.tracked"),
+        new(DepsWhy.Bound, [], "note.deps.why.bound"),
+        new(DepsWhy.NamesTree, [], "note.deps.why.names-tree"),
+        new(DepsWhy.Secret, [], "note.deps.why.secret"),
+        new(DepsWhy.Beside, ["file"], "note.deps.why.beside"),
+        new(DepsWhy.LinkOut, ["link"], "note.deps.why.link-out"),
+        new(DepsWhy.HeldBefore, ["file"], "note.deps.why.held-ignored"),
+        new(DepsWhy.Group, ["with"], "note.deps.why.group"),
+    ]);
+
     /// <summary>Why an agent's ask to hand its session over came to nothing (<see cref="HandOverAskWhy"/>): the page's <c>note.handover.why.*</c>.</summary>
     public static readonly NoteReasons HandOver = new(
     [

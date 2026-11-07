@@ -76,10 +76,22 @@ public static class KeepKinds
         SizeOnly = true,
     };
 
+    /// <summary>
+    /// The dependency store's entries: each is installed again at its key's next miss, so one not placed or sealed for thirty days goes,
+    /// then, over its size limit, the one placed longest ago, once a day (<see cref="DepsKeeping"/>). A placed copy is its tree's. Its rule
+    /// is the table's alone: the person sets none of it.
+    /// </summary>
+    public static KeepKind Deps { get; } = new(
+        "deps", [HomeEntry.Deps.Name], "every entry, installed again at its key's next miss",
+        TimeSpan.FromDays(30), MinDays: 30, MaxDays: 30, MaySetWhole: false, Remover: "the store's eviction")
+    {
+        DefaultGb = 10,
+    };
+
     /// <summary>The most Daoris may use, in GB, by default: what it holds in all (the allowance over the whole).</summary>
     public const int DefaultAllowanceGb = 48;
 
-    /// <summary>Every kind with a rule that runs, in the order the card will show them.</summary>
+    /// <summary>Every kind whose rule runs and the person sets, in the order the card shows them.</summary>
     public static IReadOnlyList<KeepKind> Table { get; } = [SetAside, Downloads, BrowserCache, Logs, History];
 
     /// <summary>The kind of this id, or null where the table holds none.</summary>
@@ -125,7 +137,10 @@ public sealed record LimitsPolicy(int? SetAsideGb, int? DownloadsGb, int? Browse
         new(KeepKinds.SetAside.DefaultGb, KeepKinds.Downloads.DefaultGb, KeepKinds.BrowserCache.DefaultGb, KeepKinds.DefaultAllowanceGb);
 
     /// <summary>No limit: a file that does not read keeps the most.</summary>
-    public static LimitsPolicy None { get; } = new(null, null, null, null);
+    public static LimitsPolicy None { get; } = new(null, null, null, null) { DepsGb = null };
+
+    /// <summary>The dependency store's limit, the table's alone.</summary>
+    public int? DepsGb { get; init; } = KeepKinds.Deps.DefaultGb;
 }
 
 /// <summary>
@@ -167,6 +182,9 @@ public sealed record KeepPolicy(SetAsidePolicy SetAside)
 
     /// <summary>Finished history's rule: no age by default, the person's clear alone.</summary>
     public HistoryPolicy History { get; init; } = new(null);
+
+    /// <summary>How long a store entry not placed or sealed is kept: the table's thirty days, which no choice moves.</summary>
+    public TimeSpan DepsDays => KeepKinds.Deps.Days;
 
     /// <summary>The policy the person's <paramref name="choices"/> make over the table's defaults.</summary>
     public static KeepPolicy From(KeepChoices choices) =>

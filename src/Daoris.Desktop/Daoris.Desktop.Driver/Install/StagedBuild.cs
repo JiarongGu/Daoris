@@ -91,7 +91,7 @@ public sealed record StagedManifest(string Id, string Version, string? Commit, D
 /// </param>
 public sealed record StagedProblem(string Code, string Sentence);
 
-/// <summary>A move the swap made, relative to the install's root, journalled before the next one.</summary>
+/// <summary>A move the swap made, relative to the install's root, journalled before it is made.</summary>
 public sealed record SwapMove(string From, string To);
 
 /// <summary>

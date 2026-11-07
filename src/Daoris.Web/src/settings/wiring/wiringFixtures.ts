@@ -231,6 +231,11 @@ export const SPACE: SystemSpace = {
       next: { at: '2026-10-28T09:00:00.000+00:00', count: 1, bytes: null },
       last: { at: '2026-10-11T08:10:00.000+00:00', door: 'look', removed: { count: 1, bytes: 0.3 * GB }, kept: {} },
     }),
+    spaceKind('deps', {
+      entries: ['deps'], bytes: 2.4 * GB,
+      rule: { kind: 'days', days: 30, whole: null, default: true, whose: null, gb: 10 },
+      next: { at: '2026-11-20T06:00:00.000+00:00', count: 2, bytes: 0.4 * GB },
+    }),
     spaceKind('browser-cache', { entries: ['browser-engine'], bytes: 0.7 * GB, rule: { kind: 'own', days: null, whole: null, default: true, whose: 'browser', gb: 2 },
       settable: true, bounds: { min: 0, max: 0, whole: false, never: false, gb: { min: 1, max: 1_048_576 }, sizeOnly: true } }),
     spaceKind('logs', {

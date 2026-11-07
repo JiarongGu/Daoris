@@ -241,11 +241,12 @@ public sealed class HelpChatTests : IDisposable
             ? await runner.StartHelpAsync(adapter, config, Machine)
             : await runner.StartAsync("engine", adapter, config);
         var id = start.SessionId ?? throw new InvalidOperationException(start.Message);
-        await Until(() => File.Exists(seen), () => $"state {service.State(id)}");
+        string? written = null;
+        await Until(() => (written = WrittenUnlessRenamedOver(seen)) is not null, () => $"state {service.State(id)}");
 
         // What the machine running the test already carries is the harness's default here, not Daoris's.
         var ambient = Environment.GetEnvironmentVariable("ENABLE_TOOL_SEARCH") ?? "(unset)";
-        Assert.Equal(upFront ? "false" : ambient, File.ReadAllText(seen));
+        Assert.Equal(upFront ? "false" : ambient, written);
 
         Assert.True(runner.Finish(id));
         await Until(() => service.State(id) is "completed" or "stopped", () => $"state {service.State(id)}");
@@ -262,6 +263,12 @@ public sealed class HelpChatTests : IDisposable
         await Assert.ThrowsAsync<DriverException>(() => runner.StartHelpAsync("no-such-agent", config, Machine));
 
         Assert.False(Directory.Exists(HelpRoom.PathOf(_home)));
+    }
+
+    private static string? WrittenUnlessRenamedOver(string path)
+    {
+        try { return File.ReadAllText(path); }
+        catch (IOException) { return null; }
     }
 
     private static async Task Until(Func<bool> condition, Func<string> seen)

@@ -218,6 +218,17 @@ internal sealed class GoingOnRun(IExecutorWiring wiring, ChatGoOn owner)
             answering = steered => answers(steered || persons);
         }
 
+        // A tree Daoris marked as it brought it back to this line gets its files step, then the go-on's own step takes the mark off
+        // before its resumed turn; a tree holding none is the conversation's own, and nothing is done to it.
+        if (TreeFilesRecord.Read(_context.Home, record.Tree!) is { Unworked: true })
+        {
+            await TreeFilesStep.RunAsync(
+                _context.Home, known.Root!, record.Tree!, record.Repository!,
+                line => _context.Events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line.Note, Parts = line.Parts.Count > 0 ? line.Parts : null }, say: null),
+                ct).ConfigureAwait(false);
+            TreeFilesStep.Hand(_context.Home, record.Tree!);
+        }
+
         var placed = _runner.RepositoryPlace(
             config, registry, known, record.Repository!, record.Tree!, continued,
             answers: await _runner.AnswersFindingsAsync(sessionId, record.Tree!, config).ConfigureAwait(false));

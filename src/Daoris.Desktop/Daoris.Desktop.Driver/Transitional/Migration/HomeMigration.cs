@@ -78,6 +78,8 @@ public static class HomeMigration
             try
             {
                 step.Run(run);
+                kept.Add(step.Name);
+                Write(record, kept, (clock ?? (() => DateTimeOffset.UtcNow))());
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or DriverException
                                               or DesktopStoreException or Microsoft.Data.Sqlite.SqliteException or InvalidOperationException)
@@ -85,9 +87,7 @@ public static class HomeMigration
                 return new(Name, ran, run.Changed, Failed: (step.Name, error.Message));
             }
 
-            kept.Add(step.Name);
             ran.Add(step.Name);
-            Write(record, kept, (clock ?? (() => DateTimeOffset.UtcNow))());
         }
 
         return new(Name, ran, run.Changed);

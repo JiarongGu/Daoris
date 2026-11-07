@@ -87,6 +87,22 @@ public sealed class McpChannelToolTests : IAsyncLifetime
         Assert.DoesNotContain("use the older bridge", again);
     }
 
+    /// <summary>🔴 A member's message reads as an outside agent's claim, never a session's, even with no repository said.</summary>
+    [Fact]
+    public async Task A_read_says_an_agent_outside_Daoris_wrote_a_member_s_message()
+    {
+        var (ask, session) = await RunningAsync();
+        var member = (await _channel.Members.JoinAsync(new ChannelJoin(ask.Id, null, "claude-code", null, null), Now)).Member!;
+        await _channel.Members.PostAsync(member.Id, "the check passes on my side", null, null, question: false, urgent: false, DateTimeOffset.UtcNow);
+
+        var read = await As(_channel, session.Id).ReadAsync();
+
+        var line = read.Split('\n').Single(each => each.Contains("the check passes on my side"));
+        Assert.Contains($"an agent outside Daoris ({member.Id}, claude-code)", line);
+        Assert.DoesNotContain("another session's claim", line);
+        Assert.DoesNotContain("from  (", line);
+    }
+
     /// <summary>
     /// 🔴 <c>channel_post</c>'s <c>urgent</c> says the post reaches a working session at its next step; the
     /// answer says so, and a part's fourth urgent post is kept ordinary, which the answer says too. An ordinary post says it waits.
