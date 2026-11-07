@@ -24,6 +24,9 @@ internal static class LimitCarry
     /// <summary>The copy did not complete.</summary>
     public const string Failed = "copy-failed";
 
+    /// <summary>The door would not resume the conversation its copy holds.</summary>
+    public const string Refused = "resume-refused";
+
     /// <summary>The carry the door's provider declares through its conversation home, or null.</summary>
     public static IConversationCarry? Declared(ProviderRegistry registry, DoorId door) =>
         registry.Provider(registry.ProviderOf(door)).Conversations.TryGet(out var home) ? home.Carry : null;
@@ -57,5 +60,17 @@ internal static class LimitCarry
         }
 
         return why is null ? plan : new CarryPlan.Briefed(why);
+    }
+
+    /// <summary>Takes the copy out of the home it lies in, where the door would not resume it; a removal that cannot be made leaves a file nothing reads.</summary>
+    public static void Withdrawn(IConversationCarry? carry, string to, string tree, string conversation)
+    {
+        try
+        {
+            carry?.Remove(to, tree, conversation);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+        }
     }
 }

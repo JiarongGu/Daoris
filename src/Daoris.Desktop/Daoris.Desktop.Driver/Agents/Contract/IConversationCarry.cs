@@ -24,4 +24,7 @@ public interface IConversationCarry
     /// why not: <c>missing</c> where the conversation's file is not in the home it ran in, <c>copy-failed</c> where the copy did not complete.
     /// </summary>
     string? Copy(string from, string to, string tree, string conversation);
+
+    /// <summary>Removes what <see cref="Copy"/> placed in the home <paramref name="to"/>, where the door would not resume the conversation it holds.</summary>
+    void Remove(string to, string tree, string conversation);
 }

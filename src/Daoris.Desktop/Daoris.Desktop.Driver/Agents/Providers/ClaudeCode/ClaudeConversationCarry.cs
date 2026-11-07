@@ -43,4 +43,13 @@ internal sealed class ClaudeConversationCarry : IConversationCarry
         if (Directory.Exists(Path.Combine(source, conversation))) CarriedFiles.Folder(Path.Combine(source, conversation), Path.Combine(target, conversation));
         return null;
     }
+
+    /// <inheritdoc/>
+    public void Remove(string to, string tree, string conversation)
+    {
+        var layout = ClaudeConversationHome.Home.Projects!;
+        var target = Path.Combine(to, layout.Folder, layout.Flatten(Path.GetFullPath(tree)));
+        File.Delete(Path.Combine(target, conversation + ".jsonl"));
+        if (Directory.Exists(Path.Combine(target, conversation))) Directory.Delete(Path.Combine(target, conversation), recursive: true);
+    }
 }

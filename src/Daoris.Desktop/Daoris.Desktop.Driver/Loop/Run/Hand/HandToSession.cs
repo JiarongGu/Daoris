@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -225,9 +227,6 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 SetUpFrom = setUp is null ? null : ReviewRules.Resolve(config, quest.To, start.Workspace)?.Source,
             };
             tree.OneLook.Dispose();
-            var (info, harnessNotice) = wiring.Prepare(
-                adapter, target, selection, conversation is null ? null : LimitCarried.Prepared(context, adapter, target, conversation));
-            if (conversation is not null) LimitCarried.Compact(info, conversation);
             var carriedAsk = conversation is null || prior is null || continues is null
                 ? null
                 : LimitCarried.Ask(conversation, CarriedNotes.From(prior.Session, prior.Adapter ?? agent, prior.Profile, continues.Why, conversation), movedOn);
@@ -256,25 +255,65 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
             // Daoris's home, and the file goes when the session does.
             context.Hooks?.Log.Served(context.Catalog, sessionId, servers);
             var connectors = ConnectorPlans.For(sessionId, start.Workspace, servers);
-            var handed = adapter.ServerHanding()?.Hand(info, home, connectors);
-            // The skills plugins hand sessions, composed under the home, gone with the session.
-            var (skills, skillPlugins) = SpawnSkills.Hand(context.Adapters, adapter, info, home, sessionId, context.Catalog, PluginServerTo.Sessions);
-            using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
-
-            // What this session may do: the rules composed for its circle and repository, handed over as the harness's own settings
-            // tier. A carry-on reads the kept folders of its line's parts, whose files its brief names, and the folder its standing block
-            // went through, where it went through one.
-            var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(target, context.Adapters, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
-            var rules = wiring.HandRules(
-                adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across, plugins: skillPlugins,
-                continued: blockFolder is null ? brief?.Kept : [.. brief?.Kept ?? [], blockFolder], heavy: heavy);
-
             context.Runs.Live[quest.Id] = sessionId;
             using var live = new Disposer(() => context.Runs.Live.TryRemove(quest.Id, out var _));
 
             var conclusion = new RunConclusion(wiring, run, endings, adapter, target, transcript);
-            return await wiring.Holds.HoldAsync(
-                "build", adapter, info, target, sessionId, transcript, workTree, Driver.JoinNotices(harnessNotice, browserNotice), rules, handed,
+
+            // A carried resume the door refuses before any prompt is the brief's start instead, the copy taken out of the account's home.
+            var arranged = Arrange(target, conversation, brief);
+            try
+            {
+                return await HoldAsync(arranged, target, carriedAsk);
+            }
+            catch (CarriedResumeRefused) when (conversation is not null && prior is not null && continues is not null)
+            {
+            }
+            finally
+            {
+                arranged.Skilled.Dispose();
+            }
+
+            LimitCarried.Withdraw(context, adapter, selection, workTree, conversation!);
+            var fallback = await ContextBriefs.ComposeAsync(
+                service, context.Events, home, prior!.Session, continues!.Why, conversation: false, note: handedNote, config: config, tree: workTree, ct: ct)
+                .ConfigureAwait(false);
+            wiring.SayMoved(prior, sessionId, agent, selection.Profile, continues.Why, fallback, LimitCarry.Refused);
+            var briefed = target with { Brief = fallback, Course = null, Block = target.Block! with { Memory = fallback.Memory } };
+            arranged = Arrange(briefed, null, fallback);
+            try
+            {
+                return await HoldAsync(arranged, briefed, null, again: true);
+            }
+            finally
+            {
+                arranged.Skilled.Dispose();
+            }
+
+            (ProcessStartInfo Info, string? Notice, string? Served, (string? File, object? Meta, HandedSection? Handed) Rules, IDisposable Skilled) Arrange(
+                SessionTarget held, CarryPlan.Carried? carried, ComposedBrief? composed)
+            {
+                var (spawn, notice) = wiring.Prepare(adapter, held, selection, carried is null ? null : LimitCarried.Prepared(context, adapter, held, carried));
+                if (carried is not null) LimitCarried.Compact(spawn, carried);
+                var served = adapter.ServerHanding()?.Hand(spawn, home, connectors);
+                // The skills plugins hand sessions, composed under the home, gone with the session.
+                var (skills, skillPlugins) = SpawnSkills.Hand(context.Adapters, adapter, spawn, home, sessionId, context.Catalog, PluginServerTo.Sessions);
+
+                // What this session may do: the rules composed for its circle and repository, handed over as the harness's own settings
+                // tier. A carry-on reads the kept folders of its line's parts, whose files its brief names, and the folder its standing block
+                // went through, where it went through one.
+                var blockFolder = TargetPrompt.Filed(TargetPrompt.ForStart(held, context.Adapters, adapter)) ? StandingBlocks.FolderOf(home, sessionId) : null;
+                var ruled = wiring.HandRules(
+                    adapter, spawn, sessionId, start.Workspace, quest.To, workTree, held.AttachmentsDirectory, across: across, plugins: skillPlugins,
+                    continued: blockFolder is null ? composed?.Kept : [.. composed?.Kept ?? [], blockFolder], heavy: heavy);
+                return (spawn, notice, served, ruled, new Disposer(() => SpawnFiles.RemoveFolder(skills)));
+            }
+
+            async Task<StartRun> HoldAsync(
+                (ProcessStartInfo Info, string? Notice, string? Served, (string? File, object? Meta, HandedSection? Handed) Rules, IDisposable Skilled) laid,
+                SessionTarget held, ResumeAsk? ask, bool again = false) =>
+            await wiring.Holds.HoldAsync(
+                "build", adapter, laid.Info, held, sessionId, transcript, workTree, Driver.JoinNotices(laid.Notice, browserNotice), laid.Rules, laid.Served,
                 // `actor` stays the seeded id; the role the start took and its revision go on the binding. A continuation keeps its record's.
                 taken: start.Resumes is null ? wiring.RoleTaken(start, stepRole) : null,
                 // A driven session takes no person's line, on either door: it is handed its whole quest at once, the pipe door gives it
@@ -286,7 +325,9 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 drivesBrowser: drivesBrowser,
                 said: wiring.Said(adapter, selection, sessionId), limits: wiring.NativeLimit(adapter),
                 // A carried conversation is resumed on the new account, its first prompt Daoris's word.
-                resume: carriedAsk,
+                resume: ask,
+                // The refused try moved the record to working already.
+                movedFirst: again,
                 // A native run holds what the person says while it works, and goes on with it in its own conversation.
                 goesOnAs: selection,
                 stopMade: stop => endings.StoppedFirst = stop,
@@ -313,7 +354,10 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
                 // A driven quest session is tried again in the same conversation on a transient failure, asking before each try whether
                 // its quest still wants a turn, against the quest as this start is planned.
                 transientWanted: retryCt => TransientRetries.WantedAsync(service, quest.Id, sessionId, quest.Status, quest.Awaits, retryCt),
-                conclude: (exitCode, used, turnFailed, ended) => conclusion.ConcludeAsync(exitCode, used, turnFailed, ended, ct)).ConfigureAwait(false);
+                conclude: (exitCode, used, turnFailed, ended) =>
+                    ask is not null && endings.StoppedFirst is null && CarriedResumeRefused.Of(ask, adapter, exitCode) is { } refusal
+                        ? Task.FromException<StartRun>(new CarriedResumeRefused(refusal))
+                        : conclusion.ConcludeAsync(exitCode, used, turnFailed, ended, ct)).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

@@ -278,7 +278,7 @@ of everything it handed, section by section.
 - **SWITCHCTX1a onward: the account carry.** A move keeps the agent's own conversation by carrying it to the other
   account's home. Proposed (`docs/2026-10-24-switch-context-design.md`, its round 5 read and another round owed), with no backlog row. A driven line's
   limit move carries through the providers' `IConversationCarry` (`Loop/Run/Hand/LimitCarried.cs`); a conversation's limit move, the curve's move and the
-  hand-over carry nothing, and a carried resume the agent refuses after the copy is not briefed in the same start.
+  hand-over carry nothing; a driven line's carried resume the agent refuses after the copy is briefed in the same start, the copy removed.
   `Course/MoveRecords.cs` reserves the `carry` kind and the `copied` and `verified` phases.
 - **SESSCTX1a:** resume and a fresh part measured on each door. No brief has been counted on a harness.
 - **SESSCTX1e (ONEWAY1j):** *Go on fresh*, Daoris's compaction on the person's press, re-cut as a hand-over to the same
