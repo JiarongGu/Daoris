@@ -260,7 +260,7 @@ internal sealed class HeavyStep : IDisposable
 
     private static HeavyStep StartElsewhere(string run, string directory, IReadOnlyDictionary<string, string> added, StepOptions? options)
     {
-        // Not the tools' environment: the gate runs in the calling session's own environment, which that
+        // Not the tools' environment (TOOLS5): the gate runs in the calling session's own environment, which that
         // session's start already handed the tools; the Windows path builds its block from the same environment.
         var info = new ProcessStartInfo("/bin/sh") { UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = directory };
         info.ArgumentList.Add("-c");
