@@ -4,10 +4,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The review's gate beside a landing's plan and press (REVIEWENV1c, D154 point 7; the review environment design §3.1): the
+/// The review's gate beside a landing's plan and press: the
 /// <c>LANDING</c> and <c>LAND_SESSION_TREE</c> routes read the gate for the session's tree and hand it to the landing, which
 /// refuses what it holds; each answers what the gate says while it holds the work, for the page to say *Waits for your review in
-/// `environment`* where *Accept…* would be (REVIEWENV1g), and nothing where nothing waits, so a landing no review touches answers as
+/// `environment`* where *Accept…* would be, and nothing where nothing waits, so a landing no review touches answers as
 /// it did. The landing's own refusal is held over real git by the driver's <c>ReviewLandingTests</c>.
 /// </summary>
 public sealed class DriverModuleReviewGateTests

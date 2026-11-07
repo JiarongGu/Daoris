@@ -3,8 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The grounds bind what a press acts on, not a count or a name that stays the same while it changes (CONFIRMWAIT1, the confirm-wait
-/// design §15.1, Codex's findings 1 to 5, 7 and 12): a branch rewritten to as many commits reads moved; a discard binds its tree by
+/// The grounds bind what a press acts on, not a count or a name that stays the same while it changes: a branch rewritten to as many commits reads moved; a discard binds its tree by
 /// <c>id</c> or <c>path</c>; a Resume binds the pause it was asked on; a repository binds what its name resolves to; a terminal's
 /// attachments bind their bytes; a baseline that lacks a ground holds nothing; and a setting assigned whole is answered <c>already</c>
 /// unless it is a named exception. Read through the stand-in for the loop's readers (<see cref="StubGrounds"/>).

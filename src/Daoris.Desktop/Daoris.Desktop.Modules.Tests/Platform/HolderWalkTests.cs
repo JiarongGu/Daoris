@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// STEWARDROLE1a-i (D209 §6.1): what the walk reads, it reads from the system. The holder's argument vector, quoted into one command line
+/// What the walk reads, it reads from the system. The holder's argument vector, quoted into one command line
 /// as the pseudo-console starts it, splits back into the same elements, <c>{"disableAllHooks":true}</c> with its quotes; and the system's
 /// reader names this test process's own parent, creation, image, arguments and a variable of its environment as the process itself knows
 /// them. The walk's judgement over a process tree is <c>PipeStandingTests</c>'.

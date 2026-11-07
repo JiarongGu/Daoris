@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// LANDPRESS1: the window's landing press is always answered. It is answered within its bound with what it came to, or held in words
+/// The window's landing press is always answered. It is answered within its bound with what it came to, or held in words
 /// while it goes on off the asking window's wait; a second press of a session whose press runs is held, never run twice. Every answer
 /// is the machine log's <c>landing.pressed</c> with its outcome and sentence, and a press that ends after its held answer tells the
 /// windows again, so the review reads what it came to.

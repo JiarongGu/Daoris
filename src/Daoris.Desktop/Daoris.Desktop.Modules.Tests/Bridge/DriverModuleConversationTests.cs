@@ -6,14 +6,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A conversation over the bridge (`ConversationRoutes.cs`, MOD5): its record, its start, the
+/// A conversation over the bridge (`ConversationRoutes.cs`): its record, its start, the
 /// person's messages and files, finishing, stopping a turn, and its queue. The rows where a real process
 /// holds the session are <see cref="DriverModuleConversationProcessTests"/>'s.
 /// </summary>
 public sealed class DriverModuleConversationTests : DriverModuleBridge
 {
     /// <summary>
-    /// MSG1d (D137 §2.2, §5.3): before the loop's service answers, words to a session nothing here runs have nowhere to be
+    /// Before the loop's service answers, words to a session nothing here runs have nowhere to be
     /// kept, which is a sentence the person can wait out, never a quiet false.
     /// </summary>
     [Fact]
@@ -25,7 +25,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1d (D137 §2.2, §3.1, §5.3): words to a session of this machine's that ended go to the service's say door, which
+    /// Words to a session of this machine's that ended go to the service's say door, which
     /// keeps them on its record; the conversation shows them at once as the person's, under the id the record gave them,
     /// with the reach <c>resume</c> and the door they were said at; the loop is nudged to take them up now; and the page is
     /// told they are held. They are kept on the ask once a session takes them, so nothing goes to the added door.
@@ -57,10 +57,9 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ANSWER2 (D131's ANSWER2 note): the person's answer to a parked driven session through the box moves nothing. The say
+    /// The person's answer to a parked driven session through the box moves nothing. The say
     /// door keeps it on the parked record and the loop is nudged; the driver's next look is what moves the record to working,
-    /// once (the driver's <c>AnswerGoesOnOnceTests</c>). The install's failures read as if the answer had moved it first: the
-    /// second move was a second look taking the same record up.
+    /// once (the driver's <c>AnswerGoesOnOnceTests</c>).
     /// </summary>
     [Fact]
     public async Task An_answer_to_a_park_through_the_box_moves_nothing_and_nudges_the_loop()
@@ -84,7 +83,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PARKVIEW1 (the park's ask design §4): a press answering a park's question names it, and goes as any word where that question is
+    /// A press answering a park's question names it, and goes as any word where that question is
     /// the one its park still asks.
     /// </summary>
     [Fact]
@@ -136,7 +135,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 PARKVIEW1: a press for a question the park no longer asks (answered and asked anew in another window, or none kept) is
+    /// A press for a question the park no longer asks (answered and asked anew in another window, or none kept) is
     /// refused `question-changed` and keeps nothing, so a label never answers a question it was not offered for.
     /// </summary>
     [Theory]
@@ -156,7 +155,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COMMS1e: a press is said to a host that checks it with its question's id, so the say door judges it inside its own step; to a host
+    /// A press is said to a host that checks it with its question's id, so the say door judges it inside its own step; to a host
     /// without the mark it carries none, and the route's own check stands alone. The door's refusal `question-changed` is the answer as it is.
     /// </summary>
     [Theory]
@@ -199,9 +198,9 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1d (D137 §2.2): what never goes on is refused by its code, and nothing is posted: a teammate's record (whose
+    /// What never goes on is refused by its code, and nothing is posted: a teammate's record (whose
     /// process and conversation are on their machine), an intake, a session that stood down, a session whose quest went on in
-    /// a later session here, and a record nothing holds. Ask Daoris's own conversation goes on in itself since ASKHIST1
+    /// a later session here, and a record nothing holds. Ask Daoris's own conversation goes on in itself
     /// (<see cref="DriverModuleHelpHistoryTests"/>).
     /// </summary>
     [Theory]
@@ -227,7 +226,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1d: the service judges the record again as it keeps the words, and its refusal is the answer, by the code the
+    /// The service judges the record again as it keeps the words, and its refusal is the answer, by the code the
     /// page words: its word for a teammate's record is the page's <c>teammate</c>.
     /// </summary>
     [Theory]
@@ -251,7 +250,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1d (D137 §2.1, D90, D136): words said as a session winds up are no longer refused. Its record still runs, so the
+    /// Words said as a session winds up are no longer refused. Its record still runs, so the
     /// say door refuses them <c>running</c>; they are held, the page is told so, and once the record moves through this
     /// machine's client the words are kept on it, shown in its conversation and the loop nudged.
     /// </summary>
@@ -285,8 +284,8 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1d4 (D137's MSG1d note): words held as a session winds up survive a restart. The shell keeps them in a small file
-    /// under the home until the record keeps them; a new loop's judge reads them back and tries them as before, so once the
+    /// Words held as a session winds up survive a restart. The shell keeps them in a small file
+    /// under the home until the record keeps them; a new loop's judge reads them back and tries them again, so once the
     /// record ends they are kept, shown at the door they were said at, and the file holds nothing more.
     /// </summary>
     [Fact]
@@ -321,7 +320,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A file of held words that does not read holds nothing (MSG1d4): the loop comes up as before, and the next words held
+    /// A file of held words that does not read holds nothing: the loop comes up with none held, and the next words held
     /// replace it, written whole beside it and renamed.
     /// </summary>
     [Fact]
@@ -348,7 +347,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 HANDWORDS1 (D163 point 1, D165 point 3): a conversation handed over or moved went on in another, which takes its words. A
+    /// A conversation handed over or moved went on in another, which takes its words. A
     /// word to it is refused <c>continued</c>, naming the latest of the conversations that continue it, as the queue says it too;
     /// nothing is kept on its record, so nothing could restart it in the tree its successor holds.
     /// </summary>
@@ -371,7 +370,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 HANDWORDS1, TAKEWAITS1: words said while a conversation is handed over or moved (its move standing in the store until the take is
+    /// Words said while a conversation is handed over or moved (its move standing in the store until the take is
     /// done) are held here, never kept on the record that is ending, even once it has ended; when the take is told done, its move ended, they go
     /// to the conversation that continues it, kept and shown there, and nothing is held any more.
     /// </summary>
@@ -409,7 +408,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         await UntilAsync(() => !File.Exists(SessionWords.HeldPath(Home)));
     }
 
-    /// <summary>A stand-in host whose marks keep the moving open and the head (FOUNDATION1o, the design §19.12).</summary>
+    /// <summary>A stand-in host whose marks keep the moving open and the head.</summary>
     private const string Marked = """{"run":"r1","marks":{"settled":1,"opens":2,"head":1}}""";
 
     private const string Running = """{"error":"Session is working.","refusal":"running"}""";
@@ -419,7 +418,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         ending ? (HttpStatusCode.OK, Kept(id, "w7", "and the readme")) : (HttpStatusCode.Conflict, Running);
 
     /// <summary>
-    /// 🔴 FOUNDATION1o (the design §3.4 rule 4, §19.11): against a host whose marks keep the moving open and the head, a word said as a session
+    /// Against a host whose marks keep the moving open and the head, a word said as a session
     /// winds up is kept on its record at once, asked <c>ending</c>, for its next part to go on with: shown under the record's id and the loop
     /// nudged, nothing held in this process and no file of held words written.
     /// </summary>
@@ -442,7 +441,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1o (§19.11, §19.12): a host without both marks keeps today's hold: one whose open moves no words is never asked <c>ending</c>,
+    /// A host without both marks keeps today's hold: one whose open moves no words is never asked <c>ending</c>,
     /// and a word said as a session winds up is held here and in the file, as before; so is one a host with the marks refuses <c>running</c>
     /// all the same, a host before the row.
     /// </summary>
@@ -466,7 +465,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 FOUNDATION1o, HANDWORDS1-i's case with the shell restarted mid-hand-over: against a host with the marks, a word said while the
+    /// 🔴 A shell restarted mid-hand-over: against a host with the marks, a word said while the
     /// conversation's move stands is kept on the record the move leaves, asked <c>ending</c>, where the move's open moves it; it is shown on
     /// neither part here, the move's delivery showing it at its destination. Nothing is held, so a shell restarted before the take is over says
     /// nothing again, and the take told over says nothing more: the word went with the open.
@@ -506,7 +505,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FOUNDATION1o (§3.4 rule 4): the file of words an older shell held is read once as the shell comes up, and against a host with the marks
+    /// The file of words an older shell held is read once as the shell comes up, and against a host with the marks
     /// each of its words is kept on its record asked <c>ending</c>, shown there, and the file goes; no word is held in it again.
     /// </summary>
     [Fact]
@@ -528,7 +527,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1d (D137 §5.3): what a word said now would do, for the page to offer the box by: a session that ended or parked
+    /// What a word said now would do, for the page to offer the box by: a session that ended or parked
     /// goes on with it, and a driven session's inbox answers its door's reach, which is not known until the door is.
     /// </summary>
     [Fact]
@@ -556,7 +555,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// QUEUEEDIT1a (D76): the queue names each held word by its id, and <c>SESSION_QUEUE_EDIT</c> takes one back or rewords it:
+    /// The queue names each held word by its id, and <c>SESSION_QUEUE_EDIT</c> takes one back or rewords it:
     /// with no text it removes, with some it replaces the words in place, and either is told to every list as the queue moved.
     /// A word a turn took is a normal answer, <c>done: false</c> and <c>why: taken</c>, never an error.
     /// </summary>
@@ -590,7 +589,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         Assert.NotEqual(ids[0], now[0].GetProperty("id").GetString());
     }
 
-    /// <summary>QUEUEEDIT1a: words reworded to nothing are refused in a sentence: removing is the verb with no text.</summary>
+    /// <summary>Words reworded to nothing are refused in a sentence: removing is the verb with no text.</summary>
     [Fact]
     public async Task Rewording_a_held_word_to_nothing_is_refused()
     {
@@ -607,9 +606,9 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SAIDBACK1b (D76, D137 §2.4): the person's words waiting on a record that ended or parked are its queue, each by the id
+    /// The person's words waiting on a record that ended or parked are its queue, each by the id
     /// the record gave it, so the composer's *Edit* and *Remove* reach them. Never another agent's words waiting there (a second
-    /// opinion's findings, a helper's answer), nor Daoris's own (COWORK1b), and none on a record that runs again, whose run is
+    /// opinion's findings, a helper's answer), nor Daoris's own, and none on a record that runs again, whose run is
     /// already taking them.
     /// </summary>
     [Theory]
@@ -641,8 +640,8 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SAIDBACK1b (D76): a word waiting on a record, which nothing here holds, is taken back or reworded through the service's
-    /// take-back door (SAIDBACK1a). The conversation settles the old word with QUEUEEDIT1a's withdrawn line and shows a reword's
+    /// A word waiting on a record, which nothing here holds, is taken back or reworded through the service's
+    /// take-back door. The conversation settles the old word with a withdrawn line and shows a reword's
     /// new words as the person's under their new id, and the queue is told again, whole, with the record's words as they stand.
     /// </summary>
     [Fact]
@@ -683,7 +682,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         Assert.Equal(
             [(SessionEventKind.Note, SessionEventCodes.Withdrawn, "w1"), (SessionEventKind.Note, SessionEventCodes.Withdrawn, "w2")],
             shown.Where(each => each.Kind == SessionEventKind.Note).Select(each => (each.Kind, each.Code, Assert.Single(each.Words!))));
-        // WITHDRAWNLINE1: one note shape for every door: the library's, the one the driver's terminal keeps.
+        // One note shape for every door: the library's, the one the driver's terminal keeps.
         Assert.All(
             shown.Where(each => each.Kind == SessionEventKind.Note),
             each => Assert.Equal(SessionNotes.Withdrawn(each.Words![0]).Text, each.Text));
@@ -693,7 +692,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SAIDBACK1b: a word the service no longer holds is <c>taken</c>, an answer and never an error, as a live queue's is: gone
+    /// A word the service no longer holds is <c>taken</c>, an answer and never an error, as a live queue's is: gone
     /// from the record, or the record itself gone. The page is told the queue again, so a list it showed stale is read anew.
     /// </summary>
     [Theory]
@@ -712,7 +711,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         await UntilAsync(() => QueuedWords("s1") is []);
     }
 
-    /// <summary>SAIDBACK1b: what never goes on refuses a take-back in the service's sentence, and the old word stays shown.</summary>
+    /// <summary>What never goes on refuses a take-back in the service's sentence, and the old word stays shown.</summary>
     [Fact]
     public async Task A_take_back_the_service_refuses_is_refused_in_its_sentence()
     {
@@ -727,7 +726,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         Assert.Empty(loop.Events.Page("s1").Events);
     }
 
-    /// <summary>SAIDBACK1b: before the loop's service answers, nothing holds a record's words for this machine: <c>taken</c>.</summary>
+    /// <summary>Before the loop's service answers, nothing holds a record's words for this machine: <c>taken</c>.</summary>
     [Fact]
     public async Task A_word_asked_back_before_the_loop_is_up_answers_taken()
     {
@@ -737,7 +736,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SAIDBACK1b: words kept on a record that ended are told in its queue at once, so the box's list offers *Edit* and *Remove*
+    /// Words kept on a record that ended are told in its queue at once, so the box's list offers *Edit* and *Remove*
     /// on them without the page asking again.
     /// </summary>
     [Fact]
@@ -771,7 +770,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// MSG1d (D136, D137 §5.3): a word to a driven session whose inbox is open is held there as before, and the answer says
+    /// A word to a driven session whose inbox is open is held there as before, and the answer says
     /// when it reaches the session: at its next step where the door sends words during a turn.
     /// </summary>
     [Fact]
@@ -788,7 +787,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
     }
 
-    /// <summary>CONV4c: the payload's files read back as the names and bytes the page sent; none is none.</summary>
+    /// <summary>The payload's files read back as the names and bytes the page sent; none is none.</summary>
     [Fact]
     public void A_messages_files_are_read_from_the_payload_as_names_and_bytes()
     {
@@ -806,7 +805,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONV4c: a message's files arrive as bytes the way a quest's do, base64 in the payload — and bytes
+    /// A message's files arrive as bytes the way a quest's do, base64 in the payload — and bytes
     /// that are not base64 are refused in a sentence, never kept as something else.
     /// </summary>
     [Fact]
@@ -822,7 +821,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONV4a: stopping a turn nothing here holds stops nothing and withdraws nothing — an answer, as
+    /// Stopping a turn nothing here holds stops nothing and withdraws nothing — an answer, as
     /// the page asking a moment late deserves, never an error.
     /// </summary>
     [Fact]
@@ -835,10 +834,10 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEER2a, COWORK1a (D188 point 3): <c>SESSION_INPUT</c> at <c>now</c>, as <c>level: "now"</c> or an older page's
+    /// <c>SESSION_INPUT</c> at <c>now</c>, as <c>level: "now"</c> or an older page's
     /// <c>now: true</c>, answers what the session's door did, as <c>{ sent, reaches, why, to, now }</c>: steered into the running
     /// turn (<c>now</c>), or held for the turn's end, <c>now: false</c> with <c>no-interrupt</c>, whether or not the door could stop
-    /// the turn: no word stops one. Without a level the words go as they always did, and the answer says now was not asked.
+    /// the turn: no word stops one. Without a level the words go plain, and the answer says <c>now</c> is not asked.
     /// </summary>
     [Fact]
     public async Task Send_now_to_a_driven_session_answers_what_its_door_did()
@@ -881,7 +880,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORK1a (the message-urgency design §3.0, §9): <c>SESSION_INPUT</c>'s <c>level</c> is when the words should reach a
+    /// <c>SESSION_INPUT</c>'s <c>level</c> is when the words should reach a
     /// working session. Ordinary on a door that takes words at its next step waits for the turn's end, and the queue lists it with
     /// its level; urgent goes at the next step; a level this build does not know is refused in a sentence, and nothing is kept.
     /// </summary>
@@ -906,7 +905,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORK1a (the design §8.1, §8.2): the queue's reach says what the door can do while a turn runs, which the page offers the
+    /// The queue's reach says what the door can do while a turn runs, which the page offers the
     /// levels and the keeping stop by: whether its agent steers, and whether it can stop a turn keeping the session. The native
     /// door's run can do neither; a protocol door that takes words at its next step and steers can do both.
     /// </summary>
@@ -927,7 +926,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORK1a (the design §8.2): <c>SESSION_QUEUE_EDIT</c> with <c>level</c> changes a held word's level under its id; raised on a
+    /// <c>SESSION_QUEUE_EDIT</c> with <c>level</c> changes a held word's level under its id; raised on a
     /// door that takes words at its next step it goes there. A word nothing here holds answers taken, and its record is left alone:
     /// a level means nothing to words waiting on a record that is not running.
     /// </summary>
@@ -953,7 +952,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORK1a (the design §8.6, RPC1d): <c>CANCEL_TURN</c> asked for its words by <c>sessions stop &lt;id&gt; --turn</c> is the
+    /// <c>CANCEL_TURN</c> asked for its words by <c>sessions stop &lt;id&gt; --turn</c> is the
     /// keeping stop, answering the lines the verb prints: the turn stopped so what waits goes next; a door with no stop that keeps the
     /// session says so and stops nothing.
     /// </summary>
@@ -979,7 +978,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// STEER2a: <c>CANCEL_TURN</c> with <c>keep</c> stops the turn and withdraws nothing. A driven session's stop already sends what
+    /// <c>CANCEL_TURN</c> with <c>keep</c> stops the turn and withdraws nothing. A driven session's stop already sends what
     /// is held now; a turn nothing here holds stops nothing, keep or not.
     /// </summary>
     [Fact]
@@ -1003,7 +1002,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONV4a: what a conversation has waiting is asked for by a page that just opened it, and takes
+    /// What a conversation has waiting is asked for by a page that just opened it, and takes
     /// every change after that live — nothing waiting is an empty list.
     /// </summary>
     [Fact]
@@ -1014,16 +1013,16 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
         Assert.Equal("nothing-here", queue.GetProperty("session").GetString());
         Assert.Empty(queue.GetProperty("queued").EnumerateArray());
         Assert.False(queue.GetProperty("taking").GetBoolean());
-        // HELP4: nothing is opening either, so nothing waits on a door.
+        // Nothing is opening either, so nothing waits on a door.
         Assert.False(queue.GetProperty("opening").GetBoolean());
-        // RAIL2: no turn ended here, so no last move is claimed — the page keeps the record's.
+        // No turn ended here, so no last move is claimed — the page keeps the record's.
         Assert.Equal(JsonValueKind.Null, queue.GetProperty("lastTurn").ValueKind);
-        // MSG1d: before the loop is up nothing is known of where a word would go, and nothing is claimed either way.
+        // Before the loop is up nothing is known of where a word would go, and nothing is claimed either way.
         Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (queue.GetProperty("reaches").ValueKind, queue.GetProperty("why").ValueKind));
     }
 
     /// <summary>
-    /// D76 §2 (CONV1): a session's conversation is read back over the bridge a page at a time — the
+    /// A session's conversation is read back over the bridge a page at a time — the
     /// newest first, then earlier, then only what is newer — from the record under the home, so it
     /// answers after a restart when the console's window is long gone.
     /// </summary>
@@ -1088,17 +1087,17 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     private static string Record(string id, string state, string quest = "q1") =>
         $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"{{quest}}","kind":"driven","created":"2026-10-03T08:00:00Z"}""";
 
-    /// <summary>A driven record of quest #q1, or another, with these words waiting on it (MSG1a's <c>said</c>) as the service answers them.</summary>
+    /// <summary>A driven record of quest #q1, or another, with these words waiting on it (<c>said</c>) as the service answers them.</summary>
     private static string Waiting(string id, string state, params string[] said) => WaitingIn("q1", id, state, said);
 
     private static string WaitingIn(string quest, string id, string state, params string[] said) =>
         $$"""{"id":"{{id}}","repository":"engine","state":"{{state}}","quest":"{{quest}}","kind":"driven","created":"2026-10-03T08:00:00Z","said":[{{string.Join(",", said)}}]}""";
 
-    /// <summary>One word as the service answers it on a record (MSG1a), with another agent's mark where one is named.</summary>
+    /// <summary>One word as the service answers it on a record, with another agent's mark where one is named.</summary>
     private static string Word(string id, string text, string files = "", string mark = "") =>
         $$"""{"id":"{{id}}","text":"{{text}}","at":"2026-10-15T08:00:00+00:00","files":[{{files}}],"reopens":true{{mark}}}""";
 
-    /// <summary>A conversation's record, continuing <paramref name="from"/> where one is named (MIXAGENT1a-iii's <c>from</c>).</summary>
+    /// <summary>A conversation's record, continuing <paramref name="from"/> where one is named (<c>from</c>).</summary>
     private static string Chat(string id, string state, string? from = null)
     {
         var continues = from is null ? "" : $",\"from\":\"{from}\"";
@@ -1107,7 +1106,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
 
     /// <summary>The say door's yes: the record, its sentence, and the word as kept, with the id the record gave it.</summary>
     /// <summary>
-    /// A ledger whose say door keeps each word under an id of its own, as the service does (COWORK1c): a running session's words are
+    /// A ledger whose say door keeps each word under an id of its own, as the service does: a running session's words are
     /// kept on its record before its inbox holds them, under the record's id.
     /// </summary>
     private static Ledger Numbering()
@@ -1130,22 +1129,22 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
     {
         private readonly List<(string Method, string Path, string Body)> _posts = [];
 
-        /// <summary>The records the service answers; a test moves them on as a take would (HANDWORDS1).</summary>
+        /// <summary>The records the service answers; a test moves them on as a take would.</summary>
         public string Records { get; set; } = "[]";
 
         public Func<string, (HttpStatusCode Status, string Body)> Say { get; set; } = id => (HttpStatusCode.OK, Kept(id));
 
         /// <summary>
-        /// The host's <c>GET /api/protocol</c> (FOUNDATION1o, the design §19.12): null for a stand-in host without it, which has no marks, as
+        /// The host's <c>GET /api/protocol</c>: null for a stand-in host without it, which has no marks, as
         /// every case before the row asks.
         /// </summary>
         public string? Protocol { get; set; }
 
-        /// <summary>The say door by the session and whether the say asked <c>ending</c> (FOUNDATION1o), where a case answers by it; else <see cref="Say"/>.</summary>
+        /// <summary>The say door by the session and whether the say asked <c>ending</c>, where a case answers by it; else <see cref="Say"/>.</summary>
         public Func<string, bool, (HttpStatusCode Status, string Body)>? Ending { get; set; }
 
         /// <summary>
-        /// The take-back door (SAIDBACK1a) by the session and the body posted: a word no longer waiting, as the service answers
+        /// The take-back door by the session and the body posted: a word no longer waiting, as the service answers
         /// one, unless a test answers otherwise (and moves <see cref="Records"/> on as the service would).
         /// </summary>
         public Func<string, string, (HttpStatusCode Status, string Body)> TakeBack { get; set; } = (id, _) =>
@@ -1159,7 +1158,7 @@ public sealed class DriverModuleConversationTests : DriverModuleBridge
 
         private readonly List<string> _moves = [];
 
-        /// <summary>Every move asked of the state door, as <c>id → state</c> (ANSWER2).</summary>
+        /// <summary>Every move asked of the state door, as <c>id → state</c>.</summary>
         public IReadOnlyList<string> Moves
         {
             get { lock (_moves) return [.. _moves]; }

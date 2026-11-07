@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Daoris's browser as Settings reaches it (CHR5, CHR7, D50): the favorites and the extensions
+/// Daoris's browser as Settings reaches it: the favorites and the extensions
 /// setting, edited in the files <c>daoris browser</c> edits. The page's suite proves it renders what it
 /// is given; this proves what the files hold afterwards, since the files are the contract.
 /// </summary>
@@ -64,7 +64,7 @@ public sealed class BrowserModuleTests : Bridge
         Assert.Contains(state.GetProperty("edgeFound").ValueKind, new[] { JsonValueKind.True, JsonValueKind.False });
     }
 
-    /// <summary>BRW7: where the page's links open, set from Settings in the file `daoris browser links` edits.</summary>
+    /// <summary>Where the page's links open, set from Settings in the file `daoris browser links` edits.</summary>
     [Fact]
     public async Task Sending_links_to_Daoris_browser_writes_the_settings_file_the_page_reads()
     {

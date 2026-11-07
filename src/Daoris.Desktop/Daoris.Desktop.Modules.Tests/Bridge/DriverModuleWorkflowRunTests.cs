@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Where a piece of work stands in its workflow, over the bridge (WORKFLOW1c; D157 point 11, the workflow design §5.1–§5.2, §7):
+/// Where a piece of work stands in its workflow, over the bridge:
 /// `WORKFLOW_RUN` answers <see cref="WorkflowRunReader"/> read from the service's quests, sessions and ask and this machine's
 /// landing record, each step Current's cell beside where it stands; the same run for a session, its quest and its ask; a chat's
 /// no run, with the driver's sentence; and the refusals.
@@ -58,7 +58,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             Assert.True(preview.GetProperty("workflow").GetProperty("holds").GetBoolean());
             Assert.Equal(preview.GetProperty("workflow").GetRawText(), press.GetProperty("workflow").GetRawText());
             Assert.False(press.GetProperty("done").GetBoolean());
-            // RPC1b3: the refusal is also said in `trees land`'s words, exit 1, beside the page's fields.
+            // The refusal is also said in `trees land`'s words, exit 1, beside the page's fields.
             Assert.Equal([$"trees: {press.GetProperty("message").GetString()}"], press.GetProperty("said").GetProperty("out").EnumerateArray().Select(line => line.GetString()));
             Assert.Equal(1, press.GetProperty("said").GetProperty("code").GetInt32());
             Assert.Empty(new LandedBranches(Home).Entries());
@@ -93,7 +93,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1e (D190 points 2 and 3): a run bound to a graph version is answered from its record, never as a problem: its nodes as its
+    /// A run bound to a graph version is answered from its record, never as a problem: its nodes as its
     /// steps, each with its own kind, its detail its record's state and the subject it observes; its graph's entries, end and wires, a fork and its
     /// join among them; and what its record says of it. The page draws it whole, so every field is named here.
     /// </summary>
@@ -209,9 +209,9 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
 
     /// <summary>
     /// A conversation serves no quest. In the checkout it has no run, and its code with the code's English says why, which is an answer and
-    /// not a refusal (CHATFLOW1a, the chat-flow design §10); a session not recorded reads `no-session` with its id for the page's words. One in
-    /// a tree this home opened answers its chat run (CHATFLOW1c, §4.2): keyed by its line, never `chat-checkout`, its checks named and not
-    /// yet enforced (§4.4).
+    /// not a refusal; a session not recorded reads `no-session` with its id for the page's words. One in
+    /// a tree this home opened answers its chat run: keyed by its line, never `chat-checkout`, its checks named and not
+    /// yet enforced.
     /// </summary>
     [Fact]
     public async Task A_chat_in_the_checkout_says_so_by_its_code_and_one_in_its_own_tree_answers_its_run()
@@ -241,7 +241,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
         Assert.Equal(("chat-c2", "light", true),
             (mark.GetProperty("run").GetString(), mark.GetProperty("checks").GetString(), mark.GetProperty("enforced").GetBoolean()));
 
-        // Bound to a graph whose `claimed` sets its own checks (WORKFLOWCLEAN1 1d): those are enforced, and its work is drawn working.
+        // Bound to a graph whose `claimed` sets its own checks: those are enforced, and its work is drawn working.
         StoredSteps.Add(Home, new WorkflowVersionAdded("docs", "Docs", "terminal", T.ToString("O"), null, System.Text.Json.Nodes.JsonNode.Parse("""
             {"schemaVersion":2,"entries":["claimed"],"end":"handed",
              "nodes":[{"id":"claimed","kind":"claimed","version":1,"reach":"observed","options":{"checks":"heavy-at-end"}},
@@ -290,7 +290,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1f, additive: each graph run's node answers what the person may say of it now, <c>acts</c>, and the word kept on it and not
+    /// Each graph run's node answers what the person may say of it now, <c>acts</c>, and the word kept on it and not
     /// applied yet, <c>asked</c>, which then takes the place of its acts. A steps run's steps carry neither. Seen failing first.
     /// </summary>
     [Fact]
@@ -317,7 +317,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-CUTOVER1f: <c>WORKFLOW_NODE</c>, the person's skip or stop of a run's node. Before the driver is up it is the cold-start sentence; a
+    /// <c>WORKFLOW_NODE</c>, the person's skip or stop of a run's node. Before the driver is up it is the cold-start sentence; a
     /// call naming no node is malformed; a process that does not hold the home keeps nothing and says so, as an answer with its code. Asked for its
     /// words (<c>said: true</c>) by <c>workflow skip</c> sent over the pipe, it answers the lines and the exit code the alone path prints over the
     /// same home. Seen failing first.
@@ -347,7 +347,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// DECIDE1c, additive: <c>WORKFLOW_RUN</c> says which routes were taken: a decision's outcome on the graph, the nodes its outcome left no route
+    /// <c>WORKFLOW_RUN</c> says which routes were taken: a decision's outcome on the graph, the nodes its outcome left no route
     /// to, a <c>when</c> wire's outcome, and a <c>back</c> wire apart from the wires; a review waiting on the person offers their changes, and
     /// <c>WORKFLOW_NODE</c> keeps them only with words.
     /// </summary>
@@ -420,7 +420,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-PIPELINE1d: a repository's line answers its verification runs, each with the commit it judged, the branch it was asked of and its
+    /// A repository's line answers its verification runs, each with the commit it judged, the branch it is asked of and its
     /// verdict from its record; a line with none answers no run and the sentence that says how one is asked.
     /// </summary>
     [Fact]
@@ -486,7 +486,7 @@ public sealed class DriverModuleWorkflowRunTests : DriverModuleBridge
             var body = request.RequestUri!.PathAndQuery switch
             {
                 "/api/registry" => """[{"repository":"engine","workspace":"aurora"}]""",
-                // INTEGRATE1o part o2: a quest session s1 published to another repository, done with its note, and a helper it asked.
+                // A quest session s1 published to another repository, done with its note, and a helper it asked.
                 "/api/quests?includeClosed=true" when requests =>
                     """
                     [{"id":"q1","from":"ask #a1","to":"engine","title":"Quest q1","body":"","status":"Done","updated":"2026-10-09T09:30:00Z"},

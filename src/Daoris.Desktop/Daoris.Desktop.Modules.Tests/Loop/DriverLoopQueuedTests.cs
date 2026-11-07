@@ -7,7 +7,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MSG1f2 (D137 §5.3): <c>SESSION_QUEUED</c> carries what a word said now would do, <c>reach</c> {reaches, why}, so the page
+/// <c>SESSION_QUEUED</c> carries what a word said now would do, <c>reach</c> {reaches, why}, so the page
 /// follows the box it offers live rather than asking <c>SESSION_QUEUE</c> again on each move. It is told when the words a
 /// session's door holds change, said at once where the session runs here; when a record of this machine's moves through the
 /// loop's client; and, for a quest's earlier sessions, when a later one opens. <c>reach</c> is an object, present whenever
@@ -94,7 +94,7 @@ public sealed class DriverLoopQueuedTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SAIDBACK1b (D76): the person's words waiting on a record ride the queue it tells, each by its id, so a page following the
+    /// The person's words waiting on a record ride the queue it tells, each by its id, so a page following the
     /// queue keeps listing them as the record moves, where an empty list would take them off the box above.
     /// </summary>
     [Fact]

@@ -8,7 +8,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// COWORKVIEW1a rule 5's <i>Process</i> cases on a held composition (the design §3.6, §4.1): a child reads <i>working</i> only while this
+/// The <i>Process</i> cases on a held composition: a child reads <i>working</i> only while this
 /// window watches its process alive, <i>its agent ended</i> from the exit seen, and <i>not known</i> where another Daoris process issued
 /// it, each asserted against a real stand-in process the test starts and ends itself.
 /// </summary>

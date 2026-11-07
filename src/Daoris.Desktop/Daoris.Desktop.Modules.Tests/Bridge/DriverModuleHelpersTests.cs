@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The helpers rule over the bridge (DOORS1b, D163 point 3, D164's amendment point 3): the screens' half of `daoris place
+/// The helpers rule over the bridge: the screens' half of `daoris place
 /// helpers`, over the same file, for a repository or a workspace; each edit judged by the twin's table in its words; the state
 /// answering what is set as rows; and the lines answering what each repository resolves to and from where, the default's
 /// source `default` where nothing is set, which only the driver resolves.
@@ -67,7 +67,7 @@ public sealed class DriverModuleHelpersTests : DriverModuleBridge
 
         Assert.Equal(["engine", "game", "tools"], helpers.Select(row => row.GetProperty("repository").GetString()));
         Assert.Equal(["workspace", "repository", "default"], helpers.Select(row => row.GetProperty("source").GetString()));
-        // HELPERDEFAULT1: the default is `on`, its agents those set up here, which the driver reads as it judges each ask.
+        // The default is `on`, its agents those set up here, which the driver reads as it judges each ask.
         Assert.Equal(["on", "off", "on"], helpers.Select(row => row.GetProperty("rule").GetProperty("mode").GetString()));
         Assert.Equal(["codex-acp"], helpers[0].GetProperty("rule").GetProperty("agents").EnumerateArray().Select(each => each.GetString()));
         Assert.Equal("aurora", helpers[0].GetProperty("workspace").GetString());

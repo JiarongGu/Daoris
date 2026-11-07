@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A repository's session access setup over the bridge (AUTONOMY1a, D184 point 1): <c>SET_ACCESS</c>, the setup page's half of
-/// <c>daoris place access</c>, over the same keys in the same file (D50); the state answering each level as set; a pause or a value the
+/// A repository's session access setup over the bridge: <c>SET_ACCESS</c>, the setup page's half of
+/// <c>daoris place access</c>, over the same keys in the same file; the state answering each level as set; a pause or a value the
 /// setup does not have refused in the driver's words with nothing written. Edits to <c>driver.json</c> only, so no service and no process.
 /// </summary>
 public sealed class DriverModuleAccessTests : DriverModuleBridge
@@ -45,7 +45,7 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
         await AnswerAsync(module, "SET_ACCESS", new { repository = "engine", access = new { routing = "intake" } });
         var before = File.ReadAllText(DriverConfigPath);
 
-        // WORKFLOWCLEAN1 1c (D228): how work lands is its workflow's, so the landing pause is refused too.
+        // How work lands is its workflow's, so the landing pause is refused too.
         var landing = await RefusalAsync(module, "SET_ACCESS", new { repository = "engine", access = new { landing = "rule" } });
         Assert.Contains(AccessRules.LandingRetired, landing);
         var pause = await RefusalAsync(module, "SET_ACCESS", new { repository = "engine", access = new { plan = "always" } });
@@ -61,7 +61,7 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCESSSWAP1b (D183's note): a press that moves the permission prompts a driven session running here started under tells that
+    /// A press that moves the permission prompts a driven session running here started under tells that
     /// session's console when its change applies, at its next turn; a press that does not move them tells it nothing.
     /// </summary>
     [Fact]
@@ -84,7 +84,7 @@ public sealed class DriverModuleAccessTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 The route and the terminal agree (D50): what one sets the other reads, through the same keys, and both refuse a value the setup
+    /// 🔴 The route and the terminal agree: what one sets the other reads, through the same keys, and both refuse a value the setup
     /// does not have in the same words.
     /// </summary>
     [Fact]

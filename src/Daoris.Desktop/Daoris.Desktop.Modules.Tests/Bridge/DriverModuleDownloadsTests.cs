@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The Downloads row's list and press over the bridge (`SystemRoutes.cs`, CACHECLEAR1): the read lists each downloaded version with
+/// The Downloads row's list and press over the bridge (`SystemRoutes.cs`): the read lists each downloaded version with
 /// what keeps it and removes nothing; the press removes only the rows it names that nothing keeps, saying what it kept and why.
 /// </summary>
 public sealed class DriverModuleDownloadsTests : DriverModuleBridge
@@ -50,7 +50,7 @@ public sealed class DriverModuleDownloadsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// KEEP1b (the cleanup design §9): the Downloads row says each version's date by the rule: the rule's days, and for a version nothing
+    /// The Downloads row says each version's date by the rule: the rule's days, and for a version nothing
     /// uses when its current unused stretch began and when the rule takes it, from <c>keeping.json</c>; a pinned one has neither.
     /// </summary>
     [Fact]

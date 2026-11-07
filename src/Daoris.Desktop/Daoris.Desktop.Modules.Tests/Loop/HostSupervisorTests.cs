@@ -7,10 +7,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// CONNECTOR1c: a shell that finds no host answering and none to start is told the two commands that lay one down, the
+/// A shell that finds no host answering and none to start is told the two commands that lay one down, the
 /// install's first, in the order <see cref="ServiceHostLocator"/> ranks them after the person's own path, and in the words
 /// the driver's no-connector sentences use. Each is a script the workspace has. It starts nothing, so it is in the fast
-/// half (MOD8), where <see cref="HostSupervisorTests"/> is not.
+/// half, where <see cref="HostSupervisorTests"/> is not.
 /// </summary>
 public sealed class HostSupervisorNoHostTests
 {
@@ -38,7 +38,7 @@ public sealed class HostSupervisorNoHostTests
     }
 
     /// <summary>
-    /// STARTFAST1b (the start-path design §5a): the early start is claimed by one process for an address at a time, so a later launch,
+    /// The early start is claimed by one process for an address at a time, so a later launch,
     /// which the kit's guard hands over after the host was begun, begins none; let go, it is claimed again. Another address is its own.
     /// </summary>
     [Fact]
@@ -60,7 +60,7 @@ public sealed class HostSupervisorNoHostTests
     }
 
     /// <summary>
-    /// STARTFAST1b: the host begun before the window's engine is the start the loop takes, the same task however often it is asked, and
+    /// The host begun before the window's engine is the start the loop takes, the same task however often it is asked, and
     /// nothing begun is the loop's own start. With no host answering and none to start, each says so at once.
     /// </summary>
     [Fact]
@@ -89,7 +89,7 @@ public sealed class HostSupervisorNoHostTests
     }
 
     /// <summary>
-    /// PROVED1: the proof the supervisor checks is the host's twin (<c>PersonKey.Prove</c>), held to the vectors
+    /// The proof the supervisor checks is the host's twin (<c>PersonKey.Prove</c>), held to the vectors
     /// <c>PersonKeyTests</c> holds, which were made outside .NET; a text that is no key proves nothing.
     /// </summary>
     [Theory]
@@ -101,7 +101,7 @@ public sealed class HostSupervisorNoHostTests
 
     /// <summary>
     /// The host is asked for its key by the variable alone, the host's own spelling (<c>PersonKey.InputVariable</c>); the key
-    /// travels on the input, never in the environment every child is copied (the person-door design §2.1).
+    /// travels on the input, never in the environment every child is copied.
     /// </summary>
     [Fact]
     public void A_host_handed_a_key_is_asked_for_it_by_the_variable_and_the_environment_never_holds_the_key()
@@ -121,10 +121,9 @@ public sealed class HostSupervisorNoHostTests
 
 /// <summary>
 /// Adopting a host that is already answering is the supervisor's rule, and it says nothing about
-/// WHAT that host serves — the first deployment's 4d: the shell adopted the machine's host, the
-/// window was new, the page was old, and no surface said so. The second deployment fixed which host
-/// is <i>spawned</i>; this is the other door. What the shell can honestly say is what the page names
-/// about itself: its own bundle.
+/// WHAT that host serves: a new window may adopt the machine's host while it serves an old page, and no
+/// surface says so. Which host is <i>spawned</i> is another door; this is the adopting one. What the shell
+/// can honestly say is what the page names about itself: its own bundle.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 public sealed class HostSupervisorTests : IDisposable
@@ -155,7 +154,7 @@ public sealed class HostSupervisorTests : IDisposable
 
         // A killed stand-in's files stay held for a moment while Windows lets them go (twice in one queue run on 2026-10-29,
         // "being used by another process" at this delete after the body had passed): asked again within a bound, and a folder
-        // still held is left rather than failing the test (HOSTCLEAN1).
+        // still held is left rather than failing the test.
         ScratchFolders.Remove(_root);
     }
 
@@ -187,7 +186,7 @@ public sealed class HostSupervisorTests : IDisposable
     }
 
     /// <summary>
-    /// HOSTID1: something answering on the service port is adopted only when it answers as a Daoris
+    /// Something answering on the service port is adopted only when it answers as a Daoris
     /// host does, with the status the service gives (its search tier). Anything else is not this
     /// machine's host, and the shell says what answered rather than feeding its page from it.
     /// </summary>
@@ -232,7 +231,7 @@ public sealed class HostSupervisorTests : IDisposable
     }
 
     /// <summary>
-    /// A host that answers is up, whatever the notice beside it could read (REV3 modules F8). The
+    /// A host that answers is up, whatever the notice beside it could read. The
     /// install's own page, held open by something, threw out of the notice, and the loop counted an
     /// answering host as down and never started.
     /// </summary>
@@ -253,7 +252,7 @@ public sealed class HostSupervisorTests : IDisposable
     }
 
     /// <summary>
-    /// LOG2a: the host this shell starts is started to be stopped cleanly — its input redirected, and
+    /// The host this shell starts is started to be stopped cleanly — its input redirected, and
     /// asked to stop when that input ends. The variable is a twin of the host's
     /// <c>InputEndStop.Variable</c>, whose tests hold the same spelling and take only <c>1</c>.
     /// </summary>
@@ -275,8 +274,8 @@ public sealed class HostSupervisorTests : IDisposable
     }
 
     /// <summary>
-    /// TWINSTOP1: the five seconds the shell gives the host it started before it kills it are a twin by value of what the
-    /// host assumes (FLAKE2): a host started with <see cref="HostSupervisor.StopOnInputEnd"/> bounds its drain of the
+    /// The five seconds the shell gives the host it started before it kills it are a twin by value of what the
+    /// host assumes: a host started with <see cref="HostSupervisor.StopOnInputEnd"/> bounds its drain of the
     /// requests in flight (<c>InputEndStop.Drain</c>) under them, and <c>InputEndStopTests</c> holds that drain under five
     /// seconds. The artefacts share no code, so each side's tests hold the number.
     /// </summary>
@@ -320,7 +319,7 @@ public sealed class HostSupervisorTests : IDisposable
     }
 
     /// <summary>
-    /// HOSTSTART1: a host that dies at start says why on its standard error, and the window showed only that it exited.
+    /// A host that dies at start says why on its standard error, and the window showed only that it exited.
     /// The trouble carries what it printed, an em dash and 中文 whole, since the stream is read as UTF-8.
     /// </summary>
     [Fact]
@@ -343,7 +342,7 @@ public sealed class HostSupervisorTests : IDisposable
             supervisor.Trouble);
     }
 
-    /// <summary>A host that printed nothing is said as before.</summary>
+    /// <summary>A host that printed nothing is still said.</summary>
     [Fact]
     public async Task A_host_that_exits_at_start_having_printed_nothing_is_said_as_before()
     {
@@ -377,7 +376,7 @@ public sealed class HostSupervisorTests : IDisposable
         Assert.Equal(HostStop.Exited, supervisor.Stop());
     }
 
-    /// <summary>HOSTID1's other half: a host the shell adopted is somebody else's, and its stop is theirs.</summary>
+    /// <summary>A host the shell adopted is somebody else's, and its stop is theirs.</summary>
     [Fact]
     public async Task A_host_it_adopted_is_not_stopped()
     {
@@ -399,7 +398,7 @@ public sealed class HostSupervisorTests : IDisposable
     private StandInHost StandIn(bool honoursInputEnd) => StandIn(string.Empty, honoursInputEnd);
 
     /// <summary>
-    /// A stand-in that runs <paramref name="first"/> before it serves (HOSTSTART1): what it prints, and whether it exits
+    /// A stand-in that runs <paramref name="first"/> before it serves: what it prints, and whether it exits
     /// before it ever listens. Its imports are hoisted, as a module's are.
     /// </summary>
     private StandInHost StandIn(string first, bool honoursInputEnd = false)

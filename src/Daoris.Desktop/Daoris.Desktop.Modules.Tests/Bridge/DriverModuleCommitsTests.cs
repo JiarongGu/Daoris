@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The commit rule over the bridge (DOORS1b, D164's amendment points 1 and 3): the screens' half of `daoris place commits`,
+/// The commit rule over the bridge: the screens' half of `daoris place commits`,
 /// over the same file, for a repository or a workspace; each edit judged by the twin's table in its words; the state answering
 /// what is set as rows; and the lines answering what each repository resolves to and from where, the default's source
 /// `default` where nothing is set, which only the driver resolves.
@@ -80,10 +80,10 @@ public sealed class DriverModuleCommitsTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PROCESS1e (D164's amendment point 3): what a session's *Details* says of the process its own tree runs under, its
+    /// What a session's *Details* says of the process its own tree runs under, its
     /// repository's commit rule and landing rule as resolved here, each with where it was set, read from the driver file and the
     /// tree's place alone. A session whose record names a tree this home did not make (the person's checkout) or none is told no
-    /// process (PROCESS1d's guard), and the answer says none.
+    /// process, and the answer says none.
     /// </summary>
     [Fact]
     public async Task A_sessions_process_is_its_own_trees_rules_and_where_each_was_set()

@@ -7,11 +7,10 @@ using Shenora.Modules.Platform;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// THEMESTART1: the window's first frame wears the viewer's saved choice, not the OS's. The kit keeps the app's colour
+/// The window's first frame wears the viewer's saved choice, not the OS's. The kit keeps the app's colour
 /// scheme in memory only and asks the app to pass the saved one at its start (<c>IColorScheme</c>'s remarks), so the
 /// shell keeps each choice the page sets, reads it back before the window is made, and starts the window's palette and
-/// the engine from it. Before this the first frame followed the OS and flipped once the page spoke (D22's THEMESCHEME1
-/// note).
+/// the engine from it, so the first frame follows the kept choice and never flips once the page speaks.
 /// </summary>
 public sealed class KeptSchemeTests : IDisposable
 {
@@ -106,7 +105,7 @@ public sealed class KeptSchemeTests : IDisposable
     }
 
     /// <summary>
-    /// Held on the application's own source, as the colour scheme's route is (THEMESCHEME1), because the window's
+    /// Held on the application's own source, as the colour scheme's route is, because the window's
     /// composition has no test project: the kept choice seeds the kit's host options, is kept on each change, and the
     /// main window and each secondary window start their palette from the app's scheme rather than from the OS.
     /// </summary>

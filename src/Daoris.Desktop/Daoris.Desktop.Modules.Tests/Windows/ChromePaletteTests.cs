@@ -6,12 +6,11 @@ namespace Daoris.Desktop.Tests;
 
 /// <summary>
 /// The native chrome copies five of the page's colour tokens, because Windows cannot read a
-/// stylesheet (SURF7 / D56). This is what stops the copy drifting.
+/// stylesheet. This is what stops the copy drifting.
 /// </summary>
 /// <remarks>
-/// A duplicated theme file marked "keep in sync" is the exact shape this family refuses elsewhere
-/// (frontend architecture §2, where a sibling's hand-duplicated theme was the reason NOT to adopt its
-/// styling stack). The duplication here is forced — the DWM border and the caption buttons are
+/// A duplicated theme file marked "keep in sync" is the exact shape this family refuses elsewhere.
+/// The duplication here is forced — the DWM border and the caption buttons are
 /// painted natively — so the answer is not to avoid the copy but to make it impossible to let it rot:
 /// this parses the stylesheet and fails when a value moves on one side only.
 /// </remarks>

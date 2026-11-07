@@ -2,7 +2,7 @@ using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
 
-/// <summary>A repository's integration over the bridge (`IntegrateRoutes.cs`, INTEGRATE1h): the read the view draws and the owner's acts.</summary>
+/// <summary>A repository's integration over the bridge (`IntegrateRoutes.cs`): the read the view draws and the owner's acts.</summary>
 public sealed class DriverModuleIntegrateTests : DriverModuleBridge
 {
     private const string Tip = "1111111111111111111111111111111111111111";
@@ -60,7 +60,7 @@ public sealed class DriverModuleIntegrateTests : DriverModuleBridge
         Assert.Empty(Store().Open());
     }
 
-    /// <summary>INTEGRATE1h: the owner's decide is recorded on a candidate held for one, once; a second, a word that is none and another repository's candidate change nothing.</summary>
+    /// <summary>The owner's decide is recorded on a candidate held for one, once; a second, a word that is none and another repository's candidate change nothing.</summary>
     [Fact]
     public async Task A_decide_is_recorded_on_a_held_candidate_once_and_refused_as_data_otherwise()
     {
@@ -78,7 +78,7 @@ public sealed class DriverModuleIntegrateTests : DriverModuleBridge
         Assert.Equal("land", look.GetProperty("look").GetProperty("candidates")[0].GetProperty("decided").GetString());
     }
 
-    /// <summary>INTEGRATE1h: an order moves a queued request first or last, read back in the look's order; one in a candidate keeps its place.</summary>
+    /// <summary>An order moves a queued request first or last, read back in the look's order; one in a candidate keeps its place.</summary>
     [Fact]
     public async Task An_order_moves_a_queued_request_and_the_look_reads_the_queue_in_its_order()
     {
@@ -97,7 +97,7 @@ public sealed class DriverModuleIntegrateTests : DriverModuleBridge
         Assert.Equal((false, "stands"), Of(await AnswerAsync(module, "INTEGRATE", new { repository = "engine", act = "order", request = "r1", place = "last" })));
     }
 
-    /// <summary>INTEGRATE1h: a superseded commit is answered by its word; a rebase of a request with no session is refused, nothing answered.</summary>
+    /// <summary>A superseded commit is answered by its word; a rebase of a request with no session is refused, nothing answered.</summary>
     [Fact]
     public async Task A_superseded_commit_is_answered_and_a_rebase_with_no_session_answers_nothing()
     {

@@ -3,8 +3,8 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The world a set-up press reads, standing in (LAYOUT8): the real one asks git for the line and starts <c>node</c> and
-/// <c>daoris</c> for their versions, which the fast half never does (MOD8). `atlas` is registered, not adopted, with a checkout
+/// The world a set-up press reads, standing in: the real one asks git for the line and starts <c>node</c> and
+/// <c>daoris</c> for their versions, which the fast half never does. `atlas` is registered, not adopted, with a checkout
 /// here; its line holds nothing of Daoris's, and the tools a child finds answer their versions.
 /// </summary>
 internal sealed class SetupStandIn : ISetupWorld

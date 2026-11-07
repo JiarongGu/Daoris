@@ -5,13 +5,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Each repository's line, its landing rule and the clean-up over the bridge (`LinesRoutes.cs`, MOD5).
+/// Each repository's line, its landing rule and the clean-up over the bridge (`LinesRoutes.cs`).
 /// </summary>
 [Trait(Category.Name, Category.Census)]
 public sealed class DriverModuleLinesTests : DriverModuleBridge
 {
     /// <summary>
-    /// A repository's line (WSR2): the screen's half of `daoris place line`, over the same file. The
+    /// A repository's line: the screen's half of `daoris place line`, over the same file. The
     /// names ride as rows, not as an object's keys, so no key policy on the bridge can respell one.
     /// </summary>
     [Fact]
@@ -44,7 +44,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
 
     private static JsonElement Body(string json) => JsonDocument.Parse(json).RootElement.Clone();
 
-    /// <summary>WORKFLOWCLEAN1h: each line row carries the policy that reaches it, its own else its workspace's, and nothing where none is set.</summary>
+    /// <summary>Each line row carries the policy that reaches it, its own else its workspace's, and nothing where none is set.</summary>
     [Fact]
     public async Task The_lines_answer_each_lines_policy()
     {
@@ -71,7 +71,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LAND3b (D102's LAND3 note): a clean-up row says whether its discard is offered beside it, by the driver's own rule
+    /// A clean-up row says whether its discard is offered beside it, by the driver's own rule
     /// (<see cref="SessionBranchDoors.RemovalOffered"/>, the line `trees clean` prints beside such a row), so the page and the
     /// terminal offer it beside the same rows: a failed or superseded attempt's commits, which no clean-up takes.
     /// </summary>
@@ -97,7 +97,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LAND4: a clean-up row names the session its tree is, by id and how it ended, and says whether its landing is offered,
+    /// A clean-up row names the session its tree is, by id and how it ended, and says whether its landing is offered,
     /// by the driver's own rule (<see cref="SessionBranchDoors.LandingOffered"/>, the line `trees clean` prints beside it): a tree
     /// still here holding commits no branch of the person's holds, whatever that session's ending. The page's Branches tab says
     /// the same words; a row whose tree is gone, or with no session named, offers none.
@@ -122,7 +122,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LANDSYNC3b (D87's 2026-10-16 note): a plan's replay row carries how many commits the line already holds, which the replay
+    /// A plan's replay row carries how many commits the line already holds, which the replay
     /// leaves out beside the ones it carries, so the Updates list says it as `trees sync` does; a row with none left out says 0.
     /// The list's row and the press's are the same projection.
     /// </summary>
@@ -140,7 +140,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A failed or superseded attempt's branch discarded from the page (LAND3b, D102's LAND3 note) is the terminal's
+    /// A failed or superseded attempt's branch discarded from the page is the terminal's
     /// `trees remove &lt;branch&gt; --repository &lt;name&gt; --force`: it reads the registry's checkout and the sessions in
     /// use, so before the driver is up it is the cold-start sentence, and a discard that names no branch or no repository
     /// is a malformed call.
@@ -158,7 +158,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Withdrawing a landing's branch (LANDRETIRE1): before the driver is up it is the cold-start sentence, and a call naming no branch or no
+    /// Withdrawing a landing's branch: before the driver is up it is the cold-start sentence, and a call naming no branch or no
     /// repository is malformed.
     /// </summary>
     [Fact]
@@ -174,7 +174,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A withdrawal is an answer, never a throw (LANDRETIRE1): a process that does not hold the home's lease deletes nothing and says so before
+    /// A withdrawal is an answer, never a throw: a process that does not hold the home's lease deletes nothing and says so before
     /// the checkout is asked, and a plan, which changes nothing, goes on to the checkout, which this repository has none of here.
     /// </summary>
     [Fact]
@@ -195,7 +195,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The screen's withdrawal composes none of the driver's pieces itself, so it cannot part from the terminal's door (D50): read from the
+    /// The screen's withdrawal composes none of the driver's pieces itself, so it cannot part from the terminal's door: read from the
     /// modules' sources, the judgement, the keep, the delete and the record are <see cref="LandedBranchWithdrawal"/>'s.
     /// </summary>
     [Fact]
@@ -210,7 +210,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The person's delete of recovery refs (RECOVERYDROP1): before the driver is up it is the cold-start sentence; a call naming no
+    /// The person's delete of recovery refs: before the driver is up it is the cold-start sentence; a call naming no
     /// repository or no refs is malformed; and a process that does not hold the home deletes nothing and says so, as an answer.
     /// </summary>
     [Fact]
@@ -230,7 +230,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The person's word on a held attempt (FABRIC-PERFORM1g): before the driver is up it is the cold-start sentence; a call naming no
+    /// The person's word on a held attempt: before the driver is up it is the cold-start sentence; a call naming no
     /// attempt is malformed; and a process that does not hold the home records nothing and says so, as an answer. The work's state lists
     /// none held where no unit keeps a node record, the owner's install among them.
     /// </summary>
@@ -251,7 +251,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The terminal's <c>workflow fix</c> is the window's <i>Ask for a fix…</i> (FABRIC-PIPELINE1): asked for its words it is answered the
+    /// The terminal's <c>workflow fix</c> is the window's <i>Ask for a fix…</i>: asked for its words it is answered the
     /// verb's own line and exit code, a run the home keeps none of refused in the same sentence the window's press is told.
     /// </summary>
     [Fact]
@@ -271,7 +271,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1q: each held attempt carries, additively, the words the person may say of it: a plugin's three as they were, and on a
+    /// Each held attempt carries, additively, the words the person may say of it: a plugin's three as they were, and on a
     /// held close its recoveries and its stop, never a plugin's word, so the page offers a close only what the close takes.
     /// </summary>
     [Fact]
@@ -293,7 +293,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-CLOSE1q3: a held close whose submission moved by the runtime's last read goes on the wire with <c>resend</c> alone and its
+    /// A held close whose submission moved by the runtime's last read goes on the wire with <c>resend</c> alone and its
     /// reason's code, which the page words; a loop with no last read (unarmed, or before a pass) hands the held list none to judge by.
     /// </summary>
     [Fact]
@@ -314,7 +314,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-PERFORM1j: a node record that does not read is listed by the work's state, by its file and the unit it names, with the driver's
+    /// A node record that does not read is listed by the work's state, by its file and the unit it names, with the driver's
     /// sentence; a unit picked lists its own alone. Its folder's press is refused and said where no record is kept, and opens nothing
     /// without the window's launcher.
     /// </summary>
@@ -348,7 +348,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The branch is removed in its repository's own checkout, which the registry names (LAND3b): with none on this
+    /// The branch is removed in its repository's own checkout, which the registry names: with none on this
     /// machine, the terminal's sentence as an answer, and nothing is asked of git.
     /// </summary>
     [Fact]
@@ -364,9 +364,9 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A branch whose tree a session still running or waiting names is kept, whatever the press says (D88's keep): forced,
-    /// the driver's removal would take that tree with it. The route ends in the driver's one discard, the terminal's too
-    /// (LAND3c), so the answer is its sentence, and the checkout is not asked for.
+    /// A branch whose tree a session still running or waiting names is kept, whatever the press says: forced,
+    /// the driver's removal would take that tree with it. The route ends in the driver's one discard, the terminal's too,
+    /// so the answer is its sentence, and the checkout is not asked for.
     /// </summary>
     [Fact]
     public async Task A_branch_whose_tree_a_session_still_holds_is_kept_even_forced()
@@ -399,14 +399,14 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LAND3c: the screen's discard composes none of the driver's pieces itself, so it cannot part from the terminal's door
+    /// The screen's discard composes none of the driver's pieces itself, so it cannot part from the terminal's door
     /// again. Read from the modules' sources, as a reviewer would: the keep, the checkout and the removal are
     /// <see cref="SessionBranchDiscard"/>'s.
     /// </summary>
     [Fact]
     public void The_screens_discard_is_the_drivers_one_discard()
     {
-        // The bridge's files: its domains' handler classes (PART10d, PART10f).
+        // The bridge's files: its domains' handler classes.
         var sources = SourceFiles.All(SourceFiles.ModulesProject, "*Routes.cs")
             .Select(path => (File: Path.GetFileName(path), Text: File.ReadAllText(path))).ToList();
 
@@ -454,7 +454,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Bringing repositories up to date (WSR6) reads the registry's checkouts and the sessions in use, as the clean-up
+    /// Bringing repositories up to date reads the registry's checkouts and the sessions in use, as the clean-up
     /// does, so before the driver is up both its list and its press are the cold-start sentence — and nothing is fetched.
     /// </summary>
     [Fact]
@@ -465,17 +465,17 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN", new { all = true }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN", new { all = true, workspace = "aurora" }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC", new { only = new[] { "engine:main" } }));
-        // Which repositories a look would take (WSR7, D112) is read off the registry's checkouts too.
+        // Which repositories a look would take is read off the registry's checkouts too.
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_SCOPE"));
-        // Each unit's milestone (FABRIC-MILESTONE1a) is read off the same checkouts and sessions.
+        // Each unit's milestone is read off the same checkouts and sessions.
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "WORK_STATE"));
     }
 
     /// <summary>
-    /// BRSCOPE1 (WSP5): a look or a press asked for a workspace takes that workspace's checkouts alone, its name matched
+    /// A look or a press asked for a workspace takes that workspace's checkouts alone, its name matched
     /// without case and a row with none read as the default's, as every door reads a registry row's workspace. Asked for
-    /// none, it is the machine's, as before. The install's work workspace looked at every checkout on the machine, another
-    /// circle's included. Read off the registry rows alone, since a look at a real checkout runs git. BRSCOPE1b: the rows
+    /// none, it is the machine's. The install's work workspace looked at every checkout on the machine, another
+    /// circle's included. Read off the registry rows alone, since a look at a real checkout runs git. The rows
     /// are the driver tests' one table, <c>fixtures/checkout-scope.json</c>, which TreesCommand.Checkouts is read against
     /// too, so the two readers cannot drift apart unseen.
     /// </summary>
@@ -505,8 +505,8 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Every door's press asks the sessions in use again inside each repository's hold (LEFT2), so a session a driver
-    /// opened since the look is seen: Settings' *Bring up to date* and Ask Daoris's sync card alike (WSR7 d). Read from
+    /// Every door's press asks the sessions in use again inside each repository's hold, so a session a driver
+    /// opened since the look is seen: Settings' *Bring up to date* and Ask Daoris's sync card alike. Read from
     /// the modules' sources, as a reviewer would, since only a live driver can open a session between the two.
     /// </summary>
     [Fact]
@@ -544,7 +544,7 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LOOK2a: right after a start, Settings → Workspace said no repository here had a line, and kept saying it. The
+    /// Right after a start, Settings → Workspace said no repository here had a line, and kept saying it. The
     /// lines refuse *still coming up* until the loop's service is up, never answering an empty list for it; the moment it
     /// is, the state says so, the page is told once (<c>DRIVER_READY</c>), which is when it asks again what the driver
     /// refused, and the lines answer every repository the registry holds.

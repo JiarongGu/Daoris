@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// ACCEPTALL1g (D167's 2026-10-15 amendment point 2, D145 §3): <c>LANDING</c> says whether the branch Accept lands on already stands,
+/// <c>LANDING</c> says whether the branch Accept lands on already stands,
 /// an entry's or a chain's branch an earlier landing made, which the press moves on instead of making, so the review stops promising a
 /// new branch there. The plan's own reading over real git is the driver's <c>EntryLandingTests</c>.
 /// </summary>

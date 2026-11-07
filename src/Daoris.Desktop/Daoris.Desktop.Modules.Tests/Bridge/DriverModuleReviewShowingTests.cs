@@ -3,9 +3,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The strip's review chip over the bridge (REVIEWENV1d; the review environment design §3.3): <c>STATE</c> answers the set-ups
+/// The strip's review chip over the bridge: <c>STATE</c> answers the set-ups
 /// waiting for the person here, each with whether Daoris serves its tab now, which the chip says; and <c>SHOW_REVIEW_AGAIN</c>
-/// is *Show it again*, refused in the driver's words where nothing could show it. The verdict presses are REVIEWENV1g's.
+/// is *Show it again*, refused in the driver's words where nothing could show it.
 /// </summary>
 /// <remarks>What the showing serves and when it lets go is held by the driver's <c>ReviewShowingTests</c>; no service runs here.</remarks>
 public sealed class DriverModuleReviewShowingTests : DriverModuleBridge

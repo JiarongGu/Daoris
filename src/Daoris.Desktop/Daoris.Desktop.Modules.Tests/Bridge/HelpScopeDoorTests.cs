@@ -5,10 +5,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// ASKSCOPE1c (D158's ASKSCOPE1 note point 5): a proposal is judged against the workspace its conversation's record keeps, the
+/// A proposal is judged against the workspace its conversation's record keeps, the
 /// modules' half. A conversation in <c>alpha</c>'s room proposing for <c>beta</c> is never drawn: it is settled refused, saying
 /// so; one proposing for <c>alpha</c> is drawn; <c>default</c>'s conversation proposes for the whole machine. The service is stood
-/// in by a handler, and nothing starts a process: the fast half (MOD8).
+/// in by a handler, and nothing starts a process: the fast half.
 /// </summary>
 public sealed class HelpScopeDoorTests : DriverModuleBridge
 {
@@ -37,7 +37,7 @@ public sealed class HelpScopeDoorTests : DriverModuleBridge
         Assert.Equal("p2b3c4d5", card.GetProperty("id").GetString());
     }
 
-    /// <summary><c>default</c>'s room is the whole machine (ASKSCOPE1b): its conversation's proposals are judged as before.</summary>
+    /// <summary><c>default</c>'s room is the whole machine: its conversation's proposals are judged as before.</summary>
     [Fact]
     public async Task The_whole_machine_s_conversation_proposes_for_any_workspace()
     {
@@ -49,7 +49,7 @@ public sealed class HelpScopeDoorTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ASKSCOPE1c2: a delete naming a quest by its id is judged against the workspace the service files the quest under, read with
+    /// A delete naming a quest by its id is judged against the workspace the service files the quest under, read with
     /// the records a delete is judged against: <c>beta</c>'s is settled refused, naming it; <c>alpha</c>'s is drawn.
     /// </summary>
     [Fact]

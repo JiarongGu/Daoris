@@ -5,7 +5,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// One look at a time per route (SWEEPFLIGHT1, UIFREEZE1): the frozen window's stack held 22 clean-up lists at once, each a
+/// One look at a time per route: the frozen window's stack held 22 clean-up lists at once, each a
 /// whole git fan-out, because every window and every change the page heard asked the list again while the last was still
 /// running. Concurrent identical asks of the clean-up's list and of the lines share the one under way; a finished one is
 /// kept for no one, and one a press overtook is joined no more.
@@ -78,8 +78,8 @@ public sealed class DriverModuleOneFlightTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The reads shared are the two the frozen window's stack repeated, and Review's, one per session however many windows ask it
-    /// (GITAPP1a-iii); none is a press: a press is two acts.
+    /// The reads shared are the two the frozen window's stack repeated, and Review's, one per session however many windows ask it;
+    /// none is a press: a press is two acts.
     /// </summary>
     [Fact]
     public void Only_the_lines_the_clean_ups_list_and_the_review_are_shared_and_none_is_a_press()

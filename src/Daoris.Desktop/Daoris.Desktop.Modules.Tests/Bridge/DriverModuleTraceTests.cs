@@ -7,10 +7,10 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// TRACE1b (D143, D50): the screen's door to <c>daoris trace</c>. <c>TRACE</c> reads the same stores the terminal
+/// The screen's door to <c>daoris trace</c>. <c>TRACE</c> reads the same stores the terminal
 /// reads, through the driver's own <see cref="Trace.ReadChainAsync"/>: the service's session records, quests and asks, and this
 /// machine's events, rules files, landings and standing answers under the home. It answers the chain as data, each link with
-/// the store it was read from and a missing link with why, and never a machine path (D47 §4): a tree by its folder's name, a
+/// the store it is read from and a missing link with why, and never a machine path: a tree by its folder's name, a
 /// file under the home by its store, and what a failed read said stays the terminal's.
 /// </summary>
 /// <remarks>On stand-in records: the service is a stand-in reached through the real client, the home this test's own.</remarks>
@@ -49,7 +49,7 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
          "words":[{"kind":"asked","text":"use the v3 bridge","at":"2026-10-03T09:00:00+00:00"}],"goAheads":[]}
         """;
 
-    /// <summary>QUESTCLOSE1b5: the quest link carries the note's coded parts beside its English, and a quest from before parts carries none.</summary>
+    /// <summary>The quest link carries the note's coded parts beside its English, and a quest from before parts carries none.</summary>
     [Fact]
     public async Task A_quests_link_carries_the_notes_parts_only_where_the_record_has_them()
     {
@@ -133,7 +133,7 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
         Assert.Equal(2000, second.GetProperty("events").GetProperty("instructions")[0].GetProperty("chars").GetInt32());
         var landing = second.GetProperty("landing");
         Assert.Equal(("landings", "feature/q1-fix"), (landing.GetProperty("source").GetString(), landing.GetProperty("branches")[0].GetProperty("branch").GetString()));
-        // LAND2b: who accepted it and the rule it was made under.
+        // Who accepted it and the rule it is made under.
         var branch = landing.GetProperty("branches")[0];
         Assert.Equal(("auto", "workspace", true), (branch.GetProperty("acceptedBy").GetString(),
             branch.GetProperty("rule").GetProperty("source").GetString(), branch.GetProperty("rule").GetProperty("autoAccept").GetBoolean()));
@@ -178,7 +178,7 @@ public sealed class DriverModuleTraceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 No machine path reaches the page (D47 §4): not the tree's, not the home's, not a file under it, and not what a failed
+    /// 🔴 No machine path reaches the page: not the tree's, not the home's, not a file under it, and not what a failed
     /// read said; the stores are named by code.
     /// </summary>
     [Fact]

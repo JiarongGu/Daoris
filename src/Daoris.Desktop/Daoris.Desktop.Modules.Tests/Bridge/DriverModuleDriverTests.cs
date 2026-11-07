@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The driver's state and standing choices over the bridge (`DriverRoutes.cs`, MOD5): the state,
+/// The driver's state and standing choices over the bridge (`DriverRoutes.cs`): the state,
 /// the drivable set, holds, trees, notifications, strikes, the intake and helper agents, trust and *Sync now*.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
@@ -18,16 +18,16 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         Assert.Empty(state.GetProperty("drivable").EnumerateArray());
         Assert.Empty(state.GetProperty("holds").EnumerateArray());
         Assert.Empty(state.GetProperty("running").EnumerateArray());
-        // Nobody has hands on Daoris's browser (BRW8).
+        // Nobody has hands on Daoris's browser.
         Assert.Empty(state.GetProperty("drivingBrowser").EnumerateArray());
         // The path is answered so the page can tell a person which file its checkboxes edit.
         Assert.Equal(DriverConfigPath, state.GetProperty("configPath").GetString());
-        // And the home (D63), so the page can say where this machine's Daoris lives.
+        // And the home, so the page can say where this machine's Daoris lives.
         Assert.Equal(Home, state.GetProperty("home").GetString());
     }
 
     /// <summary>
-    /// *Sync now* (SYNC6b) runs the loop's own sync set — so before the loop is up there is no pass to
+    /// *Sync now* runs the loop's own sync set — so before the loop is up there is no pass to
     /// run, and the answer is the cold-start sentence rather than a pass that quietly did nothing.
     /// </summary>
     [Fact]
@@ -40,7 +40,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Every control here is an EDIT to the file the loop re-reads each tick (D46 §6, D50) — so the
+    /// Every control here is an EDIT to the file the loop re-reads each tick — so the
     /// file is what gets asserted, not this module's own answer, which would only prove it agrees
     /// with itself.
     /// </summary>
@@ -68,8 +68,8 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Session trees (D51): the desktop half of the standing opt-in, over the same file the CLI's
-    /// `daoris place trees <repo> on|off` edits — two editors, one truth (D50).
+    /// Session trees: the desktop half of the standing opt-in, over the same file the CLI's
+    /// `daoris place trees <repo> on|off` edits — two editors, one truth.
     /// </summary>
     [Fact]
     public async Task Opting_a_repository_into_session_trees_writes_the_same_file()
@@ -85,7 +85,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// GITAPP2b (D204, the git-writes design §2): the switch <c>Daoris may change this checkout's files</c>, off by default, kept by
+    /// The switch <c>Daoris may change this checkout's files</c>, off by default, kept by
     /// repository in <c>driver.json</c> and answered in <c>STATE</c> as the repositories it is on for.
     /// </summary>
     [Fact]
@@ -106,8 +106,8 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// Notifications (SURF5b): the desktop half of a machine-local switch whose other door is
-    /// `daoris settings notify on|off`. One file, two editors (D50) — and it is ON until somebody
+    /// Notifications: the desktop half of a machine-local switch whose other door is
+    /// `daoris settings notify on|off`. One file, two editors — and it is ON until somebody
     /// says otherwise, because a driver nobody has to watch is the whole point of one.
     /// </summary>
     [Fact]
@@ -126,14 +126,14 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A retry over the bridge (DRV6/D58) — the other half of D50's two doors: it marks the quest at the strike limit the state
+    /// A retry over the bridge: it marks the quest at the strike limit the state
     /// reports, in the same file the terminal edits.
     /// </summary>
     [Fact]
     public async Task A_retry_writes_the_same_file_the_terminal_edits()
     {
-        // SESSUX1b: a retry does what the loop's last look says applies, so the look parked the quest first, at the failures rule's
-        // number as the planner's park carries it (CONTEXTDRIVE1l).
+        // A retry does what the loop's last look says applies, so the look parked the quest first, at the failures rule's
+        // number as the planner's park carries it.
         var loop = Loop();
         loop.Look.Record([new Consideration(
             new QuestView("a78553", "game", "engine", "A parked quest", "A body.", "Open"), StartVerdict.Exhausted, "parked") { ParksAt = 3 }]);
@@ -147,14 +147,14 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The intake's harness (INT4b) over the bridge — the screen's half of `daoris role set intake`. Off
+    /// The intake's harness over the bridge — the screen's half of `daoris role set intake`. Off
     /// until named, and 🔴 kept by every other edit: the state is what the page shows, and a control
     /// that deleted it would switch the intake off with nobody touching it.
     /// </summary>
     /// <remarks>
     /// 🔴 Off is the empty string on the wire, never null. The bridge leaves a null property out, and
     /// the page tells a shell older than the intake by the field's ABSENCE — so a null "off" read as an
-    /// older shell and the screen offered no intake control at all: seen on the window (AGT6), from
+    /// older shell and the screen offered no intake control at all: seen on the window, from
     /// exactly the state a person would want to switch it on from. This helper keeps nulls, which is
     /// why it never saw that.
     /// </remarks>
@@ -185,7 +185,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
         }
     }
 
-    /// <summary>Ask Daoris's own agent (HELP1, D89), apart from the intake's, both a role's order set through the role door (ONEWAY1a).</summary>
+    /// <summary>Ask Daoris's own agent, apart from the intake's, both a role's order set through the role door.</summary>
     [Fact]
     public async Task Ask_daoris_runs_on_an_agent_of_its_own_off_until_named()
     {
@@ -217,7 +217,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     };
 
     /// <summary>
-    /// The screen's half of trusting a folder (D73): the person confirms a hold the driver is showing,
+    /// The screen's half of trusting a folder: the person confirms a hold the driver is showing,
     /// and exactly that grant is written — the folder the driver held, in the file it read.
     /// </summary>
     [Fact]
@@ -266,7 +266,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 POOL1a3 (D197 point 3; Fable's F3): a hold whose file is the person's own sign-in's offers no press, and one sent anyway
+    /// 🔴 A hold whose file is the person's own sign-in's offers no press, and one sent anyway
     /// is refused as <c>TRUST_OWN_HOME</c> before anything is written: Daoris writes nothing in the own home. The person trusts it
     /// with the tool itself, at their terminal.
     /// </summary>
@@ -346,7 +346,7 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// BRW8: the state names the running sessions handed Daoris's browser, which the strip's chip and
+    /// The state names the running sessions handed Daoris's browser, which the strip's chip and
     /// Settings → Browser read to say whose hands are on the page.
     /// </summary>
     [Fact]

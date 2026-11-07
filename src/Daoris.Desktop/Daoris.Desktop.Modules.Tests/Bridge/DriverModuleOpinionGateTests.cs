@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The second opinion's gate over the bridge (XAGENT1f, D155 points 9 and 10; the second-agent design §8.1, §8.5): beside a
+/// The second opinion's gate over the bridge: beside a
 /// landing's plan and press, <c>LANDING</c> and <c>LAND_SESSION_TREE</c> answer what the opinion's part of the gate says while it
-/// holds the work, for the page to draw where *Accept…* would be (XAGENT1g), with the token a press sends back to answer what it
+/// holds the work, for the page to draw where *Accept…* would be, with the token a press sends back to answer what it
 /// showed; and the presses' bridge halves (<c>OPINION_GATE</c>, <c>ASK_OPINION</c>, <c>OPINION_ANYWAY</c>, <c>OPINION_MYSELF</c>,
 /// <c>STOP_OPINION</c>), each the driver's own press. The presses themselves are held by the driver's <c>OpinionLookTests</c>.
 /// </summary>
@@ -74,7 +74,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// XAGENT1g (the second-agent design §9): the review's *Second opinion* draws each finding beside the working session's answer,
+    /// The review's *Second opinion* draws each finding beside the working session's answer,
     /// how the driver read it, the recheck's word and whether it is disputed, from the gate the driver judged.
     /// </summary>
     [Fact]
@@ -128,7 +128,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// XAGENT1g4b (design §6.3, D57 §4): a pass carries the reviewer's measured use, read by the reviewer's own session (not the
+    /// A pass carries the reviewer's measured use, read by the reviewer's own session (not the
     /// working one), and null where none was measured: absent is never zero.
     /// </summary>
     [Fact]
@@ -171,7 +171,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// XAGENT1g (design §9's *What needs you*): a dispute, a required opinion none could be had for, and commits nobody read where
+    /// A dispute, a required opinion none could be had for, and commits nobody read where
     /// the work lands by itself wait on the person; nothing else does.
     /// </summary>
     [Theory]
@@ -196,7 +196,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// XAGENT1g3 (the second-agent design §9, D155): *What needs you* reads the gates the last look judged, as of that look, and
+    /// *What needs you* reads the gates the last look judged, as of that look, and
     /// runs no gate itself: no git, no service. Where the look kept a dispute, a required opinion none could be had for and
     /// commits nobody read at a work that lands by itself, those wait, oldest first, in the shape the page reads; a gate that
     /// waits on no one is left out; and before any look it answers none.
@@ -232,7 +232,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
         Assert.Equal(before, served.Count);
     }
 
-    /// <summary>XAGENT1g3: a change in what waits is a change the tick forwards, and a quiet look is not.</summary>
+    /// <summary>A change in what waits is a change the tick forwards, and a quiet look is not.</summary>
     [Fact]
     public void A_changed_judgment_changes_the_ticks_signature_and_a_gate_that_waits_on_no_one_does_not()
     {
@@ -295,7 +295,7 @@ public sealed class DriverModuleOpinionGateTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// RPC1e: asked for its words (<c>said: true</c>) by <c>opinion ask|show|stop|anyway|myself</c> sent over the pipe, each route answers
+    /// Asked for its words (<c>said: true</c>) by <c>opinion ask|show|stop|anyway|myself</c> sent over the pipe, each route answers
     /// the lines and the exit code the alone path prints over the same service, a refusal among them as an answer, never thrown: no
     /// such session, and no such opinion. The page asks for no words, and its answer keeps its shape.
     /// </summary>

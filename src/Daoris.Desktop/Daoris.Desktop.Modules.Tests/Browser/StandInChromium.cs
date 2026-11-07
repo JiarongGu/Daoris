@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A Chromium's debug endpoint, standing in for the review's serving (REVIEWENV1d): its pages, the browser's socket with
+/// A Chromium's debug endpoint, standing in for the review's serving: its pages, the browser's socket with
 /// flattened sessions, <c>Fetch</c> interception per session, and a page's request walked through every interception that holds
 /// it before it reaches the network, a real loopback socket. What it models is what was measured on a real one
 /// (<c>docs/2026-10-09-review-serving-evidence.md</c>): interceptions chain on one tab, the one attached last first, a
@@ -209,7 +209,7 @@ internal sealed class StandInChromium : IDisposable
             }
             finally
             {
-                // A client's interceptions end with its socket, as a session's do with its server (measured, §1 row 4).
+                // A client's interceptions end with its socket, as a session's do with its server (measured).
                 lock (_gate) _clients.Remove(client);
                 foreach (var waiting in client.Paused.Values) waiting.TrySetResult(("Fetch.continueRequest", default));
             }

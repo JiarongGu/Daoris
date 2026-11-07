@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// HIST1f-c: a clear proposal's modules half. The judge is given what this machine keeps only when one is pending; the
+/// A clear proposal's modules half. The judge is given what this machine keeps only when one is pending; the
 /// first draw holds the units its card listed in the proposal's file, and Apply is <c>HISTORY_CLEAR</c>'s own clear of exactly
-/// those. The service is stood in over a loopback socket and nothing starts a process: the fast half (MOD8).
+/// those. The service is stood in over a loopback socket and nothing starts a process: the fast half.
 /// </summary>
 public sealed class HelpClearDoorTests : DriverModuleBridge
 {
@@ -46,7 +46,7 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
         Assert.Contains("still coming up", refused.Message);
     }
 
-    /// <summary>§5 end to end: the first draw lists the quest and holds it in the file; Apply clears exactly what was held.</summary>
+    /// <summary>End to end: the first draw lists the quest and holds it in the file; Apply clears exactly what the card listed.</summary>
     [Fact]
     public async Task A_clear_is_drawn_and_then_applied_to_exactly_the_units_the_card_listed()
     {
@@ -72,7 +72,7 @@ public sealed class HelpClearDoorTests : DriverModuleBridge
         Assert.False(File.Exists(DaorisHome.Entry(Home, HomeEntry.Sessions,"s1.log")));
     }
 
-    /// <summary>HIST1f-d: the <c>failed</c> door is read as the quest's failed sessions, so its card lists that unit, not the quest.</summary>
+    /// <summary>The <c>failed</c> door is read as the quest's failed sessions, so its card lists that unit, not the quest.</summary>
     [Fact]
     public async Task A_failed_sessions_clear_is_drawn_with_the_failed_unit_read_for_its_quest()
     {

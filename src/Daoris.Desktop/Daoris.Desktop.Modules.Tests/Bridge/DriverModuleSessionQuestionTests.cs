@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// PARKVIEW1 (the park's ask design §2-§3): a parked session's question over the bridge. The session's page reads the question its
+/// A parked session's question over the bridge. The session's page reads the question its
 /// agent asked through `question_ask` and the driver kept for its park (`SESSION_QUESTION`, a read), and draws it at the
 /// conversation's end with its answers as presses; none where none is kept, and none for a record that is not parked (Fable's read,
 /// Q7), whatever a file says.
@@ -93,7 +93,7 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
     }
 
     /// <summary>A stand-in service: the records as given, on the one door the route reads.</summary>
-    /// <summary>The injected admission (SUPERVISOR1a-i): the door that answers it lands in 1a-ii, and production refuses every act.</summary>
+    /// <summary>The injected admission: the door that answers it lands in 1a-ii, and production refuses every act.</summary>
     private sealed class Appointed : IDecisionAdmission
     {
         public DecisionAdmitted Admit(string repository) => new("g-1", null);
@@ -118,7 +118,7 @@ public sealed class DriverModuleSessionQuestionTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// SUPERVISOR1a-i (D208; the supervisor design §6.3): the owner's <b>Overrule</b>. While held the decision is overruled with nothing
+    /// The owner's <b>Overrule</b>. While held the decision is overruled with nothing
     /// taken back; while released its word is taken back first; after admission the press answers <c>admitted</c> and then
     /// <c>went-on</c> and changes nothing; an unknown decision is no press at all. The session's decisions read back with their reasons,
     /// never a receipt nor a word's text.

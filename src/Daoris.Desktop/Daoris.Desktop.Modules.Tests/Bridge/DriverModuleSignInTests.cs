@@ -4,12 +4,12 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// CODEXACCT1 over the bridge: a door signs in, and takes a key into, the accounts of the agent it runs as (AGT7), with that
-/// agent's own flow. Agents → Codex offered no *Add an account…*, since its one door, <c>codex-acp</c>, has no sign-in of
-/// its own, while <c>daoris agent login codex --new</c> signed one in at a terminal (D50).
+/// Over the bridge: a door signs in, and takes a key into, the accounts of the agent it runs as, with that
+/// agent's own flow. Agents → Codex offers *Add an account…* although its one door, <c>codex-acp</c>, has no sign-in of
+/// its own, as <c>daoris agent login codex --new</c> signs one in at a terminal.
 /// </summary>
 /// <remarks>
-/// The fast half (MOD8): the roster's facts are read from the toolchains, and the sign-in names a command that is not
+/// The fast half: the roster's facts are read from the toolchains, and the sign-in names a command that is not
 /// there, so it is refused as it starts and no process runs. A sign-in that runs is the <c>Process</c> half's
 /// (<c>HarnessProfileTests</c>).
 /// </remarks>
@@ -17,8 +17,8 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
 {
     /// <summary>
     /// What the roster answers each door's page with: whether it signs in, takes a key, and has a device code beside its own
-    /// sign-in, as its agent does. Codex signs in by its browser first and its device code beside it (CODEXLOGIN1) and takes
-    /// no key from Daoris (D67 §1 holds a key no Codex variable is measured for).
+    /// sign-in, as its agent does. Codex signs in by its browser first and its device code beside it and takes
+    /// no key from Daoris, since no Codex variable is measured for one.
     /// </summary>
     [Theory]
     [InlineData("claude-code", true, true, false)]
@@ -48,7 +48,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
     /// <summary>
     /// *Add an account…* on Agents → Codex runs <c>codex</c>'s sign-in, by the command named for <c>codex</c>, into a folder
     /// opened under <c>codex</c>'s accounts: here one that is not there, so it is refused naming it, and the folder opened
-    /// for it is gone again. It was refused as a door with no sign-in flow. CODEXLOGIN1: with a port free, by its browser.
+    /// for it is gone again. With a port free it signs in by its browser.
     /// </summary>
     [Fact]
     public async Task Adding_a_codex_account_runs_codex_s_own_sign_in_and_keeps_nothing_when_it_cannot_start()
@@ -68,14 +68,14 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
         Assert.Contains("could not be started", refusal);
         Assert.Empty(HarnessSettings.Profiles(Home, "codex"));
         Assert.False(Directory.Exists(DaorisHome.Entry(Home, HomeEntry.AgentHomes, "codex-acp")));
-        // CODEXLOGIN1: the console's first line names the sign-in it started, by Codex's browser, its first port free.
+        // The console's first line names the sign-in it started, by Codex's browser, its first port free.
         Assert.Equal([1455], tried);
         await UntilAsync(() => Raised.Select(Line).Any(line => line.StartsWith("$ ", StringComparison.Ordinal)));
         Assert.Contains($"$ {codex} login", Raised.Select(Line));
     }
 
     /// <summary>
-    /// CODEXLOGIN1, the port held: where neither 1455 nor 1457 can be taken, the browser sign-in is refused before anything
+    /// Where neither 1455 nor 1457 can be taken, the browser sign-in is refused before anything
     /// starts, in plain words naming each holder and offering the device code, with no account made and no tool run. Asked by
     /// its device code, the same press starts with no port tried: the panel's other way.
     /// </summary>
@@ -111,7 +111,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CODEXLOGIN1, the switch: a press that switches a sign-in's way with nothing of it running starts the way asked, never
+    /// A press that switches a sign-in's way with nothing of it running starts the way asked, never
     /// refused as busy; a way the agent does not have is refused before anything starts, as is a word that is no way.
     /// </summary>
     [Fact]
@@ -144,7 +144,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The sign-in runs the <c>codex</c> its status question asks (D57 rule 4): with no command named, the pin, here one with
+    /// The sign-in runs the <c>codex</c> its status question asks: with no command named, the pin, here one with
     /// nothing installed at it, so it is refused naming the pin, never run from <c>PATH</c>, and keeps nothing.
     /// </summary>
     [Fact]
@@ -159,7 +159,7 @@ public sealed class DriverModuleSignInTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 LIVELOGIN1: *Add an account…* on Agents → Claude Code and Codex, under this test's temporary home with nothing named or
+    /// *Add an account…* on Agents → Claude Code and Codex, under this test's temporary home with nothing named or
     /// pinned, would run PATH's <c>claude auth login</c> or <c>codex login</c> on the person's real account. Each press is refused
     /// naming the stub adapters, with no account made and nothing started: every start of the flow is held by a stand-in that
     /// records it.

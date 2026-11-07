@@ -5,7 +5,7 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// One consideration as the loop's tick hands it to the page (<see cref="DriverLoop.TickConsideration"/>): the quest, its
-/// repository, the verdict and the driver's sentence, and since SESSUX1d the session a person's stop holds it by.
+/// repository, the verdict and the driver's sentence, and the session a person's stop holds it by.
 /// </summary>
 public sealed class TickConsiderationTests
 {
@@ -14,7 +14,7 @@ public sealed class TickConsiderationTests
     private static readonly QuestView Quest = new("q1", "game", "engine", "Expose a streaming budget", "A body.", "Taken");
 
     /// <summary>
-    /// SESSUX1d (D126 §3.3): the page says a stop's sentence in the reader's language by its verdict, and the sentence
+    /// The page says a stop's sentence in the reader's language by its verdict, and the sentence
     /// names the session stopped, which the tick now carries as a fact rather than inside the driver's English.
     /// </summary>
     [Fact]
@@ -36,7 +36,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// PAUSE1b (D132 §2.3): a quest a pause holds names whose pause, its scope and id, as facts beside the driver's sentence,
+    /// A quest a pause holds names whose pause, its scope and id, as facts beside the driver's sentence,
     /// so the page says it in the reader's language; every other verdict names none.
     /// </summary>
     [Fact]
@@ -57,7 +57,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// UPDATE1 (D139 §2): a quest an update's drain holds is said so by a fact, <c>forUpdate</c>, so the page says it in the
+    /// A quest an update's drain holds is said so by a fact, <c>forUpdate</c>, so the page says it in the
     /// reader's language rather than the driver's English; every other verdict, a person's hold included, carries none.
     /// </summary>
     [Fact]
@@ -73,7 +73,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// SESSUX1i (D126 §4.6): Overview's *What needs you* holds a quest parked on its failed sessions, waiting since its last
+    /// Overview's *What needs you* holds a quest parked on its failed sessions, waiting since its last
     /// session ended, and says why in the reader's language. The tick carries both as facts: how many failed and when the
     /// last one ended. The session and its note stay here.
     /// </summary>
@@ -113,7 +113,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// TOOL4g (D125 §4): a quest held at spawn because every account its start may use is cooling waits for an account — not
+    /// A quest held at spawn because every account its start may use is cooling waits for an account — not
     /// parked, no Retry — and the page says so in the reader's language from the wait's facts: whose account, which, until
     /// when, and whether the agent named the time. The driver's sentence still travels as its reason.
     /// </summary>
@@ -153,7 +153,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// TOOL6g: a held start that passed accounts not signed in names them, whose they are, so the page says each and its
+    /// A held start that passed accounts not signed in names them, whose they are, so the page says each and its
     /// sign-in in the reader's language, beside a wait on a cooling account or with none.
     /// </summary>
     [Fact]
@@ -174,8 +174,8 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// UX6d1: a quest a wait on signed-out accounts holds waits for a sign-in, not a time, so it names no wait for an account,
-    /// which the page would say with a reset; its accounts are its <c>signedOut</c>, as they were before such a wait was made.
+    /// A quest a wait on signed-out accounts holds waits for a sign-in, not a time, so it names no wait for an account,
+    /// which the page would say with a reset; its accounts are its <c>signedOut</c>.
     /// </summary>
     [Fact]
     public void A_quest_a_signed_out_wait_holds_names_no_wait_for_an_account_and_its_accounts_as_signed_out()
@@ -198,7 +198,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// ACCT2b (D125's ACCT2b note): the wait and the accounts passed carry the name the person gave each account beside its id,
+    /// The wait and the accounts passed carry the name the person gave each account beside its id,
     /// read when the look said them, so the page says them by name in either language; null where an account has none.
     /// </summary>
     [Fact]
@@ -224,7 +224,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// CARRY2c: a quest whose take is not this machine's names whose it is as facts beside the driver's sentence, the machine
+    /// A quest whose take is not this machine's names whose it is as facts beside the driver's sentence, the machine
     /// and its session where a record named them, a take made here, and the session here not carried on, so the page says it
     /// in the reader's language; every other verdict names none.
     /// </summary>
@@ -255,7 +255,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// CANNOTSHOW1a: a set-up step the planner sits carries its code, environment and address beside the unchanged sentence, so
+    /// A set-up step the planner sits carries its code, environment and address beside the unchanged sentence, so
     /// the page words it; every other verdict carries none.
     /// </summary>
     [Fact]
@@ -281,7 +281,7 @@ public sealed class TickConsiderationTests
     }
 
     /// <summary>
-    /// OVERVIEWNOISE1c: a verdict the page had no words for carries which of its sentences it is, by code, with its facts — the cap
+    /// A verdict the page had no words for carries which of its sentences it is, by code, with its facts — the cap
     /// as a number — so the page words it in the reader's language; a verdict with none says none.
     /// </summary>
     [Fact]

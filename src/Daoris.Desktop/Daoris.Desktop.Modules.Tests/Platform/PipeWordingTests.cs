@@ -18,7 +18,7 @@ public sealed class PipeWordingTests : Bridge
     }
 
     /// <summary>
-    /// The worked example (design §3.2): <c>sessions say</c>'s press names the session, the words, the level, each file by its path
+    /// The worked example: <c>sessions say</c>'s press names the session, the words, the level, each file by its path
     /// whole, and <c>said</c> as a form, since it chooses whether the verb's own path reads the files from this machine.
     /// </summary>
     [Fact]

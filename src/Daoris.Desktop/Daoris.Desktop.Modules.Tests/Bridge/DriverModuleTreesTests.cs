@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A session's tree over the bridge (`TreesRoutes.cs`, MOD5): the review, the files a composer
+/// A session's tree over the bridge (`TreesRoutes.cs`): the review, the files a composer
 /// offers, merge and discard, landing and the hand-off.
 /// </summary>
 public sealed class DriverModuleTreesTests : DriverModuleBridge
 {
     /// <summary>
-    /// The review route on a cold start (SURF6). Every other refusal it can raise needs a service to
+    /// The review route on a cold start. Every other refusal it can raise needs a service to
     /// answer first; this one is the state a person actually meets, and it has to be a sentence.
     /// </summary>
     [Fact]
@@ -31,7 +31,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The files a person may `@` (CONV4d) are found through the session's record, as its review is —
+    /// The files a person may `@` are found through the session's record, as its review is —
     /// so on a cold start the answer is the same sentence, never an empty list, which would read as a
     /// tree with nothing in it.
     /// </summary>
@@ -46,7 +46,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A file's preview (PREVIEW1, D111) is found through the session's record, as its review is, so on a cold
+    /// A file's preview is found through the session's record, as its review is, so on a cold
     /// start it is the same sentence; and a preview of no file is a malformed call.
     /// </summary>
     [Fact]
@@ -77,12 +77,12 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.False(answer.GetProperty("binary").GetBoolean());
         Assert.False(answer.GetProperty("truncated").GetBoolean());
         Assert.Equal("export const a = 1;\n", answer.GetProperty("text").GetString());
-        // The tree's own path never goes back to the page (D47 §4; platform language §4).
+        // The tree's own path never goes back to the page.
         Assert.DoesNotContain(tree, answer.GetRawText().Replace("\\\\", "\\"));
     }
 
     /// <summary>
-    /// Opening a preview is a line in the machine log (LEFT2, D94): the session and the file relative to the tree,
+    /// Opening a preview is a line in the machine log: the session and the file relative to the tree,
     /// asked for here by its full path, so the line is seen to keep the relative one and never the tree's own. A
     /// preview that is refused opens nothing and writes nothing.
     /// </summary>
@@ -115,7 +115,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The three refusals PREVIEW1 names, and its two pieces of information, each a code of its own: the
+    /// The three refusals a file preview names, and its two pieces of information, each a code of its own: the
     /// page renders each from the catalogue, and a person's next move differs for each.
     /// </summary>
     [Theory]
@@ -156,7 +156,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Equal(Refusals.PreviewNoTree, none.Code);
     }
 
-    // ——— a landed session (REVIEW2, D113)
+    // ——— a landed session
 
     private static readonly JsonSerializerOptions Camel = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
@@ -179,7 +179,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Equal("src/chunk.ts", answer.GetProperty("files")[0].GetProperty("path").GetString());
     }
 
-    /// <summary>REVIEWDIRTY1-a (D164 point 4): a tree's uncommitted work rides beside the committed list, in its shape, and says when it was cut.</summary>
+    /// <summary>A tree's uncommitted work rides beside the committed list, in its shape, and says when it is cut.</summary>
     [Fact]
     public void A_trees_uncommitted_work_is_answered_beside_the_committed_files()
     {
@@ -212,7 +212,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// REVIEWBASE1 (D164's note): a tree's review says how far the latest known line is past its HEAD, with the line's name, and how
+    /// A tree's review says how far the latest known line is past its HEAD, with the line's name, and how
     /// many commits it holds beyond the line; the page says the first where it is above zero, and the second where it is zero.
     /// </summary>
     [Fact]
@@ -240,8 +240,8 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// REVIEWBASE4 (D164's note): a tree's review names the branch its HEAD stands on, which the page's head says over the record's
-    /// guess (TREEFOLLOW1); null where HEAD is detached, and on a review read from a landed branch, whose tree is not read.
+    /// A tree's review names the branch its HEAD stands on, which the page's head says over the record's
+    /// guess; null where HEAD is detached, and on a review read from a landed branch, whose tree is not read.
     /// </summary>
     [Fact]
     public void A_trees_review_names_the_branch_its_tree_stands_on_and_none_where_detached()
@@ -258,8 +258,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ACCEPTFOOT1 (D164's note): a tree's review carries the driver's own offer to land it (LAND4's <see cref="LandOffer"/>, D88's proof
-    /// and SQUASHTIDY1b's content hold), so the page offers an open conversation exactly what a press would land; null where the driver
+    /// A tree's review carries the driver's own offer to land it (<see cref="LandOffer"/>), so the page offers an open conversation exactly what a press would land; null where the driver
     /// offers none, and on a landed branch's review.
     /// </summary>
     [Fact]
@@ -313,11 +312,11 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.True(landed.GetProperty("asLanded").GetBoolean());
         Assert.Equal(JsonValueKind.Null, landed.GetProperty("reads").ValueKind);
         Assert.Equal(JsonValueKind.Null, landed.GetProperty("removed").ValueKind);
-        // A landing from before who accepted it was kept says none (D143 point 3).
+        // A landing that kept no accepter says none.
         Assert.Equal(JsonValueKind.Null, landed.GetProperty("acceptedBy").ValueKind);
     }
 
-    /// <summary>LAND2b (D145 point 4): the review's answer says who accepted the landing, which the note words.</summary>
+    /// <summary>The review's answer says who accepted the landing, which the note words.</summary>
     [Fact]
     public void A_landing_at_done_is_answered_as_accepted_automatically()
     {
@@ -349,7 +348,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LANDRETIRE1 part 2: a branch the person withdrew is answered with when, their reason and the recovery ref its commits stay on, beside
+    /// A branch the person withdrew is answered with when, their reason and the recovery ref its commits stay on, beside
     /// `removed`, which stays the clean-up's alone (a withdrawn entry has none); a branch removed or standing answers none.
     /// </summary>
     [Fact]
@@ -377,7 +376,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A tree still here after its landed branch went may have carried on (WSR6): its review is the tree's, and it does
+    /// A tree still here after its landed branch went may have carried on: its review is the tree's, and it does
     /// not read as landed, so accepting the work since is a door again. While the branch stands, it reads as landed.
     /// </summary>
     [Fact]
@@ -439,7 +438,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
 
     /// <summary>
     /// Why a review with no landing to fall back on has nothing to show, each its own code: no tree named here, a tree
-    /// gone (REVIEW2: nothing to diff, and no tree to act on), no base recorded, or a range git cannot read.
+    /// gone (nothing to diff, and no tree to act on), no base recorded, or a range git cannot read.
     /// </summary>
     [Fact]
     public void Each_reason_a_review_has_nothing_to_show_is_its_own_code()
@@ -449,7 +448,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Equal(Refusals.SessionNotReviewable, TreesReviewWires.Unreviewable("s1a2b3c4", null, "abc1234").Code);
         Assert.Equal(Refusals.SessionTreeGone, TreesReviewWires.Unreviewable("s1a2b3c4", tree, "abc1234").Code);
         Directory.CreateDirectory(tree);
-        // What a removal leaves where something held the folder open (D109 §5): gone all the same.
+        // What a removal leaves where something held the folder open: gone all the same.
         Assert.Equal(Refusals.SessionTreeGone, TreesReviewWires.Unreviewable("s1a2b3c4", tree, "abc1234").Code);
         File.WriteAllText(Path.Combine(tree, ".git"), "gitdir: elsewhere\n");
         Assert.Equal(Refusals.SessionNoBase, TreesReviewWires.Unreviewable("s1a2b3c4", tree, null).Code);
@@ -463,7 +462,7 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     {
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LANDING", new { id = "s1a2b3c4" }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" }));
-        // An entry's Accept and an ask's (ACCEPTALL1) read the records too.
+        // An entry's Accept and an ask's read the records too.
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "ENTRY_LANDING", new { entry = "ask:a3/engine" }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_ENTRY", new { entry = "ask:a3/engine" }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "ASK_LANDING", new { ask = "a3" }));
@@ -481,9 +480,8 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The merge alone is retired (LEFT2): the page lands through `LAND_SESSION_TREE` since WSR1, which merges
-    /// where the repository's rule says merge, and a door that merged whatever the rule said was a door past it
-    /// (D87). Nothing called it, and the terminal never had its twin.
+    /// There is no merge-alone route: the page lands through `LAND_SESSION_TREE`, which merges
+    /// where the repository's rule says merge, and a door that merged whatever the rule said would be a door past it.
     /// </summary>
     [Fact]
     public async Task The_merge_alone_is_no_route()

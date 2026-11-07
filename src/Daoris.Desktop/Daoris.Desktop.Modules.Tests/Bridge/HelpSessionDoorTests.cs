@@ -4,9 +4,9 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// SESSUX1h2c: a session proposal's Apply is Sessions' own doors, the archive marks the <c>SESSION_ARCHIVE</c> route writes and
+/// A session proposal's Apply is Sessions' own doors, the archive marks the <c>SESSION_ARCHIVE</c> route writes and
 /// the delete <c>SESSION_DELETE</c> runs, each judged again by where the list places the session as it goes, and each coming
-/// back as its sentence. The service is stood in over a loopback socket and nothing starts a process: the fast half (MOD8).
+/// back as its sentence. The service is stood in over a loopback socket and nothing starts a process: the fast half.
 /// </summary>
 public sealed class HelpSessionDoorTests : DriverModuleBridge
 {
@@ -93,7 +93,7 @@ public sealed class HelpSessionDoorTests : DriverModuleBridge
         Assert.Contains("q1", message);
     }
 
-    /// <summary>COWORKUX1: a helper card's Apply is the page's own ask, written by the library both share and told in its sentence.</summary>
+    /// <summary>A helper card's Apply is the page's own ask, written by the library both share and told in its sentence.</summary>
     [Fact]
     public async Task A_helper_card_writes_the_persons_ask_for_the_look_and_a_pass_card_passes_its_kept_answer()
     {

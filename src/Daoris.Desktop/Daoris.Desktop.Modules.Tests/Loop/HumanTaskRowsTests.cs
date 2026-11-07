@@ -5,7 +5,7 @@ using static Daoris.Desktop.Modules.Tests.AttentionTestRows;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// NODEKIT1 HUMAN: a run waiting on a person's task is one row of <i>What needs you</i>, keyed by its run and node as the other waits are, in the
+/// A run waiting on a person's task is one row of <i>What needs you</i>, keyed by its run and node as the other waits are, in the
 /// run's workspace, carrying the presses it waits for; a run with none is no row. Seen failing first.
 /// </summary>
 public sealed class HumanTaskRowsTests

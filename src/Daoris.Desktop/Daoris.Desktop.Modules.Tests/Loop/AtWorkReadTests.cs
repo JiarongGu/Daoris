@@ -7,7 +7,7 @@ using Shenora.Core.Events;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// COWORKVIEW1a's read (the design §4.1, rule 10), with COWORKVIEW1b-i's: its inputs are the <c>groups</c> slice's entries and rows,
+/// The at-work read: its inputs are the <c>groups</c> slice's entries and rows,
 /// the <c>sessions</c> slice's records and the <c>quests</c> slice's quests as judged in memory, with each slice's health, and each
 /// part's lineage file; never a service read.
 /// </summary>
@@ -65,7 +65,7 @@ public sealed class AtWorkReadTests
     }
 
     /// <summary>
-    /// COMMS1i (the comms design §7, §13 point 12): the read's exchanges half reads the home's helper files by the driver's one read, the
+    /// The read's exchanges half reads the home's helper files by the driver's one read, the
     /// line walked in the sessions slice's records; a helper's answer written after the read moves it, so the window reads again.
     /// </summary>
     [Fact]
@@ -103,7 +103,7 @@ public sealed class AtWorkReadTests
     }
 
     /// <summary>
-    /// COMMS1i (wave 2's rest): the line's reviewer is read from its record in the sessions slice, the one that serves the line, so a
+    /// The line's reviewer is read from its record in the sessions slice, the one that serves the line, so a
     /// reviewer appears in <i>Co-workers</i>; its record's end moves the read, so the window reads again.
     /// </summary>
     [Fact]

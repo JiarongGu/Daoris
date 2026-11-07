@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// LANDSYNC1 (D87's 2026-10-15 amendment point 4): the <c>LANDING</c> plan and the <c>LAND_SESSION_TREE</c> press carry what the
+/// The <c>LANDING</c> plan and the <c>LAND_SESSION_TREE</c> press carry what the
 /// landing leaves out because the line holds it, beside the answer's fields as they were, and a conflict with the words the review
 /// offers to say to the session. Each is absent where the line holds none of the tree's commits, so the answer reads as before.
 /// What the landing leaves out over real git is held by the driver's <c>LineHoldsLandingTests</c>.
@@ -37,7 +37,7 @@ public sealed class DriverModuleLandSyncTests
 
         var read = Read(TreesRoutes.Pressed("s1a2b3c4", landed, LandingGate.Open("engine"), TreesWords.Land(landed, []), []));
 
-        // CHATFLOW1d: `press` is what refused a chat run's press, null on every other.
+        // `press` is what refused a chat run's press, null on every other.
         Assert.Equal(JsonValueKind.Null, read.GetProperty("press").ValueKind);
         Assert.Equal(
             ["session", "done", "message", "branch", "review", "opinion", "workflow", "leftOut", "conflict", "said", "followed", "press"],

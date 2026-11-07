@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MAINWINDOWS2c (D171 point 2): a picker is owned by the window whose page asked, not by the first main window, which is
+/// A picker is owned by the window whose page asked, not by the first main window, which is
 /// hidden while put away. What is held here is the choice of owner, apart from the windows, which are WinForms and live in
 /// the application; the routes that open a picker (<c>RegistryModule</c>'s folder, <c>ToolsRoutes</c>' file) reach it through
 /// the delegates the application hands them, so the owner is decided at each press, not when they are made.

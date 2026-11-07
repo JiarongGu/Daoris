@@ -1,7 +1,7 @@
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The shell's power events, as a seam (FABRIC-EVENT2d): the desktop raises <see cref="PowerResume"/> from the system's resume
+/// The shell's power events, as a seam: the desktop raises <see cref="PowerResume"/> from the system's resume
 /// event, a test raises it by hand, and each listener is told once per resume until it lets go.
 /// </summary>
 public sealed class PowerResumeTests

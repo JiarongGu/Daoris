@@ -6,7 +6,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// KNOWCENTRAL2e (the memory coordinator design §1, §4): the session page's door onto its memory. <c>SESSION_MEMORY</c> passes the
+/// The session page's door onto its memory. <c>SESSION_MEMORY</c> passes the
 /// service's rows of a session through; <c>SESSION_MEMORY_DECIDE</c> is the person's decision on them, an awaiting end approved or
 /// declined by its row, or an ended session's staged changes kept or dropped, a refusal answered as data in the service's words.
 /// </summary>

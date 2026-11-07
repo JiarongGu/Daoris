@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The words a main window's page hands the shell's notifier (NOTIFY2d, <c>SET_NOTICE_WORDS</c>, the notification design §3.3): kept
+/// The words a main window's page hands the shell's notifier (<c>SET_NOTICE_WORDS</c>): kept
 /// whole as last told, so a change of language is one telling, and bounded, since a page's words are a page's.
 /// </summary>
 public sealed class NoticeWordsTests

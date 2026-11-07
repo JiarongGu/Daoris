@@ -8,8 +8,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A person's press from a terminal is confirmed in the window (RPC1c, D156 point 4, the person-door design §4.2, the terminal
-/// RPC design §4.2) and waits until the person answers (CONFIRMWAIT1a-i, the confirm-wait design §2): a <c>person</c> route sent over
+/// A person's press from a terminal is confirmed in the window
+/// and waits until the person answers: a <c>person</c> route sent over
 /// the pipe is shown to the window as a card naming the terminal, the press and every value it carries, and runs once on the person's
 /// <b>Confirm</b>, its grounds still holding; refused, changed, withdrawn, closed or past the ten that may wait, nothing runs. The
 /// terminal is told it waits, and how it ended; <c>RESULT</c> says <c>waiting</c> while it does.
@@ -75,7 +75,7 @@ public sealed class PipeConfirmTests : Bridge
 
         var id = await client.SendAsync(DriverModule.Name, Land, new { id = "s1a2b3c4", follow = true });
 
-        // The terminal is told it waits, by the instance, naming its request and no time (CONFIRMWAIT1a-i).
+        // The terminal is told it waits, by the instance, naming its request and no time.
         var told = await client.NotificationAsync(Poll.Patience);
         Assert.NotNull(told);
         var waits = Assert.Single(told.Value.GetProperty("payload").EnumerateArray());
@@ -85,7 +85,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.False(waits.GetProperty("payload").TryGetProperty("expires", out var _____));
 
         // The window is shown the press by its route, every value it carries, and the terminal by its process; nothing ran. Its terminal
-        // heard its id before its grounds were read (CONFIRMWAIT1 §15.2 item 9), so the card comes once they are.
+        // heard its id before its grounds were read, so the card comes once they are.
         await UntilAsync(() => pipe.Confirmations.Now().Waiting.Count == 1);
         var shown = Assert.Single(pipe.Confirmations.Now().Waiting);
         Assert.Equal(DriverModule.Name, shown.Module);
@@ -132,7 +132,7 @@ public sealed class PipeConfirmTests : Bridge
             Confirmations());
     }
 
-    /// <summary>The design's first row (§10): a card left unanswered for an hour, then confirmed, makes its press and tells its asker.</summary>
+    /// <summary>A card left unanswered for an hour, then confirmed, makes its press and tells its asker.</summary>
     [Fact]
     public async Task A_card_left_unanswered_for_an_hour_then_confirmed_runs_once_and_its_terminal_hears_it_or_reads_it()
     {
@@ -207,7 +207,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// The design's stale row (§10): one press per ground, each changed between its ask and its Confirm, runs nothing and its terminal
+    /// One press per ground, each changed between its ask and its Confirm, runs nothing and its terminal
     /// hears <c>changed</c> with the reason's code and values.
     /// </summary>
     [Theory]
@@ -273,7 +273,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// AGENTSPLACE1b3 (the Agents-place design §7 row 8): a terminal's apply of a place's plan is one card, confirmed once. It runs once on the
+    /// A terminal's apply of a place's plan is one card, confirmed once. It runs once on the
     /// Confirm and is never asked or run again by its id; and a plan that moved between the ask and the Confirm, read by <c>PLACE_PLAN</c>'s
     /// digest, is refused <c>changed</c> with nothing run.
     /// </summary>
@@ -459,7 +459,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (§7.2, §10's drain row): a close with a press waiting answers its line <c>waiting</c>, <c>why: close</c>, keeps its
+    /// A close with a press waiting answers its line <c>waiting</c>, <c>why: close</c>, keeps its
     /// record and ends nothing; the drain is not spent on it, nothing is logged as left, a Confirm meanwhile takes nothing, and its card
     /// says no terminal waits on it now.
     /// </summary>
@@ -499,7 +499,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// The design's restart row (§10): a press asked on one pipe over a home, the pipe closed: its line answers <c>waiting</c>; a second pipe
+    /// A press asked on one pipe over a home, the pipe closed: its line answers <c>waiting</c>; a second pipe
     /// on the same home lists it again, restored and said as its record's, Confirm runs it once, and <c>RESULT</c> from a new connection
     /// with the first key answers it. Its record is gone once it ran.
     /// </summary>
@@ -553,7 +553,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// The design's crash row (§10): a press asked on a first pipe that is never disposed, and a second made over the same home, whose
+    /// A press asked on a first pipe that is never disposed, and a second made over the same home, whose
     /// name the first still holds: the record is restored, its card back, though the second pipe serves nothing.
     /// </summary>
     [Fact]
@@ -581,7 +581,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// The design's file name row (§10): a press whose terminal's id is a path is kept under the confirmation's own id, 32 hexadecimal
+    /// A press whose terminal's id is a path is kept under the confirmation's own id, 32 hexadecimal
     /// characters, in <c>data/pipe-waiting/</c>; nothing is written or removed anywhere else, and it asks and ends as any.
     /// </summary>
     [Fact]
@@ -615,7 +615,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// The design's keyed row (§10, §7.1): <c>DAORIS.REMOTES</c> <c>SET</c> carries the workspace's deployment key, so its record holds
+    /// <c>DAORIS.REMOTES</c> <c>SET</c> carries the workspace's deployment key, so its record holds
     /// neither the key nor the payload, its card says it does not wait across a restart, and a close ends it lost: its line told so,
     /// the person told, its record gone.
     /// </summary>
@@ -650,7 +650,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Empty(Records());
     }
 
-    /// <summary>The design's keyed row (§10): a keyed press's record left by a crash ends lost at the next start, said, and is never asked.</summary>
+    /// <summary>A keyed press's record left by a crash ends lost at the next start, said, and is never asked.</summary>
     [Fact]
     public async Task A_keyed_press_left_by_a_crash_ends_lost_at_the_next_start()
     {
@@ -674,7 +674,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// The design's restore judgement row (§10, §7.2): a record is judged again as a press is judged at its ask, from its module, route and
+    /// A record is judged again as a press is judged at its ask, from its module, route and
     /// payload alone. A route the census makes open or the window's, a payload whose fingerprint is not its binding's, one of 257 values,
     /// a route with no grounds row, the eleventh waiting, a record that does not read: each ends lost, never asked, one notice for all. A
     /// passing record's card is made from its payload, whatever the record holds beside. A record begun answers <c>interrupted</c>; one
@@ -748,7 +748,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1, Codex's finding 7 (the confirm-wait design §15.2 item 7): the restore holds each record whole and alone. Two records of
+    /// The restore holds each record whole and alone. Two records of
     /// one terminal id, identical, collapse into the first; two that conflict are each lost, and neither overwrites an ending the journal
     /// already holds; a record whose grounds lack one its row reads, or add one it does not, is lost.
     /// </summary>
@@ -796,7 +796,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1, Codex's finding 8 (the confirm-wait design §15.2 item 8): an ending whose record cannot be rewritten is told to nobody
+    /// An ending whose record cannot be rewritten is told to nobody
     /// and runs nothing. A Refuse and a Confirm answer <c>unrecorded</c> and the card waits on, its buttons back; a <c>WITHDRAW</c> answers
     /// <c>unrecorded</c> and the press waits on. Once the record can be written, each ends as asked; a second pipe on the same home brings
     /// back none that ended.
@@ -854,7 +854,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// CONFIRMWAIT1, Codex's finding 9 (the confirm-wait design §15.2 item 9): the terminal hears the id before the grounds are read, and
+    /// The terminal hears the id before the grounds are read, and
     /// <c>RESULT</c> says the press waits, checking. A withdrawal while the first read is held open ends it at once, journaled: no card ever
     /// comes, no record is kept, and the id read again or sent again says it was taken back.
     /// </summary>
@@ -982,7 +982,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// The design's journal row (§10, §7.1): a refused press whose journal line cannot be written still has its record removed, since
+    /// A refused press whose journal line cannot be written still has its record removed, since
     /// the record said it ended first, and a restart asks nothing again.
     /// </summary>
     [Fact]
@@ -1011,7 +1011,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Empty(next.Confirmations.Now().Waiting);
     }
 
-    /// <summary>§7.1: a press whose record cannot be written is refused <c>unrecorded</c>, nothing asked, its place given back.</summary>
+    /// <summary>A press whose record cannot be written is refused <c>unrecorded</c>, nothing asked, its place given back.</summary>
     [Fact]
     public async Task A_press_whose_record_cannot_be_written_is_refused_and_nothing_is_asked()
     {
@@ -1033,7 +1033,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// The design's drain row (§10): during an update's drain a Confirm is refused on the card and the press still waits; after the
+    /// During an update's drain a Confirm is refused on the card and the press still waits; after the
     /// restart it is restored.
     /// </summary>
     [Fact]
@@ -1064,7 +1064,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// DRAINHOLD1, the row's proof (D156's DRAINHOLD1 note): with a driven session running and the update draining for it, a take-back's
+    /// With a driven session running and the update draining for it, a take-back's
     /// Confirm is answered and its press runs, and a take-back sent meanwhile is asked; a start's Confirm is held, <c>draining</c>, and a
     /// start sent meanwhile is refused as the update's; after *Not now* the start's Confirm takes; once the update applies, the take-back's
     /// Confirm waits too, and no new hello is taken. The pipe is wired to the updater as the shell wires it.
@@ -1155,7 +1155,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// DRAINHOLD1, a review's finding: the update begins to apply between a let-through Confirm's record saying <c>begun</c> and its run.
+    /// The update begins to apply between a let-through Confirm's record saying <c>begun</c> and its run.
     /// The person was told it is confirmed, so it runs, and the close is its to wait for; it is never answered and then dropped. The gate
     /// is the record's own write, wrapped.
     /// </summary>
@@ -1185,7 +1185,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// DRAINHOLD1, a review's finding: a Confirm the window's check let through, which the drain's hold or the close reaches by the time its
+    /// A Confirm the window's check let through, which the drain's hold or the close reaches by the time its
     /// record is written, is not taken: it answers <c>draining</c>, its buttons back, and it still waits in its record for the restart.
     /// </summary>
     [Fact]
@@ -1215,7 +1215,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// DRAINHOLD1, a review's finding, the close's side: a close begun between a Confirm's record saying <c>begun</c> and its run does not
+    /// The close's side: a close begun between a Confirm's record saying <c>begun</c> and its run does not
     /// answer its line <c>waiting</c> nor take it out of what is under way: it runs, the close's drain waits for it, and its terminal hears it.
     /// </summary>
     [Fact]
@@ -1244,7 +1244,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// DRAINHOLD1 (the confirm-wait design §7.2): a press the drain let through and still under way when the update applies is the close's
+    /// A press the drain let through and still under way when the update applies is the close's
     /// to wait for, as any begun press is. It is not cut: the close's drain waits for its answer, and its terminal hears it.
     /// </summary>
     [Fact]
@@ -1281,7 +1281,7 @@ public sealed class PipeConfirmTests : Bridge
         Assert.Equal(1, driver.Ran);
     }
 
-    /// <summary>The design's withdraw rows (§10): a waiting press taken back, the race with a Confirm either way, and another key's.</summary>
+    /// <summary>A waiting press taken back, the race with a Confirm either way, and another key's.</summary>
     [Fact]
     public async Task Withdraw_takes_back_only_a_press_that_still_waits_and_never_a_confirmed_one()
     {
@@ -1407,7 +1407,7 @@ public sealed class PipeConfirmTests : Bridge
     }
 
     /// <summary>
-    /// REVIEW2 T3: a token pasted into a git identity's press is refused whole over the real pipe: no card is raised, nothing is kept in
+    /// A token pasted into a git identity's press is refused whole over the real pipe: no card is raised, nothing is kept in
     /// the waiting records and the secret is in no file of the home, the machine log included.
     /// </summary>
     [Fact]
@@ -1448,7 +1448,7 @@ public sealed class PipeConfirmTests : Bridge
     private static string? Code(JsonElement answer) =>
         answer.TryGetProperty("error", out var error) ? error.GetProperty("code").GetString() : null;
 
-    /// <summary>Where the waiting presses' records are (CONFIRMWAIT1a-ii): the home's <c>pipe-waiting</c> entry.</summary>
+    /// <summary>Where the waiting presses' records are: the home's <c>pipe-waiting</c> entry.</summary>
     private string RecordsFolder => DaorisHome.Entry(Home, HomeEntry.PipeWaiting);
 
     /// <summary>Each record kept now, by its path.</summary>
@@ -1467,7 +1467,7 @@ public sealed class PipeConfirmTests : Bridge
     ];
 
     /// <summary>
-    /// The grounds a landing of <c>s1a2b3c4</c> reads, as its record keeps them (§15.2 item 7: whole, by kind and subject): its session, its
+    /// The grounds a landing of <c>s1a2b3c4</c> reads, as its record keeps them (whole, by kind and subject): its session, its
     /// tree's head and its plan.
     /// </summary>
     private static readonly object[] LandGrounds =
@@ -1481,7 +1481,7 @@ public sealed class PipeConfirmTests : Bridge
         Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)));
 
     /// <summary>
-    /// A record as a Daoris that stopped left it (§7.1), written by hand: <paramref name="request"/> its terminal's id, sent with
+    /// A record as a Daoris that stopped left it, written by hand: <paramref name="request"/> its terminal's id, sent with
     /// <paramref name="key"/>, its payload as its JSON, its binding's fingerprint the payload's unless one is named, asked
     /// <paramref name="minutes"/> past nine, and <paramref name="extra"/>'s fields beside, which no restore reads. Its path.
     /// </summary>

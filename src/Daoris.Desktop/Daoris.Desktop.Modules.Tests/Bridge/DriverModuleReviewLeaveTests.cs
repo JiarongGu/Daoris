@@ -7,7 +7,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Leaving Review stops its git (GITAPP1a-iii, D202, the git-app design P1.6 and P1.7's cancellation and window cases), through the
+/// Leaving Review stops its git, through the
 /// real route boundary: <c>SESSION_DIFF</c> with a <c>read</c> id, joined by session, and <c>READ_LEAVE</c>; and through two of the
 /// window kit's own <see cref="IpcHostBridge"/>s, one per window, dispatching to the real <see cref="DriverModule"/>.
 /// </summary>
@@ -58,7 +58,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         var answer = await asked.WaitAsync(Poll.Patience);
         Assert.False(answer.Success);
         Assert.Equal(IpcErrorCodes.OperationCancelled, answer.Error?.Code);
-        // A read is a graph whose reads of refs start at once beside the first (GITAPP1a-ii), so it is several gits: every one has
+        // A read is a graph whose reads of refs start at once beside the first, so it is several gits: every one has
         // exited, and none starts after the leave.
         await AllExitedAsync();
         var started = Starts.Count;
@@ -193,7 +193,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         }
     }
 
-    /// <summary>Every git the flow started has exited: a cancelled read's owner waits for each before it is done (GITAPP1a-iii).</summary>
+    /// <summary>Every git the flow started has exited: a cancelled read's owner waits for each before it is done.</summary>
     private async Task AllExitedAsync()
     {
         foreach (var started in Starts) await started.WaitForExitAsync().WaitAsync(Poll.Patience);
@@ -207,7 +207,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
         _released = Path.Combine(Home, "released");
         return ProcessStarts.Within(info =>
         {
-            // PROCLEAK1: the stand-in takes this test's pid and a bound, and gives up with the one or at the other.
+            // The stand-in takes this test's pid and a bound, and gives up with the one or at the other.
             var stand = ReleaseStandIn.For(info, _released, Environment.ProcessId, Poll.Patience);
             var process = Process.Start(stand)!;
             var watched = Process.GetProcessById(process.Id);
@@ -263,7 +263,7 @@ public sealed class DriverModuleReviewLeaveTests() : DriverModuleBridge("review-
 }
 
 /// <summary>
-/// <c>READ_LEAVE</c>'s answers that need no process (GITAPP1a-iii): a leave for an id never asked, or already answered, does nothing.
+/// <c>READ_LEAVE</c>'s answers that need no process: a leave for an id never asked, or already answered, does nothing.
 /// </summary>
 public sealed class DriverModuleReadLeaveTests : DriverModuleBridge
 {

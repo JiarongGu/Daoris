@@ -9,7 +9,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// PUSH1c3a (D182 points 2 to 4): the session list's groups pushed, the host's half. One owner in the shell's loop takes the look
+/// The session list's groups pushed, the host's half. One owner in the shell's loop takes the look
 /// <c>SESSION_GROUPS</c> takes, once per wake for every window, and pushes its rows keyed by session and its entries keyed by line of
 /// work, each row with the sort inputs its group is ordered by, so one session's move pushes its row alone and a window composes the
 /// order itself.
@@ -88,7 +88,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// The page's compose, twinned here (D182's PUSH1c3a note): the groups in the reader's order, and within each the rows by the sort
+    /// The page's compose, twinned here: the groups in the reader's order, and within each the rows by the sort
     /// inputs its group pushed, as <c>SessionGroups.Ordered</c> orders them.
     /// </summary>
     private static List<JsonObject> Composed(JsonObject rows)
@@ -336,7 +336,7 @@ public sealed partial class GroupsStateSliceTests : DriverModuleBridge
     [InlineData("DRIVER_READY", "{}", true)]
     // The loop's look told to the windows: where every window pulled the groups before.
     [InlineData("DRIVER_TICK", "{}", true)]
-    // ACCEPTFOOT1b: a conversation's turns moving, whose end offers its tree's work to land and whose next turn takes the offer back.
+    // A conversation's turns moving, whose end offers its tree's work to land and whose next turn takes the offer back.
     [InlineData("SESSION_QUEUED", "{}", true)]
     [InlineData("SESSION_STREAMS", "{}", false)]
     public void What_wakes_the_groups_slice(string type, string payload, bool wakes)

@@ -11,9 +11,9 @@ namespace Daoris.Desktop.Modules.Tests;
 /// The bridge, from the host's side — what the platform page is actually talking to.
 /// </summary>
 /// <remarks>
-/// <para>These modules are the whole contract between the page and this machine, and until now it was
-/// asserted on NEITHER side: the page's own suite mocks the bridge, and this half had no test project
-/// at all. A mock agreeing with a mock proves the two mocks agree.</para>
+/// <para>These modules are the whole contract between the page and this machine: the page's own suite
+/// mocks the bridge, so only this half's tests assert it. A mock agreeing with a mock proves the two
+/// mocks agree.</para>
 ///
 /// <para><b>Hermetic by construction.</b> Every module here resolves a path under the Daoris home
 /// — `driver.json`, `remotes.json`, the harness profile tree — so a test that did not redirect them
@@ -30,12 +30,12 @@ public abstract class Bridge : IDisposable
         Home = Path.Combine(GitSeed.RepoRoot(), "_fixtures", repositoryFixture ?? "bridge-homes", Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(Home);
 
-        // Set BEFORE any module or loop exists — see the remarks above. The home first (D63): every
+        // Set BEFORE any module or loop exists — see the remarks above. The home first: every
         // other default derives from it, so a file added under the home later is scratch already.
         Redirect("DAORIS_HOME", Home);
         Redirect("DAORIS_REMOTE_CONFIG", DaorisHome.Entry(Home, HomeEntry.Remotes));
         Redirect("DAORIS_HARNESS_CONFIG", DaorisHome.Entry(Home, HomeEntry.Harnesses));
-        // The environment pair outranks the remotes FILE for the whole machine (D48 §5). A developer
+        // The environment pair outranks the remotes FILE for the whole machine. A developer
         // with it set would otherwise change what these tests observe.
         Redirect("DAORIS_REMOTE_URL", null);
         Redirect("DAORIS_REMOTE_KEY", null);
@@ -70,7 +70,7 @@ public abstract class Bridge : IDisposable
 
     protected string RemotesPath => DaorisHome.Entry(Home, HomeEntry.Remotes);
 
-    /// <summary>Where the harness wiring lands — which profile each harness runs as (D49 §4).</summary>
+    /// <summary>Where the harness wiring lands — which profile each harness runs as.</summary>
     protected string HarnessSettingsPath => DaorisHome.Entry(Home, HomeEntry.Harnesses);
 
     /// <summary>Set an environment variable for this test, restoring it afterwards.</summary>
@@ -89,7 +89,7 @@ public abstract class Bridge : IDisposable
     /// of any contract worth testing.
     /// </remarks>
     /// <remarks>
-    /// A read told by event (NOBLOCK1) answers what was held, or <see cref="HeldAnswers.Pending"/>, while the work the ask began
+    /// A read told by event answers what is held, or <see cref="HeldAnswers.Pending"/>, while the work the ask began
     /// runs: the ask waits for that work, as the page waits for its event, and asks again until a work begun after its first ask
     /// has answered, so a test reads what the work answers now, never what an earlier ask held. What the held and pending answers do is <c>DriverModuleHeldTests</c>'.
     /// </remarks>
@@ -167,7 +167,7 @@ public abstract class Bridge : IDisposable
     public void Dispose()
     {
         foreach (var (name, value) in _restore) Environment.SetEnvironmentVariable(name, value);
-        // Git's object files are read-only on Windows, and a test may make a tree under the home (GIT1d-a); a module's machine
+        // Git's object files are read-only on Windows, and a test may make a tree under the home; a module's machine
         // log can still hold its day's file for a moment after the test (the full set on 824886d met `2026-10-20.jsonl` held at
         // the delete): asked again a few times, and a scratch folder left behind never fails a test.
         ScratchFolders.Remove(Home);

@@ -8,8 +8,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The publisher over the routes the driver has and the marks it really declares (D169 point 5): a declared press refused as an error and a
-/// read publish nothing, and the next declared press that answers publishes once, so the silence was the publisher's and not a route that
+/// The publisher over the routes the driver has and the marks it really declares: a declared press refused as an error and a
+/// read publish nothing, and the next declared press that answers publishes once, so the silence is the publisher's and not a route that
 /// never ran. <c>StatePublisherTests</c> holds the same rule over stand-in route names.
 /// </summary>
 public sealed class StatePublisherRealRoutesTests : DriverModuleBridge

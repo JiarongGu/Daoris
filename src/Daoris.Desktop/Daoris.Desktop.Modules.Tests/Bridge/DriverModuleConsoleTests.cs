@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A session's live console over the bridge (`ConsoleRoutes.cs`, MOD5): its backlog, its streams,
+/// A session's live console over the bridge (`ConsoleRoutes.cs`): its backlog, its streams,
 /// and a task's stop.
 /// </summary>
 public sealed class DriverModuleConsoleTests : DriverModuleBridge
@@ -24,7 +24,7 @@ public sealed class DriverModuleConsoleTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONSOLE2c: what a session runs beside itself is listed over the bridge, each with the key its
+    /// What a session runs beside itself is listed over the bridge, each with the key its
     /// console is tailed by, and a stream opening or ending is news the page hears, naming only the
     /// session, so a missed one costs a list the page asks for anyway.
     /// </summary>
@@ -57,7 +57,7 @@ public sealed class DriverModuleConsoleTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// CONSOLE3a: a running task its harness said can be stopped is listed as one, and its tab's stop
+    /// A running task its harness said can be stopped is listed as one, and its tab's stop
     /// reaches the session that runs it, by the task's own id. Only a task of that session, and a
     /// session nothing here runs stops nothing, as an answer.
     /// </summary>
@@ -90,7 +90,7 @@ public sealed class DriverModuleConsoleTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// PARALLEL1e (D181 point 4): a stop its session never answers holds nobody past the page's own wait. The route's token
+    /// A stop its session never answers holds nobody past the page's own wait. The route's token
     /// reaches the question asked of the agent, where none did, and ends it when the page stops waiting.
     /// </summary>
     [Fact]

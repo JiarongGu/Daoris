@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// CHANNELJOIN1b over the real pipe (D244 point 10; the event-channel design §5.3, §5.6; <c>PipeConfirmTests</c>' neighbour): an agent
+/// Over the real pipe: an agent
 /// outside Daoris asks to join a channel, a person's press that waits for their Confirm on a card that names the asking process, the
 /// channel, the agent and the repository it claims; one from a process in an agents' job is refused <c>inside</c> before any card; one
 /// whose place the system would not tell is asked, and says so.
@@ -106,7 +106,7 @@ public sealed class ChannelJoinPipeTests : Bridge
         var waits = Assert.Single(told!.Value.GetProperty("payload").EnumerateArray());
         Assert.Equal(StandingWhy.Untold, waits.GetProperty("payload").GetProperty("standing").GetString());
         await Until(() => pipe.Confirmations.Now().Waiting.Count == 1, () => "the join was never asked");
-        // CHANNELJOIN1c: the card record carries it, so the window words it beside the asker (no confirmation id is kept for it).
+        // The card record carries it, so the window words it beside the asker (no confirmation id is kept for it).
         Assert.Equal(StandingWhy.Untold, Assert.Single(pipe.Confirmations.Now().Waiting).Standing);
     }
 

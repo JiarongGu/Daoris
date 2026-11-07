@@ -8,8 +8,8 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The work milestones pushed (PUSH1c2a, D182 points 3-4): one owner in the shell's loop judging, from the machine's facts' work parts
-/// (FACTSPLIT1a) and the node records' held attempts, a partition per repository carrying its part of what <c>WORK_STATE</c> answers and
+/// The work milestones pushed: one owner in the shell's loop judging, from the machine's facts' work parts
+///  and the node records' held attempts, a partition per repository carrying its part of what <c>WORK_STATE</c> answers and
 /// one of the attempts held for the person, pushed when one moves and read by a window's first snapshot from memory.
 /// </summary>
 /// <remarks>
@@ -160,7 +160,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
         // Every field the route answers, its nulls written, is pushed or named as the pull's alone, never left to chance.
         Assert.All(RouteFields(answered), field => Assert.Contains(field, Classed()));
         Assert.Contains("attempt.words", RouteFields(answered));
-        // FABRIC-PERFORM1k: a failure kept for the person's code, pushed as the page words it.
+        // A failure kept for the person's code, pushed as the page words it.
         Assert.Contains("attempt.code", RouteFields(answered));
         var parts = snapshot.Partitions.Where(each => each.Partition != WorkStateSlice.Held).ToList();
         foreach (var part in parts)
@@ -198,7 +198,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
             new(unit, kind, "daoris/s-a", role, disposition, "the driver's clause")
             {
                 Until = At.AddDays(7), Repository = "alpha", Commit = "a1b2c3d4", Proof = "every commit of it is on `main`",
-                // OVERVIEWNOISE1b: a blocked entry's code and the facts the page words it with.
+                // A blocked entry's code and the facts the page words it with.
                 Code = InventoryCode.Kept, Facts = new Dictionary<string, string> { ["why"] = "nested", ["at"] = "2026-10-20T09:00:00.0000000+00:00" },
             };
 
@@ -218,10 +218,10 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
             Words = HeldResolutions.Plugin, Code = "broken",
         };
 
-        // FABRIC-PERFORM1j: a node record that does not read, pushed beside the held attempts.
+        // A node record that does not read, pushed beside the held attempts.
         var record = new UnreadableRecord("0a1b2c3d.json", "unit-a") { At = At };
 
-        // FABRIC-CLOSE1j: a closure graph's end, every field set, carried in the held partition.
+        // A closure graph's end, every field set, carried in the held partition.
         var end = new GraphEnd("quest:q7", QuestClosing.Partial, At)
         {
             Nodes = ["qa"], Quest = "q6", Node = "close", Attempt = 2, NodeState = NodeStates.Ready, Resolution = HeldResolutions.Stop,
@@ -323,7 +323,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// 🔴 The freshness (PUSH1c2a): what a landing writes moves no ref the watch hears here, and a sweep's tree-only removal may move
+    /// 🔴 The freshness: what a landing writes moves no ref the watch hears here, and a sweep's tree-only removal may move
     /// none, while the parts were judged a moment ago, inside the rest a burst of refs is held to. The press's declared scope judges every
     /// part afresh, so each reaches the slice at once, never at the part's five-minute deadline, and pushes the partition it moved alone.
     /// </summary>
@@ -413,7 +413,7 @@ public sealed class WorkStateSliceTests : DriverModuleBridge
 
     /// <summary>
     /// Once judged whole, a part never judged (a repository registered since) is left out until it is, never pushed empty, which a window
-    /// would read as nothing to clean up there; the rest stand and move as before.
+    /// would read as nothing to clean up there; the rest stand and move.
     /// </summary>
     [Fact]
     public async Task A_part_registered_after_the_first_judgement_is_left_out_until_judged_never_pushed_empty()

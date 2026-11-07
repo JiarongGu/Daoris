@@ -3,7 +3,7 @@ using Shenora.Core.Ipc;
 
 namespace Daoris.Desktop.Modules.Tests;
 
-/// <summary>NEW1a: the route's own read of <c>ownTree</c> is three-way, absent being the driver's choice and false the checkout.</summary>
+/// <summary>The route's own read of <c>ownTree</c> is three-way, absent being the driver's choice and false the checkout.</summary>
 public sealed class DriverModuleTreeChoiceTests
 {
     [Theory]

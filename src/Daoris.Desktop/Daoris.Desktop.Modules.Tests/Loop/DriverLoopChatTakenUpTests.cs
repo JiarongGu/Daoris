@@ -8,7 +8,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// MSG1c2 (D137's MSG1c note): the shell's loop comes up with its conversations, and with them two things no route does. An
+/// The shell's loop comes up with its conversations, and with them two things no route does. An
 /// ended chat whose words were kept while no shell ran is taken up as the loop comes up, judged as words said now are; and
 /// a chat taken up by itself announces its end as the page's <c>SESSION_ENDED</c>, in the shape a start's end has. The
 /// runner's adapter here spawns nothing, so a chat that goes on ends <c>failed</c> at its spawn, which is an end all the
@@ -81,7 +81,7 @@ public sealed class DriverLoopChatTakenUpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// FABRIC-EVENT5a: the moment the driver takes a conversation's words up, its record moving to <c>working</c>, the windows are told
+    /// The moment the driver takes a conversation's words up, its record moving to <c>working</c>, the windows are told
     /// <c>sessions</c> for it, so Ask Daoris's list needs no 1.5 s read while words wait. The move out of it is told too: the
     /// restore of an ended record where every word was withdrawn announces no end, so a page that read <c>working</c> would stay there.
     /// </summary>

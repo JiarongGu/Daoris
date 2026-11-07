@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// What a balloon says behind the window (NOTIFY1d; NOTIFY2d, D196, the notification design §3.3, §9): each kind worded from the words
+/// What a balloon says behind the window: each kind worded from the words
 /// the page handed the shell, in the window's language, the event's facts filled in, and what a session wrote shown as written; with
 /// no words handed, the English catalogue's. It lived in the application's notifier, which has no test project; here it is tested per kind.
 /// </summary>
@@ -55,8 +55,8 @@ public sealed partial class SessionBalloonTests
     }
 
     /// <summary>
-    /// A terminal's press behind the window names its act in the window's language and no value, and never its route's constant
-    /// (NOTIFY2a, §3.3): the act's words are the page's, by the route's catalogue key; a route the page handed no act for says the
+    /// A terminal's press behind the window names its act in the window's language and no value, and never its route's constant:
+    /// the act's words are the page's, by the route's catalogue key; a route the page handed no act for says the
     /// press's door alone. The event's own English (<c>Sent by …</c>) is no part of it.
     /// </summary>
     [Theory]
@@ -80,7 +80,7 @@ public sealed partial class SessionBalloonTests
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-ii (the confirm-wait design §7.2 step 7): the restart's one balloon names how many presses from a terminal wait again,
+    /// The restart's one balloon names how many presses from a terminal wait again,
     /// in the window's language, a warning, and is never folded with a minute's asks.
     /// </summary>
     [Theory]
@@ -102,7 +102,7 @@ public sealed partial class SessionBalloonTests
         Assert.Equal([PipeConfirmations.AttentionKind, PipeConfirmations.RestoredKind], shown.Select(each => each.Kind));
     }
 
-    /// <summary>An end is said by its state's own words (§6: a state by a key per state), and a state no words name is an ending, never its code.</summary>
+    /// <summary>An end is said by its state's own words (a state by a key per state), and a state no words name is an ending, never its code.</summary>
     [Theory]
     [InlineData("completed")]
     [InlineData("failed")]
@@ -158,7 +158,7 @@ public sealed partial class SessionBalloonTests
         Assert.Equal("{{quest}}: quest #{{count}} parked after 2 failed sessions", said.Title);
     }
 
-    /// <summary>A kind this build does not know says the event's own headline and detail, as before NOTIFY2d.</summary>
+    /// <summary>A kind this build does not know says the event's own headline and detail.</summary>
     [Fact]
     public void A_kind_it_does_not_know_says_the_events_own_words()
     {
@@ -193,7 +193,7 @@ public sealed partial class SessionBalloonTests
     }
 
     /// <summary>
-    /// CONFIRMWAIT1a-i (the confirm-wait design §8.2, §10's two-asks row): two presses asked within a minute while no window is in front
+    /// Two presses asked within a minute while no window is in front
     /// make the first's balloon and, at the minute's end, one balloon naming the two; the next minute folds again; a quiet minute ends
     /// the fold; every other kind passes through at once.
     /// </summary>

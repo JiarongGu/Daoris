@@ -12,7 +12,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The running Daoris answers on a pipe (RPC1a, D171 point 3, the terminal RPC design §2.2, §4, §6, §8): a terminal's request is
+/// The running Daoris answers on a pipe: a terminal's request is
 /// the kit's envelope on a line, run by the dispatcher every window's page uses, so a declared press over the pipe is under way
 /// and publishes its change as a window's press does; a person's route and a window's are refused before anything runs; a lost
 /// connection cancels nothing and <c>RESULT</c> says how the press ended; an id sent twice runs once; and a closing instance
@@ -26,7 +26,7 @@ public sealed class InstancePipeTests : Bridge
 {
     private static readonly JsonSerializerOptions Wire = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
-    /// <summary>What the test's press declares, as a route's mark does (D169 point 2).</summary>
+    /// <summary>What the test's press declares, as a route's mark does.</summary>
     private static StateChange? Declared(IpcRequest request) =>
         request.Module == "TEST.PRESS" && request.Type is "MOVE" or "PROGRESS"
             ? new StateChange(StateScopes.Sessions | StateScopes.Landing, "id")
@@ -100,7 +100,7 @@ public sealed class InstancePipeTests : Bridge
         Assert.Equal("9.9.9-test", said.GetProperty("version").GetString());
         Assert.Equal(Environment.ProcessId, said.GetProperty("pid").GetInt32());
 
-        // Pressed over the pipe: in the loop's list while it runs, as a window's press is (D169's STATEHUB1c2 note).
+        // Pressed over the pipe: in the loop's list while it runs, as a window's press is.
         var id = await client.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
         await press.Started.Task.WaitAsync(Poll.Patience);
         Assert.Equal([new PressUnderWay("MOVE", "s1a2b3c4")], underWay.Now().Presses);
@@ -132,8 +132,8 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window instead
-    /// (RPC1c), and <c>PipeConfirmTests</c> holds how, so here it is shown and never run.
+    /// A window's route and a module nobody classed are refused before anything runs; a person's route waits for the window instead,
+    /// and <c>PipeConfirmTests</c> holds how, so here it is shown and never run.
     /// </summary>
     [Fact]
     public async Task A_window_route_and_a_module_nobody_classed_are_refused_and_a_person_route_runs_nothing_unconfirmed()
@@ -166,7 +166,7 @@ public sealed class InstancePipeTests : Bridge
         Assert.True(open.GetProperty("success").GetBoolean(), open.GetRawText());
         Assert.Equal(1, driver.Ran);
 
-        // Each refusal is in the machine log by its code and request, said as the terminal's (§8).
+        // Each refusal is in the machine log by its code and request, said as the terminal's.
         var refused = Lines().Where(line => line.GetProperty("event").GetString() == "refused").Select(line => line.GetProperty("data").GetRawText()).ToList();
         Assert.Equal(
             [
@@ -219,7 +219,7 @@ public sealed class InstancePipeTests : Bridge
         Assert.Equal("running", (await again.ResultAsync(id, key)).GetProperty("state").GetString());
         Assert.Equal("unknown", (await again.ResultAsync("never-sent", "0123456789abcdef0123456789abcdef")).GetProperty("state").GetString());
 
-        // The press runs on with nobody to hear it: the connection's life is not the press's (§6.1).
+        // The press runs on with nobody to hear it: the connection's life is not the press's.
         press.Let.SetResult();
         await UntilAsync(() => underWay.Now().Presses.Count == 0);
         // The press leaves the under-way list inside the dispatch, a moment before its answer's line is kept.
@@ -272,7 +272,7 @@ public sealed class InstancePipeTests : Bridge
             Assert.Equal(1, press.Ran);
         }
 
-        // The next instance on the home reads the lines the first left, for 24 hours (§6.1).
+        // The next instance on the home reads the lines the first left, for 24 hours.
         using var next = Pipe(dispatcher, log);
         await using var three = await PipeClient.ConnectAsync(next.Serve()!);
         await three.HelloAsync(HomeId);
@@ -284,7 +284,7 @@ public sealed class InstancePipeTests : Bridge
 
     /// <summary>
     /// A press begun by an instance that stopped before it ended is unknown: <c>RESULT</c> answers it <c>interrupted</c>, and the id
-    /// sent again is refused rather than run, since what the first did is not known (§6.1).
+    /// sent again is refused rather than run, since what the first did is not known.
     /// </summary>
     [Fact]
     public async Task A_press_an_instance_never_ended_is_unknown_and_never_run_again()
@@ -310,7 +310,7 @@ public sealed class InstancePipeTests : Bridge
         await using var client = await PipeClient.ConnectAsync(pipe.Serve()!);
         await client.HelloAsync(HomeId);
 
-        // CONFIRMWAIT1 (the confirm-wait design §15.3 item 10): RESULT answers that it stopped while under way, as WITHDRAW does.
+        // RESULT answers that it stopped while under way, as WITHDRAW does.
         var interrupted = await client.ResultAsync("begun-before", key);
         Assert.Equal("answered", interrupted.GetProperty("state").GetString());
         Assert.Equal(InstancePipe.Interrupted, interrupted.GetProperty("answer").GetProperty("error").GetProperty("code").GetString());
@@ -340,8 +340,8 @@ public sealed class InstancePipeTests : Bridge
         var id = await before.SendAsync("TEST.PRESS", "MOVE", new { id = "s1a2b3c4" });
         await before.AnswerAsync(id);
 
-        // DRAINHOLD1: an update's drain takes a hello and a press that starts nothing it waits on; the close it ends in is a stop's
-        // beginning (§6.3), every new hello refused as the update's.
+        // An update's drain takes a hello and a press that starts nothing it waits on; the close it ends in is a stop's
+        // beginning, every new hello refused as the update's.
         var (draining, applying) = (false, false);
         pipe.Draining = () => draining || applying;
         pipe.Applying = () => applying;
@@ -459,7 +459,7 @@ public sealed class InstancePipeTests : Bridge
         Assert.Contains(routes, route => route.GetRawText() == """{"module":"DAORIS.WINDOWS","class":"window"}""");
     }
 
-    /// <summary>A route's progress, as the kit's tracker tells it, reaches the connection that sent the request, naming its id (§6).</summary>
+    /// <summary>A route's progress, as the kit's tracker tells it, reaches the connection that sent the request, naming its id.</summary>
     [Fact]
     public async Task A_route_s_progress_reaches_the_connection_that_sent_it()
     {
@@ -490,7 +490,7 @@ public sealed class InstancePipeTests : Bridge
         Assert.Null(await other.NotificationAsync(TimeSpan.FromMilliseconds(500)));
     }
 
-    /// <summary>The name is this instance's alone: one already served is not shared, and the machine log says so (§4.1).</summary>
+    /// <summary>The name is this instance's alone: one already served is not shared, and the machine log says so.</summary>
     [Fact]
     public void A_name_already_served_is_not_served_again()
     {
@@ -509,7 +509,7 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// The pipe is this user's at either elevation (PIPEOWNER1, §4.1): owned by the user's SID, where an elevated token would make
+    /// The pipe is this user's at either elevation: owned by the user's SID, where an elevated token would make
     /// its objects the Administrators group's, granting that SID and denying the network. So a terminal that is not elevated
     /// reaches a Daoris that is: the driver's client takes a pipe its user owns.
     /// </summary>
@@ -558,7 +558,7 @@ public sealed class InstancePipeTests : Bridge
     /// <summary>
     /// An id is bound to the request it was first sent with: its module and route, its payload and its sender's key. Sent again
     /// with any of them changed it is refused, never answered with another request's answer, and <c>RESULT</c> answers only the key
-    /// that sent it, whichever connection asks; across a restart too (a second agent's review of RPC1a).
+    /// that sent it, whichever connection asks; across a restart too.
     /// </summary>
     [Fact]
     public async Task An_id_bound_to_another_request_is_refused_and_never_answered_for_it()
@@ -602,7 +602,7 @@ public sealed class InstancePipeTests : Bridge
     }
 
     /// <summary>
-    /// RPC1h (§6.2): a terminal's Ctrl+C is the kit's <c>CANCEL</c> by the request's id, taken only for a press this pipe began and
+    /// A terminal's Ctrl+C is the kit's <c>CANCEL</c> by the request's id, taken only for a press this pipe began and
     /// only with the key that sent it, and passed on to the kit's tracker; the press then ends as a cancelled one, and <c>RESULT</c>
     /// says so. A window's id, another key's and an id nobody sent are refused as an id bound elsewhere is, and nothing is cancelled.
     /// </summary>
@@ -689,7 +689,7 @@ public sealed class InstancePipeTests : Bridge
 
     /// <summary>
     /// "Never twice" holds across a restart only for an id the journal holds, so a request whose line cannot be written is
-    /// refused and never dispatched (a second agent's review of RPC1a).
+    /// refused and never dispatched.
     /// </summary>
     [Fact]
     public async Task A_request_the_journal_cannot_hold_is_refused_and_never_run()
@@ -715,7 +715,7 @@ public sealed class InstancePipeTests : Bridge
 
     /// <summary>
     /// A route that is a look in one form and a press in another runs over the pipe as asked only in its open form: its press waits
-    /// for the window (RPC1c), and runs nothing until the person confirms it there.
+    /// for the window, and runs nothing until the person confirms it there.
     /// </summary>
     [Fact]
     public async Task A_route_classed_by_its_payload_runs_only_in_its_open_form()

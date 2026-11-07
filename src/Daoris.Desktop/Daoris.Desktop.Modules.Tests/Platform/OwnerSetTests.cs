@@ -10,7 +10,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The owner's mark and the gates (STEWARDROLE1a-ii, D209 §5.4, §3.4 step 8; the steward design §10 row 1a-ii's <c>OwnerSetTests</c>): an
+/// The owner's mark and the gates: an
 /// owner's door marks what it names <c>owner-set</c> for the run, by repository and by quest, a session resolved to its quest and a
 /// workspace to its repositories; an Ask Daoris Apply marks by its plan; a person's write through the service's door marks by the record,
 /// a publication and the ask's own words never; and a steward's act takes the gates of its target and its dependencies alone, in a fixed
@@ -141,7 +141,7 @@ public sealed class OwnerSetTests : IDisposable
         Assert.True(Act(judge, key, RoleKit.Probe.Named, """{"repository":"engine"}""").Covered);
     }
 
-    /// <summary>A steward no holder holds marks nothing and takes no gate: the owner's doors are as before.</summary>
+    /// <summary>A steward no holder holds marks nothing and takes no gate: the owner's doors are unaffected.</summary>
     [Fact]
     public async Task An_unstaffed_steward_marks_nothing()
     {
@@ -238,7 +238,7 @@ public sealed class OwnerSetTests : IDisposable
         await held.DisposeAsync();
         var refused = await waiting;
         // An act that reached the gate finds the mark set there and answers so; on a loaded machine it may reach the door only after
-        // the mark, which refuses it as owner-set before any gate (FLAKE1, 2026-10-30). Either way it is refused and never interleaves.
+        // the mark, which refuses it as owner-set before any gate. Either way it is refused and never interleaves.
         if (refused.GetProperty("success").GetBoolean())
         {
             var data = refused.GetProperty("data");
@@ -451,7 +451,7 @@ public sealed class OwnerSetTests : IDisposable
     }
 }
 
-/// <summary>The judge's steward table holding the stand-ins, and the steward staffed by the terminal with them its acts (STEWARDROLE1a-ii's tests).</summary>
+/// <summary>The judge's steward table holding the stand-ins, and the steward staffed by the terminal with them its acts.</summary>
 internal static class OwnerSetKit
 {
     public static StandingConfirmation Acting(this StandingConfirmation standing, bool staffed, params IRoleAct[] acts)

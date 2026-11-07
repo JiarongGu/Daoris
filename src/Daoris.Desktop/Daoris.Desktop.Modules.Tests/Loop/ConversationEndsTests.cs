@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// FOUNDATION1 l-ii (the foundation design §4.2): the page's <c>SESSION_ENDED</c> keeps its contract, a conversation's end, and is told once
+/// The page's <c>SESSION_ENDED</c> keeps its contract, a conversation's end, and is told once
 /// however many of this process's paths see the end: the route that ran the conversation and the journal, which tells the ends another
 /// process drove.
 /// </summary>

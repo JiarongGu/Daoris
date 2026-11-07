@@ -5,7 +5,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The owner's census sweep (STEWARDROLE1a-ii, D209 §5.4, §10 row 1a-ii): every person's and window's route of the census has a mark
+/// The owner's census sweep: every person's and window's route of the census has a mark
 /// (<see cref="PipeTargets.Mark"/>); every proposal door Ask Daoris's Apply takes of the setting and set-up kinds declares its target;
 /// every person's door of the service declares the record kind its effect is attributed on, by evidence the desktop's reader knows; and
 /// the sweep fails on any of them that names a repository, a quest or a session and marks nothing. A declaration can be wrong, so each
@@ -17,7 +17,7 @@ namespace Daoris.Desktop.Modules.Tests;
 public sealed class OwnerSetCensusTests
 {
     /// <summary>
-    /// The reviewed exemptions (§5.4, finding 9): a route that names a target field and marks nothing, each with its reason. An
+    /// The reviewed exemptions: a route that names a target field and marks nothing, each with its reason. An
     /// <c>acts-on-nothing</c> one publishes none of the role's scopes and no session; a <c>machine-setting</c> one publishes no session
     /// and none of the sessions', the landing's or the lines' state (a machine's settings are read under the driver's); an
     /// <c>own-conversation</c> one publishes no session of a quest; the appointment acts on the role.

@@ -8,7 +8,7 @@ using Shenora.Core.Ipc;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The resolved lines and repository rules, the push path's second slice (PUSH1b1, D182): one owner in the shell's loop judging,
+/// The resolved lines and repository rules, the push path's second slice: one owner in the shell's loop judging,
 /// from the machine's facts and the driver's file alone, a partition per repository carrying its rows of what <c>LINES</c> answers,
 /// pushed when one moves and read by a window's first snapshot from memory.
 /// </summary>
@@ -123,7 +123,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// AUTONOMY1a (D184 point 1): each repository's session access setup as it resolves, every pause with its value and where it came
+    /// Each repository's session access setup as it resolves, every pause with its value and where it came
     /// from, is answered by <c>LINES</c> and pushed in the repository's partition beside its other rules, which the page's setup reads.
     /// </summary>
     [Fact]
@@ -261,7 +261,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
         var beta = Pushed("beta").Count;
 
         Guessing("alpha", Task.FromResult<string?>("trunk"));
-        // What the ref watch tells the facts of a ref moved (DriverWatch's Heard, PARALLEL1a).
+        // What the ref watch tells the facts of a ref moved (DriverWatch's Heard).
         HelpFacts.Wake(loop.Facts, ChangeTopics.Refs, "alpha");
         await UntilAsync(() => Branch("alpha") == "trunk");
         await slice.JudgeAsync();
@@ -377,7 +377,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// A repository imported from a terminal moves no ledger family, and the tick hears it in the registry's signature (REGWAKE1): a
+    /// A repository imported from a terminal moves no ledger family, and the tick hears it in the registry's signature: a
     /// changed signature has the service's answers judged again within the tick; the first one heard, and an unchanged one, wake nothing.
     /// </summary>
     [Fact]
@@ -407,7 +407,7 @@ public sealed class LinesStateSliceTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// COWORKVIEW1e-i (the cowork view design §R11.2 point 2): a lanes-only registration moves the registry's signature the tick compares, so
+    /// A lanes-only registration moves the registry's signature the tick compares, so
     /// it is heard as any registry change is and has the service's answers judged again; the same lanes in another order are no change.
     /// </summary>
     [Fact]

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// The logging framework's own lines into the machine log (LOG1a, D94): its warnings and errors, from
+/// The logging framework's own lines into the machine log: its warnings and errors, from
 /// every category — the kit's, the engine's, the modules' — which went nowhere a person could read.
 /// </summary>
 public sealed class MachineLogProviderTests : IDisposable

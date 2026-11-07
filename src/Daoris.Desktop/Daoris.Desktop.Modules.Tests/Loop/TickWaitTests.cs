@@ -4,14 +4,14 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// A wait as the loop's tick hands it to the page (<see cref="DriverLoop.TickWait"/>, UX6d, D150 §6.2): starts held because
+/// A wait as the loop's tick hands it to the page (<see cref="DriverLoop.TickWait"/>): starts held because
 /// every account they may use is cooling, one per account, so *What needs you* lists a start waiting for accounts, an ask's
 /// intake among them, which the considerations never carried (they name quests alone). And starts held on signed-out
-/// accounts with none cooling, one per agent with no time (UX6d1).
+/// accounts with none cooling, one per agent with no time.
 /// </summary>
 /// <remarks>
-/// 🔴 <b>No row starts a process to find out</b> (D150 §6.3): what the tick hands is the look's own wait, read from the
-/// cool-offs and the refusals the start met (D125 §4), so building it asks no account and starts nothing. These are facts,
+/// 🔴 <b>No row starts a process to find out</b>: what the tick hands is the look's own wait, read from the
+/// cool-offs and the refusals the start met, so building it asks no account and starts nothing. These are facts,
 /// never the driver's English: the page says them in the reader's language.
 /// </remarks>
 public sealed class TickWaitTests
@@ -79,12 +79,12 @@ public sealed class TickWaitTests
         Assert.Empty(shape.GetProperty("signedOut").EnumerateArray());
     }
 
-    /// <summary>A start held on signed-out accounts with none cooling (UX6d1): an intake among what it holds.</summary>
+    /// <summary>A start held on signed-out accounts with none cooling: an intake among what it holds.</summary>
     private static AccountWait SignedOut() =>
         Wait() with { Account = null, Name = null, Until = null, Stated = false, Quests = [], Asks = ["a1"], Repositories = ["ask #a1"] };
 
     /// <summary>
-    /// UX6d1: a wait for a person, not a time. No account cools, so there is none and no <c>until</c>, the agent named no time,
+    /// A wait for a person, not a time. No account cools, so there is none and no <c>until</c>, the agent named no time,
     /// and the accounts a sign-in frees are named: the band lists an intake held so, which no consideration carries.
     /// </summary>
     [Fact]
@@ -104,7 +104,7 @@ public sealed class TickWaitTests
     }
 
     /// <summary>
-    /// OWNSPACE1b-B (D175 point 3): the page learns "no account" from <c>noAccount</c>, on the wait and on a consideration's
+    /// The page learns "no account" from <c>noAccount</c>, on the wait and on a consideration's
     /// <c>signedOut</c>, never from an empty list; and the fact moves the signature, so the tick reaches the page when it changes.
     /// </summary>
     [Fact]
@@ -127,7 +127,7 @@ public sealed class TickWaitTests
     }
 
     /// <summary>
-    /// UX6d1: a wait on signed-out accounts moves the signature as it begins, as its accounts change and as one of them comes to
+    /// A wait on signed-out accounts moves the signature as it begins, as its accounts change and as one of them comes to
     /// cool, so the tick reaches the page; with no time it signs as any wait does.
     /// </summary>
     [Fact]

@@ -4,13 +4,13 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Ask Daoris over the bridge (`HelpRoutes.cs`, MOD5): its start and its proposals. The doors an
+/// Ask Daoris over the bridge (`HelpRoutes.cs`): its start and its proposals. The doors an
 /// Apply goes through are `HelpDoorsTests`'.
 /// </summary>
 public sealed class DriverModuleHelpTests : DriverModuleBridge
 {
     /// <summary>
-    /// Ask Daoris (HELP1a, D89) is off until its agent is named, and says where to name one — asked
+    /// Ask Daoris is off until its agent is named, and says where to name one — asked
     /// before the loop is, since no service answer changes it.
     /// </summary>
     [Fact]
@@ -20,13 +20,13 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
 
         Assert.Contains(Refusals.DriverRefused, refusal);
         Assert.Contains("Agents → Roles, Ask Daoris", refusal);
-        // ONEWAY1a: the role door names it, the retired `driver helper` never.
+        // The role door names it, the retired `driver helper` never.
         Assert.Contains("daoris role set ask-daoris", refusal);
         Assert.DoesNotContain("driver helper", refusal);
     }
 
     /// <summary>
-    /// HELP1c: the person's Not now settles a proposal of Ask Daoris's, and a settled one takes no second
+    /// The person's Not now settles a proposal of Ask Daoris's, and a settled one takes no second
     /// press. Listing and applying judge against the registry, so they wait for the loop like the review.
     /// </summary>
     [Fact]
@@ -51,7 +51,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ASKDISMISS1: a go card's dismiss is a view act. Its card is settled, so no window draws it again, and the answer says the
+    /// A go card's dismiss is a view act. Its card is settled, so no window draws it again, and the answer says the
     /// conversation was told nothing: a go changes nothing, so its dismiss is no word on the quest it names.
     /// </summary>
     [Fact]
@@ -74,7 +74,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LEFT3 b: a looked-at sync card carries, beside its rows, what they do not say, in the shape the page's
+    /// A looked-at sync card carries, beside its rows, what they do not say, in the shape the page's
     /// <c>HelpSyncShown</c> reads: each repository not fetched with git's reason, when it last heard from origin and how
     /// origin is reached, and the repositories the look left apart. Before a look, both are empty.
     /// </summary>
@@ -106,7 +106,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// HELP10's guard (LEFT3 d): an Apply names an agent action for the Agents screen to follow only where one started,
+    /// An Apply names an agent action for the Agents screen to follow only where one started,
     /// an update's or a pin's. A default is a file edit that starts nothing, so an applied one names none, and nor does
     /// an update the route refused.
     /// </summary>
@@ -131,7 +131,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ENTRY1f1 (D161's ENTRY1f note): a go's answer names the one quest or ask it opens beside its place, the page's
+    /// A go's answer names the one quest or ask it opens beside its place, the page's
     /// <c>HelpSettled.go.item</c>, and a go to a place alone answers no item.
     /// </summary>
     [Theory]
@@ -153,7 +153,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ENTRY1d2a (D161's ENTRY1d note): a go to Add repository or Import a folder answers the workspace the drawer opens with,
+    /// A go to Add repository or Import a folder answers the workspace the drawer opens with,
     /// the page's <c>HelpSettled.go.workspace</c>, the driver's judged spelling; one with none answers none, as an item.
     /// </summary>
     [Theory]
@@ -175,7 +175,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// NEW1d-a (D162's note): a go to Sessions' New conversation answers the repository and the words the composer opens with,
+    /// A go to Sessions' New conversation answers the repository and the words the composer opens with,
     /// the page's <c>HelpSettled.go.repository</c> and <c>sentence</c>; either may be none, and every other go answers both null.
     /// </summary>
     [Theory]
@@ -207,9 +207,9 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// ENTRY1f1: the quests and asks are read from the service only while a proposal is judged against them, a delete as
-    /// before or a go naming an item on Quests; a go to a place alone, or any other kind, asks the service for none.
-    /// ENTRY1f2: a go naming an item on Sessions reads this machine's session records instead, and a go naming one on a view
+    /// The quests and asks are read from the service only while a proposal is judged against them, a delete or
+    /// a go naming an item on Quests; a go to a place alone, or any other kind, asks the service for none.
+    /// A go naming an item on Sessions reads this machine's session records instead, and a go naming one on a view
     /// that holds none reads neither, since the judge refuses it unread.
     /// </summary>
     [Theory]
@@ -222,7 +222,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     [InlineData("go", "quests", " ", false, false)]
     [InlineData("go", "sessions", null, false, false)]
     [InlineData("ask", "sessions", "s1a2b3c4", false, false)]
-    // ENTRY1d2a: a go's workspace is judged against the registry the snapshot already holds, so it asks for neither.
+    // A go's workspace is judged against the registry the snapshot already holds, so it asks for neither.
     [InlineData("go", "projects", null, false, false, "work")]
     public void The_records_are_read_only_for_a_proposal_judged_against_them(
         string kind, string view, string? item, bool records, bool sessions, string? workspace = null)
@@ -236,7 +236,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
     }
 
     /// <summary>
-    /// LEFT3 c: a sync card's look leaves the card standing for its press, and the answer says so, so the page writes no
+    /// A sync card's look leaves the card standing for its press, and the answer says so, so the page writes no
     /// <c>proposal.settled</c> for it; a look that found nothing to do settled the card, and says that.
     /// </summary>
     [Theory]
