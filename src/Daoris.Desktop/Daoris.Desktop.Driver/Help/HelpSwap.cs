@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A change of Ask Daoris's access under a conversation that runs (ACCESSSWAP1, D183 point 2): its mode or its configured access
-/// (the housekeeping grant, the chosen settings and the checkouts turned off, <see cref="ConfiguredAccess"/>) chosen otherwise than its start was handed. Every such change takes the
+/// A change of Ask Daoris's access under a conversation that runs: its mode or its configured access
+/// (the housekeeping grant, the chosen settings and the checkouts turned off, <see cref="ConfiguredAccess"/>) chosen otherwise than its start handed. Every such change takes the
 /// conversation's next turn: its agent ends at its turn's end, never mid-turn, or at once where it is idle, and its next words resume
-/// the same conversation under the access chosen then, its history kept (D131), since a start hands its access five ways (its harness's
-/// posture, its rules, its tree guard, its servers and its room) and none of them is changed while it runs (D183's HELPMODE1a2 note).
+/// the same conversation under the access chosen then, its history kept, since a start hands its access five ways (its harness's
+/// posture, its rules, its tree guard, its servers and its room) and none of them is changed while it runs.
 /// </summary>
 public static class HelpSwap
 {
@@ -14,7 +14,7 @@ public static class HelpSwap
     /// or null where the conversation runs under the access chosen.
     /// </summary>
     /// <param name="mode">The mode its start got.</param>
-    /// <param name="handed">The configured access its start was handed, each grant in its built order.</param>
+    /// <param name="handed">The configured access its start handed, each grant in its built order.</param>
     /// <param name="chosenMode">The mode the person chose now.</param>
     /// <param name="chosen">The configured access the record holds now, in the same order.</param>
     public static string? Changed(string mode, ConfiguredAccess handed, string chosenMode, ConfiguredAccess chosen)
@@ -32,13 +32,13 @@ public static class HelpSwap
                 : $"its housekeeping grants {Named(chosen.Housekeeping)} now");
         }
 
-        // HELPMODE1c3: the chosen settings, said the same way.
+        // The chosen settings, said the same way.
         if (!handed.Settings.SequenceEqual(chosen.Settings, StringComparer.Ordinal))
         {
             changed.Add($"its chosen settings are {(chosen.Settings.Count == 0 ? "none" : Named(chosen.Settings))} now");
         }
 
-        // HELPMODE1c4: the checkouts turned off, the grant being on by default.
+        // The checkouts turned off, the grant being on by default.
         if (!handed.CheckoutsOff.SequenceEqual(chosen.CheckoutsOff, StringComparer.OrdinalIgnoreCase))
         {
             changed.Add(chosen.CheckoutsOff.Count == 0
@@ -52,7 +52,7 @@ public static class HelpSwap
     private static string Named(IReadOnlyList<string> codes) => string.Join(", ", codes.Select(code => $"`{code}`"));
 
     /// <summary>
-    /// What the running conversation's console is told (ACCESSSWAP1): what changed, and when it applies: its agent ends now where it
+    /// What the running conversation's console is told: what changed, and when it applies: its agent ends now where it
     /// is idle, else at its turn's end, never mid-turn; and its next words resume this conversation under the new access.
     /// </summary>
     /// <param name="changed">What <see cref="Changed"/> said.</param>

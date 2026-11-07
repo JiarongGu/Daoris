@@ -1,37 +1,37 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Ask Daoris's <c>pause</c> proposal (PAUSE1f-b, D132 §7.4, design §2): an ask's work, or one quest's, paused on this machine
+/// Ask Daoris's <c>pause</c> proposal: an ask's work, or one quest's, paused on this machine
 /// or resumed. Its doors are <c>pause</c> and <c>resume</c>, its target the one ask's or quest's id, as the service's box writes
 /// it. It is judged by what a pause would do with each piece of the work (<see cref="WorkPausing.Plan"/>) and the pauses
 /// <c>driver.json</c> keeps, and applied through the pause and the resume the pages' *Pause…* and *Resume* press.
 /// </summary>
 /// <remarks>
-/// <para><b>The card is the pause's own ask</b> (§2.6): how many running sessions it stops, in the sentence *Pause ask* says,
+/// <para><b>The card is the pause's own ask</b>: how many running sessions it stops, in the sentence *Pause ask* says,
 /// then where they apply that another machine may still take an open quest of a workspace this machine syncs, and that a
-/// running intake keeps reading. Then what §2.1 leaves as it is: a session waiting on the person, a teammate's, and a take no
-/// session here worked. Nothing is stopped until Apply (D89), and the door judges the work again as it goes.</para>
+/// running intake keeps reading. Then what it leaves as it is: a session waiting on the person, a teammate's, and a take no
+/// session here worked. Nothing is stopped until Apply, and the door judges the work again as it goes.</para>
 ///
-/// <para><b>What changes nothing is said, never refused</b> (D48 §6): a pause of what is paused already with nothing of it
+/// <para><b>What changes nothing is said, never refused</b>: a pause of what is paused already with nothing of it
 /// running, a pause of work with nothing open or taken here, and a resume of what is not paused. Such a card's Apply calls no
 /// door. A pause of what is paused already where something of it runs now stops that, as the terminal's second pause does.
-/// A resume names each other pause over a quest of the work, which it does not lift (§2.4).</para>
+/// A resume names each other pause over a quest of the work, which it does not lift.</para>
 ///
-/// <para><b>Abandon is never proposed</b> (§7.4): it declines quests with the person's reason, which is their answer (D37).
-/// The box writes the id and, since PAUSE1f-c, whether it is an ask's or a quest's (<c>value</c>); a file without that word
+/// <para><b>Abandon is never proposed</b>: it declines quests with the person's reason, which is their answer.
+/// The box writes the id and whether it is an ask's or a quest's (<c>value</c>); a file without that word
 /// is found among this machine's works and pauses, and an id both an ask and a quest have is refused there.</para>
 /// </remarks>
 internal sealed class HelpPauseProposals : IHelpProposalKind
 {
     public string Kind => "pause";
 
-    // PAUSE1f-b: pause and resume; abandon is the person's own (D132 §7.4).
+    // Pause and resume; abandon is the person's own.
     public string Tool => "pause_propose";
 
     public IReadOnlyList<string> Doors { get; } = ["pause", "resume"];
 
     /// <summary>
-    /// ASKSCOPE1c2: the ask or the quest it names by id, filed under the workspace its work's record says: the ask as the service
+    /// The ask or the quest it names by id, filed under the workspace its work's record says: the ask as the service
     /// answered it, or the quest named. A pause whose work has gone names none.
     /// </summary>
     public HelpNames Named(HelpProposal proposal, HelpMachineFacts facts)
@@ -102,7 +102,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// §2.6: what the pause stops and starts nothing of, what it adds where it applies, then what §2.1 leaves as it is. What
+    /// What the pause stops and starts nothing of, what it adds where it applies, then what it leaves as it is. What
     /// <see cref="WorkPausing.PauseAsync"/> answers <see cref="PauseVerdict.Nothing"/> for, or finds paused with nothing to
     /// stop, changes nothing.
     /// </summary>
@@ -136,7 +136,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
               + $"you resume it. {kept}",
         };
 
-        // §2.6's two sentences, where they apply: an open quest another machine may take (§5.1), and a running intake.
+        // The two sentences, where they apply: an open quest another machine may take, and a running intake.
         var open = plan.Quests
             .Where(quest => quest is { Pause: PauseAct.Paused, Quest.Quest.Status: "Open" } && Wired(facts, quest.Quest.Quest.Workspace))
             .Select(quest => quest.Quest.Quest.Id)
@@ -144,7 +144,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
         if (open.Count > 0) said.Add($"Another machine may still take {Quests(open)}: a pause holds this machine only.");
         if (plan.Sessions.Any(session => session.Pause == PauseAct.Intake)) said.Add("Its intake keeps reading; what it publishes waits too.");
 
-        // §2.1: what the pause leaves as it is, each with why.
+        // What the pause leaves as it is, each with why.
         var parked = Sessions(plan, PauseAct.Parked);
         if (parked.Count > 0)
         {
@@ -174,7 +174,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// §2.4: the pause lifted and each stop it made released; it starts nothing itself. Each other pause over a quest of the work
+    /// The pause lifted and each stop it made released; it starts nothing itself. Each other pause over a quest of the work
     /// stays, named by what holds it, as the resume's answer names it after; a resume of what is not paused changes nothing.
     /// </summary>
     private static HelpPlan ResumePlan(PausedBy work, WorkPlan? plan, DriverConfig config)
@@ -215,7 +215,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
     }
 
     /// <summary>
-    /// Which it names: the box says (PAUSE1f-c); a file from before it, or a word that is neither, is left to the lookup, as an
+    /// Which it names: the box says; a file from before it, or a word that is neither, is left to the lookup, as an
     /// ask's or a quest's.
     /// </summary>
     private static WorkScope[] Kinds(HelpProposal proposal) => proposal.Value?.Trim().ToLowerInvariant() switch
@@ -238,7 +238,7 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
         _ => work.Pieces.Quests.FirstOrDefault(quest => quest.Joined == WorkJoin.Named)?.Quest.Id ?? work.Pieces.Id,
     };
 
-    /// <summary>Whether this machine syncs the quest's workspace with a remote, an unstated one being the default (§5.1).</summary>
+    /// <summary>Whether this machine syncs the quest's workspace with a remote, an unstated one being the default.</summary>
     private static bool Wired(HelpMachineFacts facts, string? workspace) =>
         facts.Wired.Contains(string.IsNullOrWhiteSpace(workspace) ? RemoteTarget.DefaultWorkspace : workspace.Trim(), StringComparer.OrdinalIgnoreCase);
 
@@ -262,15 +262,15 @@ internal sealed class HelpPauseProposals : IHelpProposalKind
 public interface IHelpPauseDoors
 {
     /// <summary>
-    /// The pause the pages' *Pause…* and a session's *Pause ask…* and *Pause quest…* press (<c>WORK_PAUSE</c>, PAUSE1b, D132
-    /// §2.1): <see cref="WorkPausing.PauseAsync"/>, which reads the work again as it goes. Its answer comes back as its sentence,
+    /// The pause the pages' *Pause…* and a session's *Pause ask…* and *Pause quest…* press (<c>WORK_PAUSE</c>):
+    /// <see cref="WorkPausing.PauseAsync"/>, which reads the work again as it goes. Its answer comes back as its sentence,
     /// a refusal included.
     /// </summary>
     Task<(bool Ok, string Message)> PauseWorkAsync(WorkScope scope, string id, CancellationToken ct);
 
     /// <summary>
-    /// The resume the pages' *Resume* and a session's *Resume ask* and *Resume quest* press (<c>WORK_RESUME</c>, PAUSE1b, D132
-    /// §2.4): <see cref="WorkPausing.ResumeAsync"/>, its answer naming what still holds each quest, as its sentence.
+    /// The resume the pages' *Resume* and a session's *Resume ask* and *Resume quest* press (<c>WORK_RESUME</c>):
+    /// <see cref="WorkPausing.ResumeAsync"/>, its answer naming what still holds each quest, as its sentence.
     /// </summary>
     Task<(bool Ok, string Message)> ResumeWorkAsync(WorkScope scope, string id, CancellationToken ct);
 }

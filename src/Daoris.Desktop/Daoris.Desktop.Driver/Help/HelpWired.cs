@@ -4,14 +4,14 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What one start of Ask Daoris handed its agent (HELPWIRED1, D183 point 4, the Ask Daoris modes design §6): recorded at the start
+/// What one start of Ask Daoris handed its agent: recorded at the start
 /// from the spawn's own inputs, never worked out again from configuration, since a list worked out later could disagree with
-/// what the agent was given (D183's rejected list). One per start: a conversation going on, or going on under another mode, adds
+/// what the agent got. One per start: a conversation going on, or going on under another mode, adds
 /// one, and the earlier are kept.
 /// </summary>
 /// <remarks>
 /// <para><b>Fields by allow-list.</b> Each field is one the receipt names; nothing of the spawn's environment, a server's command,
-/// arguments or environment, or an account's key is ever copied (design §7, the receipt leaking). Machine paths are kept (its
+/// arguments or environment, or an account's key is ever copied (the receipt leaking). Machine paths are kept (its
 /// folder, the checkouts it may read, the rules), so it is this desktop's alone: answered by the bridge's <c>HELP_WIRED</c>, never
 /// by a shared host or on a feed.</para>
 /// </remarks>
@@ -23,13 +23,13 @@ public sealed record HelpReceipt
     /// <summary><see cref="HelpWired.New"/> for a conversation's first start, <see cref="HelpWired.GoingOn"/> for one going on.</summary>
     public string Start { get; init; } = HelpWired.New;
 
-    /// <summary>The access mode it ran under, the effective one (<see cref="HelpModes"/>; design §1), never the mode chosen now.</summary>
+    /// <summary>The access mode it ran under, the effective one (<see cref="HelpModes"/>), never the mode chosen now.</summary>
     public string Mode { get; init; } = HelpModes.Restricted;
 
     /// <summary>The door it ran on: the id Daoris names it by.</summary>
     public string Door { get; init; } = "";
 
-    /// <summary>The harness version observed for the start, or null where none was.</summary>
+    /// <summary>The harness version observed for the start, or null where none is.</summary>
     public string? Version { get; init; }
 
     /// <summary>The account it ran as, by its name here; null for the agent's own sign-in.</summary>
@@ -38,10 +38,10 @@ public sealed record HelpReceipt
     /// <summary>Its transport: <see cref="HelpWired.Native"/> or <see cref="HelpWired.Protocol"/>.</summary>
     public string Transport { get; init; } = HelpWired.Native;
 
-    /// <summary>The protocol door's mode it asked (D81, D183), its required mark taken off; null on the native door.</summary>
+    /// <summary>The protocol door's mode it asked, its required mark taken off; null on the native door.</summary>
     public string? Posture { get; init; }
 
-    /// <summary>The native door's permission mode Daoris named (full access's); null where the adapter's own was kept.</summary>
+    /// <summary>The native door's permission mode Daoris named (full access's); null where the adapter's own is kept.</summary>
     public string? PermissionMode { get; init; }
 
     /// <summary>Its working folder: its room.</summary>
@@ -53,54 +53,54 @@ public sealed record HelpReceipt
     /// </summary>
     public IReadOnlyList<string> Tools { get; init; } = [];
 
-    /// <summary>The plugins' skills composed for it, each as <c>plugin:skill</c> with whether it was handed.</summary>
+    /// <summary>The plugins' skills composed for it, each as <c>plugin:skill</c> with whether it is handed.</summary>
     public IReadOnlyList<HelpWiredSkill> Skills { get; init; } = [];
 
     /// <summary>Each server: handed, handed by full access without an approval, or withheld and why.</summary>
     public IReadOnlyList<HelpWiredServer> Servers { get; init; } = [];
 
-    /// <summary>The permission rules handed, list for list as the settings file holds them; null where none was handed.</summary>
+    /// <summary>The permission rules handed, list for list as the settings file holds them; null where none is handed.</summary>
     public HelpWiredRules? Rules { get; init; }
 
-    /// <summary>Whether the tree guard (PERM3) was handed with its rules: restricted's, never full access's (D183's HELPMODE1a1 note).</summary>
+    /// <summary>Whether the tree guard is handed with its rules: restricted's, never full access's.</summary>
     public bool Guarded { get; init; }
 
     /// <summary>
-    /// The checkouts its start handed <c>checkout_read</c> (D107, HELPMODE1c4): the readable ones the person left on, whatever its agent,
-    /// which each read is judged by; none in full access. A start before HELPMODE1c4 kept here those its rules granted.
+    /// The checkouts its start handed <c>checkout_read</c>: the readable ones the person left on, whatever its agent,
+    /// which each read is judged by; none in full access.
     /// </summary>
     public IReadOnlyList<HelpRead> Checkouts { get; init; } = [];
 
-    /// <summary>In restricted mode, what it lacks, each with the door that grants it (D183 point 4); none in full access.</summary>
+    /// <summary>In restricted mode, what it lacks, each with the door that grants it; none in full access.</summary>
     public IReadOnlyList<HelpWiredLack> Lacks { get; init; } = [];
 
     /// <summary>What the door said it loaded at this start, from its init frame (<see cref="HelpLoaded"/>); null until it said, and on a start before it.</summary>
     public WireLoaded? Loaded { get; init; }
 
     /// <summary>
-    /// The housekeeping operations its start was handed (HELPMODE1c2a, <see cref="ConfiguredAccess"/>), whatever its agent: each tool's
+    /// The housekeeping operations its start handed (<see cref="ConfiguredAccess"/>), whatever its agent: each tool's
     /// call is judged by these and by the record at the call, so a grant chosen since takes the next start, at the conversation's next
-    /// turn (ACCESSSWAP1). None for a start before.
+    /// turn. None for a start before.
     /// </summary>
     public IReadOnlyList<string> Housekeeping { get; init; } = [];
 
     /// <summary>
-    /// The chosen settings its start was handed (HELPMODE1c3, <see cref="ConfiguredAccess.Settings"/>), whatever its agent, judged by
+    /// The chosen settings its start handed (<see cref="ConfiguredAccess.Settings"/>), whatever its agent, judged by
     /// as housekeeping's are (<see cref="HelpSettings"/>). None for a start before.
     /// </summary>
     public IReadOnlyList<string> Settings { get; init; } = [];
 }
 
-/// <summary>A plugin's skill composed for the start (HELPPLUG1b): <c>plugin:skill</c>, its <see cref="HelpWired"/> state and why.</summary>
+/// <summary>A plugin's skill composed for the start: <c>plugin:skill</c>, its <see cref="HelpWired"/> state and why.</summary>
 public sealed record HelpWiredSkill(string Name, string State, string? Why = null);
 
 /// <summary>
 /// A server: its name, the plugin that declares it (null for Daoris's own connector), its <see cref="HelpWired"/> state, its tools
-/// where known, and why where it was withheld.
+/// where known, and why where it is withheld.
 /// </summary>
 public sealed record HelpWiredServer(string Name, string? Plugin, string State, IReadOnlyList<string>? Tools = null, string? Why = null);
 
-/// <summary>The rules a start handed, as the settings file holds them (PERM1).</summary>
+/// <summary>The rules a start handed, as the settings file holds them.</summary>
 public sealed record HelpWiredRules(IReadOnlyList<string> Allow, IReadOnlyList<string> Ask, IReadOnlyList<string> Deny);
 
 /// <summary>
@@ -110,8 +110,8 @@ public sealed record HelpWiredRules(IReadOnlyList<string> Allow, IReadOnlyList<s
 public sealed record HelpWiredLack(string Kind, string Name, string Door, string Why, string? Plugin = null);
 
 /// <summary>
-/// What a start of Ask Daoris composed and put on its spawn, as <c>ChatRunner</c> holds it at the moment before the process starts
-/// (HELPWIRED1): what <see cref="HelpWired.Compose"/> makes a receipt of. Each "handed" is read from the spawn itself, whether its
+/// What a start of Ask Daoris composed and put on its spawn, as <c>ChatRunner</c> holds it at the moment before the process starts:
+/// what <see cref="HelpWired.Compose"/> makes a receipt of. Each "handed" is read from the spawn itself, whether its
 /// command line or its protocol door's <c>_meta</c> names the file, so a door that takes no rules, no skills or no servers is said so.
 /// </summary>
 public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Transport Transport, string Folder)
@@ -127,39 +127,39 @@ public sealed record HelpHanded(string Mode, bool GoesOn, string Harness, Transp
     /// <summary>The rules composed for the settings file; null where the harness takes none.</summary>
     public RuleLists? Rules { get; init; }
 
-    /// <summary>Whether the spawn was handed the settings file.</summary>
+    /// <summary>Whether the spawn got the settings file.</summary>
     public bool RulesHanded { get; init; }
 
     /// <summary>Whether the settings file carried the tree guard.</summary>
     public bool Guarded { get; init; }
 
-    /// <summary>The checkouts the place hands <c>checkout_read</c> (D107, HELPMODE1c4).</summary>
+    /// <summary>The checkouts the place hands <c>checkout_read</c>.</summary>
     public IReadOnlyList<HelpRead> Reads { get; init; } = [];
 
     /// <summary>The plugin folders composed for its skills (<see cref="SpawnSkills"/>).</summary>
     public IReadOnlyList<string> SkillPlugins { get; init; } = [];
 
-    /// <summary>Whether the spawn was handed them.</summary>
+    /// <summary>Whether the spawn got them.</summary>
     public bool SkillsHanded { get; init; }
 
-    /// <summary>The servers put on the spawn: the knowledge connector where one was found, and the plugins' servers handed.</summary>
+    /// <summary>The servers put on the spawn: the knowledge connector where one is found, and the plugins' servers handed.</summary>
     public IReadOnlyList<ServerEntry> Servers { get; init; } = [];
 
-    /// <summary>Whether the spawn was handed them: the protocol door always is; the native door where it takes the servers file.</summary>
+    /// <summary>Whether the spawn got them: the protocol door always is; the native door where it takes the servers file.</summary>
     public bool ServersHanded { get; init; }
 
-    /// <summary>The note that said a browser server was withheld (D78), or null.</summary>
+    /// <summary>The note that says a browser server is withheld, or null.</summary>
     public Noted? Withheld { get; init; }
 
-    /// <summary>The housekeeping operations the place was composed with (HELPMODE1c2a).</summary>
+    /// <summary>The housekeeping operations the place is composed with.</summary>
     public IReadOnlyList<string> Housekeeping { get; init; } = [];
 
-    /// <summary>The chosen settings the place was composed with (HELPMODE1c3).</summary>
+    /// <summary>The chosen settings the place is composed with.</summary>
     public IReadOnlyList<string> Settings { get; init; } = [];
 }
 
 /// <summary>
-/// Ask Daoris's receipts (HELPWIRED1), kept per conversation in <c>&lt;home&gt;/sessions/&lt;id&gt;.wired.json</c> beside its
+/// Ask Daoris's receipts, kept per conversation in <c>&lt;home&gt;/sessions/&lt;id&gt;.wired.json</c> beside its
 /// other files, oldest first, and answered newest first; a delete or a history clear takes the file with the rest
 /// (<see cref="SessionHomeFiles"/>, under Ask Daoris's own name). A conversation started before this row has none: not recorded.
 /// </summary>
@@ -175,7 +175,7 @@ public sealed class HelpWired(string home)
     /// <summary>A conversation's first start.</summary>
     public const string New = "new";
 
-    /// <summary>A start of a conversation going on (MSG1c, ASKHIST1).</summary>
+    /// <summary>A start of a conversation going on.</summary>
     public const string GoingOn = "going-on";
 
     /// <summary>The native transport.</summary>
@@ -190,14 +190,14 @@ public sealed class HelpWired(string home)
     /// <summary>On the spawn: approved for Ask Daoris, or Daoris's own.</summary>
     public const string Handed = "handed";
 
-    /// <summary>On the spawn by full access, with no restricted approval (D183 point 1).</summary>
+    /// <summary>On the spawn by full access, with no restricted approval.</summary>
     public const string FullAccess = "full-access";
 
     /// <summary>Not on the spawn; why says which.</summary>
     public const string Withheld = "withheld";
 
     /// <summary>
-    /// Handed by a door whose loading of it was read from the adapter's sources and never run (D170's HELPPLUG1b note): a skill on
+    /// Handed by a door whose loading of it is read from the adapter's sources and never run: a skill on
     /// the protocol door.
     /// </summary>
     public const string Unverified = "unverified";
@@ -205,10 +205,10 @@ public sealed class HelpWired(string home)
     /// <summary>A server declared for Ask Daoris the person has not approved.</summary>
     public const string NotApproved = "not-approved";
 
-    /// <summary>A server whose approval its plugin's update has changed since (HELPPLUG1c).</summary>
+    /// <summary>A server whose approval its plugin's update has changed since.</summary>
     public const string Changed = "changed";
 
-    /// <summary>A server naming a generic execution tool, never handed in restricted mode (HELP4).</summary>
+    /// <summary>A server naming a generic execution tool, never handed in restricted mode.</summary>
     public const string Refused = "refused";
 
     /// <summary>A server declared for sessions alone, not for Ask Daoris.</summary>
@@ -217,19 +217,19 @@ public sealed class HelpWired(string home)
     /// <summary>The harness has no door for it: the native door's adapter took no servers file, or no skills or rules.</summary>
     public const string NoDoor = "no-door";
 
-    /// <summary>Daoris's knowledge connector was not found on this machine.</summary>
+    /// <summary>Daoris's knowledge connector is not found on this machine.</summary>
     public const string NotFound = "not-found";
 
-    /// <summary>What restricted mode does not do: run commands, edit files (D89, D107).</summary>
+    /// <summary>What restricted mode does not do: run commands, edit files.</summary>
     public const string RestrictedMode = "restricted";
 
     /// <summary>A server's browser could not be brought up for a reason the shell said in its own words.</summary>
     public const string BrowserFailed = "browser.failed";
 
-    /// <summary>The door that grants it: the plugin's approval on its page (D170).</summary>
+    /// <summary>The door that grants it: the plugin's approval on its page.</summary>
     public const string DoorPlugins = "plugins";
 
-    /// <summary>The door that grants it: full access, the person's choice (D183 point 2), until HELPMODE1c's grants.</summary>
+    /// <summary>The door that grants it: full access, the person's choice.</summary>
     public const string DoorMode = "mode";
 
     /// <summary>The door that grants it: the host, the desktop's browser or Daoris's own install.</summary>
@@ -286,7 +286,7 @@ public sealed class HelpWired(string home)
     public IReadOnlyList<HelpReceipt> Read(string session) => SessionEventText.IsId(session) ? [.. Oldest(session).Reverse()] : [];
 
     /// <summary>
-    /// What <c>HELP_WIRED</c> answers for a conversation (HELPWIRED1): <c>{ session, recorded, receipts }</c>, the newest first, each
+    /// What <c>HELP_WIRED</c> answers for a conversation: <c>{ session, recorded, receipts }</c>, the newest first, each
     /// field written as the file keeps it, a null kept as a null (the bridge would leave a null field out of an object).
     /// </summary>
     public static JsonElement Answer(string session, IReadOnlyList<HelpReceipt> receipts)
@@ -305,7 +305,7 @@ public sealed class HelpWired(string home)
     }
 
     /// <summary>
-    /// The receipt of what a start handed (design §6): the servers each with its approval as the person's grants stand at this start,
+    /// The receipt of what a start handed: the servers each with its approval as the person's grants stand at this start,
     /// the skills by the plugin folders composed, and in restricted mode what it lacks with each door.
     /// </summary>
     /// <param name="catalog">The plugins as this start read them.</param>
@@ -341,7 +341,7 @@ public sealed class HelpWired(string home)
             servers.Insert(0, new HelpWiredServer(KnowledgeConnector.ServerName, null, Withheld, null, NotFound));
         }
 
-        // The servers the browser's absence kept off it (D78), each with its reason's code, never an endpoint left unresolved.
+        // The servers the browser's absence kept off it, each with its reason's code, never an endpoint left unresolved.
         var (withheld, why) = BrowserWithheld(handed.Withheld);
         foreach (var name in withheld.Where(name => servers.All(server => server.Name != name)))
         {
@@ -382,7 +382,7 @@ public sealed class HelpWired(string home)
             Servers = servers,
             Rules = rules,
             Guarded = rules is not null && handed.Guarded,
-            // HELPMODE1c4: the checkouts `checkout_read` may read, whatever its agent, since Daoris judges each read, not a rule.
+            // The checkouts `checkout_read` may read, whatever its agent, since Daoris judges each read, not a rule.
             Checkouts = handed.Reads,
             Lacks = full ? [] : Lacking(servers, catalog),
             Housekeeping = handed.Housekeeping,
@@ -396,13 +396,13 @@ public sealed class HelpWired(string home)
         || info.Arguments.Contains(path, StringComparison.Ordinal)
         || info.Environment.Values.Any(value => value?.Contains(path, StringComparison.Ordinal) == true);
 
-    /// <summary>Whether a protocol door's <c>session/new</c> meta names <paramref name="path"/>: the agent was pointed at it.</summary>
+    /// <summary>Whether a protocol door's <c>session/new</c> meta names <paramref name="path"/>: the agent is pointed at it.</summary>
     public static bool Carries(object? meta, string path) =>
         meta is not null && JsonSerializer.Serialize(meta).Contains(JsonSerializer.Serialize(path)[1..^1], StringComparison.Ordinal);
 
     /// <summary>
     /// What restricted mode lacks, each with its door: a server not approved on its plugin's page, one refused or for sessions alone
-    /// by full access, one the browser's host would bring; and the shell and file edits, full access's until HELPMODE1c's grants.
+    /// by full access, one the browser's host would bring; and the shell and file edits, full access's.
     /// </summary>
     private static IReadOnlyList<HelpWiredLack> Lacking(IReadOnlyList<HelpWiredServer> servers, PluginCatalog catalog)
     {
@@ -419,7 +419,7 @@ public sealed class HelpWired(string home)
             lacks.Add(new HelpWiredLack("server", server.Name, door, server.Why ?? "", door == DoorPlugins ? server.Plugin : null));
         }
 
-        // Every server its plugins declare for sessions alone: full access hands each (D183 as it amends D170).
+        // Every server its plugins declare for sessions alone: full access hands each.
         var named = servers.Select(server => server.Name).ToHashSet(StringComparer.Ordinal);
         foreach (var plugin in catalog.Contributing)
         {
@@ -627,9 +627,7 @@ public sealed class HelpWired(string home)
                 .Select(lack => new HelpWiredLack(
                     Json.NonEmpty(lack, "kind")!, Json.Text(lack, "name") ?? "", Json.NonEmpty(lack, "door")!, Json.Text(lack, "why") ?? "",
                     Json.NonEmpty(lack, "plugin")))],
-            // A start before HELPMODE1c2a was handed none.
             Housekeeping = Json.Strings(element, "housekeeping"),
-            // And before HELPMODE1c3, no settings.
             Settings = Json.Strings(element, "settings"),
             Loaded = HelpLoaded.Read(element),
         };

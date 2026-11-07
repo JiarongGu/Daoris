@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>across</c> (HELP9, D107), as <c>daoris place across</c> reads its words: <c>read on|off|--clear</c> for a
+/// <c>across</c>, as <c>daoris place across</c> reads its words: <c>read on|off|--clear</c> for a
 /// repository or a whole workspace, or <c>write-to &lt;other&gt; [--clear]</c> from a repository, <c>--clear</c>
 /// wherever it stands — said as the terminal says it, or refused in its words.
 /// </summary>
