@@ -98,7 +98,8 @@ describe('a line’s supervision', () => {
   });
 
   it('reads the courses the driver answers, and none from an older driver', () => {
-    expect(readSupervision({ courses: [course('held')] }).courses).toEqual([course('held')]);
+    const held = course('held');
+    expect(readSupervision({ courses: [held] }).courses).toEqual([held]);
     expect(readSupervision({ courses: 'nope' }).courses).toEqual([]);
   });
 

@@ -135,7 +135,7 @@ describe("Notifications' steward line", () => {
     await i18n.changeLanguage('zh');
     render(<StewardLine standing={did} onReverse={vi.fn()} />);
     await userEvent.click(screen.getByRole('button', { name: '显示管家的操作' }));
-    expect([...document.querySelectorAll('[data-steward-act]')].map((each) => each.textContent)).toEqual(['暂缓了', '安装了备好的更新', '合入了工作树：']);
+    expect([...document.querySelectorAll('[data-steward-act]')].map((each) => each.textContent)).toEqual(['暂缓了', '安装了备好的更新', '让工作树落地了：']);
   });
 
   it('offers the owner’s reverse press only while an act stands, and none for a finish or a Try again', async () => {
