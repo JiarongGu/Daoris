@@ -161,8 +161,8 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
     /// <summary>
     /// FABRIC-RUN1d: with the look's deadline ten minutes off, the loop's start is its only look. The awaited set's own wake starts the
     /// stand-in's process and sends the step with no plan, and the completion the stand-in sends at once is heard by link 8 alone and kept
-    /// within seconds of the attempt's record. A run's answer is judged at its branch's tip, so the pass
-    /// that hears it reads that checkout's refs first, one git start, about half a second on an idle machine, so the bound is three seconds.
+    /// within seconds of the attempt's record, sometimes before the start's look has reported. A run's answer is judged at its branch's
+    /// tip, read from the checkout's ref files, so the bound of three seconds is the process's start and its answer.
     /// The stand-in writes nothing into the plugins folder here, whose change wakes a plan.
     /// </summary>
     [Fact]
@@ -178,7 +178,7 @@ public sealed class NodeRuntimeLoopProcessTests : IDisposable
             return true;
         }, pollSeconds: 600);
 
-        Assert.Equal(1, looks);
+        Assert.InRange(looks, 0, 1);
         var attempt = Assert.Single(Record()!.Attempts);
         Assert.Equal((AttemptStates.Settled, WorkStates.Reached), (attempt.State, attempt.Outcome));
         Assert.InRange(reached!.Value - attempt.RecordedAt, TimeSpan.Zero, TimeSpan.FromSeconds(3));

@@ -4,7 +4,7 @@ namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
 /// FABRIC-RUN1b over real git (NODE1's choice 8; D88's PROC1d-ii): the runtime's own read for a branch unit's <c>pushed</c>,
-/// <see cref="NodeTips.RemotesAsync"/>. The remote-tracking ref is one <c>for-each-ref</c> of the checkout a pass.
+/// <see cref="NodeTips.RemotesAsync"/>. The remote-tracking ref is read from the checkout's ref files, and git is asked no ancestry.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
 [Trait(Category.Parallel, Category.Git)]
@@ -71,9 +71,7 @@ public sealed class NodeGitReadsGitTests : LandedFixture
         var record = records.Read(RunUnits.IdOf(Run))!;
         Assert.True(record.Statuses["push"].State == NodeStates.Reached, string.Join(", ", record.Statuses.Select(each => $"{each.Key}={each.Value.State}/{each.Value.Code}")));
         Assert.Equal(landed, Assert.Single(port.Sent).SubjectRevision);
-        // One read of the checkout's refs for the session branch's tip (the landing is judged on it) and one for the remote-tracking refs.
-        Assert.Equal(2, started.Count(line => line.StartsWith("for-each-ref", StringComparison.Ordinal)));
-        Assert.DoesNotContain(started, line => line.StartsWith("merge-base", StringComparison.Ordinal));
-        Assert.Equal(2, started.Count);
+        // The session branch's tip (the landing is judged on it) and the remote-tracking ref are read from the checkout's ref files.
+        Assert.Empty(started);
     }
 }
