@@ -7,7 +7,7 @@ namespace Daoris.Desktop;
 /// <summary>
 /// What a session's tree holds and what becomes of it, the page's `bridge/trees.ts`: the review's
 /// diff, the files a composer offers, a file's preview, discard, landing
-/// and the hand-off.
+/// and the second opinion's gate.
 /// </summary>
 public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses presses)
 {
@@ -17,7 +17,7 @@ public sealed class TreesRoutes(DriverLoop loop, ReadLeaves reads, LandPresses p
 
     /// <summary>
     /// What a landing changes: the session, every plan and gate (the line it merged into is what each
-    /// session's plan judges against, LANDSYNC1, so `landing` is never only its own), its review, its hand-off, the clean-up's
+    /// session's plan judges against, LANDSYNC1, so `landing` is never only its own), its review, the clean-up's
     /// list, and which repositories hold Daoris's branches.
     /// </summary>
     private const StateScopes Lands = StateScopes.Sessions | StateScopes.Landing | StateScopes.Diff

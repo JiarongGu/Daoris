@@ -313,8 +313,8 @@ a probe, git through a counting seam, a source that only names a start, a proces
 3. D75 §1 (menus Daoris · Workspace · Agents · View) vs D152 §1: D152 is right, per `menus/commands.ts:57-66`.
 4. D150 §2 (refresh and language move to "the Daoris menu") vs D152 §1 (there is no Daoris menu): D152 is right.
 5. D75 §2 and D150 §2 (seven Settings domains, without This Daoris or Git) vs `settings/domains.ts:51` (nine): the code is right.
-6. Code vs code: `settings/domains.ts:49` says "eight"; Ask Daoris's twins (`help/places.ts:46`, `Help/Proposals/HelpGoProposals.cs:344`) omit `tools`, so no go opens Settings → Tools. Intent unclear.
-7. D150 §6 (*What needs you* leads Overview) vs D196 §5 (Overview keeps a summary): D196 is right (`overview/OverviewView.tsx:79`, `app/shell/useViewLayouts.tsx:86`). The comment at `work/attention/AttentionBand.tsx:41` is stale.
+6. Code vs code: Ask Daoris's twins (`help/places.ts:46`, `Help/Proposals/HelpGoProposals.cs:344`) omit `tools`, so no go opens Settings → Tools. Intent unclear.
+7. D150 §6 (*What needs you* leads Overview) vs D196 §5 (Overview keeps a summary): D196 is right (`overview/OverviewView.tsx:79`, `app/shell/useViewLayouts.tsx:86`).
 8. D30 (convergence is the knowledge half's primary view) vs `knowledge/modes.ts:21` (Search is the default) and D40 (Overview is the landing): the code is right.
 9. D41 (a right drawer is the single detail-and-form surface; global state sits in the sidebar) vs D118 §3 (a record opens in the main area) and D56 (the status bar): D118 and D56 are right.
 10. D41 and D42 (toasts carry the service's sentence verbatim) vs D142, D182 §2 and D185 R3 (coded verdicts worded by the page, said where the action started): the later ones are right. An unknown code still shows the driver's sentence.
