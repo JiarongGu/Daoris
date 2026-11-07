@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A brainstorm pass's two result tools (BRAINSTORM1a2, D176 points 1-4): a generator gives its proposals and the synthesis its
+/// A brainstorm pass's two result tools: a generator gives its proposals and the synthesis its
 /// ranking, each once, into the one answer file the driver's spawn names for the turn. Each answers only a turn of its own kind,
 /// judges the answer as the driver will and says a refusal's codes back, and is a pass's only connector tool: nothing here reads,
 /// asks, publishes or changes anything else.
@@ -164,7 +164,7 @@ public sealed class BrainstormTools(BrainstormBox? brainstorms = null)
     }
 }
 
-/// <summary>One proposal as a generator gives it (D176 point 3): each part nullable, so a part left out is refused by name.</summary>
+/// <summary>One proposal as a generator gives it: each part nullable, so a part left out is refused by name.</summary>
 public sealed record BrainstormProposalInput(
     [property: Description("The idea, in at most 200 characters.")]
     string? Idea,
@@ -191,7 +191,7 @@ public sealed record BrainstormProposalInput(
     [property: Description("The packet's source ids it rests on (S1 and on), and no other.")]
     string[]? Sources);
 
-/// <summary>One group of a synthesis (D176 point 4).</summary>
+/// <summary>One group of a synthesis.</summary>
 public sealed record BrainstormGroupInput(
     [property: Description("The group's title, in at most 200 characters.")]
     string? Title,

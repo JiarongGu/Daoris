@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 
 namespace Daoris.Knowledge.Mcp;
 
-/// <summary>Ask Daoris's <c>delete_propose</c> (HELP6): the <c>delete</c> kind's tool, written by <see cref="HelpProposalBox.ProposeDelete"/>.</summary>
+/// <summary>Ask Daoris's <c>delete_propose</c>: the <c>delete</c> kind's tool, written by <see cref="HelpProposalBox.ProposeDelete"/>.</summary>
 [McpServerToolType]
 public sealed class HelpDeleteTool(IntakeScope? intake = null, HelpProposalBox? help = null)
 {

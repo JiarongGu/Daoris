@@ -51,7 +51,7 @@ public sealed class QuestPersonRoutes(HostWiring host) : IRouteModule
             QuestCloseRefusal.Malformed => Refusal.BadRequest(outcome.Message, code),
             QuestCloseRefusal.NotFound => Refusal.NotFound(outcome.Message, code),
             // A check that refused on a quest's state: stale, held, closed, unbound or not this machine's; a key not that close's or
-            // withdrawn. Nothing was written.
+            // withdrawn. Nothing is written.
             _ => Refusal.Conflict(outcome.Message, code),
         };
     }

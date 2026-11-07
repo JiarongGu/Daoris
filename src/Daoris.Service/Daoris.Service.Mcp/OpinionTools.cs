@@ -4,8 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A second opinion's two tools (XAGENT1c; the second agent design §5.4, §6.1, §6.4): the reviewer says its opinion, and the
-/// working session answers the findings it was handed. Each answers only the session its connector names, as an agent: no
+/// A second opinion's two tools (the second agent design §5.4, §6.1, §6.4): the reviewer says its opinion, and the
+/// working session answers the findings it is handed. Each answers only the session its connector names, as an agent: no
 /// tool here asks for an opinion, hands one on, or answers a dispute for the person.
 /// </summary>
 /// <param name="intake">Which session this connector speaks for, when the driver started it.</param>
@@ -76,7 +76,7 @@ public sealed class OpinionTools(IntakeScope? intake = null, OpinionDesk? opinio
         "This connector speaks for no session the driver started here, so there is no second opinion to say or answer.";
 }
 
-/// <summary>One finding as a reviewer writes it (XAGENT1c, design §6.1): each part nullable, so a part left out is refused by name.</summary>
+/// <summary>One finding as a reviewer writes it (design §6.1): each part nullable, so a part left out is refused by name.</summary>
 public sealed record OpinionFindingInput(
     [property: Description("must (wrong to land as it is), should, or note.")]
     string? Weight,
@@ -98,14 +98,14 @@ public sealed record OpinionFindingInput(
         + "work applies its own.")]
     string? Proposal = null);
 
-/// <summary>A recheck's word on one first-pass finding (XAGENT1c, design §6.5).</summary>
+/// <summary>A recheck's word on one first-pass finding (design §6.5).</summary>
 public sealed record OpinionRecheckInput(
     [property: Description("The first pass's finding, by its number.")]
     int? Finding,
     [property: Description("stands, or withdrawn after the working session's answer and commits.")]
     string? Says);
 
-/// <summary>The working session's answer to one finding (XAGENT1c, design §6.4).</summary>
+/// <summary>The working session's answer to one finding (design §6.4).</summary>
 public sealed record OpinionAnswerInput(
     [property: Description("The finding, by its number.")]
     int? Finding,

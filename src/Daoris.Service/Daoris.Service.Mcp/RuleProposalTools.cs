@@ -4,7 +4,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// <c>permission_propose</c> (PERM2, D74; PART10a): a session's proposal to change the rules the agents Daoris starts work
+/// <c>permission_propose</c>: a session's proposal to change the rules the agents Daoris starts work
 /// under. How every tool's words are written is said on <see cref="KnowledgeServer"/>.
 /// </summary>
 /// <param name="proposals">Where a proposal to change the rules is written — under the home; the environment's when none is handed.</param>

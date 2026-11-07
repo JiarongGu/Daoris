@@ -23,7 +23,7 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
 
         if (host.Mode != ServiceMode.Local) return;
 
-        // The retires this machine's checkouts owe a circle (SYNC5b): what the driver's pass carries to that circle's deployment, then
+        // The retires this machine's checkouts owe a circle: what the driver's pass carries to that circle's deployment, then
         // clears. The store writes them as the row leaves, so no door that retires, re-wires or re-registers has to remember to.
         routes.Map<ReadRetiredPending, RetiredPendingResponse>(async (request, _, ct) =>
         {
@@ -46,11 +46,11 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
     {
         if (string.IsNullOrWhiteSpace(body.Repository)) return Refusal.BadRequest("repository is required");
 
-        // One shared deployment serves one workspace (D48 §5). A row declaring another is a message delivered to the wrong building, so
+        // One shared deployment serves one workspace. A row declaring another is a message delivered to the wrong building, so
         // it says so naming both sides. A conflict, not a bad request: the payload is well-formed and the deployment is wrong.
         if (Access.RefuseForeignWorkspace(host.Workspace, body.Repository, body.Workspace) is { } foreign) return Refusal.Conflict(foreign);
 
-        // Registered is addressable; adopted is disciplined (D70). Only a door that looked says false: the desktop's add of a folder with no
+        // Registered is addressable; adopted is disciplined. Only a door that looked says false: the desktop's add of a folder with no
         // manifest. Silence is `connect`, which is adoption; a shared deployment holds no roots and so no unadopted row.
         var adopted = host.Mode == ServiceMode.Shared || (body.Adopted ?? true);
         var declared = new Registration(
@@ -61,28 +61,28 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
             body.Domain?.Accepts ?? [],
             body.Packs ?? [],
             Entries: 0,
-            // A shared deployment never stores a machine path, even one a buggy client sent: the feed has no field for it (D47 §4).
+            // A shared deployment never stores a machine path, even one a buggy client sent: the feed has no field for it.
             Root: host.Mode == ServiceMode.Shared || string.IsNullOrWhiteSpace(body.Root) ? null : body.Root,
-            // A join is a manifest's declaration (D47 §4), so a repository without one joins nothing.
+            // A join is a manifest's declaration, so a repository without one joins nothing.
             Joined: adopted && (body.Join ?? false),
-            // Knowledge feeds only from a joined repository (D47 §4), narrowed here as well as in the CLI.
+            // Knowledge feeds only from a joined repository, narrowed here as well as in the CLI.
             SharesKnowledge: adopted && (body.Join ?? false) && (body.ShareKnowledge ?? false),
-            // A shared host puts every row in its own circle (D48 §2/§5). On a local host silence preserves the row: an ordinary
+            // A shared host puts every row in its own circle. On a local host silence preserves the row: an ordinary
             // re-registration runs on every sync tick and says nothing about the wiring, so a null must not re-point it to `default`.
             Workspace: host.Workspace ?? body.Workspace,
-            // The canonical line, as the checkout that registered knows it (D48 §6); unstated preserves.
+            // The canonical line, as the checkout that registered knows it; unstated preserves.
             DefaultBranch: body.DefaultBranch,
-            // What it says it uses (D91), part of the declaration and replaced with it.
+            // What it says it uses, part of the declaration and replaced with it.
             Uses: Declared.Uses(body.Domain?.Uses, body.Repository),
-            // Its lanes' words (D115 §2.2); unstated preserves what the row holds.
+            // Its lanes' words; unstated preserves what the row holds.
             Lanes: body.Lanes is null
                 ? null
                 : Declared.Lanes(body.Lanes.Select(lane => lane is null
                     ? null
                     : new DeclaredLane(lane.Id ?? "", lane.Title ?? "", lane.Summary ?? "", lane.Steward ?? false))));
 
-        // A shared deployment holds many machines' copies of one declaration, so it orders them by the commit each was read at, as it
-        // orders their knowledge (SYNC5b). A local host's registration is this machine's own: nothing to order.
+        // A shared deployment holds many machines' copies of one declaration, so it orders them by the commit each carries, as it
+        // orders their knowledge. A local host's registration is this machine's own: nothing to order.
         Registration registered;
         if (host.Mode == ServiceMode.Shared)
         {
@@ -101,10 +101,10 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
     }
 
     // Neither retiring nor re-wiring touches a file. The machine-path half of adding stays with the shell: a browser is never told, and
-    // never tells, a filesystem path (D46/D47 §4).
+    // never tells, a filesystem path.
     private async Task<Answer<RetiredResponse>> RetireAsync(RetireRepository request, HttpContext http, CancellationToken ct)
     {
-        // Read before it goes: a joined checkout's retire is owed to its circle (SYNC5b), and a person removing it should hear that the
+        // Read before it goes: a joined checkout's retire is owed to its circle, and a person removing it should hear that the
         // team's deployment will too, not only this machine.
         var leaving = (await Service.Service.RegistryAsync(ct: ct)).Named(request.Repository);
         var retired = await Service.Service.RetireAsync(request.Repository, ct);
@@ -125,8 +125,8 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
 
     private async Task<Answer<RegisteredResponse>> WireAsync(WireRepository body, HttpContext http, CancellationToken ct)
     {
-        // Re-wiring across a shared deployment's own boundary is the refusal the registration door gives (D48 §5). A re-wire must
-        // name where to: silence became `default`, out of a shared host's circle (REV3).
+        // Re-wiring across a shared deployment's own boundary is the refusal the registration door gives. A re-wire must
+        // name where to: silence would become `default`, out of a shared host's circle.
         if (Access.RefuseRewire(host.Workspace, body.Repository, body.Workspace) is { } refused) return Refusal.Conflict(refused);
 
         var existing = (await Service.Service.RegistryAsync(ct: ct)).Named(body.Repository);
@@ -152,7 +152,7 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
         var folder = string.IsNullOrWhiteSpace(body.Folder) ? host.RepositoryRoot : body.Folder;
         if (!Directory.Exists(folder)) return Refusal.BadRequest($"no such folder: '{folder}'");
 
-        // A named workspace is the person setting the folder up as one (D77): every row lands there.
+        // A named workspace is the person setting the folder up as one: every row lands there.
         var stated = string.IsNullOrWhiteSpace(body.Workspace) ? null : body.Workspace.Trim();
         var imported = await Service.Service.ImportAsync(folder, DateTimeOffset.UtcNow, stated, ct);
         var names = imported.Select(r => r.Repository).ToList();
@@ -173,14 +173,14 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
     private async Task<Answer<RegistrationResponse[]>> ListAsync(ListRegistry request, HttpContext http, CancellationToken ct) =>
         (await Service.Service.RegistryAsync(request.Workspace, ct)).Select(r => new RegistrationResponse(
             r.Repository, r.Adopted, r.Registered, r.Summary, r.Owns, r.Accepts, r.Packs, r.Entries,
-            // Machine-local by design (D46): a filesystem path is answered only to a caller on this machine.
+            // Machine-local by design: a filesystem path is answered only to a caller on this machine.
             Root: host.MachineLocal(http) ? r.Root : null,
             r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch, r.Addressable, r.DependsOn,
-            // What an asker may address there (D115 §2.2): each lane's words, never its paths.
+            // What an asker may address there: each lane's words, never its paths.
             r.DeclaredLanes.Select(lane => new LaneWire(lane.Id, lane.Title, lane.Summary, lane.Steward)).ToList())).ToArray();
 
-    // Read from the repository's own committed file where it has a checkout here, else what was fed (MAP3b) or brought down from the
-    // circle's remote (MAP3e). Nothing machine-local rides this door: the provenance names a commit and a key, never a path.
+    // Read from the repository's own committed file where it has a checkout here, else what is fed or brought down from the
+    // circle's remote. Nothing machine-local rides this door: the provenance names a commit and a key, never a path.
     private async Task<Answer<JsonObject>> CodeMapAsync(ReadCodeMap request, HttpContext http, CancellationToken ct) =>
         await Service.Service.CodeMapAsync(request.Repository, ct) is { } read
             ? WireObject.Of(CodeMapWire.Answer(request.Repository, read))
@@ -188,7 +188,7 @@ public sealed class RegistryRoutes(HostWiring host) : IRouteModule
 
     private async Task<Answer<RefreshResponse>> RefreshAsync(RefreshIndex request, HttpContext http, CancellationToken ct)
     {
-        // A shared deployment is fed, not scanned (D47 §4): a filesystem scan here would ghost-sweep every fed entry.
+        // A shared deployment is fed, not scanned: a filesystem scan here would ghost-sweep every fed entry.
         if (host.Mode == ServiceMode.Shared)
         {
             return Refusal.Conflict("a shared deployment is fed, not scanned — entries arrive with each desktop's sync");

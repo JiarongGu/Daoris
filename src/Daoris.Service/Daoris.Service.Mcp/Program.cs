@@ -9,9 +9,9 @@ using ModelContextProtocol.Server;
 // The knowledge index as an MCP server over stdio.
 //
 // Local-first, and local means local: it reads repositories on this machine and writes one SQLite
-// file under the explicit Daoris home or database path (D63). A URL, key or account belongs to shared
+// file under the explicit Daoris home or database path. A URL, key or account belongs to shared
 // mode, and it is the HTTP host's job, not this one's. A quest shared with a team is committed here
-// like any other (D68). The one socket this host opens is a take's claim by push (D69): where the
+// like any other. The one socket this host opens is a take's claim by push: where the
 // person has wired the quest's workspace to a remote, a take waits for that remote's answer before
 // the session works. A machine that has wired nothing — the default — opens no socket at all.
 //
@@ -19,21 +19,21 @@ using ModelContextProtocol.Server;
 // Every session in every repository on this machine spawns over the same file, which is how a quest
 // published in one repository's session is waiting when another repository's session starts.
 //
-//   DAORIS_HOME            where every machine-local file lives (D63) — the installed desktop's own
-//                          `data/`, which a connector the install carries takes where none is named
-//                          (SERVICEHOME2); in a workspace build, with neither it nor the DB named, exit 2
+//   DAORIS_HOME            where every machine-local file lives — the installed desktop's own
+//                          `data/`, which a connector the install carries takes where none is named;
+//                          in a workspace build, with neither it nor the DB named, exit 2
 //   DAORIS_KNOWLEDGE_ROOT  where the repositories are      (default: the parent of this workspace)
 //   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: $DAORIS_HOME/knowledge.db)
-//   DAORIS_REMOTE_CONFIG   the machine's remotes, by workspace (default: $DAORIS_HOME/remotes.json —
-//                          D48 §5; DAORIS_REMOTE_URL/_KEY/_WORKSPACE override it whole). Read when a
+//   DAORIS_REMOTE_CONFIG   the machine's remotes, by workspace (default: $DAORIS_HOME/remotes.json;
+//                          DAORIS_REMOTE_URL/_KEY/_WORKSPACE override it whole). Read when a
 //                          take claims by push and when a chain is composed.
-//   DAORIS_KNOWLEDGE_REPOSITORY  the one checkout served, for a workspace's own server (ORIENT1c):
+//   DAORIS_KNOWLEDGE_REPOSITORY  the one checkout served, for a workspace's own server:
 //                          registered alone, watched at its refs and knowledge folders, and re-read once it
 //                          moved or its reading is five minutes old (a minute, where nothing could be watched)
 //   DAORIS_KNOWLEDGE_DOCUMENTS / _INDEX  repository-relative folders read in each registered checkout:
-//                          documents a section each, a generated index a row each (ORIENT1c)
+//                          documents a section each, a generated index a row each
 
-// SUPERVISOR1a-ii (D208 §2.2): the holder key leaves this process first, so no start it builds can copy it.
+// The holder key leaves this process first, so no start it builds can copy it.
 Environment.SetEnvironmentVariable("DAORIS_ROLE_KEY", null);
 // The inbox's variables leave with it (the event hook design §6.3).
 Environment.SetEnvironmentVariable("CLAUDE_CODE_MESSAGING_SOCKET", null);
@@ -54,28 +54,28 @@ catch (IOException)
     // byte pipes and need no re-encoding.
 }
 
-// A connector the install carries finds its home where it runs (SERVICEHOME2, D171 point 1): a person's own agent starts it
+// A connector the install carries finds its home where it runs: a person's own agent starts it
 // from its `.mcp.json` with no variable set, as the install's launchers set none, so where none is named it takes the
-// install's own `data/` as this process's home, as the desktop and the driver host do (D63), before the log, the index or
+// install's own `data/` as this process's home, as the desktop and the driver host do, before the log, the index or
 // the quest files read one. A workspace build is no install, and still needs one named.
 DaorisHome.Adopt(AppContext.BaseDirectory);
 
 var builder = KnowledgeServer.HostBuilder(args);
 
-// The machine log (LOG1, D94): this host's start and stop and its warnings and errors, in a file of its
+// The machine log: this host's start and stop and its warnings and errors, in a file of its
 // own beside the desktop's, since this standard error belongs to the agent that started it and nobody
 // keeps it. With no home it writes nothing. The framework's lines go to stderr and here, from warnings up.
 using var log = MachineLog.Open("mcp");
 log.WatchUnhandled();
-// HOSTSTART2: the exception that ends this entry point is written as `error`, at `start` until the connector serves. The
+// The exception that ends this entry point is written as `error`, at `start` until the connector serves. The
 // entry point is async, so the `using` above has closed `log` by the time the runtime raises that exception as unhandled,
-// and a connector that died at start left nothing of why. The watch writes that one line to the log file alone, never to
+// and a connector that died at start would leave nothing of why. The watch writes that one line to the log file alone, never to
 // standard output, which is the protocol's.
 var entryPoint = log.WatchEntryPoint();
 McpHostLogging.Use(builder.Logging, log);
 var started = DateTimeOffset.UtcNow;
 
-// The index lives under the Daoris home (D63) unless named directly. No home and no name is a
+// The index lives under the Daoris home unless named directly. No home and no name is a
 // refusal on stderr, not a default: an index written somewhere nobody pointed this host is the
 // thing removed.
 var database = Environment.GetEnvironmentVariable(ServiceOptions.DatabaseVariable)
@@ -94,20 +94,20 @@ if (optionsError is not null)
 }
 
 // The provider is built HOST-SIDE, not in Core: the domain holds `IVectorProvider` and nothing that
-// implements one, which is what keeps a model out of it (D22, D24). Everything downstream of that
+// implements one, which is what keeps a model out of it. Everything downstream of that
 // choice — which tier is active, what hybrid fuses, what gets reported — is ServiceFactory's, shared
 // with the HTTP host so the two cannot disagree about whether semantic recall is on.
 var embedder = HostComposition.BuildEmbedder(serviceOptions);
 
-// Every verb commits in this machine's store (D68), and a take on a shared quest claims by push at the
-// remote its circle names (D69) — the remotes map read when asked, the same as the HTTP host. The MCP
+// Every verb commits in this machine's store, and a take on a shared quest claims by push at the
+// remote its circle names — the remotes map read when asked, the same as the HTTP host. The MCP
 // host is always a LOCAL door; a shared deployment has no stdio.
-// A quest's files are kept under the home of the machine that has them (D65 §2) — this one, always:
-// the MCP host is a local door. No home, no keeper, and a publish carrying files is refused (D63).
+// A quest's files are kept under the home of the machine that has them — this one, always:
+// the MCP host is a local door. No home, no keeper, and a publish carrying files is refused.
 var composed = await ServiceFactory.CreateAsync(
     serviceOptions, embedder, remotes: new ConfiguredRemotes(), files: QuestFiles.FromEnvironment());
 
-// KSCHEMA1: an index a newer Daoris wrote is left as it is, and this connector still serves what is not derived. Said
+// An index a newer Daoris wrote is left as it is, and this connector still serves what is not derived. Said
 // once, here: on stderr with the folder to update, since that stream is this machine's, and in the log by its versions.
 if (composed.IndexRefusal is { } refusedIndex)
 {
@@ -119,42 +119,41 @@ builder.Services.AddSingleton(composed.Service);
 builder.Services.AddSingleton(composed.Quests);
 builder.Services.AddSingleton(composed.Exchange);
 builder.Services.AddSingleton(composed.Asks);
-// The ledger, for the one write a session's connector makes on its own record: that it took its quest
-// (STANDDOWN2).
+// The ledger, for the one write a session's connector makes on its own record: that it took its quest.
 builder.Services.AddSingleton(composed.Ledger);
-// Each repository's memory (KNOWCENTRAL2d): the connector reads Lyntai's engines and stages its session's changes; the service applies them.
+// Each repository's memory: the connector reads Lyntai's engines and stages its session's changes; the service applies them.
 if (composed.Memory is { } memory) builder.Services.AddSingleton<IMemoryEngines>(memory);
-// Second opinions (XAGENT1c): a reviewer's connector says its opinion, and a working session's answers what it was handed.
+// Second opinions: a reviewer's connector says its opinion, and a working session's answers what it is handed.
 builder.Services.AddSingleton(composed.Opinions);
-// The ask's channel (SESSONE2a): a session posts and reads for the ask its entry names.
+// The ask's channel: a session posts and reads for the ask its entry names.
 builder.Services.AddSingleton(composed.Channel);
 
-// An intake's connector (D65 §1b): the driver that opened the session names the ask it answers, and a
+// An intake's connector: the driver that opened the session names the ask it answers, and a
 // quest published here is then asked BY that ask. Every other session names none.
 var intake = IntakeScope.FromEnvironment();
 builder.Services.AddSingleton(intake);
 
-// Where a session's proposal to change the rules goes (PERM2, D74): the home the driver names on the
+// Where a session's proposal to change the rules goes: the home the driver names on the
 // connector it offers — the one its rules live in — else the account's. A file there, never a row.
 builder.Services.AddSingleton(RuleProposalBox.FromEnvironment());
-// And Ask Daoris's (HELP1c, D89), under the same home: a file each, for the person to apply.
+// And Ask Daoris's, under the same home: a file each, for the person to apply.
 builder.Services.AddSingleton(HelpProposalBox.FromEnvironment());
-// And a working session's ask for a helper, and a helper's answer (MIXAGENT2a-i), under the same home: a file each.
+// And a working session's ask for a helper, and a helper's answer, under the same home: a file each.
 builder.Services.AddSingleton(HelperBox.FromEnvironment());
-// And a partner's answer for its piece (COAGENT1b), under the same home: one file, beside the driver's ask and state.
+// And a partner's answer for its piece, under the same home: one file, beside the driver's ask and state.
 builder.Services.AddSingleton(PartnerBox.FromEnvironment());
-// And the event files a session's line is read back from (SESSCTX1f), under the same home: read on this machine, never served.
+// And the event files a session's line is read back from, under the same home: read on this machine, never served.
 builder.Services.AddSingleton(LineEvents.FromEnvironment());
-// And a brainstorm pass's answer (BRAINSTORM1a2): the one file the driver names on the connector it offers the pass, else none.
+// And a brainstorm pass's answer: the one file the driver names on the connector it offers the pass, else none.
 builder.Services.AddSingleton(BrainstormBox.FromEnvironment());
 
-// The ambient scope (D48 §4): this process is spawned BY a repository's session, so its working
+// The ambient scope: this process is spawned BY a repository's session, so its working
 // directory is that repository — which is the one thing that makes "my own circle" answerable without
 // asking the agent to know wiring it has no business knowing. Captured at startup, because the
 // directory a client launched this from is the fact; anything later is drift. An intake's room is no
 // repository: its circle is its ask's, read once here.
 var circle = intake.Ask is { } askId ? (await composed.Asks.FindAsync(askId).ConfigureAwait(false))?.Workspace : null;
-// ASKSCOPE1c: Ask Daoris in a workspace's room is bound to that workspace by its record, which the driver names here; its
+// Ask Daoris in a workspace's room is bound to that workspace by its record, which the driver names here; its
 // tools answer from it alone and refuse another, or all.
 builder.Services.AddSingleton(new AmbientWorkspace(Directory.GetCurrentDirectory(), circle)
 {
@@ -165,32 +164,32 @@ builder.Services
     .AddMcpServer(options =>
     {
         options.ServerInfo = new() { Name = "daoris-knowledge", Version = "0.1.0" };
-        // A server over one checkout says what it reads and which tier answers, before the first search
-        // (ORIENT1c); one over a family says nothing its tools do not.
+        // A server over one checkout says what it reads and which tier answers, before the first search;
+        // one over a family says nothing its tools do not.
         options.ServerInstructions = KnowledgeServer.Instructions(serviceOptions, composed.SemanticEnabled);
     })
     .WithStdioServerTransport()
     // The harness's client opens with the 2026-07-28 revision's probe, which this server predates: answered
-    // method not found, so it falls back to initialize, and said at debug rather than warned (MCPDISCOVER1).
+    // method not found, so it falls back to initialize, and said at debug rather than warned.
     .AnswerDiscoverProbe()
     // Every call's lineage, as its harness wrote it in `_meta`, written for the driver to bind a native child to the session's
-    // part (FABRIC-C1a, D173): a child calls with this process's session, so the environment cannot tell it apart.
+    // part: a child calls with this process's session, so the environment cannot tell it apart.
     .RecordCallLineage(LineageFile.FromEnvironment())
-    // Every call judged by the session's work before its tool runs (FOUNDATION1r, the call layer's table), whatever rules its agent
+    // Every call judged by the session's work before its tool runs (the call layer's table), whatever rules its agent
     // takes: a brainstorm pass is placed first by the turn named on this connector, else the work is its record's.
     .RefuseOutsideRole(new SessionWorks(composed.Ledger, intake, BrainstormScope.FromEnvironment()).ReadAsync)
-    // Every answer ends with what waits for the session on its ask's channel, once per new message (COWORK1d, D188's note): the pull
+    // Every answer ends with what waits for the session on its ask's channel, once per new message: the pull
     // an agent meets at its next call, whatever its door.
     .TellWhatWaits(new WaitingLine(composed.Channel, intake).NextAsync)
     // A call that leaves out an argument its tool requires is refused in plain words, naming it and what the tool takes, before the tool
-    // is built (CONNARGS1): the caller's mistake, kept in the log as a refusal and not as the marshaller's unhandled exception.
+    // is built: the caller's mistake, kept in the log as a refusal and not as the marshaller's unhandled exception.
     .RefuseMissingArguments(log)
-    // Every class of tools, from the one list the tests read too (PART10a).
+    // Every class of tools, from the one list the tests read too.
     .WithKnowledgeTools();
 
 log.Info("app.started", ("repository", Path.GetFileName(Directory.GetCurrentDirectory())));
 var host = builder.Build();
-// The start is over once the host has started its transport (HOSTSTART2): what ends the connector after it is `unhandled`.
+// The start is over once the host has started its transport: what ends the connector after it is `unhandled`.
 host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStarted.Register(entryPoint.Running);
 await host.RunAsync().ConfigureAwait(false);
 await composed.DisposeAsync().ConfigureAwait(false);
@@ -209,7 +208,7 @@ static string DefaultRepositoryRoot()
 
     var fallback = Directory.GetCurrentDirectory();
     // This default is computed eagerly even when the environment decides; only warn when it will be used. A
-    // server over one checkout never uses it: the checkout is named (ORIENT1c).
+    // server over one checkout never uses it: the checkout is named.
     if (Environment.GetEnvironmentVariable(ServiceOptions.RootVariable) is not null
         || Environment.GetEnvironmentVariable(ServiceOptions.RepositoryVariable) is not null) return fallback;
     Console.Error.WriteLine(

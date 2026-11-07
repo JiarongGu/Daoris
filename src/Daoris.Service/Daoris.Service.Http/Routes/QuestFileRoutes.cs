@@ -15,7 +15,7 @@ public sealed class QuestFileRoutes(HostWiring host) : IRouteModule
         routes.MapFile<ReadQuestAttachment>(AttachmentAsync);
     }
 
-    // The bytes never left this machine (D65 §2), and a shared deployment has no door here because it has none of them. Found by hash,
+    // The bytes never leave this machine, and a shared deployment has no door here because it has none of them. Found by hash,
     // never by a path a caller names, so nothing outside the quest's own directory is reachable through it.
     private async Task<IResult> AttachmentAsync(ReadQuestAttachment request, HttpContext http, CancellationToken ct)
     {

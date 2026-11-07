@@ -4,13 +4,13 @@ using System.Text.Json.Serialization;
 
 namespace Daoris.Contracts.Feed;
 
-// A shared host is fed by desktops: records and content arrive attributed to the key that carried them (D47 §§4-6), and the quest
-// operations they push are ordered here (D68). A local host is fed by nobody, so none of these exist there. The session, channel and
+// A shared host is fed by desktops: records and content arrive attributed to the key that carried them, and the quest
+// operations they push are ordered here. A local host is fed by nobody, so none of these exist there. The session, channel and
 // quest doors speak the wires of Core (<c>SessionWire</c>, <c>ChannelWire</c>, <c>QuestWire</c>), the ones the machines' client writes
 // and reads, so their bodies are read by the handler as text and their answers are those wires' JSON.
 
 /// <summary>
-/// The session records of a joined repository, keyed by origin and id, upserted whole and never re-judged (D47 §6). The body is the
+/// The session records of a joined repository, keyed by origin and id, upserted whole and never re-judged. The body is the
 /// session wire's feed, <c>{"records": [...]}</c>, read as text by the handler.
 /// </summary>
 public sealed record FeedSessions : IRoute<FeedResponse>
@@ -26,7 +26,7 @@ public sealed record SessionsSince(long? Since = null) : IRoute<JsonObject>
     public static string Path => "/api/sessions/since";
 }
 
-/// <summary>An ask's channel messages, up (SESSONE2d, D167 point 8): the body is the channel wire's feed, <c>{"messages": [...]}</c>.</summary>
+/// <summary>An ask's channel messages, up: the body is the channel wire's feed, <c>{"messages": [...]}</c>.</summary>
 public sealed record FeedChannel : IRoute<FeedResponse>
 {
     public static string Method => "POST";
@@ -41,8 +41,8 @@ public sealed record ChannelSince(long? Since = null) : IRoute<JsonObject>
 }
 
 /// <summary>
-/// Knowledge content, never vectors (D47 §4). The three provenance fields are the feed's claim about which point in the history it speaks
-/// for (D48 §6): nullable on the wire and judged at the door. <c>Base</c> is the held commit the feeding machine asked git about (SYNC5a).
+/// Knowledge content, never vectors. The three provenance fields are the feed's claim about which point in the history it speaks
+/// for: nullable on the wire and judged at the door. <c>Base</c> is the held commit the feeding machine asked git about.
 /// </summary>
 public sealed record FeedEntries(
     string Repository, IReadOnlyList<FeedEntryRecord>? Entries,
@@ -53,7 +53,7 @@ public sealed record FeedEntries(
 }
 
 /// <summary>
-/// A repository's code map, fed (MAP3b): the file's text as one string, judged whole again at the door, or null when the checkout keeps
+/// A repository's code map, fed: the file's text as one string, judged whole again at the door, or null when the checkout keeps
 /// none at that commit. The provenance is the entries feed's, field for field.
 /// </summary>
 public sealed record FeedCodeMap(
@@ -64,14 +64,14 @@ public sealed record FeedCodeMap(
     public static string Path => "/api/feed/code-map";
 }
 
-/// <summary>Which commit each feed of a repository stands on here: what a feeding machine asks git about before it feeds (SYNC5a).</summary>
+/// <summary>Which commit each feed of a repository stands on here: what a feeding machine asks git about before it feeds.</summary>
 public sealed record ReadFeedHeld(string? Repository = null) : IRoute<FeedHeldResponse>
 {
     public static string Method => "GET";
     public static string Path => "/api/feed/held";
 }
 
-/// <summary>What the remote accepted after a number, in its order, with the workspace's handshake (FABRIC-CLOSE1i).</summary>
+/// <summary>What the remote accepted after a number, in its order, with the workspace's handshake.</summary>
 public sealed record ReadOperations(long? Since = null) : IRoute<JsonObject>
 {
     public static string Method => "GET";

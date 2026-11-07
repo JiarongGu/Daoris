@@ -4,7 +4,7 @@ namespace Daoris.Knowledge.Http.Routes;
 
 /// <summary>
 /// The brainstorm and meeting desks a terminal reaches: the person's question written as the request the driver's look freezes into a
-/// packet, the packet and document read back, the person's send, stop and clear. Kept where it was asked, carrying the asker's records
+/// packet, the packet and document read back, the person's send, stop and clear. Kept where it is asked, carrying the asker's records
 /// and this machine's accounts, so answered only to a caller on this machine and never a quest operation.
 /// </summary>
 public sealed class BrainstormRoutes(HostWiring host) : IRouteModule

@@ -6,7 +6,7 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// A call that leaves out an argument its tool requires, answered in plain words (CONNARGS1): which parameter is missing, which the call
+/// A call that leaves out an argument its tool requires, answered in plain words: which parameter is missing, which the call
 /// gave that the tool does not take, and every one it takes.
 /// </summary>
 /// <remarks>
@@ -56,14 +56,14 @@ public static class ConnectorArguments
 }
 
 /// <summary>
-/// Every <c>tools/call</c> held to its tool's required parameters before the tool is built (CONNARGS1): a call that leaves one out is the
+/// Every <c>tools/call</c> held to its tool's required parameters before the tool is built: a call that leaves one out is the
 /// caller's mistake, answered as the tool's error result naming what is missing and what the tool takes, and written to the machine log as
 /// a refusal (<c>tool.refused</c>, information), never as the unhandled exception the SDK's argument marshaller made of it.
 /// </summary>
 /// <remarks>
 /// <para>It judges the arguments against the schema the tool advertises, before the tool runs, rather than catching what the marshaller
 /// throws: an <see cref="ArgumentException"/> a tool's own code throws is the tool's, still logged as the error it is, and nothing is
-/// caught to tell the two apart. A call that names every required parameter goes on as it was.</para>
+/// caught to tell the two apart. A call that names every required parameter goes on unchanged.</para>
 /// <para>Only the names of the arguments are read, never their values, which are the model's words and stay out of the log.</para>
 /// </remarks>
 public static class ArgumentFilter

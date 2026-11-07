@@ -9,8 +9,8 @@ namespace Daoris.Knowledge.Http;
 public static class ChannelRoutes
 {
     /// <summary>
-    /// One message or line of an ask's channel (SESSONE2a): a message's poster is named by its session, repository and agent, and the
-    /// person's by <c>person</c>; Daoris's lines are coded and carry no sentence. COWORK1d: its level, and the reader's acknowledgment of
+    /// One message or line of an ask's channel: a message's poster is named by its session, repository and agent, and the
+    /// person's by <c>person</c>; Daoris's lines are coded and carry no sentence. Its level, and the reader's acknowledgment of
     /// it or, for the person, what it reached in each repository it addresses; a message to one part, its part, channel and receipt.
     /// </summary>
     public static ChannelItemResponse ToChannelItem(IChannelItem item, ChannelRead? read = null) => item switch

@@ -4,8 +4,8 @@ using ModelContextProtocol.Server;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// Ask Daoris's <c>agent_propose</c> (HELP6): the <c>agent</c> kind's tool, written by <see cref="HelpProposalBox.ProposeAgent"/>. Since
-/// POOL1b (D197 point 6, the account-pool design §5.3) an agent's accounts are one set: <c>use</c> and <c>order</c> name no workspace.
+/// Ask Daoris's <c>agent_propose</c>: the <c>agent</c> kind's tool, written by <see cref="HelpProposalBox.ProposeAgent"/>. An
+/// agent's accounts (the account-pool design §5.3) are one set: <c>use</c> and <c>order</c> name no workspace.
 /// </summary>
 [McpServerToolType]
 public sealed class HelpAgentTool(IntakeScope? intake = null, HelpProposalBox? help = null)

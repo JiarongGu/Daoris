@@ -33,7 +33,7 @@ public static class SessionPageTypes
 
 /// <summary>
 /// One word waiting on a record: its id, which the record's events say again where the session took it; the words; when; its files'
-/// names, never where they are; and whether it was said after the record ended. The marks say whose it is: <c>By</c> the second opinion
+/// names, never where they are; and whether it is said after the record ended. The marks say whose it is: <c>By</c> the second opinion
 /// whose findings these are, <c>Helper</c> a helper's answer, <c>From</c> an author that is not the person (<c>daoris</c>) and <c>Key</c>
 /// its producer's; absent, the person's. <c>Level</c> and <c>Attempt</c> are when its sender asked it to reach a working session and
 /// when a dispatcher first wrote it to a harness. <c>Decision</c>, <c>Question</c> and <c>Choice</c> are what a supervisor's word claims.
@@ -44,15 +44,15 @@ public sealed record SaidWordResponse(
     string? Decision = null, string? Question = null, string? Choice = null);
 
 /// <summary>
-/// A session's record. <c>Quest</c> is null for a chat, and <c>Kind</c> says which way in it was: a conversation is a session, not a
+/// A session's record. <c>Quest</c> is null for a chat, and <c>Kind</c> says which way in it is: a conversation is a session, not a
 /// second kind of thing. The profile, the tree and the base commit are machine-local like the transcript beside them. <c>Entry</c>
 /// is the line of work it belongs to, <c>&lt;origin&gt;/&lt;repository&gt;</c>, which names no path and no account and so goes to every caller.
 /// </summary>
 /// <param name="Deletable">Whether the ledger would delete the record, as the list answers it; false at a shared deployment.</param>
 /// <param name="Head">The id of the part its line ends at, the list's answer only; absent for a mirror and where the walk found a cycle.</param>
-/// <param name="Work">What the record was opened for, read from its marks and never stored.</param>
+/// <param name="Work">What the record is opened for, read from its marks and never stored.</param>
 /// <param name="Limit">An account's limit made its failure; it names no account.</param>
-/// <param name="Interrupted">A stop that was not the person's.</param>
+/// <param name="Interrupted">A stop that is not the person's.</param>
 /// <param name="Took">Whether it took its own quest through its own connector.</param>
 /// <param name="TookQuest">The quest a chat took, its <c>Quest</c> staying null.</param>
 /// <param name="Ask">The ask an intake answers.</param>
@@ -81,7 +81,7 @@ public sealed record SessionResponse(
 /// The list as its change since a mark: the mark to ask from next, every record's id in the list's order, and each record whose answer
 /// moved since the mark asked from, as the list answers it.
 /// </summary>
-/// <param name="Whole">The mark asked from was none this host holds, so every record is among the changed.</param>
+/// <param name="Whole">The mark asked from is none this host holds, so every record is among the changed.</param>
 public sealed record SessionChangesResponse(string Mark, IReadOnlyList<string> Order, IReadOnlyList<SessionResponse> Changed, bool Whole);
 
 /// <summary>The session as it stands, and the ledger's sentence.</summary>
@@ -101,7 +101,7 @@ public sealed record OpenTransferResponse(string Word, string? Key, string Trans
 
 /// <summary>
 /// What the person added to a running session, as its driver reports it. <c>Kept</c> false is no error: the session is on no ask, and the
-/// message says so. <c>Ask</c> is the ask it was kept on.
+/// message says so. <c>Ask</c> is the ask it is kept on.
 /// </summary>
 public sealed record AddedResponse(bool Kept, string Message, AskResponse? Ask);
 
@@ -129,7 +129,7 @@ public sealed record TakeBackResponse(
     bool Done, string Message, string? Why = null, SessionResponse? Session = null, SaidWordResponse? Said = null);
 
 /// <summary>
-/// A move's answer: <c>Moved</c>, the ledger's sentence, and <c>To</c>, the head it was kept on, with the session and the word kept
+/// A move's answer: <c>Moved</c>, the ledger's sentence, and <c>To</c>, the head it is kept on, with the session and the word kept
 /// there; a retry is <c>Again</c>. Not moved, <c>Why</c> is <c>taken</c>, an answer as the take-back's is.
 /// </summary>
 public sealed record MoveSaidResponse(

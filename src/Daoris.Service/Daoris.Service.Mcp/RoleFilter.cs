@@ -5,7 +5,7 @@ using ModelContextProtocol.Protocol;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// Where the call layer places a connector's session (FOUNDATION1r; the foundation design §2.2, §2.3): the work its record is read as,
+/// Where the call layer places a connector's session (the foundation design §2.2, §2.3): the work its record is read as,
 /// a brainstorm's turn, or why it could not be placed. Read from the session the driver named on the connector it offers
 /// (<see cref="IntakeScope.Session"/>), never from anything a call says.
 /// </summary>
@@ -35,7 +35,7 @@ public sealed record SessionWork(string Work, string? Turn = null)
 }
 
 /// <summary>
-/// The connector's session's work (FOUNDATION1r): a brainstorm's turn placed first, else the record's work by the one rule, read once it
+/// The connector's session's work: a brainstorm's turn placed first, else the record's work by the one rule, read once it
 /// is found (the marks are set at the open and never change), and read again while it is not.
 /// </summary>
 /// <param name="ledger">The ledger the record is read from; none reads a named session as unread.</param>
@@ -62,9 +62,9 @@ public sealed class SessionWorks(SessionLedger? ledger, IntakeScope? intake, Bra
 }
 
 /// <summary>
-/// Every <c>tools/call</c> judged by the session's work before its tool runs (FOUNDATION1r, by <see cref="CallTable"/>): a refused call
+/// Every <c>tools/call</c> judged by the session's work before its tool runs (by <see cref="CallTable"/>): a refused call
 /// is answered with its sentence, its code in <c>_meta</c>, and never reaches the tool. A native child that inherits the connector's
-/// environment inherits its refusals. Its <c>tools/list</c> names only what the table serves it (CONTEXTONE1d2), so a harness that loads
+/// environment inherits its refusals. Its <c>tools/list</c> names only what the table serves it, so a harness that loads
 /// every listed tool at its start loads no definition the session may not call.
 /// </summary>
 public static class RoleFilter

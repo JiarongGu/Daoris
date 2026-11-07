@@ -4,7 +4,7 @@ namespace Daoris.Knowledge.Hosting;
 
 /// <summary>
 /// The framework's warnings and errors, from every category, into a host's machine log as the
-/// <c>log</c> event (LOG1a, D94) — linked into both hosts, and the service's own copy of the desktop's
+/// <c>log</c> event — linked into both hosts, and the service's own copy of the desktop's
 /// provider, since the two artefacts share no code.
 /// </summary>
 /// <remarks>

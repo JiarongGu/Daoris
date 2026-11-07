@@ -23,7 +23,7 @@ public sealed class Answer<T>
 
     /// <summary>
     /// A status the route answers in a shape of its own: a refusal record that carries a word beside its sentence, or an answer a
-    /// state conflict still wears. A null <paramref name="body"/> is a bare status with nothing written, as a bare 404 was.
+    /// state conflict still wears. A null <paramref name="body"/> is a bare status with nothing written, as a bare 404 is.
     /// </summary>
     public static Answer<T> Else(int status, object? body) => new(status, default, body, body is null);
 

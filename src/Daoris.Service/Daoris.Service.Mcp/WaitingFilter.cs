@@ -4,8 +4,7 @@ using ModelContextProtocol.Protocol;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// What waits for the connector's session on its ask's channel, said as one line (COWORK1d; the message-urgency design §4.2, D188's
-/// note of the owner's direction): how many messages its entry has neither had sent, taken nor read, and how many of them are urgent.
+/// What waits for the connector's session on its ask's channel, said as one line (the message-urgency design §4.2): how many messages its entry has neither had sent, taken nor read, and how many of them are urgent.
 /// Said once per new message: the line is not delivery, and the agent reads when it chooses, with <c>channel_read</c>.
 /// </summary>
 /// <param name="channel">The channel's judgement; none where the connector has no channel.</param>
@@ -40,7 +39,7 @@ public sealed class WaitingLine(ChannelDesk? channel, IntakeScope? intake)
 }
 
 /// <summary>
-/// Every tool's answer ends with what waits for the caller (COWORK1d, D188's note of the owner's direction): the pull an agent meets at
+/// Every tool's answer ends with what waits for the caller: the pull an agent meets at
 /// its next call to Daoris, whatever its door, with no interrupt. <c>channel_read</c>'s answer never does, since it is the read.
 /// </summary>
 /// <remarks>

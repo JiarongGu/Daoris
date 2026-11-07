@@ -6,19 +6,19 @@ using static Daoris.Knowledge.Mcp.WorkspaceScope;
 namespace Daoris.Knowledge.Mcp;
 
 /// <summary>
-/// The quest tools (PART10a): <c>quest_publish</c>, <c>quest_list</c> and <c>quest_respond</c>, and the records an agent
+/// The quest tools: <c>quest_publish</c>, <c>quest_list</c> and <c>quest_respond</c>, and the records an agent
 /// writes them with. How every tool's words are written is said on <see cref="KnowledgeServer"/>.
 /// </summary>
 /// <param name="quests">What <c>quest_list</c> reads.</param>
 /// <param name="exchange">What judges a publish and an answer, shared with the HTTP host.</param>
 /// <param name="circle">Which workspace <c>quest_list</c> answers from.</param>
-/// <param name="asks">The asks, for the one session that publishes as one — an intake (D65 §1b).</param>
+/// <param name="asks">The asks, for the one session that publishes as one — an intake.</param>
 /// <param name="intake">
 /// Which ask this connector speaks for, when the session is an intake; and which session it is, when the driver started
-/// it — what a quest records as its publisher (SESS1) and a take as its taker (STANDDOWN2).
+/// it — what a quest records as its publisher and a take as its taker.
 /// </param>
 /// <param name="ledger">The ledger, for the one write a session's connector makes on its own record: that it took its quest.</param>
-/// <param name="engines">Each repository's memory, which a listed quest's memory proposals are settled against (KNOWCENTRAL2e).</param>
+/// <param name="engines">Each repository's memory, which a listed quest's memory proposals are settled against.</param>
 [McpServerToolType]
 public sealed class QuestTools(
     QuestStore quests, QuestExchange exchange, WorkspaceScope circle,
@@ -93,7 +93,7 @@ public sealed class QuestTools(
         WorkflowProposal? workflowProposal = null,
         CancellationToken ct = default)
     {
-        // A path becomes bytes at the door, on the machine that has the file (D65 §2): the exchange
+        // A path becomes bytes at the door, on the machine that has the file: the exchange
         // judges and keeps them, exactly as it does for the HTTP host's uploads.
         var uploads = new List<QuestUpload>();
         foreach (var path in attachments ?? [])
@@ -104,12 +104,12 @@ public sealed class QuestTools(
             uploads.Add(upload!);
         }
 
-        // A step or a requirement sent as null arrives blank, refused by the exchange naming its number (REVIEWENV1b3).
+        // A step or a requirement sent as null arrives blank, refused by the exchange naming its number.
         var steps = (then ?? []).Select(step => new QuestStep(step?.To ?? "", step?.Title ?? "", step?.Body ?? "") { SetUpIn = step?.SetUpIn }).ToList();
-        // A choice left out arrives blank and is refused by the exchange naming why (REVIEWENV1b), and so does a proposal.
+        // A choice left out arrives blank and is refused by the exchange naming why, and so does a proposal.
         var chosen = review is null ? null : new QuestReview(review.Choice ?? "", review.Words);
-        // A half left out arrives blank and is refused by the exchange naming which (DRIFT1c); so does an evidence item
-        // naming both or neither (EVID1a).
+        // A half left out arrives blank and is refused by the exchange naming which; so does an evidence item
+        // naming both or neither.
         var required = (requirements ?? [])
             .Select(r => new QuestRequirement(r?.Quote ?? "", r?.Check ?? "")
             {
@@ -117,10 +117,10 @@ public sealed class QuestTools(
             })
             .ToList();
 
-        // An intake publishes AS ITS ASK (D65 §1b): the room is no repository, so `from` could name
+        // An intake publishes AS ITS ASK: the room is no repository, so `from` could name
         // nothing addressable — the ask is the asker, in its own circle, carrying its own links and
         // files beside these. The desk judges through the same exchange, so nothing else differs.
-        // A connector is always an agent's, whether or not the driver named its session (REVIEWENV1b3).
+        // A connector is always an agent's, whether or not the driver named its session.
         if (intake is { Active: true, Ask: { } askId } && asks is not null)
         {
             var answered = await asks.PublishAsync(
@@ -141,7 +141,7 @@ public sealed class QuestTools(
                 : answered.Message;
         }
 
-        // A proposal is an intake's reading, kept on its ask (REVIEWENV1b): a session on no ask's intake has none to keep it on.
+        // A proposal is an intake's reading, kept on its ask: a session on no ask's intake has none to keep it on.
         if (reviewProposal is not null)
         {
             return "A review proposal is an intake's, kept on its ask for the person's press, and this connector speaks for no "
@@ -168,9 +168,9 @@ public sealed class QuestTools(
                     Weight = weight,
                     Paths = paths ?? [],
                     Review = chosen,
-                    // Which session asked (SESS1), as the driver named it on this connector (PERM2).
+                    // Which session asked, as the driver named it on this connector.
                     PublishedBy = intake?.Session,
-                    // An agent's authority, named session or not: the session only credits it (REVIEWENV1b3).
+                    // An agent's authority, named session or not: the session only credits it.
                     ByAgent = true,
                 },
                 DateTimeOffset.UtcNow, ct)
@@ -181,9 +181,9 @@ public sealed class QuestTools(
     }
 
     /// <summary>
-    /// What a publish left for Daoris to fill, said beneath its answer (SHORTFIT1), of the quest as it stands: with no short
-    /// title, the name a list will call it, read from its words (SESSUX1j); and on an ask's quest with no requirements, that
-    /// nothing of the person's words will be checked, since a done answers only those it carries (DRIFT1c, D133 §3). A
+    /// What a publish left for Daoris to fill, said beneath its answer, of the quest as it stands: with no short
+    /// title, the name a list will call it, read from its words; and on an ask's quest with no requirements, that
+    /// nothing of the person's words will be checked, since a done answers only those it carries. A
     /// repository's quest carries none by design, so it is not told so.
     /// </summary>
     private static string LeftUnsaid(Quest? quest, bool onAnAsk)
@@ -251,14 +251,14 @@ public sealed class QuestTools(
             foreach (var quest in group)
             {
                 text.AppendLine($"- `#{quest.Id}` **{quest.Title}** — {quest.Status}, from `{quest.From}`");
-                // Its publisher's short title (SESSUX1j), where one was given: the words a list shows for it.
+                // Its publisher's short title, where one is given: the words a list shows for it.
                 if (quest.Short is { } shortTitle) text.AppendLine($"  short title: {shortTitle}");
                 text.AppendLine($"  {Text.Excerpt(quest.Body, null, 200)}");
-                // The lanes of the repository it asks (D115 §2.2); none is the whole repository.
+                // The lanes of the repository it asks; none is the whole repository.
                 if (quest.Lanes.Count > 0) text.AppendLine($"  lanes: {string.Join(" · ", quest.Lanes.Select(lane => $"`{lane}`"))}");
-                // The paths it declares (INTEGRATE1l): a start meeting them is said, and may wait.
+                // The paths it declares: a start meeting them is said, and may wait.
                 if (quest.Paths.Count > 0) text.AppendLine($"  paths: {string.Join(" · ", quest.Paths.Select(path => $"`{path}`"))}");
-                // A workflow's request (INTEGRATE1p): the run that waits on it, its node and its number.
+                // A workflow's request: the run that waits on it, its node and its number.
                 if (quest.Request is { } request) text.AppendLine($"  asked by a workflow's request `{request}`: its run waits on this quest's done");
                 if (quest.Links.Count > 0) text.AppendLine($"  links: {string.Join(" · ", quest.Links)}");
                 if (quest.Attachments.Count > 0)
@@ -267,16 +267,16 @@ public sealed class QuestTools(
                     text.AppendLine($"  files: {string.Join(" · ", quest.Attachments.Select(a => a.Name))}");
                 }
 
-                // The chain around it (D65 §4): what this one follows, and what its close publishes.
+                // The chain around it: what this one follows, and what its close publishes.
                 if (quest.Parent is { } parent) text.AppendLine($"  follows `#{parent}`");
-                // Ask and wait (D79): what its taker waits on.
+                // Ask and wait: what its taker waits on.
                 if (quest.Awaits is { } awaits) text.AppendLine($"  waits on `#{awaits}`");
                 foreach (var step in quest.Then)
                 {
                     text.AppendLine($"  then → `{step.To}`: {step.Title}" + (step.SetUpIn is { } shownIn ? $" (set-up step, in `{shownIn}`)" : ""));
                 }
 
-                // The review on the record (REVIEWENV1b): the chain's choice, a set-up step's environment, what it showed, and
+                // The review on the record: the chain's choice, a set-up step's environment, what it showed, and
                 // the person's verdicts, so the session working a step reads what it set up and what they said of it.
                 if (quest.Review is { } chosen)
                 {
@@ -285,7 +285,7 @@ public sealed class QuestTools(
 
                 if (quest.SetUpIn is { } environment) text.AppendLine($"  set-up step: shows the work it follows in `{environment}` for the person's review");
 
-                // The person's kind and workflow on a quest no ask published (WORKFLOW1e2): the latest stands, and the driver that
+                // The person's kind and workflow on a quest no ask published: the latest stands, and the driver that
                 // starts it reads it against its workspace's kinds. Only the person sets it.
                 if (quest.WorkflowChoices.LastOrDefault() is { } workflow && (workflow.Kind ?? workflow.Workflow) is not null)
                 {
@@ -308,11 +308,11 @@ public sealed class QuestTools(
                     text.AppendLine($"  the person said {verdict.Said}" + (verdict.Commit is { } at ? $" of the set-up at `{Clipped.ShortCommit(at, 7)}`" : "")
                         + (verdict.Words is { } words ? $": \"{words}\"" : ""));
                 }
-                // What the person requires (DRIFT1c): their words as quoted, and the check, whole.
+                // What the person requires: their words as quoted, and the check, whole.
                 foreach (var requirement in quest.Requirements)
                 {
                     text.AppendLine($"  requires \"{requirement.Quote}\" — check: {requirement.Check}");
-                    // The facts its check turns on that Daoris reads itself (EVID1a).
+                    // The facts its check turns on that Daoris reads itself.
                     if (requirement.Evidence.Count > 0)
                     {
                         text.AppendLine($"    evidence: {string.Join(" · ", requirement.Evidence.Select(item => $"{item.Kind} `{item.Named}`"))}");
@@ -321,7 +321,7 @@ public sealed class QuestTools(
 
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
 
-                // KNOWCENTRAL2e: the memory proposals it carries, each its own decision, with its standing.
+                // The memory proposals it carries, each its own decision, with its standing.
                 if (proposals[quest.Id].ToList() is { Count: > 0 } carried)
                 {
                     text.AppendLine("  memory proposals it carries, each its own decision:");
@@ -332,14 +332,14 @@ public sealed class QuestTools(
                     }
                 }
 
-                // FABRIC-CLOSE1a (§E5): a quest its graph closes, and its taker's result while it stays taken.
+                // A quest its graph closes, and its taker's result while it stays taken.
                 if (quest is { Closure: not null, Status: QuestStatus.Taken })
                 {
                     text.AppendLine(quest.Submission is { } submitted
                         ? "  submitted " + submitted.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
                           + (submitted.Note is { Length: > 0 } said ? $": _{said}_" : "")
                           + ". It stays taken until its graph closes it at the work's end, after its holds and gates."
-                        // FABRIC-CLOSE1c4: a reopened submission, with the person's words, until the next ready answers it.
+                        // A reopened submission, with the person's words, until the next ready answers it.
                         : quest.Reopened is { } reopen
                         ? "  the person reopened its submission " + reopen.At.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)
                           + (reopen.Note is { Length: > 0 } words ? $": _{words}_" : "")
@@ -347,7 +347,7 @@ public sealed class QuestTools(
                         : "  its graph closes it: its taker says `ready`, never `done`, when the work is done.");
                 }
 
-                // How its done answered each (DRIFT1d), and whether a departure holds it for the person's yes.
+                // How its done answered each, and whether a departure holds it for the person's yes.
                 foreach (var answer in quest.Answers)
                 {
                     text.AppendLine(answer.IsDeparture
@@ -355,8 +355,8 @@ public sealed class QuestTools(
                         : $"  requirement {answer.Requirement} met: {answer.Met}");
                 }
 
-                // What Daoris last read of its evidence (EVID1a): the commit, and each item's code. A commit read alone is the
-                // submission's own (FABRIC-CLOSE1c6), and no evidence was read with it.
+                // What Daoris last read of its evidence: the commit, and each item's code. A commit read alone is the
+                // submission's own, and no evidence is read with it.
                 if (quest.Evidence is { Items.Count: 0 } alone)
                 {
                     text.AppendLine($"  its submission's commit, read at the end of its session: `{Clipped.ShortCommit(alone.Commit, 7)}`");
@@ -378,7 +378,7 @@ public sealed class QuestTools(
                         QuestHold.EvidenceMissing =>
                             "  ⚠ held for the person: its evidence was not found in the commit read, and what follows it waits until "
                             + "a later commit holds it or they accept the done as it stands.",
-                        // FABRIC-CLOSE1c: said so a session on it stops, and one looking for work leaves it.
+                        // Said so a session on it stops, and one looking for work leaves it.
                         QuestHold.SourceReopened when quest.Status == QuestStatus.Open =>
                             $"  ⚠ withdrawn: the person reopened the work it grew from, `#{quest.Parent}`, so nobody takes it until that "
                             + "work is ready again.",
@@ -434,18 +434,18 @@ public sealed class QuestTools(
         RequirementAnswer[]? answers = null,
         CancellationToken ct = default)
     {
-        // A number left out arrives as 0, and a half left out blank: the exchange refuses each, naming which (DRIFT1d).
+        // A number left out arrives as 0, and a half left out blank: the exchange refuses each, naming which.
         var answered = (answers ?? [])
             .Select(answer => new QuestAnswer(answer.Requirement ?? 0, answer.Met, answer.Departed, answer.Quote))
             .ToList();
-        // The session the driver started, as its connector was spawned naming it (FABRIC-CLOSE1o): a take binds the graph named for that
-        // session alone. Its close's note is its handback (HANDBACK1): refused where it only points elsewhere, and kept naming the session.
+        // The session the driver started, as its connector is spawned naming it: a take binds the graph named for that
+        // session alone. Its close's note is its handback: refused where it only points elsewhere, and kept naming the session.
         var outcome = await exchange.RespondAsync(
                 id, action, reason, DateTimeOffset.UtcNow, ct, on: on, answers: answered, session: intake?.Session, handback: true)
             .ConfigureAwait(false);
 
-        // A take by a session the driver started is written on its record (STANDDOWN2): how its end is
-        // told apart from a stand-down, which the quest's state alone cannot say. A chat's too (CHATTAKE1):
+        // A take by a session the driver started is written on its record: how its end is
+        // told apart from a stand-down, which the quest's state alone cannot say. A chat's too:
         // how a delete knows the chat served that quest.
         if (outcome.Refusal == QuestRespondRefusal.None
             && string.Equals(action, "take", StringComparison.OrdinalIgnoreCase)
@@ -459,9 +459,9 @@ public sealed class QuestTools(
 }
 
 /// <summary>
-/// One step of a chain as an agent writes it (D65 §4) — the door's own shape, so each field can
+/// One step of a chain as an agent writes it — the door's own shape, so each field can
 /// describe itself to the model that fills it. Nullable because an agent may leave one out, and the
-/// exchange refuses a step without its words naming which step it was.
+/// exchange refuses a step without its words naming which step it is.
 /// </summary>
 public sealed record ChainStep(
     [property: Description("The repository asked at this step. Every step is asked on behalf of the chain's asker.")]
@@ -477,7 +477,7 @@ public sealed record ChainStep(
     string? SetUpIn = null);
 
 /// <summary>
-/// One requirement as an agent writes it (DRIFT1c) — nullable for the chain step's reason: the exchange
+/// One requirement as an agent writes it — nullable for the chain step's reason: the exchange
 /// refuses one missing a half, naming which, rather than the door dropping it.
 /// </summary>
 public sealed record Requirement(
@@ -491,7 +491,7 @@ public sealed record Requirement(
     RequirementEvidence[]? Evidence = null);
 
 /// <summary>
-/// One fact a requirement names as its evidence, as an agent writes it (EVID1a) — nullable for the chain step's reason:
+/// One fact a requirement names as its evidence, as an agent writes it — nullable for the chain step's reason:
 /// the exchange refuses an item that names both or neither, or a path that is not one, naming which.
 /// </summary>
 public sealed record RequirementEvidence(
@@ -504,7 +504,7 @@ public sealed record RequirementEvidence(
     string? Gate);
 
 /// <summary>
-/// How a done answers one requirement, as an agent writes it (DRIFT1d) — nullable for the chain step's reason: the
+/// How a done answers one requirement, as an agent writes it — nullable for the chain step's reason: the
 /// exchange refuses an answer that names no requirement, or says both or neither, naming which.
 /// </summary>
 public sealed record RequirementAnswer(
@@ -520,7 +520,7 @@ public sealed record RequirementAnswer(
     string? Quote);
 
 /// <summary>
-/// An intake's kind proposal as it writes it (WORKFLOW1i, the workflow design §4.3): a kind and the person's words it rests on,
+/// An intake's kind proposal as it writes it (the workflow design §4.3): a kind and the person's words it rests on,
 /// for the person's press. A kind only, never a workflow: the workflow a kind gives is the driving machine's.
 /// </summary>
 public sealed record WorkflowProposal(
@@ -532,7 +532,7 @@ public sealed record WorkflowProposal(
     string? Reason);
 
 /// <summary>
-/// A chain's review choice as an agent writes it (REVIEWENV1b): nullable for the chain step's reason, the exchange refusing one
+/// A chain's review choice as an agent writes it: nullable for the chain step's reason, the exchange refusing one
 /// that is not one, naming why.
 /// </summary>
 public sealed record ReviewChoice(
@@ -543,7 +543,7 @@ public sealed record ReviewChoice(
         + "instead.")]
     string? Words);
 
-/// <summary>An intake's review proposal as it writes it (REVIEWENV1b): a choice and its reason, for the person's press.</summary>
+/// <summary>An intake's review proposal as it writes it: a choice and its reason, for the person's press.</summary>
 public sealed record ReviewProposal(
     [property: Description("off, on (the repository's default environment), or an environment's name.")]
     string? Choice,
