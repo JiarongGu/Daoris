@@ -147,7 +147,7 @@ internal static class SessionsKeeping
     }
 
     /// <summary>What never goes on, by its code, in the terminal's words; any other code, the service's sentence.</summary>
-    /// <param name="next">The conversation a conversation went on in, where it was read; else its code says the sentence it came with.</param>
+    /// <param name="next">The conversation a conversation went on in, where it is read; else its code says the sentence it came with.</param>
     internal static string Refusal(string code, string id, SessionRecord? record, string? last, string? message, string? next = null) => code switch
     {
         WordsNever.Continued when next is not null => $"{WordsNever.WentOn(id, next).TrimEnd('.')}: daoris session say {next} \"…\"",

@@ -74,7 +74,7 @@ public sealed class AddressedDoors
     }
 }
 
-/// <summary>A line's own channel as the person reads it (COMMS1k): its origin and its messages, oldest first.</summary>
+/// <summary>A line's own channel as the person reads it: its origin and its messages, oldest first.</summary>
 public sealed record LineChannelView(string Origin, IReadOnlyList<ChannelItemView> Items);
 
 /// <summary>The client's doors of the messages to one part, as the work orders' own member of it, holding no state of its own.</summary>

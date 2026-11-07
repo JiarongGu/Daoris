@@ -12,8 +12,8 @@ public static class NodeRuns
         "run-" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"node-run\n{unit}\n")))[..24];
 
     /// <summary>
-    /// The run's name before a run was the unit alone, of the unit and the graph governing it, so each edit began another: what a scope, a
-    /// receipt and a firing written before name, judged on the graph now (<see cref="WireRun.Legacy"/>) so nothing lapses or fires again.
+    /// A run's name from the unit and the graph governing it, so each edit begins another: what a scope, a receipt and a firing recorded
+    /// under it name, judged on the graph now (<see cref="WireRun.Legacy"/>) so nothing lapses or fires again.
     /// </summary>
     public static string Of(string unit, string graphDigest) =>
         "run-" + Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"node-run\n{unit}\n{graphDigest}\n")))[..24];

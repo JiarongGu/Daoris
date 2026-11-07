@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// The answers that would take their line on alone a third time in a row with nobody between, marked for the person first so the
-/// planner leaves them waiting (COWORK1e). A record needs its line read only where answers alone wait on it; one a supervisor's held
+/// planner leaves them waiting. A record needs its line read only where answers alone wait on it; one a supervisor's held
 /// decision holds is not picked, so nothing goes on from it inside the window.
 /// </summary>
 [LookPass("alone", LookPhase.Read, "supervisor")]

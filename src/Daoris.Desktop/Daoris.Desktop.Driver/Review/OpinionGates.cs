@@ -3,9 +3,9 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The gate's own record (XAGENT1f; the second-agent design §8.5–§8.6): <c>&lt;home&gt;/opinions/gates/&lt;chain&gt;.json</c>, one per
+/// The gate's own record: <c>&lt;home&gt;/opinions/gates/&lt;chain&gt;.json</c>, one per
 /// chain, named by its first quest, with each repository's part apart. What the person said at the gate is kept here, on this
-/// machine (D47 §4), and on the landing record when the work lands: the opinion itself is the local host's, which no door here
+/// machine, and on the landing record when the work lands: the opinion itself is the local host's, which no door here
 /// writes the person's answer into.
 /// </summary>
 /// <remarks>
@@ -61,7 +61,7 @@ public sealed class OpinionGates(string home)
             var key = all.Keys.FirstOrDefault(name => string.Equals(name, repository, StringComparison.OrdinalIgnoreCase)) ?? repository;
             all[key] = change(all.GetValueOrDefault(key) ?? OpinionGateKept.None);
             OpinionGateFiles.WriteGates(path, chain, all);
-            // This process's own write wakes no landing (FABRIC-END7, EVENT2's rule): another's, a terminal's answer, is heard.
+            // This process's own write wakes no landing: another's, a terminal's answer, is heard.
             HomeWrites.Mine(path);
         }
     }

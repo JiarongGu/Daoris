@@ -3,44 +3,44 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>The service's doors the channel's reach uses (SESSONE2a): a seam, so the look's rule is held by tests without a host.</summary>
+/// <summary>The service's doors the channel's reach uses: a seam, so the look's rule is held by tests without a host.</summary>
 public interface IChannelDoors
 {
     /// <summary>
-    /// The ask's channel as one entry reads it, each message with the entry's acknowledgment of it (COWORK1d), which moves nothing; null
+    /// The ask's channel as one entry reads it, each message with the entry's acknowledgment of it, which moves nothing; null
     /// where the host holds no such ask, or no channel.
     /// </summary>
     Task<ChannelView?> ReadAsync(string ask, string entry, CancellationToken ct);
 
     /// <summary>
-    /// The entry's acknowledgment of messages by their ids (COWORK1d, the message-urgency design §6): <see cref="ChannelAcks.Taking"/>
+    /// The entry's acknowledgment of messages by their ids: <see cref="ChannelAcks.Taking"/>
     /// claims each for <paramref name="session"/>'s part, one part's only; the rest raise what the entry holds, never lowering it.
     /// </summary>
     /// <returns>The messages whose acknowledgment changed: for a claim, those this part won.</returns>
     Task<IReadOnlyList<string>> AcknowledgeAsync(
         string ask, string entry, string session, string state, IReadOnlyList<string> messages, CancellationToken ct);
 
-    /// <summary>The say door (MSG1a): the person's words kept on a parked or ended record of this machine's, for it to go on with.</summary>
-    /// <param name="channel">The channel message's id (SESSONE2e): the ask holds the words as `channel`, so the door keeps no second word.</param>
+    /// <summary>The say door: the person's words kept on a parked or ended record of this machine's, for it to go on with.</summary>
+    /// <param name="channel">The channel message's id: the ask holds the words as `channel`, so the door keeps no second word.</param>
     /// <param name="from">
-    /// Their author where not the person (COWORK1d): <c>agent</c> for another agent's claim the person passed on, never their words.
+    /// Their author where not the person: <c>agent</c> for another agent's claim the person passed on, never their words.
     /// </param>
     Task<SayAnswer> SayAsync(string session, string text, string channel, string? from, CancellationToken ct);
 
     /// <summary>
-    /// What waits for one part (COMMS1k): the messages to it alone and on its line's own channel, each with its line's acknowledgment;
+    /// What waits for one part: the messages to it alone and on its line's own channel, each with its line's acknowledgment;
     /// null where the host holds no such session or has no such door, so nothing is handed.
     /// </summary>
     Task<IReadOnlyList<ChannelItemView>?> AddressedAsync(string session, CancellationToken ct) => Task.FromResult<IReadOnlyList<ChannelItemView>?>(null);
 
-    /// <summary>One part's acknowledgment of messages to it by their ids (COMMS1k); the messages whose acknowledgment changed.</summary>
+    /// <summary>One part's acknowledgment of messages to it by their ids; the messages whose acknowledgment changed.</summary>
     Task<IReadOnlyList<string>> AcknowledgeAddressedAsync(string session, string state, IReadOnlyList<string> messages, CancellationToken ct) =>
         Task.FromResult<IReadOnlyList<string>>([]);
 }
 
 /// <summary>
-/// The channel's doors through the loop's service: <c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/ack</c>, the say door, and since
-/// COMMS1k <c>GET /api/channel/addressed</c> with its acknowledgment.
+/// The channel's doors through the loop's service: <c>GET /api/asks/{id}/channel</c>, <c>POST …/channel/ack</c>, the say door, and
+/// <c>GET /api/channel/addressed</c> with its acknowledgment.
 /// </summary>
 public sealed class ServiceChannelDoors(ServiceClient service) : IChannelDoors
 {
@@ -60,31 +60,30 @@ public sealed class ServiceChannelDoors(ServiceClient service) : IChannelDoors
 }
 
 /// <summary>
-/// A line of work on an ask as one look finds it (SESSONE2b): its entry, a part of it here, and that part's inbox where this loop runs
-/// it and its door takes words (SESS3); none where the part is parked or ended.
+/// A line of work on an ask as one look finds it: its entry, a part of it here, and that part's inbox where this loop runs
+/// it and its door takes words; none where the part is parked or ended.
 /// </summary>
 public sealed record ChannelPart(ChannelEntry Entry, string Session, DrivenInbox? Inbox);
 
-/// <summary>A part this loop runs on any line, as a message to it alone reaches it (COMMS1k): its session and its inbox.</summary>
+/// <summary>A part this loop runs on any line, as a message to it alone reaches it: its session and its inbox.</summary>
 public sealed record AddressedPart(string Session, DrivenInbox Inbox);
 
 /// <summary>
-/// The look's half of an ask's channel (SESSONE2b, D167 point 7; the co-working design §2.3; COWORK1d, D188, the message-urgency
-/// design §2.3, §4.2, §5 and §6): what each line of work on an ask has not acknowledged reaches the part that can take it now, at its
+/// The look's half of an ask's channel: what each line of work on an ask has not acknowledged reaches the part that can take it now, at its
 /// level, and otherwise waits for the entry's next part, whose instruction carries it (<see cref="ChannelText.Beneath"/>).
 /// </summary>
 /// <remarks>
-/// <para><b>What reaches what.</b> A running part takes the person's message as their words at their level (D137): urgent at its next
+/// <para><b>What reaches what.</b> A running part takes the person's message as their words at their level: urgent at its next
 /// step where its door takes words then, else held for its turn's end, where it goes as its own prompt. Another session's message is
 /// Daoris's words around that agent's claim (<see cref="ChannelText.Claim"/>), which its record keeps as Daoris's, never the person's:
 /// urgent, it goes at the next step where the door takes words then; ordinary, and any claim on a door that takes words only at its
 /// turn's end, it only rides a prompt the run sends anyway (<see cref="DrivenInbox.HoldClaim"/>), and alone at the turn's end is let
-/// go for the entry's next part. A message from before, with no level, keeps its old reach, the next step. A parked or ended part takes
-/// the person's message to its repository on its record, by the say door, and goes on with it as with their words (D137 §3); a message
+/// go for the entry's next part. A message with no level keeps the reach of the next step. A parked or ended part takes
+/// the person's message to its repository on its record, by the say door, and goes on with it as with their words; a message
 /// to everyone, and every other session's message, waits for the entry's next part. So an agent's message never starts, reopens or
-/// extends a run (D155): it reaches a run that exists, or rides one that comes for its own reasons.</para>
+/// extends a run: it reaches a run that exists, or rides one that comes for its own reasons.</para>
 ///
-/// <para><b>By identity, one part each</b> (the design §6, traps 9 and 21). A part is handed only what its entry has not acknowledged by
+/// <para><b>By identity, one part each</b>. A part is handed only what its entry has not acknowledged by
 /// the message's id, whatever the message's moment, and claims each on the entry (<see cref="ChannelAcks.Taking"/>) before anything
 /// holds it, in the service's one statement, so of two live parts of one entry, tried newest first, one takes it. Its write and the
 /// door's word acknowledge it <see cref="ChannelAcks.Sent"/> and <see cref="ChannelAcks.Taken"/>; a claim let go unsent is
@@ -92,7 +91,7 @@ public sealed record AddressedPart(string Session, DrivenInbox Inbox);
 /// display.</para>
 ///
 /// <para><b>Never reported as added.</b> The person's message is kept on the ask by the channel, as the word kind <c>channel</c>
-/// (SESSONE2a), so a part that takes it does not report it to the ask again (<see cref="WordsOnAsk"/> is not called).</para>
+/// so a part that takes it does not report it to the ask again (<see cref="WordsOnAsk"/> is not called).</para>
 ///
 /// <para><b>The cost.</b> One read of the channel per part a look reaches: each part this loop runs of a line of work on an ask, or
 /// its newest part parked or ended while its ask has a quest open; a claim per message a part can take. A line of work whose ask has
@@ -107,7 +106,7 @@ public sealed class ChannelReach
 
     /// <summary>
     /// The parts a look reads (see the remarks' cost): for each entry on an ask, every part of it this loop runs with its inbox, newest
-    /// first by when it was made; where none runs here, its newest part, parked or ended while its ask has a quest open. A teammate's
+    /// first by creation time; where none runs here, its newest part, parked or ended while its ask has a quest open. A teammate's
     /// record, an intake, a part another loop runs and a part whose door takes no words while it runs are none.
     /// </summary>
     public static IReadOnlyList<ChannelPart> Parts(Snapshot snapshot, SessionProcesses processes)
@@ -131,7 +130,7 @@ public sealed class ChannelReach
     }
 
     /// <summary>
-    /// The parts a look hands what waits for them alone and on their line's own channel (COMMS1k, the comms design §4.4): every part this
+    /// The parts a look hands what waits for them alone and on their line's own channel: every part this
     /// loop runs whose door takes words, on any line, a teammate's record none. One read each.
     /// </summary>
     public static IReadOnlyList<AddressedPart> Addressed(Snapshot snapshot, SessionProcesses processes) =>
@@ -145,7 +144,7 @@ public sealed class ChannelReach
     ];
 
     /// <summary>
-    /// What a starting part of <paramref name="entry"/> is handed from the ask's channel (design §2.3, <i>held for the next part</i>):
+    /// What a starting part of <paramref name="entry"/> is handed from the ask's channel (<i>held for the next part</i>):
     /// the messages for its entry it has not acknowledged, which it acknowledges once it has started (<see cref="HandedAsync"/>). Null
     /// where nothing waits, or the channel could not be read: a start is never held by it.
     /// </summary>
@@ -165,7 +164,7 @@ public sealed class ChannelReach
     }
 
     /// <summary>
-    /// What its started part was handed, acknowledged once the part works (COWORK1d, the design §6, trap 22): each message its packet
+    /// What its started part is handed, acknowledged once the part works: each message its packet
     /// carried whole <see cref="ChannelAcks.Taken"/>, and each it cut or left out among the older ones
     /// <see cref="ChannelAcks.Partly"/>, which a new part is handed again and the agent reads whole with <c>channel_read</c>. A miss is
     /// the next part's to be handed again, never a failure of the start.
@@ -195,7 +194,7 @@ public sealed class ChannelReach
 
     /// <summary>
     /// One look's reach over <paramref name="parts"/>: the lines it says, one for each message that reached a part, each classed as it
-    /// is made (NOTIFY2h2): a channel not read the next look's, a message's reach what the ask's channel says.
+    /// is made: a channel not read the next look's, a message's reach what the ask's channel says.
     /// </summary>
     /// <param name="said">The look's classing; none classes and keeps nothing.</param>
     /// <param name="addressed">The parts this loop runs that are handed what waits for them alone (<see cref="Addressed"/>); none, none.</param>
@@ -259,7 +258,7 @@ public sealed class ChannelReach
     }
 
     /// <summary>
-    /// What waits for one running part alone and on its line's own channel (COMMS1k, the comms design §4.4): each message its line has not
+    /// What waits for one running part alone and on its line's own channel: each message its line has not
     /// acknowledged, claimed by this part and held at its level, as an ask's message to it is; one its agent read itself leaves the inbox.
     /// A part named whose line moved on is not handed it: the service answers it to that line's head, the part that continues it.
     /// </summary>
@@ -295,7 +294,7 @@ public sealed class ChannelReach
         }
     }
 
-    /// <summary>What tells one part's line a message to it reached a state (COMMS1k), in order, as <see cref="Acknowledger"/> tells an entry's.</summary>
+    /// <summary>What tells one part's line a message to it reached a state, in order, as <see cref="Acknowledger"/> tells an entry's.</summary>
     private static Action<string> AddressedAcknowledger(IChannelDoors doors, string session, string id)
     {
         var gate = new object();
@@ -328,14 +327,14 @@ public sealed class ChannelReach
         CancellationToken ct)
     {
         var id = message.Id!;
-        // A message from before says no level and keeps its old reach, the next step where the door takes words then.
+        // A message with no level keeps the reach of the next step where the door takes words then.
         var level = message.Urgent == false ? MessageLevel.Ordinary : MessageLevel.Urgent;
         if (part.Inbox is { } inbox)
         {
-            // 🔴 Trap 3: a part whose turn is over, or whose inbox closed, takes no claim; the person's words it may still hold.
+            // 🔴 A part whose turn is over, or whose inbox closed, takes no claim; the person's words it may still hold.
             if (!message.ByThisPerson && !inbox.TakesClaims) return;
 
-            // 🔴 Trap 21: claimed on the entry by its id before anything holds it, so one part of the entry takes it.
+            // 🔴 Claimed on the entry by its id before anything holds it, so one part of the entry takes it.
             var claimed = await doors.AcknowledgeAsync(part.Entry.Ask, part.Entry.Key, part.Session, ChannelAcks.Taking, [id], ct).ConfigureAwait(false);
             if (!claimed.Contains(id, StringComparer.Ordinal)) return;
 
@@ -361,13 +360,13 @@ public sealed class ChannelReach
             return;
         }
 
-        // Only the person's words reopen a part, and only those addressed to its repository (design §2.3's third row).
+        // Only the person's words reopen a part, and only those addressed to its repository.
         if (!message.ByThisPerson || message.To is null) return;
 
         var said = await doors.SayAsync(part.Session, message.Text!, id, null, ct).ConfigureAwait(false);
         if (said.Kept)
         {
-            // Kept on the part's own record, whose queue carries it from here (COWORK1c): sent, as far as the channel goes.
+            // Kept on the part's own record, whose queue carries it from here: sent, as far as the channel goes.
             await doors.AcknowledgeAsync(part.Entry.Ask, part.Entry.Key, part.Session, ChannelAcks.Sent, [id], ct).ConfigureAwait(false);
         }
         else
@@ -375,14 +374,14 @@ public sealed class ChannelReach
             refused[id] = true;
         }
 
-        // Refused, the message waits for the entry's next part, which the ask's channel says: not asked again (NOTIFY2h2).
+        // Refused, the message waits for the entry's next part, which the ask's channel says: not asked again.
         lines.Progress(said.Kept
             ? $"channel  the person's message `{id}` on ask #{part.Entry.Ask} was kept on session {part.Session}'s record, which goes on with it"
             : $"channel  the person's message `{id}` on ask #{part.Entry.Ask} waits for `{part.Entry.Repository}`'s next part: {said.Message}");
     }
 
     /// <summary>
-    /// The person's <i>Send to its session</i> (COWORK1d, the message-urgency design §4.2, §8.4): a message of the ask's channel, sent to
+    /// The person's <i>Send to its session</i>: a message of the ask's channel, sent to
     /// the newest part here of <paramref name="repository"/>'s line of work on the ask. Because the person pressed, it may make a turn
     /// happen: to a running part it goes at the next step where the door takes words then, else as its turn's end's own prompt, a claim
     /// held only to ride going now as one; to a parked or ended part it is kept on its record by the say door, which may reopen it.

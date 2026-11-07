@@ -11,8 +11,8 @@ namespace Daoris.Driver;
 internal static class WorkflowUsing
 {
     /// <summary>
-    /// <c>use</c> without <c>--landed</c> (design §4.7): which workflow a repository's or a workspace's work follows, or a kind's. The reach of a
-    /// graph that integrates (INTEGRATE1r part r2; §17.7) is judged first, then the edit; the refusal is the words the terminal prints.
+    /// <c>use</c> without <c>--landed</c>: which workflow a repository's or a workspace's work follows, or a kind's. The reach of a
+    /// graph that integrates is judged first, then the edit; the refusal is the words the terminal prints.
     /// </summary>
     public static async Task<WorkflowUsed> UseAsync(
         DriverConfig choices, string home, RegistryRead registry, string? chosen, string? repository, string? workspace, string? kind, CancellationToken ct)
@@ -86,7 +86,7 @@ internal static class WorkflowUsing
             lines.Add(after is null
                 ? $"  `{repository}` names no workflow now, so its workspace's choice reaches it again."
                 : !after.NamesDevelopment
-                    // A landed route alone replaces nothing (FABRIC-PIPELINE1a).
+                    // A landed route alone replaces nothing.
                     ? $"  `{repository}` names no workflow for its work now, only its landed route, so its workspace's choice reaches it again."
                     : $"  This replaces the workspace's for every kind: `{repository}` follows its own kinds and its own default, and Current "
                         + "where it names none.");
@@ -107,7 +107,7 @@ internal static class WorkflowUsing
     }
 
     /// <summary>
-    /// A choice read as a plan of one (SETUPUX1c; the setup UX design §2.3), nothing written: <see cref="UseAsync"/>'s judgement, each place whose
+    /// A choice read as a plan of one, nothing written: <see cref="UseAsync"/>'s judgement, each place whose
     /// workflow it changes with what lowers the person's part there, the kinds a cleared default leaves mapped, and a token over all of it that a
     /// press carries to be refused where anything moved since.
     /// </summary>
@@ -185,7 +185,7 @@ internal static class WorkflowUsing
     }
 
     /// <summary>
-    /// The repositories a choice of a graph that integrates its landing reaches (INTEGRATE1r part r2; the integration design §17.7, F42): a
+    /// The repositories a choice of a graph that integrates its landing reaches: a
     /// repository's own, or a workspace's from the registry, the ones whose own choice does not replace it. It refuses, before anything is
     /// written, where one cannot carry the version, each case its own sentence; and says, for each, <i>integrates with no gates</i> where its
     /// rule's <c>integrate.gates</c> is absent or <c>none</c>. Nothing where the version is not a graph that integrates or pushes.
@@ -223,7 +223,7 @@ internal static class WorkflowUsing
         return await RowsAsync(choices, chosen, newest.Version, graph, reached, said, ct).ConfigureAwait(false);
     }
 
-    // A repository whose own choice names a workflow replaces its workspace's whole (D157 point 10), so the workspace's does not reach it.
+    // A repository whose own choice names a workflow replaces its workspace's whole, so the workspace's does not reach it.
     private static List<(string Repository, string? Workspace, string? Root)> InWorkspace(
         DriverConfig choices, IReadOnlyList<(string Repository, string? Workspace, string? Root)> checkouts, string workspace, string? except) =>
     [
@@ -251,7 +251,7 @@ internal static class WorkflowUsing
     }
 
     /// <summary>
-    /// What the choices as they stand do to a place (§17.7): for each repository of it, every graph its default or a kind of its workspace chooses
+    /// What the choices as they stand do to a place: for each repository of it, every graph its default or a kind of its workspace chooses
     /// that integrates or pushes, answered as a choice of it is, so a combination that cannot start is named before work stalls on it.
     /// </summary>
     public static async Task<IReadOnlyList<WorkflowReach>> PlaceReachAsync(
@@ -287,7 +287,7 @@ internal static class WorkflowUsing
 
     /// <summary>
     /// What a graph appended to a saved workflow does to the repositories that choose it: each one it reaches, answered as a choice of it is
-    /// (§17.7). Nothing where the new version is not a graph that integrates or pushes.
+    /// Nothing where the new version is not a graph that integrates or pushes.
     /// </summary>
     internal static async Task<WorkflowReached> AppendReachAsync(
         DriverConfig choices, string home, RegistryRead registry, string id, WorkflowPlanned planned, IReadOnlyList<WorkflowScope> scopes, CancellationToken ct)

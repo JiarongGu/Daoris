@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris workflow fix</c> was asked (FABRIC-PIPELINE1): the verification run, and the check node whose failure to ask a fix of.</summary>
+/// <summary>What <c>daoris workflow fix</c> asks: the verification run, and the check node whose failure to ask a fix of.</summary>
 /// <param name="Run">The run, as <c>workflow run</c> prints it.</param>
 /// <param name="Node">The check node's id; null for the run's own check.</param>
 public sealed record WorkflowFixAsk(string Run, string? Node);
 
 /// <summary>
-/// <c>daoris workflow fix &lt;run&gt; [&lt;node&gt;]</c> (FABRIC-PIPELINE1; the pipeline design §4.5): the terminal's twin of the window's
+/// <c>daoris workflow fix &lt;run&gt; [&lt;node&gt;]</c>: the terminal's twin of the window's
 /// <i>Ask for a fix…</i> on a failed verification, the same door (<see cref="VerifyFixAsks"/>), reached through <c>WORK_HELD</c> with the
 /// word <see cref="HeldResolutions.AskFix"/>, whose route answers this verb's own line (<c>said</c>).
 /// </summary>
 /// <remarks>
 /// <para><b>The person's press</b>: where Daoris runs, it is sent to it and confirmed in its window; alone, it is refused from a session's
-/// terminal (D194 point 5) and otherwise asks the service itself. It writes nothing on a node record: a repeat finds the ask made.</para>
+/// terminal and otherwise asks the service itself. It writes nothing on a node record: a repeat finds the ask made.</para>
 /// <para>Exit codes are the family's: 0 an ask stands for the failure · 1 refused (not a failed verification, a session's terminal, the
 /// person's no in the window) · 2 the usage, or a Daoris or service that did not answer.</para>
 /// </remarks>

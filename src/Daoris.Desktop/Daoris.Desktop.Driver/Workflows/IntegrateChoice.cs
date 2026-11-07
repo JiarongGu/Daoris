@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a door that sets a workflow choice says of the repositories it reaches when the version integrates its landing (INTEGRATE1r part r2;
-/// the integration design §17.7: <i>the choice's door says the reach</i>; the workflow design §4.7): for each, why its declarations cannot
+/// What a door that sets a workflow choice says of the repositories it reaches when the version integrates its landing: for each, why its declarations cannot
 /// carry the version, and whether its line integrates with no gates. The terminal's <c>use</c> and Ask Daoris's card ask it; a door that
 /// reads the accepted declaration does so here, asynchronously, and the pure check (<see cref="IntegrateCarry"/>) is handed the answer.
 /// </summary>
@@ -10,7 +9,7 @@ public static class IntegrateChoice
 {
     /// <summary>What one repository the choice reaches answers.</summary>
     /// <param name="Cannots">Why its declarations cannot carry the version, a sentence each; empty where they can.</param>
-    /// <param name="NoGates">Whether the version integrates its line there with no gates (§17.7, F42).</param>
+    /// <param name="NoGates">Whether the version integrates its line there with no gates.</param>
     internal sealed record Reach(string Repository, IReadOnlyList<string> Cannots, bool NoGates);
 
     /// <summary>Whether the graph holds a step this check judges: an <c>integrate</c>.</summary>
@@ -33,7 +32,7 @@ public static class IntegrateChoice
         {
             Version = version,
         };
-        // WORKFLOWCLEAN1 1c: a `land` is judged as the intent it binds, with the derived defaults where it leaves options open, its gates
+        // A `land` is judged as the intent it binds, with the derived defaults where it leaves options open, its gates
         // read from the options; a version that does not read here has its own refusal, and a graph with no landing integrates nothing.
         if (graph.Nodes.FirstOrDefault(node => node.Kind == NodeKinds.Land) is not { } landNode) return new(repository, [], false);
         var gates = GraphGates.Of(graph, declared);
@@ -107,7 +106,7 @@ public static class IntegrateChoice
     }
 
     /// <summary>
-    /// What a refused choice says: each repository that cannot carry the version, its sentences after its name, and that nothing was written.
+    /// What a refused choice says: each repository that cannot carry the version, its sentences after its name, and that nothing has been written.
     /// </summary>
     internal static string Refusal(string workflow, int version, IEnumerable<Reach> refused) =>
         $"`{workflow}` v{version} cannot be chosen here: "

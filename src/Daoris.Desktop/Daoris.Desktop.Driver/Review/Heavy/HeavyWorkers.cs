@@ -5,13 +5,13 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>What a heavy gate runs once its test runner's workers are bounded, and the sentence saying what was bound or why nothing was.</summary>
+/// <summary>What a heavy gate runs once its test runner's workers are bounded, and the sentence saying what is bound or why nothing is.</summary>
 /// <param name="Run">The gate's command line: as written, or with the bound at its end.</param>
 /// <param name="Said">One sentence naming the gate, without the verb's prefix.</param>
 public sealed record HeavyBound(string Run, string Said);
 
 /// <summary>
-/// A heavy gate's test runner held to two workers (HEAVYRUN1a2, D180's HEAVYRUN1 notes): Jest's and Vitest's own <c>--maxWorkers=2</c>,
+/// A heavy gate's test runner held to two workers: Jest's and Vitest's own <c>--maxWorkers=2</c>,
 /// the pool left as the repository has it, so a heavy run beside a session's own work does not take every core.
 /// </summary>
 /// <remarks>
@@ -19,19 +19,18 @@ public sealed record HeavyBound(string Run, string Said);
 /// <c>vitest</c>, or either through <c>npx</c>, is that runner; <c>npm test</c> and <c>npm run &lt;script&gt;</c> are read through the
 /// gate folder's own <c>package.json</c>, and bound through npm, after its <c>--</c>, only where that script is one command whose runner is
 /// Jest or Vitest. <c>yarn test</c>, <c>yarn run &lt;script&gt;</c>, <c>pnpm test</c> and <c>pnpm run &lt;script&gt;</c> are read the same
-/// way and bound as the yarn or pnpm the folder runs hands a script its words (HEAVYRUN1a3), only where that version is recorded and was
-/// read. A chain in the gate or its script, Angular's <c>ng test</c>, any other runner, npm or pnpm pointed at other packages, a tool's
+/// way and bound as the yarn or pnpm the folder runs hands a script its words, only where that version is recorded and read. A chain in the gate or its script, Angular's <c>ng test</c>, any other runner, npm or pnpm pointed at other packages, a tool's
 /// own options before its script, a script that cannot be read, a runner whose options already end with <c>--</c>: each runs as
 /// written, said.</para>
 ///
 /// <para><b>An owner's bound is never doubled.</b> A gate or script that already names <c>--maxWorkers</c>, <c>--max-workers</c>, <c>-w</c>,
 /// <c>--pool</c> or <c>--poolOptions</c> keeps it untouched: the bound an owner writes into this machine's mapping
-/// (<c>npm test -- --maxWorkers=2</c>, D180's HEAVYRUN1b2a note) is one of these.</para>
+/// (<c>npm test -- --maxWorkers=2</c>) is one of these.</para>
 ///
-/// <para><b>Bound only at a version whose flag was read.</b> The installed version is read from
+/// <para><b>Bound only at a version whose flag is known.</b> The installed version is read from
 /// <c>node_modules/&lt;jest|vitest&gt;/package.json</c> in the gate's folder, then each folder above it up to the checkout, the nearest
 /// winning as node resolves it; reading it starts no process. The majors in <see cref="Jest"/> and <see cref="Vitest"/> are those whose
-/// command line was read declaring <c>maxWorkers</c> (D180's HEAVYRUN1a2 note names each package and line); semver keeps a flag through its
+/// command line declares <c>maxWorkers</c>; semver keeps a flag through its
 /// major, and a prerelease promises nothing, so any other version runs as written, said.</para>
 /// </remarks>
 public static class HeavyWorkers
@@ -106,7 +105,7 @@ public static class HeavyWorkers
     }
 
     /// <summary>
-    /// <c>yarn test</c> or <c>yarn run &lt;script&gt;</c> (HEAVYRUN1a3): every yarn read (1–4) hands each word after the script's name to
+    /// <c>yarn test</c> or <c>yarn run &lt;script&gt;</c>: every yarn read (1–4) hands each word after the script's name to
     /// the script, so the bound goes at the end; a <c>--</c> there is taken away by yarn 1 and handed on by yarn 2 and later, so it runs as
     /// written. Bound only where the yarn the folder runs is known (<see cref="ManagerVersion"/>) and is one of those majors.
     /// </summary>
@@ -148,7 +147,7 @@ public static class HeavyWorkers
     }
 
     /// <summary>
-    /// <c>pnpm test</c> (<c>t</c>, <c>tst</c>) or <c>pnpm run &lt;script&gt;</c> (HEAVYRUN1a3), bound as the pnpm the folder runs takes a
+    /// <c>pnpm test</c> (<c>t</c>, <c>tst</c>) or <c>pnpm run &lt;script&gt;</c>, bound as the pnpm the folder runs takes a
     /// script's words: pnpm 6 reads every flag as its own until its <c>--</c>, and its test command does so through pnpm 9; from pnpm 7
     /// <c>run</c> hands the script every word after its name, and from pnpm 10 <c>test</c> does too, spelled so (never <c>t</c> or
     /// <c>tst</c>). Bound only where that pnpm is known (<see cref="ManagerVersion"/>) and is 6 to 11.
@@ -412,7 +411,7 @@ public static class HeavyWorkers
 
     /// <summary>
     /// The version of <paramref name="tool"/> (yarn or pnpm) the gate's folder runs, read without starting a process, each from the
-    /// folder up to the checkout, the nearest winning (HEAVYRUN1a3): the <c>packageManager</c> field corepack reads; then the install's
+    /// folder up to the checkout, the nearest winning: the <c>packageManager</c> field corepack reads; then the install's
     /// own record, pnpm's <c>node_modules/.modules.yaml</c> (<c>packageManager: pnpm@x.y.z</c>), or yarn's <c>.yarnrc.yml</c>
     /// <c>yarnPath</c> release (<c>yarn-x.y.z.cjs</c>) and a <c>node_modules/.yarn-integrity</c>, which only yarn 1 writes (said
     /// <c>1.x</c>). Null where none records it, or where the field names another tool, given in <paramref name="other"/>.
@@ -511,7 +510,7 @@ public static class HeavyWorkers
         word is "-r" or "-F" or "-C" or "-w" || word.StartsWith("-F=", StringComparison.Ordinal) || Names(word, "--recursive")
         || Names(word, "--filter") || Names(word, "--filter-prod") || Names(word, "--dir") || Names(word, "--workspace-root");
 
-    /// <summary>A test runner: its package, its name as said, and the majors whose command line was read declaring <c>maxWorkers</c>.</summary>
+    /// <summary>A test runner: its package, its name as said, and the majors whose command line declares <c>maxWorkers</c>.</summary>
     private sealed record Runner(string Package, string Name, int[] Majors)
     {
         /// <summary>Whether <paramref name="version"/> is a release of a major read declaring the flag; a prerelease promises nothing.</summary>

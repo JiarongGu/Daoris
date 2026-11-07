@@ -5,12 +5,12 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The judgements a <c>quest.close</c> node rests on (FABRIC-CLOSE1b; the fabric events design §E5): whether a graph closes, the close token,
+/// The judgements a <c>quest.close</c> node rests on: whether a graph closes, the close token,
 /// and which quests a close names. Pure.
 /// </summary>
 /// <remarks>
-/// <b>The chain closes at its last quest here</b> (D173's CLOSE1b note, choice 2): a quest whose own steps still name this repository waits,
-/// and the last one's close names every quest of the chain in this repository that is not Done yet, oldest first, in one call (§E5: all of
+/// <b>The chain closes at its last quest here</b>: a quest whose own steps still name this repository waits,
+/// and the last one's close names every quest of the chain in this repository that is not Done yet, oldest first, in one call (all of
 /// them or none). A quest the person closed is left as it is.
 /// </remarks>
 public static class QuestClosing
@@ -18,7 +18,7 @@ public static class QuestClosing
     /// <summary>The sender an attempt of Daoris's own close names: never a plugin's, so no plugin's frame is taken about it.</summary>
     public const string Sender = NodeKinds.QuestClose;
 
-    /// <summary>The sender a close node's attempt reached on its chain's close names (FABRIC-CLOSE1l): never sent, reconciled or said.</summary>
+    /// <summary>The sender a close node's attempt reached on its chain's close names: never sent, reconciled or said.</summary>
     public const string Chained = NodeKinds.QuestClose + "/chain";
 
     /// <summary>The history entry a graph ended by the person's own done keeps: what says it once.</summary>
@@ -28,8 +28,8 @@ public static class QuestClosing
     public const string Partial = "partially-closed";
 
     /// <summary>
-    /// The history entry the person's word taken back on a close whose submission moved keeps (FABRIC-CLOSE1q4), with the quest and the
-    /// word and the attempt (<c>word-taken-back #q7 stop 1</c>): what says it once on the page, where its close is no longer listed as held.
+    /// The history entry the person's word taken back on a close whose submission moved keeps, with the quest and the
+    /// word and the attempt (<c>word-taken-back #q7 stop 1</c>): what says it once on the page, where its close is not listed as held.
     /// </summary>
     public const string TakenBack = "word-taken-back";
 
@@ -37,10 +37,10 @@ public static class QuestClosing
 
     private const string Taken = "Taken";
 
-    /// <summary>Whether a graph holds <c>quest.close</c>: a closure graph (§E5).</summary>
+    /// <summary>Whether a graph holds <c>quest.close</c>: a closure graph.</summary>
     public static bool Holds(NodeGraph? graph) => graph?.Nodes.Any(node => node.Kind == NodeKinds.QuestClose) == true;
 
-    /// <summary>The close token (§E5 step 1): the unit, its revision, the graph's digest and the prerequisite acceptances' ids.</summary>
+    /// <summary>The close token: the unit, its revision, the graph's digest and the prerequisite acceptances' ids.</summary>
     public static string Token(string unit, string? revision, string graphDigest, IReadOnlyList<string> receipts)
     {
         var text = new StringBuilder("quest-close\n").Append(unit).Append('\n').Append(revision ?? "").Append('\n').Append(graphDigest).Append('\n');
@@ -51,13 +51,13 @@ public static class QuestClosing
     /// <summary>Which quests the close of <paramref name="quest"/>'s unit names now, or why it waits, or that every one is Done already.</summary>
     public static QuestCloseJudged Judge(QuestView quest, IReadOnlyDictionary<string, QuestView> quests)
     {
-        // FABRIC-CLOSE1l, the review's finding 1: the whole ancestry is walked, through other repositories' steps, so an A → B → A chain's last
+        // The whole ancestry is walked, through other repositories' steps, so an A → B → A chain's last
         // A closes with its first; an ancestor not read leaves the chain unjudged, never judged without it.
         var (chain, unread) = Lineage(quest, quests);
         if (unread is not null) return new([], $"#{unread}, which #{quest.Id}'s chain grew from, was not read, so the chain is not judged whole", false);
         var open = chain.Where(each => each.Status != Done).ToList();
         if (open.Count == 0) return new([], null, true);
-        // FABRIC-CLOSECASE1: "the same repository" is the service's rule, blind to case, as its NextStep and close door read it.
+        // "The same repository" is the service's rule, blind to case, as its NextStep and close door read it.
         if (quest.Status != Done && quest.Then.Any(step => string.Equals(step.To, quest.To, StringComparison.OrdinalIgnoreCase)))
         {
             return new([], $"#{quest.Id}'s chain has a step in this repository still to come, and closes at its last", false);
@@ -97,12 +97,12 @@ public static class QuestClosing
     }
 
     /// <summary>
-    /// A closing quest's revision (FABRIC-CLOSE1l, the review's findings 5 and 8): what its close judges, as one digest of every quest of its
+    /// A closing quest's revision: what its close judges, as one digest of every quest of its
     /// chain here (its moment, its status, its binding, its submission and its hold) and the tip of each branch their sessions worked. A
     /// commit, a new submission, or a hold gained or released anywhere in the chain moves it, which lapses every acceptance bound to the
-    /// revision before (WIRE1e), a close refused on it included, so a fresh close is made under a fresh key.
+    /// revision before, a close refused on it included, so a fresh close is made under a fresh key.
     /// </summary>
-    /// <param name="tips">The branches' tips git answered this judgement (FABRIC-CLOSE1p, <see cref="NodeUnitsRead.Tips"/>); null, each branch's recorded revision.</param>
+    /// <param name="tips">The branches' tips git answered this judgement (<see cref="NodeUnitsRead.Tips"/>); null, each branch's recorded revision.</param>
     public static string Revision(
         QuestView quest, IReadOnlyDictionary<string, QuestView> quests, IReadOnlyList<WorkUnit> units, IReadOnlyDictionary<string, string?>? tips = null)
     {
@@ -124,7 +124,7 @@ public static class QuestClosing
                 .Append('\t').Append(each.Held ? each.Hold ?? "held" : "").Append('\n');
         }
 
-        // FABRIC-CLOSE1p: each branch's tip as git answered this judgement; a record's revision is its kept end fact's, which a commit does not move.
+        // Each branch's tip as git answered this judgement; a record's revision is its kept end fact's, which a commit does not move.
         foreach (var branch in Worked(chain, units).Select(unit => $"{unit.Id}\t{(tips is null ? unit.Subject.Revision : Tip(unit, tips) ?? "unread")}")
                      .Order(StringComparer.Ordinal))
         {
@@ -142,7 +142,7 @@ public static class QuestClosing
         records.SelectMany(record => record.Attempts).Where(attempt => NamesCurrent(attempt, quest));
 
     /// <summary>
-    /// Whether a close attempt names <paramref name="quest"/> at its current submission (FABRIC-CLOSE1q): its id, and the machine and
+    /// Whether a close attempt names <paramref name="quest"/> at its current submission: its id, and the machine and
     /// sequence of the operation that made the submission. The same commit made ready again is another submission, so a close kept for
     /// the one before (its id, its commit, a sequence of another machine's) is never its authority. A quest with no submission has none.
     /// </summary>
@@ -153,7 +153,7 @@ public static class QuestClosing
                                               && named.Sequence == current.Sequence) == true;
 
     /// <summary>
-    /// The first quest a close attempt names whose submission is its current one no more (FABRIC-CLOSE1q2): read, and standing on another
+    /// The first quest a close attempt names whose submission is its current one no more: read, and standing on another
     /// submission or on none, since the person reopened it or a later <c>ready</c> replaced it; null where each one read still stands on the
     /// submission named. A quest the read does not hold is not judged.
     /// </summary>
@@ -161,7 +161,7 @@ public static class QuestClosing
         attempt.Close?.Quests.FirstOrDefault(named => quests.TryGetValue(named.Id, out var quest) && !NamesCurrent(attempt, quest));
 
     /// <summary>
-    /// Whether a close attempt is unknown and offered to the person (FABRIC-CLOSE1u): its door answered neither the close nor the question of
+    /// Whether a close attempt is unknown and offered to the person: its door answered neither the close nor the question of
     /// what became of its key, so it is asked after at each pass and never sent again by itself, and its node is still on it. The person may
     /// stop its work, or ask again now, with a held close's words (<see cref="HeldResolutions.CloseUnkept"/>).
     /// </summary>
@@ -171,7 +171,7 @@ public static class QuestClosing
         && status.State is NodeStates.Active or NodeStates.Unknown;
 
     /// <summary>
-    /// Whether a close attempt is the settled one of a close found closed only in part (FABRIC-CLOSE1j; §E5, <see cref="Partial"/>), whose node
+    /// Whether a close attempt is the settled one of a close found closed only in part (<see cref="Partial"/>), whose node
     /// is live again: the newest on its node, which a <see cref="Partial"/> entry of its record names, and nothing in flight on it. Its node
     /// would close the lost quest over the winner's take once that take submits, so the person is offered its stop.
     /// </summary>
@@ -182,7 +182,7 @@ public static class QuestClosing
         && NodeStates.Live.Contains(WorkPerformer.StatusOf(record, attempt.Node).State);
 
     /// <summary>
-    /// The first branch <paramref name="quest"/>'s chain worked whose tip git did not answer this judgement (FABRIC-CLOSE1p), or null: such a
+    /// The first branch <paramref name="quest"/>'s chain worked whose tip git did not answer this judgement, or null: such a
     /// close waits, never judged on a revision that could not be read. Null without <paramref name="tips"/>, where the records alone are judged.
     /// </summary>
     public static string? Unread(
@@ -196,10 +196,10 @@ public static class QuestClosing
     }
 
     /// <summary>
-    /// The tip of each branch a bound quest's chain worked (FABRIC-CLOSE1p; §E5 step 1), by the branch unit's id: a commit, empty where git says
+    /// The tip of each branch a bound quest's chain worked, by the branch unit's id: a commit, empty where git says
     /// the branch is not there, null where git did not say (its repository has no checkout here, or the read failed). One
     /// <see cref="RefSnapshot"/> per repository answers every branch there, taken for this judgement alone: a tip is a mutable fact, so the next
-    /// judgement reads again (LANDGIT1), and the read right before a close is its own. No quest bound to a closure graph, no git.
+    /// judgement reads again, and the read right before a close is its own. No quest bound to a closure graph, no git.
     /// </summary>
     /// <param name="take">The snapshot of a checkout (the test seam); null, <see cref="RefSnapshot.Take(string)"/>.</param>
     internal static async Task<IReadOnlyDictionary<string, string?>> TipsAsync(
@@ -233,7 +233,7 @@ public static class QuestClosing
         return units.Where(unit => unit.Kind == WorkUnitKind.Branch && unit.Links.Any(link => link.Relation == WorkRelation.ProducedBy && ids.Contains(link.Unit)));
     }
 
-    /// <summary>What git answered of <paramref name="unit"/>'s branch, the commit or empty where it is gone; null where it was not read.</summary>
+    /// <summary>What git answered of <paramref name="unit"/>'s branch, the commit or empty where it is gone; null where it is not read.</summary>
     private static string? Tip(WorkUnit unit, IReadOnlyDictionary<string, string?> tips) => tips.TryGetValue(unit.Id, out var tip) ? tip : null;
 
     /// <summary>A repository's checkout here, by its name as written, else blind to case as the inventory groups repositories; null where none.</summary>

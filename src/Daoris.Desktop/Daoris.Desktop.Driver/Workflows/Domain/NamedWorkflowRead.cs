@@ -12,7 +12,7 @@ namespace Daoris.Driver;
 public sealed record NamedWorkflowRead(string? Id, string? Name, IReadOnlyList<NamedVersion> Versions, string? Problem)
 {
     /// <summary>
-    /// The file's mark (FABRIC-PIPELINE1a, <see cref="WorkflowPipelines"/>): <c>development</c> where it says none, null where the file
+    /// The file's mark (<see cref="WorkflowPipelines"/>): <c>development</c> where it says none, null where the file
     /// does not read.
     /// </summary>
     public string? Pipeline { get; init; }

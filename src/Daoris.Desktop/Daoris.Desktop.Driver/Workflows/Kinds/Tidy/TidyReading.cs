@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>tidy</c>'s reading (D245): reached once the landing record holds what its door ended at the landing's tip (<see cref="ChainTidied"/>),
+/// A <c>tidy</c>'s reading: reached once the landing record holds what its door ended at the landing's tip (<see cref="ChainTidied"/>),
 /// pending until then. Nothing fails it: a request that did not merge never starts it.
 /// </summary>
 public static class TidyReading

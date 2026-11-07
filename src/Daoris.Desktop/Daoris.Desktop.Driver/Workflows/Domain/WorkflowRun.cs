@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>A chain's work in one repository, read as steps (WORKFLOW1c; D157 point 11, design §5.1).</summary>
+/// <summary>A chain's work in one repository, read as steps.</summary>
 /// <param name="Quests">The run's quests, in the chain's order.</param>
 public sealed record WorkflowRun(string Repository, string Workspace, CurrentWorkflow Current, IReadOnlyList<string> Quests, IReadOnlyList<WorkflowRunStep> Steps)
 {
@@ -11,15 +11,15 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     /// <summary>The <see cref="Problem"/> as a code and its values for the page to word; null where it is the driver's sentence only.</summary>
     public BindingProblem? Coded { get; init; }
 
-    /// <summary>The ask the chain was asked by, or null.</summary>
+    /// <summary>The ask that asked the chain, or null.</summary>
     public string? Ask { get; init; }
 
     /// <summary>The run's newest session: the one its doors attend.</summary>
     public string? Session { get; init; }
 
     /// <summary>
-    /// A chat run's key, <c>chat-&lt;first&gt;</c> (CHATFLOW1c); null for a quest's run. Its checks are not yet enforced for a conversation
-    /// (the chat-flow design §4.4), which the view says until CHATFLOW1h.
+    /// A chat run's key, <c>chat-&lt;first&gt;</c>; null for a quest's run. Its checks are not yet enforced for a conversation,
+    /// which the view says.
     /// </summary>
     public string? ChatRun { get; init; }
 
@@ -30,12 +30,12 @@ public sealed record WorkflowRun(string Repository, string Workspace, CurrentWor
     public string? ChatChecks { get; init; }
 
     /// <summary>
-    /// The run bound to a graph version, drawn from its record (FABRIC-CUTOVER1e): its wires, its subjects and what its record says of it;
-    /// null for a run D157's steps govern.
+    /// The run bound to a graph version, drawn from its record: its wires, its subjects and what its record says of it;
+    /// null for a run that steps govern.
     /// </summary>
     public WorkflowGraphRun? Graph { get; init; }
 
-    /// <summary>A verification run's commit, branch, verdict and gates (FABRIC-PIPELINE1d); null for a chain's or a chat's run.</summary>
+    /// <summary>A verification run's commit, branch, verdict and gates; null for a chain's or a chat's run.</summary>
     public WorkflowRunLine? Line { get; init; }
 
     /// <summary>

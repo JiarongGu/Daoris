@@ -3,7 +3,7 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run says in a terminal (WORKFLOW1c2; the workflow design §5.2's <i>Said</i>, §7, D50): each step's title, its state's
+/// What a run says in a terminal: each step's title, its state's
 /// word and what that state says, composed from the step's own facts as <see cref="WorkflowRuns.Derive"/> set them, so it cannot
 /// drift from what the reader read. The page's <c>workflow/runSaid.ts</c> says the same in its catalogue's words; these are its
 /// English, kept beside it by <c>WorkflowRunCommandTests</c>.
@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 /// </remarks>
 public static class WorkflowRunWords
 {
-    /// <summary>The details each kind words, by kind; the second opinion's are its gate's own states (XAGENT1f).</summary>
+    /// <summary>The details each kind words, by kind; the second opinion's are its gate's own states.</summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> Details { get; } = new Dictionary<string, IReadOnlyList<string>>
     {
         [WorkflowKinds.Work] =
@@ -54,7 +54,7 @@ public static class WorkflowRunWords
 
     /// <summary>
     /// A step's title, as <c>daoris workflow show</c> names it: the title of the kind it is drawn from (<see cref="INodeKind.Title"/>), a plugin's by
-    /// its node and its plugin; an older steps version's pull request by its own; any other by its id.
+    /// its node and its plugin; a steps version's pull request by its own; any other by its id.
     /// </summary>
     public static string Title(WorkflowStep step) =>
         step.Kind == WorkflowKinds.PullRequest ? "The pull request" : NodeKit.Drawn(step.Kind)?.Title ?? step.Id;
@@ -82,9 +82,7 @@ public static class WorkflowRunWords
         WorkflowRunStates.Failed, WorkflowRunStates.Stopped,
     ];
 
-    /// <summary>
-    /// What a step's state says (design §5.2's <i>Said</i>), or null where the state's word says it all (not reached).
-    /// </summary>
+    /// <summary>What a step's state says, or null where the state's word says it all (not reached).</summary>
     public static string? Said(WorkflowRunStep step)
     {
         var kind = step.Step.Kind;
@@ -123,16 +121,16 @@ public static class WorkflowRunWords
             (WorkflowKinds.Work, WorkflowRunDetails.Declined) => $"Quest #{quest} was declined.",
             (WorkflowKinds.Work, WorkflowRunDetails.Finished) =>
                 count == 1 ? "The agent finished: 1 quest here is done." : $"The agent finished: {count} quests here are done.",
-            // FABRIC-WORKFLOW2d: a closure graph's work, finished at its submissions, and a submission the person reopened.
+            // A closure graph's work, finished at its submissions, and a submission the person reopened.
             (WorkflowKinds.Work, WorkflowRunDetails.Submitted) => count == 1
                 ? "The agent finished: 1 quest here is submitted, and closes at the workflow's end."
                 : $"The agent finished: {count} quests here are submitted, and close at the workflow's end.",
             (WorkflowKinds.Work, WorkflowRunDetails.Reopened) =>
                 $"You reopened quest #{quest}'s submission: it waits for its agent to make it ready again.",
-            // FABRIC-CLOSE1c7: made ready again, the started step the reopen held waits on the person's word.
+            // Made ready again, the started step the reopen held waits on the person's word.
             (WorkflowKinds.Work, WorkflowRunDetails.GoOn) =>
                 $"The work you reopened is ready again: quest #{quest}, its next step, waits for you to go on with it on the new work or abandon it.",
-            // CHATFLOW1c (the chat-flow design §4.2): a chat run's conversation between turns, its work beyond the line, and its landing.
+            // A chat run's conversation between turns, its work beyond the line, and its landing.
             (WorkflowKinds.Work, WorkflowRunDetails.Talk) => "Your turn to talk: nothing stands beyond the line yet, so nothing waits to land.",
             (WorkflowKinds.Work, WorkflowRunDetails.Land) => count == 1
                 ? "1 commit beyond the line waits for you to accept it."
@@ -156,7 +154,7 @@ public static class WorkflowRunWords
             (WorkflowKinds.Opinion, OpinionGateStates.CommitsSince) => count == 1
                 ? "1 commit since was not read by another agent, and one pass and one recheck are spent."
                 : $"{count} commits since were not read by another agent, and one pass and one recheck are spent.",
-            // Required, it waits on the person; not, it is passed over and holds nothing (the second-agent design §8.4).
+            // Required, it waits on the person; not, it is passed over and holds nothing.
             (WorkflowKinds.Opinion, OpinionGateStates.Unavailable) => step.State == WorkflowRunStates.WaitingOnYou
                 ? $"No second opinion could be had: {Unavailable(step.Code)}. The rule requires one, so the work waits for you."
                 : $"No second opinion could be had: {Unavailable(step.Code)}. The rule does not require one, so nothing waits for it.",
@@ -169,14 +167,14 @@ public static class WorkflowRunWords
                 ? "Your Reviewed answered the second opinion."
                 : "Your Accept answered the second opinion.",
             (WorkflowKinds.Opinion, WorkflowRunDetails.Landed) => "It let the work go when the work landed.",
-            // CHATFLOW1d (the chat-flow design §4.2, §5.2): a chat run's opinion is asked by the person's Accept, never at a look.
+            // A chat run's opinion is asked by the person's Accept, never at a look.
             (WorkflowKinds.Opinion, WorkflowRunDetails.ChatAtAccept) => step.Agent is { } asks
                 ? $"A second opinion from `{asks}` is asked when you press Accept."
                 : "A second opinion is asked when you press Accept.",
             (WorkflowKinds.Opinion, OpinionGateStates.Unread) => step.Words is { } why
                 ? $"Whether a second opinion holds it could not be read: {why}"
                 : "Whether a second opinion holds it could not be read.",
-            // WORKFLOW1f (the workflow design §3.7): a named workflow's opinion step naming reviewers its repository does not declare.
+            // A named workflow's opinion step naming reviewers its repository does not declare.
             (WorkflowKinds.Opinion, OpinionGateStates.CannotStart) => step.Words is { } cannot
                 ? $"It cannot start: {cannot}"
                 : "It cannot start: its workflow names reviewers its repository does not declare.",
@@ -232,7 +230,7 @@ public static class WorkflowRunWords
     }
 
     /// <summary>
-    /// What a graph run's node says (FABRIC-CUTOVER1e): its record's state (<see cref="WorkflowGraphDetails"/>) on the subject it observes,
+    /// What a graph run's node says: its record's state (<see cref="WorkflowGraphDetails"/>) on the subject it observes,
     /// named; the person's own words are shown under it, never in it. A detail these words do not hold is said as recorded.
     /// </summary>
     private static string NodeSaid(WorkflowRunStep step, string node)
@@ -247,11 +245,11 @@ public static class WorkflowRunWords
                 NodeKinds.GoAhead => step.Words is { Length: > 0 } act ? $"Waits for your go-ahead: {act}" : "Waits for your go-ahead.",
                 NodeKinds.Human => "Waits for your task.",
                 NodeKinds.Review => "Waits for your Accept.",
-                // INTEGRATE1o part o2: the run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
+                // The run's view reads a decline from the quests (its code); the landing gate, which reads the record alone, says both ways.
                 NodeKinds.WorkRequests => step.Code == WorkRequests.DeclinedCode
                     ? "A quest the work's sessions published was declined: it waits on you, and passing it over lets the work go on."
                     : "Waits on the quests the work's sessions published here: each must be done, and one declined is yours to pass over.",
-                // LANDNODE1k: what a landing's start judged, now its steps; each holds the work until it lets go, and passing it over lets it go on.
+                // Each holds the work until it lets go, and passing it over lets it go on.
                 NodeKinds.QuestHolds or NodeKinds.ContentHolds when step.Words is { Length: > 0 } why => $"Holds the work: {why.TrimEnd('.')}.",
                 NodeKinds.QuestHolds => "Holds the work while its quest's done is not in, or is held for your yes or its evidence's verdict.",
                 NodeKinds.ContentHolds => "Holds the work while the line or a branch of yours already holds it, or it holds no commit left to land.",
@@ -259,11 +257,11 @@ public static class WorkflowRunWords
             },
             WorkflowGraphDetails.Reached => on is null ? "Reached." : $"Reached on {on}.",
             WorkflowGraphDetails.Skipped => step.Code == NodeSource.Person ? "Passed over for this work, by you." : "Passed over for this work by its record.",
-            // INTEGRATE1p (C33): a declined request is yours to ask again or go on without; its quest's note is what the receiver said.
+            // A declined request is yours to ask again or go on without; its quest's note is what the receiver said.
             WorkflowGraphDetails.Failed when node == NodeKinds.Request && step.Code == RequestOptions.DeclinedCode =>
                 "The repository it asked declined the quest: ask again, or go on without it with your words.",
             WorkflowGraphDetails.Failed => step.Code is { Length: > 0 } code ? $"Failed: `{code}`." : "Failed.",
-            // DECIDE1c: a review's rejection is the person's changes, which went to the work.
+            // A review's rejection is the person's changes, which went to the work.
             WorkflowGraphDetails.Rejected when node == NodeKinds.Review => "You asked for changes: the work's session is told your words, and what it commits is reviewed again.",
             WorkflowGraphDetails.Rejected => "You refused it.",
             WorkflowGraphDetails.Stopped => "You stopped it.",
@@ -273,7 +271,7 @@ public static class WorkflowRunWords
         };
     }
 
-    /// <summary>What a graph run's node observes, named (the cutover design §2.2): its quest, its branch at its tip, or its landing there; null for the run itself.</summary>
+    /// <summary>What a graph run's node observes, named: its quest, its branch at its tip, or its landing there; null for the run itself.</summary>
     private static string? On(WorkflowRunStep step) => step.On switch
     {
         WorkflowGraphSubjects.Quest when step.Quest is { } quest => $"quest #{quest}",
@@ -284,9 +282,9 @@ public static class WorkflowRunWords
     };
 
     /// <summary>
-    /// What a run bound to a graph version says of itself, above its nodes (FABRIC-CUTOVER1e; the cutover design §2.3, §3): what its record says
+    /// What a run bound to a graph version says of itself, above its nodes: what its record says
     /// where it says something (it does not read, it ended, Daoris has not judged it yet), the subjects its nodes observe, and that its branches are
-    /// its graph's. Its landing doors read its record since FABRIC-CUTOVER1d, so no line says they hold it.
+    /// its graph's.
     /// </summary>
     public static IReadOnlyList<string> GraphSaid(WorkflowGraphRun graph)
     {
@@ -305,7 +303,7 @@ public static class WorkflowRunWords
         return said;
     }
 
-    /// <summary>Why a step Current does not draw is in this run (design §4.6): a look the work's own choice added.</summary>
+    /// <summary>Why a step Current does not draw is in this run: a look the work's own choice added.</summary>
     public static string? Added(WorkflowRunStep step) => step.Added switch
     {
         null => null,
@@ -316,7 +314,7 @@ public static class WorkflowRunWords
     };
 
     /// <summary>
-    /// The runs as the terminal prints them (design §7): each run's repository, its workflow and version, its quests and its ask;
+    /// The runs as the terminal prints them: each run's repository, its workflow and version, its quests and its ask;
     /// then one line per step, marked <c>✓</c> where settled, <c>●</c> where the run stands and <c>○</c> otherwise, its title, its
     /// state's word and what it says, with <i>this session</i> where <paramref name="session"/> is the step's own; and under a step,
     /// the person's words it keeps, why it is in this run, the terminal's presses where the second opinion holds the work on the
@@ -362,7 +360,7 @@ public static class WorkflowRunWords
         return said.ToString();
     }
 
-    /// <summary>What a chat run said of its checks before CHATFLOW1h enforced them on its tree (§4.4); the page still words it for a driver before it.</summary>
+    /// <summary>What a chat run says of its checks where its tree is not held to them.</summary>
     public static string ChatChecks(string checks) =>
         $"Its checks (`{checks}`) are not yet enforced for a conversation, so its tree is not held to them.";
 
@@ -371,8 +369,8 @@ public static class WorkflowRunWords
 
     /// <summary>
     /// The lines under a step: the person's words, why it is here, the opinion's presses in this terminal, the pull request; and on a graph run's
-    /// node (FABRIC-CUTOVER1f), the person's word kept and not applied yet, or the skip, the stop and a review's changes it offers as this
-    /// terminal's commands on <paramref name="graph"/>'s run, a decision's outcome and a route not taken (DECIDE1c).
+    /// node, the person's word kept and not applied yet, or the skip, the stop and a review's changes it offers as this
+    /// terminal's commands on <paramref name="graph"/>'s run, a decision's outcome and a route not taken.
     /// </summary>
     private static IEnumerable<string> Under(WorkflowRunStep step, WorkflowGraphRun? graph)
     {
@@ -400,7 +398,7 @@ public static class WorkflowRunWords
         }
 
         var kind = step.Step.Kind;
-        // The person's words a step keeps, shown as written: a skip's and a not yet's (D154), and a graph run's node's skip, refusal or stop.
+        // The person's words a step keeps, shown as written: a skip's and a not yet's, and a graph run's node's skip, refusal or stop.
         if (kind == WorkflowKinds.Look && step.Node is null && step.Detail is WorkflowRunDetails.Skip or WorkflowRunDetails.NotYet && step.Words is { Length: > 0 } words)
         {
             yield return $"“{words}”";
@@ -414,13 +412,13 @@ public static class WorkflowRunWords
 
         if (Added(step) is { } added) yield return added;
 
-        // INTEGRATE1o part o2: each request the work's sessions made, a line under the work.
+        // Each request the work's sessions made, a line under the work.
         foreach (var request in step.Requests ?? []) yield return RequestSaid(request);
 
-        // INTEGRATE1h: the integrate node's record, in one line.
+        // The integrate node's record, in one line.
         if (step.Integration is { } integration) yield return IntegrationSaid(integration);
 
-        // The second opinion's gate holding the work on the person (XAGENT1f): its presses are this terminal's own.
+        // The second opinion's gate holding the work on the person: its presses are this terminal's own.
         if (kind == WorkflowKinds.Opinion && step.State == WorkflowRunStates.WaitingOnYou && step.Session is { } held)
         {
             yield return $"`daoris session opinion show {held}` lists what is unsettled; `daoris session opinion anyway {held} \"…\"` "
@@ -443,7 +441,7 @@ public static class WorkflowRunWords
     };
 
     /// <summary>
-    /// One request the work's sessions made, as a line under the work (INTEGRATE1o part o2): a quest by its repository and state, whether its session
+    /// One request the work's sessions made, as a line under the work: a quest by its repository and state, whether its session
     /// waits on the answer, and the close's note as written; a helper as a request to an agent.
     /// </summary>
     private static string RequestSaid(WorkflowRunRequest request)
@@ -475,7 +473,7 @@ public static class WorkflowRunWords
         _ => "no listed reviewer of another maker could read it",
     };
 
-    /// <summary>What stood in an automatic landing's way, by its last try's code (LAND2b).</summary>
+    /// <summary>What stood in an automatic landing's way, by its last try's code.</summary>
     private static string Refused(string? code) => code switch
     {
         LandingCode.Uncommitted => "its tree holds uncommitted work",

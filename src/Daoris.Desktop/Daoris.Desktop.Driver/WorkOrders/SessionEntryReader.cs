@@ -3,8 +3,8 @@ namespace Daoris.Driver;
 public static class SessionEntries
 {
     /// <summary>
-    /// The entries, in the groups' order and, within a group, in the order its leading parts' rows are (D126 §2.1): each the
-    /// first of the groups any part qualifies for (SESSONE1b, D167, the design §1.6).
+    /// The entries, in the groups' order and, within a group, in the order its leading parts' rows are: each the
+    /// first of the groups any part qualifies for.
     /// </summary>
     /// <remarks>
     /// <para><b>The key is opaque.</b> Records are grouped on the string the service answers, which a record from before it is
@@ -12,13 +12,13 @@ public static class SessionEntries
     /// joins an entry, so no twin of that rule exists.</para>
     ///
     /// <para><b>An ended intake whose ask became quests leaves the list</b>: it is its ask's, and its ask's page names it. Its ask
-    /// became quests where a quest of this look was asked by it, or a session of its ask remains. A running intake, or one that
+    /// became quests where a quest of this look is asked by it, or a session of its ask remains. A running intake, or one that
     /// ended with nothing published, stays, since only the person moves its ask on. The rows (<see cref="SessionGroups.Read"/>) keep it.</para>
     ///
     /// <para><b>How a part began</b> is read from the record's own <c>from</c> and its quest's chain, in this order: a record
-    /// that continues another began by its link's why (SESSCTX1b: a hand-over's five, carried on, retried or moved, <see cref="PartBegan.ByLink"/>);
+    /// that continues another began by its link's why (a hand-over's five, carried on, retried or moved, <see cref="PartBegan.ByLink"/>);
     /// a quest an earlier part served is retried (its last part failed), carried on
-    /// (it was cut off) or resumed; a quest another session published is asked of this repository; a chain's step is carried
+    /// (it got cut off) or resumed; a quest another session published is asked of this repository; a chain's step is carried
     /// on; otherwise the part opened.</para>
     /// </remarks>
     /// <param name="only">The sessions asked about: each entry holding one is answered whole, since its other parts decide its group.</param>
@@ -78,7 +78,7 @@ public static class SessionEntries
         return (entries, SessionGroups.Read(look, ids));
     }
 
-    /// <summary>An ask's intake (D65 §1b): the conversation that answers it.</summary>
+    /// <summary>An ask's intake: the conversation that answers it.</summary>
     private static bool Intake(SessionRecord record) =>
         (record.Ask is not null && record.Quest is null) || record.Entry?.EndsWith("/intake", StringComparison.Ordinal) == true;
 
@@ -109,8 +109,8 @@ public static class SessionEntries
             var part = new EntryPart(record.Id, record.Quest, rows[at].Shown, rows[at].Group, PartBegan.Opened) { Head = record.Head };
             parts.Add(record switch
             {
-                // SESSCTX1b: every continuation names its link, so the link's why says how the part began; a why this build has no
-                // word for, and a record from before with none, read as a hand-over, as every link once did.
+                // Every continuation names its link, so the link's why says how the part began; a why this build has no
+                // word for, and a record with none, read as a hand-over.
                 { From: { } from } => part with { Began = PartBegan.ByLink(record.FromWhy), After = from },
                 _ when prior is not null => part with
                 {

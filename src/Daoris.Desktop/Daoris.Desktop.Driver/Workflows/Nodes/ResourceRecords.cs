@@ -3,7 +3,7 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Where a receipt's cleanup stands (FABRIC-PERFORM1d; the fabric events design §D3), as its unit's resource record keeps it.</summary>
+/// <summary>Where a receipt's cleanup stands, as its unit's resource record keeps it.</summary>
 public static class CleanupStates
 {
     /// <summary>Written with its key before the first send, and asked again with the same key until an answer ends it.</summary>
@@ -16,12 +16,12 @@ public static class CleanupStates
 }
 
 /// <summary>
-/// A receipt's cleanup (§D3's <c>cleanup: { state: requested, key, at, tries }</c>), persisted before it is sent: its key never changes, so a
+/// A receipt's cleanup, persisted before it is sent: its key never changes, so a
 /// restart or a lost answer sends the same request again and the plugin answers <c>already-gone</c> for what it already removed.
 /// </summary>
 /// <param name="State">One of <see cref="CleanupStates"/>.</param>
 /// <param name="Key">The idempotency key, the same at every delivery.</param>
-/// <param name="At">When it was first requested: what <see cref="ResourceCleaner.BlockedAfter"/> counts from.</param>
+/// <param name="At">When it is first requested: what <see cref="ResourceCleaner.BlockedAfter"/> counts from.</param>
 /// <param name="Tries">How many deliveries were answered with a failure, or not answered.</param>
 public sealed record ResourceCleanup(string State, string Key, DateTimeOffset At, int Tries)
 {
@@ -42,31 +42,31 @@ public sealed record ResourceCleanup(string State, string Key, DateTimeOffset At
 }
 
 /// <summary>
-/// One ownership receipt (FABRIC-PERFORM1d; §D3's <i>what a plugin step created</i>): what a plugin said one of its attempts created, by the
+/// One ownership receipt: what a plugin said one of its attempts created, by the
 /// schema its manifest declares and the opaque id it issued, kept on its unit's resource record with the attempt it came from. Only the
 /// plugin removes it, through <c>work/cleanup</c>; Daoris runs nothing for it and never holds a path.
 /// </summary>
 /// <param name="Id">Daoris's id for the receipt (<c>r-</c> and hex), the <c>receipt</c> its cleanup names.</param>
-/// <param name="Plugin">The plugin that created it: the one sender of its completion (§C4's first rule), and the one asked to clean it.</param>
+/// <param name="Plugin">The plugin that created it: the one sender of its completion, and the one asked to clean it.</param>
 /// <param name="Schema">What it is, as the plugin's manifest declares it in <c>resources</c>.</param>
 /// <param name="Resource">The plugin's own opaque id for it.</param>
 /// <param name="Role">Its declared role (<see cref="PluginResourceRoles"/>), or <see cref="ResourceReceipt.Undeclared"/> where the manifest declares no such schema.</param>
 /// <param name="Node">The node whose attempt created it.</param>
 /// <param name="Attempt">That attempt's number on its node.</param>
 /// <param name="Invocation">That attempt's invocation.</param>
-/// <param name="TakenAt">When the receipt was first taken.</param>
+/// <param name="TakenAt">When the receipt is first taken.</param>
 public sealed record ResourceReceipt(
     string Id, string Plugin, string Schema, string Resource, string Role, string Node, int Attempt, string Invocation, DateTimeOffset TakenAt)
 {
     /// <summary>
     /// The role of a receipt whose schema its plugin's manifest does not declare: no rule says who cleans it, so it is never cleaned by itself
-    /// and blocks its unit's retirement, said to the person (§D3: an unknown owner blocks, never a guess).
+    /// and blocks its unit's retirement, said to the person (an unknown owner blocks, never a guess).
     /// </summary>
     public const string Undeclared = "undeclared";
 
     /// <summary>
-    /// Whether the attempt that created it was superseded (§D3, <i>invalidation keeps resource accountability</i>): its completion came after
-    /// its node had moved off it, so it has no result, and what it made is temporary whatever role it declared, cleaned at once.
+    /// Whether the attempt that created it is superseded: its completion came after
+    /// its node moved off it, so it has no result, and what it made is temporary whatever role it declared, cleaned at once.
     /// </summary>
     public bool Superseded { get; init; }
 
@@ -79,11 +79,11 @@ public sealed record ResourceReceipt(
     public bool Settled => Cleanup is { State: CleanupStates.Settled };
 }
 
-/// <summary>A unit's resource record (FABRIC-PERFORM1d): the receipts its plugins' attempts gave, oldest first.</summary>
+/// <summary>A unit's resource record: the receipts its plugins' attempts gave, oldest first.</summary>
 /// <param name="Unit">The unit (<see cref="WorkUnit.Id"/>).</param>
 public sealed record ResourceRecord(string Unit)
 {
-    /// <summary>How many receipts one unit keeps at most (§D3's <c>Resources</c>, at most 32): a completion that would pass it is held.</summary>
+    /// <summary>How many receipts one unit keeps at most: a completion that would pass it is held.</summary>
     public const int ReceiptsKept = 32;
 
     public IReadOnlyList<ResourceReceipt> Receipts { get; init; } = [];
@@ -95,10 +95,9 @@ public sealed record ResourceRecord(string Unit)
 }
 
 /// <summary>
-/// The units' resource records under a home (FABRIC-PERFORM1d): one file per unit, <c>&lt;home&gt;/workflows/resources/&lt;key&gt;.json</c>,
-/// its key the unit's node record's (<see cref="NodeRecordFiles.KeyOf"/>). A folder of its own, not a field on the node record: a build
-/// before this one writes that record whole and would drop a field it never read, losing the receipts (the knowledge note
-/// <c>compatible-builds</c>); none of those builds looks here. Changed only by <see cref="Edit{T}"/>, as the node records are: read, judged
+/// The units' resource records under a home: one file per unit, <c>&lt;home&gt;/workflows/resources/&lt;key&gt;.json</c>,
+/// its key the unit's node record's (<see cref="NodeRecordFiles.KeyOf"/>). A folder of its own, not a field on the node record.
+/// Changed only by <see cref="Edit{T}"/>, as the node records are: read, judged
 /// and written whole in one hold of the record's lock with the lease asked inside it, atomically, BOM-less and LF; machine-local, never on
 /// the wire. A file that does not read is never taken for an empty record: a receipt it holds would never be cleaned.
 /// </summary>
@@ -161,7 +160,7 @@ public sealed class ResourceRecordFiles(string home, Func<bool>? holdsLease = nu
     /// One change of a unit's record, as <see cref="NodeRecordFiles.Edit{T}"/> is: the lock held, the lease asked, the record read as it is
     /// now, <paramref name="change"/> judged on it and what it returns written whole; a null record writes nothing. Nothing is awaited inside.
     /// </summary>
-    /// <returns>Why nothing was judged (<see cref="NotHeld"/>, <see cref="Unreadable"/>), else null with what the change said.</returns>
+    /// <returns>Why nothing is judged (<see cref="NotHeld"/>, <see cref="Unreadable"/>), else null with what the change says.</returns>
     public (string? Refused, T? Result) Edit<T>(string unit, Func<ResourceRecord, (ResourceRecord? Next, T Result)> change)
     {
         var path = PathOf(home, unit);

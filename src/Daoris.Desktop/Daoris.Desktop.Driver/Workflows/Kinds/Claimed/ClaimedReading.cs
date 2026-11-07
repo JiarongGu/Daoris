@@ -2,7 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A <c>claimed</c>'s reading: the quest's done, by the ledger. On a run's subject (a binding naming its subject, which only a run's record does) it
-/// waits for the chain's last step here (FABRIC-CUTOVER1a; the cutover design §2.2): a done whose steps name a work step still to come in its
+/// waits for the chain's last step here: a done whose steps name a work step still to come in its
 /// repository is pending, as the close and the opinion's gate read a chain, since a reach there would lapse at the next quest and run again
 /// all that rests on it. A look's set-up step is the review's, never a step of the work.
 /// </summary>

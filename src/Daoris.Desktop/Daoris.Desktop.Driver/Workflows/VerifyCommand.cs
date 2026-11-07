@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris gate verify</c> was asked: a repository, and a branch or a commit of it, or neither for its checkout's HEAD.</summary>
+/// <summary>What <c>daoris gate verify</c> asks: a repository, and a branch or a commit of it, or neither for its checkout's HEAD.</summary>
 public sealed record VerifyAsk(string Repository)
 {
     public string? Branch { get; init; }
@@ -9,7 +9,7 @@ public sealed record VerifyAsk(string Repository)
 }
 
 /// <summary>
-/// <c>daoris gate verify &lt;repository&gt; [--branch &lt;name&gt; | --commit &lt;sha&gt;]</c> (FABRIC-PIPELINE1d; the pipeline design §4.3): a person's
+/// <c>daoris gate verify &lt;repository&gt; [--branch &lt;name&gt; | --commit &lt;sha&gt;]</c>: a person's
 /// verification of a branch or a commit, a run of its own under the repository's landed route and the gates the person accepted, bound under
 /// the home's <c>workflows/lines/</c> for the running driver to verify. The line's batching never counts it.
 /// </summary>
@@ -49,7 +49,7 @@ public static class VerifyCommand
         return new VerifyAsk(args[0].Trim()) { Branch = branch, Commit = commit };
     }
 
-    /// <summary>Bind the person's run in <paramref name="checkout"/>, saying on <paramref name="output"/> what was bound and where its verdict shows.</summary>
+    /// <summary>Bind the person's run in <paramref name="checkout"/>, saying on <paramref name="output"/> what is bound and where its verdict shows.</summary>
     /// <returns>0 bound · 1 refused: no verification pipeline, no gates accepted, no version that reads · 2 the commit could not be read.</returns>
     public static async Task<int> BindAsync(
         string home, string checkout, VerifyAsk ask, WorkflowLandedSelected route, string? workspace, TextWriter output, CancellationToken ct)

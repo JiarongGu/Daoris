@@ -1,21 +1,21 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The eight wire kinds (FABRIC-WIRE1a; the fabric events design §E3; DECIDE1a's <c>when</c>, DECIDE1b's <c>back</c>). A wire is typed and
-/// carries no expression, script or command (§E9): its kind, and a <c>when</c>'s outcome or a <c>back</c>'s <c>on</c>, is its condition.
+/// The eight wire kinds. A wire is typed and
+/// carries no expression, script or command: its kind, and a <c>when</c>'s outcome or a <c>back</c>'s <c>on</c>, is its condition.
 /// </summary>
 public static class WireKinds
 {
-    /// <summary>The target becomes eligible when the source has a current <c>reached</c> acceptance; a skipped source satisfies it too (§E2).</summary>
+    /// <summary>The target becomes eligible when the source has a current <c>reached</c> acceptance; a skipped source satisfies it too.</summary>
     public const string After = "after";
 
     /// <summary>
     /// Names a source output, or its evidence, and a target input: it needs a current <c>reached</c>, compatible schemas and an immutable
-    /// output reference. A skipped source produces no outputs, so it never satisfies one (§E2).
+    /// output reference. A skipped source produces no outputs, so it never satisfies one.
     /// </summary>
     public const string Data = "data";
 
-    /// <summary>Gives a <c>wait.unit</c> node what it waits for: another unit's named node or its end, at an agreed revision (§E6).</summary>
+    /// <summary>Gives a <c>wait.unit</c> node what it waits for: another unit's named node or its end, at an agreed revision.</summary>
     public const string Wait = "wait";
 
     /// <summary>The source's accepted reach, a typed transition receipt, starts the target once for that receipt and binding.</summary>
@@ -28,13 +28,13 @@ public static class WireKinds
     public const string Rejected = "rejected";
 
     /// <summary>
-    /// The path a decision's named outcome takes (DECIDE1a): the source's current <c>reached</c> acceptance with that outcome. Another
+    /// The path a decision's named outcome takes: the source's current <c>reached</c> acceptance with that outcome. Another
     /// outcome, or none read, never takes it.
     /// </summary>
     public const string When = "when";
 
     /// <summary>
-    /// A way back to a node its source comes after (DECIDE1b), taken <see cref="Wire.On"/> the source's rejection, its spent failure or one of
+    /// A way back to a node its source comes after, taken <see cref="Wire.On"/> the source's rejection, its spent failure or one of
     /// its outcomes. It makes no node eligible and closes no cycle.
     /// </summary>
     public const string Back = "back";
@@ -42,25 +42,25 @@ public static class WireKinds
     public static readonly IReadOnlyList<string> All = [After, Data, Wait, Trigger, Failed, Rejected, When, Back];
 
     /// <summary>
-    /// The kinds a graph's order is read along (D157 §2.2's, and where a <c>back</c> may return to): a reach's, an input's and a decision's
+    /// The kinds a graph's order is read along, and where a <c>back</c> may return to: a reach's, an input's and a decision's
     /// route, never a failure's or a rejection's path.
     /// </summary>
     public static readonly IReadOnlyList<string> Ordered = [After, Trigger, Data, When];
 
     /// <summary>
     /// The kinds that make a node eligible, which its <c>allOf</c> and <c>anyOf</c> groups gather. A <c>data</c> or <c>wait</c> wire is an
-    /// input, mandatory whatever the groups say (§E3).
+    /// input, mandatory whatever the groups say.
     /// </summary>
     public static readonly IReadOnlyList<string> Eligibility = [After, Trigger, Failed, Rejected, When];
 }
 
-/// <summary>How a group of a node's incoming eligibility wires is satisfied (§E3). Groups combine by all.</summary>
+/// <summary>How a group of a node's incoming eligibility wires is satisfied. Groups combine by all.</summary>
 public static class WireGroupModes
 {
     /// <summary>Every wire of the group.</summary>
     public const string AllOf = "allOf";
 
-    /// <summary>One wire of the group, its witness: by wire-id order when several qualify at once (WIRE1b).</summary>
+    /// <summary>One wire of the group, its witness: by wire-id order when several qualify at once.</summary>
     public const string AnyOf = "anyOf";
 
     public static readonly IReadOnlyList<string> All = [AllOf, AnyOf];
@@ -74,19 +74,19 @@ public static class WireGroupModes
 /// <param name="Port">The port's name, on a <c>data</c> wire alone.</param>
 public sealed record WireEnd(string Node, string? Port = null)
 {
-    /// <summary>The source port that is a reached node's evidence reference, beside its declared outputs (§E2, <i>ports are references</i>).</summary>
+    /// <summary>The source port that is a reached node's evidence reference, beside its declared outputs.</summary>
     public const string Evidence = "evidence";
 
     /// <summary>
     /// Another unit's node, never this graph's: refused on every wire, since a dependency on other work, another repository's above all,
-    /// ends at a local <c>wait.unit</c> through a commitment (§E3, §E9).
+    /// ends at a local <c>wait.unit</c> through a commitment.
     /// </summary>
     public string? Unit { get; init; }
 }
 
 /// <summary>
-/// What a <c>wait</c> wire gives its <c>wait.unit</c> (§E6): another unit's named node or its end, at an agreed revision, never a newer
-/// one silently. Another repository's work is waited on through an accepted commitment, which the adapter checks (WAITUNIT1).
+/// What a <c>wait</c> wire gives its <c>wait.unit</c>: another unit's named node or its end, at an agreed revision, never a newer
+/// one silently. Another repository's work is waited on through an accepted commitment, which the adapter checks.
 /// </summary>
 /// <param name="Unit">The unit waited on.</param>
 /// <param name="Revision">The revision agreed.</param>
@@ -106,8 +106,8 @@ public sealed record WaitTarget(string Unit, string Revision)
 public sealed record WireGroup(string Id, string Mode);
 
 /// <summary>
-/// One wire (FABRIC-WIRE1a; §E3): <c>{ id, kind, from, to, group? }</c>. A <c>wait</c> wire's source is a <see cref="WaitTarget"/> in place
-/// of a node. The id is the wire's identity: an <c>anyOf</c>'s witness is chosen by it, and a trigger's de-duplication keys on it (WIRE1b).
+/// One wire: <c>{ id, kind, from, to, group? }</c>. A <c>wait</c> wire's source is a <see cref="WaitTarget"/> in place
+/// of a node. The id is the wire's identity: an <c>anyOf</c>'s witness is chosen by it, and a trigger's de-duplication keys on it.
 /// </summary>
 /// <param name="Id">Its id in its graph.</param>
 /// <param name="Kind">One of <see cref="WireKinds"/>.</param>
@@ -121,14 +121,14 @@ public sealed record Wire(string Id, string Kind, WireEnd? From, WireEnd To)
     /// <summary>The group it joins at its target, on an eligibility wire; none is a group of its own, satisfied by it alone.</summary>
     public WireGroup? Group { get; init; }
 
-    /// <summary>The source's outcome a <c>when</c> wire follows (DECIDE1a), one its source declares; null on every other kind.</summary>
+    /// <summary>The source's outcome a <c>when</c> wire follows, one its source declares; null on every other kind.</summary>
     public string? Outcome { get; init; }
 
-    /// <summary>What a <c>back</c> wire is taken on (DECIDE1b): <c>rejected</c>, <c>failed</c> or one of its source's outcomes; null on every other kind.</summary>
+    /// <summary>What a <c>back</c> wire is taken on: <c>rejected</c>, <c>failed</c> or one of its source's outcomes; null on every other kind.</summary>
     public string? On { get; init; }
 }
 
-/// <summary>One thing a save refuses (§E3, <i>refused when saved</i>): a stable code, the wire or node it is about, and its words.</summary>
+/// <summary>One thing a save refuses: a stable code, the wire or node it is about, and its words.</summary>
 /// <param name="Code">One of <see cref="WireRefusal"/>.</param>
 /// <param name="Wire">The wire's id, where it is about one.</param>
 /// <param name="Node">The node's id, where it is about one.</param>
@@ -137,11 +137,11 @@ public sealed record WireProblem(string Code, string? Wire, string? Node, string
 
 /// <summary>
 /// One of a node's incoming eligibility groups: a declared group, or a wire with none, a group of its own (<see cref="Id"/> null). Its
-/// wires are in wire-id order, the order an <c>anyOf</c>'s witness is chosen in (WIRE1b).
+/// wires are in wire-id order, the order an <c>anyOf</c>'s witness is chosen in.
 /// </summary>
 public sealed record WireGroupOf(string Node, string? Id, string Mode, IReadOnlyList<string> Wires);
 
-/// <summary>Why a save refuses a wire set (§E3), as a code a test holds and a page words.</summary>
+/// <summary>Why a save refuses a wire set, as a code a test holds and a page words.</summary>
 public static class WireRefusal
 {
     /// <summary>A wire without an id.</summary>
@@ -162,10 +162,10 @@ public static class WireRefusal
     /// </summary>
     public const string Shape = "shape";
 
-    /// <summary>A <c>when</c> wire from a node that declares no outcomes (DECIDE1a): no reach of it names one, so the path is never taken.</summary>
+    /// <summary>A <c>when</c> wire from a node that declares no outcomes: no reach of it names one, so the path is never taken.</summary>
     public const string NoOutcomes = "no-outcomes";
 
-    /// <summary>A <c>when</c> wire naming an outcome its source does not declare (DECIDE1a).</summary>
+    /// <summary>A <c>when</c> wire naming an outcome its source does not declare.</summary>
     public const string UnknownOutcome = "unknown-outcome";
 
     /// <summary>An end on another unit's node: a dependency on other work ends at a local <c>wait.unit</c>, through a commitment.</summary>
@@ -208,8 +208,8 @@ public static class WireRefusal
     public const string GroupSplit = "group-split";
 
     /// <summary>
-    /// A group on an <c>after</c> wire into an <c>all</c> join (FABRIC-WIRE1d): every such wire's source is a member whatever its group
-    /// (WIRE1b's choice 6), so a group there says something the evaluation ignores.
+    /// A group on an <c>after</c> wire into an <c>all</c> join: every such wire's source is a member whatever its group,
+    /// so a group there says something the evaluation ignores.
     /// </summary>
     public const string GroupedMember = "grouped-member";
 
@@ -222,7 +222,7 @@ public static class WireRefusal
     /// <summary>A local dependency cycle, a node's own <c>trigger</c> loop included.</summary>
     public const string Cycle = "cycle";
 
-    /// <summary>A <c>back</c> wire to a node its source does not come after through ordered wires (DECIDE1b), its source itself included.</summary>
+    /// <summary>A <c>back</c> wire to a node its source does not come after through ordered wires, its source itself included.</summary>
     public const string BackForward = "back-forward";
 
     /// <summary>A second <c>back</c> wire on one source and one <c>on</c>: each of its results goes back one way.</summary>
@@ -236,9 +236,9 @@ public static class WireRefusal
 }
 
 /// <summary>
-/// The wires' validation when a graph is saved (FABRIC-WIRE1a; the fabric events design §E3): each wire's shape and kind, the groups,
-/// the mandatory data inputs, and every refusal §E3 names. Pure: it judges declarations and wires, evaluates nothing (WIRE1b) and
-/// stores nothing (GRAPH1). A declaration's own checks are <see cref="NodeDeclarations.Problem"/>.
+/// The wires' validation when a graph is saved: each wire's shape and kind, the groups,
+/// the mandatory data inputs, and every refusal of <see cref="WireRefusal"/>. Pure: it judges declarations and wires, evaluates nothing and
+/// stores nothing. A declaration's own checks are <see cref="NodeDeclarations.Problem"/>.
 /// </summary>
 public static class NodeWires
 {
@@ -261,7 +261,7 @@ public static class NodeWires
 
         var ids = new HashSet<string>(StringComparer.Ordinal);
         var groups = new Dictionary<string, Wire>(StringComparer.Ordinal);
-        // DECIDE1b: what each node comes after through ordered wires, which a `back` returns to, and each source's result already gone back.
+        // What each node comes after through ordered wires, which a `back` returns to, and each source's result already gone back.
         var before = wires.Where(wire => WireKinds.Ordered.Contains(wire.Kind) && wire.From is { Unit: null } from && byId.ContainsKey(from.Node)
                 && wire.To.Unit is null && byId.ContainsKey(wire.To.Node))
             .ToLookup(wire => wire.To.Node, wire => wire.From!.Node, StringComparer.Ordinal);
@@ -301,8 +301,8 @@ public static class NodeWires
     }
 
     /// <summary>
-    /// <paramref name="node"/>'s incoming eligibility groups (§E3: groups combine by all), each declared group once and each wire with none
-    /// a group of its own, an <c>allOf</c> of one. Each group's wires are in wire-id order, an <c>anyOf</c>'s witness order (WIRE1b), and the
+    /// <paramref name="node"/>'s incoming eligibility groups (groups combine by all), each declared group once and each wire with none
+    /// a group of its own, an <c>allOf</c> of one. Each group's wires are in wire-id order, an <c>anyOf</c>'s witness order, and the
     /// groups in the order of their first wire. A <c>data</c> or <c>wait</c> wire is no member: an input is mandatory whatever the groups say.
     /// </summary>
     public static IReadOnlyList<WireGroupOf> Groups(string node, IReadOnlyList<Wire> wires) =>
@@ -414,7 +414,7 @@ public static class NodeWires
                 $"a `{wire.Kind}` wire is `{to.Id}`'s input, mandatory whatever the groups say; only `after`, `trigger`, `failed`, `rejected` and `when` wires are grouped.");
         }
 
-        // FABRIC-WIRE1d: WIRE1b reads every `after` wire into a join as a member whatever its group, so a group there says nothing it keeps.
+        // Every `after` wire into a join is read as a member whatever its group, so a group there says nothing it keeps.
         if (wire.Kind == WireKinds.After && to.Kind == NodeKinds.All)
         {
             return Refuse(WireRefusal.GroupedMember, to.Id,
@@ -458,13 +458,13 @@ public static class NodeWires
 
         if (wire.Waits is not null) return "only a `wait` wire names what it waits on.";
         if (wire.From is null) return $"a `{wire.Kind}` wire needs its source node.";
-        // DECIDE1a: a `when` names the outcome it follows, and no other kind names one.
+        // A `when` names the outcome it follows, and no other kind names one.
         if (wire.Kind == WireKinds.When ? string.IsNullOrWhiteSpace(wire.Outcome) : wire.Outcome is not null)
         {
             return wire.Kind == WireKinds.When ? "a `when` wire names the outcome of its source it follows." : "only a `when` wire names an outcome.";
         }
 
-        // DECIDE1b: a `back` names the result of its source it is taken on and joins no group, and no other kind names one.
+        // A `back` names the result of its source it is taken on and joins no group, and no other kind names one.
         if (wire.Kind == WireKinds.Back ? string.IsNullOrWhiteSpace(wire.On) : wire.On is not null)
         {
             return wire.Kind == WireKinds.Back ? "a `back` wire names what it is taken `on`: its source's `rejected`, its `failed` or one of its outcomes." : OnlyBackOn;
@@ -482,7 +482,7 @@ public static class NodeWires
     }
 
     /// <summary>
-    /// A <c>back</c> wire's first problem past its shape and ends (DECIDE1b): an <c>on</c> its source never comes to, a target its source does
+    /// A <c>back</c> wire's first problem past its shape and ends: an <c>on</c> its source never comes to, a target its source does
     /// not come after through <paramref name="before"/>, or a result of its source gone back already, noted in <paramref name="backs"/>.
     /// </summary>
     private static WireProblem? BackProblem(Wire wire, NodeDeclaration from, NodeDeclaration to, ILookup<string, string> before,
@@ -529,9 +529,9 @@ public static class NodeWires
     }
 
     /// <summary>
-    /// The local dependency cycles (§E3), a node's own loop included: over every wire of a kind with a source, both of whose ends are this
+    /// The local dependency cycles, a node's own loop included: over every wire of a kind with a source, both of whose ends are this
     /// graph's nodes. A <c>wait</c> wire's source is other work, so it closes none here, nor does a <c>back</c>, which is a way back and no
-    /// dependency (DECIDE1b). Each cycle once, named by its nodes in id order.
+    /// dependency. Each cycle once, named by its nodes in id order.
     /// </summary>
     private static IEnumerable<WireProblem> Cycles(Dictionary<string, NodeDeclaration> nodes, IReadOnlyList<Wire> wires)
     {

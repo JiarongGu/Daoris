@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which row of the level's table decided whether a chain's work in a repository waits for the person's review (REVIEWENV1c,
-/// D154 point 3; the review environment design §1.4): the first that says anything, read from the most specific down.
+/// Which row of the level's table decided whether a chain's work in a repository waits for the person's review: the first that says anything, read from the most specific down.
 /// </summary>
 public static class ReviewLevels
 {
@@ -25,17 +24,17 @@ public static class ReviewLevels
     public const string Workspace = "workspace";
 
     /// <summary>
-    /// Rows 5 and 6 under a named workflow (WORKFLOW1f, the workflow design §4.6): the run's bound version's look step, in an
+    /// Rows 5 and 6 under a named workflow: the run's bound version's look step, in an
     /// environment the rule declares, or none where the version has no look.
     /// </summary>
     public const string Workflow = "workflow";
 
-    /// <summary>Row 7: nothing set anywhere, which is today's behaviour.</summary>
+    /// <summary>Row 7: nothing set anywhere, so no review.</summary>
     public const string Nothing = "nothing";
 }
 
 /// <summary>
-/// Where a gate stands (REVIEWENV1c, D154 point 7; design §3.2's table), as a code a log line and a page can carry: three let
+/// Where a gate stands, as a code a log line and a page can carry: three let
 /// the work go, the rest hold it.
 /// </summary>
 public static class ReviewStates
@@ -43,7 +42,7 @@ public static class ReviewStates
     /// <summary>Nothing waits for a review here: the level says none.</summary>
     public const string None = "none";
 
-    /// <summary>The person skipped the review of this work.</summary>
+    /// <summary>The person skips the review of this work.</summary>
     public const string Skipped = "skipped";
 
     /// <summary>The person said <i>reviewed</i> of a set-up whose commit holds the work that lands.</summary>
@@ -61,21 +60,20 @@ public static class ReviewStates
     /// <summary>The person said <i>not yet</i> of the newest set-up: it waits for the next one shown.</summary>
     public const string NotYet = "not-yet";
 
-    /// <summary>Reviewed, but what was reviewed does not hold the commits that would land.</summary>
+    /// <summary>Reviewed, but what is reviewed does not hold the commits that would land.</summary>
     public const string NotHeld = "not-held";
 
     /// <summary>Whether it waits could not be read: the service did not answer.</summary>
     public const string Unread = "unread";
 
     /// <summary>
-    /// The run's named workflow asks for a look its repository does not declare the environment of (WORKFLOW1f, the workflow design
-    /// §3.7): it sits saying why, until the environment is declared or the person skips the review.
+    /// The run's named workflow asks for a look its repository does not declare the environment of: it sits saying why, until the environment is declared or the person skips the review.
     /// </summary>
     public const string CannotStart = "cannot-start";
 }
 
 /// <summary>
-/// What the level's table decided for a chain's work in one repository (design §1.4): the row, and the environment it is
+/// What the level's table decided for a chain's work in one repository: the row, and the environment it is
 /// reviewed in, or none, where nothing waits.
 /// </summary>
 /// <param name="Level">One of <see cref="ReviewLevels"/>.</param>
@@ -86,27 +84,27 @@ public sealed record ReviewDecision(string Level, string? Environment)
     public bool Reviews => Environment is not null || Cannot is not null;
 
     /// <summary>
-    /// Why the run's named workflow's look cannot start (WORKFLOW1f, the workflow design §3.7), at <see cref="ReviewLevels.Workflow"/>:
+    /// Why the run's named workflow's look cannot start, at <see cref="ReviewLevels.Workflow"/>:
     /// a sentence naming the Setup row that declares what it needs. Null everywhere else.
     /// </summary>
     public string? Cannot { get; init; }
 
-    /// <summary>The named workflow rows 5 and 6 were read from, as said (<c>`docs-to-pr` v2</c>), at <see cref="ReviewLevels.Workflow"/>.</summary>
+    /// <summary>The named workflow rows 5 and 6 are read from, as said (<c>`docs-to-pr` v2</c>), at <see cref="ReviewLevels.Workflow"/>.</summary>
     public string? Workflow { get; init; }
 
     /// <summary>The repository whose part of the chain this is.</summary>
     public string Repository { get; init; } = "";
 
     /// <summary>
-    /// The chain's last work quest in the repository: where a skip is given when no set-up step can take it (design §3.6). Null
-    /// for a chain this machine could not read.
+    /// The chain's last work quest in the repository: where a skip is given when no set-up step can take it. Null
+    /// for a chain this machine cannot read.
     /// </summary>
     public string? Work { get; init; }
 
-    /// <summary>Rows 3 and 4: the choice as it was set, <c>off</c>, <c>on</c> or a name.</summary>
+    /// <summary>Rows 3 and 4: the choice as it is set, <c>off</c>, <c>on</c> or a name.</summary>
     public string? Choice { get; init; }
 
-    /// <summary>The person's words the level was set on: a skip's, or a choice's. Null where none were given.</summary>
+    /// <summary>The person's words the level is set on: a skip's, or a choice's. Null where none are given.</summary>
     public string? Words { get; init; }
 
     /// <summary>Row 2: the set-up step published for the repository; null where it is only composed, and under every other row.</summary>
@@ -118,13 +116,13 @@ public sealed record ReviewDecision(string Level, string? Environment)
     /// <summary>The quest whose done publishes <see cref="Composed"/>.</summary>
     public string? ComposedBy { get; init; }
 
-    /// <summary>Row 1: the verdict that skipped it, and the quest it was given on.</summary>
+    /// <summary>Row 1: the verdict that skips it, and the quest it is given on.</summary>
     public QuestReviewVerdictView? Skip { get; init; }
 
     public string? SkippedOn { get; init; }
 
     /// <summary>
-    /// The chat run whose work this is (CHATFLOW1d2, the chat-flow design §5.3), where no quest is: no look can be set up for it, and the
+    /// The chat run whose work this is, where no quest is: no look can be set up for it, and the
     /// person's way past it is a skip of the look node of the graph it is bound to. Null for a quest's work.
     /// </summary>
     public string? ChatRun { get; init; }
@@ -135,13 +133,13 @@ public sealed record ReviewDecision(string Level, string? Environment)
     /// <summary>The working session the door lands.</summary>
     public string? Session { get; init; }
 
-    /// <summary>The tip a chat run's skip of its look let go: the commit the landing record names.</summary>
+    /// <summary>The tip a chat run's skip of its look lets go: the commit the landing record names.</summary>
     public string? SkippedAt { get; init; }
 }
 
 
 /// <summary>
-/// Where a chain's work in a repository stands at its gate (REVIEWENV1c, D154 point 7; design §3.1–§3.2): the level's decision,
+/// Where a chain's work in a repository stands at its gate: the level's decision,
 /// the state, and the set-up and verdict it turns on. A landing goes only where it <see cref="LetsGo"/>.
 /// </summary>
 /// <param name="State">One of <see cref="ReviewStates"/>.</param>
@@ -153,19 +151,19 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
     /// <summary>The verdict the state turns on: the <c>reviewed</c> or the skip that let it go, or the <c>not-yet</c>.</summary>
     public QuestReviewVerdictView? Verdict { get; init; }
 
-    /// <summary>The commit that would land: the tree's <c>HEAD</c>; null where it was not read.</summary>
+    /// <summary>The commit that would land: the tree's <c>HEAD</c>; null where it is not read.</summary>
     public string? Tip { get; init; }
 
     /// <summary>Why it could not be read, for <see cref="ReviewStates.Unread"/>.</summary>
     public string? Problem { get; init; }
 
-    /// <summary>Whether the work may land: nothing waits, the person skipped it, or they reviewed what lands.</summary>
+    /// <summary>Whether the work may land: nothing waits, the person skips it, or they review what lands.</summary>
     public bool LetsGo => State is ReviewStates.None or ReviewStates.Skipped or ReviewStates.Reviewed;
 
     /// <summary>What the gate says, in the driver's words: the terminal's line and every door's refusal.</summary>
     public string Says => ReviewGate.Says(this);
 
-    /// <summary>What the landing record keeps of it (design §3.5): a review or a skip that let it go; null where none was asked.</summary>
+    /// <summary>What the landing record keeps of it: a review or a skip that lets it go; null where none is asked.</summary>
     public LandingReview? Landing => State switch
     {
         ReviewStates.Reviewed => new LandingReview(ReviewVerdicts.Reviewed, Decision.Environment, Decision.SetUpStep?.Id)
@@ -186,9 +184,9 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
 }
 
 /// <summary>
-/// The review's gate (REVIEWENV1c, D154 points 3 and 7; design §1.4, §3.1–§3.2): which level decides for a chain's work in a
+/// The review's gate: which level decides for a chain's work in a
 /// repository, and whether the work that would land may go. A table, a commit, an ancestry and a press: no model reads any of
-/// it (design §4).
+/// it.
 /// </summary>
 /// <remarks>
 /// <para><b>Every landing door asks it</b>: the review's press (<c>LAND_SESSION_TREE</c>), <c>daoris tree land</c>, and
@@ -201,14 +199,14 @@ public sealed record ReviewGateState(string State, ReviewDecision Decision)
 public static class ReviewGate
 {
     /// <summary>
-    /// The run a chain's work in <paramref name="repository"/> is (design §1, §3.8): named by the chain's first quest there, which
+    /// The run a chain's work in <paramref name="repository"/> is: named by the chain's first quest there, which
     /// every later quest of the chain in that repository shares; null where the chain has none there.
     /// </summary>
     public static string? RunOf(IReadOnlyList<QuestView> chain, string repository) =>
         chain.FirstOrDefault(quest => string.Equals(quest.To, repository, StringComparison.OrdinalIgnoreCase))?.Id;
 
     /// <summary>
-    /// The quests of the <c>follows</c> chain <paramref name="id"/> is a step of (D149 point 1): up to its first quest, then every
+    /// The quests of the <c>follows</c> chain <paramref name="id"/> is a step of: up to its first quest, then every
     /// step published after, in the order the quests are listed. A quest the list does not hold has no chain here.
     /// </summary>
     public static IReadOnlyList<QuestView> ChainOf(IReadOnlyList<QuestView> quests, string id)
@@ -235,18 +233,18 @@ public static class ReviewGate
     }
 
     /// <summary>
-    /// The level's table for the chain's work in <paramref name="repository"/> (design §1.4), read from the most specific down;
+    /// The level's table for the chain's work in <paramref name="repository"/>, read from the most specific down;
     /// the first row that says anything decides. A chain that crosses repositories reads it once for each one's part.
     /// </summary>
-    /// <param name="chain">The chain's quests (<see cref="ChainOf"/>); empty where none could be read.</param>
-    /// <param name="ask">The ask the chain was asked by, or null.</param>
+    /// <param name="chain">The chain's quests (<see cref="ChainOf"/>); empty where none can be read.</param>
+    /// <param name="ask">The ask that asked the chain, or null.</param>
     /// <param name="rule">The review rule standing for the repository (<see cref="ReviewRules.Resolve"/>), or null for none set.</param>
     /// <param name="look">
-    /// Rows 5 and 6 as the run's named workflow says them (WORKFLOW1f, the workflow design §4.6), read from its bound version's look
-    /// step; null under Current, where the rule says them, as today. Rows 1 to 4 decide first either way, and <c>on</c> still names
-    /// the rule's default environment, since environments stay declared (§2.3).
+    /// Rows 5 and 6 as the run's named workflow says them, read from its bound version's look
+    /// step; null under Current, where the rule says them. Rows 1 to 4 decide first either way, and <c>on</c> still names
+    /// the rule's default environment, since environments stay declared.
     /// </param>
-    /// <param name="workflow">The named workflow <paramref name="look"/> was read from, as said.</param>
+    /// <param name="workflow">The named workflow <paramref name="look"/> is read from, as said.</param>
     public static ReviewDecision Decide(
         IReadOnlyList<QuestView> chain, string repository, AskView? ask, ResolvedReview? rule, WorkflowLook? look = null, string? workflow = null)
     {
@@ -270,7 +268,7 @@ public static class ReviewGate
             return Of(ReviewLevels.SetUpStep, step.SetUpIn) with { SetUpStep = step };
         }
 
-        // FABRIC-CLOSE1h (§E5): an unheld submission published its steps in its own transaction, as an unheld done does.
+        // An unheld submission publishes its steps in its own transaction, as an unheld done does.
         foreach (var quest in chain.Where(quest => QuestResults.Status(quest) is "Open" or "Taken" || (QuestResults.Judged(quest) && quest.Held)))
         {
             if (quest.Then.FirstOrDefault(each => each.SetUpIn is not null && Same(each.To, repository)) is { } composed)
@@ -288,7 +286,7 @@ public static class ReviewGate
         // Row 4: the ask's choice, the latest standing, for every chain it publishes that sets none.
         if (ask?.ReviewChoices.LastOrDefault() is { } asked) return Chosen(ReviewLevels.Ask, asked.Choice, asked.Words);
 
-        // Rows 5 and 6 under a named workflow (WORKFLOW1f): its version's look step, or none where it has no look.
+        // Rows 5 and 6 under a named workflow: its version's look step, or none where it has no look.
         if (look is not null) return Of(ReviewLevels.Workflow, look.Cannot is null ? look.Environment : null) with { Cannot = look.Cannot, Workflow = workflow };
 
         // Rows 5 and 6: the rule, a repository's replacing its workspace's whole; only a required one says review.
@@ -296,7 +294,7 @@ public static class ReviewGate
         var level = rule.Source == ReviewSource.Repository ? ReviewLevels.Repository : ReviewLevels.Workspace;
         return Of(level, rule.Rule is { IsNone: false, Required: true } required ? required.Environments[0].Name : null);
 
-        // `on` is the rule's default environment, where the repository declares one (design §1.4: `on` applies wherever an
+        // `on` is the rule's default environment, where the repository declares one (`on` applies wherever an
         // environment is declared); a name is that environment, which the planner sits a set-up step for where no rule names it.
         ReviewDecision Chosen(string level, string choice, string? words) => Of(level, choice switch
         {
@@ -307,11 +305,11 @@ public static class ReviewGate
     }
 
     /// <summary>
-    /// Where the gate stands for a decision and the commit that would land (design §3.2): nothing to wait for, the skip, or the
+    /// Where the gate stands for a decision and the commit that would land: nothing to wait for, the skip, or the
     /// set-up step's state, which lets the work go only where the person reviewed a set-up whose commit holds the tip.
     /// </summary>
-    /// <param name="tip">The commit that would land; null where none was read, which nothing reviewed can hold.</param>
-    /// <param name="holds">Whether the tip is a commit or an ancestor of it: true, false, or null where git could not say.</param>
+    /// <param name="tip">The commit that would land; null where none is read, which nothing reviewed can hold.</param>
+    /// <param name="holds">Whether the tip is a commit or an ancestor of it: true, false, or null where git cannot say.</param>
     public static async Task<ReviewGateState> JudgeAsync(ReviewDecision decision, string? tip, Func<string, Task<bool?>> holds)
     {
         if (!decision.Reviews)
@@ -323,11 +321,11 @@ public static class ReviewGate
             };
         }
 
-        // A named workflow's look that cannot start sits, saying why (WORKFLOW1f, the workflow design §3.7): the person's skip, row 1,
+        // A named workflow's look that cannot start sits, saying why: the person's skip, row 1,
         // is the floor, as it is for a review set up nowhere.
         if (decision.Cannot is not null) return new(ReviewStates.CannotStart, decision) { Tip = tip };
         if (decision.SetUpStep is not { } step) return new(ReviewStates.NotShown, decision) { Tip = tip };
-        // FABRIC-CLOSE1h (§E5): a set-up step a closure graph holds has finished its work at its submission, where it stays taken.
+        // A set-up step a closure graph holds has finished its work at its submission, where it stays taken.
         if (QuestResults.Status(step) is "Open" or "Taken" || step.SetUps.Count == 0) return new(ReviewStates.BeingSetUp, decision) { Tip = tip };
 
         // The newest set-up the person reviewed, and whether its commit holds what would land.
@@ -349,7 +347,7 @@ public static class ReviewGate
     }
 
     /// <summary>
-    /// Whether a set-up step's done still waits for the person's review (design §2.6), as the service's hold reads it: a set-up
+    /// Whether a set-up step's done still waits for the person's review, as the service's hold reads it: a set-up
     /// step neither skipped nor reviewed on its newest set-up.
     /// </summary>
     public static bool Waits(QuestView quest) =>
@@ -358,8 +356,8 @@ public static class ReviewGate
         && !(quest.SetUps.Count > 0 && VerdictOn(quest, quest.SetUps[^1], ReviewVerdicts.Reviewed) is not null);
 
     /// <summary>
-    /// What the gate says (design §3.1–§3.2): <i>Waits for your review in <c>environment</c></i> and why, with the door that moves
-    /// it, where it holds; what let it go, where it does.
+    /// What the gate says: <i>Waits for your review in <c>environment</c></i> and why, with the door that moves
+    /// it, where it holds; what lets it go, where it does.
     /// </summary>
     public static string Says(ReviewGateState gate)
     {
@@ -370,7 +368,7 @@ public static class ReviewGate
         var skip = skipOn is null ? "" : $" `daoris quest review {skipOn} skip \"…\"` lets it land without one.";
         return gate.State switch
         {
-            // CHATFLOW1d2 (the chat-flow design §5.3): a chat run's look, which no set-up step can show, and the person's way past it.
+            // A chat run's look, which no set-up step can show, and the person's way past it.
             ReviewStates.CannotStart when decision.ChatRun is not null =>
                 $"Waits for your look, and it cannot start: {ChatLookLimit}"
                 + (decision.LookNode is null
@@ -404,7 +402,7 @@ public static class ReviewGate
                 + $"what you reviewed does not hold these commits: set-up step `#{step}` was reviewed at `{Short(gate.SetUp!.Commit)}`, and "
                 + $"{(gate.Tip is { } tip ? $"`{Short(tip)}`" : "the work's tip")} is not that commit or one before it. It waits for the "
                 + "set-up step to show it again." + skip,
-            // WORKFLOW1f (design §3.7): the named workflow's look sits, saying what declares it; the skip lets it land without one.
+            // The named workflow's look sits, saying what declares it; the skip lets it land without one.
             ReviewStates.CannotStart => $"Waits for your review, and it cannot start: {decision.Workflow ?? "its workflow"} asks for one, and "
                 + $"{decision.Cannot}" + skip,
             _ => $"Whether this work waits for your review could not be read: {gate.Problem}. Nothing lands until it can be.",
@@ -435,20 +433,20 @@ public static class ReviewGate
     private static string Short(string commit) => TextBounds.ShortCommit(commit, 8);
 
     /// <summary>
-    /// The gate for a session's tree (design §3.1): the chain its quest is a step of, read from the service, the rule standing for
+    /// The gate for a session's tree: the chain its quest is a step of, read from the service, the rule standing for
     /// the tree's repository, the tree's <c>HEAD</c> and git's ancestry. A conversation, which serves no quest, has nothing to wait
     /// for. A service that does not answer holds the work only where a rule stands that could ask for a review, and says so.
     /// </summary>
     /// <param name="process">
-    /// The run's process (WORKFLOW1f, <see cref="WorkflowProcesses"/>), read once by the door for every part of the gate: under a
-    /// named workflow, rows 5 and 6 are its version's look. Null reads the rule live, as every gate did before.
+    /// The run's process (<see cref="WorkflowProcesses"/>), read once by the door for every part of the gate: under a
+    /// named workflow, rows 5 and 6 are its version's look. Null reads the rule live.
     /// </param>
     /// <param name="at">
-    /// The commit to judge the work at (FABRIC-CLOSE1h16): a landing's push passes the one its branch was made at, so a commit made on the
-    /// tree after it holds nothing back. Null reads the tree's <c>HEAD</c>, as before.
+    /// The commit to judge the work at: a landing's push passes the one its branch is made at, so a commit made on the
+    /// tree after it holds nothing back. Null reads the tree's <c>HEAD</c>.
     /// </param>
     /// <param name="run">
-    /// The chat run whose work this is where it serves no quest (CHATFLOW1d2, the chat-flow design §5.3): where its process requires a look,
+    /// The chat run whose work this is where it serves no quest: where its process requires a look,
     /// none can be set up, so it reads <c>cannot-start</c> with its limit until the person's way past it, kept on the run's look file under
     /// <paramref name="home"/>, covers the tip. Null for a quest's work, or a conversation with no run, which has nothing to wait for.
     /// </param>
@@ -493,7 +491,7 @@ public static class ReviewGate
     public const string ChatLookLimit = "a conversation publishes no set-up step, so no look can be set up for its work.";
 
     /// <summary>
-    /// A chat run's look (CHATFLOW1d2, the chat-flow design §5.3): rows 5 and 6 decide, a chat having no chain and no ask. Where they ask a look,
+    /// A chat run's look: rows 5 and 6 decide, a chat having no chain and no ask. Where they ask a look,
     /// none can be set up for a conversation's work, so it reads <c>cannot-start</c> with <see cref="ChatLookLimit"/>; the person's skip of the
     /// look node of the graph the run is bound to, kept on its record, lets it go as a skip does, its words on the landing record.
     /// </summary>

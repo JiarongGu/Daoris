@@ -4,9 +4,9 @@ namespace Daoris.Driver;
 public sealed record WorkflowStarted(QuestView Quest, string? Workspace);
 
 /// <summary>
-/// What binding a run at its first start reads and says beyond the home (WORKFLOW1e, the workflow design §4.5, §5.5): the service's
+/// What binding a run at its first start reads and says beyond the home: the service's
 /// quests, which name a later quest's run, and its asks, whose latest choice is the task's; and the machine log's
-/// <c>workflow.chosen</c> line. A port (STRUCT3b, D166): the loop hands it over its service client.
+/// <c>workflow.chosen</c> line. A port: the loop hands it over its service client.
 /// </summary>
 public interface IWorkflowStartWorld
 {
@@ -20,28 +20,28 @@ public interface IWorkflowStartWorld
     void Chosen(LandingLine line);
 }
 
-/// <summary>What a run's bind at a start came to (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8).</summary>
+/// <summary>What a run's bind at a start came to.</summary>
 public enum WorkflowBindCame
 {
     /// <summary>This start bound the run: the look says it, where a named workflow chose it or it could not be read.</summary>
     Bound,
 
-    /// <summary>The run was bound before, by an earlier start or one beside this one; its binding is the one kept.</summary>
+    /// <summary>The run is bound already, by an earlier start or one beside this one; its binding is the one kept.</summary>
     Already,
 
-    /// <summary>The quest's work names no run (its id names no file), so nothing is bound and nothing holds, as before.</summary>
+    /// <summary>The quest's work names no run (its id names no file), so nothing is bound and nothing holds.</summary>
     None,
 
     /// <summary>The run's binding is kept and does not read, so the workflow its take would name is not known: the start holds.</summary>
     Unread,
 
-    /// <summary>The bind was not made (the service did not answer, its file could not be written): the start holds, and is tried again.</summary>
+    /// <summary>The bind is not made (the service does not answer, its file cannot be written): the start holds, and is tried again.</summary>
     Failed,
 }
 
 /// <summary>
-/// A run's bind at a start (FABRIC-CUTOVER1g, the cutover design §8): the quest it was made for, the run, the binding kept, by this start or
-/// before it, and why a run was not bound. The start's take reads <see cref="Binding"/> (<c>ClosureBinding.AtTakeAsync</c>).
+/// A run's bind at a start: the quest it is made for, the run, the binding kept, by this start or
+/// before it, and why a run is not bound. The start's take reads <see cref="Binding"/> (<c>ClosureBinding.AtTakeAsync</c>).
 /// </summary>
 /// <param name="Quest">The quest whose start bound it.</param>
 /// <param name="Came">What the bind came to.</param>
@@ -55,16 +55,14 @@ public sealed record WorkflowBind(QuestView Quest, WorkflowBindCame Came, string
 }
 
 /// <summary>
-/// A run bound to its workflow at its first start (WORKFLOW1e, D157 point 11 as D190 amends it; the workflow design §4.5, the cutover
-/// design §8).
+/// A run bound to its workflow at its first start.
 /// </summary>
 /// <remarks>
-/// <para><b>The binding moment</b> (FABRIC-CUTOVER1g): a start binds its run inside itself, once it is past the holds before its tree and
+/// <para><b>The binding moment</b>: a start binds its run inside itself, once it is past the holds before its tree and
 /// before its take names a closure graph (<see cref="AtStartAsync(WorkflowStarted, IWorkflowStartWorld, string, DriverConfig, IReadOnlyList{WorkflowPlugin}, Func{DateTimeOffset}, CancellationToken)"/>,
 /// <c>Driver.RunAsync</c>), so the take names the graph its run is bound to. The binding stands though that start opens no session, and
 /// the choice is read once, there: one changed after applies to the next run.</para>
-/// <para><b>The look's say</b> (<see cref="Say"/>, <c>Driver.BindRunsAsync</c>) says what the starts bound since the last look. STRUCT3b brought
-/// the use case here.</para>
+/// <para><b>The look's say</b> (<see cref="Say"/>, <c>Driver.BindRunsAsync</c>) says what the starts bound since the last look.</para>
 /// </remarks>
 public static class WorkflowRunStart
 {
@@ -73,8 +71,8 @@ public static class WorkflowRunStart
     /// workflow chose it; a run under Current is bound silently, as nothing about its work changes.
     /// </summary>
     /// <param name="events">The look's lines, which a binding adds to.</param>
-    /// <param name="said">Where each line is classed (NOTIFY2h): a binding's is <c>progress</c>, said on the run's own place.</param>
-    /// <param name="made">What the starts' binds came to since the last look (FABRIC-CUTOVER1g); those this look says are those they bound.</param>
+    /// <param name="said">Where each line is classed: a binding's is <c>progress</c>, said on the run's own place.</param>
+    /// <param name="made">What the starts' binds came to since the last look; those this look says are those they bound.</param>
     public static void Say(IReadOnlyList<WorkflowBind> made, List<string> events, LookSaid? said = null)
     {
         said ??= LookSaid.None;
@@ -88,7 +86,7 @@ public static class WorkflowRunStart
     }
 
     /// <summary>
-    /// The start's bind (FABRIC-CUTOVER1g, D190's binding moment; the cutover design §8): its run bound to the workflow §4.1 chooses for it now
+    /// The start's bind: its run bound to the workflow its selection chooses for it now
     /// where no binding names it yet, its binding moved into place without overwriting so two starts of one run at once keep the first's; or
     /// the binding already kept, read. A bind not made, or a binding that does not read, says why, and the start holds on it: a take that
     /// went on would name a graph its run may not be bound to. The machine log's line is written as a binding is made; the look says it.
@@ -99,14 +97,14 @@ public static class WorkflowRunStart
         AtStartAsync(start, world, WorkflowPorts.Store(home), WorkflowPorts.Runs(home), config, plugins, now, ct, () => RoleCatalog.ReadHome(home));
 
     /// <summary>The start's bind through the ports.</summary>
-    /// <param name="roles">The role catalogue a step's role is judged by (ROLESTEP1b); null judges by the seed's.</param>
+    /// <param name="roles">The role catalogue a step's role is judged by; null judges by the seed's.</param>
     public static Task<WorkflowBind> AtStartAsync(
         WorkflowStarted start, IWorkflowStartWorld world, IWorkflowStore store, IWorkflowRunStore runs, DriverConfig config,
         IReadOnlyList<WorkflowPlugin> plugins, Func<DateTimeOffset> now, CancellationToken ct, Func<RoleCatalog>? roles = null) =>
         BindOneAsync(start, world, store, runs, config, plugins, now, new Every(), roles, ct);
 
     /// <summary>
-    /// The binding a start's bind would come to now, written nowhere (ROLESTEP1b): its run's kept binding, or the one its first start would
+    /// The binding a start's bind would come to now, written nowhere: its run's kept binding, or the one its first start would
     /// make, which the start's walk reads its work step's role from before its bind. Null where its work names no run, or the binding cannot
     /// be read or planned; the bind then says why and holds the start.
     /// </summary>
@@ -128,7 +126,7 @@ public static class WorkflowRunStart
         }
     }
 
-    /// <summary>What the start's hold says of a bind that was not made.</summary>
+    /// <summary>What the start's hold says of a bind that is not made.</summary>
     private const string NotBound = "its run was not bound to a workflow, and its quest is taken only once it is";
 
     /// <summary>
@@ -151,12 +149,12 @@ public static class WorkflowRunStart
             var binding = await PlanAsync(start, run, world, store, config, plugins, now, every, roles, ct).ConfigureAwait(false);
             if (!runs.Bind(binding))
             {
-                // Another start of the run bound it first, between the look above and this write (design §8, one first binding): its
+                // Another start of the run bound it first, between the look above and this write: its
                 // binding is the run's, and this start takes under it.
                 return Kept(quest, runs, run);
             }
 
-            // The machine log keeps which level chose and whether a named version or Current (WORKFLOW1f, design §5.5).
+            // The machine log keeps which level chose and whether a named version or Current.
             world.Chosen(WorkflowLines.Chosen(binding));
             return new(quest, WorkflowBindCame.Bound, run, binding, null);
         }
@@ -187,7 +185,7 @@ public static class WorkflowRunStart
         var quest = start.Quest;
         var askId = AskWords.AskOf(quest.From);
         var ask = askId is null ? null : await world.FindAskAsync(askId, ct).ConfigureAwait(false);
-        // A quest no ask published carries its own choice, made on its page before it started (WORKFLOW1e2).
+        // A quest no ask published carries its own choice, made on its page before it starts.
         var task = askId is null ? WorkflowRunBindings.TaskOf(quest, every.Quests) : WorkflowRunBindings.TaskOf(ask);
         return WorkflowRunBindings.Plan(config, store, run, quest.To, start.Workspace, askId, task, plugins, now(), roles);
     }

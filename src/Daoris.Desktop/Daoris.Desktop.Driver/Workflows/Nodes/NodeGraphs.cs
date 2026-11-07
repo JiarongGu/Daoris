@@ -7,32 +7,32 @@ using static Daoris.Driver.NodeGraphStarts;
 
 namespace Daoris.Driver;
 /// <summary>
-/// A graph's validation when saved, its digest, and its reading from JSON (FABRIC-GRAPH1; the fabric events design §E7). Pure: it judges
+/// A graph's validation when saved, its digest, and its reading from JSON. Pure: it judges
 /// declarations, evaluates nothing (<see cref="WireEvaluation"/>) and stores nothing (<see cref="NodeGraphHomes"/> reads the homes).
 /// </summary>
 /// <remarks>
-/// The choices §E7 left open, made here (D173's FABRIC-GRAPH1 note): synthetic nodes and every wire to or from one are counted apart,
+/// Synthetic nodes and every wire to or from one are counted apart,
 /// three nodes and four wires to each authored node; Current's landing nodes are the graph's own, counted; an entry takes no wire from
 /// another node; and the cleanup's wait is refused for an end at or before
 /// the line. The protected order before the landing is the kit's (<see cref="ProtectedOrder"/>).
 /// </remarks>
 public static class NodeGraphs
 {
-    /// <summary>The schema a graph is saved in (§E7's example). D157's named versions are schema 1.</summary>
+    /// <summary>The schema a graph is saved in.</summary>
     public const int SchemaVersion = 2;
 
-    /// <summary>The authored nodes a graph holds at most: D157's <see cref="WorkflowKindTable.MaxSteps"/>.</summary>
+    /// <summary>The authored nodes a graph holds at most: <see cref="WorkflowKindTable.MaxSteps"/>.</summary>
     public const int MaxNodes = WorkflowKindTable.MaxSteps;
 
-    /// <summary>The authored wires a graph holds at most (§E7).</summary>
+    /// <summary>The authored wires a graph holds at most.</summary>
     public const int MaxWires = 96;
 
-    /// <summary>The synthetic nodes a graph holds at most, for each authored node (§E7: three per authored step).</summary>
+    /// <summary>The synthetic nodes a graph holds at most, for each authored node.</summary>
     public const int SyntheticPerNode = 3;
 
     /// <summary>
     /// The wires to or from a synthetic node a graph holds at most, for each authored node: a decoded member's wire into its join and its
-    /// failure's into a sink, and a join's out and its own failure's, three to a step at worst, so a maximal D157 version always decodes.
+    /// failure's into a sink, and a join's out and its own failure's, three to a step at worst, so a maximal named version always decodes.
     /// </summary>
     public const int SyntheticWiresPerNode = 4;
 
@@ -43,9 +43,9 @@ public static class NodeGraphs
     /// </summary>
     /// <param name="graph">The graph judged.</param>
     /// <param name="saved">True for a graph a person authored and saves (a named graph version, a cycle): the rules only an authored graph is held to, the
-    /// observed nodes of one plugin step (FABRIC-GRAPH1g). False for a graph read back from a file that kept it.</param>
-    /// <param name="onSave">True where the graph is being saved now, rather than read from a file that kept it: INTEGRATE1n's F47 (a node that
-    /// observes the landing, with a way to it that passes no <c>handed</c>) is refused then alone, since a stored version that read before is
+    /// observed nodes of one plugin step. False for a graph read back from a file that kept it.</param>
+    /// <param name="onSave">True where the graph is being saved now, rather than read from a file that kept it: a node that
+    /// observes the landing, with a way to it that passes no <c>handed</c>, is refused then alone, since a stored version that read before is
     /// never made unreadable by a rule added after it (<c>compatible-builds.md</c>). Current's own graphs are judged on save, as they are drawn.</param>
     public static IReadOnlyList<WireProblem> Problems(NodeGraph graph, bool saved = true, bool onSave = true)
     {
@@ -80,7 +80,7 @@ public static class NodeGraphs
                 problems.Add(NodeKit.Of(node.Kind)?.DeclarationProblem(node, field)
                     ?? new(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `{field}` does not hold for a `{node.Kind}`."));
             }
-            // DECIDE1d: judged with the graph, so the declarations' own checks are left as they were.
+            // Judged with the graph, so the declarations' own checks leave it alone.
             else if (NodeOutcomes.OutputsOnProblem(node) is not null) Say(GraphRefusal.Declaration, null, node.Id, $"node `{node.Id}`: its `outputsOn` does not hold for a `{node.Kind}`.");
         }
 
@@ -103,7 +103,7 @@ public static class NodeGraphs
             }
         }
 
-        // DECIDE1b: the end need not lie on every route; a run whose routes not taken leave nothing to start has ended (NodeRuntime.End).
+        // The end need not lie on every route; a run whose routes not taken leave nothing to start has ended (NodeRuntime.End).
         var end = !string.IsNullOrWhiteSpace(graph.End) && byId.TryGetValue(graph.End, out var named) ? named : null;
         if (end is null)
         {
@@ -123,7 +123,7 @@ public static class NodeGraphs
                 Say(GraphRefusal.Unreachable, null, node.Id, $"node `{node.Id}`: no entry reaches it, so it would never start.");
             }
 
-            // DECIDE1d: a `data` wire takes an output its decision may carry on some outcomes alone. Each other outcome is judged as the run takes it,
+            // A `data` wire takes an output its decision may carry on some outcomes alone. Each other outcome is judged as the run takes it,
             // its decision's `when` wires of the rest never passing: a target that can start so would wait for ever on an output never carried.
             foreach (var wire in local.Where(wire => wire.Kind == WireKinds.Data))
             {
@@ -140,12 +140,12 @@ public static class NodeGraphs
             }
         }
 
-        // D247: the kinds' rules, which the kit runs: the protected order the gates share, then each kind's own of where its node stands (a push
+        // The kinds' rules, which the kit runs: the protected order the gates share, then each kind's own of where its node stands (a push
         // after a branch landing, a monitor on a step that reports a state, a tidy on a monitor's merged route, a hold before the landing, an
         // integrate after its landing, a close at the end), and what a saved graph's landing needs of the kinds that read it.
         problems.AddRange(NodeKit.Problems(standing, graph, saved && onSave));
 
-        // FABRIC-GRAPH1g: §C4's second rule names the one observed node of an event's plugin step, so two of a plugin's step in one graph are
+        // An event of a plugin's step names the one observed node of an event's plugin step, so two of a plugin's step in one graph are
         // reached by neither (`not-named`, counted only). Said when saved, naming both.
         var firstObserved = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var node in graph.Nodes.Where(node => saved && node.Reach == NodeReach.Observed && NodeKit.IsPlugin(node.Kind)))
@@ -187,7 +187,7 @@ public static class NodeGraphs
     /// <see cref="GraphRefusal.Unreadable"/> problem naming where it is not a graph's shape. Never read in part.
     /// </summary>
     /// <param name="json">The graph's JSON.</param>
-    /// <param name="onSave">True where the graph is being saved (a version added, a cycle set): INTEGRATE1n's F47 refusal is the save's alone, so
+    /// <param name="onSave">True where the graph is being saved (a version added, a cycle set): the observed-landing refusal is the save's alone, so
     /// a stored graph that read before still reads (see <see cref="Problems"/>).</param>
     public static (NodeGraph? Graph, IReadOnlyList<WireProblem> Problems) Read(string json, bool onSave = false)
     {

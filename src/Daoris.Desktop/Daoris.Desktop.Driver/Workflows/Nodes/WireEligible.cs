@@ -8,9 +8,9 @@ namespace Daoris.Driver;
 internal static class WireEligible
 {
     /// <summary>
-    /// One node's eligibility on <paramref name="receipts"/>: its data inputs, its join members, and its groups (§E3, §E7); and the binding a
-    /// start takes on its subject, none while it is withheld there (FABRIC-CUTOVER1a). An input from another subject is resolved on its producer's
-    /// reach as any is: the producer's acceptance was judged on its own subject in step 1.
+    /// One node's eligibility on <paramref name="receipts"/>: its data inputs, its join members, and its groups; and the binding a
+    /// start takes on its subject, none while it is withheld there. An input from another subject is resolved on its producer's
+    /// reach as any is: the producer's acceptance is judged on its own subject first.
     /// </summary>
     internal static WireEligibility Eligible(
         NodeDeclaration node, NodeStatus status, IReadOnlyList<Wire> wires, Dictionary<string, WireReceipt> receipts, WireRun run, Subjected subjected,
@@ -36,7 +36,7 @@ internal static class WireEligible
             else waiting.Add(wire.Id);
         }
 
-        // An all join's members are its after wires' sources: every one reached or skipped, or one failed (§E7, the group's policy). DECIDE1a: a
+        // An all join's members are its after wires' sources: every one reached or skipped, or one failed. A
         // member no route takes is settled as a skip, on the outcome receipts that closed it, so another outcome lapses the join.
         if (join)
         {
@@ -64,12 +64,12 @@ internal static class WireEligible
                 case WireKinds.Rejected when receipt?.Kind == WireReceiptKinds.Rejected:
                     return (receipt!.Id, null);
 
-                // DECIDE1a: a reached decision's chosen outcome alone, on its own receipt; a lost outcome never routes.
+                // A reached decision's chosen outcome alone, on its own receipt; a lost outcome never routes.
                 case WireKinds.When when receipt is { Kind: WireReceiptKinds.Reached, Outcome: { } outcome } && string.Equals(outcome, wire.Outcome, StringComparison.Ordinal):
                     return (OutcomeReceipt(receipt.Id, outcome), null);
 
                 case WireKinds.Trigger when receipt?.Kind == WireReceiptKinds.Reached:
-                    // FABRIC-RUN1f: a firing kept before was keyed by the graph and the run's old name, so it is looked for under both rules.
+                    // A firing is looked for under both key rules, so one kept under the graph's and the run's key still counts.
                     var key = FiringKey(run, node.Id, wire.Id, receipt.Id);
                     var rests = status.Binding?.PrerequisiteReceipts.Contains(receipt.Id, StringComparer.Ordinal) == true;
                     var spent = rests || run.Fired.Contains(key) || (run.Places.ContainsKey(node.Id) && run.Fired.Contains(LegacyKey(run, wire.Id, receipt.Id)));
@@ -126,7 +126,7 @@ internal static class WireEligible
             Binding = bound
                 ? new NodeAcceptance(status.Unit, subjected.Revision, run.GraphOf(node.Id), node.Id, node.Version, status.Attempt + 1)
                 {
-                    // Named only where it is not the record's unit, so every binding made as before keeps its id.
+                    // Named only where it is not the record's unit, so a binding on the record's own unit keeps its id.
                     Subject = subjected.Subject == status.Unit ? null : subjected.Subject,
                     Inputs = inputs,
                     PrerequisiteReceipts = [.. consumed.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)],

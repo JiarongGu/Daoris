@@ -3,13 +3,13 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>sessions at-work &lt;session&gt; [--json]</c> (COWORKVIEW1a rule 20): who is at work on a session, from the running Daoris's
+/// <c>sessions at-work &lt;session&gt; [--json]</c>: who is at work on a session, from the running Daoris's
 /// <c>SESSION_AT_WORK</c> where one answers, and with none from the same function over this process's own reading, which issues no token
 /// and so reads every open child as not known whether it still runs.
 /// </summary>
 public static class AtWorkVerb
 {
-    /// <summary>How long a pending answer is asked for again before the verb says it was not read.</summary>
+    /// <summary>How long a pending answer is asked for again before the verb says it is unread.</summary>
     public static readonly TimeSpan Bound = TimeSpan.FromSeconds(30);
 
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web);
@@ -51,8 +51,8 @@ public static class AtWorkVerb
     }
 
     /// <summary>
-    /// The answer over a look the listing reads: the same function the window's read composes by, its routing half (COWORKVIEW1b-i) taken
-    /// from the look's entries, rows and quests where the window takes it from the groups and quests slices, and its exchanges (COMMS1i)
+    /// The answer over a look the listing reads: the same function the window's read composes by, its routing half taken
+    /// from the look's entries, rows and quests where the window takes it from the groups and quests slices, and its exchanges
     /// from <paramref name="home"/>'s files where one is named.
     /// </summary>
     public static AtWorkHeld Compose(SessionLook look, string session, Func<AtWorkRecord, LineageReading> lineage, string? home = null)
@@ -151,7 +151,7 @@ public static class AtWorkVerb
         }
 
         if (answer.AskedBy is { } asker) lines.Add($"asked by: #{asker.Quest} · {Asker(asker.By)}");
-        // COMMS1i: what the line waits on, the window's head's and this view's one line, then its co-workers, each as the read found it.
+        // What the line waits on, the window's head's and this view's one line, then its co-workers, each as the read found it.
         var exchanges = answer.Exchanges ?? [];
         if (exchanges.Where(each => each.Holds).ToList() is { Count: > 0 } holds)
         {
@@ -196,7 +196,7 @@ public static class AtWorkVerb
     }
 
     /// <summary>
-    /// One request of the line (COMMS1i): what was asked, of whom, and where it stands, delivery and outcome apart; a predecessor's names
+    /// One request of the line: what is asked, of whom, and where it stands, delivery and outcome apart; a predecessor's names
     /// its part.
     /// </summary>
     public static string Exchange(AtWorkExchange each, string attended)
@@ -241,7 +241,7 @@ public static class AtWorkVerb
         return wait.Of is { } of ? $"waits on #{wait.Quest}, asked of {of}{lanes}" : $"waits on #{wait.Quest}{lanes}";
     }
 
-    /// <summary>How a part joined, in the design's words (§3.4); null where it only began.</summary>
+    /// <summary>How a part joined; null where it only began.</summary>
     private static string? Joined(AtWorkJoined joined)
     {
         var part = (int? number) => number is { } n ? $"part {n}" : "another session";

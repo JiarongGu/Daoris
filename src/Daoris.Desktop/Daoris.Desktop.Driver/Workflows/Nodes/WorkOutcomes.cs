@@ -8,7 +8,7 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
     /// <summary>
     /// One outcome applied to its attempt's node through the one table: a reach on its binding with the plugin's evidence and outputs, a
     /// failure with its code (transient where the step declares it, its retry's deadline persisted), or the plugin's unknown. A settled
-    /// attempt's is a replay; an earlier attempt's is recorded as a stale one's and lifts the gate it held (§D3). Judged on the record an
+    /// attempt's is a replay; an earlier attempt's is recorded as a stale one's and lifts the gate it held. Judged on the record an
     /// edit holds: the record it returns is written, nothing when null.
     /// </summary>
     internal (NodeRecord? Next, WorkPerformed Result) Outcome(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, WorkOutcome outcome, int generation)
@@ -16,7 +16,7 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
         var unit = record.Unit;
         if (attempt.State == AttemptStates.Settled)
         {
-            // §C4's fifth rule (FABRIC-PERFORM1c): one outcome is kept per attempt. The same again is a replay, applied once; another came late.
+            // One outcome is kept per attempt. The same again is a replay, applied once; another came late.
             return (null, string.Equals(attempt.Outcome, outcome.State, StringComparison.Ordinal)
                 ? new(unit, node.Id, PerformedWhat.Replay)
                 : new(unit, node.Id, PerformedWhat.NotTaken, WorkRefusals.Late));
@@ -31,7 +31,7 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
             return (stale with { Statuses = With(stale.Statuses, NodeLifecycle.Reconciled(status, attempt.Attempt)) }, new(unit, node.Id, PerformedWhat.Stale));
         }
 
-        // FABRIC-PIPELINE1d: a check's reach and failure are its kind's own source, the gates' exits as the executor ran them.
+        // A check's reach and failure are its kind's own source, the gates' exits as the executor ran them.
         var source = OnPort(attempt) ? NodeSource.Gates : NodeSource.Plugin;
         NodeMove move;
         switch (outcome.State)
@@ -65,7 +65,7 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
         if (!moved.Moved) return Hold(record, attempt with { Outcome = outcome.State, Generation = generation }, moved.Refused!);
         if (moved.Status is { State: NodeStates.Failed, Transient: true } failedStatus && failedStatus.Tries < (node.Retry?.MaxAttempts ?? 1))
         {
-            // FABRIC-PERFORM1h: the delay of the next try within the binding, as the bound counts it; the attempt's own number keeps growing
+            // The delay of the next try within the binding, as the bound counts it; the attempt's own number keeps growing
             // across bindings and runs, and would index a later delay.
             settled = settled with { RetryAt = now + NodeLifecycle.DelayBefore(node, failedStatus.Tries + 1) };
         }
@@ -74,9 +74,9 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
     }
 
     /// <summary>
-    /// A completion of an attempt whose work moved past the revision it was dispatched on (FABRIC-PERFORM1c, §C4's fourth rule): its own
-    /// outcome, evidence for no current binding. Its node, still on that attempt, is invalidated as the evaluation would (§D4's lapse), and the
-    /// outcome is then a stale attempt's (§D3): it settles the attempt and lifts the gate, reaching nothing, so nothing downstream reads it and
+    /// A completion of an attempt whose work moved past the revision it is dispatched on: its own
+    /// outcome, evidence for no current binding. Its node, still on that attempt, is invalidated as the evaluation would, and the
+    /// outcome is then a stale attempt's: it settles the attempt and lifts the gate, reaching nothing, so nothing downstream reads it and
     /// the node starts again on the new revision. An unknown outcome leaves the attempt unknown, asked after before any new attempt.
     /// </summary>
     internal (NodeRecord? Next, WorkPerformed Result) Lapse(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, WorkOutcome outcome, int generation)
@@ -98,11 +98,11 @@ internal sealed class WorkOutcomes(Func<DateTimeOffset> clock)
     }
 
     /// <summary>
-    /// The acceptance a reach is on: its attempt's binding, with the plugin's evidence reference at the schema it names (FABRIC-PERFORM1c,
-    /// <see cref="WorkBelief.Evidence"/>) and its outputs, each at the schema its reference names (§D6's <c>&lt;schema&gt;:&lt;id&gt;</c>), so
+    /// The acceptance a reach is on: its attempt's binding, with the plugin's evidence reference at the schema it names
+    /// (<see cref="WorkBelief.Evidence"/>) and its outputs, each at the schema its reference names (<c>&lt;schema&gt;:&lt;id&gt;</c>), so
     /// the one table refuses evidence of another schema than the node declares, and an output undeclared or of another schema.
     /// </summary>
-    /// <param name="word">What stands for the plugin's word where it gave no reference: an attempt's invocation, an event's id (FABRIC-PERFORM1i).</param>
+    /// <param name="word">What stands for the plugin's word where it gave no reference: an attempt's invocation, an event's id.</param>
     internal static NodeAcceptance Accepted(NodeDeclaration node, string word, NodeAcceptance binding, WorkOutcome outcome) => binding with
     {
         Evidence = WorkBelief.Evidence(node, word, binding.SubjectRevision, outcome.Evidence),

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the two holds, <c>quest.holds</c> and <c>content.holds</c>, share (LANDNODE1k; D145's and D173's notes of 2026-11-01): the holds a landing's
+/// What the two holds, <c>quest.holds</c> and <c>content.holds</c>, share: the holds a landing's
 /// start judged outside the graph, as steps of it, each observed by Daoris at the bound commit and begun as every observed built-in is. Pure: the
 /// caller hands in what git read, and nothing is judged again or written.
 /// </summary>
@@ -84,7 +84,7 @@ internal static class HoldReading
         if (binding.Subject is not null)
         {
             if (binding.SubjectRevision is not { } bound) return null;
-            // LANDNODE1m: a merge keeps no landing record, and a replayed one leaves its tree on the commit merged, which the run then binds.
+            // A merge keeps no landing record, and a replayed one leaves its tree on the commit merged, which the run then binds.
             return unit.Records.Landings.LastOrDefault(each => each.Tip == bound || each.Squashed == bound)
                 ?? (unit.Records.Branch?.Held is { } held && string.Equals(held.Tip, bound, StringComparison.OrdinalIgnoreCase) ? Merged(unit) : null);
         }

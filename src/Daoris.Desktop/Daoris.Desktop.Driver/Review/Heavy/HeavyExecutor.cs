@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's heavy executor (FABRIC-PIPELINE1d; the pipeline design §4.2, D192 point 6): a check's attempt sent here is taken at once and runs
+/// Daoris's heavy executor: a check's attempt sent here is taken at once and runs
 /// on the executor's own task, never the pass's. It holds the home's verification slot and then the repository's heavy-run slot, each tried
 /// without waiting, one not free letting the other go at once, so no run holds a slot while it waits for another; the attempts sent wait in
 /// the order they came, each said beside the home's slot. Once both are held its bound starts. Its gates run in one job below normal (a
@@ -97,7 +97,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     }
 
     /// <summary>
-    /// The person's stop (the pipeline design §4.2): a running attempt's job is ended as at its bound; one waiting is taken off the queue. Either
+    /// The person's stop: a running attempt's job is ended as at its bound; one waiting is taken off the queue. Either
     /// way its result follows, a stale attempt's to the performer, settling it and moving nothing.
     /// </summary>
     public void Stop(string invocation)
@@ -121,7 +121,7 @@ public sealed class HeavyExecutor(string home, VerifyWorld? world = null) : IAsy
     }
 
     /// <summary>
-    /// The reconcile's question, answered from the attempt's folder (the pipeline design §4.2): its result, else running while it waits or runs
+    /// The reconcile's question, answered from the attempt's folder: its result, else running while it waits or runs
     /// here, else not started once a job its name still finds is ended.
     /// </summary>
     public async Task<VerifyAnswer> ReconcileAsync(string run, string invocation)

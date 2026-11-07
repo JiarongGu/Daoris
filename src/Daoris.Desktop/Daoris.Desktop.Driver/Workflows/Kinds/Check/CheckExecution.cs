@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The heavy executor behind the check's port (FABRIC-PIPELINE1d): an attempt becomes a <see cref="VerifySend"/> for its run (what to verify,
+/// The heavy executor behind the check's port: an attempt becomes a <see cref="VerifySend"/> for its run (what to verify,
 /// where, under which accepted declaration), and the executor's answer the performer's reconcile answer.
 /// </summary>
 /// <param name="sendOf">What the attempt verifies, read from its run's binding; null where the run names nothing to verify.</param>

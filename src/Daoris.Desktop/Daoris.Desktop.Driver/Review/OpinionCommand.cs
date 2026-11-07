@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What <c>daoris session opinion</c> was asked (XAGENT1f): the verb, the session or opinion it names, and what goes with it.
+/// What <c>daoris session opinion</c> is asked: the verb, the session or opinion it names, and what goes with it.
 /// </summary>
 /// <param name="Verb"><c>ask</c>, <c>show</c>, <c>stop</c>, <c>anyway</c> or <c>myself</c>.</param>
 /// <param name="Id">The working session, or for <c>stop</c> the opinion, or for <c>show</c> either.</param>
@@ -13,7 +13,7 @@ public sealed record OpinionCommandAsk(string Verb, string Id)
     /// <summary>For <c>ask</c>: the working agent's own, in a fresh conversation.</summary>
     public bool SameAgent { get; init; }
 
-    /// <summary>For <c>ask</c>: a struck quest's <i>Ask another agent for help</i> (§2.1's failure occasion).</summary>
+    /// <summary>For <c>ask</c>: a struck quest's <i>Ask another agent for help</i>, the failure occasion.</summary>
     public bool Failure { get; init; }
 
     /// <summary>The person's words: every word after the verb's own, joined as said.</summary>
@@ -21,13 +21,13 @@ public sealed record OpinionCommandAsk(string Verb, string Id)
 }
 
 /// <summary>
-/// The terminal's doors to the second opinion's gate (XAGENT1f, D155 point 10; the second-agent design §8.5, §9, D50):
+/// The terminal's doors to the second opinion's gate:
 /// <c>daoris session opinion ask|show|stop|anyway|myself</c>, the screen's presses' twin, each through the driver's own press
 /// (<see cref="OpinionPresses"/>) so both say and keep the same, and each printing what the gate says after it.
 /// <c>sessions say</c> is <i>Send back…</i>.
 /// </summary>
 /// <remarks>
-/// <para><b>The person's alone</b>: no connector tool and no Ask Daoris card reaches these (§9, D110).</para>
+/// <para><b>The person's alone</b>: no connector tool and no Ask Daoris card reaches these.</para>
 ///
 /// <para><b>Exit codes</b>: 0 taken, 1 refused (no such session or opinion, nothing waits, a rule that names no reviewer), 2 the
 /// usage.</para>
@@ -120,8 +120,8 @@ public static class OpinionCommand
         RunAsync(ask, presses, service, processes, output, instance: null, ct);
 
     /// <summary>
-    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for (RPC1e, the terminal RPC design
-    /// §7.2): <c>ask</c>, <c>stop</c>, <c>anyway</c> and <c>myself</c> are the person's presses, which the window confirms, and <c>show</c>
+    /// The verb, as the running Daoris's client where <paramref name="instance"/> names one to look for:
+    /// <c>ask</c>, <c>stop</c>, <c>anyway</c> and <c>myself</c> are the person's presses, which the window confirms, and <c>show</c>
     /// a read; each route asked for its words runs this verb's own path in that Daoris, so the lines are the alone path's; alone where
     /// none runs.
     /// </summary>
@@ -186,7 +186,7 @@ public static class OpinionCommand
     }
 
     /// <summary>
-    /// What <c>opinion show</c> says (§8.5, §9): the gate's sentence, then the opinion it speaks of, its reviewer and how it stands
+    /// What <c>opinion show</c> says: the gate's sentence, then the opinion it speaks of, its reviewer and how it stands
     /// to the work, what it read and could not, and each finding with the working session's answer beside it. Claims, said as
     /// such: nothing here calls a finding true.
     /// </summary>

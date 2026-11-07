@@ -3,23 +3,23 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Which checks a development pipeline's sessions run (FABRIC-PIPELINE1b, D192 point 4; the pipeline design §3.1): <c>light</c>, the gates
+/// Which checks a development pipeline's sessions run: <c>light</c>, the gates
 /// the repository does not mark heavy and the checks a change reaches, filtered, the heavy gates left to the verification and refused to
 /// the session; <c>heavy-at-end</c>, the heavy gates once, at the session's end, through <c>run-heavy</c>; absent, today's. Under Current
-/// it is a repository's rule, <c>sessionChecks</c> in <c>driver.json</c> (D157 point 4: Current draws the rules), read, edited and written
+/// it is a repository's rule, <c>sessionChecks</c> in <c>driver.json</c>, read, edited and written
 /// here, the one place the terminal's <c>checks</c>, Setup's row, a driven start and <c>run-heavy</c> ask, held to
-/// <c>fixtures/session-checks.json</c> (the CLI's twin left in PUSH1f2b).
+/// <c>fixtures/session-checks.json</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>Why a rule and not a sentence.</b> Driven sessions on this repository ran its whole test project inside their session until
-/// their timeout and committed nothing, held back only by a standing answer's words (D192's case). A policy the start composes its words
-/// from, which <c>run-heavy</c> and the harness refuse by, is the process's, not any agent's memory (D161).</para>
+/// their timeout and committed nothing, held back only by a standing answer's words. A policy the start composes its words
+/// from, which <c>run-heavy</c> and the harness refuse by, is the process's, not any agent's memory.</para>
 ///
 /// <para><b>A named workflow's run</b> takes its bound version's <c>checks</c> (<c>claimed</c>'s option in a graph version, the
 /// <c>work</c> step's field in a steps version), never this rule, which is Current's. A steps version's <c>work</c> takes <c>checks</c>
-/// (FABRIC-PIPELINE1b2), written into its canonical text only where set, so every version saved before keeps its digest; a graph version's
-/// option is read from the version its run bound (FABRIC-PIPELINE1b3, <see cref="ICheckedProcess.Claimed"/>). A run is bound before its
-/// take (FABRIC-CUTOVER1g), so its first session takes its version's as its later ones do (<see cref="Of"/>).</para>
+/// written into its canonical text only where set, so every version saved before keeps its digest; a graph version's
+/// option is read from the version its run bound (<see cref="ICheckedProcess.Claimed"/>). A run is bound before its
+/// take, so its first session takes its version's as its later ones do (<see cref="Of"/>).</para>
 ///
 /// <para><b>Read as a stored shape</b>: a value this build does not know is passed over, read as no rule, and kept in the file by the
 /// keeping writer. Keyed as <c>heavyGates</c> is: the repository's name, trimmed, matched in any case, a key keeping the spelling first
@@ -50,9 +50,9 @@ public static class SessionChecks
         config.SessionChecks.TryGetValue(repository.Trim(), out var checks) ? checks : null;
 
     /// <summary>
-    /// The checks a run takes (the pipeline design §3.1): under Current, or where no process was read, the repository's rule; a named
-    /// workflow's, its bound version's: a steps version's <c>work</c> step's (FABRIC-PIPELINE1b2), a graph version's <c>claimed</c> node's
-    /// option (FABRIC-PIPELINE1b3); none where it sets none or the version could not be read.
+    /// The checks a run takes: under Current, or where no process is read, the repository's rule; a named
+    /// workflow's, its bound version's: a steps version's <c>work</c> step's, a graph version's <c>claimed</c> node's
+    /// option; none where it sets none or the version could not be read.
     /// </summary>
     public static string? Of(DriverConfig config, string repository, ICheckedProcess? process) =>
         process is { Named: true }
@@ -62,8 +62,8 @@ public static class SessionChecks
             : For(config, repository);
 
     /// <summary>
-    /// A graph version's <c>claimed</c> <c>checks</c> (FABRIC-PIPELINE1b3), its option's JSON text read as written: a choice spelled as the
-    /// choices are, since a version's bytes are its identity (D192's FABRIC-PIPELINE1b2 note, point 3); anything else is none, today's, as a
+    /// A graph version's <c>claimed</c> <c>checks</c>, its option's JSON text read as written: a choice spelled as the
+    /// choices are, since a version's bytes are its identity; anything else is none, today's, as a
     /// value the rule's file does not know is passed over.
     /// </summary>
     private static string? Claimed(IReadOnlyDictionary<string, string> options)
@@ -90,7 +90,7 @@ public static class SessionChecks
     public static DriverConfig Apply(DriverConfig config, string? repository, string? checks)
     {
         var named = repository?.Trim() is { Length: > 0 } r ? r : throw new DriverException(Scope);
-        // WORKFLOWCLEAN1 1e: the checks of a place on a saved workflow are the workflow's `claimed.checks`; the conversion moved the rule there.
+        // The checks of a place on a saved workflow are the workflow's `claimed.checks`.
         // The place's workspace is not known here, so a workspace's own choice is not weighed: its own choice, else the home's default.
         var chosen = config.Workflows.TryGetValue(named, out var own) ? own.Default : null;
         if (checks is not null && (chosen ?? config.DefaultWorkflow) is { } followed && followed != WorkflowKey.Current)
@@ -123,11 +123,11 @@ public static class SessionChecks
     public const string Suffix = SessionHomeFiles.ChecksSuffix;
 
     /// <summary>
-    /// Keep the checks <paramref name="session"/>'s run takes, where <c>run-heavy</c> reads them by the session its tree's lock names
-    /// (the pipeline design §3.2's second layer): beside the session's other spawn files, gone when its run is (<see cref="LetGo"/>) or with
+    /// Keep the checks <paramref name="session"/>'s run takes, where <c>run-heavy</c> reads them by the session its tree's lock names:
+    /// beside the session's other spawn files, gone when its run is (<see cref="LetGo"/>) or with
     /// its record (<see cref="SessionHomeFiles"/>). Nothing set keeps nothing, which reads as today's.
     /// </summary>
-    /// <param name="callMinutes">Its run's <c>callMinutes</c> (<see cref="CallBound.MinutesOf"/>, FABRIC-PIPELINE1b3), kept beside the checks
+    /// <param name="callMinutes">Its run's <c>callMinutes</c> (<see cref="CallBound.MinutesOf"/>), kept beside the checks
     /// for the long-call watch only where set, so the file keeps its shape for every run that sets none.</param>
     /// <returns>The file kept, or null for none.</returns>
     public static string? Hold(string home, string session, string? checks, int? callMinutes = null)
@@ -148,7 +148,7 @@ public static class SessionChecks
             : null;
 
     /// <summary>
-    /// The <c>callMinutes</c> <paramref name="session"/>'s start kept beside its checks (FABRIC-PIPELINE1b3); null where none was kept, or it
+    /// The <c>callMinutes</c> <paramref name="session"/>'s start kept beside its checks; null where none is kept, or it
     /// does not read as a whole number of minutes from one, which is the default bound.
     /// </summary>
     public static int? HeldMinutes(string home, string session) =>

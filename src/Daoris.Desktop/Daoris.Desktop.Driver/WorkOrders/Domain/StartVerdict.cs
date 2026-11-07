@@ -37,7 +37,7 @@ public enum StartVerdict
     /// Planned to start, and held at SPAWN by what only the spawn can see — a dirty tree, an absent
     /// or logged-out harness, a tree that would not grow, a trust flag never given. The reason is the
     /// hold's own sentence, which names the fix. Never produced by the planner: it is what a tick
-    /// reports when what happened differs from what was decided.
+    /// reports when what happened differs from what the plan decided.
     /// </summary>
     Blocked,
 

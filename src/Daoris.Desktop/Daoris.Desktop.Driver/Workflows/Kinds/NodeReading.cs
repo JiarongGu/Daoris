@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the pass hands an observing kind (D247 §3.2): the unit its node observes, the node, the binding it was begun on, and the pass's reads of
+/// What the pass hands an observing kind: the unit its node observes, the node, the binding it is begun on, and the pass's reads of
 /// that unit, each kind taking its own. The reads stay the pass's: a kind asks for nothing on its own, and one not read is none.
 /// </summary>
 public sealed record NodeReading(WorkUnit Unit, NodeDeclaration Node, NodeAcceptance Binding)
@@ -15,7 +15,7 @@ public sealed record NodeReading(WorkUnit Unit, NodeDeclaration Node, NodeAccept
     /// <summary>The review gate's verdict on the unit's work.</summary>
     public ReviewGateState? Review { get; init; }
 
-    /// <summary>The go-aheads the work's ask holds (D135).</summary>
+    /// <summary>The go-aheads the work's ask holds.</summary>
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 
     /// <summary>The quests the work published.</summary>

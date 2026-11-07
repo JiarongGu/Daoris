@@ -2,10 +2,10 @@ using System.Collections.Concurrent;
 
 namespace Daoris.Driver;
 
-/// <summary>A run's <c>tidy</c> to perform (D245): its node, and the landing whose chain it ends, at the tip the landing recorded.</summary>
+/// <summary>A run's <c>tidy</c> to perform: its node, and the landing whose chain it ends, at the tip the landing recorded.</summary>
 public sealed record TidyStart(string Unit, NodeDeclaration Node, string Repository, string Workspace, string Root, string Branch, string Tip);
 
-/// <summary>The door a run's <c>tidy</c> is performed through (D245).</summary>
+/// <summary>The door a run's <c>tidy</c> is performed through.</summary>
 public interface ITidyDoor : INodeDoor
 {
     /// <summary>Starts the tidy off the pass, once per node and tip; false where one runs already or none may begin now.</summary>
@@ -13,7 +13,7 @@ public interface ITidyDoor : INodeDoor
 }
 
 /// <summary>
-/// Performs a run's <c>tidy</c> (D245 point 1): once the landing's pull request merged, each part of its chain (the session branch of every unit
+/// Performs a run's <c>tidy</c>: once the landing's pull request merged, each part of its chain (the session branch of every unit
 /// the landing carries) is ended on the line. Its commits are kept on a recovery ref first, and its branch then goes through the journal's
 /// delete (<see cref="JournaledDeletes"/>, the <c>ref.delete</c> act with its Undo), resting on that ref. What it ended is
 /// written on the landing record (<see cref="ChainTidied"/>), the one judgement the keeper and the press read for those parts. It starts only
@@ -105,7 +105,7 @@ public sealed class TidyDoor(string home, Action<string>? log = null, Func<bool>
         return new TidiedPart(branch, tip) { KeptOn = kept, Act = gone.Act, Kept = gone.Kept ?? (gone.Said is { } said ? $"git would not delete it: {said}" : null) };
     }
 
-    /// <summary>A tree that checked the branch out as it went puts it back where it was; null goes on.</summary>
+    /// <summary>A tree that checked the branch out as it went puts it back as it stood; null goes on.</summary>
     private static async Task<string?> LateAsync(string root, string branch, string tip)
     {
         Dictionary<string, string> trees;

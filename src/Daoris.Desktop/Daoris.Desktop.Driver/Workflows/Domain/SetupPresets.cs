@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A place's delivery as its graph says it (the land node design §2 and §7): the method, who accepts, the plugin whose step opens a pull request
+/// A place's delivery as its graph says it: the method, who accepts, the plugin whose step opens a pull request
 /// (null where none does) and an integration's request. <see cref="Accept"/> is <c>you</c> where a <c>review</c> comes before the <c>land</c>
-/// (LANDNODE1c2) and <c>automatic</c> where none does. <see cref="Method"/> is a <c>land</c>'s method, or <see cref="PullRequest"/> for a branch
-/// followed by a push and a plugin's pull-request step (G8).
+/// and <c>automatic</c> where none does. <see cref="Method"/> is a <c>land</c>'s method, or <see cref="PullRequest"/> for a branch
+/// followed by a push and a plugin's pull-request step.
 /// </summary>
 public sealed record SetupLand(string Method, string Accept, string? Plugin = null, string? Request = null)
 {
@@ -18,7 +18,7 @@ public sealed record SetupLand(string Method, string Accept, string? Plugin = nu
 /// <summary>One delivery preset: its id, the name the page shows, and its land; <i>Not driven</i> has none.</summary>
 public sealed record SetupPreset(string Id, string Name, SetupLand? Land);
 
-/// <summary>Why a delivery is suggested (SETUPUX1a): <see cref="Code"/> is for the page to word, <see cref="Said"/> is the driver's own sentence.</summary>
+/// <summary>Why a delivery is suggested: <see cref="Code"/> is for the page to word, <see cref="Said"/> is the driver's own sentence.</summary>
 public sealed record SuggestionWhy(string Code, string Said)
 {
     public const string Kept = "kept";
@@ -43,9 +43,8 @@ public sealed record SetupMatch(string? Preset, IReadOnlyList<string> Own)
 }
 
 /// <summary>
-/// The delivery presets of a place's quick set-up (AGENTSPLACE1a2; the Agents-place design §2 point 3 and §4, the land node design §7), beside
-/// the workflows' presets: each is a default Daoris ships, whose saved copy a set-up has the place follow (WORKFLOWCLEAN1 1a; the cleanup design
-/// §1.2), never a rule written beside it. A place's preset is derived from what its work follows (<see cref="LandOf"/>, <see cref="Match"/>),
+/// The delivery presets of a place's quick set-up, beside
+/// the workflows' presets: each is a default Daoris ships, whose saved copy a set-up has the place follow, never a rule written beside it. A place's preset is derived from what its work follows (<see cref="LandOf"/>, <see cref="Match"/>),
 /// or said as the options of its own. After <i>Not driven</i>, each is a default the data offers a set-up (<see cref="WorkflowDefaults"/>),
 /// with its name and the delivery its graph derives.
 /// </summary>
@@ -81,7 +80,7 @@ public static class SetupPresets
 
     /// <summary>
     /// The land a workflow's steps say, Current's drawn or a version's: <c>integrate</c> where an integrate step follows the landing, a pull
-    /// request where one does, else the landing's method or form. Current never says <c>push</c> (the land node design §4).
+    /// request where one does, else the landing's method or form. Current never says <c>push</c>.
     /// </summary>
     public static SetupLand LandOf(IReadOnlyList<NamedStep> steps)
     {
@@ -142,9 +141,9 @@ public static class SetupPresets
     }
 
     /// <summary>
-    /// The delivery preselected from what the driver already reads (the design §4): the preset of a place whose delivery was chosen, driven
+    /// The delivery preselected from what the driver already reads: the preset of a place whose delivery is chosen, driven
     /// with a landing rule set (<paramref name="chosen"/>); else <i>Integrated into the line</i> where the line's declaration declares an
-    /// <c>integration</c>; else <i>Merge after you accept</i>. A pull request is never suggested (D240 point 5): a place has one only where its
+    /// <c>integration</c>; else <i>Merge after you accept</i>. A pull request is never suggested: a place has one only where its
     /// workflow holds the steps.
     /// </summary>
     public static string Suggest(SetupMatch match, bool chosen, bool declaresIntegration) => Suggestion(match, chosen, declaresIntegration).Preset;

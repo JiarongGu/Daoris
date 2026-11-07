@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the planner's look reads of a role's policy over its snapshot (STAFFPOLICY1e, D226; the staff policy design §3.3, §4): for each open or
+/// What the planner's look reads of a role's policy over its snapshot: for each open or
 /// taken quest, the failures that park it, the transient or quiet end whose move the course decides once, and the typed holds a policy leaves.
 /// The reads of a policy at one line's place are <see cref="StaffCourse"/>'s.
 /// </summary>
@@ -12,7 +12,7 @@ internal static class StaffSnapshotCourse
         RuledLine.OfQuest(
             staff.Home, quest, record, snapshot.Repositories.FirstOrDefault(repo => string.Equals(repo.Repository, quest.To, StringComparison.OrdinalIgnoreCase))?.Workspace);
 
-    /// <summary>The failed sessions that park each open quest (CONTEXTDRIVE1e): its line's effective failures rule, 0 where none holds.</summary>
+    /// <summary>The failed sessions that park each open quest: its line's effective failures rule, 0 where none holds.</summary>
     internal static IReadOnlyDictionary<string, int> FailuresAt(StaffLedger? staff, Snapshot snapshot)
     {
         var at = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -131,7 +131,7 @@ internal static class StaffSnapshotCourse
     }
 
     /// <summary>
-    /// The quests an account's limit cut off whose role's policy holds them for the person's yes (STAFFPOLICY1e): an <c>ask</c> on a limit, or the
+    /// The quests an account's limit cut off whose role's policy holds them for the person's yes: an <c>ask</c> on a limit, or the
     /// bound of moves a limit's move would pass. The same typed hold a transient end leaves; a yes (one approval) lets the line walk.
     /// </summary>
     internal static IReadOnlyDictionary<string, string> LimitHolds(StaffLedger? staff, Snapshot snapshot)

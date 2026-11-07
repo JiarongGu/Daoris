@@ -111,7 +111,7 @@ internal sealed class RoundSaying
     /// A take that is not this machine's, as the ledger judges it and in its words: another machine's by the claim, named by a
     /// teammate's record where one came, or one made here after the session ended that no record here marks, a chat's or work outside
     /// Daoris. An unmarked take made while the session ran is still its own, as the ledger reads it: the HTTP door marks none. Null
-    /// where the take is this machine's, or was not read. Whose it is rides beside the sentence as facts, from the same reading, so
+    /// where the take is this machine's, or is not read. Whose it is rides beside the sentence as facts, from the same reading, so
     /// the page's words and the driver's never disagree.
     /// </summary>
     internal Consideration? TakenElsewhere(QuestView quest, PriorSession cutOff)

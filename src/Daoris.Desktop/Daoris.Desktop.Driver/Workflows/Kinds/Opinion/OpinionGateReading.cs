@@ -1,21 +1,21 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <c>opinion</c> node observed (FABRIC-WIRE1g; the fabric events design §E4, D173's FABRIC-WORKFLOW2 note, choice 3): reached, passed
+/// The <c>opinion</c> node observed: reached, passed
 /// over or pending on the second opinion's gate as <see cref="OpinionGate.JudgeAsync"/> judged it, or on the opinion a recorded landing
 /// kept. Pure: the caller hands the judgement in, and nothing is judged again or written.
 /// </summary>
 /// <remarks>
 /// <para><b>The gate's reading, not a second one.</b> The gate's file keeps asks and the person's answers, never a verdict: whether an
-/// opinion covers the tip, was delivered and answered, under the rule that applies, is the gate's judgement, which the caller hands in.
-/// This reads its state as D157's run reads it (<c>WorkflowRun</c>'s opinion step): <i>settled</i> and the person's three answers reach
+/// opinion covers the tip, is delivered and answered, under the rule that applies, is the gate's judgement, which the caller hands in.
+/// This reads its state as the run reads it (<c>WorkflowRun</c>'s opinion step): <i>settled</i> and the person's three answers reach
 /// it; <i>none</i>, and an <i>unavailable</i> the rule does not require, pass it over, by the gate's record and never in the person's
 /// words (<see cref="NodeAuthority.SkipBy"/>); every other state is pending, never failed, since nothing fails an opinion.</para>
 /// <para><b>Bound to its commit and its work.</b> A judgement at another commit than the binding's, with no commit read, for another
 /// repository, or not handed in at all says nothing: the node stays pending, never completed or passed over on a guess. A rule that asks
-/// no opinion here judges no commit, and its read carries none, so it passes the node over whatever it is bound to (FABRIC-RUN1c).</para>
-/// <para><b>A landing recorded at the bound commit keeps today's reading</b>: what its gate let go, as the landing record kept it, whatever
-/// the gate says now. A kept <i>unavailable</i> passes it over; any other, or none kept (a landing from before the record kept one, or one
+/// no opinion here judges no commit, and its read carries none, so it passes the node over whatever it is bound to.</para>
+/// <para><b>A landing recorded at the bound commit keeps its reading</b>: what its gate let go, as the landing record kept it, whatever
+/// the gate says now. A kept <i>unavailable</i> passes it over; any other, or none kept (a landing recorded with none, or one
 /// no rule asked of), reaches it.</para>
 /// </remarks>
 public static class OpinionGateReading
@@ -38,7 +38,7 @@ public static class OpinionGateReading
 
         NodeObservation Skipped(string said) => Seen(NodeStates.Skipped, said) with { Source = NodeSource.Opinion };
 
-        // FABRIC-CUTOVER1a: the unit its binding observes, a run's branch on the run's record, never the record's own unit.
+        // The unit its binding observes, a run's branch on the run's record, never the record's own unit.
         if (NodeObserving.NotBound(reading) is { } refused) return refused;
 
         var landed = binding.SubjectRevision is { } bound
@@ -61,9 +61,9 @@ public static class OpinionGateReading
             return Seen(null, $"its gate was judged for `{gate.Repository}`, not this work's `{repository}`");
         }
 
-        // FABRIC-RUN1c: a rule that asks no second opinion here judges no commit, and a landing door's read of it carries none
+        // A rule that asks no second opinion here judges no commit, and a landing door's read of it carries none
         // (TreeGates.OpinionAsync), so it passes the opinion over whatever its node is bound to, a quest's work included. One read at a commit
-        // is that commit's, as WIRE1g judged it.
+        // is that commit's, as the gate judged it.
         if (gate is { State: OpinionGateStates.None, Tip: null }) return Skipped("its rule asks no second opinion here");
 
         if (gate.Tip is not { } tip || !string.Equals(tip, binding.SubjectRevision, StringComparison.Ordinal))

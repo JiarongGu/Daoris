@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One request a line's parts sent, or one that asked the line, as Daoris observed it (COMMS1d, the comms design §3.4). Its delivery
+/// One request a line's parts sent, or one that asked the line, as Daoris observed it. Its delivery
 /// (what Daoris saw of the request reaching its receiver) and its outcome (the protocol's own word for where it stands) are kept
 /// apart: an answer kept but not yet handed is delivered and answered, and still held.
 /// </summary>
@@ -40,7 +40,7 @@ public sealed record ExchangeSaid(string Session, string Question, DateTimeOffse
 
 /// <summary>
 /// An opinion asked on a working line, as plain values (Review is above this subdomain, so Loop maps its view): <c>reading</c>, <c>given</c>
-/// or <c>failed</c>, and the session its findings were handed to; or, read from the reviewer's record alone (COMMS1i), <c>ended</c> once
+/// or <c>failed</c>, and the session its findings were handed to; or, read from the reviewer's record alone, <c>ended</c> once
 /// its session stopped, the opinion's own words being the landing gate's.
 /// </summary>
 public sealed record ExchangeOpinion(string Id, string Working, string Session, string Label, string? Adapter, string State, string? HandedTo);
@@ -84,7 +84,7 @@ public sealed record ExchangeLook
 }
 
 /// <summary>
-/// The exchanges of a line, read (COMMS1d, the comms design §3.4): every request its parts sent and every request that asked them, from
+/// The exchanges of a line, read: every request its parts sent and every request that asked them, from
 /// the look's snapshot alone. Pure, so a restart that reads the same files reads the same exchanges.
 /// </summary>
 public static class Exchanges
@@ -135,9 +135,9 @@ public static class Exchanges
     }
 
     /// <summary>
-    /// Whether <paramref name="session"/>'s turn ends on its own helper alone (HELPERWAIT1): an ask of its agent's held, and no question or
-    /// go-ahead held on the person, nor one unread. A question on file that does not read is no proof that none was asked (Codex's round-2
-    /// #3), and a go-ahead the service did not answer is the same: it parks, as one asked does.
+    /// Whether <paramref name="session"/>'s turn ends on its own helper alone: an ask of its agent's held, and no question or
+    /// go-ahead held on the person, nor one unread. A question on file that does not read is no proof that none is asked,
+    /// and a go-ahead the service did not answer is the same: it parks, as one asked does.
     /// </summary>
     public static bool HoldsOnOwnHelper(IReadOnlyList<Exchange> exchanges, string session)
     {
@@ -148,7 +148,7 @@ public static class Exchanges
                                     : exchange.Holds && exchange.To == Person);
     }
 
-    /// <summary>Whether any source was not read: a caller deciding that nothing waits must not read these as none.</summary>
+    /// <summary>Whether any source is not read: a caller deciding that nothing waits must not read these as none.</summary>
     public static bool AnyUnread(IEnumerable<Exchange> exchanges) => exchanges.Any(exchange => exchange.Source == Unread);
 
     private static Exchange Unreadable(string source, string session) =>
@@ -170,7 +170,7 @@ public static class Exchanges
                 var (delivery, outcome) = kind switch
                 {
                     HelperStates.Refused => (NotReached, "refused"),
-                    // COWORKUX1d: an answer kept for the person is answered and reaches the line only by their pass.
+                    // An answer kept for the person is answered and reaches the line only by their pass.
                     HelperStates.Answered when at?.Handed == HelperState.KeptForPerson => (Kept, "answered"),
                     HelperStates.Answered when at?.Handed is not null => (Taken, "taken-in"),
                     HelperStates.Answered => (Taken, "answered"),
@@ -279,7 +279,7 @@ public static class Exchanges
         var found = new List<Exchange>();
         foreach (var part in on)
         {
-            // A conversation's quest is the one it took through its own connector (COMMS1i, as the strip reads its wait).
+            // A conversation's quest is the one it took through its own connector.
             if (records is null || !records.TryGetValue(part, out var record) || (record.Quest ?? record.TookQuest) is not { } own
                 || !byId.TryGetValue(own, out var mine) || mine.Awaits is not { Length: > 0 } awaits)
             {

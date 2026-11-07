@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 /// What the runtime keeps on a run bound to a graph version around its rounds: the person's skips and stops applied, what a review sent back
 /// told to the run's work, the accepts a carried-on session earns again, the landing started on its door, and the run's end and reopening.
 /// </summary>
-/// <param name="say">The say door a run's work is told what was sent back to it through: the session, the words and the key.</param>
+/// <param name="say">The say door a run's work is told what its steps sent back through: the session, the words and the key.</param>
 internal sealed class NodeRunKeeping(
     NodeRecordFiles records, Func<DateTimeOffset> clock, Func<bool> holdsLease, GraphRuns graphRuns, WorkPerformer performer,
     Func<NodeDoors> doors, Func<Func<string, string, string, CancellationToken, Task<SayAnswer>>?> say, Func<IPullRequestRecords?> pullRequests)

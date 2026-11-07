@@ -2,11 +2,11 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>An old landing rule as the migration reads it: the fields of one <c>landings</c> or <c>workspaceLandings</c> entry.</summary>
+/// <summary>A landing rule as the migration reads it: the fields of one <c>landings</c> or <c>workspaceLandings</c> entry.</summary>
 public sealed record MigratedRule(string Form, string? Pattern, string? Plugin, bool AutoAccept, string? Key, bool Squash, string? Cycle, LandingIntegrate? Integrate);
 
 /// <summary>
-/// What the old keys say about one place: a repository, or a workspace read with nothing set for any repository. <see cref="Rule"/> is the entry
+/// What the keys say about one place: a repository, or a workspace read with nothing set for any repository. <see cref="Rule"/> is the entry
 /// that governed it (its own, else its workspace's); <see cref="Own"/> says it is the place's own.
 /// </summary>
 public sealed record MigratedPlace(
@@ -18,12 +18,12 @@ public sealed record MigratedPlace(
 }
 
 /// <summary>
-/// The old keys of <c>driver.json</c> read raw for the migration (D232 point 2): the landing rules no build reads any more, the access setup's
+/// The keys of <c>driver.json</c> read raw for the migration: the landing rules, the access setup's
 /// <c>landing</c> pause and the session checks, which a saved graph's nodes carry instead.
 /// </summary>
 public sealed class MigratedPlaces
 {
-    /// <summary>The old choice of the workflow the rules drew, which a file may still name.</summary>
+    /// <summary>The choice of the workflow the rules drew, which a file may still name.</summary>
     public const string Current = "current";
 
     private readonly DriverConfig _config;
@@ -47,7 +47,7 @@ public sealed class MigratedPlaces
     }
 
     /// <summary>
-    /// The old rules under <paramref name="name"/>, the first spelling of a name in any case kept: a rule whose form is neither merge nor
+    /// The rules under <paramref name="name"/>, the first spelling of a name in any case kept: a rule whose form is neither merge nor
     /// branch, or whose branch pattern names no branch, is passed over; a merge keeps no pattern; an <c>integrate</c> that does not read is
     /// none.
     /// </summary>
@@ -75,7 +75,7 @@ public sealed class MigratedPlaces
         return map;
     }
 
-    /// <summary>Whether the file holds any old landing rule.</summary>
+    /// <summary>Whether the file holds any landing rule.</summary>
     public bool AnyRule => _landings.Count > 0 || _shared.Count > 0;
 
     /// <summary>The places this home has: its registry's repositories and the workspaces they and the file name, each once.</summary>

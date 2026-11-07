@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A procedure looked for in a checkout (REVIEWENV1a, design §1.1): reached
+/// A procedure looked for in a checkout: reached
 /// through <see cref="ReviewRules.Holds"/>.
 /// </summary>
 internal static class ReviewProcedureFiles

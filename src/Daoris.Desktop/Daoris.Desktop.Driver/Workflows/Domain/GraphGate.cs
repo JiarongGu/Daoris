@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where the landing gate's graph part stands for a run bound to a graph version (FABRIC-CUTOVER1d; the cutover design §4's table).</summary>
+/// <summary>Where the landing gate's graph part stands for a run bound to a graph version.</summary>
 public static class GraphGateStates
 {
     /// <summary>The run's last pass made its <c>handed</c> active on the branch the door lands, at the commit it would land: it lands there.</summary>
@@ -23,7 +23,7 @@ public static class GraphGateStates
 }
 
 /// <summary>
-/// What the landing gate's graph part reads (FABRIC-CUTOVER1d): the run, its graph version and digest, its record as the runtime keeps it, and
+/// What the landing gate's graph part reads: the run, its graph version and digest, its record as the runtime keeps it, and
 /// the door's own tree, commit and gates.
 /// </summary>
 /// <param name="Run">The run: its chain's first quest in the repository, whose record is <c>run:&lt;run&gt;</c>.</param>
@@ -50,7 +50,7 @@ public sealed record GraphGateFacts(string Run, NodeGraph Graph, string Digest, 
 
 /// <summary>The graph part as judged: its state, and what its sentence names.</summary>
 /// <param name="State">One of <see cref="GraphGateStates"/>.</param>
-/// <param name="Run">The run it was judged for.</param>
+/// <param name="Run">The run it is judged for.</param>
 public sealed record GraphGateState(string State, string Run) : IGraphGatePart
 {
     /// <summary>The graph's <c>handed</c>.</summary>
@@ -66,7 +66,7 @@ public sealed record GraphGateState(string State, string Run) : IGraphGatePart
 
     public string? NodeSaid { get; init; }
 
-    /// <summary>Whether the person may pass <see cref="Node"/> over with their words (its kind lets them, CUTOVER1f).</summary>
+    /// <summary>Whether the person may pass <see cref="Node"/> over with their words (its kind lets them).</summary>
     public bool Skippable { get; init; }
 
     /// <summary>The branch the run's newest session works, for <see cref="GraphGateStates.Elsewhere"/>.</summary>
@@ -80,7 +80,7 @@ public sealed record GraphGateState(string State, string Run) : IGraphGatePart
     /// <summary>Whether the graph lets the work land.</summary>
     public bool LetsGo => State == GraphGateStates.Lands;
 
-    /// <summary>Whether the door asks the loop for a pass that reads the units afresh (the cutover design §4): the record may move at it.</summary>
+    /// <summary>Whether the door asks the loop for a pass that reads the units afresh: the record may move at it.</summary>
     public bool AsksPass => State is GraphGateStates.NotJudged or GraphGateStates.Waits;
 
     /// <summary>Whether a press waits for the pass it asked, within its bound: only for a judgement not made yet.</summary>
@@ -95,13 +95,13 @@ public sealed record GraphGateState(string State, string Run) : IGraphGatePart
 }
 
 /// <summary>
-/// The landing gate's graph part (FABRIC-CUTOVER1d; D190 point 4, the cutover design §4): for a run bound to a graph version, read from the run's
+/// The landing gate's graph part: for a run bound to a graph version, read from the run's
 /// record, never evaluated. The runtime begins a node only ready, eligible, bound and with no attempt unreconciled, so a <c>handed</c> active is the
 /// last pass's judgement that the landing may start at the commit it is bound to, on the subjects, revisions and rules it read; a door that
 /// evaluated the record itself would be a second engine. Pure: the door reads the record and its own facts, and this reads them alone.
 /// </summary>
 /// <remarks>
-/// <para><b>One table</b> (§4): a record that does not read holds, said; the person's stop holds; a door whose tree is not the branch the run's
+/// <para><b>One table</b>: a record that does not read holds, said; the person's stop holds; a door whose tree is not the branch the run's
 /// <c>handed</c> is bound to holds, naming the branch that carries the work; <c>handed</c> active in this run's scope on the door's branch at the
 /// door's commit lands there, and the landing is pinned to that commit on every path; anything else is a judgement not made yet, unless
 /// <c>handed</c> waits on a node before it that the door's own gates do not show answered since, which is named in the words the run's view gives
@@ -163,7 +163,7 @@ public static class GraphGate
     }
 
     /// <summary>
-    /// Whether a run's record has begun its every node of <paramref name="kind"/> (the cutover design §4: the gates' own engines wait for their
+    /// Whether a run's record has begun its every node of <paramref name="kind"/> (the gates' own engines wait for their
     /// node): each stands past ready, so its wires let it start and the runtime began it. True where the graph holds none; false where the record
     /// does not read.
     /// </summary>
@@ -173,12 +173,12 @@ public static class GraphGate
 
     /// <summary>
     /// Whether <paramref name="process"/>'s run, where it is bound to a graph version, has begun its node of <paramref name="kind"/>, its record
-    /// read with no lease and never written; true for every other run, whose gates' engines go on as before (FABRIC-CUTOVER1d).
+    /// read with no lease and never written; true for every other run, whose gates' engines go on as before.
     /// </summary>
     public static bool Begun(string home, WorkflowProcess process, string kind) =>
         process is not { Graph: { } graph, Run: { } run } || Begun(graph, new NodeRecordFiles(home, () => false).Read(RunUnits.IdOf(run)), kind);
 
-    /// <summary>What the graph part says (the cutover design §4's table): the terminal's line, and every door's refusal where it holds.</summary>
+    /// <summary>What the graph part says: the terminal's line, and every door's refusal where it holds.</summary>
     public static string Says(GraphGateState gate) => gate.State switch
     {
         GraphGateStates.Lands => $"Run {gate.Run}'s graph made `{gate.Handed}` ready to land at `{Short(gate.Commit)}`, so it lands there.",
@@ -197,7 +197,7 @@ public static class GraphGate
     /// <summary>
     /// The node <c>handed</c> waits on: of the nodes a wire path leads from into it, the first in the graph's order that is not settled and stands
     /// somewhere a move can come from (not blocked behind another); else the first not settled. Null where none is. A <c>back</c> wire comes from a
-    /// node after its target (DECIDE1c), so no path is read along one.
+    /// node after its target, so no path is read along one.
     /// </summary>
     private static NodeDeclaration? WaitedOn(NodeGraph graph, NodeDeclaration handed, NodeRecord record)
     {
@@ -224,7 +224,7 @@ public static class GraphGate
 }
 
 /// <summary>
-/// The person's press on a run held by its graph (FABRIC-CUTOVER1d; the cutover design §4): the press keeps its order, its answer kept first and
+/// The person's press on a run held by its graph: the press keeps its order, its answer kept first and
 /// the gate read with the graph's part; where that part holds for a judgement not made yet, the press asks the loop for a whole pass, waits for
 /// it within <see cref="Bound"/>, and reads the gate again, so it lands at the same press where that pass made <c>handed</c> active at the commit.
 /// Past the bound it is refused as read, its answer kept, and the next press or look lands it.
@@ -244,7 +244,7 @@ public static class GraphPasses
     /// </summary>
     /// <param name="pass">Asks the loop for a whole pass and waits for it within the bound given (none: asks and waits for nothing); true where it came.</param>
     /// <param name="accept">
-    /// The person's Accept kept on the run's record for the <c>review</c> the graph waits on (LANDNODE1c2), true where it was kept: the press is
+    /// The person's Accept kept on the run's record for the <c>review</c> the graph waits on, true where it is kept: the press is
     /// that Accept, so it never lands past the review itself, and the pass it then asks reaches the review and readies the landing.
     /// </param>
     public static async Task<LandingGate> PressAsync(

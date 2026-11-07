@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second opinion's two files under the home (XAGENT1f): the opinions owed, <c>&lt;home&gt;/opinions/due.json</c>
+/// The second opinion's two files under the home: the opinions owed, <c>&lt;home&gt;/opinions/due.json</c>
 /// (<see cref="OpinionDues"/>), and each chain's gate record, <c>&lt;home&gt;/opinions/gates/&lt;chain&gt;.json</c>
 /// (<see cref="OpinionGates"/>), read without trusting their shape and written whole, atomically, as BOM-less UTF-8 with LF.
 /// </summary>
@@ -79,7 +79,7 @@ internal static class OpinionGateFiles
         {
             writer.WriteStartObject();
             writer.WriteString("session", entry.Session);
-            // CHATFLOW1d: a chat run's due names its run and no quest, so a build before it, which reads a due only by its quest, passes
+            // A chat run's due names its run and no quest, so a build that reads a due only by its quest passes
             // it over rather than close it `undone`.
             if (entry.OnRun)
             {
@@ -216,7 +216,7 @@ internal static class OpinionGateFiles
 
     /// <summary>
     /// Reading a kept file's fields without trusting its shape: a field of another type is absent. Nested, so its short name is
-    /// declared nowhere the structure gate indexes (STRUCT3c): other modules name a <c>Kept</c> of their own.
+    /// declared nowhere the structure gate indexes: other modules name a <c>Kept</c> of their own.
     /// </summary>
     private static class Kept
     {

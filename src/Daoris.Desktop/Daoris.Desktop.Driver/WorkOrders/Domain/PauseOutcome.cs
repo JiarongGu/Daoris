@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a pause does with one piece of the work (D132 point 2, design §2.1), in the public spelling the page and the terminal
+/// What a pause does with one piece of the work, in the public spelling the page and the terminal
 /// share: a word, never a sentence, so each door says it in its own words and the page in the reader's language.
 /// </summary>
 public static class PauseAct
@@ -24,7 +24,7 @@ public static class PauseAct
     /// <summary>The ask's running intake: left running, since an ask has one; what it publishes is paused with the rest.</summary>
     public const string Intake = "intake";
 
-    /// <summary>A teammate's live session: its process is on their machine (D47 §4), and nothing here reaches it.</summary>
+    /// <summary>A teammate's live session: its process is on their machine, and nothing here reaches it.</summary>
     public const string Teammate = "teammate";
 
     /// <summary>A session that ended: a record, untouched.</summary>
@@ -33,7 +33,7 @@ public static class PauseAct
 
 /// <summary>
 /// The words a pause keeps a live session for when it could not stop it (<see cref="WorkKept.Why"/>), beside
-/// <see cref="PauseAct"/>'s: <c>WorkPausing</c> forwards them under the names its callers use (STRUCT3g-i).
+/// <see cref="PauseAct"/>'s: <c>WorkPausing</c> forwards them under the names its callers use.
 /// </summary>
 public static class PauseKept
 {
@@ -57,8 +57,8 @@ public sealed record WorkPlanQuest(WorkQuest Quest, string Pause)
 public sealed record WorkPlanSession(WorkSession Session, string Pause);
 
 /// <summary>
-/// The work of an ask or a quest with what a pause would do with each piece (PAUSE1b, design §1, §2.1): what <c>WORK_PLAN</c>
-/// answers and what a pause acts on, so the screen and the pause cannot disagree. Abandon's half is PAUSE1d's.
+/// The work of an ask or a quest with what a pause would do with each piece: what <c>WORK_PLAN</c>
+/// answers and what a pause acts on, so the screen and the pause cannot disagree.
 /// </summary>
 public sealed record WorkPlan(WorkPieces Pieces, IReadOnlyList<WorkPlanQuest> Quests, IReadOnlyList<WorkPlanSession> Sessions)
 {
@@ -75,10 +75,10 @@ public sealed record WorkPlan(WorkPieces Pieces, IReadOnlyList<WorkPlanQuest> Qu
 /// <summary>How a pause came out.</summary>
 public enum PauseVerdict
 {
-    /// <summary>The pause is written, and what of the work ran here was stopped or asked to stop.</summary>
+    /// <summary>The pause is written, and what of the work ran here is stopped or asked to stop.</summary>
     Paused,
 
-    /// <summary>Nothing of the work is open or taken here, and no intake would start: nothing was written (D48 §6, information).</summary>
+    /// <summary>Nothing of the work is open or taken here, and no intake would start: nothing is written.</summary>
     Nothing,
 
     /// <summary>No such ask on this machine, or no such quest here: <c>WORK_UNKNOWN</c>.</summary>
@@ -91,7 +91,7 @@ public enum ResumeVerdict
     /// <summary>The pause is gone and every stop it made released.</summary>
     Resumed,
 
-    /// <summary>It was not paused here: nothing changed (D48 §6, information).</summary>
+    /// <summary>Not paused here: nothing changed.</summary>
     NotPaused,
 
     /// <summary>No such ask on this machine, or no such quest here, and no pause of it: <c>WORK_UNKNOWN</c>.</summary>
@@ -118,7 +118,7 @@ public sealed record WorkKept(string Session, string? Quest, string Why)
 /// <summary>What a pause did.</summary>
 public sealed record PauseOutcome(WorkScope Scope, string Id, PauseVerdict Verdict)
 {
-    /// <summary>It was paused already: its time and its earlier stops stand, and what started since was stopped.</summary>
+    /// <summary>Paused already: its time and its earlier stops stand, and what started since is stopped.</summary>
     public bool Already { get; init; }
 
     public IReadOnlyList<WorkStop> Stopped { get; init; } = [];
@@ -127,8 +127,8 @@ public sealed record PauseOutcome(WorkScope Scope, string Id, PauseVerdict Verdi
 }
 
 /// <summary>
-/// A quest of the work something still holds after a resume (design §2.4): the planner's verdict and sentence, and the facts
-/// the page says that sentence from in the reader's language (CARRY2d), as the tick's consideration carries them. The sentence
+/// A quest of the work something still holds after a resume: the planner's verdict and sentence, and the facts
+/// the page says that sentence from in the reader's language, as the tick's consideration carries them. The sentence
 /// stays the terminal's and an older page's; each fact is null for every verdict but its own.
 /// </summary>
 public sealed record WorkHold(string Quest, StartVerdict Verdict, string Reason)
@@ -145,20 +145,20 @@ public sealed record WorkHold(string Quest, StartVerdict Verdict, string Reason)
     /// </summary>
     public int? Strikes { get; init; }
 
-    /// <summary>For a take that is not this machine's (<see cref="StartVerdict.TakenElsewhere"/>): whose it is (CARRY2c).</summary>
+    /// <summary>For a take that is not this machine's (<see cref="StartVerdict.TakenElsewhere"/>): whose it is.</summary>
     public TakenBy? TakenBy { get; init; }
 
-    /// <summary>For a set-up step the planner sits (<see cref="StartVerdict.CannotShow"/>): the code and facts of its sentence (CANNOTSHOW1a).</summary>
+    /// <summary>For a set-up step the planner sits (<see cref="StartVerdict.CannotShow"/>): the code and facts of its sentence.</summary>
     public CannotShowFact? CannotShow { get; init; }
 
-    /// <summary>For a hold the page had no words for (<see cref="StartVerdict.NotAdopted"/>): which sentence, by code (OVERVIEWNOISE1c).</summary>
+    /// <summary>For a hold the page had no words for (<see cref="StartVerdict.NotAdopted"/>): which sentence, by code.</summary>
     public SittingFact? Said { get; init; }
 }
 
 /// <summary>What a resume did.</summary>
 public sealed record ResumeOutcome(WorkScope Scope, string Id, ResumeVerdict Verdict)
 {
-    /// <summary>Each stop the pause made, now released (SESSUX1b's <c>released</c>).</summary>
+    /// <summary>Each stop the pause made, now released.</summary>
     public IReadOnlyList<WorkStop> Released { get; init; } = [];
 
     /// <summary>What still holds each quest of the work, named and never released; null where the plan could not be read.</summary>

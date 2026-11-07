@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>A line as a look read it: its repository and workspace, the checkout its tip was read in, the line's branch and its tip.</summary>
+/// <summary>A line as a look read it: its repository and workspace, the checkout its tip is read in, the line's branch and its tip.</summary>
 public sealed record LineHead(string Repository, string Workspace, string Root, string Line, string Tip);
 
 /// <summary>
-/// The landed route's batching (the pipeline design §4.3): one run per line at a time, bound at the newest tip once the line
+/// The landed route's batching: one run per line at a time, bound at the newest tip once the line
 /// moved past its newest run and no run of it is in flight, so every landing since the base is in it and what lands meanwhile is the next
 /// batch's. A run, once bound, is never superseded. The line keeps no record of its own: its base, its run in flight and its newest verdict are
 /// read from the runs bound on it under <c>lines/</c>. A person's run is never counted.
@@ -26,9 +26,9 @@ public static class LineBatching
     ];
 
     /// <summary>
-    /// Where a run settled (§4.3: each check reached, failed, or stopped by the person): <see cref="LineVerdicts.Failed"/> where one failed,
+    /// Where a run settled (each check reached, failed, or stopped by the person): <see cref="LineVerdicts.Failed"/> where one failed,
     /// <see cref="LineVerdicts.Verified"/> where all reached, else <see cref="LineVerdicts.NotNow"/>; null while it is in flight, waiting, running
-    /// or held unknown for the person. A run with no record yet, or whose version no longer names its checks, is in flight.
+    /// or held unknown for the person. A run with no record yet, or whose version names no checks, is in flight.
     /// </summary>
     public static string? Settled(NodeRecord? record, IReadOnlyCollection<string> checks)
     {
@@ -42,7 +42,7 @@ public static class LineBatching
     /// <summary>
     /// The run <paramref name="head"/>'s line owes now under <paramref name="route"/>, or null: none where the route names no verification
     /// pipeline, no gates are accepted or no version reads; none while a run of the line is in flight (an unknown holds it for the person), or
-    /// where its newest run was bound at this tip, whatever it came to. Its base is the tip of the newest run with a verdict, so a run the person
+    /// where its newest run is bound at this tip, whatever it came to. Its base is the tip of the newest run with a verdict, so a run the person
     /// put off (<i>Not now</i>) is taken into the next batch; none before any verdict, the line's first verification.
     /// </summary>
     public static VerifyRun? Owed(string home, LineHead head, WorkflowLandedSelected route, NodeRecordFiles records, DateTimeOffset now)
@@ -99,7 +99,7 @@ public static class LineBatching
         return code == 0 && WorkingTree.IsCommitId(tip) ? tip : null;
     }
 
-    /// <summary>The check nodes of the version a run is bound to; none where it no longer reads.</summary>
+    /// <summary>The check nodes of the version a run is bound to; none where it does not read.</summary>
     internal static IReadOnlyList<string> ChecksOf(WorkflowFiles files, VerifyRun run) =>
         files.Load(run.Workflow)?.Read.Versions.FirstOrDefault(each => each.Version == run.Version) is { Graph: { } graph }
             ? [.. graph.Nodes.Where(node => node.Kind == NodeKinds.Check).Select(node => node.Id)]

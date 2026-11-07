@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The <c>look</c> node observed from its gate's records (FABRIC-WIRE1h, FABRIC-NODE1b; the fabric events design §E4, §E2): the person's
+/// The <c>look</c> node observed from its gate's records: the person's
 /// verdict as <see cref="ReviewGate"/> read it, or the review a recorded landing kept, and the chain's or the ask's choice that turns the look
 /// off for this work. Pure: the caller hands the gate's read in, and nothing is judged again or written.
 /// </summary>
@@ -23,8 +23,8 @@ public static class LookReading
 
         NodeObservation Seen(string? outcome, string said) => NodeObserving.Seen(reading, outcome, said);
 
-        // The person's reviewed: by the look's reach authority, on the binding it was started on. It exposes no evidence (§E2: the person's look
-        // is no record a consumer reads).
+        // The person's reviewed: by the look's reach authority, on the binding the node started on. It exposes no evidence: the person's look
+        // is no record a consumer reads.
         NodeObservation Reached(string said) => Seen(NodeStates.Reached, said) with { Source = NodeSource.Person, Acceptance = binding };
 
         NodeObservation Persons(string outcome, string? words, string said) => string.IsNullOrWhiteSpace(words)
@@ -33,10 +33,10 @@ public static class LookReading
 
         NodeObservation PassedOver(string said) => Seen(NodeStates.Skipped, said) with { Source = NodeSource.Review };
 
-        // FABRIC-CUTOVER1a: the unit its binding observes, a run's branch on the run's record, never the record's own unit.
+        // The unit its binding observes, a run's branch on the run's record, never the record's own unit.
         if (NodeObserving.NotBound(reading) is { } refused) return refused;
 
-        // FABRIC-NODE1b: a landing recorded at the bound commit keeps the review that let it go, whatever the gate says now (as an opinion's does).
+        // A landing recorded at the bound commit keeps the review that let it go, whatever the gate says now (as an opinion's does).
         var landed = binding.SubjectRevision is { } bound
             ? unit.Records.Landings.Where(each => string.Equals(each.Tip, bound, StringComparison.Ordinal)).ToList()
             : [];
@@ -80,7 +80,7 @@ public static class LookReading
 
     /// <summary>
     /// The person's words where <paramref name="node"/> of the run's record stands skipped by them, or their skip waits there for the next
-    /// look to apply; null otherwise. The gate of a chat run's look reads it (CHATFLOW1d2).
+    /// look to apply; null otherwise. The gate of a chat run's look reads it.
     /// </summary>
     public static string? SkippedWords(NodeRecord? record, string? node)
     {

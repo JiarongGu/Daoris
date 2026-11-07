@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The unit's step in the line's integration (INTEGRATE1n; the integration design §17.4): its landed branch asked of the one request door and
+/// The unit's step in the line's integration: its landed branch asked of the one request door and
 /// waited on (<see cref="IntegrateStart"/>), reached and failed by the integration record. A <c>land</c> of the method <c>integrate</c> brings it.
 /// </summary>
 [NodeKind(NodeKinds.Integrate, NodeGroup.Landing, NodeKinds.Land)]
 internal sealed class IntegrateNode : BuiltInNode, IStarts
 {
     /// <summary>
-    /// Never skipped, since a skip satisfies <c>after</c> and would read as integrated where nothing was; the person's door is the stop, which the
-    /// record bounds (F50, row n2).
+    /// Never skipped, since a skip satisfies <c>after</c> and would read as integrated where nothing is; the person's door is the stop, which the
+    /// record bounds.
     /// </summary>
     public override NodeAuthority Row { get; } =
         new(NodeKinds.Integrate, NodeReach.Waited, NodeSource.Integration, NodeSource.Integration, false, PersonSkips: false, true, true);
@@ -37,7 +37,7 @@ internal sealed class IntegrateNode : BuiltInNode, IStarts
     }
 
     /// <summary>
-    /// At most one, after the landing, and a tail of a <c>land</c> whose method is <c>integrate</c> (§17.4's graph rules; G8): said against the
+    /// At most one, after the landing, and a tail of a <c>land</c> whose method is <c>integrate</c>: said against the
     /// node it is about, once.
     /// </summary>
     public override IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node)
@@ -85,7 +85,7 @@ internal sealed class IntegrateNode : BuiltInNode, IStarts
 
     public override bool EndsByTheLine => true;
 
-    /// <summary>The one door a unit's <c>integrate</c> asks (the integration design §17.4): the one handed, else the home's own.</summary>
+    /// <summary>The one door a unit's <c>integrate</c> asks: the one handed, else the home's own.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) => wiring.Integration ?? NodeRuntime.HomeDoor(wiring.Home);
 
     /// <summary>A waited node, begun through its adapter: the unit's request asked of the one door, by its key.</summary>

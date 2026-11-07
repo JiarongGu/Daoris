@@ -5,13 +5,13 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own <c>quest.close</c> (FABRIC-CLOSE1b; the fabric events design §E5's fence): the attempt written with its key and token before
+/// Daoris's own <c>quest.close</c>: the attempt written with its key and token before
 /// the close is sent, the door's answer kept on it, and a timeout or a restart sending the same close again.
 /// </summary>
 /// <remarks>
-/// <para><b>The fence</b> (§E5, D173's CLOSE1b note, choice 1): step 1 is one locked edit that judges the start on the record as the evaluation
+/// <para><b>The fence</b>: step 1 is one locked edit that judges the start on the record as the evaluation
 /// left it and writes the attempt with its key and token; step 2 is the door's one transaction; step 3 is one locked edit that keeps the answer
-/// on that attempt, only while it still waits for it. Nothing is awaited inside an edit (PERFORM1h). What holds the driver's facts still between
+/// on that attempt, only while it still waits for it. Nothing is awaited inside an edit. What holds the driver's facts still between
 /// steps 1 and 3 is the lease's one writer and the pass's one-at-a-time: no other writer edits the unit's record meanwhile.</para>
 /// <para><b>Step 4:</b> an unanswered close is unknown, and the next pass sends the same close again, its key, token and quests unchanged: the
 /// door answers its first outcome, a refusal included, and writes nothing twice.</para>
@@ -23,7 +23,7 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
 
     private readonly List<string> _said = [];
 
-    /// <summary>What the closer said since it was last asked: each refusal in the door's words.</summary>
+    /// <summary>What the closer has said since its last asking: each refusal in the door's words.</summary>
     public IReadOnlyList<string> TakeSaid()
     {
         var said = _said.ToList();
@@ -64,8 +64,8 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
     /// taking one of <paramref name="sends"/>. Asked whatever graph governs its unit now: a close in flight is reconciled.
     /// </summary>
     /// <remarks>
-    /// FABRIC-CLOSE1u (the 2026-10-18 review of the close path): never sent again blind. A close written before a crash, never delivered, is
-    /// judged on the revision it was written on, and its key's idempotency protects an outcome already kept, not a key never used, so a resend
+    /// Never sent again blind. A close written before a crash, never delivered, is
+    /// judged on the revision it carries, and its key's idempotency protects an outcome already kept, not a key never used, so a resend
     /// after the branch moved would close on obsolete evidence. Its door is asked what became of the key, answering from its own record and
     /// executing nothing: a key it took is settled from the outcome it kept; a key it never took is withdrawn there, in the same transaction,
     /// and its attempt is settled as never started, its node judged again on what is there now (<see cref="Withdrawn"/>), so a close is made
@@ -87,25 +87,25 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
     }
 
     /// <summary>
-    /// The person's word on each held close (FABRIC-CLOSE1q), and on each unknown one (FABRIC-CLOSE1u, <see cref="QuestClosing.Unanswered"/>),
+    /// The person's word on each held close, and on each unknown one (<see cref="QuestClosing.Unanswered"/>),
     /// applied before any close is asked after (<see cref="ReconcileAsync"/>): a close's recovery, never a plugin's <i>it happened</i> or <i>it
     /// did not</i>, since its outcome is its door's answer and no word of the person's stands in for it, and a new close is never made. The word
     /// is cleared as it is applied, so only one not applied yet is ever written.
     /// </summary>
     /// <remarks>
     /// <para><b><c>record</c></b>: the door's answer kept on the attempt (it closed the quest) recorded again through the one table, its key as
-    /// the evidence. Refused again, the attempt stays held with the new refusal; its node moved off, it settles as a stale one's (§D3).</para>
+    /// the evidence. Refused again, the attempt stays held with the new refusal; its node moved off, it settles as a stale one's.</para>
     /// <para><b><c>resend</c></b>: the attempt waits for its answer again, so its door is asked within this pass what became of its key, its
-    /// token and named submissions; the door answers its first outcome and writes nothing (FABRIC-CLOSE1u: never the close sent again).</para>
+    /// token and named submissions; the door answers its first outcome and writes nothing.</para>
     /// <para><b><c>stop</c></b>, offered apart: every live node of its work stopped by the person, and the close's answer kept as it is (a
     /// kept one settles the attempt, its receipt kept; one not kept is asked for again with its key, and lands as a stale one's). The quest's
     /// Done, if the door wrote it, stands.</para>
-    /// <para>A plugin's word recorded on a close before this build, or <c>record</c> with nothing kept, is taken back, saying why.</para>
-    /// <para><b>A close for a submission reopened or replaced since</b> (FABRIC-CLOSE1q2, <see cref="QuestClosing.Moved"/>, judged on
+    /// <para>A plugin's word recorded on a close, or <c>record</c> with nothing kept, is taken back, saying why.</para>
+    /// <para><b>A close for a submission reopened or replaced since</b> (<see cref="QuestClosing.Moved"/>, judged on
     /// <paramref name="quests"/>): <c>record</c> and <c>stop</c> are taken back, saying why. Its answer closes none of the work there is now,
     /// and a stop through it would stop the next submission's: its nodes already on that work, or the close node itself, since a stop is the
     /// person's word for the work and not for a revision (<see cref="NodeStates.Bound"/>), so the next submission's close would never run.
-    /// The nodes it was bound to lapse with its revision. <c>resend</c> asks after its key alone, as before.</para>
+    /// The nodes it is bound to lapse with its revision. <c>resend</c> asks after its key alone.</para>
     /// </remarks>
     /// <param name="declared">The declaration governing each unit's node now.</param>
     /// <param name="quests">The quests the pass read, by id; null, no close is judged moved.</param>
@@ -141,11 +141,11 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
         return done;
     }
 
-    /// <summary>Whether any close attempt holds the person's word not applied yet: the pass that applies it reads the quests afresh (FABRIC-CLOSE1q2).</summary>
+    /// <summary>Whether any close attempt holds the person's word not applied yet: the pass that applies it reads the quests afresh.</summary>
     public bool Worded() => records.All().Records.Any(record => record.Attempts.Any(Worded));
 
-    /// <summary>A close attempt holding a word to apply. FABRIC-CLOSE1u: an unknown close takes the person's word as a held one does, before it is asked after.</summary>
-    // FABRIC-CLOSE1j: a close found closed only in part takes the person's stop on its settled attempt (QuestClosing.Partly).
+    /// <summary>A close attempt holding a word to apply. An unknown close takes the person's word as a held one does, before it is asked after.</summary>
+    // A close found closed only in part takes the person's stop on its settled attempt (QuestClosing.Partly).
     private static bool Worded(NodeAttempt attempt) =>
         attempt is { Plugin: QuestClosing.Sender, State: AttemptStates.Held or AttemptStates.Unknown, Resolution: not null, Close: not null }
             or { Plugin: QuestClosing.Sender or QuestClosing.Chained, State: AttemptStates.Settled, Resolution: HeldResolutions.Stop };
@@ -159,8 +159,8 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
         var node = declared(unit, attempt.Node) ?? Declaration(attempt);
         var cleared = attempt with { Resolution = null, ResolvedAt = null };
 
-        // FABRIC-CLOSE1j: the stop of a close found closed only in part. Its answer stands for the quests it kept, so the attempt stays settled,
-        // and its work's live nodes are stopped: the lost quest's work is the winner's, never closed here over its take (§E5).
+        // The stop of a close found closed only in part. Its answer stands for the quests it kept, so the attempt stays settled,
+        // and its work's live nodes are stopped: the lost quest's work is the winner's, never closed here over its take.
         if (attempt.State == AttemptStates.Settled)
         {
             var stopped = new List<string>();
@@ -174,14 +174,14 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
             return (WorkPerformer.With(record, attempt, cleared with { Code = code }), new(unit, node.Id, PerformedWhat.Refused, code));
         }
 
-        // FABRIC-CLOSE1q2: S1's close never records on, nor stops, the work of S2 at its commit; the nodes bound to S1 lapse with its revision.
+        // S1's close never records on, nor stops, the work of S2 at its commit; the nodes bound to S1 lapse with its revision.
         if (word != HeldResolutions.Resend && quests is not null && QuestClosing.Moved(attempt, quests) is { } moved)
         {
             lines.Add($"work  {unit}: your `{word}` on its close ({node.Id}, attempt {attempt.Attempt}) was not taken: #{moved.Id}'s submission "
                 + $"{moved.Machine}/{moved.Sequence}, which that close names, was reopened or replaced since, so the work there is now is never that close's to "
                 + (word == HeldResolutions.Record ? "record" : "stop")
                 + (attempt.State == AttemptStates.Unknown ? "; its door is still asked what became of it." : "; say resend to ask its door what became of it."));
-            // FABRIC-CLOSE1q4: kept in its history too, said on the page once its close is no longer listed (its node moved off, before
+            // Kept in its history too, said on the page once its close is not listed (its node moved off, before
             // this pass ends or later); while it is listed, its held row says it (submission-moved).
             var why = $"{QuestClosing.TakenBack} #{moved.Id} {word} {attempt.Attempt}";
             record = record with { History = [.. record.History, new NodeHistory(clock(), why, WorkPerformer.StatusOf(record, node.Id))] };
@@ -191,7 +191,7 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
 
         if (word == HeldResolutions.Resend)
         {
-            // FABRIC-CLOSE1q4: the person's resend answers a word of theirs taken back on it, which is said no more.
+            // The person's resend answers a word of theirs taken back on it, which is then unsaid.
             var answered = $" {attempt.Attempt}";
             record = record with
             {
@@ -238,7 +238,7 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
     private static NodeDeclaration Declaration(NodeAttempt attempt) => new(attempt.Node, NodeKinds.QuestClose, attempt.Call.StepVersion, NodeReach.Performed);
 
     /// <summary>
-    /// The chain's close reached on a quest it closed (D173's CLOSE1b note, choice 2): a chain quest's own close node, proposed to start once its
+    /// The chain's close reached on a quest it closed: a chain quest's own close node, proposed to start once its
     /// quest is Done by the close its chain's last quest made, is started and reached in one locked edit on that close's key, never sent.
     /// </summary>
     public WorkPerformed ReachByChain(NodeDeclaration node, WireStart start, NodeStatus evaluated, NodeAttempt chained)
@@ -256,7 +256,7 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
             if (!reached.Moved) return (null, new WorkPerformed(unit, node.Id, PerformedWhat.Refused, reached.Refused));
             var fired = record.Fired.Concat(start.Firings.Select(firing => firing.Key)).Distinct(StringComparer.Ordinal).ToList();
 
-            // FABRIC-CLOSE1l: a node with attempts of its own (the close's own node, started again once its quest's Done moved its revision)
+            // A node with attempts of its own (the close's own node, started again once its quest's Done moved its revision)
             // keeps one for the attempt started here, settled on the chain's close and never sent, so its record still agrees with itself
             // (each node's attempts end at its status's) and reads; marked as the chain's, so nothing reconciles or says it.
             var attempts = record.Attempts.Any(attempt => attempt.Node == node.Id)
@@ -277,8 +277,8 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
         attempt.Plugin == QuestClosing.Sender && attempt.Close is not null && attempt.State is AttemptStates.Recorded or AttemptStates.Unknown;
 
     /// <summary>
-    /// One send of a close, its key, token and quests as written (step 2), or, with <paramref name="ask"/>, the question of what became of it
-    /// (FABRIC-CLOSE1u); and the answer kept on its attempt after the await (step 3), only while that attempt still waits for it. Unanswered,
+    /// One send of a close, its key, token and quests as written (step 2), or, with <paramref name="ask"/>, the question of what became of it;
+    /// and the answer kept on its attempt after the await (step 3), only while that attempt still waits for it. Unanswered,
     /// the attempt and its node are unknown, and it is asked after again.
     /// </summary>
     private async Task<WorkPerformed> AnswerAsync(string unit, NodeAttempt attempt, NodeDeclaration node, string what, bool ask, CancellationToken ct)
@@ -328,10 +328,10 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
     }
 
     /// <summary>
-    /// A close whose door never took its key (FABRIC-CLOSE1u): it never ran, and the door withdrew the key as it answered, so it never will. The
+    /// A close whose door never took its key: it never ran, and the door withdrew the key as it answered, so it never will. The
     /// attempt is settled as never started, its key kept as the one withdrawn, and a node still on it is invalidated, its attempt superseded:
     /// the next evaluation judges it again on what is there now, and where it is still eligible makes a new close, under a new key, through the
-    /// fresh fence. A node moved off it is left as it stands, the gate the attempt held lifted (§D3).
+    /// fresh fence. A node moved off it is left as it stands, the gate the attempt held lifted.
     /// </summary>
     private (NodeRecord Next, WorkPerformed Result) Withdrawn(NodeRecord record, NodeAttempt attempt, NodeDeclaration node)
     {
@@ -358,8 +358,8 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
 
     /// <summary>
     /// The door's answer applied to its attempt's node through the one table: closed is the reach, on the close's key as its evidence; refused
-    /// is the failure, with the door's code and its words kept. An answer that is neither never reaches here: the client throws it as unanswered
-    /// (FABRIC-CLOSE1l). An attempt its node has moved off is settled as a stale one's, lifting the gate it held (§D3).
+    /// is the failure, with the door's code and its words kept. An answer that is neither never reaches here: the client throws it as unanswered.
+    /// An attempt its node has moved off is settled as a stale one's, lifting the gate it held.
     /// </summary>
     private (NodeRecord? Next, WorkPerformed Result) Outcome(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, QuestCloseAnswer answer)
     {
@@ -371,7 +371,7 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
     /// <summary>
     /// A door's answer applied to its attempt's node (<see cref="Outcome"/>, and the person's <c>record</c>): settled with it where it binds or
     /// where the node moved off the attempt; held where the one table refuses it, the answer kept on the attempt and any word taken back, so
-    /// the person's next word is asked afresh and never applied twice (FABRIC-CLOSE1q).
+    /// the person's next word is asked afresh and never applied twice.
     /// </summary>
     private (NodeRecord Next, WorkPerformed Result) Answered(NodeRecord record, NodeAttempt attempt, NodeDeclaration node, bool closed, string? code, QuestCloseCall? close)
     {
@@ -400,7 +400,7 @@ public sealed class QuestCloser(NodeRecordFiles records, IQuestClosePort port, F
         return (WorkPerformer.With(WorkPerformer.Kept(record, moved, outcome, now), attempt, settled), new(unit, node.Id, PerformedWhat.Applied, outcome));
     }
 
-    /// <summary>The close's reach (§E2: the close door's write is its authority): its binding, with the close's key as its evidence.</summary>
+    /// <summary>The close's reach (the close door's write is its authority): its binding, with the close's key as its evidence.</summary>
     private static NodeMove Reach(NodeDeclaration node, NodeStatus status, string key) => new(NodeStates.Reached, NodeCause.Authority)
     {
         Source = NodeSource.CloseDoor,

@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>A built-in kind a step graph may hold: who reaches and fails it, what the person may do to it, and its options.</summary>
-/// <param name="Leaves">The wire kinds that may leave a node of this kind (WORKFLOWEDIT1b), which the step editor offers from it.</param>
+/// <param name="Leaves">The wire kinds that may leave a node of this kind, which the step editor offers from it.</param>
 /// <param name="RoleTakes">The works a role takes a node of this kind by, the step's own first; none where no agent session takes it.</param>
 /// <param name="Offered">
-/// How the editor offers the kind (WORKFLOWCLEAN1 1b): <c>alone</c>, a step to add; <c>tail:&lt;method&gt;</c>, a step a <c>land</c> of that method brings
+/// How the editor offers the kind: <c>alone</c>, a step to add; <c>tail:&lt;method&gt;</c>, a step a <c>land</c> of that method brings
 /// with it. The page reads it and keeps no list of its own.
 /// </param>
 public sealed record PaletteKind(
@@ -24,9 +24,9 @@ public sealed record PaletteKind(
 public sealed record PaletteWire(string Kind, bool Eligibility, IReadOnlyList<string>? From, string? To);
 
 /// <summary>One step a plugin declares, as its manifest holds it, with the wire kinds that may leave it.</summary>
-/// <param name="OutputsOn">DECIDE1d: each output a step carries on some of its outcomes alone, with the outcomes that carry it; an output left out is carried on every reach.</param>
-/// <param name="Title">SETUPUX1f: the step's name as its manifest wrote it (authored text), or null where it declares none.</param>
-/// <param name="About">SETUPUX1f: a sentence of what the step does (authored text), or null.</param>
+/// <param name="OutputsOn">Each output a step carries on some of its outcomes alone, with the outcomes that carry it; an output left out is carried on every reach.</param>
+/// <param name="Title">The step's name as its manifest wrote it (authored text), or null where it declares none.</param>
+/// <param name="About">A sentence of what the step does (authored text), or null.</param>
 public sealed record PaletteStep(
     string Kind, int Version, string Reach, bool Rejectable, bool Skippable, IReadOnlyDictionary<string, string> Inputs,
     IReadOnlyDictionary<string, string> Outputs, string? Evidence, IReadOnlyList<string> Outcomes,
@@ -74,7 +74,7 @@ public sealed record WorkflowPalette(IReadOnlyList<PaletteKind> Kinds, IReadOnly
     }
 
     /// <summary>
-    /// The palette as Ask Daoris is handed it beside an open draft (FLOWCHART2d; the flowchart design §8.3), one line a kind: each built-in
+    /// The palette as Ask Daoris is handed it beside an open draft, one line a kind: each built-in
     /// kind's reach, its options with their choices and the ways that may leave it, then each plugin step's version, reach, outcomes,
     /// inputs, outputs (and the outcomes that carry each), evidence and ways. Agent-facing English, never shown.
     /// </summary>

@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris place checks</c> was asked (FABRIC-PIPELINE1b): a repository, and its checks to set or a clear, or none to say.</summary>
+/// <summary>What <c>daoris place checks</c> asks: a repository, and its checks to set or a clear, or none to say.</summary>
 public sealed record SessionChecksAsk
 {
     /// <summary>The repository named, or null to list every repository's.</summary>
@@ -17,7 +17,7 @@ public sealed record SessionChecksAsk
 }
 
 /// <summary>
-/// <c>daoris place checks</c> (FABRIC-PIPELINE1b, D192 point 4, D50): which checks a repository's sessions run under Current, from a
+/// <c>daoris place checks</c>: which checks a repository's sessions run under Current, from a
 /// terminal: listed, said, set or cleared. It reads and writes the driver's file alone, through <see cref="SessionChecks.Apply"/>, the door
 /// Setup's row goes through, so they refuse alike.
 /// </summary>
@@ -57,7 +57,7 @@ public static class SessionChecksCommand
     }
 
     /// <summary>List every repository's rule, say one's, or make the change, written to the driver's file at <paramref name="configPath"/>.</summary>
-    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing was written.</exception>
+    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing is written.</exception>
     public static int Run(SessionChecksAsk ask, string configPath, TextWriter output)
     {
         var config = DriverConfig.Load(configPath);
@@ -89,7 +89,7 @@ public static class SessionChecksCommand
         return 0;
     }
 
-    /// <summary>What a repository's sessions run, as a sentence; <paramref name="now"/> where it was just set.</summary>
+    /// <summary>What a repository's sessions run, as a sentence; <paramref name="now"/> where it is just set.</summary>
     private static string Said(string? checks, string repository, bool now) => checks switch
     {
         SessionChecks.Light =>

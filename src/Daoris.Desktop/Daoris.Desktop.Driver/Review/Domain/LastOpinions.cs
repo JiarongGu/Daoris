@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One owed landing opinion's gate as the last look judged it (XAGENT1g3): the work, since when its opinion has been owed, whether
+/// One owed landing opinion's gate as the last look judged it: the work, since when its opinion has been owed, whether
 /// it lands by itself, and the gate as <see cref="SessionTreeGates.GateAsync"/> reads it for the route that answers *What needs you*.
 /// </summary>
 public sealed record OpinionJudged(
     string Session, string Quest, string Repository, string Workspace, DateTimeOffset Since, bool Auto, OpinionGateState Gate) : IJudgedOpinion;
 
 /// <summary>
-/// The second-opinion gates the loop's last look judged (XAGENT1g3, D155): each owed landing opinion's gate, kept so the attention
+/// The second-opinion gates the loop's last look judged: each owed landing opinion's gate, kept so the attention
 /// band's route reads them instead of running a gate per owed session at every poll.
 /// </summary>
 /// <remarks>

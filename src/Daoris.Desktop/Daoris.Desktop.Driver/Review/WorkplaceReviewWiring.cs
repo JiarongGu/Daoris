@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the workplace asks of the review, installed when the driver loads: the second opinion a landing the gate holds is owed
-/// (<see cref="IWorkplaceReview"/>). It does exactly what the auto-lander did before it was a port.
+/// (<see cref="IWorkplaceReview"/>).
 /// </summary>
 internal sealed class WorkplaceReviewOperations : IWorkplaceReview
 {

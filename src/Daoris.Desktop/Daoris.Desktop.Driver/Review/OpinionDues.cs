@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The opinions owed by themselves on this machine (XAGENT1f): <c>&lt;home&gt;/opinions/due.json</c>. Written at a driven record's
-/// conclusion, read and closed by the look. Machine-local (D47 §4), as the opinions are.
+/// The opinions owed by themselves on this machine: <c>&lt;home&gt;/opinions/due.json</c>. Written at a driven record's
+/// conclusion, read and closed by the look. Machine-local, as the opinions are.
 /// </summary>
 /// <remarks>
 /// What is kept, and for how long, is this use case's; the file and its format are

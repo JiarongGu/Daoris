@@ -24,7 +24,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
     public bool Holding => _told || NextDue is not null || _toldText.Length > 0;
 
     /// <summary>
-    /// Disarmed: the plugins are told nothing is awaited where something was, so their processes stop, and what was told is forgotten, a
+    /// Disarmed: the plugins are told nothing is awaited where something is, so their processes stop, and what is told is forgotten, a
     /// pending retry's timer included, so nothing wakes the loop. A cleanup still due is asked once the runtime is armed again.
     /// </summary>
     public void Withdraw()
@@ -47,7 +47,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
 
     /// <summary>
     /// The frame a run's plugin is told an attempt under: a node after <c>handed</c>'s, the landed branch at the landing's tip; any other, the
-    /// branch its call was sent for, at the tip this pass read, a branch the run has since left included, so its answer still reaches the
+    /// branch its call is sent for, at the tip this pass read, a branch the run has since left included, so its answer still reaches the
     /// run's record. Null where that branch is not the run's.
     /// </summary>
     public WatchedUnit? RunTold(GovernedUnit governed, NodeAttempt attempt, PassTips tips)
@@ -93,7 +93,7 @@ internal sealed class NodeTelling(NodeRecordFiles records, IWorkRuntimePort port
 
     /// <summary>
     /// The frame a run's plugin node is told under: one after <c>handed</c>, the landed branch at its landing's tip; an attempt waiting, the
-    /// branch it was sent for; any other, the branch its binding observes, else the run's branch. Null where none is found this pass, and it is
+    /// branch it is sent for; any other, the branch its binding observes, else the run's branch. Null where none is found this pass, and it is
     /// told nothing.
     /// </summary>
     private WatchedUnit? RunFrame(GovernedUnit governed, NodeRecord record, string node, PassTips tips)

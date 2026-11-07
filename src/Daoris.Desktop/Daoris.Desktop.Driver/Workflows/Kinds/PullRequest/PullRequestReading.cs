@@ -1,22 +1,22 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A pull request's state as a monitor watches it (D245 point 2; D247 §4 point 3): the answer the plugin that opened it gave through
-/// <c>work/state</c>, asked at D148's moments and kept on the landing. Completed is <see cref="Merged"/>, a squash merge included and said so;
+/// A pull request's state as a monitor watches it: the answer the plugin that opened it gave through
+/// <c>work/state</c>, kept on the landing. Completed is <see cref="Merged"/>, a squash merge included and said so;
 /// abandoned is <see cref="Closed"/>; open or unanswered is no state yet. Pure: nothing is asked or written here.
 /// </summary>
 public static class PullRequestReading
 {
-    /// <summary>The request was merged, a squash merge included.</summary>
+    /// <summary>The request merged, a squash merge included.</summary>
     public const string Merged = "merged";
 
-    /// <summary>The request was closed without merging.</summary>
+    /// <summary>The request closed without merging.</summary>
     public const string Closed = "closed";
 
     /// <summary>The states a pull request reports, in order.</summary>
     public static readonly IReadOnlyList<string> States = [Merged, Closed];
 
-    /// <summary>Whether the landing's pull request was merged, a squash merge included: the plugin answered it completed.</summary>
+    /// <summary>Whether the landing's pull request merged, a squash merge included: the plugin answered it completed.</summary>
     public static bool IsMerged(LandedBranch landing) => landing.PullRequestState is { State: PullRequestStates.Completed };
 
     /// <summary>The state of the pull request of the branch unit the reading is on, read from its landing.</summary>

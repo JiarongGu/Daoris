@@ -5,9 +5,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The closure graphs this machine bound a quest to, kept by digest beside the node records (FABRIC-CLOSE1l; the fabric events design §E5's
-/// cutover: "removing `quest.close` from a graph changes nothing for runs already bound"). A quest bound to a graph since edited or removed is
-/// closed by the graph it was bound to, read from here; a home that never bound one keeps nothing, and nothing here is read.
+/// The closure graphs this machine bound a quest to, kept by digest beside the node records: removing `quest.close` from a graph
+/// changes nothing for runs already bound. A quest bound to a graph since edited or removed is
+/// closed by the graph it is bound to, read from here; a home that never bound one keeps nothing, and nothing here is read.
 /// </summary>
 public static class ClosureGraphs
 {
@@ -41,8 +41,8 @@ public static class ClosureGraphs
     }
 
     /// <summary>
-    /// Drops each kept graph <paramref name="needed"/> says nothing needs, and the folder once it is empty (FABRIC-CLOSE1m), so a home that
-    /// no longer binds a quest is not kept armed by it. A graph written within <paramref name="grace"/> of <paramref name="now"/> stays: it is
+    /// Drops each kept graph <paramref name="needed"/> says nothing needs, and the folder once it is empty, so a home that
+    /// binds no quest any more is not kept armed by it. A graph written within <paramref name="grace"/> of <paramref name="now"/> stays: it is
     /// kept before the service binds its quest (<see cref="ClosureBinding.AtTakeAsync"/>), and no read shows that quest bound yet.
     /// </summary>
     public static void Prune(string home, Func<string, bool> needed, DateTimeOffset now, TimeSpan grace)

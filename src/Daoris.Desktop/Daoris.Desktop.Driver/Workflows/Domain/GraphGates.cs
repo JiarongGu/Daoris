@@ -8,7 +8,7 @@ public sealed record GraphGateReading(
     WorkflowLook Look, ResolvedOpinion? Opinion, string? OpinionCannot, IReadOnlyDictionary<string, string> Claimed, string? Problem);
 
 /// <summary>
-/// A graph's gates read straight from its nodes' options (WORKFLOWCLEAN1 1c, the cleanup design §2.6), without turning the graph back into
+/// A graph's gates read straight from its nodes' options, without turning the graph back into
 /// steps: each option is read as the node of its kind reads that field, absence as its default, and each chooses among what the
 /// repository declares, never beyond it. A bad option holds the run, naming the node.
 /// </summary>

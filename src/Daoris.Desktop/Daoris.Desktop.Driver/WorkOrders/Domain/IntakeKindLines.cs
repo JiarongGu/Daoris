@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One kind of work a workspace declares, as a repository in it follows it (WORKFLOW1i-b; the workflow design §4.3).
+/// One kind of work a workspace declares, as a repository in it follows it.
 /// </summary>
 /// <param name="Workflow">What a task of the kind follows there, as said: a workflow's id and version, or Current.</param>
 /// <param name="Lowers">

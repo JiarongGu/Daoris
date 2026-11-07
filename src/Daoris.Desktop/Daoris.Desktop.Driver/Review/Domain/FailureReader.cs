@@ -24,11 +24,11 @@ internal sealed record ReadFailure(string Runner, string? Unit, string Test, str
     };
 }
 
-/// <summary>Where a failure was thrown in its test's own file: the frame's method, the text of its source line (normalised) and its place among identical lines of that method.</summary>
+/// <summary>Where a failure is thrown in its test's own file: the frame's method, the text of its source line (normalised) and its place among identical lines of that method.</summary>
 internal sealed record FailureLocation(string Method, string Text, int Ordinal);
 
 /// <summary>
-/// What a failure is, across runs on different trees (D207; the integration design §5.3): a test by its full name, exception type and
+/// What a failure is, across runs on different trees: a test by its full name, exception type and
 /// location (or, where none can be read, its message line), a gate that names no test by its step, a build by the set of its error codes
 /// with their files. Two failures are one when their <see cref="Key"/> is one string.
 /// </summary>
@@ -110,7 +110,7 @@ internal sealed record FailureSignature
 }
 
 /// <summary>
-/// The failure reader and the signature (INTEGRATE1f part f1; D207, the integration design §5.3): every judgement of a failure compares
+/// The failure reader and the signature: every judgement of a failure compares
 /// runs made on different trees, so a failure is read as what it is, not as the message a run makes fresh (a GUID, a tree id, a hash, an
 /// actual value) or the line number a line inserted above moves.
 /// </summary>
@@ -595,7 +595,7 @@ internal static class FailureReader
 
     /// <summary>
     /// A gate that names no failing test, signed by its step: for a build, the set of its compiler errors' codes with their files
-    /// (<c>CS0103 src/.../X.cs</c>), sorted, since MSBuild prints each project's errors as its node finishes; otherwise the step's first
+    /// (<c>src/.../X.cs</c>), sorted, since MSBuild prints each project's errors as its node finishes; otherwise the step's first
     /// error line, normalised.
     /// </summary>
     public static FailureSignature GateSignature(string gate, string step, string? output, string? root = null)

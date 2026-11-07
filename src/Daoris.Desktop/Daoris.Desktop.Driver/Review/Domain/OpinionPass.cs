@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a pass reads, and for whom (XAGENT1d, D155; the second-agent design §4): the occasion, the working session whose work it
+/// What a pass reads, and for whom: the occasion, the working session whose work it
 /// is, the repository and its checkout, the candidate's base and tip as git can name them, the rule that asked for it, and the
-/// quests and words the work was asked by. The look asks one for an opinion owed and for the person's ask (XAGENT1f).
+/// quests and words that asked the work. The look asks one for an opinion owed and for the person's ask.
 /// </summary>
-/// <param name="Occasion">One of <c>landing</c>, <c>steps</c>, <c>failure</c> or <c>asked</c> (design §2.1).</param>
+/// <param name="Occasion">One of <c>landing</c>, <c>steps</c>, <c>failure</c> or <c>asked</c>.</param>
 /// <param name="Working">The working session's record: the one whose work is read.</param>
 /// <param name="Root">The repository's registered checkout, which the candidate's commits are read from and the copy made of.</param>
 /// <param name="Base">Where the work starts: a commit or a name git reads as one.</param>
@@ -19,35 +19,35 @@ public sealed record OpinionPassAsk(
     /// <summary>The quests of the work in this repository, their requirements, closes and evidence as the service answered them.</summary>
     public IReadOnlyList<QuestView> Quests { get; init; } = [];
 
-    /// <summary>The person's words on the ask the work was asked by; null for work no ask asked.</summary>
+    /// <summary>The person's words on the ask that asked the work; null for work no ask asked.</summary>
     public AskWords? Words { get; init; }
 
-    /// <summary>A chat run's conversation's opening (CHATFLOW1d, the chat-flow design §7); null for a quest's work.</summary>
+    /// <summary>A chat run's conversation's opening; null for a quest's work.</summary>
     public string? Opening { get; init; }
 
     /// <summary>
-    /// The chat run the opinion was asked on (CHATFLOW1e, the chat-flow design §6): its findings go back into its conversation, only between
+    /// The chat run the opinion is asked on: its findings go back into its conversation, only between
     /// turns. Null for a quest's work.
     /// </summary>
     public string? Run { get; init; }
 
-    /// <summary>The person's turn count at the press that asked it (CHATFLOW1e, §6.1 (b)), which the send-back compares; null for a quest's work.</summary>
+    /// <summary>The person's turn count at the press that asked it, which the send-back compares; null for a quest's work.</summary>
     public int? Turns { get; init; }
 
     /// <summary>
-    /// For the one recheck (XAGENT1e, design §6.5), the first pass whose findings it reads again and the working session's
+    /// For the one recheck, the first pass whose findings it reads again and the working session's
     /// answers as the driver read them; null for a first pass. Its base is that pass's tip, and its tip the working tree's.
     /// </summary>
     public OpinionRecheckOf? Rechecks { get; init; }
 
     /// <summary>
-    /// Told the opinion's id and its reviewer's session the moment the host opens them (XAGENT1f): the gate keeps the ask then, so
+    /// Told the opinion's id and its reviewer's session the moment the host opens them: the gate keeps the ask then, so
     /// a door reads the pass as being read while it runs, never as not asked. Null tells nobody, as a recheck's run does.
     /// </summary>
     public Action<string, string>? Opened { get; init; }
 
     /// <summary>
-    /// The owner's own walk, asked again with what was passed left out (D205 §3.5(f), MODELROLE1e): a refusal of the entry's model at the
+    /// The owner's own walk, asked again with what it passed left out: a refusal of the entry's model at the
     /// open is handled in this call, the refused record ended <c>choice-not-offered</c> and the walk's answer opened. Null asks nothing again.
     /// </summary>
     public Func<IReadOnlyList<ReviewerPassed>, Task<ReviewerChoice>>? Reask { get; init; }
@@ -57,14 +57,14 @@ public sealed record OpinionPassAsk(
 }
 
 /// <summary>
-/// What a recheck reads again (XAGENT1e, design §4, §6.5): the first pass, its findings, and the working session's answers as
+/// What a recheck reads again: the first pass, its findings, and the working session's answers as
 /// the driver read them when its turn ended, each fix's commit checked.
 /// </summary>
 public sealed record OpinionRecheckOf(OpinionView First, OpinionReading Answers);
 
 /// <summary>
-/// How a pass went (XAGENT1d): its line, whether its reviewer's record opened, the opinion and the session, how the record
-/// ended, the tier and the code (design §10), what held the reviewer read-only, and anything the pass could not tidy.
+/// How a pass went: its line, whether its reviewer's record opened, the opinion and the session, how the record
+/// ended, the tier and the code, what held the reviewer read-only, and anything the pass could not tidy.
 /// </summary>
 /// <param name="Line">What a terminal and a look say, one line, opening with what became of it.</param>
 /// <param name="Opened">Whether the reviewer's record opened: false is a pass that started nothing.</param>
@@ -79,30 +79,30 @@ public sealed record OpinionPassRun(string Line, bool Opened)
     /// <summary>How the reviewer's record ended, in its public spelling; null where none opened.</summary>
     public string? State { get; init; }
 
-    /// <summary>Who read it (design §10): <see cref="OpinionPass.TierAgent"/>, or <see cref="OpinionPass.TierNone"/> where none could.</summary>
+    /// <summary>Who read it: <see cref="OpinionPass.TierAgent"/>, or <see cref="OpinionPass.TierNone"/> where none could.</summary>
     public string Tier { get; init; } = OpinionPass.TierAgent;
 
-    /// <summary>Why no other maker's agent read it, the choice's code (§3.3); null where one did.</summary>
+    /// <summary>Why no other maker's agent read it, the choice's code; null where one did.</summary>
     public string? Code { get; init; }
 
     /// <summary>What held the reviewer read-only (<see cref="OpinionPosture"/>); null where no reviewer ran.</summary>
     public string? Posture { get; init; }
 
-    /// <summary>Why the copy's folder is left, where removing it failed; null where it went, or none was made.</summary>
+    /// <summary>Why the copy's folder is left, where removing it failed; null where it went, or none is made.</summary>
     public string? TreeLeft { get; init; }
 
-    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c> (D205 §3.5(f)).</summary>
+    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c>.</summary>
     public bool NotOffered { get; init; }
 
     /// <summary>
-    /// A pass no reviewer could read (§3.3, §10): tier <c>none</c>, with the choice's code and its sentence, and nothing started.
+    /// A pass no reviewer could read: tier <c>none</c>, with the choice's code and its sentence, and nothing started.
     /// Never <i>no issues</i>: no agent read it.
     /// </summary>
     public static OpinionPassRun Unavailable(ReviewerChoice choice) =>
         new($"unavailable  no agent could read this: {choice.Sentence}", false) { Tier = OpinionPass.TierNone, Code = choice.Code };
 }
 
-/// <summary>The pass's own words and bounds (XAGENT1d, design §5.6, §10), each said once for every door.</summary>
+/// <summary>The pass's own words and bounds, each said once for every door.</summary>
 public static class OpinionPass
 {
     /// <summary>A pass a reviewer's session read.</summary>
@@ -112,7 +112,7 @@ public static class OpinionPass
     public const string TierNone = "none";
 
     /// <summary>
-    /// The code words said to a reviewer are refused with (D155 point 5, design §5.6), the service's say door's own: a reviewer
+    /// The code words said to a reviewer are refused with, the service's say door's own: a reviewer
     /// reads in one turn, and nobody talks to it while it reads.
     /// </summary>
     public const string WordsCode = "opinion";
@@ -121,7 +121,7 @@ public static class OpinionPass
     public const string OpenedKind = "opinion";
 
     /// <summary>
-    /// How long one pass may run (§5.6): the rule's minutes, never capped by a session's time (SESSWATCH1a, D200), so the reviewer is
+    /// How long one pass may run: the rule's minutes, never capped by a session's time, so the reviewer is
     /// told the minutes it gets; only the tests' backstop (<see cref="DriverConfig.TestBound"/>) comes first.
     /// </summary>
     public static int Bound(OpinionRule rule, DriverConfig config) => Math.Max(1, Math.Min(rule.Bound, config.TestBound ?? int.MaxValue));
@@ -136,7 +136,7 @@ public static class OpinionPass
         + "`npm run publish:desktop -- --to <install> --service` lays one beside the application, and "
         + "`npm run publish:service -- --install` lands one in the home's `bin/`.";
 
-    /// <summary>The line a reviewer's transcript opens with: what it reads, where, and what holds it read-only (§5.2).</summary>
+    /// <summary>The line a reviewer's transcript opens with: what it reads, where, and what holds it read-only.</summary>
     public static string Opening(OpinionCandidateRead candidate, string posture) =>
         $"— a second opinion on `{candidate.Repository}` at `{TextBounds.ShortCommit(candidate.Tip, 7)}`, "
         + $"{OpinionPosture.Said(posture)}: it reads in a copy of its own, and nothing in it is taken back.";
@@ -147,8 +147,8 @@ public static class OpinionPass
         + "opinion through its tool, and nobody talks to it while it reads. What it says is shown with the opinion.";
 
     /// <summary>
-    /// The families that wrote the work, as the opinion names them (§3.4): each one's owner, the agent whose accounts it runs as
-    /// (AGT7), once, in the order first named.
+    /// The families that wrote the work, as the opinion names them: each one's owner, the agent whose accounts it runs as,
+    /// once, in the order first named.
     /// </summary>
     public static IReadOnlyList<string> Families(IEnumerable<AgentFamily> working) =>
         [.. working.Select(family => family.Owner).Distinct(StringComparer.OrdinalIgnoreCase)];

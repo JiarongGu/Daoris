@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The session watch (SESSWATCH1a, D200, the session-watch design §2): the watcher looks in on every running driven session, from
+/// The session watch: the watcher looks in on every running driven session, from
 /// memory, reading a job only for one unheard for half its bound; each step it takes is said, and nothing quiet is ended but under
 /// <c>--quiet-end</c>.
 /// </summary>

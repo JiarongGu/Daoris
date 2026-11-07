@@ -2,11 +2,11 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris ask at-work</c> was asked: the ask, and whether to print the answer whole.</summary>
+/// <summary>The request of <c>daoris ask at-work</c>: the ask, and whether to print the answer whole.</summary>
 public sealed record AskAtWorkAsk(string Ask, bool Json);
 
 /// <summary>
-/// <c>ask at-work &lt;ask&gt; [--json]</c> (COWORKVIEW1d, the cowork view design §3.5): who is at work on an ask, the terminal's twin of the ask
+/// <c>ask at-work &lt;ask&gt; [--json]</c>: who is at work on an ask, the terminal's twin of the ask
 /// page's <i>At work</i> section. From the running Daoris's <c>SESSION_AT_WORK</c> keyed <c>{ ask }</c> where one answers, and with none from
 /// the same function over this process's own reading (<see cref="AtWorkAsk"/>), which issues no token and so reads every open child as not
 /// known whether it still runs. It prints the answer's lines of work and quests, and one line naming what it leaves out.

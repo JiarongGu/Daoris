@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rules' acts a look's plan made (the context counters design §4.7): a quest parked by its failed sessions, held on a transient
+/// The rules' acts a look's plan made: a quest parked by its failed sessions, held on a transient
 /// episode, moved to another choice by a rule, or held by the bound of moves, each as the <see cref="RuleActed"/> of the rule that acts by
 /// it, read from the plan and the snapshot alone.
 /// </summary>
@@ -35,7 +35,7 @@ internal static class PlannedRuleActs
                 case { Verdict: StartVerdict.Exhausted, FailedSince: { } failed }:
                     Add(held.Quest, SupervisorRules.Failures, rule => rule.Do is SupervisorRules.Hold or SupervisorRules.Refer, failed, "start", held.LastSession);
                     break;
-                // A failed choice's ask is the person's yes as it always was; only a refer's is kept, the point the supervisor is asked at.
+                // A failed choice's ask is the person's yes; only a refer's is kept, the point the supervisor is asked at.
                 case { Verdict: StartVerdict.PolicyHeld, Said.Code: SittingFact.PolicyAsk, HeldBy: { } ended } when StaffSnapshotCourse.FailedStrike(ended):
                     Add(held.Quest, SupervisorRules.FailuresOnChoice, rule => rule.Do == SupervisorRules.Refer, snapshot.FailedRuns.GetValueOrDefault(held.Quest.Id), "start", ended.Session);
                     break;

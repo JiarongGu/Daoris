@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
-/// <summary>Where a repository's review rule was set, for the screen, the room and the terminal.</summary>
+/// <summary>Where a repository's review rule is set, for the screen, the room and the terminal.</summary>
 public static class ReviewSource
 {
     public const string Repository = CommitRules.RepositorySource;
@@ -14,7 +14,7 @@ public static class ReviewSource
 
 
 /// <summary>
-/// One change to a review rule, as every door makes it (design §1.7): for a <see cref="Repository"/> or a
+/// One change to a review rule, as every door makes it: for a <see cref="Repository"/> or a
 /// <see cref="Workspace"/>, add or replace an environment (<see cref="Put"/>, with <see cref="Required"/> if given), say a
 /// repository has <see cref="None"/>, <see cref="Drop"/> one, set <see cref="Required"/> alone, or <see cref="Clear"/>.
 /// </summary>
@@ -30,17 +30,15 @@ public sealed record ReviewEdit
 }
 
 /// <summary>
-/// The review rule, <c>reviews</c> and <c>workspaceReviews</c> in <c>driver.json</c> (REVIEWENV1a, D154 point 2, design
-/// §1.1–§1.3, §1.7): read, refused, resolved, said and edited — the one place every door asks.
+/// The review rule, <c>reviews</c> and <c>workspaceReviews</c> in <c>driver.json</c>: read, refused, resolved, said and edited — the one place every door asks.
 /// </summary>
 /// <remarks>
-/// <para>One table, this suite's tests' <c>fixtures/review-rules.json</c>, cell for cell (<c>ReviewRulesTests</c>; its CLI twin,
-/// <c>reviews.ts</c>, left with the driver family's TypeScript in PUSH1f2b): the reading and its precedence, every refusal in the
+/// <para>One table, this suite's tests' <c>fixtures/review-rules.json</c>, cell for cell (<c>ReviewRulesTests</c>): the reading and its precedence, every refusal in the
 /// same words, each door's sentences and what each says after them of the gate, the edits, and what a checkout holding a
 /// procedure means.</para>
 ///
 /// <para>Nothing here composes a step, gates a landing or serves anything: the gate (<see cref="ReviewGate"/>) and the planner's
-/// sit (<see cref="ReviewSetUps"/>) read it since REVIEWENV1c, and the intake's composing is REVIEWENV1f's.</para>
+/// sit (<see cref="ReviewSetUps"/>) read it; the intake composes no set-up step.</para>
 ///
 /// <para>Whether a checkout holds a procedure, <see cref="Holds"/> and <see cref="Lacking"/>, looks in the checkout through
 /// <see cref="ReviewProcedureFiles"/>, which does the looking.</para>
@@ -57,16 +55,16 @@ public static class ReviewRules
     public static readonly IReadOnlyList<string> Production = ReviewKey.Production;
 
     /// <summary>
-    /// Said by each door after what the rule lets a step do (REVIEWENV1c2, through <see cref="Gate"/>): what the landing's gate
-    /// does with it since REVIEWENV1c, the person's verdict by the terminal's door, and that the intake composes no set-up step
-    /// yet (REVIEWENV1f). The CLI's <c>REVIEW_WAITING</c> and the page's <c>settings.review.says.waiting</c>, held to the shared
+    /// Said by each door after what the rule lets a step do (through <see cref="Gate"/>): what the landing's gate
+    /// does with it, the person's verdict by the terminal's door, and that the intake composes no set-up step
+    /// yet. The CLI's <c>REVIEW_WAITING</c> and the page's <c>settings.review.says.waiting</c>, held to the shared
     /// table's <c>gate</c> rows: the doors' words change together, never at one alone.
     /// </summary>
     public const string Waiting = "Where work here waits for your review, it lands only once you say it is reviewed, "
         + "`daoris quest review <quest> reviewed`, or skip the review, `daoris quest review <quest> skip`. "
         + "No set-up step is composed for you yet.";
 
-    /// <summary>What stands where nothing is set anywhere (design §1.8): today's behaviour, said as such.</summary>
+    /// <summary>What stands where nothing is set anywhere: work is offered to land, said as such.</summary>
     public const string NoneSet = "None: work is offered to land once its quest is done.";
 
     private const string Scope = "a review rule is set for a repository or a workspace — name exactly one.";
@@ -88,7 +86,7 @@ public static class ReviewRules
     /// <summary>Whether a name reads as production: the whole of it, or a word between its dashes, is one of <see cref="Production"/>.</summary>
     public static bool ReadsAsProduction(string name) => ReviewKey.ReadsAsProduction(name);
 
-    /// <summary>A path a procedure may be (design §1.1), the settings' <see cref="ReviewKey.IsProcedurePath"/>.</summary>
+    /// <summary>A path a procedure may be, the settings' <see cref="ReviewKey.IsProcedurePath"/>.</summary>
     internal static bool IsProcedurePath(string path) => ReviewKey.IsProcedurePath(path);
 
     /// <summary>A map of review rules as <c>driver.json</c> holds it (the settings' <see cref="ReviewKey.Map"/>).</summary>
@@ -115,14 +113,14 @@ public static class ReviewRules
     internal static string Either(IReadOnlyList<string> names) => ReviewDoorWords.Either(names);
 
     /// <summary>
-    /// What each door says after the rule's own sentences (REVIEWENV1c2): what the landing's gate does with work that waits for the
+    /// What each door says after the rule's own sentences: what the landing's gate does with work that waits for the
     /// person's review (<see cref="Waiting"/>); nothing after <see cref="ReviewRule.None"/>, where nothing waits. The CLI's
     /// <c>reviewGate</c>, by the shared table's <c>gate</c> rows.
     /// </summary>
     public static IReadOnlyList<string> Gate(ReviewRule rule) => rule.IsNone ? [] : [Waiting];
 
     /// <summary>
-    /// What each door says as a rule is set (design §1.7): whether work waits for the person's look and where, then what a
+    /// What each door says as a rule is set: whether work waits for the person's look and where, then what a
     /// set-up step may do in each environment, in order — the CLI's <c>reviewSays</c>, word for word.
     /// </summary>
     public static IReadOnlyList<string> Says(ReviewRule rule)
@@ -241,8 +239,8 @@ public static class ReviewRules
     }
 
     /// <summary>
-    /// One change as a door sends it, read as the shared table's (the page's edit, and <c>daoris place review</c>'s payload,
-    /// PUSH1f2a): a field of another type is absent, <c>none</c> and <c>clear</c> only when true.
+    /// One change as a door sends it, read as the shared table's (the page's edit, and <c>daoris place review</c>'s payload):
+    /// a field of another type is absent, <c>none</c> and <c>clear</c> only when true.
     /// </summary>
     public static ReviewEdit EditOf(JsonElement? payload)
     {
@@ -274,8 +272,8 @@ public static class ReviewRules
         $"`{repository}` holds no `{procedure}` here: its set-up steps sit until it does.";
 
     /// <summary>
-    /// The room's cell for a repository (design §1.7–§1.8): its environments with their kind, address, procedure and command,
-    /// whether work waits for the person's look, and where it was set; <c>no review environment</c> where nothing is.
+    /// The room's cell for a repository: its environments with their kind, address, procedure and command,
+    /// whether work waits for the person's look, and where it is set; <c>no review environment</c> where nothing is.
     /// </summary>
     public static string RoomCell(ResolvedReview? review)
     {
@@ -307,7 +305,7 @@ public static class ReviewRules
     }
 
     /// <summary>
-    /// Whether a checkout holds a procedure (design §1.1): a regular file at that path, reached through folders, with no link
+    /// Whether a checkout holds a procedure: a regular file at that path, reached through folders, with no link
     /// on the way — the CLI's <c>holdsProcedure</c>. Read where the registry says the checkout is, never for meaning.
     /// </summary>
     public static bool Holds(string root, string procedure) =>

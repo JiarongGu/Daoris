@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>The runner's inputs (the integration design §5.9, D192's own two and the five integration adds): set on the runner's process alone, which strips them from everything it starts.</summary>
+/// <summary>The runner's inputs: set on the runner's process alone, which strips them from everything it starts.</summary>
 internal static class RunnerInputs
 {
     internal const string Commit = "DAORIS_VERIFY_COMMIT";
@@ -17,7 +17,7 @@ internal static class RunnerInputs
     /// <summary>The modes a call asks: <c>run</c>, <c>plan</c>, <c>probe</c> or <c>commits</c>.</summary>
     internal static readonly IReadOnlyList<string> Modes = ["run", "plan", "probe", "commits"];
 
-    /// <summary>The exit that says the runner's own run holds its lock (D192): the step waits it out.</summary>
+    /// <summary>The exit that says the runner's own run holds its lock: the step waits it out.</summary>
     internal const int BusyExit = 75;
 
     /// <summary>The exit of a refusal, which writes no answer.</summary>
@@ -40,9 +40,9 @@ internal sealed record RunnerCallAsk(string Mode, string Commit, string Base, st
 internal sealed record RunnerCalled(RunnerRead Read, int? Exit, string Log);
 
 /// <summary>
-/// The caller of a repository's declared runner (INTEGRATE1f part f2; D192's <c>verification</c> runner, the integration design §5.9): its
+/// The caller of a repository's declared <c>verification</c> runner: its
 /// command started in the candidate's job with its inputs set on that process only, through <see cref="GateEnvironment.Compose"/>, so
-/// nothing else of the driver's environment reaches it, and the answer read from the file it was handed, never from its output.
+/// nothing else of the driver's environment reaches it, and the answer read from the file it is handed, never from its output.
 /// </summary>
 /// <remarks>
 /// <para><b>Exit 75 or <c>busy: true</c></b> is busy (the runner's own run holds its lock); <b>exit 2 with no answer</b> is a refusal, said in
@@ -56,7 +56,7 @@ internal sealed class RunnerCaller(CandidateJob job, VerdictRunner runner, IRead
     private int _calls;
 
     /// <summary>
-    /// The runner's environment (§5.5): the gate environment composed from <paramref name="start"/> (every Daoris name, git's locating
+    /// The runner's environment: the gate environment composed from <paramref name="start"/> (every Daoris name, git's locating
     /// variables and the tool's switches removed, the build servers of the gate's own and the declaration's <c>env.pass</c> names added, the
     /// hold marker where the call runs inside a hold), then its own inputs. Nothing else of this process's environment is in it.
     /// </summary>

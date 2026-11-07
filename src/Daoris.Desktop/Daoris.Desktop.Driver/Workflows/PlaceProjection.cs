@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Where a place's effective value was set, as the page words it: *set here*, *from the workspace*, *from this machine*, *default*.</summary>
+/// <summary>Where a place's effective value is set, as the page words it: *set here*, *from the workspace*, *from this machine*, *default*.</summary>
 public static class PlaceSource
 {
     public const string Here = "here";
@@ -26,7 +26,7 @@ public static class PlaceSource
     }
 }
 
-/// <summary>One effective value of a place and where it was set; the value is null where it reads as nothing set.</summary>
+/// <summary>One effective value of a place and where it is set; the value is null where it reads as nothing set.</summary>
 public sealed record PlaceValue(string? Value, string Source);
 
 /// <summary>Why a place needs a look, judged from the configuration alone: a code the page words, and what it names.</summary>
@@ -42,7 +42,7 @@ public sealed record PlaceWork(
 
 /// <summary>
 /// The default a place follows, by its id, and each option the place says otherwise, as <c>accept `automatic`</c>: under Current
-/// the default its landing rule matches, and for a chosen version the default it was copied from.
+/// the default its landing rule matches, and for a chosen version the default it copies.
 /// </summary>
 public sealed record PlaceDefault(string? Default, IReadOnlyList<string> Differs)
 {
@@ -107,8 +107,8 @@ public sealed record PlacesRead(
     PlaceRow? Detail = null, PlaceMembers? Members = null);
 
 /// <summary>
-/// The Agents place's effective projection (AGENTSPLACE1a, the design §2 and §3): this machine, each workspace and every driven
-/// repository, each with its driving, its works' roles and rules, its head's values and where each was set, and why it needs a look. Each
+/// The Agents place's effective projection: this machine, each workspace and every driven
+/// repository, each with its driving, its works' roles and rules, its head's values and where each is set, and why it needs a look. Each
 /// value is read by the reader a start uses (<see cref="RoleCatalog.RoleFor"/>, <see cref="CanonicalLine"/>, <see cref="LandingRules"/>,
 /// <see cref="WorkflowSelection"/>, <see cref="WorkPolicies.Of"/>), so the page cannot say another thing. It is a read of the
 /// configuration and the registry alone: no git, no process, no account. A repository not driven is only counted for its workspace's
@@ -259,9 +259,9 @@ public static class PlaceProjection
         : "none";
 
     /// <summary>
-    /// The values a place's head says, each as its execution reader resolves it over <paramref name="config"/> and with where it was set,
+    /// The values a place's head says, each as its execution reader resolves it over <paramref name="config"/> and with where it is set,
     /// said from <paramref name="level"/>'s page; a workspace's is read with no repository named. A place's plan reads its before and after
-    /// through this (AGENTSPLACE1a2), so the two cannot say another thing.
+    /// through this, so the two cannot say another thing.
     /// </summary>
     /// <param name="workflows">Where a chosen workflow's versions are read, for the default it follows; null reads none, and it follows none known.</param>
     public static PlaceValues ValuesAt(DriverConfig config, string repository, string? workspace, string level, IWorkflowStore? workflows = null)
@@ -283,7 +283,7 @@ public static class PlaceProjection
         var scope = level == PlaceSource.RepositoryLevel ? repository : "";
         var steps = StepsFollowed(flow.Workflow, workflows);
         var lands = steps is null ? null : SetupPresets.Match(driven: true, SetupPresets.LandOf(steps));
-        // WORKFLOWCLEAN1 1a: a saved workflow's delivery is the default its version was copied from, and what the copy changed.
+        // A saved workflow's delivery is the default its version copies, and what the copy changes.
         if (FollowsOf(flow.Workflow, workflows) is { Default: { } copied } held && SetupPresets.Of(copied) is not null)
         {
             lands = new SetupMatch(copied, held.Differs);
@@ -317,7 +317,7 @@ public static class PlaceProjection
         Newest(chosen, workflows)?.Graph is { } graph ? Involvement.StepsOf(graph) : null;
 
     /// <summary>
-    /// The default a place's saved workflow follows: the default its newest graph version was copied from, with what the copy changed. Null for a
+    /// The default a place's saved workflow follows: the default its newest graph version copies, with what the copy changes. Null for a
     /// version copied from none, one this build cannot read, or where none is chosen.
     /// </summary>
     private static PlaceDefault? FollowsOf(string chosen, IWorkflowStore? workflows)

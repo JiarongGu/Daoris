@@ -3,26 +3,25 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second opinion's part of the landing gate (XAGENT1f; design §8), which the review owns because the opinion's gate, its rules and its
+/// The second opinion's part of the landing gate, which the review owns because the opinion's gate, its rules and its
 /// reads are the review's: the workplace's <see cref="TreeGates"/> keeps the git reads it uses (<c>ChangedAsync</c>, <c>SinceAsync</c>, the
-/// fork point) and the workflows' assembly of the gate asks this over the one process it read. Each step is what <see cref="TreeGates"/> did
-/// before it moved, in the same order.
+/// fork point) and the workflows' assembly of the gate asks this over the one process it read.
 /// </summary>
 internal static class TreeGateOpinions
 {
     /// <summary>
-    /// The second opinion's part of the gate for a tree (design §8): the rule standing for its repository, the chain its quest is a
+    /// The second opinion's part of the gate for a tree: the rule standing for its repository, the chain its quest is a
     /// step of, the tree's <c>HEAD</c>, what this machine kept at the gate, the host's opinions and git's ancestry. Git and the
     /// service are asked only where a rule reads at the occasion. A service or git that does not answer holds the work, and says so.
     /// </summary>
-    /// <param name="occasion"><c>landing</c> for a landing door; <c>steps</c> where the chain's next step waits on this work (§8.1).</param>
+    /// <param name="occasion"><c>landing</c> for a landing door; <c>steps</c> where the chain's next step waits on this work.</param>
     /// <param name="process">
-    /// The run's process (WORKFLOW1f), read once by the door or the look: under a named workflow, its version's opinion step over the
-    /// declared reviewers. Null reads the rule live, as before.
+    /// The run's process, read once by the door or the look: under a named workflow, its version's opinion step over the
+    /// declared reviewers. Null reads the rule live.
     /// </param>
-    /// <param name="at">The commit to judge at, the branch's where a push is judged (FABRIC-CLOSE1h16); null reads the tree's <c>HEAD</c>.</param>
+    /// <param name="at">The commit to judge at, the branch's where a push is judged; null reads the tree's <c>HEAD</c>.</param>
     /// <param name="run">
-    /// The chat run whose work this is where it serves no quest (CHATFLOW1d, the chat-flow design §7): its gate is kept under the run's key
+    /// The chat run whose work this is where it serves no quest: its gate is kept under the run's key
     /// in place of a chain's, and a pass a press asked and the look has not started reads as asked. Null for a quest's work, or none.
     /// </param>
     internal static async Task<OpinionGateState> OpinionAsync(
@@ -64,7 +63,7 @@ internal static class TreeGateOpinions
                 commit => tip is null ? Task.FromResult<bool?>(null) : ReviewGit.HoldsAsync(tree, tip, commit, ct),
                 from => TreeGates.SinceAsync(tree, from, ct, at))
             {
-                // LIMITRESUME1h: a limited pass's reset is its cool-off's, read by its session; none left names a ready account.
+                // A limited pass's reset is its cool-off's, read by its session; none left names a ready account.
                 Ready = reviewer => AccountCooling.OfSession(gates.Context.Home, reviewer)?.Until ?? DateTimeOffset.UtcNow,
             }).ConfigureAwait(false);
         }
@@ -79,9 +78,9 @@ internal static class TreeGateOpinions
     }
 
     /// <summary>
-    /// A chat run's opinion gate (CHATFLOW1d, the chat-flow design §5.2, §7): what is kept under the run's key, <c>chat-&lt;first&gt;</c>, at the
+    /// A chat run's opinion gate: what is kept under the run's key, <c>chat-&lt;first&gt;</c>, at the
     /// commit that would land, with no chain and no later step; and whether a press asked a pass the look has not started yet, a due open
-    /// on the run with no ask kept since it was owed, nor a request the look has still to take.
+    /// on the run with no ask kept after it fell owed, nor a request the look has still to take.
     /// </summary>
     private static async Task<OpinionGateState> ChatOpinionAsync(
         TreeGates gates, string tree, string repository, string run, OpinionGateFacts facts, IOpinionWorld world, CancellationToken ct, string? at)

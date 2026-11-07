@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris quest workflow</c> was asked: the quest, the kind and workflow (neither clears), and the words.</summary>
+/// <summary>What <c>daoris quest workflow</c> asks: the quest, the kind and workflow (neither clears), and the words.</summary>
 public sealed record QuestWorkflowAsk(string Quest, string? Kind, string? Workflow, string? Words);
 
 /// <summary>
-/// A quest's own kind and workflow at a terminal (WORKFLOW1e2, D157; the workflow design §4.1 row 1, §4.3, D50):
+/// A quest's own kind and workflow at a terminal:
 /// <c>daoris quest workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]</c>, for a quest
-/// published with no ask, before it starts. The latest stands, and its run binds it at its first start (§4.5).
+/// published with no ask, before it starts. The latest stands, and its run binds it at its first start.
 /// </summary>
 /// <remarks>
-/// <para><b>A person's door</b> (D156 §3), as an ask's is (<see cref="AskWorkflowCommand"/>): the service keeps the choice behind the
+/// <para><b>A person's door</b>, as an ask's is (<see cref="AskWorkflowCommand"/>): the service keeps the choice behind the
 /// person key, so a keyless call on a keyed host is refused in the service's words, which this prints whole. A quest an ask
 /// published follows its ask's choice, set by <c>ask --set-workflow</c>; the service refuses it here, naming the ask.</para>
 ///

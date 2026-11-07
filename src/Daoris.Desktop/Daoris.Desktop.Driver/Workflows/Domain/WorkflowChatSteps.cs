@@ -7,10 +7,10 @@ namespace Daoris.Driver;
 internal static class WorkflowChatSteps
 {
     /// <summary>
-    /// The landing kept for the tip a chat's tree stands at (the chat-flow design §4.2, the Opus check's finding 1), or null. A branch landing
+    /// The landing kept for the tip a chat's tree stands at, or null. A branch landing
     /// is kept for a tip where an entry naming a record of the line holds it as its own <c>Squashed ?? Tip</c>, or an advance's
     /// <c>Squashed ?? To</c>. A merge acceptance keeps no tip, so it is read from the line: kept for the tip the tree stands at where nothing
-    /// stands beyond the line, since the line then holds that tip's work. A tree that no longer stands reads its line's newest landing.
+    /// stands beyond the line, since the line then holds that tip's work. A tree that does not stand reads its line's newest landing.
     /// </summary>
     internal static ChatLanded? ChatLandedAt(WorkflowRunFacts facts, ChatRunFacts chat)
     {
@@ -41,8 +41,8 @@ internal static class WorkflowChatSteps
     }
 
     /// <summary>
-    /// A chat run's candidate (the chat-flow design §4.2): commits beyond the line, between turns or ended; or a landing kept for the tip the
-    /// tree stands at, which it stays while that reads done; or an opinion a press asked on a tip of the line (CHATFLOW1d), asked or read,
+    /// A chat run's candidate: commits beyond the line, between turns or ended; or a landing kept for the tip the
+    /// tree stands at, which it stays while that reads done; or an opinion a press asked on a tip of the line, asked or read,
     /// so it stays visible while an answering turn runs.
     /// </summary>
     internal static bool Candidate(WorkflowRunFacts facts, ChatRunFacts chat, ChatLanded? landed) =>
@@ -50,7 +50,7 @@ internal static class WorkflowChatSteps
         || (chat.Beyond > 0 && facts.Opinion is { } gate && (gate.Asked || gate.Opinion is not null));
 
     /// <summary>
-    /// A chat run's work (the chat-flow design §4.2): done once a landing is kept for the tip its tree stands at, read first; an agent at it
+    /// A chat run's work: done once a landing is kept for the tip its tree stands at, read first; an agent at it
     /// while a turn runs or words wait; the person's <i>Accept…</i> between turns, or ended, with commits beyond the line; their turn to
     /// talk between turns with nothing beyond it; stopped once the conversation ended with nothing beyond it.
     /// </summary>
@@ -68,7 +68,7 @@ internal static class WorkflowChatSteps
     }
 
     /// <summary>
-    /// A chat run's landing (the chat-flow design §4.2): done for the landing kept for the tip its tree stands at; else waiting on the
+    /// A chat run's landing: done for the landing kept for the tip its tree stands at; else waiting on the
     /// person's <i>Accept…</i> while it is a candidate, on the line's newest record, live or ended; not reached before.
     /// </summary>
     internal static WorkflowRunStep ChatLanding(WorkflowStep cell, bool candidate, WorkflowRunFacts facts, ChatLanded? landed)
@@ -86,7 +86,7 @@ internal static class WorkflowChatSteps
     }
 
     /// <summary>
-    /// A chat run's second opinion (CHATFLOW1d, the chat-flow design §4.2, §5.2): the one a landing of the tip the tree stands at kept, never an
+    /// A chat run's second opinion: the one a landing of the tip the tree stands at kept, never an
     /// earlier tip's; else, once the work is a candidate, its gate as a quest's reads, but the opinion no press has asked waits on the person's
     /// <i>Accept…</i>, which asks it (<c>chat-at-accept</c>), naming the reviewer it asks.
     /// </summary>

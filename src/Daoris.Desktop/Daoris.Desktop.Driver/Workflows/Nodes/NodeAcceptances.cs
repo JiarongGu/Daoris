@@ -5,18 +5,18 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A node's acceptance (FABRIC-NODE1; the fabric events design §E2, generalizing §D4's evidence binding): what a reach is bound to,
-/// <c>{ unit, subjectRevision, graphDigest, nodeVersion, inputs, prerequisiteReceipts, attempt }</c>, and a run's node its <c>subject</c>
-/// (FABRIC-CUTOVER1a), and the evidence it rests on.
+/// A node's acceptance: what a reach is bound to,
+/// <c>{ unit, subjectRevision, graphDigest, nodeVersion, inputs, prerequisiteReceipts, attempt }</c>, and a run's node its <c>subject</c>,
+/// and the evidence it rests on.
 /// A changed dependency invalidates it and everything downstream (<see cref="NodeAcceptances.Invalidate"/>).
 /// </summary>
 /// <param name="Unit">The unit it acts on: its node record's.</param>
 /// <param name="SubjectRevision">
-/// The revision of the unit it observes it was accepted at (<see cref="Observes"/>): a branch's full tip, which names its repository by the unit.
+/// The revision of the unit it observes it is accepted at (<see cref="Observes"/>): a branch's full tip, which names its repository by the unit.
 /// </param>
 /// <param name="GraphDigest">
-/// The graph that bound the run: on a live graph its node's place (<c>plc-</c>, FABRIC-RUN1f, <see cref="NodeGraphs.Places"/>), so an edit
-/// elsewhere leaves it bound; else, and in every acceptance written before, the whole graph's digest (<c>gph-</c>).
+/// The graph that bound the run: on a live graph its node's place (<c>plc-</c>, <see cref="NodeGraphs.Places"/>), so an edit
+/// elsewhere leaves it bound; else the whole graph's digest (<c>gph-</c>).
 /// </param>
 /// <param name="Node">The node's id in that graph.</param>
 /// <param name="NodeVersion">The node's declared version.</param>
@@ -26,15 +26,15 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
     /// <summary>No ports: an acceptance's inputs or outputs before any are named.</summary>
     public static readonly IReadOnlyDictionary<string, NodePort> NoPorts = ImmutableSortedDictionary.Create<string, NodePort>(StringComparer.Ordinal);
 
-    // FABRIC-NODE1c: each collection is copied when it is set, so an issued id never moves with a caller's dictionary or list.
+    // Each collection is copied when it is set, so an issued id never moves with a caller's dictionary or list.
     private readonly IReadOnlyDictionary<string, NodePort> inputs = NoPorts;
     private readonly IReadOnlyList<string> prerequisiteReceipts = ImmutableArray<string>.Empty;
     private readonly IReadOnlyDictionary<string, NodePort> outputs = NoPorts;
 
-    /// <summary>Its inputs by name: references to upstream outputs, each naming the acceptance that produced it. A copy of what was set.</summary>
+    /// <summary>Its inputs by name: references to upstream outputs, each naming the acceptance that produced it. A copy of what is set.</summary>
     public IReadOnlyDictionary<string, NodePort> Inputs { get => inputs; init => inputs = Frozen(value); }
 
-    /// <summary>The acceptances of the nodes it came after (<see cref="Id"/>s): the receipts its eligibility rested on. A copy of what was set.</summary>
+    /// <summary>The acceptances of the nodes it came after (<see cref="Id"/>s): the receipts its eligibility rested on. A copy of what is set.</summary>
     public IReadOnlyList<string> PrerequisiteReceipts
     {
         get => prerequisiteReceipts;
@@ -42,23 +42,23 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
     }
 
     /// <summary>
-    /// The unit its node observes where that is not <see cref="Unit"/> (FABRIC-CUTOVER1a; the cutover design §2.1): a run's node, kept on the
-    /// run's record, observes the quest, the branch or the run its kind names. Null where the node observes its record's own unit, as every
-    /// acceptance written before does: it is in the id only when set, so those keep theirs, and an absent one reads as the unit.
+    /// The unit its node observes where that is not <see cref="Unit"/>: a run's node, kept on the
+    /// run's record, observes the quest, the branch or the run its kind names. Null where the node observes its record's own unit: it is in
+    /// the id only when set, so an absent one keeps its id and reads as the unit.
     /// </summary>
     public string? Subject { get; init; }
 
     /// <summary>The unit it observes: its <see cref="Subject"/> where set, else its <see cref="Unit"/>.</summary>
     public string Observes => Subject ?? Unit;
 
-    /// <summary>The immutable evidence reference it was reached on; not part of the binding.</summary>
+    /// <summary>The immutable evidence reference it is reached on; not part of the binding.</summary>
     public NodePort? Evidence { get; init; }
 
-    /// <summary>Its declared outputs, each a reference naming this acceptance; not part of the binding. A copy of what was set.</summary>
+    /// <summary>Its declared outputs, each a reference naming this acceptance; not part of the binding. A copy of what is set.</summary>
     public IReadOnlyDictionary<string, NodePort> Outputs { get => outputs; init => outputs = Frozen(value); }
 
     /// <summary>
-    /// The outcome a decision was reached with (DECIDE1a), one of its node's <see cref="NodeDeclaration.Outcomes"/>; null on any other reach.
+    /// The outcome a decision is reached with, one of its node's <see cref="NodeDeclaration.Outcomes"/>; null on any other reach.
     /// Not part of the binding, as the evidence is not: a start's binding is the one its reach names whichever outcome it chose.
     /// </summary>
     public string? Outcome { get; init; }
@@ -103,7 +103,7 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
             Line(receipt);
         }
 
-        // FABRIC-CUTOVER1a: last and marked, only when set, so an acceptance naming none keeps the id it was written with.
+        // Last and marked, only when set, so an acceptance naming none keeps its id.
         if (Subject is not null)
         {
             Line("subject");
@@ -114,48 +114,48 @@ public sealed record NodeAcceptance(string Unit, string? SubjectRevision, string
     }
 }
 
-/// <summary>Why an acceptance no longer binds (<see cref="NodeInvalidation.Because"/>).</summary>
+/// <summary>Why an acceptance stops binding (<see cref="NodeInvalidation.Because"/>).</summary>
 public static class NodeLapse
 {
-    /// <summary>The unit's revision moved: a new tip, or one no longer read.</summary>
+    /// <summary>The unit's revision moved: a new tip, or one not read.</summary>
     public const string Revision = "revision";
 
     /// <summary>
-    /// The unit the node observes moved (FABRIC-CUTOVER1a; the cutover design §2.2): a run's chain went on to its next quest, or its next session
+    /// The unit the node observes moved: a run's chain went on to its next quest, or its next session
     /// to another branch, at the same revision or not. Judged before the revision.
     /// </summary>
     public const string Subject = "subject";
 
-    /// <summary>The graph that binds the run changed: on a live graph, the node's place in it (FABRIC-RUN1f).</summary>
+    /// <summary>The graph that binds the run changed: on a live graph, the node's place in it.</summary>
     public const string Graph = "graph";
 
     /// <summary>The node's declared version changed.</summary>
     public const string Version = "version";
 
-    /// <summary>An acceptance it rests on, by a prerequisite or an input, was invalidated.</summary>
+    /// <summary>An acceptance it rests on, by a prerequisite or an input, is invalidated.</summary>
     public const string Upstream = "upstream";
 
     /// <summary>
-    /// A reached decision's outcome no longer reads as one of its node's (DECIDE1a): an older writer rewrote the record without it, so the
+    /// A reached decision's outcome does not read as one of its node's: a writer rewrote the record without it, so the
     /// decision is judged again rather than routed on a guess.
     /// </summary>
     public const string Outcome = "outcome";
 }
 
-/// <summary>One acceptance invalidated: why, and, where it was carried from upstream, the acceptance it rested on.</summary>
+/// <summary>One acceptance invalidated: why, and, where it comes from upstream, the acceptance it rests on.</summary>
 public sealed record NodeInvalidation(string Acceptance, string Because, string? Upstream);
 
-/// <summary>The results a record writer keeps after one more (<see cref="NodeAcceptances.Keep"/>), or as they were with the refusal's code.</summary>
+/// <summary>The results a record writer keeps after one more (<see cref="NodeAcceptances.Keep"/>), or as they stand with the refusal's code.</summary>
 public sealed record NodeResults(IReadOnlyList<NodeAcceptance> Kept, string? Refused);
 
 /// <summary>
-/// The acceptances' binding and its transitive invalidation (§E2: <i>a changed dependency invalidates every acceptance downstream,
-/// transitively</i>). Pure: nothing is removed. Old answers and resource receipts stay accountable (§D3); an invalidation never reverses
+/// The acceptances' binding and its transitive invalidation: a changed dependency invalidates every acceptance downstream,
+/// transitively. Pure: nothing is removed. Answers and resource receipts stay accountable; an invalidation never reverses
 /// an external effect and never reopens a closed quest by itself.
 /// </summary>
 public static class NodeAcceptances
 {
-    /// <summary>Why <paramref name="acceptance"/> no longer binds against what is current for its unit and node, or null while it does.</summary>
+    /// <summary>Why <paramref name="acceptance"/> does not bind against what is current for its unit and node, or null while it does.</summary>
     public static string? Lapsed(NodeAcceptance acceptance, string? revision, string graphDigest, int nodeVersion) =>
         !string.Equals(acceptance.SubjectRevision, revision, StringComparison.Ordinal) ? NodeLapse.Revision
         : !string.Equals(acceptance.GraphDigest, graphDigest, StringComparison.Ordinal) ? NodeLapse.Graph
@@ -163,15 +163,15 @@ public static class NodeAcceptances
         : null;
 
     /// <summary>
-    /// Why <paramref name="acceptance"/> no longer binds against the subject its node observes now and that subject's revision (FABRIC-CUTOVER1a):
-    /// another subject first, whatever the revision, so a branch replaced at the same commit is new work; then as <see cref="Lapsed(NodeAcceptance, string?, string, int)"/>.
+    /// Why <paramref name="acceptance"/> does not bind against the subject its node observes now and that subject's revision:
+    /// another subject first, whatever the revision, so a branch that replaces another at the same commit is new work; then as <see cref="Lapsed(NodeAcceptance, string?, string, int)"/>.
     /// </summary>
     public static string? Lapsed(NodeAcceptance acceptance, string subject, string? revision, string graphDigest, int nodeVersion) =>
         !string.Equals(acceptance.Observes, subject, StringComparison.Ordinal) ? NodeLapse.Subject : Lapsed(acceptance, revision, graphDigest, nodeVersion);
 
     /// <summary>
     /// The roots a unit's new revision makes: every acceptance observing that unit bound to another revision, a run's node whose subject it is
-    /// included (FABRIC-CUTOVER1a, the cutover design §11.2: a run's roots name the subject, never the run's record).
+    /// included: a run's roots name the subject, never the run's record.
     /// </summary>
     public static Func<NodeAcceptance, string?> Moved(string unit, string? revision) => acceptance =>
         acceptance.Observes == unit && !string.Equals(acceptance.SubjectRevision, revision, StringComparison.Ordinal) ? NodeLapse.Revision : null;
@@ -193,7 +193,7 @@ public static class NodeAcceptances
         for (var next = 0; next < found.Count; next++)
         {
             var upstream = found[next].Acceptance;
-            // DECIDE1a: a route rests on its decision's outcome receipt, never on the acceptance's id alone.
+            // A route rests on its decision's outcome receipt, never on the acceptance's id alone.
             var routes = acceptances.Where(each => each.Id == upstream && each.Outcome is not null)
                 .Select(each => WireEvaluation.OutcomeReceipt(upstream, each.Outcome!)).ToHashSet(StringComparer.Ordinal);
             foreach (var acceptance in acceptances)
@@ -208,9 +208,9 @@ public static class NodeAcceptances
     }
 
     /// <summary>
-    /// One more result, as a record writer keeps it (FABRIC-NODE1c): one immutable result per binding. A binding with none takes it; the
+    /// One more result, as a record writer keeps it: one immutable result per binding. A binding with none takes it; the
     /// same result again is a replay, kept once; a different one for a binding that has one is refused (<see cref="NodeRefusal.OtherResult"/>),
-    /// never overwritten, since the evidence and the outputs are not in the id. Pure: what is kept is returned, and stored by its writer.
+    /// never overwritten, because the evidence and the outputs are not in the id. Pure: what is kept is returned, and stored by its writer.
     /// </summary>
     public static NodeResults Keep(IReadOnlyList<NodeAcceptance> kept, NodeAcceptance result)
     {

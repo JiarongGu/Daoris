@@ -5,13 +5,12 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// This machine's record of what each abandon took and kept (PAUSE1d, D132 point 9, design §4.2):
-/// <c>&lt;home&gt;/abandoned.json</c>, written atomically by the driver library at both doors, as <c>landings.json</c> is
-/// (D102).
+/// This machine's record of what each abandon took and kept:
+/// <c>&lt;home&gt;/abandoned.json</c>, written atomically by the driver library at both doors, as <c>landings.json</c> is.
 /// </summary>
 /// <remarks>
 /// <para><b>Under the home, not on the record.</b> The trees, the branches and their tips are this machine's facts, and a
-/// quest's record travels (D47 §4). An ask's does not, but one home for both scopes keeps one reader.</para>
+/// quest's record travels. An ask's does not, but one home for both scopes keeps one reader.</para>
 ///
 /// <para><b>No path, and no conversation's words.</b> A tree is its repository and branch; the reason is the person's
 /// answer, which every declined quest carries too.</para>
@@ -19,7 +18,7 @@ namespace Daoris.Driver;
 /// <para><b>A missing or unreadable file is no record</b>, and the abandon still abandons. An entry stays while its ask or
 /// quest has a record here: it is the only trace of a discarded tree, and it is small.</para>
 ///
-/// <para><b>Edited under its record's lock</b> (FABRIC-RECLOCK2, D173's note): the window's press and a terminal's
+/// <para><b>Edited under its record's lock</b>: the window's press and a terminal's
 /// <c>quest abandon</c> or <c>ask --abandon</c> beside it, and a history clear, each read, change and write the whole file, so each edit holds <see cref="LockPath"/> as
 /// <c>landings.json</c>'s do.</para>
 /// </remarks>
@@ -34,7 +33,7 @@ public sealed class AbandonRecord(string home)
 
     public string FilePath => DaorisHome.Entry(home, HomeEntry.Abandoned);
 
-    /// <summary>The record's lock across processes (FABRIC-RECLOCK2): the loop and a verb beside it edit this file one at a time.</summary>
+    /// <summary>The record's lock across processes: the loop and a verb beside it edit this file one at a time.</summary>
     public string LockPath => RecordLock.PathOf(home, FileName);
 
     /// <summary>Every entry, oldest first; none when the file is missing or does not read.</summary>
@@ -46,14 +45,14 @@ public sealed class AbandonRecord(string home)
             && string.Equals(entry.Id, id.Trim().TrimStart('#'), StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// Keep one more entry, dropping those whose ask or quest no longer has a record here.
+    /// Keep one more entry, dropping those whose ask or quest has no record here.
     /// </summary>
     /// <param name="known">Whether an entry's ask or quest still has a record here; null keeps every entry.</param>
     public void Write(AbandonEntry entry, Func<AbandonEntry, bool>? known = null) =>
         List.Edit(FilePath, all => [.. all.Where(each => known is null || known(each)), entry], LockPath);
 
     /// <summary>
-    /// Drop the entries whose ask or quest no longer has a record here (HIST1c, the history-clearing design §2.2), as
+    /// Drop the entries whose ask or quest has no record here, as
     /// <see cref="Write"/> drops them beside a new one: a clear takes the record, and its abandon's trace with it. How many went
     /// comes back; nothing is written when none did.
     /// </summary>
@@ -175,6 +174,5 @@ public sealed class AbandonRecord(string home)
         };
     }
 
-    // Empty strings are kept here, as the copy this replaced kept them.
     private static IReadOnlyList<string> Strings(JsonElement element, string name) => Json.Strings(element, name, keepEmpty: true);
 }

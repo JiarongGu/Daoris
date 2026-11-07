@@ -11,7 +11,7 @@ public static class CleanedWhat
 }
 
 /// <summary>
-/// The durable, idempotent cleanup of what plugins created (FABRIC-PERFORM1d; the fabric events design §D3): at a unit's true end, and at
+/// The durable, idempotent cleanup of what plugins created: at a unit's true end, and at
 /// once for a superseded attempt's, each receipt whose role is temporary is asked of the plugin that created it through <c>work/cleanup</c>,
 /// the request persisted with its key before it is sent, so a crash between the plugin's removal and the recording of its answer sends the
 /// same key again and is answered <c>already-gone</c>. A failure is asked again on a back-off (1, 5, 15 and 60 minutes, then daily) and never
@@ -26,10 +26,10 @@ public static class CleanedWhat
 /// </remarks>
 public sealed class ResourceCleaner(ResourceRecordFiles receipts, IWorkPerformPort port, Func<DateTimeOffset> clock)
 {
-    /// <summary>How long a requested cleanup is tried before it reads as blocked (§D3): it is still tried, daily.</summary>
+    /// <summary>How long a requested cleanup is tried before it reads as blocked: it is still tried, daily.</summary>
     public static readonly TimeSpan BlockedAfter = TimeSpan.FromDays(7);
 
-    /// <summary>The back-off after each failed or unanswered delivery (§D3): 1, 5, 15 and 60 minutes, then daily.</summary>
+    /// <summary>The back-off after each failed or unanswered delivery: 1, 5, 15 and 60 minutes, then daily.</summary>
     public static TimeSpan DelayAfter(int tries) => tries switch
     {
         <= 1 => TimeSpan.FromMinutes(1),
@@ -39,13 +39,13 @@ public sealed class ResourceCleaner(ResourceRecordFiles receipts, IWorkPerformPo
         _ => TimeSpan.FromDays(1),
     };
 
-    /// <summary>Whether a receipt's cleanup reads as blocked (§D3): requested, unsettled, and first asked at least <see cref="BlockedAfter"/> ago.</summary>
+    /// <summary>Whether a receipt's cleanup reads as blocked: requested, unsettled, and first asked at least <see cref="BlockedAfter"/> ago.</summary>
     public static bool Blocked(ResourceReceipt receipt, DateTimeOffset now) =>
         receipt.Cleanup is { State: CleanupStates.Requested } cleanup && now - cleanup.At >= BlockedAfter;
 
     /// <summary>
     /// Whether a receipt is Daoris's to ask its plugin to clean now: not settled, temporary (a superseded attempt's whatever it declared), its
-    /// schema declared, its back-off passed, and its unit's end over (<paramref name="ended"/>) unless its attempt was superseded.
+    /// schema declared, its back-off passed, and its unit's end over (<paramref name="ended"/>) unless its attempt is superseded.
     /// </summary>
     public static bool Due(ResourceReceipt receipt, bool? ended, DateTimeOffset now) =>
         !receipt.Settled && receipt.Effective == PluginResourceRoles.Temporary
@@ -53,7 +53,7 @@ public sealed class ResourceCleaner(ResourceRecordFiles receipts, IWorkPerformPo
         && (receipt.Cleanup?.NextAt is not { } next || next <= now);
 
     /// <summary>
-    /// The plugins owed a cleanup that is or will come due by itself (FABRIC-PERFORM1d): each receipt not settled and temporary, of a unit
+    /// The plugins owed a cleanup that is or will come due by itself: each receipt not settled and temporary, of a unit
     /// whose end is over or an attempt superseded. Their process is wanted though no unit awaits their steps (<see cref="IWorkRuntimePort.Owe"/>).
     /// </summary>
     public IReadOnlySet<string> Owed(Func<string, bool?> ended) =>
@@ -72,7 +72,7 @@ public sealed class ResourceCleaner(ResourceRecordFiles receipts, IWorkPerformPo
     /// Each receipt due asked of its plugin, within the pass's <paramref name="sends"/>: the request written first, then sent, then its answer
     /// kept. A plugin whose process is not up is not asked now, and takes no send.
     /// </summary>
-    /// <param name="ended">Whether a unit's end is over, as the pass last read it; null where it was not read, and nothing of it is asked.</param>
+    /// <param name="ended">Whether a unit's end is over, as the pass last read it; null where it is not read, and nothing of it is asked.</param>
     public async Task<IReadOnlyList<WorkPerformed>> CleanAsync(Func<string, bool?> ended, WorkSends sends, CancellationToken ct)
     {
         var done = new List<WorkPerformed>();
@@ -93,7 +93,7 @@ public sealed class ResourceCleaner(ResourceRecordFiles receipts, IWorkPerformPo
 
     private async Task<WorkPerformed> CleanOneAsync(string unit, string id, CancellationToken ct)
     {
-        // §D3: the request persisted before it is sent, its key kept for every later delivery.
+        // The request is persisted before it is sent, its key kept for every later delivery.
         var now = clock();
         var (refused, asked) = receipts.Edit<ResourceReceipt?>(unit, record =>
         {

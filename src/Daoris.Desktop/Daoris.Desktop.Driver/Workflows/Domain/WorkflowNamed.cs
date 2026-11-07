@@ -10,14 +10,13 @@ using static Daoris.Driver.NamedStepReading;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Named workflows read (WORKFLOW1d, D157 points 5, 6 and 8, the workflow design §2.5, §2.6, §3.2, §3.3, §3.9): what a workflow
-/// file and each of its versions may say, the first problem in what does not, and a version's digest. Choosing one is WORKFLOW1e's,
-/// and every gate reads the version a run bound (WORKFLOW1f, <see cref="WorkflowProcesses"/>).
+/// Named workflows read: what a workflow
+/// file and each of its versions may say, the first problem in what does not, and a version's digest. Every gate reads the
+/// version a run bound (<see cref="WorkflowProcesses"/>).
 /// </summary>
 /// <remarks>
 /// One table, this suite's tests' <c>fixtures/workflow-named.json</c>, cell for cell, every sentence and every digest included
-/// (<c>WorkflowNamedTests</c>); the CLI's twin, <c>namedworkflows.ts</c>, left with the driver family's TypeScript (PUSH1f2b), and
-/// <c>daoris workflow</c> is <see cref="DriverWorkflowsCommand"/>.
+/// (<c>WorkflowNamedTests</c>); <c>daoris workflow</c> is <see cref="DriverWorkflowsCommand"/>.
 /// </remarks>
 public static class WorkflowNamed
 {
@@ -32,14 +31,14 @@ public static class WorkflowNamed
     internal const string VersionNumber = "each version's `version` is a whole number from 1, each greater than the one before it.";
     internal const string PipelineSentence = "a workflow's `pipeline` is `development` or `verification`, as it was made; absent is `development`.";
 
-    /// <summary>The kinds a verification pipeline's graph never holds: each observes a chain's work, or lands it (the pipeline design §2.1).</summary>
+    /// <summary>The kinds a verification pipeline's graph never holds: each observes a chain's work, or lands it.</summary>
     private static readonly string[] NotVerified =
         [NodeKinds.Claimed, NodeKinds.Opinion, NodeKinds.Look, NodeKinds.GoAhead, NodeKinds.Land, NodeKinds.Review, NodeKinds.Integrate, NodeKinds.WorkRequests, NodeKinds.QuestClose];
 
     /// <summary>A workflow's or a step's id: lower-case letters, digits and dashes, at most 40.</summary>
     public static bool IsId(string? value) => value is { Length: > 0 and <= 40 } && SafeNames.IsKebabId(value);
 
-    /// <summary>What is wrong with a workflow's id, or null. <c>current</c> is Current's (design §2.5).</summary>
+    /// <summary>What is wrong with a workflow's id, or null. <c>current</c> is Current's.</summary>
     public static string? IdProblem(string? value)
     {
         if (string.IsNullOrEmpty(value)) return IdSentence;
@@ -47,12 +46,12 @@ public static class WorkflowNamed
         return value == "current" ? Current : null;
     }
 
-    /// <summary>What is wrong with a workflow's name, or null: the person's words, 1 to 60 characters (content, D142).</summary>
+    /// <summary>What is wrong with a workflow's name, or null: the person's words, 1 to 60 characters.</summary>
     public static string? NameProblem(string? value) =>
         value is not null && value.Trim().Length > 0 && value.Length <= 60 ? null : NameSentence;
 
     /// <summary>
-    /// A workflow file read whole (design §2.5, §2.6): the file's own problem first (its shape, id, name, and its versions'
+    /// A workflow file read whole: the file's own problem first (its shape, id, name, and its versions'
     /// numbers, each greater than the one before), then each version on its own, so a version a newer build or a hand edit
     /// wrote is kept and unreadable here while the others read. A step's id an earlier readable version used for another kind
     /// makes the later version unreadable.
@@ -66,7 +65,7 @@ public static class WorkflowNamed
         var name = Json.Text(file, "name");
         if (NameProblem(name) is { } nameProblem) return Unread(nameProblem);
 
-        // The mark (FABRIC-PIPELINE1a): absent or null is a development pipeline; a value this build does not know reads nothing.
+        // The mark: absent or null is a development pipeline; a value this build does not know reads nothing.
         var pipeline = WorkflowPipelines.Development;
         if (file.TryGetProperty("pipeline", out var mark) && mark.ValueKind != JsonValueKind.Null)
         {
@@ -96,13 +95,13 @@ public static class WorkflowNamed
         return new NamedWorkflowRead(id, name, read, null) { Pipeline = pipeline };
     }
 
-    /// <summary>One version read (design §2.5): its <c>at</c>, its <c>door</c>, then its steps, the first problem said with its number.</summary>
+    /// <summary>One version read: its <c>at</c>, its <c>door</c>, then its steps, the first problem said with its number.</summary>
     /// <param name="prior">The versions before it that read, which a step's id is held to: an id is never used for another kind.</param>
     /// <param name="pipeline">
-    /// The mark its workflow's file carries (FABRIC-PIPELINE1a): a development pipeline's graph lands its work once, and a verification
+    /// The mark its workflow's file carries: a development pipeline's graph lands its work once, and a verification
     /// pipeline's versions are graphs holding its checks.
     /// </param>
-    /// <param name="onSave">True where the version is being added to a file (INTEGRATE1n's F47 is the save's alone: a stored version that read before still reads).</param>
+    /// <param name="onSave">True where the version is being added to a file: the save's checks alone, so a stored version that read before still reads.</param>
     /// <param name="id">The workflow a version is being saved to, said in the refusal of a list of steps.</param>
     public static NamedVersion ReadVersion(JsonElement version, int number, IReadOnlyList<NamedVersion> prior, string pipeline = WorkflowPipelines.Development, bool onSave = false, string? id = null)
     {
@@ -115,7 +114,7 @@ public static class WorkflowNamed
             return Unread($"v{number}: its `door` is `screen`, `terminal` or `ask-daoris:<proposal>`.");
         }
 
-        // A version is its steps (schema 1: no `schema`, or 1) or its graph (schema 2), never both and never in part (FABRIC-GRAPH1b). An
+        // A version is its steps (schema 1: no `schema`, or 1) or its graph (schema 2), never both and never in part. An
         // older build reads `steps` alone and no other key, so a graph version, which holds none, is unreadable there as it is here.
         var hasSteps = version.TryGetProperty("steps", out var raw) && raw.ValueKind != JsonValueKind.Null;
         if (version.TryGetProperty("schema", out var schema) && schema.ValueKind != JsonValueKind.Null)
@@ -142,20 +141,20 @@ public static class WorkflowNamed
             }
         }
 
-        // A verification pipeline's versions are graphs (the steps engine runs no `check`, D190 §10).
+        // A verification pipeline's versions are graphs (the steps engine runs no `check`).
         if (pipeline == WorkflowPipelines.Verification)
         {
             return Unread($"v{number}: a verification pipeline's versions are graphs (schema {GraphSchema}) holding its checks, never steps.");
         }
 
-        // WORKFLOWCLEAN1 1b: a list of steps is no longer saved; a stored one reads as before.
+        // A list of steps is not saved; a stored one still reads.
         if (onSave && hasSteps) return Unread(StepsRefused(id));
 
         var (steps, problem) = ReadSteps(hasSteps ? raw : null, number, prior);
         return steps is null ? Unread(problem!) : new NamedVersion(number, at, door, steps, null, Digest(steps)) { From = FromOf(version) };
     }
 
-    /// <summary>The code a save of steps is refused by (WORKFLOWCLEAN1 1b), which the page keys its words on.</summary>
+    /// <summary>The code a save of steps is refused with, which the page keys its words on.</summary>
     public const string StepsRefusedCode = "steps-refused";
 
     /// <summary>What every door says to a list of steps (schema 1) being saved.</summary>
@@ -172,7 +171,7 @@ public static class WorkflowNamed
             : null;
 
     /// <summary>
-    /// Why a named version's graph is not one landing, or null (FABRIC-CUTOVER1b; D190 point 4, the cutover design §4): it holds one
+    /// Why a named version's graph is not one landing, or null: it holds one
     /// <c>land</c>, and at most one <c>opinion</c> and one <c>look</c>, since the process it is read as holds one of each. Judged after
     /// the graph holds, in that order, so a save is refused and a stored version is kept as written and read as unreadable. Held to
     /// <c>workflow-graph-versions.json</c>.
@@ -193,9 +192,9 @@ public static class WorkflowNamed
     }
 
     /// <summary>
-    /// Why a verification pipeline's graph is not one, or null (FABRIC-PIPELINE1a, D192 point 3, the pipeline design §2.1): it holds none
-    /// of <c>claimed</c>, <c>opinion</c>, <c>look</c>, <c>go-ahead</c>, <c>land</c>, <c>integrate</c> (INTEGRATE1n: its subject is a chain's
-    /// landing), <c>work.requests</c> (INTEGRATE1o: it holds a chain's work on the quests its sessions published) or <c>quest.close</c>, whose subjects (a chain's
+    /// Why a verification pipeline's graph is not one, or null: it holds none
+    /// of <c>claimed</c>, <c>opinion</c>, <c>look</c>, <c>go-ahead</c>, <c>land</c>, <c>integrate</c> (its subject is a chain's
+    /// landing), <c>work.requests</c> (it holds a chain's work on the quests its sessions published) or <c>quest.close</c>, whose subjects (a chain's
     /// quests, its branch, its ask) a landed run has none of, the first in node order named; then at least one <c>check</c>. Held to
     /// <c>workflow-graph-versions.json</c>.
     /// </summary>
@@ -212,7 +211,7 @@ public static class WorkflowNamed
             : $"v{number}: its graph holds no `{NodeKinds.Check}`, and a verification pipeline's graph runs at least one.";
     }
 
-    /// <summary>The schema of a version that is a graph (FABRIC-GRAPH1b); a version of steps is schema 1, named or not.</summary>
+    /// <summary>The schema of a version that is a graph; a version of steps is schema 1, named or not.</summary>
     public const int GraphSchema = 2;
 
     private static string BothSentence(int number) => $"v{number}: a version is its `steps` or its `graph`, never both.";
@@ -250,18 +249,18 @@ public static class WorkflowNamed
 
     internal const string AskDoorPrefix = "ask-daoris:";
 
-    /// <summary>The Ask Daoris door: its prefix and a plain id (DEDUP6).</summary>
+    /// <summary>The Ask Daoris door: its prefix and a plain id.</summary>
     private static bool IsAskDoor(string door) =>
         door.StartsWith(AskDoorPrefix, StringComparison.Ordinal) && SafeNames.IsPlainId(door[AskDoorPrefix.Length..]);
 
-    // ---- Adding a version (WORKFLOW1d, D157 point 5, the workflow design §2.4–§2.6) ----
+    // ---- Adding a version ----
     // Planned and not written: the store's use case (WorkflowStore's Add) writes the plan through its port. A version is
     // whole and never edited: saving adds the next number, keeping the file's other fields and every version as written,
     // then the newest 20 and every version a kept run names. The plan is held to the driver suite's fixtures/workflow-named.json
-    // `store`, cell for cell (the CLI's planAddVersion left in PUSH1f2b).
+    // `store`, cell for cell.
 
     /// <summary>
-    /// A version added to a workflow's file, planned and not written (design §2.6): the next number after the last, the file's
+    /// A version added to a workflow's file, planned and not written: the next number after the last, the file's
     /// other fields and every version kept as written, a version that does not read here included, then the newest 20 kept with
     /// every version a kept run names. A file that does not read is never written over, and steps that do not read write nothing.
     /// </summary>
@@ -289,7 +288,7 @@ public static class WorkflowNamed
         {
             if ((IdProblem(add.Id) ?? NameProblem(add.Name)) is { } problem) return Refused(problem);
             version["version"] = 1;
-            // The mark is written at creation (FABRIC-PIPELINE1a): a verification pipeline's, after the name; a development one's absent.
+            // The mark is written at creation: a verification pipeline's, after the name; a development one's absent.
             var verification = add.Pipeline == WorkflowPipelines.Verification;
             var first = ReadVersion(ElementOf(version), 1, [], verification ? WorkflowPipelines.Verification : WorkflowPipelines.Development, onSave: true, id: add.Id);
             if (first.Problem is not null) return Refused(first.Problem);

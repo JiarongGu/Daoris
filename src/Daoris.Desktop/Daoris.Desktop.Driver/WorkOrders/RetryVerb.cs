@@ -6,7 +6,7 @@ using static Daoris.Driver.ChoiceArgs;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris quest retry</c> (RETRY1, SESSUX1b; FOUNDATION1 mod-iii): the work orders' own verb, the settings' port
+/// <c>daoris quest retry</c>: the work orders' own verb, the settings' port
 /// (<see cref="ChoiceVerb"/>) implemented beside the judgement of a quest's <i>Try again</i> (<see cref="QuestRetry"/>). The planner's verdict on
 /// each quest, over a fresh snapshot of the service this machine's driver watches, is handed it by Loop (<paramref name="readVerdicts"/>).
 /// </summary>
@@ -16,7 +16,7 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
     public override string Word => "retry";
 
     /// <summary>
-    /// <c>retry</c> (RETRY1, SESSUX1b): with <c>--session</c> the person's stop released, with <c>--at</c> a mark the person gives, both
+    /// <c>retry</c>: with <c>--session</c> the person's stop released, with <c>--at</c> a mark the person gives, both
     /// alone; else the quest's *Try again*, judged from the planner's verdict (<see cref="QuestRetry.Decide"/>) on both paths.
     /// </summary>
     public override ChoicePress Plan(IReadOnlyList<string> args, DriverConfig before, DriverChoicesWorld world)
@@ -109,7 +109,7 @@ public sealed class RetryVerb(Func<DriverConfig, CancellationToken, Task<IReadOn
 
             var decision = QuestRetry.Decide(quest, verdicts);
             var now = StandingChoices.Write(path, decision.Change);
-            // STAFFPOLICY1e: the yes to a role policy's ask or bound is one approval beside the line's moves (as RETRY_QUEST writes it).
+            // The yes to a role policy's ask or bound is one approval beside the line's moves.
             if (decision.Approve is { } role && !new StaffMoves(DriverConfig.HomeOf(path)).Approve(quest, role))
             {
                 throw new ChoiceWords("this machine's store would not take your yes, so nothing was approved; try again.");

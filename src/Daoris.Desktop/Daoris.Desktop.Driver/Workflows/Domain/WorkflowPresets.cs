@@ -2,8 +2,8 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One preset built in that is a graph (the integration design §17.7): its id, its name and its graph as a version saves it, as JSON.</summary>
-/// <param name="NoPress">It integrates with no press: the repository must declare its gates and have them accepted (§4.1).</param>
+/// <summary>One preset built in that is a graph: its id, its name and its graph as a version saves it, as JSON.</summary>
+/// <param name="NoPress">It integrates with no press: the repository must declare its gates and have them accepted.</param>
 public sealed record WorkflowGraphPreset(string Id, string Name, string GraphJson, bool NoPress = false)
 {
     /// <summary>The graph as saved, fresh each time, for a version to take.</summary>
@@ -11,14 +11,14 @@ public sealed record WorkflowGraphPreset(string Id, string Name, string GraphJso
 }
 
 /// <summary>
-/// The presets built in (WORKFLOW1d, the workflow design §2.7), a table both twins read as the tools list is (D121): nothing is
+/// The presets built in, a table both twins read as the tools list is: nothing is
 /// stored until one is saved. Each is offered with a second opinion and with your look first (<see cref="WithGates"/>), and
 /// each is shown by a line composed from its steps (<see cref="Line"/>), never typed, so it cannot drift from them.
 /// </summary>
 /// <remarks>
 /// Held to this suite's tests' <c>fixtures/workflow-named.json</c> <c>presets</c>, <c>variants</c> and <c>lines</c>, cell for cell
-/// (the CLI's twin, <c>namedworkflows.ts</c>, left in PUSH1f2b). The graphs are the defaults Daoris ships
-/// (<see cref="WorkflowDefaults"/>); the presets of steps are deleted (WORKFLOWCLEAN1 1b).
+/// (the CLI's twin is <c>namedworkflows.ts</c>). The graphs are the defaults Daoris ships
+/// (<see cref="WorkflowDefaults"/>).
 /// </remarks>
 public static class WorkflowPresets
 {
@@ -33,13 +33,13 @@ public static class WorkflowPresets
             NoPress: shipped.Delivery is { Method: LandNodes.Integrate, Accept: SetupLand.Automatic })),
     ];
 
-    /// <summary>A graph preset by its id or an id its default was known by (LANDNODE1c2's <c>merge-no-press</c>), or null.</summary>
+    /// <summary>A graph preset by its id or an alias of its default's id (<c>merge-no-press</c>), or null.</summary>
     public static WorkflowGraphPreset? GraphOf(string id) =>
         WorkflowDefaults.Of(id) is { } shipped ? GraphTable.FirstOrDefault(preset => preset.Id == shipped.Id) : null;
 
     /// <summary>
     /// A graph with a second opinion and your look added where it holds none: each a node wired from what led into the landing and straight into
-    /// it, the opinion never wired into the look (FABRIC-CUTOVER1b), so the graph reads under the order of D157 §2.2.
+    /// it, the opinion never wired into the look, so the graph reads under the order the steps keep.
     /// </summary>
     public static JsonObject WithGraphGates(JsonObject graph, bool opinion, bool look)
     {
@@ -48,7 +48,7 @@ public static class WorkflowPresets
         var wires = next["wires"]!.AsArray();
         bool Has(string kind) => nodes.Any(node => (string?)node!["kind"] == kind);
         var landing = (string)nodes.First(node => (string)node!["kind"]! == NodeKinds.Land)!["id"]!;
-        // LANDNODE1c2: the gates come before the person's Accept where a `review` stands before the landing, and each is wired into the landing too.
+        // The gates come before the person's Accept where a `review` stands before the landing, and each is wired into the landing too.
         var review = (string?)nodes.FirstOrDefault(node => (string?)node!["kind"] == NodeKinds.Review)?["id"];
         var into = review ?? landing;
         var lead = wires.First(wire => (string?)wire!["to"] == into)!;
@@ -69,7 +69,7 @@ public static class WorkflowPresets
         return next;
     }
 
-    /// <summary>The line a graph preset is shown by, composed from its nodes and their options, never typed (§17.7).</summary>
+    /// <summary>The line a graph preset is shown by, composed from its nodes and their options, never typed.</summary>
     public static string GraphLine(JsonObject graph)
     {
         var nodes = graph["nodes"]!.AsArray().Select(node => node!.AsObject()).ToList();
@@ -78,7 +78,7 @@ public static class WorkflowPresets
         var said = new List<string>();
         if (Of(WorkflowKinds.Opinion) is not null) said.Add("Another agent reads the work first.");
         if (Of(WorkflowKinds.Look) is not null) said.Add("You look at it running before it lands.");
-        // LANDNODE1c2: a `land` waits on the person where a `review` comes before it.
+        // A `land` waits on the person where a `review` comes before it.
         var you = Of(NodeKinds.Review) is not null;
         if (nodes.Any(node => PullRequestKind.PluginOf((string?)node["kind"] ?? "") is not null))
         {
@@ -107,7 +107,7 @@ public static class WorkflowPresets
     }
 
     /// <summary>
-    /// Steps with a second opinion and your look added where they are not (design §2.7's <i>with a second opinion</i>,
+    /// Steps with a second opinion and your look added where they are not (<i>with a second opinion</i>,
     /// <i>with your look first</i>), each reading what the repository declares: the opinion before the look, both before the landing.
     /// </summary>
     public static JsonArray WithGates(JsonArray steps, bool opinion, bool look)
@@ -125,7 +125,7 @@ public static class WorkflowPresets
     }
 
     /// <summary>
-    /// The line a workflow is shown by (design §2.5, §2.7), composed from its steps: who reads it first, whether you look, how it
+    /// The line a workflow is shown by, composed from its steps: who reads it first, whether you look, how it
     /// lands and what follows, and the go-aheads on the way.
     /// </summary>
     public static string Line(IReadOnlyList<NamedStep> steps)

@@ -7,10 +7,10 @@ namespace Daoris.Driver;
 
 
 /// <summary>
-/// The milestone the person sees for one unit (the design's §D0): end reached, result kept, cleanup, recovery retained; and the
-/// entries it was read from. Read from the unit (<see cref="Of"/>), the same way for every kind, and stored nowhere.
+/// The milestone the person sees for one unit: end reached, result kept, cleanup, recovery retained; and the
+/// entries it is read from. Read from the unit (<see cref="Of"/>), the same way for every kind, and stored nowhere.
 /// </summary>
-/// <param name="Unit">The unit's id, or a name derived from its branch for work from before units were kept.</param>
+/// <param name="Unit">The unit's id, or a name derived from its branch where its record keeps no unit id.</param>
 /// <param name="Repository">The owner's repository; empty for an ask, which is a workspace's.</param>
 /// <param name="Branch">A branch unit's branch; null for every other kind.</param>
 public sealed record WorkMilestone(
@@ -18,7 +18,7 @@ public sealed record WorkMilestone(
     MilestoneCleanup Cleanup, IReadOnlyList<InventoryEntry> Recovery, IReadOnlyList<InventoryEntry> Entries) : IKnowledgeMilestone
 {
     /// <summary>
-    /// The unit's milestone (FABRIC-UNIT1a reads MILESTONE1a's through the projection): the cleanup waits on every temporary entry
+    /// The unit's milestone: the cleanup waits on every temporary entry
     /// pending or blocked and on any entry blocked, and on the end itself while nothing else waits and the end is not over; it is
     /// completed only once the end is over and nothing waits. An unknown owner's unit names no end to wait for: its blocked entry says why.
     /// </summary>
@@ -44,21 +44,21 @@ public sealed record WorkMilestone(
 }
 
 /// <summary>
-/// The branch adapter (FABRIC-UNIT1a; the fabric events design §D2) and its ownership inventory, derived (FABRIC-MILESTONE1a; §D0 and
-/// §D3): every entry gets a role and a disposition from the records that already name the resource, each unit is read from them as a
+/// The branch adapter and its ownership inventory, derived:
+/// every entry gets a role and a disposition from the records that already name the resource, each unit is read from them as a
 /// <see cref="WorkUnit"/> of kind <see cref="WorkUnitKind.Branch"/>, and its milestone from the unit. Pure over
 /// <see cref="InventoryFacts"/>: nothing is stored, nothing removed, no fact written twice.
 /// </summary>
 /// <remarks>
-/// <para><b>The canonical records</b> (§D2's table): the session branch's entry in <see cref="SessionBranches.FileName"/>, with the
+/// <para><b>The canonical records</b>: the session branch's entry in <see cref="SessionBranches.FileName"/>, with the
 /// landings in <see cref="LandedBranches.FileName"/> that name its unit (<see cref="LandedBranch.Units"/>); their one writer is the
-/// driver. A landing from before units, and an auto-landing alone, name a unit of their own from their record.</para>
+/// driver. A landing naming no unit, and an auto-landing alone, name a unit of their own from their record.</para>
 /// <para><b>The end is the kept fact</b> (<see cref="HeldFact"/>), never judged again here: a fact whose branch moved since is
-/// cleared by the next look (§B5), so this reads what the keeper last proved. Absent, the work is <i>handed</i> where a landing
+/// cleared by the next look, so this reads what the keeper last proved. Absent, the work is <i>handed</i> where a landing
 /// carries it and the line does not hold that, else <i>not ended</i> (<see cref="EndState"/>'s words).</para>
-/// <para><b>An unknown owner blocks</b> (canary 27): a tree no record and no session's record names, or one git cannot read the
+/// <para><b>An unknown owner blocks</b>: a tree no record and no session's record names, or one git cannot read the
 /// branch of, is <see cref="InventoryDisposition.Blocked"/> and says so, in a unit of its own that is never read as ended. A tree a
-/// session recorded is that session's (OVERVIEWNOISE1b, <see cref="InventoryFacts.Recorded"/>).</para>
+/// session recorded is that session's (<see cref="InventoryFacts.Recorded"/>).</para>
 /// </remarks>
 public static partial class WorkInventory
 {
@@ -72,14 +72,14 @@ public static partial class WorkInventory
         public List<InventoryEntry> Extra { get; } = [];
         public bool Unowned { get; set; }
 
-        /// <summary>The standing branch no record names (FABRIC-UNKNOWN1), which is the whole of such a unit.</summary>
+        /// <summary>The standing branch no record names, which is the whole of such a unit.</summary>
         public string? Standing { get; set; }
         public HashSet<string> Sessions { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-        /// <summary>A unit of its own for a tree its session recorded and no record of Daoris's names (OVERVIEWNOISE1b): the session's record names it.</summary>
+        /// <summary>A unit of its own for a tree its session recorded and no record of Daoris's names: the session's record names it.</summary>
         public bool Joined { get; init; }
 
-        /// <summary>The trees joined by the session that recorded them and no branch record follows (OVERVIEWNOISE1b), by their full path.</summary>
+        /// <summary>The trees joined by the session that recorded them and no branch record follows, by their full path.</summary>
         public HashSet<string> Unfollowed { get; } = new(StringComparer.OrdinalIgnoreCase);
     }
 
@@ -87,13 +87,13 @@ public static partial class WorkInventory
     public static IReadOnlyList<WorkMilestone> Derive(InventoryFacts facts) => [.. Units(facts).Select(WorkMilestone.Of)];
 
     /// <summary>
-    /// Daoris's own recoveries no record names a unit of (CLEANUP1): a folder moved aside with its purge date, and a recovery ref. Each is
+    /// Daoris's own recoveries no record names a unit of: a folder moved aside with its purge date, and a recovery ref. Each is
     /// kept by its own rule, owned by it, and waits on nobody, so it is no unit: the unit it came from retired and its trace went.
     /// </summary>
     public static IReadOnlyList<InventoryEntry> Recoveries(InventoryFacts facts) => Read(facts).Recoveries;
 
     /// <summary>
-    /// Every branch unit the records name, and a unit of its own for what no record names, oldest first (the branch adapter, §D2). A
+    /// Every branch unit the records name, and a unit of its own for what no record names, oldest first. A
     /// landing that carries one unit alone links it to the quest the landing names; one carrying several does not say which served it.
     /// Daoris's own recoveries no record names are no unit (<see cref="Recoveries"/>).
     /// </summary>
@@ -125,8 +125,8 @@ public static partial class WorkInventory
         {
             foreach (var landing in draft.Landings)
             {
-                // FABRIC-UNITLINK1: a landing carrying several units says each session's own on its work, so a session executes the unit its
-                // work is; where the record does not say (a landing from before), every unit it carries, as before.
+                // A landing carrying several units says each session's own on its work, so a session executes the unit its
+                // work is; where the record does not say, every unit it carries.
                 foreach (var work in landing.Work().Where(work => Executes(landing, work, draft.Id))) draft.Sessions.Add(work.Session);
             }
         }
@@ -142,16 +142,16 @@ public static partial class WorkInventory
     }
 
     /// <summary>
-    /// Whether <paramref name="work"/> is <paramref name="unit"/>'s (FABRIC-UNITLINK1): every session's is, where the landing carries this
-    /// unit alone or is a unit of its own; else only the work the record names this unit for, and the work it names none for, as before.
+    /// Whether <paramref name="work"/> is <paramref name="unit"/>'s: every session's is, where the landing carries this
+    /// unit alone or is a unit of its own; else only the work the record names this unit for, and the work it names none for.
     /// </summary>
     private static bool Executes(LandedBranch landing, LandedWork work, string unit) =>
         landing.Units.Count <= 1 || !landing.Units.Contains(unit, StringComparer.Ordinal) || work.Unit is null
         || string.Equals(work.Unit, unit, StringComparison.Ordinal);
 
     /// <summary>
-    /// The quests <paramref name="unit"/> was produced by, by what its landings name (FABRIC-UNITLINK1): a landing carrying it alone names
-    /// its own quest for it, as before, and each session's work the record names this unit for names the quest that session served, the
+    /// The quests that produced <paramref name="unit"/>, by what its landings name: a landing carrying it alone names
+    /// its own quest for it, and each session's work the record names this unit for names the quest that session served, the
     /// landing's own falling back to the quest the landing names. Never a guess: work the record names no unit for links nothing.
     /// </summary>
     private static IEnumerable<string> QuestsOf(LandedBranch landing, string unit)
@@ -185,8 +185,8 @@ public static partial class WorkInventory
 
     /// <summary>
     /// Each tree to the unit whose branch it is on, or to a unit of its own where no record names it. A folder moved aside with its purge
-    /// date that no record names is a recovery of no unit (CLEANUP1): its rule owns it, and it waits on nobody. One its purge keeps past
-    /// that date (<see cref="SessionTree.PurgeKept"/>, after review) is a unit of its own, since its rule can no longer finish it.
+    /// date that no record names is a recovery of no unit: its rule owns it, and it waits on nobody. One its purge keeps past
+    /// that date (<see cref="SessionTree.PurgeKept"/>) is a unit of its own, since its rule cannot finish it.
     /// </summary>
     private static Dictionary<string, List<SessionTree>> AttachTrees(
         InventoryFacts facts, Dictionary<string, Draft> drafts, List<InventoryEntry> recoveries, out Dictionary<string, string> treeOf)
@@ -195,7 +195,7 @@ public static partial class WorkInventory
         treeOf = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var tree in facts.Trees)
         {
-            // INTEGRATETREE1: a line's integration tree is Daoris's own, kept warm and detached between candidates by the line's run
+            // A line's integration tree is Daoris's own, kept warm and detached between candidates by the line's run
             // (IntegrationReplays), which owns it: no unit's, and nothing of it waits on the person.
             if (IntegrationTree(tree)) continue;
             var aside = tree.Branch == SessionTree.SetAside;
@@ -210,8 +210,8 @@ public static partial class WorkInventory
                 continue;
             }
 
-            // OVERVIEWNOISE1b: a tree no standing branch record names that a session recorded (one made again after its branch's record
-            // went, TREEGONE1) is that session's: the unit it executes, else a unit of its own named by it. Never an unknown owner's.
+            // A tree no standing branch record names that a session recorded (one made again after its branch's record
+            // went) is that session's: the unit it executes, else a unit of its own named by it. Never an unknown owner's.
             if (found is null && !aside && RecordedBy(facts, tree).FirstOrDefault() is { } session)
             {
                 found = drafts.Values.FirstOrDefault(draft => draft.Sessions.Contains(session));
@@ -233,7 +233,7 @@ public static partial class WorkInventory
             if (!attached.TryGetValue(found.Id, out var list)) attached[found.Id] = list = [];
             list.Add(tree);
             treeOf[Full(tree.Path)] = found.Id;
-            // OVERVIEWNOISE1b: each session that recorded the tree executed its unit, after what its landings name.
+            // Each session that recorded the tree executed its unit, after what its landings name.
             if (!aside && !found.Unowned)
             {
                 foreach (var recorder in RecordedBy(facts, tree)) found.Sessions.Add(recorder);
@@ -247,7 +247,7 @@ public static partial class WorkInventory
     private static bool IntegrationTree(SessionTree tree) =>
         tree.Branch == "HEAD" && Path.GetFileName(Full(tree.Path)).StartsWith(IntegrationReplays.Prefix, StringComparison.Ordinal);
 
-    /// <summary>The sessions whose records name <paramref name="tree"/>, in the order the records list them (OVERVIEWNOISE1b).</summary>
+    /// <summary>The sessions whose records name <paramref name="tree"/>, in the order the records list them.</summary>
     private static IEnumerable<string> RecordedBy(InventoryFacts facts, SessionTree tree)
     {
         var full = Full(tree.Path);
@@ -259,7 +259,7 @@ public static partial class WorkInventory
     [GeneratedRegex(@"-\d+$")]
     private static partial Regex Numbered();
 
-    /// <summary>Each recovery ref to the unit whose branch it kept; one no record names is a recovery of no unit (CLEANUP1), never guessed into one.</summary>
+    /// <summary>Each recovery ref to the unit whose branch it kept; one no record names is a recovery of no unit, never guessed into one.</summary>
     private static void AttachRefs(InventoryFacts facts, Dictionary<string, Draft> drafts, List<InventoryEntry> recoveries)
     {
         foreach (var each in facts.Refs)
@@ -274,7 +274,7 @@ public static partial class WorkInventory
     }
 
     /// <summary>
-    /// A <c>daoris/*</c> branch standing that no record names and no tree has checked out (FABRIC-UNKNOWN1, §D3): a unit of its own with
+    /// A <c>daoris/*</c> branch standing that no record names and no tree has checked out: a unit of its own with
     /// an unknown owner. Only the person's press removes it, so it is blocked, never pending: the look's tidy takes recorded branches
     /// alone. A branch a tree holds is that tree's (<see cref="AttachTrees"/>), and a landing's own branch is the landing's.
     /// </summary>
@@ -299,7 +299,7 @@ public static partial class WorkInventory
     }
 
     /// <summary>
-    /// A recovery ref by its rule (CLEANUP1, <see cref="RecoveryRetention"/>): one a branch or a tag here holds goes at the look's tidy
+    /// A recovery ref by its rule (<see cref="RecoveryRetention"/>): one a branch or a tag here holds goes at the look's tidy
     /// once past its retention; one nothing else holds is kept until the person deletes it, and says how; one whose holders git did not
     /// read is kept.
     /// </summary>
@@ -332,7 +332,7 @@ public static partial class WorkInventory
             entries.Add(branch.GoneAt is { } gone
                 ? new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Removed,
                     $"went {Minute(gone)} UTC") { Proof = branch.Held is { } held ? ProofSaid(held.By, held.On) : null }
-                // FABRIC-END4a: a guard that kept it at the tidy's last try is the record's, so it reads as blocked, saying why.
+                // A guard that kept it at the tidy's last try is the record's, so it reads as blocked, saying why.
                 : ended && branch.Blocked is { } blocked
                     ? KeptEntry(draft.Id, branch.Branch, blocked)
                     : new InventoryEntry(draft.Id, InventoryKind.SessionBranch, branch.Branch, InventoryRole.Temporary, InventoryDisposition.Pending,
@@ -343,7 +343,7 @@ public static partial class WorkInventory
         {
             if (landing.GoneAt is { } went)
             {
-                // CLEANUP1: where Daoris did not remove it, why it went, on git's word; never a claim that the line holds it.
+                // Where Daoris did not remove it, why it went, on git's word; never a claim that the line holds it.
                 var said = landing.RemovedAs is not null || landing.Held is not null ? $"went {Minute(went)} UTC"
                     : landing.GoneAs switch
                     {
@@ -352,7 +352,7 @@ public static partial class WorkInventory
                         LandedGone.Missing => $"removed outside Daoris; git said it is missing {Minute(went)} UTC",
                         LandedGone.Moved => $"went {Minute(went)} UTC outside Daoris; `{landing.MovedTo}` holds its recorded commit",
                         LandedGone.Stands => $"went {Minute(went)} UTC; a branch of its name stands that is not the landing's",
-                        // LANDRETIRE1: Daoris's own act on the person's word, with the reason it was given and where its commits stay.
+                        // Daoris's own act on the person's word, with the reason given and where its commits stay.
                         LandedGone.Withdrawn => $"withdrawn {Minute(went)} UTC: {landing.GoneWhy ?? "no reason kept"}"
                             + (landing.KeptOn is { } recovery ? $"; its commits stay on `{recovery}`" : ""),
                         _ => $"went {Minute(went)} UTC",
@@ -367,7 +367,7 @@ public static partial class WorkInventory
             }
             else if (LandedStanding.Stale(landing, facts.ClosedQuests, facts.Now))
             {
-                // LANDRETIRE1 part 2: its quest is closed and the line has not held it for a day, which no clean-up of Daoris's ends: the
+                // Its quest is closed and the line has not held it for a day, which no clean-up of Daoris's ends: the
                 // person says whether the work comes yet, or withdraws it (LandedWithdrawals), so it waits on them with the code the page words.
                 entries.Add(Coded(draft.Id, InventoryKind.LandingBranch, landing.Branch, InventoryCode.LandingStale,
                     [("branch", landing.Branch), ("quest", landing.Quest!), ("since", Moments.Write(LandedStanding.Since(landing)))],
@@ -389,7 +389,7 @@ public static partial class WorkInventory
 
         foreach (var tree in trees) entries.Add(TreeEntry(draft, tree, facts, ended));
         entries.AddRange(draft.Extra);
-        // FABRIC-PERFORM1d (§D3): its plugins' receipts and its attempts not settled, so it retires only once those are terminal too.
+        // Its plugins' receipts and its attempts not settled, so it retires only once those are terminal too.
         if (facts.Owed.TryGetValue(draft.Id, out var owed)) entries.AddRange(owed);
         foreach (var id in draft.Sessions.Where(facts.HasHistory))
         {
@@ -397,8 +397,8 @@ public static partial class WorkInventory
                 "the session's record and log: history, which the end never removes (clearing governs it)"));
         }
 
-        // The record that names it, by what the draft was read from; none for what no record names (canary 27). A tree its session
-        // recorded and no record of Daoris's names is named by that session's record, the service's (OVERVIEWNOISE1b).
+        // The record that names it, by what the draft is read from; none for what no record names. A tree its session
+        // recorded and no record of Daoris's names is named by that session's record, the service's.
         var record = draft.Unowned ? null
             : branch is not null ? SessionBranches.FileName
             : draft.Landings.Count > 0 ? LandedBranches.FileName
@@ -419,8 +419,8 @@ public static partial class WorkInventory
 
     /// <summary>
     /// A folder moved aside: a recovery retained until its purge date, or, with no date in its name, never purged by itself. One past its
-    /// date that the purge keeps (after review: a write after the move, a link, a folder that cannot be read) is blocked on the person,
-    /// saying why: the purge compares with the move, so it never takes it. KEEP1a: its days are the one policy's, and a folder whose
+    /// date that the purge keeps (a write after the move, a link, a folder that cannot be read) is blocked on the person,
+    /// saying why: the purge compares with the move, so it never takes it. Its days are the one policy's, and a folder whose
     /// package folders the slim dropped names them.
     /// </summary>
     private static InventoryEntry AsideEntry(string unit, SessionTree tree, TimeSpan days)
@@ -448,7 +448,7 @@ public static partial class WorkInventory
     {
         if (tree.Branch == SessionTree.SetAside) return AsideEntry(draft.Id, tree, facts.SetAsideFor);
 
-        // OVERVIEWNOISE1b: each blocked entry carries its code and the facts it is worded with, beside the driver's sentence.
+        // Each blocked entry carries its code and the facts it is worded with, beside the driver's sentence.
         if (draft.Unowned)
         {
             return tree.Branch is SessionTree.NotATree
@@ -469,10 +469,10 @@ public static partial class WorkInventory
         var held = facts.InUse.Contains(Full(tree.Path)) || facts.InUse.Any(path => string.Equals(Full(path), Full(tree.Path), StringComparison.OrdinalIgnoreCase));
         if (!held && draft.Unfollowed.Contains(Full(tree.Path)))
         {
-            // OVERVIEWNOISE1b: the look's tidy takes recorded branches alone, so a tree no branch record follows waits on the clean-up's
+            // The look's tidy takes recorded branches alone, so a tree no branch record follows waits on the clean-up's
             // press; no retry is promised that will not come.
             var said = $"its session recorded it, but no branch record follows `{tree.Branch}`, so the look's tidy never takes it";
-            // CLEANUPADVICE1: where the press would keep it, the row says what keeps it and the remove that takes it, never a press that refuses.
+            // Where the press would keep it, the row says what keeps it and the remove that takes it, never a press that refuses.
             if (facts.TreeKeeps.TryGetValue(Full(tree.Path), out var keep))
             {
                 return keep.Said is not { } holds
@@ -494,7 +494,7 @@ public static partial class WorkInventory
                 : ended ? "the look's tidy moves its folder aside once nothing holds it" : "waits for the work to end");
     }
 
-    /// <summary>A temporary entry blocked for <paramref name="code"/>'s reason, with the facts it is worded with (OVERVIEWNOISE1b).</summary>
+    /// <summary>A temporary entry blocked for <paramref name="code"/>'s reason, with the facts it is worded with.</summary>
     private static InventoryEntry Coded(
         string unit, string kind, string resource, string code, IEnumerable<(string Name, string Value)> facts, string detail) =>
         new(unit, kind, resource, InventoryRole.Temporary, InventoryDisposition.Blocked, detail)
@@ -504,8 +504,8 @@ public static partial class WorkInventory
         };
 
     /// <summary>
-    /// A line-held branch the look's tidy kept (FABRIC-END4a), its guard said once (OVERVIEWNOISE1b): the tidy's own sentence where one
-    /// was kept, which says why and not only which guard, else the guard's words; and a retry only where the guard frees by itself.
+    /// A line-held branch the look's tidy kept, its guard said once: the tidy's own sentence where one
+    /// is kept, which says why and not only which guard, else the guard's words; and a retry only where the guard frees by itself.
     /// </summary>
     private static InventoryEntry KeptEntry(string unit, string branch, TidyBlock blocked)
     {
@@ -545,7 +545,7 @@ public static partial class WorkInventory
 
         if (draft.Landings.Count > 0) return GoneOutside(draft);
 
-        // OVERVIEWNOISE1b: no record of Daoris's follows a tree its session recorded, so no proof was ever kept for it.
+        // No record of Daoris's follows a tree its session recorded, so no proof is kept for it.
         if (draft.Branch is null && draft.Joined)
         {
             return new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null, "no branch record follows its tree, so whether the line holds its work is not judged");
@@ -557,9 +557,9 @@ public static partial class WorkInventory
     }
 
     /// <summary>
-    /// The end of a unit whose every landing went where Daoris neither removed it nor proved the line holds it (CLEANUP1). Git said each
-    /// landing's branch is missing and nothing of the unit stands: the person removed it, which is the person's end of it, <i>dropped</i>
-    /// (§D3's "or the person drops it"), and nothing is left to clean. Any doubt keeps it, saying which: a branch of its name standing,
+    /// The end of a unit whose every landing went where Daoris neither removed it nor proved the line holds it. Git said each
+    /// landing's branch is missing and nothing of the unit stands: the person removed it, which is the person's end of it, <i>dropped</i>,
+    /// and nothing is left to clean. Any doubt keeps it, saying which: a branch of its name standing,
     /// git not yet asked, or its session branch still standing, whose work nothing proved anywhere.
     /// </summary>
     private static MilestoneEnd GoneOutside(Draft draft)
@@ -572,7 +572,7 @@ public static partial class WorkInventory
                 $"a branch of `{stands.Branch}`'s name stands that is not the landing's, so whether the person ended it is not known: it is kept");
         }
 
-        // After review: a branch that holds its recorded commit took the work on (a rename), so it is not the person's end of it.
+        // A branch that holds its recorded commit took the work on (a rename), so it is not the person's end of it.
         if (draft.Landings.FirstOrDefault(landing => landing.GoneAs == LandedGone.Moved) is { } moved)
         {
             return new MilestoneEnd(WorkEndState.NotEnded, null, null, null, null,
@@ -592,7 +592,7 @@ public static partial class WorkInventory
         }
 
         var kept = draft.Landings.Select(landing => landing.KeptOn).OfType<string>().ToList();
-        // LANDRETIRE1: withdrawn on a word, the person's or the steward's, that the line will never hold its work: dropped, with its commits kept and
+        // Withdrawn on a word, the person's or the steward's, that the line will never hold its work: dropped, with its commits kept and
         // its reason said; git said nothing of it, and Daoris does not claim the line holds anything.
         if (last.GoneAs == LandedGone.Withdrawn)
         {

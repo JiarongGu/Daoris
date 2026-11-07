@@ -1,15 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The parts of a tree's landing gate the review owns, as calls on the trees (XAGENT1f; REVIEWENV1c): the whole gate as the record every
+/// The parts of a tree's landing gate the review owns, as calls on the trees: the whole gate as the record every
 /// door reads, the review's part and the second opinion's. The workplace reads the gate as <see cref="IWorkplaceGate"/>
-/// (<see cref="SessionTrees.GateOfAsync"/>) and the review's <see cref="LandingGate"/> is the only gate there is, so each call keeps the
-/// spelling its callers had on <see cref="SessionTrees"/>.
+/// (<see cref="SessionTrees.GateOfAsync"/>) and the review's <see cref="LandingGate"/> is the only gate there is.
 /// </summary>
 public static class SessionTreeGates
 {
     /// <summary>
-    /// The whole landing gate for this tree (XAGENT1f, D155 point 9; the second-agent design §7): D154's look as <see cref="ReviewAsync"/>
+    /// The whole landing gate for this tree: the review's look as <see cref="ReviewAsync"/>
     /// reads it, and the second opinion before it. Every door that lands reads it here, once, and hands it to
     /// <see cref="SessionTrees.LandAsync"/>, which refuses the first part that holds (<see cref="TreeGates.GateAsync"/>).
     /// </summary>
@@ -20,7 +19,7 @@ public static class SessionTreeGates
         (LandingGate)await trees.GateOfAsync(path, quest, world, session, ct, process, tip, run).ConfigureAwait(false);
 
     /// <summary>
-    /// The review's gate for this tree (REVIEWENV1c, D154 point 7; <see cref="ReviewGate.ReadAsync"/>): the chain its quest is a step
+    /// The review's gate for this tree (<see cref="ReviewGate.ReadAsync"/>): the chain its quest is a step
     /// of, the review rule standing for the tree's repository here, and git's ancestry from the tree's <c>HEAD</c>. Every door that
     /// lands asks it and hands it to <see cref="SessionTrees.LandAsync"/>; a conversation, with no quest, has nothing to wait for.
     /// </summary>

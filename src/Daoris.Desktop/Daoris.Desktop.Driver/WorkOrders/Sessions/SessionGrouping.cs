@@ -20,7 +20,7 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
     /// <summary>For a session awaiting reply: the quest its quest waits on.</summary>
     public string? Awaits { get; init; }
 
-    /// <summary>And the repository that quest was asked of, where the service still lists it.</summary>
+    /// <summary>And the repository that quest is addressed to, where the service still lists it.</summary>
     public string? AwaitsOf { get; init; }
 
     /// <summary>For a session to review: what its own tree holds.</summary>
@@ -59,7 +59,7 @@ public sealed record SessionGrouping(string Session, string Group, string Shown)
 
     /// <summary>
     /// This row held by <paramref name="holds"/>: where its words wait for an account's reset it is <see cref="ShownState.LimitWaits"/>
-    /// in place of the state it ended in, whatever that was; a record a limit ended keeps its own <see cref="ShownState.Limited"/>,
+    /// in place of the state it ended in, whatever it is; a record a limit ended keeps its own <see cref="ShownState.Limited"/>,
     /// which says it already.
     /// </summary>
     public SessionGrouping HeldBy(WordsHold holds) => this with

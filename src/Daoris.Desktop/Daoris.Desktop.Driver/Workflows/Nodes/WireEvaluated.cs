@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 
 namespace Daoris.Driver;
 
-/// <summary>What one evaluation came to (FABRIC-WIRE1b).</summary>
+/// <summary>What one evaluation came to.</summary>
 /// <param name="Statuses">Every node's status after the moves, by node id.</param>
 /// <param name="Moves">The moves made, in the order made: invalidations, observations, joins, then eligibility.</param>
 /// <param name="Refused">Moves the one table refused, kept apart: none is expected, and each is a defect to name.</param>
@@ -18,7 +18,7 @@ public sealed record WireEvaluated(
     IReadOnlyList<string> Queued)
 {
     /// <summary>
-    /// Why the evaluation judged nothing, or null (FABRIC-WIRE1e): <see cref="WireEvaluation.NoRevision"/> when the caller's revisions
+    /// Why the evaluation judged nothing, or null: <see cref="WireEvaluation.NoRevision"/> when the caller's revisions
     /// are not a complete snapshot. A refused evaluation moves nothing, offers no start and returns the statuses as handed in.
     /// </summary>
     public string? Refusal { get; init; }
@@ -27,15 +27,15 @@ public sealed record WireEvaluated(
     public IReadOnlyList<string> Missing { get; init; } = [];
 
     /// <summary>
-    /// The nodes no route can start any more given the outcomes reached (DECIDE1a), in node-id order: one behind a <c>when</c> of another
+    /// The nodes no route can start any more given the outcomes reached, in node-id order: one behind a <c>when</c> of another
     /// outcome, an <c>allOf</c> group with such a wire, an <c>anyOf</c> group all of whose wires are, or a data input, transitively. Derived
     /// at each evaluation, never stored; an <c>all</c> join counts such a member as settled.
     /// </summary>
     public IReadOnlyList<string> NotTaken { get; init; } = [];
 
     /// <summary>
-    /// The <c>back</c> wires taken (DECIDE1c), each keyed as a trigger's firing on its source's receipt of its <c>on</c>: its target was invalidated
-    /// for a new attempt, and what rests on the target lapsed after it. The record writer keeps their keys with the moves, so one is taken once.
+    /// The <c>back</c> wires taken, each keyed as a trigger's firing on its source's receipt of its <c>on</c>: its target is invalidated
+    /// for a new attempt, and what rests on the target lapses after it. The record writer keeps their keys with the moves, so one is taken once.
     /// </summary>
     public IReadOnlyList<WireFiring> Backs { get; init; } = [];
 
@@ -44,7 +44,7 @@ public sealed record WireEvaluated(
 
     /// <summary>
     /// Whether the evaluator moved nothing: evaluated again on the same statuses, it moves nothing. It says nothing of pending starts
-    /// (<see cref="Starts"/>, <see cref="Queued"/>) nor of execution finished (FABRIC-WIRE1e), and a refused evaluation moved nothing too:
+    /// (<see cref="Starts"/>, <see cref="Queued"/>) nor of execution finished, and a refused evaluation moved nothing too:
     /// read <see cref="Refusal"/> first.
     /// </summary>
     public bool Settled => Moves.Count == 0;

@@ -78,8 +78,8 @@ internal sealed class NodeOwing(NodeRecordFiles records, Func<IIntegrationDoor?>
     }
 
     /// <summary>
-    /// What a fresh read says of the records Current's graphs wrote on a run's quests and branches before the run was bound to a graph version
-    /// (the cutover design §2.3): each left as it stands, no graph governing it now, so an attempt on it not settled is held for the person as
+    /// What a fresh read says of the records Current's graphs wrote on a run's quests and branches before the run bound a graph version:
+    /// each left as it stands, no graph governing it now, so an attempt on it not settled is held for the person as
     /// a removed graph's is; one line each, once a look.
     /// </summary>
     public IEnumerable<string> LeftBefore(IEnumerable<GovernedUnit> governed)

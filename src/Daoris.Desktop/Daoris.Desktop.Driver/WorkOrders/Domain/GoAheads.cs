@@ -4,14 +4,14 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The terminal's door onto a go-ahead (KNOWUSE1a, D50): <c>daoris ask go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]</c>,
+/// The terminal's door onto a go-ahead: <c>daoris ask go-ahead &lt;id&gt; &lt;n&gt; approve|refuse ["…"]</c>,
 /// read here, in the library, so its words are held by a test.
 /// </summary>
 public static class GoAheadCommand
 {
     /// <summary>
     /// What follows <c>--go-ahead &lt;id&gt;</c>: the go-ahead's number, <c>approve</c> or <c>refuse</c>, then the person's
-    /// words, if any, as one sentence. Null with what was not understood.
+    /// words, if any, as one sentence. Null with what is not understood.
     /// </summary>
     public static (int Number, bool Approved, string? Words)? Read(IReadOnlyList<string> rest, out string? problem)
     {
@@ -35,9 +35,9 @@ public static class GoAheadCommand
 }
 
 /// <summary>
-/// How the go-aheads on an ask are written into an instruction (KNOWUSE1a, D135 §2): beneath the quest and the person's
+/// How the go-aheads on an ask are written into an instruction: beneath the quest and the person's
 /// words, each by its number with what became of it, the person's words on an answer quoted verbatim, and bounded, saying
-/// what was left out.
+/// what is left out.
 /// </summary>
 /// <remarks>
 /// <b>Why that size</b>: the same command line the person's words share (<see cref="AskWordsText"/>). The service bounds
@@ -79,7 +79,7 @@ public static class GoAheadsText
 
     /// <summary>
     /// How many go-aheads an instruction lists by <see cref="Limit"/>: the first always, then each while its item fits beside
-    /// those before it. The instruction and its account (CONTEXT1) count by this one rule.
+    /// those before it. The instruction and its account count by this one rule.
     /// </summary>
     internal static int Shown(IReadOnlyList<GoAheadView> held)
     {
@@ -97,13 +97,13 @@ public static class GoAheadsText
     }
 
     /// <summary>
-    /// The prompt an answer resumes its own conversation with (ANSWER1a, D131 §1): the person's answer, verbatim, then the
-    /// answers to the go-aheads this session asked, which its conversation was not handed at its start, then those of them that
+    /// The prompt an answer resumes its own conversation with: the person's answer, verbatim, then the
+    /// answers to the go-aheads this session asked, which its conversation is not handed at its start, then those of them that
     /// still wait. The answer alone where it asked none, or the ask's go-aheads were not read.
     /// </summary>
     /// <remarks>
-    /// 🔴 SAYHELD1: the person's words to a park go on at the next look whatever go-ahead it asked still waits (MSG1b; GOAHEAD2b says
-    /// so of the box), and the go-ahead stays waiting. So the turn says which still wait and that their acts are not yet the session's,
+    /// 🔴 The person's words to a park go on at the next look whatever go-ahead it asked still waits,
+    /// and the go-ahead stays waiting. So the turn says which still wait and that their acts are not yet the session's,
     /// or words that answered something else would read as leave to do them.
     /// </remarks>
     public static string Resumed(string answer, AskWords? words, string session)

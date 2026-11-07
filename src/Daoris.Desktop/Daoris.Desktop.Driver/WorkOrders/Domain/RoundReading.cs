@@ -67,7 +67,7 @@ internal sealed class RoundReading(Snapshot snapshot, DriverConfig config, IRole
         // A stand-down the person's bring-forward carries on, whatever ran here before it.
         || (quest.Status == "Taken" && BroughtForwardFrom(quest) is not null);
 
-    /// <summary>Whether the quest was handed to another agent from this session: the store names the session whose stop it is.</summary>
+    /// <summary>Whether the quest is handed to another agent from this session: the store names the session whose stop it is.</summary>
     internal bool HandedFrom(QuestView quest, PriorSession stop) =>
         snapshot.Handed.TryGetValue(quest.Id, out var handed) && string.Equals(handed.From, stop.Session, StringComparison.Ordinal);
 
@@ -95,7 +95,7 @@ internal sealed class RoundReading(Snapshot snapshot, DriverConfig config, IRole
     }
 
     /// <summary>
-    /// The held record a hand-over was made from, or the one Try again released: what an Open quest is carried on from, in its
+    /// The held record a hand-over is made from, or the one Try again released: what an Open quest is carried on from, in its
     /// tree, ahead of the commit rule, never started afresh.
     /// </summary>
     internal PriorSession? TransientReleasedFrom(QuestView quest) =>
@@ -134,7 +134,7 @@ internal sealed class RoundReading(Snapshot snapshot, DriverConfig config, IRole
 
     /// <summary>
     /// Whether a taken quest's resume already began, so it waits on its question no more. The service names the question for as long
-    /// as the quest is taken, so read alone it held the quest after its resume for good. Read from what the look holds: the question
+    /// as the quest is taken, so read alone it would hold the quest after its resume for good. Read from what the look holds: the question
     /// is off the open list (answered), and the quest's last session here is a park, which only a session started after the answer
     /// makes, since one that asks ends <c>completed</c>. A last session that ended any other way is still the resume's to carry on.
     /// </summary>
@@ -149,7 +149,7 @@ internal sealed class RoundReading(Snapshot snapshot, DriverConfig config, IRole
     /// take: its last session here, or null. A taken quest waiting on a question waits with them: the resume is its next start, which
     /// is handed them. Once that resume began (<see cref="ResumedOnAnswer"/>), the quest waits on nothing, and words to its session go
     /// on in it as any record's do. A closed quest waits on nothing, whatever question the service still keeps for it. The session a
-    /// taken quest's reopen names, where a later one is its last here, goes first with the words it was told; not while the person's
+    /// taken quest's reopen names, where a later one is its last here, goes first with the words it is told; not while the person's
     /// stop of the last session holds the quest: the reopen's words are Daoris's, and release no stop the person made.
     /// </summary>
     internal PriorSession? WordsOn(QuestView quest)

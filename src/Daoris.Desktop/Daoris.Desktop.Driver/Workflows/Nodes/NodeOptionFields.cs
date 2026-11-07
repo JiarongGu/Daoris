@@ -16,7 +16,7 @@ public sealed record NodeOptionField(string Name, string Type, IReadOnlyList<str
 public static class NodeOptionFields
 {
     /// <summary>
-    /// The option an agent step names the role that takes it by (ROLESTEP1b): a role's id, on <c>claimed</c> and <c>opinion</c> alone, since
+    /// The option an agent step names the role that takes it by: a role's id, on <c>claimed</c> and <c>opinion</c> alone, since
     /// no agent session takes Daoris's or a plugin's performed steps.
     /// </summary>
     public const string Role = "role";

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One turn of a brainstorm's pass (BRAINSTORM1a, D176 points 1-4): a generator's or the synthesis's, or its one repair, in a room
+/// One turn of a brainstorm's pass: a generator's or the synthesis's, or its one repair, in a room
 /// that holds the packet and the instruction and nothing else.
 /// </summary>
 /// <param name="Turn">The turn's id: <c>g1</c>… for a generator, <c>s1</c> for the synthesis, each with <c>r</c> for its repair.</param>
@@ -10,8 +10,8 @@ namespace Daoris.Driver;
 /// <param name="Answer">The file its result tool writes its answer to, outside the room.</param>
 /// <param name="Minutes">How long it may take.</param>
 /// <param name="Entry">
-/// The voice's entry of the Brainstorm actor, frozen with its plan (D205 §4.4, MODELROLE1e): the model and effort its turn asks and the
-/// choice its record keeps; null for a turn of a meeting, which asks account default as it always did.
+/// The voice's entry of the Brainstorm actor, frozen with its plan: the model and effort its turn asks and the
+/// choice its record keeps; null for a turn of a meeting, which asks the account default.
 /// </param>
 /// <param name="Passed">The accounts of its agent this voice already passed for its model: the one bounded restart leaves them out.</param>
 public sealed record BrainstormTurn(
@@ -19,7 +19,7 @@ public sealed record BrainstormTurn(
     ActorEffective? Entry = null, IReadOnlyCollection<string>? Passed = null)
 {
     /// <summary>
-    /// The workspace of the repository its brainstorm asks about (FOUNDATION1j part ii, the foundation design §2.4's table), for the version it
+    /// The workspace of the repository its brainstorm asks about, for the version it
     /// pins; null for a brainstorm on no repository, and for a meeting's turn, which asks the machine's.
     /// </summary>
     public string? Workspace { get; init; }
@@ -31,8 +31,8 @@ public sealed record BrainstormTurn(
 public sealed record BrainstormTurnRun(bool Ran, string? Account, string? Code, string Line, string? Why = null);
 
 /// <summary>
-/// The variables a brainstorm turn's spawn carries (BRAINSTORM1a): the brainstorm, the turn, and the file its result tool writes,
-/// which a stub agent may write in place of calling the tool. Its connector carries them too, with the room (BRAINSTORM1a2).
+/// The variables a brainstorm turn's spawn carries: the brainstorm, the turn, and the file its result tool writes,
+/// which a stub agent may write in place of calling the tool. Its connector carries them too, with the room.
 /// </summary>
 /// <remarks>A twin of the service's <c>BrainstormScope</c>: the names are duplicated deliberately, never imported across.</remarks>
 public static class BrainstormVariables

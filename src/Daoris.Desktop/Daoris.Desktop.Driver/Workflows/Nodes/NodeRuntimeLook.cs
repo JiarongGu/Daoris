@@ -6,7 +6,7 @@ namespace Daoris.Driver;
 /// </summary>
 public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
 {
-    /// <summary>The units and their checkouts: read at the look's deadline, and at a wake only when none was read yet.</summary>
+    /// <summary>The units and their checkouts: read at the look's deadline, and at a wake only when none is read yet.</summary>
     public Func<CancellationToken, Task<NodeUnitsRead>> Units { get; init; } = _ => Task.FromResult(new NodeUnitsRead([], new Dictionary<string, string>()));
 
     /// <summary>The plugins' steps as the catalogue declares them (<see cref="PluginManifest.Steps"/>): a performed node's contract.</summary>
@@ -36,7 +36,7 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
     /// <summary>
     /// The second opinion's and the look's gates for a branch unit's work as a landing door reads them (<see cref="OpinionGate.JudgeAsync"/>
     /// and <see cref="ReviewGate"/>'s live read), what its <c>opinion</c> and <c>look</c> nodes observe: read once a pass for a unit, and only
-    /// where one of them waits. Either is null where it was not read, and its node waits. Judged at the commit given, where one is (a run's
+    /// where one of them waits. Either is null where it is not read, and its node waits. Judged at the commit given, where one is (a run's
     /// branch at the tip the pass read, which its gate nodes bind); null judges the unit's newest tree's <c>HEAD</c>.
     /// </summary>
     public Func<WorkUnit, string?, CancellationToken, Task<(OpinionGateState? Opinion, ReviewGateState? Review)>> Gates { get; init; } =
@@ -44,7 +44,7 @@ public sealed record NodeRuntimeLook(DriverConfig Config, bool Whole)
 
     /// <summary>
     /// What the line and the person's branches hold of a run's branch at the commit its pass read, what its <c>content.holds</c> observes:
-    /// read once a pass, and only where that node waits. Null where it was not read at that commit, and the node waits.
+    /// read once a pass, and only where that node waits. Null where it is not read at that commit, and the node waits.
     /// </summary>
     public Func<WorkUnit, string, CancellationToken, Task<HoldContent?>> Content { get; init; } = (_, _, _) => Task.FromResult<HoldContent?>(null);
 

@@ -108,13 +108,13 @@ public sealed record SessionsWorld(ServiceClient Service, string Home, DriverCon
 /// <summary>What the keeping stop came to: <c>CANCEL_TURN</c>'s answer to a terminal's <c>sessions stop &lt;id&gt; --turn</c>, which the verb words.</summary>
 public static class KeepingStops
 {
-    /// <summary>The turn was asked to stop, keeping the session: what waits goes next.</summary>
+    /// <summary>The turn is asked to stop, keeping the session: what waits goes next.</summary>
     public const string Stopped = "stopped";
 
-    /// <summary>No turn ran, or nothing waited for its end: nothing was stopped, since ending the work is the session's own stop.</summary>
+    /// <summary>No turn ran, or nothing waited for its end: nothing is stopped, since ending the work is the session's own stop.</summary>
     public const string Nothing = "nothing";
 
-    /// <summary>The door has no stop that keeps the session (the native door's run): nothing was stopped.</summary>
+    /// <summary>The door has no stop that keeps the session (the native door's run): nothing is stopped.</summary>
     public const string NoInterrupt = "no-interrupt";
 
     /// <summary>Nothing here runs the session.</summary>

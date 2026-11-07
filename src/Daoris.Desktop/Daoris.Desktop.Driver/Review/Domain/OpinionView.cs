@@ -4,16 +4,16 @@ using static Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>One claim a reviewer made (design §6.1), as the local host answers it: a claim, never a fact (§6.6).</summary>
+/// <summary>One claim a reviewer makes, as the local host answers it: a claim, never a fact.</summary>
 /// <param name="Number">Its number in the pass, from 1: what an answer names it by.</param>
 public sealed record OpinionFindingView(int Number, string Weight, string Where, string Claim, string Consequence, string Reproduce, string Sure)
 {
-    /// <summary>A diagnosis or a change proposed as text; null where none was given.</summary>
+    /// <summary>A diagnosis or a change proposed as text; null where none is given.</summary>
     public string? Proposal { get; init; }
 }
 
 /// <summary>
-/// The working session's answer to one finding as the host keeps it (design §6.4): <c>fixed</c> with the commit it named,
+/// The working session's answer to one finding as the host keeps it: <c>fixed</c> with the commit it names,
 /// <c>rejected</c> with its evidence, or <c>unresolved</c> with why. The session's claim: the driver checks a fix's commit.
 /// </summary>
 public sealed record OpinionAnswerView(int Finding, string Said)
@@ -26,12 +26,12 @@ public sealed record OpinionAnswerView(int Finding, string Said)
 }
 
 /// <summary>
-/// A second opinion as this machine's local host answers it (XAGENT1c's <c>GET /api/opinions/{id}</c>; design §6.2), read for
+/// A second opinion as this machine's local host answers it (<c>GET /api/opinions/{id}</c>), read for
 /// what the driver delivers: where its pass stands, the candidate, the reviewer, what it said, where its findings went and the
 /// working session's answers. Read without trusting the shape: a part this build does not know is passed over.
 /// </summary>
 /// <param name="Pass"><c>first</c>, or <c>recheck</c>.</param>
-/// <param name="Working">The session whose work it read.</param>
+/// <param name="Working">The session whose work it reads.</param>
 /// <param name="Session">The reviewer's own session record.</param>
 /// <param name="State"><c>reading</c>, <c>given</c> or <c>failed</c>, derived by the host when read.</param>
 public sealed record OpinionView(
@@ -47,16 +47,16 @@ public sealed record OpinionView(
     /// <summary>The reviewer's declared maker; null where none is declared, which its label says.</summary>
     public string? Maker { get; init; }
 
-    /// <summary>A failed pass's code: <c>ended</c>, <c>out-of-time</c> or <c>limited</c> (LIMITRESUME1h). Null otherwise.</summary>
+    /// <summary>A failed pass's code: <c>ended</c>, <c>out-of-time</c> or <c>limited</c>. Null otherwise.</summary>
     public string? Why { get; init; }
 
-    /// <summary>The rule's bound of the pass, in minutes; null where the host said none.</summary>
+    /// <summary>The rule's bound of the pass, in minutes; null where the host says none.</summary>
     public int? Minutes { get; init; }
 
     /// <summary>The commits the candidate holds, oldest first.</summary>
     public IReadOnlyList<string> Commits { get; init; } = [];
 
-    /// <summary>What it said, its findings in their order; null until it said its opinion.</summary>
+    /// <summary>What it said, its findings in their order; null until it says its opinion.</summary>
     public IReadOnlyList<OpinionFindingView>? Findings { get; init; }
 
     /// <summary>What it read, said with its opinion.</summary>
@@ -85,17 +85,17 @@ public sealed record OpinionView(
     /// <summary>Who read it, as the person reads it: its product, else its adapter, and its maker where declared.</summary>
     public string Who => (Product ?? Door) + (Maker is { } maker ? $" ({maker})" : "");
 
-    /// <summary>The answer standing for <paramref name="finding"/>: the latest kept, or null where none was.</summary>
+    /// <summary>The answer standing for <paramref name="finding"/>: the latest kept, or null where none is.</summary>
     public OpinionAnswerView? AnswerTo(int finding) => Answers.LastOrDefault(answer => answer.Finding == finding);
 }
 
-/// <summary>The host's words for an opinion, and its reading (XAGENT1e).</summary>
+/// <summary>The host's words for an opinion, and its reading.</summary>
 public static class OpinionViews
 {
     /// <summary>The pass that reads the candidate first.</summary>
     public const string FirstPass = "first";
 
-    /// <summary>The one pass that reads the commits made in answer (design §6.5).</summary>
+    /// <summary>The one pass that reads the commits made in answer.</summary>
     public const string RecheckPass = "recheck";
 
     /// <summary>A pass still being read.</summary>
@@ -104,16 +104,16 @@ public static class OpinionViews
     /// <summary>A pass whose reviewer said its opinion.</summary>
     public const string GivenState = "given";
 
-    /// <summary>A pass that ended without an opinion, never an empty one (design §6.1).</summary>
+    /// <summary>A pass that ended without an opinion, never an empty one.</summary>
     public const string Failed = "failed";
 
     /// <summary>
-    /// A failed pass's code where an account's limit ended its session (LIMITRESUME1h, D206 design §3.8): the host's <c>Opinions.Limited</c>,
+    /// A failed pass's code where an account's limit ended its session: the host's <c>Opinions.Limited</c>,
     /// a twin by its spelling.
     /// </summary>
     public const string Limited = "limited";
 
-    /// <summary>A failed pass's code where its provider kept failing through the retry's bound (AGENTERRORS1d): the host's <c>Opinions.Transient</c>, which the gate reads as its own unavailable code.</summary>
+    /// <summary>A failed pass's code where its provider kept failing through the retry's bound: the host's <c>Opinions.Transient</c>, which the gate reads as its own unavailable code.</summary>
     public const string Transient = "transient";
 
     /// <summary>Wrong to land as it is.</summary>
@@ -149,7 +149,6 @@ public static class OpinionViews
             Maker = root.Reviewer.Maker,
             Why = root.Why,
             Minutes = root.Minutes,
-            // Empty strings are kept here, as the copy this replaced kept them.
             Commits = [.. (root.Candidate.Commits ?? []).OfType<string>()],
             Findings = given is null ? null : [.. (given.Findings ?? []).Select(Finding).OfType<OpinionFindingView>()],
             Read = given?.Read,

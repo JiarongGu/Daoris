@@ -5,17 +5,17 @@ namespace Daoris.Driver;
 /// <summary>What a pause or a resume reads and touches: the service, the home, <c>driver.json</c> and this machine's processes.</summary>
 /// <param name="Processes">
 /// The registry the door holds: the loop's own at the screen, which stops what it runs; at a terminal, the home's markers,
-/// which run nothing, so a live session is reached through the request its loop takes (SESSUX1g).
+/// which run nothing, so a live session is reached through the request its loop takes.
 /// </param>
 public sealed record WorkWorld(ServiceClient Service, string Home, string ConfigPath, SessionProcesses Processes)
 {
-    /// <summary>The configured agent's wire, which a resume's plan is read by (D70).</summary>
+    /// <summary>The configured agent's wire, which a resume's plan is read by.</summary>
     public bool Unadopted { get; init; }
 
     /// <summary>Where <c>work.paused</c> and <c>work.resumed</c> go; null writes none.</summary>
     public MachineLog? Log { get; init; }
 
-    /// <summary>How long a request to another Daoris process is waited for: ten seconds, as the sessions verb waits (D126 §7.1).</summary>
+    /// <summary>How long a request to another Daoris process is waited for: ten seconds, as the sessions verb waits.</summary>
     public TimeSpan Wait { get; init; } = TimeSpan.FromSeconds(10);
 
     /// <summary>How often the record is read while a request waits.</summary>
@@ -24,20 +24,20 @@ public sealed record WorkWorld(ServiceClient Service, string Home, string Config
     public Func<DateTimeOffset> Clock { get; init; } = () => DateTimeOffset.UtcNow;
 
     /// <summary>
-    /// How an abandon judges a tree and its branch, and discards them (PAUSE1d, D132 §3.3): this home's
+    /// How an abandon judges a tree and its branch, and discards them: this home's
     /// <see cref="SessionTrees"/>, which asks git; null is that. A test hands in its own.
     /// </summary>
     public IWorkTrees? Trees { get; init; }
 
     /// <summary>
-    /// One sync pass of a workspace (D69), as the door runs it (PAUSE1d, D132 §3.4 step 4): the loop's own pass at the screen,
+    /// One sync pass of a workspace, as the door runs it: the loop's own pass at the screen,
     /// the terminal's set at a terminal. A null answer is a workspace with no remote here; a null delegate is a machine with
     /// none wired, whose declines travel nowhere.
     /// </summary>
     public Func<string, CancellationToken, Task<SyncReport?>>? Sync { get; init; }
 
     /// <summary>
-    /// Where the terminal's verb looks for the running Daoris (RPC1e), whose routes it sends while one answers; null acts alone, as the
+    /// Where the terminal's verb looks for the running Daoris, whose routes it sends while one answers; null acts alone, as the
     /// window's own world and a test's do.
     /// </summary>
     public InstanceWorld? Instance { get; init; }
@@ -47,17 +47,17 @@ public sealed record WorkWorld(ServiceClient Service, string Home, string Config
 }
 
 /// <summary>
-/// Pause and resume an ask's work, or one quest's, on this machine (PAUSE1b, D132 points 2–4, design §2): one implementation
+/// Pause and resume an ask's work, or one quest's, on this machine: one implementation
 /// the screen's <c>WORK_PLAN</c>, <c>WORK_PAUSE</c> and <c>WORK_RESUME</c> and the terminal's <c>ask --pause|--resume</c> and
-/// <c>quest pause|resume</c> call (D50).
+/// <c>quest pause|resume</c> call.
 /// </summary>
 /// <remarks>
 /// <para><b>A pause takes nothing Resume cannot give back.</b> It writes itself into <c>driver.json</c> first, so nothing of the
 /// work starts between the steps that follow; it stops every live session of the work this machine runs as the person's own
-/// stop, through the routes the screen's *Stop…* takes and the request folder SESSUX1g made (<c>by: pause</c>); and it
+/// stop, through the routes the screen's *Stop…* takes and the request folder (<c>by: pause</c>); and it
 /// records each stop as its own. A session waiting on you stays parked, a running intake goes on, and a teammate's session
 /// is named, never reached. Each open quest keeps its place, and each taken one its take, tree and strikes: the pause is a
-/// verdict and a file, never a state (D46 §3).</para>
+/// verdict and a file, never a state.</para>
 ///
 /// <para><b>Resume releases what the pause made</b>, <c>released</c> for each stop, and removes the pause. It starts nothing
 /// itself: the next look plans the work as it would have, a taken quest carried on in its tree. What still holds a quest (a
@@ -66,21 +66,21 @@ public sealed record WorkWorld(ServiceClient Service, string Home, string Config
 /// </remarks>
 public static class WorkPausing
 {
-    /// <summary>The verdicts that hold a quest after a resume (design §2.4): each says what holds it, where a wait only says when.</summary>
+    /// <summary>The verdicts that hold a quest after a resume: each says what holds it, where a wait only says when.</summary>
     private static readonly HashSet<StartVerdict> Holding =
     [
         StartVerdict.Paused, StartVerdict.Stopped, StartVerdict.Exhausted, StartVerdict.Held,
         StartVerdict.NotDrivable, StartVerdict.NotAdopted, StartVerdict.NoRoot,
-        // A take that is not this machine's (CARRY2b): a resume carries nothing on over it.
+        // A take that is not this machine's: a resume carries nothing on over it.
         StartVerdict.TakenElsewhere,
-        // AGENTERRORS1a: a line past its transient bound, held for the person's word.
+        // A line past its transient bound, held for the person's word.
         StartVerdict.TransientHeld,
-        // STAFFPOLICY1e: a line held for the person's yes by its role's policy.
+        // A line held for the person's yes by its role's policy.
         StartVerdict.PolicyHeld,
     ];
 
     /// <summary>
-    /// What a pause would do with each piece of a work (design §2.1). Pure: the work as <see cref="AskWork"/> read it, the
+    /// What a pause would do with each piece of a work. Pure: the work as <see cref="AskWork"/> read it, the
     /// pauses in the file and the paused set the look would compute, and the ask itself for an ask's work.
     /// </summary>
     public static WorkPlan Plan(WorkPieces pieces, DriverConfig config, IReadOnlyDictionary<string, PausedBy> paused, AskView? ask)
@@ -148,7 +148,7 @@ public static class WorkPausing
     }
 
     /// <summary>
-    /// Pause a work on this machine (design §2.1): the pause written first, then every live session of it this machine runs
+    /// Pause a work on this machine: the pause written first, then every live session of it this machine runs
     /// stopped as the person's, each stop recorded as the pause's own.
     /// </summary>
     /// <param name="door">The machine log's <c>door</c>: <c>screen</c> or <c>terminal</c>.</param>
@@ -164,7 +164,7 @@ public static class WorkPausing
 
         if (plan.Paused is null && !plan.Pausable) return new PauseOutcome(scope, named, PauseVerdict.Nothing);
 
-        // 1. The pause first, so nothing of the work starts while its sessions are stopped (design §3.4's order, a pause's half).
+        // 1. The pause first, so nothing of the work starts while its sessions are stopped.
         var config = DriverConfig.Load(world.ConfigPath);
         var earlier = Entry(config, scope, named);
         var at = earlier?.At ?? ToSecond(world.Clock());
@@ -218,7 +218,7 @@ public static class WorkPausing
     }
 
     /// <summary>
-    /// Resume a work (design §2.4): the pause removed, each stop it made released, and what still holds each quest named from
+    /// Resume a work: the pause removed, each stop it made released, and what still holds each quest named from
     /// the planner's verdict over the file as it now stands.
     /// </summary>
     /// <param name="door">The machine log's <c>door</c>: <c>screen</c> or <c>terminal</c>.</param>
@@ -256,7 +256,7 @@ public static class WorkPausing
         };
     }
 
-    /// <summary>What a terminal prints of a pause, one line each, in English (D50): the screen says it from the answer's facts.</summary>
+    /// <summary>What a terminal prints of a pause, one line each, in English: the screen says it from the answer's facts.</summary>
     public static IReadOnlyList<string> Lines(PauseOutcome outcome)
     {
         var what = Named(outcome.Scope, outcome.Id);
@@ -291,7 +291,7 @@ public static class WorkPausing
         return lines;
     }
 
-    /// <summary>What a terminal prints of a resume, one line each, in English (D50).</summary>
+    /// <summary>What a terminal prints of a resume, one line each, in English.</summary>
     public static IReadOnlyList<string> Lines(ResumeOutcome outcome)
     {
         var what = Named(outcome.Scope, outcome.Id);
@@ -344,7 +344,7 @@ public static class WorkPausing
 
     private static string On(string? quest) => quest is null ? "" : $" on #{quest}";
 
-    /// <summary>When, to the second, as <c>driver.json</c> writes a pause's time (PAUSE1a).</summary>
+    /// <summary>When, to the second, as <c>driver.json</c> writes a pause's time.</summary>
     internal static DateTimeOffset ToSecond(DateTimeOffset at)
     {
         var utc = at.ToUniversalTime();
@@ -354,8 +354,8 @@ public static class WorkPausing
     /// <summary>
     /// Stop one live session as the person's, with the pause's or the abandon's words on its record: null when it stopped,
     /// else why not. One this registry runs is stopped here; one nothing here runs is ended as an orphan; one another Daoris
-    /// process here runs is asked through the request its loop takes (SESSUX1g), and waited for. A session waiting on you
-    /// (an abandon's, PAUSE1d) is ended <c>stopped</c> unanswered, as <c>RESOLVE_SESSION</c> ends it, its process first.
+    /// process here runs is asked through the request its loop takes, and waited for. A session waiting on you
+    /// (an abandon's) is ended <c>stopped</c> unanswered, as <c>RESOLVE_SESSION</c> ends it, its process first.
     /// </summary>
     /// <param name="by">Who asks, as the request names it: <see cref="RequestDoor.Pause"/> or <see cref="RequestDoor.Abandon"/>.</param>
     internal static async Task<string?> StopAsync(WorkWorld world, SessionRecord record, Noted note, string by, CancellationToken ct)
@@ -387,7 +387,7 @@ public static class WorkPausing
             if (now is null || now.State != record.State) return null;
         }
 
-        // Withdrawn, no loop acts on it after the person was told; taken and not yet moved, the loop that runs it is stopping it.
+        // Withdrawn, no loop acts on it after the person is told; taken and not yet moved, the loop that runs it is stopping it.
         return requests.Withdraw(record.Id) ? PauseKept.Elsewhere : null;
     }
 
@@ -419,7 +419,7 @@ public static class WorkPausing
     }
 
     /// <summary>
-    /// One hold with the facts its sentence is said from (CARRY2d), read from the same consideration as the sentence, so the
+    /// One hold with the facts its sentence is said from, read from the same consideration as the sentence, so the
     /// page's words and the driver's never disagree: a park's count is the one its sentence says, the failures less the mark.
     /// </summary>
     private static WorkHold Hold(Consideration consideration, DriverConfig config) =>

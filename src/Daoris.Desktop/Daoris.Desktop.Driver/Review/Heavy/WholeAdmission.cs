@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One whole take of the machine's admission and what it holds (INTEGRATE1f part f2): see <see cref="MachineAdmission.TakeWholeAsync"/>.
+/// One whole take of the machine's admission and what it holds: see <see cref="MachineAdmission.TakeWholeAsync"/>.
 /// It is the driver's twin of <c>createAdmission().takeWhole</c> in <c>tools/machine-admission.mjs</c>: the same entries, the same
 /// readings, the same doubts in the same words, so a record this writes is one the tool counts, and the other way round.
 /// </summary>

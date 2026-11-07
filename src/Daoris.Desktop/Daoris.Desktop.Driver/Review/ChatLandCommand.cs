@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>trees land</c> on a chat run's work reads and writes through (CHATFLOW1d): the service, the home, its trees and the instance.</summary>
+/// <summary>What <c>trees land</c> on a chat run's work reads and writes through: the service, the home, its trees and the instance.</summary>
 /// <param name="Instance">The running Daoris this terminal may reach; null where it reaches none, so a live conversation is refused.</param>
 public sealed record ChatLandWorld(ServiceClient Service, string Home, SessionTrees Trees, InstanceWorld? Instance, TextWriter Output, TextWriter Error)
 {
@@ -9,11 +9,10 @@ public sealed record ChatLandWorld(ServiceClient Service, string Home, SessionTr
 }
 
 /// <summary>
-/// <c>daoris tree land &lt;session&gt;</c> on a chat run's work (CHATFLOW1d; the chat-flow design §5.2
-/// point 1, Codex's finding 11): bound first, as the window's press binds it, then the driver's one press operation
+/// <c>daoris tree land &lt;session&gt;</c> on a chat run's work: bound first, as the window's press binds it, then the driver's one press operation
 /// (<see cref="ChatPresses.PressAsync"/>). A live conversation is held by the running Daoris's runner, so the press is sent there (the connected
 /// terminal), confirmed in its window and reserved there; with none to reach, it is refused, never landed beside a turn this terminal cannot
-/// see. An ended one no runner holds, and this terminal is its door (the standalone terminal), which lands nothing (CHATFLOW1g, D228): the
+/// see. An ended one no runner holds, and this terminal is its door (the standalone terminal), which lands nothing: the
 /// run's <c>land</c> lands it at Daoris's next pass, so the press keeps the review's word, or says what holds the work. Its words are the
 /// press's, exit 1 where refused.
 /// </summary>

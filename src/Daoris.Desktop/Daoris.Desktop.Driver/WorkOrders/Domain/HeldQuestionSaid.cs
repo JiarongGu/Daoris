@@ -4,7 +4,7 @@ namespace Daoris.Driver;
 internal static class HeldQuestionSaid
 {
     /// <summary>
-    /// A host before evidence answers no cause, and its one hold was a departure. The check names a commit where no session here
+    /// The check names a commit where no session here
     /// ended on the question, since a done no driven end read must be read at a commit the person names. The code beside the
     /// sentence is which of them it is, so the page words it.
     /// </summary>

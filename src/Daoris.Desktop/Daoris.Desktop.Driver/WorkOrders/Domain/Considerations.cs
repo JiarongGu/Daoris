@@ -12,8 +12,8 @@ public static class Considerations
             .OrderBy(line => line, StringComparer.Ordinal));
 
     /// <summary>
-    /// The plan as it turned out: every start that was held at spawn becomes <see cref="StartVerdict.Blocked"/> with the hold's own
-    /// sentence, and everything else is the plan's word. The plan is not edited — what was decided and what happened are two records.
+    /// The plan as it turned out: every start held at spawn becomes <see cref="StartVerdict.Blocked"/> with the hold's own
+    /// sentence, and everything else is the plan's word. The plan is not edited: the decision and what happened are two records.
     /// </summary>
     /// <param name="signedOut">The accounts each held start passed not signed in, carried beside its hold.</param>
     public static IReadOnlyList<Consideration> Blocked(

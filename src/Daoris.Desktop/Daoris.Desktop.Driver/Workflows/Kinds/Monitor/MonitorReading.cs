@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>monitor</c>'s reading (D245's note; D247 §4 point 1): the state the one step it follows reports through that step's own reading
+/// A <c>monitor</c>'s reading: the state the one step it follows reports through that step's own reading
 /// (<see cref="IWatchable"/>), read into its outcome. Reached once the state settles, its outcome the state; pending while the state is open or
 /// unanswered, or where it follows no one step that reports a state, which the save refuses. Nothing fails it.
 /// </summary>

@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>The rule standing for a question, and where it was set: <c>workspace</c>, <c>machine</c> or <c>default</c>.</summary>
+/// <summary>The rule standing for a question, and where it is set: <c>workspace</c>, <c>machine</c> or <c>default</c>.</summary>
 public sealed record ResolvedBrainstorms(BrainstormRule Rule, string Source);
 
 /// <summary>
@@ -34,13 +34,12 @@ public sealed record BrainstormSet
 
 /// <summary>
 /// The brainstorm policy, <c>brainstorms</c> (this machine's rule) and <c>workspaceBrainstorms</c> in <c>driver.json</c>: read,
-/// refused, resolved, said and edited, the one place every door asks (D176 point 9: a workspace's whole over the machine's).
+/// refused, resolved, said and edited, the one place every door asks: a workspace's whole over the machine's.
 /// Modelled on <see cref="HelperRules"/>.
 /// </summary>
 /// <remarks>
-/// One table, this suite's <c>fixtures/brainstorm-rules.json</c>, cell for cell (<c>BrainstormRulesTests</c>); its CLI twin,
-/// <c>brainstorms.ts</c>, left with the driver family's TypeScript (PUSH1f2b, D194 point 7). The look reads the agents and the minutes; the mode is read by an
-/// agent's ask, which is BRAINSTORM1d's.
+/// One table, this suite's <c>fixtures/brainstorm-rules.json</c>, cell for cell (<c>BrainstormRulesTests</c>). The look reads the agents and the minutes; the mode is read by an
+/// agent's ask.
 /// </remarks>
 public static class BrainstormRules
 {
@@ -53,7 +52,7 @@ public static class BrainstormRules
     public const string FromMachine = "machine";
     public const string DefaultSource = "default";
 
-    /// <summary>The most agents one brainstorm runs (D176 point 9: at most four makers).</summary>
+    /// <summary>The most agents one brainstorm runs: at most four makers.</summary>
     public const int MostAgents = BrainstormKey.MostAgents;
 
     /// <summary>The minutes' names, in the order they are kept.</summary>
@@ -72,9 +71,9 @@ public static class BrainstormRules
     public static void Write(Utf8JsonWriter writer, BrainstormRule rule) => BrainstormKey.Write(writer, rule);
 
     /// <summary>
-    /// The rule standing for a question (D176 point 9): its repository's workspace's whole, else this machine's, else the default.
+    /// The rule standing for a question: its repository's workspace's whole, else this machine's, else the default.
     /// A question with no repository (<paramref name="workspace"/> null) takes this machine's. Names matched in any case. Read by the
-    /// policy's one reader (<see cref="WorkPolicies.Brainstorms"/>, FOUNDATION1q).
+    /// policy's one reader (<see cref="WorkPolicies.Brainstorms"/>).
     /// </summary>
     public static ResolvedBrainstorms Resolve(DriverConfig config, string? workspace)
     {

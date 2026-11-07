@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
-/// <summary>What a terminal asked of a work (PAUSE1b, PAUSE1d, D132 §7.2): pause, resume or abandon an ask's, or one quest's.</summary>
+/// <summary>What a terminal asked of a work: pause, resume or abandon an ask's, or one quest's.</summary>
 /// <param name="Verb"><c>pause</c>, <c>resume</c> or <c>abandon</c>.</param>
 public sealed record WorkAsk(WorkScope Scope, string Verb, string Id)
 {
-    /// <summary>An abandon's reason (PAUSE1d), which each declined quest keeps; null where none was given.</summary>
+    /// <summary>An abandon's reason, which each declined quest keeps; null where none is given.</summary>
     public string? Reason { get; init; }
 
     /// <summary>An abandon's <c>--yes</c>: the second press, which abandons what the list holds now.</summary>
@@ -12,12 +12,11 @@ public sealed record WorkAsk(WorkScope Scope, string Verb, string Id)
 }
 
 /// <summary>
-/// <c>daoris ask pause|--resume|--abandon &lt;id&gt;</c> and <c>quest pause|resume|abandon &lt;id&gt;</c> (PAUSE1b, PAUSE1d,
-/// D132 §7.2, D50): the terminal's door to <see cref="WorkPausing"/> and <see cref="WorkAbandoning"/>, which the screen's
+/// <c>daoris ask pause|--resume|--abandon &lt;id&gt;</c> and <c>quest pause|resume|abandon &lt;id&gt;</c>: the terminal's door to <see cref="WorkPausing"/> and <see cref="WorkAbandoning"/>, which the screen's
 /// <c>WORK_PAUSE</c>, <c>WORK_RESUME</c> and <c>WORK_ABANDON</c> call too. In the library, so its words are held by a test.
 /// </summary>
 /// <remarks>
-/// <para><b>A session another Daoris process runs</b> is stopped through the request folder SESSUX1g made, which every loop
+/// <para><b>A session another Daoris process runs</b> is stopped through the request folder every loop
 /// on the home watches, with <c>by: pause</c> or <c>by: abandon</c>; one nothing here runs is ended as the screen ends an orphan.</para>
 ///
 /// <para><b>Without <c>--yes</c>, an abandon is the first press</b>: it prints the list and changes nothing. With it, it judges
@@ -25,7 +24,7 @@ public sealed record WorkAsk(WorkScope Scope, string Verb, string Id)
 /// refused before the service is asked anything.</para>
 ///
 /// <para>Exit codes are the family's: 0 done, listed, or nothing to do · 1 refused, no such ask or quest, or no reason · 2
-/// could not: a session of the work this machine runs was not stopped, a step of an abandon failed, or the service did not
+/// could not: a session of the work this machine runs is not stopped, a step of an abandon failed, or the service did not
 /// answer.</para>
 /// </remarks>
 [CommandGroup("work", "state", "held", "recovery", Whole = true)]
@@ -56,7 +55,7 @@ public static class WorkCommand
     }
 
     /// <summary>
-    /// The verb, as the running Daoris's client where its world names an instance to look for (RPC1e, the terminal RPC design §7.2): a
+    /// The verb, as the running Daoris's client where its world names an instance to look for: a
     /// pause, a resume and an abandon's <c>--yes</c> are the person's presses, which the window confirms; an abandon's list is a read.
     /// Each route asked for its words runs this verb's own path in that Daoris, so the lines are the alone path's; alone where none runs.
     /// </summary>
@@ -103,7 +102,7 @@ public static class WorkCommand
         return resumed.Verdict == ResumeVerdict.Unknown ? 1 : 0;
     }
 
-    /// <summary>The first press without <c>--yes</c>, the second with it (design §7.2).</summary>
+    /// <summary>The first press without <c>--yes</c>, the second with it.</summary>
     private static async Task<int> AbandonAsync(WorkAsk ask, WorkWorld world, TextWriter output, CancellationToken ct)
     {
         if (!ask.Yes)

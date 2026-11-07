@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris quest review</c> was asked: the quest, the verdict as the service spells it, and the person's words.</summary>
+/// <summary>What <c>daoris quest review</c> asks: the quest, the verdict as the service spells it, and the person's words.</summary>
 /// <param name="Said">
-/// <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>, which <c>off</c> is (REVIEWENV1j, design §3.6); or
+/// <c>reviewed</c>, <c>not-yet</c> or <c>skipped</c>, which <c>off</c> is; or
 /// <see cref="QuestReviewCommand.SetUpStep"/>, a set-up step asked in <see cref="SetUpIn"/>.
 /// </param>
 public sealed record QuestReviewAsk(string Quest, string Said, string? Words)
 {
     /// <summary>
-    /// The environment the chain's choice sets the work up in (REVIEWENV1j, design §3.6): <c>on</c>, the repository's default, or an
+    /// The environment the chain's choice sets the work up in: <c>on</c>, the repository's default, or an
     /// environment's name; null for a verdict.
     /// </summary>
     public string? SetUpIn { get; init; }
@@ -19,36 +19,36 @@ public sealed record QuestReviewAsk(string Quest, string Said, string? Words)
 public sealed record QuestReviewWorld(ServiceClient Service)
 {
     /// <summary>
-    /// This machine's driver config, whose review rule a set-up's choice is judged against (REVIEWENV1j, design §1.4): the
+    /// This machine's driver config, whose review rule a set-up's choice is judged against: the
     /// environment named, or <c>on</c>'s default, must be one the quest's repository declares. Empty declares none.
     /// </summary>
     public DriverConfig Config { get; init; } = DriverConfig.Empty;
 
     /// <summary>
-    /// The person's <i>not yet</i> said to the set-up step's session as its next turn (D137): the terminal's <c>sessions say</c>,
+    /// The person's <i>not yet</i> said to the set-up step's session as its next turn: the terminal's <c>sessions say</c>,
     /// which holds it at the door of a loop that runs the session or keeps it on its record. Its exit code; null says nothing.
     /// </summary>
     public Func<string, string, CancellationToken, Task<int>>? Say { get; init; }
 
-    /// <summary>Where the verdict's <c>review.verdict</c> line goes (D94); null where nothing keeps one.</summary>
+    /// <summary>Where the verdict's <c>review.verdict</c> line goes; null where nothing keeps one.</summary>
     public Action<LandingLine>? Log { get; init; }
 }
 
 /// <summary>
-/// The terminal's door to the person's verdict on a review (REVIEWENV1c, D154 point 8; the review environment design §3.3, D50):
+/// The terminal's door to the person's verdict on a review:
 /// <c>daoris quest review &lt;id&gt; reviewed|not-yet|skip ["…"]</c>. It prints what the set-up step showed and how to show it
-/// again, sends the verdict with the set-up it printed, by its <c>machine</c> and <c>sequence</c> (REVIEWENV1b3: what the person
+/// again, sends the verdict with the set-up it printed, by its <c>machine</c> and <c>sequence</c> (what the person
 /// looked at is what the verdict answers), and says what the gate now says. A <i>not yet</i> needs words, and they go to the step's
-/// session as its next turn (design §3.4).
+/// session as its next turn.
 /// </summary>
 /// <remarks>
-/// <para><b>The person's alone</b>: no connector tool and no Ask Daoris card gives a verdict (design §3.3). This door is a
-/// terminal's, beside the quest's page and the strip's chip that REVIEWENV1g draws.</para>
+/// <para><b>The person's alone</b>: no connector tool and no Ask Daoris card gives a verdict. This door is a
+/// terminal's, beside the quest's page and the strip's chip.</para>
 ///
-/// <para><b>The chain's choice at the gate</b> (REVIEWENV1j, design §3.6): <c>quest review &lt;id&gt; off ["…"]</c> is the skip,
+/// <para><b>The chain's choice at the gate</b>: <c>quest review &lt;id&gt; off ["…"]</c> is the skip,
 /// and <c>on|&lt;environment&gt;</c> is <i>Set it up</i>, the same act at another time. Each calls the door the gate's press calls
 /// (<c>/review</c>, <c>/set-up-step</c>), never a second path. The environment is judged against the rule standing for the quest's
-/// repository first, since the service holds no rule (design §1.4: refused at the door, naming the repository).</para>
+/// repository first, since the service holds no rule (refused at the door, naming the repository).</para>
 ///
 /// <para><b>Exit codes</b>: 0 kept, 1 refused (no such quest, nothing shown yet, an environment not declared, a service refusal),
 /// 2 the usage.</para>
@@ -64,7 +64,7 @@ public static class QuestReviewCommand
         + "       choose whether a done quest's work is reviewed, as its gate does: off is the skip; on (the repository's default\n"
         + "       environment) or an environment it declares publishes a set-up step to show the work there.";
 
-    /// <summary>What <see cref="QuestReviewAsk.Said"/> is for a set-up step the chain's choice asks for (REVIEWENV1j).</summary>
+    /// <summary>What <see cref="QuestReviewAsk.Said"/> is for a set-up step the chain's choice asks for.</summary>
     public const string SetUpStep = "set-up-step";
 
     /// <summary>Whether a <c>quest</c> line asks for a review's verdict, or the chain's choice.</summary>
@@ -89,13 +89,13 @@ public static class QuestReviewCommand
         {
             "reviewed" => ReviewVerdicts.Reviewed,
             "not-yet" => ReviewVerdicts.NotYet,
-            // REVIEWENV1j: the chain's `off` at the gate is the skip (design §3.6).
+            // The chain's `off` at the gate is the skip.
             "skip" or "skipped" or "off" => ReviewVerdicts.Skipped,
             _ => null,
         };
         if (said is null)
         {
-            // REVIEWENV1j: `on` or an environment's name is *Set it up*, judged as a rule judges a name.
+            // `on` or an environment's name is *Set it up*, judged as a rule judges a name.
             if (verdict != "on" && ReviewKey.NameProblem(verdict) is { } unnamed)
             {
                 problem = $"`{verdict}` is not a verdict or a review choice: `reviewed`, `not-yet` or `skip`; or `off`, `on` or an "
@@ -123,8 +123,8 @@ public static class QuestReviewCommand
     }
 
     /// <summary>
-    /// Print what was shown, give the verdict, send a <i>not yet</i>'s words on, and say what the gate now says; or, for the chain's
-    /// choice of an environment, publish the set-up step there (REVIEWENV1j).
+    /// Print what the set-up showed, give the verdict, send a <i>not yet</i>'s words on, and say what the gate now says; or, for the chain's
+    /// choice of an environment, publish the set-up step there.
     /// </summary>
     public static async Task<int> RunAsync(QuestReviewAsk ask, QuestReviewWorld world, TextWriter output, CancellationToken ct = default)
     {
@@ -164,7 +164,7 @@ public static class QuestReviewCommand
         if (!ok) return 1;
         world.Log?.Invoke(ReviewDoorWords.Verdict(quest.Id, ask.Said, LandingDoors.Terminal));
 
-        // Not yet goes back to the step's session as its next turn (design §3.4, D137): the person's own set-up has no session.
+        // Not yet goes back to the step's session as its next turn: the person's own set-up has no session.
         if (ask.Said == ReviewVerdicts.NotYet)
         {
             if (shown!.Session is not { } session)
@@ -182,7 +182,7 @@ public static class QuestReviewCommand
     }
 
     /// <summary>
-    /// <i>Set it up in <c>environment</c></i> from a terminal (REVIEWENV1j, design §3.6): the environment judged against the rule standing
+    /// <i>Set it up in <c>environment</c></i> from a terminal: the environment judged against the rule standing
     /// for the quest's repository, <c>on</c> read as its default, then the set-up step's door the gate's press calls, whose sentence is
     /// printed whole, a refusal included.
     /// </summary>
@@ -229,7 +229,7 @@ public static class QuestReviewCommand
         return lines;
     }
 
-    /// <summary>What the gate says once the verdict is kept (design §3.2), from the verdict and the set-up it answers.</summary>
+    /// <summary>What the gate says once the verdict is kept, from the verdict and the set-up it answers.</summary>
     private static string Gate(QuestView quest, string said, QuestSetUpView? shown) => said switch
     {
         ReviewVerdicts.Reviewed =>

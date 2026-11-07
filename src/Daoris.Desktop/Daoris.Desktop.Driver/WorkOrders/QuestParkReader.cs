@@ -1,11 +1,11 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The quests' parks as the doors read them (SESSUX1i, D126 §4.6, §4.7): what the watch says a park with, and what the
+/// The quests' parks as the doors read them: what the watch says a park with, and what the
 /// tick hands Overview's row. One reader for both doors, the shell's loop and the headless host, so they say one thing.
 /// </summary>
 /// <remarks>
-/// <para><b>Read only when what the planner parked changed.</b> The records are every session ever run (D126 M9), and a
+/// <para><b>Read only when what the planner parked changed.</b> The records are every session ever run, and a
 /// park lasts every look until *Try again*; reading them each look for the same answer would double the look's largest
 /// read. A new park always changes the set: its quest left it to run the sessions that failed.</para>
 ///
@@ -26,7 +26,7 @@ public sealed class QuestParkReader
     /// This look's parks, read from the records where the quests the planner parked changed since the last read; null where
     /// they did not, or where the records could not be read.
     /// </summary>
-    /// <param name="forgivenAt">RETRY1's mark for a quest (<see cref="DriverConfig.ForgivenAt"/>): the planner counts from it.</param>
+    /// <param name="forgivenAt">The mark Try again leaves for a quest (<see cref="DriverConfig.ForgivenAt"/>): the planner counts from it.</param>
     /// <param name="records">Every record as the list's text (<see cref="SessionListKept.JsonAsync"/>); a test hands in its own.</param>
     public async Task<IReadOnlyList<QuestPark>?> LookAsync(
         TickReport report, Func<string, int> forgivenAt, Func<CancellationToken, Task<string>> records,

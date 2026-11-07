@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>push</c>'s reading (G8): Daoris's push (the push act) wrote the commit it pushed on the landing, and the node is reached when git's
+/// A <c>push</c>'s reading: Daoris's push (the push act) wrote the commit it pushed on the landing, and the node is reached when git's
 /// remote-tracking ref holds it. Unread it is unknown; nothing pushed, or a ref elsewhere, is not yet.
 /// </summary>
 internal static class PushReading

@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The runtime's last fresh read of the quests, kept beside the node records as <c>workflows/quests.json</c> (FABRIC-CLOSE1q5), so the
+/// The runtime's last fresh read of the quests, kept beside the node records as <c>workflows/quests.json</c>, so the
 /// terminal, which has no runtime, judges a held close as the page does (<see cref="QuestClosing.Moved"/>). Only what <c>Moved</c> needs is
 /// kept: per quest, its current submission's machine and sequence, or null for a quest with none. Never under <c>units/</c>, where any file
 /// not a unit's record is reported unreadable. A read left by a closed desktop is kept and used: a submission that moved stays moved (its

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The room measurement's files (BRAINSTORM1c, D53): the probe laid where a pass must not reach, and the effects a run left read back for
+/// The room measurement's files: the probe laid where a pass must not reach, and the effects a run left read back for
 /// the judgement, which <see cref="BrainstormRoomProbe"/> makes with no world of its own.
 /// </summary>
 public static class BrainstormRoomFiles

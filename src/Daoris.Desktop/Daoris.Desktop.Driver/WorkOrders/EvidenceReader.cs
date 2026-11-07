@@ -2,14 +2,14 @@ using System.Text;
 
 namespace Daoris.Driver;
 
-/// <summary>How a folder of the tree is listed (EVID1b3): the disk's own listing, which a test stands a refusal in at.</summary>
+/// <summary>How a folder of the tree is listed: the disk's own listing, which a test stands a refusal in at.</summary>
 internal delegate IEnumerable<FileSystemInfo> FolderList(DirectoryInfo folder);
 
 /// <summary>
-/// The driver's read of a done's evidence (EVID1b, D144 §3): for each path a met requirement names, whether the commit holds
-/// it and its object, whether this work changed it since the tree's base, whether it was left in the tree uncommitted, and a
+/// The driver's read of a done's evidence: for each path a met requirement names, whether the commit holds
+/// it and its object, whether this work changed it since the tree's base, whether it is left in the tree uncommitted, and a
 /// path the commit spells only in another case, named and still missing. A gate is answered <c>no-queue</c> until the landing
-/// queue reads gates (EVID1d).
+/// queue reads gates.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>It reads and never writes</b>: <c>rev-parse</c> and <c>ls-tree</c> are all it asks git, and a directory listing is
@@ -23,7 +23,7 @@ internal delegate IEnumerable<FileSystemInfo> FolderList(DirectoryInfo folder);
 /// <para>🔴 <b>git walks UP</b>: a tree that is gone, or is not the top of its own repository, is unread, since git would answer
 /// for the repository above it.</para>
 ///
-/// <para>🔴 <b>A failure is never absence</b> (EVID1b3): each lookup, the commit's object, the base's, the case walk's listings
+/// <para>🔴 <b>A failure is never absence</b>: each lookup, the commit's object, the base's, the case walk's listings
 /// and the tree's own folders, comes to found, absent or unread, and an unread one anywhere in an item's read makes the read
 /// unread, so nothing is posted and the done waits as it would for a git that did not answer. Otherwise a read that
 /// established nothing would post <c>missing</c> or <c>uncommitted</c> and hold a done for a fact nobody read.</para>
@@ -34,12 +34,12 @@ public static class EvidenceReader
     private const int CaseCandidates = 8;
 
     /// <summary>
-    /// What <paramref name="quest"/>'s done waits on (D144 §3; the service's <c>Quest.EvidenceWanted</c>): each item of each
+    /// What <paramref name="quest"/>'s done waits on (the service's <c>Quest.EvidenceWanted</c>): each item of each
     /// requirement its done answered met, once, in the requirements' order. A departure waits on none of its requirement's
-    /// evidence, since the work departed from it. Empty for a quest that is not done.
+    /// evidence: the work departs from it. Empty for a quest that is not done.
     /// </summary>
     public static IReadOnlyList<WantedEvidence> Wanted(QuestView quest) =>
-        // FABRIC-CLOSE1b (§E5): in a closure graph a taken quest's current submission is judged as a done is, its evidence read for it.
+        // In a closure graph a taken quest's current submission is judged as a done is, its evidence read for it.
         quest.Status != "Done" && quest is not { Status: "Taken", Submission: not null }
             ? []
             : [.. quest.Answers
@@ -52,7 +52,7 @@ public static class EvidenceReader
         ReadAsync(at, wanted, WorkingTree.ReadGitAsync, ct);
 
     /// <inheritdoc cref="ReadAsync(EvidenceAt, IReadOnlyList{WantedEvidence}, CancellationToken)"/>
-    /// <param name="git">How git is read: the review's seam (REVIEW3), which a test stands git in at.</param>
+    /// <param name="git">How git is read: the review's seam, which a test stands git in at.</param>
     /// <param name="list">How a folder of the tree is listed: the disk's own listing where null, and a test's stand-in else.</param>
     internal static async Task<EvidenceReading> ReadAsync(
         EvidenceAt at, IReadOnlyList<WantedEvidence> wanted, WorkingTree.GitRead git, CancellationToken ct, FolderList? list = null)
@@ -98,13 +98,13 @@ public static class EvidenceReader
         {
             if (item.Path is not { } path)
             {
-                // A gate is read from the landing queue's verdict alone (D144 §4), which EVID1d builds.
+                // A gate is read from the landing queue's verdict alone.
                 items.Add(new EvidenceRead(requirement, null, item.Gate, EvidenceCodes.NoQueue));
                 continue;
             }
 
             // Each lookup below is found, absent or unread, and an unread one, wherever in the item's read, makes the read
-            // unread (EVID1b3): a lookup that established nothing is never the item's absence.
+            // unread: a lookup that established nothing is never the item's absence.
             var (looked, found) = await ObjectAsync(at.Tree, commit, path, git, ct).ConfigureAwait(false);
             if (looked is Looked.Unread) return Unread($"git did not answer while `{path}` was read in `{Short(commit)}`.");
 
@@ -154,7 +154,7 @@ public static class EvidenceReader
     }
 
     /// <summary>
-    /// Where <paramref name="named"/> stands to <paramref name="done"/>, the done's commit, in <paramref name="tree"/> (D144 §3):
+    /// Where <paramref name="named"/> stands to <paramref name="done"/>, the done's commit, in <paramref name="tree"/>:
     /// a check reads the done's commit or one after it on the same history. Unknown where either is not a commit id, git holds
     /// either not, or the tree is not the top of its own repository.
     /// </summary>
@@ -183,7 +183,7 @@ public static class EvidenceReader
     }
 
     /// <summary>
-    /// The commit <paramref name="at"/> names, else its tree's HEAD, by its full id (FABRIC-CLOSE1c6): what a submission that waits on no
+    /// The commit <paramref name="at"/> names, else its tree's HEAD, by its full id: what a submission that waits on no
     /// evidence is posted with alone. Null where the tree is gone or not the top of its own repository (git walks up), the name is not a
     /// commit id, or git holds no such commit; it asks git nothing more.
     /// </summary>
@@ -221,7 +221,7 @@ public static class EvidenceReader
     /// <summary>
     /// How <paramref name="commit"/> spells <paramref name="path"/> where it holds it only in another case: each folder's entries
     /// listed in turn, a few spellings followed at each. The first in ordinal order is named, judged as a path first. Absent
-    /// where every listing the walk needed was given and none spells it; unread where git did not give one (EVID1b3), since
+    /// where every listing the walk needs is given and none spells it; unread where git does not give one, since
     /// that folder may hold the first spelling, so what the walk would name is not known.
     /// </summary>
     private static async Task<(Looked Looked, string? Spelled)> SpelledAsync(
@@ -266,8 +266,8 @@ public static class EvidenceReader
     /// <summary>
     /// Whether <paramref name="path"/> stands in the tree as named, its case included: each folder listed in turn rather than
     /// asked by name, since a filesystem that folds case would say yes to another spelling. Found or absent once each listing
-    /// it needed was given (a file where a folder is named holds nothing beneath it); unread where the disk would not list one
-    /// (EVID1b3), naming that folder from the tree's root and why.
+    /// it needs is given (a file where a folder is named holds nothing beneath it); unread where the disk would not list one
+    /// naming that folder from the tree's root and why.
     /// </summary>
     private static Standing InTree(string tree, string path, FolderList list)
     {
@@ -282,7 +282,7 @@ public static class EvidenceReader
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // The folder's name as the path spells it, which is how it was found: never its place on this machine.
+                // The folder's name as the path spells it, which is how it is found: never its place on this machine.
                 return new(Looked.Unread, string.Join('/', segments.Take(depth)),
                     error is UnauthorizedAccessException ? "access was refused" : "the disk did not answer");
             }
@@ -297,7 +297,7 @@ public static class EvidenceReader
     }
 
     /// <summary>
-    /// What one lookup came to (EVID1b3): found, absent, or unread, where git or the disk did not answer and so established
+    /// What one lookup came to: found, absent, or unread, where git or the disk did not answer and so established
     /// nothing. Unread is never absent.
     /// </summary>
     private enum Looked

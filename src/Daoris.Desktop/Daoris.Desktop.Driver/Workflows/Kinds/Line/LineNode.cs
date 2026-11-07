@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Git's proof that the line holds the work (§B3): the kept end fact, <i>held</i>, observed and never skipped, since the cleanup rests on it.</summary>
+/// <summary>Git's proof that the line holds the work: the kept end fact, <i>held</i>, observed and never skipped, since the cleanup rests on it.</summary>
 [NodeKind(NodeKinds.Line, NodeGroup.Landing, NodeKinds.Tidy)]
 internal sealed class LineNode : BuiltInNode, IObserves
 {

@@ -4,13 +4,13 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A delivery's id, name and purpose in English (SETUPUX1a): the terminal's words and the page's fallback. The page names a delivery from its
+/// A delivery's id, name and purpose in English: the terminal's words and the page's fallback. The page names a delivery from its
 /// own catalogue by <paramref name="Id"/>, in every locale it ships; the workflow's name is another thing.
 /// </summary>
 public sealed record ShippedDelivery(string Id, string Name, string For);
 
 /// <summary>
-/// One default workflow Daoris ships: its id and the ids it was known by, its name and what it is for in English (the page names it from its
+/// One default workflow Daoris ships: its id and the ids it answers to, its name and what it is for in English (the page names it from its
 /// own catalogue by the id), its delivery (the <c>land</c> options a place's quick set-up applies, <see cref="SetupPresets"/>) with its id, name
 /// and purpose, whether that set-up offers it, and its graph as a version saves it, compact, with its digest.
 /// </summary>
@@ -26,7 +26,7 @@ public sealed record WorkflowDefault(
 }
 
 /// <summary>
-/// The fabric's defaults as shipped data (DEFAULTCONFIG1a; D145's and D173's notes of 2026-11-01): one file each under the driver's
+/// The fabric's defaults as shipped data: one file each under the driver's
 /// <c>Defaults/workflows/</c>, carried inside the assembly, read once and judged by the graph rules as they are read. The graph presets, the
 /// quick set-up's deliveries and the default a place follows all read them, so a default is written once.
 /// </summary>
@@ -39,7 +39,7 @@ public static class WorkflowDefaults
     /// <summary>Every default this build ships, in its order.</summary>
     public static IReadOnlyList<WorkflowDefault> All => Shipped.Value;
 
-    /// <summary>A default by its id or an id it was known by, or null.</summary>
+    /// <summary>A default by its id or an id it answers to, or null.</summary>
     public static WorkflowDefault? Of(string? id) =>
         id is null ? null : All.FirstOrDefault(each => each.Id == id || each.Aliases.Contains(id, StringComparer.Ordinal));
 
@@ -72,9 +72,9 @@ public static class WorkflowDefaults
     }
 
     /// <summary>
-    /// The shipped default a copy is behind (WORKFLOWCLEAN1h; the cleanup design §1.1): the one its newest version's <c>from</c> names, where this build
+    /// The shipped default a copy is behind: the one its newest version's <c>from</c> names, where this build
     /// ships a digest other than the one stamped, with the graph the copy's next version would be, which keeps the gates the copy has. Null for a
-    /// copy that is up to date, one stamped by none, or one copied from a default this build no longer ships.
+    /// copy that is up to date, one stamped by none, or one copied from a default this build does not ship.
     /// </summary>
     public static ShippedNewer? NewerThan(WorkflowFrom? from, NodeGraph? copy)
     {
@@ -109,7 +109,7 @@ public static class WorkflowDefaults
             read.Add(Read(name[Folder.Length..^".json".Length], document.RootElement));
         }
 
-        // A delivery's words are its owner's: the first default by order whose graph derives that shape (WORKFLOWCLEAN1 1a, the cleanup design §1.3).
+        // A delivery's words are its owner's: the first default by order whose graph derives that shape.
         var ordered = read.OrderBy(each => each.Order).ToList();
         var owners = ordered.Where(each => each.DeliveryWords.Id.Length > 0).ToList();
         if (owners.GroupBy(each => each.Delivery).FirstOrDefault(group => group.Count() > 1) is { } twice)
@@ -132,7 +132,7 @@ public static class WorkflowDefaults
     public sealed record WorkflowCopy(string Id, string Name, JsonObject Graph, WorkflowFrom From);
 
     /// <summary>
-    /// A copy of <paramref name="shipped"/> for a home to save (WORKFLOWCLEAN1 1a; the cleanup design §1.1): the id <c>merge-after-accept</c>, with
+    /// A copy of <paramref name="shipped"/> for a home to save: the id <c>merge-after-accept</c>, with
     /// <c>-opinion</c>, <c>-look</c> or <c>-opinion-look</c> after it for the variant the ticks choose, numbered <c>-2</c>, <c>-3</c> from
     /// <paramref name="taken"/> where a person's own workflow holds it; the graph with the gates the ticks add; <c>from</c> stamped.
     /// </summary>
@@ -147,7 +147,7 @@ public static class WorkflowDefaults
     }
 
     /// <summary>
-    /// The land a graph says (the cleanup design §1.3): the method from its <c>land</c>, <c>you</c> where a <c>review</c> comes before it,
+    /// The land a graph says: the method from its <c>land</c>, <c>you</c> where a <c>review</c> comes before it,
     /// the plugin it names (an integration or a branch left to push is <c>none</c>), and an integration's request.
     /// </summary>
     public static SetupLand DerivedLand(NodeGraph graph)
@@ -155,7 +155,7 @@ public static class WorkflowDefaults
         var land = graph.Nodes.First(node => node.Kind == NodeKinds.Land);
         var method = NodeOptions.Text(land, "method") ?? LandNodes.Merge;
         var accept = LandNodes.Reviewed(graph) ? SetupLand.You : SetupLand.Automatic;
-        // A branch followed by a push and a plugin's pull-request step is the pull-request delivery (G8): the plugin is the step's own.
+        // A branch followed by a push and a plugin's pull-request step is the pull-request delivery: the plugin is the step's own.
         var pullRequest = graph.Nodes.FirstOrDefault(node => NodeKit.IsPlugin(node.Kind) &&node.Kind.EndsWith("/pull-request", StringComparison.Ordinal));
         if (method == LandNodes.Branch && pullRequest is not null && graph.Nodes.Any(node => node.Kind == NodeKinds.Push))
         {
@@ -188,7 +188,7 @@ public static class WorkflowDefaults
         var (read, problems) = NodeGraphs.Read(graph, onSave: true);
         if (read is null) throw Broken(problems[0].Words);
         if (NodeGraphs.Problems(read) is [var first, ..]) throw Broken(first.Words);
-        // The delivery is derived from the graph; a file keeps only the words of the delivery it owns (WORKFLOWCLEAN1 1a, design §1.3).
+        // The delivery is derived from the graph; a file keeps only the words of the delivery it owns.
         var land = DerivedLand(read);
         var deliveryWords = root.TryGetProperty("delivery", out var delivery) && delivery.ValueKind == JsonValueKind.Object
             ? new ShippedDelivery(id, Text(delivery, "name"), Text(delivery, "for"))

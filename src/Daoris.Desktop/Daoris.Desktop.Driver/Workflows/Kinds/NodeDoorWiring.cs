@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a loop hands the starting kinds to build their doors from (D247 §3.5): the home, whether this loop may start now (it holds the lease
+/// What a loop hands the starting kinds to build their doors from: the home, whether this loop may start now (it holds the lease
 /// and no update drains), the machine log, and the loop's own pieces a door is carried out through. A piece left out builds no door that needs it.
 /// </summary>
-/// <param name="MayStart">Whether a door may start now: this loop holds the home's lease and no update drains (DRAINHOLD1).</param>
+/// <param name="MayStart">Whether a door may start now: this loop holds the home's lease and no update drains.</param>
 internal sealed record NodeDoorWiring(string Home, Func<bool> MayStart)
 {
     /// <summary>The machine log a door tells what it did to, by its code.</summary>

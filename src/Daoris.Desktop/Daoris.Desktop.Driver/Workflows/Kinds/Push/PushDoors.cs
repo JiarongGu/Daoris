@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A <c>push</c> the runtime starts (G8; D241 point 2): the run's record and node, the landed branch it pushes at the commit the landing made,
+/// A <c>push</c> the runtime starts: the run's record and node, the landed branch it pushes at the commit the landing made,
 /// and the checkout that holds it. Everything else the push needs is the push act's own to read.
 /// </summary>
 /// <param name="Unit">The run's own unit, whose record holds the node.</param>
@@ -14,7 +14,7 @@ namespace Daoris.Driver;
 public sealed record PushStart(string Unit, NodeDeclaration Node, string Repository, string Workspace, string Root, string Branch, string Tip);
 
 /// <summary>
-/// The door a run's <c>push</c> is performed through (G8): the person's press of the push act and a workflow's step are one act, so this
+/// The door a run's <c>push</c> is performed through: the person's press of the push act and a workflow's step are one act, so this
 /// pushes through <see cref="GitPushActs"/> and nothing else.
 /// </summary>
 public interface IPushDoor : INodeDoor

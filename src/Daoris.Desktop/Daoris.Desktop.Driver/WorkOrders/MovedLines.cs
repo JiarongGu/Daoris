@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The lines Daoris moved since each was last followed (WSSETUP5, D124 §3.1), registered from the line before the look reads the
+/// The lines Daoris moved since the look last followed each, registered from the line before the look reads the
 /// registry, so a set-up that just landed is planned by what it now declares. Nothing is read with git, or asked of the service,
 /// unless a line moved.
 /// </summary>
@@ -11,7 +11,7 @@ internal sealed class MovedLines(ILookWiring wiring) : ILookPass
     public Task RunAsync(LookRound round, CancellationToken ct) => wiring.Stages.TimeAsync("lines", () => FollowAsync(round.Events, ct));
 
     /// <summary>
-    /// Each repository whose line Daoris moved since it was last followed, registered from its line (WSSETUP5), with what
+    /// Each repository whose line Daoris moved since the look last followed it, registered from its line, with what
     /// changed or must be fixed added to <paramref name="events"/>. A pass the service did not answer is said, and the
     /// lines stay due for the next look: following is never a dead look.
     /// </summary>

@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The ask adapter (FABRIC-UNIT1a; the fabric events design §D2, "read-only, as the quest's space"): each ask the service answered
-/// (D65 §1a), read as a <see cref="WorkUnit"/> of kind <see cref="WorkUnitKind.Ask"/>. Its canonical record is the service's ask store
+/// The ask adapter: each ask the service answered, read as a <see cref="WorkUnit"/> of kind <see cref="WorkUnitKind.Ask"/>. Its canonical record is the service's ask store
 /// and its one writer the service; this reads the answer and writes nothing.
 /// </summary>
 /// <remarks>
@@ -26,7 +25,7 @@ public static class AskUnits
         {
             Executors = ask.Intake is { Length: > 0 } intake ? [intake] : [],
             Links = [.. ask.Quests.Distinct(StringComparer.Ordinal).Select(quest => new WorkLink(WorkRelation.Produced, QuestUnits.IdOf(quest)))],
-            // FABRIC-CUTOVER1c: the ask as answered, whose go-aheads a run's go-ahead node observes.
+            // The ask as answered, whose go-aheads a run's go-ahead node observes.
             Records = WorkUnitRecords.None with { Ask = ask },
         };
     }

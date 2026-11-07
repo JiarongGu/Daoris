@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The quests a part of an entry asked, and what asked the attended part (COWORKVIEW1b-ii, the design §3.1): built over the quest units
+/// The quests a part of an entry asked, and what asked the attended part: built over the quest units
 /// <see cref="QuestUnits.Read"/> answers, never over a branch's inventory or a service call per member. A quest a part published that
 /// opened no part of the entry is a row, its chain's steps after it by <c>parent</c>; one the entry holds the executing part of is that
 /// part's <i>on what</i>, never a row too. It sits above the participants' composition, which takes it as a port (<see cref="AtWorkAsking"/>).
@@ -15,7 +15,7 @@ public static class AtWorkQuests
     private sealed record Stores(IReadOnlyList<QuestView> Quests, IReadOnlyList<SessionRecord> Sessions, Func<string, AtWorkRow?> Row);
 
     /// <summary>
-    /// The quests an ask asked (COWORKVIEW1d, the design §3.5): those whose sender is the ask, each with its chain's steps after it and its
+    /// The quests an ask asked: those whose sender is the ask, each with its chain's steps after it and its
     /// taker, as the quests of a session's entry are drawn. None is left out for being executed by a part: the ask's section says who took each.
     /// </summary>
     public static AtWorkAsked ForAsk(string ask, IReadOnlyList<QuestView> quests, IReadOnlyList<SessionRecord> sessions, Func<string, AtWorkRow?> row)

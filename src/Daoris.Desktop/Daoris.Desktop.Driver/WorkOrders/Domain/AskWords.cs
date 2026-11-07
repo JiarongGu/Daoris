@@ -4,30 +4,30 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The person's words on the ask a session's work is for (DRIFT1b, D133 §2), as the driver read them for its start: every
+/// The person's words on the ask a session's work is for, as the driver read them for its start: every
 /// one, oldest first, or, where the service did not answer them, none, which the session is told.
 /// </summary>
 /// <param name="Ask">The ask's id.</param>
 /// <param name="Said">Its words, oldest first, the ask's own sentence first; null where they could not be read.</param>
-/// <param name="KeptFrom">For an ask from before its words were kept (DRIFT1a): from when they are, since nothing is back-filled.</param>
+/// <param name="KeptFrom">For an ask from before its words are kept: from when they are, since nothing is back-filled.</param>
 public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, DateTimeOffset? KeptFrom = null) : IAgentAskWords
 {
     /// <summary>
-    /// The go-aheads its sessions asked the person for (KNOWUSE1a, D135 §2), oldest first, read in the same answer as the
+    /// The go-aheads its sessions asked the person for, oldest first, read in the same answer as the
     /// words: null where the service answered none, unread or a host from before them, and the instruction says nothing of
     /// them then.
     /// </summary>
     public IReadOnlyList<GoAheadView>? GoAheads { get; init; }
 
     /// <summary>
-    /// The sender a quest an ask asked carries, chain steps included (D65 §4). A twin of the service's
+    /// The sender a quest an ask asked carries, chain steps included. A twin of the service's
     /// <c>AskDesk.SenderOf</c>, duplicated deliberately: the driver and the service share no code.
     /// </summary>
     private const string SenderPrefix = AskSender.Prefix;
 
     /// <summary>
-    /// These words with the person's moved words a driven carry-on has handed its new part and not yet taken (FOUNDATION1f-iv part b), as the
-    /// service's take keeps them on the ask once made: each the person's that reopened the work, said to the new session. The take now waits
+    /// These words with the person's moved words a driven carry-on has handed its new part and not yet taken, as the
+    /// service's take keeps them on the ask once made: each the person's that reopened the work, said to the new session. The take waits
     /// for the door's write of the prompt this instruction is, so the ask cannot yet hold them and the instruction would lose them; a twin of
     /// the service's rule (<c>/api/sessions/{id}/taken</c>), duplicated deliberately. Unread words, and a word the ask already holds, are left as
     /// they are.
@@ -50,7 +50,7 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
     public static AskWords Unread(string ask) => new(ask, null);
 
     /// <summary>
-    /// The ask a quest was asked by, read from its sender — the reverse of the service's <c>AskDesk.SenderOf</c> and a twin
+    /// The ask that asked a quest, read from its sender — the reverse of the service's <c>AskDesk.SenderOf</c> and a twin
     /// of its <c>AskOf</c>: null for a quest a repository asked, which is on no ask.
     /// </summary>
     public static string? AskOf(string? sender) => AskSender.AskOf(sender);
@@ -60,7 +60,7 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
         (ask.Words is { } said ? new AskWords(ask.Id, said, ask.WordsKeptFrom) : Unread(ask.Id)) with { GoAheads = ask.GoAheads };
 
     /// <summary>
-    /// The ask a session's line is on (COMMS1c, D225): the origin of its entry's key where that is <c>ask:&lt;id&gt;</c>, the same
+    /// The ask a session's line is on: the origin of its entry's key where that is <c>ask:&lt;id&gt;</c>, the same
     /// origin the service's go-ahead and channel read. Null for a line on no ask, or a key the host did not answer.
     /// </summary>
     public static string? AskOfEntry(string? entry) =>
@@ -94,7 +94,7 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
 
     /// <summary>
     /// The person's words on the ask a session's line is on (<see cref="AskOfEntry"/>), read from the ask for a session's start
-    /// (DRIFT1b): null for a line on no ask, and never a failure. A read that does not answer is <see cref="Unread"/>, and the
+    /// null for a line on no ask, and never a failure. A read that does not answer is <see cref="Unread"/>, and the
     /// start goes on with its instruction saying so: the words are what a session is handed, never what holds it.
     /// </summary>
     /// <exception cref="OperationCanceledException">The driver is closing: a start it ends is not one to compose.</exception>
@@ -116,8 +116,8 @@ public sealed record AskWords(string Ask, IReadOnlyList<AskWordView>? Said, Date
 }
 
 /// <summary>
-/// How the person's words are written into an instruction (DRIFT1b, D133 §2): verbatim and quoted, each saying how it was
-/// given, when, and on which quest, oldest first and newest last — and bounded, saying what was left out.
+/// How the person's words are written into an instruction: verbatim and quoted, each saying how it is
+/// given, when, and on which quest, oldest first and newest last — and bounded, saying what is left out.
 /// </summary>
 /// <remarks>
 /// <para><b>What bounds it.</b> The ask's own sentence is kept whole, as the quest's body and the intake's instruction
@@ -145,8 +145,8 @@ public static class AskWordsText
     internal const string IntakeUnread = "Whether they said more on it since the ask could not be read just now.";
 
     /// <summary>
-    /// The words beneath a quest (DRIFT1b): a heading, then each word, the older left out past the bound said as one line;
-    /// or the unread line. Empty for a session on no ask, so its instruction reads exactly as it did.
+    /// The words beneath a quest: a heading, then each word, the older left out past the bound said as one line;
+    /// or the unread line. Empty for a session on no ask.
     /// </summary>
     internal static string Beneath(IAgentAskWords? words, string questId)
     {
@@ -167,7 +167,7 @@ public static class AskWordsText
     }
 
     /// <summary>
-    /// For an intake (DRIFT1b): what the person said on its ask after the ask itself, which its instruction quotes above;
+    /// For an intake: what the person said on its ask after the ask itself, which its instruction quotes above;
     /// nothing where they said nothing more, and the intake's unread line where it could not be read.
     /// </summary>
     internal static string Since(AskView ask)
@@ -230,7 +230,7 @@ public static class AskWordsText
         return text.ToString();
     }
 
-    /// <summary>How a word was given, and on which quest: this one, another by its id, or none named.</summary>
+    /// <summary>How a word is given, and on which quest: this one, another by its id, or none named.</summary>
     private static string Given(AskWordView word, string? questId)
     {
         var on = word.Quest is not { Length: > 0 } quest ? ""
@@ -242,11 +242,9 @@ public static class AskWordsText
             AskWordView.Answered => $"They answered a session{on}",
             AskWordView.Added => $"They added, while a session{on} ran",
             AskWordView.Reopened => $"They added, after a session{on} ended",
-            // A review's verdict (REVIEWENV1b2): said as the verdict it came with, of the set-up or the work on its quest.
             AskWordView.Reviewed => $"They reviewed the set-up shown{on}",
             AskWordView.NotYet => $"They said not yet to the set-up shown{on}",
             AskWordView.Skipped => $"They skipped the review of the work{on}",
-            // Their message on the ask's channel (SESSONE2b): kept on the ask when posted, to whichever of its repositories.
             AskWordView.Channel => "They wrote on the ask's channel",
             _ => on.Length == 0 ? "They said" : $"They said,{on}",
         };

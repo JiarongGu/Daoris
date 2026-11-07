@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
-/// <summary>A <c>quest.holds</c>' reading (LANDNODE1k): reached once nothing of its quest's own holds the work, else none.</summary>
+/// <summary>A <c>quest.holds</c>' reading: reached once nothing of its quest's own holds the work, else none.</summary>
 internal static class QuestHoldsReading
 {
-    /// <summary>Whether a done held for the person's yes (D133) holds the work.</summary>
+    /// <summary>Whether a done held for the person's yes holds the work.</summary>
     public const string Yes = "yes";
 
-    /// <summary>Whether a done held for its evidence's verdict (D144) holds the work.</summary>
+    /// <summary>Whether a done held for its evidence's verdict holds the work.</summary>
     public const string Evidence = "evidence";
 
     /// <summary>Its options, in the order an editor lists them; each is <c>true</c> or <c>false</c>, and true where it is not written.</summary>

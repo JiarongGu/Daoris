@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What <c>daoris ask workflow</c> was asked: the ask, the kind and workflow (neither clears), and the words.</summary>
+/// <summary>The request of <c>daoris ask workflow</c>: the ask, the kind and workflow (neither clears), and the words.</summary>
 public sealed record AskWorkflowAsk(string Ask, string? Kind, string? Workflow, string? Words);
 
 /// <summary>
@@ -10,14 +10,14 @@ public sealed record AskWorkflowAsk(string Ask, string? Kind, string? Workflow, 
 public sealed record AskWorkflowWorld(ServiceClient Service, Func<DriverConfig> Config, string Home);
 
 /// <summary>
-/// The ask's kind and workflow at a terminal (WORKFLOW1e, D157 point 10; the workflow design §4.1 row 1, §4.3, D50):
+/// The ask's kind and workflow at a terminal:
 /// <c>daoris ask … --kind &lt;kind&gt; [--workflow &lt;id&gt;|current] [--workflow-words "…"]</c> with a new ask, and
 /// <c>daoris ask workflow &lt;id&gt; [--kind &lt;kind&gt;] [--workflow &lt;id&gt;|current]|--clear ["…"]</c> on one.
 /// The latest stands, and reaches every chain the ask publishes whose work has not started.
 /// </summary>
 /// <remarks>
-/// <para><b>A person's door</b> (D156 §3): the service keeps the choice behind the person key, so a keyless call on a keyed host is
-/// refused in the service's words, which this prints whole. An agent proposes a kind (the intake, WORKFLOW1i), never sets one.</para>
+/// <para><b>A person's door</b>: the service keeps the choice behind the person key, so a keyless call on a keyed host is
+/// refused in the service's words, which this prints whole. An agent proposes a kind (the intake), never sets one.</para>
 ///
 /// <para><b>A kind is one the ask's workspace declares, and a workflow one saved here whose newest version reads</b>, as the
 /// composer will offer only those: the service holds no workflow and no kind, so this door reads them. <c>current</c> needs none.</para>

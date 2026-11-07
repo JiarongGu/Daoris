@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The unit's landing as a step Daoris performs (LANDNODE1a; the land node design §2), 落地: the graph's one landing, by its method's options
-/// (<see cref="LandNodes"/>). It takes no <c>accept</c>: it starts once its wires hold, and the person's Accept is a <c>review</c>'s (LANDNODE1c2).
+/// The unit's landing as a step Daoris performs, 落地: the graph's one landing, by its method's options
+/// (<see cref="LandNodes"/>). It takes no <c>accept</c>: it starts once its wires hold, and the person's Accept is a <c>review</c>'s.
 /// </summary>
 [NodeKind(NodeKinds.Land, NodeGroup.Landing)]
 internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
@@ -28,8 +28,8 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
     ];
 
     /// <summary>
-    /// One landing to a graph (LANDNODE1a), the method's tail and no other: what precedes a <c>land</c> decides whether it waits on a person, and
-    /// nothing here refuses one that starts without a press (LANDNODE1c2). A land of the method <c>integrate</c> brings an <c>integrate</c> after it.
+    /// One landing to a graph, the method's tail and no other: what precedes a <c>land</c> decides whether it waits on a person, and
+    /// nothing here refuses one that starts without a press. A land of the method <c>integrate</c> brings an <c>integrate</c> after it.
     /// </summary>
     public override IEnumerable<WireProblem> Problems(NodeGraph graph, NodeDeclaration node)
     {
@@ -70,10 +70,10 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
             if (method == LandNodes.Merge || LandNodes.Written(node, "pattern") is not { } pattern || BranchPatterns.Problem(pattern) is not null) return "pattern";
         }
 
-        // A landing hands the work to no plugin: a pull request is the plugin's own step after a push (G8, D241 point 4).
+        // A landing hands the work to no plugin: a pull request is the plugin's own step after a push.
         if (node.Options.ContainsKey("plugin")) return "plugin";
 
-        // The ticket's key (WORKFLOWCLEAN1 1a): read only for a pattern that says {ticket}, so a merge, a pattern without it and an
+        // The ticket's key: read only for a pattern that says {ticket}, so a merge, a pattern without it and an
         // integrate (which names no branch by a pattern) refuse one; its shape is the landing key's to judge.
         if (node.Options.ContainsKey(LandNodes.KeyOption))
         {
@@ -93,7 +93,7 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
         return node.Options.ContainsKey("message") && !(LandNodes.Written(node, "message") is { } message && LandNodes.MessageProblem(message) is null) ? "message" : null;
     }
 
-    /// <summary>Drawn as the landing; with no press of its own, unless a stored <c>accept</c> it was saved with before LANDNODE1c2 says the person's.</summary>
+    /// <summary>Drawn as the landing; with no press of its own, unless a stored <c>accept</c> says the person's.</summary>
     public override NodePart Part(NodeDeclaration node) =>
         !node.Options.TryGetValue(LandNodes.AcceptOption, out var accept) || NodeOptions.Value(accept) is "automatic"
             ? new(WorkflowKinds.Landing, WorkflowParticipation.Automatic, WorkflowExecutor.Daoris, Lowered: WorkflowKinds.Landing)
@@ -107,10 +107,10 @@ internal sealed class LandNode : BuiltInNode, IObserves, IStarts, IMakesLanding
 
     public override bool EndsByTheLine => true;
 
-    /// <summary>Reached where the landing record holds the bound tip, by the landing's authority (LANDNODE1c).</summary>
+    /// <summary>Reached where the landing record holds the bound tip, by the landing's authority.</summary>
     public NodeObservation Observe(NodeReading reading) => LandReading.Observe(reading,NodeSource.Landing);
 
-    /// <summary>The door a run's <c>land</c> is performed through, landing as the review's Accept lands it, off the pass (WORKFLOWCLEAN1 1c).</summary>
+    /// <summary>The door a run's <c>land</c> is performed through, landing as the review's Accept lands it, off the pass.</summary>
     public INodeDoor? Door(NodeDoorWiring wiring) =>
         wiring.Landing is { } landing ? new LandingDoor(landing, said => wiring.Say("landing.run", said), wiring.MayStart) : null;
 

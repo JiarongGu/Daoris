@@ -3,8 +3,8 @@ using System.Runtime.CompilerServices;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The workflows' answer to where the <see cref="ChangeTopics.Gates"/> topic's files are (FOUNDATION1 mod-vii, the design §14.3): the second
-/// opinions' records and the workflows' versions, never every run there ever was. Installed when
+/// The workflows' answer to where the <see cref="ChangeTopics.Gates"/> topic's files are: the second
+/// opinions' records and the workflows' versions, never every run there is. Installed when
 /// the driver's assembly loads, before any watch is built.
 /// </summary>
 internal static class WorkflowHomeTopic
@@ -19,7 +19,7 @@ internal static class WorkflowHomeTopic
         ]);
 
     /// <summary>
-    /// The workflows (FABRIC-END7, FABRIC-END7b): each version's file by its stamp, and of the runs' bindings under <c>runs/</c>, kept one
+    /// The workflows: each version's file by its stamp, and of the runs' bindings under <c>runs/</c>, kept one
     /// per run for good, only those <paramref name="runs"/> names, by name: the runs a due entry's gate read, which alone can release a
     /// landing. Every <c>*.json</c> under the folder is heard, and its judge reads the same.
     /// </summary>

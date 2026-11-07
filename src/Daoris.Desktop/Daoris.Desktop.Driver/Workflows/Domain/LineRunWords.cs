@@ -3,7 +3,7 @@ using System.Globalization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A verification run in the terminal's words (FABRIC-PIPELINE1d; the pipeline design §4.4): what it judged and its verdict on the run's head,
+/// A verification run in the terminal's words: what it judged and its verdict on the run's head,
 /// then who asked it and each gate's evidence. The page words the same verdicts from its catalogue.
 /// </summary>
 public static class LineRunWords

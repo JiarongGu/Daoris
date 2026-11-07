@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 /// <summary>The verification run holding the home's verification slot: its process, its run and attempt, its repository, since when.</summary>
 public sealed record VerifyHolder(int Pid, long Started, string Run, string Invocation, string Repository, DateTimeOffset Since);
 
-/// <summary>An attempt the executor was sent and has not started, in the order sent, and what it waits for now.</summary>
+/// <summary>An attempt sent to the executor that has not started, in the order sent, and what it waits for now.</summary>
 public sealed record VerifyWaiter(int Pid, long Started, string Run, string Invocation, string Repository, DateTimeOffset Since, int Order)
 {
     /// <summary>What it waits for: the run holding a slot, or the runner's own run; null before its first look.</summary>
@@ -18,7 +18,7 @@ public sealed record VerifyWaiter(int Pid, long Started, string Run, string Invo
 public sealed record VerifyLook(VerifyHolder? Holder, IReadOnlyList<VerifyWaiter> Waiters);
 
 /// <summary>
-/// The home's one verification slot (the pipeline design §4.2): one verification run in the home at a time, its handle the lock as a
+/// The home's one verification slot: one verification run in the home at a time, its handle the lock as a
 /// repository's heavy-run slot's is, its holder and its waiters said beside it under <c>locks/verify/</c>.
 /// </summary>
 public sealed class VerifySlot : IDisposable

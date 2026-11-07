@@ -30,7 +30,7 @@ internal sealed class WorkflowListing(WorkflowTerminal run)
                 continue;
             }
 
-            // FABRIC-CUTOVER1d: a graph version reads and runs as a version of steps does.
+            // A graph version reads and runs as a version of steps does.
             if (newest.Graph is not null)
             {
                 run.Say($"  `{found.Id}` — {read.Name}: v{newest.Version}, {WorkflowWords.GraphSaid(newest)}");
@@ -126,7 +126,7 @@ internal sealed class WorkflowListing(WorkflowTerminal run)
     }
 
     /// <summary>
-    /// The workflow a repository's or a workspace's work follows (WORKFLOW1a, WORKFLOW1e; design §4.1, §4.7): resolved for the kind
+    /// The workflow a repository's or a workspace's work follows: resolved for the kind
     /// named, as a task of that kind would be. Current is drawn from the rules as they stand; a named workflow, its newest version,
     /// which new work binds. A workspace's is read from the file alone; a repository's workspace from the registry.
     /// </summary>
@@ -184,7 +184,7 @@ internal sealed class WorkflowListing(WorkflowTerminal run)
     }
 
     /// <summary>
-    /// The start node's routes (FABRIC-PIPELINE1a, the pipeline design §1.3), said before the steps: the default, each kind the
+    /// The start node's routes, said before the steps: the default, each kind the
     /// workspace declares by its label and paths, and the landed route, each with the workflow it names and what chose it.
     /// </summary>
     internal List<string> RoutesSaid(string? owner, string circle, string? inWorkspace)
@@ -217,7 +217,7 @@ internal sealed class WorkflowListing(WorkflowTerminal run)
         var newest = found?.Read.Problem is null && found is not null ? found.Read.Versions[^1] : null;
         if (newest is { Graph: not null })
         {
-            // FABRIC-CUTOVER1d: a graph newest is followed as a version of steps is, its graph said whole.
+            // A graph newest is followed as a version of steps is, its graph said whole.
             run.Say($"daoris: {whose} follows `{selected.Workflow}` — {found!.Read.Name}, v{newest.Version} (digest {newest.Digest}), {why}.");
             foreach (var line in notes.Concat(UndeclaredSaid(selected, circle)).Concat(RoutesSaid(owner, circle, inWorkspace))) run.Say(line);
             run.Say($"  {char.ToUpperInvariant(WorkflowWords.GraphSaid(newest)[0])}{WorkflowWords.GraphSaid(newest)[1..]}");

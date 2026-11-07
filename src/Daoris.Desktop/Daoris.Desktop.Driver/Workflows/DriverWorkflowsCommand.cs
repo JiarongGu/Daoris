@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// <c>daoris workflow …</c> (D194, the alone-path design §5; D157, the workflow design §4.7): the terminal's door to workflows; a
+/// <c>daoris workflow …</c>: the terminal's door to workflows; a
 /// run's <c>run</c>, <c>keep</c>, <c>skip</c>, <c>stop</c> and <c>changes</c> are the host's. <c>show --repository|--workspace [--kind]</c> draws what
 /// work there follows: Current, read from the rules as they stand, or the named workflow a choice gives. The rest are named workflows,
 /// one file each under the home's <c>workflows</c>: <c>list</c>, <c>show &lt;id&gt;[@&lt;version&gt;]</c>, <c>new</c>, <c>edit</c>,
@@ -52,7 +52,7 @@ public static class DriverWorkflowsCommand
         new WorkflowTerminal(argv, choices, world, ct).Go();
 
     /// <summary>
-    /// The graph a file's version or a file holds (FABRIC-GRAPH1f): a version of schema 2's <c>graph</c>, or an object that is a graph
+    /// The graph a file's version or a file holds: a version of schema 2's <c>graph</c>, or an object that is a graph
     /// itself, its <c>nodes</c> a list or its <c>schemaVersion</c> named, with no <c>steps</c>; else null, and the file is read for steps.
     /// </summary>
     internal static bool GraphIn(JsonNode? value, out JsonNode? graph)

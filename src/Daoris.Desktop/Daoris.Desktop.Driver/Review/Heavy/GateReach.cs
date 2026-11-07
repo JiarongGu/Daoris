@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a batch's check is told to keep from reaching (the pipeline design §4.7): the commit its batch began at and the gates whose newest
+/// What a batch's check is told to keep from reaching: the commit its batch began at and the gates whose newest
 /// evidence on the line is a pass, which stand until a path they reach changes.
 /// </summary>
 /// <param name="Base">The tip of the line's newest run with a verdict: the batch is the commits from it to the run's commit.</param>
@@ -9,7 +9,7 @@ namespace Daoris.Driver;
 public sealed record VerifyReach(string Base, IReadOnlyList<string> Passed);
 
 /// <summary>
-/// The gates a batch's changed paths reach, for any repository (the pipeline design §4.7): read from the accepted declaration's own
+/// The gates a batch's changed paths reach, for any repository: read from the accepted declaration's own
 /// <c>paths</c> on each gate, as the merge tool's lane table places this repository's. A gate with no <c>paths</c> is reached by every change,
 /// as a path no rule places reaches every gate there; a gate that is owed (its newest evidence on the line is not a pass) runs whatever the
 /// batch changed, since the batch's base moves past a failed verdict.

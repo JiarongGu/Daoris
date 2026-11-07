@@ -1,25 +1,25 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// One attempt held for the person (FABRIC-PERFORM1g; the fabric events design §D6, §E2, §D3's <i>blocked, needs the person</i>): what it
+/// One attempt held for the person: what it
 /// is on, how far its node got, why nothing establishes it by itself, and the person's word where they gave it.
 /// </summary>
 /// <param name="Unit">The unit (<see cref="WorkUnit.Id"/>).</param>
 /// <param name="Node">The node's id in its graph.</param>
 /// <param name="Attempt">The node's attempt number it is.</param>
 /// <param name="Plugin">The plugin that performs it.</param>
-/// <param name="Step">The step it was sent as (<c>&lt;plugin&gt;/&lt;id&gt;</c>).</param>
+/// <param name="Step">The step it is sent as (<c>&lt;plugin&gt;/&lt;id&gt;</c>).</param>
 /// <param name="NodeState">Where its node stands now (<see cref="NodeStates"/>).</param>
 /// <param name="Why">Why it is held: <c>unknown</c>, <c>no-reconcile</c>, <c>no-outcome</c>, <c>not-current</c>, or the code the one table refused its outcome with.</param>
 public sealed record HeldAttempt(string Unit, string Node, int Attempt, string Plugin, string Step, string NodeState, string Why)
 {
-    /// <summary>What its plugin said of it, where it said anything: an outcome that did not bind keeps its state here.</summary>
+    /// <summary>What its plugin said of it, where it said anything: an outcome that does not bind keeps its state here.</summary>
     public string? Outcome { get; init; }
 
-    /// <summary>The revision it was sent on.</summary>
+    /// <summary>The revision it is sent on.</summary>
     public string Revision { get; init; } = "";
 
-    /// <summary>When it was written, before its first send.</summary>
+    /// <summary>When it is written, before its first send.</summary>
     public DateTimeOffset RecordedAt { get; init; }
 
     /// <summary>The person's word, given and not applied yet (<see cref="HeldResolutions"/>), or null.</summary>
@@ -28,15 +28,15 @@ public sealed record HeldAttempt(string Unit, string Node, int Attempt, string P
     public DateTimeOffset? ResolvedAt { get; init; }
 
     /// <summary>
-    /// The words the person may say of it (FABRIC-CLOSE1q): a plugin's attempt's three (<see cref="HeldResolutions.Plugin"/>), or a close's
+    /// The words the person may say of it: a plugin's attempt's three (<see cref="HeldResolutions.Plugin"/>), or a close's
     /// recoveries and its stop (<see cref="HeldResolutions.Close"/>), <c>record</c> only where its door's answer is kept on it.
     /// </summary>
     public IReadOnlyList<string> Words { get; init; } = HeldResolutions.Plugin;
 
-    /// <summary>A failure kept for the person's code (FABRIC-PERFORM1k), as its plugin gave it; null on an attempt held.</summary>
+    /// <summary>A failure kept for the person's code, as its plugin gave it; null on an attempt held.</summary>
     public string? Code { get; init; }
 
-    /// <summary>Whether it is a failure kept for the person (FABRIC-PERFORM1k), which takes their new attempt alone, rather than an attempt held.</summary>
+    /// <summary>Whether it is a failure kept for the person, which takes their new attempt alone, rather than an attempt held.</summary>
     public bool Failed => Why is WorkPerformer.FailureKept or WorkPerformer.TriesSpent;
 
     /// <summary>What a check on a verification run verifies, which the person reads it by; null for every other attempt.</summary>
@@ -44,19 +44,19 @@ public sealed record HeldAttempt(string Unit, string Node, int Attempt, string P
 }
 
 /// <summary>
-/// A unit's node record whose file does not read (FABRIC-PERFORM1j, §D3): nothing on its unit is judged or started until a person mends
-/// it, since an attempt it may hold could be sent twice were it taken for empty.
+/// A unit's node record whose file does not read: nothing on its unit is judged or started until a person mends
+/// it, because an attempt it may hold could be sent twice were it taken for empty.
 /// </summary>
 /// <param name="File">The file's name in the records' folder (<see cref="NodeRecordFiles.FolderOf"/>): its unit's key.</param>
 /// <param name="Unit">The unit it names, where its text still names one whose key is its name; else null.</param>
 public sealed record UnreadableRecord(string File, string? Unit)
 {
-    /// <summary>When it was last written, where it is still there.</summary>
+    /// <summary>When it is last written, where it is still there.</summary>
     public DateTimeOffset? At { get; init; }
 }
 
 /// <summary>
-/// The attempts held for the person, read from the units' node records (FABRIC-PERFORM1g): what <c>WORK_STATE</c> and
+/// The attempts held for the person, read from the units' node records: what <c>WORK_STATE</c> and
 /// <c>daoris work held</c> list, and the sentences both say. Read-only: no record is written, no lease taken. An install no graph
 /// naming a plugin's performed node governs has no record, so it lists nothing.
 /// </summary>
@@ -67,8 +67,8 @@ public static class HeldAttempts
         "usage: daoris work held [--unit <id>]  |  daoris work held <unit> <node> <attempt> happened|did-not|stop  (a held close: record|resend|stop; a failed step: again)";
 
     /// <summary>
-    /// Every attempt held on the records that read, every close unknown with its node still on it (FABRIC-CLOSE1u,
-    /// <see cref="QuestClosing.Unanswered"/>), and every failure kept for the person (FABRIC-PERFORM1k, <see cref="WorkPerformer.KeptFailure"/>),
+    /// Every attempt held on the records that read, every close unknown with its node still on it (<see cref="QuestClosing.Unanswered"/>),
+    /// and every failure kept for the person (<see cref="WorkPerformer.KeptFailure"/>),
     /// oldest first; with <paramref name="unit"/>, that unit's alone.
     /// </summary>
     public static IReadOnlyList<HeldAttempt> Read(NodeRecordFiles records, string? unit = null, IReadOnlyDictionary<string, QuestView>? quests = null) =>
@@ -83,7 +83,7 @@ public static class HeldAttempts
                 })
             .Concat(record.Attempts.Where(attempt => attempt.State == AttemptStates.Held || QuestClosing.Unanswered(record, attempt)).Select(attempt =>
             {
-                // FABRIC-CLOSE1q3: a close whose submission moved by the runtime's last read is offered resend alone: the pass takes back
+                // A close whose submission moved by the runtime's last read is offered resend alone: the pass takes back
                 // record and stop, which the node records alone cannot tell (WORK_HELD holds no quest). No last read judges nothing.
                 var moved = attempt.Plugin == QuestClosing.Sender && quests is not null && QuestClosing.Moved(attempt, quests) is not null;
                 return new HeldAttempt(
@@ -98,7 +98,7 @@ public static class HeldAttempts
             .OrderBy(held => held.RecordedAt)]);
 
     /// <summary>
-    /// The node records that do not read (FABRIC-PERFORM1j), oldest written first; with <paramref name="unit"/>, only the one its text still
+    /// The node records that do not read, oldest written first; with <paramref name="unit"/>, only the one its text still
     /// names as that unit's, or whose name is that unit's key.
     /// </summary>
     public static IReadOnlyList<UnreadableRecord> Unreadable(NodeRecordFiles records, string? unit = null) =>
@@ -132,8 +132,8 @@ public static class HeldAttempts
     };
 
     /// <summary>
-    /// Why Daoris's own close is held (FABRIC-CLOSE1q): its door answered and its node could not take the answer, by the one table's code;
-    /// or no answer is kept; or the person's word was not a close's.
+    /// Why Daoris's own close is held: its door answered and its node could not take the answer, by the one table's code;
+    /// or no answer is kept; or the person's word is not a close's.
     /// </summary>
     private static string CloseWhy(HeldAttempt held) => (held.Why, held.Outcome) switch
     {
@@ -142,14 +142,14 @@ public static class HeldAttempts
             "the submission its close names was reopened or replaced since, so the work there is now is never that close's to record or stop: it can be sent again",
         (var code, WorkStates.Reached) => $"the quest was closed, and Daoris could not record that on its close's node ({code})",
         (var code, WorkStates.Failed) => $"the quest's close was refused, and Daoris could not record that on its close's node ({code})",
-        // FABRIC-CLOSE1y: an unknown close (FABRIC-CLOSE1u) is its door's silence, not a missing record: it is asked again at each look.
+        // An unknown close is its door's silence, not a missing record: it is asked again at each look.
         (ReconcileStates.Unknown, _) => "its door has not answered the quest's close or the question of what became of it, and is asked again at each look",
         (var code, _) => $"Daoris keeps no answer to the quest's close ({code})",
     };
 
     /// <summary>
     /// The lines <c>daoris work held</c> prints: one per attempt held, and what the person may say of it; then one per node record
-    /// that does not read (FABRIC-PERFORM1j), which no word settles.
+    /// that does not read, which no word settles.
     /// </summary>
     public static IReadOnlyList<string> Lines(IReadOnlyList<HeldAttempt> held, IReadOnlyList<UnreadableRecord>? unreadable = null)
     {
@@ -174,9 +174,8 @@ public static class HeldAttempts
 
     /// <summary>
     /// <c>daoris work held [--unit &lt;id&gt;]</c> lists; <c>daoris work held &lt;unit&gt; &lt;node&gt; &lt;attempt&gt;
-    /// happened|did-not|stop</c> (a held close's: <c>record|resend|stop</c>, FABRIC-CLOSE1q; a failure kept for the person's: <c>again</c>,
-    /// FABRIC-PERFORM1k) records the person's word (FABRIC-PERFORM1g, D50:
-    /// the page's <c>WORK_HELD</c> is the other door). Only the
+    /// happened|did-not|stop</c> (a held close's: <c>record|resend|stop</c>; a failure kept for the person's: <c>again</c>)
+    /// records the person's word (the page's <c>WORK_HELD</c> is the other door). Only the
     /// process holding the home's lease records it, asked inside the record's lock. Exit 0 clean; 1 refused; 2 words not understood.
     /// </summary>
     public static int Run(string home, IReadOnlyList<string> args, TextWriter output, TextWriter error, Func<DateTimeOffset>? clock = null)
