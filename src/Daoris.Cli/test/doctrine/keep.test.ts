@@ -12,8 +12,8 @@ import { canonFileDigest } from '../../src/doctrine/keep.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
 /**
- * A keep (D230): a canonical file this repository keeps its own text of, recorded in `daoris.json` with its reason and the
- * canon file's digest it was judged against. `sync` passes over it, `--force` too; `check` names it and does not call it
+ * A keep: a canonical file this repository keeps its own text of, recorded in `daoris.json` with its reason and the
+ * canon file's digest it is judged against. `sync` passes over it, `--force` too; `check` names it and does not call it
  * drift; `status` names it apart from an update, and again once the canon's file moves. A core file's absence is never kept.
  */
 

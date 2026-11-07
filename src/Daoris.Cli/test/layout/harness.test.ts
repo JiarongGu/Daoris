@@ -75,8 +75,7 @@ test('a skill missing name or description is reported', () => {
 
 /**
  * A tier that IS a directory is read one level deep, so a document filed below that is never loaded.
- * Knowledge, because the always-loaded tier is a span now and has no directory to nest anything in
- * (D7 as amended by D59).
+ * Knowledge, because the always-loaded tier is a span and has no directory to nest anything in.
  */
 test('a nested document is reported, because only the top level is read', () => {
   const fx = makeFixture('harness-nested');
@@ -100,7 +99,7 @@ test('a correct tree reports no problems', () => {
 });
 
 /**
- * The seam a second harness grows from. One implementation ships (D23); what these pin is that the
+ * The seam a second harness grows from. One implementation ships; what these pin is that the
  * facts live in ONE descriptor rather than scattered as constants, so adding another is an addition
  * and not an excavation.
  */
@@ -110,7 +109,7 @@ test('the descriptor holds every fact that used to be a constant', () => {
   assert.equal(harness.defaultTarget, '.claude');
   assert.equal(harness.headerPlacement, 'below-frontmatter');
 
-  // 🔴 The tier is the LOCATION (D7 as amended by D59). The always-loaded one is a REGION in the
+  // 🔴 The tier is the LOCATION. The always-loaded one is a REGION in the
   // file every harness reads, because `.claude/rules/` is read by exactly one of three; the pointer
   // is what carries it to the harness that reads another name and follows imports.
   assert.deepEqual(harness.tiers.rules!.region, { file: 'AGENTS.md', name: 'rules' });

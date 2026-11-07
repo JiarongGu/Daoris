@@ -79,7 +79,7 @@ test('a pack added to the manifest but not yet synced is stale', () => {
 });
 
 /**
- * The budget reports and does not fail (D54). Size is a judgement, not a fact the tool established:
+ * The budget reports and does not fail. Size is a judgement, not a fact the tool establishes:
  * one byte over a number somebody chose is not wrong, and a gate that stops a build over a judgement
  * gets its number raised rather than read. Everything else `check` reports IS a fact, and those still
  * fail — which is the distinction worth pinning, because the tempting simplification is to make the
@@ -113,8 +113,8 @@ test('drift still fails the check — only the budget is advisory', () => {
 
 /**
  * 🔴 The index's rows, rebuilt from disk and compared — offline and canon-free, which is what `check`
- * inside a build gate needs (D8). It catches the case that actually happens: a document added to a
- * tier that IS still files, and the index never re-synced (WSSETUP14a: the rows left the region).
+ * inside a build gate needs. It catches the case that actually happens: a document added to a
+ * tier that IS files, and the index never re-synced.
  *
  * The rules rows are deliberately not checked. They come from frontmatter the span strips on the way
  * in, so nothing without the canon can say what they ought to be — and a canon change is `status`'s

@@ -5,7 +5,7 @@ import { digestBytes, readText } from '../platform/fsx.ts';
 import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 
-/** The region a target lives in, for an always-loaded tier that is a span rather than a folder (D59); null for a file. */
+/** The region a target lives in, for an always-loaded tier that is a span rather than a folder; null for a file. */
 export function regionFor(harness: Harness, target: string): { file: string; name: string } | null {
   for (const tier of Object.values(harness.tiers)) {
     if (tier.region && tier.dir === undefined && target.startsWith(`${tier.region.name}/`)) return tier.region;
@@ -23,7 +23,7 @@ export function holds(root: string, harness: Harness, at: string, file: CanonFil
 }
 
 /**
- * The digest a keep records (D230): the canon's file as it ships, hashed as `canonDigest` hashes each file, so any change
+ * The digest a keep records: the canon's file as it ships, hashed as `canonDigest` hashes each file, so any change
  * to that one file, its frontmatter included, reopens the keep and nothing else does.
  */
 export function canonFileDigest(canon: Pick<Canon, 'root'>, file: Pick<CanonFile, 'source'>): string {
@@ -32,7 +32,7 @@ export function canonFileDigest(canon: Pick<Canon, 'root'>, file: Pick<CanonFile
 
 /**
  * Each of the manifest's keeps against what the canon selects here. A keep the selection no longer ships is dropped: the
- * canon retired the file or a switch took it out, so there is no canon text left to keep one's own against, and D19's rows
+ * canon retired the file or a switch took it out, so there is no canon text left to keep one's own against, and the ordinary rows
  * apply to the file as to any other.
  *
  * @param present Whether this repository holds the file: a span's body in its region, or a file at its target.

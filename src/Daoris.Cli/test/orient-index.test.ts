@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture } from './_fixture.ts';
 
-// ORIENT1a and 1b: `tools/orient-index.mjs` writes `docs/index/` from the code and the decisions, so a session
+// `tools/orient-index.mjs` writes `docs/index/` from the code and the decisions, so a session
 // starts from a lookup rather than a search, and `--check` fails when the index no longer says what the tree does.
 type Entry = { start: number; end: number; depth: number; name: string };
 // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents

@@ -39,7 +39,7 @@ export function detectRenames(
     let best: { target: string; score: number } | null = null;
     for (const write of created) {
       // 🔴 Never itself. A rule MIGRATING out of its old file into the region is a delete and a
-      // create at the same target, and pairing those reads as "x was renamed to x".
+      // create at the same target, and pairing those reads as a rename of x to x.
       if (write.target === from) continue;
       if (claimed.has(write.target)) continue;
       const score = containment(old, significantTokens(write.content));
@@ -81,7 +81,7 @@ export function planChanges(
   const keeps = manifest.kept ?? {};
 
   for (const file of selected) {
-    // A kept file is no update (D230): `status` names it apart, again once the canon's file moves since it was judged.
+    // A kept file is no update: `status` names it apart, again once the canon's file moves since its judgement.
     if (keeps[file.target]) continue;
     const entry = locked.get(file.target);
     if (!entry) {
@@ -90,8 +90,8 @@ export function planChanges(
     }
 
     if (entry.in) {
-      // A span (D59): what is held is the rule's BODY, so the comparison is body against body. Read
-      // by the LOCK's provenance, as every other reader does — what is on disk is what was written.
+      // A span: what is held is the rule's BODY, so the comparison is body against body. Read
+      // by the LOCK's provenance, as every other reader does — what is on disk is what sync wrote.
       const body = spanBody(root, harness, entry);
       // Untouched here, and different from what the canon now says: an upstream improvement.
       if (body === null || sha256(body) !== entry.sha256) continue;
@@ -107,7 +107,7 @@ export function planChanges(
   }
 
   const wanted = new Set(selected.map((file) => file.target));
-  // A row a confirmed switch takes out is not RETIRED — the canon still ships it (D71) — and `status`
+  // A row a confirmed switch takes out is not RETIRED — the canon still ships it — and `status`
   // names it as switched off, with its pack and reason, rather than here.
   return {
     added,

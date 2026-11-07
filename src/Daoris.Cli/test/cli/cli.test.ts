@@ -28,7 +28,7 @@ test('--version prints the package version', () => {
 });
 
 /**
- * ONEWAY1ai-i: a word that is no doctrine command is the desktop's program's, which says the command is unknown; with no program
+ * A word that is no doctrine command is the desktop's program's, which says the command is unknown; with no program
  * found, the CLI says where it is, a tool error (exit 2), and does nothing.
  */
 test('a word outside the doctrine with no desktop program to hand it to is a tool error (exit 2) saying where the program is', () => {
@@ -46,9 +46,9 @@ test('a word outside the doctrine with no desktop program to hand it to is a too
 
 /**
  * The table answers for its own verbs only. Looked up as a plain object, `toString` and `constructor`
- * resolved to Object's own members, ran as handlers, and their return reached `process.exit`, which
- * threw: a stack trace and exit 1, the policy code. Found while MOD7 made the commands a table. Since
- * ONEWAY1ai-i such a word is no doctrine command, handed to the desktop's program whole and never run here.
+ * resolves to Object's own members, which run as handlers and whose return reaches `process.exit`,
+ * which throws: a stack trace and exit 1, the policy code. Such a word is no doctrine command,
+ * handed to the desktop's program whole and never run here.
  */
 test('a verb named like a member of Object is no handler: it is handed on whole, never a crash', async () => {
   for (const verb of ['toString', 'constructor', '__proto__', 'hasOwnProperty', 'valueOf']) {
@@ -67,7 +67,7 @@ test('a verb named like a member of Object is no handler: it is handed on whole,
 /**
  * Exit codes are the contract, and 1 is POLICY — the code a build gate reads as "the doctrine is
  * wrong". A failure nobody anticipated (a file system that refused, a shape nobody expected) is a tool
- * error, 2, said in one line. It escaped as a stack trace and Node's own exit 1 (REV3).
+ * error, 2, said in one line, never a stack trace and Node's own exit 1.
  */
 test('a failure nobody anticipated is a tool error (exit 2) in one line, never a stack trace', async () => {
   const fx = makeFixture('cli-unanticipated');
@@ -85,7 +85,7 @@ test('no arguments prints usage and exits 2', () => {
 });
 
 /**
- * The commands are a table (MOD7): each row is a module under `cli/` carrying its verb, its usage lines
+ * The commands are a table: each row is a module under `cli/` carrying its verb, its usage lines
  * and its handler, and `--help` is assembled from the rows in the table's order. A row that registered
  * no usage, or usage the help never prints, would be a verb nobody can discover.
  */

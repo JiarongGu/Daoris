@@ -1,4 +1,4 @@
-// The seam: every word outside the doctrine commands, run by Daoris's desktop program (D194 point 1; ONEWAY1ai-i, the oneway design §11).
+// The seam: every word outside the doctrine commands, run by Daoris's desktop program.
 //
 // `daoris …` is one tree: the CLI owns the doctrine commands, and every other group is the desktop's program's. This module starts that
 // program with the person's words, whole, through the one spawn site, `startChild`, marked as handed so the program never hands a word
@@ -18,7 +18,7 @@ import type { ExitCode } from './errors.ts';
 type Env = Record<string, string | undefined>;
 
 /**
- * 🔴 Every child this package starts is started here, and there is one: Daoris's desktop program (PUSH1f2a, D194 point 1), handed the
+ * 🔴 Every child this package starts is started here, and there is one: Daoris's desktop program, handed the
  * terminal's environment and the handed mark. It hands its own children the tools itself, and its `agent install` finds the machine's
  * npm on the PATH it inherited; a managed node's first would install the agent into the managed node's folder. The program is an
  * apphost, never a `.cmd` (`driverProgram` refuses one), so nothing here goes through `cmd.exe`. Held by the dogfood test: the one
@@ -42,7 +42,7 @@ export const DRIVER_PROGRAM_HOME: readonly string[] = Object.freeze(['app', 'dao
 export const DRIVER_PROGRAM_FILE = process.platform === 'win32' ? 'daoris-driver.exe' : 'daoris-driver';
 
 /**
- * Daoris's desktop program for this `daoris` (D194 point 1, the alone-path design §1.1): the apphost `DAORIS_DRIVER_PROGRAM` names, else
+ * Daoris's desktop program for this `daoris`: the apphost `DAORIS_DRIVER_PROGRAM` names, else
  * the one this package's install carries; else the refusal saying where it is. Never `PATH`, never a checkout's build output found by
  * itself, never the install that holds the home: each is a guess at which build acts. A variable naming anything but an existing file
  * of the apphost's name is refused naming it: a `.dll` no start runs, a `.cmd` or `.bat` Node would hand to `cmd.exe`, where the
@@ -78,7 +78,7 @@ export type DriverProgramSeam = (words: readonly string[]) => ExitCode | Promise
 const CTRL_C_STATUSES: ReadonlySet<number> = new Set([0xC000013A, -1073741510]);
 
 /**
- * `daoris <words…>` run by Daoris's desktop program (D194 point 1; ONEWAY1ai-i): `<program> <words…>`, the words whole, through the one
+ * `daoris <words…>` run by Daoris's desktop program: `<program> <words…>`, the words whole, through the one
  * spawn site with the terminal's own streams, so the program reads the person's typing and its prompts reach the person with no copy
  * held here, and with the terminal's environment and the handed mark. Nothing is written before the start. Its exit is the run's: its
  * own 0, 1 and 2 as they are; a start that fails is 2, said with the program and the error; a Ctrl+C's end is 2 with nothing said, the
@@ -105,7 +105,7 @@ export function runDriverProgram(
   try {
     ran = start([found.program, ...words], { ...env, [HANDED_VARIABLE]: 'cli' });
   } finally {
-    // A key pressed while the program ran was taken by these listeners' handle and is dropped with it: the program had it too.
+    // A key pressed while the program runs is taken by these listeners' handle and dropped with it: the program has it too.
     process.off('SIGINT', waiting);
     process.off('SIGBREAK', waiting);
   }

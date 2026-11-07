@@ -64,8 +64,8 @@ function takeHanded(): string | null {
 }
 
 /**
- * @param driverProgram the desktop's program, which every word outside the doctrine commands is handed to (D194 point 1, ONEWAY1ai-i):
- * the real one, or a test's stand-in, which records what it was handed.
+ * @param driverProgram the desktop's program, which every word outside the doctrine commands is handed to:
+ * the real one, or a test's stand-in, which records what it is handed.
  * @param handedBy the program that handed these words here, `driver` where the desktop's program did; read from the environment.
  */
 export function runCli(
@@ -118,7 +118,7 @@ export function runCli(
       return error.exitCode;
     }
     // 🔴 A failure nobody anticipated is a TOOL error. Rethrown, Node printed a stack trace and exited
-    // 1 — the policy code, which a build gate reads as "the doctrine is wrong" (REV3).
+    // 1 — the policy code, which a build gate reads as "the doctrine is wrong".
     write(`daoris: ${error instanceof Error ? error.message : String(error)}`);
     return 2;
   }

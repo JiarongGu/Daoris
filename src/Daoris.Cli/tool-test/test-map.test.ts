@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 /**
- * CISCOPE1c (D207, design §3): the census of every test unit, `tools/test-map.mjs`. Its TypeScript reach is held here to one
- * fixture per edge kind (§3.4 check 6): an import closure into a tool, a catalogue glob with a member added, a twin's basename,
+ * The census of every test unit, `tools/test-map.mjs`. Its TypeScript reach is held here to one
+ * fixture per edge kind (design §3.4 check 6): an import closure into a tool, a catalogue glob with a member added, a twin's basename,
  * a source read as text, a folder scan with a member added, another project's words, a generated output declared, a computed
  * import read wide, and a table named as data. Its checks are held to a hand row, a whole-suite file and a skip. The .NET
- * reach is PROCREACH1's census, held by `process-reach.test.ts`. Run by the `tool-tests` gate.
+ * reach is the process-reach census's, held by `process-reach.test.ts`. Run by the `tool-tests` gate.
  */
 
 interface Reach { files: string[]; folders: string[]; globs: string[]; wide: string[] }

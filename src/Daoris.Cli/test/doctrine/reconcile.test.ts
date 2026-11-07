@@ -10,7 +10,7 @@ import { commandReconcile } from '../../src/doctrine/reconcile.ts';
 import { DaorisError } from '../../src/platform/errors.ts';
 
 /**
- * `daoris reconcile` (D230): offline, a brief in the canon's words that lists only the differences — what a sync would
+ * `daoris reconcile`: offline, a brief in the canon's words that lists only the differences — what a sync would
  * update or add, the copies edited here, a keep the canon moved past, and a set-up gap `check` reports — and asks the
  * session to adopt, keep with its reason, or propose upstream each, with the repository's checks kept green.
  */

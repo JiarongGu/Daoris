@@ -1,10 +1,8 @@
 /**
- * The shapes this tool has always had, written down.
+ * The shapes this tool shares between modules, written down.
  *
- * They were implicit while the source was JavaScript — described accurately in comments, agreed on by
- * every module, and checked by nothing. Naming them is most of what the TypeScript migration buys:
- * the lock, the manifest and the plan are the three things `sync` reasons about at once (D19), and
- * that state space is exactly where a wrong shape would be expensive.
+ * The lock, the manifest and the plan are the three things `sync` reasons about at once, and that
+ * state space is exactly where a wrong shape would be expensive.
  */
 /** Where a document lives in the canon and where it lands in a repository. */
 export interface CanonFile {
@@ -20,17 +18,17 @@ export interface CanonFile {
 export interface Pack {
   name: string;
   description: string;
-  /** The canon contract this pack was written against (PLUG1). Absent in a manifest means 1. */
+  /** The canon contract this pack is built against. Absent in a manifest means 1. */
   api: number;
   files: CanonFile[];
   /**
-   * The core rows this pack offers to switch off, each with the reason (D71). Keyed by a core
+   * The core rows this pack offers to switch off, each with the reason. Keyed by a core
    * document's target, or a core skill's directory. Empty for core, and for almost every pack.
    */
   switchesOff: Record<string, string>;
 }
 
-/** A core row a selected pack offers to switch off, or has switched off (D71). */
+/** A core row a selected pack offers to switch off, or has switched off. */
 export interface CoreSwitch {
   /** A core document's target (`rules/x.md`), or a core skill's directory (`skills/x`). */
   target: string;
@@ -41,7 +39,7 @@ export interface CoreSwitch {
 }
 
 /**
- * What installs, after the repository's confirmations are applied (D71).
+ * What installs, after the repository's confirmations are applied.
  *
  * @remarks
  * One answer computed in one place, because `sync`, `status`'s update report and `analyze`'s
@@ -66,17 +64,16 @@ export interface Canon {
 /**
  * What a harness expects on disk. **The tier is the LOCATION** — a directory for the tiers a harness
  * reaches for, and a marked REGION in a shared file for the one it loads without being asked
- * (D7 as amended by D59).
  *
  * @remarks
- * `.claude/rules/` was read by exactly one of the three harnesses this family drives, so the
+ * `.claude/rules/` is read by only one of the three harnesses this family drives, so the
  * always-loaded tier lives where all three look. That makes it the one tier whose location is not
  * harness-specific at all; what stays harness-specific is the POINTER, below.
  */
 export interface HarnessTier {
   /** Where this tier's files live under the target, for a tier that is a directory. */
   dir?: string;
-  /** Where this tier lives when it is a span inside a file the repository owns (D59). */
+  /** Where this tier lives when it is a span inside a file the repository owns. */
   region?: {
     /** The file, relative to the repository root — NOT to the target directory. */
     file: string;
@@ -100,14 +97,14 @@ export interface Harness {
   defaultTarget: string;
   /**
    * The file this harness reads that others do not, and what it must import so the tier reaches it
-   * anyway. Absent for a harness that reads the tier's own file directly (D59).
+   * anyway. Absent for a harness that reads the tier's own file directly.
    */
   pointer?: { file: string; imports: string };
   tiers: Record<string, HarnessTier>;
-  /** Where the provenance line goes — under the frontmatter, because it is only frontmatter at byte 0 (D14). */
+  /** Where the provenance line goes — under the frontmatter, because it is only frontmatter at byte 0. */
   headerPlacement: 'top' | 'below-frontmatter';
   /**
-   * A tier copied to a second root for a harness that reads only there (D117 §3.2): where a reference
+   * A tier copied to a second root for a harness that reads only there: where a reference
    * layout links a folder, Daoris writes files, since a checkout without links holds a link as text.
    * The descriptor's data, so the day that harness reads the target itself, the entry goes and `sync`
    * retires every mirror.
@@ -124,12 +121,12 @@ export interface Harness {
   };
   /**
    * The root a repository on the older layout keeps its on-demand tiers in, so the documents left
-   * there can be named with the move that fixes them (D117 §5.2).
+   * there can be named with the move that fixes them.
    */
   formerly?: string;
 }
 
-/** One file of a mirror, as `sync` would write it and the lock records it (D117 §3.2). */
+/** One file of a mirror, as `sync` would write it and the lock records it. */
 export interface MirrorEntry {
   /** The copy, relative to the repository root. */
   path: string;
@@ -145,7 +142,7 @@ export interface MirrorWrite extends MirrorEntry {
   state: 'create' | 'update' | 'unchanged';
 }
 
-/** The mirror table of D117 §5.4, decided. */
+/** The mirror table, decided. */
 export interface MirrorPlan {
   writes: MirrorWrite[];
   /** In the lock, as the lock, source gone: deleted. */
@@ -160,10 +157,10 @@ export interface MirrorPlan {
   editedGone: string[];
 }
 
-/** The pointer table of D117 §5.4, decided: each room's `CLAUDE.md`. */
+/** The pointer table, decided: each room's `CLAUDE.md`. */
 export interface RoomPlan {
   pointers: { room: string; path: string; state: 'create' | 'append' | 'unchanged'; content: string | null }[];
-  /** Undeclared rooms whose region comes out; `content` null when the region was all of the file. */
+  /** Undeclared rooms whose region comes out; `content` null when the region is all of the file. */
   unpoint: { room: string; path: string; content: string | null }[];
   /** Undeclared rooms with no region: only the lock forgets them. */
   drop: string[];
@@ -173,13 +170,13 @@ export interface RoomPlan {
   records: string[];
 }
 
-/** A path Daoris would write that is a link, or a link checked out as text (D117 §5.4). */
+/** A path Daoris would write that is a link, or a link checked out as text. */
 export interface LinkProblem {
   path: string;
   kind: 'link' | 'text' | 'file';
 }
 
-/** One canonical document moving from the lock's root to the manifest's (D117 §5.4). */
+/** One canonical document moving from the lock's root to the manifest's. */
 export interface Move {
   target: string;
   /** Both relative to the repository root. */
@@ -191,7 +188,7 @@ export interface Move {
 export interface DetectedHarness {
   id: string;
   name: string;
-  /** False for a harness whose signals are known but whose layout Daoris does not generate (D23). */
+  /** False for a harness whose signals are known but whose layout Daoris does not generate. */
   supported: boolean;
   evidence: string[];
 }
@@ -203,21 +200,21 @@ export interface DriftReport {
   stalePacks: string[];
   coreBytes: number;
   overBudget: boolean;
-  /** Where the index of the on-demand tiers is, at the lock's root (D128 §2.3). */
+  /** Where the index of the on-demand tiers is, at the lock's root. */
   index: string;
   /** The index is absent, not yet recorded in the lock, or behind the files it lists: a fact. */
   indexStale: boolean;
   /** The region's pointer to the index, its mirror sentence or its rooms differ from the disk: a fact. */
   rosterStale: boolean;
-  /** The core rows the lock says are off, and by which pack (D71) — named on every run. */
+  /** The core rows the lock says are off, and by which pack — named on every run. */
   switchedOff: { target: string; by: string }[];
   /** Rows the manifest and the lock disagree about: a fact, so it fails like a stale pack. */
   staleSwitches: string[];
-  /** The files `daoris.json` keeps this repository's own text of, with each reason (D230): named on every run, never drift. */
+  /** The files `daoris.json` keeps this repository's own text of, with each reason: named on every run, never drift. */
   kept: { target: string; reason: string }[];
   /** The manifest names a layout the files were not written under: a move `sync` has not made yet. */
   staleLayout: string | null;
-  /** Mirrors edited here, each with its source (D117 §3.3). */
+  /** Mirrors edited here, each with its source. */
   mirrorsDrifted: { path: string; of: string }[];
   /** Mirrors the lock records and the disk lacks, or a source has and the lock does not. */
   mirrorsMissing: string[];
@@ -231,7 +228,7 @@ export interface DriftReport {
   links: LinkProblem[];
   /** The root instruction file's whole size — reported against the smallest limit measured, never failed on. */
   agentsBytes: number;
-  /** Of `agentsBytes`, the repository's own part and the doctrine region's, and the region's largest rules, so an over-limit report says what to trim (CANONSIZE1). */
+  /** Of `agentsBytes`, the repository's own part and the doctrine region's, and the region's largest rules, so an over-limit report says what to trim. */
   agentsOwnBytes: number;
   agentsRegionBytes: number;
   agentsLargestRules: { name: string; bytes: number }[];
@@ -241,16 +238,16 @@ export interface DriftReport {
   readAlone: string[];
   /**
    * The repository's own knowledge documents with no frontmatter, which the index lists by their first
-   * heading (D128 §3.2): reported once, never failed on.
+   * heading: reported once, never failed on.
    */
   withoutFrontmatter: number;
-  /** The region's *Where things are* table differs from the manifest's documents (D122 §2.8): a fact. */
+  /** The region's *Where things are* table differs from the manifest's documents: a fact. */
   documentsStale: boolean;
   /** Declared documents that are neither a file nor a folder: a fact. */
   documentsMissing: { role: string; path: string }[];
   /** Declared documents that are a link, or a link held as text: a fact, and never read through. */
   documentLinks: DocumentLinkProblem[];
-  /** Declared documents over their ceiling in words: reported, never failed on (D54). */
+  /** Declared documents over their ceiling in words: reported, never failed on. */
   documentsOver: { label: string; words: number; ceiling: number }[];
   /** A ceiling declared on a folder, which no count can measure: reported. */
   ceilingsUnmeasured: { role: string; path: string; ceiling: number }[];
@@ -267,7 +264,7 @@ export interface DriftReport {
  * addressing to it. Without it, publishing a quest is guessing what the other side does — which is the
  * same "the knowledge does not travel" problem the whole arrangement exists to solve.
  *
- * Nouns only, like everything else in the manifest (D26): what this repository IS, never a command.
+ * Nouns only, like everything else in the manifest: what this repository IS, never a command.
  */
 export interface Domain {
   /** One line: what this repository is, for someone who has never opened it. */
@@ -277,18 +274,17 @@ export interface Domain {
   /** Kinds of quest it welcomes. Guidance for the asker, not a contract. */
   accepts: string[];
   /**
-   * The repositories it depends on, by the names the registry knows them by (D91). Optional: absent
+   * The repositories it depends on, by the names the registry knows them by. Optional: absent
    * says nothing is declared. Read through `usesOf`, never directly.
    */
   uses?: string[];
 }
 
-/** `daoris.json` — inert data, deliberately (D26). */
 /**
- * What may leave this machine for a remote deployment (D47 §4). It lives in the MANIFEST — tracked
+ * What may leave this machine for a remote deployment. It lives in the MANIFEST — tracked
  * and reviewed — because disclosure is the repository's call, not one person's local toggle. Absence
  * is the default and means local: the cost of the wrong default is asymmetric, since over-sharing is
- * a disclosure and under-sharing is an inconvenience (D21).
+ * a disclosure and under-sharing is an inconvenience.
  */
 export interface RemoteDeclaration {
   /** Join a remote: the registration, quests and session records become visible to it. */
@@ -305,35 +301,35 @@ export interface Manifest {
   coreBudgetBytes: number;
   /** Absent until a repository registers itself; a quest can still be addressed, less usefully. */
   domain?: Domain;
-  /** Absent until a repository opts into a remote deployment; silence means local (D47 §4). */
+  /** Absent until a repository opts into a remote deployment; silence means local. */
   remote?: RemoteDeclaration;
   /**
-   * The core rows this repository confirms a selected pack may switch off: target → the pack
-   * (D71). A pack's offer does nothing until it is named here, and a row named here that no
-   * selected pack offers is refused — a repository alone still cannot drop core (D4).
+   * The core rows this repository confirms a selected pack may switch off: target → the pack.
+   * A pack's offer does nothing until it is named here, and a row named here that no
+   * selected pack offers is refused — a repository alone still cannot drop core.
    */
   switchedOff?: Record<string, string>;
   /**
-   * The canonical files this repository keeps its own text of (D230): target → why, and the digest of the canon's file it
-   * was judged against. `sync` passes over each, `--force` too, and `status` names one again once the canon's file moves.
+   * The canonical files this repository keeps its own text of: target → why, and the digest of the canon's file it
+   * is judged against. `sync` passes over each, `--force` too, and `status` names one again once the canon's file moves.
    */
   kept?: Record<string, Keep>;
   /**
-   * Folders with an `AGENTS.md` of their own (D117 §2.2): declared, never found, since a walk of the
+   * Folders with an `AGENTS.md` of their own: declared, never found, since a walk of the
    * tree meets build output and worktrees. Relative to the repository, with forward slashes; empty
    * when none are declared.
    */
   rooms: string[];
   /**
-   * The development documents this repository keeps, each role bound to a path or a ceiling (D122
-   * §2.7), in the roles' own order. Empty when none are declared, which changes nothing.
+   * The development documents this repository keeps, each role bound to a path or a ceiling,
+   * in the roles' own order. Empty when none are declared, which changes nothing.
    */
   documents: DeclaredDocument[];
   /** Resolved at read time so an unknown name fails at the edge, naming what exists. */
   harnessDescriptor: Harness;
 }
 
-/** One keep in `daoris.json` (D230): the repository's reason, and the canon file's digest (`canonFileDigest`) it was judged against. */
+/** One keep in `daoris.json`: the repository's reason, and the canon file's digest (`canonFileDigest`) it is judged against. */
 export interface Keep {
   reason: string;
   canon: string;
@@ -344,23 +340,23 @@ export interface KeepState extends Keep {
   target: string;
   /** The canon's file digest now; null where the canon no longer ships the file here, which drops the keep. */
   now: string | null;
-  /** The canon's file moved since the keep was judged, so the repository decides it again. */
+  /** The canon's file moved since the keep's judgement, so the repository decides it again. */
   reopened: boolean;
-  /** A core rule kept with its file absent: a keep is a text, never a core rule's absence (D4, D71), so `sync` refuses it. */
+  /** A core rule kept with its file absent: a keep is a text, never a core rule's absence, so `sync` refuses it. */
   absentCore: boolean;
 }
 
-/** One role the manifest's `documents` declares (D122 §2.7). */
+/** One role the manifest's `documents` declares. */
 export interface DeclaredDocument {
   /** One of the roles `documents.ts` knows. */
   role: string;
   /** Repository-relative, as a declared path is spelled; null for `brief` and `room`, which take a ceiling alone. */
   path: string | null;
-  /** The ceiling in words, reported against and never failed on (D54); null when none is declared. */
+  /** The ceiling in words, reported against and never failed on; null when none is declared. */
   words: number | null;
 }
 
-/** One row of `daoris.lock`: what was written, from where, and what it hashed to. */
+/** One row of `daoris.lock`: what is written, from where, and what it hashes to. */
 export interface LockEntry {
   pack: string;
   source: string;
@@ -368,7 +364,7 @@ export interface LockEntry {
   canonVersion: string;
   sha256: string;
   /**
-   * Present when this entry is a **span inside a file** rather than a file of its own (D59): the
+   * Present when this entry is a **span inside a file** rather than a file of its own: the
    * file, relative to the repository root.
    *
    * @remarks
@@ -381,7 +377,7 @@ export interface LockEntry {
 
 /**
  * `daoris.lock` — the authority. Anything absent from it is invisible to the tool, which is what
- * makes a repository's own files safe (D5).
+ * makes a repository's own files safe.
  */
 export interface Lock {
   /** Stamped by the writer, so a caller hands over entries and provenance without inventing it. */
@@ -395,31 +391,31 @@ export interface Lock {
   source: string;
   entries: LockEntry[];
   /**
-   * The core rows switched off here, and by which pack (D71) — recorded so the offline `check` can
+   * The core rows switched off here, and by which pack — recorded so the offline `check` can
    * name them without reading any pack. Absent when nothing is off, so an ordinary lock is unchanged.
    */
   switchedOff?: { target: string; by: string }[];
   /**
-   * The descriptor and root the entries were written under (D117 §5.1). Absent means `claude-code`
-   * and `.claude`, the only layout written before, so a lock on that layout is unchanged byte for byte.
+   * The descriptor and root the entries are written under. Absent means `claude-code`
+   * and `.claude`, so a lock on that layout is unchanged byte for byte.
    * 🔴 The lock, not the manifest, says where the files are: between a manifest's flip and the sync
    * that moves them, the manifest names the new root and the files are still at the old.
    */
   harness?: string;
   target?: string;
   /**
-   * Where `sync` wrote the index of the on-demand tiers, repository-relative (WSSETUP14a, D128 §2.4):
+   * Where `sync` wrote the index of the on-demand tiers, repository-relative:
    * always `<target>/INDEX.md`. Absent in a lock written before it, which reads as no index written yet.
    */
   index?: string;
-  /** Every mirror file `sync` wrote, and what it hashed to (D117 §3.2). Absent when there are none. */
+  /** Every mirror file `sync` wrote, and what it hashed to. Absent when there are none. */
   mirrors?: MirrorEntry[];
   /** The rooms whose pointers `sync` keeps, so a room taken out of the manifest loses its pointer. */
   rooms?: string[];
 }
 
 /**
- * The index of the on-demand tiers, decided (D128 §2.4's cells): generated like the region's roster, so
+ * The index of the on-demand tiers, decided: generated like the region's roster, so
  * a file the lock names is rewritten whatever it says, and one it does not name is the repository's own
  * unless it is already what would be written.
  */
@@ -449,13 +445,13 @@ export interface PlannedWrite extends CanonFile {
   sha256: string;
   state: 'create' | 'update' | 'unchanged';
   /**
-   * Present when this write is a **span inside a file** rather than a file of its own (D59): the
+   * Present when this write is a **span inside a file** rather than a file of its own: the
    * file, relative to the repository root. `content` is then the rule's body, and the whole region is
    * assembled from every write that names the same file.
    */
   in?: string;
   /**
-   * The frontmatter a span dropped, captured where the canon was in hand.
+   * The frontmatter a span drops, captured where the canon is in hand.
    *
    * @remarks
    * The roster's rows are built from `applies_when` and `enforces`, and a span carries the body
@@ -464,8 +460,8 @@ export interface PlannedWrite extends CanonFile {
    */
   meta?: Record<string, string>;
   /**
-   * The lock's entry for a file this repository keeps (D230): written nowhere, `--force` included, and carried into the new
-   * lock as it was, so the disk against the lock stays what this repository changed. `content` is its text as it stands.
+   * The lock's entry for a file this repository keeps: written nowhere, `--force` included, and carried into the new
+   * lock unchanged, so the disk against the lock stays what this repository changed. `content` is its text as it stands.
    */
   kept?: LockEntry;
 }
@@ -484,40 +480,40 @@ export interface SyncPlan {
   writes: PlannedWrite[];
   deletes: string[];
   /**
-   * The deletes that were SPANS (D59): they leave with the region's rewrite, and there is no file of
+   * The deletes that are SPANS: they leave with the region's rewrite, and there is no file of
    * Daoris's at their old path — a file there is the repository's own, and is never removed.
    */
   leavesRegion?: string[];
-  /** In the lock and edited here — an improvement that may want promoting, not a mistake (D13). */
+  /** In the lock and edited here — an improvement that may want promoting, not a mistake. */
   drifted: string[];
-  /** Not in the lock: the repository wrote it before adopting, and overwriting would destroy it (D12). */
+  /** Not in the lock: the repository wrote it before adopting, and overwriting would destroy it. */
   collisions: string[];
   renames: Rename[];
   /** Retirements the repository has edited — the worst moment to lose work, so they refuse. */
   editedRetirements: string[];
-  /** Core rows a confirmed switch takes out (D71). Their files are in `deletes`; this names why. */
+  /** Core rows a confirmed switch takes out. Their files are in `deletes`; this names why. */
   switchedOff: CoreSwitch[];
   /** Offers nobody confirmed: the row stays, and `sync` says so. */
   offers: CoreSwitch[];
   /**
-   * Switched-off files this repository edited (D71). They refuse like drift rather than like an
+   * Switched-off files this repository edited. They refuse like drift rather than like an
    * edited retirement: the canonical file still exists, so `upstream` can still save the edit.
    */
   editedSwitchedOff: string[];
-  /** The keeps this sync passes over, each with whether the canon's file moved since it was judged (D230). */
+  /** The keeps this sync passes over, each with whether the canon's file moved since its judgement. */
   kept: KeepState[];
-  /** Keeps naming a file the canon no longer ships here: dropped, so D19's rows apply to the file as to any other. */
+  /** Keeps naming a file the canon no longer ships here: dropped, so the ordinary rows apply to the file as to any other. */
   keepsDropped: string[];
   /**
-   * The layout the lock was written under, and the one the manifest names (D117 §5.1). A move when
+   * The layout the lock is written under, and the one the manifest names. A move when
    * the two targets differ: files are read and deleted at `from`, written at `to`.
    */
   layout: { from: { harness: string; target: string }; to: { harness: string; target: string } };
   /** Canonical documents whose old file goes once the new one is written: moved, or a move finished. */
   moves: Move[];
-  /** The repository's own file where a move would write (repository-relative), and what was moving there. */
+  /** The repository's own file where a move would write (repository-relative), and what the move would replace. */
   moveCollisions: { from: string | null; to: string }[];
-  /** The repository's own documents in an old on-demand tier: each refuses the move (D117 §5.4). */
+  /** The repository's own documents in an old on-demand tier: each refuses the move. */
   leftBehind: { path: string; move: string }[];
   /** The same own document under both roots: which one is meant is the repository's call. */
   bothRoots: { old: string; neu: string }[];
@@ -525,11 +521,11 @@ export interface SyncPlan {
   keptRules: string[];
   mirrors: MirrorPlan;
   rooms: RoomPlan;
-  /** The index of the on-demand tiers (WSSETUP14a, D128 §2.3–§2.4). */
+  /** The index of the on-demand tiers. */
   index: IndexPlan;
   links: LinkProblem[];
   /**
-   * The declared documents (D122 §2.7), which `sync` names and never writes: a link refuses, since the
+   * The declared documents, which `sync` names and never writes: a link refuses, since the
    * table would send every session through it; an absent one is said and left to `check`.
    */
   documents: { links: DocumentLinkProblem[]; missing: { role: string; path: string }[] };
@@ -584,14 +580,14 @@ export interface AnalysisReport {
   suggested: PackSuggestion[];
   /** Paths the repository owns that the canon would claim — sync refuses until each is resolved. */
   collisions: string[];
-  /** In the lock already, so a difference is an update to install rather than a collision (D12). */
+  /** In the lock already, so a difference is an update to install rather than a collision. */
   updates: string[];
   twins: Twin[];
   budget: { current: number; projected: number; limit: number };
-  /** Core rows a chosen pack would switch off, awaiting the manifest's confirmation (D71). */
+  /** Core rows a chosen pack would switch off, awaiting the manifest's confirmation. */
   offers: CoreSwitch[];
   /** Core rows the manifest already confirms off — out of every projection above. */
   switchedOff: CoreSwitch[];
-  /** The records this repository seems to keep, by role, from conventional names (D122 §2.7). Never declared here. */
+  /** The records this repository seems to keep, by role, from conventional names. Never declared here. */
   documents: { role: string; path: string }[];
 }

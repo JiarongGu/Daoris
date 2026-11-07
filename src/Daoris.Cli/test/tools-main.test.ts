@@ -7,10 +7,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { makeFixture } from './_fixture.ts';
 
 /**
- * The tools' runner guard (REV3 tools F9, C8). A `tools/` script whose helpers are imported runs only
- * when it is the script node was asked to run. Node resolves the main module's links, so a script
- * reached through a junction saw `import.meta.url` as its REAL path and `process.argv[1]` as the path
- * typed: the guard was false, and a gate ran nothing and exited 0 — a pass nobody earned.
+ * The tools' runner guard. A `tools/` script whose helpers are imported runs only
+ * when it is the script node is asked to run. Node resolves the main module's links, so a script
+ * reached through a junction sees `import.meta.url` as its REAL path and `process.argv[1]` as the path
+ * typed: the guard turns false, and a gate runs nothing and exits 0 — a pass nobody earned.
  */
 const fsx = pathToFileURL(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'tools', 'fsx.mjs')).href;
 
@@ -37,7 +37,7 @@ test('an imported tool is not the one being run', async () => {
 });
 
 /**
- * How the family rehearsal asks whether the examples are current (REV3 tools F14): sync a COPY and
+ * How the family rehearsal asks whether the examples are current: sync a COPY and
  * compare. Synced in place, the first run repaired the examples it had just found stale, and every
  * later run passed on the repair.
  */
@@ -60,7 +60,7 @@ test('two trees disagree on changed bytes and on a file either side lacks, and o
 });
 
 /**
- * A folder renamed just after it was written (UPDATE1's stage, 2026-10-03): on Windows the rename of a folder of fresh
+ * A folder renamed just after it is written: on Windows the rename of a folder of fresh
  * executables fails with EPERM while something still holds a file in it, the virus scanner most often, and gives way a
  * moment later. The deployment rehearsal's update phase failed on exactly that.
  */

@@ -1,20 +1,20 @@
-// What goes inside the region: the always-loaded tier, rendered once (CANON8b, D59).
+// What goes inside the region: the always-loaded tier, rendered once.
 //
-// `.claude/rules/` was read by exactly one of three harnesses, so the tier moves into the file all
+// `.claude/rules/` is read by only one of three harnesses, so the tier moves into the file all
 // three read. Eight files become one span, and three content decisions follow from that — each a
 // consequence of concatenating rather than a preference:
 //
-//   1. FRONTMATTER IS STRIPPED. D14 already says frontmatter is only frontmatter at byte 0. Eight
+//   1. FRONTMATTER IS STRIPPED. Frontmatter is only frontmatter at byte 0. Eight
 //      rules concatenated would put seven `---` blocks mid-document, where a reader sees horizontal
 //      rules and stray key-value prose. What it carried becomes the table.
 //   2. PROVENANCE STAYS, per rule. It is what keeps drift and `upstream` per RULE inside one region,
 //      which design §4 rests on — without it a person improving one sentence has drifted all eight.
-//   3. THE TABLE KEEPS THE RULES, AND POINTS AT THE REST (WSSETUP14a, D128 §2). The rules rows are
+//   3. THE TABLE KEEPS THE RULES, AND POINTS AT THE REST. The rules rows are
 //      cheap and carry the `applies_when`/`enforces` the stripped frontmatter held. Knowledge and
 //      skills grow with the repository, so their tables live in `<target>/INDEX.md`, read on demand,
 //      and the region says where: a row per document put the pilot's first rule past the byte at which
 //      one agent stops reading.
-//   4. ONLY THE RULES TIER IS IN FULL (CONSOLIDATE1). A knowledge document marked `rule: true` is a rule
+//   4. ONLY THE RULES TIER IS IN FULL. A knowledge document marked `rule: true` is a rule
 //      whose body is read on demand: its row is in the table, linked to its file, and its body is not.
 
 import type { CanonFile, Harness, LockEntry } from './records.ts';
@@ -48,17 +48,17 @@ export interface TierInput {
   version: string;
   /** Where the on-demand tiers live, for the pointer to their index. */
   target?: string;
-  /** The core rows this repository switched off, and the pack that offered each (D71). */
+  /** The core rows this repository switched off, and the pack that offered each. */
   off?: readonly { target: string; by: string }[];
-  /** Where the skills live and the root that mirrors them, for the one sentence that says so (D117 §5.3). */
+  /** Where the skills live and the root that mirrors them, for the one sentence that says so. */
   mirror?: { source: string; root: string };
-  /** Each declared room and its first heading (D117 §2.2). */
+  /** Each declared room and its first heading. */
   rooms?: readonly { path: string; heading: string | null }[];
-  /** Each declared document with a path, in the roles' order, and its role's job (D122 §2.7). */
+  /** Each declared document with a path, in the roles' order, and its role's job. */
   documents?: readonly { role: string; path: string; job: string }[];
 }
 
-/** What the index renders: the on-demand tiers as they are on disk (D128 §2.3). */
+/** What the index renders: the on-demand tiers as they are on disk. */
 export interface IndexInput {
   knowledge: TierDocument[];
   skills: TierDocument[];
@@ -95,10 +95,10 @@ export function onDemandExtras(
   };
 }
 
-/** The heading of the roster's last table, which `check` compares on its own (D122 §2.8). */
+/** The heading of the roster's last table, which `check` compares on its own. */
 export const WHERE_HEADING = '## Where things are';
 
-/** The index's file name, at the target's root beside the tiers rather than inside one (D128 §2.3). */
+/** The index's file name, at the target's root beside the tiers rather than inside one. */
 export const INDEX_FILE = 'INDEX.md';
 
 /**
@@ -120,7 +120,7 @@ function metaOf(document: TierDocument, required: readonly string[] = ['applies_
 
 /**
  * A document with no frontmatter block at all, which the index lists by its first heading and `check`
- * counts (WSSETUP14c, D128 §3.1–§3.2). One answer for both, so the count is the table's rows.
+ * counts. One answer for both, so the count is the table's rows.
  */
 export const withoutFrontmatter = (document: TierDocument): boolean =>
   !document.meta && frontmatterEnd(document.text) === -1;
@@ -161,7 +161,7 @@ export function renderTier(input: TierInput): string {
  * not rebuildable offline, because the frontmatter they come from is stripped on the way in; a canon
  * change is `status`'s report and `sync`'s job, which is where a canon change belongs.
  *
- * 🔴 Nothing here grows with the repository's documents (WSSETUP14a, D128 §2.1). The knowledge and
+ * 🔴 Nothing here grows with the repository's documents. The knowledge and
  * skill tables did, and on the first real set-up they put the first rule past byte 32,768 of the file,
  * where one agent stops reading. They are `renderIndex`'s now, and the region carries one sentence
  * naming the file, with no count in it: a count would change the region with every document.
@@ -204,7 +204,7 @@ export function renderRoster(input: TierInput): string {
     lines.push(row(document, `[\`${nameOf(document.file)}\`](${path})`));
   }
 
-  // 🔴 What is NOT here, said here (D71). A core row a pack switched off is absent from every table
+  // 🔴 What is NOT here, said here. A core row a pack switched off is absent from every table
   // below, and a session that meets a doctrine with a hole in it cannot tell the hole from a canon
   // that never had the rule. Under the rules table, because that half is `sync`'s alone: `check`
   // rebuilds only the on-demand half offline, and this line needs the lock's knowledge of who did it.
@@ -214,22 +214,22 @@ export function renderRoster(input: TierInput): string {
     lines.push('', `Switched off here, by a pack and confirmed in \`daoris.json\`: ${rows.join(', ')}.`);
   }
 
-  // The pointer (D128 §2.2), linked because it names a real file the reader has to go and open.
+  // The pointer, linked because it names a real file the reader has to go and open.
   const index = indexPath(target);
   lines.push('', '## Read on demand', '',
     `The knowledge and the skills, each with when it applies, are listed in [${index}](${index}), generated `
     + 'from the files: read it before a non-trivial task, and search it when it is long.');
   // Said once, beside the pointer: the copy exists for the agent that reads only there, and an edit
-  // made to it is refused (D117 §3.3), so the reader learns which file to open before editing.
+  // made to it is refused, so the reader learns which file to open before editing.
   if (input.mirror) {
     lines.push('', `Skills live in \`${input.mirror.source}/\`; \`${input.mirror.root}/\` mirrors them for the agent `
       + 'that reads only there — edit the source.');
   }
 
-  // 🔴 Telling, not loading (D117 §2.2). D59 rejected telling for the RULES, which every task needs; a
+  // 🔴 Telling, not loading. Telling is rejected for the RULES, which every task needs; a
   // room is on-demand material like knowledge, and no harness is measured loading a nested file for a
-  // session started at the root (LAYOUT2), so the roster is what makes each one reachable. Only when a
-  // room is declared, so a region without rooms is byte for byte what it was.
+  // session started at the root, so the roster is what makes each one reachable. Only when a
+  // room is declared, so a region without rooms is byte for byte unchanged.
   if (input.rooms?.length) {
     lines.push('', '## Rooms', '', "Read a folder's room before changing anything in it.", '', ROOM_HEAD);
     for (const room of input.rooms) {
@@ -237,10 +237,10 @@ export function renderRoster(input: TierInput): string {
     }
   }
 
-  // 🔴 Where the records are (D122 §2.7), as data rather than prose: the one part of the standard every
+  // 🔴 Where the records are, as data rather than prose: the one part of the standard every
   // task needs, and the search each session would otherwise make. From the manifest alone, so `check`
   // rebuilds it offline and fails when it differs. Only when a path is declared, so a region whose
-  // repository declares nothing is byte for byte what it was. A path is a code span with its pipes
+  // repository declares nothing is byte for byte unchanged. A path is a code span with its pipes
   // escaped, which is what keeps a table a table.
   if (input.documents?.length) {
     lines.push('', WHERE_HEADING, '', 'Declared in `daoris.json`; look here before searching.', '', WHERE_HEAD);
@@ -253,7 +253,7 @@ export function renderRoster(input: TierInput): string {
 }
 
 /**
- * `<target>/INDEX.md`: the knowledge and skills, each with when it applies (WSSETUP14a, D128 §2.3).
+ * `<target>/INDEX.md`: the knowledge and skills, each with when it applies.
  *
  * @remarks
  * Every document is named by its path from the repository's root, as a code span rather than a link:
@@ -283,11 +283,11 @@ export function renderIndex(input: IndexInput): string {
       : `| ${at(document)} | ⚠ needs frontmatter | ⚠ needs frontmatter |`);
   }
 
-  // 🔴 A document with no frontmatter at all is listed by what it says it is about (WSSETUP14c, D128
-  // §3.1): the first set-up met 166 of them, and a row reading *needs frontmatter* twice told a reader
-  // nothing. Its heading is the document's own words, never a guessed *applies when* (§3.4). A block
+  // 🔴 A document with no frontmatter at all is listed by what it says it is about: a real
+  // set-up meets many of them, and a row reading *needs frontmatter* twice tells a reader
+  // nothing. Its heading is the document's own words, never a guessed *applies when*. A block
   // missing a field keeps the warning above, since there the field is what is wrong. Only when there is
-  // one, so an index whose documents are all described is what it was.
+  // one, so an index whose documents are all described is unchanged.
   if (bare.length) {
     lines.push('', BARE_HEADING, '', BARE_HEAD);
     for (const document of bare) {

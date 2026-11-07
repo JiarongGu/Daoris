@@ -7,13 +7,13 @@ import type { Canon, CanonFile, CoreSwitch, Pack, Selection } from './records.ts
 /**
  * The canon's own vocabulary for what a document IS: always-loaded, read-on-demand, or invoked by
  * name. Where each one lands on disk is the harness's business (src/layout/harness.ts), which is why this
- * list describes doctrine rather than directories — and why there is still no `tier` field (D7).
+ * list describes doctrine rather than directories — and why there is no `tier` field.
  */
 const TIERS = ['rules', 'knowledge', 'skills'];
 
 /**
  * The canon ships INSIDE the package, so the pinned ref in a repo's manifest is
- * itself the version pin and no command ever fetches anything (D11). That is the
+ * itself the version pin and no command ever fetches anything. That is the
  * published layout, staged at pack time by tools/stage-package.mjs.
  *
  * In THIS repository the canon lives at the root instead, because it is data the
@@ -68,10 +68,10 @@ function tierFiles(canonRoot: string, pack: string, prefix: string): CanonFile[]
 }
 
 /**
- * The pack contract this build speaks (PLUG1).
+ * The pack contract this build speaks.
  *
  * @remarks
- * 🔴 **A pack declares the canon it was written against, and the host reads it BEFORE materializing
+ * 🔴 **A pack declares the canon it is written against, and the host reads it BEFORE materializing
  * anything.** Taken from a neighbouring application's plugin manifests, which have carried an
  * integer `apiVersion` all along. Without it a pack from a newer canon failed at whatever it
  * happened to touch first — a frontmatter field that did not exist yet, a tier that is now a region,
@@ -80,7 +80,7 @@ function tierFiles(canonRoot: string, pack: string, prefix: string): CanonFile[]
  * **Raise this when a pack written for the new shape cannot work on the old one**, never for an
  * addition: a number that goes up on every change teaches people to ignore it.
  *
- * 1 — the shape as of D59: `rules/` into the always-loaded region, `knowledge/` and `skills/` as
+ * 1 — the shape today: `rules/` into the always-loaded region, `knowledge/` and `skills/` as
  * directories, frontmatter of `name`, `applies_when`, `enforces`.
  */
 export const PACK_API = 1;
@@ -140,7 +140,7 @@ export function readCanon(canonRoot: string): Canon {
 
 /**
  * The canon's identity beside its stamp: every document of every pack, by path and content, hashed as the lock hashes
- * a file. The stamp stays `0.0.1` through every 0.0.x build (D124 §1.4), so two canons with one version are told apart
+ * a file. The stamp stays `0.0.1` through every 0.0.x build, so two canons with one version are told apart
  * by this, and never ordered by it: which of two is newer only a version can say.
  */
 export function canonDigest(canon: Canon): string {
@@ -161,10 +161,10 @@ export function isSwitchedOff(
 }
 
 /**
- * A pack's offer to switch core rows off, checked when the canon is read (D71).
+ * A pack's offer to switch core rows off, checked when the canon is read.
  *
  * @remarks
- * Refused here rather than at `sync`, for PLUG1's reason: a pack that names a row core does not have
+ * Refused here rather than at `sync`, as a pack contract is: a pack that names a row core does not have
  * is a defect in the PACK, and the place to say so is before anything is planned. Core only, because
  * another pack's rows are opt-in already — a switch naming one is a mistake, not a feature. The
  * reason is required: it is the sentence `status` prints to someone deciding whether to confirm.
@@ -179,8 +179,8 @@ function readSwitches(pack: string, declared: unknown, core: Pack): Record<strin
 
   const switches: Record<string, string> = {};
   for (const [target, because] of Object.entries(declared)) {
-    // A ROW, in the shape D71 names — never a whole tier, never one file of a skill. `covers` matches
-    // by prefix, so without this `rules` took every core rule out (REV3).
+    // A ROW — never a whole tier, never one file of a skill. `covers` matches
+    // by prefix, so without this `rules` would take every core rule out.
     const document = /^(rules|knowledge)\/[^/]+\.md$/.test(target)
       && core.files.some((file) => file.target === target);
     const skill = /^skills\/[^/]+$/.test(target) && core.files.some((file) => covers(target, file));
@@ -200,12 +200,12 @@ function readSwitches(pack: string, declared: unknown, core: Pack): Record<strin
 }
 
 /**
- * What installs, once the repository's confirmations are applied (D71).
+ * What installs, once the repository's confirmations are applied.
  *
  * A selected pack OFFERS to switch a core row off; only a row the manifest names, with that pack,
  * goes off. An offer nobody confirmed leaves the row installed and comes back as an offer, so the
  * caller can say so. A confirmation no selected pack offers is refused: a repository alone still
- * cannot drop a core row (D4).
+ * cannot drop a core row.
  */
 export function resolveSelection(
   canon: Canon, packNames: readonly string[], confirmed: Readonly<Record<string, string>> = {},
@@ -223,7 +223,7 @@ export function resolveSelection(
 
   // 🔴 One identity, one source. The lock, drift and `upstream` all key on the target, so two
   // selected packs shipping one would install whichever came last and promote an edit into the
-  // wrong canon file. Unguarded until D71 made "replace a core row" a thing a pack might try.
+  // wrong canon file. A pack may try to "replace a core row", which is what makes this guard needed.
   const shippedBy = new Map<string, string>();
   for (const pack of packs) {
     for (const file of pack.files) {

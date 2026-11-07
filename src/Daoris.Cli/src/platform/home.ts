@@ -4,17 +4,17 @@ import { fileURLToPath } from 'node:url';
 import { DaorisError } from './errors.ts';
 
 /**
- * Where every machine-local file Daoris owns lives (D63): one home, named by `DAORIS_HOME`, and **no
+ * Where every machine-local file Daoris owns lives: one home, named by `DAORIS_HOME`, and **no
  * default under the user profile**. The application's own folder is the home — the installed desktop
  * sets the variable for itself and everything it spawns — and this CLI reads the same variable from
- * the user's environment, or, run from an install with none, that install's own `data` (D171). Absent
+ * the user's environment, or, run from an install with none, that install's own `data`. Absent
  * both, there is no home: the management class refuses with one sentence rather than writing
- * somewhere nobody pointed it; doctrine commands never needed a home.
+ * somewhere nobody pointed it; doctrine commands need no home.
  *
  * One of three twins — the driver's and the service's `DaorisHome` hold the same contract in C# and
- * share no code, the way the remotes map's three copies do (WSP3). The environment is the contract.
+ * share no code, the way the remotes map's three copies do. The environment is the contract.
  *
- * Each file and folder under the home is an entry of D172's table (`HOME_ENTRIES`, HOMELAYOUT2), and a reader asks for the
+ * Each file and folder under the home is an entry of the table `HOME_ENTRIES`, and a reader asks for the
  * entry by name (`homeEntry`), never for a path it joined itself; `home-census.test.ts` fails a join by hand. The three
  * twins hold the same table, cell for cell (`home.test.ts`).
  */
@@ -27,7 +27,7 @@ export const HOME_SENTENCE =
   + 'Daoris.exe), or name the file\'s own variable. Daoris keeps nothing under the user profile.';
 
 /**
- * The refusal for an entry found in both its places (D172 point 5's review note): the entry's name, its new place and its old
+ * The refusal for an entry found in both its places: the entry's name, its new place and its old
  * one. The driver's and the service's `DaorisHome.Twice` are the same words.
  */
 export const HOME_TWICE =
@@ -39,12 +39,12 @@ type Env = Record<string, string | undefined>;
 /** The file `desktop-publish` writes at an install's root, and nothing else does (the driver's and the service's `DaorisHome.InstallMarker`). */
 export const INSTALL_MARKER = 'INSTALLED.md';
 
-/** The folder an install's programs run from (D93), and its home beside it (D63). */
+/** The folder an install's programs run from, and its home beside it. */
 export const INSTALL_APP = 'app';
 export const INSTALL_DATA = 'data';
 
 /**
- * The install a folder sits in (FINDDAORIS1, D171 point 1): the folder above the `app/` it is in, however deep (this package is
+ * The install a folder sits in: the folder above the `app/` it is in, however deep (this package is
  * `app/cli/node_modules/daoris/`), where that folder holds the marker. Null for a checkout, which is no install.
  */
 export function installOf(from: string): string | null {
@@ -61,7 +61,7 @@ export const THIS_INSTALL: string | null = installOf(dirname(fileURLToPath(impor
 
 /**
  * The home, or null when there is none. Blank is none. The variable still wins (the dev loop, a rehearsal, a second home);
- * with none, a `daoris` the install carries finds the install's own `data` folder, as the driver host does (FINDDAORIS1),
+ * with none, a `daoris` the install carries finds the install's own `data` folder, as the driver host does,
  * since the install's launchers set nothing.
  */
 export function daorisHome(env: Env = process.env, install: string | null = THIS_INSTALL): string | null {
@@ -70,11 +70,11 @@ export function daorisHome(env: Env = process.env, install: string | null = THIS
   return install ? join(install, INSTALL_DATA) : null;
 }
 
-/** A top folder of the Daoris folder (D172 point 1): the category an entry is in. */
+/** A top folder of the Daoris folder: the category an entry is in. */
 export type HomeCategory = 'data' | 'profiles' | 'work' | 'cache' | 'run' | 'logs';
 
 /**
- * An entry of D172's table (the install layout design §3, HOMELAYOUT2): its name, its category, its new place and its old one,
+ * An entry of the home table: its name, its category, its new place and its old one,
  * each `/`-separated under the home, a `*` for each part of an item where the entry is kept per item, and the names that make
  * a place there where the entry is known by them (none: the place itself).
  */
@@ -90,10 +90,10 @@ const row = <const N extends string>(name: N, category: HomeCategory, next: stri
   ({ name, category, new: next, old, holds }) satisfies HomeEntry;
 
 /**
- * D172's table, in order: the driver's and the service's `HomeEntry` hold the same rows, which `home.test.ts` holds cell for
- * cell. 🔴 The new places are switched on (HOMELAYOUT3): each under the top folder its category names, under the Daoris folder,
- * and each old place under the old home (`homeFolder`), so an install's `data/` entries are where they were. An entry made by
- * HOMELAYOUT3 itself had no old place: its old column repeats its new, a place under the old home nothing writes.
+ * The home table, in order: the driver's and the service's `HomeEntry` hold the same rows, which `home.test.ts` holds cell for
+ * cell. 🔴 Each new place is under the top folder its category names, under the Daoris folder,
+ * and each old place under the old home (`homeFolder`), so an install's `data/` entries stay where they are. An entry with
+ * no old place repeats its new in its old column: a place under the old home nothing writes.
  */
 export const HOME_ENTRIES = [
   row('driver', 'data', 'data/driver.json', 'driver.json'),
@@ -136,22 +136,22 @@ export const HOME_ENTRIES = [
   row('keeping', 'data', 'data/keeping.json', 'keeping.json'),
   row('notices', 'data', 'data/notices.json', 'notices.json'),
   row('git-identities', 'data', 'data/git-identities.json', 'data/git-identities.json'),
-  // D201's grant, deleted: named here, never read by the CLI, so the desktop's migration finds a stored record to remove.
+  // A deleted grant: named here, never read by the CLI, so the desktop's migration finds a stored record to remove.
   row('standing-confirmation', 'data', 'data/standing-confirmation.json', 'data/standing-confirmation.json'),
-  // MODELROLE1c2 (D205 §9.2): named here, never read by the CLI.
+  // Named here, never read by the CLI.
   row('agent-offers', 'data', 'data/agent-offers.json', 'data/agent-offers.json'),
-  // CONFIRMWAIT1a-ii (the confirm-wait design §7.1): a terminal's presses waiting for the person, kept across a restart; named here,
+  // A terminal's presses waiting for the person, kept across a restart; named here,
   // never read by the CLI.
   row('pipe-waiting', 'data', 'data/pipe-waiting', 'data/pipe-waiting'),
-  // GITAPP2j (D204): an act's file step's bytes, one folder per act; named here, never read by the CLI.
+  // An act's file step's bytes, one folder per act; named here, never read by the CLI.
   row('act-files', 'data', 'data/act-files/*', 'data/act-files/*'),
-  // AGENTSPLACE1b2: a place's apply, written before its first effect; named here, never read by the CLI.
+  // A place's apply, written before its first effect; named here, never read by the CLI.
   row('place-receipts', 'data', 'data/place-receipts', 'data/place-receipts'),
-  // COMMS1l: the steward desk's requests kept across a restart; named here, never read by the CLI.
+  // The steward desk's requests kept across a restart; named here, never read by the CLI.
   row('steward-desk', 'data', 'data/steward-desk.json', 'data/steward-desk.json'),
-  // D233 choice 6: the newest build that has run on the home, which the launcher refuses an older one by; named here, never read by the CLI.
+  // The newest build that has run on the home, which the launcher refuses an older one by; named here, never read by the CLI.
   row('last-build', 'data', 'data/last-build.json', 'data/last-build.json'),
-  // NOCOMPAT1 (D232): the desktop's migration record and its copies; named here, never read by the CLI.
+  // The desktop's migration record and its copies; named here, never read by the CLI.
   row('migration', 'data', 'data/migration.json', 'data/migration.json'),
   row('salvage', 'data', 'data/salvage', 'data/salvage'),
   row('keys', 'profiles', 'profiles/keys.json', 'keys.json'),
@@ -166,7 +166,7 @@ export const HOME_ENTRIES = [
   row('git-known-hosts', 'profiles', 'profiles/git/known_hosts', 'profiles/git/known_hosts'),
   row('git-config', 'profiles', 'profiles/git/global.gitconfig', 'profiles/git/global.gitconfig'),
   row('window', 'profiles', 'profiles/window', '', 'chromium', 'config'),
-  // CONFIRMWAIT1 (the confirm-wait design §15.2 item 6): the keys of a terminal's sent presses, kept as long as a press's card lives; named
+  // The keys of a terminal's sent presses, kept as long as a press's card lives; named
   // here, never read by the CLI.
   row('pipe-sent', 'profiles', 'profiles/pipe-sent', 'profiles/pipe-sent'),
   row('trees', 'work', 'work/trees/*/*/*', 'trees/*/*/*'),
@@ -180,7 +180,7 @@ export const HOME_ENTRIES = [
   row('proof', 'work', 'work/files/proof/*', 'proof/*'),
   row('usage-read', 'work', 'work/usage-read', 'usage-read'),
   row('brainstorm-rooms', 'work', 'work/brainstorm-rooms/*', 'brainstorm-rooms/*'),
-  // SUPERVISOR1a-ii (D208 §2.2): named here, never read by the CLI.
+  // Named here, never read by the CLI.
   row('role-rooms', 'work', 'work/rooms/roles/*', 'work/rooms/roles/*'),
   row('toolchain', 'cache', 'cache/toolchain', 'toolchain'),
   row('tool-versions', 'cache', 'cache/tools', 'tools'),
@@ -213,7 +213,7 @@ export type HomeEntryName = (typeof HOME_ENTRIES)[number]['name'];
 
 const BY_NAME: ReadonlyMap<string, HomeEntry> = new Map(HOME_ENTRIES.map((entry) => [entry.name, entry]));
 
-/** An entry found in both its places (D172 point 5's review note): neither is chosen, and the refusal names both. */
+/** An entry found in both its places: neither is chosen, and the refusal names both. */
 export class HomeEntryTwice extends DaorisError {
   /** The entry's new place, holding it. */
   readonly next: string;
@@ -231,7 +231,7 @@ export class HomeEntryTwice extends DaorisError {
 const entryOf = (entry: HomeEntryName | HomeEntry): HomeEntry => (typeof entry === 'string' ? BY_NAME.get(entry)! : entry);
 
 /**
- * A place under the home: its `/` parts, each `*` taking the next part asked. Whole where every item part was asked; the rest
+ * A place under the home: its `/` parts, each `*` taking the next part asked. Whole where every item part is asked; the rest
  * asked is what lies under it.
  */
 function expand(home: string, place: string, asked: readonly string[]): { place: string; under: string[]; whole: boolean } {
@@ -271,7 +271,7 @@ function holds(entry: HomeEntry, place: string): boolean {
 }
 
 /**
- * Where an entry is in a home, by D172 point 5 and its review note (the install layout design §6.2): its new place where that
+ * Where an entry is in a home: its new place where that
  * holds what the entry is, else its old place where that is there, else its new place, where a writer makes it. Where both
  * hold it, neither is chosen: `HomeEntryTwice` names both, for the caller to say.
  *
@@ -299,7 +299,7 @@ export function homeEntry(home: string, name: HomeEntryName | HomeEntry, ...aske
 }
 
 /**
- * The folder of an entry's category, made where its new place is answered and the Daoris folder is there (HOMELAYOUT3), as the
+ * The folder of an entry's category, made where its new place is answered and the Daoris folder is there, as the
  * C# twins make it: a writer of a file the home's top held before now writes into its category's folder, which a new home has not
  * made yet. Nothing else is made: an entry's own folders are its writer's, and a home that is not there stays not there.
  */
@@ -330,9 +330,9 @@ export function homePlaces(home: string, name: HomeEntryName | HomeEntry, ...ask
 }
 
 /**
- * The Daoris folder a home names, and the old home its entries were under before D172's places (D172 point 2, HOMELAYOUT3): an
+ * The Daoris folder a home names, and the old home its entries sit under in the old places: an
  * install's folder (it holds the marker), whose old home is its `data/`; that `data/`, which names the same install and is its
- * old home, as every account that met D63 names it; and any other home, which is both. The C# twins' `DaorisHome.FolderOf`.
+ * old home, as every existing account names it; and any other home, which is both. The C# twins' `DaorisHome.FolderOf`.
  */
 export function homeFolder(home: string): { folder: string; old: string } {
   const trimmed = home.length > 1 ? home.replace(/[\\/]+$/, '') || home : home;
@@ -345,8 +345,8 @@ export function homeFolder(home: string): { folder: string; old: string } {
 }
 
 /**
- * The home a file or folder of it is in, the entry it is named (HOMELAYOUT3): undone from the entry's new place, the Daoris
- * folder, spelled as its `data/` where that folder is an install, as every install's home has been since D63; else undone from
+ * The home a file or folder of it is in, the entry it is named: undone from the entry's new place, the Daoris
+ * folder, spelled as its `data/` where that folder is an install, as every install's home is; else undone from
  * its old place, the old home. For a reader that holds a file rather than its home (the harnesses' wiring, the driver's
  * choices). The C# twins' `DaorisHome.HomeOf`. An entry kept per item is not asked here.
  */
@@ -389,7 +389,7 @@ export function requireHomeFile(env: Env, name: HomeEntryName, install: string |
 }
 
 /**
- * A home's identity (HOMEID1, the terminal RPC design §3.1): `<home>/home.json`, the entry `home-id`,
+ * A home's identity: `<home>/home.json`, the entry `home-id`,
  * `{ "id": "<32 lower-case hex>", "minted": "…" }`, which every path to the folder reads alike, so a running service is told to
  * be this home's by it and never by a path. The driver's and the service's `HomeIdentity` hold the same file in C# and share no
  * code (`twins.md`).
@@ -402,8 +402,7 @@ export function isHomeId(value: unknown): value is string {
 }
 
 /**
- * The home's id, or null where it has none or its file does not read. A read: discovery mints nothing, and since the home's lease
- * left with the last family's TypeScript (PUSH1f2f) nothing here mints one; the driver's `HomeIdentity.Ensure` does.
+ * The home's id, or null where it has none or its file does not read. A read: discovery mints nothing, and nothing here mints one; the driver's `HomeIdentity.Ensure` does.
  */
 export function homeId(home: string): string | null {
   try {

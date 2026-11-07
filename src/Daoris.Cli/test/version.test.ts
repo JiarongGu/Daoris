@@ -15,7 +15,7 @@ const read = (rel: string) => readText(join(repoRoot, rel));
 const readCli = (rel: string) => readText(join(cliRoot, rel));
 const version = () => JSON.parse(readCli('package.json')).version;
 
-/** The name npm publishes the CLI under — what every shipped reference must name (DIST1, D105). */
+/** The name npm publishes the CLI under — what every shipped reference must name. */
 const packageName = () => JSON.parse(readCli('package.json')).name;
 
 /** The example family's manifests, discovered as release-prep discovers them. */
@@ -29,7 +29,7 @@ const exampleManifests = () =>
  * The version appears in four live places, and a bump that misses one is
  * invisible until a consumer's provenance header disagrees with the canon that
  * wrote it. Dated design and plan documents are deliberately excluded: they are
- * records of what was decided then, not statements about what ships now.
+ * records of a decision at its date, not statements about what ships now.
  */
 test('the canon version tracks the package version', () => {
   assert.equal(JSON.parse(read('canon/canon.json')).version, version());
@@ -58,9 +58,9 @@ test('the version is a semver triple', () => {
 });
 
 /**
- * A consumer installs the CLI from npm, `daoris@<version>` (DIST1, D105). The git ref every reference
- * used to name could not run: the repository's root package is a private workspace with no `bin`, and
- * no tag existed. So every shipped reference names the package npm publishes, and none the git ref —
+ * A consumer installs the CLI from npm, `daoris@<version>`. A git ref cannot run:
+ * the repository's root package is a private workspace with no `bin`, and
+ * no tag exists. So every shipped reference names the package npm publishes, and none the git ref —
  * a stale one would go on teaching a command that fails, and nothing would rewrite it.
  */
 test('every shipped reference names the npm package, and none the git ref that cannot run', () => {
@@ -70,7 +70,7 @@ test('every shipped reference names the npm package, and none the git ref that c
     assert.equal(GIT_REF.test(read(rel)), false, `${rel} still names a git ref`);
   }
   assert.ok(read('README.md').includes(`npx daoris@${version()} init`));
-  // By its name, in whichever module folder it sits (STRUCT5d).
+  // By its name, in whichever module folder it sits.
   const init = readCli(`src/${cliSource('commands.ts')}`);
   assert.ok(init.includes('`daoris@${canon.version}`'), 'what init writes');
   assert.equal(GIT_REF.test(init), false, 'init must not write the git ref');
@@ -116,7 +116,7 @@ test('release-prep reports the git ref, and a README that names no install line'
 
 /**
  * The tree and the document that enumerates it are a counterpart set, and counterpart sets rot: `harness` and `driver` shipped,
- * the README's table grew two rows, and a sentence nothing read went on naming the old count for two whole landings.
+ * the README's table grew two rows, and a sentence nothing read kept naming a count that no longer held.
  *
  * Asserted as a SET rather than a count, because a count agrees with itself while naming the wrong command, and a renamed verb is
  * exactly the change that would keep the number right. The set is the one tree's: the doctrine commands, the dispatcher's own
@@ -135,7 +135,7 @@ const treeCommands = (): string[] => {
   return names;
 };
 
-// The table moved from the README, now the landing page, to the guide it links (GITHUBDOCS1, D211).
+// The table lives in the guide the README, the landing page, links.
 test('ONEWAY1ai-iv the guide\'s command table lists exactly the commands the tree has', () => {
   const documented = [...read('docs/guide/README.md').matchAll(/^\| `([a-z-]+)[ `]/gm)].map((m) => m[1]!).sort();
   assert.deepEqual(documented, treeCommands());

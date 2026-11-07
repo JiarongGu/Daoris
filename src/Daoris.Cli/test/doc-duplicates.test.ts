@@ -4,9 +4,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { makeFixture } from './_fixture.ts';
 
-// MOD1 (D106): the append-only records merge by union, and union keeps both versions of a line two branches
+// The append-only records merge by union, and union keeps both versions of a line two branches
 // changed. `tools/doc-duplicates.mjs` refuses what that leaves: a decision number, a heading, an index row or
-// a changelog line twice. DOC8b (D134 §3.4): once the decisions record is a folder of one file per decision, it
+// a changelog line twice. The decisions record is a folder of one file per decision; the tool
 // refuses what union can leave in one decision's file, and a decision written into the page the record left.
 // @ts-expect-error — untyped workspace tooling; the same seam dogfood.test.ts documents
 const { duplicates, check, records, PAGE } = await import('../../../tools/doc-duplicates.mjs') as {
@@ -52,7 +52,7 @@ test('quoted examples do not duplicate live records, while repeated live records
   }
 });
 
-// The router merges by its rows (ROUTERMERGE1), and the decisions by their notes (NOTEBREAK1), not by union, and both are still
+// The router merges by its rows, and the decisions by their notes, not by union, and both are still
 // checked: a side can carry a row or a note twice.
 test('the records the attributes mark union, rows or notes are exactly the ones checked', async () => {
   const { readFileSync } = await import('node:fs');
@@ -67,13 +67,13 @@ test("this repository's records hold nothing twice", () => {
   assert.deepEqual(check(root), []);
 });
 
-// DOC8b: the folder's facts, each on a fixture folder.
+// The folder's facts, each on a fixture folder.
 
 /** One decision's file as the migration writes it: its heading first, its notes each after a blank line. */
 const entry = (n: number, ...notes: string[]) =>
   [`## D${n} — the decision (2026-10-03)`, '', '**Decision.** It is decided.', '', '**Why.** Because.', ...notes.flatMap((note) => ['', note]), ''].join('\n');
 
-/** The page `docs/DECISIONS.md` becomes (D134 §3.2): where the decisions are, and no rows. */
+/** The page `docs/DECISIONS.md` becomes: where the decisions are, and no rows. */
 const page = [
   '# Decisions', '',
   'Each decision is its own file, `docs/decisions/D<n>.md`. D114 was never taken.', '',
@@ -182,8 +182,8 @@ test("a note's label straight after a non-blank line is refused in each form the
   fx.cleanup();
 });
 
-// DUPNOTE1: union keeps both copies of a note two sides carried, each after its blank line, so nothing above sees it:
-// D150 held PLUGTOOL1a's note twice, and the check passed.
+// Union keeps both copies of a note two sides carried, each after its blank line, so nothing above sees it:
+// a decision could hold a note twice, and the check would pass.
 test('a note held twice in one decision is refused, by its label; the same note under two decisions is not', () => {
   const note = '**PLUGTOOL1a, built 2026-10-04: a manifest declares its tools** (point 7). Both twins read it.';
   const other = '**UX6g, built 2026-10-04: a workspace has a page** (point 3).';

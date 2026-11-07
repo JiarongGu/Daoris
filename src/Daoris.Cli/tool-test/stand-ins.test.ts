@@ -14,7 +14,7 @@ import {
 import { makeFixture, PATIENCE, unroled } from '../test/_fixture.ts';
 
 /**
- * AGENTPROVIDER1 row b, part 3 (D213's row b part 3 note): the stand-ins found from their files, as the family rehearsal's stand-in phase
+ * The stand-ins found from their files, as the family rehearsal's stand-in phase
  * finds them. The reader and the phase's plan over a scratch folder of providers, the repository's own stand-ins read with no break of
  * the layout, and each of their programs answering a start and a turn on each door against a stand-in for the service's quest door, so
  * a stand-in added later is held by these rows with no edit to them. Run by the `tool-tests` gate; only the parent runs the rehearsal.

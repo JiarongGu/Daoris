@@ -1,8 +1,8 @@
-// Rooms: nested `AGENTS.md` files the manifest declares (LAYOUT3; D117 §2.2 and §5.4's pointer table).
+// Rooms: nested `AGENTS.md` files the manifest declares.
 //
 // A room's text is the repository's own and Daoris never writes it. What `sync` keeps is the pointer
-// beside it — `<room>/CLAUDE.md` holding the import region, exactly as at the root (D59 §4) — and a
-// row for it in the roster. One test per cell of the pointer table, written before the code.
+// beside it — `<room>/CLAUDE.md` holding the import region, exactly as at the root — and a
+// row for it in the roster. One test per cell of the pointer table.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
