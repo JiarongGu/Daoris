@@ -395,8 +395,7 @@ public sealed class SessionTreesTests : IDisposable
     }
 
     /// <summary>
-    /// A tree opens holding nothing of its checkout's installed dependencies (the person's install never reaches a session), marked
-    /// unworked with its hook owed, the <c>post-checkout</c> hook held while git makes it, so the files stage runs it after.
+    /// A tree opens holding none of its checkout's installed dependencies, marked unworked with its hook held and owed.
     /// </summary>
     [Fact]
     public async Task A_tree_opens_unworked_with_its_hook_held_and_none_of_the_checkout_s_dependencies()
@@ -413,7 +412,7 @@ public sealed class SessionTreesTests : IDisposable
 
         Assert.False(Directory.Exists(Path.Combine(opened.Path, "node_modules")));
         Assert.False(File.Exists(Path.Combine(opened.Path, "hook-ran.txt")), "the hook is held while git makes the tree");
-        Assert.Equal(TreeFilesState.Made, TreeFilesRecord.Read(_home, opened.Path));
+        Assert.Equivalent(TreeFilesState.Made, TreeFilesRecord.Read(_home, opened.Path), strict: true);
         Assert.Contains("nothing git does not track", opened.Sentence);
 
         await TreeFilesStep.RunAsync(_home, root, opened.Path, "engine", _ => { }, CancellationToken.None);

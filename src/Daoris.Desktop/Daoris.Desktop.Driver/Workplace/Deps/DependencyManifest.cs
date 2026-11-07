@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>A file of a dependency's folder: its path inside the folder, its size, its content's hash and when it was written.</summary>
+/// <summary>A file of a dependency's folder: its path inside the folder, its size, its content's hash and its write time.</summary>
 internal sealed record ManifestFile(string Path, long Size, string Hash, long Written);
 
 /// <summary>A link of a dependency's folder: its path inside the folder, and where it leads, relative to the tree's top.</summary>

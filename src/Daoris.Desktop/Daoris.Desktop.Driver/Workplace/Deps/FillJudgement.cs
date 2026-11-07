@@ -19,8 +19,8 @@ internal static class FillJudgement
     internal static async Task<IReadOnlyDictionary<string, string>> StatusAsync(string tree, bool ignored, CancellationToken ct)
     {
         string[] ask = ignored
-            ? ["status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching"]
-            : ["status", "--porcelain", "-z", "--untracked-files=all"];
+            ? ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all", "--ignored=matching"]
+            : ["--no-optional-locks", "status", "--porcelain", "-z", "--untracked-files=all"];
         var (code, said, error) = await WorkingTree.GitAsync(tree, ask, ct).ConfigureAwait(false);
         if (code != 0) throw new DriverException($"git could not read the tree's status: {error.Trim()}");
         var paths = new Dictionary<string, string>(StringComparer.Ordinal);

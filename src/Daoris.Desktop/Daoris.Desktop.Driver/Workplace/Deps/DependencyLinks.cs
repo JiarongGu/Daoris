@@ -88,7 +88,7 @@ internal static class DependencyLinks
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // The placement it was part of is discarded whole.
+                // The placement it belongs to is discarded whole.
             }
 
             throw;

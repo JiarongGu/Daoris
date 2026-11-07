@@ -9,7 +9,6 @@ namespace Daoris.Desktop.Driver.Tests;
 /// package, read from the shipped signature. Fixtures live under the repository's gitignored `_fixtures/`, never OS temp.
 /// </summary>
 [Trait(Category.Name, Category.Process)]
-[Trait(Category.Parallel, Category.Git)]
 public sealed class DependencyStoreTests : IDisposable
 {
     private const string Script = """

@@ -15,7 +15,7 @@ internal sealed record TreeFilesOutcome(IReadOnlyList<Noted> Said, bool Stopped,
 /// installed by Daoris and sealed where its judgement holds; the <c>post-checkout</c> hook the making held runs; each kept placement's
 /// other writes are read, one gone installing it again; and the machine-local files are copied. In a worked tree it installs, removes
 /// and runs nothing but a key's <c>toolchain</c> reads: a dependency is kept where its record holds, or placed from a hit into an absent
-/// folder where every one before it was kept or placed here and no group names it; every other is the line's own, said.
+/// folder where every one before it stands kept or placed here and no group names it; every other is the line's own, said.
 /// </summary>
 /// <remarks>
 /// The mark is read again under the record's lock before each write-back, removal, placement record, hook and copy, and the lock is held
@@ -208,7 +208,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
 
     /// <summary>
     /// One dependency in a worked tree: kept where its key, record, companions and other writes hold, or placed from a hit into an
-    /// absent folder where no tracked input of its key has a working change, no group names it and every dependency before it was kept
+    /// absent folder where no tracked input of its key has a working change, no group names it and every dependency before it stands kept
     /// or placed here. Whether it stands as its key says.
     /// </summary>
     private async Task<bool> WorkedAsync(StoreDependency dependency, string key, bool standing, CancellationToken ct)
@@ -258,7 +258,7 @@ internal sealed class TreeFilesStage(string home, string root, string tree, stri
     private bool Placeable(StoreDependency dependency) =>
         !_installOnly.Contains(dependency.Path) && TreeFilesRecord.Read(home, tree)?.GroupOf(dependency.Path) is null;
 
-    /// <summary>A hit placed into the absent folder, and its record written: true where it was placed.</summary>
+    /// <summary>A hit placed into the absent folder, and its record written: true where it is placed.</summary>
     private async Task<bool> PlaceAsync(StoreDependency dependency, string key, CancellationToken ct)
     {
         if (dependency.Rule.Bound == true || DependencyStore.Hit(home, key) is null) return false;

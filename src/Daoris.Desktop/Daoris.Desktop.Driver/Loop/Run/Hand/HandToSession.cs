@@ -40,7 +40,6 @@ internal sealed class HandToSession(IRunWiring wiring) : IRunStage
         var endings = new RunEndings(wiring, run, sessionId, agent, workTree, state.Opened.LocksTree);
         try
         {
-            // The hand's own step: the tree's unworked mark off before its session is handed it.
             if (context.Trees.Holds(workTree)) TreeFilesStep.Hand(home, workTree);
 
             // The words a session could not go on with went to this one: off that record by their ids, kept on the ask by the service, so

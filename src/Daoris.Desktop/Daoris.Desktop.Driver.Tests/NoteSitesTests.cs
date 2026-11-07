@@ -289,7 +289,6 @@ public sealed class NoteSitesTests
         Assert.Equal("secrets/token.txt", opening.Parts[2].Value("input"));
         Assert.Equal(NoteBy.Program, opening.Parts[4].By);
 
-        // The opening says nothing of what the stage does after the record opens.
         Assert.Equal(["started.tree"], NoteAssert.Codes(TreeOpening.OpeningOf(path, "daoris/s-1a2b3c4d", "`main`", "main", unrecorded: null).Parts));
     }
 

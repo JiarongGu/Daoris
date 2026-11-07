@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A store entry as eviction weighs it: its key, its size, and when it was last placed or sealed.</summary>
+/// <summary>A store entry as eviction weighs it: its key, its size, and its last placement or seal.</summary>
 internal sealed record StoreEntry(string Key, long Bytes, DateTimeOffset Placed);
 
 /// <summary>
@@ -20,7 +20,7 @@ internal static class DependencyStore
     /// <summary>The name a folder is made under beside where it goes, a random tail after it.</summary>
     internal const string MakingPrefix = ".daoris-making-";
 
-    /// <summary>How many files are copied at once: eight, past which TREEDEPS1's measurement found nothing faster.</summary>
+    /// <summary>How many files are copied at once: eight, past which a measured copy gets no faster.</summary>
     private static readonly int AtOnce = Math.Clamp(Environment.ProcessorCount, 1, 8);
 
     /// <summary>The test seam: run with each file's path before a placement copies it, where a test cuts a placement off. Production sets none.</summary>
@@ -159,7 +159,7 @@ internal static class DependencyStore
         File.SetAttributes(to, File.GetAttributes(to) & ~FileAttributes.ReadOnly);
     }
 
-    /// <summary>Every entry the store holds whole, with its size and when it was last placed.</summary>
+    /// <summary>Every entry the store holds whole, with its size and its last placement.</summary>
     internal static IReadOnlyList<StoreEntry> Entries(string home)
     {
         var root = RootOf(home);

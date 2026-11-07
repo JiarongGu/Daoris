@@ -7,7 +7,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// A dependency's folder as the tree's files record holds it: its rule's path, its key's hash, how it came (<c>placed</c>,
-/// <c>sealed</c>, <c>installed</c>), the manifest of what was placed, and <see cref="Installing"/> while Daoris's own install of it runs.
+/// <c>sealed</c>, <c>installed</c>), the manifest of what it placed, and <see cref="Installing"/> while Daoris's own install of it runs.
 /// </summary>
 internal sealed record TreePlacement(string Path, string Key, string How, DependencyManifest? Manifest)
 {

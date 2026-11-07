@@ -43,9 +43,7 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
     }
 
     /// <summary>
-    /// A tree made again is marked unworked as an opened one is, holding none of its checkout's installed dependencies, so its files
-    /// stage prepares it after its record opens: the checkout's declared machine-local files read-only with a clean status, and a declared
-    /// file the checkout lacks said.
+    /// A tree made again is marked unworked as an opened one is, and its files stage copies and says what an opened one's does.
     /// </summary>
     [Fact]
     public async Task A_remade_tree_is_marked_unworked_and_its_files_stage_copies_what_an_opened_one_s_does()
@@ -59,7 +57,7 @@ public sealed class TreeReturnsTests : BranchTidyingFixture
         var remade = await trees.EnsureAsync(root, tree.Path);
 
         Assert.Equal((TreeStand.Remade, tree.Branch), (remade.Stand, remade.Branch));
-        Assert.Equal(TreeFilesState.Made, TreeFilesRecord.Read(_home, tree.Path));
+        Assert.Equivalent(TreeFilesState.Made, TreeFilesRecord.Read(_home, tree.Path), strict: true);
         Assert.False(Directory.Exists(Path.Combine(tree.Path, "node_modules")), "the checkout's install never reaches a session");
         Assert.Equal(head, (await GitAsync(tree.Path, "rev-parse", "HEAD")).Trim());
         Assert.Equal("", (await GitAsync(root, "worktree", "list", "--porcelain")).Split('\n').FirstOrDefault(line => line.StartsWith("locked", StringComparison.Ordinal)) ?? "");

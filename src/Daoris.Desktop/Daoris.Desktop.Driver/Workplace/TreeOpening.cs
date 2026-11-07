@@ -166,8 +166,7 @@ internal sealed class TreeOpening(TreeContext context)
                 }
             }
 
-            // Marked unworked, its hook owed, before the lock goes: the files stage after its record opens is the one that places,
-            // installs and copies into it, outside the start's hold.
+            // Marked before the lock goes: the files stage, outside the start's hold, places, installs and copies into it.
             TreeFilesRecord.Mark(context.Home, path);
 
             var unlocked = await AskAsync(root, ["worktree", "unlock", path], ct).ConfigureAwait(false);
@@ -198,8 +197,7 @@ internal sealed class TreeOpening(TreeContext context)
 
     /// <summary>
     /// The opening's sentence, price included, with its codes: its branch and the branch it started at as facts, never its path,
-    /// which only the English names and the cleaner cuts where it travels. What the files stage places, installs and copies into it
-    /// is said after its record opens, a line each.
+    /// which only the English names and the cleaner cuts where it travels.
     /// </summary>
     /// <param name="basedOn">What it grew from, spelled for a person.</param>
     /// <param name="startedAt">The branch it started at, or <c>HEAD</c>: the fact the page says.</param>

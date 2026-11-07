@@ -106,8 +106,7 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
 
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         // Locked while it is made, as an opening is, so a kill leaves it for the look (TreeStrays) and a cancel takes
-        // it back below. Made with its hooks held, as an opening is, and marked unworked before the lock goes, so the files
-        // stage after its record opens places its dependencies and runs the hook it owes.
+        // it back below. Made with its hooks held and marked unworked before the lock goes, as an opening is.
         var ours = !Directory.Exists(full);
         var (code, _, stderr) = await WorkingTree.GitAsync(
             root, [.. TreeOpenings.HooksHeld(context.Home), "worktree", "add", "--lock", "--reason", TreeOpenings.LockReason(Environment.ProcessId), full, branch], ct)
@@ -126,7 +125,6 @@ internal sealed class TreeReturns(TreeContext context, TreeFollows follows, Tree
         }
         catch
         {
-            // Cut off before the lock went: the folder made goes, never the branch, which holds the session's commits.
             await TreeOpenings.UndoAsync(root, full, branch, ours, keepBranch: true).ConfigureAwait(false);
             throw;
         }
