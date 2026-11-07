@@ -120,6 +120,29 @@ public sealed class RelayCopyTests : IDisposable
         Assert.Equal((1, "", RelaySaid.NotFromCopy), (code, output.ToString(), error.ToString().Trim()));
     }
 
+    /// <summary>
+    /// A folder made while it is read is plain, absent or there: two relays starting together each make the subscribers' folders, and
+    /// one read between the other's making must not take a fresh folder for a link and stop with <c>home</c>.
+    /// </summary>
+    [Fact]
+    public async Task A_folder_made_while_it_is_read_is_plain()
+    {
+        for (var each = 0; each < 200; each++)
+        {
+            var folder = Path.Combine(_root, "made", each.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            using var go = new ManualResetEventSlim();
+            var making = Task.Run(() =>
+            {
+                go.Wait();
+                Directory.CreateDirectory(folder);
+            });
+            go.Set();
+            while (!making.IsCompleted) Assert.True(RelayCopy.Plain(folder), $"folder {each}, read as it was made, was taken for a link");
+            await making;
+            Assert.True(RelayCopy.Plain(folder));
+        }
+    }
+
     [Fact]
     public void The_relay_holds_no_lease_where_lays_out_under_it_and_a_roles_terminal_runs_neither()
     {

@@ -138,7 +138,7 @@
   "work.delete.kept.conversation": "its words",
   "work.delete.kept.transcript": "its transcript",
   "work.delete.kept.files": "its files",
-  "work.delete.kept.harness": "its agent’s conversation id",
+  "work.delete.kept.binding": "its agent’s conversation id",
   "work.delete.kept.marker": "its process marker",
   "work.delete.kept.mark": "its go-on mark",
   "work.delete.kept.choice": "its choice of a new session",

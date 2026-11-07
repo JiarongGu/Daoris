@@ -98,10 +98,20 @@ public static class RelayCopy
     }
 
     /// <summary>Whether <paramref name="path"/> is absent or a plain folder or file, never a junction or a symbolic link.</summary>
+    /// <remarks>
+    /// Its attributes are read once: a folder made between two reads would otherwise be absent to one and there to the other. One that
+    /// cannot be read is left to the act that touches it, which fails there.
+    /// </remarks>
     public static bool Plain(string path)
     {
-        var info = new FileInfo(path);
-        return !info.Exists && !Directory.Exists(path) || (info.Attributes & FileAttributes.ReparsePoint) == 0;
+        try
+        {
+            return (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0;
+        }
+        catch (Exception unread) when (unread is IOException or UnauthorizedAccessException)
+        {
+            return true;
+        }
     }
 
     // An entry and everything under it plain: what is removed through is never a link.
