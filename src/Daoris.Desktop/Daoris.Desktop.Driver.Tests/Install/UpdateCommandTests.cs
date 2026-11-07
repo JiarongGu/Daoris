@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Microsoft.Data.Sqlite;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Driver.Tests;
@@ -25,6 +26,7 @@ public sealed class UpdateCommandTests : IDisposable
 
     public void Dispose()
     {
+        SqliteConnection.ClearAllPools();
         try { Directory.Delete(_root, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
@@ -72,6 +74,40 @@ public sealed class UpdateCommandTests : IDisposable
         Assert.Equal(mode, line["data"]!["mode"]!.GetValue<string>());
         Assert.Equal("terminal", line["data"]!["door"]!.GetValue<string>());
         Assert.Equal("b1", line["data"]!["build"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// `--now` for a build the application refuses says the refusal's sentence, as the screen says it, and exits 1: a going back while a
+    /// delivery is unresolved names the delivery, and a build that fails its check says what failed. The word is written all the same, a
+    /// new word the desktop tries again at.
+    /// </summary>
+    [Fact]
+    public void Now_for_a_build_the_application_refuses_says_why_and_exits_1()
+    {
+        Stage("b1", version: "0.0.0");
+        var store = new DeliveryStore(Home, () => StoreSettled.Yes, null, "run-a", StoreProcess.Shell);
+        var started = store.Start(
+            new DeliveryIntent("unit-1", "engine", "a1b2c3d4e5", DeliveryMethods.Branch, "main", "main", "feature/tidy", null, "Tidy", null, "epoch-1"),
+            DeliveryAuthorization.Person("accept-1", "r1", "graph-digest", """{"method":"branch"}""", "[]"));
+        Assert.True(started.Started, started.Refused ?? started.Held);
+
+        var (code, said) = Run("--now");
+
+        Assert.Equal(1, code);
+        Assert.Contains("build b1 is not installed now", said);
+        Assert.Contains("1 delivery is unresolved (`unit-1` by branch at a1b2c3d4)", said);
+        Assert.DoesNotContain("the desktop closes", said);
+        Assert.Equal(new UpdateRequest(UpdateMode.Now, "b1", Now), InstallUpdate.Read(Home));
+
+        store.Settle(started.Claim!, DeliverySettlements.Stopped, "stopped by the person");
+        (code, said) = Run("--now");
+        Assert.Equal(0, code);
+        Assert.Contains("the desktop closes", said);
+
+        File.WriteAllText(Path.Combine(Install, "update", "staged", "Daoris.exe"), "another launcher");
+        (code, said) = Run("--now");
+        Assert.Equal(1, code);
+        Assert.Contains(StagedBuild.Check(Install)!.Sentence, said);
     }
 
     [Fact]
@@ -181,19 +217,32 @@ public sealed class UpdateCommandTests : IDisposable
             })
             .Select(line => JsonNode.Parse(line)!.AsObject());
 
-    private void Stage(string id)
+    /// <summary>A build staged as the publish stages one, which its check passes: what `--now` checks before it says the word is taken.</summary>
+    private void Stage(string id, string version = "0.0.1")
     {
         var staged = Path.Combine(Install, "update", "staged");
         if (Directory.Exists(staged)) Directory.Delete(staged, recursive: true);
-        Directory.CreateDirectory(staged);
+        var files = new JsonArray();
+        foreach (var (relative, text) in new[]
+                 {
+                     ("INSTALLED.md", "# Daoris — installed desktop\n"), ("Daoris.exe", "launcher"),
+                     ("app/Daoris.Desktop.exe", "application"), ("app/Daoris.Desktop.App.dll", "library"),
+                 })
+        {
+            var path = Path.Combine(staged, relative.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, text);
+            files.Add(new JsonObject { ["path"] = relative, ["size"] = new FileInfo(path).Length, ["sha256"] = StagedBuild.Sha256Of(path) });
+        }
+
         File.WriteAllText(Path.Combine(staged, "build.json"), new JsonObject
         {
             ["schema"] = 1,
             ["id"] = id,
-            ["version"] = "0.0.1",
+            ["version"] = version,
             ["commit"] = "abc1234",
             ["at"] = "2026-10-03T12:00:00Z",
-            ["files"] = new JsonArray(),
+            ["files"] = files,
         }.ToJsonString());
     }
 }

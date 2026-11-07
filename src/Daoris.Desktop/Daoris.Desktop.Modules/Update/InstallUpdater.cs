@@ -94,7 +94,7 @@ public sealed class InstallUpdater(
     private UpdateState _state = new(UpdateStates.None, null, null, 0, 0, null, null, null);
     private UpdateOutcome? _outcome;
     private UpdateOutcome? _last;
-    private readonly Dictionary<string, UpdateProblem> _refused = new(StringComparer.Ordinal);
+    private readonly UpdateRefusals _refused = new();
     private string? _seen;
     private string? _drainedFor;
     private DateTimeOffset? _drainSince;
@@ -238,11 +238,12 @@ public sealed class InstallUpdater(
 
         var id = manifest?.Id ?? $"unread:{unread!.Code}";
         var staged = manifest is null ? null : new UpdateBuild(manifest.Id, manifest.Version, manifest.Commit, manifest.At);
+        var request = InstallUpdate.Read(home);
         UpdateProblem? known;
-        lock (_gate) known = _refused.GetValueOrDefault(id);
+        lock (_gate) known = _refused.For(id, request);
         if (known is not null) return Publish(new UpdateState(UpdateStates.Refused, staged, null, 0, 0, known, Outcome(), Last()));
 
-        if (unread is not null) return Refuse(id, staged, null, new UpdateProblem(unread.Code, unread.Sentence));
+        if (unread is not null) return Refuse(id, staged, null, request, new UpdateProblem(unread.Code, unread.Sentence));
 
         if (!string.Equals(_seen, id, StringComparison.Ordinal))
         {
@@ -250,7 +251,7 @@ public sealed class InstallUpdater(
             log.Info("update.staged", ("build", manifest!.Id), ("version", manifest.Version));
         }
 
-        var mode = InstallUpdate.ModeFor(InstallUpdate.Read(home), manifest!.Id);
+        var mode = InstallUpdate.ModeFor(request, manifest!.Id);
         if (mode == UpdateMode.NotNow)
         {
             lock (_gate)
@@ -263,7 +264,7 @@ public sealed class InstallUpdater(
         }
 
         var now = work();
-        if (mode == UpdateMode.Now) return await ApplyAsync(id, staged, mode, now, "now").ConfigureAwait(false);
+        if (mode == UpdateMode.Now) return await ApplyAsync(id, staged, mode, request, now, "now").ConfigureAwait(false);
 
         DateTimeOffset? since;
         lock (_gate)
@@ -279,7 +280,7 @@ public sealed class InstallUpdater(
         }
 
         return InstallUpdate.Idle(now.Driven, now.Turns)
-            ? await ApplyAsync(id, staged, mode, now, "idle").ConfigureAwait(false)
+            ? await ApplyAsync(id, staged, mode, request, now, "idle").ConfigureAwait(false)
             : Publish(new UpdateState(UpdateStates.Draining, staged, mode, now.Driven, now.Turns, null, Outcome(), Last(), since));
     }
 
@@ -396,7 +397,7 @@ public sealed class InstallUpdater(
         _poke.Dispose();
     }
 
-    private async Task<UpdateState> ApplyAsync(string id, UpdateBuild? staged, string mode, UpdateWork now, string by)
+    private async Task<UpdateState> ApplyAsync(string id, UpdateBuild? staged, string mode, UpdateRequest? asked, UpdateWork now, string by)
     {
         lock (_gate)
         {
@@ -409,10 +410,9 @@ public sealed class InstallUpdater(
         UpdateProblem? refused = null;
         try
         {
-            // Checked by the application before it closes for it (D139 §4); the launcher checks again before it moves a file.
-            if (StagedBuild.Check(install!) is { } problem) refused = new UpdateProblem(problem.Code, problem.Sentence);
-            // LANDNODE1c2: going back to an older build waits until no delivery is unresolved.
-            else if (InstallRollback.Refused(home, staged?.Version, Running) is var (backCode, back)) refused = new UpdateProblem(backCode, back);
+            // Checked by the application before it closes for it (D139 §4), as `daoris update --now` checks it; the launcher checks again
+            // before it moves a file.
+            if (UpdateRefusal.Of(install!, home, staged?.Version, Running) is var (code, why)) refused = new UpdateProblem(code, why);
             // DRAINHOLD1, a review's finding: what began after the look read no work (a turn a press let through opened, a helper the look
             // started, a conversation the window began) is read again now that no press passes, and the drain goes on for it. *Update now*
             // closes whatever runs, so it reads nothing.
@@ -438,7 +438,7 @@ public sealed class InstallUpdater(
         if (refused is not null)
         {
             lock (_gate) _applying = false;
-            return Refuse(id, staged, mode, refused);
+            return Refuse(id, staged, mode, asked, refused);
         }
 
         double waited;
@@ -466,7 +466,7 @@ public sealed class InstallUpdater(
         if (!started)
         {
             lock (_gate) _applying = false;
-            return Refuse(id, staged, mode, new UpdateProblem(
+            return Refuse(id, staged, mode, asked, new UpdateProblem(
                 "launcher", "the launcher at the install's root would not start, so the application stays open and nothing was replaced."));
         }
 
@@ -478,11 +478,12 @@ public sealed class InstallUpdater(
         return applying;
     }
 
-    private UpdateState Refuse(string id, UpdateBuild? staged, string? mode, UpdateProblem problem)
+    /// <param name="asked">The person's word it was refused under, which a new word replaces, trying again (<see cref="UpdateRefusals"/>).</param>
+    private UpdateState Refuse(string id, UpdateBuild? staged, string? mode, UpdateRequest? asked, UpdateProblem problem)
     {
         lock (_gate)
         {
-            _refused[id] = problem;
+            _refused.Keep(id, asked, problem);
             _drainedFor = null;
             _drainSince = null;
         }
