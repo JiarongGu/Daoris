@@ -47,7 +47,7 @@ public sealed class BindingFilesStep : IHomeMigrationStep
     {
         var session = Path.GetFileName(path)[..^Suffix.Length];
         if (!SessionEventText.IsLocalId(session) || Read(path) is not var (door, conversation)) return;
-        var bytes = File.ReadAllBytes(path);
+        var bytes = AtomicFile.ReadBytes(path);
         var sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
         var receipt = Path.GetRelativePath(run.Home, path).Replace('\\', '/');
 
