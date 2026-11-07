@@ -220,7 +220,7 @@ public sealed class RelayHostProcessTests : IDisposable
         return ended;
     }
 
-    private string PluginFile => Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", "event-relay", "plugin.mjs");
+    private string PluginFile => RelayStandIn.File;
 
     private string[] Batch =>
     [
@@ -278,7 +278,7 @@ public sealed class RelayHostProcessTests : IDisposable
         var start = Regex.Match(Assert.Single(where.Out), "\"(?<copy>[^\"]+)\" events relay --once --home \"(?<home>[^\"]+)\"");
         var plugins = Path.Combine(DaorisHome.Entry(home, HomeEntry.Plugins), "event-relay");
         Directory.CreateDirectory(plugins);
-        foreach (var file in new[] { "plugin.json", "plugin.mjs" }) File.Copy(Path.Combine(WorkspaceRoot.Folder, "examples", "plugins", "event-relay", file), Path.Combine(plugins, file));
+        foreach (var file in new[] { "plugin.json", "plugin.mjs" }) File.Copy(Path.Combine(RelayStandIn.Folder, file),Path.Combine(plugins, file));
 
         var relay = Start(start.Groups["copy"].Value, ["events", "relay", "--once", "--home", start.Groups["home"].Value], new Dictionary<string, string?>());
         var subscribers = Path.Combine(DaorisHome.Entry(home, HomeEntry.Plugins), PluginCatalog.DataFolder, "event-relay", "subscribers", $"{relay.Id}.json");

@@ -1,0 +1,11 @@
+{
+  "id": "event-relay",
+  "apiVersion": 1,
+  "name": "Event relay stand-in",
+  "version": "1.0.0",
+  "description": "The Process tests' stand-in for the event-relay plugin.",
+  "hooks": {
+    "command": ["node", "${plugin}/plugin.mjs"],
+    "points": ["work/event"]
+  }
+}
