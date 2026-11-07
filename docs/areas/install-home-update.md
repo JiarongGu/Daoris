@@ -201,7 +201,7 @@ Paths below use `Drv/` for `src/Daoris.Desktop/Daoris.Desktop.Driver/` and `Mod/
     copied into `data/salvage/<migration>/`, the Daoris folder's layout under it, a database with its journal files; a copy
     already there is kept. The copy is the undo. (from D232)
 53. `data/migration.json` names the migration and each step as it finishes. A start whose record holds every step runs
-    nothing; a step that throws stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
+    nothing; a step that throws, or whose record cannot be written, stops the run there, said in the machine log (`home.migrated`, `home.migration-held`,
     `home.migration-failed`), and the next start runs it and the steps after it. (from D232)
 54. This release's migration is `nocompat1`, in the order of `HomeMigration.Steps`: the staffing into the store; the caps as
     the supervisor's rules; the old workflow records as saved graphs, then a push-landing workflow as steps; a run bound to a workflow version no graph reads, rebound to its place's choice; `driver.json`'s keys
