@@ -10,13 +10,9 @@ public sealed class RuleWiderPlaces(IReadOnlyDictionary<string, string> workspac
     /// <summary>No repository's workspace known.</summary>
     public static RuleWiderPlaces None { get; } = new(new Dictionary<string, string>());
 
-    /// <summary>
-    /// Why the kept map did not read, where it did not: a store that fails is told apart from one before its step, so the supervisors'
-    /// resolver makes the decisions it cannot place the person's rather than skipping a repository's workspace.
-    /// </summary>
+    /// <summary>Why the kept map did not read, so the supervisors' resolver holds what it cannot place for the person.</summary>
     public string? Error { get; init; }
 
-    /// <summary>A map that did not read, said by <paramref name="error"/>: no repository placed, every place on its own chain.</summary>
     public static RuleWiderPlaces Unread(string error) => new(new Dictionary<string, string>()) { Error = error };
 
     /// <summary>Each repository's workspace, for those registered in one.</summary>

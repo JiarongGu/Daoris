@@ -51,7 +51,6 @@ public static class HomeMigration
         new SupervisorStep(),
     ];
 
-    /// <summary>Whether <paramref name="home"/>'s record holds <paramref name="step"/> of this migration as done.</summary>
     public static bool Recorded(string home, string step) => Done(DaorisHome.Entry(home, HomeEntry.Migration)) is { } done && done.Contains(step);
 
     /// <summary>

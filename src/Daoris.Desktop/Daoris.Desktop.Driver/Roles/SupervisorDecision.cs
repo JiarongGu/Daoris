@@ -7,11 +7,7 @@ namespace Daoris.Driver;
 /// </summary>
 public interface IDecisionAdmission
 {
-    /// <summary>
-    /// The hold of the supervisor that answers a decision of <paramref name="kind"/> at <paramref name="place"/> (a repository's place
-    /// placed in its workspace by the store), or why none admits: <c>not-staffed</c>, <c>not-started</c>, or <c>not-granted</c> where its
-    /// grants do not cover <paramref name="act"/>; a null act is a leave, which needs no grant.
-    /// </summary>
+    /// <summary>The hold of the supervisor answering <paramref name="kind"/> at <paramref name="place"/>; a null act is a leave, needing no grant.</summary>
     DecisionAdmitted Admit(string kind, RolePlace place, string? act);
 }
 
@@ -21,9 +17,8 @@ public sealed record DecisionAdmitted(string? Generation, string? Why)
     public static DecisionAdmitted Refused(string why) => new(null, why);
 
     /// <summary>
-    /// The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within
-    /// <see cref="QuestionSupervisorDecisions.ShortestWindow"/> and <see cref="QuestionSupervisorDecisions.LongestWindow"/>; null keeps
-    /// <see cref="QuestionSupervisorDecisions.Window"/>.
+    /// The overrule window the effective supervisor's role keeps (<see cref="RoleHold.Window"/>), within the decisions' shortest and
+    /// longest; null keeps <see cref="QuestionSupervisorDecisions.Window"/>.
     /// </summary>
     public TimeSpan? Window { get; init; }
 }
@@ -98,7 +93,6 @@ public static class SupervisorWhy
     /// <summary>The role is staffed by the terminal and its terminal is not started this run.</summary>
     public const string NotStarted = "not-started";
 
-    /// <summary>The supervisor's grants do not cover the act (<see cref="SupervisorGrants.Covers"/>): it is the person's.</summary>
     public const string NotGranted = "not-granted";
 
     /// <summary>The hold an act names is not the role's now: its terminal is started again, or its role changed.</summary>

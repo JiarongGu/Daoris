@@ -382,8 +382,7 @@ public sealed class RoleVerb : ChoiceVerb
         if (off && entries.Count > 0) throw new ChoiceWords($"`off` is a role's whole staffing, never beside its choices: {Grammar}.");
         if (name is null) throw new ChoiceWords($"a new role names itself (`--name`): {Grammar}.");
         IReadOnlyList<ActorChoice>? choices = off ? [] : entries.Count > 0 ? entries : null;
-        // An appointed role keeps its acts in place of work, its kind its own, a supervisor's where it names what it decides, or the one
-        // its acts name, so a new supervisor with nothing granted is set as the editor makes it; the judge refuses a record holding both.
+        // A new supervisor naming what it decides is set with nothing granted, as the editor makes it; the judge refuses work beside acts.
         if (appointed)
         {
             var kind = current?.Hold?.Kind ?? (decides is not null ? AppointedRoles.Supervisor : AppointedRoles.KindOf(acts ?? []))

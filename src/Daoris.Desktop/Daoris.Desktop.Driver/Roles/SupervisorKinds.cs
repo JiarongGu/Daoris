@@ -36,8 +36,8 @@ public static class SupervisorKinds
     public static IReadOnlyList<string> Acts { get; } = [.. All.SelectMany(ActsOf)];
 
     /// <summary>
-    /// What the machine's seeded supervisor grants: the three decisions a terminal holder made before any grant was read, so a home
-    /// behaves as it did and an agent given the role answers what a terminal would. Every other act is off.
+    /// What the machine's seeded supervisor grants: the three decisions a terminal holder makes with no other grant, so a home behaves as
+    /// before and an agent given the role answers what a terminal would. Every other act is off.
     /// </summary>
     public static IReadOnlyList<string> Seeded { get; } = [Qualified(Question, Answer), Qualified(Course, GoOn), Qualified(Limit, Move)];
 

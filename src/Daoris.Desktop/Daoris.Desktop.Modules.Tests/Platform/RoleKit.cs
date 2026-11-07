@@ -55,10 +55,7 @@ internal static class RoleKit
     public static RoleRecord Steward(IReadOnlyList<string> acts, string? holder = RoleHolders.Terminal) =>
         new(AppointedRoles.Steward, AuthoredText.Of("Steward"), RoleRecord.Appointed, [], CatalogueScope.Everywhere, new RoleHold(AppointedRoles.Steward, acts, holder));
 
-    /// <summary>
-    /// A supervisor's record at <paramref name="scope"/> (the machine where none), held by <paramref name="holder"/>, its window in minutes,
-    /// deciding <paramref name="decides"/> (every kind where none) under <paramref name="acts"/> (the seed's grants where none).
-    /// </summary>
+    /// <summary>A supervisor's record at <paramref name="scope"/> (the machine where none), generic and under the seed's grants where none.</summary>
     public static RoleRecord Supervisor(
         string id = AppointedRoles.Supervisor, CatalogueScope? scope = null, string? holder = RoleHolders.Terminal, int window = RoleHold.DefaultWindow,
         IReadOnlyList<string>? decides = null, IReadOnlyList<string>? acts = null) =>
