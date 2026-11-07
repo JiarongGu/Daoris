@@ -79,7 +79,10 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         GitFolders.Read(home).Where(each => string.Equals(each.Repository, record.Intent.Repository, StringComparison.OrdinalIgnoreCase))
             .Select(each => each.Root).FirstOrDefault(Directory.Exists);
 
-    /// <summary>Every unresolved delivery, oldest first, each settled by phase: the driver's start, and a look before any new start.</summary>
+    /// <summary>
+    /// Every unresolved delivery, oldest first, each settled by phase: the driver's start, and a look before any new start. One whose landing
+    /// made nothing is settled withdrawn here (<see cref="WithdrawnPreparations"/>), where its unit's own next landing goes on from it.
+    /// </summary>
     public async Task<IReadOnlyList<DeliveryReconciled>> StartAsync(CancellationToken ct)
     {
         IReadOnlyList<DeliveryRecord> open;
@@ -96,7 +99,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         foreach (var delivery in open)
         {
             ct.ThrowIfCancellationRequested();
-            settled.Add(await OneAsync(delivery, ct).ConfigureAwait(false));
+            settled.Add(await OneAsync(delivery, look: true, ct).ConfigureAwait(false));
         }
 
         return settled;
@@ -133,7 +136,10 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         store.UnresolvedFor(unit) is { } open ? await OneAsync(open, ct).ConfigureAwait(false) : null;
 
     /// <summary>One delivery settled by phase, held in this process while it is, outside any landing's memo scope.</summary>
-    public async Task<DeliveryReconciled> OneAsync(DeliveryRecord delivery, CancellationToken ct)
+    public Task<DeliveryReconciled> OneAsync(DeliveryRecord delivery, CancellationToken ct) => OneAsync(delivery, look: false, ct);
+
+    /// <param name="look">The look's settlement (<see cref="StartAsync"/>), which settles a delivery whose landing made nothing (<see cref="WithdrawnPreparations"/>).</param>
+    private async Task<DeliveryReconciled> OneAsync(DeliveryRecord delivery, bool look, CancellationToken ct)
     {
         using var facts = GitFacts.Outside();
         using var refs = RefSnapshot.Outside();
@@ -162,7 +168,7 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
                 claim = taken.Claim;
             }
 
-            return await SettleAsync(delivery, claim, ct).ConfigureAwait(false);
+            return await SettleAsync(delivery, claim, look, ct).ConfigureAwait(false);
         }
         catch (DesktopStoreBusyException)
         {
@@ -181,9 +187,15 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
     }
 
     /// <summary>The delivery's phases settled under <paramref name="claim"/>: an open entry read and ended, then rule 1 from what is done.</summary>
-    private async Task<DeliveryReconciled> SettleAsync(DeliveryRecord delivery, DeliveryClaim claim, CancellationToken ct)
+    private async Task<DeliveryReconciled> SettleAsync(DeliveryRecord delivery, DeliveryClaim claim, bool look, CancellationToken ct)
     {
         var phases = store.Phases(delivery.Key);
+        if (look && WithdrawnPreparations.Only(phases))
+        {
+            store.Settle(claim, DeliverySettlements.Withdrawn, WithdrawnPreparations.Said);
+            return Said(delivery, DeliveryStandings.Settled, WithdrawnPreparations.Said, claim);
+        }
+
         if (phases.FirstOrDefault(each => !DeliveryPhases.All.Contains(each.Phase, StringComparer.Ordinal)
                 || each.Outcome is { } outcome && !DeliveryOutcomes.All.Contains(outcome, StringComparer.Ordinal)) is { } newer)
         {
@@ -198,8 +210,12 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         if (phases.FirstOrDefault(each => each.Open) is { } open)
         {
             if (open.Phase is DeliveryPhases.PluginDispatched or DeliveryPhases.PluginAnswered) return await PluginAsync(delivery, claim, ct).ConfigureAwait(false);
-            if (checkout(delivery) is not { } root) return Said(delivery, DeliveryStandings.Held, $"`{delivery.Intent.Repository}`'s checkout is not here, so its refs are read at the next look", claim);
-            if (await ReadAsync(delivery, phases, open.Phase, root, ct).ConfigureAwait(false) is not { } read)
+            (string Outcome, string? Evidence, string Said)? reading;
+            // A preparation cut before any ref was written ahead reads nothing of git, so it needs no checkout.
+            if (open.Phase == DeliveryPhases.Prepared) reading = Cut;
+            else if (checkout(delivery) is not { } root) return Said(delivery, DeliveryStandings.Held, $"`{delivery.Intent.Repository}`'s checkout is not here, so its refs are read at the next look", claim);
+            else reading = await ReadAsync(delivery, phases, open.Phase, root, ct).ConfigureAwait(false);
+            if (reading is not { } read)
             {
                 return Said(delivery, DeliveryStandings.Held, $"git could not read what its `{open.Phase}` came to, so it is settled at the next look", claim);
             }
@@ -257,21 +273,19 @@ public sealed class DeliveryReconciler(DeliveryStore store, string home, Func<De
         return Delivered(delivery, claim);
     }
 
+    /// <summary>Rule 2 for a preparation cut before any ref was written ahead: withdrawn, since nothing of it stands.</summary>
+    private static readonly (string Outcome, string? Evidence, string Said) Cut =
+        (DeliveryOutcomes.Withdrawn, null, "it stopped while it was prepared, before any ref was written ahead of it, so nothing of it stands");
+
     /// <summary>
-    /// Rule 2, the open entry of <paramref name="phase"/> read: a preparation cut before any ref was written ahead is withdrawn, since nothing of
-    /// it stands; a ref done where it stands at the intended tip, withdrawn where it is absent or stands where its record had it or at the tip
-    /// judged, else unknown; a record done where it holds the branch at the tip its ref was written at, else withdrawn, to be written again. Null
-    /// where git cannot say.
+    /// Rule 2, the open entry of <paramref name="phase"/> after its preparation read: a ref done where it stands at the intended tip, withdrawn
+    /// where it is absent or stands where its record had it or at the tip judged, else unknown; a record done where it holds the branch at the
+    /// tip its ref was written at, else withdrawn, to be written again. Null where git cannot say.
     /// </summary>
     private async Task<(string Outcome, string? Evidence, string Said)?> ReadAsync(
         DeliveryRecord delivery, IReadOnlyList<DeliveryPhase> phases, string phase, string root, CancellationToken ct)
     {
         var intent = delivery.Intent;
-        if (phase == DeliveryPhases.Prepared)
-        {
-            return (DeliveryOutcomes.Withdrawn, null, "it stopped while it was prepared, before any ref was written ahead of it, so nothing of it stands");
-        }
-
         var commit = Prepared(phases) ?? intent.Tip;
         if (intent.Method == DeliveryMethods.Merge)
         {
