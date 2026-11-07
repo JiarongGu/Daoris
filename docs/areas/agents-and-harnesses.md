@@ -346,7 +346,7 @@ when the driver loads (`IAgentContext`, `IAgentWorkplace`, `IAgentWorkWords`, `I
 
 **Tests that pin the area** (`src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/Agents/`):
 - contract: `ProviderCensusTests`, `ProviderVocabularyTests`, `ProviderConformanceTests` (and its process and live cases), `PendingRowsTests`,
-  `ParityOracleTests`, `ProviderRegistryTests`, `ProvidersBuiltTests`, `StandInShimProcessTests`;
+  `ParityOracleTests`, `LayerCensusTests`, `ProviderRegistryTests`, `ProvidersBuiltTests`, `StandInShimProcessTests`;
 - doors: `AcpTests`, `AcpPartsTests`, `AcpSteerTests`, `AcpTransientTests`, `AcpTypedFailureTests`, `AcpResumeTests`,
   `HarnessRunTests`, `ClaudeStreamJsonTests`, `NativePromptProcessTests`, `AdapterTests`, `Acp3AdapterTests`, `WireReadingsTests` (the
   readings and the sink, each door's event file as before, a subagent's card `think` on both doors);
@@ -372,7 +372,7 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
    (the suggestions name `sonnet` and `opus`; starts carry the role's model). D205 reads right.
 3. D205 point 7 (the suggestion leads Build with `opus` · high) vs its note of 2026-10-25 and `Roles/ActorSuggestion.cs:23`
    (`sonnet` · high, then `opus` · high). The note and the code read right.
-4. D81 (a driven session is never `bypassPermissions`) vs D184 and `ClaudeCodeSpawn.cs:137` (bypass by a repository's unrestricted
+4. D81 (a driven session is never `bypassPermissions`) vs D184 and `ClaudeCodeSpawn.cs:136` (bypass by a repository's unrestricted
    setup). D184 reads right; D81 holds only for the auto setup.
 5. D184 point 5 (the person's deny rules hold in every setup) vs `CodexProvider.cs:63` (Codex states no rule language, so no deny
    reaches it in any mode). The code reads right, and is said (D233 choice 3).
@@ -384,12 +384,12 @@ Agents page, and `universal` (which writes the orient index) and `code-map` once
    the set, never the own home). D197 reads right.
 9. D57 (toolchain, accounts and usage under `~/.daoris/`) vs `HarnessAccountFolders.ManagedHome` and `ProfileHome` (entries of Daoris's home). The
    code and D63/D172 read right.
-10. D213 point 2 (each fact in one place; no reader asks "own, else owner") vs `AgentErrors.cs:108-154` (own table, then
+10. D213 point 2 (each fact in one place; no reader asks "own, else owner") vs `AgentErrors.cs:105-140` (own table, then
     owner's), as D210 point 2 prescribes. The code and D210 read right today; D213 is the target.
 11. `HarnessAccountFolders.cs:26-27` (a pin with nothing installed falls back to `PATH` and says so) vs `RosterWalk.cs:91`
     (refused). The refusal reads right (D57, D121).
 12. `ClaudeCodeSpawn.cs:89` (the repository's `.mcp.json` wires the connector; the driver may not write it) vs
-    `Loop/DriverContinuations.cs:375` and `Loop/Chat/ChatRun.cs:173` (Daoris offers its connector at every spawn, through `ConnectorPlans.For`). The spawn reads right.
+    `Loop/DriverContinuations.cs:374` and `Loop/Chat/ChatRun.cs:174` (Daoris offers its connector at every spawn, through `ConnectorPlans.For`). The spawn reads right.
 
 ## Open
 
