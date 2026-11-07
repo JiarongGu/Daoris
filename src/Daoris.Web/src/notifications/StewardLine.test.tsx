@@ -99,6 +99,23 @@ describe("Notifications' steward line", () => {
     for (const row of rows) expect(within(row).getByText('By the steward, on your behalf')).toBeInTheDocument();
   });
 
+  it("STEWARDROLE1d says a repository's workflow chosen by the steward in English and Chinese, with no reverse press", async () => {
+    const chosen = { ...STANDING, stewardActs: [act('a9', 'workflow', '2026-10-25T10:09:00Z', { repository: 'engine' })] };
+    const onReverse = vi.fn();
+    const { unmount } = render(<StewardLine standing={chosen} onReverse={onReverse} />);
+    await userEvent.click(line().getByRole('button', { name: "Show the steward's acts" }));
+    const [row] = acts();
+    expect(row!.querySelector('[data-steward-act]')?.textContent).toBe('Chose the workflow of');
+    expect(within(row!).getByText('engine')).toBeInTheDocument();
+    expect(within(row!).queryByRole('button')).toBeNull();
+    unmount();
+
+    await i18n.changeLanguage('zh');
+    render(<StewardLine standing={chosen} onReverse={onReverse} />);
+    await userEvent.click(screen.getByRole('button', { name: '显示管家的操作' }));
+    expect(document.querySelector('[data-steward-act]')?.textContent).toBe('选择了工作流：');
+  });
+
   it('offers the owner’s reverse press only while an act stands, and none for a finish or a Try again', async () => {
     const onReverse = vi.fn();
     render(<StewardLine standing={STANDING} onReverse={onReverse} />);

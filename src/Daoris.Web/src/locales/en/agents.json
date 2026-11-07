@@ -347,6 +347,7 @@
   "agents.setup.roles.hold.act.stop": "stop",
   "agents.setup.roles.hold.act.finish": "finish",
   "agents.setup.roles.hold.act.retry": "try again",
+  "agents.setup.roles.hold.act.workflow": "choose a repository's workflow",
   "agents.setup.roles.hold.act.setup": "set up",
   "agents.setup.sessions.title": "Sessions",
   "agents.setup.workflow.title": "Workflow",

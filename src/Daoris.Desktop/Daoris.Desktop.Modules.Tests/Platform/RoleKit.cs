@@ -13,7 +13,10 @@ internal static class RoleKit
 {
     public const string Driver = DriverModule.Name;
 
-    /// <summary>A stand-in act: <c>{ repository }</c> exactly, its target that repository; it records each run and runs <see cref="Inside"/> first.</summary>
+    /// <summary>
+    /// A stand-in act: <c>{ repository }</c> exactly, or the names <see cref="Form"/> lists with <c>repository</c> first, its target that
+    /// repository; it records each run and runs <see cref="Inside"/> first.
+    /// </summary>
     internal sealed class Probe : IRoleAct
     {
         public const string Named = "probe";
@@ -22,13 +25,19 @@ internal static class RoleKit
 
         public int Ran { get; private set; }
 
+        /// <summary>The person's route it asks as outside the role's acts, or none.</summary>
+        public string? PersonRoute { get; init; }
+
+        /// <summary>The form's names in order, the first the repository's.</summary>
+        public IReadOnlyList<string> Form { get; init; } = ["repository"];
+
         /// <summary>Run inside the handler, before it answers: a test's role change or pending operation.</summary>
         public Func<RoleActRun, Task>? Inside { get; set; }
 
         public bool IsForm(JsonElement form)
         {
             var names = form.EnumerateObject().Select(each => each.Name).ToList();
-            return names.Count == 1 && string.Equals(names[0], "repository", StringComparison.OrdinalIgnoreCase)
+            return names.Count == Form.Count && names.Zip(Form).All(each => string.Equals(each.First, each.Second, StringComparison.OrdinalIgnoreCase))
                    && form.EnumerateObject().First().Value.ValueKind == JsonValueKind.String;
         }
 

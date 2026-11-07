@@ -167,9 +167,18 @@ public static class SupervisorDoor
                 return Acted(false, RoleWhy.NotRole, judged.Roles);
             }
 
-            var run = new RoleActRun(id, role, act, form.Form, judge) { World = world };
+            var run = new RoleActRun(id, role, act, form.Form, judge) { World = world, Route = (route, form, token) => StewardRouteAct.DispatchAsync(pipe, id, route, form, token) };
             if (await row.UnderGatesAsync(run, ct).ConfigureAwait(false) is { } refused) return Acted(false, refused, judged.Roles);
-            var answer = await row.RunAsync(run, ct).ConfigureAwait(false);
+            object? answer;
+            try
+            {
+                answer = await row.RunAsync(run, ct).ConfigureAwait(false);
+            }
+            catch (RoleActRefused kept)
+            {
+                return Acted(false, kept.Why, judged.Roles);
+            }
+
             return new { Done = true, Why = (string?)null, Answer = answer, Roles = judged.Roles ?? [], Brief = RolesBrief.Revision };
         }
         finally

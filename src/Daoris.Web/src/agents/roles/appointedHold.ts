@@ -5,7 +5,7 @@ import type { AppointedRead } from './roleStructure';
 /** The acts each kind may hold, as the driver's vocabulary has them (`AppointedRoles`). */
 export const ACTS: Readonly<Record<RoleHoldRead['kind'], readonly string[]>> = {
   supervisor: ['answer', 'defer'],
-  steward: ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'setup'],
+  steward: ['drive', 'undrive', 'trees', 'hold', 'resume', 'stop', 'finish', 'retry', 'workflow', 'setup'],
 };
 
 /** The holders a kind takes: the supervisor's rules alone or with a terminal, the steward's terminal; none is a role not staffed. */

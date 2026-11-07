@@ -22,6 +22,12 @@ public interface IRoleAct
     string TargetKind => OwnerKinds.Repository;
 
     /// <summary>
+    /// The person's route whose exact form is this act's own (STEWARDROLE1d): outside the acts the person granted the role, its holder's
+    /// proved press asks the person as that route's press, and confirmed it is theirs. None is refused <c>not-granted</c> there.
+    /// </summary>
+    string? PersonRoute => null;
+
+    /// <summary>
     /// The act's conditions that read a dependency (<c>landing-pushes</c>, <c>no-tree</c>), judged again under the gates of its target and
     /// its dependencies before its handler runs (STEWARDROLE1a-ii, D209 §3.4 step 8): null where they hold, else the refusal's code.
     /// </summary>
@@ -36,6 +42,18 @@ public sealed record RoleActRun(string Id, string Role, string Act, JsonElement 
 {
     /// <summary>What the steward's acts read and change (STEWARDROLE1b): the driver bridge's own, or a test's stand-in; null for none.</summary>
     public IStewardWorld? World { get; init; }
+
+    /// <summary>
+    /// Runs a route of the driver module with a payload inside the door the act runs in (STEWARDROLE1d's route acts), so the owner's
+    /// marks pass it by as they pass every role's act by; null where no pipe runs it.
+    /// </summary>
+    public Func<string, JsonElement, CancellationToken, Task<JsonElement>>? Route { get; init; }
+}
+
+/// <summary>An act's handler's refusal as data (STEWARDROLE1d): its route kept nothing, so the act is refused with that code and is not the role's.</summary>
+public sealed class RoleActRefused(string why) : Exception(why)
+{
+    public string Why { get; } = why;
 }
 
 /// <summary>

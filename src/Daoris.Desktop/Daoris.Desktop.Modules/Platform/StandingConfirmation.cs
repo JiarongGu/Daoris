@@ -139,6 +139,12 @@ public sealed record RoleJudgement(
     string? Act = null, string? ActId = null, IReadOnlyList<string>? Roles = null)
 {
     internal static RoleJudgement Refused(string why) => new(false, why);
+
+    /// <summary>
+    /// A proved holder's act outside the acts the person granted, in its exact form, that asks the person as <see cref="Asks"/>'s press
+    /// (STEWARDROLE1d): the route, and the form as its payload. Null for every other judgement.
+    /// </summary>
+    public (string Route, JsonElement Form)? Asks { get; init; }
 }
 
 /// <summary>

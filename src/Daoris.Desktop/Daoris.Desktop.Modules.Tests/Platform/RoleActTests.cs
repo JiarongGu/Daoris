@@ -49,6 +49,7 @@ public sealed class RoleActTests : IDisposable
         { "stop", """{"id":"s1","said":true}""" },
         { "finish", """{"id":"s1","state":"completed","said":true}""" },
         { "retry", """{"quest":"q1"}""" },
+        { "workflow", """{"repository":"engine","workflow":"review"}""" },
     };
 
     [Theory]
@@ -57,7 +58,7 @@ public sealed class RoleActTests : IDisposable
     {
         var (judge, key) = Appointed();
 
-        Assert.Equal(["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry"], StewardActs.Table.Keys);
+        Assert.Equal(["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow"], StewardActs.Table.Keys);
         var judged = Act(judge, key, act, form);
         Assert.True(judged.Covered, judged.Why);
     }

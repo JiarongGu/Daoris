@@ -39,10 +39,10 @@ public static class StewardCommand
     /// <summary>What the verb's usage says.</summary>
     public const string Usage =
         "usage: daoris steward acts | drive <repo> | undrive <repo> | trees <repo> on | hold <repo> | resume <repo> | stop <id> | "
-        + "finish <id> | retry <quest> | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
+        + "finish <id> | retry <quest> | workflow <repo> <workflow> | desk | desk decline <request> \"<reason>\" | request <act> <target> \"<why>\"";
 
     /// <summary>The acts a request may ask for: those the steward's verbs make.</summary>
-    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry"];
+    public static IReadOnlyList<string> Requestable { get; } = ["drive", "undrive", "trees", "hold", "resume", "stop", "finish", "retry", "workflow"];
 
     /// <summary>The one line the desk's print says before its first fence (D208 §4.4).</summary>
     public const string Header =
@@ -64,6 +64,7 @@ public static class StewardCommand
         ["stop", var id] when Named(id) => ("stop", new { id, said = true }),
         ["finish", var id] when Named(id) => ("finish", new { id, state = "completed", said = true }),
         ["retry", var quest] when Named(quest) => ("retry", new { quest = quest.TrimStart('#') }),
+        ["workflow", var repo, var workflow] when Named(repo) && Named(workflow) => ("workflow", new { repository = repo, workflow }),
         _ => null,
     };
 
@@ -141,16 +142,25 @@ public static class StewardCommand
             return 2;
         }
 
+        var sent = Guid.NewGuid().ToString();
+        var owners = new StewardAsked(sent, output);
         var answer = await client.RequestAsync(
-            Guid.NewGuid().ToString(), Act.Module, Act.Route, new RoleActForm(StewardRoutes.Role, asked.Act, generation, form, proof).Payload(),
-            Guid.NewGuid().ToString("N"), told: null, instance.Within, ct).ConfigureAwait(false);
+            sent, Act.Module, Act.Route, new RoleActForm(StewardRoutes.Role, asked.Act, generation, form, proof).Payload(),
+            Guid.NewGuid().ToString("N"), owners.Told, instance.Within, ct).ConfigureAwait(false);
         if (answer is not { } envelope)
         {
             await output.WriteLineAsync("steward: Daoris did not answer; read `steward acts` before acting again.").ConfigureAwait(false);
             return 2;
         }
 
-        if (!envelope.TryGetProperty("success", out var success) || success.ValueKind != JsonValueKind.True)
+        var succeeded = envelope.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True;
+        if (owners.Asked)
+        {
+            await output.WriteLineAsync(owners.Ended($"{asked.Act} {string.Join(' ', args.Skip(1))}", succeeded)).ConfigureAwait(false);
+            return succeeded ? 0 : 1;
+        }
+
+        if (!succeeded)
         {
             var error = envelope.TryGetProperty("error", out var held) ? held : default;
             await output.WriteLineAsync($"steward: {InstanceClient.Text(error, "message")} ({InstanceClient.Text(error, "code")})").ConfigureAwait(false);

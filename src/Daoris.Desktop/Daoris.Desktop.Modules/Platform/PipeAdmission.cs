@@ -74,18 +74,25 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         if (holding && pipe.Holding.RefuseStart(request, connection) is { } refused) return (IpcJson.Serialize(refused), null);
         Task<string> Held(Task<string> answered) => holding ? pipe.Holding.AfterOpenedAsync(answered, connection) : answered;
 
-        // The connection holding a conversation says its words in the verb's form, stops its turn and finishes it as a confirmed press:
-        // no card, so nothing is shaped for one; every other press asks as before.
-        var covered = @class == PipeClass.Person && !holding && pipe.Holding.Covers(connection, request);
-
         // SUPERVISOR1a-ii (D208 §2.2, the supervisor design §11 row 1a-ii): a role's act is judged by the judge's own role method, before
         // the open path and before any card, under the same lock and caller look, then by the holder's proof over this connection's
-        // nonce, which this act uses up. Anything it does not cover is refused, logged, never asked.
+        // nonce, which this act uses up. Anything it does not cover is refused, logged, never asked, but for STEWARDROLE1d's one case: a
+        // proved holder's act outside the acts the person granted asks the person as its route's own press, the card's alone to admit.
         RoleJudgement? role = null;
+        var asked = false;
         if (@class == PipeClass.Role)
         {
             role = pipe.StandingConfirmation.JudgeRole(request.Module, request.Type, request.Payload, connection.Client, connection.TakeNonce());
-            if (!role.Covered)
+            if (role is { Covered: false, Asks: { } asks })
+            {
+                _log.Info(StewardAsk.LogEvent, ("role", role.Role ?? ""), ("act", role.Act ?? ""), ("route", asks.Route), ("door", PipeDoor.Terminal));
+                request = StewardAsk.Press(request, role);
+                @class = _census.Of(request.Module, request.Type, request.Payload);
+                if (@class != PipeClass.Person) return (IpcJson.Serialize(pipe.Refuse(request, RoleWhy.NotGranted, RoleRefusal(RoleWhy.NotGranted))), null);
+                if (pipe.Holds(request.Module, request.Type, @class)) return (IpcJson.Serialize(pipe.RefuseStopping(request)), null);
+                (role, asked) = (null, true);
+            }
+            else if (!role.Covered)
             {
                 // STEWARDROLE1a-i (D209 §5.2): a role's act's refusal is `role.refused`; the supervisor's routes keep their own line.
                 if (request.Type == RoleRoutes.Act) _log.Info("role.refused", ("why", role.Why ?? ""), ("door", PipeDoor.Terminal));
@@ -93,6 +100,10 @@ internal sealed class PipeAdmission(InstancePipe pipe)
                 return (IpcJson.Serialize(pipe.Refuse(request, role.Why ?? InstancePipe.Unclassed, RoleRefusal(role.Why))), null);
             }
         }
+
+        // The connection holding a conversation says its words in the verb's form, stops its turn and finishes it as a confirmed press:
+        // no card, so nothing is shaped for one; every other press asks as before.
+        var covered = @class == PipeClass.Person && !holding && !asked && pipe.Holding.Covers(connection, request);
 
         // RPC1c: a person's press is shown to the window with every value it carries, so one the card could not show whole is not asked.
         IReadOnlyList<PipeConfirmationField>? fields = null;
@@ -155,7 +166,7 @@ internal sealed class PipeAdmission(InstancePipe pipe)
         // press it covers is admitted there, once: run as a confirmed press is, said to the log and the terminal, with no card. A revoke
         // after the admission does not recall it; a press it does not cover asks as before, saying why where the grant names it.
         // A start that holds is the person's Confirm alone: the standing confirmation never covers words said as the person.
-        StandingJudgement? judged = holding ? null : pipe.StandingConfirmation.Judge(request.Module, request.Type, request.Payload, connection.Client);
+        StandingJudgement? judged = holding || asked ? null : pipe.StandingConfirmation.Judge(request.Module, request.Type, request.Payload, connection.Client);
         if (judged is { Covered: true })
         {
             _log.Info(PipeConfirmations.LogEvent, ("state", "standing"), ("route", $"{request.Module}.{request.Type}"), ("door", PipeDoor.Terminal));

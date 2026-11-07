@@ -126,6 +126,8 @@ public static class StewardWhy
     public const string WordsWaiting = "words-waiting";
     public const string NotParked = "not-parked";
     public const string Ended = "ended";
+    public const string Refused = "refused";
+    public const string NoRoute = "no-route";
 }
 
 /// <summary>
@@ -137,14 +139,15 @@ public static class StewardActRows
     /// <summary>Every row, in §3.1's order.</summary>
     public static IReadOnlyList<IRoleAct> All { get; } =
     [
-        new Setting(StewardActNames.Drive, "drivable", true, noTree: true),
-        new Setting(StewardActNames.Undrive, "drivable", false, noTree: false),
-        new Setting(StewardActNames.Trees, "ownTree", true, noTree: false),
-        new Setting(StewardActNames.Hold, "held", true, noTree: false),
-        new Setting(StewardActNames.Resume, "held", false, noTree: false),
+        new Setting(StewardActNames.Drive, "drivable", true, noTree: true, "SET_DRIVABLE"),
+        new Setting(StewardActNames.Undrive, "drivable", false, noTree: false, "SET_DRIVABLE"),
+        new Setting(StewardActNames.Trees, "ownTree", true, noTree: false, "SET_TREES"),
+        new Setting(StewardActNames.Hold, "held", true, noTree: false, "SET_HOLD"),
+        new Setting(StewardActNames.Resume, "held", false, noTree: false, "SET_HOLD"),
         new StopAct(),
         new FinishAct(),
         new RetryAct(),
+        StewardRouteAct.Workflow,
     ];
 
     /// <summary>
@@ -177,9 +180,11 @@ public static class StewardActRows
     private static IStewardWorld WorldOf(RoleActRun run) => run.World ?? throw new InvalidOperationException("no world was handed to the act.");
 
     /// <summary>Rows 1 to 5: a repository's standing choice, <c>{ repository, &lt;field&gt;: &lt;value&gt; }</c>.</summary>
-    private sealed class Setting(string name, string field, bool value, bool noTree) : IRoleAct
+    private sealed class Setting(string name, string field, bool value, bool noTree, string route) : IRoleAct
     {
         public string Name => name;
+
+        public string? PersonRoute => route;
 
         public bool IsForm(JsonElement form) => Exact(form, new Dictionary<string, Func<JsonElement, bool>>(StringComparer.OrdinalIgnoreCase)
         {
@@ -226,6 +231,8 @@ public static class StewardActRows
     {
         public string Name => StewardActNames.Stop;
 
+        public string? PersonRoute => "STOP_SESSION";
+
         public string TargetKind => OwnerKinds.Session;
 
         public bool IsForm(JsonElement form) => StandingConfirmation.IsForm(StandingPresses.Stop, form);
@@ -269,6 +276,8 @@ public static class StewardActRows
     {
         public string Name => StewardActNames.Finish;
 
+        public string? PersonRoute => "RESOLVE_SESSION";
+
         public string TargetKind => OwnerKinds.Session;
 
         public bool IsForm(JsonElement form) => StandingConfirmation.IsForm(StandingPresses.Finish, form);
@@ -305,6 +314,8 @@ public static class StewardActRows
     private sealed class RetryAct : IRoleAct
     {
         public string Name => StewardActNames.Retry;
+
+        public string? PersonRoute => "RETRY_QUEST";
 
         public string TargetKind => OwnerKinds.Quest;
 
