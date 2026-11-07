@@ -69,11 +69,11 @@ public sealed class CallLineageFilterTests : IDisposable
         Assert.All(answers, answer => Assert.Equal((false, "ran knowledge_search"), answer));
         var lines = File.ReadAllLines(LineagePath).Select(line => JsonNode.Parse(line)!).ToList();
         Assert.Equal(3, lines.Count);
-        Assert.Equal(("claude-code", "toolu_child"), ((string)lines[0]["harness"]!, (string)lines[0]["toolUse"]!));
+        Assert.Equal(("claude-code", "toolu_child"), ((string)lines[0]["door"]!, (string)lines[0]["toolUse"]!));
         // An id in the arguments is the model's, never the harness's: it is not read.
         Assert.Null(lines[0]["thread"]);
-        Assert.Equal(("codex", "t2", "t1"), ((string)lines[1]["harness"]!, (string)lines[1]["thread"]!, (string)lines[1]["parent"]!));
-        Assert.Null(lines[2]["harness"]);
+        Assert.Equal(("codex", "t2", "t1"), ((string)lines[1]["door"]!, (string)lines[1]["thread"]!, (string)lines[1]["parent"]!));
+        Assert.Null(lines[2]["door"]);
         Assert.All(lines, line => Assert.Equal("knowledge_search", (string)line["tool"]!));
     }
 

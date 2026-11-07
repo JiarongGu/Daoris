@@ -36,7 +36,7 @@ public static class CallerProof
     {
         if (lineage is null) return Unread("the call carried no lineage from its harness");
         if (lineage.Malformed is not null) return Unread($"its harness sent a lineage value that is not an id ({lineage.Malformed})");
-        if (lineage.Harness != CallLineage.Claude) return Codex(lineage);
+        if (lineage.Door !=CallLineage.Claude) return Codex(lineage);
         if (lineage.ToolUse is not { } toolUse) return Unread("the call named no call id");
 
         return await join(toolUse).ConfigureAwait(false) switch

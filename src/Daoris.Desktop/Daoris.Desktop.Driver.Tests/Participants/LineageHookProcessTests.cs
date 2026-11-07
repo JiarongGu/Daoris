@@ -131,7 +131,7 @@ public sealed class LineageHookProcessTests : IDisposable
         var hook = ClaudeLineageHook.For(_home, "s1", ChildLineage.PathOf(_home, "s1"))!;
 
         Run(hook, """{"hook_event_name":"PreToolUse","tool_name":"mcp__daoris-knowledge__knowledge_search","tool_use_id":"toolu_r","session_id":"c1"}""");
-        ChildLineage.Append(_home, "s1", """{"by":"call","tool":"knowledge_search","harness":"claude-code","toolUse":"toolu_r"}""");
+        ChildLineage.Append(_home, "s1", """{"by":"call","tool":"knowledge_search","door":"claude-code","toolUse":"toolu_r"}""");
 
         var bound = ChildLineage.Read(_home, "s1");
         Assert.Equal(("c1", 1, 0), (bound.Root, bound.RootCalls, bound.Unjoined));

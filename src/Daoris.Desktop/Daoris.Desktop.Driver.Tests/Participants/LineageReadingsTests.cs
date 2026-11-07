@@ -43,10 +43,10 @@ public sealed class LineageReadingsTests : IDisposable
         Assert.Equal(Lines(File.ReadAllLines(Path.Combine(Fixtures, "claude-family.driver.jsonl"))), Written("s1"));
         Assert.Equal(
             Lines(
-                """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a1","depth":1,"name":"Reader","task":"Read the README.","proc":"0123456789abcdef"}""",
-                """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a2","parent":"a1","name":"Nested","proc":"0123456789abcdef"}""",
-                """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a2","state":"completed","proc":"0123456789abcdef"}""",
-                """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1","proc":"0123456789abcdef"}"""),
+                """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"started","agent":"a1","depth":1,"name":"Reader","task":"Read the README.","proc":"0123456789abcdef"}""",
+                """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"started","agent":"a2","parent":"a1","name":"Nested","proc":"0123456789abcdef"}""",
+                """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"ended","agent":"a2","state":"completed","proc":"0123456789abcdef"}""",
+                """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"ended","agent":"a1","proc":"0123456789abcdef"}"""),
             Written("s2"));
     }
 
@@ -105,8 +105,8 @@ public sealed class LineageReadingsTests : IDisposable
 
         Assert.Equal(
             Lines(
-                $$"""{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"started","agent":"a1","name":"{{new string('n', 120)}}"}""",
-                """{"at":"1970-01-01T00:00:00.000Z","by":"acp","event":"ended","agent":"a1"}"""),
+                $$"""{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"started","agent":"a1","name":"{{new string('n', 120)}}"}""",
+                """{"at":"1970-01-01T00:00:00.000Z","by":"announced","event":"ended","agent":"a1"}"""),
             Written("s1"));
     }
 

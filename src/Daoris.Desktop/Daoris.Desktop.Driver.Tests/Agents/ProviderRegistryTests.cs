@@ -188,7 +188,7 @@ public sealed class ProviderRegistryTests : IDisposable
         Assert.Equal(IdKind.Door, RecordIds.KindOf("The session record", "Adapter"));
         Assert.Equal(IdKind.AccountKey, RecordIds.KindOf("The account homes, cooling, windows", "profiles/agents/<agent>/"));
         Assert.Equal(IdKind.AccountKey, RecordIds.KindOf("SessionEnded, the usage history", "TurnBinding.Agent"));
-        Assert.Equal(IdKind.Provider, RecordIds.KindOf("The lineage", "harness"));
+        Assert.Equal(IdKind.Provider, RecordIds.KindOf("The lineage", "door"));
         Assert.Throws<DriverException>(() => RecordIds.KindOf("The session record", "NoSuchField"));
     }
 

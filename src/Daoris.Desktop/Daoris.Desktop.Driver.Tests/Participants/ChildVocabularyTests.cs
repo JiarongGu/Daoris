@@ -22,14 +22,14 @@ public sealed class ChildVocabularyTests
 
         Assert.Equal("root-1", lines.Root);
         Assert.Equal(["root-1"], lines.Roots);
-        Assert.Equal(ChildCall.Of("a1"), lines.Call(Line("""{"by":"call","harness":"claude-code","toolUse":"t1"}""")));
-        Assert.Equal(ChildCall.Root, lines.Call(Line("""{"by":"call","harness":"claude-code","toolUse":"t2"}""")));
-        Assert.Equal(ChildCall.Unknown, lines.Call(Line("""{"by":"call","harness":"claude-code","toolUse":"t3"}""")));
-        Assert.Equal(ChildCall.Unjoined, lines.Call(Line("""{"by":"call","harness":"claude-code","toolUse":"t9"}""")));
-        Assert.Equal(ChildCall.Unknown, lines.Call(Line("""{"by":"call","harness":"claude-code"}""")));
+        Assert.Equal(ChildCall.Of("a1"), lines.Call(Line("""{"by":"call","door":"claude-code","toolUse":"t1"}""")));
+        Assert.Equal(ChildCall.Root, lines.Call(Line("""{"by":"call","door":"claude-code","toolUse":"t2"}""")));
+        Assert.Equal(ChildCall.Unknown, lines.Call(Line("""{"by":"call","door":"claude-code","toolUse":"t3"}""")));
+        Assert.Equal(ChildCall.Unjoined, lines.Call(Line("""{"by":"call","door":"claude-code","toolUse":"t9"}""")));
+        Assert.Equal(ChildCall.Unknown, lines.Call(Line("""{"by":"call","door":"claude-code"}""")));
 
         Assert.Equal(ChildCall.Of("a1"), ClaudeChildVocabulary.Vocabulary.Wake(Line("""{"by":"hook","event":"call","agent":"a1"}""")));
-        Assert.Equal(ChildCall.None, ClaudeChildVocabulary.Vocabulary.Wake(Line("""{"by":"call","harness":"claude-code","toolUse":"t1"}""")));
+        Assert.Equal(ChildCall.None, ClaudeChildVocabulary.Vocabulary.Wake(Line("""{"by":"call","door":"claude-code","toolUse":"t1"}""")));
         Assert.Null(ClaudeChildVocabulary.Vocabulary.Wake(Line("""{"by":"hook","event":"started","agent":"a1"}""")));
     }
 
@@ -37,16 +37,16 @@ public sealed class ChildVocabularyTests
     public void Codex_names_a_thread_with_no_parent_its_root_and_a_malformed_call_unknown()
     {
         var lines = CodexChildVocabulary.Vocabulary.Lines();
-        lines.Learn(Line("""{"by":"call","harness":"codex","thread":"th-root"}"""));
-        lines.Learn(Line("""{"by":"call","harness":"codex","thread":"th-2","parent":"th-root","root":"th-root"}"""));
+        lines.Learn(Line("""{"by":"call","door":"codex","thread":"th-root"}"""));
+        lines.Learn(Line("""{"by":"call","door":"codex","thread":"th-2","parent":"th-root","root":"th-root"}"""));
 
         Assert.Equal("th-root", lines.Root);
-        Assert.Equal(ChildCall.Root, lines.Call(Line("""{"by":"call","harness":"codex","thread":"th-root"}""")));
-        Assert.Equal(ChildCall.Of("th-2"), lines.Call(Line("""{"by":"call","harness":"codex","thread":"th-2","parent":"th-root"}""")));
-        Assert.Equal(ChildCall.Unknown, lines.Call(Line("""{"by":"call","harness":"codex","thread":"th-2","malformed":"parent"}""")));
+        Assert.Equal(ChildCall.Root, lines.Call(Line("""{"by":"call","door":"codex","thread":"th-root"}""")));
+        Assert.Equal(ChildCall.Of("th-2"), lines.Call(Line("""{"by":"call","door":"codex","thread":"th-2","parent":"th-root"}""")));
+        Assert.Equal(ChildCall.Unknown, lines.Call(Line("""{"by":"call","door":"codex","thread":"th-2","malformed":"parent"}""")));
 
-        Assert.Equal(new ChildCall(ChildCallKind.Root, "th-9"), CodexChildVocabulary.Vocabulary.Wake(Line("""{"by":"call","harness":"codex","thread":"th-9"}""")));
-        Assert.Equal(ChildCall.None, CodexChildVocabulary.Vocabulary.Wake(Line("""{"by":"call","harness":"codex"}""")));
+        Assert.Equal(new ChildCall(ChildCallKind.Root, "th-9"), CodexChildVocabulary.Vocabulary.Wake(Line("""{"by":"call","door":"codex","thread":"th-9"}""")));
+        Assert.Equal(ChildCall.None, CodexChildVocabulary.Vocabulary.Wake(Line("""{"by":"call","door":"codex"}""")));
     }
 
     [Fact]
@@ -54,9 +54,9 @@ public sealed class ChildVocabularyTests
     {
         var codex = ChildBindings.Fold(
         [
-            """{"by":"call","harness":"codex","thread":"th-root","at":"2026-11-06T10:00:00.000Z"}""",
-            """{"by":"call","harness":"codex","thread":"th-2","parent":"th-root","at":"2026-11-06T10:00:01.000Z"}""",
-            """{"by":"call","harness":"dsh","thread":"th-3","parent":"th-root","at":"2026-11-06T10:00:02.000Z"}""",
+            """{"by":"call","door":"codex","thread":"th-root","at":"2026-11-06T10:00:00.000Z"}""",
+            """{"by":"call","door":"codex","thread":"th-2","parent":"th-root","at":"2026-11-06T10:00:01.000Z"}""",
+            """{"by":"call","door":"dsh","thread":"th-3","parent":"th-root","at":"2026-11-06T10:00:02.000Z"}""",
         ]);
 
         Assert.Equal(("codex", "th-root"), (codex.Harness, codex.Root));
@@ -64,7 +64,7 @@ public sealed class ChildVocabularyTests
         Assert.Equal(("codex", "th-2", "th-root"), (child.Harness, child.Native, child.Parent));
         Assert.Equal(1, codex.RootCalls);
         Assert.Equal(1, codex.UnknownCalls);
-        Assert.False(codex.Wakes("""{"by":"call","harness":"dsh","thread":"th-4","parent":"th-root"}"""));
-        Assert.True(codex.Wakes("""{"by":"acp","event":"started","agent":"x"}"""));
+        Assert.False(codex.Wakes("""{"by":"call","door":"dsh","thread":"th-4","parent":"th-root"}"""));
+        Assert.True(codex.Wakes("""{"by":"announced","event":"started","agent":"x"}"""));
     }
 }

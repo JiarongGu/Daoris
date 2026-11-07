@@ -49,7 +49,7 @@ public static class RecordIds
         new("The pins", "versions by id", IdKind.Program),
         new("The account homes, cooling, windows", "profiles/agents/<agent>/", IdKind.AccountKey),
         new("The account homes, cooling, windows", "by agent", IdKind.AccountKey),
-        new("The lineage", "harness", IdKind.Provider),
+        new("The lineage", "door", IdKind.Provider),
     ];
 
     /// <summary>The kind of id a field holds; a field the table does not name is an error, never a guess.</summary>

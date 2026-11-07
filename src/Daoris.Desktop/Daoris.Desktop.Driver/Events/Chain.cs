@@ -29,9 +29,6 @@ public static class ChainEvents
     /// </summary>
     public const string Nodes = "nodes";
 
-    /// <summary>A harness's frame (§A4.4).</summary>
-    public const string Harness = "harness";
-
     /// <summary>A process ended.</summary>
     public const string Exit = "exit";
 

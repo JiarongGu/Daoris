@@ -13,7 +13,7 @@ namespace Daoris.Knowledge;
 /// <para><b>The file is the contract</b> (<c>.claude/knowledge/twins.md</c>): <c>&lt;home&gt;/sessions/&lt;session&gt;/lineage.jsonl</c>,
 /// one JSON object a line, LF, UTF-8 with no BOM. This connector writes <c>"by":"call"</c> lines; the hook the driver hands
 /// Claude Code (<c>lineage-hook.mjs</c>) writes <c>"by":"hook"</c> lines and the driver its own <c>"by":"stream"</c>,
-/// <c>"acp"</c>, <c>"start"</c> and <c>"end"</c> lines; the driver's <c>ChildLineage</c> reads them all. 🔴 Its <c>FileName</c> and folder are this
+/// <c>"announced"</c>, <c>"start"</c> and <c>"end"</c> lines; the driver's <c>ChildLineage</c> reads them all. 🔴 Its <c>FileName</c> and folder are this
 /// file's, copied there.</para>
 ///
 /// <para><b>Only for a session the driver started.</b> The session is the connector's <c>DAORIS_SESSION_ID</c> and the home
@@ -101,7 +101,7 @@ public sealed class LineageFile
         if (CallLineage.Id(tool) is { } name) line["tool"] = name;
         if (lineage is not null)
         {
-            line["harness"] = lineage.Harness;
+            line["door"] = lineage.Door;
             Put(line, "toolUse", lineage.ToolUse);
             Put(line, "thread", lineage.Thread);
             Put(line, "parent", lineage.Parent);
