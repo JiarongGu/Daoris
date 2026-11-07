@@ -74,11 +74,8 @@ public sealed class AccountsRoutes(DriverLoop loop)
                         // readings are its owner's.
                         Speaks = owner.Any(door => roster.Speaks(door.Door)),
                         // Whether its accounts' use is read by asking its agent (USAGEREAD2a, CODEXUSE1), which the screen's
-                        // *Read now* and its read as it opens need (SWITCH1d).
+                        // *Read now* needs (SWITCH1d).
                         Reads = owner.Any(door => roster.UsageOf(door.Door) is not null),
-                        // How long a reading of it stands, in seconds, its question's own (Claude's one minute, Codex's five): the
-                        // page reads an account again once its reading is older.
-                        ReadFloor = owner.Select(door => roster.UsageOf(door.Door)?.Fresh).FirstOrDefault(fresh => fresh is not null)?.TotalSeconds,
                         Own = new
                         {
                             Cooling = CoolingShown(cooling.FirstOrDefault(entry => Same(entry.Agent, agent) && entry.Account is null), roster.Home),
@@ -364,7 +361,7 @@ public sealed class AccountsRoutes(DriverLoop loop)
     // ---------------------------------------------------------------- Read now
 
     /// <summary>
-    /// The screen's <i>Read now</i>, and its read as Agents opens (SWITCH1d; the switch design §1.2): each of the agent's accounts
+    /// The screen's <i>Read now</i>, which only a press asks, never the page's open (SWITCH1d; the switch design §1.2): each of the agent's accounts
     /// whose reading is older than its question's floor (a minute for Claude Code, five for Codex) is asked its use by its agent
     /// under its own home, with no prompt and no model request (D165 point 1), as a start's walk freshens its list
     /// (<see cref="HarnessRoster.ReadUsageAsync"/>): never one cooling, refused, read signed out or a key, nor one a session of

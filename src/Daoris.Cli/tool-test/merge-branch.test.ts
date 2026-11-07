@@ -1592,6 +1592,11 @@ test('a merge runs the baseline and what each changed path can reach, but the lo
       `a provider's ${file}`, [`src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Stub/${file}`],
       [...BASE, 'driver', 'modules', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment'],
     ]),
+    // D251: the tools' provider census runs the contracts' generator, which reads each provider's own sources and the registry's reader.
+    ['a provider\'s vocabulary source', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Providers/Codex/CodexProvider.cs'],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment']],
+    ['the provider vocabulary reader', ['src/Daoris.Desktop/Daoris.Desktop.Driver/Agents/Registry/ProviderVocabulary.cs'],
+      [...BASE, 'driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process', 'rehearse-family', 'tool-tests', 'deployment']],
     ['release tooling', ['tools/release-rehearsal.mjs'], [...BASE, 'rehearse']],
     ['the CLI',['src/Daoris.Cli/src/platform/args.ts'], [...BASE, 'driver', 'rehearse', 'rehearse-family', 'web', 'deployment']],
     // PUSH1f2a: the driver's DriverProgramWordsProcessTests runs the CLI's entry, dispatcher, driver row and seam under node.

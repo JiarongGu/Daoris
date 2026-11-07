@@ -93,4 +93,13 @@ public sealed class CountTextsTests
         Assert.True(CountTexts.NamesNone("count:answers-alone=2 (exact)", null));
         Assert.False(CountTexts.NamesNone("D201 point 3", null));
     }
+
+    [Fact]
+    public void A_part_handed_over_near_says_its_account_was_near_its_limit_never_its_context_s_end()
+    {
+        // HandOverWhy.Near is the account near its limit (D163's note), not the conversation near its context's end.
+        var print = CountTexts.Print(new LineFacts([], [new LinePartFact("s1", null), new LinePartFact("s2", HandOverWhy.Near)], []));
+        Assert.Contains("- session s2: handed over as its account was near its limit", print, StringComparison.Ordinal);
+        Assert.DoesNotContain("context", print, StringComparison.Ordinal);
+    }
 }

@@ -2061,11 +2061,11 @@ describe('how accounts are used', () => {
   });
 
   /**
-   * SWITCH1d (the switch design §1.2, §5): an agent whose accounts' use is read by asking it reads them as its page opens, once,
-   * where a reading is older than a minute, and again at *Read now*; each window says its share against its curve now and where
-   * its reading came from.
+   * SWITCH1d (the switch design §1.2, §5): an agent whose accounts' use is read by asking it reads them at *Read now* and
+   * never as its page opens, whatever the age of what was kept; each window says its share against its curve now and where its
+   * reading came from.
    */
-  it('reads each account’s use as its page opens and at Read now, and says each window against its curve', async () => {
+  it('reads each account’s use at Read now and not as its page opens, and says each window against its curve', async () => {
     const reset = new Date(Date.now() + 2 * 3_600_000).toISOString();
     const seen = new Date(Date.now() - 20 * 60_000).toISOString();
     const reads = {
@@ -2089,16 +2089,17 @@ describe('how accounts are used', () => {
     expect(await within(personal).findByText(/over its curve's 90% now/)).toBeTruthy();
     expect(within(personal).getByText('read from Claude Code 20m ago')).toBeTruthy();
     const readsOf = () => invoke.mock.calls.filter(([, type]) => type === 'ACCOUNTS_READ');
-    await waitFor(() => expect(readsOf()).toEqual([['DAORIS.DRIVER', 'ACCOUNTS_READ', { payload: { door: 'claude-code' } }]]));
+    // Nothing is asked as the page opens.
+    expect(readsOf()).toEqual([]);
 
     await userEvent.click(screen.getByRole('button', { name: 'Read now' }));
-    await waitFor(() => expect(readsOf()).toHaveLength(2));
+    await waitFor(() => expect(readsOf()).toEqual([['DAORIS.DRIVER', 'ACCOUNTS_READ', { payload: { door: 'claude-code' } }]]));
     // Never the sign-ins' read, which only *Read again* asks.
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES_REFRESH', expect.anything());
   });
 
-  /** And reads nothing as it opens where every reading is younger than a minute, nor offers *Read now* where nothing is asked. */
-  it('reads nothing as its page opens where every reading is fresh, and offers no Read now where its agent is asked nothing', async () => {
+  /** And offers no *Read now* where its agent is asked nothing, with its readings fresh or none. */
+  it('offers Read now where every reading is fresh, and none where its agent is asked nothing', async () => {
     const reset = new Date(Date.now() + 2 * 3_600_000).toISOString();
     const seen = new Date(Date.now() - 10_000).toISOString();
     const fresh = (name: string) => ({

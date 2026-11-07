@@ -9,12 +9,17 @@ import { fileURLToPath } from 'node:url';
  * in the repository's tools (`tools/`) and in the CLI's doctrine code (`src/Daoris.Cli/src/`) that names a provider's id, variable, file
  * or wire key is counted over the source with its comments blanked, and each is a named exception in the `tools` section of the driver's
  * `fixtures/provider-census.json` by file and token (the count is not pinned, CENSUSRULES1), the design's row that moves it and its class. The ids and the vocabulary are the
- * driver's registrations', `PROVIDER_VOCABULARY` in the page's generated service types (`node tools/contracts.mjs` writes it), the one
- * table the four censuses share; nothing here copies a word of it. Run by the `tool-tests` gate (the merge tool's `REACH` rows send the
- * fixture here).
+ * driver's registrations', `PROVIDER_VOCABULARY` in the page's generated service types, the one
+ * table the four censuses share; nothing here copies a word of it. The census runs the contracts' generator first (`--if-stale`, under
+ * its run lock, into its own build output), so it reads no file another step was to write: a fresh checkout and this file run alone
+ * read the same table (D251). Run by the `tool-tests` gate (the merge tool's `REACH` rows send the fixture here).
  */
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+
+const contracts = await import(
+  // @ts-expect-error — untyped workspace tooling; the same seam merge-branch.test.ts documents
+  '../../../tools/contracts.mjs') as { writeContracts: (root: string, mode: string) => number };
 const fixtures = join(root, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'fixtures');
 
 /** The design's rows (§11) that can remove a site; `-` is a site no row removes. */
@@ -30,13 +35,14 @@ const section = census.tools;
 
 /** The generated `PROVIDER_VOCABULARY` object: one row a line, its end a line holding `};` alone. */
 function readVocabulary(): { ids: [string, string][]; words: [string, string, string][] } {
+  assert.equal(contracts.writeContracts(root, '--if-stale'), 0, "the contracts' generator failed, and the census reads its table: its own words are above");
   const path = join(root, 'src', 'Daoris.Web', 'src', 'data', 'generated', 'service.ts');
-  assert.ok(existsSync(path), "the page's service types are not written, and the census reads its table there: run `node tools/contracts.mjs`");
+  assert.ok(existsSync(path), "the generator wrote no service types, and the census reads its table there");
   const text = readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
   const start = text.indexOf('export const PROVIDER_VOCABULARY');
   const open = start < 0 ? -1 : text.indexOf('= {', start);
   const close = open < 0 ? -1 : text.indexOf('\n};', open);
-  assert.ok(close > 0, 'the page\'s service types hold no PROVIDER_VOCABULARY: run `node tools/contracts.mjs`');
+  assert.ok(close > 0, 'the page\'s service types hold no PROVIDER_VOCABULARY');
   return JSON.parse(text.slice(open + 2, close + 2));
 }
 

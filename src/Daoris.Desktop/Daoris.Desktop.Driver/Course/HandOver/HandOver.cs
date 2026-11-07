@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The conversations waiting to be handed over (MIXAGENT1a-i, D163 §2): <c>&lt;home&gt;/sessions/&lt;session&gt;.hand-over.json</c>,
-/// beside the session's marks. A box is the ask, kept with when it was given (D143 point 4), until the shell's chat runner takes
-/// it: at once where the conversation is not talking, else at its turn's end, else as the shell comes up.
+/// An older build's hand-over ask (MIXAGENT1a-i, D163 §2): <c>&lt;home&gt;/sessions/&lt;session&gt;.hand-over.json</c>, beside the
+/// session's marks, kept with when it was given (D143 point 4). This build keeps a hand-over as a move row in the store and writes no box;
+/// a box left behind is imported once as the move it keeps (<see cref="HandOverBoxImport"/>) and holds its record from every go-on until then.
 /// </summary>
 /// <remarks>
 /// <para><b>This machine's, never the record's.</b> A file that does not read is no ask: nothing is handed over, which loses nothing.</para>
@@ -46,7 +46,7 @@ public sealed class HandOverBox(string home)
 /// <summary>
 /// *Hand a conversation over* (MIXAGENT1a-i, D163, the mixed-agents design §2 and §5): a conversation goes on with another agent
 /// when its own account's allowance runs low. This is the ask's judge: it refuses what cannot be handed over by a code before
-/// anything is kept, and keeps the <see cref="HandOverBox"/> the shell's chat runner takes.
+/// anything is kept, and keeps the hand-over as a move row in the store, which the conversation's executor takes.
 /// </summary>
 /// <remarks>
 /// <b>Conversations only here.</b> A quest's session is <see cref="QuestHandOver"/>'s (MIXAGENT1a-ii); asked of this judge it is

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A conversation whose turn its account's limit refused goes on, in the same conversation, on the next account (LIMITGOON1; the
+/// A conversation whose turn its account's limit refused goes on, not in its agent's own conversation but in a new part, on the next account (LIMITGOON1; the
 /// limit-goes-on design §2; D197, D189 point 3): at that turn's end, a new part of its line on the account of the same agent the walk
 /// offers next, the cooling one passed, handed Daoris's brief and then the person's words the refused turns held, its record continuing
 /// the old by <c>limit</c>, asked by <c>daoris</c>. A repository's chat opens it in the same tree; Ask Daoris's opens it in its

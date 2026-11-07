@@ -39,7 +39,7 @@ public static class AccountsStateSlice
     /// What an agent's partition carries: the fields of the route's agent, as the page's <c>AgentAccounts</c> reads them; <c>pooled</c>,
     /// the fold's unsaid receipts (POOL1a1, the account-pool design §5.2, §6.3), so the page that shows them reads them from the push.
     /// </summary>
-    public static readonly IReadOnlyList<string> AgentFields = ["agent", "speaks", "reads", "own", "accounts", "scopes", "pooled", "readFloor"];
+    public static readonly IReadOnlyList<string> AgentFields = ["agent", "speaks", "reads", "own", "accounts", "scopes", "pooled"];
 
     /// <summary>
     /// What each account carries: the fields of the route's account, the page's <c>AccountFacts</c> among them. Never a key, who signed
