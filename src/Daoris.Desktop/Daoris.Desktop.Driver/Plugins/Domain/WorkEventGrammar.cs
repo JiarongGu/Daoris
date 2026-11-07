@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The one grammar of <c>work/event</c>'s frame (EVENTHOOK1b; the event hook design §4.3): each kind's closed list of fields, and each
+/// The one grammar of <c>work/event</c>'s frame: each kind's closed list of fields, and each
 /// field's shape. A value is a generated id in its minted shape, a closed code, a count or a UTC time, so no frame carries a name, a word,
 /// a secret or a machine path. <see cref="HookFrames.Event"/> builds by it, and the census and the relay's check read it.
 /// </summary>
@@ -14,7 +14,7 @@ public static class WorkEventGrammar
     /// <summary>Raised whenever a kind or a field's shape changes; the handshake says it.</summary>
     public const int Version = 3;
 
-    /// <summary>A trial's <c>run</c> (§5.4): a sample is never taken for the live point's.</summary>
+    /// <summary>A trial's <c>run</c>: a sample is never taken for the live point's.</summary>
     public const string Sample = "sample";
 
     /// <summary>A kind's fields beyond <see cref="Common"/>: those it must carry, and those it carries where its source holds them.</summary>
@@ -31,13 +31,13 @@ public static class WorkEventGrammar
         [WorkEventKinds.SessionEnded] = new(["session", "state"], ["quest", "ask", "adapter"]),
         [WorkEventKinds.WorkLanded] = new(["session", "code"], ["quest"]),
         [WorkEventKinds.Missed] = new([], []),
-        // Version 2 (EVENTHOOK1d, the event channel design §3.5).
+        // Version 2.
         [WorkEventKinds.QuestPublished] = new(["quest"], []),
         [WorkEventKinds.QuestClosed] = new(["quest", "state"], []),
         [WorkEventKinds.QuestCloseLost] = new(["quest", "state"], []),
         [WorkEventKinds.ConfirmationEnded] = new(["confirmation", "end"], []),
         [WorkEventKinds.WorkEnded] = new(["session"], ["quest"]),
-        // Version 3 (CHANNELJOIN1d, the event channel design §5.7).
+        // Version 3.
         [WorkEventKinds.ChannelPosted] = new(["by"], ["message", "ask", "poster", "urgent"]),
     };
 

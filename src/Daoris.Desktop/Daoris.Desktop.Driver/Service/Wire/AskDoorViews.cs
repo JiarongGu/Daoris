@@ -48,7 +48,7 @@ public static class AskDoorViews
     /// <summary>
     /// An ask's channel as one entry reads it, which moves no mark: what the look hands a running part, and a starting part's instruction
     /// carries. No entry is the person's own (the service's default), and <paramref name="since"/> the page's tail of a long channel. Null
-    /// where the host holds no such ask, or is one from before the channel, which answers the route not found as well.
+    /// where the host holds no such ask, or is one without the channel, which answers the route not found as well.
     /// </summary>
     /// <exception cref="DriverException">The host answered something other than the channel.</exception>
     public static async Task<ChannelView?> ChannelAsync(
@@ -65,7 +65,7 @@ public static class AskDoorViews
 
     /// <summary>
     /// The asks the mirrored channel messages name that this machine does not hold, newest message first. Empty where the host is one
-    /// from before the door, which answers the route not found.
+    /// without the door, which answers the route not found.
     /// </summary>
     /// <exception cref="DriverException">The host answered something other than the list.</exception>
     public static async Task<IReadOnlyList<ElsewhereAskAnswer>> ElsewhereAsksAsync(this ServiceClient service, CancellationToken ct = default)
@@ -99,7 +99,7 @@ public static class AskDoorViews
 
     /// <summary>
     /// Move the person's own read mark on an ask's channel, through <paramref name="through"/> or the newest item, and answer the
-    /// channel as it then reads. Null where the host holds no such ask, or is one from before the channel.
+    /// channel as it then reads. Null where the host holds no such ask, or is one without the channel.
     /// </summary>
     /// <exception cref="DriverException">The host refused the move.</exception>
     public static async Task<ChannelView?> ChannelMarkAsync(

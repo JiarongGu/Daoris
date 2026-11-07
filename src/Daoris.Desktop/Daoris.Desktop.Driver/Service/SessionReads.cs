@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the driver reads of the service's session records, each read from the records as the contracts type them (<see cref="SessionResponse"/>):
-/// the planner's inputs, the strikes, the last runs and the carry-ons' takes. A teammate's record came down with the sync keyed
-/// <c>origin/id</c>, the same rule the platform reads it by, and holds nothing here (D47 §6, SYNC4): counted, it would spend this machine's
+/// the planner's inputs, the strikes, the last runs and the carry-ons' takes. A teammate's record comes down with the sync keyed
+/// <c>origin/id</c>, the same rule the platform reads it by, and holds nothing here: counted, it would spend this machine's
 /// cap on work another machine is doing, so the reads of this machine's work leave it out.
 /// </summary>
 internal static class SessionReads
@@ -30,7 +30,7 @@ internal static class SessionReads
         }
     }
 
-    /// <summary>A record that came down from the team: keyed <c>origin/id</c>, the id this machine's own never has.</summary>
+    /// <summary>A record that comes down from the team: keyed <c>origin/id</c>, the id this machine's own never has.</summary>
     internal static bool IsTeams(SessionResponse session) => session.Id?.Contains('/') == true;
 
     private static bool IsState(SessionResponse session, string state) => string.Equals(session.State, state, StringComparison.OrdinalIgnoreCase);
@@ -39,12 +39,12 @@ internal static class SessionReads
 
     private static DateTimeOffset? MomentOf(DateTimeOffset moment) => moment == default ? null : moment;
 
-    /// <summary>Whether a record's note says its account was refused, by an account's line's code and never its words (ROSTER1b).</summary>
+    /// <summary>Whether a record's note says its account is refused, by an account's line's code and never its words.</summary>
     private static bool AccountRefused(SessionResponse session) =>
         PartsOf(session) is { } parts && parts.Any(part => part.Code is { } code && RecordNotes.AccountsOwn.Contains(code));
 
     /// <summary>
-    /// Whether a record ended <c>choice-not-offered</c> (D205 §3.5(c), MODELROLE1c2), by its end code: its agent refused the choice at the
+    /// Whether a record ended <c>choice-not-offered</c>, by its end code: its agent refused the choice at the
     /// open, before any prompt, so it is no strike, no last run and no start the walk counts.
     /// </summary>
     internal static bool NotOffered(SessionResponse session) =>
@@ -71,7 +71,7 @@ internal static class SessionReads
                 Adapter = session.Door is { Length: > 0 } adapter ? adapter : null,
                 // Where its tree stood when it opened: what the sweep reads a lost done's evidence as changed from.
                 BaseCommit = session.BaseCommit is { Length: > 0 } baseCommit ? baseCommit : null,
-                // Its note's lines by code, handed on wherever the note is; null for a record from before parts.
+                // Its note's lines by code, handed on wherever the note is; null for a record without parts.
                 NoteParts = PartsOf(session),
                 // Its words, read as SessionRecords reads them: the person's make an answered park.
                 Said = session.Said is { } said ? [.. said.Select(ReadWord).OfType<SaidWordView>()] : null,
@@ -89,8 +89,8 @@ internal static class SessionReads
     }
 
     /// <summary>
-    /// This machine's active sessions as the downloads' rule reads them (KEEP1b, D195 point 6): each id, when its record was opened, and the
-    /// downloaded versions its starts were handed, null for a record from before that field, which keeps the start-time rule.
+    /// This machine's active sessions as the downloads' rule reads them: each id, when its record opened, and the
+    /// downloaded versions its starts are handed, null for a record without that field, which keeps the start-time rule.
     /// </summary>
     internal static IReadOnlyList<LiveSession> Running(IEnumerable<SessionResponse> listed) =>
         [.. listed.Where(session => !IsTeams(session))
@@ -109,11 +109,11 @@ internal static class SessionReads
         !IsNeutral(session) && (IsState(session, "failed") || (IsState(session, "stopped") && session.Interrupted));
 
     /// <summary>
-    /// How often each quest has been failed (DRV6). Only <c>failed</c> counts, and a stop that was not the person's (D104): a
+    /// How often each quest has failed. Only <c>failed</c> counts, and a stop that is not the person's: a
     /// <c>stood-down</c> session means somebody else took the quest first, a <c>declined</c> one closes it, a <c>stopped</c> one the person
-    /// stopped was theirs. A failure that says <c>limit</c> is not a strike (TOOL4d), nor is one whose account was refused (ROSTER1b), whose
-    /// end was past a transient bound (AGENTERRORS1a), whose update closed (<see cref="RecordNotes.UpdateClosed"/>) or whose choice its agent
-    /// refused at the open (D205 §3.5(c)): counted, a healthy quest parks for succeeding.
+    /// stopped is theirs. A failure that says <c>limit</c> is not a strike, nor is one whose account is refused, whose
+    /// end is past a transient bound, whose update closed (<see cref="RecordNotes.UpdateClosed"/>) or whose choice its agent
+    /// refused at the open: counted, a healthy quest parks for succeeding.
     /// </summary>
     internal static IReadOnlyDictionary<string, int> Strikes(IEnumerable<SessionResponse> listed)
     {
@@ -131,7 +131,7 @@ internal static class SessionReads
     }
 
     /// <summary>
-    /// How many strikes in a row each quest's last choice has made (STAFFPOLICY1e2): the trailing failed records on the same agent and asked
+    /// How many strikes in a row each quest's last choice has made: the trailing failed records on the same agent and asked
     /// model, in the order they were made. A limit, a refused account, a transient end and a choice not offered are no strike and break
     /// nothing; any other end that is not a failure, or a failure on another choice, starts the count again.
     /// </summary>
@@ -165,7 +165,7 @@ internal static class SessionReads
     }
 
     /// <summary>
-    /// The session this machine last ran on each quest, and where (D79). A stand-down is not a run: it means somebody else had the quest, so
+    /// The session this machine last ran on each quest, and where. A stand-down is not a run: it means somebody else had the quest, so
     /// resuming it here would double another taker's work.
     /// </summary>
     internal static IReadOnlyDictionary<string, PriorSession> LastRun(IEnumerable<SessionResponse> listed)
@@ -176,7 +176,7 @@ internal static class SessionReads
             if (IsTeams(session)) continue;
             if (session.Quest is not { Length: > 0 } quest) continue;
             if (IsState(session, "stood-down")) continue;
-            // D205 §3.5(c): a record its agent's refusal of the choice ended before any prompt ran nothing, so a carry-on carries on from
+            // A record its agent's refusal of the choice ended before any prompt ran nothing, so a carry-on carries on from
             // the record before it, never from the empty one.
             if (NotOffered(session)) continue;
 
@@ -188,7 +188,7 @@ internal static class SessionReads
     }
 
     /// <summary>
-    /// The newest record of this machine's on each quest where it stood down (SYNCMERGE1b), newer by that alone than the quest's
+    /// The newest record of this machine's on each quest where it stood down, newer by that alone than the quest's
     /// <see cref="LastRun"/>, which skips it: read so a look asks the claim of those quests.
     /// </summary>
     internal static IReadOnlyDictionary<string, PriorSession> StoodDown(IEnumerable<SessionResponse> listed)
@@ -209,7 +209,7 @@ internal static class SessionReads
     }
 
     /// <summary>
-    /// The record each taken quest's standing reopen names (FABRIC-CLOSE1c9), where it is this machine's and not the quest's last record
+    /// The record each taken quest's standing reopen names, where it is this machine's and not the quest's last record
     /// here (<paramref name="lastRun"/>). Nothing is read where no taken quest's reopen names such a session.
     /// </summary>
     internal static IReadOnlyDictionary<string, PriorSession> NamedByReopen(
@@ -245,13 +245,13 @@ internal static class SessionReads
     }
 
     /// <summary>
-    /// Whose each take is (CARRY2b), for the quests whose claim was read: whether a record of this machine's, in any state, marks that it took
+    /// Whose each take is, for the quests whose claim is read: whether a record of this machine's, in any state, marks that it took
     /// the quest, and the newest teammate's record on it that did not stand down, which names another machine's take.
     /// </summary>
     /// <param name="claims">This machine's claim on each quest read, by quest id.</param>
     /// <param name="whys">Why a lost claim lost, by quest id, where the host said.</param>
-    /// <param name="forwards">The bring-forward each take was made by, by quest id, where the host named one.</param>
-    /// <param name="taken">When each take was made, by quest id (CARRY3), where the host said.</param>
+    /// <param name="forwards">The bring-forward that made each take, by quest id, where the host names one.</param>
+    /// <param name="taken">When each take happened, by quest id, where the host says.</param>
     internal static IReadOnlyDictionary<string, QuestTake> Takes(
         IEnumerable<SessionResponse> listed, IReadOnlyDictionary<string, string> claims, IReadOnlyDictionary<string, string?>? whys = null,
         IReadOnlyDictionary<string, ForwardTake?>? forwards = null, IReadOnlyDictionary<string, DateTimeOffset?>? taken = null)
@@ -268,7 +268,7 @@ internal static class SessionReads
             }
 
             if (IsState(session, "stood-down")) continue;
-            // The newest by when it was made, a later one in the answer on a tie, as the ledger orders them.
+            // The newest by when it is made, a later one in the answer on a tie, as the ledger orders them.
             if (teammates.TryGetValue(quest, out var seen) && seen.At > session.Created) continue;
             teammates[quest] = (session.Id!, session.Created);
         }
@@ -281,7 +281,7 @@ internal static class SessionReads
             StringComparer.OrdinalIgnoreCase);
     }
 
-    /// <summary>This machine's records by id, read as <see cref="Prior"/> reads one: what a brief follows a line's <c>from</c> links through (SESSCTX1b).</summary>
+    /// <summary>This machine's records by id, read as <see cref="Prior"/> reads one: what a brief follows a line's <c>from</c> links through.</summary>
     internal static IReadOnlyDictionary<string, PriorSession> Records(IEnumerable<SessionResponse> listed)
     {
         var records = new Dictionary<string, PriorSession>(StringComparer.Ordinal);
@@ -306,7 +306,7 @@ internal static class SessionReads
         return null;
     }
 
-    /// <summary>The trees of this machine's records the person's words wait on (AUTOTIDY2d, MSG1b, D137 §2.2).</summary>
+    /// <summary>The trees of this machine's records the person's words wait on.</summary>
     internal static IReadOnlyList<string> WaitingTrees(IEnumerable<SessionResponse> listed)
     {
         var trees = new List<string>();
@@ -319,7 +319,7 @@ internal static class SessionReads
         return trees;
     }
 
-    /// <summary>Every record's entry key by its id (SESSONE1d): this machine's and a teammate's mirror, keyed <c>origin/id</c>.</summary>
+    /// <summary>Every record's entry key by its id: this machine's and a teammate's mirror, keyed <c>origin/id</c>.</summary>
     internal static IReadOnlyDictionary<string, string> Entries(IEnumerable<SessionResponse> listed)
     {
         var entries = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -332,7 +332,7 @@ internal static class SessionReads
     }
 
     /// <summary>
-    /// This machine's records as the goal's walk counts them (TOOL6b, D130 §4.2): each one's adapter, account, when it was opened, and whether
+    /// This machine's records as the goal's walk counts them: each one's adapter, account, when it opened, and whether
     /// it runs now, which is the active list's word. A record naming no adapter names no owner to count it for.
     /// </summary>
     internal static IReadOnlyList<SessionStarted> Started(IEnumerable<SessionResponse> listed, IReadOnlyList<SessionView> active)
@@ -345,7 +345,7 @@ internal static class SessionReads
             started.Add(new SessionStarted(adapter, session.Profile, MomentOf(session.Created), running.Contains(session.Id ?? ""))
             {
                 Id = session.Id,
-                // D205 §3.5(c): a record its agent's refusal of the choice ended at the open, read by its end code.
+                // A record its agent's refusal of the choice ended at the open, read by its end code.
                 NotOffered = NotOffered(session),
             });
         }
@@ -353,11 +353,11 @@ internal static class SessionReads
         return started;
     }
 
-    /// <summary>A record as what a later run on it is compared with and told (D79, D80, ANSWER1a, MSG1b).</summary>
+    /// <summary>A record as what a later run on it is compared with and told.</summary>
     internal static PriorSession Prior(SessionResponse session) =>
         new(session.Id ?? "", session.Tree, session.State ?? "", session.Note, session.Repository, session.Interrupted)
         {
-            // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
+            // Which account it ran on and whether a limit cut it off: what a carry-on is compared with and told.
             Profile = session.Profile,
             Actor = session.Actor,
             Choice = session.Choice,
@@ -367,46 +367,46 @@ internal static class SessionReads
             Chosen = Wired<ActorChosen>(session.Chosen),
             Limit = session.Limit,
             NotOffered = NotOffered(session),
-            // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
+            // What an answered park is compared with, and where its evidence counts from.
             Adapter = session.Door,
             DoorVersion = session.DoorVersion,
             BaseCommit = session.BaseCommit,
-            // The person's words waiting on it (MSG1a): what goes on with it, parked or ended (MSG1b, D137 §2.2).
+            // The person's words waiting on it: what goes on with it, parked or ended.
             Said = session.Said is { } said ? [.. said.Select(ReadWord).OfType<SaidWordView>()] : null,
             Ask = session.Ask,
-            // The work its marks read as (FOUNDATION1c, D212): served on loopback, none for a mirror and from a host before the field.
+            // The work its marks read as: served on loopback, none for a mirror and from a host without the field.
             Work = session.Work is { Length: > 0 } work ? work : null,
-            // What a helper may be asked of, and where its rule resolves (MIXAGENT2a-ii): served on loopback with the record.
+            // What a helper may be asked of, and where its rule resolves: served on loopback with the record.
             Serves = session.Serves,
-            // A partner's piece (COAGENT1b, the co-agent design §7.3): served on loopback beside its serves.
+            // A partner's piece: served on loopback beside its serves.
             Piece = session.Piece is { Length: > 0 } piece ? piece : null,
             Opinion = session.Opinion,
-            // The session it continues, why and who asked (MIXAGENT1a-iii): served on loopback with the record, for the head to say.
+            // The session it continues, why and who asked: served on loopback with the record, for the head to say.
             From = session.From,
             FromWhy = session.FromWhy,
             FromBy = session.FromBy,
             Workspace = session.Workspace,
-            // A chat goes on through the chat runner, never the planner (MSG1c).
+            // A chat goes on through the chat runner, never the planner.
             Kind = session.Kind ?? "driven",
-            // Its note's lines by code (LANG1a), which a note added to it carries on; null for a record from before parts.
+            // Its note's lines by code, which a note added to it carries on; null for a record without parts.
             NoteParts = PartsOf(session),
-            // When it last moved, which a take here is compared with (CARRY2b).
+            // When it last moved, which a take here is compared with.
             Updated = MomentOf(session.Updated),
-            // When it was made, which a curve move's hold is counted from (SWITCH1c-ii).
+            // Its creation time, which a curve move's hold is counted from.
             Created = MomentOf(session.Created),
-            // Its session entry and its quest (SESSONE1a): what a later quest of the same line goes into its tree by (SESSONE1d).
+            // Its session entry and its quest: what a later quest of the same line goes into its tree by.
             Entry = session.Entry is { Length: > 0 } entry ? entry : null,
             Quest = session.Quest is { Length: > 0 } quest ? quest : null,
             TookQuest = session.TookQuest is { Length: > 0 } took ? took : null,
-            // The mode an Ask Daoris record last ran under (HELPMODE1a2), which a conversation going on is compared with.
+            // The mode an Ask Daoris record last ran under, which a conversation going on is compared with.
             HelpMode = session.HelpMode is { Length: > 0 } mode ? mode : null,
-            // The setup a driven record started under (AUTONOMY1a), each pause that is a word: what a run going on from it compares its own with.
+            // The setup a driven record started under, each pause that is a word: what a run going on from it compares its own with.
             Access = session.Access is { } access
                 ? access.Where(pause => pause.Value is { Length: > 0 }).ToDictionary(pause => pause.Key, pause => pause.Value, StringComparer.Ordinal)
                 : null,
         };
 
-    /// <summary>An actor's provenance as the record carries it, read as it was stored; null where it is no object or does not read.</summary>
+    /// <summary>An actor's provenance as the record carries it, read as stored; null where it is no object or does not read.</summary>
     internal static T? Wired<T>(JsonElement? value)
     {
         if (value is not { ValueKind: JsonValueKind.Object } wired) return default;
@@ -418,7 +418,7 @@ internal static class SessionReads
     internal static T? ActorRead<T>(JsonElement session, string name) =>
         session.TryGetProperty(name, out var value) ? Wired<T>(value) : default;
 
-    /// <summary>The words waiting on a raw record (MSG1a, D137 §2.4); null where the record answers no list, which is not the same as nothing waiting.</summary>
+    /// <summary>The words waiting on a raw record; null where the record answers no list, which is not the same as nothing waiting.</summary>
     internal static IReadOnlyList<SaidWordView>? ReadSaid(JsonElement session)
     {
         if (!session.TryGetProperty("said", out var said) || said.ValueKind != JsonValueKind.Array) return null;
@@ -426,8 +426,8 @@ internal static class SessionReads
     }
 
     /// <summary>
-    /// One word of a raw record (MSG1a): its id, its words, when, its files' names and whether it was said after the record ended; and the
-    /// second opinion whose findings it carries (XAGENT1c's <c>by</c>). Null for one without its id, its words or a moment that reads.
+    /// One word of a raw record: its id, its words, when, its files' names and whether it is said after the record ended; and the
+    /// second opinion whose findings it carries (<c>by</c>). Null for one without its id, its words or a moment that reads.
     /// </summary>
     internal static SaidWordView? ReadWord(JsonElement word) =>
         word.ValueKind == JsonValueKind.Object
@@ -439,7 +439,7 @@ internal static class SessionReads
 
     /// <summary>
     /// A word as the typed answer carries it: the marks that say whose it is are absent when blank, a helper's answer is its own mark (never
-    /// <c>by</c>), and a host from before a mark says none, so its word is the person's.
+    /// <c>by</c>), and a host without a mark says none, so its word is the person's.
     /// </summary>
     internal static SaidWordView? ReadWord(SaidWordResponse word) =>
         word.Id is { Length: > 0 } id && word.Text is { } words && word.At != default
@@ -456,7 +456,7 @@ internal static class SessionReads
             : null;
 
     /// <summary>
-    /// The closed quests whose last session here has the person's words waiting (MSG1b, D137 §2.2): an open one is planned from the open list,
+    /// The closed quests whose last session here has the person's words waiting: an open one is planned from the open list,
     /// and one with nothing waiting is not looked at.
     /// </summary>
     /// <param name="open">The ids of the quests the open list holds.</param>

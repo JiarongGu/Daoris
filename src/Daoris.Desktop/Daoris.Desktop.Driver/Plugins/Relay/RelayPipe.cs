@@ -25,7 +25,7 @@ public sealed class RelayClient(Stream stream, int? pid, Action ended) : IAsyncD
 }
 
 /// <summary>
-/// The relay's one pipe (EVENTHOOK1c; the event hook design §6.1 step 2, P4): on Windows <c>daoris-event-</c> and 32 random hex characters,
+/// The relay's one pipe: on Windows <c>daoris-event-</c> and 32 random hex characters,
 /// made by this user's rule (<see cref="UserPipe.Security"/>) as its first instance, for two instances, so as one is taken by a client
 /// the other listens and a second client reaches the relay instead of a busy pipe; elsewhere a Unix socket of that name in the
 /// subscribers' folder, which only the user reads.

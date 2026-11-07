@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>What the look's plugin pass reaches of the driver beyond <see cref="ILookWiring"/>: the adapters it was built with, the hooks, and the taking up of a read catalogue.</summary>
+/// <summary>What the look's plugin pass reaches of the driver beyond <see cref="ILookWiring"/>: the adapters it is built with, the hooks, and the taking up of a read catalogue.</summary>
 internal interface IPluginWiring : ILookWiring
 {
     /// <summary>The adapters this build carries, before any plugin's.</summary>
@@ -11,7 +11,7 @@ internal interface IPluginWiring : ILookWiring
 
     /// <summary>
     /// Takes a read catalogue up: the adapters with its plugins, its servers, its catalogue, and the harness roster over them, with
-    /// the one set of Daoris's accounts (POOL1a, D197) folded again where a held lock refused it.
+    /// the one set of Daoris's accounts folded again where a held lock refused it.
     /// </summary>
     void Adopt(PluginCatalog catalog);
 }

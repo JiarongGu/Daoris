@@ -1,23 +1,23 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The second opinion's pass (XAGENT1d, D155 points 5 and 6; the second-agent design §4–§5): another agent, the one the walk
-/// chose (XAGENT1b), reads a session's work in a copy of its own and says its opinion through its connector (XAGENT1c).
+/// The second opinion's pass: another agent, the one the walk
+/// chose, reads a session's work in a copy of its own and says its opinion through its connector.
 /// </summary>
 /// <remarks>
 /// <para><b>The same spawn as an intake's</b>, on the driven capture path: a pass is one turn framed as one prompt on either
-/// door, taking no person's line and never resumed, since every pass is a fresh conversation (INT4i, §5.6). Its account is the
+/// door, taking no person's line and never resumed, since every pass is a fresh conversation. Its account is the
 /// one the walk already chose, never walked again.</para>
 ///
 /// <para><b>Nothing is taken back.</b> The copy is made before the record and removed after the run however it ended; the only
 /// thing a pass takes is the opinion the reviewer said through its tool, which the local host keeps. The record moves on the
-/// exit code, never on what the reviewer said of itself (D46 §4): whether it gave its opinion is the host's to derive.</para>
+/// exit code, never on what the reviewer said of itself: whether it gave its opinion is the host's to derive.</para>
 ///
-/// <para><b>The look asks it</b> (XAGENT1f, <see cref="OpinionGateLook.OpinionsAsync"/>): for an opinion owed by itself and for the
-/// person's ask, beside the look, its slot taken before any quest's first start, and its findings delivered after (XAGENT1e).</para>
+/// <para><b>The look asks it</b> (<see cref="OpinionGateLook.OpinionsAsync"/>): for an opinion owed by itself and for the
+/// person's ask, beside the look, its slot taken before any quest's first start, and its findings delivered after.</para>
 /// </remarks>
 /// <param name="driver">
-/// The driver whose run machinery a pass goes through (PART10m, D166): the spawn's preparation, the connector, the rules handed,
+/// The driver whose run machinery a pass goes through: the spawn's preparation, the connector, the rules handed,
 /// the hold of the process and the account sayings, which Continue, Helper and Intake call as well.
 /// </param>
 internal sealed class DriverOpinions(LoopContext context, Driver driver)
@@ -54,7 +54,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             return Held(error.Message);
         }
 
-        // Its own copy, at the candidate's tip (§5.1), made before the record for the reason a session's tree is: a record for
+        // Its own copy, at the candidate's tip, made before the record for the reason a session's tree is: a record for
         // a run that could never happen would explain nothing.
         OpinionTreeOpened copy;
         try
@@ -72,7 +72,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
         {
             var reask = ask.Reask is { } walk ? new OneTurnReask(choice, walk) : null;
             run = await ReadInCopyAsync(ask, choice, adapter, selection, reviewer, label, candidate, copy, named, reask, ct).ConfigureAwait(false);
-            // D205 §3.5(f): its agent refused the entry's model at the open, so the record has ended `choice-not-offered` and this call
+            // Its agent refused the entry's model at the open, so the record has ended `choice-not-offered` and this call
             // asks its walk again, the refused (entry, account) passed, before it publishes an ordinary outcome: the replacement's record
             // opens in the same copy, which nothing read; with none left, the walk's own "no reviewer could run", its pass reasons said.
             while (run is { NotOffered: true } && reask is not null && !ct.IsCancellationRequested)
@@ -116,7 +116,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
         var service = _context.Service;
         var home = _context.Home;
 
-        // The repository's own rules as they stand in the candidate, read before the reviewer starts and never after (§4).
+        // The repository's own rules as they stand in the candidate, read before the reviewer starts and never after.
         var rules = OpinionPackets.RulesIn(copy.Path);
         var posture = OpinionPosture.Of(adapter);
         var family = choice.Family ?? AgentFamily.Of(_context.Adapters, reviewer);
@@ -129,7 +129,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                         ask.Occasion, ask.Working, candidate, reviewer, label, OpinionPass.Families(choice.Working), posture,
                         ask.Rule.Bound, copy.Path)
                     {
-                        // The one recheck reads the commits since its first pass's tip (XAGENT1e, design §6.5).
+                        // The one recheck reads the commits since its first pass's tip.
                         Pass = ask.Rechecks is null ? OpinionViews.FirstPass : OpinionViews.RecheckPass,
                         Rechecks = ask.Rechecks?.First.Id,
                         Product = family.Product,
@@ -151,7 +151,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
         }
 
         var (opinion, sessionId) = (asked.Opinion!, asked.Session!);
-        // The gate keeps the ask now (XAGENT1f), so every door reads the pass as being read while it runs.
+        // The gate keeps the ask, so every door reads the pass as being read while it runs.
         ask.Opened?.Invoke(opinion, sessionId);
         OpinionPassRun Ended(string state, string note) =>
             new($"{state}  second opinion {opinion} (session {sessionId}, {named}): {note}", true)
@@ -159,7 +159,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 Opinion = opinion, Session = sessionId, State = state, Code = choice.Code, Posture = posture,
             };
 
-        // An opinion on another account of the order says so, as a quest's start does (TOOL4f, D125 §3.2).
+        // An opinion on another account of the order says so, as a quest's start does.
         RotatedOpening.Say(service, _context.Events, sessionId, reviewer, selection, carried: null);
         OneTurnReask.Say(_context.Events, sessionId, "opinion", choice, _driver.Log);
         var bound = OpinionPass.Bound(ask.Rule, _context.Config);
@@ -167,8 +167,8 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
         try
         {
-            // The diff, in the opinion's own folder (§4): the reviewer is handed a read of it, as a resumed session is handed its
-            // files (INT4j). Where git could not write it, the instruction says to read it from git in the copy.
+            // The diff, in the opinion's own folder: the reviewer is handed a read of it, as a resumed session is handed its
+            // files. Where git could not write it, the instruction says to read it from git in the copy.
             var folder = OpinionPackets.Folder(home, opinion);
             var diffFile = Path.Combine(folder, OpinionPackets.DiffName);
             var diff = await OpinionPackets.WriteDiffAsync(ask.Root, candidate, diffFile, ct).ConfigureAwait(false) ? diffFile : null;
@@ -190,9 +190,9 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 Opinion = opinion,
                 Session = sessionId,
                 Prompt = OpinionInstruction.Compose(packet),
-                // CONTEXTONE1c: its standing block, its copy's facts and the person's choices for its repository.
+                // Its standing block, its copy's facts and the person's choices for its repository.
                 Block = StandingBlocks.OnMachine(StandingBlocks.OfTree(ask.Repository, copy.Path), ParticipantWork.Review, _context.Config, [], null),
-                // MODELROLE1e (D205 §3.2, §4.4): the entry's model and effort, carried on either door, and the choice its record keeps.
+                // The entry's model and effort, carried on either door, and the choice its record keeps.
                 Asked = choice.Effective?.Asked,
                 Choice = choice.Effective?.From,
             };
@@ -202,7 +202,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
             var transcript = DaorisHome.Entry(home, HomeEntry.Sessions, $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
-            // Its connector and nothing else (§5.4): no plugin's server, which could write where a reviewer may not. The
+            // Its connector and nothing else: no plugin's server, which could write where a reviewer may not. The
             // protocol door carries the connector on the wire; the pipe door takes a file under the home, as an intake's does.
             string? handed = null;
             string? preamble = null;
@@ -213,12 +213,12 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 handed = handing.Hand(info, home, ConnectorPlans.For(sessionId, ask.Workspace, connector is null ? [] : [connector], ConnectorPlans.ConnectorOnly));
             }
 
-            // HELPPLUG1c (D170 point 4): the skills plugins hand sessions, though not their servers: a skill is words, and one that
+            // The skills plugins hand sessions, though not their servers: a skill is words, and one that
             // allows itself tools is handed nowhere, so the reviewer's rules below stand. Gone with the pass.
             var (skills, skillPlugins) = SpawnSkills.Hand(_context.Adapters, adapter, info, home, sessionId, _context.Catalog, PluginServerTo.Sessions);
             using var skilled = new Disposer(() => SpawnFiles.RemoveFolder(skills));
 
-            // What it may do (§5.2): the person's composition under the opinion's rules, held to its copy by the tree guard,
+            // What it may do: the person's composition under the opinion's rules, held to its copy by the tree guard,
             // with a read of its folder outside it.
             var handedRules = _driver.HandRules(
                 adapter, info, sessionId, ask.Workspace, ask.Repository, tree: copy.Path, kept: diff is null ? null : folder, opinion: true,
@@ -227,7 +227,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
 
             return await _driver.Holds.HoldAsync(
                 "opinion", adapter, info, target, sessionId, transcript, copy.Path, Driver.JoinNotices(harnessNotice, opening), handedRules, handed,
-                // 🔴 One turn, and no words (§5.6): nobody talks to a reviewer while it reads, on either door.
+                // 🔴 One turn, and no words: nobody talks to a reviewer while it reads, on either door.
                 refusesInput: OpinionPass.TakesNoWords(opinion),
                 ct: ct,
                 transientWanted: TransientOwners.Opinion(_context.Processes, sessionId, retryCt => service.Opinions.ReadAsync(opinion, retryCt)),
@@ -237,7 +237,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
                 minutes: bound,
                 noConnector: OpinionPass.NoConnector,
                 stopMade: stop => stoppedFirst = stop,
-                // D205 §3.5(f): its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in this
+                // Its agent's refusal of the entry's model at the open is kept as the account's reading and asked again in this
                 // call: a later entry of the same agent on the same account is set on this session, anything else ends the record below.
                 offers: new OpenOffers(selection.Version, selection.Profile, reask is null ? null : _ => reask.SameAccountAsync()),
                 conclude: async (exitCode, used, turnFailed, ended) =>
@@ -290,13 +290,13 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
         }
         catch (Exception) when (stoppedFirst is not null)
         {
-            // A wire that broke after a stop is that stop's end, not a failure (STOPRACE1), as a quest's session reads it.
+            // A wire that broke after a stop is that stop's end, not a failure, as a quest's session reads it.
             var stopped = await _driver.EndStoppedAsync(sessionId, stoppedFirst).ConfigureAwait(false);
             return Ended(stopped.State, stopped.Note);
         }
         catch (Exception error)
         {
-            // Everything but the shutdown above, a client timeout included (REV3), as an intake's twin.
+            // Everything but the shutdown above, a client timeout included, as an intake's twin.
             try
             {
                 await service.AdvanceAsync(sessionId, "failed", Observation.Failure(error.Message), ct: CancellationToken.None).ConfigureAwait(false);
@@ -315,7 +315,7 @@ internal sealed class DriverOpinions(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// How a reviewer's run ended, from its exit and its door (D46 §4): a clean exit is <c>completed</c>, whatever it said; a
+    /// How a reviewer's run ended, from its exit and its door: a clean exit is <c>completed</c>, whatever it said; a
     /// refused turn or another exit is <c>failed</c>. Whether it gave its opinion is the opinion's, which the host derives.
     /// </summary>
     internal static SessionConclusion Read(string opinion, int exitCode, string? turnFailed) =>

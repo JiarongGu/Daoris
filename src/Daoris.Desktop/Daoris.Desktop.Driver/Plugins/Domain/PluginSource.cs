@@ -6,16 +6,15 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The package a plugin was installed from (PLUGDIST1a, D120 §4, the distribution design §5.7 step 5): its
+/// The package a plugin is installed from: its
 /// package id, its version, the SHA-512 of the package file in standard base64, and the source it came from: a
 /// package source's index address, or the whole path of the folder that held the file.
 /// </summary>
 public sealed record PluginPackageOrigin(string Package, string Version, string Sha512, string Source);
 
 /// <summary>
-/// Where an installed plugin came from (PLUG9 c, D103): the folder it was added from, a whole path; the
-/// offer of this install it was installed from, by id; or, since PLUGDIST1a (D120), the package it was
-/// installed from. Exactly one of the three.
+/// Where an installed plugin came from: the folder it is added from, a whole path; the
+/// offer of this install it is installed from, by id; or the package it is installed from. Exactly one of the three.
 /// </summary>
 /// <remarks>
 /// <para>It is <see cref="FileName"/> in the plugin's install folder, written into the staged copy before
@@ -24,12 +23,12 @@ public sealed record PluginPackageOrigin(string Package, string Version, string 
 ///
 /// <para><c>PluginSourceTests</c> holds the table: the file, its shapes, and each problem in its words.</para>
 ///
-/// <para>The record and its rules are pure (STRUCT3a, FLAT1b-i); <c>Read</c>, <c>Write</c> and <c>FromFolder</c> touch the
+/// <para>The record and its rules are pure; <c>Read</c>, <c>Write</c> and <c>FromFolder</c> touch the
 /// machine through <see cref="PluginFolders"/>, which does the I/O, so this file names none itself.</para>
 /// </remarks>
 /// <param name="Digest">
-/// The files an install from an offer copied (<see cref="PluginFolders.Digest"/>, LANDPIN3b), so a copy edited since is told
-/// from one as it was installed; null on a record written before it, and on a folder's or a package's.
+/// The files an install from an offer copied (<see cref="PluginFolders.Digest"/>), so a copy edited since is told
+/// from one as installed; null on a record without one, and on a folder's or a package's.
 /// </param>
 public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOrigin? Package = null, string? Digest = null)
 {
@@ -59,7 +58,7 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
 
     public static PluginSource FromPackage(PluginPackageOrigin package) => new(null, null, package);
 
-    /// <summary>Where it came from, said for a person: a package as the distribution design §6.2 says it.</summary>
+    /// <summary>Where it came from, said for a person.</summary>
     public string Said => Package is { } package
         ? $"{package.Source}, package `{package.Package}` {package.Version}"
         : Offer is { } offer ? $"Daoris's own plugins, offered by this install (`{offer}`)" : Folder!;
@@ -114,7 +113,7 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
             if (offer is not null)
             {
                 if (!PluginCatalog.IsId(offer)) return Unread("its offer is not a plugin id");
-                // LANDPIN3b: what the install copied; a record from before it has none, which is said as unjudged.
+                // What the install copied; a record without one is said as unjudged.
                 var digest = Text(root, "digest");
                 return digest is null || FilesDigest.IsMatch(digest)
                     ? (new PluginSource(null, offer, Digest: digest), null)
@@ -122,7 +121,7 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
             }
             if (package is null) return Unread("it names no folder, offer or package");
 
-            // A package's record (PLUGDIST1a), each field judged in the CLI's order and words.
+            // A package's record, each field judged in the CLI's order and words.
             if (!IsPackageId(package)) return Unread($"its package `{package}` is not a package id");
             if (Text(root, "version") is not { } version) return Unread("a package needs its `version`");
             if (!IsPackageVersion(version)) return Unread($"its version `{version}` is not a package version");
@@ -164,7 +163,7 @@ public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOr
     });
 }
 
-/// <summary>One thing an update changes (PLUG9 c): `version`, `command`, `points`, `harnesses`, `servers`, (HELPPLUG1b) `skills`, or (FABRIC-UNIT1e) `steps` and `resources`, each side as its manifest writes it; empty is none.</summary>
+/// <summary>One thing an update changes: `version`, `command`, `points`, `harnesses`, `servers`, `skills`, `steps` or `resources`, each side as its manifest writes it; empty is none.</summary>
 public sealed record PluginChange(string What, string Was, string Now)
 {
     /// <summary>What an update changes, from what is installed to what the source now holds, each as written.</summary>
@@ -177,9 +176,9 @@ public sealed record PluginChange(string What, string Was, string Now)
             ["points"] = string.Join(", ", manifest.Hooks?.Points ?? []),
             ["harnesses"] = string.Join("; ", manifest.Harnesses.Select(harness => $"{harness.Name} ({Line(harness.Command)})")),
             ["servers"] = string.Join("; ", manifest.Servers.Select(server => $"{server.Name} ({Line(server.Command)}){ServerTo(server)}")),
-            // HELPPLUG1b: each skill and who it is handed to.
+            // Each skill and who it is handed to.
             ["skills"] = string.Join("; ", manifest.Skills.Select(skill => $"{skill.Name} to {string.Join(" and ", skill.To)}")),
-            // FABRIC-UNIT1e (§D9): each step and resource in PluginSteps' words.
+            // Each step and resource in PluginSteps' words.
             ["steps"] = string.Join("; ", manifest.Steps.Select(PluginSteps.Said)),
             ["resources"] = string.Join("; ", manifest.Resources.Select(PluginSteps.Said)),
         };
@@ -191,8 +190,8 @@ public sealed record PluginChange(string What, string Was, string Now)
     }
 
     /// <summary>
-    /// Who a server is handed to and what it allows Ask Daoris, as an update's change says it (HELPPLUG1a): nothing for a
-    /// server handed to sessions alone, as every server was before, so an update that keeps one changes nothing. Twin: the
+    /// Who a server is handed to and what it allows Ask Daoris, as an update's change says it: nothing for a
+    /// server handed to sessions alone, so an update that keeps one changes nothing. Twin: the
     /// CLI's <c>serverTo</c>.
     /// </summary>
     private static string ServerTo(PluginServer server) =>

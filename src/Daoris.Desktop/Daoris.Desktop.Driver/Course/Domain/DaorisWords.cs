@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Daoris's own words to a session (COWORK1b, D188; the message-urgency design §2.2, §4.3): a reopen told, a step's go-on. Marked as
+/// Daoris's own words to a session: a reopen told, a step's go-on. Marked as
 /// Daoris's wherever they go, never the person's, and dropped where they are delivered once the fact they state no longer holds,
 /// judged by the key each carries, never by its sentence.
 /// </summary>
@@ -48,14 +48,14 @@ public static class DaorisWords
     }
 
     /// <summary>
-    /// Whether a new part an ended record's account cooling opens carries this word (LIMITSWITCH3, D137's note of 2026-10-26): the person's,
+    /// Whether a new part an ended record's account cooling opens carries this word: the person's,
     /// and Daoris's own that state a fact (a rebase, a reopen, a step's go-on), said as Daoris's. Never Daoris's resume words (a limit's,
     /// a restart's, a retry's), which ask for the record's own conversation, nor another agent's findings or a helper's answer, which
     /// go to the person.
     /// </summary>
     public static bool NewPartCarries(SaidWordView word) => word.Persons || (word.Daoris && !DaorisKeys.IsResume(word.Key));
 
-    /// <summary>Tell a word of Daoris's it was delivered; a listener's failure is its own.</summary>
+    /// <summary>Tell a word of Daoris's it is delivered; a listener's failure is its own.</summary>
     internal static void Delivered(ChatMessage word)
     {
         try
@@ -64,12 +64,12 @@ public static class DaorisWords
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
-            // The word went either way: what forgets it was told is the telling's own memory.
+            // The word went either way: what forgets it is told is the telling's own memory.
         }
     }
 
     /// <summary>
-    /// The note a word of Daoris's leaves where it was dropped: its code, which the page words as <c>work.conversation.dropped</c>, and
+    /// The note a word of Daoris's leaves where it is dropped: its code, which the page words as <c>work.conversation.dropped</c>, and
     /// the word's id where the record showed it held, so the page settles it there.
     /// </summary>
     public static SessionEvent Dropped(ChatMessage word) => new()
@@ -97,7 +97,7 @@ public static class DaorisWords
 }
 
 /// <summary>
-/// The mark a word of Daoris's carries to a running session (COWORK1b): its fact's key, the judge of whether that fact still holds
+/// The mark a word of Daoris's carries to a running session: its fact's key, the judge of whether that fact still holds
 /// where the word is delivered, and who is told it went.
 /// </summary>
 /// <param name="Key">The fact's key (<see cref="DaorisKeys"/>), as the word on a record keeps it.</param>
@@ -114,7 +114,7 @@ public sealed record DaorisWord(string Key)
 public sealed record DaorisFact(string Kind, string Quest, string Machine, long Sequence);
 
 /// <summary>
-/// The keys Daoris's facts give their words (COWORK1b, the message-urgency design §6): a reopen's, the quest and the reopen's machine
+/// The keys Daoris's facts give their words: a reopen's, the quest and the reopen's machine
 /// and sequence; a step's go-on, the step and the submission it grew from. One word per key on a record, and what a word's fact is
 /// judged by, never its sentence.
 /// </summary>
@@ -136,13 +136,13 @@ public static class DaorisKeys
     public const string RebaseKind = RebaseKeys.Kind;
 
     /// <summary>
-    /// The rebase words' key (LANDREBASE1): the session an automatic landing refused for a conflict, and the tip that conflicted, so a
+    /// The rebase words' key: the session an automatic landing refused for a conflict, and the tip that conflicted, so a
     /// look that tries the same tip again keeps one word. No quest's fact: <see cref="Read"/> names none, so the word waits as it is.
     /// </summary>
     public static string Rebase(string session, string tip) => RebaseKeys.Of(session, tip);
 
     /// <summary>
-    /// The commit a rebase word's key names (<see cref="Rebase"/>), which the line may hold since (LIMITSWITCH3); null for any other key.
+    /// The commit a rebase word's key names (<see cref="Rebase"/>), which the line may hold since; null for any other key.
     /// Read from the end, since a session's name may hold a slash (a teammate's).
     /// </summary>
     public static string? RebaseTipOf(string? key) => RebaseKeys.TipOf(key);
@@ -150,7 +150,7 @@ public static class DaorisKeys
     public const string CarryKind = CarryKeys.Kind;
 
     /// <summary>
-    /// The words an Accept says to a session it carries on, to commit its tree or resolve its conflict (LANDBACK1 part 1): the session,
+    /// The words an Accept says to a session it carries on, to commit its tree or resolve its conflict: the session,
     /// what it is carried on for and which of the Accept's two carry-ons this is. Not a resume (<see cref="IsResume"/>): the words state
     /// a fact about the tree, so a new part an account's cooling opens carries them (<see cref="DaorisWords.NewPartCarries"/>). No quest's
     /// fact: <see cref="Read"/> names none.
@@ -163,8 +163,8 @@ public static class DaorisKeys
     public const string TransientRetryKind = "transient-retry";
 
     /// <summary>
-    /// Daoris's go-on's key in a transient episode (AGENTERRORS1a, the agent-errors design §5.1): the session and the episode, named by
-    /// when its first failure was read, so one episode keeps one word. No quest's fact: <see cref="Read"/> names none.
+    /// Daoris's go-on's key in a transient episode: the session and the episode, named by
+    /// when its first failure is read, so one episode keeps one word. No quest's fact: <see cref="Read"/> names none.
     /// </summary>
     public static string TransientRetry(string session, DateTimeOffset episode) =>
         $"{TransientRetryKind}/{session}/{episode.UtcDateTime.ToString("yyyy-MM-dd'T'HH-mm-ss'Z'", System.Globalization.CultureInfo.InvariantCulture)}";
@@ -175,7 +175,7 @@ public static class DaorisKeys
     public const string TransientReleaseKind = "transient-release";
 
     /// <summary>
-    /// Daoris's go-on's key at <i>Try again</i>'s step-1 resume (AGENTERRORS1a2, the agent-errors design §5.1): the session and the end the
+    /// Daoris's go-on's key at <i>Try again</i>'s resume: the session and the end the
     /// release names, since <see cref="TransientRetry"/> names no episode across runs, so a start tried again at a later look keeps one word.
     /// No quest's fact: <see cref="Read"/> names none.
     /// </summary>
@@ -186,7 +186,7 @@ public static class DaorisKeys
     public const string WatchKind = WatchKeys.Kind;
 
     /// <summary>
-    /// The watcher's word to a quest session seen quiet (SESSWATCH1b, the session-watch design §2.1): the session and its quiet episode, so
+    /// The watcher's word to a quest session seen quiet: the session and its quiet episode, so
     /// one episode keeps one word. No quest's fact: <see cref="Read"/> names none.
     /// </summary>
     public static string Watch(string session, int episode) => WatchKeys.Of(session, episode);
@@ -199,19 +199,19 @@ public static class DaorisKeys
     public static bool IsResume(string? key) => IsLimitReset(key) || IsRestart(key) || IsTransientRelease(key);
 
     /// <summary>
-    /// The limit word's key (LIMITRESUME1, D206 §3.3 step 1, §3.5): the session its account's limit cut off, and the cool-off's
+    /// The limit word's key: the session its account's limit cut off, and the cool-off's
     /// <c>until</c> that held it, so a wake tried again at a later look keeps one word. No quest's fact: <see cref="Read"/> names none.
     /// </summary>
     public static string LimitReset(string session, DateTimeOffset until) =>
         LimitReset(session, until.UtcDateTime.ToString("yyyy-MM-dd'T'HH-mm-ss'Z'", System.Globalization.CultureInfo.InvariantCulture));
 
     /// <summary>
-    /// The limit word's key for a driven line (LIMITRESUME1b): the <c>until</c> as its cooling note said it, so a start tried again
+    /// The limit word's key for a driven line: the <c>until</c> as its cooling note said it, so a start tried again
     /// for the same cool-off keeps one word.
     /// </summary>
     public static string LimitReset(string session, string until) => $"{LimitResetKind}/{session}/{until}";
 
-    /// <summary>Whether a word's key is a limit word's (<see cref="LimitReset"/>): what every refusal takes off first (D206 §3.5).</summary>
+    /// <summary>Whether a word's key is a limit word's (<see cref="LimitReset"/>): what every refusal takes off first.</summary>
     public static bool IsLimitReset(string? key) => key?.StartsWith(LimitResetKind + "/", StringComparison.Ordinal) == true;
 
     /// <summary>The fact a key names; null for none, or a key that is not one of Daoris's facts.</summary>

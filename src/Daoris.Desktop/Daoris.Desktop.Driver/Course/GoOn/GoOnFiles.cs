@@ -5,12 +5,12 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What this machine keeps beside a session's transcript for its words to go on (MSG1b, MSG1g), each
+/// What this machine keeps beside a session's transcript for its words to go on, each
 /// <c>&lt;home&gt;/sessions/&lt;session&gt;.&lt;kind&gt;.json</c>: a mark (<see cref="GoOnMarks"/>) and the person's choice of a new
 /// session (<see cref="NewSessionChoices"/>), read without trusting their shape and written whole, atomically, as BOM-less UTF-8 with LF.
 /// </summary>
 /// <remarks>
-/// STRUCT3h, D166's note: the stores decide what is kept and whether a failed write is lost; this
+/// The stores decide what is kept and whether a failed write is lost; this
 /// reads and writes it. A file that does not read is nothing kept; a write that fails throws.
 /// </remarks>
 internal static class GoOnFiles
@@ -27,7 +27,7 @@ internal static class GoOnFiles
             writer.WriteEndArray();
             writer.WriteString("why", why);
             writer.WriteString("at", Moments.Write(at));
-            // COWORK1e: the agent an answers-alone mark was held for, added beside the rest; a mark from before has none.
+            // The agent an answers-alone mark is held for, added beside the rest; a mark from before has none.
             if (agent is { Length: > 0 }) writer.WriteString("agent", agent);
             writer.WriteEndObject();
         });
@@ -98,7 +98,7 @@ internal static class GoOnFiles
         }
     }
 
-    /// <summary>The reopens a session was told of (FABRIC-CLOSE1c8, <see cref="ReopenMarks"/>) written to <paramref name="path"/>, its folder made where it is not.</summary>
+    /// <summary>The reopens a session is told of (<see cref="ReopenMarks"/>) written to <paramref name="path"/>, its folder made where it is not.</summary>
     public static void WriteTold(string path, IReadOnlyList<ReopenTold> told)
     {
         JsonFile.Write(path, writer =>

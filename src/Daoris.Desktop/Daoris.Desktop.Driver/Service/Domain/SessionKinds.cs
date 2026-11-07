@@ -6,9 +6,9 @@ namespace Daoris.Driver;
 /// </summary>
 public static class SessionKinds
 {
-    /// <summary>A record's kind where a person's quest is planned into a session (D49 §3): what a host that answers none is read as.</summary>
+    /// <summary>A record's kind where a person's quest is planned into a session: what a host that answers none is read as.</summary>
     public const string Driven = "driven";
 
-    /// <summary>A record's kind where a person opened a conversation, and the kind the driver's own intakes, helpers and reviewers keep (D65, D155, D163).</summary>
+    /// <summary>A record's kind where a person opened a conversation, and the kind the driver's own intakes, helpers and reviewers keep.</summary>
     public const string Chat = "chat";
 }

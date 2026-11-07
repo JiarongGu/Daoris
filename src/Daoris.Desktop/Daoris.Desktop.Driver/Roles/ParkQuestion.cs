@@ -6,8 +6,8 @@ namespace Daoris.Driver;
 /// <summary>
 /// A session's question as <c>question_ask</c> wrote it: its id, the session, the agent's words, the answers it offers, the one it
 /// recommends by number from 1 (null for none, or one that names no answer), by when as it said, when it asked, and why it recommends
-/// that answer (QUESTIONUI1a; null with none recommended), and the agent's mark that the question is the owner's alone (SUPERVISOR1b;
-/// null for none), read as written, a mark this build does not know included: the supervisor answers no marked question.
+/// that answer (null with none recommended), and the agent's mark that the question is the owner's alone
+/// (null for none), read as written, a mark this build does not know included: the supervisor answers no marked question.
 /// </summary>
 public sealed record ParkQuestion(
     string Id, string Session, string Question, IReadOnlyList<ParkQuestionChoice> Choices, int? Recommend, string? By, DateTimeOffset At,
@@ -17,7 +17,7 @@ public sealed record ParkQuestion(
 public sealed record ParkQuestionChoice(string Label, string Does);
 
 /// <summary>
-/// The question a file holds, read to the writer's bounds (PARKVIEW1): the rule the supervisor's decisions memory and the question's file share,
+/// The question a file holds, read to the writer's bounds: the rule the supervisor's decisions memory and the question's file share,
 /// Roles' since it is the lowest that reads it. <see cref="QuestionFiles"/> keeps the file and names these.
 /// </summary>
 internal static class ParkQuestions
@@ -54,9 +54,9 @@ internal static class ParkQuestions
 
         int? recommend = root.TryGetProperty("recommend", out var number) && number.ValueKind == JsonValueKind.Number
             && number.TryGetInt32(out var chosen) && chosen >= 1 && chosen <= choices.Count ? chosen : null;
-        // Its reason explains the recommendation (QUESTIONUI1a): with none recommended, there is nothing for it to explain.
+        // Its reason explains the recommendation: with none recommended, there is nothing for it to explain.
         var why = recommend is not null && Text(root, "why") is { } reason && !string.IsNullOrWhiteSpace(reason) ? reason : null;
-        // The agent's mark that the question is the owner's alone (SUPERVISOR1b), any words at all: the supervisor answers none of it.
+        // The agent's mark that the question is the owner's alone, any words at all: the supervisor answers none of it.
         var owner = Text(root, "owner") is { } mark && !string.IsNullOrWhiteSpace(mark) ? mark : null;
         return new ParkQuestion(id, session, question, choices, recommend, by, Moments.Read(root, "at") ?? written(), why, owner);
     }

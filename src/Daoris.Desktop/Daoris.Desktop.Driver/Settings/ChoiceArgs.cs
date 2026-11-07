@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The words of <c>daoris place</c> and <c>settings</c> read (PUSH1f2a, PUSH1f2b; FOUNDATION1 mod-iii): the operands, the flags and the numbers a
+/// The words of <c>daoris place</c> and <c>settings</c> read: the operands, the flags and the numbers a
 /// verb takes from its arguments, in the CLI's own reading, which the settings' own verbs and the verbs the subdomains above own
 /// (<see cref="ChoiceVerb"/>) read alike.
 /// </summary>
@@ -38,7 +38,7 @@ public static class ChoiceArgs
     }
 
     /// <summary>
-    /// A press no route takes (D171's PUSH1f note), acting alone: the choice written to <paramref name="path"/> and its words said, as
+    /// A press no route takes, acting alone: the choice written to <paramref name="path"/> and its words said, as
     /// the settings' own presses are made.
     /// </summary>
     public static ChoicePress Alone(string verb, string path, Func<DriverConfig, DriverConfig> change, Func<int> words) =>
@@ -55,7 +55,7 @@ public static class ChoiceArgs
     public static JsonObject Scoped(string? workspace, string name) =>
         workspace is not null ? new JsonObject { ["workspace"] = workspace } : new JsonObject { ["repository"] = name };
 
-    /// <summary>The verb's name, the first operand after it: a flag's value is never the name (REV3).</summary>
+    /// <summary>The verb's name, the first operand after it: a flag's value is never the name.</summary>
     public static string Named(IReadOnlyList<string> args, string verb) =>
         Operands(args, ["--at", "--session"]).ElementAtOrDefault(1)
         ?? throw new ChoiceWords($"`driver {verb}` needs a name — e.g. `daoris {Tree(verb)} aurora-engine`.");

@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the course's executors ask of the chat runner (D49 §3): open a conversation, place and run Ask Daoris's, go on in an ended
-/// conversation's own, walk an actor's order and say what a start was told. Course declares it and the chat runner in Loop implements it,
-/// exactly as the executors called the runner before it was a port; the places are Course's own records.
+/// What the course's executors ask of the chat runner: open a conversation, place and run Ask Daoris's, go on in an ended
+/// conversation's own, walk an actor's order and say what a start is told. Course declares it and the chat runner in Loop implements it;
+/// the places are Course's own records.
 /// </summary>
 internal interface IChatRunning
 {

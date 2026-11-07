@@ -1,8 +1,8 @@
 namespace Daoris.Driver;
 
-/// <summary>What stopping a turn did (CONV4a).</summary>
+/// <summary>What stopping a turn did.</summary>
 /// <param name="Cancelled">
-/// A turn had reached the harness and was asked to stop. It ends on the harness's own word, as a
+/// A turn that has reached the harness is asked to stop. It ends on the harness's own word, as a
 /// <c>cancelled</c> turn in the record — this is the asking, not the ending.
 /// </param>
 /// <param name="Withdrawn">
@@ -11,35 +11,35 @@ namespace Daoris.Driver;
 /// </param>
 public sealed record TurnStop(bool Cancelled, IReadOnlyList<ChatMessage> Withdrawn)
 {
-    /// <summary>Nothing was running and nothing was waiting: an answer, never an error.</summary>
+    /// <summary>Nothing is running and nothing is waiting: an answer, never an error.</summary>
     public static readonly TurnStop Nothing = new(false, []);
 }
 
-/// <summary>What taking back or rewording one queued word did (QUEUEEDIT1a): a normal answer either way, never an error.</summary>
+/// <summary>What taking back or rewording one queued word did: a normal answer either way, never an error.</summary>
 public enum QueueEdit
 {
-    /// <summary>The word was still waiting, and is removed or reworded.</summary>
+    /// <summary>The word is still waiting, and is removed or reworded.</summary>
     Done,
 
     /// <summary>A turn already took it (or it is no word of this queue): nothing changed.</summary>
     Taken,
 }
 
-/// <summary>Where a conversation's turns stand, as the page is told it (CONV4a, CONV4b).</summary>
+/// <summary>Where a conversation's turns stand, as the page is told it.</summary>
 /// <param name="Taking">A turn is on its way to the harness or running there — what a stop would act on.</param>
 /// <param name="Queued">What the person sent that has not reached the harness, in the order sent.</param>
 /// <param name="LastTurnEnded">
-/// When this machine last saw one of its turns end (RAIL2), or null before any has. A live chat's last
+/// When this machine last saw one of its turns end, or null before any has. A live chat's last
 /// move: its record moves on state changes only, and writing it every turn would carry a chat's activity
-/// to a teammate's machine (D47 §4), so it is told here, machine-local, and never recorded.
+/// to a teammate's machine, so it is told here, machine-local, and never recorded.
 /// </param>
 /// <param name="Opening">
-/// The door is still opening (HELP4): what is queued waits for the session to be ready, not for a turn
+/// The door is still opening: what is queued waits for the session to be ready, not for a turn
 /// to end. The page says so; told only <paramref name="Taking"/>, a conversation's first words read as
 /// waiting behind a turn when nothing had answered yet.
 /// </param>
 /// <param name="Pressing">
-/// The person's press on a chat run's work holds the conversation (CHATFLOW1d, the chat-flow design §5.2 point 1): what is queued waits for
+/// The person's press on a chat run's work holds the conversation: what is queued waits for
 /// that press to answer, landed or refused, not for a turn. The page says so.
 /// </param>
 public sealed record ChatQueue(
@@ -52,8 +52,8 @@ public sealed record ChatQueue(
 }
 
 /// <summary>
-/// What a second opinion's send-back into a live conversation came to (CHATFLOW1e, the chat-flow design §6.1 (b), <c>ChatTurns.SendBackAsync</c>):
-/// three outcomes the findings' delivery keeps distinct, and two that say why nothing was taken.
+/// What a second opinion's send-back into a live conversation came to (<c>ChatTurns.SendBackAsync</c>):
+/// three outcomes the findings' delivery keeps distinct, and two that say why nothing is taken.
 /// </summary>
 public enum SendBack
 {
@@ -72,42 +72,42 @@ public enum SendBack
     /// <summary>No runner in this process holds the conversation: the findings wait, as a hand-over's box waits for a runner.</summary>
     NotHere,
 
-    /// <summary>An ended conversation its runner cannot resume (§6.1 (f)): the findings go to the person, never to a new session.</summary>
+    /// <summary>An ended conversation its runner cannot resume: the findings go to the person, never to a new session.</summary>
     CannotGoOn,
 }
 
-/// <summary>What became of a word said to a conversation (MSG1c, D137 §2.1), in the reach the record and the page speak of.</summary>
+/// <summary>What became of a word said to a conversation, in the reach the record and the page speak of.</summary>
 public enum TurnReach
 {
     /// <summary>No turn ran: it is the next turn, sent at once.</summary>
     Now,
 
-    /// <summary>Handed to the turn on the wire at once, read at the agent's next step (D136).</summary>
+    /// <summary>Handed to the turn on the wire at once, read at the agent's next step.</summary>
     NextStep,
 
-    /// <summary>Waiting for the running turn to end, then its own turn (CONV4a).</summary>
+    /// <summary>Waiting for the running turn to end, then its own turn.</summary>
     TurnEnd,
 
     /// <summary>
-    /// The person's *Send now* (STEER2a, D136's 2026-10-16 note): handed to the turn on the wire by the steering extension,
+    /// The person's *Send now*: handed to the turn on the wire by the steering extension,
     /// which cuts the step in flight, and taken there; spelled <c>now</c>.
     /// </summary>
     Steered,
 }
 
-/// <summary>What keeping a word for a conversation's turns did (COWORK1c): where it reaches, and the record's id for it.</summary>
-/// <param name="Word">The id its record kept it under; null where the record would not keep it, and it waits here alone as before.</param>
+/// <summary>What keeping a word for a conversation's turns did: where it reaches, and the record's id for it.</summary>
+/// <param name="Word">The id its record kept it under; null where the record would not keep it, and it waits here alone.</param>
 public sealed record TurnKept(TurnReach Reach, string? Word)
 {
     /// <summary>
-    /// The record answered the say <b>settled</b> (FOUNDATION1 row p, the design §3.4 rule 5): the word's key left a record of the line, so this
-    /// is a retry of a word held already, and nothing was kept, queued, steered, attempted or taken. <see cref="Word"/> is null.
+    /// The record answered the say <b>settled</b>: the word's key left a record of the line, so this
+    /// is a retry of a word held already, and nothing is kept, queued, steered, attempted or taken. <see cref="Word"/> is null.
     /// </summary>
     public bool Settled { get; init; }
 
     /// <summary>
-    /// The record is no longer its line's head (FOUNDATION1d-ii, the foundation design §3.4 rule 2): the say door refused the word <c>continued</c>,
-    /// naming this head, and nothing was queued, steered, attempted or written here. <see cref="Word"/> is null; the caller says the word there.
+    /// The record is no longer its line's head: the say door refused the word <c>continued</c>,
+    /// naming this head, and nothing is queued, steered, attempted or written here. <see cref="Word"/> is null; the caller says the word there.
     /// </summary>
     public string? Head { get; init; }
 
@@ -115,45 +115,44 @@ public sealed record TurnKept(TurnReach Reach, string? Word)
     public SentNow? Now { get; init; }
 }
 
-/// <summary>What the person's words to a live chat did (COWORK1c): when they reach it in the record's spelling, and the record's id for them.</summary>
+/// <summary>What the person's words to a live chat did: when they reach it in the record's spelling, and the record's id for them.</summary>
 /// <param name="Reaches">As <c>ChatRunner.Say</c> spells it: <c>next-step</c>, <c>turn-end</c>, <c>now</c>, or null where they are its turn at once.</param>
 /// <param name="Word">The id the record kept them under; null where nothing kept them (a text-only door, a record that would not).</param>
 public sealed record ChatSaid(string? Reaches, string? Word)
 {
-    /// <summary>The say was answered settled (row p): a retry of a word held already, nothing kept, queued, steered, attempted or taken.</summary>
+    /// <summary>The say is answered settled: a retry of a word held already, nothing kept, queued, steered, attempted or taken.</summary>
     public bool Settled { get; init; }
 
-    /// <summary>The say was refused <c>continued</c> (FOUNDATION1d-ii): the line's head it named, where the word is said instead; nothing kept here.</summary>
+    /// <summary>The say is refused <c>continued</c>: the line's head it named, where the word is said instead; nothing kept here.</summary>
     public string? Head { get; init; }
 
     /// <summary>The person's *Send now*: what the door did with it.</summary>
     public SentNow? Now { get; init; }
 }
 
-/// <summary>When what a person tells a driven session reaches it (STEER1, D136).</summary>
+/// <summary>When what a person tells a driven session reaches it.</summary>
 public enum DrivenReach
 {
-    /// <summary>Held, and the next prompt of the same session when its turn ends (SESS3, D90).</summary>
+    /// <summary>Held, and the next prompt of the same session when its turn ends.</summary>
     TurnEnd,
 
     /// <summary>
-    /// Sent at once, as a prompt the agent takes during its turn: Claude Code folds it in at its next step
-    /// (docs/2026-10-03-steer-evidence.md §1).
+    /// Sent at once, as a prompt the agent takes during its turn: Claude Code folds it in at its next step.
     /// </summary>
     NextStep,
 
     /// <summary>
-    /// The person's *Send now* (STEER2a): steered into the running turn at once, cutting the step in flight
-    /// (docs/2026-10-03-steer-evidence.md §2, §6 turn B); spelled <c>now</c>. A word's reach only, never the inbox's.
+    /// The person's *Send now*: steered into the running turn at once, cutting the step in flight;
+    /// spelled <c>now</c>. A word's reach only, never the inbox's.
     /// </summary>
     Steered,
 }
 
 /// <summary>
-/// What a running session's door can do with a word while a turn runs (COWORK1a, the message-urgency design §3.0), which the page
+/// What a running session's door can do with a word while a turn runs, which the page
 /// offers the composer's levels and the keeping stop by.
 /// </summary>
-/// <param name="Steers">Its agent steers (STEER2a): a word at <c>now</c> cuts its step in flight.</param>
+/// <param name="Steers">Its agent steers: a word at <c>now</c> cuts its step in flight.</param>
 /// <param name="KeepingStop">
 /// It can stop a turn and keep the session, so the keeping stop is offered beside words held for the turn's end: a protocol door
 /// (<c>session/cancel</c>) and Claude Code's conversation (its <c>interrupt</c>); never the native door's run.
@@ -166,7 +165,7 @@ public sealed record TurnDoor(bool Steers, bool KeepingStop);
 public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer)
 {
     /// <summary>
-    /// What the run waits for before it goes on (STEER2a), which is no turn and no stop reason: a steer the person's *Send now*
+    /// What the run waits for before it goes on, which is no turn and no stop reason: a steer the person's *Send now*
     /// sent, whose answer is where the words are taken; or a stop decided for the turn that just ended, still on its way, which
     /// must reach the wire before the held words' own turn does. Never faults. Null for the other two.
     /// </summary>
@@ -174,7 +173,7 @@ public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer)
 }
 
 /// <summary>
-/// What the person's *Send now* did with their words (STEER2a, D136's 2026-10-16 note): the answer <c>SESSION_INPUT</c> gives
+/// What the person's *Send now* did with their words: the answer <c>SESSION_INPUT</c> gives
 /// with <c>now</c>, for a driven session and a conversation alike.
 /// </summary>
 /// <param name="Reaches">
@@ -182,17 +181,17 @@ public sealed record DrivenNext(ChatMessage? Held, Task<string>? Answer)
 /// <c>turn-end</c>; null where no turn ran and they are its turn at once, or where the door is not known yet.
 /// </param>
 /// <param name="Now">
-/// The press was carried out: steered into the running turn, or taken at once because no turn ran. Never a turn stopped: no word
-/// stops one (COWORK1a, D188 point 1), and the keeping stop is the person's own press.
+/// The press is carried out: steered into the running turn, or taken at once because no turn ran. Never a turn stopped: no word
+/// stops one, and the keeping stop is the person's own press.
 /// </param>
-/// <param name="Why">Where it was not, why, by a <see cref="SendNowWhy"/> code; null where it was.</param>
+/// <param name="Why">Where it is not, why, by a <see cref="SendNowWhy"/> code; null where it is.</param>
 public sealed record SentNow(string? Reaches, bool Now, string? Why);
 
-/// <summary>Why the person's *Send now* was not carried out (STEER2a): codes the page words itself. The words still go as before.</summary>
+/// <summary>Why the person's *Send now* is not carried out: codes the page words itself. The words still go.</summary>
 public static class SendNowWhy
 {
     /// <summary>
-    /// A turn runs on a door whose agent does not steer, and no word interrupts it (COWORK1a, D188 point 3): the words go at its
+    /// A turn runs on a door whose agent does not steer, and no word interrupts it: the words go at its
     /// next step on a door that takes words then, and are held for its turn's end on any other (a protocol door that holds words,
     /// Claude Code's conversation, the native door's driven run), or go at once on a text-only door. Where the door can stop a turn
     /// and keep the session, the keeping stop is the person's own press beside the held words.
@@ -205,12 +204,12 @@ public static class SendNowWhy
     /// <summary>
     /// On a next-step door whose agent cannot steer, other words wait before these or are on their way to the agent (a word sent
     /// at its next step, a helper's answer waiting as its own turn): the words go behind them, at the next step or as the next
-    /// turn, and nothing is stopped, since a stop would answer a word on its way cancelled while the agent may still act on it
-    /// (D136 point 4). Where the agent steers, the words are steered past them instead.
+    /// turn, and nothing is stopped, since a stop would answer a word on its way cancelled while the agent may still act on it.
+    /// Where the agent steers, the words are steered past them instead.
     /// </summary>
     public const string Behind = "behind";
 
-    /// <summary>A reach in the record's spelling (D136 §3), <c>now</c> for a steer.</summary>
+    /// <summary>A reach in the record's spelling, <c>now</c> for a steer.</summary>
     public static string? Spelled(DrivenReach? reach) => reach switch
     {
         DrivenReach.NextStep => "next-step",
@@ -219,7 +218,7 @@ public static class SendNowWhy
         _ => null,
     };
 
-    /// <summary>A conversation's reach in the record's spelling (MSG1c), <c>now</c> for a steer and null for a turn taken at once.</summary>
+    /// <summary>A conversation's reach in the record's spelling, <c>now</c> for a steer and null for a turn taken at once.</summary>
     public static string? Spelled(TurnReach? reach) => reach switch
     {
         TurnReach.NextStep => "next-step",

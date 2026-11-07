@@ -1,33 +1,32 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a run that resumes a harness conversation carries, and what it learns on the way (ANSWER1a, D131 §1; MSG1b, D137
-/// §2.2): the conversation, the person's words that are its next prompt, and the run's first line; whether the agent would
-/// not resume it, whether the native door's harness named its conversation at all, and whether the words went.
+/// What a run that resumes a harness conversation carries, and what it learns on the way: the conversation, the person's words
+/// that are its next prompt, and the run's first line; whether the agent would not resume it, whether the native door's harness named its conversation at all, and whether the words went.
 /// </summary>
 /// <param name="words">The person's words waiting on the record, in the order said: a park's answer, or words to an ended record.</param>
 /// <param name="appendix">
-/// What the prompt carries after the person's words: the answers to the go-aheads it asked, which it was not handed at its
-/// start (KNOWUSE1a). The record keeps only the person's words as theirs. Null or empty for none.
+/// What the prompt carries after the person's words: the answers to the go-aheads it asked, which it is not handed at its
+/// start. The record keeps only the person's words as theirs. Null or empty for none.
 /// </param>
 /// <param name="files">
-/// Where each word's files are kept (MSG1d3, D137 §2.4): the record names them, and the run is handed where they lie, as a
-/// conversation's message is (CONV4c). Read once, as the ask is made. Null hands the words alone.
+/// Where each word's files are kept: the record names them, and the run is handed where they lie, as a
+/// conversation's message is. Read once, as the ask is made. Null hands the words alone.
 /// </param>
 internal sealed class ResumeAsk(
     string conversation, IReadOnlyList<SaidWordView> words, string firstLine, string? appendix = null,
     Func<SaidWordView, IReadOnlyList<KeptFile>>? files = null) : IResumeState
 {
-    /// <summary>The first line with its lines by code (CONVNOTE2a): its English is the line the ask keeps.</summary>
+    /// <summary>The first line with its lines by code: its English is the line the ask keeps.</summary>
     public ResumeAsk(
         string conversation, IReadOnlyList<SaidWordView> words, Noted firstLine, string? appendix = null,
         Func<SaidWordView, IReadOnlyList<KeptFile>>? files = null)
         : this(conversation, words, firstLine.Note, appendix, files) => FirstParts = firstLine.Parts;
 
-    /// <summary>The first line's parts, where it was handed with them; null for English alone.</summary>
+    /// <summary>The first line's parts, where it is handed with them; null for English alone.</summary>
     private IReadOnlyList<NotePart>? FirstParts { get; }
 
-    // The words it carries, narrowed in place to those the record named marked (FOUNDATION1 row p, <see cref="Narrow"/>): every holder of this ask, the
+    // The words it carries, narrowed in place to those the record named marked (<see cref="Narrow"/>): every holder of this ask, the
     // door that sends it and the dispatcher that takes its words off the record, reads the same words, so a word left out is neither sent nor taken off.
     private readonly List<SaidWordView> _words = [.. words];
 
@@ -36,8 +35,7 @@ internal sealed class ResumeAsk(
         [.. words.Select(word => files is null || word.Files.Count == 0 ? Array.Empty<KeptFile>() : files(word))];
 
     /// <summary>
-    /// Keeps the words the record named marked attempted, and those it keeps under no id (a word kept nowhere has none to name) (row p, the
-    /// design §3.4 rule 5): an answer naming fewer words than asked sends only those. The rest are left waiting on their record, which is
+    /// Keeps the words the record named marked attempted, and those it keeps under no id (a word kept nowhere has none to name): an answer naming fewer words than asked sends only those. The rest are left waiting on their record, which is
     /// theirs, never taken off by this ask; its prompt, blocks, files and ids are read again from the words that stay.
     /// </summary>
     internal void Narrow(IReadOnlyCollection<string> marked)
@@ -53,7 +51,7 @@ internal sealed class ResumeAsk(
     public string Conversation => conversation;
 
     /// <summary>
-    /// The person's words of the turns its account's limit refused (LIMITRESUME1c, D206 §3.5; <see cref="LimitHeld"/>), handed again
+    /// The person's words of the turns its account's limit refused (<see cref="LimitHeld"/>), handed again
     /// first, each with its files: the record already shows them where they were said, so the opening never says them again, and no
     /// id takes them off anything. Empty for every other resume.
     /// </summary>
@@ -63,27 +61,27 @@ internal sealed class ResumeAsk(
     public IReadOnlyList<SaidWordView> Words => _words;
 
     /// <summary>
-    /// Every word's files in the order said (MSG1d3): the protocol door's links after the words' blocks, and what a run is
-    /// handed a read of. Empty where none was said, or none is kept any more.
+    /// Every word's files in the order said: the protocol door's links after the words' blocks, and what a run is
+    /// handed a read of. Empty where none is said, or none is kept.
     /// </summary>
     public IReadOnlyList<KeptFile> Files => [.. Resent.SelectMany(word => word.Files), .. _files.SelectMany(each => each)];
 
     /// <summary>
     /// The person's words joined by a blank line, as the native door's one argument carries them: each with where its files
-    /// are kept beneath it, as a conversation's message names them on that door (MSG1d3, <see cref="ChatFiles.PathLines"/>).
+    /// are kept beneath it, as a conversation's message names them on that door (<see cref="ChatFiles.PathLines"/>).
     /// </summary>
-    /// <remarks>A word pressed as an answer of its park's question is handed as that answer chosen (<see cref="SaidWordView.Handed"/>, PARKVIEW1).</remarks>
+    /// <remarks>A word pressed as an answer of its park's question is handed as that answer chosen (<see cref="SaidWordView.Handed"/>).</remarks>
     public string Answer => string.Join(
         "\n\n",
         [.. Resent.Select(word => word.Text + ChatFiles.PathLines(word.Files)), .. _words.Select((word, at) => word.Handed + ChatFiles.PathLines(_files[at]))]);
 
     /// <summary>
     /// What the conversation is resumed with on the native door: the words, then the appendix, after a blank line. Never the standing
-    /// block, which its first message carried (CONTEXTONE1c): a go-on is the same conversation.
+    /// block, which its first message carried: a go-on is the same conversation.
     /// </summary>
     public string Prompt => string.Join("\n\n", new[] { Answer }.Concat(Afterwards));
 
-    /// <summary>The same on the protocol door (D137 §2.2): each word its own text block in order, then the appendix as one more.</summary>
+    /// <summary>The same on the protocol door: each word its own text block in order, then the appendix as one more.</summary>
     public IReadOnlyList<string> Blocks =>
         [.. Resent.Select(word => word.Text), .. _words.Select(word => word.Handed), .. Afterwards];
 
@@ -99,12 +97,12 @@ internal sealed class ResumeAsk(
     public bool Named { get; set; }
 
     /// <summary>
-    /// Whether the native door's one retry of this resume was made (SESSCTX1c, D189's amendment): a harness that ended on a failed exit
+    /// Whether the native door's one retry of this resume is made: a harness that ended on a failed exit
     /// before it named its conversation is tried once more, and only a second such end reads as <see cref="ContinueWhy.Exited"/>.
     /// </summary>
     public bool Retried { get; private set; }
 
-    /// <summary>The same resume, tried once more (SESSCTX1c): nothing the first try learned of the wire stands, and its opening stays said.</summary>
+    /// <summary>The same resume, tried once more: nothing the first try learned of the wire stands, and its opening stays said.</summary>
     public void Again()
     {
         Retried = true;
@@ -114,29 +112,29 @@ internal sealed class ResumeAsk(
 
     bool IResumeState.Refused => Refused is not null;
 
-    /// <summary>The native harness opened the conversation its input carried the words to, so they went (MSG1b).</summary>
+    /// <summary>The native harness opened the conversation its input carried the words to, so they went.</summary>
     void IResumeState.Opened() => Named = Prompted = true;
 
     /// <summary>
-    /// The words went to the session (MSG1b): the protocol door's first prompt is on the wire, or the native door's harness
+    /// The words went to the session: the protocol door's first prompt is on the wire, or the native door's harness
     /// opened the conversation its argument carried them to. Only then are they taken off the record.
     /// </summary>
     public bool Prompted { get; set; }
 
-    /// <summary>The run's opening was written to the record: the person's words are there, beneath what they answer.</summary>
+    /// <summary>The run's opening is written to the record: the person's words are there, beneath what they answer.</summary>
     public bool Spoken { get; private set; }
 
     /// <summary>
-    /// The second opinions whose findings are among the words (XAGENT1e, D155 point 7), each once, in the order handed: what
+    /// The second opinions whose findings are among the words, each once, in the order handed: what
     /// the run's end reads the answers of.
     /// </summary>
     public IReadOnlyList<string> Opinions => [.. _words.Select(word => word.By).OfType<string>().Distinct(StringComparer.Ordinal)];
 
     /// <summary>
     /// The record's opening for the resumed run: the driver's first line, then each of the person's words as theirs, under
-    /// the id their record gave it, so the words shown while they waited pair with where the session took them (D137 §3.1).
-    /// Another agent's findings (XAGENT1e, D155 point 7) are never the person's: they are the turn Daoris composed around that
-    /// agent's claims, naming the opinion they are from. Daoris's own words (COWORK1b) are Daoris's, by their mark.
+    /// the id their record gave it, so the words shown while they waited pair with where the session took them.
+    /// Another agent's findings are never the person's: they are the turn Daoris composed around that
+    /// agent's claims, naming the opinion they are from. Daoris's own words are Daoris's, by their mark.
     /// </summary>
     public IReadOnlyList<SessionEvent> Opening()
     {
@@ -148,12 +146,12 @@ internal sealed class ResumeAsk(
             {
                 Kind = SessionEventKind.User,
                 Origin = word.Persons ? "person" : "target",
-                // SUPERVISOR1a-i: the supervisor's answer keeps its author where the session took it.
+                // The supervisor's answer keeps its author where the session took it.
                 From = word.Daoris ? DaorisWords.From : word.Supervisors ? SupervisorHanded.From : null,
                 Opinion = word.By,
-                // COWORK1e: a helper's answer by its mark, which the answers-alone bound counts (AnswersAlone).
+                // A helper's answer by its mark, which the answers-alone bound counts (AnswersAlone).
                 Helper = word.Helper,
-                // PARKVIEW1: a word pressed as an answer of its park's question keeps that mark where the session took it.
+                // A word pressed as an answer of its park's question keeps that mark where the session took it.
                 Choice = word.Choice,
                 Id = word.Id,
                 Text = word.Text,

@@ -1,14 +1,14 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An older build's hand-over ask (MIXAGENT1a-i, D163 §2): <c>&lt;home&gt;/sessions/&lt;session&gt;.hand-over.json</c>, beside the
-/// session's marks, kept with when it was given (D143 point 4). This build keeps a hand-over as a move row in the store and writes no box;
+/// An older build's hand-over ask: <c>&lt;home&gt;/sessions/&lt;session&gt;.hand-over.json</c>, beside the
+/// session's marks, kept with when it is given. This build keeps a hand-over as a move row in the store and writes no box;
 /// a box left behind is imported once as the move it keeps (<see cref="HandOverBoxImport"/>) and holds its record from every go-on until then.
 /// </summary>
 /// <remarks>
 /// <para><b>This machine's, never the record's.</b> A file that does not read is no ask: nothing is handed over, which loses nothing.</para>
 ///
-/// <para>What is kept is this store's; the file and its format are <see cref="HandOverFiles"/>' (STRUCT3h, D166's note).</para>
+/// <para>What is kept is this store's; the file and its format are <see cref="HandOverFiles"/>'.</para>
 /// </remarks>
 public sealed class HandOverBox(string home)
 {
@@ -18,7 +18,7 @@ public sealed class HandOverBox(string home)
     public string PathOf(string session) => DaorisHome.Entry(home, HomeEntry.Sessions, session + Suffix);
 
     /// <summary>Keep the ask, replacing any before. An id that is not a session's keeps nothing.</summary>
-    /// <exception cref="IOException">The ask could not be written: the asker is told, rather than told it was kept.</exception>
+    /// <exception cref="IOException">The ask could not be written: the asker is told, rather than told it is kept.</exception>
     public void Write(string session, HandOverRequest request)
     {
         if (!SessionEventText.IsLocalId(session)) return;
@@ -35,7 +35,7 @@ public sealed class HandOverBox(string home)
             .Where(SessionEventText.IsLocalId)
             .Order(StringComparer.Ordinal)];
 
-    /// <summary>Take a session's box away: it was taken, or could not be. Nothing to take is no failure.</summary>
+    /// <summary>Take a session's box away: it is taken, or cannot be. Nothing to take is no failure.</summary>
     public void Clear(string session)
     {
         // A box left behind is judged again when it is taken, and refused if it no longer holds.
@@ -44,30 +44,30 @@ public sealed class HandOverBox(string home)
 }
 
 /// <summary>
-/// *Hand a conversation over* (MIXAGENT1a-i, D163, the mixed-agents design §2 and §5): a conversation goes on with another agent
+/// *Hand a conversation over*: a conversation goes on with another agent
 /// when its own account's allowance runs low. This is the ask's judge: it refuses what cannot be handed over by a code before
 /// anything is kept, and keeps the hand-over as a move row in the store, which the conversation's executor takes.
 /// </summary>
 /// <remarks>
-/// <b>Conversations only here.</b> A quest's session is <see cref="QuestHandOver"/>'s (MIXAGENT1a-ii); asked of this judge it is
+/// <b>Conversations only here.</b> A quest's session is <see cref="QuestHandOver"/>'s; asked of this judge it is
 /// refused <see cref="NotConversation"/>, saying where its door is. Ask Daoris's own
-/// conversations and intakes never go on elsewhere (D137 §2.2), and the conversation cannot be handed to the agent and account it
+/// conversations and intakes never go on elsewhere, and the conversation cannot be handed to the agent and account it
 /// runs on, nor while another hand-over waits, nor from a tree that is gone. The one path that moves Ask Daoris's conversation to
 /// another agent is no hand-over: its turn met a limit with no account of its agent left, and <see cref="LimitMove"/> goes on with its
-/// actor's next choice (LIMITGOON2, D205 §3.5(e)); the person's press and an agent's ask are still refused here.
+/// actor's next choice; the person's press and an agent's ask are still refused here.
 /// </remarks>
 public static class HandOver
 {
-    /// <summary>A quest's session where no driven roster is handed in (the shell's page press, a later row), or a conversation about a quest.</summary>
+    /// <summary>A quest's session where no driven roster is handed in (the shell's page press), or a conversation about a quest.</summary>
     public const string NotConversation = "not-conversation";
 
-    /// <summary>A quest's session whose quest is not open or taken any more (MIXAGENT1a-ii): no work is left to hand over.</summary>
+    /// <summary>A quest's session whose quest is not open or taken any more: no work is left to hand over.</summary>
     public const string QuestClosed = HandOverAskWhy.QuestClosed;
 
     /// <summary>A quest's session whose quest is not this machine's to carry on: taken elsewhere, or the session stood down.</summary>
     public const string QuestElsewhere = HandOverAskWhy.QuestElsewhere;
 
-    /// <summary>A quest's session whose take was lost to the person's own reopen of the work its step grew from (FABRIC-CLOSE1c20).</summary>
+    /// <summary>A quest's session whose take is lost to the person's own reopen of the work its step grew from.</summary>
     public const string QuestReopened = HandOverAskWhy.QuestReopened;
 
     /// <summary>A quest's session that is not the quest's last run on this machine, which a later session here carries.</summary>
@@ -97,14 +97,14 @@ public static class HandOver
     /// <summary>Another hand-over of it waits.</summary>
     public const string Waiting = HandOverAskWhy.Waiting;
 
-    /// <summary>The tree it ran in no longer exists, so the new conversation has nowhere to go on.</summary>
+    /// <summary>The tree it ran in is gone, so the new conversation has nowhere to go on.</summary>
     public const string TreeGone = HandOverAskWhy.TreeGone;
 
     /// <summary>The ask is an agent's, which the person's rule has not admitted: it waits for the person's yes, which the look keeps, and nothing is kept here.</summary>
     public const string AwaitsYes = "awaits-yes";
 
     /// <summary>
-    /// The hand-over rule's consent for an agent's ask as the door that judged it says it (FOUNDATION1h branch 3, the foundation design §3.1): the
+    /// The hand-over rule's consent for an agent's ask as the door that judged it says it: the
     /// verdict stays in <c>DriverHandOvers</c> and reaches the course as a fact, so the course admits an agent's ask only where <c>on</c> let
     /// it go, puts it to the person under <c>ask</c> and refuses it under <c>off</c>.
     /// </summary>
@@ -112,10 +112,10 @@ public static class HandOver
         new(HandOverAdmits: verdict.Kind == HandOverAskVerdict.GoKind, HandOverAsks: verdict.Kind == HandOverAskVerdict.WaitKind);
 
     /// <summary>
-    /// Judge and decide the move for a conversation of this machine's (FOUNDATION1f-v part a, §3.3, §13.4 step 1): the hand-over is kept as a
+    /// Judge and decide the move for a conversation of this machine's: the hand-over is kept as a
     /// move record in the store, decided as it is asked, and no <c>&lt;s&gt;.hand-over.json</c> is written. A record a move still stands for,
     /// whether a hand-over waiting or another move under way, takes no second ask, read from the store. Whether and where it goes is the
-    /// course's (FOUNDATION1h branch 3, <see cref="JudgedAsync"/>); this keeps what it decided.
+    /// course's (<see cref="JudgedAsync"/>); this keeps what it decided.
     /// </summary>
     /// <param name="accountsOf">The accounts the roster holds for an agent, or null where it has no such agent.</param>
     /// <param name="moves">The conversations' move record, whose run claims the decision.</param>
@@ -173,10 +173,10 @@ public static class HandOver
     }
 
     /// <summary>
-    /// <see cref="JudgeAsync"/> with the course's answer (FOUNDATION1h branch 3, the foundation design §3.1, §14.2): the record is read into the
+    /// <see cref="JudgeAsync"/> with the course's answer: the record is read into the
     /// facts <see cref="CourseDecision.Decide"/> decides a hand-over over, its nevers by <see cref="WordsNever"/>'s one table, and whatever the
-    /// course refuses is said by the code and sentence the ask has always had. What only the executor knows stays its own and is judged beside
-    /// the course, in the order of today's refusals: no such session, a quest's session (<see cref="QuestHandOver"/>'s), an agent or an account
+    /// course refuses is said by its code and sentence. What only the executor knows stays its own and is judged beside
+    /// the course, in this order: no such session, a quest's session (<see cref="QuestHandOver"/>'s), an agent or an account
     /// the roster does not hold.
     /// </summary>
     /// <param name="askedBy">Who asks, one of <see cref="HandOverBy"/>: an agent's ask is admitted only by the consent handed in.</param>
@@ -240,7 +240,7 @@ public static class HandOver
                 Refused(SameAgent, named is null ? $"{id} already runs on {agent}." : $"{id} already runs on {agent} as {named}."), null, course),
             LineCourse.Hold { Why: CourseHoldWhy.Refused, Code: TreeGone } => new HandOverJudged(
                 Refused(TreeGone, $"the tree {id} ran in is gone, so there is nothing to go on in."), null, course),
-            // An agent's ask the rule has not admitted: put to the person first under `ask`, refused under `off`, or where none was said.
+            // An agent's ask the rule has not admitted: put to the person first under `ask`, refused under `off`, or where none is said.
             LineCourse.Hold { Why: CourseHoldWhy.ConsentRefused, Doors.Count: > 0 } => new HandOverJudged(
                 Refused(AwaitsYes, "its agent's ask waits for the person's yes first: the look keeps it, and nothing is kept here."), null, course),
             LineCourse.Hold { Why: CourseHoldWhy.ConsentRefused } => new HandOverJudged(
@@ -259,7 +259,7 @@ public static class HandOver
 
     /// <summary>
     /// What never goes on elsewhere, whichever kind of session asks: a teammate's record, Ask Daoris's own conversation, an intake,
-    /// and a conversation that went on in another already (HANDWORDS1), whose tree that one holds: a second take would open another
+    /// and a conversation that went on in another already, whose tree that one holds: a second take would open another
     /// conversation in it, and a box left from before the shell closed is refused as it is taken.
     /// </summary>
     /// <param name="next">The conversation it went on in (<see cref="WordsNever.ContinuedIn(string, string)"/>), or null.</param>
@@ -276,7 +276,7 @@ public static class HandOver
             case WordsNever.Teammate:
                 return Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it.");
             case WordsNever.Help:
-                // LIMITGOON2 (D205 §3.5(e)): only a limit with no account of its agent left moves it to another agent (LimitMove), never this.
+                // Only a limit with no account of its agent left moves it to another agent (LimitMove), never this.
                 return Refused(WordsNever.Help,
                     $"{id} is Ask Daoris's own conversation, which stays on its own agent: Ask Daoris's history starts a new conversation from it.");
             case WordsNever.Intake:
@@ -289,20 +289,20 @@ public static class HandOver
     internal static HandOverAnswer Refused(string why, string message) => new(false, why, message);
 }
 
-/// <summary>What a hand-over was judged to be (<see cref="HandOver.JudgedAsync"/>): its refusal, or the record as the ledger holds it, with the course's answer where one was decided.</summary>
+/// <summary>What a hand-over is judged to be (<see cref="HandOver.JudgedAsync"/>): its refusal, or the record as the ledger holds it, with the course's answer where one is decided.</summary>
 internal sealed record HandOverJudged(HandOverAnswer? Refused, PriorSession? Prior, LineCourse? Course);
 
-/// <summary>What an ask came to (<see cref="HandOver.AskAsync"/>): the answer, and where it was kept the move decided for it with the request.</summary>
+/// <summary>What an ask came to (<see cref="HandOver.AskAsync"/>): the answer, and where it is kept the move decided for it with the request.</summary>
 internal sealed record HandOverAsked(HandOverAnswer Answer, ConversationMove? Move, HandOverRequest? Request);
 
 /// <summary>
-/// Taking a hand-over (MIXAGENT1a-i, D163 §3): judged again, then the old conversation ends, the new starts in its tree on
+/// Taking a hand-over: judged again, then the old conversation ends, the new starts in its tree on
 /// the agent and account asked for and is told Daoris's briefing, and both records say where it went and where it came from.
 /// Pure of the runner's own parts, which are handed in, so the sequence is held in-process.
 /// </summary>
 /// <remarks>
-/// <b>The old ends before the new starts</b>: a tree is held by one session at a time (D51). <b>The move is ended however it came out</b>
-/// (its executor's, FOUNDATION1f-v part a), so a refused start is not tried again at every shell's come-up; the asker is told, and asks again.
+/// <b>The old ends before the new starts</b>: a tree is held by one session at a time. <b>The move is ended however it came out</b>
+/// (its executor's), so a refused start is not tried again at every shell's come-up; the asker is told, and asks again.
 /// </remarks>
 public static class HandOverTake
 {
@@ -310,20 +310,20 @@ public static class HandOverTake
     /// <param name="end">Ends the old conversation by the runner's own end, and returns once its record has ended.</param>
     /// <param name="start">
     /// Opens the new conversation in the old one's tree on the ask's agent and account, its record naming the one it continues,
-    /// why and who asked (MIXAGENT1a-iii), asking the host to move the old part's waiting words under the move's key where it has one
+    /// why and who asked, asking the host to move the old part's waiting words under the move's key where it has one
     /// (<paramref name="opens"/>): every word of the person's kept there meanwhile, none named, since a hand-over carries none of its own.
     /// </param>
-    /// <param name="opens">The key the move's open is sent with (FOUNDATION1f-v part a); null for an open with no move record behind it.</param>
+    /// <param name="opens">The key the move's open is sent with; null for an open with no move record behind it.</param>
     /// <param name="say">Hands the new conversation its first message; false where nothing took it.</param>
     /// <param name="moved">
-    /// What the usage curve's decision said, where Daoris moves the conversation to another account by it (SWITCH1c-ii): the
+    /// What the usage curve's decision says, where Daoris moves the conversation to another account by it: the
     /// two lines are then the moved pair (<see cref="HandOverNotes.Moved"/>, <see cref="HandOverNotes.MovedFrom"/>), naming the
     /// accounts. Null for every other take, and for a curve's box taken where the decision is not held (a shell come up since),
     /// whose lines are the hand-over's, its reason <c>curve</c>.
     /// </param>
     /// <param name="closing">
-    /// The outgoing agent's closing note, where the take asked one (SESSCTX1c part B, §2.2): carried as the brief's note, or said absent;
-    /// null where none was asked.
+    /// The outgoing agent's closing note, where the take asked one: carried as the brief's note, or said absent;
+    /// null where none is asked.
     /// </param>
     public static async Task<HandedOver> RunAsync(
         ServiceClient service, string home, SessionEvents events, SessionOutput? output, string id, HandOverRequest ask,
@@ -335,18 +335,18 @@ public static class HandOverTake
         if (refused is not null) return new HandedOver(null, false, refused.Why, refused.Message);
 
         var from = prior!.Adapter ?? "its agent";
-        // MIXAGENT1c: where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim; SESSCTX1c part
-        // B: else the closing note the take asked, or that none was written.
+        // Where its agent asked to hand over, its own note, told after Daoris's record as that agent's claim;
+        // else the closing note the take asked, or that none is written.
         var note = (ask.AskedBy == HandOverBy.Agent ? new HandOverAskFiles(home).Ask(id)?.Note : null) ?? closing?.Note;
-        // SESSCTX1b: Daoris's brief of the whole line (ContextBrief), in place of the request, the last plan and words and what
-        // is uncommitted, the note its own section (the design §3.1 item 6).
+        // Daoris's brief of the whole line (ContextBrief), in place of the request, the last plan and words and what
+        // is uncommitted, the note its own section.
         var brief = await ContextBriefs.ComposeAsync(
                 service, events, home, id, ask.Why, conversation: true, note: note, ct: ct, noteAsked: closing is not null, before: closing?.Before)
             .ConfigureAwait(false);
 
         await end(id).ConfigureAwait(false);
 
-        // FOUNDATION1f-v part a (§3.4 rule 3): the open is keyed with nothing named and nothing read, as the curve's is, so the host moves every
+        // The open is keyed with nothing named and nothing read, as the curve's is, so the host moves every
         // word of the person's kept on the old part meanwhile and the new part's own go-on says it after the brief, never before.
         var moves = opens is null ? null : MovedWords.Asked(id, [], []) with { Opens = opens };
         var started = await start(prior, ask, new ContinuedFrom(id, ask.Why, ask.AskedBy), moves, ct).ConfigureAwait(false);
@@ -357,7 +357,7 @@ public static class HandOverTake
                 $"{id} ended, but the conversation with {ask.Agent} did not start: {started.Message} Its tree is as it was.");
         }
 
-        // A move by the usage curve names the account it left and the one it went to (SWITCH1c-ii): the record that says so stays
+        // A move by the usage curve names the account it left and the one it went to: the record that says so stays
         // on this machine. Only where the decision is the move's own, on the account the record ran on.
         var left = moved is not null && ask.Why == HandOverWhy.Curve
                    && string.Equals(moved.Account, ask.Account, StringComparison.OrdinalIgnoreCase) && prior.Profile is { Length: > 0 } account

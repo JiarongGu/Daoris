@@ -41,7 +41,7 @@ internal static class AccountWaits
 
         // A start held on accounts not signed in with none cooling waits for a person, not a time: a wait with no time and no
         // account, naming the accounts a sign-in frees, its quests and its asks' intakes among what it holds. The tick hands it to
-        // the page as it hands a cool-off's, since a consideration names quests alone, and an intake held so was the log's line and
+        // the page as it hands a cool-off's, since a consideration names quests alone, and an intake held so is the log's line and
         // nothing else. One per agent, as the line is.
         var signedOut = begun
             .Where(each => each.Came is { Cooling: null, SignedOut: not null })

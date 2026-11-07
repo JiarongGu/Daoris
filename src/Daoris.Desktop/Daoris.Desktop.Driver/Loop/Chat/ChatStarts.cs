@@ -25,7 +25,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
     /// </param>
     /// <param name="tree">
     /// A conversation handed over from another agent runs in the tree the old one ran in: its own folder, neither grown nor removed here, and
-    /// refused where it no longer exists. Null opens as before.
+    /// refused where it no longer exists. Null opens as every other conversation does.
     /// </param>
     /// <param name="from">The conversation this one continues, with why and who asked: named on the new record as it opens. Null for every other conversation.</param>
     /// <param name="order">
@@ -107,7 +107,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         if (chosen is not null) adapter = chosen.Agent;
         var walking = order is { Count: > 1 } || pending is not null;
 
-        // Through the roster's live set, not the one the runner was built with: the driver's tick hands the roster the build's adapters plus
+        // Through the roster's live set, not the one the runner is built with: the driver's tick hands the roster the build's adapters plus
         // whatever the plugins declare, so a harness declared since the shell started is a harness a conversation can run on now.
         var resolved = walking ? null! : harnesses.Adapters.Door(adapter);
         if (!walking && !resolved.Can.Interactive) return new(null, NotInteractive(resolved.Id.Value));
@@ -228,7 +228,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         var (sessionId, message) = keyed is not null
             ? (keyed.SessionId, keyed.Message)
             : await service
-                // The tree the conversation runs in: its own where one was grown, the checkout found above otherwise, stated by the side that
+                // The tree the conversation runs in: its own where one is grown, the checkout found above otherwise, stated by the side that
                 // is about to spawn into it.
                 .OpenChatAsync(
                     repository, resolved.Id.Value, selection.Version, selection.Profile, workTree, before, ct, from)
@@ -297,7 +297,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         // attribution: the record it continues may carry a different maker's instruction. Any other conversation, in the person's checkout or
         // Ask Daoris's, is told nothing ahead of the person's words.
         // Its run binds here, the record being its line's first in the tree it grew, and the landing it is told is planned with the process its
-        // run was bound to, so it is told the landing its press makes. A chat run whose process names a second opinion is handed the tool that
+        // run is bound to, so it is told the landing its press makes. A chat run whose process names a second opinion is handed the tool that
         // answers its findings from its spawn.
         var answers = false;
         if (opened is not null)
@@ -331,7 +331,7 @@ internal sealed class ChatStarts(IExecutorWiring wiring, ChatTold told)
         }
         finally
         {
-            // A start that failed, or was cancelled, has no first message to tell it with.
+            // A start that fails, or is cancelled, has no first message to tell it with.
             if (started?.SessionId is null)
             {
                 told.Forget(sessionId);

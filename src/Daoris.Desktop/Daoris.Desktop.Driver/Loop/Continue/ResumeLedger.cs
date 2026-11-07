@@ -6,11 +6,11 @@ internal sealed class ResumeLedger(LoopContext context)
     private readonly LoopContext _context = context;
 
     /// <summary>
-    /// The record's conversation says why its words wait (MSG1g, D143 point 1), once for each wait: a look that finds it saying
+    /// The record's conversation says why its words wait, once for each wait: a look that finds it saying
     /// the same as its last event writes nothing more, and a word said since is answered again. The person wrote to it, so it
-    /// stays in view while it waits (D137 §2.3). The words stay waiting and unmarked: the reset lets them go on. Its line is
-    /// <see cref="ResumeWords.NotYetOn"/>'s, by code (CONVNOTE2g); the last event is compared by its English, as it always was. A start
-    /// held because the record's tree is gone and cannot be made again says so the same way (TREEGONE1).
+    /// stays in view while it waits. The words stay waiting and unmarked: the reset lets them go on. Its line is
+    /// <see cref="ResumeWords.NotYetOn"/>'s, by code; the last event is compared by its English. A start
+    /// held because the record's tree is gone and cannot be made again says so the same way.
     /// </summary>
     internal void HeldSaying(PriorSession record, Noted line)
     {
@@ -32,14 +32,14 @@ internal sealed class ResumeLedger(LoopContext context)
     }
 
     /// <summary>
-    /// The record the move to working took up goes back where no run of it started and nothing went (SAIDBACK1e, D137 §2.4), as
-    /// <see cref="Continuations.PutBack"/> says: every word taken back first, or the driver closed first (PARALLEL1f). Nothing is
+    /// The record the move to working took up goes back where no run of it started and nothing went, as
+    /// <see cref="Continuations.PutBack"/> says: every word taken back first, or the driver closed first. Nothing is
     /// sent and nothing holds it. Where the ledger will not move it back, its refusal holds the start, and the next look reads the
-    /// record as it now is. A run that could not start is <see cref="UnstartedAsync"/>'s (SESSCTX1c).
+    /// record as it now is. A run that could not start is <see cref="UnstartedAsync"/>'s.
     /// </summary>
     /// <param name="unsent">
-    /// The look's line: every word taken back first, unless the driver closed before its run started (PARALLEL1f,
-    /// <see cref="ClosedFirst"/>), its words still waiting.
+    /// The look's line: every word taken back first, unless the driver closed before its run started
+    /// (<see cref="ClosedFirst"/>), its words still waiting.
     /// </param>
     internal async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> PutBackAsync(
         QuestView quest, PriorSession park, StartRun? unsent = null)
@@ -62,7 +62,7 @@ internal sealed class ResumeLedger(LoopContext context)
     }
 
     /// <summary>
-    /// An admitted supervisor's word that was not handed (SUPERVISOR1a-i, D208; the supervisor design §6.3): the decision moves to
+    /// An admitted supervisor's word that is not handed: the decision moves to
     /// <c>not-handed</c>, the park is restored by the ledger's <c>RestoreParkAsync</c> keeping every word but that one (never
     /// <see cref="PutBackAsync"/>, whose move to a park clears them), and its question is written back from the decision's snapshot with
     /// the same id, since the run's opening may have cleared it. Where the restore fails the record is left working with no run, for the
@@ -93,13 +93,13 @@ internal sealed class ResumeLedger(LoopContext context)
     }
 
     /// <summary>
-    /// A resumed run that could not start (SESSCTX1c, D189's amendment; the session-context design §2): a start failure, never a move.
+    /// A resumed run that could not start: a start failure, never a move.
     /// The record the move to working took up ends <c>failed</c> with the spawn's words, as <see cref="Continuations.Unstarted"/> says,
-    /// so the strikes count it as they count a first start's failed spawn (DRV6), and the words wait on it to go again; failing twice
-    /// running they are marked and wait for the person, as a failed turn's are (TURNFAIL1). Its conversation says so beside them, by
+    /// so the strikes count it as they count a first start's failed spawn, and the words wait on it to go again; failing twice
+    /// running they are marked and wait for the person, as a failed turn's are. Its conversation says so beside them, by
     /// their ids. No new session opens and nothing is handed on.
     /// </summary>
-    /// <param name="ids">The ids of the words that were to go, said beside the line.</param>
+    /// <param name="ids">The ids of the words that are to go, said beside the line.</param>
     internal async Task<(StartRun? Run, ContinueReason? FellBack, bool AnswerKept)> UnstartedAsync(
         QuestView quest, PriorSession park, string agent, string failure, IReadOnlyList<string> ids)
     {
@@ -132,13 +132,13 @@ internal sealed class ResumeLedger(LoopContext context)
             new SessionEnded(park.Session, quest.To, "failed", ByPerson: false, failure, Quest: quest.Id, Adapter: agent)), null, false);
     }
 
-    /// <summary>The look's line where every word waiting on the record was taken back before it went on (SAIDBACK1d, SAIDBACK1e).</summary>
+    /// <summary>The look's line where every word waiting on the record is taken back before it goes on.</summary>
     internal static StartRun TakenBackFirst(QuestView quest, string session) => new(
         $"held  #{quest.Id} → {quest.To}: every word waiting on session {session} was taken back before it went on; nothing is sent.",
         false);
 
     /// <summary>
-    /// The look's line where the driver closed before a record's run started (PARALLEL1f): put back as it ended, its words waiting on
+    /// The look's line where the driver closed before a record's run started: put back as it ended, its words waiting on
     /// it for the next start, which goes on with them.
     /// </summary>
     internal static StartRun ClosedFirst(QuestView quest, string session) => new(
@@ -146,7 +146,7 @@ internal sealed class ResumeLedger(LoopContext context)
         + "its words waiting for the next start.",
         false);
 
-    /// <summary>The record as it stands now, or null where it cannot be read: the look's words are then what there is (SAIDBACK1d).</summary>
+    /// <summary>The record as it stands now, or null where it cannot be read: the look's words are then what there is.</summary>
     internal static async Task<PriorSession?> ReadAgainAsync(ServiceClient service, string sessionId, CancellationToken ct)
     {
         try
@@ -161,8 +161,8 @@ internal sealed class ResumeLedger(LoopContext context)
     }
 
     /// <summary>
-    /// End the park a fallback leaves behind, keeping what it asked and saying why (D131 §2), and write the line. A record
-    /// that had already ended moves no further: its words wait on it until they are handed on (MSG1b). Null when done; else
+    /// End the park a fallback leaves behind, keeping what it asked and saying why, and write the line. A record
+    /// that has already ended moves no further: its words wait on it until they are handed on. Null when done; else
     /// the service's refusal.
     /// </summary>
     internal async Task<string?> EndParkAsync(PriorSession park, ContinueReason why, string agent, CancellationToken ct)
@@ -186,9 +186,9 @@ internal sealed class ResumeLedger(LoopContext context)
     }
 
     /// <summary>
-    /// The machine log's line for words taken up (D94 §4): a park's answer is <c>session.answered</c> (D131 §2), and words to
-    /// a record that had ended are <c>session.reopened</c> (D137 §3.3), from the state it ended in, naming the door the first
-    /// of them was said at, as the record showed them (MSG1d).
+    /// The machine log's line for words taken up: a park's answer is <c>session.answered</c>, and words to
+    /// a record that has ended are <c>session.reopened</c>, from the state it ended in, naming the door the first
+    /// of them is said at, as the record showed them.
     /// </summary>
     internal AccountLine Took(PriorSession record, string adapter, ContinueReason? why) =>
         record.Parked || !record.WordsWaiting

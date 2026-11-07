@@ -99,8 +99,8 @@ internal sealed class SessionHold(IRunWiring wiring)
         {
             RefusesInput = refusesInput, DrivesBrowser = drivesBrowser, Piece = piece, Moved = moved, Target = target, Request = request, Selection = goesOnAs,
         };
-        // A native door's driven start is the layer's run where the driver carries Lyntai's layer and binds that door's driven kind
-        // (AGENTLYNTAI1d, D248's note), today's transport otherwise; the steps below are the same on either.
+        // A native door's driven start is the layer's run where the driver carries Lyntai's layer and binds that door's driven kind,
+        // the transport otherwise; the steps below are the same on either.
         await using HeldRun run = (adapter.Can.HeldOnWire ? null : DrivenRuns.Of(adapter.Id.Value, wiring.Transport, start, request))
             ?? new TransportRun(wiring.Transport, context.Adapters, adapter, start);
         await run.SpawnAsync(sessionId, ct).ConfigureAwait(false);
@@ -146,13 +146,13 @@ internal sealed class SessionHold(IRunWiring wiring)
         // go-ons' among them, so it is read while they still are, for a close that cuts the conclusion off to record that stop.
         using var letGo = new Disposer(() => stopMade?.Invoke(context.Processes.StopMade(sessionId)));
 
-        // Each door ends the same way: the record is concluded from the exit code and what the session was for, never from what the
+        // Each door ends the same way: the record is concluded from the exit code and what the session is for, never from what the
         // session said about itself. A resume's prompt is the answer as it is, the conversation already holding the target; after it,
         // the answers to the go-aheads it asked since its start.
         var composed = resume is null ? TargetPrompt.Composed(TargetPrompt.ForStart(target, context.Adapters, adapter)) : null;
         var prompt = resume?.Prompt ?? composed!.Text;
 
-        // What the target was composed of, kept beside it on its event with the rules handed beside it. A resume composes nothing, so
+        // What the target is composed of, kept beside it on its event with the rules handed beside it. A resume composes nothing, so
         // its record keeps none; nor a reviewer's, whose instruction is its own composer's, which the account's sections do not name.
         var account = composed is null || target.Opinion is not null || target.Helper is not null || target.Piece is not null || target.Brainstorm is not null ? null
             : rules.Handed is { } rulesHanded ? composed.Account.Beside(rulesHanded)
@@ -256,7 +256,7 @@ internal sealed class SessionHold(IRunWiring wiring)
                 return later.Asked;
             });
 
-        // Every run on the protocol door handed its owner's check takes the one transient retry (D210 point 8), its waits on the driver's
+        // Every run on the protocol door handed its owner's check takes the one transient retry, its waits on the driver's
         // clock: a driven session, an intake, a helper, an opinion, a partner and a brainstorm voice. Its bound is its line's tries rule, and a
         // pass with minutes of its own waits none past them.
         var retry = abilities.HeldOnWire && transientWanted is not null
@@ -295,14 +295,14 @@ internal sealed class SessionHold(IRunWiring wiring)
                 setupChanged: setupChanged,
 
                 // What its actor asked, set on the session before the first prompt; what the agent would not take is kept as asked and
-                // not carried, so the record never says a choice was taken that was not.
+                // not carried, so the record never claims an untaken choice.
                 asked: asked, carried: target.Brainstorm is not null ? null
                     : notCarried => _ = service.TryKeepActorAsync(sessionId, log, choice, notCarried, ct: CancellationToken.None),
                 modelRefused: refusedAt, offerRead: offered, retry: retry, carriesOn: carriesOn, written: written,
                 typedFailures: context.Adapters.AgentNamed(adapter.Id.Value)?.Tables.ErrorWords?.TypedFailures == true, handedBack: words => acpLeft = words),
         });
 
-        // What was asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first
+        // What is asked, first: the composed target and the person's answer it carries on from, as theirs; a resumed run's own first
         // line and the answer, the target already in the conversation above.
         IReadOnlyList<SessionEvent> opening = resume?.Opening() ?? HarnessCapture.Opening(prompt, target.PersonSaid, account, target.Handed);
         run.HandStart(run.Start with
@@ -312,14 +312,14 @@ internal sealed class SessionHold(IRunWiring wiring)
             Own = own,
 
             // The protocol door's opening goes on with what its harness is doing that Daoris could not govern, said as a note; the
-            // native door's transcript opens with how its run was set up.
+            // native door's transcript opens with how its run is set up.
             Opening = protocol && harnessNotice is { Length: > 0 } notice ? [.. opening, new SessionEvent { Kind = SessionEventKind.Note, Text = notice }] : opening,
             Preamble = protocol ? null : preamble,
         });
 
         // The run's readings, each kept by its owner: the record and its console, the conversation the harness named under the adapter a
-        // quest's session keeps it as (ANSWER1a), each child its door says in the part's lineage (COWORKVIEW1a), and what the stream says
-        // of the account's windows (TOOL6c).
+        // quest's session keeps it as, each child its door says in the part's lineage, and what the stream says
+        // of the account's windows.
         run.HandSink(ReadingSinks.Of(
             new RecordReadings(sessionId, output, context.Events),
             keepAs is null ? null : ReadingSinks.On<WireReading.ConversationNamed>(named => context.Conversations.Keep(sessionId, keepAs, named.Conversation)),
@@ -329,7 +329,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             offers is null ? null
                 : new OfferRefusals(home, adapter.Id.Value, offers.Version, offers.Account, why => log?.Write("warn", "actor.offers-unkept", [("session", sessionId), ("why", why)]))));
 
-        // The rules and servers a go-on runs under, the ones this start was handed.
+        // The rules and servers a go-on runs under, the ones this start is handed.
         run.HandCarriers(new RunCarriers(rules.File, handed));
         // A native resume's state goes with it: its harness naming the conversation marks its words gone, and the run's one retry reads it.
         await (resume is null ? run.OpenAsync(ct) : run.ResumeAsync(resume.Conversation, ct, resume)).ConfigureAwait(false);
@@ -344,7 +344,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             catch
             {
                 // 🔴 The record would not become this run's, as where a second resume met working, so the run is ended here, and what
-                // was reading its output is observed: its failure is written with its reason, never left unawaited.
+                // is reading its output is observed: its failure is written with its reason, never left unawaited.
                 await run.AbandonAsync().ConfigureAwait(false);
                 throw;
             }
@@ -365,7 +365,7 @@ internal sealed class SessionHold(IRunWiring wiring)
         }
 
         // The turn's failure the conclusion reads: the protocol door's refused turn, or the native door's last turn ended on its account's
-        // limit (D210 row 1c), so a native limit cools its account there, once, and its record says `limit`, as the protocol door's does.
+        // limit, so a native limit cools its account there, once, and its record says `limit`, as the protocol door's does.
         var turnFailed = NativeLimits.TurnFailed(protocol, end.Ending, limits);
 
         // The run Daoris ended for a changed setup says so on its console as it ends; its record's note says it once concluded.
@@ -389,7 +389,7 @@ internal sealed class SessionHold(IRunWiring wiring)
             .ConfigureAwait(false);
 
         // The words its failed door never delivered wait on its ended record to go again: kept once the conclusion moved it, since the
-        // say door refuses a running record. So do the words a changed setup handed back, to go on under it; unless a stop was made of
+        // say door refuses a running record. So do the words a changed setup handed back, to go on under it; unless a stop is made of
         // it since, which ends it with them unreached as any stop does, since words on its record would carry it on past the stop.
         if (left.Count > 0 && swapped is not null && turnFailed is null && context.Processes.StopMade(sessionId) is not null)
         {

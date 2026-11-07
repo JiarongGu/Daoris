@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// How a handed session's run concludes once its process has ended: what the quest and the harness say it was, the record advanced to
+/// How a handed session's run concludes once its process has ended: what the quest and the harness say it is, the record advanced to
 /// it and the line the look reports. Built with the facts of the start it concludes, and handed to the hold as its conclusion.
 /// </summary>
 internal sealed class RunConclusion(
@@ -26,7 +26,7 @@ internal sealed class RunConclusion(
         }
 
         // The person's stop outranks the observation: a killed session leaves the same signals as a crashed one, and only this flag
-        // knows whose decision the end was.
+        // knows whose decision the end is.
         var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
         var status = after?.Status ?? "Open";
         var stop = context.Processes.StopMade(sessionId);
@@ -34,7 +34,7 @@ internal sealed class RunConclusion(
         var awaitsHelper = stop is null && exitCode == 0 && status == "Taken"
                            && await wiring.WaitsOnOwnHelperAsync(sessionId, quest, openedAt, ct).ConfigureAwait(false);
         var conclusion = stop is not null
-            // The driver's own stop, for a take that lost, stands it down: the quest was someone else's, and the reason says who. The
+            // The driver's own stop, for a take that lost, stands it down: the quest is someone else's, and the reason says who. The
             // person's, a pause's naming the pause, is theirs, never interrupted. One reading, which a close cutting this off records too.
             ? stop.Conclusion
             : exitCode is int code
@@ -42,7 +42,7 @@ internal sealed class RunConclusion(
                 // stand-down.
                 ? Observation.Conclude(
                     code, status, quest.Awaits, after?.Awaits, turnFailed, resumed: start.Resumes is not null,
-                    // Whose take it was, and what it last said: a session holding the quest it took and stopping is waiting on the person.
+                    // Whose take it is, and what it last said: a session holding the quest it took and stopping is waiting on the person.
                     took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
                     lastWords: SessionLastWords.ParkedWords(context.Events, sessionId, transcript),
                     // The person's reopen of the work it grew from holds its quest as it ends; or they reopened it and went on with the
@@ -93,7 +93,7 @@ internal sealed class RunConclusion(
         conclusion = wiring.AccountRefused(conclusion, adapter, selection, ended);
         var beforeSignIn = conclusion;
         conclusion = wiring.AccountSignedOut(conclusion, adapter, selection, turnFailed, ended);
-        // The account this start was refused for, where it has a profile another can stand in for.
+        // The account this start is refused for, where it has a profile another can stand in for.
         var signedOutOn = !ReferenceEquals(beforeSignIn, conclusion) && stop is null && run.MovedOff is null && start.Resumes is null
             ? selection.Profile : null;
         // The quest is reserved again before this record fails, so a look between this end and the next run's open plans nothing for it;
@@ -155,7 +155,7 @@ internal sealed class RunConclusion(
         return new StartRun(
             $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
             true,
-            // The stop flag is the "whose decision was this" answer, read once, used for both. A park is not an ending: the record
+            // The stop flag is the "whose decision is this" answer, read once, used for both. A park is not an ending: the record
             // waits on the person, and the attention watch says so from the active list. Nor is a run ended for a changed setup, whose
             // record goes on at the next look, nor one waiting on its own helper.
             endings.HoldsTree

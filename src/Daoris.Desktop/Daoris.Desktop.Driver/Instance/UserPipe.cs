@@ -6,8 +6,8 @@ using System.Security.Principal;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The rule every pipe Daoris serves on this machine is made with (the terminal RPC design §4.1, PIPEOWNER1): the instance's pipe and the
-/// events relay's (the event hook design §6.1 step 2) alike.
+/// The rule every pipe Daoris serves on this machine is made with: the instance's pipe and the
+/// events relay's alike.
 /// </summary>
 public static class UserPipe
 {

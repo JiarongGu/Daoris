@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The codes a standing choice's refusal is said in (PUSH1f2a, D194 point 4, the alone-path design §1.3): the page's catalogue keys,
+/// The codes a standing choice's refusal is said in: the page's catalogue keys,
 /// which the shell's <c>Refusals</c> declares as these, and the driver's verbatim refusal for every other. One table, read by the
 /// route that answers the window and by <c>daoris</c> acting alone, so a refusal is one line both ways.
 /// </summary>
@@ -13,13 +13,13 @@ public static class ChoiceCodes
     /// <summary>*Try again* asked of a quest a pause holds: Resume is the press that moves it.</summary>
     public const string QuestPaused = "QUEST_PAUSED";
 
-    /// <summary>A keep rule out of its kind's bounds, or a choice its kind does not take (KEEP1d, the cleanup design §2.2).</summary>
+    /// <summary>A keep rule out of its kind's bounds, or a choice its kind does not take.</summary>
     public const string KeepOutOfRange = "KEEP_OUT_OF_RANGE";
 
     /// <summary>The shell's <c>DRIVER_REFUSED</c>: any other refusal, said in its own sentence.</summary>
     public const string Refused = "DRIVER_REFUSED";
 
-    /// <summary>A second opinion switched off, or a look required, for a place whose saved workflow's node decides it (WORKFLOWCLEAN1 1h).</summary>
+    /// <summary>A second opinion switched off, or a look required, for a place whose saved workflow's node decides it.</summary>
     public const string GraphDecides = "GRAPH_DECIDES";
 
     /// <summary>Each check an operation refuses by, and the code it is said in.</summary>
@@ -37,7 +37,7 @@ public static class ChoiceCodes
 }
 
 /// <summary>
-/// A standing choice's operation refusing by a named check (PUSH1f2a, as <see cref="ToolRefusal"/> carries a tool's): its sentence,
+/// A standing choice's operation refusing by a named check (as <see cref="ToolRefusal"/> carries a tool's): its sentence,
 /// and the facts the window's catalogue says it with. <see cref="ChoiceCodes.Of"/> gives its code.
 /// </summary>
 public sealed class ChoiceRefusal(string check, string message, params (string Key, string Value)[] facts) : DriverException(message)
@@ -48,7 +48,7 @@ public sealed class ChoiceRefusal(string check, string message, params (string K
     /// <summary>The quest is paused, on its own or with its ask.</summary>
     public const string Paused = "quest-paused";
 
-    /// <summary>A keep rule out of its kind's bounds (KEEP1d): its <c>kind</c>, <c>min</c> and <c>max</c> said with it.</summary>
+    /// <summary>A keep rule out of its kind's bounds: its <c>kind</c>, <c>min</c> and <c>max</c> said with it.</summary>
     public const string KeepOutOfRange = "keep-out-of-range";
 
     /// <summary>The place follows a saved workflow, whose <c>opinion</c> or <c>look</c> node decides what the edit would set.</summary>
@@ -59,8 +59,8 @@ public sealed class ChoiceRefusal(string check, string message, params (string K
     public IReadOnlyList<(string Key, string Value)> Facts { get; } = facts;
 }
 
-/// <summary>What *Try again* did to a quest (SESSUX1b): <c>marked</c> at its failures, or <c>released</c> from a stop's session.</summary>
-/// <param name="Approve">The role whose policy asked: the press is its yes, one approval, written beside the moves (STAFFPOLICY1e).</param>
+/// <summary>What *Try again* did to a quest: <c>marked</c> at its failures, or <c>released</c> from a stop's session.</summary>
+/// <param name="Approve">The role whose policy asked: the press is its yes, one approval, written beside the moves.</param>
 public sealed record RetryDecision(string Quest, string Did, string? Session, Func<DriverConfig, DriverConfig> Change, string? Approve = null)
 {
     /// <summary>For a mark: the failed sessions the quest's line's failures rule parks it at again, as the planner read it; else null.</summary>
@@ -73,19 +73,19 @@ public sealed record RetryDecision(string Quest, string Did, string? Session, Fu
     public const string Approved = "approved";
 }
 
-/// <summary>What a review's procedure look found: the repositories of a workspace whose checkout lacks it, and whether it was looked for.</summary>
+/// <summary>What a review's procedure look found: the repositories of a workspace whose checkout lacks it, and whether the look ran.</summary>
 public sealed record ReviewLooked(IReadOnlyList<string> Lacking, bool Unchecked);
 
 /// <summary>
-/// The standing choices' operations (PUSH1f2a, D194 point 4, the alone-path design §1.3): each the judgement a route made inside its
+/// The standing choices' operations: each the judgement a route made inside its
 /// handler, taken out over the facts it judges by, so the window's route and <c>daoris</c> acting alone call one
 /// implementation. The rest of the choices are already <see cref="DriverConfig"/>'s <c>With*</c> and each rule's <c>Apply</c>; their
 /// write is <see cref="Write"/>, which the route makes through its context with the loop's nudge.
 /// </summary>
 public static class StandingChoices
 {
-    /// <summary>A standing choice written: the file read, the change made, and saved under its lock (CONFIG1); the choices it wrote.</summary>
-    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing was written.</exception>
+    /// <summary>A standing choice written: the file read, the change made, and saved under its lock; the choices it wrote.</summary>
+    /// <exception cref="DriverConfigUnreadableException">The file does not read, so nothing is written.</exception>
     public static DriverConfig Write(string path, Func<DriverConfig, DriverConfig> change)
     {
         var next = change(DriverConfig.Load(path));

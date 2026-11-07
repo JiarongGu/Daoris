@@ -3,9 +3,9 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a build enforces of a policy (STAFFPOLICY1b, the staff policy design §11 point 6): nothing is offered before it is enforced, so the
-/// doors refuse a field this list does not hold, and <c>ROLES</c> answers the list for the screen. A field joins it in the row that makes
-/// the start, the line or the course read it.
+/// What a build enforces of a policy: nothing is offered before it is enforced, so the
+/// doors refuse a field this list does not hold, and <c>ROLES</c> answers the list for the screen. A field joins it once
+/// the start, the line or the course reads it.
 /// </summary>
 public static class StaffCapabilities
 {
@@ -17,7 +17,7 @@ public static class StaffCapabilities
 }
 
 /// <summary>
-/// A press's policy for one role (STAFFPOLICY1b): a record, a preset's name that fills one for the role's choices, or a clear; with the
+/// A press's policy for one role: a record, a preset's name that fills one for the role's choices, or a clear; with the
 /// policy revision the person read, which a save against a moved one refuses.
 /// </summary>
 /// <param name="Policy">The record the press carries.</param>
@@ -56,14 +56,14 @@ public sealed record RolePolicyPress(StaffPolicy? Policy = null, string? Preset 
     }
 }
 
-/// <summary>One role's change as a door reads it (STAFFPOLICY1b): the change, the staffing it names, the role revision and the policy press.</summary>
+/// <summary>One role's change as a door reads it: the change, the staffing it names, the role revision and the policy press.</summary>
 public sealed record RolePress(RoleChange Change, IReadOnlyList<ActorChoice>? Choices = null, long? Read = null, RolePolicyPress? Policy = null);
 
-/// <summary>The next new start of a role as its policy would take it (§6.4), a probe: the choice, why, and that said. Nothing is reserved and no account is asked.</summary>
+/// <summary>The next new start of a role as its policy would take it, a probe: the choice, why, and that said. Nothing is reserved and no account is asked.</summary>
 public sealed record RoleNext(string Choice, string By, string Said, string Agent, string? Model, string? Effort);
 
 /// <summary>
-/// One role's policy as <c>ROLES</c> and <c>daoris role &lt;id&gt;</c> say it (STAFFPOLICY1b): its state (<c>default</c>, <c>set</c> or
+/// One role's policy as <c>ROLES</c> and <c>daoris role &lt;id&gt;</c> say it: its state (<c>default</c>, <c>set</c> or
 /// <c>stale</c>), revision, why it is stale, the record (also while stale, for the editor), and its next new start.
 /// </summary>
 public sealed record RolePolicyRow(string Role, string PolicyState, long Revision, string? Why, System.Text.Json.Nodes.JsonNode? StaffPolicy, RoleNext? Next)
@@ -96,7 +96,7 @@ public sealed record RolePolicyRow(string Role, string PolicyState, long Revisio
     }
 }
 
-/// <summary>The judge of a policy at a door (STAFFPOLICY1b): the role door's, beside the catalogue's, so every door answers a refusal alike.</summary>
+/// <summary>The judge of a policy at a door: the role door's, beside the catalogue's, so every door answers a refusal alike.</summary>
 public static class StaffPolicyDoor
 {
     /// <summary>

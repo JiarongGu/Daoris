@@ -6,12 +6,12 @@ namespace Daoris.Driver;
 /// <summary>One favorite: the page's address in the bar's form, and what the bar calls it.</summary>
 public sealed record Favorite(string Url, string Title);
 
-/// <summary>What the favorites file holds, and why a file that was there gave none.</summary>
+/// <summary>What the favorites file holds, and why a file that exists gave none.</summary>
 public sealed record FavoritesRead(IReadOnlyList<Favorite> Favorites, string? Problem);
 
 /// <summary>
-/// The in-app browser's favorites (BRW5): <c>&lt;home&gt;/browser/favorites.json</c>, the person's and never a session's. The window's
-/// Browser screen, Ask Daoris and the terminal edit it through <see cref="Add"/> and <see cref="Remove"/>, the one writer (ONEWAY1u).
+/// The in-app browser's favorites: <c>&lt;home&gt;/browser/favorites.json</c>, the person's and never a session's. The window's
+/// Browser screen, Ask Daoris and the terminal edit it through <see cref="Add"/> and <see cref="Remove"/>, the one writer.
 /// </summary>
 /// <remarks>
 /// An editor never writes over what it could not read: a reader answers an unreadable file with none, which is the wrong starting
@@ -37,10 +37,10 @@ public static class BrowserFavorites
     }
 
     /// <summary>
-    /// Keep a page: appended, or, when it is kept already, left in its place and given <paramref name="title"/> if one was given.
+    /// Keep a page: appended, or, when it is kept already, left in its place and given <paramref name="title"/> if one is given.
     /// Returns it as kept.
     /// </summary>
-    /// <exception cref="HomeFileRefusal">Not a web page, or a file this could not read; nothing was written.</exception>
+    /// <exception cref="HomeFileRefusal">Not a web page, or a file this could not read; nothing is written.</exception>
     public static Favorite Add(string home, string typed, string? title)
     {
         var page = BrowserAddress.Page(typed)
@@ -60,8 +60,8 @@ public static class BrowserFavorites
         return new Favorite(page, Title(kept, page));
     }
 
-    /// <summary>Stop keeping a page, by address under the same rule. False when it was not kept.</summary>
-    /// <exception cref="HomeFileRefusal">A file this could not read; nothing was written.</exception>
+    /// <summary>Stop keeping a page, by address under the same rule. False when it is not kept.</summary>
+    /// <exception cref="HomeFileRefusal">A file this could not read; nothing is written.</exception>
     public static bool Remove(string home, string typed)
     {
         var (file, rows) = Editable(home);

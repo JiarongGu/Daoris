@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What the supervisor's course act is kept against (CONTEXTDRIVE1j): the line's repository, the point a <c>refer</c> holds it at (none
+/// What the supervisor's course act is kept against: the line's repository, the point a <c>refer</c> holds it at (none
 /// where none is open), and the counts the keeping read, which a reason's <c>count:</c> source names.
 /// </summary>
 public sealed record ReferredPoint(string Repository, RuleActed? Open, IReadOnlyList<CountFact>? Counts);

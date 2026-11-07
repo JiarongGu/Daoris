@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin's program as the kit's trial starts it (PLUG8, D101; STRUCT3a): from the driver's own
+/// A plugin's program as the kit's trial starts it: from the driver's own
 /// <see cref="HookProcess.StartInfo"/>, so it starts exactly as the driver starts it, and owned here only so the trial
 /// sees what the driver does not need to: its exit code, its stdout whole, whether it left when told.
 /// </summary>
@@ -22,15 +22,15 @@ internal sealed class PluginTrialProcess : IDisposable
     /// <exception cref="DriverException">Its first word's tool cannot run as the person chose: the driver would refuse it too.</exception>
     /// <exception cref="Win32Exception">The program did not start.</exception>
     /// <remarks>
-    /// Through the start gate (PROCSTART2): the plugin page's trial is a press, so a person's start (PARALLEL1d), and the
-    /// trial's token ends its wait for a place (PARALLEL1e). Through the launcher where one is laid out beside the home (TERMTRUST1a).
+    /// Through the start gate: the plugin page's trial is a press, so a person's start, and the
+    /// trial's token ends its wait for a place. Through the launcher where one is laid out beside the home.
     /// </remarks>
     /// <param name="world">
-    /// The kit's stand-in world (FABRIC-PERFORM1e, <see cref="PluginCycles.World"/>): a file answering in a working plugin's platform's place,
+    /// The kit's stand-in world (<see cref="PluginCycles.World"/>): a file answering in a working plugin's platform's place,
     /// so a trial's attempt reaches nothing. Null where nothing it is sent can reach a platform's work.
     /// </param>
     /// <param name="machineHome">
-    /// The machine's home, whose install holds the launcher and whose log says the start (PLUGINTRYJOB1); never the scratch <paramref name="home"/>
+    /// The machine's home, whose install holds the launcher and whose log says the start; never the scratch <paramref name="home"/>
     /// a folder's plugin is told. Defaults to <paramref name="home"/>, which is the machine's for an installed plugin.
     /// </param>
     public static async Task<PluginTrialProcess> StartAsync(
@@ -45,7 +45,7 @@ internal sealed class PluginTrialProcess : IDisposable
 
         if (world is not null) info.Environment[PluginCycles.World] = world;
 
-        // Through the launcher (TERMTRUST1a, D201 point 4), as the driver starts the plugin: born in this process's agents' job.
+        // Through the launcher, as the driver starts the plugin: born in this process's agents' job.
         return new(await AgentStarts.StartAsync(info, ContainedKind.Plugin, StartClass.Person, machineHome ?? home, log: null, ct).ConfigureAwait(false)
             ?? throw new Win32Exception("the process did not start"));
     }

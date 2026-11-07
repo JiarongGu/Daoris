@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The choices the person made to go on in a new session rather than wait for a cooling account (MSG1g, D137 §2.2):
+/// The choices the person made to go on in a new session rather than wait for a cooling account:
 /// <c>&lt;home&gt;/sessions/&lt;session&gt;.new-session.json</c>, beside the session's marks and conversation id. The person's
-/// choice, kept with when it was given (D143 point 4), which the driver's next look reads.
+/// choice, kept with when it is given, which the driver's next look reads.
 /// </summary>
 /// <remarks>
 /// <para><b>By the words' ids</b>, as <see cref="GoOnMarks"/> keeps its marks: a choice covers its record while any word it
@@ -13,7 +13,7 @@ namespace Daoris.Driver;
 /// <para><b>This machine's, never the record's.</b> A file that does not read is no choice: the words wait for the account,
 /// which loses nothing.</para>
 ///
-/// <para>What is kept is this store's; the file and its format are <see cref="GoOnFiles"/>' (STRUCT3h, D166's note).</para>
+/// <para>What is kept is this store's; the file and its format are <see cref="GoOnFiles"/>'.</para>
 /// </remarks>
 public sealed class NewSessionChoices(string home)
 {
@@ -25,7 +25,7 @@ public sealed class NewSessionChoices(string home)
     /// <summary>
     /// Keep the choice for these words, replacing any before. An id that is not a session's keeps nothing.
     /// </summary>
-    /// <exception cref="IOException">The choice could not be written: the person is told, rather than told it was kept.</exception>
+    /// <exception cref="IOException">The choice could not be written: the person is told, rather than told it is kept.</exception>
     public void Choose(string session, IEnumerable<string> said, DateTimeOffset at)
     {
         if (!SessionEventText.IsLocalId(session)) return;
@@ -53,13 +53,13 @@ public sealed class NewSessionChoices(string home)
 }
 
 /// <summary>
-/// *Go on in a new session* (MSG1g, D137 §2.2's account paragraph): words a resume holds while the account their session ran on
+/// *Go on in a new session*: words a resume holds while the account their session ran on
 /// cools go on now in a new session, handed them, without that conversation. The hand-over's press naming no agent, the screen's
-/// <c>SESSION_HAND_OVER</c> and the terminal's <c>daoris session hand-over &lt;id&gt;</c> alike (D50): it keeps the person's choice (<see cref="NewSessionChoices"/>), and the
+/// <c>SESSION_HAND_OVER</c> and the terminal's <c>daoris session hand-over &lt;id&gt;</c> alike: it keeps the person's choice (<see cref="NewSessionChoices"/>), and the
 /// driver's next look carries the words on as it carries on words whose account cannot run there.
 /// </summary>
 /// <remarks>
-/// <para><b>Refused before anything is kept</b>: D137 §2.2's nevers by <see cref="WordsNever"/>, a session still running, one
+/// <para><b>Refused before anything is kept</b>: what never goes on, by <see cref="WordsNever"/>, a session still running, one
 /// with nothing waiting, and what nothing carries on by itself, a conversation and a closed quest's session, which are pointed
 /// at *Start a conversation with these words*; and words whose account is not cooling, which the same session goes on with at
 /// the next look, better than any new one.</para>
@@ -69,10 +69,10 @@ public static class GoOnNew
     /// <summary>Nothing waits on the record to go on with.</summary>
     public const string NoWords = "no-words";
 
-    /// <summary>The session runs: words reach it at its door (D136), and it needs no new session.</summary>
+    /// <summary>The session runs: words reach it at its door, and it needs no new session.</summary>
     public const string Running = "running";
 
-    /// <summary>A conversation, which nothing carries on by itself (D137 §2.2): *Start a conversation with these words* is the door.</summary>
+    /// <summary>A conversation, which nothing carries on by itself: *Start a conversation with these words* is the door.</summary>
     public const string Conversation = "conversation";
 
     /// <summary>A closed quest's session, which nothing carries on by itself either.</summary>
@@ -82,16 +82,16 @@ public static class GoOnNew
     public const string NotCooling = "not-cooling";
 
     /// <summary>Judge and keep the choice for a session of this machine's.</summary>
-    /// <param name="coolingOf">The cool-off a start on an adapter would read for an account and the model its line asks (MODELROLE1k2), or null where it is ready.</param>
+    /// <param name="coolingOf">The cool-off a start on an adapter would read for an account and the model its line asks, or null where it is ready.</param>
     public static Task<GoOnNewAnswer> AskAsync(
         ServiceClient service, string home, Func<string?, string?, string?, CoolingEntry?> coolingOf, string id, DateTimeOffset now,
         CancellationToken ct = default) =>
         AskAsync(service, home, coolingOf, id, now, null, ct);
 
     /// <summary>
-    /// FOUNDATION1h branch 2 (the foundation design §3.1): the course's one decision for <see cref="CourseTrigger.GoOnNew"/> says whether the
-    /// words may go on in a new session; this reads the facts it decides over and says its answer in the door's own codes and words, so
-    /// nothing a person reads changes. <paramref name="decided"/> hears what the course answered: a test's, no person's.
+    /// The course's one decision for <see cref="CourseTrigger.GoOnNew"/> says whether the
+    /// words may go on in a new session; this reads the facts it decides over and says its answer in the door's own codes and words.
+    /// <paramref name="decided"/> hears what the course answered: a test's, no person's.
     /// </summary>
     internal static async Task<GoOnNewAnswer> AskAsync(
         ServiceClient service, string home, Func<string?, string?, string?, CoolingEntry?> coolingOf, string id, DateTimeOffset now,
@@ -131,7 +131,7 @@ public static class GoOnNew
                     CourseNeverWhy.Teammate => Refused(WordsNever.Teammate, $"{id} ran on {id[..id.IndexOf('/')]}, where its conversation is; nothing said here reaches it."),
                     CourseNeverWhy.Intake => Refused(WordsNever.Intake, $"{id} is an intake; answer its ask #{record.Ask} instead: publish it or close it."),
                     CourseNeverWhy.StoodDown => Refused(WordsNever.StoodDown, $"it stood down: #{record.Quest} is someone else's, so it has nothing to go on with."),
-                    // A later session of its quest is a quest's; none is a conversation that went on in another (HANDWORDS1).
+                    // A later session of its quest is a quest's; none is a conversation that went on in another.
                     _ when judged == WordsNever.Superseded =>
                         Refused(WordsNever.Superseded, $"#{record.Quest} went on in a later session here, {last}, and its words go there."),
                     _ => Refused(WordsNever.Continued, WordsNever.WentOn(id, next!)),
@@ -163,7 +163,7 @@ public static class GoOnNew
             + "Ask Daoris's history starts a new conversation from it."),
         Running => Refused(Running, $"{id} is {record.State}: words reach it there, so it needs no new session."),
         NoWords => Refused(NoWords, $"no words wait on {id} to go on with: `daoris session say {id} \"…\"` says some."),
-        // MSG1f3: the terminal's *Start a conversation with these words*, which takes them off this session.
+        // The terminal's *Start a conversation with these words*, which takes them off this session.
         Conversation => Refused(Conversation,
             $"{id} is a conversation, which nothing carries on by itself: start a conversation with these words instead: "
             + $"`daoris session start-from {id}`."),
@@ -176,7 +176,7 @@ public static class GoOnNew
 
     // What the course reads of the record: the nevers, whether it runs, the words waiting and the quest's status. The nevers are
     // WordsNever's one table, read by its code (a later session of its quest, or the conversation it went on in, is the head's later
-    // part either way). Ask Daoris's own conversation has no quest a new session would serve (ASKHIST1). A park is live, but the
+    // part either way). Ask Daoris's own conversation has no quest a new session would serve. A park is live, but the
     // course reads it as no running turn.
     private static CourseFacts FactsOf(
         SessionRecord record, PriorSession? prior, string? never, string? last, string? next, string? questStatus, CourseAccount? account)

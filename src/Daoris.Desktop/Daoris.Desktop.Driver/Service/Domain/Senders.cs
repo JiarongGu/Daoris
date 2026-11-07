@@ -1,12 +1,12 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Who said a word (COMMS1a, the comms design §3.3), read once from the marks it carries and never stored: the person, Daoris, the
+/// Who said a word, read once from the marks it carries and never stored: the person, Daoris, the
 /// supervisor, a channel post, a helper, a partner, or a second opinion. The driver's twin of the service's <c>Senders</c>; both are held
 /// with the page's <c>sender.ts</c> to <c>fixtures/senders.json</c> among the service's tests, row for row.
 /// </summary>
 /// <remarks>
-/// An event carries no key, so a partner is told from a helper by the work of the record the event's <c>Helper</c> names (B11), which
+/// An event carries no key, so a partner is told from a helper by the work of the record the event's <c>Helper</c> names, which
 /// the caller reads and hands in; a kept word tells it by its key. A reader of an event or a message hands in the marks it carries.
 /// </remarks>
 public static class Senders

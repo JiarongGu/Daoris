@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>Where a repository's hand-over rule was set: <see cref="HandOverRules.DefaultSource"/> where nothing was.</summary>
+/// <summary>Where a repository's hand-over rule is set: <see cref="HandOverRules.DefaultSource"/> where nothing is set.</summary>
 public sealed record ResolvedHandOver(HandOverRule Rule, string Source);
 
 /// <summary>What a set changes, before it is judged: the mode, kept as said to be refused in the twin's words.</summary>
@@ -27,8 +27,7 @@ public sealed record HandOverEdit
 /// one place every door asks. Modelled on <see cref="HelperRules"/>, simpler: a rule is its mode.
 /// </summary>
 /// <remarks>
-/// One table, this suite's <c>fixtures/hand-over-rules.json</c>, cell for cell (<c>HandOverRulesTests</c>); its CLI twin,
-/// <c>handover.ts</c>, left with the driver family's TypeScript (PUSH1f2b, D194 point 7). The look's judge of an agent's ask reads it (<c>HandOverAskJudge</c>).
+/// One table, this suite's <c>fixtures/hand-over-rules.json</c>, cell for cell (<c>HandOverRulesTests</c>). The look's judge of an agent's ask reads it (<c>HandOverAskJudge</c>).
 /// </remarks>
 public static class HandOverRules
 {
@@ -52,7 +51,7 @@ public static class HandOverRules
     /// <summary>
     /// The rule standing for a repository: its own, else its workspace's (one in no workspace being in <c>default</c>), else
     /// <see cref="HandOverRule.Default"/> from <see cref="DefaultSource"/> — names matched in any case, as every door matches them. Read by
-    /// the policy's one reader (<see cref="WorkPolicies.HandOver"/>, FOUNDATION1q).
+    /// the policy's one reader (<see cref="WorkPolicies.HandOver"/>).
     /// </summary>
     public static ResolvedHandOver Resolve(DriverConfig config, string repository, string? workspace)
     {

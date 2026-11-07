@@ -7,7 +7,7 @@ using Fields = Daoris.Driver.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A problem the editor holds open on the draft, as its judgement said it: the code, the step or way, and the words.</summary>
+/// <summary>A problem the editor holds open on the draft, as its judgement says it: the code, the step or way, and the words.</summary>
 /// <param name="Way">The way it is about, by its id: the file's <c>wire</c>.</param>
 public sealed record WorkflowDraftProblem(string Code, string? Node, string? Way, string Words);
 
@@ -15,14 +15,13 @@ public sealed record WorkflowDraftProblem(string Code, string? Node, string? Way
 /// The palette a draft is composed from, compact (the kinds, their options, outcomes and outputs installed here) under its digest: the
 /// room has no reader of it, so a conversation is handed it with its first draft and again when the digest moves.
 /// </summary>
-/// <param name="Text">The compact palette, or null where this conversation was told it under this digest already.</param>
+/// <param name="Text">The compact palette, or null where this conversation has been told it under this digest already.</param>
 public sealed record WorkflowDraftPalette(string Digest, string? Text);
 
 /// <summary>
-/// The workflow draft open in the person's editor, told to Ask Daoris beside their words (FLOWCHART2d, D223; the flowchart design §4
-/// and §8.3): its graph exactly as the editor holds it, the fingerprint the editor's judgement keys on, the place it is for, where it came
+/// The workflow draft open in the person's editor, told to Ask Daoris beside their words: its graph exactly as the editor holds it, the fingerprint the editor's judgement keys on, the place it is for, where it came
 /// from and what it would save to, its route, its pipeline, the step selected and the problems open. Bounded as a whole, and refused
-/// past the bound, never cut. Agent-facing, so its words are Daoris's one copy (D142 point 6).
+/// past the bound, never cut. Agent-facing, so its words are Daoris's one copy.
 /// </summary>
 public sealed partial record WorkflowDraftTold(string Fingerprint, string Place, JsonElement Graph)
 {
@@ -35,16 +34,16 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
     /// <summary>The saved workflow it adds a version to, or the id it would save as new; null where it names none yet.</summary>
     public string? Workflow { get; init; }
 
-    /// <summary>The version it was opened from; null for a draft from a preset or from nothing.</summary>
+    /// <summary>The version it is opened from; null for a draft from a preset or from nothing.</summary>
     public int? Base { get; init; }
 
     /// <summary>Where it came from, as the editor names it: <c>preset:&lt;id&gt;</c>, <c>&lt;workflow&gt;@v&lt;n&gt;</c> or <c>new</c>.</summary>
     public string? Source { get; init; }
 
-    /// <summary>The route the place chooses it for, where the editor was opened on one: <c>default</c>, <c>landed</c> or <c>kind:&lt;id&gt;</c>.</summary>
+    /// <summary>The route the place chooses it for, where the editor is opened on one: <c>default</c>, <c>landed</c> or <c>kind:&lt;id&gt;</c>.</summary>
     public string? Route { get; init; }
 
-    /// <summary>The pipeline its save would keep, <c>development</c> or <c>verification</c>; null where the editor said none.</summary>
+    /// <summary>The pipeline its save would keep, <c>development</c> or <c>verification</c>; null where the editor says none.</summary>
     public string? Pipeline { get; init; }
 
     /// <summary>The step the person has selected, by its id; null where none is.</summary>
@@ -53,7 +52,7 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
     /// <summary>The problems the editor's judgement holds open on it.</summary>
     public IReadOnlyList<WorkflowDraftProblem> Problems { get; init; } = [];
 
-    /// <summary>The palette it is composed from, handed beside it by the host; null where none was read.</summary>
+    /// <summary>The palette it is composed from, handed beside it by the host; null where none is read.</summary>
     public WorkflowDraftPalette? Palette { get; init; }
 
     [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}\z", RegexOptions.CultureInvariant)]
@@ -99,7 +98,7 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
             Pipeline = Fields.NonEmpty(draft, "pipeline"),
             Selected = Fields.NonEmpty(draft, "selected"),
             Problems = [.. Fields.Items(draft, "problems").Select(ProblemOf).OfType<WorkflowDraftProblem>()],
-            // Kept beside a draft as told, so one read back from the record names the palette it was composed from.
+            // Kept beside a draft as told, so one read back from the record names the palette it is composed from.
             Palette = Fields.NonEmpty(draft, "palette") is { } digest ? new WorkflowDraftPalette(digest, null) : null,
         };
     }
@@ -162,7 +161,7 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
     public string Words => $"{Lead}\n{Json}";
 
     /// <summary>
-    /// The note the record keeps of it as told: its lead by code, then what the agent was handed as the program's words, the draft's JSON
+    /// The note the record keeps of it as told: its lead by code, then what the agent is handed as the program's words, the draft's JSON
     /// last and whole, which <see cref="Told"/> reads back.
     /// </summary>
     public SessionEvent ToldNote()
@@ -174,13 +173,13 @@ public sealed partial record WorkflowDraftTold(string Fingerprint, string Place,
     }
 
     /// <summary>
-    /// The drafts a conversation's record says it was told, each by its fingerprint, the newest kept where one was told twice: what the
+    /// The drafts a conversation's record says it is told, each by its fingerprint, the newest kept where one is told twice: what the
     /// draft door judges a proposal against. A note that does not read is no draft told.
     /// </summary>
     public static IReadOnlyDictionary<string, WorkflowDraftTold> Told(IEnumerable<SessionEvent> events) => ToldIn(events);
 
     /// <summary>
-    /// <see cref="Told"/> across the parts of a conversation (REVIEW2 S7): <paramref name="session"/>'s record, then the one its first brief continues, and so
+    /// <see cref="Told"/> across the parts of a conversation: <paramref name="session"/>'s record, then the one its first brief continues, and so
     /// on back, the oldest read first so a draft told again later wins. A part named twice or past <see cref="MostParts"/> ends the walk.
     /// </summary>
     public static IReadOnlyDictionary<string, WorkflowDraftTold> ToldAcross(string session, Func<string, IEnumerable<SessionEvent>> eventsOf)

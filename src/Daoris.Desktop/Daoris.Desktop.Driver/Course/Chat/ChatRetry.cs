@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a conversation on the protocol door is handed to try a transient failure again in the same conversation (AGENTERRORS1b, D210, the
-/// agent-errors design §5.1, §7): the one reader over the adapter set, the clock its waits are read off
+/// What a conversation on the protocol door is handed to try a transient failure again in the same conversation: the one reader over the adapter set, the clock its waits are read off
 /// (<c>.claude/knowledge/held-clocks.md</c>), and who it is. The conversation's turns supply the rest, since its process lives across
 /// turns and its words wait in its own queue.
 /// </summary>
@@ -15,7 +14,7 @@ internal sealed record ChatRetry(string Session, string Agent, TimeProvider Cloc
     /// <summary>Told as each try goes, its number from one, and when the next would, or null where it is the last: the machine log's line.</summary>
     public Action<TransientEpisode, int, DateTimeOffset?>? Tried { get; init; }
 
-    /// <summary>The tries its episode makes: its line's tries rule (CONTEXTDRIVE1n, <see cref="ConversationRules.Tries"/>), else D210's five.</summary>
+    /// <summary>The tries its episode makes: its line's tries rule (<see cref="ConversationRules.Tries"/>), else five.</summary>
     public int Limit { get; init; } = TransientRetry.Bound;
 
     /// <summary>Told as a turn ends past its episode, before its end is recorded: the turn's end its rules then judge (<see cref="TransientMove"/>).</summary>

@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A move record's phases (FOUNDATION1f-i; the foundation design §3.3): <c>decided</c> → <c>quiescing</c> → <c>old-ended</c> → <c>opening</c> →
+/// A move record's phases: <c>decided</c> → <c>quiescing</c> → <c>old-ended</c> → <c>opening</c> →
 /// <c>opened</c> → [<c>copied</c> → <c>verified</c>, the carry's] → <c>delivering</c> → <c>delivered</c>, or <c>fell-back</c>, or <c>held</c>
 /// → <c>closed</c>, or <c>closed</c>. The names the course's own reading of a standing move uses are the same names.
 /// </summary>
@@ -13,7 +13,7 @@ public enum MoveRecordPhase
     /// <summary>Waiting for the old part's natural boundary.</summary>
     Quiescing,
 
-    /// <summary>The old part has ended, or there was none to end: a move from an ended record is written here.</summary>
+    /// <summary>The old part has ended, or there is none to end: a move from an ended record is written here.</summary>
     OldEnded,
 
     /// <summary>The open asked, under the move's <c>opens</c> key.</summary>
@@ -37,14 +37,14 @@ public enum MoveRecordPhase
     /// <summary>Fell back: the move ended on the old part, with its code.</summary>
     FellBack,
 
-    /// <summary>Held for the person, with its reason: it stands until it closes <c>resolved</c> by §3.3's one rule.</summary>
+    /// <summary>Held for the person, with its reason: it stands until it closes <c>resolved</c> by the held move's one rule.</summary>
     Held,
 
     /// <summary>Closed, with its reason: superseded, gone or resolved.</summary>
     Closed,
 }
 
-/// <summary>A phase's word in <c>moves.phase</c>, and the order the phases go in (§3.3).</summary>
+/// <summary>A phase's word in <c>moves.phase</c>, and the order the phases go in.</summary>
 public static class MovePhases
 {
     private static readonly (MoveRecordPhase Phase, string Word)[] Words =
@@ -95,7 +95,7 @@ public static class MovePhases
     };
 }
 
-/// <summary>Who executes a move (§3.3): a conversation's by the shell whose chat runner runs it, a driven line's by the loop whose look runs it.</summary>
+/// <summary>Who executes a move: a conversation's by the shell whose chat runner runs it, a driven line's by the loop whose look runs it.</summary>
 public static class MoveExecutors
 {
     public const string Conversation = "conversation";
@@ -105,7 +105,7 @@ public static class MoveExecutors
     public static readonly IReadOnlyList<string> All = [Conversation, Driven];
 }
 
-/// <summary>How a move goes (the design §3.1's <c>Move</c>): <c>brief</c>, or <c>carry</c> once SWITCHCTX1 lands.</summary>
+/// <summary>How a move goes: <c>brief</c>, or <c>carry</c>.</summary>
 public static class MoveHows
 {
     public const string Brief = "brief";
@@ -115,7 +115,7 @@ public static class MoveHows
     public static readonly IReadOnlyList<string> All = [Brief, Carry];
 }
 
-/// <summary>Why a move closed (§3.3): the old part went on before the open; its record left or its destination is gone; a hold ended by the one rule.</summary>
+/// <summary>Why a move closed: the old part went on before the open; its record left or its destination is gone; a hold ended by the one rule.</summary>
 public static class MoveCloseWhy
 {
     public const string Superseded = "superseded";
@@ -127,7 +127,7 @@ public static class MoveCloseWhy
     public static readonly IReadOnlyList<string> All = [Superseded, Gone, Resolved];
 }
 
-/// <summary>The external effects a move marks before it makes them (§3.3, §13.4 step 2): a spawn, a prompt, a copy.</summary>
+/// <summary>The external effects a move marks before it makes them: a spawn, a prompt, a copy.</summary>
 public static class MoveEffects
 {
     public const string Spawn = "spawn";
@@ -139,7 +139,7 @@ public static class MoveEffects
     public static readonly IReadOnlyList<string> All = [Spawn, Prompt, Copy];
 }
 
-/// <summary>Why a take of a move was refused, nothing written (§13.4, §19.1).</summary>
+/// <summary>Why a take of a move is refused, nothing written.</summary>
 public static class MoveTakeRefusals
 {
     /// <summary>The claim is the taker's own run's: a live run keeps its moves.</summary>
@@ -154,14 +154,14 @@ public static class MoveTakeRefusals
     /// <summary>The move has ended: there is nothing to take up.</summary>
     public const string Ended = "ended";
 
-    /// <summary>No such move: its record was deleted, and the move with it.</summary>
+    /// <summary>No such move: its record is deleted, and the move with it.</summary>
     public const string Gone = "gone";
 
-    /// <summary>The move is no hand-over waiting to be taken (FOUNDATION1f-v part c): it has begun, or it names no agent, so its own executor goes on with it.</summary>
+    /// <summary>The move is no hand-over waiting to be taken: it has begun, or it names no agent, so its own executor goes on with it.</summary>
     public const string NotWaiting = "not-waiting";
 }
 
-/// <summary>What the course decided a move of a record left to be, as the move record writes it at its claim (§3.3, §13.4 step 1).</summary>
+/// <summary>What the course decided a move of a record left to be, as the move record writes it at its claim.</summary>
 /// <param name="Left">The record left: the line's head the move is from.</param>
 /// <param name="Executor"><see cref="MoveExecutors"/>' word.</param>
 /// <param name="How"><see cref="MoveHows"/>' word.</param>
@@ -169,7 +169,7 @@ public static class MoveTakeRefusals
 /// <param name="By">Its <c>from_by</c>, today's hand-over asker codes.</param>
 public sealed record MoveDecision(string Left, string Executor, string How, string Why, string By)
 {
-    /// <summary>A move from an ended record, which has no part to end: written at <c>old-ended</c> (§3.3).</summary>
+    /// <summary>A move from an ended record, which has no part to end: written at <c>old-ended</c>.</summary>
     public bool FromEnded { get; init; }
 
     /// <summary>The settled selection's account, by profile name, where it is settled.</summary>
@@ -181,20 +181,20 @@ public sealed record MoveDecision(string Left, string Executor, string How, stri
     /// <summary>The brief's recipe: how many of the old part's events it is composed up to, or null for all.</summary>
     public int? RecipeBound { get; init; }
 
-    /// <summary>The agent the new part opens on where the move names one, a hand-over's (part 2, step 5); null for the line's own.</summary>
+    /// <summary>The agent the new part opens on where the move names one, a hand-over's; null for the line's own.</summary>
     public string? Agent { get; init; }
 
-    /// <summary>The model and effort of the choice the hand-over was offered and approved on (STAFFPOLICY1d), with <see cref="Agent"/>; null for the agent's own.</summary>
+    /// <summary>The model and effort of the choice the hand-over is offered and approved on, with <see cref="Agent"/>; null for the agent's own.</summary>
     public string? Model { get; init; }
 
     public string? Effort { get; init; }
 
-    /// <summary>A limit's refused turns' bound: how many of the old part's events its refused turns' words are read within (part 2, step 5).</summary>
+    /// <summary>A limit's refused turns' bound: how many of the old part's events its refused turns' words are read within.</summary>
     public int? RefusedBound { get; init; }
 }
 
 /// <summary>
-/// Why a move was held for the person (§3.3): each hold stands until it closes <c>resolved</c> by §3.3's one rule, once nothing it names waits
+/// Why a move is held for the person: each hold stands until it closes <c>resolved</c> by the held move's one rule, once nothing it names waits
 /// on its destination's <c>said</c> (<see cref="MoveWordDispositions.Named"/>).
 /// </summary>
 public static class MoveHoldWhy
@@ -203,20 +203,20 @@ public static class MoveHoldWhy
     public const string Unrecorded = "unrecorded";
 
     /// <summary>
-    /// Its delivery was cut before every word it moved had <c>sent</c> (part 3; §13.4 step 4, §19.4): a word gone from its destination without
+    /// Its delivery is cut before every word it moved had <c>sent</c>: a word gone from its destination without
     /// <c>sent</c> is <i>left</i>, one still waiting there attempted and without it uncertain, and the hold names them and its begun effect.
     /// </summary>
     public const string Undelivered = "undelivered";
 
     /// <summary>
-    /// The line's head moved past its destination before anything was delivered there (§13.4 step 5, §19.3), which only an older build does:
+    /// The line's head moved past its destination before anything is delivered there, which only an older build does:
     /// the destination's waiting words are named <see cref="MoveWordDispositions.Held"/>, the person's offered to be taken back and said at the head.
     /// </summary>
     public const string Superseded = "superseded";
 }
 
 /// <summary>
-/// A moved word's disposition in <c>move_words</c> (FOUNDATION1f-i part 3, D212; the foundation design §3.3, §13.4 step 4, §19.4): what the
+/// A moved word's disposition in <c>move_words</c>: what the
 /// move knows of it, written once and never over another, and never its text. A word with none waits to be delivered.
 /// </summary>
 public static class MoveWordDispositions
@@ -247,14 +247,14 @@ public static class MoveWordDispositions
 }
 
 /// <summary>
-/// A move an older build's box kept, as its import writes it (FOUNDATION1f-i part 2; §3.3, §13.5): the decision, the phase the box shows it at
+/// A move an older build's box kept, as its import writes it: the decision, the phase the box shows it at
 /// (<c>decided</c>, <c>old-ended</c> or <c>opened</c>), and what that phase carries.
 /// </summary>
 /// <param name="Decision">The move as the box decided it.</param>
 /// <param name="Phase">The phase the box shows.</param>
 public sealed record MoveFromBox(MoveDecision Decision, MoveRecordPhase Phase)
 {
-    /// <summary>The moment the box says it was decided, ISO 8601; null for the import's own.</summary>
+    /// <summary>The moment the box says it decided, ISO 8601; null for the import's own.</summary>
     public string? DecidedAt { get; init; }
 
     /// <summary>The record its open made, at <c>opened</c>.</summary>
@@ -270,25 +270,25 @@ public sealed record MoveFromBox(MoveDecision Decision, MoveRecordPhase Phase)
 /// </summary>
 public sealed record MoveImported(MoveRecord? Move, MoveRecord? Standing, string? Held);
 
-/// <summary>A move's claim (§13.3, §13.4): the move, the process run that holds it and its generation, which every write checks inside its transaction.</summary>
+/// <summary>A move's claim: the move, the process run that holds it and its generation, which every write checks inside its transaction.</summary>
 public sealed record MoveClaim(long Move, string Run, long Generation);
 
-/// <summary>A move's effect mark (§3.3): the effect begun and its moment, and, once known, its outcome and its moment.</summary>
+/// <summary>A move's effect mark: the effect begun and its moment, and, once known, its outcome and its moment.</summary>
 public sealed record MoveEffect(string What, string Begun, string? Outcome, string? Ended);
 
-/// <summary>One word in transfer (§13.3's <c>move_words</c>): its id, producer key, transfer id, order and disposition, never its text.</summary>
+/// <summary>One word in transfer (<c>move_words</c>): its id, producer key, transfer id, order and disposition, never its text.</summary>
 /// <param name="Word">The word's id on the record left.</param>
 /// <param name="Producer">Its producer's key, or null for a keyless word.</param>
 /// <param name="Transfer">The transfer id the open moved it under.</param>
 /// <param name="Position">Its order among the move's words.</param>
-/// <param name="Disposition">Its disposition once one is known (<see cref="MoveWordDispositions"/>, part 3; refused at a limit, row f-v's); null until then.</param>
+/// <param name="Disposition">Its disposition once one is known (<see cref="MoveWordDispositions"/>); null until then.</param>
 public sealed record MoveRecordWord(string Word, string? Producer, string Transfer, int Position, string? Disposition = null)
 {
-    /// <summary>The moment its disposition was written, ISO 8601; null until then.</summary>
+    /// <summary>The moment its disposition is written, ISO 8601; null until then.</summary>
     public string? DisposedAt { get; init; }
 }
 
-/// <summary>One row of <c>moves</c>, as the store holds it (§3.3, §13.3): never a word's text, a path or a credential.</summary>
+/// <summary>One row of <c>moves</c>, as the store holds it: never a word's text, a path or a credential.</summary>
 /// <param name="Id">The move's id, never handed out again.</param>
 /// <param name="Left">The record left.</param>
 /// <param name="Executor"><see cref="MoveExecutors"/>' word.</param>
@@ -339,7 +339,7 @@ public sealed record MoveRecord(long Id, string Left, string Executor, string Ph
     /// <summary>The agent its new part opens on, where it names one.</summary>
     public string? Agent { get; init; }
 
-    /// <summary>The model and effort of the choice a hand-over was approved on (STAFFPOLICY1d); null for the agent's own.</summary>
+    /// <summary>The model and effort of the choice a hand-over is approved on; null for the agent's own.</summary>
     public string? Model { get; init; }
 
     public string? Effort { get; init; }
@@ -347,13 +347,13 @@ public sealed record MoveRecord(long Id, string Left, string Executor, string Ph
     /// <summary>A limit's refused turns' bound.</summary>
     public int? RefusedBound { get; init; }
 
-    /// <summary>The phase moment it was last said quiet for (<c>move.quiet</c>, §19.1 point 4), or null where it never was.</summary>
+    /// <summary>The latest phase moment said quiet (<c>move.quiet</c>), or null where none has been said.</summary>
     public string? QuietAt { get; init; }
 }
 
 /// <summary>
 /// What a decision came to: the move claimed by the deciding run, or the record's standing move, which the decider reads as the course's
-/// <c>Never</c>: the one it left, or since part 3 the one whose open made it, a destination taking no move of its own while that stands.
+/// <c>Never</c>: the one it left, or the one whose open made it, a destination taking no move of its own while that stands.
 /// </summary>
 /// <param name="Move">The new move, or the one already standing.</param>
 /// <param name="Claim">The decider's claim on the new move; null where another move stands.</param>
@@ -363,20 +363,20 @@ public sealed record MoveDecided(MoveRecord Move, MoveClaim? Claim)
     public bool Claimed => Claim is not null;
 }
 
-/// <summary>What a take came to: the move under the taker's claim, or why it was refused (<see cref="MoveTakeRefusals"/>), nothing written.</summary>
+/// <summary>What a take came to: the move under the taker's claim, or why it is refused (<see cref="MoveTakeRefusals"/>), nothing written.</summary>
 public sealed record MoveTaken(MoveRecord? Move, MoveClaim? Claim, string? Refused);
 
-/// <summary>A write under a claim the move no longer holds: taken by another run, or the move gone with its record. Nothing was written.</summary>
+/// <summary>A write under a claim the move no longer holds: taken by another run, or the move gone with its record. Nothing is written.</summary>
 public sealed class MoveClaimLostException(MoveClaim claim, string why)
     : DriverException($"move {claim.Move} is no longer claimed by run {claim.Run} at generation {claim.Generation}: {why}; nothing was written.")
 {
-    /// <summary>The claim the write was made under.</summary>
+    /// <summary>The claim the write is made under.</summary>
     public MoveClaim Claim { get; } = claim;
 }
 
 /// <summary>A write the move's phase or effect does not take: a phase out of its order, an ended move, a second effect over one never recorded.</summary>
 public sealed class MoveRefusedException(long move, string why) : DriverException($"move {move}: {why}; nothing was written.")
 {
-    /// <summary>The move the write was refused on.</summary>
+    /// <summary>The move whose write is refused.</summary>
     public long Move { get; } = move;
 }

@@ -1,18 +1,18 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// How the running Daoris's pipe treats a route (RPC1a's census, the terminal RPC design §4.2), as a verb reads it before it looks
+/// How the running Daoris's pipe treats a route, as a verb reads it before it looks
 /// for the instance: a twin of the modules' <c>PipeClass</c>, which the driver library cannot see, held to it route by route by
 /// <c>PipeCensusTests</c>. A wire's words, added to and never renamed.
 /// </summary>
 public enum RouteClass
 {
-    /// <summary>A read, or a press D156 §3 leaves to an agent or to the driver: the instance runs it as asked.</summary>
+    /// <summary>A read, or a press left to an agent or to the driver: the instance runs it as asked.</summary>
     Open,
 
     /// <summary>
-    /// A press D156 §3 makes the person's alone: sent to the instance that answers, which shows it in its window and runs it on the
-    /// person's Confirm (RPC1c), the verb saying it waits; a verb with no client path yet acts alone, as it did.
+    /// A press that is the person's alone: sent to the instance that answers, which shows it in its window and runs it on the
+    /// person's Confirm, the verb saying it waits; a verb with no client path acts alone.
     /// </summary>
     Person,
 
@@ -20,15 +20,15 @@ public enum RouteClass
     Window,
 
     /// <summary>
-    /// A role's act (SUPERVISOR1a-ii, D208): sent only by its holder's verb, with a proof by the holder key over the hello's nonce, and
+    /// A role's act: sent only by its holder's verb, with a proof by the holder key over the hello's nonce, and
     /// judged by the instance with no card; refused where not covered, never done alone.
     /// </summary>
     Role,
 }
 
 /// <summary>
-/// A route a terminal verb sends over the pipe, with the class the census gives it (RPC1b). The route's vocabulary is the settings'
-/// (FOUNDATION1 mod-iii): the settings' own presses name it, and the instance's door, which sends it, reads it from here.
+/// A route a terminal verb sends over the pipe, with the class the census gives it. The route's vocabulary is the settings':
+/// the settings' own presses name it, and the instance's door, which sends it, reads it from here.
 /// </summary>
 /// <param name="Module">The module, as the kit's dispatcher names it.</param>
 /// <param name="Route">The route, as its module's table names it.</param>

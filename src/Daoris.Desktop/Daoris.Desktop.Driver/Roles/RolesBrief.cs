@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The holder's brief (STEWARDROLE1a-i, D209 §2.2): what <c>daoris role brief</c> prints, for each role this build knows, what it
+/// The holder's brief: what <c>daoris role brief</c> prints, for each role this build knows, what it
 /// does, what it never does and how its verbs answer, headed by its revision. Daoris's own text: it names no key and no appointment,
 /// and the holder loads no instruction file, so this is where its brief comes from, the initial prompt telling it to read it.
 /// </summary>

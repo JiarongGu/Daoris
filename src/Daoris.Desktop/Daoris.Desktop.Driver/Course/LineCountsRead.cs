@@ -3,10 +3,10 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Reads what <see cref="LineCounts.Of"/> answers from, once for a line (CONTEXTDRIVE1a, the context-counters design §2.2): the service's
+/// Reads what <see cref="LineCounts.Of"/> answers from, once for a line: the service's
 /// records, read once and handed to the readers that count them today (<see cref="ServiceClient.ReadStrikes"/>,
 /// <see cref="ServiceClient.ReadFailedRuns"/>), the line's events, its moves from <see cref="StaffMoves"/>, and its answers alone from its
-/// admission (<see cref="ContinuationAdmissions"/>, COMMS1g) once one is kept. It keeps nothing: a count is read from its record each time,
+/// admission (<see cref="ContinuationAdmissions"/>) once one is kept. It keeps nothing: a count is read from its record each time,
 /// so a restart reads it equal.
 /// </summary>
 public sealed class LineCountsRead(
@@ -40,8 +40,7 @@ public sealed class LineCountsRead(
     }
 
     /// <summary>
-    /// The line <paramref name="session"/> is on as facts below the course (CONTEXTDRIVE1b, CONTEXTDRIVE1i; the context-counters design §3,
-    /// §5): its counts, each with the number Daoris acts on it at today, its parts and its last go-ons, read from this home's files over the
+    /// The line <paramref name="session"/> is on as facts below the course: its counts, each with the number Daoris acts on it at today, its parts and its last go-ons, read from this home's files over the
     /// records' text as the service answered it (null where it did not).
     /// </summary>
     public static LineFacts FactsOf(string home, string session, string? recordsJson)
@@ -60,7 +59,7 @@ public sealed class LineCountsRead(
         };
     }
 
-    /// <summary>The line's effective rules (CONTEXTDRIVE1e); null where the records did not read.</summary>
+    /// <summary>The line's effective rules; null where the records did not read.</summary>
     private static IReadOnlyDictionary<string, IReadOnlyList<SupervisorRule>>? Ruled(string home, string session, LineEvidence evidence)
     {
         var book = SupervisorRuleBook.Read(home);
@@ -140,7 +139,7 @@ public sealed class LineCountsRead(
         try
         {
             var all = events.After(id, 0).Events;
-            // The log's first event is seq 1 until D195's retention drops the oldest: a log that starts later has lost its start.
+            // The log's first event is seq 1 until the log's retention drops the oldest: a log that starts later has lost its start.
             return new PartEvents(all, all.Count > 0 && all[0].Seq > 1);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or DriverException)

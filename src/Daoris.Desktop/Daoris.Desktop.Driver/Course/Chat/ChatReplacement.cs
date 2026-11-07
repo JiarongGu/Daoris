@@ -92,13 +92,13 @@ internal sealed class ChatReplacement(IExecutorWiring wiring) : IExecutor
 
         if (pending.Next is not { } next)
         {
-            // Its door opened and carried its choice, or failed for another reason: refusals are no longer this start's.
+            // Its door opened and carried its choice, or failed for another reason: refusals are not this start's any more.
             if (string.Equals(pending.Current, sessionId, StringComparison.OrdinalIgnoreCase)) pending.Dispatched();
             return;
         }
 
         pending.Next = null;
-        // The display a moved part's first message was held with is the replacement's to write now, and nothing holds it for this record.
+        // The display a moved part's first message is held with is the replacement's to write now, and nothing holds it for this record.
         (string Text, IReadOnlyList<SessionEvent> Events)? shown = context.Shown.TryRemove(sessionId, out var held) ? held : null;
         context.ShownMoved.TryRemove(sessionId, out _);
         // Its process has stopped and its record left Running, so its one count is given back first.

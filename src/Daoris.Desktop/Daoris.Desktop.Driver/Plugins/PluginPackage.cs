@@ -1,13 +1,13 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A Daoris plugin package and its reader, offline (PLUGDIST1a, D120; the distribution design §5.1 and §5.7). A
+/// A Daoris plugin package and its reader, offline. A
 /// package is a NuGet <c>.nupkg</c>, a zip, of the custom package type <see cref="Type"/> alone, whose type version's
 /// major number is the plugin API it speaks, with no dependencies, and its plugin folder under <see cref="Root"/>.
 /// </summary>
 /// <remarks>
 /// <para><b>Read before extract.</b> The nuspec's id, version, type and dependencies, and every entry under
-/// <c>plugin/</c>, are judged before anything is written: a refusal leaves the home as it was. The file is opened
+/// <c>plugin/</c>, are judged before anything is written: a refusal leaves the home as it is. The file is opened
 /// once, shared for reading only, so what is hashed is what is extracted.</para>
 ///
 /// <para><b>The <c>plugin/</c> guard.</b> Only <c>plugin/**</c> is extracted, into a stage under the home that the
@@ -20,10 +20,10 @@ namespace Daoris.Driver;
 /// its API to the type's, and <see cref="PluginInstall"/> adds it, never replacing an installed plugin, with the
 /// package recorded in <see cref="PluginSource.FileName"/>.</para>
 ///
-/// <para>No NuGet client, and no network: a package source over HTTP is PLUGDIST1c's, and hands this the file it
-/// fetched. 🔴 Nothing a plugin declares runs here; the loop starts it at its next look.</para>
+/// <para>No NuGet client, and no network: this reads a file it is handed.
+/// 🔴 Nothing a plugin declares runs here; the loop starts it at its next look.</para>
 ///
-/// <para>The use case (STRUCT3a): what the package's words are is the Domain's <see cref="PluginPackageRules"/>, the file
+/// <para>The use case: what the package's words are is the Domain's <see cref="PluginPackageRules"/>, the file
 /// <see cref="PluginPackageFile"/>'s.</para>
 /// </remarks>
 public static class PluginPackage
@@ -83,7 +83,7 @@ public static class PluginPackage
         }
     }
 
-    /// <summary>§5.7 step 3: the stage read as the catalogue reads a plugin, then held to the package that carried it.</summary>
+    /// <summary>The stage read as the catalogue reads a plugin, then held to the package that carried it.</summary>
     private static PluginManifest ReadStage(string stage, PluginPackageRead read, IReadOnlyCollection<string> reserved)
     {
         var said = PluginPackageRules.Said(read.Package, read.Version);
@@ -107,7 +107,7 @@ public static class PluginPackage
         return manifest;
     }
 
-    /// <summary>§5.7 step 4: an add never replaces, and the refusal names where the installed one came from.</summary>
+    /// <summary>An add never replaces, and the refusal names where the installed one came from.</summary>
     private static string Installed(string id, string folder)
     {
         var (source, problem) = PluginSource.Read(folder);
@@ -120,16 +120,15 @@ public static class PluginPackage
 }
 
 /// <summary>
-/// `daoris plugin install &lt;file.nupkg&gt;` (PLUGDIST1a, the distribution design §6.4): a package file's plugin
-/// installed from a terminal, through <see cref="PluginPackage.Install"/>. A package source's <c>install &lt;Id&gt;</c>
-/// is PLUGDIST1c's.
+/// `daoris plugin install &lt;file.nupkg&gt;`: a package file's plugin
+/// installed from a terminal, through <see cref="PluginPackage.Install"/>.
 /// </summary>
 /// <remarks>
-/// <para><b>Why the driver's.</b> The package reader is the driver's alone (D120 §4): the CLI reads and lists the record
+/// <para><b>Why the driver's.</b> The package reader is the driver's alone: the CLI reads and lists the record
 /// a package leaves, and its <c>daoris plugin install</c> says this door is where a package is installed.</para>
 ///
 /// <para>The printing lives in the library so a test runs the whole door in-process. Exit codes keep the family
-/// contract: 0 installed · 2 it could not do what was asked, a refused package among them.</para>
+/// contract: 0 installed · 2 it could not do what it is asked, a refused package among them.</para>
 /// </remarks>
 public static class PluginPackageCommand
 {
@@ -190,7 +189,7 @@ public static class PluginPackageCommand
         if (manifest.Hooks is { } hooks) parts.Add($"speaks on {string.Join(", ", hooks.Points)}");
         var sessions = manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Sessions)).ToList();
         if (sessions.Count > 0) parts.Add($"hands sessions {string.Join(", ", sessions.Select(server => server.Name))}");
-        // HELPPLUG1a (D170 point 3): what it offers Ask Daoris, its tools reaching it only once the person approves them.
+        // What it offers Ask Daoris, its tools reaching it only once the person approves them.
         var help = manifest.Servers.Where(server => server.HandedTo(PluginServerTo.Help)).ToList();
         if (help.Count > 0)
         {
@@ -199,14 +198,14 @@ public static class PluginPackageCommand
                 Tools(server).Count > 0 ? $"{server.Name} ({string.Join("; ", Tools(server))})" : server.Name))}");
         }
 
-        // HELPPLUG1b (D170 point 4): the skills it hands each, as the CLI's `describe` says them.
+        // The skills it hands each, as the CLI's `describe` says them.
         foreach (var (to, who) in new[] { (PluginServerTo.Sessions, "sessions"), (PluginServerTo.Help, "Ask Daoris") })
         {
             var skills = manifest.Skills.Where(skill => skill.HandedTo(to)).Select(skill => skill.Name).ToList();
             if (skills.Count > 0) parts.Add($"hands {who} skill{(skills.Count == 1 ? "" : "s")} {string.Join(", ", skills)}");
         }
 
-        // FABRIC-UNIT1e (§D9): the steps it declares, each with its reach, and what they create, as the CLI's `describe` says them.
+        // The steps it declares, each with its reach, and what they create, as the CLI's `describe` says them.
         if (manifest.Steps.Count > 0)
         {
             var steps = manifest.Steps.Select(step => $"{PluginSteps.NameOf(step)} ({step.Reach})").ToList();

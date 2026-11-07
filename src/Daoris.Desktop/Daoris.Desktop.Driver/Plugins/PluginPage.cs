@@ -1,22 +1,22 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin's page (PLUGUI1d, D119 §3.2 and §4.1): what it declares, as written; each point's kind, wait and whether the
-/// running process listens; a landing plugin's rules and readiness; its source and whether an update waits; when it
-/// was installed; its data folder counted up to a bound; the tests its folder carries; and its health. One reader for
+/// A plugin's page: what it declares, as written; each point's kind, wait and whether the
+/// running process listens; a landing plugin's rules and readiness; its source and whether an update waits; its
+/// install date; its data folder counted up to a bound; the tests its folder carries; and its health. One reader for
 /// both doors: the page's <c>PLUGIN</c> and <c>daoris plugin show</c>.
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>An environment variable's value never leaves the reader</b> (D119 §4.1): a server's <c>env</c> is
+/// <para>🔴 <b>An environment variable's value never leaves the reader</b>: a server's <c>env</c> is
 /// answered by name. Nothing here answers the raw manifest.</para>
 ///
 /// <para><b>A refused plugin is read as written</b> and marked not taken; one whose manifest does not read answers
 /// its sentence and nothing it declares. The catalogue takes nothing of either (<c>PluginCatalog.Load</c>).</para>
 ///
 /// <para><b>Its health is the loop's record where the caller runs the loop</b>, and the machine log's last word
-/// where it does not (D119 §2): the shell hands its <see cref="PluginHealth"/>, a terminal hands none.</para>
+/// where it does not: the shell hands its <see cref="PluginHealth"/>, a terminal hands none.</para>
 ///
-/// <para>The use case (STRUCT3a): the page's records are the Domain's, the folders it counts and walks
+/// <para>The use case: the page's records are the Domain's, the folders it counts and walks
 /// are <see cref="PluginFolders"/>'.</para>
 /// </remarks>
 public static class PluginPage
@@ -37,7 +37,7 @@ public static class PluginPage
     {
         var (entry, manifest, catalog) = Installed(home, id);
         var plugin = entry.Manifest.Id;
-        // HELPPLUG1a's tightening: what it offers Ask Daoris, with the person's approval as it stands.
+        // What it offers Ask Daoris, with the person's approval as it stands.
         var grants = HelpGrants.Read(home, catalog).All.Where(grant => string.Equals(grant.Plugin, plugin, StringComparison.OrdinalIgnoreCase)).ToList();
         PageServer Granted(PageServer page, PluginServer server)
         {
@@ -81,10 +81,10 @@ public static class PluginPage
             Count(entry.Data, CountBound, CountTime),
             PluginFolders.Tests(entry.Folder, CountBound))
         {
-            // FABRIC-UNIT1e (§D9): its steps and what they create, as written.
+            // Its steps and what they create, as written.
             Steps = manifest.Steps,
             Resources = manifest.Resources,
-            // ADOSIGNIN1: its tools as written; nothing is found or run by this read.
+            // Its tools as written; nothing is found or run by this read.
             Tools = [.. manifest.Tools.Select(tool => ToolStanding.Declared(tool, manifest.Tools))],
             ToolsProblem = manifest.ToolsProblem,
         };
@@ -92,7 +92,7 @@ public static class PluginPage
 
     /// <summary>
     /// An installed plugin by its id: the catalogue's entry, its manifest as written (placeholders left as they are,
-    /// read even where the catalogue refused it), and the catalogue it was found in.
+    /// read even where the catalogue refused it), and the catalogue it is found in.
     /// </summary>
     /// <exception cref="DriverException">This machine holds no such plugin.</exception>
     internal static (PluginEntry Entry, PluginManifest Manifest, PluginCatalog Catalog) Installed(string home, string id)

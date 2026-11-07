@@ -3,7 +3,7 @@ using static Daoris.Driver.ChoiceArgs;
 
 namespace Daoris.Driver;
 
-/// <summary>The standing choices' <c>across</c> verb (READ1, D107): whether a checkout is read by agents outside it, and the writes declared into another.</summary>
+/// <summary>The standing choices' <c>across</c> verb: whether a checkout is read by agents outside it, and the writes declared into another.</summary>
 internal static class DriverChoicesAcross
 {
     public static ChoicePress Across(IReadOnlyList<string> args, DriverChoicesWorld world)

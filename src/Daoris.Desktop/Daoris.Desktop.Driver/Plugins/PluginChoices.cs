@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// A plugin's operation refusing by one named check (PUSH1f2f, D194 point 4): the check, its sentence, and the facts a page's catalogue
+/// A plugin's operation refusing by one named check: the check, its sentence, and the facts a page's catalogue
 /// fills it with. <see cref="PluginCodes"/> gives each check the code the route and <c>daoris plugin</c> both say it in.
 /// </summary>
 public sealed class PluginRefusal(string check, string message, params (string Key, string Value)[] facts) : DriverException(message)
@@ -9,7 +9,7 @@ public sealed class PluginRefusal(string check, string message, params (string K
     /// <summary>No plugin of the id is installed.</summary>
     public const string Unknown = "unknown";
 
-    /// <summary>Something on the machine holds a file in the plugin's folder, so it was not moved: nothing was taken.</summary>
+    /// <summary>Something on the machine holds a file in the plugin's folder, so it is not moved: nothing is taken.</summary>
     public const string Busy = "busy";
 
     public string Check { get; } = check;
@@ -18,7 +18,7 @@ public sealed class PluginRefusal(string check, string message, params (string K
 }
 
 /// <summary>
-/// The library's one table from a plugin operation's check to its code (PUSH1f2f, the alone-path design §1.3): the modules'
+/// The library's one table from a plugin operation's check to its code: the modules'
 /// <c>Refusals</c> read these constants, and <c>DriverModule</c> maps a <see cref="PluginRefusal"/> through <see cref="Of"/>, so the
 /// window and the terminal say one refusal in one code.
 /// </summary>
@@ -49,9 +49,9 @@ public static class PluginCodes
 }
 
 /// <summary>
-/// The routes <c>daoris plugin</c> sends while Daoris runs (PUSH1f2f, D194 point 5): the Plugins place's presses, code that runs
-/// in the driver, so each is the person's; and the one verb no route takes, with why it acts alone (D171's PUSH1f note, kept by D194
-/// point 5): the CLI's <c>PLUGIN_VERBS</c>, now this program's. Held to the census by <c>PipeCensusTests</c>.
+/// The routes <c>daoris plugin</c> sends while Daoris runs: the Plugins place's presses, code that runs
+/// in the driver, so each is the person's; and the one verb no route takes, with why it acts alone: the CLI's
+/// <c>PLUGIN_VERBS</c>. Held to the census by <c>PipeCensusTests</c>.
 /// </summary>
 public static class PluginRoutes
 {

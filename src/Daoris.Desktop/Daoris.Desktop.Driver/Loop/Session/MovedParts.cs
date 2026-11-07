@@ -14,7 +14,7 @@ internal static class MovedParts
     }
 
     /// <summary>
-    /// A driven move to a new part said as it happens (D189 point 8): a coded line on the part it left and on the new part, each on
+    /// A driven move to a new part said as it happens: a coded line on the part it left and on the new part, each on
     /// its console too, with the context the part it left stood at and the brief's characters; and <c>session.moved</c> in the
     /// machine log. Every driven start that continues another says it, whatever moved it.
     /// </summary>
@@ -34,13 +34,13 @@ internal static class MovedParts
     }
 
     /// <summary>
-    /// The session a quest's start continues, for its record's <c>from</c> link: the session the quest was handed over from, with the
+    /// The session a quest's start continues, for its record's <c>from</c> link: the session the quest is handed over from, with the
     /// hand-over's why and asker; else a session a limit cut off, carried on onto another account, Daoris's own move; else the
     /// curve's move. Every other carry-on names its link too, so the brief follows the line: <c>retry</c> where its resume fell back,
     /// else <c>carry-on</c>, the person's where their press released or brought it forward. A first start, a resume of its own record
     /// and a fresh start carry nothing on and say none. The link is the course's move, its why and who asked.
     /// </summary>
-    /// <param name="retried">Its record's resume was tried and fell back: a driven record's fallback.</param>
+    /// <param name="retried">Its record's resume is tried and falls back: a driven record's fallback.</param>
     /// <param name="pressed">The person's press carried it on: <i>Try again</i> after their stop, or a bring-forward.</param>
     /// <param name="handed">The quest's hand-over as held, or null.</param>
     /// <param name="carried">The record it carries on, where it carries one on, or null.</param>

@@ -2,8 +2,7 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// What the session requests ask of Ask Daoris's judges: how a request to housekeep and a request for a chosen setting are answered, each
-/// over the home and the loop's service (HELPMODE1c2a, HELPMODE1c3). Help installs it when the driver loads and builds exactly the judges the
-/// watch built before it was a port.
+/// over the home and the loop's service. Help installs it when the driver loads.
 /// </summary>
 internal interface ICourseHelp
 {

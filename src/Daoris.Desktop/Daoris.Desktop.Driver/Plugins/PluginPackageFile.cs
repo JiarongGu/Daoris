@@ -6,9 +6,9 @@ using System.Xml.Linq;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A package file, open for reading only, judged whole (PLUGDIST1a, D120; the distribution design §5.7 steps 1 and 2): what it
+/// A package file, open for reading only, judged whole: what it
 /// says it is, and the plugin's entries, by the Domain's <see cref="PluginPackageRules"/>. Opened once, shared for reading
-/// only, so what is hashed is what is extracted (STRUCT3a: the file is this layer's, its words the Domain's).
+/// only, so what is hashed is what is extracted (the file is this layer's, its words the Domain's).
 /// </summary>
 internal sealed class PluginPackageFile : IDisposable
 {
@@ -88,7 +88,7 @@ internal sealed class PluginPackageFile : IDisposable
     }
 
     /// <summary>
-    /// §5.7 step 2: <c>plugin/**</c> alone, into the stage. Every part was judged inside it already; each
+    /// <c>plugin/**</c> alone, into the stage. Every part is judged inside it already; each
     /// target is checked again against the stage's whole path, since a refusal here costs nothing.
     /// </summary>
     /// <exception cref="PluginPackageRefusal">A part would land outside the stage.</exception>

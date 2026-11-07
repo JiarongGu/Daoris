@@ -1,10 +1,10 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// How a setting-up press ended (WIRING1e): done, whether it changed anything, or refused as data with a code the page words in both
+/// How a setting-up press ended: done, whether it changed anything, or refused as data with a code the page words in both
 /// languages and a sentence for a log. A refusal changes nothing.
 /// </summary>
-/// <param name="Done">Whether the press did what it was asked, or found it already so.</param>
+/// <param name="Done">Whether the press did what it is asked, or found it already so.</param>
 /// <param name="Changed">Whether the account's environment is different now.</param>
 /// <param name="Why">The refusal's code; null when done.</param>
 /// <param name="Message">The refusal's sentence, in English; null when done.</param>

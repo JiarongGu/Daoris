@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The two kinds of appointed role in the catalogue (D233 point 2): the supervisor, who answers a parked session's recorded question with
+/// The two kinds of appointed role in the catalogue: the supervisor, who answers a parked session's recorded question with
 /// one offered choice or leaves it to the person, and the steward, who makes development's management acts on the person's behalf. A
 /// record names its kind; its acts are of that kind's vocabulary, as a working role's works are of the work vocabulary.
 /// </summary>

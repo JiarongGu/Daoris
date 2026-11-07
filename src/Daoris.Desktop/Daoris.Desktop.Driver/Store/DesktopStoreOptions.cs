@@ -7,7 +7,7 @@ public sealed record DesktopStoreOptions
     public string Kind { get; init; } = "verb";
 
     /// <summary>
-    /// Whether the start's confirmation is settled, asked at each import and each stamp-raising migration, never earlier (§13.5). A store
+    /// Whether the start's confirmation is settled, asked at each import and each stamp-raising migration, never earlier. A store
     /// handed none holds both: it is not settled until a reading says it is.
     /// </summary>
     public Func<StoreSettled>? Settled { get; init; }
@@ -15,7 +15,7 @@ public sealed record DesktopStoreOptions
     /// <summary>The migrations, contiguous from 1; null for the build's own (<see cref="DesktopStore.Steps"/>).</summary>
     public IReadOnlyList<StoreMigration>? Steps { get; init; }
 
-    /// <summary>The writer stamp this build writes with: a store stamped past it is refused for writes (§13.3).</summary>
+    /// <summary>The writer stamp this build writes with: a store stamped past it is refused for writes.</summary>
     public int Writer { get; init; } = DesktopStore.WriterStamp;
 
     /// <summary>

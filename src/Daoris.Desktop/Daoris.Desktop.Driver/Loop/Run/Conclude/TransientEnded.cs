@@ -1,8 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// How a pass that is no driven session or conversation ends past its transient bound (AGENTERRORS1d, D210 point 8; the agent-errors design
-/// §7): an intake, a helper, an opinion, a partner and a brainstorm voice each take the one retry at the hold, and each reads its end here,
+/// How a pass that is no driven session or conversation ends past its transient bound: an intake, a helper, an opinion, a partner and a brainstorm voice each take the one retry at the hold, and each reads its end here,
 /// once: <c>failed</c>, said by its kind's code with the tries it made and the provider's words. A pass whose minutes ran out inside the
 /// episode ends the same way, never <i>timed out</i>.
 /// </summary>
@@ -20,7 +19,7 @@ internal static class TransientEnded
 
     /// <summary>
     /// <paramref name="conclusion"/> as a pass of <paramref name="kind"/> ends it: its transient end where the run ended past its bound or its
-    /// minutes ended inside the episode, else as it was. A person's stop is read before this, and stays the person's.
+    /// minutes ended inside the episode, else as it stands. A person's stop is read before this, and stays the person's.
     /// </summary>
     public static SessionConclusion Over(SessionConclusion conclusion, HarnessEnding ended, string kind, string agent, bool timedOut = false) =>
         Of(ended, timedOut) is { } episode ? SessionConclusion.Of("failed", Said(kind, agent, episode)) : conclusion;
@@ -42,7 +41,7 @@ internal static class TransientEnded
     }
 
     /// <summary>
-    /// The check of a pass with no outcome of its own to outrank a retry (a brainstorm voice, §5.5): another try is wanted while the person has
+    /// The check of a pass with no outcome of its own to outrank a retry (a brainstorm voice): another try is wanted while the person has
     /// not stopped it. The other kinds hand <see cref="TransientOwners"/>' check, each its own authority.
     /// </summary>
     public static Func<CancellationToken, Task<bool>> Wanted(SessionProcesses processes, string sessionId) =>

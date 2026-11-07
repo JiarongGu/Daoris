@@ -5,7 +5,7 @@ namespace Daoris.Driver;
 /// <see cref="HookPoints.State"/>, a process started for one occasion's frames and stopped after them.
 /// </summary>
 /// <remarks>
-/// <b>Daoris pushes through its own push act and opens nothing</b> (D37, D241 point 4). A pull request is opened by the plugin's
+/// <b>Daoris pushes through its own push act and opens nothing</b>. A pull request is opened by the plugin's
 /// <c>pull-request</c> step on <see cref="HookPoints.Perform"/>, which the work wire's loop speaks; nothing here speaks it.
 /// </remarks>
 public sealed class LandingPlugins(
@@ -14,16 +14,16 @@ public sealed class LandingPlugins(
     // Where a plugin's word goes: the console under `plugin:<id>`, or a terminal's own lines.
     Action<string, string>? say = null,
     TimeSpan? patience = null,
-    // The process's machine log (PLUGUI1d). Null writes none.
+    // The process's machine log. Null writes none.
     MachineLog? log = null,
-    // The loop's own record of each plugin's health (D119 §2), in the process that runs the loop. Null keeps none.
+    // The loop's own record of each plugin's health, in the process that runs the loop. Null keeps none.
     PluginHealth? health = null,
-    // The loop's own writer of the plugin lines, where the loop lands work itself (LAND2b): its hook set's, so a landing at
+    // The loop's own writer of the plugin lines, where the loop lands work itself: its hook set's, so a landing at
     // done is logged and recorded where its hooks are. It outranks the two above.
     PluginLog? pluginLog = null,
-    // What an occasion's asks reckon their bound by (PLUGHOOK1a); the clock by default.
+    // What an occasion's asks reckon their bound by; the clock by default.
     Func<DateTimeOffset>? clock = null,
-    // How long one ask waits, its handshake inside the first (PLUGHOOK1a); StatePatience by default.
+    // How long one ask waits, its handshake inside the first; StatePatience by default.
     TimeSpan? statePatience = null) : IWorkplacePluginWire
 {
     private readonly PluginLog _log = pluginLog ?? new(log, health);
@@ -31,12 +31,12 @@ public sealed class LandingPlugins(
     private readonly TimeSpan _statePatience = statePatience ?? StatePatience;
 
     /// <summary>
-    /// How long one ask at <see cref="HookPoints.State"/> waits, the handshake inside the first (PLUGHOOK1a, D148 point 2): one
+    /// How long one ask at <see cref="HookPoints.State"/> waits, the handshake inside the first: one
     /// <c>az</c> or <c>gh</c> call takes seconds. A judgement, not a measurement.
     /// </summary>
     public static readonly TimeSpan StatePatience = TimeSpan.FromSeconds(30);
 
-    /// <summary>After this long an occasion starts no more frames; an entry it did not reach is not asked this time (design §2.1).</summary>
+    /// <summary>After this long an occasion starts no more frames; an entry it did not reach is not asked this time.</summary>
     public static readonly TimeSpan StateBound = TimeSpan.FromSeconds(60);
 
     /// <summary>
@@ -53,7 +53,7 @@ public sealed class LandingPlugins(
         start ?? (async (plugin, onLine, ct) =>
             await HookChannels.StartAsync(plugin, home, onLine, ct, patience ?? DefaultPatience).ConfigureAwait(false));
 
-    /// <summary>The moment an occasion reckons by: whether an entry was asked in the last minute, and when an answer was asked.</summary>
+    /// <summary>The moment an occasion reckons by: whether an entry has been asked in the last minute, and when an answer is asked.</summary>
     public DateTimeOffset Now => _clock();
 
     /// <summary>The home's plugins, read as the driver reads them — a harness name this build carries refused.</summary>
@@ -88,7 +88,7 @@ public sealed class LandingPlugins(
     }
 
     /// <summary>
-    /// An occasion's asks at <see cref="HookPoints.State"/> (PLUGHOOK1a, D148 point 2, design §2.1): one process per plugin,
+    /// An occasion's asks at <see cref="HookPoints.State"/>: one process per plugin,
     /// started for its frames and stopped after them; frames one at a time, the entry asked longest ago first, each waiting
     /// <see cref="StatePatience"/> with the handshake inside the first; and no frame started once <see cref="StateBound"/> has
     /// passed. It never throws for a plugin's sake: each failure comes back as its code and Daoris's sentence, and keeps
@@ -134,7 +134,7 @@ public sealed class LandingPlugins(
         StateAsk ask, PluginCatalog catalog, Dictionary<string, (IHookChannel? Channel, string Id, string? Kind, string? Why)> held,
         CancellationToken ct)
     {
-        // When this entry was asked (FABRIC-END6c): the attempt's time, then, once its process listens, the time its own request went
+        // When this entry is asked: the attempt's time, then, once its process listens, the time its own request went
         // out, so each answer is stamped with its own and not the occasion's start.
         var asked = _clock();
         StateAnswer Failed(string kind, string why)
@@ -143,7 +143,7 @@ public sealed class LandingPlugins(
             return new(ask, null, kind, why) { AskedAt = asked };
         }
 
-        // The handshake waits inside the first frame's bound (design §2.1).
+        // The handshake waits inside the first frame's bound.
         using var bound = CancellationTokenSource.CreateLinkedTokenSource(ct);
         bound.CancelAfter(_statePatience);
         var where = PluginEvents.AtStart;
@@ -184,7 +184,7 @@ public sealed class LandingPlugins(
         try
         {
             var answer = await process.Channel!.StateAsync(HookFrames.State(ask.Frame), bound.Token).ConfigureAwait(false);
-            // The answer's code, never its address or its words (D119 §4.2).
+            // The answer's code, never its address or its words.
             _log.Called(process.Id, HookPoints.State, answer.State, took.ElapsedMilliseconds);
             Say(process.Id, $"answered for `{ask.Entry.Branch}`: {answer.State}" + (answer.Message is { } words ? $" — {words}" : ""));
             return new(ask, answer with { Plugin = process.Id }, null) { AskedAt = asked };

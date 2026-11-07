@@ -1,15 +1,15 @@
 namespace Daoris.Driver;
 
 /// <summary>A word waiting on a record's <c>said</c> as a move reads it: its id there, and whether a dispatcher marked it attempted.</summary>
-/// <param name="Word">Its id on the record, which a moved word keeps from the record it left (row d-ii part 3).</param>
+/// <param name="Word">Its id on the record, which a moved word keeps from the record it left.</param>
 /// <param name="Attempted">Whether a dispatcher marked it attempted before a write: it may have reached its agent.</param>
-/// <param name="Person">Whether it is the person's own word: another author's (a helper's answer, an agent's findings, Daoris's) is a claim, never offered as theirs to say (§19.3).</param>
+/// <param name="Person">Whether it is the person's own word: another author's (a helper's answer, an agent's findings, Daoris's) is a claim, never offered as theirs to say.</param>
 public sealed record MoveWaiting(string Word, bool Attempted, bool Person = true);
 
 /// <summary>
-/// A move's destination's <c>said</c>, as the move reads and settles it (FOUNDATION1f-i part 3, D212; the foundation design §3.3, §13.4 step 4,
-/// §19.4): what waits there, the take of words its agent was written, and the settlement of uncertain ones. Never a session event, which is
-/// the display's and no delivery's evidence. Rows f-ii to f-vi hand the service's, <see cref="MoveSaidDoor"/>.
+/// A move's destination's <c>said</c>, as the move reads and settles it: what waits there, the take of words already written to its agent, and the
+/// settlement of uncertain ones. Never a session event, which is
+/// the display's and no delivery's evidence. The service's is <see cref="MoveSaidDoor"/>.
 /// </summary>
 public interface IMoveSaid
 {
@@ -27,16 +27,16 @@ public interface IMoveSaid
 
     /// <summary>
     /// The head of the line a record is on, where it is past the record: the newest record that continues it, which only an older build makes
-    /// while a move stands (§13.4 step 5, §19.3). Null where the record is the head, or where it cannot be told now. Never faults. A reader
+    /// while a move stands. Null where the record is the head, or where it cannot be told now. Never faults. A reader
     /// handed none reads every record as the head.
     /// </summary>
     Task<string?> HeadPastAsync(string record, CancellationToken ct) => Task.FromResult<string?>(null);
 }
 
 /// <summary>
-/// The service's doors to a destination's <c>said</c> (FOUNDATION1f-i part 3): the record's waiting words and their attempt marks as this
-/// machine's records answer them, the taken door, and the take-back door with the <c>lost</c> note kept in the record's events. Rows f-ii to
-/// f-vi hand it the move's readings, the conversations' holder first (FOUNDATION1f-ii part a, <see cref="ConversationMoves"/>).
+/// The service's doors to a destination's <c>said</c>: the record's waiting words and their attempt marks as this
+/// machine's records answer them, the taken door, and the take-back door with the <c>lost</c> note kept in the record's events. The move's
+/// readings are handed to it by <see cref="ConversationMoves"/>.
 /// </summary>
 /// <param name="service">The service whose ledger holds the records.</param>
 /// <param name="events">Where a record's <c>lost</c> note is kept; none keeps none.</param>

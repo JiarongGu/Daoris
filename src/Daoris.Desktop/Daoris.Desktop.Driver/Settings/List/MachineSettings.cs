@@ -23,7 +23,7 @@ public sealed record MachineSetting(string Key, string File, bool Door, string? 
 }
 
 /// <summary>
-/// Every machine setting, declared once (D228): the terminal, Ask Daoris, the window's routes and the page are held to this list by
+/// Every machine setting, declared once: the terminal, Ask Daoris, the window's routes and the page are held to this list by
 /// the settings census, and the page reads it as <c>SETTINGS</c>, written from it by <c>tools/contracts.mjs</c>. A setting that gains
 /// a door is spelled by its key there; one listed twice, or a door under a second name, fails the census.
 /// </summary>

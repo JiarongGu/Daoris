@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>What a partner's pass is asked with (COAGENT1b): the ask, the lead's record, the repository's checkout and the copy's named folder.</summary>
+/// <summary>What a partner's pass is asked with: the ask, the lead's record, the repository's checkout and the copy's named folder.</summary>
 /// <param name="Root">The repository's registered checkout, where the ask's base is.</param>
 /// <param name="Copy">The copy's folder, named in <see cref="PartnerStates.Preparing"/> before it is made.</param>
 public sealed record PartnerPassAsk(PartnerAsk Ask, PriorSession Lead, string Root, string Copy)
@@ -15,17 +15,17 @@ public sealed record PartnerPassAsk(PartnerAsk Ask, PriorSession Lead, string Ro
     public Action<string, string>? Opened { get; init; }
 
     /// <summary>
-    /// The owner's own walk, asked again with what was passed left out (D205 §3.5(f), MODELROLE1e): a refusal of the entry's model at the
+    /// The owner's own walk, asked again with what it passed left out: a refusal of the entry's model at the
     /// open is handled in this call, the refused record ended <c>choice-not-offered</c> and the walk's answer opened, <see cref="Opened"/>
     /// called again with the replacement. The ask names its agent, so the walk is that agent's other accounts, then its other entries.
     /// </summary>
     public Func<IReadOnlyList<ReviewerPassed>, Task<ReviewerChoice>>? Reask { get; init; }
 
-    /// <summary>Told the choice that replaced a refused open, before the replacement's record opens.</summary>
+    /// <summary>Told the choice that stands in for a refused open, before the replacement's record opens.</summary>
     public Action<ReviewerChoice>? Replaced { get; init; }
 }
 
-/// <summary>What a partner's pass came to: its record if one opened, how its turn ended, and only once its job was waited empty.</summary>
+/// <summary>What a partner's pass came to: its record if one opened, how its turn ended, and only once its job is waited empty.</summary>
 /// <param name="Session">The partner's record; null where none opened, and nothing ran.</param>
 /// <param name="Line">What a terminal and a look say, one line.</param>
 public sealed record PartnerPassRun(string? Session, string Line)
@@ -39,12 +39,12 @@ public sealed record PartnerPassRun(string? Session, string Line)
     /// <summary>What the partner said last, where its turn completed: the fallback answer.</summary>
     public string? LastWords { get; init; }
 
-    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c> (D205 §3.5(f)).</summary>
+    /// <summary>Its agent refused the entry's model at the open, before any prompt: the record ended <c>choice-not-offered</c>.</summary>
     public bool NotOffered { get; init; }
 }
 
 /// <summary>
-/// A partner's piece (COAGENT1b, D199 points 2 to 4; the co-agent design §2.3): the person's ask on file is judged, its agent chosen
+/// A partner's piece: the person's ask on file is judged, its agent chosen
 /// and admitted, its slot reserved in the common admission, its copy made at the ask's exact base, its record opened through the host,
 /// its one turn run through the launcher in its strict job, its end waited until the job is empty, its files kept and imported as one
 /// commit frozen at <see cref="PieceRefs.Of"/>, and its answer and facts written. Each side effect is made before the state that names
@@ -69,7 +69,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
     /// <summary>
     /// The pieces on file at a look: each judged and started, or carried on from where it stands, beside the look. Returns how many this
-    /// look reserved, which take slots under the cap before any quest's first start, as a helper's do (D130). Nothing is read where no
+    /// look reserved, which take slots under the cap before any quest's first start, as a helper's do. Nothing is read where no
     /// piece is on file.
     /// </summary>
     /// <param name="taken">The slots this look's other passes already took.</param>
@@ -105,7 +105,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                     }
                 }
 
-                // DRAINHOLD1: every act that starts a session, makes or removes a copy, or keeps into a repository waits out an update's drain
+                // Every act that starts a session, makes or removes a copy, or keeps into a repository waits out an update's drain
                 // (the delivery too, which can go a conversation on in a turn); what is on file stays as it is, and the claim is let go below.
                 if (_context.Config.Draining
                     && (step.Act is PartnerAct.Judge or PartnerAct.Prepare or PartnerAct.RemoveCopyThenPrepare or PartnerAct.Keep
@@ -115,7 +115,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                     continue;
                 }
 
-                // The person's later acts and the read of whether a handed piece was taken in, each in the look, quick and the claim's own.
+                // The person's later acts and the read of whether a handed piece is taken in, each in the look, quick and the claim's own.
                 if (step.Act == PartnerAct.None && (await Acts.RunAsync(ask, state, files, ct).ConfigureAwait(false)
                     ?? await Acts.TakenInAsync(ask, state, files, ct).ConfigureAwait(false)) is { } acted)
                 {
@@ -177,7 +177,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     private sealed record Go(PriorSession Lead, string Root, ReviewerChoice Choice);
 
     /// <summary>
-    /// An ask judged (the design §2.3 steps 1 to 4): its lead a working session of this machine's, its piece and paths sound, its agent
+    /// An ask judged: its lead a working session of this machine's, its piece and paths sound, its agent
     /// chosen and admitted, then its slot and its place in the lead's allowance reserved in one step. A verdict that refuses writes
     /// <see cref="PartnerStates.Refused"/> with its code; one that waits writes <see cref="PartnerStates.Waiting"/>.
     /// </summary>
@@ -244,7 +244,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         return fromOf;
     }
 
-    // The lead's repository's checkout is read with git, unless a test hands in a stand-in, since a real read spawns git.
+    // The lead's repository's checkout is read with git, unless a test hands in a stand-in, because a real read spawns git.
     private async Task<string?> RootAsync(string tree, CancellationToken ct) =>
         _context.PartnerTrees is { } read ? await read(tree, ct).ConfigureAwait(false) : await TreeGates.CheckoutOfTreeAsync(tree, ct).ConfigureAwait(false);
 
@@ -274,7 +274,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
 
     private static LookLine Line(LookClass @class, string line) => new(line, new LookClassed(@class, "partner"));
 
-    /// <summary>A note on a record's conversation and its transcript: never a word, so it reaches no prompt and resets no count (§4.2).</summary>
+    /// <summary>A note on a record's conversation and its transcript: never a word, so it reaches no prompt and resets no count.</summary>
     private void Note(string session, Noted noted)
     {
         _context.Output?.Append(session, $"— {noted.Note}");
@@ -307,7 +307,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         });
 
     /// <summary>
-    /// The agent the ask names, walked for its account and its entries of the partner actor (D205 §4.4), the (entry, account) a refusal at the
+    /// The agent the ask names, walked for its account and its entries of the partner actor, the (entry, account) a refusal at the
     /// open already passed left out.
     /// </summary>
     private Task<ReviewerChoice> ChoosePartnerAsync(PartnerAsk ask, PriorSession lead, IReadOnlyList<ReviewerPassed>? passed, CancellationToken ct) =>
@@ -333,7 +333,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// One reserved piece carried to its answer (the design §2.3 steps 5 to 8): <c>preparing</c> naming the copy, the pass (the copy, the
+    /// One reserved piece carried to its answer: <c>preparing</c> naming the copy, the pass (the copy, the
     /// job, the record, <c>started</c>, the turn, the job waited empty), <c>ending</c> with the keeper's moment, then the keeper.
     /// </summary>
     private async Task<LookLine> RunPieceAsync(PartnerAsk ask, PriorSession lead, string root, ReviewerChoice choice, PartnerFiles files, CancellationToken ct)
@@ -349,7 +349,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var pass = new PartnerPassAsk(ask, lead, root, copy)
         {
             Reask = passed => ChoosePartnerAsync(ask, lead, passed, ct),
-            // A replacement on another account of the named agent: the state names the account that runs (D205 §3.5(f)).
+            // A replacement on another account of the named agent: the state names the account that runs.
             Replaced = next => files.WriteState(files.ReadState(ask.Id)! with { Account = next.Selection?.Profile, At = DateTimeOffset.UtcNow }),
             // 🔴 Started, naming the record and the job, BEFORE its turn: `partner_answer` finds its piece by this state.
             Opened = (partner, job) =>
@@ -362,7 +362,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         var run = await (_context.PartnerPasses ?? PartnerPassAsync)(pass, choice, ct).ConfigureAwait(false);
         if (run.Session is null)
         {
-            // Nothing of the partner's ran: the copy, if any of it was made, is Daoris's own to remove.
+            // Nothing of the partner's ran: the copy, if any of it exists, is Daoris's own to remove.
             await OpinionTree.RemoveAsync(_context.Home, copy, PartnerPass.Prefix).ConfigureAwait(false);
             return Refuse(ask, run.Code ?? PartnerWhy.CopyFailed, agent, files, run.Line);
         }
@@ -375,7 +375,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The keeper (the design §2.3 step 7, §7.9): the copy read as files and judged, one commit written onto the base in the repository,
+    /// The keeper: the copy read as files and judged, one commit written onto the base in the repository,
     /// frozen create-only. <c>imported</c> removes the copy and goes on to the answer; <c>held</c> keeps it for the person; no work refuses
     /// the piece <see cref="PartnerWhy.NoWork"/>, its copy removed.
     /// </summary>
@@ -427,7 +427,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
         return await PieceKeeper.KeepAsync(root, state.Copy!, ask.Id, ask.Base, index, state.Kept!.Value, PartnerPass.Message(ask, state.Agent, state.Account), ct).ConfigureAwait(false);
     }
 
-    /// <summary>The facts Daoris read itself, never the partner's words: the commit, its files, those beyond the piece, and what was left out.</summary>
+    /// <summary>The facts Daoris read itself, never the partner's words: the commit, its files, those beyond the piece, and what is left out.</summary>
     private static PartnerFacts Facts(PartnerAsk ask, string commit, PieceImport.Judged judged)
     {
         IReadOnlyList<string> touched = [.. judged.Changed.Select(change => change.Entry.Path).Concat(judged.Deleted).Order(StringComparer.Ordinal)];
@@ -435,7 +435,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The answer (the design §2.3 step 8): the facts written beside the partner's own words, then <see cref="PartnerStates.Answered"/>,
+    /// The answer: the facts written beside the partner's own words, then <see cref="PartnerStates.Answered"/>,
     /// from which <see cref="HandAsync"/> hands it.
     /// </summary>
     private static LookLine Answer(PartnerAsk ask, PartnerState state, PartnerFiles files, PieceImport.Judged? judged)
@@ -454,13 +454,13 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
     }
 
     /// <summary>
-    /// The hand (the design §2.3 step 9, §7.6): an answered piece's word, in <see cref="PartnerWords"/>' fixed words, handed through the
+    /// The hand: an answered piece's word, in <see cref="PartnerWords"/>' fixed words, handed through the
     /// local host's door under the piece's key to the newest record of the lead's line, by the delivery receipt. The receipt is claimed,
     /// then marked attempted before the door, then taken naming the record the door kept it on, and the state <c>handed</c>. A running
     /// or parked lead takes it at its turn's end, so nothing is tried or said while it runs; a door that refuses puts the receipt back to
-    /// waiting. A receipt found attempted was cut by a restart: it is uncertain and waits for the person, never handed again by itself.
-    /// COMMS1b (the comms design §4.2, §13 points 1, 3 and 4): the look reads the line's head as the host's one door for solicited answers
-    /// walks it and whether its park was answered, an attempt made under the piece's key is asked again inside the settlement's horizon,
+    /// waiting. A receipt found attempted has been cut by a restart: it is uncertain and waits for the person, never handed again by itself.
+    /// The look reads the line's head as the host's one door for solicited answers
+    /// walks it and whether its park has been answered, an attempt made under the piece's key is asked again inside the settlement's horizon,
     /// and a word already waiting is dispatched on the record that holds it. Null where nothing moved worth saying.
     /// </summary>
     private async Task<LookLine?> HandAsync(PartnerAsk ask, PartnerFiles files, CancellationToken ct)
@@ -483,8 +483,8 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
                 return null;
         }
 
-        // Never into a step in flight (D136): a running lead takes it at its turn's end, and a park once the person answered it, beside their
-        // answer (§13 point 1). Said nowhere, as a helper's.
+        // Never into a step in flight: a running lead takes it at its turn's end, and a park once the person answered it, beside their
+        // answer. Said nowhere, as a helper's.
         if (SolicitedHand.Walk(await _context.Service.RecordsAsync(ct).ConfigureAwait(false), ask.Asker).Head is { } head && !SolicitedHand.TakesNow(head)) return null;
 
         receipt = PartnerDelivery.Claim(receipt, ask.Id, ask.Asker, now);
@@ -508,8 +508,8 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             return Line(LookClass.Retry, $"partner  piece `{ask.Id}` is answered, and waits to be handed to session {ask.Asker}'s line: {answer.Message}");
         }
 
-        // FOUNDATION1 row p (the design §3.4 rule 5): the host answered the hand settled, the piece's word left a record of the lead's line and
-        // was kept by an earlier hand whose answer was lost. It is marked handed and never handed again, with no event recorded, no note
+        // The host answered the hand settled: the piece's word left a record of the lead's line and
+        // stands kept by an earlier hand whose answer never arrived. It is marked handed and never handed again, with no event recorded, no note
         // written and nothing for the lead's conversation to hear.
         if (answer.SettledOn is { } settled)
         {
@@ -518,14 +518,14 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             return Line(LookClass.Progress, $"partner  piece `{ask.Id}`'s answer was handed to session {settled}'s line already: its word is settled, and it is not handed again.");
         }
 
-        // Kept now, or waiting already (§13 point 4): the dispatch goes on the record that holds the word, once.
+        // Kept now, or waiting already: the dispatch goes on the record that holds the word, once.
         var destination = answer.Holder?.Session ?? ask.Asker;
         files.WriteReceipt(PartnerDelivery.Took(receipt, destination, DateTimeOffset.UtcNow));
         files.WriteState(state with { State = PartnerStates.Handed, At = DateTimeOffset.UtcNow });
         Note(destination, PartnerNotes.Answered(state.Agent ?? "a partner", partner));
         if (facts.Beyond.Count > 0) Note(destination, PartnerNotes.Beyond(facts.Beyond.Count));
 
-        // A conversation hears it as its next turn, as a helper's answer: the shell's chat runner hears this event (D137 §3.1), once by the word's id.
+        // A conversation hears it as its next turn, as a helper's answer: the shell's chat runner hears this event, once by the word's id.
         if (answer.Word is { } word && await _context.Service.RecordAsync(destination, ct).ConfigureAwait(false) is { Kind: "chat" }
             && !_context.Events.After(destination, 0).Events.Any(each => each.Kind == SessionEventKind.User && each.Reaches == "resume" && each.Id == word))
         {
@@ -543,7 +543,7 @@ internal sealed class DriverPartners(LoopContext context, Driver driver)
             $"partner  piece `{ask.Id}` by {state.Agent ?? "a partner"} is handed to session {destination}: it takes it in with `git merge --no-ff {PieceRefs.Of(ask.Id)}`.");
     }
 
-    /// <summary>The partner's pass (the design §2.3 steps 5 and 6), run by <see cref="PartnerPassRunner"/>.</summary>
+    /// <summary>The partner's pass, run by <see cref="PartnerPassRunner"/>.</summary>
     internal Task<PartnerPassRun> PartnerPassAsync(PartnerPassAsk ask, ReviewerChoice choice, CancellationToken ct = default) =>
         new PartnerPassRunner(_context, _driver).PartnerPassAsync(ask, choice, ct);
 

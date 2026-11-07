@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whether a person's rule holds a line on a count other than answers alone (the context counters design §4.6 point 2), read from its counts
+/// Whether a person's rule holds a line on a count other than answers alone, read from its counts
 /// as <see cref="LineCountsRead"/> gives them, each with what its effective rule does there: a supervisor's answer is refused <c>rule-holds</c>
 /// at its keeping and moved stale with it at its release, since going on would pass a hold the person set. Answers alone keeps its own code,
 /// <c>supervisor-bound</c>.

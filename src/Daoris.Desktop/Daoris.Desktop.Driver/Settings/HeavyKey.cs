@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace Daoris.Driver;
 
-/// <summary>A gate a checkout's <c>daoris.gates.json</c> declares, as a heavy run reads it (HEAVYRUN1a).</summary>
+/// <summary>A gate a checkout's <c>daoris.gates.json</c> declares, as a heavy run reads it.</summary>
 /// <param name="Name">Its name.</param>
 /// <param name="Run">Its command line, run through the platform's shell.</param>
 /// <param name="WorkingDirectory">Its <c>cwd</c>, under the checkout; null for the checkout itself.</param>
@@ -10,8 +10,7 @@ namespace Daoris.Driver;
 public sealed record HeavyGate(string Name, string Run, string? WorkingDirectory, bool Heavy);
 
 /// <summary>
-/// This machine's heavy gates as <c>driver.json</c> keeps them, <c>heavyGates</c> (HEAVYRUN1b2a, D180's HEAVYRUN1b2a note;
-/// FOUNDATION1 mod-iii): the key's shape, the sentences that say what does not read, and the reading and writing, by the settings' own
+/// This machine's heavy gates as <c>driver.json</c> keeps them, <c>heavyGates</c>: the key's shape, the sentences that say what does not read, and the reading and writing, by the settings' own
 /// parser. What the mapping means, its edit and where it stands in a heavy run, stays with the mapping (<see cref="HeavyMapping"/>),
 /// which answers through this for what it shares.
 /// </summary>

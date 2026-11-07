@@ -6,14 +6,14 @@ using static Daoris.Driver.Json;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A hand-over's two files under the home (MIXAGENT1a-i, MIXAGENT1a-ii): a conversation's box,
+/// A hand-over's two files under the home: a conversation's box,
 /// <c>&lt;home&gt;/sessions/&lt;session&gt;.hand-over.json</c> (<see cref="HandOverBox"/>), and a quest held on another agent,
 /// <c>&lt;home&gt;/handed/&lt;quest&gt;.json</c> (<see cref="HandedQuests"/>), read without trusting their shape and written whole,
 /// atomically, as BOM-less UTF-8 with LF.
 /// </summary>
 /// <remarks>
-/// STRUCT3h, D166's note: the stores decide what is kept and by which name; this reads and writes
-/// it. A file that does not read is nothing kept; a write that fails throws, as it did.
+/// The stores decide what is kept and by which name; this reads and writes
+/// it. A file that does not read is nothing kept; a write that fails throws.
 /// </remarks>
 internal static class HandOverFiles
 {
@@ -29,7 +29,7 @@ internal static class HandOverFiles
             writer.WriteString("why", request.Why);
             writer.WriteString("askedBy", request.AskedBy);
             writer.WriteString("at", Moments.Write(request.At));
-            // STAFFPOLICY1d: only where the choice approved names them, so every box from before keeps its shape.
+            // Only where the choice approved names them, so every box from before keeps its shape.
             if (request.Model is { } model) writer.WriteString("model", model);
             if (request.Effort is { } effort) writer.WriteString("effort", effort);
             writer.WriteEndObject();
@@ -51,7 +51,7 @@ internal static class HandOverFiles
 
     /// <summary>
     /// A box's text read as its ask, or null where it does not read as one: the one reading of the format, which the move record's import
-    /// (FOUNDATION1f-i part 2) reads the bytes it took once by.
+    /// reads the bytes it took once by.
     /// </summary>
     public static HandOverRequest? ParseBox(string text)
     {
@@ -90,7 +90,7 @@ internal static class HandOverFiles
             writer.WriteString("why", handed.Why);
             writer.WriteString("askedBy", handed.AskedBy);
             writer.WriteString("at", Moments.Write(handed.At));
-            // MIXAGENT1c: the outgoing agent's note, only where it left one, so every file from before keeps its shape.
+            // The outgoing agent's note, only where it left one, so every file from before keeps its shape.
             if (handed.Note is { } note) writer.WriteString("note", note);
             if (handed.Model is { } model) writer.WriteString("model", model);
             if (handed.Effort is { } effort) writer.WriteString("effort", effort);

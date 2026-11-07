@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// An entry's acknowledgments of a channel message (COWORK1d, D188 point 6; the message-urgency design §6), as the service's
+/// An entry's acknowledgments of a channel message, as the service's
 /// <c>ChannelAcks</c> spells them: a twin, since the driver and the service share no code.
 /// </summary>
 public static class ChannelAcks

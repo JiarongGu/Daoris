@@ -6,7 +6,7 @@ using Microsoft.Data.Sqlite;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The staffing the store holds (§19.15): the actors of today's loaded record, each as <c>driver.json</c> holds them.
+/// The staffing the store holds: the actors of today's loaded record, each as <c>driver.json</c> holds them.
 /// </summary>
 /// <param name="Actors">Each readable entry, its choices (<c>[]</c>, off, for Intake and Ask Daoris alone).</param>
 /// <param name="Errors">Each entry that does not read, with why: it holds the starts that read it (<see cref="ActorUnreadableException"/>).</param>
@@ -25,20 +25,20 @@ public enum StaffingImported
     /// <summary>The store holds the file's staffing now, or a fresh home's seeds.</summary>
     Done,
 
-    /// <summary>The store held it already: it is imported once.</summary>
+    /// <summary>The store holds it already: it is imported once.</summary>
     Already,
 
-    /// <summary>The file does not read as a configuration: nothing was imported, and it is left as it is.</summary>
+    /// <summary>The file does not read as a configuration: nothing is imported, and it is left as it is.</summary>
     Unread,
 
     /// <summary>Not made now: the start's confirmation is not settled, the staffing's lock stayed held or the store would not take it.</summary>
     Held,
 }
 
-/// <summary>An import's outcome and, where it was held or unread, why.</summary>
+/// <summary>An import's outcome and, where it is held or unread, why.</summary>
 public sealed record StaffingImport(StaffingImported How, string? Said = null);
 
-/// <summary>Where the check runs (§19.15): a look imports with no wait for the staffing's lock; a start waits as a writer does.</summary>
+/// <summary>Where the check runs: a look imports with no wait for the staffing's lock; a start waits as a writer does.</summary>
 public enum StaffingCheckAt
 {
     Start,
@@ -63,18 +63,18 @@ public enum StaffingChecks
 public sealed record StaffingChecked(StaffingChecks How, string? Said = null);
 
 /// <summary>
-/// The roles' staffing in the desktop store (FOUNDATION1 w-s part 1, D212; the design §19.15, §13.3, §13.5, §13.6): <c>role_staffing</c>,
-/// imported once from the file. Read through Settings' port by every load of a wired home's file (part 3); written by
+/// The roles' staffing in the desktop store: <c>role_staffing</c>,
+/// imported once from the file. Read through Settings' port by every load of a wired home's file; written by
 /// <see cref="Set(string, IReadOnlyList{ActorChoice}?)"/> alone, every writer reaching it through
-/// <see cref="SetAt(string, string, IReadOnlyList{ActorChoice}?)"/> (part 4), in the store alone (D232).
+/// <see cref="SetAt(string, string, IReadOnlyList{ActorChoice}?)"/>, in the store alone.
 /// </summary>
 /// <remarks>
-/// <para><b>Imported once, once the start's confirmation is settled</b> (§13.5, §19.7), under the staffing's record lock
-/// (<c>locks/records/role-staffing.lock</c>), where nothing was imported yet: one store transaction reads the file's staffing through
+/// <para><b>Imported once, once the start's confirmation is settled</b>, under the staffing's record lock
+/// (<c>locks/records/role-staffing.lock</c>), where nothing is imported yet: one store transaction reads the file's staffing through
 /// today's reader (<see cref="ActorChoices.Read"/>) into <c>role_staffing</c>, an entry that does not read kept as found with why.
-/// <b>The file is never written</b>: it already is the projection of what was imported (<see cref="ImportClass.Projected"/>). A kill before the commit leaves the store as it was, and the next start imports again.</para>
-/// <para><b>The home's own <c>driver.json</c></b>, the only one a home has (ONEWAY1c-i). One that does not read imports nothing and is
-/// asked again at the next start. A fresh home, with no file or one holding none of the four keys, is seeded instead (ONEWAY1b): each of
+/// <b>The file is never written</b>: it already is the projection of what is imported (<see cref="ImportClass.Projected"/>). A kill before the commit leaves the store as it stood, and the next start imports again.</para>
+/// <para><b>The home's own <c>driver.json</c></b>, the only one a home has. One that does not read imports nothing and is
+/// asked again at the next start. A fresh home, with no file or one holding none of the four keys, is seeded instead: each of
 /// the five roles with an order of its own written at its seed (<see cref="ActorChoices.Seed"/>), recorded <see cref="ImportClass.Seeded"/>.</para>
 /// <para><b>Opened for one use and closed</b>, as every family's store is, a read never creating or writing the store.</para>
 /// </remarks>
@@ -83,7 +83,7 @@ public sealed record StaffingChecked(StaffingChecks How, string? Said = null);
 public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null) : IRoleStaffing
 {
     /// <summary>
-    /// Wire the staffing of <paramref name="home"/>'s own <c>driver.json</c> to Settings' port (FOUNDATION1w-s part 3), once before the root's
+    /// Wire the staffing of <paramref name="home"/>'s own <c>driver.json</c> to Settings' port, once before the root's
     /// first load: from then on a load of that file fills its five staffing fields from the store where it holds an import.
     /// </summary>
     public static RoleStaffing Wire(string home, Func<StoreSettled>? settled = null)
@@ -99,7 +99,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// <summary>The family's name in <c>imports</c> and <c>store_revisions</c>.</summary>
     public const string Family = "role_staffing";
 
-    /// <summary>The staffing's record lock, <c>locks/records/role-staffing.lock</c> (§19.15's first step of a write).</summary>
+    /// <summary>The staffing's record lock, <c>locks/records/role-staffing.lock</c>, the first step of a write.</summary>
     public const string Record = "role-staffing";
 
     /// <summary>The store's version this family's tables arrive at.</summary>
@@ -180,7 +180,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
             .Where(row => ActorChoices.Ids.Contains(row.Role, StringComparer.Ordinal))];
     }
 
-    /// <summary>Whether this home's staffing was seeded fresh (ONEWAY1b): its file never held it, so no older build reads it there.</summary>
+    /// <summary>Whether this home's staffing is seeded fresh: its file never held it, so no older build reads it there.</summary>
     public bool Seeded()
     {
         try
@@ -251,7 +251,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
             bytes ??= [];
 
-            // ONEWAY1b: a fresh home, whose file holds none of the four keys, starts on its seeds, written; nothing of it is copied.
+            // A fresh home, whose file holds none of the four keys, starts on its seeds, written; nothing of it is copied.
             var fresh = !staffing.Holds;
             if (fresh) staffing = Seeds();
             var receipt = Path.GetRelativePath(home, path).Replace('\\', '/');
@@ -283,14 +283,14 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     public static RoleStaffing? Of(string file) => RoleStaffingPort.Of(file) as RoleStaffing;
 
     /// <summary>
-    /// A composition root's wiring (§19.15): the home its environment names, wired before its first load, or nothing where no home is
-    /// named. A variable that named another file is read nowhere (ONEWAY1c-i): every home's staffing is its store's.
+    /// A composition root's wiring: the home its environment names, wired before its first load, or nothing where no home is
+    /// named. A variable that names another file is read nowhere: every home's staffing is its store's.
     /// </summary>
     public static RoleStaffing? WireHome(Func<string, string?> environment) =>
         DriverConfig.FindHome(environment) is { } home ? Wire(home) : null;
 
     /// <summary>
-    /// The staffing's writers' one door (§19.15, every writer of the census): <see cref="Set(string, IReadOnlyList{ActorChoice}?)"/> where
+    /// The staffing's writers' one door (every writer of the census): <see cref="Set(string, IReadOnlyList{ActorChoice}?)"/> where
     /// <paramref name="file"/> is wired, else the file's own write as today.
     /// </summary>
     /// <exception cref="DriverException">The judge's refusal, a lock held past its wait, or a write not done; said.</exception>
@@ -307,7 +307,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     public void Set(string actor, IReadOnlyList<ActorChoice>? choices) => Set([(actor, choices)]);
 
     /// <summary>
-    /// The one write of the staffing (§19.15, steps 1 to 5): the staffing lock, a writer waiting past <see cref="LockWait"/> refused with
+    /// The one write of the staffing: the staffing lock, a writer waiting past <see cref="LockWait"/> refused with
     /// nothing written; each change by today's <c>ActorChoices.With</c>; the commit. Before the import the file is the staffing, and is
     /// written under the same lock.
     /// </summary>
@@ -316,9 +316,9 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     /// <summary>
     /// <see cref="Set(IReadOnlyList{ValueTuple{string, IReadOnlyList{ActorChoice}}})"/> with <paramref name="also"/> run in the commit's
-    /// transaction (STAFFPOLICY1b): the role's record and policy are published with the staffing or not at all. Before the import, where the
+    /// transaction: the role's record and policy are published with the staffing or not at all. Before the import, where the
     /// file is the staffing, it runs in a transaction of its own after the file's write. A policy bound to a changed role's choices is
-    /// re-keyed in the same transaction, or deleted where the role is left with none (§2.1).
+    /// re-keyed in the same transaction, or deleted where the role is left with none.
     /// </summary>
     internal void Set(IReadOnlyList<(string Actor, IReadOnlyList<ActorChoice>? Choices)> changes, Action<DesktopWrite>? also)
     {
@@ -337,7 +337,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
 
     /// <summary>
     /// A transaction that writes <paramref name="rows"/> (the added roles' staffing) and <paramref name="also"/> together, under the staffing's
-    /// lock, with no seeded role's staffing among them (STAFFPOLICY1b): the catalogue, the policy and the staffing of added roles published as one.
+    /// lock, with no seeded role's staffing among them: the catalogue, the policy and the staffing of added roles published as one.
     /// </summary>
     /// <exception cref="DriverException">The staffing is not in the store yet and <paramref name="rows"/> names a role; a lock held past its wait; a write not done.</exception>
     internal void Publish(IReadOnlyList<(string Role, IReadOnlyList<ActorChoice>? Choices)> rows, Action<DesktopWrite> also)
@@ -380,15 +380,15 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     }
 
     /// <summary>
-    /// The staffing of an added role (FOUNDATION1y-i): its own row of <c>role_staffing</c> set, or deleted where <paramref name="choices"/> is
-    /// null, under the staffing's lock in one transaction. The file holds no added role, so nothing of it is projected; the caller judged the
+    /// The staffing of an added role: its own row of <c>role_staffing</c> set, or deleted where <paramref name="choices"/> is
+    /// null, under the staffing's lock in one transaction. The file holds no added role, so nothing of it is projected; the caller judges the
     /// choices by the role's work (<see cref="RoleCatalog.Judge(RoleRecord, IReadOnlyList{ActorChoice}?)"/>) and runs the check once the
     /// catalogue is written, since an added role taking Intake or Ask Daoris moves the projection's narrowing.
     /// </summary>
     /// <exception cref="DriverException">The staffing is not in the store yet, a lock held past its wait, or a write not done; said.</exception>
     public void SetAdded(string role, IReadOnlyList<ActorChoice>? choices) => SetAdded([(role, choices)]);
 
-    /// <summary><see cref="SetAdded(string, IReadOnlyList{ActorChoice})"/> for several added roles, all in the one transaction (AGENTSPLACE1g2).</summary>
+    /// <summary><see cref="SetAdded(string, IReadOnlyList{ActorChoice})"/> for several added roles, all in the one transaction.</summary>
     public void SetAdded(IReadOnlyList<(string Role, IReadOnlyList<ActorChoice>? Choices)> changes)
     {
         foreach (var (role, _) in changes)
@@ -443,7 +443,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     }
 
     /// <summary>
-    /// The check (§19.15): at a start, a look of the lease holder's loop and a write's end, whether the store holds the staffing; before the
+    /// The check: at a start, a look of the lease holder's loop and a write's end, whether the store holds the staffing; before the
     /// import a start or a look imports, once the start's confirmation is settled, a look waiting for no lock.
     /// </summary>
     public StaffingChecked Check(StaffingCheckAt at)
@@ -528,7 +528,7 @@ public sealed class RoleStaffing(string home, Func<StoreSettled>? settled = null
     /// </summary>
     private static readonly string[] Keys = ["actors", "adapter", "intakeAdapter", "helperAdapter"];
 
-    /// <summary>A fresh home's staffing (ONEWAY1b): each of the five roles with an order of its own at its seed, nothing in the file.</summary>
+    /// <summary>A fresh home's staffing: each of the five roles with an order of its own at its seed, nothing in the file.</summary>
     private static Staffing Seeds() => new(
         [.. ActorChoices.Ordered.Select(role => new StaffingRow(role, "set", Write(ActorChoices.Seed(role)!), null, null))],
         false);

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One rule a person sets for a place (CONTEXTDRIVE1c; the context counters design §4.1): when <see cref="Count"/> stands at
+/// One rule a person sets for a place: when <see cref="Count"/> stands at
 /// <see cref="At"/>, <see cref="Do"/> happens.
 /// </summary>
 /// <param name="Id">The rule's name within its place's set.</param>
@@ -40,7 +40,7 @@ public sealed record SupervisorRuleWorld(
     Func<string, IReadOnlyList<string>>? Wider = null);
 
 /// <summary>
-/// The rule supervisor's pure half (the context counters design §4.4, §4.5): the judge of a write, the effective rules of a line and the act
+/// The rule supervisor's pure half: the judge of a write, the effective rules of a line and the act
 /// at a point. Nothing here reads a model or a store.
 /// </summary>
 public static class SupervisorRules
@@ -65,7 +65,7 @@ public static class SupervisorRules
 
     public const string EpisodeWindow = "episode";
 
-    /// <summary>The ruled counts (§2.2) and the window each offers.</summary>
+    /// <summary>The ruled counts and the window each offers.</summary>
     public static IReadOnlyDictionary<string, string> Windows { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [AnswersAlone] = "in-a-row",
@@ -81,7 +81,7 @@ public static class SupervisorRules
     public static IReadOnlyList<string> Codes { get; } =
         ["count", "window", "at", "do", "upTo", "place", "roles", "ladder", "moves-unbounded", "tries-unbounded", "revision"];
 
-    // The actions each count allows (§4.2); `off` is every ruled count's but tries'. `refer` is offered where the agent supervisor's course act
+    // The actions each count allows; `off` is every ruled count's but tries'. `refer` is offered where the agent supervisor's course act
     // can release the hold between sessions through the count's own door: answers alone's, and the two counts only a driven quest has,
     // whose door is the quest's *Try again*. Tries, limits and moves are a conversation's too, held for its person's word, which no
     // course act speaks; a quiet end has no hold.
@@ -229,10 +229,10 @@ public static class SupervisorRules
     /// <summary>The counts only a driven quest has and whose <c>refer</c> its <i>Try again</i> releases: the failed sessions that park it, and the failures on one choice that ask.</summary>
     public static IReadOnlyList<string> QuestCounts { get; } = [Failures, FailuresOnChoice];
 
-    /// <summary>The actions <paramref name="count"/> allows (§4.2).</summary>
+    /// <summary>The actions <paramref name="count"/> allows.</summary>
     public static IReadOnlyList<string> Actions(string count) => Allowed.TryGetValue(count, out var actions) ? actions : [];
 
-    /// <summary>The <c>at</c> a rule on <paramref name="count"/> takes (§4.1); failures in a row on one choice below the failures rule's, judged apart.</summary>
+    /// <summary>The <c>at</c> a rule on <paramref name="count"/> takes; failures in a row on one choice below the failures rule's, judged apart.</summary>
     public static (int Low, int High) Bounds(string count) => count switch
     {
         AnswersAlone or Failures => (1, 20),

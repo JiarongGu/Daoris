@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The pieces asked of partners (COAGENT1b, D199 points 2 to 4): judged and reserved in the common admission, each started beside the
+/// The pieces asked of partners: judged and reserved in the common admission, each started beside the
 /// look in its copy and its strict job, and carried from where it stands to its answer.
 /// </summary>
 [LookPass("partners", LookPhase.Read, "helpers")]

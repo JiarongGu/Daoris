@@ -4,29 +4,29 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// What a plugin hands Ask Daoris, as the person approved it (HELPPLUG1a's tightening, D170's note): a manifest describes
+/// What a plugin hands Ask Daoris, as the person approved it: a manifest describes
 /// authority and grants none. A server declared for Ask Daoris reaches it only once the person approved its exact tools, on the
 /// plugin's page or at its terminal twin, and asks again when an update adds a tool or moves one between reading and writing.
 /// </summary>
 /// <remarks>
-/// <para><b>A write is never allowed silently</b> (D89, every change is confirmed): a tool the plugin marks as changing something
+/// <para><b>A write is never allowed silently</b> (every change is confirmed): a tool the plugin marks as changing something
 /// outside Daoris is allowed only where the person accepted it as a write; any other is asked, which Ask Daoris's asking mode
 /// refuses. A write an update adds after the approval is asked the same way.</para>
 ///
-/// <para><b>No generic execution tool, whatever the manifest says</b> (HELP4): a server naming a tool that runs commands, a
+/// <para><b>No generic execution tool, whatever the manifest says</b>: a server naming a tool that runs commands, a
 /// shell, a script or an eval, by its name, is refused for Ask Daoris with that reason and cannot be approved. A wildcard is no
 /// tool's name, so the manifest's own rules already refuse one (<see cref="PluginCatalog"/>).</para>
 ///
 /// <para><b>Machine-local and the driver's alone</b>: <c>&lt;home&gt;/plugin-approvals.json</c>, written by the page's press and
 /// <c>daoris plugin approve|withdraw</c>, read at each spawn of Ask Daoris. A file that does not read approves nothing,
-/// the safe direction, and is never written over; an edit keeps every key it does not own (KEEPALL1d).</para>
+/// the safe direction, and is never written over; an edit keeps every key it does not own.</para>
 /// </remarks>
 public static class HelpGrants
 {
     /// <summary>The file's name, as a refusal says it.</summary>
     public const string FileName = "plugin-approvals.json";
 
-    /// <summary>Where a home's approvals are: the home's <c>plugin-approvals</c> entry (D172, HOMELAYOUT2).</summary>
+    /// <summary>Where a home's approvals are: the home's <c>plugin-approvals</c> entry.</summary>
     public static string PathIn(string home) => DaorisHome.Entry(home, HomeEntry.PluginApprovals);
 
     /// <summary>The person approved its exact tools: it is handed, its reads and accepted writes allowed.</summary>
@@ -76,7 +76,7 @@ public static class HelpGrants
                 var approval = approvals.FirstOrDefault(each => Same(each, plugin.Manifest.Id, server.Name));
                 var exact = approval is not null && approval.Allow.ToHashSet(StringComparer.Ordinal).SetEquals(server.Allow)
                             && approval.Writes.All(tool => server.Writes.Contains(tool, StringComparer.Ordinal));
-                // HELPPLUG1c: an approval on file that no longer matches is said as changed since, never as never approved.
+                // An approval on file that differs from the server's tools is said as changed since, never as never approved.
                 grants.Add(exact
                     ? new HelpGrant(plugin.Manifest.Id, server, Approved, null) { Accepted = approval!.Writes }
                     : new HelpGrant(plugin.Manifest.Id, server, Waits, null) { Changed = approval is not null });
@@ -95,7 +95,7 @@ public static class HelpGrants
         Approve(home, catalog, plugin, server, readsOnly ? [] : null);
 
     /// <summary>
-    /// The person's approval of a server's exact reads, and of the writes they accepted, each on its own (HELPPLUG1c): null
+    /// The person's approval of a server's exact reads, and of the writes they accepted, each on its own: null
     /// accepts every write it declares, an empty list none. The writes not accepted are asked, which Ask Daoris's mode refuses.
     /// </summary>
     /// <exception cref="DriverException">
@@ -188,10 +188,10 @@ public static class HelpGrants
             : [];
 
     /// <summary>
-    /// The edit from the approvals read to <paramref name="approvals"/> made onto the file as it stands (KEEPALL1d,
-    /// <see cref="JsonKeeping.Save"/>), so a key this build has no field for stays as written, at the top and in a row: a row the edit
+    /// The edit from the approvals read to <paramref name="approvals"/> made onto the file as it stands
+    /// (<see cref="JsonKeeping.Save"/>), so a key this build has no field for stays as written, at the top and in a row: a row the edit
     /// did not touch is written as the file had it, and one it changed keeps its own unknown keys. Rebuilt from the approvals alone, it
-    /// deleted every other key the file held. <paramref name="found"/> says a file was there at the read. The rows are one array, so
+    /// would delete every other key the file holds. <paramref name="found"/> says a file existed at the read. The rows are one array, so
     /// another writer's row landing between this read and the write is not kept; the read and the write are one call.
     /// </summary>
     private static void Save(string home, bool found, IReadOnlyList<HelpApproval> read, IReadOnlyList<HelpApproval> approvals) =>
@@ -262,7 +262,7 @@ public sealed record HelpGrant(string Plugin, PluginServer Server, string State,
     public IReadOnlyList<string> Accepted { get; init; } = [];
 
     /// <summary>
-    /// Where it waits: whether the person approved it once and an update has changed its tools since (HELPPLUG1c), so it is
+    /// Where it waits: whether the person approved it once and an update has changed its tools since, so it is
     /// said as asked again rather than as never approved. False for every other state.
     /// </summary>
     public bool Changed { get; init; }
@@ -286,7 +286,7 @@ public sealed record HelpGrantSet(IReadOnlyList<HelpGrant> All)
         grant.Server.Writes.Except(grant.Accepted, StringComparer.Ordinal).Select(tool => $"mcp__{grant.Server.Name}__{tool}"))];
 
     /// <summary>
-    /// The browser's grant of Ask Daoris's configured access (HELPMODE1c3, the modes design §4.1): the server declared for it that
+    /// The browser's grant of Ask Daoris's configured access: the server declared for it that
     /// attaches to Daoris's own browser (<see cref="InAppBrowserServers.Placeholder"/> in its command or environment), the first such;
     /// null where no plugin here declares one. *Configured access* draws its state from this, read only, and leads to its plugin's tab.
     /// </summary>

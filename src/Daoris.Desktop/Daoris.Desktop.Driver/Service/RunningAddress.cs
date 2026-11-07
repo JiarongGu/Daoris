@@ -7,15 +7,15 @@ namespace Daoris.Driver;
 /// <param name="Url">The service's address, without a trailing slash.</param>
 /// <param name="Pid">The desktop's process.</param>
 /// <param name="Started">That process's start time, in UTC ticks, so a process id used again is not taken for it.</param>
-/// <param name="Home">The home's id (HOMEID1, <see cref="HomeIdentity"/>), or null in a file written before it or where the home has none.</param>
+/// <param name="Home">The home's id (<see cref="HomeIdentity"/>), or null in a file that carries none or where the home has none.</param>
 /// <param name="Pipe">
-/// The pipe the instance answers on (RPC1a, <see cref="HomePipe"/>), or null before it serves one, in a file from before, or where
+/// The pipe the instance answers on (<see cref="HomePipe"/>), or null before it serves one, in a file that carries none, or where
 /// the name is not the pipe of the home the file names.
 /// </param>
 public sealed record RunningEntry(string Url, int Pid, long Started, string? Home = null, string? Pipe = null);
 
 /// <summary>
-/// The address the running desktop leaves in its home (FINDDAORIS1, D171 point 1): a terminal outside Daoris's own panel is
+/// The address the running desktop leaves in its home: a terminal outside Daoris's own panel is
 /// handed no variable, so a program the install carries reads where the service is from here (<see cref="RunningService"/>).
 /// </summary>
 /// <remarks>
@@ -26,7 +26,7 @@ public sealed record RunningEntry(string Url, int Pid, long Started, string? Hom
 /// <para><b>Removed by its writer at a clean exit, and only while it still says what that writer wrote</b>, so a second Daoris
 /// on the same home that wrote since keeps its own. One that ended without its exit leaves it, and a reader judges it stale.</para>
 ///
-/// <para>No key, ever: a file under the home is no place for a credential, and a local host takes none (D21).</para>
+/// <para>No key, ever: a file under the home is no place for a credential, and a local host takes none.</para>
 /// </remarks>
 public sealed class RunningAddress : IDisposable
 {
@@ -48,7 +48,7 @@ public sealed class RunningAddress : IDisposable
     /// way, and a terminal then says Daoris is not running rather than this start failing.
     /// </summary>
     /// <param name="pipe">
-    /// The pipe this instance serves (RPC1a, the terminal RPC design §6.3), written only once it is served, so a client that
+    /// The pipe this instance serves, written only once it is served, so a client that
     /// reads one finds it served; null names none.
     /// </param>
     public static RunningAddress? Write(string home, string serviceUrl, string? pipe = null)
@@ -56,7 +56,7 @@ public sealed class RunningAddress : IDisposable
         try
         {
             using var self = Process.GetCurrentProcess();
-            // HOMEID1: the home's id beside the address, minted where it has none (fields added, never changed in place).
+            // The home's id beside the address, minted where it has none (fields added, never changed in place).
             var id = HomeIdentity.Ensure(home);
             var text = JsonFile.Serialize(writer =>
             {
@@ -71,7 +71,7 @@ public sealed class RunningAddress : IDisposable
             });
             Directory.CreateDirectory(home);
             var path = PathIn(home);
-            // The folder the address is in (`run/` since HOMELAYOUT3), which a new home has not made yet.
+            // The folder the address is in (`run/`), which a new home has not made yet.
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             AtomicFile.WriteText(path, text);
             return new RunningAddress(path, text);
@@ -110,7 +110,7 @@ public sealed class RunningAddress : IDisposable
             }
 
             var homeId = Text(root, "home") is { } named && HomeIdentity.IsId(named) ? named : null;
-            // RPC1a: a pipe is read only where it is the pipe of the home this file names.
+            // A pipe is read only where it is the pipe of the home this file names.
             var pipe = Text(root, "pipe") is { } served && HomePipe.IsOf(served, homeId) ? served : null;
             return new RunningEntry(address, id, ticks, homeId, pipe);
         }

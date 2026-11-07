@@ -18,7 +18,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
     /// stop is theirs, and a timeout carries no door failure. A failure no table recognises is a failure as today, and the strikes
     /// bound it.</para>
     /// <para>🔴 <b>The note carries the facts, never the agent's sentence</b>: the sentence names its reset in the zone of the machine
-    /// it was said on, and in English, and the note travels to every machine. The cooling line carries the reset as a moment each
+    /// it is said on, and in English, and the note travels to every machine. The cooling line carries the reset as a moment each
     /// reader words in its own zone and language; the sentence stays in the transcript and the conversation, which stay here.</para>
     /// </remarks>
     /// <param name="turnFailed">What the protocol door said refusing the turn, or null.</param>
@@ -139,7 +139,7 @@ internal sealed class AccountEndings(string home, DriverConfig config, ServiceCl
 
     /// <summary>
     /// 🔴 The pipe door's refusal of the model its actor asked, read from measured words on a silent turn
-    /// (<see cref="HarnessEnding.ModelRefused"/>): the one refusal after a prompt was handed that is no failure of the quest's. The
+    /// (<see cref="HarnessEnding.ModelRefused"/>): the one refusal after a prompt is handed that is no failure of the quest's. The
     /// account's <c>refused</c> reading for that model is kept, so the next start's walk passes the account without spawning, and the
     /// part ends with the account's line, which no strike counts (<see cref="AccountNoteCodes.AccountsOwn"/>), naming the agent and the model
     /// but no account, since the note travels.

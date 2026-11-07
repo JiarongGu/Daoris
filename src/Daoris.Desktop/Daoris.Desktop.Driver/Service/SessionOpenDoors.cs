@@ -12,43 +12,43 @@ public sealed record DestinationOpen(string? SessionId, string Message, string? 
     IReadOnlyList<string>? Candidates = null)
 {
     /// <summary>
-    /// That the host was asked to move the words and echoed the key (FOUNDATION1d-ii part 3; its <c>opens</c> mark 2): its open moved what
-    /// <see cref="Moved"/> names. False where it was not asked, a host whose mark is below 2 or that keeps none, so the old record's words are
-    /// still the caller's to move as today.
+    /// That the host is asked to move the words and echoes the key (its <c>opens</c> mark 2): its open moved what
+    /// <see cref="Moved"/> names. False where it is not asked, a host whose mark is below 2 or that keeps none, so the earlier record's words are
+    /// still the caller's to move.
     /// </summary>
     public bool Moves { get; init; }
 
     /// <summary>
     /// Every word the open moved, in order, as its transfer answers them: delivered from the destination by <see cref="MovedWord.Id"/>, never
-    /// by the old record's ids. Read as moved whatever <see cref="Moves"/> says: a host whose mark is below 2 replaying a newer host's receipt
+    /// by the earlier record's ids. Read as moved whatever <see cref="Moves"/> says: a host whose mark is below 2 replaying a newer host's receipt
     /// answers what that host moved.
     /// </summary>
     public IReadOnlyList<MovedWord> Moved { get; init; } = [];
 
     /// <summary>
-    /// The opened record's adapter, repository and workspace as the host recorded them (FOUNDATION1d-ii part 5): what an open's watchers are
+    /// The opened record's adapter, repository and workspace as the host recorded them: what an open's watchers are
     /// told, as the unkeyed door tells them, a driven record naming its quest's receiver. Null where the answer names none.
     /// </summary>
     public (string? Adapter, string? Repository, string? Workspace) Recorded { get; init; }
 }
 
 /// <summary>
-/// What a keyed open is asked to move (FOUNDATION1d-ii part 3, the design §3.4 rule 3): <paramref name="From"/>, the record the words move from,
+/// What a keyed open is asked to move: <paramref name="From"/>, the record the words move from,
 /// the open's own <c>from</c> or a start's source where it names none; <paramref name="Words"/>, the ids the course named; <paramref name="Read"/>,
 /// the ids it saw waiting there when it read, so the person's words kept since move too.
 /// </summary>
 public sealed record MoveWords(string From, IReadOnlyList<string> Words, IReadOnlyList<string> Read)
 {
     /// <summary>
-    /// The key a chat's keyed open is sent under (FOUNDATION1f-ii part a): the move record's <c>opens</c>, written before the open, so a retried
-    /// open whose answer was lost reuses it; null for a key of the open's own (<see cref="ChatKey"/>).
+    /// The key a chat's keyed open is sent under: the move record's <c>opens</c>, written before the open, so a retried
+    /// open whose answer is lost reuses it; null for a key of the open's own (<see cref="ChatKey"/>).
     /// </summary>
     public string? Opens { get; init; }
 
     /// <summary>A new key for a chat's keyed open.</summary>
     public static string ChatKey() => "chat-move/" + Guid.NewGuid().ToString("N");
 
-    /// <summary>A new key for a driven record's keyed open (FOUNDATION1f-iv part a): the carry-on's move record's <c>opens</c>, written before the open.</summary>
+    /// <summary>A new key for a driven record's keyed open: the carry-on's move record's <c>opens</c>, written before the open.</summary>
     public static string DrivenKey() => "drive-move/" + Guid.NewGuid().ToString("N");
 }
 
@@ -58,14 +58,14 @@ public sealed record MoveWords(string From, IReadOnlyList<string> Words, IReadOn
 /// </summary>
 public sealed record MovedWord(string Word, string Id, string? Key, string Transfer, int Order);
 
-/// <summary>Keyed opens and protocol negotiation, over one client's host runs (D212 §19.5, §19.12).</summary>
+/// <summary>Keyed opens and protocol negotiation, over one client's host runs.</summary>
 public sealed class SessionOpenDoors
 {
     private readonly ServiceClient _service;
     private string? _run;
     private bool _known;
     private int _opens;
-    // FOUNDATION1d-ii (§19.12): the say door's `continued`, naming the line's head; kept beside `opens` by the same run.
+    // The say door's `continued`, naming the line's head; kept beside `opens` by the same run.
     private int _head;
     private readonly object _marks = new();
     private readonly HashSet<string> _lost = new(StringComparer.Ordinal);
@@ -94,9 +94,9 @@ public sealed class SessionOpenDoors
     }
 
     /// <summary>
-    /// The host's <c>head</c> mark (FOUNDATION1d-ii, the design §19.12): 1 where its say door refuses a word said to a record that is not its line's
+    /// The host's <c>head</c> mark: 1 where its say door refuses a word said to a record that is not its line's
     /// head as <c>continued</c>, naming the head, so the driver's own walk (<c>WordsNever.ContinuedIn</c>) stands aside for the service's
-    /// judgement; 0 for a host without it, whose say keeps the driver's walk as today. Kept by the host's run, read again before this read once an
+    /// judgement; 0 for a host without it, whose say keeps the driver's walk. Kept by the host's run, read again before this read once an
     /// answer named another run or none. A host that does not answer the protocol, or answers it unreadably, has none; never throws for it.
     /// </summary>
     public async Task<int> HeadAsync(CancellationToken ct = default)
@@ -120,7 +120,7 @@ public sealed class SessionOpenDoors
     }
 
     /// <summary>
-    /// Whether the host's marks keep the moving open and the head (FOUNDATION1o, the design §3.4 rule 4, §19.11): <c>opens</c> 2 or more and
+    /// Whether the host's marks keep the moving open and the head: <c>opens</c> 2 or more and
     /// <c>head</c> 1 or more, so a word for a record that winds up or moves is kept on its <c>said</c>, which the open moves and the say door
     /// follows past, rather than held by the shell. False for a host without both, or one that does not answer the protocol; never throws for it.
     /// </summary>
@@ -133,12 +133,12 @@ public sealed class SessionOpenDoors
     /// <summary>
     /// Opens a driven or chat destination. The body's fields are the existing open request, without an opens member.
     /// A caller recovering a lost answer passes retry; each retry re-reads protocol before it sends anything. The moves that hand a part words
-    /// open through it (FOUNDATION1d-ii parts 4 and 5: <see cref="ServiceClient.OpenChatMovingAsync"/>, <see cref="ServiceClient.OpenSessionMovingAsync"/>).
+    /// open through it (<see cref="ServiceClient.OpenChatMovingAsync"/>, <see cref="ServiceClient.OpenSessionMovingAsync"/>).
     /// </summary>
     /// <param name="moves">
-    /// The words the open is asked to move (FOUNDATION1d-ii part 3), sent as the request's <c>moves</c> only to a host whose <c>opens</c> mark
+    /// The words the open is asked to move, sent as the request's <c>moves</c> only to a host whose <c>opens</c> mark
     /// is 2 or more and only beside the key; any <c>moves</c> the body carries is never sent. Against an older host the answer's
-    /// <see cref="DestinationOpen.Moves"/> is false, and the caller moves the words itself as today.
+    /// <see cref="DestinationOpen.Moves"/> is false, and the caller moves the words itself.
     /// </param>
     public Task<DestinationOpen> OpenAsync(
         OpenSession open, string key, string left, bool retry = false, CancellationToken ct = default, MoveWords? moves = null) =>

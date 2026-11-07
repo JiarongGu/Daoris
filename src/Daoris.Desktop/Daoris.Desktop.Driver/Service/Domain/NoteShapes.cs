@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Whose words a part of a session's note is (LANG1a, D142 point 2; the language design §3): a words part is shown as
+/// Whose words a part of a session's note is: a words part is shown as
 /// written, never through a catalogue.
 /// </summary>
 public static class NoteBy
@@ -19,21 +19,21 @@ public static class NoteBy
     /// <summary>A program's words passed through: an exception's message, git's.</summary>
     public const string Program = "program";
 
-    /// <summary>An English note from before parts, carried whole.</summary>
+    /// <summary>An English note kept whole, with no parts.</summary>
     public const string Before = "before";
 }
 
 /// <summary>
-/// One line of a session's note (LANG1a, D142 point 2; the language design §3): a coded part, which the page words from its
+/// One line of a session's note: a coded part, which the page words from its
 /// code and values in the reader's language and whose <see cref="Text"/> is the English its writer wrote; or a words part,
 /// someone's words, shown as written.
 /// </summary>
 /// <remarks>
-/// <b>Values are facts, never sentences, and never a path or an account's name</b>: the note travels (D125 §3.6). A value is
-/// text, a whole number, or a list of texts; one read back that is none of them is kept as it was read, so a newer writer's
-/// part passes through this one unchanged. The one exception is a conversation's own lines, its first (<c>opening.*</c>, UX7d-1),
-/// a wait for its account (<c>waits.*</c>, CONVNOTE2g) and a move by the usage curve (<c>chat.moved</c>, <c>chat.moved-from</c>,
-/// SWITCH1c-i): they are kept only in the conversation's record, which never leaves the machine (D76 §2), so their values name
+/// <b>Values are facts, never sentences, and never a path or an account's name</b>: the note travels. A value is
+/// text, a whole number, or a list of texts; one read back that is none of them is kept as read, so a newer writer's
+/// part passes through this one unchanged. The one exception is a conversation's own lines, its first (<c>opening.*</c>),
+/// a wait for its account (<c>waits.*</c>) and a move by the usage curve (<c>chat.moved</c>, <c>chat.moved-from</c>):
+/// they are kept only in the conversation's record, which never leaves the machine, so their values name
 /// accounts by id.
 /// </remarks>
 [JsonConverter(typeof(NotePartJson))]
@@ -45,7 +45,7 @@ public sealed record NotePart
     /// <summary>The facts its line carries, in the order written.</summary>
     public IReadOnlyList<KeyValuePair<string, object>> Values { get; init; } = [];
 
-    /// <summary>A coded part's English as its writer wrote it: a substring of the note it was built into.</summary>
+    /// <summary>A coded part's English as its writer writes it: a substring of the note it is built into.</summary>
     public string? Text { get; init; }
 
     /// <summary>A words part's words.</summary>
@@ -68,7 +68,7 @@ public sealed record NotePart
     /// <summary>Someone's words as a part of their own.</summary>
     public static NotePart Said(string words, string by) => new() { Words = words, By = by };
 
-    /// <summary>The parts as the record's JSON spells them, an array (the language design §3).</summary>
+    /// <summary>The parts as the record's JSON spells them, an array.</summary>
     public static void Write(Utf8JsonWriter writer, IReadOnlyList<NotePart> parts)
     {
         writer.WriteStartArray();
@@ -78,7 +78,7 @@ public sealed record NotePart
 
     /// <summary>
     /// The parts a record answers, read without trusting the shape: an entry that is neither a coded part nor a words part
-    /// is skipped. Null where the record answers none, a record from before parts, which is not the same as no parts.
+    /// is skipped. Null where the record answers none, a record without parts, which is not the same as no parts.
     /// </summary>
     public static IReadOnlyList<NotePart>? Read(JsonElement record, string name = "noteParts")
     {
@@ -92,7 +92,7 @@ public sealed record NotePart
 
 /// <summary>
 /// A part as JSON, whichever serializer meets it: the record's own shape, <c>{code, values, text}</c> or <c>{words, by}</c>,
-/// so the modules hand a part on to the page as the service answers it (LANG1a).
+/// so the modules hand a part on to the page as the service answers it.
 /// </summary>
 public sealed class NotePartJson : JsonConverter<NotePart>
 {
@@ -187,8 +187,8 @@ public sealed class NotePartJson : JsonConverter<NotePart>
 }
 
 /// <summary>
-/// A note as its writer composes it (LANG1a, D142 point 2): its English, <see cref="Note"/>, byte for byte as the record has
-/// always kept it, and its parts, each coded part's text a substring of it by construction.
+/// A note as its writer composes it: its English, <see cref="Note"/>, byte for byte as the record
+/// keeps it, and its parts, each coded part's text a substring of it by construction.
 /// </summary>
 /// <remarks>
 /// Composed by joining: <see cref="Then(string, Noted)"/> adds glue and a line, <see cref="Then(string)"/> glue alone, and
@@ -201,7 +201,7 @@ public sealed record Noted(string Note, IReadOnlyList<NotePart> Parts)
     public static Noted Said(string words, string by) => new(words, words.Length == 0 ? [] : [NotePart.Said(words, by)]);
 
     /// <summary>
-    /// A record's note as parts (the language design §3): its own parts, or its note whole as one <see cref="NoteBy.Before"/>
+    /// A record's note as parts: its own parts, or its note whole as one <see cref="NoteBy.Before"/>
     /// part where it has none, or nothing.
     /// </summary>
     public static Noted From(string? note, IReadOnlyList<NotePart>? parts) =>
@@ -219,7 +219,7 @@ public sealed record Noted(string Note, IReadOnlyList<NotePart> Parts)
     public Noted Also(NotePart part) => new(Note, [.. Parts, part]);
 
     /// <summary>
-    /// This without someone's words that a coded line will say as facts (AGT3c): the last words part holding exactly
+    /// This without someone's words that a coded line will say as facts: the last words part holding exactly
     /// <paramref name="words"/> by <paramref name="by"/>, and those words and the space before them out of the English. This,
     /// unchanged, where no such part is or the English does not hold them.
     /// </summary>

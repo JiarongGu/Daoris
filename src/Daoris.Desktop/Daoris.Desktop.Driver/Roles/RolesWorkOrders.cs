@@ -7,9 +7,9 @@ namespace Daoris.Driver;
 internal sealed record SupervisorAskWords(string GoAheads, string Beneath);
 
 /// <summary>
-/// What the roles ask of Work orders, which keeps the question files and the ask's record and sits above Roles (FOUNDATION1 mod-xi, D212):
+/// What the roles ask of Work orders, which keeps the question files and the ask's record and sits above Roles:
 /// the supervisor's print reads the session's question and the ask's words. Work orders implements this and installs it when the driver loads
-/// (<c>WorkOrders/Work/RolesWorkOrdersWiring.cs</c>); each operation does exactly what its caller did before it was a port.
+/// (<c>WorkOrders/Work/RolesWorkOrdersWiring.cs</c>); each operation does exactly what its caller would do itself.
 /// </summary>
 internal interface IRolesWorkOrders
 {

@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// One of Daoris's own plugins the install offers (PLUG9 d, D103), read as the catalogue reads a plugin,
+/// One of Daoris's own plugins the install offers, read as the catalogue reads a plugin,
 /// its placeholders as written.
 /// </summary>
 /// <param name="Problem">Why it could not be installed as it stands, in the catalogue's words; null when sound.</param>

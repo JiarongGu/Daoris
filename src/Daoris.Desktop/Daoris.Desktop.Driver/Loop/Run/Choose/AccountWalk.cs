@@ -162,7 +162,7 @@ internal sealed class AccountWalk(IRunWiring wiring) : IRunStage
         {
             // The words wait for the account's reset, held as any start on a cooling account is, so the look says the wait once and a
             // screen shows the quest waiting for an account; the record's conversation says why, with the door out of the wait. Nothing
-            // was spawned or probed to learn it.
+            // is spawned or probed to learn it.
             var why = DriverContinuations.WaitsFor(quest, start.Resumes!, resume.Selection);
             wiring.GoOns.HeldSaying(start.Resumes!, ResumeWords.NotYetOn(resume, DriverContinuations.DoorOf(quest, start.Resumes!)));
             return run.Hold(why) with { Cooling = resume.Selection.Cooling };

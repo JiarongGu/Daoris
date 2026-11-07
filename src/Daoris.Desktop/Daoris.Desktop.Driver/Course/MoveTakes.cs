@@ -6,9 +6,9 @@ namespace Daoris.Driver;
 internal sealed class MoveTakes(MoveStore owner)
 {
     /// <summary>
-    /// Take up a move whose claim's run is dead by the lease's test (§13.4, §19.1), in one guarded update that writes this store's run and
+    /// Take up a move whose claim's run is dead by the lease's test, in one guarded update that writes this store's run and
     /// raises the generation: refused, nothing written, where the move is gone or ended, where its claim is this run's own, where the generation
-    /// moved since <paramref name="generation"/> was read, or where its run lives or cannot be told dead.
+    /// moved past <paramref name="generation"/>, or where its run lives or cannot be told dead.
     /// </summary>
     public MoveTaken Take(long move, long generation)
     {
@@ -41,12 +41,12 @@ internal sealed class MoveTakes(MoveStore owner)
     }
 
     /// <summary>
-    /// Receive a hand-over still waiting (FOUNDATION1f-v part c, reading 5 of part a): decided or quiescing and naming its agent, from a run that
+    /// Receive a hand-over still waiting: decided or quiescing and naming its agent, from a run that
     /// decided it and goes no further with it, a headless host's look or a terminal's verb, which a long-lived host would otherwise hold for good
     /// and a quitting terminal's run only a look after it is dead. One guarded update that raises the generation, as a take does, so the run that
     /// decided it writes nothing more under its old claim. Never from a live shell, whose chat runner takes its own (a dead shell's is taken up);
     /// refused, nothing written, where the move is gone, ended, this run's own, past its wait or naming no agent, where the generation moved
-    /// since <paramref name="generation"/> was read, or where its run is a live shell's or cannot be told.
+    /// past <paramref name="generation"/>, or where its run is a live shell's or cannot be told.
     /// </summary>
     public MoveTaken Receive(long move, long generation)
     {

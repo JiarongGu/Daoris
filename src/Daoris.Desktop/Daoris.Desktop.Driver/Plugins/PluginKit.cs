@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The kit a session makes a plugin with (PLUG8, D101): a new plugin's folder, and a trial that starts a
+/// The kit a session makes a plugin with: a new plugin's folder, and a trial that starts a
 /// plugin as the driver would and checks every answer by the driver's own reader.
 /// </summary>
 /// <remarks>
@@ -24,13 +24,13 @@ namespace Daoris.Driver;
 /// Plugins both call this class. The CLI names no scaffold of its own: it spawns nothing but this program
 /// (<c>driverprogram.ts</c>), and the samples come from this library.</para>
 ///
-/// <para><b>The use case</b> (STRUCT3a): what the kit says and plans is here; the folder it writes, the templates the build
+/// <para><b>The use case</b>: what the kit says and plans is here; the folder it writes, the templates the build
 /// carries, a trial's scratch and its process are <see cref="PluginKitFiles"/>' and
 /// <see cref="PluginTrialProcess"/>'s.</para>
 ///
 /// <para><b>A change to a working plugin's kit files</b> (<c>work.mjs</c>, the wire and contract tests, <c>cycle.json</c>) is written into
 /// <c>examples/plugins/local-preview</c> in the same commit, by `plugins new` into a scratch folder and copied over: <c>PluginKitTests</c>
-/// holds the example's copies to what the kit writes (FABRIC-PERFORM1e).</para>
+/// holds the example's copies to what the kit writes.</para>
 /// </remarks>
 public static class PluginKit
 {
@@ -57,42 +57,42 @@ public static class PluginKit
     public static readonly SessionEnded SampleEnding = new(
         "s1a2b3c4", "engine", "completed", ByPerson: false, Note: null, Quest: "0fda18", Adapter: "claude-code", Account: "work");
 
-    /// <summary>A landed branch asked about, as the kit's samples say it (PLUGHOOK1a): pushed, with the pull request its plugin opened.</summary>
+    /// <summary>A landed branch asked about, as the kit's samples say it: pushed, with the pull request its plugin opened.</summary>
     public static readonly StateFrame SampleState = new(
         "engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "main",
         "https://example.test/example-org/engine/pull/7", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a");
 
-    /// <summary>A change, as the kit's samples say it (STATEHUB1g): what a session's landing moved, as accepting it declares.</summary>
+    /// <summary>A change, as the kit's samples say it: what a session's landing moved, as accepting it declares.</summary>
     public static readonly StateChangedFrame SampleChange = new(["sessions", "landing", "diff", "sweep", "treesSync"], ["s1a2b3c4"]);
 
-    /// <summary>A work event, as the kit's samples say it (EVENTHOOK1b): a session parked, waiting on the person, under the sample run.</summary>
+    /// <summary>A work event, as the kit's samples say it: a session parked, waiting on the person, under the sample run.</summary>
     public static readonly WorkEvent SampleEvent = new(WorkEventKinds.SessionParked, new DateTimeOffset(2026, 11, 6, 10, 0, 0, TimeSpan.Zero))
     {
         Session = "4b62a9fe", Quest = "0fda18",
     };
 
     /// <summary>
-    /// A sample frame's step (FABRIC-PERFORM1e): the plugin's own, which the wire test and the trial replace with its first declared
+    /// A sample frame's step: the plugin's own, which the wire test and the trial replace with its first declared
     /// step, its kind <c>&lt;plugin&gt;/&lt;id&gt;</c> where Daoris names a kind and its id where it names an id. A README says the plugin's.
     /// </summary>
     public const string SampleStep = "{step}";
 
-    /// <summary>A sample reference's owner (FABRIC-PERFORM1e): the plugin's id, written in a README as the plugin's own.</summary>
+    /// <summary>A sample reference's owner: the plugin's id, written in a README as the plugin's own.</summary>
     public const string SamplePlugin = "{plugin-id}";
 
-    /// <summary>The units awaiting a plugin's steps, as the kit's samples say it (FABRIC-PERFORM1e): one branch, its step awaited, a resync asked.</summary>
+    /// <summary>The units awaiting a plugin's steps, as the kit's samples say it: one branch, its step awaited, a resync asked.</summary>
     public static readonly WorkWatchFrame SampleWatch = new(1, Resync: true,
     [
         new WatchedUnit("engine", "default", SampleRoot, "feature/0fda18-expose-a-streaming-budget", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a",
             "main", null, [SampleStep]),
     ]);
 
-    /// <summary>One attempt, as the kit's samples say it (FABRIC-PERFORM1e): what the performer sends at <see cref="HookPoints.Perform"/>.</summary>
+    /// <summary>One attempt, as the kit's samples say it: what the performer sends at <see cref="HookPoints.Perform"/>.</summary>
     public static readonly WorkPerformCall SamplePerform = new(
         "u-0fda18a2", SampleStep, 1, "i-0fda18a2b3c4", "k-3f2a9c1e5b7d4a6f", "3f2a9c1e5b7d4a6f8e0c2b4d6f8a0c2e4b6d8f0a", [],
         new DateTimeOffset(2026, 10, 21, 9, 10, 0, TimeSpan.Zero));
 
-    /// <summary>The attempt's outcome, as the kit's samples say it (FABRIC-PERFORM1e): the event a performer sends, bound to its invocation.</summary>
+    /// <summary>The attempt's outcome, as the kit's samples say it: the event a performer sends, bound to its invocation.</summary>
     public static readonly WorkStepFrame SampleOutcome = new(
         SampleStep,
         new WorkOutcome(WorkStates.Reached, Evidence: new WorkEvidence($"{SamplePlugin}/receipt@1:i-0fda18a2b3c4", null, null, "deployed"))
@@ -283,7 +283,7 @@ public static class PluginKit
             throw new DriverException($"`{unknown}` is not a point — one of: {Names}.");
         }
 
-        // FABRIC-PERFORM1e: a plugin that works reports at `work/step`, a performer's outcome and an observer's alike, so either brings it;
+        // A plugin that works reports at `work/step`, a performer's outcome and an observer's alike, so either brings it;
         // and the hook set tells every plugin that works the awaited set at `work/watch`, a performer included, so performing brings that.
         if (named.Any(point => point is HookPoints.Watch or HookPoints.Perform) && !named.Contains(HookPoints.Step)) named.Add(HookPoints.Step);
         if (named.Contains(HookPoints.Perform) && !named.Contains(HookPoints.Watch)) named.Add(HookPoints.Watch);
@@ -294,7 +294,7 @@ public static class PluginKit
         var name = NameOf(id);
         var files = new List<ScaffoldFile>
         {
-            // LF whatever this source file's own line endings were when it was compiled: raw literals carry them.
+            // LF whatever this source file's own line endings are when it is compiled: raw literals carry them.
             new(PluginCatalog.ManifestName, Manifest(id, name, chosen).Replace("\r\n", "\n")),
             new(Script, WireScript(id, name, chosen).Replace("\r\n", "\n")),
             new(Test, WireTest()),
@@ -310,13 +310,13 @@ public static class PluginKit
         return new ScaffoldPlan(id, folder, chosen.Select(point => point.Name).ToList(), files);
     }
 
-    /// <summary>The kit's half of a plugin that works (FABRIC-PERFORM1e): the journal, the work points' handlers and the stand-in world.</summary>
+    /// <summary>The kit's half of a plugin that works: the journal, the work points' handlers and the stand-in world.</summary>
     public const string WorkScript = "work.mjs";
 
-    /// <summary>A performer's contract test (§D9): `node --test` runs it beside the wire test.</summary>
+    /// <summary>A performer's contract test: `node --test` runs it beside the wire test.</summary>
     public const string ContractTest = "plugin.contract.test.mjs";
 
-    /// <summary>The cycle `plugins try --cycle` drives a performer through (§D9).</summary>
+    /// <summary>The cycle `plugins try --cycle` drives a performer through.</summary>
     public const string CycleFixture = "cycle.json";
 
     /// <summary>The performed step a new performer declares, and the observed step a new observer does.</summary>
@@ -324,7 +324,7 @@ public static class PluginKit
 
     public const string ObservedStep = "observe";
 
-    /// <summary>The failure codes a new performer's step retries: §D6's own example.</summary>
+    /// <summary>The failure codes a new performer's step retries.</summary>
     public static readonly IReadOnlyList<string> Transient = ["unavailable", "rate-limited", "timeout"];
 
     /// <summary>Whether a plugin of these points works: it speaks the work wire, and the kit gives it <see cref="WorkScript"/>.</summary>
@@ -341,7 +341,7 @@ public static class PluginKit
         .Replace("{{grace}}", ((long)HookProcess.Grace.TotalMilliseconds).ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
         .Replace("{{capability}}", WorkWire.Capability, StringComparison.Ordinal);
 
-    /// <summary>Write a plan's files, each whole or not at all. The folder is judged again first: a plan is what the disk said when it was made.</summary>
+    /// <summary>Write a plan's files, each whole or not at all. The folder is judged again first: a plan holds what the disk showed at planning.</summary>
     /// <returns>The names written, in the plan's order.</returns>
     public static IReadOnlyList<string> Write(ScaffoldPlan plan) => PluginKitFiles.Write(plan);
 
@@ -371,14 +371,14 @@ public static class PluginKit
 
         """;
 
-    /// <summary>The receipt a new working plugin's step is reached on, and what a new performer makes (§D4, §D3): schemas of its own.</summary>
+    /// <summary>The receipt a new working plugin's step is reached on, and what a new performer makes: schemas of its own.</summary>
     internal static string ReceiptOf(string id) => $"{id}/receipt@1";
 
     internal static string ResourceOf(string id) => $"{id}/resource@1";
 
     /// <summary>
-    /// A working plugin's steps and resources (FABRIC-PERFORM1e, §D9): a performer's one performed step, declaring §D6's contract as the
-    /// kit keeps it (idempotent, reconciled, §D6's transient codes under a retry that can take them) and the one temporary thing it makes;
+    /// A working plugin's steps and resources: a performer's one performed step, declaring the performer's contract as the
+    /// kit keeps it (idempotent, reconciled, transient codes under a retry that can take them) and the one temporary thing it makes;
     /// an observer's one observed step. Each reached on a receipt of the plugin's own. Nothing for a plugin that does not work.
     /// </summary>
     private static string Declared(string id, IReadOnlyList<KitPoint> points)
@@ -412,7 +412,7 @@ public static class PluginKit
             """.TrimEnd();
     }
 
-    /// <summary>Whether a plugin of these points runs a platform's tool, so it is written <c>run()</c> (a query, PLUGHOOK1a).</summary>
+    /// <summary>Whether a plugin of these points runs a platform's tool, so it is written <c>run()</c> (a query).</summary>
     private static bool RunsATool(IReadOnlyList<KitPoint> points) => points.Any(point => point.Name is HookPoints.State);
 
     private static string WireScript(string id, string name, IReadOnlyList<KitPoint> points)
@@ -434,7 +434,7 @@ public static class PluginKit
     }
 
     /// <summary>
-    /// The external calls a working plugin's author writes (FABRIC-PERFORM1e, §D9), handed to the kit's <c>work()</c>: a performer's
+    /// The external calls a working plugin's author writes, handed to the kit's <c>work()</c>: a performer's
     /// <c>act</c>, <c>check</c> and <c>remove</c>, an observer's <c>observe</c>. Each starts by saying it is not written yet.
     /// </summary>
     private static string WorkCalls(string id, bool performs) => (performs
@@ -501,7 +501,7 @@ public static class PluginKit
 
     private static string ReadmeOf(string id, string name, IReadOnlyList<KitPoint> points)
     {
-        // A sample's step and its references' owner are this plugin's own in its README (FABRIC-PERFORM1e): the awaited set names a step
+        // A sample's step and its references' owner are this plugin's own in its README: the awaited set names a step
         // by its id, an attempt and its outcome by its kind.
         var step = Performs(points) ? PerformedStep : ObservedStep;
         string Own(KitPoint point) => point.Frame.ToJsonString(Pretty)

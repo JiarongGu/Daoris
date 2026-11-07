@@ -51,8 +51,8 @@ internal static class DesktopStoreSteps
             CREATE INDEX imports_family ON imports (family, path);
             """)),
 
-        // Row z-iii: the participants' bindings. A new table, every column required, which a build of z-i never opens, so the stamp stays
-        // where it is and the step runs at the first start (§13.3); later rows add their own columns nullable, each writer naming its own.
+        // The participants' bindings. A new table, every column required, which an earlier build never opens, so the stamp stays
+        // where it is and the step runs at the first start; later steps add their own columns nullable, each writer naming its own.
         new(2, FirstWriter, write => write.Execute(
             """
             CREATE TABLE bindings (
@@ -63,8 +63,8 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // Row a-ii: whether the person picked a session's account, kept with its binding (§13.3). A new table, every column required, so
-        // a build of z-iii, which reads `bindings` as a conversation to resume, never meets a row with no conversation in it, and the
+        // Whether the person picked a session's account, kept with its binding. A new table, every column required, so
+        // an earlier build, which reads `bindings` as a conversation to resume, never meets a row with no conversation in it, and the
         // stamp stays where it is (`compatible-builds.md`): the pick is known when a start opens, the conversation's id only when the wire names it.
         new(3, FirstWriter, write => write.Execute(
             """
@@ -75,7 +75,7 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // Row f-i: the course's move record (§3.3, §13.3's family *The course*). New tables an older store-aware build never opens, so the
+        // The course's move record (the family *The course*). New tables an older store-aware build never opens, so the
         // stamp stays where it is and the step runs at the first start. One standing move per record left by the partial unique index, a
         // line moving again once its move has ended and the ended row kept as evidence; the claim names the run that holds it, a row of
         // `store_runs`, and its generation. A column every decision writes is required; each later phase's moment and what it carries, the
@@ -131,10 +131,10 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // Row f-i part 2: what a box an older build wrote carries that step 4's columns do not, and a quiet move's telling (§3.3, §13.5,
-        // §19.1). Each nullable, added to the table a step-4 build already writes, which names its own columns and leaves these empty, so the
+        // What a box an older build wrote carries that step 4's columns do not, and a quiet move's telling.
+        // Each nullable, added to the table a step-4 build already writes, which names its own columns and leaves these empty, so the
         // stamp stays where it is and the step runs at the first start: the agent a hand-over opens its new part on, a limit's refused
-        // turns' bound, and the phase moment a quiet move was last said quiet for, so two processes looking say it once between them.
+        // turns' bound, and the phase moment a quiet move is last said quiet for, so two processes looking say it once between them.
         new(5, FirstWriter, write => write.Execute(
             """
             ALTER TABLE moves ADD COLUMN agent TEXT;
@@ -142,7 +142,7 @@ internal static class DesktopStoreSteps
             ALTER TABLE moves ADD COLUMN quiet_at TEXT;
             """)),
 
-        // INTEGRATE1e part e2: the integration's family (the integration design §5.6, D212 §13), Workplace's. New tables an older
+        // The integration's family, Workplace's. New tables an older
         // store-aware build never opens, so the stamp stays where it is and the step runs at the first start. One open request per
         // repository and branch, one standing candidate per line, one standing membership per request and one open step per candidate, each
         // by a partial unique index the write meets; one job per candidate by its own. A column every row of its table carries is
@@ -232,7 +232,7 @@ internal static class DesktopStoreSteps
             CREATE INDEX integration_steps_of ON integration_steps (candidate, id);
             """)),
 
-        // INTEGRATE1e part e4b: a superseded member's pending disposition (the integration design §5.7), Workplace's. A new table an older
+        // A superseded member's pending disposition, Workplace's. A new table an older
         // store-aware build never opens, so the stamp stays where it is and the step runs at the first start. One row for each superseded commit
         // of a request, written in the settle step's own end, so the member settling and its work being kept in view are one write; it stays
         // pending (no `answered_at`) until the session, the steward or the owner answers it. `reference` is the recovery ref under
@@ -254,7 +254,7 @@ internal static class DesktopStoreSteps
             CREATE INDEX integration_dispositions_pending ON integration_dispositions (at) WHERE answered_at IS NULL;
             """)),
 
-        // FOUNDATION1w-s part 1: the roles' staffing (the foundation design §19.15), Roles'. New tables an older store-aware build never
+        // The roles' staffing, Roles'. New tables an older store-aware build never
         // opens, so the stamp stays where it is and the step runs at the first start. `role_staffing` holds one row for each role that has
         // a stored entry or, for Build, Intake and Ask Daoris, a first-agent key: `state` is `before` (no entry, the key alone), `set`
         // (`choices` the entry's list, `[]` being off) or `unreadable` (`choices` the entry as the file showed it, `why` what does not
@@ -296,10 +296,10 @@ internal static class DesktopStoreSteps
             CREATE INDEX role_staffing_found_pending ON role_staffing_found (id) WHERE answered_at IS NULL;
             """)),
 
-        // FOUNDATION1z-v: the news (§4.5, §13.3), Events'. New tables an older store-aware build never opens, so the stamp stays where it
+        // The news, Events'. New tables an older store-aware build never opens, so the stamp stays where it
         // is and the step runs at the first start. `notices` holds `data/notices.json`'s notices by id, one column for each field the page
         // reads; `news_said` the occurrences already told, apart from the notices so a prune or a dismissal never forgets one; and
-        // `journal_cursors` one journal position for each teller, with the store identity it was read against.
+        // `journal_cursors` one journal position for each teller, with the store identity it is read against.
         new(9, FirstWriter, write => write.Execute(
             """
             CREATE TABLE notices (
@@ -330,7 +330,7 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // FOUNDATION1w: the role catalogue (§2.7, §13.3), Roles'. New tables an older store-aware build never opens, so the stamp stays where
+        // The role catalogue, Roles'. New tables an older store-aware build never opens, so the stamp stays where
         // it is. `roles` holds one row for each role id the person changed: `state` is `set` (`record` the role's JSON, as written) or
         // `removed` (a seeded role taken out); an id with no row is the seed's. `role_revisions` keeps every revision of every id, never
         // rewritten and never reset by a removal; its `state` adds `default` (a seeded id's record deleted) and `deleted` (an added one's).
@@ -353,9 +353,9 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // FOUNDATION1x: the role a start took and its revision, kept with its binding (§2.7, §13.3's Bindings family). A new table, as
-        // `binding_picks` was, so the role is known when a start opens while the conversation's id comes only when the wire names it, a
-        // build that knows no role never opens it, and each writer of a binding names its own columns (O3-16). The stamp stays.
+        // The role a start took and its revision, kept with its binding (the Bindings family). A new table, like
+        // `binding_picks`, so the role is known when a start opens while the conversation's id comes only when the wire names it, a
+        // build that knows no role never opens it, and each writer of a binding names its own columns. The stamp stays.
         new(11, FirstWriter, write => write.Execute(
             """
             CREATE TABLE binding_roles (
@@ -366,8 +366,7 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // INTEGRATE1h: the owner's decide on a candidate held for one, a queued request's place, and a disposition's answer (the integration
-        // design §5.7, §5.8, §8), Workplace's. A new table and two nullable columns an older build names none of, so the stamp stays where it
+        // The owner's decide on a candidate held for one, a queued request's place, and a disposition's answer, Workplace's. A new table and two nullable columns an older build names none of, so the stamp stays where it
         // is: an older build orders its queue by arrival and answers a disposition with its moment alone. One decide for each candidate.
         new(12, FirstWriter, write => write.Execute(
             """
@@ -381,7 +380,7 @@ internal static class DesktopStoreSteps
             ALTER TABLE integration_dispositions ADD COLUMN answer TEXT;
             """)),
 
-        // GITAPP2a: the act journal (the git-writes design §5, D204), Workplace's. New tables an older build never opens, so the stamp stays
+        // The act journal, Workplace's. New tables an older build never opens, so the stamp stays
         // where it is; a record carries its own `format`, and one past a build's is held by it, never reconciled. One open act per checkout
         // (`common_dir`, the checkout lock's key), one job per act; each step's start is written before its effect and its end after.
         new(13, FirstWriter, write => write.Execute(
@@ -432,9 +431,9 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // LANDNODE1g: the line's epoch (the land node design §5), Workplace's. A new table an older build never opens, so the stamp stays where
+        // The line's epoch, Workplace's. A new table an older build never opens, so the stamp stays where
         // it is; a request or candidate with no row reads as its own epoch. An older build still forms candidates by its first request's
-        // policy alone, which this build cannot stop: the remainder D215's note keeps.
+        // policy alone, which this build cannot stop.
         new(14, FirstWriter, write => write.Execute(
             """
             CREATE TABLE integration_epochs (
@@ -445,9 +444,9 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // LANDNODE1b: the delivery record (the land node design §3, §4), Workplace's, and the first step that raises the writer stamp. From 2
+        // The delivery record, Workplace's, and the first step that raises the writer stamp. From 2
         // an older build reads the store and its every write is refused inside its transaction, so none writes beside a delivery's phases; the
-        // step waits for the start's confirmation as every raise does (§13.3, §13.5). One unresolved delivery per unit by the partial unique
+        // step waits for the start's confirmation as every raise does. One unresolved delivery per unit by the partial unique
         // index, its key the digest of the unit, the bound tip, the method and the target; one phase entry without its outcome per delivery by
         // its own. What a later phase or a settlement sets is nullable, and no CHECK holds a word, so a newer build's is kept as written.
         new(15, DeliveryWriter, write => write.Execute(
@@ -496,10 +495,10 @@ internal static class DesktopStoreSteps
             CREATE UNIQUE INDEX delivery_phases_open ON delivery_phases (delivery) WHERE ended_at IS NULL;
             """)),
 
-        // STAFFPOLICY1a: a role's staffing policy, its revisions and the role's new starts (the staff policy design §2.1, §11), Roles'. The
+        // A role's staffing policy, its revisions and the role's new starts, Roles'. The
         // second step to raise the writer stamp: an older build reads `role_staffing` and would start a choice past its budget or outside the
         // works it takes, so from 3 its every write is refused; the step waits for the start's confirmation as every raise does. `staffing` is
-        // the digest of the choices the policy was set for; a revision with no policy is a deletion; `choice` keeps the choice's tuple.
+        // the digest of the choices the policy is set for; a revision with no policy is a deletion; `choice` keeps the choice's tuple.
         new(16, PolicyWriter, write => write.Execute(
             """
             CREATE TABLE role_policy (
@@ -529,7 +528,7 @@ internal static class DesktopStoreSteps
             CREATE INDEX role_starts_role ON role_starts (role, at);
             """)),
 
-        // STAFFPOLICY1e: a line's moves to another choice and the person's approvals of a policy's ask (the staff policy design §4.2, §11 point 5),
+        // A line's moves to another choice and the person's approvals of a policy's ask,
         // Roles'. Keyed by the line's identity (a quest's id, a conversation's), so a restart keeps the count and an in-start replacement, which
         // writes no part link, is counted beside a part's. No raise: an older build reads no table it does not know.
         new(17, PolicyWriter, write => write.Execute(
@@ -549,7 +548,7 @@ internal static class DesktopStoreSteps
             CREATE INDEX role_moves_line ON role_moves (line, at);
             """)),
 
-        // STAFFPOLICY1d (the staff policy design §11 point 4): the model and effort of the choice a hand-over was offered and approved on, kept
+        // The model and effort of the choice a hand-over is offered and approved on, kept
         // with the move so a restart takes it as approved and never picks again. Each nullable, added to the table a step-16 build already
         // writes, which names its own columns and leaves these empty, so the stamp stays where it is and the step runs at the first start.
         new(18, PolicyWriter, write => write.Execute(
@@ -558,7 +557,7 @@ internal static class DesktopStoreSteps
             ALTER TABLE moves ADD COLUMN effort TEXT;
             """)),
 
-        // CONTEXTDRIVE1c (the context counters design §4.4): a place's supervisor rules, one row per rule, and each place's set as written with
+        // A place's supervisor rules, one row per rule, and each place's set as written with
         // its revision, Roles'. No raise: an older build reads no table it does not know and drives by the numbers compiled into it.
         new(19, PolicyWriter, write => write.Execute(
             """
@@ -585,7 +584,7 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // COMMS1g (the comms design §5.3, §13 point 8): the answers-alone count, one admission per line keyed by its one key, Course's. A line's
+        // The answers-alone count, one admission per line keyed by its one key, Course's. A line's
         // reading of its events (what it read of each part, and the prompt it read last), its epochs (the seed, then each reset), each go-on
         // with its disposition, and when the admissions began, which ends the seed's kept read. No raise: an older build reads no table it does
         // not know and counts from the events, and a line it went on meanwhile is read on from its events at the next read.
@@ -628,7 +627,7 @@ internal static class DesktopStoreSteps
             INSERT INTO continuation_made (one, at) VALUES (1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
             """)),
 
-        // The context counters design §4.4: each repository's workspace as the registry placed it at the last look, Roles', so
+        // Each repository's workspace as the registry placed it at the last look, Roles', so
         // the rules' judge in any process weighs a write on the chain the lines read. No raise: an older build reads no table it does not know.
         new(21, PolicyWriter, write => write.Execute(
             """
@@ -638,7 +637,7 @@ internal static class DesktopStoreSteps
             );
             """)),
 
-        // AGENTPROVIDER1t (D232): a binding's door by today's name, and the staffing's projection of driver.json's old keys, which no
+        // A binding's door by today's name, and the staffing's projection of driver.json's old keys, which no
         // code reads, dropped. The home's migration runs it (`StoreNamesStep`) with the store's copy kept. No raise: no build older than
         // the migration runs on a converted home.
         new(DesktopStore.NamesVersion, PolicyWriter, write => write.Execute(

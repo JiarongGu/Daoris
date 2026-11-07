@@ -5,12 +5,12 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The moves a request may carry (D126 §7.1): the person's three on a live or parked session, and their words to any session
-/// of this machine's (MSG1e).
+/// The moves a request may carry: the person's three on a live or parked session, and their words to any session
+/// of this machine's.
 /// </summary>
 public static class SessionMove
 {
-    /// <summary>End it now, as the person's stop: its quest is then held here until *Try again* (SESSUX1b).</summary>
+    /// <summary>End it now, as the person's stop: its quest is then held here until *Try again*.</summary>
     public const string Stop = "stop";
 
     /// <summary>Finish one that waits on the person, with their note.</summary>
@@ -20,37 +20,37 @@ public static class SessionMove
     public const string Decline = "decline";
 
     /// <summary>
-    /// Words said to a session from a terminal (MSG1e, D137 §5.2): held at its door where it runs, or kept on its record for it
+    /// Words said to a session from a terminal: held at its door where it runs, or kept on its record for it
     /// to go on with. Answered beside the request (<see cref="SessionRequests.Answer"/>), since no state move says where they went.
     /// </summary>
     public const string Say = "say";
 
     /// <summary>
-    /// A word waiting on a parked or ended record taken back, or with the request's text reworded, from a terminal (SAIDBACK1c,
-    /// D137 §2.4): taken by the loop that holds the home, which keeps the withdrawn note in its own record of the conversation.
+    /// A word waiting on a parked or ended record taken back, or with the request's text reworded, from a terminal:
+    /// taken by the loop that holds the home, which keeps the withdrawn note in its own record of the conversation.
     /// Keyed and answered as a say is.
     /// </summary>
     public const string TakeBack = "take-back";
 
     /// <summary>
-    /// Ask Daoris's housekeeping tool asking for one operation (HELPMODE1c2a, D183's note): written by the connector, the agent's
+    /// Ask Daoris's housekeeping tool asking for one operation: written by the connector, the agent's
     /// and never the person's, taken by the loop running the conversation, judged there at the call, and answered beside the
     /// request in <see cref="HousekeepingAnswer"/>'s shape. Keyed as a say is.
     /// </summary>
     public const string Housekeep = "housekeep";
 
     /// <summary>
-    /// Ask Daoris's chosen-settings tool asking to change one setting (HELPMODE1c3, D183's note): written by the connector as a
+    /// Ask Daoris's chosen-settings tool asking to change one setting: written by the connector as a
     /// housekeeping request is, taken by the loop running the conversation, judged and applied there at the call, and answered beside
     /// the request in <see cref="SettingAnswer"/>'s shape. Keyed as a say is.
     /// </summary>
     public const string Set = "set";
 
     /// <summary>
-    /// Ask Daoris's checkout tool asking to read one checkout (HELPMODE1c4, D183's note): a file, a folder, <c>git status</c> or the
+    /// Ask Daoris's checkout tool asking to read one checkout: a file, a folder, <c>git status</c> or the
     /// branch list, by a repository and a path relative to its checkout; written by the connector as a setting request is, taken by
     /// the loop running the conversation, judged there at the call, and answered beside the request in <see cref="CheckoutAnswer"/>'s
-    /// shape, what was read beside its words. Keyed as a say is.
+    /// shape, what is read beside its words. Keyed as a say is.
     /// </summary>
     public const string Read = "read";
 
@@ -63,70 +63,69 @@ public static class RequestDoor
     /// <summary><c>daoris session list</c>.</summary>
     public const string Terminal = "terminal";
 
-    /// <summary>A pause stopping what of its work another process runs (PAUSE1b, D132 §2.1): <see cref="WorkPausing"/>.</summary>
+    /// <summary>A pause stopping what of its work another process runs: <see cref="WorkPausing"/>.</summary>
     public const string Pause = "pause";
 
-    /// <summary>An abandon stopping or ending what of its work another process runs (PAUSE1d, D132 §3.4): <see cref="WorkAbandoning"/>.</summary>
+    /// <summary>An abandon stopping or ending what of its work another process runs: <see cref="WorkAbandoning"/>.</summary>
     public const string Abandon = "abandon";
 
-    /// <summary>Ask Daoris's housekeeping tool (HELPMODE1c2a): the agent's, through its connector, never the person's.</summary>
+    /// <summary>Ask Daoris's housekeeping tool: the agent's, through its connector, never the person's.</summary>
     public const string Help = "help";
 }
 
 /// <summary>One move asked of one session, for whichever loop on the home runs it.</summary>
 /// <param name="Move">One of <see cref="SessionMove"/>.</param>
-/// <param name="At">When it was asked: a request nobody took for <see cref="SessionRequests.Lifetime"/> is dropped.</param>
+/// <param name="At">When it is asked: a request nobody took for <see cref="SessionRequests.Lifetime"/> is dropped.</param>
 public sealed record SessionRequest(string Session, string Move, DateTimeOffset At) : ICheckoutAsk
 {
     /// <summary>
-    /// A finish's note or a decline's reason, the person's words; for a stop, none, or a pause's words for the record
-    /// (PAUSE1b, design §4.1).
+    /// A finish's note or a decline's reason, the person's words; for a stop, none, or a pause's words for the record.
     /// </summary>
     public string? Note { get; init; }
 
     /// <summary>
-    /// A pause's or an abandon's words for the record with their codes (LANG1a, D142 point 2), beside <see cref="Note"/>; null
+    /// A pause's or an abandon's words for the record with their codes, beside <see cref="Note"/>; null
     /// for the person's own words, and for a request an older door wrote, whose note is then carried whole.
     /// </summary>
     public IReadOnlyList<NotePart>? NoteParts { get; init; }
 
     /// <summary>
-    /// That the record waited on the person when it was asked: its stop is then its card's, the record moved by the ledger
-    /// once the process is let go, as <c>RESOLVE_SESSION</c>'s <c>stopped</c> moves it (D126 §3.3).
+    /// That the record waits on the person when it is asked: its stop is then its card's, the record moved by the ledger
+    /// once the process is let go, as <c>RESOLVE_SESSION</c>'s <c>stopped</c> moves it.
     /// </summary>
     public bool Parked { get; init; }
 
     /// <summary>Who asked, one of <see cref="RequestDoor"/>.</summary>
     public string By { get; init; } = RequestDoor.Terminal;
 
-    /// <summary>A say's words, as the person said them (MSG1e); null for a move.</summary>
+    /// <summary>A say's words, as the person said them; null for a move.</summary>
     public string? Text { get; init; }
 
     /// <summary>A say's files, by the names they are kept under for the session (<see cref="ChatFiles"/>), never a path.</summary>
     public IReadOnlyList<string> Files { get; init; } = [];
 
     /// <summary>
-    /// A say's own name (MSG1e): <c>&lt;id&gt;.&lt;key&gt;.json</c>, so two said at once both wait and a stop of the same session is
+    /// A say's own name: <c>&lt;id&gt;.&lt;key&gt;.json</c>, so two said at once both wait and a stop of the same session is
     /// not replaced by them, and its answer is found beside it. Null for a move, which is one per session.
     /// </summary>
     public string? Key { get; init; }
 
     /// <summary>
-    /// A say's urgency (COWORK1a, D188 point 1; ONEWAY1l): <c>ordinary</c>, <c>urgent</c> or <c>now</c>, as <c>SESSION_INPUT</c> sends it
-    /// as <c>level</c>, the one spelling. A request file waiting from an older build with <c>now: true</c> and no level is read as <c>now</c>.
+    /// A say's urgency: <c>ordinary</c>, <c>urgent</c> or <c>now</c>, as <c>SESSION_INPUT</c> sends it
+    /// as <c>level</c>, the one spelling. A request file with <c>now: true</c> and no level is read as <c>now</c>.
     /// </summary>
     public string? Level { get; init; }
 
-    /// <summary>The level the say asked for, read as <see cref="Level"/> says; urgent where it names none.</summary>
+    /// <summary>The level the say asks for, read as <see cref="Level"/> says; urgent where it names none.</summary>
     public MessageLevel Asked => MessageLevels.Asked(Level);
 
-    /// <summary>A take-back's word: the id it waits under on the record (SAIDBACK1c); null for any other move.</summary>
+    /// <summary>A take-back's word: the id it waits under on the record; null for any other move.</summary>
     public string? Word { get; init; }
 
     /// <summary>
-    /// A housekeeping request's operation, one of <see cref="ConfiguredAccess.HousekeepingBuilt"/> (HELPMODE1c2a); a setting request's
-    /// setting, one of <see cref="ConfiguredAccess.SettingsBuilt"/> (HELPMODE1c3); a checkout read's, one of
-    /// <see cref="HelpCheckouts.Operations"/> (HELPMODE1c4); null for any other move.
+    /// A housekeeping request's operation, one of <see cref="ConfiguredAccess.HousekeepingBuilt"/>; a setting request's
+    /// setting, one of <see cref="ConfiguredAccess.SettingsBuilt"/>; a checkout read's, one of
+    /// <see cref="HelpCheckouts.Operations"/>; null for any other move.
     /// </summary>
     public string? Operation { get; init; }
 
@@ -139,22 +138,22 @@ public sealed record SessionRequest(string Session, string Move, DateTimeOffset 
     /// <summary>A housekeeping request's branches, by name, never a path; none for a look, and for any other move.</summary>
     public IReadOnlyList<string> Branches { get; init; } = [];
 
-    /// <summary>A setting request's value, as the setting's door spells it (HELPMODE1c3); null for any other move.</summary>
+    /// <summary>A setting request's value, as the setting's door spells it; null for any other move.</summary>
     public string? Value { get; init; }
 
-    /// <summary>A language's workspace, for a setting request (HELPMODE1c3); null for any other.</summary>
+    /// <summary>A language's workspace, for a setting request; null for any other.</summary>
     public string? Workspace { get; init; }
 
     /// <summary>
-    /// A checkout read's path, relative to the checkout of <see cref="Repository"/> as the agent wrote it (HELPMODE1c4); null for its
+    /// A checkout read's path, relative to the checkout of <see cref="Repository"/> as the agent wrote it; null for its
     /// top, and for any other move. Never trusted: <see cref="HelpCheckouts"/> judges it at the call.
     /// </summary>
     public string? Path { get; init; }
 }
 
 /// <summary>
-/// What became of a setting request (HELPMODE1c3), written beside it for the tool that asked, in housekeeping's answer's fields: the
-/// setting, whether it was changed, a code where it was not, and the words the agent reads. A twin: the service's <c>SettingsBox</c>
+/// What became of a setting request, written beside it for the tool that asked, in housekeeping's answer's fields: the
+/// setting, whether it is changed, a code where it is not, and the words the agent reads. A twin: the service's <c>SettingsBox</c>
 /// reads <c>said</c> by the same name.
 /// </summary>
 public sealed record SettingAnswer(string Setting, bool Done, string? Code, string Said)
@@ -168,13 +167,13 @@ public sealed record SettingAnswer(string Setting, bool Done, string? Code, stri
     /// <summary>The person has not chosen the setting in configured access.</summary>
     public const string NotGranted = "not-granted";
 
-    /// <summary>Chosen after this conversation's start, which was not handed it: it holds from its next turn.</summary>
+    /// <summary>Chosen after this conversation's start, which is not handed it: it holds from its next turn.</summary>
     public const string NotHanded = "not-handed";
 
     /// <summary>A language for a repository or a workspace outside the conversation's.</summary>
     public const string Outside = "outside";
 
-    /// <summary>The request named no setting of the five.</summary>
+    /// <summary>The request names no setting of the five.</summary>
     public const string Named = "named";
 
     /// <summary>The setting's own door refused the value, in its words.</summary>
@@ -183,13 +182,13 @@ public sealed record SettingAnswer(string Setting, bool Done, string? Code, stri
     /// <summary>The change failed on its way: the driver's file or the service.</summary>
     public const string Failed = "failed";
 
-    /// <summary>A refusal of <paramref name="setting"/> with its code, its words ending that nothing was changed.</summary>
+    /// <summary>A refusal of <paramref name="setting"/> with its code, its words ending that nothing is changed.</summary>
     public static SettingAnswer Refusal(string setting, string code, string said) => new(setting, false, code, $"{said} Nothing was changed.");
 }
 
 /// <summary>
-/// What became of a housekeeping request (HELPMODE1c2a), written beside it for the tool that asked: the operation, whether it was
-/// carried out, a code where it was not, and the words the agent reads. A twin: the service's <c>HousekeepingBox</c> reads
+/// What became of a housekeeping request, written beside it for the tool that asked: the operation, whether it is
+/// carried out, a code where it is not, and the words the agent reads. A twin: the service's <c>HousekeepingBox</c> reads
 /// <c>said</c> by the same name.
 /// </summary>
 public sealed record HousekeepingAnswer(string Operation, bool Done, string? Code, string Said)
@@ -203,7 +202,7 @@ public sealed record HousekeepingAnswer(string Operation, bool Done, string? Cod
     /// <summary>The person has not chosen the operation in configured access.</summary>
     public const string NotGranted = "not-granted";
 
-    /// <summary>Chosen after this conversation's start, which was not handed it: it holds from the next start.</summary>
+    /// <summary>Chosen after this conversation's start, which is not handed it: it holds from the next start.</summary>
     public const string NotHanded = "not-handed";
 
     /// <summary>The repository is registered in another workspace than the conversation's.</summary>
@@ -215,7 +214,7 @@ public sealed record HousekeepingAnswer(string Operation, bool Done, string? Cod
     /// <summary>The repository has no checkout on this machine.</summary>
     public const string NoCheckout = "no-checkout";
 
-    /// <summary>The request did not name what its operation acts on, or named it as no branch of Daoris's.</summary>
+    /// <summary>The request does not name what its operation acts on, or names it as no branch of Daoris's.</summary>
     public const string Named = "named";
 
     /// <summary>The discard's judge kept the branch.</summary>
@@ -224,13 +223,13 @@ public sealed record HousekeepingAnswer(string Operation, bool Done, string? Cod
     /// <summary>The judgement failed on its way: git, the service or the disk.</summary>
     public const string Failed = "failed";
 
-    /// <summary>A refusal of <paramref name="operation"/> with its code, its words ending that nothing was done.</summary>
+    /// <summary>A refusal of <paramref name="operation"/> with its code, its words ending that nothing is done.</summary>
     public static HousekeepingAnswer Refused(string operation, string code, string said) =>
         new(operation, false, code, $"{said} Nothing was done.");
 }
 
 /// <summary>
-/// The requests every loop on the home watches (SESSUX1g, D126 §7.1): <c>&lt;home&gt;/sessions/requests/&lt;id&gt;.json</c>, a
+/// The requests every loop on the home watches: <c>&lt;home&gt;/sessions/requests/&lt;id&gt;.json</c>, a
 /// move the person asked of a session another process on this machine runs, written atomically by the door that asked
 /// and taken, once, by the loop whose own registry runs it.
 /// </summary>
@@ -241,53 +240,53 @@ public sealed record HousekeepingAnswer(string Operation, bool Done, string? Cod
 /// markers are (<see cref="SessionProcesses"/>), and it needs no port and no service.</para>
 ///
 /// <para><b>Taken once.</b> A loop takes a request by renaming it, and reads and removes it only where it is still under the
-/// name it was moved to: on Windows a rename another loop had already begun moves it on from under the first (REQTAKE1), so
+/// name it is moved to: on Windows a rename another loop has already begun moves it on from under the first, so
 /// the loop whose name it ends under has it. Two loops honouring at once act on it once, and never neither. The door that
 /// asked withdraws it when nothing took it in time, so a late loop never acts on an
-/// answer the person was already told did not come; it says withdrawn only once nothing else holds what it moved aside, since
-/// a take's rename begun a moment before moves it on from there (REQTAKE2). A request nobody took for <see cref="Lifetime"/> is dropped by any
+/// answer the person is already told did not come; it says withdrawn only once nothing else holds what it moved aside, since
+/// a take's rename begun a moment before moves it on from there. A request nobody took for <see cref="Lifetime"/> is dropped by any
 /// loop that looks, so one left by a door that died does not wait for ever.</para>
 ///
-/// <para><b>Built for PAUSE1b too</b> (D132 §2.1, §6.1): a pause stops what of an ask's work another process runs through
+/// <para><b>Built for a pause too</b>: a pause stops what of an ask's work another process runs through
 /// the same request, a stop with <see cref="RequestDoor.Pause"/>, and records the stop as its own itself.</para>
 ///
-/// <para><b>And for a terminal's words</b> (MSG1e, D137 §5.2): a say is named by its own key beside the session's id, and the
+/// <para><b>And for a terminal's words</b>: a say is named by its own key beside the session's id, and the
 /// loop that takes it writes where the words stand beside it (<see cref="Answer"/>), since a say moves no record the asker could
 /// watch. An answer nobody read is dropped with the requests nobody took.</para>
 ///
-/// <para><b>And for Ask Daoris's housekeeping tools</b> (HELPMODE1c2a, D183's note): the connector, which reaches no judge of its own,
+/// <para><b>And for Ask Daoris's housekeeping tools</b>: the connector, which reaches no judge of its own,
 /// writes a keyed <see cref="SessionMove.Housekeep"/> for its conversation's session and waits for the answer beside it
 /// (<see cref="HousekeepingAnswer"/>), withdrawing it where nobody took it in time. The connector is the twin writer.</para>
 /// </remarks>
 public sealed partial class SessionRequests(string home)
 {
-    /// <summary>How long a request nobody took stands: the asking door waits ten seconds (§7.1), and a minute is ample.</summary>
+    /// <summary>How long a request nobody took stands: the asking door waits ten seconds, and a minute is ample.</summary>
     public static readonly TimeSpan Lifetime = TimeSpan.FromMinutes(1);
 
     private const string Taking = ".taking";
 
     /// <summary>
-    /// How often a take reads what it moved aside before putting it back (REQTAKE1): what refuses it is another loop's rename,
+    /// How often a take reads what it moved aside before putting it back: what refuses it is another loop's rename,
     /// for the moment it moves it, so twenty tries ten milliseconds apart is ample.
     /// </summary>
     private const int ReadTries = 20;
 
     /// <summary>
-    /// How often a withdrawal opens what it moved aside before putting it back (REQTAKE2): what holds it is a take's rename for
+    /// How often a withdrawal opens what it moved aside before putting it back: what holds it is a take's rename for
     /// the moment it moves it, or a reader, so a second of tries ten milliseconds apart is ample, and is spent only while held.
     /// </summary>
     private const int WithdrawTries = 100;
 
-    /// <summary>A say's answer's ending, beside it: what the loop writes, so the folder's watch never hears it (FABRIC-EVENT2).</summary>
+    /// <summary>A say's answer's ending, beside it: what the loop writes, so the folder's watch never hears it.</summary>
     internal const string Answered = ".answer.json";
 
     public string Folder => DaorisHome.Entry(home, HomeEntry.Requests);
 
-    /// <summary>A fresh key for a say (MSG1e): enough of a random id that two said at once never share one.</summary>
+    /// <summary>A fresh key for a say: enough of a random id that two said at once never share one.</summary>
     public static string NewKey() => Guid.NewGuid().ToString("N")[..12];
 
     /// <summary>
-    /// The producer's key a say's words are kept under, whichever door says them (COWORK1c, FOUNDATION1b): the request's own key,
+    /// The producer's key a say's words are kept under, whichever door says them: the request's own key,
     /// so a request read again after a restart keeps one word; null for a request that names none.
     /// </summary>
     public static string? WordKey(SessionRequest request) => request.Key is { Length: > 0 } key ? $"request/{key}" : null;
@@ -345,7 +344,7 @@ public sealed partial class SessionRequests(string home)
         var pending = new List<SessionRequest>();
         foreach (var path in Directory.EnumerateFiles(Folder, "*.json"))
         {
-            // 🔴 A look every second that opened the answer its asker was reading made that read fail, or its removal (MSG1e).
+            // 🔴 A look every second that opened the answer its asker is reading makes that read fail, or its removal.
             if (path.EndsWith(Answered, StringComparison.Ordinal))
             {
                 if (File.Exists(path) && now - new DateTimeOffset(File.GetLastWriteTimeUtc(path), TimeSpan.Zero) > Lifetime) Remove(path);
@@ -371,7 +370,7 @@ public sealed partial class SessionRequests(string home)
 
     /// <summary>
     /// Take a session's request, once: renamed aside, read and removed. Null when another loop took it first or its asker
-    /// withdrew it, or when what was moved aside could not be read, which is put back for the next look (REQTAKE1).
+    /// withdrew it, or when what is moved aside cannot be read, which is put back for the next look.
     /// </summary>
     public SessionRequest? Take(string session) => TakeAt(PathOf(session));
 
@@ -390,17 +389,17 @@ public sealed partial class SessionRequests(string home)
             return null;
         }
 
-        // 🔴 REQTAKE1 (FIX-LOG 2026-10-16): on Windows another loop's rename opens the file, letting it be moved, a moment before
+        // 🔴 On Windows another loop's rename opens the file, letting it be moved, a moment before
         // it moves it. This rename succeeds under that handle, the handle then moves the file on from this name, and while it is
-        // open a read is refused. A take that removed what it could not read lost the request unread, and the other loop's move
-        // then found it deleted. So a refused read is tried again, a file gone was moved on by the loop that has it, and only
-        // what was read is removed.
+        // open a read is refused. A take that removes what it cannot read loses the request unread, and the other loop's move
+        // then finds it deleted. So a refused read is tried again, a file gone has been moved on by the loop that has it, and only
+        // what is read is removed.
         for (var attempt = 1; ; attempt++)
         {
             string text;
             try
             {
-                text = File.ReadAllText(taking); // read-shares: refused while another loop's rename holds it, which must stay so (REQTAKE1)
+                text = File.ReadAllText(taking); // read-shares: refused while another loop's rename holds it, which must stay so
             }
             catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
             {
@@ -439,8 +438,8 @@ public sealed partial class SessionRequests(string home)
     }
 
     /// <summary>
-    /// Withdraw a session's request while nobody has taken it; false when it was taken, or never written, or held past every
-    /// try, when it is put back for a loop to take (REQTAKE2).
+    /// Withdraw a session's request while nobody has taken it; false when it is taken, or never written, or held past every
+    /// try, when it is put back for a loop to take.
     /// </summary>
     public bool Withdraw(string session) => WithdrawAt(PathOf(session));
 
@@ -449,8 +448,8 @@ public sealed partial class SessionRequests(string home)
 
     /// <summary>
     /// Withdrawn by renaming it aside, as a loop takes it, then removed only once nothing else holds it, so of a withdrawal and a
-    /// take only one wins and the answer says which (REQTAKE2); a look reading it that moment holds it for milliseconds, and is
-    /// waited out rather than read as a take (MSG1e).
+    /// take only one wins and the answer says which; a look reading it that moment holds it for milliseconds, and is
+    /// waited out rather than read as a take.
     /// </summary>
     private static bool WithdrawAt(string path)
     {
@@ -476,9 +475,9 @@ public sealed partial class SessionRequests(string home)
             }
         }
 
-        // 🔴 REQTAKE2 (FIX-LOG 2026-10-16): on Windows a take's rename opens the file, letting it be moved, a moment before it
+        // 🔴 On Windows a take's rename opens the file, letting it be moved, a moment before it
         // moves it, so a rename begun before this one lands after it and moves the file on from the withdrawn name. Removing that
-        // name found nothing there and said withdrawn while the loop acted on it. So the file is opened alone, which waits out
+        // name finds nothing there and says withdrawn while the loop acts on it. So the file is opened alone, which waits out
         // every handle opened before the rename above (none can be opened after it, the name being gone), and removed as that
         // handle closes; gone by then, the take that moved it on has it. On Linux a rename is by name and whole, so nothing moves
         // it on, and the open waits only for a reader.
@@ -509,7 +508,7 @@ public sealed partial class SessionRequests(string home)
     }
 
     /// <summary>
-    /// Where a say's words stand, written beside it by the loop that took it (MSG1e), for the door that asked: atomically, so
+    /// Where a say's words stand, written beside it by the loop that took it, for the door that asked: atomically, so
     /// the asker reads the whole of it or nothing.
     /// </summary>
     public void Answer(SessionRequest request, WordsHeld held)
@@ -519,7 +518,7 @@ public sealed partial class SessionRequests(string home)
         AtomicFile.WriteText(path, ToJson(held));
     }
 
-    /// <summary>What became of a housekeeping request (HELPMODE1c2a), written beside it as a say's answer is, for the tool that asked.</summary>
+    /// <summary>What became of a housekeeping request, written beside it as a say's answer is, for the tool that asked.</summary>
     public void Answer(SessionRequest request, HousekeepingAnswer answer)
     {
         var path = AnswerPath(request);
@@ -527,7 +526,7 @@ public sealed partial class SessionRequests(string home)
         AtomicFile.WriteText(path, ToJson(answer.Operation, answer.Done, answer.Code, answer.Said));
     }
 
-    /// <summary>What became of a setting request (HELPMODE1c3), written beside it in housekeeping's answer's fields.</summary>
+    /// <summary>What became of a setting request, written beside it in housekeeping's answer's fields.</summary>
     public void Answer(SessionRequest request, SettingAnswer answer)
     {
         var path = AnswerPath(request);
@@ -535,7 +534,7 @@ public sealed partial class SessionRequests(string home)
         AtomicFile.WriteText(path, ToJson(answer.Setting, answer.Done, answer.Code, answer.Said));
     }
 
-    /// <summary>What became of a checkout read (HELPMODE1c4), written beside it in the same fields with what was read as <c>text</c>.</summary>
+    /// <summary>What became of a checkout read, written beside it in the same fields with what is read as <c>text</c>.</summary>
     public void Answer(SessionRequest request, CheckoutAnswer answer)
     {
         var path = AnswerPath(request);
@@ -688,7 +687,7 @@ public sealed partial class SessionRequests(string home)
         if (request.Word is not null) writer.WriteString("takeBackWord", request.Word);
         if (request.Operation is not null && request.Move == SessionMove.Set)
         {
-            // HELPMODE1c3: a setting's fields, in the connector's order.
+            // A setting's fields, in the connector's order.
             writer.WriteString("operation", request.Operation);
             if (request.Value is not null) writer.WriteString("value", request.Value);
             if (request.Repository is not null) writer.WriteString("repository", request.Repository);
@@ -696,7 +695,7 @@ public sealed partial class SessionRequests(string home)
         }
         else if (request.Operation is not null && request.Move == SessionMove.Read)
         {
-            // HELPMODE1c4: a checkout read's fields, in the connector's order.
+            // A checkout read's fields, in the connector's order.
             writer.WriteString("operation", request.Operation);
             if (request.Repository is not null) writer.WriteString("repository", request.Repository);
             if (request.Path is not null) writer.WriteString("path", request.Path);
@@ -713,8 +712,8 @@ public sealed partial class SessionRequests(string home)
         writer.WriteEndObject();
     });
 
-    // The twin's fields, in its order (HELPMODE1c2a, and HELPMODE1c3's settings alike): the service's boxes read `said`; a checkout
-    // read's (HELPMODE1c4) carries `text` after them, null where nothing was read.
+    // The twin's fields, in its order (housekeeping's and the settings' alike): the service's boxes read `said`; a checkout
+    // read's carries `text` after them, null where nothing is read.
     private static string ToJson(string operation, bool done, string? code, string said, string? text = null, bool withText = false) =>
         JsonFile.Serialize(writer =>
         {
@@ -738,7 +737,7 @@ public sealed partial class SessionRequests(string home)
         if (held.Word is not null) writer.WriteString("word", held.Word);
         if (held.Message is not null) writer.WriteString("message", held.Message);
         if (held.Now) writer.WriteBoolean("now", true);
-        // FOUNDATION1d-ii: additive, so a verb from before reads the rest as it did.
+        // Additive, so a verb that does not know it reads the rest as it does.
         if (held.Head is not null) writer.WriteString("head", held.Head);
         writer.WriteEndObject();
     });
