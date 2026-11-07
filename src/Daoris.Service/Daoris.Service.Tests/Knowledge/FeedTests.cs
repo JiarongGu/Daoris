@@ -108,6 +108,48 @@ public sealed class FeedTests : IAsyncLifetime
         Assert.Empty(await _store.AllAsync());
     }
 
+    /// <summary>
+    /// 🔴 A feed admitted while its repository shared, then queued behind the declaration that stops it sharing, is judged again once
+    /// that declaration stands: admitted before the gate, it would write what the repository no longer lets leave.
+    /// </summary>
+    [Fact]
+    public async Task A_feed_queued_behind_a_declaration_that_stops_sharing_is_refused()
+    {
+        await Register("Open", joined: true, shares: true);
+        var registering = new TaskCompletionSource();
+        var release = new TaskCompletionSource();
+        var asked = 0;
+        var admitted = new TaskCompletionSource();
+        var feeds = new KnowledgeFeeds(
+            _store, _registrations,
+            async ct =>
+            {
+                var rows = await _service.RegistryAsync(ct: ct);
+                // The declaration's own look is the first; the next is the feed's.
+                if (Interlocked.Increment(ref asked) == 2) admitted.TrySetResult();
+                return rows;
+            },
+            async (declared, now, ct) =>
+            {
+                registering.SetResult();
+                await release.Task;
+                return await _service.RegisterAsync(declared, now, ct);
+            },
+            () => { }, TimeProvider.System);
+
+        var withdrawing = feeds.RegisterFedAsync(
+            new Registration("Open", Adopted: true, "A repo.", ["x"], [], [], Entries: 0, Joined: true, SharesKnowledge: false), From(), Now, default);
+        await registering.Task;
+        var feeding = feeds.FeedAsync("Open", [Entry()], From("cccc3333dddd4444", at: "2026-09-20T09:30:00Z"), default);
+        // A feed judged inside the gate has nothing to say until the declaration is through, so it is given a moment, not waited for.
+        await Task.WhenAny(admitted.Task, Task.Delay(TimeSpan.FromMilliseconds(500)));
+        release.SetResult();
+        await withdrawing;
+
+        Assert.Equal(FeedRefusal.NotSharing, (await feeding).Refusal);
+        Assert.Empty(await _store.AllAsync());
+    }
+
     // ——— Which point in the history speaks. Wholesale replacement between two machines is a
     // flapping generator without these three: each tick, whichever fed last would overwrite the other.
 
