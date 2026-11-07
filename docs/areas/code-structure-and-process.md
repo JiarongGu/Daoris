@@ -137,8 +137,11 @@ finishes first and the whole set runs once.
     once for its class (`Todays`, `Rules`) and runs the cases eight wide through `GridRun` (185 s to 84 s); `StructureTests` and
     `ShellStructureTests` share one analysis, `DriverTree.Shared` (one compile fewer, about 50 s of CPU, no change in either class's wall);
     the web's vitest keeps its transformed modules (`fsModuleCache`: the rules gate 87 s to 42 s warm). Still redundant: the `censuses` gate
-    reruns the Census classes that the driver's and modules' fast halves already run (a full CI run could skip it when both run), and the
-    modules' fast half did not finish in a worktree beside a long Process run. (from OPTIMIZE1d)
+    reruns the Census classes that the driver's and modules' fast halves already run (a full CI run could skip it when both run). The modules'
+    fast half does not hang in a worktree: run twice in a session's tree, once alone and once beside the merge queue's driver-process gate, it
+    ran its 3,006 tests in about 4 minutes of test time each (the slowest test 5 s, 230 s of test time in all, one class at a time). The
+    second run first waited about 3 minutes in `daoris gate run` for a heavy-run place (all three held), which it said, and which has no
+    time-out: that wait, not a test, is what a run beside a long Process run spends its time on. (from OPTIMIZE1d)
 
 ## Where a change goes
 
