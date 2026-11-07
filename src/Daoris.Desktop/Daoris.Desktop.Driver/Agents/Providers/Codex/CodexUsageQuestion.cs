@@ -1,6 +1,6 @@
 namespace Daoris.Driver;
 
-/// <summary>Codex's way of being asked an account's windows (CODEXUSE1): <c>codex app-server</c>'s JSON-RPC over stdio, a reading standing five minutes.</summary>
+/// <summary>Codex's way of being asked an account's windows: <c>codex app-server</c>'s JSON-RPC over stdio, a reading standing five minutes.</summary>
 public sealed record CodexUsageQuestion(string Harness, IReadOnlyList<string> Command, IReadOnlyList<RecordedFrame> Recorded)
     : UsageQuestion(Harness, Command, Recorded)
 {

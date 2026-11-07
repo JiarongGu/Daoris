@@ -1,9 +1,9 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// The newest release a pin may move to (USE1a), asked one way for the window's update and the terminal's <c>agent update</c>: the maker's
-/// own release channel where the agent declares one, else <c>npm view &lt;package&gt; version</c> through the tools' npm (TOOLS5, D121
-/// §2.7), its answer streamed to the person as the pin's <c>npm install</c> is. Anything but one exact version is a refusal that says the
+/// The newest release a pin may move to, asked one way for the window's update and the terminal's <c>agent update</c>: the maker's
+/// own release channel where the agent declares one, else <c>npm view &lt;package&gt; version</c> through the tools' npm,
+/// its answer streamed to the person as the pin's <c>npm install</c> is. Anything but one exact version is a refusal that says the
 /// pin stays.
 /// </summary>
 internal static class PinNewest

@@ -9,7 +9,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
 {
     /// <summary>The walk behind <see cref="SelectAsync"/> and a view's read of it (<see cref="WiringAsync"/>).</summary>
     /// <param name="asks">
-    /// False for a view's read (ROSTER1, D150 point 5: nothing is probed as a view opens): the walk composes from the last readings, the
+    /// False for a view's read (nothing is probed as a view opens): the walk composes from the last readings, the
     /// account's, the cool-offs', the offer judgement and the agent's report, and asks no account's status nor its binary again. An
     /// account read signed out stays signed out for it however old the reading, and an agent the report says is absent is refused as such;
     /// the next start, which asks, or a press, is what reads them again.
@@ -27,48 +27,47 @@ internal sealed class RosterWalk(HarnessRoster roster)
         if (roster.Adapters.AgentNamed(resolved.Id.Value) is not { } toolchain) return new HarnessSelection(Refusal: null);
 
         var settings = roster.Settings;
-        // 🔴 A door runs as its OWNER's accounts (AGT7): the owner's default, the owner's directory,
+        // 🔴 A door runs as its OWNER's accounts: the owner's default, the owner's directory,
         // the owner's login question and key. The pin below stays the door's own — a door is a
-        // different package at a different version (ACP2).
+        // different package at a different version.
         var owner = roster.Adapters.OwnerOfAgent(resolved.Id.Value).Value;
-        // The agent's one set, whatever the workspace (POOL1a2, the account-pool design §2.4): no start reads a workspace's scope.
+        // The agent's one set, whatever the workspace: no start reads a workspace's scope.
         var named = settings.Set(owner);
         var picked = string.IsNullOrWhiteSpace(chosen) ? null : chosen.Trim();
-        // Where the person named no account, the agent's Daoris accounts are the start's (OWNSPACE1a), and none signed in holds it.
+        // Where the person named no account, the agent's Daoris accounts are the start's, and none signed in holds it.
         var ours = picked is null && !ownHome && named.List.Count == 0 && named.Begins is null && !toolchain.Home.StartsInOwnHome;
         var scope = ours ? roster.Walked(named, owner, toolchain) : named;
 
         // Where the agent's door carries none of its windows, its own server is asked them first, for each account of the list
-        // the start could take that a set point owes a question (CODEXUSE1, USAGEPROBE1): never read, unread for the interval,
+        // the start could take that a set point owes a question: never read, unread for the interval,
         // projected near its curve, or a limit or a credit said of it. A start, never a look or a panel, which count nothing.
-        // Each under its own account's lock and under no gate of the walk's (PARALLEL1c), so another start never waits on them.
-        // Only where there is a choice for a reading to change (USAGEONE1): a set of one, and a resume held to its own account,
+        // Each under its own account's lock and under no gate of the walk's, so another start never waits on them.
+        // Only where there is a choice for a reading to change: a set of one, and a resume held to its own account,
         // run where they run whatever they would say, so the hour's backstop and a person's look read them instead.
         if (counts && picked is null && !ownHome && scope.List.Count > 1)
         {
             await roster.FreshenAsync(resolved.Id.Value, owner, scope.List, config, ct, scope.Use).ConfigureAwait(false);
         }
 
-        // The first look, before any question: read again under the gate once the questions are asked (PARALLEL1c).
+        // The first look, before any question: read again under the gate once the questions are asked.
         var now = roster.Clock();
         var (order, known) = OrderOf(owner, scope, kind, picked, ownHome, now, offer.Except);
 
-        // What a hold says names each account by the person's name, read now, as it is said (ACCT2b); the selection's facts
+        // What a hold says names each account by the person's name, read now, as it is said; the selection's facts
         // and the record's opening line keep the ids.
         var names = AccountNames.Of(roster.Home, owner);
 
-        // 🔴 No Daoris account to run on (OWNSPACE1a, D175 point 2): the start waits for the person's sign-in, before anything is
-        // probed or spawned, and never runs in the person's own tool home, which a scope naming nothing once meant (D125 point 5).
+        // 🔴 No Daoris account to run on: the start waits for the person's sign-in, before anything is
+        // probed or spawned, and never runs in the person's own tool home, which a scope naming nothing never meant.
         if (ours && order is [null]) return HarnessRoster.NoAccount(owner, [], names);
         var states = order.Select(account => roster.Before(owner, account, now, names, HarnessRoster.FactOf(known, account), offer.Model)).ToList();
 
-        // 🔴 A cooling account is held FIRST, by a file read, before any probe (TOOL4d, D125 §3.3, §4): a start on a
-        // spent account is refused at once and spends nothing, and three of them parked a quest on 1 October whose only
-        // fault was its account. An account its provider already refused is not spent again (AGT3b). So when no account
+        // 🔴 A cooling account is held FIRST, by a file read, before any probe: a start on a
+        // spent account is refused at once and spends nothing. An account its provider already refused is not spent again. So when no account
         // the start may use is ready on either count, nothing is spawned or probed: the start waits.
         if (!states.Any(state => state.IsReady))
         {
-            // A pick is the person's (§3.3): refused, never rotated, naming what they could pick instead.
+            // A pick is the person's: refused, never rotated, naming what they could pick instead.
             if (picked is null || states[0].Cooling is not { } pick) return Unready(owner, states, picked is null ? scope : null, kind, now, names);
 
             var refusal = RotationWords.PickedOf(
@@ -76,7 +75,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             return new HarnessSelection(refusal.Note) { Cooling = pick, RefusalNote = refusal };
         }
 
-        // Which binary this spawn runs (TOOL2/D57): the explicit command, then the managed pin, then
+        // Which binary this spawn runs: the explicit command, then the managed pin, then
         // PATH. An explicit `commands` entry is the person naming exactly what to run and has the
         // last word — a pin quietly replacing it would be a standing choice overruling a specific one.
         string? managed = null;
@@ -89,7 +88,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             if (managed is null)
             {
                 // 🔴 Refused, never a silent fall back to PATH. Running a different tool than the one
-                // that was pinned — and recording its version as though it were the pinned one —
+                // that is pinned — and recording its version as though it were the pinned one —
                 // is the failure this whole shape exists to prevent.
                 var pinRefusal = $"`{resolved.Id.Value}` is pinned to {pinned} on this machine, and nothing is "
                     + $"installed at that version — `daoris agent pin {resolved.Id.Value} {pinned}` "
@@ -104,14 +103,14 @@ internal sealed class RosterWalk(HarnessRoster roster)
         }
 
         var report = await roster.ReportAsync(resolved.Id.Value, config, refresh: false, ct).ConfigureAwait(false);
-        // 🔴 A pin this start resolved counts for this start alone (WSPINONLY1): the roster's binary look reads the machine's
-        // install and pin, never a workspace's, so an agent only a workspace pins was refused as absent. The managed install
+        // 🔴 A pin this start resolved counts for this start alone: the roster's binary look reads the machine's
+        // install and pin, never a workspace's, so an agent only a workspace pins would be refused as absent. The managed install
         // the pin names is its presence, found above; another workspace's start resolves no such pin and still asks the machine.
         var pinPresent = managed is not null;
         if (asks && !pinPresent && report is { Present: false })
         {
             // Asked again before refusing: the cached answer may predate the install the last refusal
-            // asked for. Its binary alone, since an install is no question of an account (ROSTER1). A view's read refuses on the
+            // asked for. Its binary alone, since an install is no question of an account. A view's read refuses on the
             // cached answer, as it asks nothing.
             await roster.BinaryChangedAsync(resolved.Id.Value, config, ct).ConfigureAwait(false);
             report = await roster.ReportAsync(resolved.Id.Value, config, refresh: false, ct).ConfigureAwait(false);
@@ -133,7 +132,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             {
                 Absent = AgentAbsence.NotInstalled,
                 // An agent with its own tooling names that command, which may hold a path: it is the program's words between the
-                // lead and the line that says Daoris never installs, never a value (ROSTERREFUSE2).
+                // lead and the line that says Daoris never installs, never a value.
                 RefusalNote = installs
                     ? Noted.Of(HeldNoteCodes.HeldNotInstalled, absent, ("agent", resolved.Id.Value))
                     : Noted.Of(HeldNoteCodes.HeldNotInstalledOwn,
@@ -143,7 +142,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             };
         }
 
-        // Claude Code's seam (ACP2), on a door whose program runs Claude Code's: the Agent SDK needs to be told which `claude` to use.
+        // Claude Code's seam, on a door whose program runs Claude Code's: the Agent SDK needs to be told which `claude` to use.
         // Read from the PIPE door's pin, because that is where the CLI lives.
         var claude = resolved.Spawned().ClaudeSeam
             ? HarnessSettings.ManagedBinary(
@@ -159,13 +158,13 @@ internal sealed class RosterWalk(HarnessRoster roster)
         // declares no login question of its own, which is what `accountOf` says.
         var asker = roster.AnswersFor(resolved.Id.Value, toolchain);
 
-        // 🔴 The walk (TOOL4f, D125 §3.3), with no question asked under its gate (PARALLEL1c, D181 point 3). A pass reads again
+        // 🔴 The walk, with no question asked under its gate. A pass reads again
         // the order, each account's state and what the agent last said of each, and chooses the first still ready, counting it
         // where the start counts, under the gate alone, so starts made together each see the others' counts. A question the walk
         // owes an account, a wait for the chosen account's lock, and every other question are outside it: a question that does
         // not answer on one account holds no start on another.
         var walk = new WalkMemory();
-        // Each account's offer reading, judged for the model this start asks (D205 §3.3, MODELROLE1c2): an account passed already, or
+        // Each account's offer reading, judged for the model this start asks: an account passed already, or
         // whose reading of this version, under a day old, lacks or refused it, is passed for this start, never cooled.
         string? Offers(string account) =>
             offer.Passed?.Contains(account, StringComparer.OrdinalIgnoreCase) == true
@@ -186,12 +185,11 @@ internal sealed class RosterWalk(HarnessRoster roster)
             if (pass.Held is { } hold) return hold;
             if (pass.Ask is { } asking)
             {
-                // Asked again, as the install above is, since the person may have signed in since (TOOL6g): that account
+                // Asked again, as the install above is, since the person may have signed in since: that account
                 // alone, and only once a sign-in marked it or the word is `SignedOutAskedAgain` old, or once after a refusal
-                // its last reading said signed in (TOOL6h). Before, a start held on a signed-out account asked every account's
-                // status at every look. An account never read is unknown, and a start runs on it as on any unknown (SES3): a
-                // look asks nothing (ROSTER1). One whose lock another question kept past its patience is unknown for this walk
-                // alone, and passed (PARALLEL1c).
+                // its last reading said signed in. An account never read is unknown, and a start runs on it as on any unknown: a
+                // look asks nothing. One whose lock another question keeps past its patience is unknown for this walk
+                // alone, and passed.
                 HarnessProbe.LoginAnswer answer;
                 try
                 {
@@ -212,9 +210,9 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 continue;
             }
 
-            // Counted already, and busy from then on (TOOL6g): a status question another caller is asking the account now is
+            // Counted already, and busy from then on: a status question another caller is asking the account now is
             // waited out, and no question begun after asks it while the session's own process may refresh its token. Where its
-            // lock stays held past its patience, the count is taken back and the account passed for this walk (PARALLEL1c).
+            // lock stays held past its patience, the count is taken back and the account passed for this walk.
             if (counts && !await WaitedOutAsync(owner, pass.States[pass.At].Account!, pass.Number, ct).ConfigureAwait(false))
             {
                 walk.Unknown.Add(pass.States[pass.At].Account!);
@@ -224,13 +222,13 @@ internal sealed class RosterWalk(HarnessRoster roster)
             break;
         }
 
-        // What the pass that chose it read: the start's line says the walk as it was when the account was counted.
+        // What the pass that chose it read: the start's line says the walk as it is when the account is counted.
         (states, order, now) = (pass.States, pass.Order, pass.Now);
         var (at, facts) = (pass.At, pass.Facts);
         var runs = states[at].Account!;
         var home = HarnessSettings.ProfileHome(roster.Home, owner, runs);
 
-        // An account that is a key is handed its key through the tool's own variable (AGT3) — the
+        // An account that is a key is handed its key through the tool's own variable — the
         // owner's variable, for a door, since the door runs the owner's tool.
         var key = asker.Accounts.KeyVariable is { Length: > 0 } variable
             && HarnessKeys.Of(roster.Home, owner, runs) is { } held
@@ -240,27 +238,27 @@ internal sealed class RosterWalk(HarnessRoster roster)
         var selection = new HarnessSelection(null, runs, home, version, managed, claude, key) { Number = pass.Number };
         if (picked is not null || scope.List.Count == 0 || scope.Begins is not { } begins) return selection;
 
-        // Said by whoever opens the record (TOOL4f, §3.6; TOOL6b, §16.4): its first line and `account.rotated`, with what each
-        // account of the list last said about its windows (TOOL6c).
+        // Said by whoever opens the record: its first line and `account.rotated`, with what each
+        // account of the list last said about its windows.
         var choice = AccountRotation.Chose(scope, kind, states, at, facts, now);
         var passed = states.FirstOrDefault(state => string.Equals(state.Account, begins, StringComparison.OrdinalIgnoreCase));
-        // Each step by code beside its English (UX7d-1): the choice's clause joins them, and a rotation's is the first alone.
+        // Each step by code beside its English: the choice's clause joins them, and a rotation's is the first alone.
         var steps = RotationWords.Steps(choice, owner, runs, scope, null, passed, facts, kind, now, roster.Zone);
-        // Over its curve is the log's `near`, the word for an account passed (SWITCH1b-ii).
+        // Over its curve is the log's `near`, the word for an account passed.
         string? Standing(string account) => AccountReadings.Standing(facts.GetValueOrDefault(account)?.Said, scope.Use, now);
         var walked = scope.List.Where(account => order.Contains(account, StringComparer.OrdinalIgnoreCase)).ToList();
         return selection with
         {
             Choice = scope.Use.Use == "goal" && order.Count > 1 ? new AccountChoice(choice.Step, RotationWords.Text(steps)) : null,
             Steps = steps,
-            // A start's line says what was projected (USAGEPROBE1); a panel, which a person waits on, reads no history for it.
+            // A start's line says what is projected; a panel, which a person waits on, reads no history for it.
             AccountsSaid = RotationWords.AccountsSaid(walked, counts ? roster.Projected(owner, walked, facts, now) : facts, scope.Use, now),
             Rotated = string.Equals(runs, begins, StringComparison.OrdinalIgnoreCase)
                 ? null
                 : new RotatedStart(begins, passed?.Cooling, steps[0].Text)
                 {
                     Step = choice.Step,
-                    // The set's, for every start now (the account-pool design §2.4); a line written before keeps the workspace it named.
+                    // The set's, for every start now; a line written before keeps the workspace it named.
                     Scope = null,
                     FromSaid = Standing(begins),
                     ToSaid = Standing(runs),
@@ -269,7 +267,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
     }
 
     /// <summary>
-    /// The accounts a start may use, in the order it tries them (TOOL6b, D130 §16.3; D125 §3.3 under `order`), and what the walk
+    /// The accounts a start may use, in the order it tries them, and what the walk
     /// knows of each. A pick, a scope that names one account, and the tool's own sign-in are the one account, and nothing more
     /// is read.
     /// </summary>
@@ -284,9 +282,9 @@ internal sealed class RosterWalk(HarnessRoster roster)
     }
 
     /// <summary>
-    /// The hold of a start whose every ready account's reading does not offer its model (D205 §3.3, MODELROLE1c2): one sentence naming
+    /// The hold of a start whose every ready account's reading does not offer its model: one sentence naming
     /// each account by the person's name, and the soonest cool-off of the rest beside it, so the actor's walk passes the choice
-    /// <c>not-offered</c> and a pick is refused with its reason (§3.5(d)).
+    /// <c>not-offered</c> and a pick is refused with its reason.
     /// </summary>
     private static HarnessSelection NotOfferedHold(
         string owner, IReadOnlyList<string> unoffered, IReadOnlyList<AccountState> states, IReadOnlyDictionary<string, string> names)
@@ -302,14 +300,14 @@ internal sealed class RosterWalk(HarnessRoster roster)
     }
 
     /// <summary>
-    /// One pass of a start's walk (TOOL4f, D125 §3.3), asking nothing (PARALLEL1c): the order and each account's state read again,
-    /// with what this walk's own questions answered and every other account's last reading (ROSTER1), and the first account still
+    /// One pass of a start's walk, asking nothing: the order and each account's state read again,
+    /// with what this walk's own questions answered and every other account's last reading, and the first account still
     /// ready chosen, and counted where the start counts. A counted start's pass runs under the walk's gate, so it reads and counts
     /// as one; it reads files and asks no agent.
     /// </summary>
     /// <remarks>
-    /// An account read signed out that is owed a question (TOOL6g's mark or hour, TOOL6h's fresh reading) is handed back to be
-    /// asked outside the gate, claimed so no other walk asks it beside this one; one another walk is asking now is passed as its
+    /// An account read signed out that is owed a question (a sign-in mark, the hour's backstop or a fresh reading) is handed back to be
+    /// asked outside the gate, claimed so no other walk asks it beside this one; one another walk is asking is passed as its
     /// last reading says, never waited on. An account unknown for this walk is passed; where nothing else is chosen, the start is
     /// held on it, for the next start to try again.
     /// </remarks>
@@ -321,7 +319,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         var now = roster.Clock();
         var (order, facts) = OrderOf(owner, scope, kind, picked, ownHome: false, now, except);
         var states = order.Select(account => roster.Before(owner, account, now, names, HarnessRoster.FactOf(facts, account), model)).ToList();
-        // What the agent last said of each account (ROSTER1), as a report says it: an account not on this machine said nothing.
+        // What the agent last said of each account, as a report says it: an account not on this machine says nothing.
         var present = HarnessSettings.Profiles(roster.Home, owner);
         var reads = AccountReads.Of(roster.Home, owner);
 
@@ -332,7 +330,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
         {
             if (!states[i].IsReady) continue;
             var account = states[i].Account!;
-            // D205 §3.3 (MODELROLE1c2): an account whose reading does not offer the model asked is passed for this start, before any
+            // An account whose reading does not offer the model asked is passed for this start, before any
             // question is asked of it: not a cool-off, never counted.
             if (offers?.Invoke(account) is not null)
             {
@@ -353,11 +351,11 @@ internal sealed class RosterWalk(HarnessRoster roster)
             var asked = walk.Said.TryGetValue(account, out var answered);
             var login = asked ? answered : read?.Login ?? LoginState.Unknown;
             var key = HarnessRoster.AccountKey(owner, account);
-            // A view's read asks nothing (`asks` false): the reading stands, and the one fresh reading a refusal owes (TOOL6h) stays
+            // A view's read asks nothing (`asks` false): the reading stands, and the one fresh reading a refusal owes stays
             // owed to the next start that asks.
             if (asks && login == LoginState.Out && !asked && _asking.TryAdd(key, true))
             {
-                // The one fresh reading a refusal of a signed-in reading owes it (TOOL6h), spent here whatever it answers.
+                // The one fresh reading a refusal of a signed-in reading owes it, spent here whatever it answers.
                 var owed = roster._owed.TryRemove(key, out _);
                 if (owed || roster.AskAgain(owner, account, read?.At)) return new WalkPass(Ask: account, Owed: owed);
                 _asking.TryRemove(key, out _);
@@ -387,7 +385,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
             // An account passed for its lock comes free by itself: the start is held for the next to try, never waiting for a time.
             if (passed.Count > 0) return new WalkPass(Held: Locked(owner, passed, names));
 
-            // Every account still ready refuses the model (D205 §3.3, §3.5(d)): the start holds with the reason, the soonest cool-off of
+            // Every account still ready refuses the model: the start holds with the reason, the soonest cool-off of
             // the rest beside it, for the actor's walk to take its next choice.
             if (unoffered.Count > 0 && !states.Any(state => state.IsReady && state.Readiness != AccountReadiness.SignedOut
                     && !unoffered.Contains(state.Account!, StringComparer.OrdinalIgnoreCase)))
@@ -395,7 +393,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 return new WalkPass(Held: NotOfferedHold(owner, unoffered, states, names));
             }
 
-            // Every Daoris account the person never named said signed out: none is signed in, so the same sentence (OWNSPACE1a).
+            // Every Daoris account the person never named said signed out: none is signed in, so the same sentence.
             return new WalkPass(Held: ours && states.All(state => state.Readiness == AccountReadiness.SignedOut)
                 ? HarnessRoster.NoAccount(owner, RotationWords.SignedOut(states), names)
                 : Unready(owner, states, picked is null ? scope : null, kind, now, names));
@@ -410,9 +408,9 @@ internal sealed class RosterWalk(HarnessRoster roster)
     }
 
     /// <summary>
-    /// A counted start waits out a question in flight on the account it chose (TOOL6g), counted already, so no question begun
-    /// since asks it. False, the count taken back, where the account's lock stays held past <see cref="LockPatience"/>
-    /// (PARALLEL1c): a start beside a question in flight could spend its single-use refresh token twice, which signs it out.
+    /// A counted start waits out a question in flight on the account it chose, counted already, so no question begun
+    /// since asks it. False, the count taken back, where the account's lock stays held past <see cref="LockPatience"/>:
+    /// a start beside a question in flight could spend its single-use refresh token twice, which signs it out.
     /// </summary>
     private async Task<bool> WaitedOutAsync(string owner, string account, long number, CancellationToken ct)
     {
@@ -438,8 +436,8 @@ internal sealed class RosterWalk(HarnessRoster roster)
     }
 
     /// <summary>
-    /// The hold of a start whose every account it could run on stayed locked by another question past the walk's patience
-    /// (PARALLEL1c): nothing counted, nothing run beside the question, and no wait for a time, so the next start tries again. Its
+    /// The hold of a start whose every account it could run on stays locked by another question past the walk's patience:
+    /// nothing counted, nothing run beside the question, and no wait for a time, so the next start tries again. Its
     /// words alone, a refusal no held note carries by code (<see cref="HarnessSelection.RefusalNote"/>).
     /// </summary>
     private static HarnessSelection Locked(string owner, IReadOnlyList<string> accounts, IReadOnlyDictionary<string, string> names)
@@ -456,25 +454,25 @@ internal sealed class RosterWalk(HarnessRoster roster)
     }
 
     /// <summary>
-    /// No account the start may use is ready (TOOL4f, D125 §4). One account is held as it always was: its own sentence,
+    /// No account the start may use is ready. One account is held by its own sentence,
     /// and its cool-off where that is why. Over an order, the start waits for the first reset when one is cooling, said
     /// with every account and why; with none cooling, nothing will come ready by itself, so the default's own refusal,
     /// which names the fix, is the answer.
     /// </summary>
     /// <remarks>
-    /// A wait for a time also says what the person could do (TOOL6b, D130 §3.3, §4.6), where it applies: a driven start
-    /// whose kept account is ready says it is kept for conversations. No account is outside the set (POOL1a2, D197 point 1), so
+    /// A wait for a time also says what the person could do, where it applies: a driven start
+    /// whose kept account is ready says it is kept for conversations. No account is outside the set, so
     /// none is named as one a list could add. Read from the cool-offs and the refusals alone, as a waiting look starts no process.
     /// </remarks>
     /// <param name="scope">The start's scope, or null for a pick, which says nothing more.</param>
-    /// <param name="names">The owner's names by id, which the sentence says each account by (ACCT2b), and its facts carry.</param>
+    /// <param name="names">The owner's names by id, which the sentence says each account by, and its facts carry.</param>
     private HarnessSelection Unready(
         string owner, IReadOnlyList<AccountState> states, RotationScope? scope, StartKind kind, DateTimeOffset now,
         IReadOnlyDictionary<string, string> names)
     {
         var first = LineAccount.Earliest(ResetSet.Walk, states);
-        // TOOL6g: the accounts passed as not signed in are facts beside the sentence, and over a list with nothing cooling
-        // each is named with its sign-in, where the first account's refusal alone named only its own.
+        // The accounts passed as not signed in are facts beside the sentence, and over a list with nothing cooling
+        // each is named with its sign-in, where the first account's refusal alone names only its own.
         var signedOut = RotationWords.SignedOut(states) is { Count: > 0 } passed ? SignedOutAccounts.Of(owner, passed, names) : null;
         var held = states.Count == 1 || (first is null && signedOut is null)
             ? new HarnessSelection(states[0].Refusal)
@@ -492,7 +490,7 @@ internal sealed class RosterWalk(HarnessRoster roster)
                 };
         if (held.Cooling is null || scope?.Begins is null) return held;
 
-        // What is said after the refusal is parts of their own after its code (ROSTERREFUSE2); where the refusal has none, the
+        // What is said after the refusal is parts of their own after its code; where the refusal has none, the
         // sentence keeps its words.
         var sentence = held.Refusal!;
         var note = held.RefusalNote;
@@ -507,18 +505,18 @@ internal sealed class RosterWalk(HarnessRoster roster)
             note = note?.Then(" ", aside);
         }
 
-        // No account outside the set to name (POOL1a2, D197 point 1): every account of Daoris's is in the order the start walked.
+        // No account outside the set to name: every account of Daoris's is in the order the start walked.
         return held with { Refusal = sentence, RefusalNote = note };
     }
 
-    // ——— What the goal's walk counts (TOOL6b, D130 §4.2, §16.2): Daoris's sessions as of the driver's last look, and the
+    // ——— What the goal's walk counts: Daoris's sessions as of the driver's last look, and the
     // starts chosen since. One roster serves the driver and the conversations alike, so both count.
 
     // One choice and its count at a time, so starts begun together see each other's: a pass of a counted start's walk, which
-    // reads files and counts, and is held across no question, binary or lock wait (PARALLEL1c, D181 point 3).
+    // reads files and counts, and is held across no question, binary or lock wait.
     private readonly object _walking = new();
 
-    // The accounts a walk is asking its status now (PARALLEL1c), by owner and account: another walk passes such an account as its
+    // The accounts a walk is asking its status now, by owner and account: another walk passes such an account as its
     // last reading says, never waiting on that question nor asking it again beside it.
     private readonly ConcurrentDictionary<string, bool> _asking = new(StringComparer.OrdinalIgnoreCase);
 }

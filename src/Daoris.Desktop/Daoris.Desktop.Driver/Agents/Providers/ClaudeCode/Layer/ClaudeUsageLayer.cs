@@ -5,12 +5,12 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's windows read through the layer (AGENTLYNTAI1c, the agent-lyntai design §4.2): its CLI provider registered under
-/// <c>claude-code</c> for its usage source alone, never opened, its server in the account home's own folder as today's (Lyntai's AG22),
+/// Claude Code's windows read through the layer: its CLI provider registered under
+/// <c>claude-code</c> for its usage source alone, never opened, its server in the account home's own folder,
 /// and the reading named as <see cref="ClaudeUsage"/> names it, a window not yet opened turning over a window's length after the read.
-/// Bound in place of today's question when the driver loads, where the driver carries the layer (D248): Lyntai's reader keeps a scoped row
-/// whose model the installed server names with a null <c>id</c> and skips a row it cannot read (its D250, Lyntai <c>9b2eecf6</c>), so the
-/// oracle finds the two reads alike but for the spawn's <c>-p</c>, which changes no answer (D248's notes of 2026-11-07).
+/// Bound when the driver loads, where the driver carries the layer: Lyntai's reader keeps a scoped row
+/// whose model the installed server names with a null <c>id</c> and skips a row it cannot read, so the
+/// oracle finds the two reads alike but for the spawn's <c>-p</c>, which changes no answer.
 /// </summary>
 internal static class ClaudeUsageLayer
 {
@@ -28,7 +28,7 @@ internal static class ClaudeUsageLayer
     [ModuleInitializer]
     internal static void Install() => UsageReads.Bind(ClaudeUsage.Question, new LayerUsageRead(ClaudeUsage.Question, Vendor));
 
-    /// <summary>The reading under today's names: <c>five_hour</c>, <c>seven_day</c> and <c>seven_day_&lt;scope&gt;</c>, and the server's rows as <c>limits:&lt;kind&gt;</c>.</summary>
+    /// <summary>The reading under the usage reader's names: <c>five_hour</c>, <c>seven_day</c> and <c>seven_day_&lt;scope&gt;</c>, and the server's rows as <c>limits:&lt;kind&gt;</c>.</summary>
     private static LayerUsageAnswer Answer(AgentAllowanceReading reading, DateTimeOffset now)
     {
         var walk = new List<WindowReading>();
@@ -68,15 +68,15 @@ internal static class ClaudeUsageLayer
     }
 
     /// <summary>
-    /// A row's scope under today's name: the word a string scope wrote. A scope the server wrote as an object, naming a model (with its
-    /// <see cref="AgentAllowanceLimit.ScopeName"/>) or a <see cref="AgentAllowanceLimit.Surface"/>, is a row today's reader keeps with no
+    /// A row's scope under the usage reader's name: the word a string scope carries. A scope the server writes as an object, naming a model (with its
+    /// <see cref="AgentAllowanceLimit.ScopeName"/>) or a <see cref="AgentAllowanceLimit.Surface"/>, is a row the usage reader keeps with no
     /// scope, so the model and the surface are not kept here either. A model named with no display name reads as a word would: the
     /// reading cannot tell the two apart, and no recorded answer has one.
     /// </summary>
     private static string? ScopeOf(AgentAllowanceLimit row) =>
         row.ScopeName is null && row.Surface is null && row.Scope is { Length: > 0 } scope ? scope : null;
 
-    /// <summary>As today's reader keeps a window: one that says something, a window said twice its last.</summary>
+    /// <summary>As the usage reader keeps a window: one that says something, a window said twice its last.</summary>
     private static void Kept(List<WindowSeen> seen, WindowSeen window)
     {
         if (window.Used is null && window.Reset is null) return;

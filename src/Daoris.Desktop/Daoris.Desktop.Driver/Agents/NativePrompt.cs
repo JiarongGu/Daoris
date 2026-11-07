@@ -3,7 +3,7 @@ using System.Diagnostics;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A driven native session's prompt, written on its standard input (AGENTLYNTAI1s-i; the agent-lyntai design §9.3, §5.5): the
+/// A driven native session's prompt, written on its standard input: the
 /// harness reads it there under a bare <c>-p</c>, where an argument would be readable by any process on the machine. The prompt is
 /// the session's, so it goes on the input of every native start the driver makes: the start, the answer's resume, the run that
 /// carries words said while it worked, and the resume's one retry.
@@ -21,7 +21,7 @@ internal static class NativePrompt
     /// swallowed, never raised in its place. The encoding is the start's own, BOM-less UTF-8 (<see cref="ClaudeCodeSpawn"/>).
     /// </remarks>
     /// <returns>
-    /// Whether the prompt's write returned (FOUNDATION1f-iv part b): what a carry-on's moved words' <c>sent</c> waits for. False for a start
+    /// Whether the prompt's write returned: what a carry-on's moved words' <c>sent</c> waits for. False for a start
     /// that wrote nothing here and for a write the pipe refused.
     /// </returns>
     internal static async Task<bool> WriteAsync(Process process, AgentDoor adapter, string prompt, CancellationToken ct)

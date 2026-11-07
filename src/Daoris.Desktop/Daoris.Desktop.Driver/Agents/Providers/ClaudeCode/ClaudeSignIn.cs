@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's words for a start it refused for its sign-in (ROSTER1b), seen on its protocol door: the adapter's own
+/// Claude Code's words for a start it refused for its sign-in, seen on its protocol door: the adapter's own
 /// <i>authentication required</i>, which its ACP adapter answers when nobody is signed in to the account's home.
 /// </summary>
 public static class ClaudeSignIn

@@ -3,15 +3,15 @@ using System.Text;
 namespace Daoris.Driver;
 
 /// <summary>
-/// A file another program is writing, read line by line as it grows (CONSOLE2): how a background
+/// A file another program is writing, read line by line as it grows: how a background
 /// task's output reaches its console stream.
 /// </summary>
 /// <remarks>
 /// <para><b>The wire carries none of a task's output.</b> The harness writes it to a file and the
-/// task names the file, so reading that file is the only live view of a dev server
-/// (docs/2026-09-28-console2-streams-evidence.md). This only ever READS it, shared with the writer,
+/// task names the file, so reading that file is the only live view of a dev server.
+/// This only ever READS it, shared with the writer,
 /// and the lines stay on this machine: the file is under the harness's own temporary directory, and
-/// the console never leaves the machine (D47 §4).</para>
+/// the console never leaves the machine.</para>
 ///
 /// <para><b>Polled, not watched.</b> A watcher's events are advisory and coalesce; a read from the
 /// last offset on a short timer sees every byte whatever the writer did. A file that is not there yet
@@ -90,7 +90,7 @@ public sealed class OutputTail
         try
         {
             using var file = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            // A file that shrank was replaced or cut: read it again from the start rather than past its end.
+            // A file that shrinks is replaced or cut: read it again from the start rather than past its end.
             if (file.Length < _offset) _offset = 0;
             file.Seek(_offset, SeekOrigin.Begin);
 

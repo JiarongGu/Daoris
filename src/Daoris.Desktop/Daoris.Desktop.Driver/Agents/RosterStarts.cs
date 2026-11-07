@@ -17,7 +17,7 @@ internal sealed class RosterStarts(HarnessRoster roster)
     }
 
     /// <summary>
-    /// The driver's look read this machine's session records (TOOL6b): what the walk counts from now on, with the starts
+    /// The driver's look read this machine's session records: what the walk counts from now on, with the starts
     /// chosen after <paramref name="mark"/>. A look begins only once the last look's starts have opened their records, so
     /// every start chosen before it is one of them.
     /// </summary>
@@ -41,15 +41,15 @@ internal sealed class RosterStarts(HarnessRoster roster)
         }
     }
 
-    /// <summary>A start counted on an account that did not run there after all (PARALLEL1c): no longer one of its sessions.</summary>
+    /// <summary>A start counted on an account that does not run there after all: no longer one of its sessions.</summary>
     internal void Unchose(long number)
     {
         lock (roster._load) roster._chosen.RemoveAll(start => start.Number == number);
     }
 
     /// <summary>
-    /// A start's one count given back after its opened process has stopped and before any replacement is chosen (D205 §4.1, round 4,
-    /// R3-B1, MODELROLE1c2): idempotent, both halves under the count's lock. The start's number is taken back (nothing once a look has
+    /// A start's one count given back after its opened process has stopped and before any replacement is chosen:
+    /// idempotent, both halves under the count's lock. The start's number is taken back (nothing once a look has
     /// covered it), and where <paramref name="session"/> is given, a look's reading of that record is made not running and out of the
     /// last started, so the refusing account is neither busy nor the start just made.
     /// </summary>
@@ -71,7 +71,7 @@ internal sealed class RosterStarts(HarnessRoster roster)
         }
     }
 
-    /// <summary>Whose accounts a session on <paramref name="adapter"/> ran as (AGT7): its owner, or the adapter where it is unknown.</summary>
+    /// <summary>Whose accounts a session on <paramref name="adapter"/> ran as: its owner, or the adapter where it is unknown.</summary>
     private string OwnerOf(string adapter)
     {
         try

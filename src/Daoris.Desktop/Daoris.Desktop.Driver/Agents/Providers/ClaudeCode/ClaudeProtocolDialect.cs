@@ -7,8 +7,8 @@ namespace Daoris.Driver;
 internal sealed class ClaudeProtocolDialect : IProtocolDialect
 {
     /// <summary>
-    /// The rules Daoris composed (PERM1, D72) as the options' <c>settings</c>, a file read against the session's cwd (claude-agent-acp
-    /// 0.79.0, <c>dist/acp-agent.js</c>, l. 5934–6045 and 6003–6010), and the harness plugins a spawn composed (HELPPLUG1b) as its
+    /// The rules Daoris composed as the options' <c>settings</c>, a file read against the session's cwd (claude-agent-acp
+    /// 0.79.0, <c>dist/acp-agent.js</c>, l. 5934–6045 and 6003–6010), and the harness plugins a spawn composed as its
     /// <c>plugins</c>, each <c>{ type: "local", path }</c>, which the SDK passes to Claude Code as one <c>--plugin-dir</c> each
     /// (claude-agent-acp 0.91.0, l. 8115–8223; the SDK 0.3.300, <c>sdk.d.ts</c>, l. 2036–2049).
     /// </summary>

@@ -6,10 +6,10 @@ using Lyntai.Agents;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Codex's windows read through the layer (AGENTLYNTAI1c, the agent-lyntai design §4.2): its CLI provider registered under the holder's
-/// id for its usage source alone, never opened; its server in the folder today's starts it in, the driver's own, and told the client
-/// today's read names (Lyntai's AG22); the reading named as <see cref="CodexUsage"/> names it, by length and its limit's scope, its plan
-/// never read. Bound in place of today's question when the driver loads, where the driver carries the layer (D248).
+/// Codex's windows read through the layer: its CLI provider registered under the holder's
+/// id for its usage source alone, never opened; its server in the driver's own folder, and told the client
+/// name the read uses; the reading named as <see cref="CodexUsage"/> names it, by length and its limit's scope, its plan
+/// never read. Bound when the driver loads, where the driver carries the layer.
 /// </summary>
 internal static class CodexUsageLayer
 {

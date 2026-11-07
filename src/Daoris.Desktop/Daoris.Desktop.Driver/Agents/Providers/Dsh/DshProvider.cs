@@ -1,7 +1,7 @@
 namespace Daoris.Driver;
 
 /// <summary>
-/// dsh written on the contract (AGENTPROVIDER1 row d; the agent-provider design §2.3, §11): provider <c>dsh</c> with its one door of the
+/// dsh written on the contract: provider <c>dsh</c> with its one door of the
 /// same id on the protocol.
 /// </summary>
 /// <remarks>It has no sign-in and no login question: there is no account here to be out of.</remarks>
@@ -33,7 +33,7 @@ internal static class DshProvider
 
         return new Provider(
             new ProviderId("dsh"),
-            // The name its maker publishes it under (AGENTS2); the binary and the door stay `dsh`, which is what a terminal types.
+            // The name its maker publishes it under; the binary and the door stay `dsh`, which is what a terminal types.
             new ProviderIdentity("DeepSeek Harness", "DeepSeek", "DH", StandIn: false, DeclaredBy: []),
             [door],
             Known<ToolSpec>.Declared(program, Evidence),

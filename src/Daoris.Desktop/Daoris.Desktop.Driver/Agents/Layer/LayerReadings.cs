@@ -8,7 +8,7 @@ using LayerToolResult = Lyntai.Agents.ToolResult;
 namespace Daoris.Driver;
 
 /// <summary>
-/// The events' translation (the agent-lyntai design §5.4): each event a layer door yields read once into the readings today's native capture
+/// The events' translation: each event a layer door yields read once into the readings the native capture
 /// hands its writer for the same thing, in its order: a failure first, through the ingress (<see cref="LayerFailures"/>), then the
 /// conversation named, the lines the console shows and the events the record keeps. One translation a turn, which keeps what a later event
 /// reads: a call's name, the turn's counts, the conversation first named and the turn's one terminal. No frame is read here: Events reads
@@ -21,7 +21,7 @@ namespace Daoris.Driver;
 /// </remarks>
 /// <param name="door">The bound door's transport word, the failure's door.</param>
 /// <param name="clock">The clock the failure is seen on.</param>
-/// <param name="coolOff">D125's default cool-off, for a limit whose recovery is not stated.</param>
+/// <param name="coolOff">The default cool-off, for a limit whose recovery is not stated.</param>
 /// <param name="steps">The door's own reading of a tool call (<see cref="LayerRegistration.Steps"/>); null shows a call by its name alone.</param>
 internal sealed class LayerReadings(
     string door, TimeProvider clock, TimeSpan coolOff, LayerRefusals? refusals = null, Func<LayerToolCall, SessionEvent>? steps = null)
@@ -44,10 +44,10 @@ internal sealed class LayerReadings(
 
     private bool _stopping;
 
-    /// <summary>Whether the turn showed words, thinking or a call of the session's own: what today's guard on a refused model reads.</summary>
+    /// <summary>Whether the turn showed words, thinking or a call of the session's own: what the guard on a refused model reads.</summary>
     private bool _ran;
 
-    /// <summary>The failed turn was the door's refusal of the model it was handed: the ending's flag, set on the native door's failed result alone.</summary>
+    /// <summary>The turn failed on the door's refusal of the model handed to it: the ending's flag, set on the native door's failed result alone.</summary>
     public bool ModelRefused { get; private set; }
 
     /// <summary>The conversation the door named first; null until one is.</summary>
@@ -59,7 +59,7 @@ internal sealed class LayerReadings(
     /// <summary>The turn's one terminal; null until it ended.</summary>
     public LayerEnded? Ended { get; private set; }
 
-    /// <summary>The turn's failure as Daoris's outcome; null where it did not fail or was stopped.</summary>
+    /// <summary>The turn's failure as Daoris's outcome; null where it did not fail or stopped.</summary>
     public NormalizedFailure? Failure { get; private set; }
 
     /// <summary>Whether Daoris ended the process (its bound, its watch's quiet, a stop it registered): its executor says that end.</summary>
@@ -71,7 +71,7 @@ internal sealed class LayerReadings(
     /// <summary>Daoris asked a stop before the terminal: the terminal that follows is the stop, never the fatal exit after the kill.</summary>
     public void Stop() => _stopping = Ended is null;
 
-    /// <summary>The readings <paramref name="evt"/> is, in the order today's capture hands them.</summary>
+    /// <summary>The readings <paramref name="evt"/> is, in the order the capture hands them.</summary>
     public IReadOnlyList<WireReading> Read(AgentStreamEvent evt)
     {
         if (evt is TextDelta { ParentCallId: null } or Thinking { ParentCallId: null } or LayerToolCall { ParentCallId: null }) _ran = true;

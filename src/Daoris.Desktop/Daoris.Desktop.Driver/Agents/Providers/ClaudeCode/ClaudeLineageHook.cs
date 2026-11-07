@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Daoris.Driver;
 
 /// <summary>
-/// Claude Code's lineage hook (FABRIC-C1a, D173): a script its settings file runs on the connector's calls and each subagent's start
+/// Claude Code's lineage hook: a script its settings file runs on the connector's calls and each subagent's start
 /// and stop, which appends what Claude Code says of each agent to the session's lineage file. It is Claude Code's asset, handed in
 /// its settings by its rule language (<see cref="ClaudeRules"/>); an agent whose calls carry their thread needs none.
 /// </summary>
