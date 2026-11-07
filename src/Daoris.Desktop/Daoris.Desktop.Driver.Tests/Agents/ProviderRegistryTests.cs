@@ -369,6 +369,19 @@ public sealed class ProviderRegistryTests : IDisposable
         }
     }
 
+    /// <summary>The owner an agent borrows accounts from is read from <c>OwnerOfAgent</c> alone: a door onto another agent's accounts names it, an owner and an unknown name name none.</summary>
+    [Theory]
+    [InlineData("claude-code-acp", "claude-code")]
+    [InlineData("claude-code", null)]
+    [InlineData("nobody-knows", null)]
+    public void An_agent_borrowed_from_names_its_owner_only_where_another_agent_owns_the_accounts(string agent, string? borrowed)
+    {
+        var set = ProviderRegistry.Built();
+
+        Assert.Equal(borrowed, set.BorrowedFrom(agent));
+        Assert.Equal(borrowed ?? agent, set.OwnerOfAgent(agent).Value);
+    }
+
     /// <summary>§5: a key resolves to its pool, the providers holding it and none selected first, never to the door the key spells.</summary>
     [Theory]
     [MemberData(nameof(Cases))]

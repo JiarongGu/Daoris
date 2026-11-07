@@ -51,23 +51,12 @@ internal static class DriverChoicesConsole
 
     /// <summary>
     /// The planner's verdicts over a fresh snapshot (<see cref="SessionGroups.VerdictsAsync"/>), as a window with no look of its own
-    /// plans: the configured adapter's answer, this machine's plugins among the adapters, else may not.
+    /// plans: Build's whole order (<see cref="BuildDoor"/>), this machine's plugins among the adapters; a door nobody knows is refused.
     /// </summary>
     private static async Task<IReadOnlyList<Consideration>> VerdictsAsync(DriverConfig config, CancellationToken ct)
     {
         using var service = ServiceClient.FromEnvironment();
         var home = DriverConfig.HomeOf(DriverConfig.ResolvePath());
-        bool unadopted;
-        try
-        {
-            var adapters = ProviderRegistry.Built().WithPlugins(PluginCatalog.Load(home, ProviderRegistry.Built().Names));
-            unadopted = Adoption.Unadopted(ActorChoices.BuildAgent(config), adapters.AbilitiesOf);
-        }
-        catch (DriverException refused) when (refused is not UnknownDoorException)
-        {
-            unadopted = false;
-        }
-
-        return await SessionGroups.VerdictsAsync(service, config, unadopted, lastLook: null, ct, home).ConfigureAwait(false);
+        return await SessionGroups.VerdictsAsync(service, config, SetupWorld.Unadopted(config, home), lastLook: null, ct, home).ConfigureAwait(false);
     }
 }

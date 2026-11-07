@@ -142,10 +142,8 @@ public sealed class LayerRunProcessTests : IDisposable
         var (run, readings) = Run(new { @out = new object[] { new { t = "end" } } });
         await using var _ = run;
 
-        var choice = await Assert.ThrowsAsync<DriverException>(() => run.ApplyChoiceAsync(null!, CancellationToken.None));
         var task = await Assert.ThrowsAsync<DriverException>(() => run.StopTaskAsync("t1", CancellationToken.None));
 
-        Assert.Contains(LayerRun.ChoiceAbility, choice.Message);
         Assert.Contains(LayerRun.TaskAbility, task.Message);
         Assert.Null(run.Words);
         Assert.Empty(readings);

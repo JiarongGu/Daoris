@@ -81,13 +81,15 @@ public static class SupervisorRules
     public static IReadOnlyList<string> Codes { get; } =
         ["count", "window", "at", "do", "upTo", "place", "roles", "ladder", "moves-unbounded", "tries-unbounded", "revision"];
 
-    // The actions each count allows (§4.2); `off` is every ruled count's but tries'. `refer` is answers alone's, the one count whose
-    // release the agent supervisor's course act makes.
+    // The actions each count allows (§4.2); `off` is every ruled count's but tries'. `refer` is offered where the agent supervisor's course act
+    // can release the hold between sessions through the count's own door: answers alone's, and the two counts only a driven quest has,
+    // whose door is the quest's *Try again*. Tries, limits and moves are a conversation's too, held for its person's word, which no
+    // course act speaks; a quiet end has no hold.
     private static readonly IReadOnlyDictionary<string, string[]> Allowed = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
         [AnswersAlone] = [Hold, Refer, Off],
-        [Failures] = [Hold, Off],
-        [FailuresOnChoice] = [Ask, Next, Weighted, Off],
+        [Failures] = [Hold, Refer, Off],
+        [FailuresOnChoice] = [Ask, Next, Weighted, Refer, Off],
         [Tries] = [Hold, Ask, Next, Weighted],
         [Quiet] = [Next, Weighted, Off],
         [Limits] = [Ask, Wait, Next, Weighted, Off],
@@ -223,6 +225,9 @@ public static class SupervisorRules
         var (low, high) = Bounds(rule.Count);
         return rule.At < low || rule.At > high ? Refuse("at", $"{rule.Count} takes {low} to {high}.") : null;
     }
+
+    /// <summary>The counts only a driven quest has and whose <c>refer</c> its <i>Try again</i> releases: the failed sessions that park it, and the failures on one choice that ask.</summary>
+    public static IReadOnlyList<string> QuestCounts { get; } = [Failures, FailuresOnChoice];
 
     /// <summary>The actions <paramref name="count"/> allows (§4.2).</summary>
     public static IReadOnlyList<string> Actions(string count) => Allowed.TryGetValue(count, out var actions) ? actions : [];

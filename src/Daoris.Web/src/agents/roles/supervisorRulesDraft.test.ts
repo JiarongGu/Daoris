@@ -7,7 +7,7 @@ import { blankRule, chainOf, draftOf, inheritedFrom, nextCount, pressOf, readabl
 const READ: SupervisorRulesRead = {
   counts: [
     { count: 'answers-alone', window: 'in-a-row', actions: ['hold', 'refer', 'off'], least: 1, most: 20 },
-    { count: 'failures', window: 'since-try-again', actions: ['hold', 'off'], least: 1, most: 20 },
+    { count: 'failures', window: 'since-try-again', actions: ['hold', 'refer', 'off'], least: 1, most: 20 },
     { count: 'limits', window: 'this-end', actions: ['ask', 'wait', 'next', 'weighted', 'off'], least: 1, most: 1 },
   ],
   sets: [

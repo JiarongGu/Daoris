@@ -271,7 +271,7 @@ public static class AccountLimits
         var dated = precision == ResetPrecision.DateAndTime;
         // Every moment behind the refusal but a dated one in the grace happens only for a named year: the latest, for the bounds
         // not to believe.
-        var chosen = (dated ? moments.Where(m => m <= seen && seen - m <= Grace).Select(m => (DateTimeOffset?)m).FirstOrDefault() : null)
+        var chosen = (dated ? moments.Where(m => ResetBounds.InGrace(m, seen)).Select(m => (DateTimeOffset?)m).FirstOrDefault() : null)
                      ?? moments.Where(m => m > seen).Select(m => (DateTimeOffset?)m).FirstOrDefault()
                      ?? moments.Select(m => (DateTimeOffset?)m).LastOrDefault();
         return chosen is { } moment ? (moment, precision) : null;

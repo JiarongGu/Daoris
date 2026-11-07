@@ -34,9 +34,6 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
     /// <summary>The ability a line on a protocol door's input is refused as: its words are requests on its session, <see cref="Words"/>' (D246).</summary>
     public const string LinesAbility = "a line written to a protocol door's process";
 
-    /// <summary>The ability a later choice on the same session is refused as until <c>IChoiceReask</c> (row n).</summary>
-    public const string ChoiceAbility = "a later choice on the same session before IChoiceReask (row n)";
-
     private TransportStart _start = start;
 
     // Process, its tracking and its reaper of each run, in the order made: ended in reverse, the go-on's before the first run's.
@@ -148,8 +145,6 @@ internal sealed class TransportRun(ITransportHost host, ProviderRegistry adapter
         _resume = state;
         return _opened is null ? BeginAsync(conversation, ct) : NextProcessAsync(conversation, ct);
     }
-
-    public override Task ApplyChoiceAsync(ActorAsked choice, CancellationToken ct) => Refused(ChoiceAbility);
 
     internal override DoorInput Input { get; } = new(adapter.Transport == Transport.Protocol ? LinesAbility : null);
 

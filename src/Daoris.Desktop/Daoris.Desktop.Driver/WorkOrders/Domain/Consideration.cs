@@ -93,6 +93,9 @@ public sealed record Consideration(
     /// </summary>
     public int? ParksAt { get; init; }
 
+    /// <summary>For a quest its failed sessions park: the quest's last session here, which the rule's act is kept on and a <c>refer</c>'s point is named by.</summary>
+    public string? LastSession { get; init; }
+
     /// <summary>For a start under <c>overlap: warn</c> whose declared paths meet an earlier unit's: the overlap, which its reason says.</summary>
     public OverlapFact? Overlaps { get; init; }
 }

@@ -21,7 +21,7 @@ internal static class SessionsConsole
         var config = DriverConfig.Load(configPath);
         var home = DriverConfig.HomeOf(configPath);
         using var service = ServiceClient.FromEnvironment();
-        var unadopted = Unadopted(config);
+        var unadopted = SetupWorld.Unadopted(config, home);
 
         return await SessionsCommand.RunAsync(ask, new SessionsWorld(service, home, config, unadopted, log)
         {
@@ -32,18 +32,5 @@ internal static class SessionsConsole
             // MIXAGENT1a-i (D163), RPC1g3: a conversation goes on with another agent in the running Daoris, and this terminal holds the new one.
             HandOver = (id, agent, account, _) => ChatConsole.HandOverAsync(id, agent, account),
         }, Console.Out).ConfigureAwait(false);
-    }
-
-    /// <summary>Whether the configured agent may drive a repository that has not adopted Daoris, as the loop plans by it (D70); a door this build does not know is refused (<see cref="UnknownDoorException"/>).</summary>
-    internal static bool Unadopted(DriverConfig config)
-    {
-        try
-        {
-            return Adoption.Unadopted(ActorChoices.BuildAgent(config), ProviderRegistry.Built().AbilitiesOf);
-        }
-        catch (DriverException refused) when (refused is not UnknownDoorException)
-        {
-            return false;
-        }
     }
 }
