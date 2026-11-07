@@ -83,7 +83,7 @@ describe('the catalogs', () => {
 
   /**
  * The page's inline renderer draws `code`, never `**bold**`, so a value that says `**New**` shows its
- * asterisks (PLUG8's kit card, seen on the window). Emphasis in a catalogue is left out, not marked up.
+ * asterisks (the kit card, seen on the window). Emphasis in a catalogue is left out, not marked up.
  */
   it('carry no markdown bold, which the page would show as asterisks', () => {
     const bold = (catalogue: Record<string, string>) =>
@@ -108,7 +108,7 @@ describe('the catalogs', () => {
   });
 
   /**
- * A view is named by the name it has (UX5 U19). D66 made the Work frame the Sessions view, and two
+ * A view is named by the name it has. The Work frame is the Sessions view, and two
  * sentences still sent a person to Work: the status bar's sessions tip and a quest's *open in Work*.
  * Nothing on the window is called that any more.
  */
@@ -122,7 +122,7 @@ describe('the catalogs', () => {
   });
 
   /**
- * A count is said in its number (UX5 U54): *1 session(s)* on the usage rows, where every other
+ * A count is said in its number: *1 session(s)* on the usage rows, where every other
  * count in the catalogue has its `_other` form. English pluralises; the catalogue can say both.
  */
   it('say a count in its number, never with (s)', () => {

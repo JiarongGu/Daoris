@@ -5,7 +5,7 @@ import type { AccountNamer } from '../agents/tools';
 // not a utility belt.
 
 /**
- * The locale every formatter here writes in (UX5 U28): the page's language, with the machine's habits
+ * The locale every formatter here writes in: the page's language, with the machine's habits
  * when the machine speaks it. A British machine reading English writes 24/09/2026, which the page's
  * bare `en` would have written 9/24/2026; the same machine reading 中文 writes the date as 中文 does.
  */
@@ -23,7 +23,7 @@ export function compact(value: number): string {
 
 /**
  * A count, grouped as the reader's language groups it. Never `toLocaleString()` with no locale,
- * which takes the machine's rather than the page's (UX5 U28; `tokens.test.ts` holds it). `language` is the page's unless
+ * which takes the machine's rather than the page's (`tokens.test.ts` holds it). `language` is the page's unless
  * a caller words in another, as {@link list}'s is.
  */
 export function figure(value: number, language?: string): string {
@@ -32,7 +32,7 @@ export function figure(value: number, language?: string): string {
 
 /**
  * A moment as a date and a clock, written the way the reader's language writes them: `2026/9/23
- * 13:58:49` in 中文. The drawer read `23/09/2026, 1:58:49 pm` there, the machine's locale (UX5 U28).
+ * 13:58:49` in 中文. The drawer read `23/09/2026, 1:58:49 pm` there, the machine's locale.
  */
 export function stamp(iso: string): string {
   return new Date(iso).toLocaleString(locale());
@@ -50,7 +50,7 @@ export function moment(iso: string, language?: string): string {
 }
 
 /**
- * When something was read, as a person scans a list of them: its clock today, its day and clock before,
+ * When something is read, as a person scans a list of them: its clock today, its day and clock before,
  * in this machine's zone and the reader's language: `10:42`, `Oct 3, 10:42`, `10月3日 10:42`.
  */
 export function clockOf(iso: string, now: Date = new Date(), language?: string): string {
@@ -62,7 +62,7 @@ export function clockOf(iso: string, now: Date = new Date(), language?: string):
 }
 
 /**
- * A day something happens on, as a person reads a date ahead (KEEP1c's *next*): its month and day in this machine's zone and the
+ * A day something happens on, as a person reads a date ahead (*next*): its month and day in this machine's zone and the
  * reader's language: `Oct 29`, `10月29日`.
  */
 export function dayOf(iso: string, language?: string): string {
@@ -184,7 +184,7 @@ const FORM_WHEN_EMPTY: Readonly<Record<string, { parameter: string; context: str
  *
  * An unmapped code falls back to a sentence rather than to the code itself. It happens when the page
  * is older than the host, and a bare `SOMETHING_FAILED` in front of a person is barely better than the
- * generic failure this whole seam was fixed to replace.
+ * generic failure this whole seam replaces.
  *
  * A form of the sentence is the shell's `context`, or, for a refusal in `FORM_WHEN_EMPTY`, the form that
  * names nothing where the shell sent that parameter empty.
@@ -222,8 +222,8 @@ export function sentence(error: unknown, language?: string): string {
 export function sessionTool(
   session: { door: string; doorVersion?: string | null; profile?: string | null },
   /**
- * The session's agent has accounts, so a record naming none ran on the tool's own sign-in, said so (TOOL4m's
- * rest with UX6e). Left out, nothing is said of an account the record does not name.
+ * The session's agent has accounts, so a record naming none ran on the tool's own sign-in, said so.
+ * Left out, nothing is said of an account the record does not name.
  */
   ownSignIn = false,
   /**

@@ -12,7 +12,7 @@ import { en, zh } from '.';
  * This side parses both declarations, one per line as each writer writes them, and holds both catalogues to them: every
  * code has its entry saying exactly its values, and every `note.*` entry is a code a writer declares, so a retired code
  * leaves nothing behind. Each writer's own test reads the catalogues from its side; the parity gate holds `en` and `zh` to one
- * key set. LANG1b's `work/noteLines.ts` map is the third side: held below to both declarations code for code, with the same
+ * key set. The `work/noteLines.ts` map is the third side: held below to both declarations code for code, with the same
  * values, key and family of reasons, and every value a writer declares has a way the page says it.
  */
 
@@ -129,7 +129,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     expect(NOTE_VALUES.owner).toBe('text');
   });
 
-  /** FOUNDATION1f-i part 2 (§19.1 point 4): a move a live Daoris keeps past ten minutes is said by a line of its own, its minutes said in both languages. */
+  /** A move a live Daoris keeps past ten minutes is said by a line of its own, its minutes said in both languages. */
   it('words a quiet move’s line by its own code, saying its minutes in both languages', () => {
     expect(driver.find((code) => code.code === 'move.quiet')).toEqual({ code: 'move.quiet', values: ['minutes'], key: 'note.move.quiet', writer: 'driver' });
     expect(NOTE_CODES['move.quiet']).toEqual({ values: ['minutes'] });
@@ -173,7 +173,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   /** Whose words a resumed conversation goes on with is a reason of its own family, held key for key. */
   it('words every way a resumed conversation’s first line says whose words', () => {
     const resumed = reasons('Resumed');
-    // Daoris's own words alone are an eighth; SUPERVISOR1a-i: the supervisor's answer a ninth.
+    // Daoris's own words alone are an eighth; the supervisor's answer a ninth.
     expect(resumed.length).toBe(9);
     const page = Object.values(RESUMED_REASONS).map(({ key, values }) => ({ key, values: [...values] }));
     const byKey = (a: { key: string }, b: { key: string }) => a.key.localeCompare(b.key);
@@ -200,8 +200,8 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   });
 
   /**
- * Why a conversation was handed to another agent is a reason of its own family, held key for key; SWITCH1c-i adds
- * `curve`, Daoris's move by the usage curve; SESSCTX1b adds `resume`, `carry-on` and `retry`, the reasons every other
+ * Why a conversation is handed to another agent is a reason of its own family, held key for key, with
+ * `curve`, Daoris's move by the usage curve; `resume`, `carry-on` and `retry`, the reasons every other
  * continuation names its link by.
  */
   it('words every reason a conversation was handed to another agent', () => {
@@ -218,9 +218,9 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   });
 
   /**
- * Why no helper answered a question is a reason family of its own, held key for key; HELPERNO1 added the no, and
- * COAGENT1a the six ways the asker's work in progress could not be captured whole, HELPERWAIT1 a hand whose outcome a restart lost,
- * and LIMITRESUME1h a helper a limit cut off that its session no longer waits on; HELPERDEFAULT1 the two the default refuses by,
+ * Why no helper answered a question is a reason family of its own, held key for key: the no, and
+ * the six ways the asker's work in progress could not be captured whole, a hand whose outcome a restart lost,
+ * and a helper a limit cut off that its session no longer waits on; the two the default refuses by,
  * an agent not set up here and none set up.
  */
   it('words every reason no helper answered a question', () => {
@@ -236,7 +236,7 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
     }
   });
 
-  /** Why a piece was refused, held or uncertain is a reason family of its own, held key for key. */
+  /** Why a piece is refused, held or uncertain is a reason family of its own, held key for key. */
   it('words every reason a piece was refused, held or uncertain', () => {
     const partner = reasons('Partner');
     expect(partner.length).toBe(18);
@@ -251,8 +251,8 @@ describe('the page’s map of a note’s codes, held to both writers', () => {
   });
 
   /**
- * Why an agent's ask to hand its session over came to nothing is a reason family of its own, held key for key; since
- * HANDOVERSAID1 it holds the take's own refusals too, each said in its words rather than as `cannot`.
+ * Why an agent's ask to hand its session over came to nothing is a reason family of its own, held key for key; it
+ * holds the take's own refusals too, each said in its words rather than as `cannot`.
  */
   it('words every reason an agent\'s ask to hand over was refused or not taken', () => {
     const asked = reasons('HandOver');

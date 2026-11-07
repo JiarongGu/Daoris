@@ -7,8 +7,8 @@ import {
 } from '../../scripts/names-check.mjs';
 
 /**
- * The names check: `scripts/names-check.mjs`, beside the parity check. NAME1b turned its
- * facts' half to a gate: `--strict` runs in the web's build and fails on a glossary, form or door finding;
+ * The names check: `scripts/names-check.mjs`, beside the parity check. Its
+ * facts' half is a gate: `--strict` runs in the web's build and fails on a glossary, form or door finding;
  * the budgets report and never fail (`docs/2026-10-01-naming-design.md` §6).
  */
 
@@ -257,7 +257,7 @@ describe('the form rules', () => {
 
   /**
  * A tab is a place a door names as a view is (*Change in Setup*), so its own name keeps its capitals
- * mid-label. While the guide was named Setup that name was a domain's and passed by accident; Get started took it back.
+ * mid-label.
  */
   it("keeps a tab's own name capitalised inside a label, as a view's", () => {
     const glossary = fixture();
@@ -385,7 +385,7 @@ describe('the real glossary and catalogues', () => {
       'nav.agents': ['Agents', '智能体'],
       'settings.sync.title': ['Updates', '更新'],
       'settings.sync.look': ['Look for updates', '检查更新'],
-      // The palette's row was its own key until UX7a; Go › Convergence and the palette's *Go to:* read the place's.
+      // Go › Convergence and the palette's *Go to:* read the place's.
       'nav.convergence': ['Convergence', '同归'],
       // The owner's two calls: the view of repositories is named for them, and an ask is 需求.
       'nav.projects': ['Repositories', '仓库'],
@@ -398,8 +398,8 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
- * DEV4 put a quest's lanes on the window after NAME1's glossary was written, so the
- * concept had no term and the drawer's *Lanes* no kind. A lane is 泳道 wherever either language names it.
+ * A quest's lanes on the window need a glossary term, so the
+ * concept has one and the drawer's *Lanes* no kind. A lane is 泳道 wherever either language names it.
  */
   it('name a lane 泳道 wherever it is said, and read the drawer\'s Lanes as a field', () => {
     const lane = glossary.terms.find((term) => term.term === 'lane');
@@ -413,7 +413,7 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
- * NAME2, seen on the install: a plugin's switch read 关闭, close's word, so *Turn off* said *close* as much
+ * A plugin's switch read 关闭, close's word, so *Turn off* said *close* as much
  * as *turn off*, and an off plugin wore a closed quest's 已关闭. The glossary settles the pair, and the
  * check holds every label whose English turns a plugin on or off to it.
  */
@@ -439,7 +439,7 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
- * NAME2 went through the budget judgements NAME1b left by kind: a shorter name where it says the same as
+ * The budget judgements go by kind: a shorter name where it says the same as
  * well, an acceptance with its reason where the length is the name, and the rest left for the window.
  */
   it('name the budget judgements NAME2 renamed by the shorter names that say the same', () => {
@@ -471,7 +471,7 @@ describe('the real glossary and catalogues', () => {
   });
 
   /**
- * NAME1b turned the facts' half to a gate: the build runs `--strict` beside the parity check, and it
+ * The facts' half is a gate: the build runs `--strict` beside the parity check, and it
  * passes, because no label breaks the glossary, its form or its door. The budgets still report and never
  * gate: a character count estimates a width, and the window is where a width is a fact.
  */
@@ -651,7 +651,7 @@ describe('the real glossary and catalogues', () => {
   /**
  * A sentence's words are held only under `--all`, which reports; what it still finds are words a sentence
  * rightly says of something else (the audit's §5 lists them): a browser's or Windows' profile, a request's
- * value no application accepts, a process that ended. *helper* is no longer one of them: since MIXAGENT3a-i a
+ * value no application accepts, a process that ended. *helper* is no longer one of them: a
  * helper is its own term, so a note that says it and git's credential helper are no stray word for Ask Daoris.
  */
   it("say in sentences only what the audit found to be another thing's word", () => {

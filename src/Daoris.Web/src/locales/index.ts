@@ -1,6 +1,6 @@
 /**
  * The catalogues, one file per area: `locales/<language>/<area>.json`, merged here at load, so
- * i18next sees one flat catalogue per language, exactly the resources it saw when each language was a
+ * i18next sees one flat catalogue per language, exactly the resources it would see if each language were a
  * single file.
  *
  * @remarks

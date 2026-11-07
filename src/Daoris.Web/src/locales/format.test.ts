@@ -127,7 +127,7 @@ describe('elapsed', () => {
 
   /**
  * A record mirrored from a machine whose clock is ahead arrives with a start in this machine's
- * future (D47 §6 — records travel, clocks do not). It reads as brand new, never as a negative
+ * future (records travel, clocks do not). It reads as brand new, never as a negative
  * span, because "-4m" in a rail is a bug report the person cannot act on.
  */
   it('reads a start in the future as brand new rather than as a negative span', () => {
@@ -145,9 +145,9 @@ describe('elapsed', () => {
  * Two transports, two shapes, one rule: the person reads a sentence, never a code.
  *
  * The shell's bridge rejects with a structured `code` + `parameters` and expects the client to produce
- * the text; the HTTP service answers prose that this platform renders verbatim. Before this existed,
- * every bridge refusal reached the person as a generic failure — the module's sentence was dropped by
- * the host and nothing here looked for a code.
+ * the text; the HTTP service answers prose that this platform renders verbatim. Without this,
+ * every bridge refusal reaches the person as a generic failure — the module's sentence is dropped by
+ * the host and nothing here looks for a code.
  */
 describe('sentence', () => {
   it('renders a bridge refusal from its code, interpolating what it carries', () => {
@@ -175,7 +175,7 @@ describe('sentence', () => {
    * person is barely better than the generic failure this replaced, so it falls back to a sentence.
    */
   /**
- * REV3 web-rest F7: the bridge framework's own codes had no sentences, so a request that timed out —
+ * The bridge framework's own codes had no sentences, so a request that timed out —
  * the driver busy, the host slow — said "something on this machine refused", which it had not.
  */
   it('says what the bridge itself failed at, in its own words for each', () => {
@@ -210,7 +210,7 @@ describe('sentence', () => {
 });
 
 /**
- * 🔴 UX5 U28: a date took the machine's locale whatever the page's language, so a 中文 drawer read
+ * 🔴 A date took the machine's locale whatever the page's language, so a 中文 drawer read
  * *23/09/2026, 1:58:49 pm*. Naming the page's bare language then wrote *9/24/2026, 8:17:19 AM* for an
  * English reader on a British machine, the US's habits. The language is the page's; the habits are
  * the machine's when the machine speaks that language.

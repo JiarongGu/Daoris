@@ -9,12 +9,12 @@ import { areas } from '.';
  * delivery added to the data with no key here would be shown in English alone.
  */
 const folder = join(process.cwd(), '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Defaults', 'workflows');
-// Since WORKFLOWCLEAN1 1a a delivery is its workflow's own: it carries a name and a purpose, and its id is the workflow's.
+// A delivery is its workflow's own: it carries a name and a purpose, and its id is the workflow's.
 type Delivery = { name: string; for: string };
 type Shipped = { id: string; name: string; for: string; delivery?: Delivery };
 const shipped: Shipped[] = readdirSync(folder).filter((file) => file.endsWith('.json'))
   .map((file) => JSON.parse(readFileSync(join(folder, file), 'utf8')) as Shipped);
-// A workflow that is no delivery of a repository (documents, release) carries none since WORKFLOWCLEAN1 1a derived the deliveries from the graphs.
+// A workflow that is no delivery of a repository (documents, release) carries none: the deliveries derive from the graphs.
 const delivered = shipped.filter((each): each is Shipped & { delivery: Delivery } => each.delivery !== undefined);
 
 describe('the shipped workflows and deliveries are worded in every locale', () => {

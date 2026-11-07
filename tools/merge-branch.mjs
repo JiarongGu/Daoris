@@ -44,10 +44,10 @@
  * rehearsals); within a kind the declared order holds, and the workflow's own rehearsals go before the
  * declared ones, so the declaration's last gate, the deployment rehearsal, ends the plan. On 2026-09-30 a
  * long-lived build server carried a broken environment into a publish, so that rehearsal started after
- * `dotnet build-server shutdown`; since REHLANE2b its builds keep servers of their own, and no gate has a step before it.
- * GATESLIM1: by default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
- * census of test units), and each path check one of its paths reaches (`PATH_CHECKS`: MERGETSC1's web
- * `tsc --noEmit` and MERGEWEBRULES1's design and structure tests, where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside".
+ * `dotnet build-server shutdown`; its builds keep servers of their own, and no gate has a step before it.
+ * By default a merge runs the blocking checks alone (`BLOCKING`: the universal gates, the code map and the
+ * census of test units), and each path check one of its paths reaches (`PATH_CHECKS`: the web
+ * `tsc --noEmit` and the design and structure tests, where the page's sources change); every other gate it reaches is listed and skipped, "in the CI beside".
  * `--gated` runs what follows: of the plan, the baseline (`BASELINE`: the blocking checks and the CLI's `verify`, at every
  * merge) and each gate a path the merge changes can reach (`REACH`). A path no rule
  * places reaches every gate, and so does a gate the table never names. A long gate (`isLongGate`) is
@@ -73,7 +73,7 @@
  * `--rerun <gate>…` runs the named gates again on the merge in place, then any gate of its selection that
  * has no verdict yet (the ones a failure stopped, or one a fix's paths now reach), and any whose verdict a
  * path changed since reaches (below); it keeps every other verdict. The summary names each kept
- * verdict and when it was given, and each run again with the path that made it stale. `--continue` runs
+ * verdict and when it is given, and each run again with the path that made it stale. `--continue` runs
  * every selected gate again, as it always did. With no merge open it acts on the checkout (below).
  *
  * ## The full set before the install
@@ -100,8 +100,8 @@
  * `--rerun <gate>…` with no merge open runs the named gates on the checkout, merging nothing, and every gate the stage
  * calls stale with them; `--stale` runs the stale ones alone. Each verdict is recorded where `--passed` reads it, every
  * other verdict is kept as the stage counts it, and the run ends with the stage's answer. A gate with no verdict at
- * all runs only when named. Outside a merge `--rerun` used to refuse, so one gate that flaked in the full set, or a fix
- * committed after it, left `--full` again, about an hour and a half, as the only way to a stage. Both refuse a tree that
+ * all runs only when named. Outside a merge, one gate that flakes in the full set, or a fix
+ * committed after it, need not send `--full` again, about an hour and a half, as the only way to a stage. Both refuse a tree that
  * is not clean, naming each path: a re-run gates a commit, and `--full` is the verb for the tree as it stands.
  *
  * A refused stage, `--passed` and a failed `--full` end with the smallest command that would pass the checkout
@@ -114,7 +114,7 @@
  * [<commit>]` runs it on `commit`, main's tip unless named, in the gate tree (`GATE_TREE`, `local/gate-tree` under the
  * main checkout, ignored): a worktree of its own, detached at that commit, made where none stands, reused where it
  * holds the commit, moved there where it holds another, refused where it holds changes. Each folder of
- * `DEPENDENCY_FOLDERS` with a lockfile is installed there (`npm ci`) when its `node_modules` is missing or was installed
+ * `DEPENDENCY_FOLDERS` with a lockfile is installed there (`npm ci`) when its `node_modules` is missing or installed
  * from another lockfile, a stamp inside it says which. Then the whole plan runs there as `--full` does, and merges land
  * in the main checkout meanwhile.
  *
@@ -128,12 +128,12 @@
  * builds in the gate tree, never in the main checkout as it moves, and refuses a tree no full set passed as before.
  * - **The prune sees it.** No rule above did: it is detached, so no merged branch has it out, and it is under `local/`,
  * not `.claude/worktrees/`. It is never removed while its run holds the lock, nor while a process is inside it (one a
- * full set started by hand holds no lock), read as CLEANUP2 reads a harness-locked tree's. A merge's prune removes it once its stage
+ * full set started by hand holds no lock), read as a harness-locked tree's is. A merge's prune removes it once its stage
  * is done (`GATE_TREE_RECORD` notes the stage of the commit it holds); `--prune` removes it once its run has ended,
  * staged or not. Either says so, a line of its own; changes in it are never forced away, and a folder git no longer
  * lists there is the half-removed rule's.
  * - **Under load.** A full set beside merges shares the machine with their gates (a Process half's
- * timing tests failed beside heavy gates). Nothing of FLAKE1's changes: a Process half's failures are re-run alone once
+ * timing tests failed beside heavy gates). The flake re-run holds: a Process half's failures are re-run alone once
  * its lane is quiet, and a pass alone reads FLAKE. The run says so before its gates start. A clock gate's timed Playwright
  * specs that failed are run again alone once both lanes have ended.
  * - **A guest.** After the lock is taken and before anything is built, the run lowers its own process to below
@@ -155,7 +155,7 @@
  *
  * A release's verification at `c557800` ran 20 gates one after another for 2 h 48 min, since nothing had verified main
  * since the last one. `--ci [<commit>]` (`gateCi`) verifies main's tip after each merge, in the gate tree under its lock (a
- * `ci` holder), so a release waits only for the delta since. D180's CI1 note has what it settles and what it rejected.
+ * `ci` holder), so a release waits only for the delta since.
  *
  * - **What it runs** (`ciPlan`): the gates the tree's verdicts lack. A gate runs when no verdict that stands on the tree
  * passed it: none, a pass a path changed since reaches, or a failure, which stays owed whatever changes. The
@@ -166,11 +166,11 @@
  * (`owed`, each such gate's state `owed`) and record, and the run is green on the rest. `--ci --stage [<commit>]`, the
  * stage's path, owes none: it runs them on the commit to stage, with whatever else it lacks. The stage's judgement is
  * unchanged, so `--from-gated` still refuses a commit whose rehearsals have no pass that stands on its tree, naming
- * `--ci --stage <commit>`. They still run one after the other, never side by side: D180's CIFAST1 note says why.
+ * `--ci --stage <commit>`. They still run one after the other, never side by side.
  * - **How**: as a run beside does (its private files, its dependencies), keeping going past a failure, its light
  * lane `CI_IDLE.width` wide when the machine is measured idle before its gates start (`measureLoad`, `ciWidth`), and
  * scheduled by memory (`laneSchedule`'s `byMemory`): a Process half waits only for what builds its component, the heavy
- * light gates beside it each once MEMGATE1 finds its memory.
+ * light gates beside it each once its memory is found.
  * - **Which tip**: a run of main's tip reads it again once its tree is prepared and moves to the newest before any gate starts
  * (`CI_MOVES`); once started it runs to its verdict, and what lands meanwhile is the next run's.
  * - **What it writes**, all under the main checkout's ignored `local/`: each verdict in the store as a merge's, its logs and
@@ -185,8 +185,7 @@
  * ## A Process half by the classes a change reaches
  *
  * A gate a change reaches ran every class in it, so a driver or modules change cost the Process halves' 95 minutes. A CI run
- * now runs, of each Process half it owes, the classes the change reaches, and keeps the rest. D180's PROCREACH1 note has what
- * it settles and what it rejected.
+ * now runs, of each Process half it owes, the classes the change reaches, and keeps the rest.
  *
  * - **Reach** is the census's (`tools/process-reach.mjs`): read from each class's sources, the source folders the types it and
  * the helpers it reads name are defined in, and the programs it starts. A path the census cannot place, or a file that acts
@@ -200,15 +199,14 @@
  * `SWEEP_BOUND_MS` (a day). The half's verdict carries `classes` (how many ran, how many were kept, the oldest kept verdict's
  * time), and a pass that kept classes past the bound stands no more (`sweptOut`): the stage refuses it, and the next CI run
  * sweeps it.
- * - **Composed**: a half whose every class is kept passes without running only when its last verdict was a
+ * - **Composed**: a half whose every class is kept passes without running only when its last verdict is a
  * pass gone stale by reach, its results read and its classes the census's (`composeRefusal`); else it runs whole.
  * - **The status** names, for each Process half, its census's count, whether it ran whole and why, each class it ran with why,
  * and each it kept with its verdict's time, commit and standing.
  *
  * ## The prune
  *
- * Every subagent leaves a branch and a worktree, and so does every integration: 36 of 41 local branches
- * were merged into main with 41 worktrees standing when this was built. So each merge starts by removing
+ * Every subagent leaves a branch and a worktree, and so does every integration. So each merge starts by removing
  * the merged ones, after its refusals and before `git merge` (a refusal still touches nothing), and a
  * batch's last `--continue` does it again. `--prune [--plan]` runs it alone; its plan changes nothing.
  *
@@ -237,7 +235,7 @@
  *
  * A folder directly under the main checkout's `.claude/worktrees/` that git does not list and that holds
  * no `.git` is what a `git worktree remove` left when it could not finish (a 320 MB one, held by two
- * processes a test leaked, stood when CLEANUP2 was built). It is removed, looked at again just before: a
+ * processes a test leaked). It is removed, looked at again just before: a
  * link (a reparse point) is never followed or removed, and a link inside it is removed as a link. One a
  * running process is inside is kept, naming each pid and command line; a process is never stopped here.
  * What cannot be removed is named, and the next prune tries again. Any other folder git does not list is
@@ -246,7 +244,7 @@
  * ## Flakes
  *
  * Real-process tests fail under load and pass alone. When a `dotnet test` gate
- * fails and every test it names is in one of FLAKE1's classes, each is re-run alone, once. If they all
+ * fails and every test it names is in one of the flake classes, each is re-run alone, once. If they all
  * pass the gate reads FLAKE, not PASS, and the summary counts it: a flake is reported, never hidden. A
  * failure outside those classes is never re-run, because a test that passes alone after failing in the
  * suite may be one test polluting another, and that is a defect.
@@ -259,7 +257,7 @@
  *
  * A clock gate that runs Playwright (`web-measured`) and failed only in specs whose title path carries `timed`, every
  * failure named, runs those specs again once, alone, by `file:line`, after every gate has ended: a pass
- * reads FLAKE. Any other failure of it keeps its FAIL, with a note saying why it was not run again.
+ * reads FLAKE. Any other failure of it keeps its FAIL, with a note saying why it is not run again.
  *
  * ## A heavy gate waits for memory
  *
@@ -278,8 +276,8 @@
  * file is too small", or Windows' exit for an allocation refused) is said as memory, its line MEMORY, never a check that
  * failed, and stops nothing. Once both lanes have ended it runs again once, whole and alone, in the plan's order, after its
  * memory is free (`againOfMemory`): a pass reads FLAKE of memory, which the summary names as the machine's and not the
- * change's, never for FLAKE1; a second death of memory fails, still named as memory; another failure fails plainly. A Process
- * half whose dead tests are named runs them alone as FLAKE1's are, once its memory is free. A run a failure stopped runs none
+ * change's, not for the flake classes; a second death of memory fails, still named as memory; another failure fails plainly. A Process
+ * half whose dead tests are named runs them alone as a flake class's are, once its memory is free. A run a failure stopped runs none
  * again, saying so. The gate's own pass and fail are unchanged, and so is `--one-at-a-time`, whose memory re-runs come last.
  * A clock gate's timed specs run again alone take the same turn, and are run again in the same way. So do the
  * failed tests of a gate that runs `node --test` (`nodeTestDirs`: read from its npm scripts), when every failure is
@@ -297,11 +295,11 @@
  * Two builds of one .NET project at once fight over its `obj/` and `bin/`. So a Process-lane gate starts only once the
  * light gates of its component (`dotnetComponent`: the first two folders of the project its command names) have ended,
  * and the light lane runs those first: the desktop's fast halves build what its Process halves then run. A Process-lane
- * gate also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, the web gate), GATEORDER1:
+ * gate also waits for the heavy light gates (`isHeavyGate`: the CLI's verify, the .NET suites, the web gate), because
  * the 0b44c7a run started `driver-process` beside cli, service and web and two timing tests failed there. The cost is
  * the light lane's tail, about 7 to 8 minutes of a full set of an hour or more, since the Process lane is the long pole
  * either way. The git half and the driver's other Process half never overlap: the Process lane is one gate at a time, though
- * each gate's classes run at once, but for the release, family and deployment rehearsals beside the git half (* REHLANE2, below). `--stale` and `--rerun` run through the same `runGates`, so they follow
+ * each gate's classes run at once, but for the release, family and deployment rehearsals beside the git half (below). `--stale` and `--rerun` run through the same `runGates`, so they follow
  * the same order. A Process-lane gate whose command names no project, a rehearsal, starts once the light lane has ended:
  * it builds the hosts behind its script's name. A
  * Process gate's failures are re-run alone only once the light lane has ended, and the gate beside it in its own lane,
@@ -323,7 +321,7 @@
  * own build writes into, so it runs in turn with service; driver and modules share the desktop's. A gate that builds
  * none (orient-index) runs beside any. `LIGHT_WIDTH` says why three. Each gate keeps its own process, log, verdict and
  * line; the lines print as gates end, and the summary in the plan's order. The first failure starts nothing more, and
- * the gates running end and keep their verdicts. GATEORDER1's waits are unchanged, and `--one-at-a-time` is as before.
+ * the gates running end and keep their verdicts. The Process lane's waits are unchanged, and `--one-at-a-time` is as before.
  * A run of one light gate alone, or of Process gates alone, runs in turn.
  *
  * ## A Process half on its fast half's build
@@ -334,12 +332,12 @@
  * (`no build: driver built this tree in this run`). The tree is the one each verdict is recorded with (`contentTree`), so
  * a changed tree, or one git cannot name, builds. A `--rerun` or `--stale` that names a Process half without its fast
  * half has no fast half in its run, and builds; one that names both reuses as a full set does. The flake re-run alone
- * was `--no-build` already. One at a time reuses too.
+ * is `--no-build` already. One at a time reuses too.
  *
  * ## The family rehearsal beside the git half
  *
- * After GATELANES2 a full set's wall was mostly the Process lane, one gate at a time: the git half about 45 to 50
- * minutes, the driver's other Process half (then one class at a time, now eight at once) 15 to 19, the family rehearsal 10 to 26 and the deployment rehearsal 13 to 15. So a rehearsal
+ * A full set's wall is mostly the Process lane, one gate at a time: the git half about 45 to 50
+ * minutes, the driver's other Process half (eight classes at once) 15 to 19, the family rehearsal 10 to 26 and the deployment rehearsal 13 to 15. So a rehearsal
  * of `BESIDE_GIT_HALF` (`runsBesideGitHalf`) runs beside a git half (`isGitHalf`, the driver's `git.process.runsettings`
  * half, `beside` in the schedule): it goes in the lane right after the last git half, and a Process-lane gate starts once
  * every gate before it in the lane has ended but those it may run beside. Every other pair still runs one at a time, the
@@ -350,9 +348,6 @@
  * rehearsal builds the driver host into an output of its own, `_fixtures/rehearsal-builds/family` (`ownBuild` in
  * `tools/rehearsal-kit.mjs`, the SDK's `--artifacts-path`), and the service's hosts where the driver finds a development
  * build, in folders no git half builds; and it shuts no build server down. A test reads its tool for both.
- *
- * The deployment rehearsal ran alone and last then, where its build-server shutdown stopped no build (D115's REHLANE1
- * note), below, moved it beside.
  *
  * A git half that re-runs its failures alone waits for the rehearsal beside it to end, and no Process-lane gate
  * starts meanwhile, the next rehearsal beside it neither. A rehearsal that died and is run again whole does not
@@ -368,7 +363,7 @@
  * classes no neighbour's load can fail; the family, which runs the CLI's bin, starts once it has ended, and two
  * Process-lane gates at once stays the ceiling. The driver's other Process half and the modules' run beside nothing: they
  * hold the clock-bound classes. It waits for the whole light lane, whose cli gate runs the bin, and the deployment
- * rehearsal, which packs the same folder, waits for it. D180's REHLANE2 note has what was rejected.
+ * rehearsal, which packs the same folder, waits for it.
  *
  * ## The deployment rehearsal beside the git half last
  *
@@ -379,18 +374,17 @@
  * build servers of its own (`OWN_BUILD_SERVERS` in the kit, a run beside's `BESIDE_ENVIRONMENT`), so it no longer starts
  * after a shutdown of every server on the machine, which beside the git half would stop the builds of all beside it. So it
  * is of `BESIDE_GIT_HALF`, last: it starts once the release rehearsal (which packs the same folder) and the family (which
- * runs the bin it would shadow) have ended, still beside the git half, and the modules' Process half waits for it. D180's
- * REHLANE2b note says why its window's checks share nothing with the git half but load, the walls, and what was rejected.
- * CIFAST1 read it beside the family again and kept them apart: each of its three publishes packs the CLI in place, and a
+ * runs the bin it would shadow) have ended, still beside the git half, and the modules' Process half waits for it.
+ * It stays apart from the family: each of its three publishes packs the CLI in place, and a
  * `dist/` half written or removed under one of the family's many runs of the bin is state, not load.
  *
  * ## The web gate's unit run beside service
  *
- * In a full set the light lane's floor was the service suite then the web gate, about 10 minutes under load, because the
+ * In a full set the light lane's floor is the service suite then the web gate, about 10 minutes under load, because the
  * web gate builds the HTTP host the service suite builds. Its first step, the page's vitests, builds nothing. So it is a
  * light gate of its own, `web-unit` (`npm run test:web:unit`), of no component, and runs beside service; `web` runs the
  * page's build, the HTTP host's and Playwright (`npm run test:web:e2e`), after service as before. `npm run test:web` runs
- * both, for a person. Both are heavy, and `web` is declared first (`LIGHT_WIDTH` says why). WEBGATE1's cap on
+ * both, for a person. Both are heavy, and `web` is declared first (`LIGHT_WIDTH` says why). The cap on
  * vitest's workers is the page's own config, so it holds wherever the unit run runs. A vitest's read outside the page
  * reaches `web-unit`, and the browser suite's reads reach `web`.
  *
@@ -408,7 +402,7 @@
  * node tools/merge-branch.mjs --plan <branch> [--batch <branch>…] [--full]
  * node tools/merge-branch.mjs --full [--keep-going] [--one-at-a-time]
  * node tools/merge-branch.mjs --full --beside [<commit>] [--keep-going] [--one-at-a-time]
- * node tools/merge-branch.mjs --full --beside --daoris-verify [--keep-going] [--one-at-a-time] (D192's declared runner, inputs in DAORIS_VERIFY_*)
+ * node tools/merge-branch.mjs --full --beside --daoris-verify [--keep-going] [--one-at-a-time] (the declared runner, inputs in DAORIS_VERIFY_*)
  * node tools/merge-branch.mjs --ci [--stage | --night] [<commit>] [--one-at-a-time]
  * node tools/merge-branch.mjs --ci --watch [--one-at-a-time]
  * node tools/merge-branch.mjs --ci --stop
@@ -512,7 +506,7 @@ export const isGitHalf = (gate) => /git\.process\.runsettings/.test(gate.run);
  * which the git half builds into and runs from, only into an output of its own (`ownBuild` in `tools/rehearsal-kit.mjs`,
  * and `desktop-publish --artifacts-path` for the deployment rehearsal's publishes), or builds no .NET project at all, and
  * shuts no build server down: a test reads each one's tool for both. They run one after the other, in this order, never
- * beside each other; the header's REHLANE2 and REHLANE2b sections say why the release and deployment rehearsals may run here
+ * beside each other; the header says why the release and deployment rehearsals may run here
  * and not beside the family or each other.
  */
 export const BESIDE_GIT_HALF = Object.freeze(['rehearse', 'rehearse:family', 'rehearse:deploy']);
@@ -569,11 +563,11 @@ export function dotnetComponent(run) {
  * that runs the web gate ends no sooner with three than with two (the service's gates then web, about 10 minutes under
  * load, are its floor), so three is the width, on 22 logical processors.
  *
- * WEBSPLIT1 took the web gate's vitests off that floor as a gate that builds none, `web-unit`. It takes the first free
+ * The web gate's vitests are off that floor, as a gate that builds none, `web-unit`. It takes the first free
  * place `web` does not take: `web` is declared before it, so a place service frees goes to `web`, and the floor is service
  * then the page's build and browser suite. By the figures above the desktop's fast halves end before service, so it runs
  * beside service. A
- * fourth place would start it at once, beside three heavy gates, for no shorter floor: TESTWAIT2's 600 ms bound already
+ * fourth place would start it at once, beside three heavy gates, for no shorter floor: a 600 ms test bound already
  * failed beside two, so the width stays three until the parent's full sets measure otherwise.
  */
 export const LIGHT_WIDTH = 3;
@@ -648,18 +642,18 @@ export const reuseBuild = (built, tree) => Boolean(built?.tree && tree && built.
  * script's name, and the release and deployment rehearsals stage the dist/ the cli gate's bin prefers) waits for the whole
  * light lane. Within each rule, the plan's order holds.
  *
- * GATELANES2: up to `width` light gates run at once, never two that build one component (`components`, read through
- * the root `scripts` a gate names). GATEBUILD1: `reuses` names, for each Process half, the light gate that builds the
+ * Up to `width` light gates run at once, never two that build one component (`components`, read through
+ * the root `scripts` a gate names). `reuses` names, for each Process half, the light gate that builds the
  * same test project the same way (`testBuild`), its fast half.
  *
- * REHLANE1: `beside` names, for each Process-lane gate, the ones it may run beside: a git half and each rehearsal of
+ * `beside` names, for each Process-lane gate, the ones it may run beside: a git half and each rehearsal of
  * `BESIDE_GIT_HALF`. The lane's order is the plan's, but each such rehearsal goes right after the last git half, and a
- * Process-lane gate starts once every gate before it in the lane has ended but those it may run beside. REHLANE2: those
+ * Process-lane gate starts once every gate before it in the lane has ended but those it may run beside. Those
  * rehearsals are never beside each other, so each starts once the one before it has ended, all beside the git half
  * (the release, the family, then the deployment).
  *
- * CI1: `byMemory`, a CI run's schedule, drops GATEORDER1's wait. A Process half waits only for the light gates that build
- * its component, and the heavy light gates run beside it, each starting once MEMGATE1's reading finds its free memory, as
+ * `byMemory`, a CI run's schedule, drops the wait for heavy gates. A Process half waits only for the light gates that build
+ * its component, and the heavy light gates run beside it, each starting once the memory reading finds its free memory, as
  * the half did. The build rule stays (two builds of one project fight over its `obj/`), and so does a rehearsal's wait for
  * the whole light lane, which is about what it builds and stages, not load. Every other rule is the merge's.
  */
@@ -681,7 +675,7 @@ export function laneSchedule(gates, { scripts = {}, width = LIGHT_WIDTH, byMemor
   const waits = Object.fromEntries(process.map((gate) => {
     const component = dotnetComponent(gate.run);
     // Beside the component's own gates, the heavy light gates, so a Process half's timing tests run with no suite loading the CPU.
-    // CI1: by memory, the component's own alone; MEMGATE1's reading holds each heavy gate until its memory is free.
+    // By memory, the component's own alone; the memory reading holds each heavy gate until its memory is free.
     const after = component === null ? light : light.filter((other) => sharing(component).includes(other) || (!byMemory && isHeavyGate(other)));
     return [gate.name, { after: after.map((other) => other.name), component }];
   }));
@@ -762,7 +756,7 @@ export function parseArgs(argv) {
       continue;
     }
     if (arg.startsWith('-')) flags.push(arg);
-    // The word right after --beside, if it is no option, is the commit it gates. CI1: so is the word after --ci.
+    // The word right after --beside, if it is no option, is the commit it gates. So is the word after --ci.
     const besideCommit = besideNext && !arg.startsWith('-');
     const ciCommit = ciNext && !arg.startsWith('-');
     besideNext = false;
@@ -853,8 +847,8 @@ export function parseArgs(argv) {
   if (options.ciStage && !options.ci) throw usageError("--stage is the CI's: --ci --stage [<commit>] gates a commit to stage, its rehearsals with it");
   if (options.ciNight && !options.ci) throw usageError("--night is the CI's: --ci --night [<commit>] runs every gate whole, as the nightly run does");
   if (options.ci) {
-    // One run of the CI, its watch, or the stop asked of the watch; each a verb alone. CIFAST1: a run for a stage.
-    // REVIEW2 T5: a plain CI run always keeps going and a stage's ends at its first failure, so the flag would change nothing; refused rather than ignored.
+    // One run of the CI, its watch, or the stop asked of the watch; each a verb alone.
+    // A plain CI run always keeps going and a stage's ends at its first failure, so the flag would change nothing; refused rather than ignored.
     if (flags.includes('--keep-going')) throw usageError('--keep-going is not taken beside --ci: a plain CI run keeps going past a failure anyway, and a --stage run ends at its first failure by design');
     if (flags.some((flag) => !['--ci', '--stage', '--night', '--watch', '--stop', '--one-at-a-time'].includes(flag))) {
       throw usageError('--ci takes only a commit, --stage, --night, --watch, --stop and --one-at-a-time');
@@ -988,7 +982,7 @@ export function readDeclared(root) {
   return declaredIn(readFileSync(file, 'utf8'), 'daoris.gates.json');
 }
 
-/** The gates of a declaration's text, as `readDeclared` reads a file's; `label` says whose text it is in a refusal (INTEGRATE1j reads one it was handed). */
+/** The gates of a declaration's text, as `readDeclared` reads a file's; `label` says whose text it is in a refusal. */
 export function declaredIn(text, label) {
   let parsed;
   try {
@@ -1008,7 +1002,7 @@ export function declaredIn(text, label) {
     }
   }
   // `"clock": true` marks a gate whose tests are bounded by the wall clock, which a run beside raises.
-  // MEMGATE1: `"memoryGb"` is the free memory a gate needs before it starts, whatever its class (`memoryNeed`).
+  // `"memoryGb"` is the free memory a gate needs before it starts, whatever its class (`memoryNeed`).
   return gates.map(({ name, run, cwd, clock, memoryGb }) => ({
     name, run, ...(typeof cwd === 'string' ? { cwd } : {}), ...(clock === true ? { clock: true } : {}),
     ...(typeof memoryGb === 'number' ? { memoryGb } : {}),
@@ -1021,7 +1015,7 @@ export function readPlan(root) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// GATE3: the gates a merge's paths can reach
+// The gates a merge's paths can reach
 
 /**
  * The gates every merge runs, whatever it changed: the universal gates scan every file, the code map
@@ -1035,21 +1029,21 @@ export const BASELINE = Object.freeze(['universal', 'code-map', 'test-map', 'cli
  * commit) and the code map. Every other gate is listed and skipped, "in the CI beside"
  *; `--gated` runs what the merge's paths reach, `--full` every gate, `--rerun <gate>` a named one.
  *
- * CISCOPE1c: and the census of test units' check (`tools/test-map.mjs check`, about 20 s), which reads every suite's
+ * And the census of test units' check (`tools/test-map.mjs check`, about 20 s), which reads every suite's
  * sources and holds the hand rows of `REACH` below, the whole-suite files and the skips to them.
  */
 export const BLOCKING = Object.freeze(['universal', 'code-map', 'test-map']);
 
 /**
  * The light checks a merge blocks on when one of its paths reaches what they read, beside `BLOCKING`. Two sides
- * that each typecheck may not together (RAILLINE1's stories named a helper STORYGAP1 had renamed, 2026-10-21), and the CI
+ * that each typecheck may not together (one side's stories named a helper the other had renamed, 2026-10-21), and the CI
  * beside found it hours after the commit; the web's `tsc --noEmit` takes about a minute. Each is reached by its own
  * `paths`, and by a path the lane table's every-gate rule places (the gates, the scripts, the lanes), never by the rest of
  * the table: a path no rule of `REACH` places reaches every other gate, and a typecheck stays a minute of the merges that
  * change what it reads. `--gated` runs it where reached, `--full` always.
  *
- * MERGEWEBRULES1: the web's design and structure tests are a second such check, reached the same way. HEAVYSLOT1 and
- * ACCESSASK1's stories each broke `design/tokens.test.ts` (a line's measure, a native control), which only the CI beside's
+ * The web's design and structure tests are a second such check, reached the same way. Two stories
+ * each broke `design/tokens.test.ts` (a line's measure, a native control), which only the CI beside's
  * `web-unit` ran, hours after their merges; the two files run in a minute or two, most of it jsdom starting.
  */
 export const PATH_CHECKS = Object.freeze([
@@ -1079,7 +1073,7 @@ const pathCheckPaths = (check, paths, reach, lanes) => {
   return paths.filter((path) => own(path) || readRule(path)?.gates === '*');
 };
 
-// The .NET suites with a test that reads the page's catalogues or sources: MOD9's incident was two of them.
+// The .NET suites with a test that reads the page's catalogues or sources.
 const PAGE_READERS = ['service', 'driver', 'modules', 'censuses'];
 const DESKTOP_SUITES = ['driver', 'modules', 'censuses', 'driver-process', 'driver-process-git', 'modules-process'];
 // What the CLI's sources reach; a narrow rule for one of its files names these as well, since the first rule decides.
@@ -1150,7 +1144,7 @@ export const REACH = Object.freeze([
   },
   { paths: ['tools/stage-package.mjs'], gates: ['rehearse', 'deployment'], why: "every pack runs it: the release rehearsal's, and the install's doctrine tool" },
   { paths: ['tools/family-rehearsal.mjs', 'tools/stub-two.mjs', 'tools/usage-report.mjs', 'tools/usage-report/**'], gates: ['rehearse-family'], why: 'the family rehearsal, its parts' },
-  // AGENTPROVIDER1b part 3 (placed by INTEGRATE1d part 4): the stand-ins' reader, which its own tool test and the family rehearsal import.
+  // The stand-ins' reader, which its own tool test and the family rehearsal import.
   { paths: ['tools/stand-ins.mjs'], gates: ['tool-tests', 'rehearse-family'], why: "the stand-ins' reader: its tool test (stand-ins.test.ts) and the family rehearsal, which finds the providers' stand-ins by it (AGENTPROVIDER1b)" },
   // The same row's files in each provider's folder: the driver's (its lane's readers, ProviderFilesTests among them), and the tool
   // test and the family rehearsal read them through `stand-ins.mjs`. A narrow rule, since the first rule decides.
@@ -1171,7 +1165,7 @@ export const REACH = Object.freeze([
   { paths: ['src/Daoris.Desktop/process.runsettings'], gates: ['driver', 'driver-process', 'modules-process'], why: "the Process halves' settings (MOD8), which the driver's CategoryTests read (PROCPAR1)" },
   { paths: ['src/Daoris.Desktop/git.process.runsettings'], gates: ['driver-process-git'], why: "the driver's git-only Process classes' settings, four at once (PROC1c)" },
   // Before the driver's tests, which would place it first: the page's twin reads it too.
-  // WEBSPLIT1: a vitest's read reaches the web gate's unit run, which runs the vitests; the web gate builds and runs Playwright.
+  // A vitest's read reaches the web gate's unit run, which runs the vitests; the web gate builds and runs Playwright.
   {
     paths: ['src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/fixtures/kept-names.json'],
     gates: ['driver', 'web-unit'],
@@ -1311,7 +1305,7 @@ export const REACH = Object.freeze([
     why: "the modules' own, and the driver's NoConsoleWindow and PullRequestOccasion scans read every C# source of the modules and the app (MOD9c)",
   },
   // The page's twin vitests parse these sources' declarations, so they are named by file: the driver's other sources
-  // reach no vitest. WEBSPLIT1: the vitests are the web gate's unit run, which builds nothing. STRUCT1: each by its name at any depth of the
+  // reach no vitest. The vitests are the web gate's unit run, which builds nothing. Each by its name at any depth of the
   // driver's folder, since the driver's files move into module folders one module per branch.
   {
     paths: [
@@ -1320,12 +1314,12 @@ export const REACH = Object.freeze([
       'TraceChains.cs', 'LandedKind.cs',
       // MSG1g3: the page's say twin holds its refusal tables to these codes.
       'GoOnNew.cs', 'SessionSay.cs', 'Continuation.cs', 'ContinueReason.cs', 'ContinueCodes.cs', 'ChatRunner.StartFrom.cs',
-      // The say twin holds the hand-over's refusal table to its codes; FOUNDATION1 mod-vii moved the codes it aliases
-      // into Events, so the twin reads their literals there.
+      // The say twin holds the hand-over's refusal table to its codes; the codes it aliases are in
+      // Events, so the twin reads their literals there.
       'HandOver.cs', 'HandOverAskWhy.cs',
-      // FOUNDATION1d-ii part 1: `WordsNever.Continued` forwards the say door's answer's own word, which this record declares.
+      // `WordsNever.Continued` forwards the say door's answer's own word, which this record declares.
       'ServiceAnswers.cs',
-      // SESSCTX1c part B: the say twin holds *Go on with Daoris's brief*'s refusal table to its codes.
+      // The say twin holds *Go on with Daoris's brief*'s refusal table to its codes.
       'BriefedMove.cs',
       // The parts flow's twin holds its words to `PartBegan`.
       'SessionEntries.cs',
@@ -1342,7 +1336,7 @@ export const REACH = Object.freeze([
     why: "the driver's own, and the page's graphFlow vitest reads every shipped workflow to hold its fixtures to them (SETUPUX1n)",
   },
   // The service's McpToolRegistrationTests holds the brainstorm posture's list of the connector's tools to its
-  // host's, reading the driver's file by its name; a path rule replaces its lane's, so the driver's readers stay. COAGENT1b: the
+  // host's, reading the driver's file by its name; a path rule replaces its lane's, so the driver's readers stay. The
   // service's McpRoleFilterTests reads the partner's rules the same way (`PartnerPermissions.Offered`).
   {
     paths: [
@@ -1370,7 +1364,7 @@ export const REACH = Object.freeze([
     why: "the CLI's own readers (the lane's), and the driver's DriverProgramWordsProcessTests runs these under node through the seam (PUSH1f2a)",
   },
   { paths: ['src/Daoris.Cli/test/**'], gates: [], why: "the CLI's tests, which verify runs at every merge" },
-  // A fix to a browser test was re-gated by the web gate alone, and the stage then voided every other verdict.
+  // A fix to a browser test is re-gated by the web gate alone, so the stage voids no other verdict.
   { paths: ['src/Daoris.Web/e2e/**'], gates: ['web'], why: "the page's end-to-end specs, which only the web gate runs: no .NET suite reads them" },
   // The measured-box check's own specs, harness and config, which no other suite reads (tsc and the vitests read src/ alone).
   {
@@ -1469,7 +1463,7 @@ export const REACH = Object.freeze([
 ]);
 
 // ---------------------------------------------------------------------------------------------------
-// ORIENT1a: what a merge writes rather than merges
+// What a merge writes rather than merges
 
 /**
  * Folders a tool writes from the tree, never merged: the orientation index's line numbers move with nearly
@@ -1512,7 +1506,7 @@ function writeGenerated(root) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// MERGETASKS1: the backlog's line conflicts, resolved by the merge base
+// The backlog's line conflicts, resolved by the merge base
 
 /** The backlog `daoris.json` declares, else `TASKS.md`: the file a merge resolves by its base; null where the manifest does not read. */
 export function backlogPath(root) {
@@ -1687,8 +1681,7 @@ export function integrationOf(text) {
 
 /**
  * The files a repository's declaration says settle by rows: `daoris.gates.json`'s
- * `integration.merge`, each rule `{ "paths": file, "by": "rows" }`, read through the whole declaration (`integrationOf`,
- * INTEGRATE1d). A file whose conflict is settled as the backlog's is, by the merge base, line by line: a row a side added is kept,
+ * `integration.merge`, each rule `{ "paths": file, "by": "rows" }`, read through the whole declaration (`integrationOf`). A file whose conflict is settled as the backlog's is, by the merge base, line by line: a row a side added is kept,
  * one a side removed is dropped, rows both add at one place are both kept, and a base row both changed stays a conflict. No
  * command runs, so no acceptance is read: a `line` rule's `run` writer waits for the acceptance and is passed over (C6, F10).
  *
@@ -1768,7 +1761,7 @@ function hunksCollide(x, y) {
 /**
  * The backlog merged line by line against its merge base: a line one side added is kept, one a side removed is
  * dropped, and two sides that changed the same base line are a conflict, left for the person. Rows that two sides add at one
- * place are both kept, this side's first. With `text` when nothing collided, and what was kept, dropped and left.
+ * place are both kept, this side's first. With `text` when nothing collided, and what is kept, dropped and left.
  *
  * Nearly every landing of a session's or a builder's branch stopped on `TASKS.md` (2026-10-21): each side removed or added a
  * row beside the other's, which git reads as one conflict. Union would undo every row a side moved to the archive, so the
@@ -1813,7 +1806,7 @@ function stageText(root, stage, path) {
 /**
  * The backlog's conflict, and each declared row table's, in the merge in place resolved by its base and
  * staged, with one line saying so; or, where both sides changed one line, left as git wrote it, with one line naming where.
- * Whether any was resolved. The row tables are the ones `line` declares (`declaredRows`).
+ * Whether any is resolved. The row tables are the ones `line` declares (`declaredRows`).
  */
 function resolveBacklog(root, { line = 'HEAD' } = {}) {
   const backlog = backlogPath(root);
@@ -1843,11 +1836,11 @@ function resolveBacklog(root, { line = 'HEAD' } = {}) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// MERGEJOIN1: two notes a union merge leaves touching
+// Two notes a union merge leaves touching
 
 /**
  * A decision's file with one blank line set before each note's label that follows a non-blank line outside a fence,
- * and every other byte as it was; with each label set apart and its line once set (1-based).
+ * and every other byte as it stands; with each label set apart and its line once set (1-based).
  *
  * Two branches that each append a note to one decision both open it with a blank line. Git's union merge takes that
  * line, the same on both sides, as common to them and keeps it once, then keeps both notes one after the other, so
@@ -1887,7 +1880,7 @@ const joinKey = (lines, i) => `${lines[i - 1].trimEnd()}\n${lines[i].trimEnd()}`
 
 /**
  * A union record with one blank line set before each heading the merge joined to the line above, and every other byte
- * as it was; with each heading and its line once set (1-based).
+ * as it stands; with each heading and its line once set (1-based).
  *
  * Two branches that each append an entry to the task archive both open it with a blank line, and union keeps that line
  * once, as `setApart` says of two notes: the second entry's `## ` heading lands under the first's last line. Two merges
@@ -1904,7 +1897,7 @@ export function setApartHeadings(text, sides = []) {
   return spaced(text, lines, gluedHeadings(lines).filter((i) => !held.has(joinKey(lines, i))));
 }
 
-/** How a note set apart is named: by the first task its label names (`UX6e`, not the decision `D130`), else by its label. */
+/** How a note set apart is named: by the first task its label names (a task's id, not a decision's number), else by its label. */
 export function noteName(label) {
   const span = label.replace(/^\*+/, '').split('*')[0].trim();
   const task = /\b[A-Z]{2,}\d+[a-z]*\b/.exec(span)?.[0];
@@ -2021,7 +2014,7 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
     if (BLOCKING.includes(gate.name) || (gated && BASELINE.includes(gate.name))) return { gate, run: true, reached: true, why: 'runs at every merge' };
     const check = pathCheckOf(gate.name, pathChecks);
     if (check) {
-      // MERGETSC1, MERGEWEBRULES1: a path check blocks the merges whose paths reach what it reads, and only those.
+      // A path check blocks the merges whose paths reach what it reads, and only those.
       const by = pathCheckPaths(check, changed, reach, lanes);
       if (full) return { gate, run: true, reached: by.length > 0, why: '--full runs every gate' };
       if (by.length === 0) return { gate, run: false, reached: false, why: gated ? 'no changed path reaches it' : 'in the CI beside' };
@@ -2042,7 +2035,7 @@ export function selectGates(plan, changed, { lanes = [], full = false, gated = f
  * Of `paths`, the ones that reach `gate` by the lane table, read as `selectGates` reads it: every path reaches
  * a baseline gate and a gate no rule names, a path no rule places reaches every gate, and any other reaches the gates
  * its rule names. A verdict stays good until one of these changes, so the stage and `--rerun` ask this of the paths
- * changed since it was given. The test of the table checks that it and `selectGates` agree on every case.
+ * changed since it is given. The test of the table checks that it and `selectGates` agree on every case.
  */
 export function pathsReaching(gate, paths, { lanes = [], reach = REACH, pathChecks = PATH_CHECKS } = {}) {
   const check = pathCheckOf(gate, pathChecks);
@@ -2068,7 +2061,7 @@ export function selectionLines(gates) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// GATE4: a fixed gate re-runs alone
+// A fixed gate re-runs alone
 
 /**
  * What `--rerun` runs and keeps, in the plan's order: each named gate, each chosen gate with no verdict yet
@@ -2114,7 +2107,7 @@ export function verdictsHome(root) {
 
 /**
  * `fn` run holding a lock beside `file`, so two runs writing one store (a merge's and a full set's beside it)
- * never write over each other's verdict. A write takes milliseconds, so a lock older than `staleMs` was left by a run
+ * never write over each other's verdict. A write takes milliseconds, so a lock older than `staleMs` is left by a run
  * that died, and one still held after `waitMs` is taken: a lost verdict is better than a run that never ends.
  */
 function holdingLock(file, fn, { waitMs = 10_000, staleMs = 30_000 } = {}) {
@@ -2292,12 +2285,12 @@ function standingFor(root, tree) {
   };
 }
 
-/** A verdict that passed: PASS, or FLAKE, a pass that was said. */
+/** A verdict that passed: PASS, or FLAKE, a pass that is said. */
 const passing = (verdict) => verdict === 'PASS' || verdict === 'FLAKE';
 
 /**
  * How a verdict given on tree `from` stands for `tree`, for its gate, as `{ standing, paths, records }`:
- * `exact` on this tree; `records` when the two differ only by the records (`isRecord`, forgiven since GATE3);
+ * `exact` on this tree; `records` when the two differ only by the records (`isRecord`);
  * `unreached` when every other path they differ by is one the gate cannot see (`reaching`, the lane table), those
  * paths in `paths`; else `stale`, `paths` naming the ones that reach it, or none when the trees cannot be compared
  * (a verdict with no tree, or one git no longer has: `drift` says null). `records` is the records they differ by.
@@ -2327,7 +2320,7 @@ const hoursOf = (ms) => `${Number((ms / 3_600_000).toFixed(2))}`;
 
 /**
  * Whether a verdict is a Process half's pass that kept classes on a verdict older than `bound`: the stage
- * refuses it and the CI owes the half a sweep. A pass that kept none (the whole half, or a verdict before PROCREACH1) never is;
+ * refuses it and the CI owes the half a sweep. A pass that kept none (the whole half, or a verdict with no class count) never is;
  * one whose sweep does not read is.
  */
 export function sweptOut(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
@@ -2337,7 +2330,7 @@ export function sweptOut(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
 }
 
 /**
- * CISCOPE1d (design §5.3 point 2): whether a verdict is a Process half's whole pass (it kept no class) given more than `bound`
+ * Whether a verdict is a Process half's whole pass (it kept no class) given more than `bound`
  * before `now`. Before a stage such a pass counts only on the commit's own tree: on another, by standing alone, the census's
  * reach is all that carries it, so it is held to the sweep's bound as a pass that kept classes is.
  */
@@ -2354,10 +2347,10 @@ export function agedWhole(entry, now = Date.now(), bound = SWEEP_BOUND_MS) {
  * and how it stands; a gate that does not pass, when a newer verdict no longer stands, carries that one as `stale`,
  * with the paths that made it so.
  *
- * PROCREACH1: a Process half's pass that kept classes by reach (`classes.kept`) stands only while its oldest kept class verdict
+ * A Process half's pass that kept classes by reach (`classes.kept`) stands only while its oldest kept class verdict
  * (`classes.sweep`) is within `bound` of `now` (`sweptOut`): past it, a sweep of the whole half is owed, so the stage refuses
  * the gate (`swept` says why) and the CI runs it. An older pass that still stands counts instead, and a whole half's of any
- * age stands as every verdict does. CISCOPE1d: with `ageWhole` (the stage's, never the CI's), a whole half's pass on another tree
+ * age stands as every verdict does. With `ageWhole` (the stage's, never the CI's), a whole half's pass on another tree
  * counts only within `bound` (`agedWhole`), said as `swept` with `aged`; one on this tree counts at any age.
  */
 export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching, now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
@@ -2396,13 +2389,13 @@ export function stageJudgement({ plan, verdicts, tree, drift, isRecord, reaching
 }
 
 // ---------------------------------------------------------------------------------------------------
-// GATE6b: a gate re-run on the checkout as it stands
+// A gate re-run on the checkout as it stands
 
 /**
  * The smallest command that would make the stage pass the checkout, from its judgement's `gates` (in the plan's order),
  * or null when it passes: `--stale` when every gate it lacks is stale; `--rerun` naming each that failed or has no
  * verdict, when that runs fewer gates than the plan (it runs each stale one too, `checkoutRerun`); else `--full`. `runs`
- * is what the command would run. A refusal named `--full` whatever was missing, which cost a whole run, about an hour
+ * is what the command would run. A refusal names `--full` whatever is missing, which costs a whole run, about an hour
  * and a half, for one gate that flaked or one fix committed after the full set.
  */
 export function stageRemedy(gates) {
@@ -2590,7 +2583,7 @@ export const nodeTestRerunCommand = (file, title) => {
 };
 
 // ---------------------------------------------------------------------------------------------------
-// PROC1: where a Process half's time goes
+// Where a Process half's time goes
 
 /** A Process gate's command with a trx logger writing each test's duration to `file`. Its re-runs add none. */
 export const trxCommand = (run, file) => `${run.trim()} --logger "trx;LogFileName=${file}"`;
@@ -2609,8 +2602,8 @@ function trxMs(duration) {
  * The slowest classes of a trx, at most `count`: each class's tests' durations summed, slowest first, by the
  * class's simple name (a nested class keeps its outer name, `Outer+Inner`). A test's class is its
  * definition's `TestMethod className`, matched to its result by `testId`; a test with no definition is
- * placed by its name. A Process half runs classes at once (the driver's eight; the git-only half's four,
- * PROC1c), so its sums are each class's own time, not its wall, and its slowest class is its wall's floor. The wall is
+ * placed by its name. A Process half runs classes at once (the driver's eight; the git-only half's four),
+ * so its sums are each class's own time, not its wall, and its slowest class is its wall's floor. The wall is
  * the run's, which `slowestLines` prints beside them; only the modules' half runs one class at a time.
  */
 export function slowestClasses(trx, count = 10) {
@@ -3047,8 +3040,8 @@ const attributePattern = (pattern) => (pattern.includes('/')
   : new RegExp(`^(?:.*/)?${globToRegExp(pattern).source.slice(1)}`));
 
 /**
- * Where each changed path belongs, in D115 §2.3's order: the steward's lane first (its records, which a
- * subagent never edits, the parent's list before DEV2), then the records that merge by union, then the
+ * Where each changed path belongs, in order: the steward's lane first (its records, which a
+ * subagent never edits, the parent's list), then the records that merge by union, then the
  * first other lane that owns it, then the paths the map declares laneless (the docs, the doctrine),
  * else outside every lane: a path the map does not place, which the lanes test refuses. Lanes
  * come back by id and title in the map's order, only those touched; the steward's paths come back on
@@ -3415,8 +3408,8 @@ export function folderVerdict(folder) {
 }
 
 /**
- * Whether a candidate goes, and if it stays, why. `facts` is what was found in its worktree, and null
- * where nothing was looked into: a worktree locked for any reason but the agent harness's is in use, so
+ * Whether a candidate goes, and if it stays, why. `facts` is what is found in its worktree, and null
+ * where nothing is looked into: a worktree locked for any reason but the agent harness's is in use, so
  * the lock decides and what it holds does not, and nothing runs in it. The harness's own lock
  * is lifted, `unlock`, when its branch is not at main's tip (a just-dispatched agent's is), it has no
  * change, nothing under `local/` but logs and scratch, and no running process inside it. Every reason to
@@ -3507,7 +3500,7 @@ function inspectWorktree(tree) {
   return facts;
 }
 
-// One CIM query lists every process with its path and command line (2.4 s on the machine it was built on);
+// One CIM query lists every process with its path and command line (about 2.4 s);
 // `Get-Process` gives no command line. The encoding is set so a path that is not ASCII arrives whole.
 const PROCESS_QUERY = '[Console]::OutputEncoding = [Text.Encoding]::UTF8; '
   + 'ConvertTo-Json -Compress -InputObject @(Get-CimInstance Win32_Process | Select-Object ProcessId,ExecutablePath,CommandLine)';
@@ -3859,7 +3852,7 @@ const dropState = (root) => rmSync(statePath(root), { force: true });
 // Running gates
 
 /**
- * A file as a line names it, from `root`. CI1: a CI run's logs are the main checkout's while its gates run in the gate tree,
+ * A file as a line names it, from `root`. A CI run's logs are the main checkout's while its gates run in the gate tree,
  * so one outside the gate tree is named from the main checkout that holds it, as the run's status names it.
  */
 const shown = (root, file) => {
@@ -4040,13 +4033,13 @@ async function rerunAlone(root, gate, dir, tests, step, trees = null) {
     }
   });
   // Which failed again, not only whether any did: a note naming every re-run test as failed sends a reader after ones that passed.
-  // MEMGATE1: and each test's exit, for whether one died of memory.
+  // And each test's exit, for whether one died of memory.
   return { passed: !ended && failed.length === 0, failed, codes, log, ended };
 }
 
 /**
  * The gate (as `command`, its own run unless given) into its log: the gate's exit, or `STEP_ENDED` once the run ended its
- * trees. A gate has one step: BEFORESTEP1 removed the steps before it.
+ * trees. A gate has one step.
  */
 function runSteps(root, gate, log, step, command = gate.run, trees = null) {
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
@@ -4071,12 +4064,12 @@ function endedResult(result, started, trees, before = '') {
  * Process-lane gate, resolves once the light lane beside it has ended. `noBuild` runs a `dotnet test`
  * gate with `--no-build`, on the build `built` (its fast half's pass in this run) made, and its note says so.
  *
- * CIPRIO1c: given the run's `trees`, each step's child is held there; a gate whose step the run ended is `ENDED`, never
+ * Given the run's `trees`, each step's child is held there; a gate whose step the run ended is `ENDED`, never
  * FAIL, and nothing of it starts after: no step before it, no rehearsal run again, no test run alone.
  *
- * MEMGATE1: a gate whose log or exit says it died of memory (`memoryDeath`) is said so, `cause: 'memory'`, never as a check that
+ * A gate whose log or exit says it died of memory (`memoryDeath`) is said so, `cause: 'memory'`, never as a check that
  * failed. Its verdict is FAIL, with `again`: `runGates` runs it again once, alone, at the run's end (`again`, the first result,
- * given back here, runs it whole: `runAgain`). A Process half whose dead tests are named runs them alone in place, as FLAKE1's,
+ * given back here, runs it whole: `runAgain`). A Process half whose dead tests are named runs them alone in place, as a flake class's,
  * once `memory` (the run's wait) has its memory free.
  */
 export async function runGate(root, gate, dir, { step = runStep, settled = null, noBuild = false, built = null, trees = null, again = null, memory = null } = {}) {
@@ -4098,7 +4091,7 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
   const timed = code !== 0 && gate.clock && !died && !/^npm run rehearse/.test(gate.run.trim()) ? timedDecision(readFileSync(log, 'utf8')) : null;
   const node = code !== 0 && !died && !timed?.playwright && nodeTestDirs(root, gate).length ? nodeTestDecision(readFileSync(log, 'utf8')) : null;
   if (died && !testsAlone) {
-    // Before a rehearsal's report and LEFT1's re-run in place, beside the gates still running.
+    // Before a rehearsal's report and the re-run in place, beside the gates still running.
     Object.assign(result, {
       cause: 'memory', again: true, died,
       note: `exit ${code}; died of memory (${died.said}): run again alone once every other gate has ended, after waiting for memory`,
@@ -4145,7 +4138,7 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
     if (decision.rerun.length === 0) {
       result.note = `exit ${code}; ${decision.reason}`;
     } else {
-      // Alone means with nothing beside it, as FLAKE1 measured it, so the light lane ends first.
+      // Alone means with nothing beside it, as a flake is measured, so the light lane ends first.
       if (settled) await settled();
       // Main may move on, or a person stop the run, while the half waits to be alone.
       if (trees?.ended) return endedResult(result, started, trees, `exit ${code}; not run alone`);
@@ -4180,7 +4173,7 @@ export async function runGate(root, gate, dir, { step = runStep, settled = null,
 /**
  * A gate that died of memory (`first`, its result) run again once, whole, into a log of its own beside the first: a
  * pass is a FLAKE of memory; a second death of memory a failure still named as memory; any other failure a plain one, said.
- * Its line names the first log and its note the second, as LEFT1's re-run does.
+ * Its line names the first log and its note the second, as the re-run does.
  */
 async function runAgain(root, gate, dir, first, go, trees) {
   const started = Date.now();
@@ -4274,7 +4267,7 @@ function resultLine(root, result) {
 const gateNamed = (result) => (result.cause === 'memory' ? `${result.gate.name} (memory)` : result.gate.name);
 
 /**
- * What a summary says of its flakes, empty when none: a test's flake is recorded under FLAKE1, and one of memory is
+ * What a summary says of its flakes, empty when none: a test's flake is recorded, and one of memory is
  * the machine's, not the change's, and said so.
  */
 export function flakeNote(flakes) {
@@ -4297,7 +4290,7 @@ export function memoryLine(failed) {
 }
 
 /**
- * The slowest classes of a Process gate's run, under its line. PROCPAR1b: the classes run at once, so their times
+ * The slowest classes of a Process gate's run, under its line. The classes run at once, so their times
  * are their own and the wall is the run's (`result.ms`), said beside them.
  */
 function slowestLines(root, result) {
@@ -4327,7 +4320,7 @@ function laneLines(schedule) {
     : [`  the light lane, up to ${schedule.width} gates at once (${turn}):`];
   out.push(`    light    ${names(schedule.light.map((gate) => gate.name))}`);
   if (schedule.process.length) out.push(`    Process  ${names(schedule.process.map((gate) => gate.name))}, one at a time`);
-  // The rehearsals that run beside a git half; REHLANE2: one after the other when there are more than one.
+  // The rehearsals that run beside a git half; one after the other when there are more than one.
   const besideGit = schedule.process.filter((gate) => runsBesideGitHalf(gate) && schedule.beside[gate.name]?.length);
   if (besideGit.length === 1) {
     const [gate] = besideGit;
@@ -4357,7 +4350,7 @@ function laneLines(schedule) {
       ? `    ${names(gates)} ${verb} once the light lane has ended: a rehearsal builds what its command does not name`
       : `    ${names(gates)} ${verb} once ${names(after)} ${after.length === 1 ? 'has' : 'have'} ended: ${own.length ? `${names(own)} build${own.length === 1 ? 's' : ''} ${component} first${loud.length ? ', ' : ''}` : ''}${loud.length ? `${names(loud)} load${loud.length === 1 ? 's' : ''} the machine` : ''}`);
   }
-  // A CI run's schedule leaves GATEORDER1's wait to the memory each heavy gate reads for before it starts.
+  // A CI run's schedule leaves the heavy-gate wait to the memory each heavy gate reads for before it starts.
   if (schedule.byMemory && schedule.process.some((gate) => schedule.waits[gate.name]?.component !== null)) {
     out.push('    the heavy light gates run beside the Process lane, each once its free memory allows (CI1, MEMGATE1)');
   }
@@ -4387,9 +4380,9 @@ const withWait = (beside, wait) => (wait ? { ...beside, memory: wait } : beside)
 
 /**
  * A clock gate whose timed specs failed is run again by the same path, for those specs.
- * MEMGATE1: each gate of this run that died of memory, run again once, alone: once every other gate has ended, one at a time in
+ * Each gate of this run that died of memory, run again once, alone: once every other gate has ended, one at a time in
  * the plan's order, each once its memory is free (`wait`). A run that stopped (`halted`: a failure, or a run beside ended) runs
- * none again: each keeps its first verdict, a failure named as memory, its note saying why it was not run again.
+ * none again: each keeps its first verdict, a failure named as memory, its note saying why it is not run again.
  */
 async function againOfMemory(root, gates, dir, results, { run, print, wait, heard, halted, admission = null }) {
   const died = gates.filter((gate) => results.get(gate.name)?.again);
@@ -4444,8 +4437,8 @@ export async function admitted(admission, gate, halted, fn) {
 }
 
 /**
- * One gate after another, in the plan's order: every run before GATELANES1, and `--one-at-a-time`. `beside` names what
- * each gate is handed (a Process half, its fast half's pass), and `heard` hears each result. MEMGATE1: a heavy
+ * One gate after another, in the plan's order, as `--one-at-a-time` runs. `beside` names what
+ * each gate is handed (a Process half, its fast half's pass), and `heard` hears each result. A heavy
  * gate first waits for its memory (`wait`), and a gate that died of memory runs again after the last.
  */
 async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () => ({}), heard = () => {}, halt = () => false, wait = null, admission = null }) {
@@ -4480,29 +4473,29 @@ async function runInTurn(root, gates, dir, { keepGoing, run, print, beside = () 
  * The gates, one line each as it ends (and a Process gate's slowest classes under it). The first failure starts
  * nothing more and every gate not started is named as not run, unless `keepGoing`.
  *
- * GATELANES1: the light lane runs beside the Process lane (`laneSchedule`), and once both have ended every gate's line
+ * The light lane runs beside the Process lane (`laneSchedule`), and once both have ended every gate's line
  * is printed again in the plan's order. A failure in either lane starts nothing more in either; the gates running run to
  * their end and keep their verdicts, since a failure stops no gate midway (a superseded or stopped run beside ends them
- * through its trees, and `halt` then starts nothing more: CIPRIO1c). `oneAtATime`, or a run with no light gate
+ * through its trees, and `halt` then starts nothing more). `oneAtATime`, or a run with no light gate
  * or one light gate alone, runs every gate in turn as before. The results are in the plan's order.
  *
- * GATELANES2: the light lane runs up to `width` gates at once, each starting, in the lane's order, once a place is free
+ * The light lane runs up to `width` gates at once, each starting, in the lane's order, once a place is free
  * and no gate running builds a component it builds; the Process lane stays one gate at a time. `scripts` are the root
  * scripts a gate's `npm run` is read through, the root `package.json`'s unless given.
  *
- * GATEBUILD1: a Process half is handed `built`, its fast half's pass in this run and the tree that ran on, which the
+ * A Process half is handed `built`, its fast half's pass in this run and the tree that ran on, which the
  * runner compares with the tree the half starts on (`reuseBuild`). A run with no fast half (a `--rerun` or `--stale`
  * that names a Process half alone) hands none, and the half builds.
  *
- * MEMGATE1: given `memory` (what `memoryGate` reads the machine with: `{ read }`, or stand-ins), a heavy gate waits for its
+ * Given `memory` (what `memoryGate` reads the machine with: `{ read }`, or stand-ins), a heavy gate waits for its
  * memory before it starts, holding its place in its lane, and is handed the wait, for its tests run alone. A gate that died
  * of memory stops nothing: once both lanes have ended it runs again alone (`againOfMemory`), before the summary. With no
  * `memory` nothing is read and nothing waits, and a gate that died of memory still runs again.
  *
- * MEASUREDALONE1: a clock gate whose failed Playwright specs are all timed stops nothing either, and runs those specs again
+ * A clock gate whose failed Playwright specs are all timed stops nothing either, and runs those specs again
  * through the same step (`againOfMemory`), in turn or after both lanes, waiting for admission and memory as a memory re-run does.
  *
- * CI1: `byMemory` is a CI run's schedule (`laneSchedule`): a Process half waits only for what builds its component, and
+ * `byMemory` is a CI run's schedule (`laneSchedule`): a Process half waits only for what builds its component, and
  * the heavy light gates beside it each wait for their memory as it did.
  */
 export async function runGates(root, gates, dir, {
@@ -4725,7 +4718,7 @@ function chooseGates(root, state, plan) {
  * The machine's heavy-run admission this tool's heavy gates take a place in (`machine-admission.mjs`), or null where it
  * is off: `MERGE_BRANCH_ADMISSION=off`, or `MERGE_BRANCH_MEMORY=off` (the tool's own end-to-end tests, which must not wait on the
  * machine they run on) unless `MERGE_BRANCH_ADMISSION=on`. It has no home to share without `DAORIS_HOME`, and then nothing waits.
- * INTEGRATE1a: the tool hands it the home it read at its start (`home`), the one its gates no longer inherit.
+ * The tool hands it the home it read at its start (`home`), the one its gates do not inherit.
  */
 export function machineAdmission(env = process.env, { home = env.DAORIS_HOME } = {}) {
   const setting = env.MERGE_BRANCH_ADMISSION;
@@ -4738,7 +4731,7 @@ const headCommit = (root) => git(root, ['rev-parse', 'HEAD'], { allowFail: true 
 /**
  * The gates run in order, each verdict recorded with the tree it ran on, as its gate ends, so a run
  * cut short keeps what it learned. `onResult` hears each result. A gate the run's `trees` ended gives no verdict.
- * CI1: `onStart` hears each gate as it starts, once its memory is free; `width` and `byMemory` are a CI run's schedule.
+ * `onStart` hears each gate as it starts, once its memory is free; `width` and `byMemory` are a CI run's schedule.
  */
 function runRecorded(root, gates, dir, {
   keepGoing = false, oneAtATime = false, branch = null, onResult = () => {}, onStart = () => {}, halt = undefined, trees = null, width = LIGHT_WIDTH, byMemory = false,
@@ -4771,7 +4764,7 @@ function runRecorded(root, gates, dir, {
           ? { classes: { ran: result.trx ? found.length : null, kept: gate.reach?.kept.length ?? 0, sweep: gate.reach?.kept.length ? gate.reach.sweep : started } }
           : {};
         // Every verdict carries the kind of run that gave it (`ci-background.mjs`'s `RUN_KINDS`, or `merge`, `checkout`).
-        // CISCOPE1e: a scoped run writes a gate verdict only for a gate it ran whole, never for a git half with deferred classes.
+        // A scoped run writes a gate verdict only for a gate it ran whole, never for a git half with deferred classes.
         if (gateVerdict(gate)) addVerdicts(home, [{ gate: gate.name, verdict: result.verdict, tree, at: started, commit, branch, ...(kind ? { kind } : {}), ...classes }]);
         addClassVerdicts(home, gate.name, found.map((each) => ({ ...each, tree, at: started, commit })));
       }
@@ -4842,7 +4835,7 @@ async function gateMerge(root, state, plan) {
 /**
  * `--rerun <gate>…`: the named gates again on the merge in place, then any gate of its selection with
  * no verdict yet, and any whose verdict a path changed since reaches, keeping every other verdict and
- * saying when each was given. Every verdict kept is one a stage counts. With no merge open, `rerunCheckout`.
+ * saying when each is given. Every verdict kept is one a stage counts. With no merge open, `rerunCheckout`.
  */
 async function rerunGates(root, options) {
   const state = readState(root);
@@ -4869,7 +4862,7 @@ async function rerunGates(root, options) {
 
   const { chosen } = chooseGates(root, state, plan);
   const results = state.results?.[branch] ?? {};
-  // A verdict is kept only while no path changed since it was given reaches its gate; one a fix's path reaches
+  // A verdict is kept only while no path changed since it is given reaches its gate; one a fix's path reaches
   // runs again, so every verdict kept is one the stage counts. A tree git cannot write judges none stale.
   const tree = contentTree(root);
   const judging = standingFor(root, tree);
@@ -4945,7 +4938,7 @@ async function gateCheckout(root, options, watch = null, trees = null) {
     throw new Refusal(`${SCRATCH}/ is not ignored here, so the gate logs would change the tree being gated`);
   }
   requireVerdictsIgnored(root);
-  // INTEGRATE1j (F6): the declared runner hands the plan it read from the declaration it was given; the tree's own file is never read for it.
+  // The declared runner hands the plan it read from the declaration it is given; the tree's own file is never read for it.
   const plan = options.givenPlan ?? readPlan(root);
   const dir = join(root, SCRATCH, `full-${head.slice(0, 7)}`);
   clearLogs(dir);
@@ -4969,7 +4962,7 @@ async function gateCheckout(root, options, watch = null, trees = null) {
   const flakes = results.filter((result) => result.verdict === 'FLAKE');
   console.log('');
   if (watch?.superseded || trees?.ended) {
-    // CIPRIO1, CIPRIO1c: never judged as a fail or a pass; the verdicts of the gates that ran stay recorded, and the gates
+    // Never judged as a fail or a pass; the verdicts of the gates that ran stay recorded, and the gates
     // it ended gave none.
     const names = (list) => list.map((each) => each.gate?.name ?? each.name);
     const ran = names(results.filter((result) => result.verdict !== 'ENDED'));
@@ -5040,7 +5033,7 @@ function passedOnly(root) {
     + `${plan.length - judged.missing.length} of ${plan.length} gates${judged.passed && !evidence.ok ? ", but the stage's evidence is missing (CISCOPE1d)" : ''}.`);
   for (const line of stageLines(judged.gates)) console.log(line);
   for (const line of evidence.lines) console.log(line);
-  // The smallest command that would pass it, which the publish's refusal names in turn. CISCOPE1d: a stage with no
+  // The smallest command that would pass it, which the publish's refusal names in turn. A stage with no
   // receipt, or a sweep overdue, needs the stage's own run in the gate tree, which also runs whatever the verdicts lack.
   const remedy = evidence.remedy ?? stageRemedy(judged.gates);
   if (remedy) console.log(remedyLine(remedy));
@@ -5072,7 +5065,7 @@ function sweepRecord(home, plan, verdicts = readVerdicts(home).verdicts) {
 }
 
 /**
- * CISCOPE1d (design §5.3 points 1 and 2): what a stage needs beside its gates' verdicts. The checkout's content is its commit's
+ * What a stage needs beside its gates' verdicts. The checkout's content is its commit's
  * tree (a dirty checkout is refused, whatever its verdicts); a background run finished on that tree and its receipt counts
  * (`receiptFor`: ordinary, nightly, a plain `--ci`, `--ci --stage` or `--full --beside`, never a sweep-only run); and no
  * Process half's sweep is overdue in `local/ci-sweep.json`. There is no waiver: a known-red test fails its gate here as any
@@ -5118,8 +5111,8 @@ const stageVerdict = (judged, plan) => `the full set has ${judged.passed ? '' : 
 /**
  * `--rerun <gate>…` with no merge open, and `--stale`: on the checkout as it stands, merging nothing, the named
  * gates and each the stage calls stale (`checkoutRerun`), every verdict recorded where `--passed` reads it; then the
- * stage's answer, and the smallest command for what it still lacks. Outside a merge, `--rerun` used to refuse, so a gate
- * that flaked in the full set, or a fix committed after it, left `--full` again, about an hour and a half, as the only
+ * stage's answer, and the smallest command for what it still lacks. Outside a merge, a gate
+ * that flakes in the full set, or a fix committed after it, need not send `--full` again, about an hour and a half, as the only
  * way to a stage.
  *
  * A clean tree only, naming what is not: the verdicts are recorded with HEAD's commit, and a re-run is for a commit (one
@@ -5347,7 +5340,7 @@ function dropBatch(root) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// GATEWT1: the full set in its own worktree, beside the merges
+// The full set in its own worktree, beside the merges
 
 /** Whether a process runs with this pid: signal 0 asks without sending, and EPERM is one that runs as someone else. */
 export function pidAlive(pid) {
@@ -5393,7 +5386,7 @@ function holderSaid(held) {
  * process no longer runs (its window closed on it) is taken over, and returned as `stale` for the caller to say, with
  * `ended`: the pids `end` ended, the dead pid's direct children started since the lock's `at`
  * with their trees, and the processes since then naming the gate tree's folder whose parent no longer
- * runs. Only Windows ends any: elsewhere both are no-ops. CI1: `holder` names the run (`full` or `ci`); a refusal is `busy`,
+ * runs. Only Windows ends any: elsewhere both are no-ops. `holder` names the run (`full` or `ci`); a refusal is `busy`,
  * which the CI watch reads as a tree to wait for, never a failure.
  */
 export function takeGateLock(home, { commit, holder = 'full', alive = pidAlive, now = nowIso, end = endOrphans, endStrays = endStranded } = {}) {
@@ -5478,7 +5471,7 @@ export function gateTreeVerdict(facts, { atMerge = false } = {}) {
     return { remove: false, why: `${what} (pid ${lock.pid}, since ${when(lock.at)}, on ${lock.commit.slice(0, 7)}): never removed while it runs` };
   }
   if (!facts.listed) return folderVerdict(facts.folder);
-  // A full set started there by hand, as before GATEWT1, holds no lock: what runs inside is the only sign of it.
+  // A full set started there by hand holds no lock: what runs inside is the only sign of it.
   if (facts.processError) return { remove: false, why: `whether a process runs inside it could not be read (${facts.processError})` };
   if (facts.processes?.length) {
     return { remove: false, why: `a running process is inside it (${facts.processes.map(processSaid).join('; ')}), and no lock says whose run: it is never removed while one runs` };
@@ -5640,11 +5633,11 @@ const UNDER_LOAD = 'under load: a full set beside the merges shares the machine 
   + 'loaded; its failures are still re-run alone once its lane is quiet, and a pass alone still reads FLAKE (GATEORDER1, FLAKE1)';
 
 /**
- * A full set beside the merges is a guest on the machine (D180's budget). It lowers its own process to below
+ * A full set beside the merges is a guest on the machine. It lowers its own process to below
  * normal: on Windows a process created by a below-normal one starts in that class, so every gate's shell, npm, dotnet,
  * test host and git runs below normal with no race, and the run ends with the process, so nothing is restored. Below
  * normal, not idle: idle starves behind a busy machine and a Process half's timing tests would flake. I/O priority is
- * left out (Node has no API for it, and whether children inherit background mode is unsettled; CIPRIO1b measures).
+ * left out (Node has no API for it, and whether children inherit background mode is unsettled).
  * Returns what went wrong, or null.
  */
 export function lowerPriority(setPriority = osSetPriority) {
@@ -5672,7 +5665,7 @@ export function startBesideRun({ setPriority = osSetPriority, env = process.env,
 }
 
 /**
- * The Process lane's bounds are wall-clock and starved below normal (the rehearsals; FAMILYFAIL1c: the
+ * The Process lane's bounds are wall-clock and starved below normal (the rehearsals, the
  * Process halves and each test re-run alone too, 59 of whose timing tests failed beside five workers): its step is raised
  * to normal and what it starts inherits that. A failure to raise is said once and the step goes on.
  */
@@ -5809,7 +5802,7 @@ async function gateBeside(root, options) {
     console.log(UNDER_LOAD);
     let code;
     // Only a run of main's tip is superseded by a newer tip; one given a commit gates that commit whatever main does.
-    // CIPRIO1c: the move ends the gates running at once, each with its tree, rather than before the next.
+    // The move ends the gates running at once, each with its tree, rather than before the next.
     const tip = () => git(home, ['rev-parse', '--verify', '--quiet', `refs/heads/${MAIN}^{commit}`], { allowFail: true }).out.trim() || null;
     const watch = watchTip(options.besideCommit ? null : commit, tip, {
       onMove: (moved) => trees.end(`main moved from ${moved.from.slice(0, 7)} to ${moved.to.slice(0, 7)}`),
@@ -5845,9 +5838,9 @@ async function gateBeside(root, options) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// INTEGRATE1j: this tool as the repository's declared `verification` runner
+// This tool as the repository's declared `verification` runner
 
-/** The runner's inputs (§5.9), each set on its job alone: D192's two, and the ones integration's calls add. */
+/** The runner's inputs, each set on its job alone: the declared runner's own, and the ones integration's calls add. */
 const VERIFY_INPUTS = ['COMMIT', 'RESULT', 'MODE', 'BASE', 'DECLARATION', 'GATES', 'FAILURE', 'TREE'];
 const VERIFY_MODES = ['run', 'plan', 'probe', 'commits'];
 /** Why each mode needs the candidate's base: every schema-2 answer names it, and `run` and `plan` reach their gates from it. */
@@ -5862,7 +5855,7 @@ const FULL_OBJECT_ID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 /**
  * The runner's inputs read from `env` (the environment the tool started with), each refused in a sentence where it is missing, not
  * what it must be, or at odds with another: the tip (a full object id, never one a person's shell left behind: the flag alone reads it),
- * the file to answer in, the declaration handed (the only source of the gates, F6), the mode (none asked is D192's schema 1), the
+ * the file to answer in, the declaration handed (the only source of the gates, F6), the mode (none asked is schema 1), the
  * base every mode answers for, the tree a caller made, the gates a `run` or a `plan` is narrowed to (comma-separated, by the names
  * the declaration writes), and the file naming the failure a `probe` repeats. A refusal here has no file to be written to.
  */
@@ -5928,7 +5921,7 @@ export function verifyNamed(plan, names) {
 }
 
 /**
- * The declaration's gates as the runner runs them (F6): read from the text it was handed, in the plan's order, each with `declared`,
+ * The declaration's gates as the runner runs them (F6): read from the text it is handed, in the plan's order, each with `declared`,
  * the name the declaration writes (the answer's name; `name` is the slug a log is kept by). No release-workflow step is added. A
  * declaration that repeats a name, or whose `integration` breaks a shape, is refused: the answer could not name its gates apart.
  */
@@ -5945,12 +5938,12 @@ export function verifyPlan(text) {
   return gatePlan(declared, '', { keepDeclared: true });
 }
 
-/** The tool's verdicts as D192's schema 1 names them. */
+/** The tool's verdicts as schema 1 names them. */
 const VERIFY_VERDICTS = Object.freeze({ PASS: 'pass', FLAKE: 'flake', FAIL: 'fail', ENDED: 'ended' });
 
 /**
  * The schema-1 `gates` of a run: every gate of the plan, under the declared name, `not-run` where no result is given. `keep` maps a
- * log to the path where it stays once the run has ended (nothing, and no `log`, where it was not kept); `seconds` is a gate's wall.
+ * log to the path where it stays once the run has ended (nothing, and no `log`, where it is not kept); `seconds` is a gate's wall.
  */
 export function verifyGates(plan, results, { keep = (log) => log, seconds = () => undefined } = {}) {
   return plan.map((gate) => {
@@ -5968,13 +5961,13 @@ export function verifyGates(plan, results, { keep = (log) => log, seconds = () =
   });
 }
 
-/** The `commits` mode's answer (schema 2): the commit check's attribution problems for the range, `declaration` the blob id it was handed. */
+/** The `commits` mode's answer (schema 2): the commit check's attribution problems for the range, `declaration` the blob id it is handed. */
 export function verifyCommitsAnswer({ commit, base, declaration, commits }) {
   return { schema: 2, mode: 'commits', commit, base, declaration, problems: commitAttributionProblems(commits) };
 }
 
 /**
- * INTEGRATE1j (design §5.5): the environment a gate is composed with, as its composition records it: the rule (the names it never
+ * The environment a gate is composed with, as its composition records it: the rule (the names it never
  * inherits, `GATE_REMOVED`, and the build servers of its own, `BESIDE_ENVIRONMENT`), never a value the machine holds, so two runs on
  * one machine compose alike and a change of the rule changes every digest.
  */
@@ -5997,7 +5990,7 @@ export function compositionDigest(units, settings) {
 }
 
 /**
- * INTEGRATE1j (design §4.5, §5.9): what a gate ran with, so one of its failures can be repeated as composed. `units`: the classes it
+ * What a gate ran with, so one of its failures can be repeated as composed. `units`: the classes it
  * ran where it ran by class (a Process half by reach, the git half within its budget), sorted; null where it ran whole, every unit its
  * command selects. `settings`: the gate as the declaration writes it (its name, command and folder), the run settings its command
  * names as the commit holds them (`runsettings`, null where it names none), the classes its run settings left out (`narrowed`), and
@@ -6039,8 +6032,8 @@ function runSettingsAt(where, commit, gate) {
 
 /**
  * The `run` mode's gates (design §5.9): each gate it ran as schema 1 answers it (`verifyGates`), with its `composition` (`units`; the
- * path where its settings file stays once the run has ended, omitted where it was not kept; `digest`) and its `failures`, each
- * `{ unit, test, signature }`. `compositions` maps a gate's log name to its composition and the file it was written to.
+ * path where its settings file stays once the run has ended, omitted where it is not kept; `digest`) and its `failures`, each
+ * `{ unit, test, signature }`. `compositions` maps a gate's log name to its composition and the file it is written to.
  */
 export function verifyRunGates(plan, results, { keep = (path) => path, seconds = () => undefined, compositions, failures }) {
   return verifyGates(plan, results, { keep, seconds }).map((answered, at) => {
@@ -6064,10 +6057,10 @@ function classDetail(gate) {
 }
 
 /**
- * INTEGRATE1j (design §4.3, §5.9): the `plan` mode's three lists, each declared gate in one of them once, under the name the declaration
+ * The `plan` mode's three lists, each declared gate in one of them once, under the name the declaration
  * writes, in the plan's order. `run`, `{ name, why }`: the scoped set's run (`set`), with the classes a half runs (`gates`, as
  * `scopedGates` shapes them). `kept`, `{ name, why, commit, tree, standing }`: a gate whose pass stands on the tree (`kept`, `ciPlan`'s),
- * with the commit and tree that pass was given on and how it stands; a half every class of which is kept (`composed`) on its last pass.
+ * with the commit and tree that pass is given on and how it stands; a half every class of which is kept (`composed`) on its last pass.
  * `deferred`, `{ name, why }`: the scoped set's, and a gate no path of the candidate reaches whose pass does not stand, which the
  * background run answers for. With `named` (DAORIS_VERIFY_GATES), the plan is those gates, each run whole.
  */
@@ -6098,7 +6091,7 @@ export function verifyPlanAnswer({ plan, set = { run: [], kept: [], deferred: []
 }
 
 /**
- * INTEGRATE1j (design §5.9): the failure a `probe` repeats, read from the file `DAORIS_VERIFY_FAILURE` names: one failure of a `run`
+ * The failure a `probe` repeats, read from the file `DAORIS_VERIFY_FAILURE` names: one failure of a `run`
  * answer with the gate it failed in and that gate's composition as the answer gave them, `{ gate, unit, test, signature, composition:
  * { units, settings, digest } }`. Answers the plan's gate, the failure as the queue's probe takes it (`names`: `gate` where its
  * signature is a gate's step, `test` otherwise), and the composition; each part missing or misshapen is refused in a sentence.
@@ -6178,7 +6171,7 @@ function verifyPlanLines(answer) {
 }
 
 /**
- * INTEGRATE1j (design §5.9): a probe's failure and the composition it is to be repeated by, judged before the runner takes any tree,
+ * A probe's failure and the composition it is to be repeated by, judged before the runner takes any tree,
  * so a refusal writes nothing and runs nothing. The failure's file is read (`verifyFailure`); the settings file its composition names
  * must be the one kept, its digest the one handed; and the composition the probe would build at `commit` (the declaration handed, the
  * run settings the commit holds, the environment's rule, the units and the classes the run left out) must have that digest too, else
@@ -6210,10 +6203,10 @@ function probeComposition(where, inputs, plan, commit) {
 }
 
 /**
- * INTEGRATE1j (design §4.5, §5.9; the nearest code is `prefixRunner`): one failure repeated as its gate composed it, in `tree` at the
+ * One failure repeated as its gate composed it, in `tree` at the
  * probe's commit: the failing test's class, or the gate's own command for a failure that named no test (`prefixCommand`), under the
  * gate's run settings narrowed as its run's were, with the gate environment, holding the gate's place in the machine's admission. So a
- * test its own class pollutes fails again, where it alone would pass. Judged on that run alone, whatever a Process half's FLAKE1 re-run
+ * test its own class pollutes fails again, where it alone would pass. Judged on that run alone, whatever a Process half's flake re-run
  * alone says after it: `pass`; `fail` with the failure's own signature, or with the first other one; `cannot` where the gate failed
  * outside any test. Its log stays in the main checkout's scratch.
  */
@@ -6246,7 +6239,7 @@ async function probeAsComposed(tree, home, { gate, failure, settings }, sha, tre
 }
 
 /**
- * `--full --beside --daoris-verify`: this tool as D192's declared runner. Its inputs are the environment's `DAORIS_VERIFY_*`, read
+ * `--full --beside --daoris-verify`: this tool as the declared runner. Its inputs are the environment's `DAORIS_VERIFY_*`, read
  * once from the start environment and then removed from this process, so nothing it starts holds one. It runs the handed declaration's
  * gates at the named commit, in the gate tree it makes as `--full --beside` does, or in the tree a caller handed (the caller's: no
  * lock taken, no private file copied in; only the dependencies the gates need, installed where the tree lacks them), and answers
@@ -6254,7 +6247,7 @@ async function probeAsComposed(tree, home, { gate, failure, settings }, sha, tre
  * `commits` mode the commit check's problems on base..commit. It writes no gate record and no receipt: a stage is allowed by
  * `--full --beside` alone.
  *
- * INTEGRATE1j part 2 (design §5.9): the schema-2 modes. `run` runs its plan's run, each gate's composition written beside its log
+ * The schema-2 modes. `run` runs its plan's run, each gate's composition written beside its log
  * first, and answers by gate with each composition and the failures read from it, beside the plan's kept and deferred; `plan` says
  * what a run would run, keep and defer, and runs nothing; `probe` repeats one failure of a run as composed. Every answer is written
  * whole, or nothing is and the refusal exits 2; a run that started and did not finish answers `unfinished` (`verifyUnfinished`).
@@ -6430,7 +6423,7 @@ async function gateVerify(root, options) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// CI1: the local CI runner, main's tip gated after each merge in the gate tree
+// The local CI runner, main's tip gated after each merge in the gate tree
 
 /** The CI's record in the main checkout: its last green run, and each run's commit and end, the newest last. */
 export const CI_RECORD = 'local/ci.json';
@@ -6463,7 +6456,7 @@ const CI_MOVES = 5;
 
 /**
  * When the light lane runs wider. Before its gates start a CI run measures the machine over `sampleMs` (`measureLoad`): it is
- * idle when at most `busy` of its processors' time was busy and its free commit and free physical memory are each at least
+ * idle when at most `busy` of its processors' time is busy and its free commit and free physical memory are each at least
  * `freeGb`; then the light lane is `width` wide, else `LIGHT_WIDTH`, a merge's. Its own gates are what loads it next, so it is
  * measured once, before them. Five places: the three components' chains hold three, and the gates that build none
  * (orient-index, web-types, web-rules, tool-tests, web-unit, web-measured) waited for a fourth. The width is chosen, not
@@ -6472,12 +6465,12 @@ const CI_MOVES = 5;
 export const CI_IDLE = Object.freeze({ busy: 0.25, freeGb: 16, width: 5, sampleMs: 1_000 });
 
 /**
- * What a CI run gates on a tree, from the verdicts store (`stageJudgement`, GATE6's standing), the records no excuse: a
+ * What a CI run gates on a tree, from the verdicts store (`stageJudgement`'s standing), the records no excuse: a
  * gate runs when no verdict that stands on this tree passed it. A pass stands while no path changed since reaches its gate
  * (`reaching`, the lane table), so the delta since a gate's last pass is what runs it again, and a gate a run failed stays
  * owed, whatever changes, until a run passes it (the pipeline design's §4.7). The stage forgives the records, which the
  * install carries none of; the CI runs what they reach (the universal gates, the CLI's verify), so a records commit is
- * checked too. Every other gate is kept, with the verdict that stands and how it stands. CIFAST1: a gate `owe` names that
+ * checked too. Every other gate is kept, with the verdict that stands and how it stands. A gate `owe` names that
  * lacks a pass is `owed` for a stage rather than run (a plain run hands it `STAGE_REHEARSALS`' gates, the stage's path none).
  */
 export function ciPlan({ plan, verdicts, tree, drift, reaching, owe = [], now = Date.now(), bound = SWEEP_BOUND_MS, ageWhole = false }) {
@@ -6490,7 +6483,7 @@ export function ciPlan({ plan, verdicts, tree, drift, reaching, owe = [], now = 
 }
 
 // ---------------------------------------------------------------------------------------------------
-// PROCREACH1: a Process half the CI owes, run by the classes a change reaches
+// A Process half the CI owes, run by the classes a change reaches
 
 /**
  * Which classes of a Process half the CI owes it runs, and which it keeps. `classes` are the half's
@@ -6506,7 +6499,7 @@ export function ciPlan({ plan, verdicts, tree, drift, reaching, owe = [], now = 
  * misses goes unseen); or when every class is kept and something may be hidden (`composeRefusal`). `sweep` is the oldest
  * kept verdict's time, which the half's verdict carries for the stage (`sweptOut`).
  *
- * CISCOPE1b: a half whose every class is kept passes without running (`composed` says why) only when
+ * A half whose every class is kept passes without running (`composed` says why) only when
  * `last`, the half's newest gate verdict with how it stands on this tree (`verdictStanding`), is a pass gone stale by reach
  * whose results are complete and whose classes the census matched. Anything else, a half that failed outside a test among it,
  * runs whole for a verdict of its own.
@@ -6574,7 +6567,7 @@ export function classPlan({ classes, verdicts, tree, drift, reached, last = null
 }
 
 /**
- * Why a half whose every class is kept may not pass by them, or null when nothing was hidden. `last` is the half's
+ * Why a half whose every class is kept may not pass by them, or null when nothing is hidden. `last` is the half's
  * newest gate verdict and its standing: it must be a pass (a failure with every class passing failed outside a test), gone
  * stale by paths that reach the gate (one that cannot be compared says nothing), with its classes' results read (a trx), and
  * the census and the runner agreeing on that run's classes: none it ran that the census lacks and, when it ran whole, none of
@@ -6615,9 +6608,9 @@ export function lastVerdict(gate, verdicts, { tree, drift, isRecord, reaching })
  * and the lane table's paths for the gate (`standing.reaching`). A half run by reach is handed run settings of its own, written
  * into the run's `dir` beside its log (`reachSettings`, named so the merge tool still reads it as the half it is), and its plan
  * as `reach`; a whole half keeps its command and is handed its plan too, so its verdict says it kept none. A census that cannot
- * be read, or a half whose command names no settings, runs whole and says why. CISCOPE1b: each half is judged with its newest
+ * be read, or a half whose command names no settings, runs whole and says why. Each half is judged with its newest
  * gate verdict in `verdicts` (the gate store's) and how that stands, and a half its plan composes (`composed`) is not run.
- * INTEGRATE1j: with no `dir` nothing is written, and a half by reach keeps its command: the declared runner's plan runs nothing.
+ * With no `dir` nothing is written, and a half by reach keeps its command: the declared runner's plan runs nothing.
  */
 function reachedHalves({ tree, treeId, gates, standing, verdicts = [], home, dir, now = Date.now(), whole = new Map(), owedAnyway = new Set() }) {
   const plans = new Map();
@@ -6686,7 +6679,7 @@ function reachLines(name, plan) {
   ];
 }
 
-/** The share of the processors' time that was busy between two `os.cpus()` readings, across all of them; null when not measured. */
+/** The share of the processors' time that is busy between two `os.cpus()` readings, across all of them; null when not measured. */
 export function cpuBusy(before, after) {
   if (!Array.isArray(before) || !Array.isArray(after) || !before.length || before.length !== after.length) return null;
   const sum = (times) => Object.values(times ?? {}).reduce((all, each) => all + (Number(each) || 0), 0);
@@ -6699,7 +6692,7 @@ export function cpuBusy(before, after) {
   return total > 0 ? Math.min(1, Math.max(0, 1 - idle / total)) : null;
 }
 
-/** The machine's load before a CI run's gates start: its processors' busy share over `ms`, and MEMGATE1's reading of its memory. */
+/** The machine's load before a CI run's gates start: its processors' busy share over `ms`, and the reading of its memory. */
 export async function measureLoad({ cpus = osCpus, sleep = (ms) => new Promise((done) => { setTimeout(done, ms); }), read = readMemory, ms = CI_IDLE.sampleMs } = {}) {
   const before = cpus();
   await sleep(ms);
@@ -6735,8 +6728,8 @@ export function ciWidth({ busy, physical, commit }) {
  * commit and its tree, the run's state (`running`, then `green`, `failed`, `stopped` or `error`), its pid and times, the delta
  * since the last green run, the light lane's width and why, and every gate of the plan in its order: `waiting` for one it runs,
  * then `running` and `done` with its verdict, time, log and note, or `not run`; `kept` for one whose verdict stands, with that
- * verdict, the commit and tree it was given on, how it stands (`exact`, `unreached`), and its log where a CI run kept one.
- * CIFAST1: whether it is the stage's path (`stage`), the gates it owes a stage (`owed`), and each such gate `owed`, neither
+ * verdict, the commit and tree it is given on, how it stands (`exact`, `unreached`), and its log where a CI run kept one.
+ * Whether it is the stage's path (`stage`), the gates it owes a stage (`owed`), and each such gate `owed`, neither
  * failed nor passed, its note naming the run that pays it.
  */
 export function ciStatus({ commit, tree, plan, chosen, since, light, pid, at, logOf, stage = false, kind = stage ? 'stage' : 'ci' }) {
@@ -6830,11 +6823,11 @@ export function nightHour(env = process.env) {
 const overdueSaid = (record, halves, hour) => overdueLines(hour === null ? { ...record, night: { last: nowIso() } } : record, halves, Date.now(), { hour: hour ?? NIGHT_HOUR });
 
 /**
- * CISCOPE1d (design §5.1, §5.2): what a CI run's end writes beside its verdicts. The due record: each Process half it ran whole
+ * What a CI run's end writes beside its verdicts. The due record: each Process half it ran whole
  * and gave every class a verdict (`sweepSatisfied`) is swept, and a nightly run that finished satisfies the night. The findings:
  * each failure it found is filed as known red (a Process half's by test from its trx, with row 3's fingerprint and signature, the
  * source read from the run's own tree; any other gate's by its step, `gateSignature`), a death of memory never; each pass clears
- * the known red of its test (a trx's passing tests) or its gate on a commit on main's first-parent line from where it was last
+ * the known red of its test (a trx's passing tests) or its gate on a commit on main's first-parent line from where it is last
  * seen. Answers what the run says of them, the overdue report and the known red the watch says.
  */
 function noteBackground({ home, tree, plan, commit, kind, state, started, ended, results, kept = [], treeId = null }) {
@@ -6925,10 +6918,10 @@ function noteBackground({ home, tree, plan, commit, kind, state, started, ended,
  * where a merge landed meanwhile, moves to the newest before any gate starts (`CI_MOVES`), so a newer tip supersedes a run not
  * yet started. Once its gates start it runs to its verdict, as a pipeline's run does: what lands
  * meanwhile is the next run's. It runs what the tree's verdicts lack (`ciPlan`), every gate the first time, keeping going past a
- * failure (but a stage's run, which ends at its first: CISTAGEFAIL1), a guest on the machine as a run beside is, its light lane as wide as the measured load allows
+ * failure (but a stage's run, which ends at its first), a guest on the machine as a run beside is, its light lane as wide as the measured load allows
  * (`ciWidth`), scheduled by memory (`laneSchedule`'s `byMemory`). Each verdict goes to the main checkout's store as a merge's
  * does, the logs and the status to its `local/scratch/ci-<sha7>/`, the run to the CI's record. `stopAsked` (the watch's stop)
- * and a Ctrl+C end its gates' trees, its finished verdicts kept. 0 green, 1 failed or stopped. CIFAST1: a plain run owes the
+ * and a Ctrl+C end its gates' trees, its finished verdicts kept. 0 green, 1 failed or stopped. A plain run owes the
  * stage's rehearsals (`STAGE_REHEARSALS`) and is green on the rest; `options.ciStage`, the stage's path, runs them too.
  */
 async function gateCi(root, options, { stopAsked = () => false } = {}) {
@@ -7105,12 +7098,12 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
     for (const gate of status.gates) if (gate.state === 'waiting' || gate.state === 'running') gate.state = 'not run';
 
     const judgedAfter = ciPlan({ ...standing, owe, plan: names, verdicts: readVerdicts(home).verdicts, ageWhole: kind === 'stage' });
-    // A sweep alone is judged on the half it ran, never on the gates it was not asked to run.
+    // A sweep alone is judged on the half it ran, never on the gates it is not asked to run.
     const after = kind === 'sweep' ? { ...judgedAfter, run: judgedAfter.run.filter((name) => chosen.run.includes(name)), owed: [] } : judgedAfter;
     const state = stageFailed ? 'failed' : trees.ended ? 'stopped' : after.run.length === 0 ? 'green' : 'failed';
     const ended = nowIso();
     const ranNames = results.filter((result) => result.verdict !== 'ENDED').map((result) => result.gate.name);
-    // The record says which run was the stage's path, and what a plain one left owed.
+    // The record says which run is the stage's path, and what a plain one leaves owed.
     const noted = { commit, state, at: ended, status: fromHome(home, statusFile), kind, ...(kind === 'stage' ? { stage: true } : {}), ...(after.owed.length ? { owed: after.owed } : {}) };
     noteCiRun(home, noted, state === 'green' && kind !== 'sweep' ? { commit, tree: treeId, at: ended } : null);
     writeGateRecord(home, { commit, started, ended, passed: state === 'green', staged: null, by: 'ci' });
@@ -7194,13 +7187,13 @@ async function gateCi(root, options, { stopAsked = () => false } = {}) {
  * The watch's loop, its seams handed in. Every `pollMs` it reads main's tip; a tip no CI run here ended on (`gated`), that
  * this watch has not taken up already, is gated (`run`) once the gate tree is idle (`holder`: who holds it, null when none),
  * and the tip is read again at once after, so the tips that landed while a run went give way to the newest. A tree held is
- * waited for, said once; a run refused because the tree was taken meanwhile (`busy`) is tried again; any other failure is
+ * waited for, said once; a run refused because the tree is taken meanwhile (`busy`) is tried again; any other failure is
  * said once and that tip not tried again by this watch. It ends, 0, once `stopAsked`, read every `tickMs`.
  *
- * CISCOPE1d (design §5.1): `schedule(tip)` says which run is next and why (`ci-background.mjs`'s `nextRun`: a night due first,
+ * `schedule(tip)` says which run is next and why (`ci-background.mjs`'s `nextRun`: a night due first,
  * then a tip with no verdict, then a due sweep with no promotion to ride), and `run(kind)` starts it; one of a kind is tried once
  * per tip, so a night that cannot finish, or a sweep its build leaves due, is not started again until main moves. Without a
- * schedule it gates the tip alone, as CI1 did. `report()` gives the overdue report and the known red, said each time it changes.
+ * schedule it gates the tip alone. `report()` gives the overdue report and the known red, said each time it changes.
  */
 export async function watchCi({ tip, gated, holder, run, stopAsked, sleep, say, pollMs = CI_WATCH_MS, tickMs = CI_TICK_MS, now = Date.now, schedule = null, report = null }) {
   const tried = new Set();
@@ -7364,7 +7357,7 @@ async function ciStopVerb(root) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-// CISCOPE1e: the merge queue, its candidates in the scope tree, and the scoped run
+// The merge queue, its candidates in the scope tree, and the scoped run
 
 /** How often a waiting invocation reads the queue, and how often the runner looks again when it waits. */
 const QUEUE_POLL_MS = Number(process.env.MERGE_BRANCH_QUEUE_POLL_MS) || 5_000;
@@ -7402,12 +7395,12 @@ const START_ENVIRONMENT = Object.freeze({ ...process.env });
 
 /**
  * The variables the tool tests' stand-in gates read. The tests write their paths into their gates now, so a name here
- * in a runner's environment was inherited from a test's process, as the leak's runner inherited the class probe's on 2026-10-28.
+ * in a runner's environment is inherited from a test's process, as the leak's runner inherited the class probe's on 2026-10-28.
  */
 export const HARNESS_VARIABLES = Object.freeze(['QUEUE_DRAIN_DIR', 'QUEUE_DROP_HOLD']);
 
 /**
- * INTEGRATE1a (design §5.5): the names a gate never inherits, in one list a test, a census and the driver's twin read. Every Daoris name
+ * The names a gate never inherits, in one list a test, a census and the driver's twin read. Every Daoris name
  * (the home, the roles, the keys, the admission's hold marker: the hold's own plumbing to a gate is still owed); git's repository-locating
  * variables (inherited, they redirect a gate's git to another repository, `docs/development.md`); the tool's own switches
  * (`MERGE_BRANCH_*`, the runner's inputs and no gate's); and the tool tests' stand-in gates' variables.
@@ -7422,12 +7415,12 @@ export const GATE_REMOVED = Object.freeze([
 /**
  * The environment of every gate, probe, re-run, rehearsal and repository script this tool starts (git's own commands keep
  * theirs): the tool's own at its start (`start`), never `process.env` as something in this process changed it since, without
- * `GATE_REMOVED`, with the build servers of its own (`BESIDE_ENVIRONMENT`). It was the queue's alone; on 2026-10-28
+ * `GATE_REMOVED`, with the build servers of its own (`BESIDE_ENVIRONMENT`). On 2026-10-28
  * the steward's shell held the install's home, and every gate of every runner it started inherited it.
  */
 export function gateEnvironment(start = START_ENVIRONMENT, { pass = [] } = {}) {
   const kept = Object.entries(start).filter(([name, value]) => value !== undefined && !GATE_REMOVED.some((pattern) => pattern.test(name)));
-  // INTEGRATE1d part 4 (design §5.5): the names an accepted declaration's `env.pass` lists come back from the start environment, in
+  // The names an accepted declaration's `env.pass` lists come back from the start environment, in
   // any case, a name the removed list took among them, never a Daoris name (the declaration's own read refuses one; this holds it too).
   const wanted = new Set(pass.filter((name) => !/^daoris_/i.test(name)).map((name) => name.toUpperCase()));
   const passed = Object.entries(start).filter(([name, value]) => value !== undefined && wanted.has(name.toUpperCase()));
@@ -7435,7 +7428,7 @@ export function gateEnvironment(start = START_ENVIRONMENT, { pass = [] } = {}) {
 }
 
 /**
- * INTEGRATE1d part 4: the names the owner accepted for a gate to receive beyond the composed base. Only the declared runner sets them,
+ * The names the owner accepted for a gate to receive beyond the composed base. Only the declared runner sets them,
  * from the declaration it is handed, which the caller makes of the accepted blob (§5.9): a merge in place reads no acceptance, since the
  * tool has no way to read the install's without its home, and passes nothing.
  */
@@ -7445,7 +7438,7 @@ let acceptedPass = [];
 const gateStep = (command, cwd, fd, options = {}) => runStep(command, cwd, fd, { ...options, env: gateEnvironment(START_ENVIRONMENT, { pass: acceptedPass }) });
 
 /**
- * The Daoris home as the tool read it at its start, before anything was composed or changed: the admission's file is found
+ * The Daoris home as the tool read it at its start, before anything is composed or changed: the admission's file is found
  * from it, and nothing reads `DAORIS_HOME` from the live environment after (F20).
  */
 const START_HOME = Object.entries(START_ENVIRONMENT).find(([name, value]) => name.toUpperCase() === 'DAORIS_HOME' && value)?.[1] ?? null;
@@ -7467,7 +7460,7 @@ function withQueue(home, change) {
  * queue's lock (a read made beside a writer must never mistake a record it could not read for a drop); once it is no longer this
  * frozen candidate (dropped, or replaced), `trees.end` ends every step the run owns, each with what it started, through the
  * same cancellation a superseded run uses, and the run starts nothing more. It is asked at each tick and before each
- * probe; the timer keeps no process alive. `taken()` says the drop was taken before anything is ended.
+ * probe; the timer keeps no process alive. `taken()` says the drop is taken before anything is ended.
  */
 export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS, superseded = () => null, taken = () => {} } = {}) {
   const watch = {
@@ -7521,7 +7514,7 @@ export function watchCandidate(candidate, current, trees, { ms = DROP_POLL_MS, s
 /** The reason a watch ends a run for a drop or a replacement of its candidate. */
 const DROPPED = 'the candidate was dropped or replaced';
 
-/** A probe the drop ended: the judgement stops where it stands, and the run answers that it was drained. */
+/** A probe the drop ended: the judgement stops where it stands, and the run answers that it is drained. */
 class Drained extends Error {
   constructor(probe = null) {
     super('the candidate was dropped: its probe was ended');
@@ -7540,7 +7533,7 @@ function requireQueueIgnored(home) {
 }
 
 /**
- * Why a queue verb is refused where it was started, or null. The queue is its home's (`verdictsHome`, the
+ * Why a queue verb is refused where it is started, or null. The queue is its home's (`verdictsHome`, the
  * repository's first worktree), and only that checkout queues to it or runs it: a verb started in a linked worktree, or in a
  * folder git read as one (a tool test's scratch whose `.git` a reset had removed, 2026-10-28), never reaches the main checkout's
  * queue. A verb that may start the runner (`run`) is refused too where the tool running it is another checkout's of the queue's
@@ -7597,7 +7590,7 @@ function toolCheckout(home) {
   return { tool: resolve(top), sameRepository: theirs.status === 0 && samePath(common, theirs.out.trim()) };
 }
 
-/** The verb refused, with `queueHomeRefusal`'s sentence, where it was started outside the queue's own checkout. */
+/** The verb refused, with `queueHomeRefusal`'s sentence, where it is started outside the queue's own checkout. */
 function requireQueueHome(root, home, { run = false } = {}) {
   const why = queueHomeRefusal({ root, home, ...(run ? toolCheckout(home) : {}), run });
   if (why) throw new Refusal(why);
@@ -7726,7 +7719,7 @@ export function prefixCommand(gate, failure) {
 /**
  * One failure's selection run on a prefix in the scope tree (§4.1 point 4): the failing test's class, or the failing gate's own
  * command, at the base plus the first `k` members; answers whether it fails with the signature, another way, or cannot run.
- * QUEUEDRAIN1: given the candidate's `watch`, a probe starts only while the candidate stands, runs among the run's step trees, and
+ * Given the candidate's `watch`, a probe starts only while the candidate stands, runs among the run's step trees, and
  * throws `Drained` once the drop ended it.
  */
 export function prefixRunner(tree, candidate, plan, dir, watch = null) {
@@ -7755,7 +7748,7 @@ export function prefixRunner(tree, candidate, plan, dir, watch = null) {
   };
 }
 
-/** The open known red a failure's signature matches, with its expiry and where it was last seen (§5.2), or null. */
+/** The open known red a failure's signature matches, with its expiry and where it is last seen (§5.2), or null. */
 function knownFor(home, failure) {
   const key = signatureKey(failure.signature);
   const finding = readFindings(home).findings.find((each) => each.state === 'red' && each.test === failure.test && each.key === key);
@@ -7788,7 +7781,7 @@ function scopedChoice(home, tree, { plan, base, tip, recordsOnly = false }) {
 /**
  * The gates a scoped choice runs, each as it will run (§4.2): a Process half by class, its run settings written into `dir` beside its
  * log (`reachedHalves`); the git half's reached classes within its budget, a known-red class first, the rest deferred (point 5); a
- * .NET suite with a trx of its own. A half every class of which is kept is not run, and is answered in `composed`. INTEGRATE1j: each
+ * .NET suite with a trx of its own. A half every class of which is kept is not run, and is answered in `composed`. Each
  * gate carries `units`, the classes it runs where it runs by class (null where whole), and `narrowed`, the classes its run settings
  * leave out, which its composition records. With no `dir` nothing is written and each gate keeps its declared command: a plan.
  */
@@ -7824,7 +7817,7 @@ function scopedGates(home, tree, plan, choice, dir) {
 
 /**
  * The scoped run of the queue's candidate, judged (§4.1 points 2 and 4, §4.2): its set run in the scope tree at normal priority,
- * its light lane below normal while the Process lane runs (D180's split, as the CI's), each gate's verdict recorded as `scoped`;
+ * its light lane below normal while the Process lane runs (as the CI's), each gate's verdict recorded as `scoped`;
  * on red each failure judged over the base and the prefixes. Answers what the queue does next (`candidateOutcome`), with the run.
  */
 async function runCandidate(home, candidate) {
@@ -7851,7 +7844,7 @@ async function drainHeld() {
   while (hold && !existsSync(hold) && !ownerEnded(START_ENVIRONMENT)) await sleepMs(25);
 }
 
-/** What the runner does once the drop has ended the candidate's steps: say what was ended, tell the drop, take the next work. */
+/** What the runner does once the drop has ended the candidate's steps: say what is ended, tell the drop, take the next work. */
 async function drained(home, candidate, run, { ended = [], left = [], probe = null, strays = [], why = null } = {}) {
   await drainHeld();
   const record = drainedRecord(candidate, { ended, left, probe, strays });
@@ -7867,7 +7860,7 @@ async function drained(home, candidate, run, { ended = [], left = [], probe = nu
 const NO_ADMISSION = "the machine's admission is off (MERGE_BRANCH_ADMISSION=off, or MERGE_BRANCH_MEMORY=off without it on), so it cannot be shown that the machine held for the confirm run alone";
 
 /**
- * INTEGRATE1b (design §4.5, §5.3 step 3): one failing gate's confirm run in the queue's runner, made once, and only when a failure of
+ * One failing gate's confirm run in the queue's runner, made once, and only when a failure of
  * that gate reaches step 3 (`reading`), so a gate whose failures are all inherited known reds runs none. The gate runs again as the
  * scoped run composed it (its units, its run settings as narrowed, a trx of its own) on the candidate's tip, by `runGate` alone: it
  * takes no place, since the whole admission it runs inside (`take`) holds every place, and it records no verdict, so its pass stands
@@ -7964,7 +7957,7 @@ async function runCandidateWatched(home, candidate, watch) {
     kept: set.kept.map((each) => each.name), deferred: [...set.deferred, ...deferredClasses.map((name) => ({ name, why: "past the git half's budget" }))],
   };
   // Asked once more now every step has ended, so a drop that came as the last gate ended is drained too.
-  // QUEUEDROPLEAK1: and what a test of an ended step had already orphaned (its killed run's child, a detached runner and its gate) is in
+  // And what a test of an ended step had already orphaned (its killed run's child, a detached runner and its gate) is in
   // none of the step trees, so it is ended by the scope tree's folder, once every step has gone and before the drop is told.
   const gone = () => ({
     ended: results.filter((result) => result.verdict === 'ENDED').map((result) => result.gate.name),
@@ -7976,7 +7969,7 @@ async function runCandidateWatched(home, candidate, watch) {
     appendScopeRun(home, { ...run, state: 'ended', why: 'the candidate was dropped or replaced' });
     return { action: 'obsolete' };
   }
-  // §4.1 point 4: a death of memory is the machine's. MEMGATE1 ran it again once already; a second death holds the candidate.
+  // §4.1 point 4: a death of memory is the machine's. The memory re-run ran it again once already; a second death holds the candidate.
   if (memory.length) {
     const step = memoryStep([{ died: true }, { died: true }]);
     appendScopeRun(home, { ...run, state: 'held', on: 'memory' });
@@ -7987,7 +7980,7 @@ async function runCandidateWatched(home, candidate, watch) {
     return { action: 'green', run };
   }
   const judgements = [];
-  // INTEGRATE1b (design §4.5, §11 row b): the owner's policy for a failure that does not recur, read from the main checkout's own
+  // The owner's policy for a failure that does not recur, read from the main checkout's own
   // switch file, `split` where it is unset; and the whole admission each confirm run takes, inconclusive where it is off.
   const policy = readIntegrationPolicy(home);
   console.log(`  ${policy.said}`);
@@ -8022,7 +8015,7 @@ async function runCandidateWatched(home, candidate, watch) {
       for (const { failure, confirm: reading } of confirm.own()) await judge(failure, reading);
     }
   } catch (error) {
-    // A drop ended the probe running (or none was started): what was judged so far is not filed, and the runner goes on.
+    // A drop ended the probe running (or none is started): what is judged so far is not filed, and the runner goes on.
     if (error instanceof Drained) return drained(home, candidate, withConfirms(run), { probe: error.probe, ...gone(), why: watch.trees.ended });
     throw error;
   }
@@ -8168,8 +8161,8 @@ async function queueStep(home) {
     const hold = process.env.MERGE_BRANCH_QUEUE_HOLD;
     if (hold && !existsSync(hold)) return 'wait';
     // The members are taken from the queue as it stands under its lock, never from the step's first read, which a
-    // request queued, dropped or queued again since (or while the hold was waited on) has left behind.
-    // QUEUEWAITEND1: they stand as `forming` in the same write, so each one's waiter reads it in flight until its candidate is
+    // request queued, dropped or queued again since (or while the hold is waited on) has left behind.
+    // They stand as `forming` in the same write, so each one's waiter reads it in flight until its candidate is
     // written; a form a crash or a drop left is formed first.
     const { forming } = withQueue(home, (q) => {
       if (q.candidate) return {};
@@ -8191,7 +8184,7 @@ const sameForming = (now, asked) => Boolean(now && asked) && now.base === asked.
 
 /**
  * A candidate formed in the scope tree from the requests `forming` names (its `base`, `members`, `reforms`, `recordsOnly`), its
- * set-aside handed back. QUEUEWAITEND1: it is written only over the same `forming`; a drop that took one of its requests out
+ * set-aside handed back. It is written only over the same `forming`; a drop that took one of its requests out
  * meanwhile leaves it unwritten, and what is left forms again at the next step.
  */
 async function formNext(home, forming) {
@@ -8234,15 +8227,15 @@ async function judged(home, candidate, outcome) {
     if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'green' } } })).obsolete) return obsolete();
     return 'next';
   }
-  // INTEGRATE1b, the owner's `land` (design §4.5): the confirm run's pass is the gate's verdict on this tip alone, so the candidate goes
-  // on to promotion. That pass was written as no verdict, so the gate is owed again by every later tree and the CI's watch.
+  // The owner's `land`: the confirm run's pass is the gate's verdict on this tip alone, so the candidate goes
+  // on to promotion. That pass is written as no verdict, so the gate is owed again by every later tree and the CI's watch.
   if (outcome.action === 'land') {
     if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'green', landing: { onConfirm: outcome.passedOnConfirm } } } })).obsolete) return obsolete();
     const gates = outcome.passedOnConfirm.join(', ');
     console.log(`${at} ${candidate.tip.slice(0, 7)} lands on its confirm run alone (the owner's land): ${gates} passed only when run once more holding the whole machine admission, a verdict on this tip and no other's; no pass of ${gates} is kept for another tip or plan`);
     return 'next';
   }
-  // INTEGRATE1b, the owner's `hold`: the candidate waits with its members for a decide (§8), which no door gives yet, so it says so.
+  // The owner's `hold`: the candidate waits with its members for a decide (§8), which no door gives yet, so it says so.
   if (outcome.action === 'hold' && outcome.on === 'decide') {
     const why = `${outcome.why}; no decide door exists yet (the integration design's §8): --drop-batch takes it off, and a commit on ${MAIN} forms it again`;
     if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'decide', why } } } })).obsolete) return obsolete();
@@ -8252,7 +8245,7 @@ async function judged(home, candidate, outcome) {
   if (outcome.action === 'hold') {
     if (change((q) => ({ queue: { ...q, candidate: { ...q.candidate, state: 'held', held: { on: 'memory', why: outcome.why } } } })).obsolete) return obsolete();
     console.log(`${at} held as memory: ${outcome.why}`);
-    // Run again once the machine's memory admits the gates that died (MEMGATE1's wait), on the next step.
+    // Run again once the machine's memory admits the gates that died (the memory wait), on the next step.
     const wait = memoryGate();
     for (const name of outcome.gates) await wait({ name, run: '', kind: 'suite' }, { again: true });
     return 'next';
@@ -8274,7 +8267,7 @@ async function judged(home, candidate, outcome) {
   }
   // The retained candidate is judged again: the members kept, formed anew on the base, run on their own tree.
   // C4: so are the members it held as contained, now that their container may be gone: each is merged again, or found contained again.
-  // QUEUEWAITEND1: they stand as `forming` in the write that ends this candidate.
+  // They stand as `forming` in the write that ends this candidate.
   const ended = change((q) => {
     const again = requestsOf(q.candidate, retained);
     const forming = again.length ? { base: candidate.base, members: again, reforms: 0, recordsOnly: false } : null;
@@ -8299,7 +8292,7 @@ async function queueRunVerb(root) {
     return 0;
   }
   console.log(`${nowIso()} the queue's runner started (pid ${process.pid})`);
-  // A merge waits on the scoped run, so it runs at normal priority (D207's amendment of D180's budget note), with build servers
+  // A merge waits on the scoped run, so it runs at normal priority, with build servers
   // of its own as the background's gates have, so no gate leaves a server alive or borrows one.
   Object.assign(process.env, BESIDE_ENVIRONMENT);
   let lost = null;
@@ -8564,7 +8557,7 @@ async function dropQueuedVerb(root, options) {
 /**
  * What the drop of a candidate ended. The runner owns the run's processes, so it ends them (within `DROP_POLL_MS`) and
  * records what it ended; this waits for that record, and says it. A candidate with no run in progress had none to end.
- * DROPWAIT1: only the runner's take of the drop (`draining`, at its next ask) is waited for on the clock, `DRAIN_WAIT_MS`: one that took
+ * Only the runner's take of the drop (`draining`, at its next ask) is waited for on the clock, `DRAIN_WAIT_MS`: one that took
  * it always records what it ended, however long ending its trees takes, so that is waited for while the runner runs.
  */
 async function saidDrained(home, candidate, asked) {
