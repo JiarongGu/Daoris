@@ -138,7 +138,7 @@
   "work.delete.kept.conversation": "它的对话内容",
   "work.delete.kept.transcript": "它的记录文本",
   "work.delete.kept.files": "它的文件",
-  "work.delete.kept.harness": "它在智能体中的对话编号",
+  "work.delete.kept.binding": "它在智能体中的对话编号",
   "work.delete.kept.marker": "它的进程标记",
   "work.delete.kept.mark": "它的继续标记",
   "work.delete.kept.choice": "它对新会话的选择",
